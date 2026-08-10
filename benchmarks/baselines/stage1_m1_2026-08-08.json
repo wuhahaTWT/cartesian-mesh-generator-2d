@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "projectStage": 1,
+  "status": "superseded_center_point_only",
+  "supersededBy": "benchmarks/baselines/stage1_uniform_exact_m1_2026-08-08.json",
+  "date": "2026-08-08",
+  "hardware": {
+    "model": "MacBook Air MacBookAir10,1",
+    "cpu": "Apple M1",
+    "cores": 8,
+    "memoryBytes": 8589934592
+  },
+  "operatingSystem": "macOS 26.5.2 arm64",
+  "build": {
+    "type": "Release",
+    "compiler": "GCC 15.2.0",
+    "cmake": "4.4.2",
+    "threads": 1
+  },
+  "input": {
+    "path": "tests/data/closed_unit_cube_ascii.stl",
+    "format": "ascii_stl",
+    "sha256": "cac46acc501ee3256e777cefab0120251e6e9bbc6f8a02012ca3886f452bfd5b",
+    "triangleCount": 12
+  },
+  "grid": {
+    "dimensions": [100, 100, 100],
+    "cellCount": 1000000,
+    "insideCellCount": 729000,
+    "outsideCellCount": 271000,
+    "onSurfaceCellCount": 0,
+    "conflictCellCount": 0
+  },
+  "bvh": {
+    "nodeCount": 3,
+    "leafCount": 2,
+    "maximumDepth": 1,
+    "maximumLeafTriangles": 6
+  },
+  "timingsSeconds": {
+    "externalProcessWall": 0.66,
+    "internalTotal": 0.646664,
+    "stlImport": 0.000276,
+    "surfaceDiagnostics": 0.000146,
+    "bvhBuild": 0.000107,
+    "classification": 0.642479,
+    "vtkWrite": 0.0
+  },
+  "memoryBytes": {
+    "externalMaximumResidentSet": 19857408,
+    "internalPeakRss": 19824640
+  },
+  "resultHashFnv1a64": "55d280f58b4ba679",
+  "solverReadyCutCellMesh": false,
+  "notes": [
+    "该基准是 STL/BVH 均匀网格单元中心分类，不是 Cut-cell。",
+    "输入只有 12 个三角形，不能外推复杂表面上的性能。",
+    "VTK 输出已关闭，导出时间为零。"
+  ]
+}

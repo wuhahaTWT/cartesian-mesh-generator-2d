@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-08-07",
+  "stage": 0,
+  "status": "measured",
+  "hardware": {
+    "model": "MacBook Air MacBookAir10,1",
+    "chip": "Apple M1",
+    "cores": 8,
+    "memoryGiB": 8
+  },
+  "software": {
+    "os": "macOS 26.5.2",
+    "architecture": "arm64",
+    "cmake": "4.4.2",
+    "releaseCompiler": "GCC 15.2.0",
+    "secondaryCompiler": "Apple Clang 21.0.0",
+    "buildType": "Release",
+    "threads": 1
+  },
+  "case": {
+    "name": "sphere_center_sample",
+    "domain": [[-1.25, -1.25, -1.25], [1.25, 1.25, 1.25]],
+    "sphereCenter": [0.0, 0.0, 0.0],
+    "sphereRadius": 1.0,
+    "exactVolume": 4.1887902047863905,
+    "warning": "这是解析单元中心分类，不是 Cut-cell 重建。"
+  },
+  "layout": {
+    "uniformGridObjectBytes": 88,
+    "cellKeyBytes": 16,
+    "mortonCodeBytes": 8,
+    "perCellCoreStorageBytes": 0
+  },
+  "runs": [
+    {
+      "resolution": 12,
+      "cellCount": 1728,
+      "insideCellCount": 480,
+      "estimatedVolume": 4.340277777777779,
+      "internalWallSeconds": 0.000012,
+      "checksum": 10984238285460806149
+    },
+    {
+      "resolution": 24,
+      "cellCount": 13824,
+      "insideCellCount": 3648,
+      "estimatedVolume": 4.12326388888889,
+      "internalWallSeconds": 0.000094,
+      "checksum": 7156900573806767397
+    },
+    {
+      "resolution": 48,
+      "cellCount": 110592,
+      "insideCellCount": 29464,
+      "estimatedVolume": 4.16282371238426,
+      "internalWallSeconds": 0.000763,
+      "checksum": 12289486528355924589
+    },
+    {
+      "resolution": 96,
+      "cellCount": 884736,
+      "insideCellCount": 236984,
+      "estimatedVolume": 4.185288040726274,
+      "internalWallSeconds": 0.006069,
+      "checksum": 13461232080429122605
+    },
+    {
+      "resolution": 100,
+      "cellCount": 1000000,
+      "insideCellCount": 268096,
+      "estimatedVolume": 4.189000000000001,
+      "internalWallSeconds": 0.006736,
+      "externalProcessWallSeconds": 0.20,
+      "peakRssBytes": 8781824,
+      "checksum": 12480557215144883013
+    }
+  ],
+  "measurementNotes": [
+    "内部时间使用 std::chrono::steady_clock 测量构建和分类过程。",
+    "外部进程时间和峰值 RSS 使用沙箱外的 macOS /usr/bin/time -l 测量。",
+    "外部进程墙钟时间包含可执行程序启动和测量开销。",
+    "计时值只是本记录机器上的基线，不构成产品性能声明。"
+  ]
+}

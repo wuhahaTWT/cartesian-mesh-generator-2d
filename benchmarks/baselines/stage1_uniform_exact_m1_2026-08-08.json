@@ -1,0 +1,503 @@
+{
+  "benchmark": "uniform Cartesian exact triangle-AABB surface intersection plus center parity",
+  "build": {
+    "cmake": "4.4.2",
+    "compiler": "GCC 15.2.0",
+    "runtimeThreads": 1,
+    "sanitizers": false,
+    "type": "Release"
+  },
+  "cases": [
+    {
+      "analyticCountsMatch": true,
+      "analyticExpected": {
+        "centerInside": 729000,
+        "conflict": 0,
+        "inside": 729000,
+        "intersected": 49688,
+        "outside": 221312
+      },
+      "bvh": {
+        "leafCount": 2,
+        "maximumDepth": 1,
+        "maximumLeafTriangles": 6,
+        "nodeCount": 3,
+        "triangleCount": 12
+      },
+      "cellCount": 1000000,
+      "cellSpacing": [
+        0.011000000000000001,
+        0.011000000000000001,
+        0.011000000000000001
+      ],
+      "centerPointCounts": {
+        "conflict": 0,
+        "inside": 729000,
+        "onSurface": 0,
+        "outside": 271000
+      },
+      "classificationCounts": {
+        "conflict": 0,
+        "inside": 729000,
+        "intersected": 49688,
+        "outside": 221312
+      },
+      "dimensions": {
+        "nx": 100,
+        "ny": 100,
+        "nz": 100
+      },
+      "domain": {
+        "maximum": [
+          1.05,
+          1.05,
+          1.05
+        ],
+        "minimum": [
+          -0.05,
+          -0.05,
+          -0.05
+        ]
+      },
+      "resolution": 100,
+      "runs": [
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 0.772766,
+          "internalPeakRssBytes": 8781824,
+          "internalTotalSeconds": 0.77567,
+          "maximumResidentSetBytes": 8781824,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run1.json",
+          "resultHashFnv1a64": "cbb6079ddc8a0200",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run1.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run1.stdout.txt",
+          "systemSeconds": 0.009047999999999999,
+          "userSeconds": 0.779071,
+          "wallSeconds": 0.7914275419898331
+        },
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 0.764246,
+          "internalPeakRssBytes": 8781824,
+          "internalTotalSeconds": 0.76701,
+          "maximumResidentSetBytes": 8781824,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run2.json",
+          "resultHashFnv1a64": "cbb6079ddc8a0200",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run2.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run2.stdout.txt",
+          "systemSeconds": 0.009507,
+          "userSeconds": 0.7691319999999999,
+          "wallSeconds": 0.7811968339374289
+        },
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 0.760892,
+          "internalPeakRssBytes": 8781824,
+          "internalTotalSeconds": 0.763693,
+          "maximumResidentSetBytes": 8781824,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run3.json",
+          "resultHashFnv1a64": "cbb6079ddc8a0200",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run3.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_100_exact_run3.stdout.txt",
+          "systemSeconds": 0.008307,
+          "userSeconds": 0.767177,
+          "wallSeconds": 0.7778835829813033
+        }
+      ],
+      "summary": {
+        "externalMaximumRssBytes": 8781824,
+        "externalWallMaximumSeconds": 0.7914275419898331,
+        "externalWallMedianSeconds": 0.7811968339374289,
+        "externalWallMinimumSeconds": 0.7778835829813033,
+        "resultHashFnv1a64": "cbb6079ddc8a0200"
+      }
+    },
+    {
+      "analyticCountsMatch": true,
+      "analyticExpected": {
+        "centerInside": 7529536,
+        "conflict": 0,
+        "inside": 7529536,
+        "intersected": 232856,
+        "outside": 2315304
+      },
+      "bvh": {
+        "leafCount": 2,
+        "maximumDepth": 1,
+        "maximumLeafTriangles": 6,
+        "nodeCount": 3,
+        "triangleCount": 12
+      },
+      "cellCount": 10077696,
+      "cellSpacing": [
+        0.005092592592592593,
+        0.005092592592592593,
+        0.005092592592592593
+      ],
+      "centerPointCounts": {
+        "conflict": 0,
+        "inside": 7529536,
+        "onSurface": 0,
+        "outside": 2548160
+      },
+      "classificationCounts": {
+        "conflict": 0,
+        "inside": 7529536,
+        "intersected": 232856,
+        "outside": 2315304
+      },
+      "dimensions": {
+        "nx": 216,
+        "ny": 216,
+        "nz": 216
+      },
+      "domain": {
+        "maximum": [
+          1.05,
+          1.05,
+          1.05
+        ],
+        "minimum": [
+          -0.05,
+          -0.05,
+          -0.05
+        ]
+      },
+      "resolution": 216,
+      "runs": [
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 7.593983,
+          "internalPeakRssBytes": 23019520,
+          "internalTotalSeconds": 7.62083,
+          "maximumResidentSetBytes": 23052288,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run1.json",
+          "resultHashFnv1a64": "d42cc61845b30f8c",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run1.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run1.stdout.txt",
+          "systemSeconds": 0.063725,
+          "userSeconds": 7.54884,
+          "wallSeconds": 7.637017042026855
+        },
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 7.574419,
+          "internalPeakRssBytes": 23019520,
+          "internalTotalSeconds": 7.600851,
+          "maximumResidentSetBytes": 23052288,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run2.json",
+          "resultHashFnv1a64": "d42cc61845b30f8c",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run2.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run2.stdout.txt",
+          "systemSeconds": 0.06361599999999999,
+          "userSeconds": 7.533101,
+          "wallSeconds": 7.617695291992277
+        },
+        {
+          "exitCode": 0,
+          "internalClassificationSeconds": 7.735499,
+          "internalPeakRssBytes": 23019520,
+          "internalTotalSeconds": 7.761723,
+          "maximumResidentSetBytes": 23052288,
+          "projectReport": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run3.json",
+          "resultHashFnv1a64": "d42cc61845b30f8c",
+          "stderr": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run3.stderr.txt",
+          "stdout": "/Users/Zhuanz/Desktop/网络生成器/artifacts/stage1_exact_benchmarks/stage1_cube_216_exact_run3.stdout.txt",
+          "systemSeconds": 0.06787599999999999,
+          "userSeconds": 7.554824,
+          "wallSeconds": 7.7779565419768915
+        }
+      ],
+      "summary": {
+        "externalMaximumRssBytes": 23052288,
+        "externalWallMaximumSeconds": 7.7779565419768915,
+        "externalWallMedianSeconds": 7.637017042026855,
+        "externalWallMinimumSeconds": 7.617695291992277,
+        "resultHashFnv1a64": "d42cc61845b30f8c"
+      }
+    }
+  ],
+  "date": "2026-08-08",
+  "hardware": {
+    "chip": "Apple M1",
+    "logicalCores": 8,
+    "memoryBytes": 8589934592,
+    "model": "MacBook Air MacBookAir10,1",
+    "physicalCores": 8
+  },
+  "input": {
+    "bounds": {
+      "maximum": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "minimum": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "format": "ascii_stl",
+    "path": "tests/data/closed_unit_cube_ascii.stl",
+    "sha256": "cac46acc501ee3256e777cefab0120251e6e9bbc6f8a02012ca3886f452bfd5b",
+    "triangleCount": 12
+  },
+  "measuredRunsPerCase": 3,
+  "notes": [
+    "相交标签来自 BVH 粗筛后的精确 triangle-AABB SAT；inside/outside 来自非相交单元中心奇偶射线。",
+    "这是均匀背景单元分类，不是 Cut-cell 或求解器可用网格。",
+    "外部资源数据由独立 Python 父进程的 POSIX wait4 采集；macOS ru_maxrss 单位为字节。",
+    "关闭 VTU 只测分类核心；小规模 VTU 另由 meshio 和 ParaView 验证。"
+  ],
+  "operatingSystem": {
+    "architecture": "arm64",
+    "name": "macOS",
+    "version": "26.5.2"
+  },
+  "outputEnabled": false,
+  "projectStage": 1,
+  "schemaVersion": 3,
+  "solverReadyCutCellMesh": false,
+  "sourceRevision": {
+    "gitRepository": false,
+    "sourceManifest": {
+      "fileCount": 46,
+      "files": [
+        {
+          "bytes": 899,
+          "path": "AGENTS.md",
+          "sha256": "45a889a51f6408d9f57e260bff2dec03b2d921fe19b4c302f0497b20c3951a40"
+        },
+        {
+          "bytes": 34185,
+          "path": "CARTESIAN_MESH_GENERATOR_PROJECT_BRIEF_CN.md",
+          "sha256": "9f71a0a281cf2eec9168b53ca07f4df6188f03a689227ea30d4445834389574f"
+        },
+        {
+          "bytes": 4022,
+          "path": "CMakeLists.txt",
+          "sha256": "7254e8382b83bf0925b0e7eb43aac3c2bd356cab690bdb291ad53577b6df0e91"
+        },
+        {
+          "bytes": 990,
+          "path": "CMakePresets.json",
+          "sha256": "f9a2729e989023046f963afb1488ca3c05f9e677c53e364b981cca41cbe7a0ab"
+        },
+        {
+          "bytes": 2913,
+          "path": "apps/benchmark/main.cpp",
+          "sha256": "208d0579916c98502d56d55a1c92af882e74620ed3411579a94588e12510166e"
+        },
+        {
+          "bytes": 34787,
+          "path": "apps/cli/main.cpp",
+          "sha256": "b9720159780be29b35a68c174d6682c7c8e26e08b11f01190e051a45ba9863fa"
+        },
+        {
+          "bytes": 2819,
+          "path": "include/cartmesh/classify/SurfaceClassifier.hpp",
+          "sha256": "7488d4de88b03cfee6a74f9a699728c5c080247c3fdc217735c59e6c766b34c6"
+        },
+        {
+          "bytes": 1831,
+          "path": "include/cartmesh/geometry/AABB.hpp",
+          "sha256": "0ca8c24ba453e3424bd8485b14bd7bb374a37ef287a266c72781d9433773dda6"
+        },
+        {
+          "bytes": 1895,
+          "path": "include/cartmesh/geometry/AnalyticShapes.hpp",
+          "sha256": "9cfe36b2e20257aec1afaaebe234d58a925fae09fd4ef52239de7f4ad60f6176"
+        },
+        {
+          "bytes": 1901,
+          "path": "include/cartmesh/geometry/SurfaceDiagnostics.hpp",
+          "sha256": "13efdc536f7293a348182358471b7583c0401db355796368edb552114c29863e"
+        },
+        {
+          "bytes": 979,
+          "path": "include/cartmesh/geometry/SurfaceMesh.hpp",
+          "sha256": "5a4fa06762b7d49b13b4d7156e7a7ccdd8fdb53853658e215b5bb9fe504a125b"
+        },
+        {
+          "bytes": 1540,
+          "path": "include/cartmesh/geometry/Triangle.hpp",
+          "sha256": "e9fadd105f4e69fbf4dc96f73bea255fad4970930799856b828aa657f9068df0"
+        },
+        {
+          "bytes": 425,
+          "path": "include/cartmesh/geometry/TriangleBoxIntersection.hpp",
+          "sha256": "ff2d2b04013c0420c403153cecb0d1cf47caa2766d3017ed9ba39341325caa06"
+        },
+        {
+          "bytes": 1275,
+          "path": "include/cartmesh/geometry/Vec3.hpp",
+          "sha256": "97e37efda64b98162492c6e33fccb2e3174fc312ce24a963bf90b04d15e99b53"
+        },
+        {
+          "bytes": 414,
+          "path": "include/cartmesh/grid/CellKey.hpp",
+          "sha256": "a17d842068709896c5d87b1a0076eabf46c876ad68e264f79da9a50fe8c4f3c1"
+        },
+        {
+          "bytes": 1433,
+          "path": "include/cartmesh/grid/MortonCode.hpp",
+          "sha256": "68e2a95051241136c1ae1c3a94bb0e4660206774d9b3ce2f508bc32ac5e632d9"
+        },
+        {
+          "bytes": 1290,
+          "path": "include/cartmesh/grid/UniformCartesianGrid.hpp",
+          "sha256": "4b1faee672e6ab7ee3538a4a1cb61d2419c87c3a9888aba6276db0129dd23d63"
+        },
+        {
+          "bytes": 509,
+          "path": "include/cartmesh/io/DiagnosticVtkWriter.hpp",
+          "sha256": "e0181e6d19e3fe80b3052f2f95db02d017e4d28e42565968267967da47fd1f63"
+        },
+        {
+          "bytes": 204,
+          "path": "include/cartmesh/io/StlReader.hpp",
+          "sha256": "1a632831708a131ad1ead5cfa8fae1d3917e0c223adbbd41d3a1e3983d9330c5"
+        },
+        {
+          "bytes": 420,
+          "path": "include/cartmesh/io/VtkWriter.hpp",
+          "sha256": "586efa3a055e8ed2a5c407df093843fa572a00f6b52dd677ea57ae470de76aad"
+        },
+        {
+          "bytes": 1857,
+          "path": "include/cartmesh/spatial/TriangleBvh.hpp",
+          "sha256": "61806a6d2fc91a2ddbbee6aa0fcb2d95d7bdece0909a4259941e988a4ce4cb09"
+        },
+        {
+          "bytes": 547,
+          "path": "include/cartmesh/util/Performance.hpp",
+          "sha256": "bb317b47f67d5bef6ff5720b28ee4585163d70378c8df0a740844a04433f6d52"
+        },
+        {
+          "bytes": 4744,
+          "path": "src/classify/SurfaceClassifier.cpp",
+          "sha256": "96a97652cd1fae7c392f726750711dc20e51650b4826a3a65fcfe45e5f4fd14c"
+        },
+        {
+          "bytes": 11542,
+          "path": "src/geometry/SurfaceDiagnostics.cpp",
+          "sha256": "1cebb44bd455181f2a8488d6c79565b784a5b5c2694d9c2216a70357c8f4ca2d"
+        },
+        {
+          "bytes": 1077,
+          "path": "src/geometry/SurfaceMesh.cpp",
+          "sha256": "77c569041da0aaaed4f460c5557ba80d9ba9846e62a49eded46f5c4dbe25b3d3"
+        },
+        {
+          "bytes": 4284,
+          "path": "src/geometry/TriangleBoxIntersection.cpp",
+          "sha256": "81de2514b951ec6d825bb9654206aa9b7743d5744a69a309efea34b5a3bd1106"
+        },
+        {
+          "bytes": 3686,
+          "path": "src/grid/UniformCartesianGrid.cpp",
+          "sha256": "c59b813e7d75281b06c7010f78c4be7c1f52dc2c510bc333ade812b73c37e40e"
+        },
+        {
+          "bytes": 3899,
+          "path": "src/io/DiagnosticVtkWriter.cpp",
+          "sha256": "f37b6833859acf01d9c623b8bae0dc04efa0e34591f7ee2f26c3e0024152d110"
+        },
+        {
+          "bytes": 8943,
+          "path": "src/io/StlReader.cpp",
+          "sha256": "8cb2df2d3d497edfd27248d9e28d833edf38af170982bcb0af212a86839e4ede"
+        },
+        {
+          "bytes": 5305,
+          "path": "src/io/VtkWriter.cpp",
+          "sha256": "49ca53b2524acb36219058471c8933f425b86e7733b037b5bbc0f45dbbc14d9f"
+        },
+        {
+          "bytes": 15764,
+          "path": "src/spatial/TriangleBvh.cpp",
+          "sha256": "f3f5e2fa96ac9a3d2b61848fb1478eefa0a6fff67b1aeaeaf614e10e2fdce8bf"
+        },
+        {
+          "bytes": 1279,
+          "path": "tests/data/closed_unit_cube_ascii.stl",
+          "sha256": "cac46acc501ee3256e777cefab0120251e6e9bbc6f8a02012ca3886f452bfd5b"
+        },
+        {
+          "bytes": 1026,
+          "path": "tests/data/nonmanifold_vertex_two_tetrahedra_ascii.stl",
+          "sha256": "8b5c84b6c00627a8895c5f021cba12704d78cc670eb0a22667aaf5da8d5230c9"
+        },
+        {
+          "bytes": 1207,
+          "path": "tests/data/open_unit_cube_missing_triangle_ascii.stl",
+          "sha256": "7971c14b0157eab3f67a80b86df26aa9aa79a0785108761c2981e20e688039d2"
+        },
+        {
+          "bytes": 38845,
+          "path": "tests/stage1_test.cpp",
+          "sha256": "a787f3fb0ff16801f3a823fb7b273de943fcd1ae8f90cb9b84a3c01e38f3408b"
+        },
+        {
+          "bytes": 8738,
+          "path": "tests/test_main.cpp",
+          "sha256": "26968a5ee2e2a6ed78a25224cad0fc30ee646c7b7b94743e1637693e1e0b2ec5"
+        },
+        {
+          "bytes": 6213,
+          "path": "tools/generate_stage1_surfaces.py",
+          "sha256": "8f0eaf5f18f33692819575f3e90c145ec96eb730ed9edd7d6d82585861680537"
+        },
+        {
+          "bytes": 31421,
+          "path": "tools/meshio_stage1_verify.py",
+          "sha256": "8dcfd4ddf338215746dc0def842ef1a062ea3120518fed45a9c24d3c490fe15a"
+        },
+        {
+          "bytes": 3969,
+          "path": "tools/meshio_verify.py",
+          "sha256": "53b732a4393835883db900a0517811305d43ae8b15231291e3ba40f9265f8064"
+        },
+        {
+          "bytes": 8919,
+          "path": "tools/paraview_stage1_verify.py",
+          "sha256": "1118d7fcbcb8bfbc6eb6ffa3e00f8ca9d3e969571fd782551b23083a544dcd48"
+        },
+        {
+          "bytes": 4882,
+          "path": "tools/paraview_verify.py",
+          "sha256": "13ace126282733e11f6c1419d42f257806bccfde739a4e9228be27b3348f14dc"
+        },
+        {
+          "bytes": 11616,
+          "path": "tools/render_stage1_classification.py",
+          "sha256": "8396d085280ad23c784f7682a1b14be7401395c28bc44782170959e592119e3a"
+        },
+        {
+          "bytes": 13944,
+          "path": "tools/run_stage1_benchmarks.py",
+          "sha256": "bcbb3f7720b9b0ba184eee7558a4309617852689e84abf4dd8c30675e8c181ed"
+        },
+        {
+          "bytes": 4921,
+          "path": "tools/verify_stage1_convergence.py",
+          "sha256": "ccc390a80b3a9eb46c3f4257a61fa4ae55b1f3195c63739f6e1883b22813ab83"
+        },
+        {
+          "bytes": 2995,
+          "path": "tools/verify_stage1_determinism.py",
+          "sha256": "6edeb4aba6d30e50d0bf4a3263694656370c19b2ccc12eb995abfd1e11027966"
+        },
+        {
+          "bytes": 4568,
+          "path": "tools/verify_vtu.py",
+          "sha256": "e373deed783ec8be28431e7c0756a3a67b5fa38c147a98467bd59e0c4190f9d9"
+        }
+      ],
+      "sha256": "545a890e04060ddd85f956b2fe3700a33b6d94c3e838c01401d1a0feee1bce0e"
+    }
+  },
+  "timezone": "Asia/Shanghai",
+  "warmupRunsPerCase": 1
+}

@@ -1,0 +1,18 @@
+{
+  "asset": "stanford_bunny_libigl_binary.stl",
+  "purpose": "stage4_complex_public_geometry_verification",
+  "sourceRepository": "https://github.com/libigl/libigl-tutorial-data",
+  "sourceCommit": "644dd4104843b6d736745d9dafbd70bf8d175648",
+  "sourcePath": "bunny.off",
+  "sourceAttribution": "Stanford 3D Scanning Repository",
+  "sourcePage": "http://graphics.stanford.edu/data/3Dscanrep/",
+  "licenseStatus": "custom_stanford_3d_scanning_repository_terms",
+  "usageTerms": "Research use and free mirroring or redistribution are permitted with credit to the Stanford Computer Graphics Laboratory; commercial use or inclusion in a product for sale requires Stanford permission.",
+  "commercialUseWithoutPermission": false,
+  "requiredCredit": "Stanford University Computer Graphics Laboratory",
+  "sourceOffSha256": "dda85ca6dc03ed83a0b754611d5c0b1a3c8ba5234e690479ac4a04063e6a7d4d",
+  "conversion": "meshio 5.3.5 OFF to binary STL without topology repair",
+  "binaryStlSha256": "21548a3c21187110f25d442f9ec688e90efd048c83590b422b5e4c8f7ef2cf35",
+  "retrievedDate": "2026-08-09",
+  "geometryUploadedExternally": false
+}

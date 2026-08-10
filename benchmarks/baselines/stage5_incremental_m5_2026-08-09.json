@@ -1,0 +1,41 @@
+{
+  "buildType": "Release",
+  "compiler": "GCC 15.2.0",
+  "failures": [],
+  "fullRebuildSeconds": {
+    "maximum": 1.843689,
+    "median": 1.426893,
+    "minimum": 1.314247
+  },
+  "geometryRebuiltLeafCount": 866,
+  "geometryReuseFraction": 0.9092433452106476,
+  "geometryReusedLeafCount": 8676,
+  "hardwareLogicalCpu": 8,
+  "hardwareMemoryBytes": 8589934592,
+  "hardwareModel": "MacBookAir10,1",
+  "incrementalSeconds": {
+    "maximum": 0.589834,
+    "median": 0.506252,
+    "minimum": 0.469721
+  },
+  "maximumObservedPeakRssBytes": 67158016,
+  "newLeafCount": 9542,
+  "notes": [
+    "Each process built the old baseline, then separately timed incremental and full-new paths.",
+    "Peak RSS is the conservative maximum for old baseline plus incremental plus full validation plus export.",
+    "Export time is excluded from both compared compute timings and reported separately by each run."
+  ],
+  "oldLeafCount": 9304,
+  "peakRssScope": "old_baseline_plus_incremental_plus_full_validation_plus_export",
+  "resultHashFnv1a64": "d13d490a35e8178f",
+  "runCount": 3,
+  "runtimeThreads": 1,
+  "schema": "cartmesh-stage5-benchmark-v1",
+  "speedup": {
+    "maximum": 3.125776065808346,
+    "median": 2.8185429390896233,
+    "minimum": 2.7979311122985773
+  },
+  "stage5PerformancePass": true,
+  "status": "pass"
+}

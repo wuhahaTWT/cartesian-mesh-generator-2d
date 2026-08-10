@@ -1,0 +1,15 @@
+# Python 版本要求：3.10 或更高版本
+#
+# 安装命令：
+#   python3 -m pip install -r requirements.txt
+#
+# tools/verify_vtu.py 只使用 Python 标准库，无需安装第三方库。
+# tools/meshio_verify.py 使用以下三个库：
+
+meshio>=5.3.5
+numpy>=1.24
+matplotlib>=3.7
+
+# tools/paraview_verify.py 必须使用 ParaView 自带的 pvpython 运行。
+# ParaView、paraview 和 vtk 不列入本文件，因为完整的 ParaView Python
+# 运行时应随 ParaView 应用安装，而不是在本项目的普通 Python 环境中用 pip 安装。

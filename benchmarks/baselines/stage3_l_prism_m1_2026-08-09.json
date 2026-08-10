@@ -1,0 +1,72 @@
+{
+  "schema": "cartmesh-stage3-performance-evidence-v1",
+  "date": "2026-08-09",
+  "timezone": "Asia/Shanghai",
+  "hardware": {
+    "model": "MacBookAir10,1",
+    "chip": "Apple M1",
+    "physicalCoreDescription": "8 cores (4 performance, 4 efficiency)",
+    "memoryBytes": 8589934592
+  },
+  "operatingSystem": {
+    "name": "macOS",
+    "version": "26.5.2",
+    "build": "25F84",
+    "architecture": "arm64"
+  },
+  "build": {
+    "type": "Release",
+    "compiler": "GCC 15.2.0",
+    "cmake": "4.4.2",
+    "sanitizers": false
+  },
+  "runtimeThreads": 1,
+  "input": {
+    "path": "tests/data/nonconvex_l_prism_ascii.stl",
+    "format": "ascii_stl",
+    "fnv1a64": "10228ccb0b4458e8",
+    "triangleCount": 28
+  },
+  "configuration": {
+    "kernel": "oriented_tetrahedral_chain",
+    "resolution": [8, 8, 8],
+    "backgroundCellCount": 512,
+    "paddingFraction": 0.1,
+    "vtkWritten": false,
+    "geometryJsonWritten": true
+  },
+  "result": {
+    "resultHashFnv1a64": "2e38b5e465909cba",
+    "fluidCellCount": 404,
+    "fullFluidCellCount": 224,
+    "fullSolidCellCount": 108,
+    "volumeCutCellCount": 180,
+    "boundaryCellCount": 222,
+    "minimumCutCellVolumeFraction": 0.1428571428571415,
+    "smallCellThreshold": 0.01,
+    "smallCutCellCount": 0,
+    "internalFluidFaceCount": 945,
+    "totalFluidVolume": 5.0639999999999885,
+    "totalSolidVolume": 3.0000000000000133,
+    "embeddedBoundaryArea": 14.000000000000005,
+    "negativeVolumeCellCount": 0,
+    "nonclosedCellCount": 0,
+    "disconnectedFluidCellCount": 0,
+    "componentAnalysisPendingCellCount": 0,
+    "classificationConflictCount": 0,
+    "sharedFaceMismatchCount": 0
+  },
+  "timing": {
+    "internalWallSeconds": 0.061572,
+    "externalRealSeconds": 0.08,
+    "externalUserSeconds": 0.06,
+    "externalSystemSeconds": 0.01
+  },
+  "memory": {
+    "internalPeakRssBytes": 8781824,
+    "externalMaximumResidentSetBytes": 8781824,
+    "externalPeakMemoryFootprintBytes": 8537152
+  },
+  "scope": "Serial stage-3 correctness baseline; not a stage-6 scalability claim",
+  "solverReadyCutCellMesh": true
+}

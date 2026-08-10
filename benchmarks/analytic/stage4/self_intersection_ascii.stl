@@ -1,0 +1,16 @@
+solid self_intersection
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+      vertex 0 1 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0.25 0.10000000000000001 -1
+      vertex 0.25 0.10000000000000001 1
+      vertex 0.25 0.80000000000000004 0
+    endloop
+  endfacet
+endsolid self_intersection

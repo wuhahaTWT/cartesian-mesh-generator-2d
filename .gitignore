@@ -1,0 +1,9 @@
+/build/
+/artifacts/
+/.venv/
+/.idea/
+/artifacts.zip
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.DS_Store

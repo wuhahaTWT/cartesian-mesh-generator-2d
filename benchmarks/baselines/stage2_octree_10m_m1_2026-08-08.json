@@ -1,0 +1,458 @@
+{
+  "benchmark": "compact_linear_octree_ten_million_leaf_construction",
+  "date": "2026-08-08T22:34:06.963496+08:00",
+  "environment": {
+    "build": {
+      "cmake": "4.4.2",
+      "compiler": "GCC 15.2.0",
+      "runtimeThreads": 1,
+      "sanitizers": false,
+      "type": "Release"
+    },
+    "hardware": {
+      "chip": "Apple M1",
+      "logicalCores": 8,
+      "memoryBytes": 8589934592,
+      "model": "MacBookAir10,1",
+      "physicalCores": 8
+    },
+    "operatingSystem": {
+      "architecture": "arm64",
+      "name": "macOS",
+      "version": "26.5.2"
+    }
+  },
+  "executable": {
+    "path": "build/release/cartmesh_stage2_benchmark",
+    "sha256": "13925bfa42fcbe55ed1854d0943169b6ed2d9e9bbc15ae5c73e8e1c8247b6e91"
+  },
+  "measuredRuns": [
+    {
+      "external": {
+        "maximumResidentSetBytes": 124633088,
+        "peakMemoryFootprintBytes": 123880512,
+        "systemSeconds": 0.09,
+        "userSeconds": 3.78,
+        "wallSeconds": 4.18
+      },
+      "internal": {
+        "balanceSplitCount": 0,
+        "benchmark": "compact_linear_octree_construction",
+        "buildType": "Release",
+        "bytesPerLeafCode": 8,
+        "compactLeafStorageBytes": 80000040,
+        "faceBalanced2To1": true,
+        "finalLeafCount": 10000005,
+        "initialLeafCount": 2097152,
+        "partitionValid": true,
+        "peakRssBytes": 124633088,
+        "projectStage": 2,
+        "requestedLeafCount": 10000000,
+        "resultHashFnv1a64Decimal": 10481776288188551783,
+        "ruleSplitCount": 1128979,
+        "schemaVersion": 1,
+        "solverReadyCutCellMesh": false,
+        "threads": 1,
+        "timingsSeconds": {
+          "balanceCheck": 0.10695,
+          "initialConstruction": 2.605436,
+          "refinement": 0.961718,
+          "total": 4.164155
+        }
+      },
+      "rawReport": "artifacts/stage2_octree_10m_run1.json",
+      "rawTimeLog": "artifacts/stage2_octree_10m_run1_time.txt",
+      "run": 1
+    },
+    {
+      "external": {
+        "maximumResidentSetBytes": 125075456,
+        "peakMemoryFootprintBytes": 123880512,
+        "systemSeconds": 0.11,
+        "userSeconds": 3.87,
+        "wallSeconds": 4.74
+      },
+      "internal": {
+        "balanceSplitCount": 0,
+        "benchmark": "compact_linear_octree_construction",
+        "buildType": "Release",
+        "bytesPerLeafCode": 8,
+        "compactLeafStorageBytes": 80000040,
+        "faceBalanced2To1": true,
+        "finalLeafCount": 10000005,
+        "initialLeafCount": 2097152,
+        "partitionValid": true,
+        "peakRssBytes": 125075456,
+        "projectStage": 2,
+        "requestedLeafCount": 10000000,
+        "resultHashFnv1a64Decimal": 10481776288188551783,
+        "ruleSplitCount": 1128979,
+        "schemaVersion": 1,
+        "solverReadyCutCellMesh": false,
+        "threads": 1,
+        "timingsSeconds": {
+          "balanceCheck": 0.202217,
+          "initialConstruction": 2.335973,
+          "refinement": 1.063581,
+          "total": 4.730105
+        }
+      },
+      "rawReport": "artifacts/stage2_octree_10m_run2.json",
+      "rawTimeLog": "artifacts/stage2_octree_10m_run2_time.txt",
+      "run": 2
+    },
+    {
+      "external": {
+        "maximumResidentSetBytes": 124633088,
+        "peakMemoryFootprintBytes": 123880512,
+        "systemSeconds": 0.11,
+        "userSeconds": 3.88,
+        "wallSeconds": 4.35
+      },
+      "internal": {
+        "balanceSplitCount": 0,
+        "benchmark": "compact_linear_octree_construction",
+        "buildType": "Release",
+        "bytesPerLeafCode": 8,
+        "compactLeafStorageBytes": 80000040,
+        "faceBalanced2To1": true,
+        "finalLeafCount": 10000005,
+        "initialLeafCount": 2097152,
+        "partitionValid": true,
+        "peakRssBytes": 124633088,
+        "projectStage": 2,
+        "requestedLeafCount": 10000000,
+        "resultHashFnv1a64Decimal": 10481776288188551783,
+        "ruleSplitCount": 1128979,
+        "schemaVersion": 1,
+        "solverReadyCutCellMesh": false,
+        "threads": 1,
+        "timingsSeconds": {
+          "balanceCheck": 0.106162,
+          "initialConstruction": 2.805768,
+          "refinement": 0.86691,
+          "total": 4.268432
+        }
+      },
+      "rawReport": "artifacts/stage2_octree_10m_run3.json",
+      "rawTimeLog": "artifacts/stage2_octree_10m_run3_time.txt",
+      "run": 3
+    }
+  ],
+  "meshKind": "adaptive_cartesian_background_leaf_codes_only",
+  "notes": [
+    "The benchmark stores one uint64 node code per leaf in the compact leaf array.",
+    "The measured tree has only two adjacent levels, so global level span proves face 2:1 before the generic neighbor tests remain independently covered by unit and meshio checks.",
+    "This is a background octree memory/construction benchmark, not Cut-cell generation or solver-ready mesh output."
+  ],
+  "projectStage": 2,
+  "schemaVersion": 1,
+  "solverReadyCutCellMesh": false,
+  "sourceRevision": {
+    "gitRepository": false,
+    "sourceManifest": {
+      "fileCount": 57,
+      "files": [
+        {
+          "bytes": 899,
+          "path": "AGENTS.md",
+          "sha256": "45a889a51f6408d9f57e260bff2dec03b2d921fe19b4c302f0497b20c3951a40"
+        },
+        {
+          "bytes": 34185,
+          "path": "CARTESIAN_MESH_GENERATOR_PROJECT_BRIEF_CN.md",
+          "sha256": "9f71a0a281cf2eec9168b53ca07f4df6188f03a689227ea30d4445834389574f"
+        },
+        {
+          "bytes": 5893,
+          "path": "CMakeLists.txt",
+          "sha256": "db4dc640214b661f62597382793a58627cfc775a36d6707b41e5ba36bf807b63"
+        },
+        {
+          "bytes": 990,
+          "path": "CMakePresets.json",
+          "sha256": "f9a2729e989023046f963afb1488ca3c05f9e677c53e364b981cca41cbe7a0ab"
+        },
+        {
+          "bytes": 2913,
+          "path": "apps/benchmark/main.cpp",
+          "sha256": "208d0579916c98502d56d55a1c92af882e74620ed3411579a94588e12510166e"
+        },
+        {
+          "bytes": 34787,
+          "path": "apps/cli/main.cpp",
+          "sha256": "b9720159780be29b35a68c174d6682c7c8e26e08b11f01190e051a45ba9863fa"
+        },
+        {
+          "bytes": 25502,
+          "path": "apps/octree_cli/main.cpp",
+          "sha256": "33c50cee63608d3e0613743f5228859895521385d2077f1b87838a9c12b55f57"
+        },
+        {
+          "bytes": 4817,
+          "path": "apps/stage2_benchmark/main.cpp",
+          "sha256": "044b101057f448a020503996d7f49c6a2e61ed99fb01aee8b3770d1f6ab752bc"
+        },
+        {
+          "bytes": 3525,
+          "path": "include/cartmesh/classify/SurfaceClassifier.hpp",
+          "sha256": "87e476d4a1e870327358e2f1150e88c34d51328b52ee30755ec282d6d2f0fc52"
+        },
+        {
+          "bytes": 1831,
+          "path": "include/cartmesh/geometry/AABB.hpp",
+          "sha256": "0ca8c24ba453e3424bd8485b14bd7bb374a37ef287a266c72781d9433773dda6"
+        },
+        {
+          "bytes": 1895,
+          "path": "include/cartmesh/geometry/AnalyticShapes.hpp",
+          "sha256": "9cfe36b2e20257aec1afaaebe234d58a925fae09fd4ef52239de7f4ad60f6176"
+        },
+        {
+          "bytes": 1901,
+          "path": "include/cartmesh/geometry/SurfaceDiagnostics.hpp",
+          "sha256": "13efdc536f7293a348182358471b7583c0401db355796368edb552114c29863e"
+        },
+        {
+          "bytes": 979,
+          "path": "include/cartmesh/geometry/SurfaceMesh.hpp",
+          "sha256": "5a4fa06762b7d49b13b4d7156e7a7ccdd8fdb53853658e215b5bb9fe504a125b"
+        },
+        {
+          "bytes": 1540,
+          "path": "include/cartmesh/geometry/Triangle.hpp",
+          "sha256": "e9fadd105f4e69fbf4dc96f73bea255fad4970930799856b828aa657f9068df0"
+        },
+        {
+          "bytes": 425,
+          "path": "include/cartmesh/geometry/TriangleBoxIntersection.hpp",
+          "sha256": "ff2d2b04013c0420c403153cecb0d1cf47caa2766d3017ed9ba39341325caa06"
+        },
+        {
+          "bytes": 1275,
+          "path": "include/cartmesh/geometry/Vec3.hpp",
+          "sha256": "97e37efda64b98162492c6e33fccb2e3174fc312ce24a963bf90b04d15e99b53"
+        },
+        {
+          "bytes": 414,
+          "path": "include/cartmesh/grid/CellKey.hpp",
+          "sha256": "a17d842068709896c5d87b1a0076eabf46c876ad68e264f79da9a50fe8c4f3c1"
+        },
+        {
+          "bytes": 3630,
+          "path": "include/cartmesh/grid/LinearOctree.hpp",
+          "sha256": "dc89813185cfc840b234a7e38271a187a0cd2121ba2797ec2834af1afc8330df"
+        },
+        {
+          "bytes": 1433,
+          "path": "include/cartmesh/grid/MortonCode.hpp",
+          "sha256": "68e2a95051241136c1ae1c3a94bb0e4660206774d9b3ce2f508bc32ac5e632d9"
+        },
+        {
+          "bytes": 4109,
+          "path": "include/cartmesh/grid/OctreeNodeCode.hpp",
+          "sha256": "6a6d0f763cd350571211f2f08bcfe33d7de020b8f1b3e9d917f3ebd486ebc749"
+        },
+        {
+          "bytes": 2639,
+          "path": "include/cartmesh/grid/OctreeRefinement.hpp",
+          "sha256": "3b5f5782c70e9d6f01ae023725c8f3cb9736146870531eaed7bfbb74bcaa7f8d"
+        },
+        {
+          "bytes": 1290,
+          "path": "include/cartmesh/grid/UniformCartesianGrid.hpp",
+          "sha256": "4b1faee672e6ab7ee3538a4a1cb61d2419c87c3a9888aba6276db0129dd23d63"
+        },
+        {
+          "bytes": 509,
+          "path": "include/cartmesh/io/DiagnosticVtkWriter.hpp",
+          "sha256": "e0181e6d19e3fe80b3052f2f95db02d017e4d28e42565968267967da47fd1f63"
+        },
+        {
+          "bytes": 204,
+          "path": "include/cartmesh/io/StlReader.hpp",
+          "sha256": "1a632831708a131ad1ead5cfa8fae1d3917e0c223adbbd41d3a1e3983d9330c5"
+        },
+        {
+          "bytes": 617,
+          "path": "include/cartmesh/io/VtkWriter.hpp",
+          "sha256": "2928caaa21faea74bf8a9d8244327c65d96f2ba8833103242a4339d5601c18ef"
+        },
+        {
+          "bytes": 1928,
+          "path": "include/cartmesh/spatial/TriangleBvh.hpp",
+          "sha256": "37fc32475f4cb750335101678ecc3b02d4ac36044f78f8bf1a02fff58b259a84"
+        },
+        {
+          "bytes": 547,
+          "path": "include/cartmesh/util/Performance.hpp",
+          "sha256": "bb317b47f67d5bef6ff5720b28ee4585163d70378c8df0a740844a04433f6d52"
+        },
+        {
+          "bytes": 6905,
+          "path": "src/classify/SurfaceClassifier.cpp",
+          "sha256": "222c00dca208071af9f8aa595715e578a767e705fa260e31da6d864f71414c9c"
+        },
+        {
+          "bytes": 11542,
+          "path": "src/geometry/SurfaceDiagnostics.cpp",
+          "sha256": "1cebb44bd455181f2a8488d6c79565b784a5b5c2694d9c2216a70357c8f4ca2d"
+        },
+        {
+          "bytes": 1077,
+          "path": "src/geometry/SurfaceMesh.cpp",
+          "sha256": "77c569041da0aaaed4f460c5557ba80d9ba9846e62a49eded46f5c4dbe25b3d3"
+        },
+        {
+          "bytes": 4284,
+          "path": "src/geometry/TriangleBoxIntersection.cpp",
+          "sha256": "81de2514b951ec6d825bb9654206aa9b7743d5744a69a309efea34b5a3bd1106"
+        },
+        {
+          "bytes": 17714,
+          "path": "src/grid/LinearOctree.cpp",
+          "sha256": "f409738d33c93ae7aae0bea2219ffcd276712ed7340983693222cfe281d882d6"
+        },
+        {
+          "bytes": 19963,
+          "path": "src/grid/OctreeRefinement.cpp",
+          "sha256": "1562d94c43527413f1f73921386e104f07daafed202fa21e066a4f32549d4f19"
+        },
+        {
+          "bytes": 3686,
+          "path": "src/grid/UniformCartesianGrid.cpp",
+          "sha256": "c59b813e7d75281b06c7010f78c4be7c1f52dc2c510bc333ade812b73c37e40e"
+        },
+        {
+          "bytes": 3899,
+          "path": "src/io/DiagnosticVtkWriter.cpp",
+          "sha256": "f37b6833859acf01d9c623b8bae0dc04efa0e34591f7ee2f26c3e0024152d110"
+        },
+        {
+          "bytes": 8943,
+          "path": "src/io/StlReader.cpp",
+          "sha256": "8cb2df2d3d497edfd27248d9e28d833edf38af170982bcb0af212a86839e4ede"
+        },
+        {
+          "bytes": 11638,
+          "path": "src/io/VtkWriter.cpp",
+          "sha256": "a9470738fb9b7307eaac9536d8b160dd3de69e7ea7d2dff2e3246021a004c583"
+        },
+        {
+          "bytes": 17983,
+          "path": "src/spatial/TriangleBvh.cpp",
+          "sha256": "24d0ff31ff1a1680ecc7020ac7875cd2c06177da42567316f67774fa21320087"
+        },
+        {
+          "bytes": 1279,
+          "path": "tests/data/closed_unit_cube_ascii.stl",
+          "sha256": "cac46acc501ee3256e777cefab0120251e6e9bbc6f8a02012ca3886f452bfd5b"
+        },
+        {
+          "bytes": 1026,
+          "path": "tests/data/nonmanifold_vertex_two_tetrahedra_ascii.stl",
+          "sha256": "8b5c84b6c00627a8895c5f021cba12704d78cc670eb0a22667aaf5da8d5230c9"
+        },
+        {
+          "bytes": 1207,
+          "path": "tests/data/open_unit_cube_missing_triangle_ascii.stl",
+          "sha256": "7971c14b0157eab3f67a80b86df26aa9aa79a0785108761c2981e20e688039d2"
+        },
+        {
+          "bytes": 38845,
+          "path": "tests/stage1_test.cpp",
+          "sha256": "a787f3fb0ff16801f3a823fb7b273de943fcd1ae8f90cb9b84a3c01e38f3408b"
+        },
+        {
+          "bytes": 17533,
+          "path": "tests/stage2_test.cpp",
+          "sha256": "dd7631d4e9590be8756bce73b06027fcf59c024c73caedeac6367053abf4613d"
+        },
+        {
+          "bytes": 8738,
+          "path": "tests/test_main.cpp",
+          "sha256": "26968a5ee2e2a6ed78a25224cad0fc30ee646c7b7b94743e1637693e1e0b2ec5"
+        },
+        {
+          "bytes": 7554,
+          "path": "tools/aggregate_stage2_benchmark.py",
+          "sha256": "c7ea24489feab5f873fed699aaca119a409b613051a4a7a3f04c78d893cdeb37"
+        },
+        {
+          "bytes": 6213,
+          "path": "tools/generate_stage1_surfaces.py",
+          "sha256": "8f0eaf5f18f33692819575f3e90c145ec96eb730ed9edd7d6d82585861680537"
+        },
+        {
+          "bytes": 31421,
+          "path": "tools/meshio_stage1_verify.py",
+          "sha256": "8dcfd4ddf338215746dc0def842ef1a062ea3120518fed45a9c24d3c490fe15a"
+        },
+        {
+          "bytes": 13501,
+          "path": "tools/meshio_stage2_verify.py",
+          "sha256": "a6bd0e3456014663b8718162eafcaef9c7a56efde2046985c52a99679c5e6b1c"
+        },
+        {
+          "bytes": 3969,
+          "path": "tools/meshio_verify.py",
+          "sha256": "53b732a4393835883db900a0517811305d43ae8b15231291e3ba40f9265f8064"
+        },
+        {
+          "bytes": 8919,
+          "path": "tools/paraview_stage1_verify.py",
+          "sha256": "1118d7fcbcb8bfbc6eb6ffa3e00f8ca9d3e969571fd782551b23083a544dcd48"
+        },
+        {
+          "bytes": 9408,
+          "path": "tools/paraview_stage2_verify.py",
+          "sha256": "6c3205b235c2d5f186bd048373a7e93828ef66cfce2d567e9b8ec9930f0cc3b9"
+        },
+        {
+          "bytes": 4882,
+          "path": "tools/paraview_verify.py",
+          "sha256": "13ace126282733e11f6c1419d42f257806bccfde739a4e9228be27b3348f14dc"
+        },
+        {
+          "bytes": 11616,
+          "path": "tools/render_stage1_classification.py",
+          "sha256": "8396d085280ad23c784f7682a1b14be7401395c28bc44782170959e592119e3a"
+        },
+        {
+          "bytes": 13944,
+          "path": "tools/run_stage1_benchmarks.py",
+          "sha256": "bcbb3f7720b9b0ba184eee7558a4309617852689e84abf4dd8c30675e8c181ed"
+        },
+        {
+          "bytes": 4921,
+          "path": "tools/verify_stage1_convergence.py",
+          "sha256": "ccc390a80b3a9eb46c3f4257a61fa4ae55b1f3195c63739f6e1883b22813ab83"
+        },
+        {
+          "bytes": 2995,
+          "path": "tools/verify_stage1_determinism.py",
+          "sha256": "6edeb4aba6d30e50d0bf4a3263694656370c19b2ccc12eb995abfd1e11027966"
+        },
+        {
+          "bytes": 4568,
+          "path": "tools/verify_vtu.py",
+          "sha256": "e373deed783ec8be28431e7c0756a3a67b5fa38c147a98467bd59e0c4190f9d9"
+        }
+      ],
+      "sha256": "de452cc864c64b957dbdf406f0882810270029bae0f22dedec3724bc31d75a40"
+    }
+  },
+  "summary": {
+    "compactLeafStorageBytes": 80000040,
+    "faceBalanced2To1EveryRun": true,
+    "finalLeafCount": 10000005,
+    "maximumResidentSetBytesMaximum": 125075456,
+    "partitionValidEveryRun": true,
+    "requestedLeafCount": 10000000,
+    "resultHashFnv1a64Decimal": 10481776288188551783,
+    "runCount": 3,
+    "wallSecondsMaximum": 4.74,
+    "wallSecondsMedian": 4.35,
+    "wallSecondsMinimum": 4.18
+  }
+}
