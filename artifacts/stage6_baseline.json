@@ -1,0 +1,334 @@
+{
+  "schema": "cartmesh-stage6-baseline-v1",
+  "generatedAt": "2026-08-11T04:32:15+08:00",
+  "status": "pass_stage6_0",
+  "stage6BaselineComplete": true,
+  "stage6Complete": false,
+  "solverReadyCutCellMesh": false,
+  "readyForUserDecisionOnStage61": true,
+  "source": {
+    "branch": "main",
+    "commit": "c4d72aa3cca92b7d409a1ff30ef2df23645fa8a4c",
+    "workingTreeWasCleanBeforeBaseline": true,
+    "releaseTag": null,
+    "remotes": [],
+    "missingExpectedDocument": "CHANGELOG.md"
+  },
+  "environment": {
+    "hardwareModel": "MacBookAir10,1",
+    "chip": "Apple M1",
+    "physicalCoreCount": 8,
+    "memoryBytes": 8589934592,
+    "operatingSystem": "macOS 26.5.2 build 25F84 arm64",
+    "cmake": "4.4.2",
+    "compiler": "GCC 15.2.0",
+    "buildType": "Release",
+    "runtimeThreads": 1,
+    "availableDiskBytesAtStart": 29325107200,
+    "dockerDaemonAvailable": false,
+    "openfoamImageLiveInspectionAvailable": false,
+    "freshOpenFoamCheckMeshRun": false,
+    "openfoamEvidencePolicy": "historical checkMesh evidence is recorded separately and is not presented as a fresh run"
+  },
+  "freshBuildAndTests": {
+    "configureStatus": "pass",
+    "buildStatus": "pass",
+    "testStatus": "pass",
+    "ctestPassed": 21,
+    "ctestTotal": 21,
+    "ctestWallSeconds": 5.75,
+    "command": "ctest --preset release --output-on-failure"
+  },
+  "inputContract": {
+    "acceptedByDefault": "closed manifold consistently oriented non-self-intersecting STL",
+    "dirtyGeometryPolicy": "reject and locate; no implicit repair",
+    "geometryRepairAppliedByBaseline": false
+  },
+  "fixedInputs": [
+    {
+      "name": "cube",
+      "path": "tests/data/closed_unit_cube_ascii.stl",
+      "sha256": "cac46acc501ee3256e777cefab0120251e6e9bbc6f8a02012ca3886f452bfd5b"
+    },
+    {
+      "name": "nonconvex_l_prism",
+      "path": "tests/data/nonconvex_l_prism_ascii.stl",
+      "sha256": "8d2268318d3548e5be1271a0c9ad5c8d5f7e76e9cafde94f07ed3e7988e1c7dd"
+    },
+    {
+      "name": "thin_wall_nested_cavity",
+      "path": "benchmarks/analytic/stage4/thin_shell_wall005_ascii.stl",
+      "sha256": "e5254296ff9fd474e747262ee0b17b429b51e993c379001224684d3834fafb18"
+    },
+    {
+      "name": "multiple_disjoint_shells",
+      "path": "benchmarks/analytic/stage4/two_disjoint_cubes_ascii.stl",
+      "sha256": "85173ae7ff4034776a9f93011f84ba5003efc64a425f70c176fe110303f3f8cb"
+    },
+    {
+      "name": "stanford_bunny",
+      "path": "benchmarks/public/stage4/stanford_bunny_libigl_binary.stl",
+      "sha256": "21548a3c21187110f25d442f9ec688e90efd048c83590b422b5e4c8f7ef2cf35"
+    }
+  ],
+  "freshRegressionCases": [
+    {
+      "name": "cube_uniform_complete_solver_output",
+      "input": "cube",
+      "pathKind": "uniform_cartesian_cut_cells",
+      "resolution": 8,
+      "status": "pass_geometry_and_independent_reader_external_cfd_pending",
+      "backgroundCellCount": 512,
+      "cutCellCount": 296,
+      "globalFluidRegionCount": 1,
+      "nonclosedCellCount": 0,
+      "sharedFaceMismatchCount": 0,
+      "completeSolverVolumeMeshWritten": true,
+      "externalIndependentReader": "meshio 5.3.5 pass",
+      "freshOpenFoamCheckMesh": false,
+      "resultHashFnv1a64": "e6fd5337f55140ea",
+      "wallSeconds": 0.155237,
+      "peakRssBytes": 8798208,
+      "runtimeThreads": 1,
+      "buildType": "Release"
+    },
+    {
+      "name": "nonconvex_l_prism_adaptive_cut_cell",
+      "input": "nonconvex_l_prism",
+      "pathKind": "adaptive_linear_octree_cut_cells",
+      "baseLevel": 2,
+      "maximumLevel": 4,
+      "surfaceLevel": 4,
+      "status": "pass_geometry_and_independent_reader_solver_export_missing",
+      "backgroundLeafCount": 2234,
+      "cutCellCount": 684,
+      "globalFluidRegionCount": 1,
+      "nonclosedCellCount": 0,
+      "sharedFaceMismatchCount": 0,
+      "completeSolverVolumeMeshWritten": false,
+      "externalIndependentReader": "meshio 5.3.5 stage4 verifier pass",
+      "resultHashFnv1a64": "a47fd5b59db2b115",
+      "wallSeconds": 0.226649,
+      "peakRssBytes": 11075584,
+      "runtimeThreads": 1,
+      "buildType": "Release"
+    },
+    {
+      "name": "thin_wall_nested_cavity_uniform_complete_solver_output",
+      "input": "thin_wall_nested_cavity",
+      "pathKind": "uniform_cartesian_cut_cells",
+      "resolution": 12,
+      "status": "pass_geometry_and_independent_reader_external_cfd_pending",
+      "backgroundCellCount": 1728,
+      "cutCellCount": 488,
+      "globalFluidRegionCount": 2,
+      "boundaryIds": [10, 20],
+      "regionNames": ["exterior", "cavity"],
+      "nonclosedCellCount": 0,
+      "sharedFaceMismatchCount": 0,
+      "completeSolverVolumeMeshWritten": true,
+      "externalIndependentReader": "meshio 5.3.5 stage4 verifier pass",
+      "freshOpenFoamCheckMesh": false,
+      "resultHashFnv1a64": "9c81a637a4c23d36",
+      "wallSeconds": 0.945915,
+      "peakRssBytes": 13926400,
+      "runtimeThreads": 1,
+      "buildType": "Release"
+    },
+    {
+      "name": "multiple_disjoint_shells_adaptive_cut_cell",
+      "input": "multiple_disjoint_shells",
+      "pathKind": "adaptive_linear_octree_cut_cells",
+      "baseLevel": 2,
+      "maximumLevel": 4,
+      "surfaceLevel": 4,
+      "status": "pass_geometry_and_independent_reader_solver_export_missing",
+      "backgroundLeafCount": 1800,
+      "cutCellCount": 400,
+      "globalFluidRegionCount": 1,
+      "nonclosedCellCount": 0,
+      "sharedFaceMismatchCount": 0,
+      "completeSolverVolumeMeshWritten": false,
+      "externalIndependentReader": "meshio 5.3.5 stage4 verifier pass",
+      "resultHashFnv1a64": "cda2a2afc7ad74ac",
+      "wallSeconds": 0.159075,
+      "peakRssBytes": 8798208,
+      "runtimeThreads": 1,
+      "buildType": "Release"
+    },
+    {
+      "name": "stanford_bunny_uniform_classification_smoke",
+      "input": "stanford_bunny",
+      "pathKind": "uniform_background_exact_triangle_aabb_classification",
+      "resolution": 8,
+      "status": "pass_not_cut_cell_not_solver_mesh",
+      "triangleCount": 6966,
+      "backgroundCellCount": 512,
+      "classificationCounts": {
+        "outside": 281,
+        "inside": 28,
+        "intersected": 203,
+        "conflict": 0
+      },
+      "resultHashFnv1a64": "5f03106f16a69ef7",
+      "wallSeconds": 0.052043,
+      "peakRssBytes": 8781824,
+      "runtimeThreads": 1,
+      "buildType": "Release"
+    }
+  ],
+  "bunnyStopLossEvidence": {
+    "freshFullCutCellR8": {
+      "status": "terminated_during_stop_loss_cleanup",
+      "completeOutputWritten": false,
+      "usableTiming": false
+    },
+    "freshCompactStage6R12": {
+      "status": "explicitly_interrupted_at_stop_loss",
+      "completeOutputWritten": false,
+      "wallSecondsAtInterruption": 117.63,
+      "userCpuSecondsAtInterruption": 116.12,
+      "systemCpuSecondsAtInterruption": 0.91
+    },
+    "interpretation": "low background resolution did not make the complex-surface path cheap; no larger Bunny run was attempted",
+    "historicalFullStage4EvidenceAvailable": true,
+    "historicalEvidenceWasNotRelabeledAsFresh": true
+  },
+  "pathCapabilityMatrix": [
+    {
+      "path": "uniform",
+      "cutCellGeometryAndTopology": true,
+      "completeSolverMeshWriter": true,
+      "freshIndependentGeometryReader": true,
+      "freshOpenFoamCheckMesh": false,
+      "historicalOpenFoamMeshOk": true,
+      "currentClaim": "complete solver mesh can be written; current run remains external CFD pending"
+    },
+    {
+      "path": "adaptive",
+      "cutCellGeometryAndTopology": true,
+      "coarseFineConnectionsPresent": true,
+      "completeSolverMeshWriter": false,
+      "freshIndependentGeometryReader": true,
+      "cliOpenFoamAttemptExitCode": 1,
+      "cliOpenFoamRejection": "当前 OpenFOAM 完整体网格输出只支持均匀 Cartesian 背景",
+      "currentClaim": "internal geometry/topology exists but no complete solver output"
+    },
+    {
+      "path": "incremental",
+      "cutCellGeometryAndTopology": true,
+      "incrementalEqualsFullRebuild": true,
+      "completeSolverMeshWriter": false,
+      "freshIndependentGeometryReader": true,
+      "oldLeafCount": 1688,
+      "newLeafCount": 1744,
+      "geometryReusedLeafCount": 1388,
+      "geometryRebuiltLeafCount": 356,
+      "geometryReuseFraction": 0.7958715596330275,
+      "incrementalResultHashFnv1a64": "40dc680ddf6d7a3f",
+      "fullRebuildResultHashFnv1a64": "40dc680ddf6d7a3f",
+      "incrementalTotalSeconds": 0.057196,
+      "fullRebuildSeconds": 0.10125,
+      "measuredSpeedup": 1.770228687320792,
+      "exportSeconds": 0.216146,
+      "mappingSeconds": 0.002158,
+      "peakRssBytes": 22216704,
+      "runtimeThreads": 1,
+      "buildType": "Release",
+      "currentClaim": "incremental geometry and mapping are valid but solver output is absent"
+    }
+  ],
+  "freshDeterminismEvidence": {
+    "uniformCubeSameConfigurationResultHashEqual": true,
+    "uniformCubeOpenFoamCoreFileSha256Equal": true,
+    "uniformCubeOpenFoamSha256": {
+      "points": "7d0ddf0e2fe57bf4fb7f589b3b9e2f4e6dfe4955b659f85e94a0eaaf0cab6559",
+      "faces": "c333d66020fe7fe4b2c5de2a19ee4918c380da3884740efdf1dcbd7b6cb17791",
+      "owner": "6ef35a395352dd62a59eff1fd2d42fc2b90f17fe8337cfb068ea448290fd996d",
+      "neighbour": "00d889d1964fc3cc7f15645f4012e4bfd20fbb1c401ed1572ca8a173d17147d9",
+      "boundary": "f5817a95bdb15dde0b4d543d4c6119dda55de3a8fc3d1b43b8ee7de214fd0970"
+    },
+    "adaptiveLResultHashEqual": true,
+    "incrementalResultHashEqual": true,
+    "incrementalVtuSha256Equal": true,
+    "incrementalMappingSha256Equal": true,
+    "incrementalVtuSha256": "126ba658d42bd4a405588d5863515c330549a2ce1b858287b43905d7c4e0e05d",
+    "incrementalMappingSha256": "b30ad394f0c49f8dab25a5ee3a1eb1ce92cbb3f44ecf24fe63d19190808b175a",
+    "configurationSensitivityIsNotNondeterminism": "uniform cube without --openfoam-case intentionally selects convex_halfspace while the solver-output configuration selects oriented_tetrahedral_chain; determinism comparisons used identical configurations"
+  },
+  "independentReaderCompatibility": {
+    "stage3VerifierUniform": "pass",
+    "stage3VerifierAdaptive": "unsupported_report_schema_key_dimensions",
+    "stage4VerifierAdaptive": "pass",
+    "interpretation": "adaptive geometry has a working independent reader, but not every legacy verifier accepts its report schema"
+  },
+  "historicalStage6Evidence": {
+    "source": "artifacts/stage6_acceptance.json",
+    "status": "blocked_openfoam_quality",
+    "tenMillionBackgroundScale": true,
+    "completeBinaryOpenFoamMeshWritten": true,
+    "externalFullBinaryReader": true,
+    "externalAllCellEdgeIncidence": true,
+    "deterministicRepeat": true,
+    "openfoamFormatRead": true,
+    "openfoamCoreTopology": true,
+    "openfoamMeshOk": false,
+    "openfoamDefaultQuality": false,
+    "wrongOrientedFacePyramids": 3293,
+    "highlySkewFaces": 12078,
+    "maximumSkewness": 1274.65,
+    "historicalEvidenceOnly": true
+  },
+  "stage61Preparation": {
+    "objective": "export adaptive octree Cut-cell geometry as one deterministic complete OpenFOAM polyMesh",
+    "primaryGap": "OpenFoamWriter accepts UniformCartesianGrid and the CLI rejects LinearOctree",
+    "mustReuse": [
+      "LinearOctree leaf_codes, cell_bounds and face_neighbors",
+      "ConvexCutCellMesh and FluidCellGeometry",
+      "adaptive coarse-fine FluidFaceConnection construction",
+      "existing OpenFoamWriter component-cell and face intersection logic",
+      "stable OctreeNodeCode ordering"
+    ],
+    "mustReplaceOrGeneralize": [
+      "UniformCartesianGrid-only OpenFoamWriter interface",
+      "uniform cell_key and nx/ny/nz neighbor traversal",
+      "single uniform spacing tolerance assumptions",
+      "temporary leaf-index-only solver mapping",
+      "CLI adaptive OpenFOAM rejection"
+    ],
+    "mustNotReuse": [
+      "writer-layer 2-N merge search",
+      "convex_piece_exact path",
+      "quality_conformal_split path",
+      "quality_constrained_cell_merge path",
+      "kernel tetra repair"
+    ],
+    "referenceWriterFirst": true,
+    "scalableWriterDeferredUntilStage65": true,
+    "minimumAcceptanceCases": [
+      "adaptive analytic cube with actual coarse-fine connections",
+      "adaptive nonconvex L prism",
+      "coarse-fine plus cut minimal regression"
+    ],
+    "externalAcceptance": "independent full polyMesh reader pass and OpenFOAM checkMesh -allTopology Mesh OK",
+    "implementationStarted": false
+  },
+  "acceptanceBlockersForStage6": [
+    "adaptive_complete_solver_output_not_implemented",
+    "native_quality_evaluator_not_implemented",
+    "quality_preserving_small_cut_cell_stabilization_not_implemented",
+    "complex_geometry_default_openfoam_quality_not_closed",
+    "uniform_and_adaptive_compact_paths_not_unified",
+    "fresh_openfoam_checkmesh_unavailable_docker_daemon_not_running"
+  ],
+  "scopeGuardsObserved": {
+    "cppModified": false,
+    "testsModified": false,
+    "cmakeModified": false,
+    "algorithmsModified": false,
+    "stage61ImplementationStarted": false,
+    "stage7Started": false,
+    "tenMillionRerunAttempted": false,
+    "failedWriterRepairPathRestored": false
+  }
+}
