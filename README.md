@@ -6,11 +6,12 @@ Morton 线性八叉树、表面/距离/法向变化/狭缝/用户区域细化、
 VTU 和千万叶实测；阶段三还包含凸/非凸单连通封闭 STL 的真实 Cut-cell 多面体、
 体积/质心/面几何、边界 patch、流体分量和 cell-face-neighbor 拓扑，
 以及包含普通全流体单元与 Cut-cell 凸片的完整 OpenFOAM `polyMesh`。项目仍有意
-**不实现** CFD 求解器、GUI、云服务或部署路径。阶段 6 已于
-2026-08-10 获批启动；千万级完整导出、全量独立读取和性能门已通过，但 OpenFOAM
-默认质量门仍失败，所以当前验收门禁尚未关闭。范围、证据和阻断项见
-[`docs/STAGE6_PLAN.md`](docs/STAGE6_PLAN.md) 与
-[`docs/STAGE6_VERIFICATION.md`](docs/STAGE6_VERIFICATION.md)。
+**不实现** CFD 求解器、GUI、云服务或部署路径。此前 Stage 6 尝试的千万级完整导出、
+全量独立读取和性能门已通过，但 OpenFOAM 默认质量门失败，因此不能把它描述为
+solver-ready。旧尝试及失败证据见 [`docs/STAGE6_PLAN.md`](docs/STAGE6_PLAN.md) 与
+[`docs/STAGE6_VERIFICATION.md`](docs/STAGE6_VERIFICATION.md)；当前唯一执行计划是
+[`STAGE6_REVISED_PLAN_CN.md`](STAGE6_REVISED_PLAN_CN.md)。新机器或新 Codex 会话请先读
+[`WINDOWS_CODEX_HANDOFF_CN.md`](WINDOWS_CODEX_HANDOFF_CN.md)。
 
 项目范围以
 [`CARTESIAN_MESH_GENERATOR_PROJECT_BRIEF_CN.md`](CARTESIAN_MESH_GENERATOR_PROJECT_BRIEF_CN.md)

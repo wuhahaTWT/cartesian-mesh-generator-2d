@@ -10,3 +10,11 @@
 8. 相同输入必须保持确定性的遍历顺序、ID、报告和输出。
 9. 修复任何几何缺陷时，都必须保留最小失败案例。
 10. 不得把几何或项目数据上传到外部服务。
+
+## 当前执行范围（2026-08-11）
+
+- 新环境或新 Codex 会话必须先完整阅读 `WINDOWS_CODEX_HANDOFF_CN.md`，再按其中顺序阅读项目事实来源和计划。
+- 当前唯一执行计划是 `STAGE6_REVISED_PLAN_CN.md`，并且当前只允许审计和完成 Stage 6.0。
+- 必须按 `6.0 → 6.1 → 6.2 → ...` 顺序一次推进一个子阶段；未经用户明确确认，不得开始修改代码。
+- `STAGE7_HYBRID_CARTESIAN_CODEX_PLAN_CN.md` 只作后续架构约束和接口参考。在 Stage 6 完成并由用户明确确认前，不得实现 boundary layer、prism layer、surface projection、hybrid transition 或其他 Stage 7 功能。
+- `docs/STAGE6_PLAN.md` 和 `docs/STAGE6_VERIFICATION.md` 记录的是此前 Stage 6 尝试及其失败证据，不是当前获准继续执行的计划。
