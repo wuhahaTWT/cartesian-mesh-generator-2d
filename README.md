@@ -268,5 +268,13 @@ OpenFOAM writer 完全相同的内存 points/faces/owner/neighbour 计算 closur
 face pyramid、non-orthogonality、skewness、concavity/star-shaped、重复面、tiny face/edge
 和来源 volume fraction，并把失败定位回 solver cell/face 与稳定背景 ID。固定 adaptive
 cube/L-prism 的原生问题数为 0，独立 reader 通过，OpenFOAM 2606 均为 `Mesh OK.`；完整
-证据见 [`docs/STAGE6_2_VERIFICATION.md`](docs/STAGE6_2_VERIFICATION.md)。这只关闭 6.2，
-没有完成 6.3 稳定化、复杂几何质量门或千万级 adaptive 路径。
+证据见 [`docs/STAGE6_2_VERIFICATION.md`](docs/STAGE6_2_VERIFICATION.md)。
+
+Stage 6.3 已加入显式启用的写出前稳定化闭环。`--stabilize` 会优先做同 region、
+正面积邻接的保守聚并；任何非星形/负 face pyramid、拓扑、edge manifold、
+patch、体积或一阶矩退化都会拒绝候选。adaptive 路径随后可按来源 Morton 叶做
+局部细分和 2:1 重平衡；达到最大层级或轮数上限时显式失败。真实 adaptive
+L-prism 在更严格的 `0.05` 来源体积分数门下完成 6 次聚并，独立 reader 通过且
+OpenFOAM 2606 `checkMesh -allTopology` 为 `Mesh OK.`。详见
+[`docs/STAGE6_3_VERIFICATION.md`](docs/STAGE6_3_VERIFICATION.md)。额外 `-allGeometry` 仍有 3 类阻断，
+因此复杂几何质量门、千万级 adaptive 路径和 Stage 6 总体都尚未完成。

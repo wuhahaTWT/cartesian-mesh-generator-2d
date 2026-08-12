@@ -121,6 +121,7 @@ void accumulate_cell_face(const OpenFoamMesh& mesh, const OpenFoamFace& face,
 }
 
 [[nodiscard]] std::string source_type(const OpenFoamCellSource& source) {
+    if (source.members.size() > 1U) return "agglomerated_control_volume";
     return source.full_cartesian ? "full_cartesian" : "cut_polyhedron_piece";
 }
 
@@ -219,6 +220,7 @@ MeshQualityReport evaluate_solver_mesh_quality(
     std::vector<FaceGeometry> faces;
     faces.reserve(mesh.faces.size());
     std::vector<CellGeometry> cells(mesh.cells.size());
+    report.cell_metrics.resize(mesh.cells.size());
     std::map<std::vector<std::size_t>, std::size_t> canonical_faces;
     for (std::size_t face_id = 0; face_id < mesh.faces.size(); ++face_id) {
         const auto& face = mesh.faces[face_id];
@@ -328,6 +330,10 @@ MeshQualityReport evaluate_solver_mesh_quality(
                       mesh, cell_id, no_id, geometry.centroid,
                       volume_fraction, thresholds.minimum_volume_fraction);
         }
+        report.cell_metrics[cell_id] = {
+            geometry.signed_volume, geometry.centroid,
+            geometry.centroid * geometry.signed_volume,
+            geometry.surface_area, closure_ratio};
     }
 
     std::vector<bool> non_star(cells.size(), false);

@@ -23,9 +23,9 @@
 
 - 当前只执行 `STAGE6_REVISED_PLAN_CN.md`。
 - 必须严格按 `6.0 → 6.1 → 6.2 → ...` 顺序推进，一次只完成一个子阶段。
-- Stage 6.0 基线审计、Stage 6.1 自适应完整 OpenFOAM 拓扑和 Stage 6.2 原生质量评估器
-  已经完成。
-- 当前下一个子阶段是 **Stage 6.3 小 Cut-cell 与坏形状稳定化**，但未经用户再次确认不得
+- Stage 6.0 基线审计、Stage 6.1 自适应完整 OpenFOAM 拓扑、Stage 6.2 原生质量评估器
+  和 Stage 6.3 小 Cut-cell/坏形状稳定化已经完成。
+- 当前下一个子阶段是 **Stage 6.4 复杂几何质量门**，但未经用户再次确认不得
   开始修改。
 - 在 Stage 6 完成并得到用户明确确认前，不得实现任何 Stage 7 功能。
 - `STAGE7_HYBRID_CARTESIAN_CODEX_PLAN_CN.md` 只能作为后续架构约束和接口参考。
@@ -54,6 +54,7 @@
 | 自适应 octree Cut-cell | 内部几何和拓扑已经存在 |
 | 自适应 octree → 完整 OpenFOAM | Stage 6.1 已打通 reference ASCII writer；固定 cube/L-prism 的独立 reader 与 OpenFOAM 2606 `Mesh OK.` 已通过 |
 | 写出前原生质量评估 | Stage 6.2 已让 reference writer 与质量评估器消费同一份最终内存 solver mesh；固定 cube/L-prism 的原生问题数为 0，non-orthogonality 与 OpenFOAM 对应 |
+| 小 Cut-cell/坏形状稳定化 | Stage 6.3 已实现写出前保守邻接聚并、非星形/拓扑/守恒拒绝、Morton 来源叶局部细化回退和未解决停线；真实 L-prism 完成 6 次聚并并得到 `Mesh OK.` |
 | 增量自适应 | 已有映射/复用能力，但没有完整 solver output 链路 |
 | 旧 Stage 6 compact 路径 | 仅支持均匀路径和 binary `polyMesh`，不得当作 revised Stage 6 已完成 |
 | Stage 7 hybrid 功能 | 当前未实现，也不允许在本阶段实现 |
@@ -75,12 +76,14 @@ Stage 6.0 机器基线见 `artifacts/stage6_baseline.json`，人工记录见
 `docs/STAGE6_BASELINE.md`。Stage 6.1 的当前实现、确定性、独立读取和 OpenFOAM 证据见
 `docs/STAGE6_1_VERIFICATION.md` 与本机 `artifacts/stage61/`。Stage 6.2 的原生质量接口、
 最小失败回归、确定性和 OpenFOAM 对照见 `docs/STAGE6_2_VERIFICATION.md` 与本机
-`artifacts/stage62/`。
+`artifacts/stage62/`。Stage 6.3 的聚并/拒绝/局部细化、最小案例和外部证据见
+`docs/STAGE6_3_VERIFICATION.md` 与本机 `artifacts/stage63/`。
 
 Stage 6.1 只证明固定解析 adaptive cube/L-prism 的完整拓扑链路；不得外推为复杂 STL、
-大规模 adaptive 或全部质量门已经通过。Stage 6.2 只证明 reference solver mesh 已有原生
-检测和定位，并未接入旧 compact/binary 路径，也未修复历史 Bunny face-pyramid/skewness
-阻断。Stage 6 总体仍未完成。
+大规模 adaptive 或全部质量门已经通过。Stage 6.3 仍未接入旧 compact/binary 路径，
+也没有关闭复杂几何 `-allGeometry` 门；当前固定 L-prism 的额外探针还报告 337 个
+concave cells、8 张 low-weight faces 和 24 张 low-volume-ratio faces。这些是 Stage 6.4
+的显式入口，Stage 6 总体仍未完成。
 
 ## 5. Windows 上的推荐工作方式
 
@@ -124,19 +127,19 @@ ctest --preset release --output-on-failure
 如果 Windows/WSL 环境还没装齐依赖，应报告缺失项，不得把“无法运行测试”写成“测试通过”。
 独立 OpenFOAM 验证也必须记录实际命令、stdout/stderr、质量指标和工具版本。
 
-完成检查后，先核对 Stage 6.0/6.1/6.2 的验证记录和当前 HEAD，再向用户提交 Stage 6.3
-开工方案并等待确认。不要在同一轮顺手实现 Stage 6.3。
+完成检查后，先核对 Stage 6.0–6.3 的验证记录和当前 HEAD，再向用户提交 Stage 6.4
+开工方案并等待确认。不要在同一轮顺手实现 Stage 6.4。
 
 ## 7. 可直接交给 Windows Codex 的开场指令
 
 ```text
 先完整阅读 AGENTS.md 和 WINDOWS_CODEX_HANDOFF_CN.md，再按接管说明列出的顺序阅读项目文件。
-当前唯一计划是 STAGE6_REVISED_PLAN_CN.md。Stage 6.0、6.1 和 6.2 已完成，先只读核实
+当前唯一计划是 STAGE6_REVISED_PLAN_CN.md。Stage 6.0–6.3 已完成，先只读核实
 docs/STAGE6_BASELINE.md、docs/STAGE6_1_VERIFICATION.md、docs/STAGE6_2_VERIFICATION.md、
-artifacts/stage61、artifacts/stage62 和当前 HEAD。
+docs/STAGE6_3_VERIFICATION.md、artifacts/stage61、artifacts/stage62、artifacts/stage63 和当前 HEAD。
 代码、测试、验证产物和 Git 历史是最高事实来源。先核实 Git/branch/tag/工作区和测试基线，
-再报告 Stage 6.3 的守恒聚合、拒绝条件、局部共形分裂回退、最小失败案例、拟修改文件和
-验收命令。在我明确确认前，不开始 Stage 6.3 代码修改，也不实现任何 Stage 7 功能。
+再报告 Stage 6.4 的 R24 复杂几何质量矩阵、`-allGeometry` 阻断、最小失败案例、
+拟修改文件、停线和验收命令。在我明确确认前，不开始 Stage 6.4 代码修改，也不实现任何 Stage 7 功能。
 ```
 
 只要 ZIP 被完整解压且 `.git` 隐藏目录没有被丢失，Windows Codex 从仓库根目录打开后，读取

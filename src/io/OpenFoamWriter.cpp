@@ -1023,13 +1023,29 @@ class PointWelder {
     for (const auto& cell : cells) {
         const double background_volume =
             grid.cells[static_cast<std::size_t>(cell.background_cell_id)].volume();
-        result.cells.push_back(
-            {cell.background_cell_id,
-             grid.stable_cell_ids[static_cast<std::size_t>(cell.background_cell_id)],
-             cell.component_id, cell.local_piece_id,
-             cell.full_cartesian ? 1.0 : cell.piece->geometry.volume /
-                                             background_volume,
-             cell.full_cartesian});
+        const auto* fluid = fluid_by_background[
+            static_cast<std::size_t>(cell.background_cell_id)];
+        const std::uint64_t region_id =
+            cell.full_cartesian
+                ? (fluid != nullptr &&
+                           cell.component_id <
+                               fluid->fluid_component_region_ids.size()
+                       ? fluid->fluid_component_region_ids[cell.component_id]
+                       : 0U)
+                : cell.piece->global_region_id;
+        const std::uint64_t stable_id =
+            grid.stable_cell_ids[static_cast<std::size_t>(
+                cell.background_cell_id)];
+        OpenFoamCellSource source{
+            cell.background_cell_id, stable_id, cell.component_id,
+            cell.local_piece_id,
+            cell.full_cartesian ? 1.0 : cell.piece->geometry.volume /
+                                            background_volume,
+            cell.full_cartesian, region_id, {}};
+        source.members.push_back(
+            {cell.background_cell_id, stable_id, cell.component_id,
+             cell.local_piece_id, region_id, background_volume});
+        result.cells.push_back(std::move(source));
     }
     result.faces.reserve(face_point_ids.size());
     for (std::size_t index = 0; index < internal_faces.size(); ++index) {
@@ -1084,7 +1100,8 @@ void write_openfoam_poly_mesh(
         std::ofstream output(poly_mesh / "cartmeshCellMapping.json",
                              std::ios::trunc);
         if (!output) throw std::runtime_error("无法写入 OpenFOAM cell mapping");
-        output << "{\n  \"schema\": \"cartmesh-openfoam-cell-mapping-v1\",\n"
+        output << std::setprecision(17)
+               << "{\n  \"schema\": \"cartmesh-openfoam-cell-mapping-v2\",\n"
                << "  \"backgroundStableIdKind\": \""
                << mesh.background_stable_id_kind
                << "\",\n  \"solverCellCount\": " << mesh.cells.size()
@@ -1099,8 +1116,28 @@ void write_openfoam_poly_mesh(
                    << cell.background_stable_id
                    << "\",\"componentId\":" << cell.component_id
                    << ",\"localPieceId\":" << cell.local_piece_id
+                   << ",\"globalRegionId\":" << cell.global_region_id
+                   << ",\"sourceVolumeFraction\":"
+                   << cell.source_volume_fraction
                    << ",\"fullCartesian\":"
-                   << (cell.full_cartesian ? "true" : "false") << '}';
+                   << (cell.full_cartesian ? "true" : "false")
+                   << ",\"sourceMembers\":[";
+            for (std::size_t member_id = 0;
+                 member_id < cell.members.size(); ++member_id) {
+                if (member_id != 0U) output << ',';
+                const auto& member = cell.members[member_id];
+                output << "{\"backgroundCellId\":"
+                       << member.background_cell_id
+                       << ",\"backgroundStableId\":\""
+                       << member.background_stable_id
+                       << "\",\"componentId\":" << member.component_id
+                       << ",\"localPieceId\":" << member.local_piece_id
+                       << ",\"globalRegionId\":"
+                       << member.global_region_id
+                       << ",\"backgroundVolume\":"
+                       << member.background_volume << '}';
+            }
+            output << "]}";
         }
         output << "\n  ]\n}\n";
     }

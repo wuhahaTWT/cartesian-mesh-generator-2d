@@ -41,6 +41,7 @@ add_library(cartmesh
     src/io/ScalableOpenFoamWriter.cpp
     src/io/VtkWriter.cpp
     src/quality/SolverMeshQuality.cpp
+    src/quality/SolverMeshStabilizer.cpp
     src/scalable/CompactUniformCutCellMesh.cpp
     src/spatial/TriangleBvh.cpp
 )
@@ -136,6 +137,37 @@ if(BUILD_TESTING AND CARTMESH_BUILD_TESTS)
     target_compile_features(cartmesh_stage62_tests PRIVATE cxx_std_20)
     cartmesh_enable_warnings(cartmesh_stage62_tests)
     add_test(NAME cartmesh_stage62_quality_tests COMMAND cartmesh_stage62_tests)
+    add_executable(cartmesh_stage63_tests tests/stage63_test.cpp)
+    target_link_libraries(cartmesh_stage63_tests PRIVATE cartmesh::cartmesh)
+    target_compile_features(cartmesh_stage63_tests PRIVATE cxx_std_20)
+    cartmesh_enable_warnings(cartmesh_stage63_tests)
+    add_test(NAME cartmesh_stage63_stabilization_tests COMMAND cartmesh_stage63_tests)
+    add_test(
+        NAME cartmesh_cutcell_cli_stage63_stabilizes_l
+        COMMAND cartmesh_cutcell_cli
+                --stl ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/nonconvex_l_prism_ascii.stl
+                --adaptive --base-level 2 --max-level 6 --surface-level 4
+                --padding-fraction 0.1 --small-cell-threshold 0.05
+                --stabilize --max-stabilization-rounds 2 --no-vtk
+                --openfoam-case ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_l_case
+                --quality-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_l_quality.json
+                --stabilization-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_l_stabilization.json
+                --geometry-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_l_geometry.json
+                --report ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_l_report.json
+    )
+    add_test(
+        NAME cartmesh_cutcell_cli_stage63_stops_unresolved
+        COMMAND cartmesh_cutcell_cli
+                --stl ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/closed_unit_cube_ascii.stl
+                --resolution 2 --padding-fraction 0.1
+                --small-cell-threshold 2 --stabilize --no-vtk
+                --stabilization-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_unresolved_stabilization.json
+                --quality-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_unresolved_quality.json
+                --geometry-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_unresolved_geometry.json
+                --report ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage63_unresolved_report.json
+    )
+    set_tests_properties(cartmesh_cutcell_cli_stage63_stops_unresolved
+                         PROPERTIES WILL_FAIL TRUE)
     add_test(
         NAME cartmesh_cli_stl_smoke
         COMMAND cartmesh_cli --stl ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/closed_unit_cube_ascii.stl

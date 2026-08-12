@@ -9,6 +9,7 @@
 #include "cartmesh/io/StlReader.hpp"
 #include "cartmesh/io/VtkWriter.hpp"
 #include "cartmesh/quality/SolverMeshQuality.hpp"
+#include "cartmesh/quality/SolverMeshStabilizer.hpp"
 
 #include <algorithm>
 #include <array>
@@ -21,6 +22,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <optional>
 #include <sstream>
@@ -58,6 +60,7 @@ struct Options {
     std::filesystem::path report{"artifacts/stage3_cut_cells.json"};
     std::optional<std::filesystem::path> openfoam_case;
     std::optional<std::filesystem::path> quality_output;
+    std::optional<std::filesystem::path> stabilization_output;
     std::uint32_t resolution{24};
     double padding_fraction{0.1};
     double small_cell_threshold{0.01};
@@ -68,6 +71,8 @@ struct Options {
     std::optional<std::uint8_t> surface_level;
     cartmesh::OctreeRefinementConfiguration refinement;
     bool strict_gap_resolution{};
+    bool stabilize{};
+    std::uint32_t maximum_stabilization_rounds{2};
     std::vector<BoundaryRange> boundary_ranges;
     std::vector<RegionName> region_names;
     bool write_vtk{true};
@@ -315,6 +320,15 @@ struct Options {
             options.openfoam_case = next();
         } else if (value == "--quality-output") {
             options.quality_output = next();
+        } else if (value == "--stabilize") {
+            options.stabilize = true;
+        } else if (value == "--stabilization-output") {
+            options.stabilize = true;
+            options.stabilization_output = next();
+        } else if (value == "--max-stabilization-rounds") {
+            options.stabilize = true;
+            options.maximum_stabilization_rounds =
+                parse_positive_u32(next(), value);
         } else if (value == "--no-vtk") {
             options.write_vtk = false;
         } else if (value == "--help") {
@@ -339,6 +353,9 @@ struct Options {
               << "  --report FILE.json      阶段四 Cut-cell 机器报告\n"
               << "  --openfoam-case DIR     写出完整流体域 constant/polyMesh\n"
               << "  --quality-output FILE   写出同一 solver mesh 的原生质量诊断\n"
+              << "  --stabilize             执行 Stage 6.3 保守聚并/局部细化闭环\n"
+              << "  --stabilization-output FILE 写出 Stage 6.3 稳定化报告\n"
+              << "  --max-stabilization-rounds N 最多局部细化轮数（默认 2）\n"
                 << "  --no-vtk                只计算并写 JSON\n";
             std::exit(0);
         } else {
@@ -695,6 +712,8 @@ int main(int argc, char** argv) {
                                     surface.bounds().maximum() + padding_vector);
         std::optional<cartmesh::UniformCartesianGrid> grid;
         std::optional<cartmesh::LinearOctree> tree;
+        std::unique_ptr<cartmesh::TriangulatedSurfaceCutter>
+            triangulated_cutter;
         cartmesh::OctreeAdaptationStatistics adaptation;
         cartmesh::ConvexCutCellMesh mesh;
         std::string kernel;
@@ -738,13 +757,16 @@ int main(int argc, char** argv) {
                     *tree, cutter, options.geometric_tolerance);
             };
             if (named_boundary_ids) {
-                const cartmesh::TriangulatedSurfaceCutter cutter(
-                    surface, std::move(*named_boundary_ids));
-                build_adaptive(cutter);
+                triangulated_cutter =
+                    std::make_unique<cartmesh::TriangulatedSurfaceCutter>(
+                        surface, std::move(*named_boundary_ids));
+                build_adaptive(*triangulated_cutter);
                 supported_geometry = "named_closed_oriented_shells";
             } else {
-                const cartmesh::TriangulatedSurfaceCutter cutter(surface, 0);
-                build_adaptive(cutter);
+                triangulated_cutter =
+                    std::make_unique<cartmesh::TriangulatedSurfaceCutter>(
+                        surface, 0);
+                build_adaptive(*triangulated_cutter);
                 supported_geometry =
                     "closed_oriented_nested_or_disjoint_shells";
             }
@@ -753,16 +775,22 @@ int main(int argc, char** argv) {
             grid.emplace(domain, options.resolution, options.resolution,
                          options.resolution);
             if (named_boundary_ids) {
-                const cartmesh::TriangulatedSurfaceCutter cutter(
-                    surface, std::move(*named_boundary_ids));
+                triangulated_cutter =
+                    std::make_unique<cartmesh::TriangulatedSurfaceCutter>(
+                        surface, std::move(*named_boundary_ids));
                 mesh = cartmesh::build_triangulated_cut_cell_mesh(
-                    *grid, cutter, options.geometric_tolerance);
+                    *grid, *triangulated_cutter,
+                    options.geometric_tolerance);
                 kernel = "oriented_tetrahedral_chain";
                 supported_geometry = "named_closed_oriented_shells";
-            } else if (options.openfoam_case || options.quality_output) {
-                const cartmesh::TriangulatedSurfaceCutter cutter(surface, 0);
+            } else if (options.openfoam_case || options.quality_output ||
+                       options.stabilize) {
+                triangulated_cutter =
+                    std::make_unique<cartmesh::TriangulatedSurfaceCutter>(
+                        surface, 0);
                 mesh = cartmesh::build_triangulated_cut_cell_mesh(
-                    *grid, cutter, options.geometric_tolerance);
+                    *grid, *triangulated_cutter,
+                    options.geometric_tolerance);
                 kernel = "oriented_tetrahedral_chain";
                 supported_geometry =
                     "closed_oriented_nested_or_disjoint_shells";
@@ -774,14 +802,155 @@ int main(int argc, char** argv) {
                 kernel = "convex_halfspace";
                 supported_geometry = "single_component_closed_convex_stl";
             } catch (const std::invalid_argument&) {
-                const cartmesh::TriangulatedSurfaceCutter cutter(surface, 0);
+                triangulated_cutter =
+                    std::make_unique<cartmesh::TriangulatedSurfaceCutter>(
+                        surface, 0);
                 mesh = cartmesh::build_triangulated_cut_cell_mesh(
-                    *grid, cutter, options.geometric_tolerance);
+                    *grid, *triangulated_cutter,
+                    options.geometric_tolerance);
                 kernel = "oriented_tetrahedral_chain";
                 supported_geometry =
                     "closed_oriented_nested_or_disjoint_shells";
             }
         }
+        std::optional<std::filesystem::path> quality_output =
+            options.quality_output;
+        if (!quality_output && options.openfoam_case) {
+            quality_output = *options.openfoam_case / "cartmeshQuality.json";
+        }
+        std::optional<std::filesystem::path> stabilization_output =
+            options.stabilization_output;
+        if (options.stabilize && !stabilization_output) {
+            if (options.openfoam_case) {
+                stabilization_output =
+                    *options.openfoam_case / "cartmeshStabilization.json";
+            } else {
+                stabilization_output = options.report;
+                stabilization_output->replace_extension();
+                *stabilization_output += "_stabilization.json";
+            }
+        }
+        std::optional<cartmesh::OpenFoamMesh> solver_mesh;
+        std::optional<cartmesh::MeshQualityReport> quality_report;
+        std::optional<cartmesh::SolverMeshStabilizationReport>
+            stabilization_report;
+        std::uint64_t stabilization_refined_leaf_count = 0U;
+        std::uint64_t stabilization_balance_split_count = 0U;
+        if (options.stabilize) {
+            if (!triangulated_cutter) {
+                throw std::runtime_error(
+                    "Stage 6.3 稳定化需要可重建的三角化曲面 cutter");
+            }
+            cartmesh::MeshQualityThresholds thresholds;
+            thresholds.minimum_volume_fraction = options.small_cell_threshold;
+            cartmesh::SolverMeshStabilizationOptions stabilization_options;
+            stabilization_options.minimum_volume_fraction =
+                options.small_cell_threshold;
+            const double writer_tolerance = std::max(
+                options.geometric_tolerance,
+                diagnostics.suggested_length_tolerance);
+            cartmesh::SolverMeshStabilizationReport aggregate;
+            bool first_round = true;
+            for (std::uint32_t round = 0;
+                 round <= options.maximum_stabilization_rounds; ++round) {
+                auto raw_solver_mesh = tree
+                                           ? cartmesh::build_openfoam_mesh(
+                                                 *tree, mesh, writer_tolerance)
+                                           : cartmesh::build_openfoam_mesh(
+                                                 *grid, mesh, writer_tolerance);
+                auto stabilized = cartmesh::stabilize_solver_mesh(
+                    raw_solver_mesh, thresholds, stabilization_options);
+                if (first_round) {
+                    aggregate.initial_cell_count =
+                        stabilized.report.initial_cell_count;
+                    aggregate.initial_volume = stabilized.report.initial_volume;
+                    aggregate.initial_first_moment =
+                        stabilized.report.initial_first_moment;
+                    first_round = false;
+                }
+                aggregate.final_cell_count = stabilized.report.final_cell_count;
+                aggregate.final_volume = stabilized.report.final_volume;
+                aggregate.final_first_moment =
+                    stabilized.report.final_first_moment;
+                aggregate.agglomeration_count +=
+                    stabilized.report.agglomeration_count;
+                aggregate.rejected_candidate_count +=
+                    stabilized.report.rejected_candidate_count;
+                aggregate.actions.insert(
+                    aggregate.actions.end(), stabilized.report.actions.begin(),
+                    stabilized.report.actions.end());
+                aggregate.refinement_requested_stable_ids.insert(
+                    aggregate.refinement_requested_stable_ids.end(),
+                    stabilized.report.refinement_requested_stable_ids.begin(),
+                    stabilized.report.refinement_requested_stable_ids.end());
+                solver_mesh = std::move(stabilized.mesh);
+                if (stabilized.report.pass()) {
+                    aggregate.unresolved_stable_ids.clear();
+                    break;
+                }
+                aggregate.unresolved_stable_ids =
+                    stabilized.report.unresolved_stable_ids;
+                if (!tree || round == options.maximum_stabilization_rounds) {
+                    break;
+                }
+                const auto refinement =
+                    cartmesh::refine_stabilization_sources(
+                        *tree, stabilized.report.refinement_requested_stable_ids);
+                stabilization_refined_leaf_count +=
+                    refinement.refined_leaf_count;
+                stabilization_balance_split_count +=
+                    refinement.balance_split_count;
+                for (const auto stable_id : refinement.refined_stable_ids) {
+                    aggregate.actions.push_back(
+                        {cartmesh::StabilizationActionKind::conformal_refined,
+                         stable_id, 0U, 0.0, 0.0,
+                         "refined source Morton leaf and restored 2:1 balance"});
+                }
+                if (!refinement.unresolved_stable_ids.empty()) {
+                    aggregate.unresolved_stable_ids =
+                        refinement.unresolved_stable_ids;
+                    for (const auto stable_id :
+                         refinement.unresolved_stable_ids) {
+                        aggregate.actions.push_back(
+                            {cartmesh::StabilizationActionKind::unresolved_max_level,
+                             stable_id, 0U, 0.0, 0.0,
+                             "source is not a current refinable leaf or reached maximum level"});
+                    }
+                    break;
+                }
+                mesh = cartmesh::build_triangulated_cut_cell_mesh(
+                    *tree, *triangulated_cutter,
+                    options.geometric_tolerance);
+            }
+            std::sort(aggregate.refinement_requested_stable_ids.begin(),
+                      aggregate.refinement_requested_stable_ids.end());
+            aggregate.refinement_requested_stable_ids.erase(
+                std::unique(aggregate.refinement_requested_stable_ids.begin(),
+                            aggregate.refinement_requested_stable_ids.end()),
+                aggregate.refinement_requested_stable_ids.end());
+            std::sort(aggregate.unresolved_stable_ids.begin(),
+                      aggregate.unresolved_stable_ids.end());
+            aggregate.unresolved_stable_ids.erase(
+                std::unique(aggregate.unresolved_stable_ids.begin(),
+                            aggregate.unresolved_stable_ids.end()),
+                aggregate.unresolved_stable_ids.end());
+            const double conservation_scale = std::max(
+                {1.0, std::abs(aggregate.initial_volume),
+                 std::abs(aggregate.final_volume),
+                 cartmesh::norm(aggregate.initial_first_moment),
+                 cartmesh::norm(aggregate.final_first_moment)});
+            aggregate.conservation_pass =
+                std::abs(aggregate.initial_volume - aggregate.final_volume) <=
+                    1.0e-10 * conservation_scale &&
+                cartmesh::norm(aggregate.initial_first_moment -
+                               aggregate.final_first_moment) <=
+                    1.0e-10 * conservation_scale;
+            stabilization_report = std::move(aggregate);
+            cartmesh::write_solver_mesh_stabilization_json(
+                *stabilization_output, *stabilization_report);
+        }
+        const bool stabilization_pass =
+            !stabilization_report || stabilization_report->pass();
         const double solid_volume = domain.volume() - mesh.total_fluid_volume;
         for (const auto& region : options.region_names) {
             if (region.region_id >= mesh.global_fluid_region_count) {
@@ -824,13 +993,6 @@ int main(int argc, char** argv) {
             invariants_pass &&
             (!options.adaptive ||
              adaptation.gap_resolution_failure_count == 0);
-        std::optional<std::filesystem::path> quality_output =
-            options.quality_output;
-        if (!quality_output && options.openfoam_case) {
-            quality_output = *options.openfoam_case / "cartmeshQuality.json";
-        }
-        std::optional<cartmesh::OpenFoamMesh> solver_mesh;
-        std::optional<cartmesh::MeshQualityReport> quality_report;
         if (options.openfoam_case || quality_output) {
             std::vector<std::pair<std::uint64_t, std::string>> boundary_names;
             boundary_names.reserve(options.boundary_ranges.size());
@@ -840,11 +1002,13 @@ int main(int argc, char** argv) {
             const double writer_tolerance = std::max(
                 options.geometric_tolerance,
                 diagnostics.suggested_length_tolerance);
-            solver_mesh = tree
-                              ? cartmesh::build_openfoam_mesh(
-                                    *tree, mesh, writer_tolerance)
-                              : cartmesh::build_openfoam_mesh(
-                                    *grid, mesh, writer_tolerance);
+            if (!solver_mesh) {
+                solver_mesh = tree
+                                  ? cartmesh::build_openfoam_mesh(
+                                        *tree, mesh, writer_tolerance)
+                                  : cartmesh::build_openfoam_mesh(
+                                        *grid, mesh, writer_tolerance);
+            }
             cartmesh::MeshQualityThresholds quality_thresholds;
             quality_thresholds.minimum_volume_fraction =
                 options.small_cell_threshold;
@@ -854,7 +1018,7 @@ int main(int argc, char** argv) {
                 cartmesh::write_solver_mesh_quality_json(
                     *quality_output, *quality_report);
             }
-            if (options.openfoam_case) {
+            if (options.openfoam_case && stabilization_pass) {
                 cartmesh::write_openfoam_poly_mesh(
                     *options.openfoam_case, *solver_mesh, boundary_names);
             }
@@ -956,7 +1120,9 @@ int main(int argc, char** argv) {
                << "{\n"
                << "  \"schema\": \"cartmesh-stage4-cutcell-v1\",\n"
                << "  \"status\": \""
-               << (invariants_pass
+               << (!stabilization_pass
+                       ? "failed_solver_mesh_stabilization"
+                       : invariants_pass
                        ? (options.adaptive &&
                                   adaptation.gap_resolution_failure_count > 0
                               ? "pass_with_gap_resolution_warning"
@@ -977,9 +1143,11 @@ int main(int argc, char** argv) {
                << "  \"solverReadyCutCellMesh\": "
                << "false,\n"
                << "  \"acceptanceBlockers\": "
-               << (options.openfoam_case
-                       ? "[\"external_cfd_checker\"]"
-                       : "[\"complete_volume_mesh_export_and_external_cfd_checker\"]")
+               << (!stabilization_pass
+                       ? "[\"solver_mesh_stabilization\",\"external_cfd_checker\"]"
+                       : options.openfoam_case
+                             ? "[\"external_cfd_checker\"]"
+                             : "[\"complete_volume_mesh_export_and_external_cfd_checker\"]")
                << ",\n"
                << "  \"stage4Capabilities\": {\"multipleComponents\":true,"
                   "\"nestedCavities\":true,\"globalFluidRegions\":true,"
@@ -1173,7 +1341,40 @@ int main(int argc, char** argv) {
                << "  \"polyhedraOutputScope\": "
                   "\"debug_cut_cell_fluid_polyhedron_pieces_only\",\n"
                << "  \"completeSolverVolumeMeshWritten\": "
-               << (options.openfoam_case ? "true" : "false") << ",\n"
+               << (options.openfoam_case && stabilization_pass ? "true"
+                                                               : "false")
+               << ",\n"
+               << "  \"solverMeshStabilizationEnabled\": "
+               << (options.stabilize ? "true" : "false") << ",\n"
+               << "  \"solverMeshStabilizationPass\": "
+               << (stabilization_pass ? "true" : "false") << ",\n"
+               << "  \"solverMeshAgglomerationCount\": "
+               << (stabilization_report
+                       ? stabilization_report->agglomeration_count
+                       : 0U)
+               << ",\n"
+               << "  \"solverMeshRejectedCandidateCount\": "
+               << (stabilization_report
+                       ? stabilization_report->rejected_candidate_count
+                       : 0U)
+               << ",\n"
+               << "  \"solverMeshRefinedLeafCount\": "
+               << stabilization_refined_leaf_count << ",\n"
+               << "  \"solverMeshBalanceSplitCount\": "
+               << stabilization_balance_split_count << ",\n"
+               << "  \"solverMeshUnresolvedSourceCount\": "
+               << (stabilization_report
+                       ? stabilization_report->unresolved_stable_ids.size()
+                       : 0U)
+               << ",\n"
+               << "  \"solverMeshStabilizationReport\": ";
+        if (stabilization_output) {
+            report << "\"" << json_escape(stabilization_output->string())
+                   << "\",\n";
+        } else {
+            report << "null,\n";
+        }
+        report
                << "  \"nativeSolverQualityEvaluated\": "
                << (quality_report ? "true" : "false") << ",\n"
                << "  \"nativeSolverTopologyPass\": "
@@ -1199,7 +1400,7 @@ int main(int argc, char** argv) {
             report << "null,\n";
         }
         report << "  \"completeSolverVolumeMeshOutput\": ";
-        if (options.openfoam_case) {
+        if (options.openfoam_case && stabilization_pass) {
             report << "\"" << json_escape(options.openfoam_case->string())
                    << "/constant/polyMesh\"\n";
         } else {
@@ -1218,7 +1419,7 @@ int main(int argc, char** argv) {
                   << mesh.total_fluid_volume << " closureFailures="
                   << mesh.nonclosed_cell_count << " sharedFaceFailures="
                   << mesh.shared_face_mismatch_count << " hash=" << result_hash << '\n';
-        return invariants_pass ? 0 : 2;
+        return invariants_pass && stabilization_pass ? 0 : 2;
     } catch (const std::exception& error) {
         std::cerr << "错误：" << error.what() << '\n';
         return 1;

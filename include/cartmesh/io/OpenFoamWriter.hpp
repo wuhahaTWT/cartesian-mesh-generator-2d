@@ -13,6 +13,15 @@
 
 namespace cartmesh {
 
+struct OpenFoamCellMember {
+    std::uint64_t background_cell_id{};
+    std::uint64_t background_stable_id{};
+    std::size_t component_id{};
+    std::size_t local_piece_id{};
+    std::uint64_t global_region_id{};
+    double background_volume{};
+};
+
 struct OpenFoamCellSource {
     std::uint64_t background_cell_id{};
     std::uint64_t background_stable_id{};
@@ -20,6 +29,8 @@ struct OpenFoamCellSource {
     std::size_t local_piece_id{};
     double source_volume_fraction{1.0};
     bool full_cartesian{};
+    std::uint64_t global_region_id{};
+    std::vector<OpenFoamCellMember> members;
 };
 
 struct OpenFoamFace {

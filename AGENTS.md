@@ -14,11 +14,13 @@
 ## 当前执行范围（2026-08-12）
 
 - 新环境或新 Codex 会话必须先完整阅读 `WINDOWS_CODEX_HANDOFF_CN.md`，再按其中顺序阅读项目事实来源和计划。
-- 当前唯一执行计划是 `STAGE6_REVISED_PLAN_CN.md`。Stage 6.0、Stage 6.1 与 Stage 6.2 已完成；
-  验证记录分别是 `docs/STAGE6_BASELINE.md`、`docs/STAGE6_1_VERIFICATION.md` 和
-  `docs/STAGE6_2_VERIFICATION.md`。
+- 当前唯一执行计划是 `STAGE6_REVISED_PLAN_CN.md`。Stage 6.0、Stage 6.1、Stage 6.2 与
+  Stage 6.3 已完成；验证记录为 `docs/STAGE6_BASELINE.md`、
+  `docs/STAGE6_1_VERIFICATION.md`、`docs/STAGE6_2_VERIFICATION.md` 和
+  `docs/STAGE6_3_VERIFICATION.md`。
 - 必须按 `6.0 → 6.1 → 6.2 → ...` 顺序一次推进一个子阶段；未经用户明确确认，不得开始修改代码。
-- 当前不得自动进入 Stage 6.3；开始前必须先报告小 Cut-cell/坏形状稳定化的最小失败案例、
-  守恒聚合拒绝条件、局部共形分裂回退、拟修改文件和验收命令，等待用户确认。
+- 当前不得自动进入 Stage 6.4；开始前必须先报告 R24 复杂几何质量矩阵、
+  当前 `-allGeometry` 的 337 个 concave cells / 8 张 low-weight faces / 24 张
+  low-volume-ratio faces、最小失败案例、拟修改文件、停线和验收命令，等待用户确认。
 - `STAGE7_HYBRID_CARTESIAN_CODEX_PLAN_CN.md` 只作后续架构约束和接口参考。在 Stage 6 完成并由用户明确确认前，不得实现 boundary layer、prism layer、surface projection、hybrid transition 或其他 Stage 7 功能。
 - `docs/STAGE6_PLAN.md` 和 `docs/STAGE6_VERIFICATION.md` 记录的是此前 Stage 6 尝试及其失败证据，不是当前获准继续执行的计划。

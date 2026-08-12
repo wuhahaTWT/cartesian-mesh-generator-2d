@@ -32,7 +32,7 @@ void expect(bool condition, const std::string& message) {
         {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
         {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0},
         {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}};
-    mesh.cells.push_back({7U, 42U, 0U, 0U, 1.0, true});
+    mesh.cells.push_back({7U, 42U, 0U, 0U, 1.0, true, 0U, {}});
     mesh.faces = {
         {{0, 4, 7, 3}, 0}, {{1, 2, 6, 5}, 0},
         {{0, 1, 5, 4}, 0}, {{3, 7, 6, 2}, 0},
@@ -107,7 +107,7 @@ void test_non_orthogonality_and_skewness_are_located() {
     mesh.points.insert(mesh.points.end(), {
         {2.0, 0.5, 0.0}, {2.0, 1.5, 0.0},
         {2.0, 0.5, 1.0}, {2.0, 1.5, 1.0}});
-    mesh.cells.push_back({8U, 43U, 0U, 0U, 1.0, true});
+    mesh.cells.push_back({8U, 43U, 0U, 0U, 1.0, true, 0U, {}});
     mesh.faces = {
         {{1, 2, 6, 5}, 0, 1},
         {{0, 4, 7, 3}, 0}, {{0, 1, 5, 4}, 0},

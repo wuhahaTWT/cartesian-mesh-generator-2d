@@ -72,9 +72,18 @@ struct MeshQualitySummary {
     double minimum_face_pyramid_volume{std::numeric_limits<double>::infinity()};
 };
 
+struct SolverCellQualityMetrics {
+    double signed_volume{};
+    Vec3 centroid{};
+    Vec3 first_moment{};
+    double surface_area{};
+    double closure_ratio{};
+};
+
 struct MeshQualityReport {
     MeshQualityThresholds thresholds;
     MeshQualitySummary summary;
+    std::vector<SolverCellQualityMetrics> cell_metrics;
     std::vector<MeshQualityIssue> issues;
 
     [[nodiscard]] bool topology_pass() const noexcept;
