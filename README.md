@@ -261,5 +261,12 @@ meshio 读取和重复性能证据汇总通过后，`artifacts/stage5_acceptance
 L-prism 均通过独立全量读取器和 OpenFOAM 2606 `checkMesh -allTopology`，并输出稳定
 Morton leaf → solver cell 映射；均匀 R8 cube 的五个核心文件 SHA-256 与 Stage 6.0
 基线逐项不变。完整证据见
-[`docs/STAGE6_1_VERIFICATION.md`](docs/STAGE6_1_VERIFICATION.md)。这只关闭 6.1，
-没有完成 6.2 原生质量评估、6.3 稳定化、复杂几何质量门或千万级 adaptive 路径。
+[`docs/STAGE6_1_VERIFICATION.md`](docs/STAGE6_1_VERIFICATION.md)。
+
+Stage 6.2 已加入写出前原生 solver mesh 质量评估。`--quality-output FILE` 会对与
+OpenFOAM writer 完全相同的内存 points/faces/owner/neighbour 计算 closure、signed volume、
+face pyramid、non-orthogonality、skewness、concavity/star-shaped、重复面、tiny face/edge
+和来源 volume fraction，并把失败定位回 solver cell/face 与稳定背景 ID。固定 adaptive
+cube/L-prism 的原生问题数为 0，独立 reader 通过，OpenFOAM 2606 均为 `Mesh OK.`；完整
+证据见 [`docs/STAGE6_2_VERIFICATION.md`](docs/STAGE6_2_VERIFICATION.md)。这只关闭 6.2，
+没有完成 6.3 稳定化、复杂几何质量门或千万级 adaptive 路径。

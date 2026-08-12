@@ -40,6 +40,7 @@ add_library(cartmesh
     src/io/OpenFoamWriter.cpp
     src/io/ScalableOpenFoamWriter.cpp
     src/io/VtkWriter.cpp
+    src/quality/SolverMeshQuality.cpp
     src/scalable/CompactUniformCutCellMesh.cpp
     src/spatial/TriangleBvh.cpp
 )
@@ -130,6 +131,11 @@ if(BUILD_TESTING AND CARTMESH_BUILD_TESTS)
     target_compile_features(cartmesh_stage6_tests PRIVATE cxx_std_20)
     cartmesh_enable_warnings(cartmesh_stage6_tests)
     add_test(NAME cartmesh_stage6_scalable_tests COMMAND cartmesh_stage6_tests)
+    add_executable(cartmesh_stage62_tests tests/stage62_test.cpp)
+    target_link_libraries(cartmesh_stage62_tests PRIVATE cartmesh::cartmesh)
+    target_compile_features(cartmesh_stage62_tests PRIVATE cxx_std_20)
+    cartmesh_enable_warnings(cartmesh_stage62_tests)
+    add_test(NAME cartmesh_stage62_quality_tests COMMAND cartmesh_stage62_tests)
     add_test(
         NAME cartmesh_cli_stl_smoke
         COMMAND cartmesh_cli --stl ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/closed_unit_cube_ascii.stl

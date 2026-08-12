@@ -8,6 +8,7 @@
 #include "cartmesh/io/OpenFoamWriter.hpp"
 #include "cartmesh/io/StlReader.hpp"
 #include "cartmesh/io/VtkWriter.hpp"
+#include "cartmesh/quality/SolverMeshQuality.hpp"
 
 #include <algorithm>
 #include <array>
@@ -56,6 +57,7 @@ struct Options {
     std::filesystem::path tetrahedra_output{"artifacts/stage4_fluid_tetrahedra.vtu"};
     std::filesystem::path report{"artifacts/stage3_cut_cells.json"};
     std::optional<std::filesystem::path> openfoam_case;
+    std::optional<std::filesystem::path> quality_output;
     std::uint32_t resolution{24};
     double padding_fraction{0.1};
     double small_cell_threshold{0.01};
@@ -311,6 +313,8 @@ struct Options {
             options.report = next();
         } else if (value == "--openfoam-case") {
             options.openfoam_case = next();
+        } else if (value == "--quality-output") {
+            options.quality_output = next();
         } else if (value == "--no-vtk") {
             options.write_vtk = false;
         } else if (value == "--help") {
@@ -334,6 +338,7 @@ struct Options {
                 << "  --tetrahedra-output FILE.vtu 凸片的外部检查四面体分解\n"
               << "  --report FILE.json      阶段四 Cut-cell 机器报告\n"
               << "  --openfoam-case DIR     写出完整流体域 constant/polyMesh\n"
+              << "  --quality-output FILE   写出同一 solver mesh 的原生质量诊断\n"
                 << "  --no-vtk                只计算并写 JSON\n";
             std::exit(0);
         } else {
@@ -754,7 +759,7 @@ int main(int argc, char** argv) {
                     *grid, cutter, options.geometric_tolerance);
                 kernel = "oriented_tetrahedral_chain";
                 supported_geometry = "named_closed_oriented_shells";
-            } else if (options.openfoam_case) {
+            } else if (options.openfoam_case || options.quality_output) {
                 const cartmesh::TriangulatedSurfaceCutter cutter(surface, 0);
                 mesh = cartmesh::build_triangulated_cut_cell_mesh(
                     *grid, cutter, options.geometric_tolerance);
@@ -819,7 +824,14 @@ int main(int argc, char** argv) {
             invariants_pass &&
             (!options.adaptive ||
              adaptation.gap_resolution_failure_count == 0);
-        if (options.openfoam_case) {
+        std::optional<std::filesystem::path> quality_output =
+            options.quality_output;
+        if (!quality_output && options.openfoam_case) {
+            quality_output = *options.openfoam_case / "cartmeshQuality.json";
+        }
+        std::optional<cartmesh::OpenFoamMesh> solver_mesh;
+        std::optional<cartmesh::MeshQualityReport> quality_report;
+        if (options.openfoam_case || quality_output) {
             std::vector<std::pair<std::uint64_t, std::string>> boundary_names;
             boundary_names.reserve(options.boundary_ranges.size());
             for (const auto& range : options.boundary_ranges) {
@@ -828,14 +840,23 @@ int main(int argc, char** argv) {
             const double writer_tolerance = std::max(
                 options.geometric_tolerance,
                 diagnostics.suggested_length_tolerance);
-            if (tree) {
+            solver_mesh = tree
+                              ? cartmesh::build_openfoam_mesh(
+                                    *tree, mesh, writer_tolerance)
+                              : cartmesh::build_openfoam_mesh(
+                                    *grid, mesh, writer_tolerance);
+            cartmesh::MeshQualityThresholds quality_thresholds;
+            quality_thresholds.minimum_volume_fraction =
+                options.small_cell_threshold;
+            quality_report = cartmesh::evaluate_solver_mesh_quality(
+                *solver_mesh, quality_thresholds);
+            if (quality_output) {
+                cartmesh::write_solver_mesh_quality_json(
+                    *quality_output, *quality_report);
+            }
+            if (options.openfoam_case) {
                 cartmesh::write_openfoam_poly_mesh(
-                    *options.openfoam_case, *tree, mesh, boundary_names,
-                    writer_tolerance);
-            } else {
-                cartmesh::write_openfoam_poly_mesh(
-                    *options.openfoam_case, *grid, mesh, boundary_names,
-                    writer_tolerance);
+                    *options.openfoam_case, *solver_mesh, boundary_names);
             }
         }
         const std::uint64_t background_cell_count =
@@ -1153,7 +1174,31 @@ int main(int argc, char** argv) {
                   "\"debug_cut_cell_fluid_polyhedron_pieces_only\",\n"
                << "  \"completeSolverVolumeMeshWritten\": "
                << (options.openfoam_case ? "true" : "false") << ",\n"
-               << "  \"completeSolverVolumeMeshOutput\": ";
+               << "  \"nativeSolverQualityEvaluated\": "
+               << (quality_report ? "true" : "false") << ",\n"
+               << "  \"nativeSolverTopologyPass\": "
+               << (quality_report && quality_report->topology_pass()
+                       ? "true" : "false") << ",\n"
+               << "  \"nativeSolverQualityPass\": "
+               << (quality_report && quality_report->quality_pass()
+                       ? "true" : "false") << ",\n"
+               << "  \"nativeSolverQualityIssueCount\": "
+               << (quality_report ? quality_report->summary.issue_count : 0U)
+               << ",\n"
+               << "  \"nativeSolverMaximumNonOrthogonalityDegrees\": "
+               << (quality_report
+                       ? quality_report->summary.maximum_non_orthogonality_degrees
+                       : 0.0) << ",\n"
+               << "  \"nativeSolverMaximumSkewness\": "
+               << (quality_report ? quality_report->summary.maximum_skewness
+                                  : 0.0) << ",\n"
+               << "  \"nativeSolverQualityReport\": ";
+        if (quality_output) {
+            report << "\"" << json_escape(quality_output->string()) << "\",\n";
+        } else {
+            report << "null,\n";
+        }
+        report << "  \"completeSolverVolumeMeshOutput\": ";
         if (options.openfoam_case) {
             report << "\"" << json_escape(options.openfoam_case->string())
                    << "/constant/polyMesh\"\n";

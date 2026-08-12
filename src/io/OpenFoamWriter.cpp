@@ -648,10 +648,8 @@ class PointWelder {
 
 } // 匿名命名空间
 
-static void write_openfoam_poly_mesh_impl(
-    const std::filesystem::path& case_directory,
+[[nodiscard]] OpenFoamMesh build_openfoam_mesh_impl(
     const BackgroundGridView& grid, const ConvexCutCellMesh& mesh,
-    const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
     double length_tolerance) {
     if (length_tolerance < 0.0 || !std::isfinite(length_tolerance)) {
         throw std::invalid_argument("OpenFOAM 点合并容差必须是非负有限数");
@@ -1016,6 +1014,68 @@ static void write_openfoam_poly_mesh_impl(
     for (const auto& face : internal_faces) append_face(face);
     for (const auto& face : boundary_faces) append_face(face);
 
+    OpenFoamMesh result;
+    result.background_stable_id_kind = grid.kind;
+    result.points = welder.points();
+    result.internal_face_count = internal_faces.size();
+    result.length_tolerance = length_tolerance;
+    result.cells.reserve(cells.size());
+    for (const auto& cell : cells) {
+        const double background_volume =
+            grid.cells[static_cast<std::size_t>(cell.background_cell_id)].volume();
+        result.cells.push_back(
+            {cell.background_cell_id,
+             grid.stable_cell_ids[static_cast<std::size_t>(cell.background_cell_id)],
+             cell.component_id, cell.local_piece_id,
+             cell.full_cartesian ? 1.0 : cell.piece->geometry.volume /
+                                             background_volume,
+             cell.full_cartesian});
+    }
+    result.faces.reserve(face_point_ids.size());
+    for (std::size_t index = 0; index < internal_faces.size(); ++index) {
+        const auto& face = internal_faces[index];
+        result.faces.push_back({std::move(face_point_ids[index]), face.owner,
+                                face.neighbor, 0U, false});
+    }
+    for (std::size_t index = 0; index < boundary_faces.size(); ++index) {
+        const auto& face = boundary_faces[index];
+        result.faces.push_back(
+            {std::move(face_point_ids[result.internal_face_count + index]),
+             face.owner, std::numeric_limits<std::size_t>::max(),
+             face.boundary_id, face.farfield});
+    }
+    return result;
+}
+
+OpenFoamMesh build_openfoam_mesh(
+    const UniformCartesianGrid& grid, const ConvexCutCellMesh& mesh,
+    double length_tolerance) {
+    return build_openfoam_mesh_impl(make_background_view(grid), mesh,
+                                    length_tolerance);
+}
+
+OpenFoamMesh build_openfoam_mesh(
+    const LinearOctree& tree, const ConvexCutCellMesh& mesh,
+    double length_tolerance) {
+    return build_openfoam_mesh_impl(make_background_view(tree), mesh,
+                                    length_tolerance);
+}
+
+void write_openfoam_poly_mesh(
+    const std::filesystem::path& case_directory, const OpenFoamMesh& mesh,
+    const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names) {
+    if (mesh.internal_face_count > mesh.faces.size()) {
+        throw std::invalid_argument("OpenFOAM 内部面计数越界");
+    }
+    for (std::size_t face_id = 0; face_id < mesh.faces.size(); ++face_id) {
+        const auto& face = mesh.faces[face_id];
+        if (face.internal() != (face_id < mesh.internal_face_count) ||
+            (face.internal() &&
+             (face.owner == face.neighbour || face.owner > face.neighbour))) {
+            throw std::invalid_argument(
+                "OpenFOAM 面必须按内部面优先排序且满足 owner < neighbour");
+        }
+    }
     const std::filesystem::path poly_mesh =
         case_directory / "constant" / "polyMesh";
     std::filesystem::create_directories(poly_mesh);
@@ -1023,22 +1083,20 @@ static void write_openfoam_poly_mesh_impl(
     {
         std::ofstream output(poly_mesh / "cartmeshCellMapping.json",
                              std::ios::trunc);
-        if (!output) {
-            throw std::runtime_error("无法写入 OpenFOAM cell mapping");
-        }
+        if (!output) throw std::runtime_error("无法写入 OpenFOAM cell mapping");
         output << "{\n  \"schema\": \"cartmesh-openfoam-cell-mapping-v1\",\n"
-               << "  \"backgroundStableIdKind\": \"" << grid.kind
-               << "\",\n  \"solverCellCount\": " << cells.size()
+               << "  \"backgroundStableIdKind\": \""
+               << mesh.background_stable_id_kind
+               << "\",\n  \"solverCellCount\": " << mesh.cells.size()
                << ",\n  \"cells\": [\n";
         for (std::size_t solver_cell_id = 0;
-             solver_cell_id < cells.size(); ++solver_cell_id) {
-            const auto& cell = cells[solver_cell_id];
+             solver_cell_id < mesh.cells.size(); ++solver_cell_id) {
+            const auto& cell = mesh.cells[solver_cell_id];
             if (solver_cell_id != 0U) output << ",\n";
             output << "    {\"solverCellId\":" << solver_cell_id
                    << ",\"backgroundCellId\":" << cell.background_cell_id
                    << ",\"backgroundStableId\":\""
-                   << grid.stable_cell_ids[static_cast<std::size_t>(
-                          cell.background_cell_id)]
+                   << cell.background_stable_id
                    << "\",\"componentId\":" << cell.component_id
                    << ",\"localPieceId\":" << cell.local_piece_id
                    << ",\"fullCartesian\":"
@@ -1049,23 +1107,13 @@ static void write_openfoam_poly_mesh_impl(
     {
         std::ofstream output(case_directory / "system" / "controlDict",
                              std::ios::trunc);
-        if (!output) {
-            throw std::runtime_error("无法写入 OpenFOAM controlDict");
-        }
+        if (!output) throw std::runtime_error("无法写入 OpenFOAM controlDict");
         output << "FoamFile\n{\n"
-               << "    version 2.0;\n"
-               << "    format ascii;\n"
-               << "    class dictionary;\n"
-               << "    object controlDict;\n"
-               << "}\n\n"
-               << "application checkMesh;\n"
-               << "startFrom startTime;\n"
-               << "startTime 0;\n"
-               << "stopAt endTime;\n"
-               << "endTime 1;\n"
-               << "deltaT 1;\n"
-               << "writeControl timeStep;\n"
-               << "writeInterval 1;\n"
+               << "    version 2.0;\n    format ascii;\n"
+               << "    class dictionary;\n    object controlDict;\n}\n\n"
+               << "application checkMesh;\nstartFrom startTime;\nstartTime 0;\n"
+               << "stopAt endTime;\nendTime 1;\ndeltaT 1;\n"
+               << "writeControl timeStep;\nwriteInterval 1;\n"
                << "runTimeModifiable false;\n";
     }
     {
@@ -1096,8 +1144,8 @@ static void write_openfoam_poly_mesh_impl(
         if (!output) throw std::runtime_error("无法写入 OpenFOAM points");
         output << std::setprecision(17);
         write_header(output, "vectorField", "points");
-        output << welder.points().size() << "\n(\n";
-        for (const auto point : welder.points()) {
+        output << mesh.points.size() << "\n(\n";
+        for (const auto point : mesh.points) {
             output << '(' << point.x << ' ' << point.y << ' ' << point.z << ")\n";
         }
         output << ")\n";
@@ -1106,12 +1154,12 @@ static void write_openfoam_poly_mesh_impl(
         std::ofstream output(poly_mesh / "faces", std::ios::trunc);
         if (!output) throw std::runtime_error("无法写入 OpenFOAM faces");
         write_header(output, "faceList", "faces");
-        output << face_point_ids.size() << "\n(\n";
-        for (const auto& face : face_point_ids) {
-            output << face.size() << '(';
-            for (std::size_t index = 0; index < face.size(); ++index) {
+        output << mesh.faces.size() << "\n(\n";
+        for (const auto& face : mesh.faces) {
+            output << face.point_ids.size() << '(';
+            for (std::size_t index = 0; index < face.point_ids.size(); ++index) {
                 if (index != 0U) output << ' ';
-                output << face[index];
+                output << face.point_ids[index];
             }
             output << ")\n";
         }
@@ -1121,17 +1169,18 @@ static void write_openfoam_poly_mesh_impl(
         std::ofstream output(poly_mesh / "owner", std::ios::trunc);
         if (!output) throw std::runtime_error("无法写入 OpenFOAM owner");
         write_header(output, "labelList", "owner");
-        output << face_point_ids.size() << "\n(\n";
-        for (const auto& face : internal_faces) output << face.owner << '\n';
-        for (const auto& face : boundary_faces) output << face.owner << '\n';
+        output << mesh.faces.size() << "\n(\n";
+        for (const auto& face : mesh.faces) output << face.owner << '\n';
         output << ")\n";
     }
     {
         std::ofstream output(poly_mesh / "neighbour", std::ios::trunc);
         if (!output) throw std::runtime_error("无法写入 OpenFOAM neighbour");
         write_header(output, "labelList", "neighbour");
-        output << internal_faces.size() << "\n(\n";
-        for (const auto& face : internal_faces) output << face.neighbor << '\n';
+        output << mesh.internal_face_count << "\n(\n";
+        for (std::size_t index = 0; index < mesh.internal_face_count; ++index) {
+            output << mesh.faces[index].neighbour << '\n';
+        }
         output << ")\n";
     }
     {
@@ -1139,7 +1188,9 @@ static void write_openfoam_poly_mesh_impl(
         for (const auto& [id, name] : boundary_names) names[id] = foam_name(name);
         struct Patch { std::string name; std::string type; std::size_t count{}; };
         std::vector<Patch> patches;
-        for (const auto& face : boundary_faces) {
+        for (std::size_t index = mesh.internal_face_count;
+             index < mesh.faces.size(); ++index) {
+            const auto& face = mesh.faces[index];
             const std::string name = face.farfield
                                          ? "farfield"
                                          : names.contains(face.boundary_id)
@@ -1156,13 +1207,12 @@ static void write_openfoam_poly_mesh_impl(
         if (!output) throw std::runtime_error("无法写入 OpenFOAM boundary");
         write_header(output, "polyBoundaryMesh", "boundary");
         output << patches.size() << "\n(\n";
-        std::size_t start = internal_faces.size();
+        std::size_t start = mesh.internal_face_count;
         for (const auto& patch : patches) {
             output << patch.name << "\n{\n"
                    << "    type " << patch.type << ";\n"
                    << "    nFaces " << patch.count << ";\n"
-                   << "    startFace " << start << ";\n"
-                   << "}\n";
+                   << "    startFace " << start << ";\n}\n";
             start += patch.count;
         }
         output << ")\n";
@@ -1174,8 +1224,9 @@ void write_openfoam_poly_mesh(
     const UniformCartesianGrid& grid, const ConvexCutCellMesh& mesh,
     const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
     double length_tolerance) {
-    write_openfoam_poly_mesh_impl(case_directory, make_background_view(grid),
-                                  mesh, boundary_names, length_tolerance);
+    write_openfoam_poly_mesh(case_directory,
+                             build_openfoam_mesh(grid, mesh, length_tolerance),
+                             boundary_names);
 }
 
 void write_openfoam_poly_mesh(
@@ -1183,8 +1234,9 @@ void write_openfoam_poly_mesh(
     const LinearOctree& tree, const ConvexCutCellMesh& mesh,
     const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
     double length_tolerance) {
-    write_openfoam_poly_mesh_impl(case_directory, make_background_view(tree),
-                                  mesh, boundary_names, length_tolerance);
+    write_openfoam_poly_mesh(case_directory,
+                             build_openfoam_mesh(tree, mesh, length_tolerance),
+                             boundary_names);
 }
 
 } // 命名空间 cartmesh
