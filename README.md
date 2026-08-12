@@ -255,3 +255,11 @@ meshio 读取和重复性能证据汇总通过后，`artifacts/stage5_acceptance
 12,078 张高偏斜面，最终为 `Failed 2 mesh checks.`，没有 `Mesh OK.`。
 机器终态见 `artifacts/stage6_acceptance.json`；完整说明见
 [`docs/STAGE6_VERIFICATION.md`](docs/STAGE6_VERIFICATION.md)。阶段 7 尚未启动。
+
+修订计划的 Stage 6.1 已于 2026-08-12 打通 reference 路径的
+`adaptive LinearOctree → 完整 ASCII OpenFOAM polyMesh`。固定 adaptive cube 与非凸
+L-prism 均通过独立全量读取器和 OpenFOAM 2606 `checkMesh -allTopology`，并输出稳定
+Morton leaf → solver cell 映射；均匀 R8 cube 的五个核心文件 SHA-256 与 Stage 6.0
+基线逐项不变。完整证据见
+[`docs/STAGE6_1_VERIFICATION.md`](docs/STAGE6_1_VERIFICATION.md)。这只关闭 6.1，
+没有完成 6.2 原生质量评估、6.3 稳定化、复杂几何质量门或千万级 adaptive 路径。

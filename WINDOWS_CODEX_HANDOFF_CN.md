@@ -1,6 +1,6 @@
 # Windows / WSL Codex 接管说明
 
-更新日期：2026-08-11
+更新日期：2026-08-12
 
 这份文件是把仓库 ZIP 解压到 Windows 后，新 Codex 会话的第一入口。它说明当前目标、
 已知事实、禁止范围和开始工作前必须完成的检查。它不宣称任何尚未通过代码、测试和外部
@@ -23,11 +23,12 @@
 
 - 当前只执行 `STAGE6_REVISED_PLAN_CN.md`。
 - 必须严格按 `6.0 → 6.1 → 6.2 → ...` 顺序推进，一次只完成一个子阶段。
-- 当前首先只处理 **Stage 6.0 基线审计**。
+- Stage 6.0 基线审计和 Stage 6.1 自适应完整 OpenFOAM 拓扑已经完成。
+- 当前下一个子阶段是 **Stage 6.2 原生质量评估器**，但未经用户再次确认不得开始修改。
 - 在 Stage 6 完成并得到用户明确确认前，不得实现任何 Stage 7 功能。
 - `STAGE7_HYBRID_CARTESIAN_CODEX_PLAN_CN.md` 只能作为后续架构约束和接口参考。
 - 禁止提前实现 boundary layer、prism layer、surface projection、hybrid transition。
-- 未得到用户确认前，不修改 C++、测试、构建脚本或算法实现。
+- 未得到用户对下一个子阶段的确认前，不修改 C++、测试、构建脚本或算法实现。
 
 每个子阶段开始前，必须先向用户报告：当前基线、该阶段解决的问题、拟修改文件、接口变化、
 明确不修改的代码、验收测试，以及如何证明结果不是 mock、hard-code 或预生成输出。等用户
@@ -49,7 +50,7 @@
 |---|---|
 | 均匀 Cartesian/Cut-cell → OpenFOAM | 可以生成完整 `polyMesh`；已有独立读取与历史验证路径 |
 | 自适应 octree Cut-cell | 内部几何和拓扑已经存在 |
-| 自适应 octree → 完整 OpenFOAM | 尚未打通；当前 writer 会明确拒绝自适应输入，这是 Stage 6.1 的主要缺口 |
+| 自适应 octree → 完整 OpenFOAM | Stage 6.1 已打通 reference ASCII writer；固定 cube/L-prism 的独立 reader 与 OpenFOAM 2606 `Mesh OK.` 已通过 |
 | 增量自适应 | 已有映射/复用能力，但没有完整 solver output 链路 |
 | 旧 Stage 6 compact 路径 | 仅支持均匀路径和 binary `polyMesh`，不得当作 revised Stage 6 已完成 |
 | Stage 7 hybrid 功能 | 当前未实现，也不允许在本阶段实现 |
@@ -67,8 +68,12 @@
 - writer 层的 2–N merge；
 - kernel tetra repair。
 
-Stage 6.0 计划要求的 `stage6_baseline.json` 和人类可读基线表，在导入接管基线时尚不存在。
-这正是 Stage 6.0 要核实和形成的内容，不能伪造为既有产物。
+Stage 6.0 机器基线见 `artifacts/stage6_baseline.json`，人工记录见
+`docs/STAGE6_BASELINE.md`。Stage 6.1 的当前实现、确定性、独立读取和 OpenFOAM 证据见
+`docs/STAGE6_1_VERIFICATION.md` 与本机 `artifacts/stage61/`。
+
+Stage 6.1 只证明固定解析 adaptive cube/L-prism 的完整拓扑链路；不得外推为复杂 STL、
+大规模 adaptive 或全部质量门已经通过。Stage 6 总体仍未完成。
 
 ## 5. Windows 上的推荐工作方式
 
@@ -112,16 +117,18 @@ ctest --preset release --output-on-failure
 如果 Windows/WSL 环境还没装齐依赖，应报告缺失项，不得把“无法运行测试”写成“测试通过”。
 独立 OpenFOAM 验证也必须记录实际命令、stdout/stderr、质量指标和工具版本。
 
-完成检查后，先向用户提交 Stage 6.0 基线报告并等待确认。不要在同一轮顺手实现 Stage 6.1。
+完成检查后，先核对 Stage 6.0/6.1 的验证记录和当前 HEAD，再向用户提交 Stage 6.2
+开工方案并等待确认。不要在同一轮顺手实现 Stage 6.2。
 
 ## 7. 可直接交给 Windows Codex 的开场指令
 
 ```text
 先完整阅读 AGENTS.md 和 WINDOWS_CODEX_HANDOFF_CN.md，再按接管说明列出的顺序阅读项目文件。
-当前唯一目标是 STAGE6_REVISED_PLAN_CN.md，当前只做 Stage 6.0 基线审计，不修改代码。
+当前唯一计划是 STAGE6_REVISED_PLAN_CN.md。Stage 6.0 和 6.1 已完成，先只读核实
+docs/STAGE6_BASELINE.md、docs/STAGE6_1_VERIFICATION.md、artifacts/stage61 和当前 HEAD。
 代码、测试、验证产物和 Git 历史是最高事实来源。先核实 Git/branch/tag/工作区和测试基线，
-再报告实际 STL → mesh → solver output 链路、旧 Stage 6 残留、计划冲突，以及 Stage 6.1 的准备方案。
-在我明确确认前，不开始任何代码修改，也不实现任何 Stage 7 功能。
+再报告 Stage 6.2 原生质量评估器的接口、最小失败案例、拟修改文件和验收命令。
+在我明确确认前，不开始 Stage 6.2 代码修改，也不实现任何 Stage 7 功能。
 ```
 
 只要 ZIP 被完整解压且 `.git` 隐藏目录没有被丢失，Windows Codex 从仓库根目录打开后，读取

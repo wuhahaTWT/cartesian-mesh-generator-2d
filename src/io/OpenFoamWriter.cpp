@@ -28,6 +28,7 @@ struct Point2 {
 struct ComponentCell {
     std::uint64_t background_cell_id{};
     std::size_t component_id{};
+    std::size_t local_piece_id{};
     const FluidPolyhedronPiece* piece{};
     bool full_cartesian{};
 };
@@ -54,6 +55,21 @@ struct OutputFace {
     std::size_t neighbor{std::numeric_limits<std::size_t>::max()};
     std::uint64_t boundary_id{};
     bool farfield{};
+};
+
+struct BackgroundInterface {
+    std::uint64_t first{};
+    std::vector<std::uint64_t> seconds;
+    std::uint8_t first_face{};
+};
+
+struct BackgroundGridView {
+    AABB domain;
+    std::string kind;
+    std::vector<std::uint64_t> stable_cell_ids;
+    std::vector<AABB> cells;
+    std::vector<std::array<bool, 6>> exterior_faces;
+    std::vector<BackgroundInterface> interfaces;
 };
 
 struct EdgePoint {
@@ -107,6 +123,100 @@ struct EdgePoint {
                             polygon[index + 1U] - origin) * 0.5;
     }
     return norm(area_vector);
+}
+
+[[nodiscard]] double cell_face_area_scale(const AABB& bounds) noexcept {
+    const Vec3 extent = bounds.extent();
+    return std::max({extent.x * extent.y, extent.x * extent.z,
+                     extent.y * extent.z});
+}
+
+[[nodiscard]] BackgroundGridView make_background_view(
+    const UniformCartesianGrid& grid) {
+    BackgroundGridView view{grid.domain(), "uniform_linear_id", {}, {}, {}, {}};
+    view.stable_cell_ids.reserve(static_cast<std::size_t>(grid.cell_count()));
+    view.cells.reserve(static_cast<std::size_t>(grid.cell_count()));
+    view.exterior_faces.reserve(static_cast<std::size_t>(grid.cell_count()));
+    view.interfaces.reserve(static_cast<std::size_t>(grid.cell_count()) * 3U);
+    for (std::uint64_t background = 0; background < grid.cell_count(); ++background) {
+        const CellKey key = grid.cell_key(background);
+        view.stable_cell_ids.push_back(background);
+        view.cells.push_back(grid.cell_bounds(key));
+        view.exterior_faces.push_back({
+            key.i == 0U, key.i + 1U == grid.nx(),
+            key.j == 0U, key.j + 1U == grid.ny(),
+            key.k == 0U, key.k + 1U == grid.nz()});
+        if (key.i + 1U < grid.nx()) {
+            CellKey neighbor = key;
+            ++neighbor.i;
+            view.interfaces.push_back(
+                {background, {grid.linear_id(neighbor)}, 1U});
+        }
+        if (key.j + 1U < grid.ny()) {
+            CellKey neighbor = key;
+            ++neighbor.j;
+            view.interfaces.push_back(
+                {background, {grid.linear_id(neighbor)}, 3U});
+        }
+        if (key.k + 1U < grid.nz()) {
+            CellKey neighbor = key;
+            ++neighbor.k;
+            view.interfaces.push_back(
+                {background, {grid.linear_id(neighbor)}, 5U});
+        }
+    }
+    return view;
+}
+
+[[nodiscard]] BackgroundGridView make_background_view(
+    const LinearOctree& tree) {
+    BackgroundGridView view{tree.domain(), "octree_node_code", {}, {}, {}, {}};
+    view.stable_cell_ids.reserve(static_cast<std::size_t>(tree.leaf_count()));
+    view.cells.reserve(static_cast<std::size_t>(tree.leaf_count()));
+    view.exterior_faces.reserve(static_cast<std::size_t>(tree.leaf_count()));
+    view.interfaces.reserve(static_cast<std::size_t>(tree.leaf_count()) * 3U);
+    constexpr std::array<FaceDirection, 6> directions = {
+        FaceDirection::negative_x, FaceDirection::positive_x,
+        FaceDirection::negative_y, FaceDirection::positive_y,
+        FaceDirection::negative_z, FaceDirection::positive_z};
+    for (std::uint64_t leaf_id = 0; leaf_id < tree.leaf_count(); ++leaf_id) {
+        const OctreeNodeCode code = tree.leaf_code(leaf_id);
+        const AABB bounds = tree.cell_bounds(code);
+        view.stable_cell_ids.push_back(code);
+        view.cells.push_back(bounds);
+        std::array<bool, 6> exterior{};
+        for (std::size_t face = 0; face < directions.size(); ++face) {
+            const auto neighbors = tree.face_neighbors(code, directions[face]);
+            exterior[face] = neighbors.empty();
+            if (neighbors.empty()) continue;
+            const auto node = decode_octree_node(code);
+            bool has_coarser_neighbor = false;
+            bool has_finer_neighbor = false;
+            std::vector<std::uint64_t> neighbor_ids;
+            neighbor_ids.reserve(neighbors.size());
+            for (const OctreeNodeCode neighbor_code : neighbors) {
+                const auto neighbor_node = decode_octree_node(neighbor_code);
+                has_coarser_neighbor =
+                    has_coarser_neighbor || neighbor_node.level < node.level;
+                has_finer_neighbor =
+                    has_finer_neighbor || neighbor_node.level > node.level;
+                const auto neighbor_id = tree.find_leaf(neighbor_code);
+                if (!neighbor_id) {
+                    throw std::logic_error("八叉树 OpenFOAM 邻居不在叶数组中");
+                }
+                neighbor_ids.push_back(*neighbor_id);
+            }
+            // 跨层接口始终由 coarse face 一次覆盖全部 fine faces；同层接口由较小
+            // Morton 叶 ID 处理一次。
+            if (has_coarser_neighbor) continue;
+            if (!has_finer_neighbor && leaf_id > neighbor_ids.front()) continue;
+            view.interfaces.push_back(
+                {leaf_id, std::move(neighbor_ids),
+                 static_cast<std::uint8_t>(face)});
+        }
+        view.exterior_faces.push_back(exterior);
+    }
+    return view;
 }
 
 void remove_short_edges(std::vector<Point2>& polygon, double tolerance) {
@@ -538,15 +648,15 @@ class PointWelder {
 
 } // 匿名命名空间
 
-void write_openfoam_poly_mesh(
+static void write_openfoam_poly_mesh_impl(
     const std::filesystem::path& case_directory,
-    const UniformCartesianGrid& grid, const ConvexCutCellMesh& mesh,
+    const BackgroundGridView& grid, const ConvexCutCellMesh& mesh,
     const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
     double length_tolerance) {
     if (length_tolerance < 0.0 || !std::isfinite(length_tolerance)) {
         throw std::invalid_argument("OpenFOAM 点合并容差必须是非负有限数");
     }
-    const double scale = norm(grid.domain().extent());
+    const double scale = norm(grid.domain.extent());
     length_tolerance = std::max(
         length_tolerance,
         1024.0 * std::numeric_limits<double>::epsilon() * scale);
@@ -554,35 +664,41 @@ void write_openfoam_poly_mesh(
 
     std::vector<ComponentCell> cells;
     std::vector<const FluidCellGeometry*> fluid_by_background(
-        static_cast<std::size_t>(grid.cell_count()), nullptr);
+        grid.cells.size(), nullptr);
     for (const auto& cell : mesh.fluid_cells) {
+        if (cell.background_cell_id >= grid.cells.size()) {
+            throw std::runtime_error("OpenFOAM 流体单元 background ID 越界");
+        }
         fluid_by_background[static_cast<std::size_t>(cell.background_cell_id)] = &cell;
         if (cell.cut && (cell.fluid_component_count == 0U ||
                          cell.fluid_polyhedron_pieces.empty())) {
             throw std::runtime_error("OpenFOAM 输出遇到未解析的流体分量");
         }
         if (!cell.cut) {
-            cells.push_back({cell.background_cell_id, 0U, nullptr, true});
+            cells.push_back({cell.background_cell_id, 0U, 0U, nullptr, true});
         } else {
-            for (const auto& piece : cell.fluid_polyhedron_pieces) {
+            for (std::size_t piece_id = 0;
+                 piece_id < cell.fluid_polyhedron_pieces.size(); ++piece_id) {
+                const auto& piece = cell.fluid_polyhedron_pieces[piece_id];
                 if (piece.component_id >= cell.fluid_component_count) {
                     throw std::runtime_error("Cut-cell 凸片 component ID 越界");
                 }
                 cells.push_back({cell.background_cell_id, piece.component_id,
-                                 &piece, false});
+                                 piece_id, &piece, false});
             }
         }
     }
 
     std::vector<std::array<std::vector<CartesianPatch>, 6>> cartesian(
-        static_cast<std::size_t>(grid.cell_count()));
+        grid.cells.size());
     std::vector<std::vector<PartitionPatch>> partitions(
-        static_cast<std::size_t>(grid.cell_count()));
+        grid.cells.size());
     for (std::size_t cell_id = 0; cell_id < cells.size(); ++cell_id) {
         const auto& component = cells[cell_id];
         if (component.full_cartesian) {
             const auto polyhedron = make_box_polyhedron(
-                grid.cell_bounds(grid.cell_key(component.background_cell_id)));
+                grid.cells[static_cast<std::size_t>(
+                    component.background_cell_id)]);
             for (std::size_t face = 0; face < polyhedron.faces.size(); ++face) {
                 std::vector<Vec3> vertices;
                 for (const auto vertex : polyhedron.faces[face].vertex_indices) {
@@ -629,88 +745,96 @@ void write_openfoam_poly_mesh(
 
     std::vector<OutputFace> internal_faces;
     std::vector<OutputFace> boundary_faces;
-    const auto add_interface = [&](std::uint64_t first_background,
-                                   std::uint64_t second_background,
-                                   std::uint8_t first_face) {
+    const auto add_interface = [&](const BackgroundInterface& interface) {
+        const std::uint64_t first_background = interface.first;
+        const std::uint8_t first_face = interface.first_face;
         const std::uint8_t second_face = opposite_face[first_face];
         auto& first = cartesian[static_cast<std::size_t>(first_background)]
                                [first_face];
-        auto& second = cartesian[static_cast<std::size_t>(second_background)]
-                                [second_face];
         std::vector<double> first_covered(first.size(), 0.0);
-        std::vector<double> second_covered(second.size(), 0.0);
-        for (std::size_t i = 0; i < first.size(); ++i) {
-            for (std::size_t j = 0; j < second.size(); ++j) {
-                auto overlap = intersect_convex_cartesian_polygons(
-                    first[i].vertices, second[j].vertices, first_face,
-                    length_tolerance);
-                const double area = polygon_area(overlap);
-                if (area <= area_tolerance) continue;
-                orient_face(overlap, face_normal(first_face));
-                internal_faces.push_back(
-                    {std::move(overlap), first[i].owner, second[j].owner,
-                     0U, false});
-                first_covered[i] += area;
-                second_covered[j] += area;
-                first[i].covered_area += area;
-                second[j].covered_area += area;
+        double covered_area = 0.0;
+        double expected_second_sum = 0.0;
+        double face_scale = cell_face_area_scale(
+            grid.cells[static_cast<std::size_t>(first_background)]);
+        for (const std::uint64_t second_background : interface.seconds) {
+            auto& second = cartesian[static_cast<std::size_t>(second_background)]
+                                    [second_face];
+            std::vector<double> second_covered(second.size(), 0.0);
+            for (std::size_t i = 0; i < first.size(); ++i) {
+                for (std::size_t j = 0; j < second.size(); ++j) {
+                    auto overlap = intersect_convex_cartesian_polygons(
+                        first[i].vertices, second[j].vertices, first_face,
+                        length_tolerance);
+                    const double area = polygon_area(overlap);
+                    if (area <= area_tolerance) continue;
+                    std::size_t owner = first[i].owner;
+                    std::size_t neighbor = second[j].owner;
+                    Vec3 normal = face_normal(first_face);
+                    if (owner > neighbor) {
+                        std::swap(owner, neighbor);
+                        normal = normal * -1.0;
+                    }
+                    orient_face(overlap, normal);
+                    internal_faces.push_back(
+                        {std::move(overlap), owner, neighbor, 0U, false});
+                    first_covered[i] += area;
+                    second_covered[j] += area;
+                    first[i].covered_area += area;
+                    second[j].covered_area += area;
+                }
+            }
+            const auto* second_fluid = fluid_by_background[
+                static_cast<std::size_t>(second_background)];
+            const double expected_second =
+                second_fluid == nullptr
+                    ? 0.0
+                    : second_fluid->cartesian_faces[second_face].area;
+            const double second_total = std::accumulate(
+                second_covered.begin(), second_covered.end(), 0.0);
+            expected_second_sum += expected_second;
+            covered_area += second_total;
+            face_scale = std::max(
+                face_scale,
+                cell_face_area_scale(
+                    grid.cells[static_cast<std::size_t>(second_background)]));
+            const double local_tolerance = std::max(
+                area_tolerance,
+                8192.0 * std::numeric_limits<double>::epsilon() * face_scale);
+            if (std::abs(second_total - expected_second) > local_tolerance) {
+                throw std::runtime_error(
+                    "OpenFOAM 粗细接口 fine 面覆盖不守恒：first=" +
+                    std::to_string(first_background) +
+                    " second=" + std::to_string(second_background) +
+                    " face=" + std::to_string(first_face) +
+                    " covered=" + std::to_string(second_total) +
+                    " expected=" + std::to_string(expected_second));
             }
         }
-        const double face_scale = std::max(
-            {grid.spacing().x * grid.spacing().y,
-             grid.spacing().x * grid.spacing().z,
-             grid.spacing().y * grid.spacing().z});
         const double coverage_tolerance = std::max(
             area_tolerance,
             8192.0 * std::numeric_limits<double>::epsilon() * face_scale);
-        const double covered_area =
-            std::accumulate(first_covered.begin(), first_covered.end(), 0.0);
         const auto* first_fluid = fluid_by_background[
             static_cast<std::size_t>(first_background)];
-        const auto* second_fluid = fluid_by_background[
-            static_cast<std::size_t>(second_background)];
         const double expected_first =
             first_fluid == nullptr
                 ? 0.0
                 : first_fluid->cartesian_faces[first_face].area;
-        const double expected_second =
-            second_fluid == nullptr
-                ? 0.0
-                : second_fluid->cartesian_faces[second_face].area;
         if (std::abs(covered_area - expected_first) > coverage_tolerance ||
-            std::abs(covered_area - expected_second) > coverage_tolerance) {
+            std::abs(covered_area - expected_second_sum) > coverage_tolerance) {
             throw std::runtime_error(
                 "OpenFOAM 内部面公共细分与控制体开口面积不守恒：first=" +
                 std::to_string(first_background) +
-                " second=" + std::to_string(second_background) +
                 " face=" + std::to_string(first_face) +
                 " covered=" + std::to_string(covered_area) +
                 " expectedFirst=" + std::to_string(expected_first) +
-                " expectedSecond=" + std::to_string(expected_second));
+                " expectedSecond=" + std::to_string(expected_second_sum));
         }
     };
 
-    for (std::uint64_t background = 0; background < grid.cell_count(); ++background) {
-        const CellKey key = grid.cell_key(background);
-        if (key.i + 1U < grid.nx()) {
-            CellKey neighbor = key;
-            ++neighbor.i;
-            add_interface(background, grid.linear_id(neighbor), 1U);
-        }
-        if (key.j + 1U < grid.ny()) {
-            CellKey neighbor = key;
-            ++neighbor.j;
-            add_interface(background, grid.linear_id(neighbor), 3U);
-        }
-        if (key.k + 1U < grid.nz()) {
-            CellKey neighbor = key;
-            ++neighbor.k;
-            add_interface(background, grid.linear_id(neighbor), 5U);
-        }
-    }
+    for (const auto& interface : grid.interfaces) add_interface(interface);
 
     // 同一背景单元内的凸片以 arrangement 面成对连接。
-    for (std::uint64_t background = 0; background < grid.cell_count(); ++background) {
+    for (std::uint64_t background = 0; background < grid.cells.size(); ++background) {
         auto& patches = partitions[static_cast<std::size_t>(background)];
         for (std::size_t first = 0; first < patches.size(); ++first) {
             for (std::size_t second = first + 1U; second < patches.size(); ++second) {
@@ -741,12 +865,9 @@ void write_openfoam_poly_mesh(
     }
 
     // 计算域外边界的 Cartesian 面。
-    for (std::uint64_t background = 0; background < grid.cell_count(); ++background) {
-        const CellKey key = grid.cell_key(background);
-        const std::array<bool, 6> exterior = {
-            key.i == 0U, key.i + 1U == grid.nx(),
-            key.j == 0U, key.j + 1U == grid.ny(),
-            key.k == 0U, key.k + 1U == grid.nz()};
+    for (std::uint64_t background = 0; background < grid.cells.size(); ++background) {
+        const auto& exterior =
+            grid.exterior_faces[static_cast<std::size_t>(background)];
         for (std::size_t face = 0; face < 6U; ++face) {
             if (!exterior[face]) continue;
             for (auto& patch :
@@ -769,10 +890,8 @@ void write_openfoam_poly_mesh(
             static_cast<std::size_t>(fluid_cell.background_cell_id)];
         auto& local_cartesian = cartesian[
             static_cast<std::size_t>(fluid_cell.background_cell_id)];
-        const double face_scale = std::max(
-            {grid.spacing().x * grid.spacing().y,
-             grid.spacing().x * grid.spacing().z,
-             grid.spacing().y * grid.spacing().z});
+        const double face_scale = cell_face_area_scale(
+            grid.cells[static_cast<std::size_t>(fluid_cell.background_cell_id)]);
         const double coverage_tolerance = std::max(
             area_tolerance,
             8192.0 * std::numeric_limits<double>::epsilon() * face_scale);
@@ -829,14 +948,12 @@ void write_openfoam_poly_mesh(
         }
     }
 
-    const double face_scale = std::max(
-        {grid.spacing().x * grid.spacing().y,
-         grid.spacing().x * grid.spacing().z,
-         grid.spacing().y * grid.spacing().z});
-    const double coverage_tolerance = std::max(
-        area_tolerance,
-        16384.0 * std::numeric_limits<double>::epsilon() * face_scale);
-    for (std::uint64_t background = 0; background < grid.cell_count(); ++background) {
+    for (std::uint64_t background = 0; background < grid.cells.size(); ++background) {
+        const double coverage_tolerance = std::max(
+            area_tolerance,
+            16384.0 * std::numeric_limits<double>::epsilon() *
+                cell_face_area_scale(
+                    grid.cells[static_cast<std::size_t>(background)]));
         for (const auto& face_patches :
              cartesian[static_cast<std::size_t>(background)]) {
             for (const auto& patch : face_patches) {
@@ -880,7 +997,7 @@ void write_openfoam_poly_mesh(
                   return first.owner < second.owner;
               });
 
-    PointWelder welder(grid.domain().minimum(), length_tolerance);
+    PointWelder welder(grid.domain.minimum(), length_tolerance);
     std::vector<std::vector<std::size_t>> face_point_ids;
     face_point_ids.reserve(internal_faces.size() + boundary_faces.size());
     const auto append_face = [&](const OutputFace& face) {
@@ -903,6 +1020,32 @@ void write_openfoam_poly_mesh(
         case_directory / "constant" / "polyMesh";
     std::filesystem::create_directories(poly_mesh);
     std::filesystem::create_directories(case_directory / "system");
+    {
+        std::ofstream output(poly_mesh / "cartmeshCellMapping.json",
+                             std::ios::trunc);
+        if (!output) {
+            throw std::runtime_error("无法写入 OpenFOAM cell mapping");
+        }
+        output << "{\n  \"schema\": \"cartmesh-openfoam-cell-mapping-v1\",\n"
+               << "  \"backgroundStableIdKind\": \"" << grid.kind
+               << "\",\n  \"solverCellCount\": " << cells.size()
+               << ",\n  \"cells\": [\n";
+        for (std::size_t solver_cell_id = 0;
+             solver_cell_id < cells.size(); ++solver_cell_id) {
+            const auto& cell = cells[solver_cell_id];
+            if (solver_cell_id != 0U) output << ",\n";
+            output << "    {\"solverCellId\":" << solver_cell_id
+                   << ",\"backgroundCellId\":" << cell.background_cell_id
+                   << ",\"backgroundStableId\":\""
+                   << grid.stable_cell_ids[static_cast<std::size_t>(
+                          cell.background_cell_id)]
+                   << "\",\"componentId\":" << cell.component_id
+                   << ",\"localPieceId\":" << cell.local_piece_id
+                   << ",\"fullCartesian\":"
+                   << (cell.full_cartesian ? "true" : "false") << '}';
+        }
+        output << "\n  ]\n}\n";
+    }
     {
         std::ofstream output(case_directory / "system" / "controlDict",
                              std::ios::trunc);
@@ -1024,6 +1167,24 @@ void write_openfoam_poly_mesh(
         }
         output << ")\n";
     }
+}
+
+void write_openfoam_poly_mesh(
+    const std::filesystem::path& case_directory,
+    const UniformCartesianGrid& grid, const ConvexCutCellMesh& mesh,
+    const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
+    double length_tolerance) {
+    write_openfoam_poly_mesh_impl(case_directory, make_background_view(grid),
+                                  mesh, boundary_names, length_tolerance);
+}
+
+void write_openfoam_poly_mesh(
+    const std::filesystem::path& case_directory,
+    const LinearOctree& tree, const ConvexCutCellMesh& mesh,
+    const std::vector<std::pair<std::uint64_t, std::string>>& boundary_names,
+    double length_tolerance) {
+    write_openfoam_poly_mesh_impl(case_directory, make_background_view(tree),
+                                  mesh, boundary_names, length_tolerance);
 }
 
 } // 命名空间 cartmesh

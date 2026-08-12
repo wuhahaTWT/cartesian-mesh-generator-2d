@@ -26,6 +26,7 @@ def main() -> int:
     parser.add_argument("--case", required=True, type=Path)
     parser.add_argument("--project-report", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--log-output", type=Path)
     parser.add_argument("--image", default="opencfd/openfoam-run:2606")
     parser.add_argument("--milestone", choices=("stage3", "stage4"),
                         default="stage3")
@@ -59,6 +60,9 @@ def main() -> int:
             stderr=subprocess.STDOUT,
         )
     log = completed.stdout
+    if args.log_output is not None:
+        args.log_output.parent.mkdir(parents=True, exist_ok=True)
+        args.log_output.write_text(log, encoding="utf-8")
     mesh_ok = "Mesh OK." in log and "Failed " not in log
 
     def integer(pattern: str) -> int | None:
@@ -86,6 +90,8 @@ def main() -> int:
         "checker": "OpenFOAM checkMesh",
         "checkerImage": args.image,
         "checkerOptions": ["-constant", "-allTopology"],
+        "command": command,
+        "logOutput": str(args.log_output.resolve()) if args.log_output else None,
         "checkerBuild": build_match.group(1) if build_match else None,
         "checkerVersion": version_match.group(1) if version_match else None,
         "networkDisabled": True,

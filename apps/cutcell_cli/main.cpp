@@ -819,20 +819,24 @@ int main(int argc, char** argv) {
             invariants_pass &&
             (!options.adaptive ||
              adaptation.gap_resolution_failure_count == 0);
-        if (options.openfoam_case && tree) {
-            throw std::invalid_argument(
-                "当前 OpenFOAM 完整体网格输出只支持均匀 Cartesian 背景");
-        }
         if (options.openfoam_case) {
             std::vector<std::pair<std::uint64_t, std::string>> boundary_names;
             boundary_names.reserve(options.boundary_ranges.size());
             for (const auto& range : options.boundary_ranges) {
                 boundary_names.emplace_back(range.boundary_id, range.name);
             }
-            cartmesh::write_openfoam_poly_mesh(
-                *options.openfoam_case, *grid, mesh, boundary_names,
-                std::max(options.geometric_tolerance,
-                         diagnostics.suggested_length_tolerance));
+            const double writer_tolerance = std::max(
+                options.geometric_tolerance,
+                diagnostics.suggested_length_tolerance);
+            if (tree) {
+                cartmesh::write_openfoam_poly_mesh(
+                    *options.openfoam_case, *tree, mesh, boundary_names,
+                    writer_tolerance);
+            } else {
+                cartmesh::write_openfoam_poly_mesh(
+                    *options.openfoam_case, *grid, mesh, boundary_names,
+                    writer_tolerance);
+            }
         }
         const std::uint64_t background_cell_count =
             tree ? tree->leaf_count() : grid->cell_count();

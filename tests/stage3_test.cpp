@@ -51,6 +51,49 @@ void expect_vec_near(const cartmesh::Vec3& actual, const cartmesh::Vec3& expecte
     expect_near(actual.z, expected.z, tolerance, message + " z");
 }
 
+[[nodiscard]] std::string read_all(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    if (!input) throw TestFailure("无法读取测试产物：" + path.string());
+    return std::string(std::istreambuf_iterator<char>(input),
+                       std::istreambuf_iterator<char>());
+}
+
+[[nodiscard]] std::vector<std::uint64_t> read_foam_label_list(
+    const std::filesystem::path& path) {
+    const std::string text = read_all(path);
+    const std::size_t begin_marker = text.find("\n(\n");
+    const std::size_t end_marker = text.rfind("\n)\n");
+    if (begin_marker == std::string::npos || end_marker == std::string::npos ||
+        end_marker <= begin_marker) {
+        throw TestFailure("OpenFOAM labelList 结构无效：" + path.string());
+    }
+    std::istringstream values(
+        text.substr(begin_marker + 3U, end_marker - begin_marker - 3U));
+    std::vector<std::uint64_t> result;
+    std::uint64_t value = 0;
+    while (values >> value) result.push_back(value);
+    return result;
+}
+
+void expect_openfoam_cell_labels(const std::filesystem::path& case_directory,
+                                 std::uint64_t expected_cell_count) {
+    const auto poly_mesh = case_directory / "constant/polyMesh";
+    const auto owner = read_foam_label_list(poly_mesh / "owner");
+    const auto neighbour = read_foam_label_list(poly_mesh / "neighbour");
+    expect(!owner.empty(), "OpenFOAM owner 不得为空");
+    std::uint64_t maximum_cell = 0;
+    for (const auto id : owner) maximum_cell = std::max(maximum_cell, id);
+    for (const auto id : neighbour) maximum_cell = std::max(maximum_cell, id);
+    expect(maximum_cell + 1U == expected_cell_count,
+           "OpenFOAM owner/neighbour 必须覆盖全部 solver cell");
+    expect(neighbour.size() <= owner.size(),
+           "OpenFOAM neighbour 数不得超过 owner 数");
+    for (std::size_t face = 0; face < neighbour.size(); ++face) {
+        expect(owner[face] < neighbour[face],
+               "OpenFOAM 内部面必须满足 owner < neighbour");
+    }
+}
+
 template <typename Function> void expect_throw(Function&& function, const std::string& message) {
     try {
         function();
@@ -754,6 +797,72 @@ void test_general_adaptive_octree_topology() {
     }
     expect(coarse_fine_connection_count > 0,
            "自适应 cell-face-neighbor 拓扑必须显式包含粗细层级连接");
+
+    const auto first_case = std::filesystem::temp_directory_path() /
+                            "cartmesh_stage61_adaptive_cut_first";
+    const auto second_case = std::filesystem::temp_directory_path() /
+                             "cartmesh_stage61_adaptive_cut_second";
+    std::filesystem::remove_all(first_case);
+    std::filesystem::remove_all(second_case);
+    cartmesh::write_openfoam_poly_mesh(first_case, tree, mesh);
+    cartmesh::write_openfoam_poly_mesh(second_case, tree, mesh);
+    std::uint64_t solver_cell_count = 0;
+    for (const auto& cell : mesh.fluid_cells) {
+        solver_cell_count += cell.cut ? cell.fluid_polyhedron_pieces.size() : 1U;
+    }
+    expect_openfoam_cell_labels(first_case, solver_cell_count);
+    for (const std::string name : {"points", "faces", "owner", "neighbour",
+                                   "boundary", "cartmeshCellMapping.json"}) {
+        expect(read_all(first_case / "constant/polyMesh" / name) ==
+                   read_all(second_case / "constant/polyMesh" / name),
+               "自适应 Cut-cell OpenFOAM 核心五文件及映射必须确定性一致");
+    }
+    std::filesystem::remove_all(first_case);
+    std::filesystem::remove_all(second_case);
+}
+
+void test_openfoam_adaptive_coarse_fine_without_cut() {
+    const cartmesh::SurfaceMesh outside_surface(
+        axis_aligned_box_triangles({2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}),
+        cartmesh::SurfaceFormat::ascii_stl, "outside_domain_box");
+    const cartmesh::TriangulatedSurfaceCutter cutter(outside_surface, 0);
+    cartmesh::LinearOctree tree(
+        cartmesh::AABB({0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}), 1, 3);
+    expect(tree.refine_leaf(cartmesh::encode_octree_node(1, 0, 0, 0)),
+           "粗细交界测试必须细分一个基础叶");
+    expect(tree.check_face_balance().balanced && tree.validate_partition(),
+           "粗细交界测试树必须保持 2:1 与完整分区");
+    const auto mesh = cartmesh::build_triangulated_cut_cell_mesh(tree, cutter);
+    expect(mesh.cut_cell_count == 0 &&
+               mesh.full_fluid_cell_count == tree.leaf_count(),
+           "无切割粗细案例必须保留所有 fluid leaves");
+    std::size_t coarse_fine_connections = 0;
+    for (const auto& connection : mesh.internal_faces) {
+        if (cartmesh::decode_octree_node(
+                tree.leaf_code(connection.first_background_cell_id)).level !=
+            cartmesh::decode_octree_node(
+                tree.leaf_code(connection.second_background_cell_id)).level) {
+            ++coarse_fine_connections;
+        }
+    }
+    expect(coarse_fine_connections > 0,
+           "无切割案例必须真实包含 coarse-fine connections");
+    const auto case_directory = std::filesystem::temp_directory_path() /
+                                "cartmesh_stage61_coarse_fine_no_cut";
+    std::filesystem::remove_all(case_directory);
+    cartmesh::write_openfoam_poly_mesh(case_directory, tree, mesh);
+    expect_openfoam_cell_labels(case_directory, tree.leaf_count());
+    const auto boundary = read_all(
+        case_directory / "constant/polyMesh/boundary");
+    expect(boundary.find("farfield") != std::string::npos,
+           "无切割自适应 OpenFOAM 必须写出远场 patch");
+    const auto mapping = read_all(
+        case_directory / "constant/polyMesh/cartmeshCellMapping.json");
+    expect(mapping.find("\"backgroundStableIdKind\": \"octree_node_code\"") !=
+               std::string::npos &&
+               mapping.find("\"solverCellCount\": 15") != std::string::npos,
+           "自适应 OpenFOAM 必须保存 Morton leaf 到 solver cell 的映射");
+    std::filesystem::remove_all(case_directory);
 }
 
 void test_nearly_blocked_shared_face_uses_conserved_moments() {
@@ -907,6 +1016,7 @@ int main() {
         {"通用三角片重排确定性", test_general_surface_triangle_reordering_is_byte_stable},
         {"通用平面排列不连通检测", test_general_arrangement_detects_disconnected_slab},
         {"通用自适应八叉树拓扑", test_general_adaptive_octree_topology},
+        {"自适应粗细交界 OpenFOAM", test_openfoam_adaptive_coarse_fine_without_cut},
         {"微小开口共享面守恒量", test_nearly_blocked_shared_face_uses_conserved_moments},
         {"多面体 VTU 紧凑顶点", test_polyhedron_vtu_compacts_unused_vertices},
         {"球体体积与面积收敛", test_sphere_volume_area_convergence},

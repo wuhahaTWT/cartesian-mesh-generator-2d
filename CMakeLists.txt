@@ -189,7 +189,18 @@ if(BUILD_TESTING AND CARTMESH_BUILD_TESTS)
                 --adaptive --base-level 2 --max-level 4 --surface-level 4
                 --distance 0.1:3 --no-vtk
                 --geometry-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage4_adaptive_cube_geometry.json
+                --openfoam-case ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage61_adaptive_cube_case
                 --report ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage4_adaptive_cube.json
+    )
+    add_test(
+        NAME cartmesh_cutcell_cli_adaptive_l_openfoam_smoke
+        COMMAND cartmesh_cutcell_cli
+                --stl ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/nonconvex_l_prism_ascii.stl
+                --adaptive --base-level 2 --max-level 4 --surface-level 4
+                --padding-fraction 0.1 --no-vtk
+                --geometry-output ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage61_adaptive_l_geometry.json
+                --openfoam-case ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage61_adaptive_l_case
+                --report ${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stage61_adaptive_l.json
     )
     add_test(
         NAME cartmesh_cutcell_cli_openfoam_cube_smoke
