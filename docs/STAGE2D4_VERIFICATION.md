@@ -2,7 +2,7 @@
 
 ## 状态
 
-**IN PROGRESS — 全局 topology 核心、coarse-fine T-junction 处理、真实 Cut-cell 全链路和根 CMake 集成门禁已完成；等待用户显式“验证-4”后对当前最终分支再跑一次封口门禁并正式 CLOSED。**
+**PASS / CLOSED — 全局二维 solver topology 已通过最终 current-head 封口门禁。**
 
 当前严格停留在 2D-4；未实现 small-cell 聚合、quality/export 或 visualization。
 
@@ -136,9 +136,9 @@ global fluid-area error = 8.88178e-16
 
 除了 builder 自身 `TopologyAudit2D` 外，永久回归中又加入独立 duplicate-vertex、duplicate-edge、owner/neighbour 和 cell-loop 扫描，避免只相信构造器自身报告。
 
-## 根目录集成门禁
+## 最终 current-head 根目录封口门禁
 
-从仓库根 CMake 开启二维，并显式构建全部二维测试 target：
+用户发出“验证-4”后，对未漂移的最终 Stage 2D-4 head 再次从仓库根 CMake 构建全部二维测试 target，并运行：
 
 ```text
 cartmesh2d_stage0_geometry_tests .................. Passed
@@ -152,7 +152,7 @@ cartmesh2d_stage4_quadtree_topology_audit_tests ... Passed
 100% tests passed, 0 tests failed out of 7
 ```
 
-说明 2D-4 不是 standalone-only；它已通过根工程集成路径。
+同时根配置 `CARTMESH_BUILD_2D=OFF` 再次 PASS。
 
 ## 分支隔离审计
 
@@ -171,7 +171,7 @@ cartmesh2d_stage4_quadtree_topology_audit_tests ... Passed
 
 三维 Stage 6 / Stage 7 算法没有被二维拓扑工作改动。
 
-## 当前门禁状态
+## 最终门禁
 
 - [x] global vertex model
 - [x] global edge model
@@ -188,7 +188,9 @@ cartmesh2d_stage4_quadtree_topology_audit_tests ... Passed
 - [x] owner/neighbour 独立审计
 - [x] cell-loop 独立审计
 - [x] branch isolation audit
-- [ ] 用户显式“验证-4”后的最终 current-head 复跑与 CLOSED 标记
+- [x] 用户“验证-4”后的 final current-head 复跑
+
+**Stage 2D-4: PASS / CLOSED.**
 
 ## 明确未开始
 
