@@ -2,9 +2,9 @@
 
 ## 状态
 
-**IN PROGRESS — 核心实现已完成并推送，最终完整分支构建/CTest 门禁尚未封口。**
+**PASS / CLOSED — 2D-1 已完成并通过根目录 CMake + CTest 集成门禁。**
 
-当前仍严格停留在 Uniform Cartesian + classification；未实现 Quadtree、2:1 balance、Cut-cell、全局拓扑或可视化。
+当前严格停留在 Uniform Cartesian + classification；未实现 Quadtree、2:1 balance、Cut-cell、全局拓扑或可视化。
 
 ## 已实现
 
@@ -28,13 +28,13 @@
 4. 只有在没有边界 segment 与 cell 相交时，才允许使用 cell center 的 point-in-polygon 结果判定完整 `Inside / Outside`。
 5. `classifyGrid` 开始前必须通过 2D-0 `BoundaryLoop::diagnose()`；自交或退化边界直接拒绝。
 
-## 当前测试矩阵
+## 测试矩阵
 
-已加入：
+已通过：
 
 - 4 × 3 网格 cell 数、dx/dy、中心坐标
 - row-major ID 稳定性
-- cell 总面积覆盖 domain
+- cell 完整覆盖 domain
 - 横/纵相邻 cell 无 gap/overlap
 - spacing-based grid
 - segment 穿过 AABB
@@ -64,7 +64,7 @@ Domain `[0,4] × [0,4]`，8 × 8 grid，rectangle `[1,3] × [1,3]`。
 
 ### 64-segment circle
 
-Domain `[-2,2] × [-2,2]`，32 × 32 grid，单位圆用 64 条线段离散。
+32 × 32 grid，单位圆用 64 条线段离散。
 当前确定性结果：
 
 - Inside = 164
@@ -72,20 +72,55 @@ Domain `[-2,2] × [-2,2]`，32 × 32 grid，单位圆用 64 条线段离散。
 - Outside = 792
 - Total = 1024
 
-## 本地实现验证
+## 最终集成门禁
 
-新 2D-1 源码已在 C++20 / CMake 环境中按 2D-0 公共 API 编译并执行 `grid_test`，结果：
+验证环境：GNU C++ 14.2.0，C++20。
 
-```text
-cartmesh2d 2D-1 grid/classification tests passed
+从仓库根目录执行：
+
+```sh
+cmake -S . -B build-verify1 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCARTMESH_BUILD_2D=ON \
+  -DCARTMESH_BUILD_TESTS=ON \
+  -DCARTMESH_BUILD_BENCHMARKS=OFF
+
+cmake --build build-verify1 \
+  --target cartmesh2d_geometry_tests cartmesh2d_grid_tests
+
+ctest --test-dir build-verify1 \
+  -R 'cartmesh2d_stage(0|1)' \
+  --output-on-failure
 ```
 
-注意：本记录此时不把阶段声明为 CLOSED，因为仍需在 GitHub 当前完整分支 checkout 上执行一次完整 CMake/CTest 门禁，确认 2D-0 + 2D-1 与根 CMake 集成共同通过。
+结果：
 
-## 2D-1 验收对照（当前）
+```text
+cartmesh2d_geometry_tests  built successfully
+cartmesh2d_grid_tests      built successfully
+
+1/2 cartmesh2d_stage0_geometry_tests ... Passed
+2/2 cartmesh2d_stage1_grid_tests ....... Passed
+
+100% tests passed, 0 tests failed out of 2
+```
+
+同时验证默认关闭二维时根配置仍正常：
+
+```sh
+cmake -S . -B build-verify1-off \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCARTMESH_BUILD_2D=OFF \
+  -DCARTMESH_BUILD_TESTS=OFF \
+  -DCARTMESH_BUILD_BENCHMARKS=OFF
+```
+
+结果：PASS。
+
+## 2D-1 验收对照
 
 - [x] `Nx*Ny` cell 数正确
-- [x] cell 总面积完整覆盖 domain
+- [x] cell 完整覆盖 domain
 - [x] 相邻 cell 无 gap/overlap
 - [x] rectangle fixture 分类统计可复核
 - [x] circle fixture 分类统计可复核
@@ -95,7 +130,18 @@ cartmesh2d 2D-1 grid/classification tests passed
 - [x] 重复运行 cell ID 稳定
 - [x] 重复运行 classification 稳定
 - [x] 非法 boundary 不静默分类
-- [ ] GitHub 当前完整分支 CMake build + CTest 最终门禁
+- [x] 根目录 CMake build + 2D-0/2D-1 CTest 最终门禁
+- [x] `CARTMESH_BUILD_2D=OFF` 根配置正常
+- [x] 未修改三维算法目录
+
+## 隔离检查
+
+与 `main` 比较，2D-1 相关新增仍位于 `cartmesh2d/**`；根目录仅保留 2D 子项目开关/接入。未修改：
+
+- `include/cartmesh/**`
+- 根 `src/**`
+- 根 `apps/**`
+- 根 `tests/**`
 
 ## 尚未开始
 
@@ -107,3 +153,5 @@ cartmesh2d 2D-1 grid/classification tests passed
 - 2D-5 small-cell
 - 2D-6 export/quality
 - 2D-V visualization
+
+**结论：Stage 2D-1 关闭。未经用户明确批准，不得自动进入 2D-2。**
