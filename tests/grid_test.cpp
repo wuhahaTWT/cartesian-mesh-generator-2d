@@ -82,6 +82,16 @@ int main() {
     }
     check(threw, "zero grid dimension rejected");
 
+    threw = false;
+    try {
+        BoundaryLoop bowTie({{0.5, 0.5}, {3.5, 3.5}, {0.5, 3.5}, {3.5, 0.5}});
+        UniformCartesianGrid2D invalidBoundaryGrid({{{0.0, 0.0}, {4.0, 4.0}}}, 4, 4);
+        (void)classifyGrid(invalidBoundaryGrid, bowTie);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    check(threw, "self-intersecting boundary rejected before classification");
+
     if (failures != 0) {
         std::cerr << failures << " test(s) failed\n";
         return EXIT_FAILURE;
