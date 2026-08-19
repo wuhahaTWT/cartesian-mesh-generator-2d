@@ -4,6 +4,7 @@ project(cartesian_mesher VERSION 0.1.0 LANGUAGES CXX)
 
 option(CARTMESH_BUILD_TESTS "构建项目测试套件" ON)
 option(CARTMESH_BUILD_BENCHMARKS "构建基准程序" ON)
+option(CARTMESH_BUILD_2D "构建独立原生二维 cartmesh2d 子项目" OFF)
 
 function(cartmesh_enable_warnings target)
     if(MSVC)
@@ -93,6 +94,13 @@ if(CARTMESH_BUILD_BENCHMARKS)
 endif()
 
 include(CTest)
+
+if(CARTMESH_BUILD_2D)
+    set(CARTMESH2D_BUILD_TESTS ${CARTMESH_BUILD_TESTS} CACHE BOOL
+        "Build cartmesh2d tests from the top-level project" FORCE)
+    add_subdirectory(cartmesh2d)
+endif()
+
 if(BUILD_TESTING AND CARTMESH_BUILD_TESTS)
     add_executable(cartmesh_tests tests/test_main.cpp)
     target_link_libraries(cartmesh_tests PRIVATE cartmesh::cartmesh)
