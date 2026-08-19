@@ -2,9 +2,9 @@
 
 ## 状态
 
-**2D-0 几何内核已实现并通过独立本地 C++20 / CMake / CTest 验证。**
+**Stage 2D-0 已完成并关闭。**
 
-当前仍严格停止在二维几何层：未实现 Cartesian cell、Quadtree、Cut-cell、拓扑网格、求解器导出或可视化。
+二维几何内核已通过独立构建以及顶层仓库可选集成验证。当前仍严格停止在二维几何层：未实现 Cartesian cell、Quadtree、Cut-cell、拓扑网格、求解器导出或可视化。
 
 ## 已实现对象
 
@@ -49,7 +49,7 @@
 10. bow-tie loop：必须诊断 self-intersection，且拒绝 normalization
 11. duplicate consecutive point：必须诊断 duplicate + zero-length edge
 
-## 实际验证命令
+## 独立二维构建验证
 
 ```sh
 cmake -S cartmesh2d -B cartmesh2d/build -DCMAKE_BUILD_TYPE=Release
@@ -67,6 +67,61 @@ ctest --test-dir cartmesh2d/build --output-on-failure
 100% tests passed, 0 tests failed out of 1
 ```
 
+## 顶层仓库集成
+
+根 `CMakeLists.txt` 新增：
+
+```cmake
+option(CARTMESH_BUILD_2D "构建独立原生二维 cartmesh2d 子项目" OFF)
+```
+
+只有显式设置 `CARTMESH_BUILD_2D=ON` 时才执行 `add_subdirectory(cartmesh2d)`；默认值为 `OFF`，因此二维不会进入原有三维默认构建图。
+
+二维测试开关在顶层集成模式下跟随 `CARTMESH_BUILD_TESTS`。
+
+### 顶层 OFF 门
+
+```sh
+cmake -S . -B build-off \
+  -DCARTMESH_BUILD_TESTS=OFF \
+  -DCARTMESH_BUILD_BENCHMARKS=OFF \
+  -DCARTMESH_BUILD_2D=OFF
+```
+
+结果：配置和生成成功。
+
+### 顶层 ON 门
+
+```sh
+cmake -S . -B build-on \
+  -DCARTMESH_BUILD_TESTS=OFF \
+  -DCARTMESH_BUILD_BENCHMARKS=OFF \
+  -DCARTMESH_BUILD_2D=ON
+cmake --build build-on --target cartmesh2d
+```
+
+结果：配置、生成及 `cartmesh2d` 静态库编译成功。
+
+### 顶层二维测试门
+
+```sh
+cmake -S . -B build-on-tests \
+  -DCARTMESH_BUILD_TESTS=ON \
+  -DCARTMESH_BUILD_BENCHMARKS=OFF \
+  -DCARTMESH_BUILD_2D=ON
+cmake --build build-on-tests --target cartmesh2d_geometry_tests
+ctest --test-dir build-on-tests \
+  -R cartmesh2d_stage0_geometry_tests --output-on-failure
+```
+
+结果：
+
+```text
+[100%] Built target cartmesh2d_geometry_tests
+1/1 Test #20: cartmesh2d_stage0_geometry_tests ... Passed
+100% tests passed, 0 tests failed out of 1
+```
+
 ## 2D-0 验收对照
 
 - [x] 原生二维数据结构，不依赖三维 `Point3D` / `AABB3D`
@@ -80,11 +135,21 @@ ctest --test-dir cartmesh2d/build --output-on-failure
 - [x] duplicate consecutive point 最小失败案例
 - [x] C++20 target 可独立编译
 - [x] CTest 数值测试通过
+- [x] 顶层 `CARTMESH_BUILD_2D=OFF` 可选隔离
+- [x] 顶层 `CARTMESH_BUILD_2D=ON` 可编译二维 target
+- [x] 顶层 CTest 可发现并通过二维 2D-0 测试
+- [x] 三维算法源码零修改
 - [x] 未实现或冒充 Quadtree / Cut-cell / GUI
 
-## 尚未开始
+## 关闭结论
 
-以下全部属于后续阶段，本阶段明确不实现：
+`2D-0` 的数据结构、基础几何谓词、边界诊断、数值回归测试和工程构建入口均已达到本阶段验收标准。
+
+**Stage 2D-0：PASS / CLOSED。**
+
+未经用户明确批准，不得自动开始 `2D-1`。
+
+## 尚未开始
 
 - 2D-1 Cartesian background grid
 - 2D-2 Quadtree / 2:1 balance
@@ -93,5 +158,3 @@ ctest --test-dir cartmesh2d/build --output-on-failure
 - 2D-5 small-cell stabilization
 - 2D-6 quality / export
 - 2D-V visualization
-
-顶层仓库的 `CARTMESH_BUILD_2D` 可选接入仍应作为一个独立的小型构建集成改动处理；二维子项目本身目前可直接以 `cmake -S cartmesh2d ...` 独立构建，因此没有修改或回归三维构建路径。
