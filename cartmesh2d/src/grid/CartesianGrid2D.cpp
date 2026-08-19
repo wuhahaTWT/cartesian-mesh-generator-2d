@@ -97,6 +97,10 @@ CellClass classifyCartesianCell(const CartesianCell2D& cell,
 ClassificationSummary classifyGrid(UniformCartesianGrid2D& grid,
                                    const BoundaryLoop& boundary,
                                    const TolerancePolicy& tol) {
+    if (!boundary.diagnose(tol).valid()) {
+        throw std::invalid_argument("cannot classify grid against invalid boundary loop");
+    }
+
     ClassificationSummary summary;
     for (auto& cell : grid.cells()) {
         cell.classification = classifyCartesianCell(cell, boundary, tol);
