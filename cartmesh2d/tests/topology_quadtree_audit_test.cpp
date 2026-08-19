@@ -1,10 +1,13 @@
 #include "cartmesh2d/topology/Topology2D.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <numbers>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace cartmesh2d;
@@ -58,6 +61,40 @@ int main() {
     check(mesh.audit.unclassifiedBoundaryEdges == 0, "all boundary edges classified");
     check(mesh.audit.openCellLoops == 0, "all cell loops close");
     check(mesh.audit.areaMismatches == 0, "topology/source cell areas agree");
+
+    std::size_t independentDuplicateVertices = 0;
+    for (std::size_t i = 0; i < mesh.vertices.size(); ++i) {
+        for (std::size_t j = i + 1; j < mesh.vertices.size(); ++j) {
+            const auto& a = mesh.vertices[i].point;
+            const auto& b = mesh.vertices[j].point;
+            if (std::hypot(a.x - b.x, a.y - b.y) <= 1.0e-12) {
+                ++independentDuplicateVertices;
+            }
+        }
+    }
+    check(independentDuplicateVertices == 0,
+          "independent duplicate-vertex scan = 0");
+
+    std::set<std::pair<std::size_t, std::size_t>> canonicalEdges;
+    std::size_t independentDuplicateEdges = 0;
+    std::size_t badOwnerNeighbour = 0;
+    std::size_t badCellLoops = 0;
+    for (const auto& edge : mesh.edges) {
+        const auto canonical = std::minmax(edge.v0, edge.v1);
+        if (!canonicalEdges.insert(canonical).second) ++independentDuplicateEdges;
+        if (edge.neighbour && edge.owner == *edge.neighbour) ++badOwnerNeighbour;
+    }
+    for (const auto& cell : mesh.cells) {
+        if (cell.vertices.size() < 3 || cell.vertices.size() != cell.edges.size()) {
+            ++badCellLoops;
+        }
+    }
+    check(independentDuplicateEdges == 0,
+          "independent duplicate-edge scan = 0");
+    check(badOwnerNeighbour == 0,
+          "independent owner-neighbour audit = 0");
+    check(badCellLoops == 0,
+          "independent cell-loop audit = 0");
 
     std::size_t internalEdges = 0;
     std::size_t embeddedEdges = 0;
