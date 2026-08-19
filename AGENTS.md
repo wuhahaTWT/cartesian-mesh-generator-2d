@@ -24,3 +24,11 @@
   low-volume-ratio faces、最小失败案例、拟修改文件、停线和验收命令，等待用户确认。
 - `STAGE7_HYBRID_CARTESIAN_CODEX_PLAN_CN.md` 只作后续架构约束和接口参考。在 Stage 6 完成并由用户明确确认前，不得实现 boundary layer、prism layer、surface projection、hybrid transition 或其他 Stage 7 功能。
 - `docs/STAGE6_PLAN.md` 和 `docs/STAGE6_VERIFICATION.md` 记录的是此前 Stage 6 尝试及其失败证据，不是当前获准继续执行的计划。
+
+## 二维并行子项目例外（2026-08-19）
+
+- 仓库新增 `cartmesh2d/` 原生二维子项目。它与三维 Stage 6/7 并行，但实现必须封闭。
+- **只有用户明确要求二维任务时**，允许进入 `cartmesh2d/`；此时 `cartmesh2d/AGENTS.md` 是二维任务的直接执行规则。
+- 二维任务不得修改三维 `include/cartmesh/**`、`src/**`、`apps/**`、`tests/**` 核心代码；顶层只允许必要的 CMake 接入和文档链接。
+- 三维任务仍严格遵守当前 Stage 6 计划，不得因为二维子项目存在而提前或替换 Stage 7。
+- 不得把三维代码 `z=0`、模板化或降维包装后称为“原生二维”。
