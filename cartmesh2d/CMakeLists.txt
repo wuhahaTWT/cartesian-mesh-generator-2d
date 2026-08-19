@@ -6,6 +6,7 @@ add_library(cartmesh2d
     src/geometry/Geometry2D.cpp
     src/grid/CartesianGrid2D.cpp
     src/quadtree/Quadtree2D.cpp
+    src/cutcell/CutCell2D.cpp
 )
 add_library(cartmesh2d::cartmesh2d ALIAS cartmesh2d)
 
@@ -40,7 +41,15 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_quadtree_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_quadtree_tests PRIVATE cxx_std_20)
 
-    foreach(target cartmesh2d_geometry_tests cartmesh2d_grid_tests cartmesh2d_quadtree_tests)
+    add_executable(cartmesh2d_cutcell_tests tests/cutcell_test.cpp)
+    target_link_libraries(cartmesh2d_cutcell_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_cutcell_tests PRIVATE cxx_std_20)
+
+    foreach(target
+            cartmesh2d_geometry_tests
+            cartmesh2d_grid_tests
+            cartmesh2d_quadtree_tests
+            cartmesh2d_cutcell_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -53,4 +62,5 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage0_geometry_tests COMMAND cartmesh2d_geometry_tests)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
+    add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
 endif()
