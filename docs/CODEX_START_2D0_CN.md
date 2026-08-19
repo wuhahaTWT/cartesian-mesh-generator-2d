@@ -1,4 +1,4 @@
-# Codex 阶段状态：2D-0 ~ 2D-4 已关闭
+# Codex 阶段状态：2D-0 ~ 2D-4 已关闭，2D-5 进行中
 
 ## 当前状态
 
@@ -7,7 +7,10 @@
 - Stage 2D-2：PASS / CLOSED
 - Stage 2D-3：PASS / CLOSED
 - Stage 2D-4：PASS / CLOSED
-- Stage 2D-5：NOT STARTED
+- Stage 2D-5A：PASS（检测 / alpha histogram / best-neighbour candidate）
+- Stage 2D-5B：NOT STARTED（topology-safe agglomeration）
+- Stage 2D-5：IN PROGRESS
+- Stage 2D-6：NOT STARTED
 
 开始或继续任何二维修改前必须阅读：
 
@@ -21,7 +24,8 @@
 8. `cartmesh2d/docs/STAGE2D1_VERIFICATION.md`；
 9. `cartmesh2d/docs/STAGE2D2_VERIFICATION.md`；
 10. `cartmesh2d/docs/STAGE2D3_VERIFICATION.md`；
-11. `cartmesh2d/docs/STAGE2D4_VERIFICATION.md`。
+11. `cartmesh2d/docs/STAGE2D4_VERIFICATION.md`；
+12. `cartmesh2d/docs/STAGE2D5_VERIFICATION.md`。
 
 ## 已关闭能力
 
@@ -45,31 +49,41 @@
 
 全局 `Vertex2D / Edge2D / TopologyCell2D`、owner/neighbour、boundary patch、coarse-fine hanging-node edge splitting、deterministic topology IDs 和完整 topology audit。
 
-最终 2D-4 根目录门禁：
+## 2D-5A 当前能力
+
+新增 `SmallCell2D` 分析模块：
+
+- configurable area-fraction threshold；
+- Cut-cell alpha histogram；
+- deterministic small-cell marking；
+- 通过 Stage 2D-4 internal edges 寻找邻居；
+- 按 stable target、shared interface length、target alpha、target area、topology id 确定最佳 candidate；
+- 无候选 tiny cell 显式 `Unresolved`；
+- shifted-circle 自适应真实 fixture 在 threshold=0.1 下稳定检测 8 个 small cells，minimum alpha 约 0.00120311，unresolved=0。
+
+当前根目录二维回归：
 
 ```text
-2D-0 / 2D-1 / 2D-2 / 2D-3 / 2D-4
-100% tests passed, 0 tests failed out of 7
+2D-0 / 2D-1 / 2D-2 / 2D-3 / 2D-4 / 2D-5A
+100% tests passed, 0 tests failed out of 8
 ```
 
-并且 adaptive-circle topology 独立审计满足：
+## 当前停线
 
-- duplicate vertex = 0
-- duplicate edge = 0
-- orphan internal edge = 0
-- non-manifold edge = 0
-- unclassified boundary edge = 0
-- open cell loop = 0
-- area mismatch = 0
+Stage 2D-5 尚未 CLOSED。
 
-## 停线要求
+下一允许工作仅为 **2D-5B topology-safe agglomeration**：
 
-未经用户明确批准，不得自动开始 Stage 2D-5。
+- 基于 2D-5A candidate graph 聚合；
+- 聚合前后流体面积守恒；
+- 重建合法 polygon / topology；
+- Stage 2D-4 audit 重新 PASS；
+- 不能产生 duplicate/non-manifold/open-loop；
+- 无法安全聚合必须显式保留失败状态。
 
-尤其禁止提前实现：
+不得提前实现：
 
-- small-cell detection / agglomeration
-- quality/export
-- GUI / visualization
+- 2D-6 quality/export；
+- GUI / visualization。
 
 三维核心目录仍不得为二维功能修改。
