@@ -74,4 +74,55 @@ struct SmallCellReport2D {
     const SmallCellPolicy2D& policy = {},
     const TolerancePolicy& tol = {});
 
+enum class AgglomerationIssueCode2D {
+    InvalidInput,
+    MissingCandidate,
+    SmallTargetUnsupported,
+    InvalidTopologyReference,
+    DisconnectedBoundary,
+    MultipleBoundaryLoops,
+    DegenerateMergedPolygon,
+    AreaMismatch,
+    RebuiltTopologyInvalid
+};
+
+struct AgglomerationIssue2D {
+    AgglomerationIssueCode2D code;
+    std::size_t objectId = 0;
+    std::string message;
+};
+
+struct AgglomeratedCell2D {
+    std::size_t id = 0;
+    std::vector<std::size_t> memberTopologyCellIds;
+    std::vector<std::size_t> memberSourceIds;
+    Polygon2D polygon;
+    double area = 0.0;
+    std::optional<Point2D> centroid;
+};
+
+struct AgglomerationResult2D {
+    std::size_t inputCellCount = 0;
+    std::size_t outputCellCount = 0;
+    std::size_t mergedSmallCellCount = 0;
+    double totalAreaBefore = 0.0;
+    double totalAreaAfter = 0.0;
+    double areaError = 0.0;
+    std::vector<AgglomeratedCell2D> cells;
+    TopologyMesh2D topology;
+    std::vector<AgglomerationIssue2D> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && topology.valid();
+    }
+};
+
+[[nodiscard]] AgglomerationResult2D agglomerateSmallCells(
+    const std::vector<CutCell2D>& cutCells,
+    const TopologyMesh2D& topology,
+    const SmallCellReport2D& analysis,
+    const Domain2D& domain,
+    const BoundaryLoop& boundary,
+    const TolerancePolicy& tol = {});
+
 } // namespace cartmesh2d
