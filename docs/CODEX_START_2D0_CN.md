@@ -1,66 +1,52 @@
-# Codex 执行记录：Stage 2D-0 已关闭
-
-> 本文件最初用于二维架构基线确认后启动 2D-0。Stage 2D-0 现已完成并验收关闭。
+# Codex 阶段状态：2D-0 / 2D-1 已关闭
 
 ## 当前状态
 
-`cartmesh2d` 的 **Stage 2D-0：二维几何内核** 已完成，正式验证记录见：
+- Stage 2D-0：PASS / CLOSED
+- Stage 2D-1：PASS / CLOSED
+- Stage 2D-2：尚未开始
 
-- `cartmesh2d/docs/STAGE2D0_VERIFICATION.md`
+开始或继续任何二维修改前必须阅读：
 
-未经用户明确批准，不得继续实现 `2D-1`。
+1. 根目录 `AGENTS.md` 中二维并行子项目例外；
+2. `cartmesh2d/AGENTS.md`；
+3. `cartmesh2d/docs/PROJECT_BRIEF_CN.md`；
+4. `cartmesh2d/docs/ARCHITECTURE_CN.md`；
+5. `cartmesh2d/docs/STAGE_PLAN_CN.md`；
+6. `cartmesh2d/docs/ACCEPTANCE_CN.md`；
+7. `cartmesh2d/docs/STAGE2D0_VERIFICATION.md`；
+8. `cartmesh2d/docs/STAGE2D1_VERIFICATION.md`。
 
-## 2D-0 已完成内容
+## 已关闭能力
 
-- `Point2D`, `Vector2D`
-- `Segment2D`
-- `AABB2D`
-- `Polygon2D`
-- `BoundaryLoop`
-- tolerance policy/config
-- cross/dot/orientation
-- signed area / area
-- polygon centroid
-- point-on-segment
-- segment intersection：`None / Point / Overlap`
-- point-in-polygon：`Inside / Outside / Boundary`
-- BoundaryLoop diagnostics：
-  - too few unique vertices
-  - duplicate consecutive vertex
-  - zero-length edge
-  - self-intersection
-  - CW/CCW orientation
-  - normalization to project-standard CCW when safe
-- 独立 CMake / CTest 数值验证
-- 顶层 `CARTMESH_BUILD_2D` 可选构建接入
+2D-0 已提供原生二维几何内核、鲁棒线段相交、point-in-polygon 和 BoundaryLoop 诊断。
 
-## 已通过测试
+2D-1 已提供：
 
-- rectangle
-- triangle
-- concave L polygon
-- discretized circle
-- crossing segments
-- endpoint touching segments
-- parallel non-intersecting segments
-- collinear overlapping segments
-- bow-tie self-intersecting loop
-- duplicate consecutive point
+- `Domain2D`
+- `CartesianCell2D`
+- `UniformCartesianGrid2D`
+- Nx × Ny / spacing-based 均匀 Cartesian 网格
+- row-major 确定性 cell IDs
+- `Outside / Inside / Intersected` 分类
+- closed-AABB boundary intersection
+- tangent / grid-line / corner-touch 明确规则
+- invalid boundary 分类前拒绝
+- rectangle / circle 可复核统计
 
-## 隔离约束仍然有效
+2D-0 与 2D-1 已从仓库根目录通过 CMake + CTest 集成门禁。
 
-禁止为二维功能修改：
+## 停线要求
 
-- `include/cartmesh/**`
-- 根 `src/**`
-- 根 `apps/**`
-- 根 `tests/**`
-- 三维 Stage 6/7 算法实现
+未经用户明确批准，不得自动开始 Stage 2D-2。
 
-同时继续禁止在后续核心阶段完成前做 GUI/绘图产品化。
+尤其禁止提前实现：
 
-## 下一阶段
+- Quadtree refinement
+- 2:1 balance
+- distance / curvature refinement
+- Cut-cell polygon
+- 全局 topology
+- GUI / visualization
 
-只有在用户明确批准后，才允许按照 `STAGE_PLAN_CN.md` 开始：
-
-**2D-1：Cartesian background grid + inside/outside/intersected classification**。
+三维核心目录仍不得为二维功能修改。
