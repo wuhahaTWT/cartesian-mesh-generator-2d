@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <numbers>
 #include <string>
 #include <vector>
 
@@ -127,6 +128,44 @@ int main() {
     check(!isolated.valid(), "unresolved small cell makes the report non-valid");
     check(isolated.smallCellCount == 1 && isolated.unresolvedCount == 1,
           "isolated small cell is counted as unresolved");
+
+    std::vector<Point2D> shiftedCircle;
+    constexpr std::size_t circleSegments = 64;
+    for (std::size_t i = 0; i < circleSegments; ++i) {
+        const double angle = 2.0 * std::numbers::pi * static_cast<double>(i) /
+                             static_cast<double>(circleSegments);
+        shiftedCircle.push_back({0.07 + std::cos(angle), 0.03 + std::sin(angle)});
+    }
+    BoundaryLoop circleBoundary(shiftedCircle);
+    const Domain2D circleDomain{{{-2.0,-2.0},{2.0,2.0}}};
+    Quadtree2D circleTree(circleDomain, 4, circleBoundary);
+    QuadtreeRefinementPolicy2D circleRefinement;
+    circleRefinement.boundaryLevel = 4;
+    circleTree.refine(circleBoundary, circleRefinement);
+    const auto circleBalance = circleTree.enforceTwoToOneBalance(circleBoundary);
+    check(circleBalance.violationsAfter == 0, "shifted-circle Quadtree is 2:1 balanced");
+    std::vector<CutCell2D> circleCuts;
+    for (const auto& leaf : circleTree.leaves()) {
+        circleCuts.push_back(buildCutCell(leaf, circleBoundary));
+    }
+    const auto circleTopology = buildGlobalTopology(circleCuts, circleDomain, circleBoundary);
+    check(circleTopology.valid(), "shifted-circle topology is valid");
+    SmallCellPolicy2D circlePolicy;
+    circlePolicy.areaFractionThreshold = 0.10;
+    const auto circleReport = analyzeSmallCells(circleCuts, circleTopology, circlePolicy);
+    check(circleReport.valid(), "shifted-circle small-cell report is valid");
+    check(circleReport.smallCellCount == 8, "shifted circle exposes eight alpha<0.1 cells");
+    check(circleReport.unresolvedCount == 0, "all shifted-circle small cells have candidates");
+    double minSmallAlpha = 1.0;
+    std::size_t candidatesTargetingSmall = 0;
+    for (const auto& record : circleReport.records) {
+        if (record.status == SmallCellStatus2D::CandidateFound) {
+            minSmallAlpha = std::min(minSmallAlpha, record.areaFraction);
+            if (record.targetIsSmall) ++candidatesTargetingSmall;
+        }
+    }
+    check(minSmallAlpha < 0.002, "real adaptive fixture contains a genuinely tiny cell");
+    check(candidatesTargetingSmall == 0, "stable neighbours are preferred for all shifted-circle tiny cells");
 
     SmallCellPolicy2D badPolicy;
     badPolicy.areaFractionThreshold = 1.0;
