@@ -9,6 +9,7 @@ add_library(cartmesh2d
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
     src/stabilization/SmallCell2D.cpp
+    src/stabilization/Agglomeration2D.cpp
 )
 add_library(cartmesh2d::cartmesh2d ALIAS cartmesh2d)
 
@@ -63,6 +64,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_small_cell_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_small_cell_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_agglomeration_tests tests/agglomeration_test.cpp)
+    target_link_libraries(cartmesh2d_agglomeration_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_agglomeration_tests PRIVATE cxx_std_20)
+
     foreach(target
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
@@ -71,7 +76,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_cutcell_quadtree_audit_tests
             cartmesh2d_topology_tests
             cartmesh2d_topology_quadtree_audit_tests
-            cartmesh2d_small_cell_tests)
+            cartmesh2d_small_cell_tests
+            cartmesh2d_agglomeration_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -91,4 +97,5 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage4_adaptive_topology_audit_tests
              COMMAND cartmesh2d_topology_quadtree_audit_tests)
     add_test(NAME cartmesh2d_stage5a_small_cell_tests COMMAND cartmesh2d_small_cell_tests)
+    add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
 endif()
