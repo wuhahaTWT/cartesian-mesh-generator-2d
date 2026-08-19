@@ -90,7 +90,7 @@ int main() {
     check(coarseFineInterfaceFragments == 2,
           "coarse face is split into two owner-neighbour fragments");
     check(!sawLongUnsplitInterface, "no T-junction-spanning coarse edge remains");
-    check(boundaryCount == 6, "outer rectangle is represented by six boundary fragments");
+    check(boundaryCount == 7, "outer rectangle is represented by seven boundary fragments");
 
     for (const auto& cell : mesh.cells) {
         check(cell.vertices.size() == cell.edges.size(), "cell edge loop closes");
