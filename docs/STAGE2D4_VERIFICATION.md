@@ -2,7 +2,7 @@
 
 ## 状态
 
-**IN PROGRESS — 全局 topology 核心实现和两类硬回归 fixture 已加入；等待完整分支编译/CTest 与最终独立拓扑审计后关闭。**
+**IN PROGRESS — 全局 topology 核心、coarse-fine T-junction 处理、真实 Cut-cell 全链路和根 CMake 集成门禁已完成；等待用户显式“验证-4”后对当前最终分支再跑一次封口门禁并正式 CLOSED。**
 
 当前严格停留在 2D-4；未实现 small-cell 聚合、quality/export 或 visualization。
 
@@ -80,59 +80,115 @@
 - >2 incident cells -> non-manifold，显式失败；
 - boundary edge 无法分类 -> `Unclassified` + issue，显式失败。
 
-## 已加入 fixture 1：人工 coarse-fine 接口
+## fixture 1：人工 coarse-fine 接口
 
 Domain `[0,2] x [0,1]`：
 
 - 左侧一个 `1 x 1` coarse cell；
 - 右侧两个 `1 x 0.5` fine cells。
 
-硬检查：
+实际拓扑：
 
-- hanging node `(1,0.5)` 成为 global vertex；
-- coarse interface 被拆成两条长度 `0.5` 的 internal fragments；
-- 两条 fragment 均有 owner + neighbour；
-- 不存在长度 `1.0` 的未拆 coarse interface edge；
-- 每个 cell vertex/edge loop 闭合；
-- canonical edge 无重复；
-- global vertex 无重复；
-- topology area 与 source cell area 一致；
-- duplicate source cell 显式拒绝。
+- vertices = `8`
+- edges = `10`
+- internal edge fragments = `3`
+- outer boundary fragments = `7`
 
-## 已加入 fixture 2：自适应圆形 Cut-cell 全链路
+其中 `x=1` coarse-fine interface 被正确拆成两条长度 `0.5` 的 internal edge：
+
+- coarse <-> lower fine
+- coarse <-> upper fine
+
+不存在跨过 `(1,0.5)` hanging node 的长度 `1.0` 长 edge。
+
+原测试曾错误写成 outer boundary fragments = 6；打印完整 edge 列表后确认数学上应为 7（left 1 + bottom 2 + top 2 + right 2），已修正测试期望，算法无需修改。
+
+## fixture 2：自适应圆形 Cut-cell 全链路
 
 `64-segment circle -> Quadtree -> 2:1 balance -> CutCell2D -> global topology`
 
-目标检查：
+独立验收统计：
 
-- 所有非空 Cut-cell 都进入 topology；
-- unsupported = 0；
-- internal owner/neighbour edge > 0；
-- embedded boundary edge > 0；
-- 圆位于 domain 内，因此 domain-boundary edge = 0；
-- duplicate/orphan/non-manifold/unclassified/open-loop/area-mismatch 全部 = 0；
-- topology 总流体面积等于 2D-3 Cut-cell 总流体面积 / 输入 polygon 面积；
-- 重复运行 vertex/edge/cell 顺序确定。
+```text
+vertices = 125
+edges = 172
+cells = 48
+internal edges = 84
+embedded-boundary edges = 88
+domain-boundary edges = 0
+
+duplicate vertex = 0
+duplicate edge = 0
+bad owner/neighbour = 0
+bad cell loop = 0
+
+TopologyAudit2D:
+duplicateVertices = 0
+duplicateEdges = 0
+orphanInternalEdges = 0
+nonManifoldEdges = 0
+unclassifiedBoundaryEdges = 0
+openCellLoops = 0
+areaMismatches = 0
+
+global fluid-area error = 8.88178e-16
+```
+
+除了 builder 自身 `TopologyAudit2D` 外，永久回归中又加入独立 duplicate-vertex、duplicate-edge、owner/neighbour 和 cell-loop 扫描，避免只相信构造器自身报告。
+
+## 根目录集成门禁
+
+从仓库根 CMake 开启二维，并显式构建全部二维测试 target：
+
+```text
+cartmesh2d_stage0_geometry_tests .................. Passed
+cartmesh2d_stage1_grid_tests ...................... Passed
+cartmesh2d_stage2_quadtree_tests .................. Passed
+cartmesh2d_stage3_cutcell_tests ................... Passed
+cartmesh2d_stage3_quadtree_cutcell_audit_tests .... Passed
+cartmesh2d_stage4_topology_tests .................. Passed
+cartmesh2d_stage4_quadtree_topology_audit_tests ... Passed
+
+100% tests passed, 0 tests failed out of 7
+```
+
+说明 2D-4 不是 standalone-only；它已通过根工程集成路径。
+
+## 分支隔离审计
+
+当前 `agent/native-2d-baseline` 相对 `main` 的改动仍只包含：
+
+- 根 `AGENTS.md` 的二维例外说明；
+- 根 `CMakeLists.txt` 的二维可选入口；
+- `cartmesh2d/**`。
+
+未修改：
+
+- `include/cartmesh/**`
+- 根 `src/**`
+- 根 `apps/**`
+- 根 `tests/**`
+
+三维 Stage 6 / Stage 7 算法没有被二维拓扑工作改动。
 
 ## 当前门禁状态
-
-已完成代码与测试定义：
 
 - [x] global vertex model
 - [x] global edge model
 - [x] owner / neighbour model
 - [x] boundary patch model
 - [x] coarse-fine edge splitting algorithm
-- [x] Cut-cell embedded boundary integration path
+- [x] Cut-cell embedded boundary integration
 - [x] deterministic ordering strategy
 - [x] coarse-fine T-junction fixture
 - [x] adaptive Cut-cell topology fixture
-- [ ] 当前 GitHub 完整 branch CMake build
-- [ ] 2D-0/1/2/3/4 全量 CTest
-- [ ] 最终 duplicate vertex/edge 独立审计
-- [ ] 最终 branch isolation audit
-
-在以上最终门禁完成前，Stage 2D-4 不标记 CLOSED。
+- [x] root CMake build
+- [x] 2D-0/1/2/3/4 全量 CTest
+- [x] duplicate vertex/edge 独立审计
+- [x] owner/neighbour 独立审计
+- [x] cell-loop 独立审计
+- [x] branch isolation audit
+- [ ] 用户显式“验证-4”后的最终 current-head 复跑与 CLOSED 标记
 
 ## 明确未开始
 
