@@ -51,6 +51,24 @@ struct DirectedBoundaryUse2D {
     return std::abs(a - b) <= eps;
 }
 
+[[nodiscard]] bool removableCollinearVertex(const Point2D& prev,
+                                            const Point2D& cur,
+                                            const Point2D& next,
+                                            const TolerancePolicy& tol) noexcept {
+    const Vector2D a = cur - prev;
+    const Vector2D b = next - cur;
+    const double lenA = std::sqrt(squaredNorm(a));
+    const double lenB = std::sqrt(squaredNorm(b));
+    const double coordinateScale =
+        std::max({1.0, std::abs(prev.x), std::abs(prev.y),
+                  std::abs(cur.x), std::abs(cur.y),
+                  std::abs(next.x), std::abs(next.y)});
+    const double lengthEps = tol.scale(coordinateScale);
+    if (lenA <= lengthEps || lenB <= lengthEps) return false;
+    const double sinAngle = std::abs(cross(a, b)) / (lenA * lenB);
+    return sinAngle <= tol.scale(1.0) && dot(a, b) >= 0.0;
+}
+
 [[nodiscard]] std::optional<Polygon2D> polygonFromTopologyGroup(
     const std::vector<std::size_t>& members,
     const TopologyMesh2D& topology,
@@ -176,9 +194,21 @@ struct DirectedBoundaryUse2D {
         std::reverse(polygon.vertices.begin(), polygon.vertices.end());
     }
 
-    // Keep the exact exterior fragments inherited from the audited source topology.
-    // Tolerance-based collinear simplification can erase a genuine very short embedded
-    // boundary segment and replace it with a chord that no longer lies on the input boundary.
+    bool simplified = true;
+    while (simplified && polygon.vertices.size() > 3) {
+        simplified = false;
+        for (std::size_t i = 0; i < polygon.vertices.size(); ++i) {
+            const std::size_t prev = (i + polygon.vertices.size() - 1) % polygon.vertices.size();
+            const std::size_t nextIndex = (i + 1) % polygon.vertices.size();
+            if (removableCollinearVertex(polygon.vertices[prev], polygon.vertices[i],
+                                         polygon.vertices[nextIndex], tol)) {
+                polygon.vertices.erase(polygon.vertices.begin() + static_cast<std::ptrdiff_t>(i));
+                simplified = true;
+                break;
+            }
+        }
+    }
+
     const double area = polygon.area();
     if (!(area > tol.scale(std::max(1.0, area)))) {
         issue = {AgglomerationIssueCode2D::DegenerateMergedPolygon, start,
