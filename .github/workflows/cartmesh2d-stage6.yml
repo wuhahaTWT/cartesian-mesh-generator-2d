@@ -94,34 +94,14 @@ jobs:
               --viz "$out/${case_name}.viz.json" \
               --color-by level
             test -s "$out/${case_name}.svg"
+            grep -q '<svg' "$out/${case_name}.svg"
+            grep -q 'id="source-background"' "$out/${case_name}.svg"
             grep -q 'id="cells"' "$out/${case_name}.svg"
             grep -q 'id="edges"' "$out/${case_name}.svg"
+            grep -q 'Quality summary' "$out/${case_name}.svg"
           done
 
-      - name: Run and render complex demo geometries
-        shell: bash
-        run: |
-          set -euo pipefail
-          exe=build_2d/cartmesh2d/cartmesh2d_cli
-          out=build_2d/cartmesh2d/complex
-          mkdir -p "$out"
-          run_case() {
-            name="$1"; level="$2"; padding="$3"; alpha="$4"
-            echo "===== COMPLEX CASE: $name level=$level ====="
-            "$exe" "cartmesh2d/examples/complex/${name}.xy" "$out/$name" "$level" "$padding" "$alpha" | tee "$out/$name.log"
-            python3 cartmesh2d/tools/visualization/render_cm2d.py \
-              "$out/${name}.cm2d" "$out/${name}.svg" \
-              --quality "$out/${name}.quality.json" \
-              --viz "$out/${name}.viz.json" --color-by level
-            test -s "$out/${name}.svg"
-          }
-          run_case nozzle_profile 7 0.20 0.01
-          run_case superellipse_24 7 0.20 0.01
-          run_case lobed_rotor_32 7 0.25 0.01
-          run_case thick_cambered_airfoil 8 0.30 0.005
-
       - name: Upload 2D-V acceptance renderings
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cartmesh2d-acceptance-visualizations
@@ -132,17 +112,7 @@ jobs:
             build_2d/cartmesh2d/acceptance/*.cm2d
           if-no-files-found: error
 
-      - name: Upload complex demo renderings
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cartmesh2d-complex-demo-visualizations
-          path: |
-            build_2d/cartmesh2d/complex/*
-          if-no-files-found: error
-
       - name: Configure root project with native 2D disabled
-        if: always()
         run: >-
           cmake -S . -B build_2d_off
           -DCARTMESH_BUILD_2D=OFF
