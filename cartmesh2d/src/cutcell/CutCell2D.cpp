@@ -14,6 +14,31 @@ namespace {
     return (box.max.x - box.min.x) * (box.max.y - box.min.y);
 }
 
+[[nodiscard]] double areaTolerance(double referenceArea,
+                                   const TolerancePolicy& tol) noexcept {
+    return std::max(tol.absolute * tol.absolute,
+                    tol.relative * std::abs(referenceArea));
+}
+
+[[nodiscard]] std::optional<Point2D> cutPolygonCentroid(
+    const Polygon2D& polygon, double areaEps) noexcept {
+    if (polygon.vertices.size() < 3) return std::nullopt;
+
+    double twiceArea = 0.0;
+    double cx = 0.0;
+    double cy = 0.0;
+    for (std::size_t i = 0; i < polygon.vertices.size(); ++i) {
+        const auto& a = polygon.vertices[i];
+        const auto& b = polygon.vertices[(i + 1) % polygon.vertices.size()];
+        const double term = a.x * b.y - b.x * a.y;
+        twiceArea += term;
+        cx += (a.x + b.x) * term;
+        cy += (a.y + b.y) * term;
+    }
+    if (std::abs(twiceArea) <= 2.0 * areaEps) return std::nullopt;
+    return Point2D{cx / (3.0 * twiceArea), cy / (3.0 * twiceArea)};
+}
+
 [[nodiscard]] Polygon2D rectanglePolygon(const AABB2D& box) {
     return {{{box.min.x, box.min.y},
              {box.max.x, box.min.y},
@@ -65,9 +90,19 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
             const Point2D& next = vertices[(i + 1) % vertices.size()];
             const Vector2D a = cur - prev;
             const Vector2D b = next - cur;
-            const double magnitude = std::sqrt(squaredNorm(a) * squaredNorm(b));
-            const double eps = tol.scale(std::max(1.0, magnitude));
-            if (std::abs(cross(a, b)) <= eps && dot(a, b) >= -eps) {
+            const double lenA = std::sqrt(squaredNorm(a));
+            const double lenB = std::sqrt(squaredNorm(b));
+            const double coordinateScale =
+                std::max({1.0, std::abs(prev.x), std::abs(prev.y),
+                          std::abs(cur.x), std::abs(cur.y),
+                          std::abs(next.x), std::abs(next.y)});
+            const double lengthEps = tol.scale(coordinateScale);
+            if (lenA <= lengthEps || lenB <= lengthEps) {
+                out.push_back(cur);
+                continue;
+            }
+            const double sinAngle = std::abs(cross(a, b)) / (lenA * lenB);
+            if (sinAngle <= tol.scale(1.0) && dot(a, b) >= 0.0) {
                 changed = true;
                 continue;
             }
@@ -75,6 +110,30 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
         }
         vertices.swap(out);
     }
+}
+
+[[nodiscard]] bool edgesAreAdjacent(std::size_t i, std::size_t j,
+                                    std::size_t edgeCount) noexcept {
+    if (i == j) return true;
+    if (i + 1 == j || j + 1 == i) return true;
+    return (i == 0 && j + 1 == edgeCount) ||
+           (j == 0 && i + 1 == edgeCount);
+}
+
+[[nodiscard]] bool simplePolygonLoop(const Polygon2D& polygon,
+                                     const TolerancePolicy& tol) noexcept {
+    const std::size_t n = polygon.vertices.size();
+    if (n < 3) return false;
+    for (std::size_t i = 0; i < n; ++i) {
+        const Segment2D a{polygon.vertices[i], polygon.vertices[(i + 1) % n]};
+        if (pointNear(a.a, a.b, tol)) return false;
+        for (std::size_t j = i + 1; j < n; ++j) {
+            if (edgesAreAdjacent(i, j, n)) continue;
+            const Segment2D b{polygon.vertices[j], polygon.vertices[(j + 1) % n]};
+            if (intersectSegments(a, b, tol).kind != SegmentIntersectionKind::None) return false;
+        }
+    }
+    return true;
 }
 
 [[nodiscard]] std::optional<Segment2D> clipSegmentToAABB(
@@ -266,7 +325,7 @@ struct LocalIntersectionResult {
     }
 
     std::vector<bool> used(edges.size(), false);
-    const double areaEps = tol.scale(std::max(1.0, backgroundArea(box)));
+    const double areaEps = areaTolerance(backgroundArea(box), tol);
     for (std::size_t startEdge = 0; startEdge < edges.size(); ++startEdge) {
         if (used[startEdge]) continue;
         std::vector<Point2D> loop;
@@ -297,8 +356,7 @@ struct LocalIntersectionResult {
         Polygon2D polygon{loop};
         if (polygon.area() <= areaEps) continue;
         if (polygon.signedArea() < 0.0) std::reverse(polygon.vertices.begin(), polygon.vertices.end());
-        BoundaryLoop diagnosticsLoop(polygon.vertices);
-        if (!diagnosticsLoop.diagnose(tol).valid()) {
+        if (!simplePolygonLoop(polygon, tol)) {
             result.graphInvalid = true;
             return result;
         }
@@ -316,7 +374,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     result.backgroundBounds = box;
 
     const double fullArea = backgroundArea(box);
-    if (!(fullArea > tol.scale(std::max(1.0, std::abs(fullArea))))) {
+    if (!(fullArea > areaTolerance(fullArea, tol))) {
         result.kind = CutCellKind::Unsupported;
         result.issues.push_back({CutCellIssueCode::InvalidBackgroundCell,
                                  "background cell has non-positive area"});
@@ -339,6 +397,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
         return result;
     }
 
+    const double areaEps = areaTolerance(fullArea, tol);
     if (classification == CellClass::Outside) {
         result.kind = CutCellKind::Empty;
         return result;
@@ -348,7 +407,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
         result.fluidPolygon = rectanglePolygon(box);
         result.area = fullArea;
         result.areaFraction = 1.0;
-        result.centroid = result.fluidPolygon.centroid(tol);
+        result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
         return result;
     }
 
@@ -369,7 +428,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
             result.fluidPolygon = rectanglePolygon(box);
             result.area = fullArea;
             result.areaFraction = 1.0;
-            result.centroid = result.fluidPolygon.centroid(tol);
+            result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
             result.embeddedBoundary.clear();
         } else {
             result.kind = CutCellKind::Empty;
@@ -386,7 +445,6 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
 
     result.fluidPolygon = local.components.front();
     result.area = result.fluidPolygon.area();
-    const double areaEps = tol.scale(std::max(1.0, fullArea));
     if (result.area <= areaEps) {
         result.kind = CutCellKind::Empty;
         result.fluidPolygon.vertices.clear();
@@ -403,7 +461,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     }
 
     result.areaFraction = std::clamp(result.area / fullArea, 0.0, 1.0);
-    result.centroid = result.fluidPolygon.centroid(tol);
+    result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
     if (!result.centroid) {
         result.kind = CutCellKind::Unsupported;
         result.issues.push_back({CutCellIssueCode::DegeneratePolygon,
@@ -416,7 +474,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
         result.fluidPolygon = rectanglePolygon(box);
         result.area = fullArea;
         result.areaFraction = 1.0;
-        result.centroid = result.fluidPolygon.centroid(tol);
+        result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
         result.embeddedBoundary.clear();
         return result;
     }
