@@ -98,6 +98,46 @@ const char* smallStatusName(SmallCellStatus2D status) noexcept {
     return "unknown";
 }
 
+const char* topologyIssueName(TopologyIssueCode2D code) noexcept {
+    switch (code) {
+    case TopologyIssueCode2D::InvalidCell: return "InvalidCell";
+    case TopologyIssueCode2D::DegenerateEdge: return "DegenerateEdge";
+    case TopologyIssueCode2D::DuplicateCellSource: return "DuplicateCellSource";
+    case TopologyIssueCode2D::OrphanInternalEdge: return "OrphanInternalEdge";
+    case TopologyIssueCode2D::NonManifoldEdge: return "NonManifoldEdge";
+    case TopologyIssueCode2D::UnclassifiedBoundaryEdge: return "UnclassifiedBoundaryEdge";
+    case TopologyIssueCode2D::OpenCellLoop: return "OpenCellLoop";
+    case TopologyIssueCode2D::AreaMismatch: return "AreaMismatch";
+    }
+    return "Unknown";
+}
+
+void printTopologyDiagnostics(const TopologyMesh2D& topology) {
+    const auto& audit = topology.audit;
+    std::cerr << "topology_audit"
+              << " duplicateVertices=" << audit.duplicateVertices
+              << " duplicateEdges=" << audit.duplicateEdges
+              << " orphanInternalEdges=" << audit.orphanInternalEdges
+              << " nonManifoldEdges=" << audit.nonManifoldEdges
+              << " unclassifiedBoundaryEdges=" << audit.unclassifiedBoundaryEdges
+              << " openCellLoops=" << audit.openCellLoops
+              << " areaMismatches=" << audit.areaMismatches << '\n';
+    std::cerr << "topology_counts vertices=" << topology.vertices.size()
+              << " edges=" << topology.edges.size()
+              << " cells=" << topology.cells.size()
+              << " issues=" << topology.issues.size() << '\n';
+    const std::size_t limit = std::min<std::size_t>(topology.issues.size(), 32);
+    for (std::size_t i = 0; i < limit; ++i) {
+        const auto& issue = topology.issues[i];
+        std::cerr << "topology_issue[" << i << "] code=" << topologyIssueName(issue.code)
+                  << " object=" << issue.objectId
+                  << " message=" << issue.message << '\n';
+    }
+    if (topology.issues.size() > limit) {
+        std::cerr << "topology_issue_more=" << (topology.issues.size() - limit) << '\n';
+    }
+}
+
 bool writeVisualizationMetadata(const std::filesystem::path& path,
                                 const std::vector<CutCell2D>& cutCells,
                                 const SmallCellReport2D& smallReport,
@@ -258,6 +298,7 @@ int main(int argc, char** argv) {
     const TopologyMesh2D sourceTopology = buildGlobalTopology(cutCells, domain, boundary);
     if (!sourceTopology.valid()) {
         std::cerr << "source global topology audit failed\n";
+        printTopologyDiagnostics(sourceTopology);
         return EXIT_FAILURE;
     }
 
@@ -274,6 +315,7 @@ int main(int argc, char** argv) {
     if (!stabilized.valid()) {
         std::cerr << "small-cell agglomeration failed with " << stabilized.issues.size()
                   << " issue(s)\n";
+        printTopologyDiagnostics(stabilized.topology);
         return EXIT_FAILURE;
     }
 
@@ -281,6 +323,7 @@ int main(int argc, char** argv) {
         evaluateMeshQuality(stabilized.topology, cutCells, &smallReport);
     if (!quality.valid()) {
         std::cerr << "final quality/topology report is invalid\n";
+        printTopologyDiagnostics(stabilized.topology);
         return EXIT_FAILURE;
     }
 
