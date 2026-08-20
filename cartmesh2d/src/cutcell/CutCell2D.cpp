@@ -120,6 +120,43 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
            (j == 0 && i + 1 == edgeCount);
 }
 
+[[nodiscard]] bool localSegmentsIntersect(const Segment2D& lhs,
+                                          const Segment2D& rhs,
+                                          const TolerancePolicy& tol) noexcept {
+    const Vector2D r = lhs.b - lhs.a;
+    const Vector2D s = rhs.b - rhs.a;
+    const double lenR = std::sqrt(squaredNorm(r));
+    const double lenS = std::sqrt(squaredNorm(s));
+    const double coordinateScale =
+        std::max({1.0, std::abs(lhs.a.x), std::abs(lhs.a.y),
+                  std::abs(lhs.b.x), std::abs(lhs.b.y),
+                  std::abs(rhs.a.x), std::abs(rhs.a.y),
+                  std::abs(rhs.b.x), std::abs(rhs.b.y)});
+    const double lengthEps = tol.scale(coordinateScale);
+    if (lenR <= lengthEps || lenS <= lengthEps) return true;
+
+    const Vector2D q = rhs.a - lhs.a;
+    const double denominator = cross(r, s);
+    const double angularEps = tol.scale(1.0);
+    if (std::abs(denominator) <= angularEps * lenR * lenS) {
+        const double distance = std::abs(cross(q, r)) / lenR;
+        if (distance > lengthEps) return false;
+        const double rr = squaredNorm(r);
+        const double t0 = dot(rhs.a - lhs.a, r) / rr;
+        const double t1 = dot(rhs.b - lhs.a, r) / rr;
+        const double lo = std::max(0.0, std::min(t0, t1));
+        const double hi = std::min(1.0, std::max(t0, t1));
+        const double paramEps = lengthEps / lenR;
+        return hi >= lo - paramEps;
+    }
+
+    const double t = cross(q, s) / denominator;
+    const double u = cross(q, r) / denominator;
+    const double paramEps = std::max(lengthEps / lenR, lengthEps / lenS);
+    return t >= -paramEps && t <= 1.0 + paramEps &&
+           u >= -paramEps && u <= 1.0 + paramEps;
+}
+
 [[nodiscard]] bool simplePolygonLoop(const Polygon2D& polygon,
                                      const TolerancePolicy& tol) noexcept {
     const std::size_t n = polygon.vertices.size();
@@ -130,7 +167,7 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
         for (std::size_t j = i + 1; j < n; ++j) {
             if (edgesAreAdjacent(i, j, n)) continue;
             const Segment2D b{polygon.vertices[j], polygon.vertices[(j + 1) % n]};
-            if (intersectSegments(a, b, tol).kind != SegmentIntersectionKind::None) return false;
+            if (localSegmentsIntersect(a, b, tol)) return false;
         }
     }
     return true;
