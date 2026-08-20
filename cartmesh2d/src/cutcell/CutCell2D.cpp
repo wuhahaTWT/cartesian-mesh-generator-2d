@@ -202,13 +202,14 @@ struct LocalIntersectionResult {
     const TolerancePolicy& tol) {
     LocalIntersectionResult result;
     result.embedded = collectEmbeddedBoundary(boundary, box, tol);
+    if (result.embedded.empty()) return result;
 
     std::vector<Point2D> points;
     std::vector<DirectedEdge> edges;
     for (const auto& fragment : result.embedded) {
         const std::size_t a = findOrAddPoint(points, fragment.a, tol);
         const std::size_t b = findOrAddPoint(points, fragment.b, tol);
-        addDirectedEdge(edges, a, b); // input boundary is CCW; fluid stays on the left.
+        addDirectedEdge(edges, a, b);
     }
 
     const std::vector<Segment2D> sides{
@@ -240,7 +241,7 @@ struct LocalIntersectionResult {
             if (state == PointInPolygon::Inside || state == PointInPolygon::Boundary) {
                 const std::size_t a = findOrAddPoint(points, unique[i], tol);
                 const std::size_t b = findOrAddPoint(points, unique[i + 1], tol);
-                addDirectedEdge(edges, a, b); // box perimeter is CCW.
+                addDirectedEdge(edges, a, b);
             }
         }
     }
@@ -363,12 +364,13 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     if (local.components.empty()) {
         const Point2D center{0.5 * (box.min.x + box.max.x), 0.5 * (box.min.y + box.max.y)};
         const auto state = classifyPointInPolygon(center, boundary.polygon(), tol);
-        if (state == PointInPolygon::Inside) {
+        if (state == PointInPolygon::Inside || state == PointInPolygon::Boundary) {
             result.kind = CutCellKind::Full;
             result.fluidPolygon = rectanglePolygon(box);
             result.area = fullArea;
             result.areaFraction = 1.0;
             result.centroid = result.fluidPolygon.centroid(tol);
+            result.embeddedBoundary.clear();
         } else {
             result.kind = CutCellKind::Empty;
         }
