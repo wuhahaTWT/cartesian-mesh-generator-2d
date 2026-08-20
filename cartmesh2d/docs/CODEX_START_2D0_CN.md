@@ -1,4 +1,4 @@
-# Codex 阶段状态：2D-0 ~ 2D-4 已关闭，2D-5 等待验证
+# Codex 阶段状态：2D-0 ~ 2D-5 已关闭，2D-6 进行中
 
 ## 当前状态
 
@@ -7,10 +7,9 @@
 - Stage 2D-2：PASS / CLOSED
 - Stage 2D-3：PASS / CLOSED
 - Stage 2D-4：PASS / CLOSED
-- Stage 2D-5A：PASS
-- Stage 2D-5B：PASS
-- Stage 2D-5：READY FOR VALIDATION
-- Stage 2D-6：NOT STARTED
+- Stage 2D-5：PASS / CLOSED
+- Stage 2D-6：IN PROGRESS
+- Stage 2D-V：NOT STARTED
 
 开始或继续任何二维修改前必须阅读：
 
@@ -25,78 +24,70 @@
 9. `cartmesh2d/docs/STAGE2D2_VERIFICATION.md`；
 10. `cartmesh2d/docs/STAGE2D3_VERIFICATION.md`；
 11. `cartmesh2d/docs/STAGE2D4_VERIFICATION.md`；
-12. `cartmesh2d/docs/STAGE2D5_VERIFICATION.md`。
+12. `cartmesh2d/docs/STAGE2D5_VERIFICATION.md`；
+13. `cartmesh2d/docs/STAGE2D6_VERIFICATION.md`。
 
 ## 已关闭能力
 
-### 2D-0
-原生二维几何内核、鲁棒线段相交、point-in-polygon 和 `BoundaryLoop` 诊断。
+2D-0 ~ 2D-5 已完成：原生二维 geometry、Cartesian/grid classification、Quadtree + 2:1、true Cut-cell polygon、global owner/neighbour topology、small-cell detection 与 topology-safe agglomeration。
 
-### 2D-1
-均匀 Cartesian 网格、确定性 cell IDs、`Outside / Inside / Intersected` 分类。
+Stage 2D-5 最近一次实际根工程回归为 9/9 PASS；验证-5 时确认测试通过的 implementation head 未漂移后正式 CLOSED。
 
-### 2D-2
-原生 Quadtree 1->4 refinement、deterministic leaf key/ID、face-neighbor discovery 和 2:1 balance。
+## 2D-6 当前实现
 
-### 2D-3
-真实 `CutCell2D` fluid polygon、area / centroid / area fraction、embedded boundary fragment 和病态输入显式拒绝。
+### 2D-6A Quality
 
-### 2D-4
-全局 `Vertex2D / Edge2D / TopologyCell2D`、owner/neighbour、boundary patch、coarse-fine hanging-node edge splitting 和完整 topology audit。
+已加入：
 
-## 2D-5A 已通过
+- geometry/topology quality evaluator；
+- min area / min edge；
+- max edge aspect ratio；
+- centroid skewness；
+- min Cut-cell alpha；
+- level distribution；
+- topology audit aggregation；
+- deterministic JSON report。
 
-`SmallCell2D` 已提供：
+### 2D-6B Export / Read-back
 
-- configurable alpha threshold；
-- Cut-cell alpha histogram；
-- deterministic small-cell marking；
-- internal-edge neighbour discovery；
-- stable-neighbour preference；
-- deterministic best candidate；
-- unresolved explicit failure。
+已加入：
 
-shifted-circle 自适应 fixture 在 threshold=0.1 下：small=8，minimum alpha 约 0.00120311，unresolved=0。
+- Legacy VTK polygon export；
+- deterministic `CM2D v1` solver-topology format；
+- CM2D independent reader；
+- byte-determinism / owner-neighbour / cell-loop read-back tests。
 
-## 2D-5B 已通过当前实现门禁
+### 2D-6C CLI / Acceptance
 
-`Agglomeration2D` 已提供：
-
-- `AgglomeratedCell2D`；
-- topology-safe group merge；
-- 组内共享 edge fragment 消除；
-- 单闭环 exterior reconstruction；
-- 共线冗余顶点简化；
-- member-area / merged-area 一致性检查；
-- total fluid-area conservation；
-- post-agglomeration global topology rebuild；
-- Stage 2D-4 topology audit 再验证；
-- unsafe small->small、断链、多环、分叉、退化 polygon 显式失败。
-
-当前根目录二维回归：
+已加入 `cartmesh2d_cli`：
 
 ```text
-2D-0 / 2D-1 / 2D-2 / 2D-3 / 2D-4 / 2D-5A / 2D-5B
-100% tests passed, 0 tests failed out of 9
+boundary.xy
+-> Quadtree
+-> 2:1
+-> Cut-cell
+-> topology
+-> small-cell stabilization
+-> quality
+-> VTK/CM2D/JSON
+-> independent CM2D read-back
 ```
 
-真实 shifted-circle 聚合：
+已注册四类 end-to-end fixture：
 
-- detected small cells = 8
-- merged small cells = 8
-- output cells = input cells - 8
-- total area error <= 1e-10
-- duplicate/orphan/non-manifold/unclassified/open-loop/area-mismatch = 0
+- rectangle
+- circle
+- concave
+- airfoil-like
 
 ## 当前停线
 
-Stage 2D-5 尚未正式 CLOSED。
+2D-6 尚未 CLOSED。当前实现必须先完成 exact-head 根 CMake 编译与所有 Stage 0~6 CTest；四类 CLI fixture 必须实际 PASS，导出文件必须独立核对。
 
-下一允许动作仅为用户显式 **`验证-5`** 后的 current-head 封口复跑与状态关闭。
+在 2D-6 正式关闭前禁止开始：
 
-在 `验证-5` 通过前不得提前实现：
-
-- 2D-6 quality/export；
-- GUI / visualization。
+- Stage 2D-V visualization；
+- GUI；
+- 为展示效果复制/重写核心 meshing 算法。
 
 三维核心目录仍不得为二维功能修改。
