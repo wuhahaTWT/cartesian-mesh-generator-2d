@@ -30,6 +30,17 @@ else()
     target_compile_options(cartmesh2d PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
 endif()
 
+add_executable(cartmesh2d_cli apps/cartmesh2d_cli.cpp)
+target_link_libraries(cartmesh2d_cli PRIVATE cartmesh2d::cartmesh2d)
+target_compile_features(cartmesh2d_cli PRIVATE cxx_std_20)
+if(COMMAND cartmesh_enable_warnings)
+    cartmesh_enable_warnings(cartmesh2d_cli)
+elseif(MSVC)
+    target_compile_options(cartmesh2d_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(cartmesh2d_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
@@ -112,4 +123,22 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
     add_test(NAME cartmesh2d_stage6b_io_tests COMMAND cartmesh2d_io_tests)
+
+    set(CARTMESH2D_ACCEPTANCE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/acceptance)
+    add_test(NAME cartmesh2d_stage6c_rectangle_e2e
+        COMMAND cartmesh2d_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
+        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/rectangle 5 0.25 0.05)
+    add_test(NAME cartmesh2d_stage6c_circle_e2e
+        COMMAND cartmesh2d_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/circle 5 0.25 0.05)
+    add_test(NAME cartmesh2d_stage6c_concave_e2e
+        COMMAND cartmesh2d_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy
+        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/concave 5 0.25 0.05)
+    add_test(NAME cartmesh2d_stage6c_airfoil_like_e2e
+        COMMAND cartmesh2d_cli
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
+        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
 endif()
