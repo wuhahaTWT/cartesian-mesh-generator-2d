@@ -6,9 +6,12 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace cartmesh2d;
@@ -72,6 +75,94 @@ bool sameReadbackTopology(const TopologyMesh2D& a, const TopologyMesh2D& b) {
         const auto& y = b.cells[i];
         if (x.id != y.id || x.sourceId != y.sourceId || x.sourceKey != y.sourceKey ||
             x.geometryArea != y.geometryArea || x.vertices != y.vertices || x.edges != y.edges) return false;
+    }
+    return true;
+}
+
+const char* cutKindName(CutCellKind kind) noexcept {
+    switch (kind) {
+    case CutCellKind::Empty: return "empty";
+    case CutCellKind::Full: return "full";
+    case CutCellKind::Cut: return "cut";
+    case CutCellKind::Unsupported: return "unsupported";
+    }
+    return "unknown";
+}
+
+const char* smallStatusName(SmallCellStatus2D status) noexcept {
+    switch (status) {
+    case SmallCellStatus2D::Stable: return "stable";
+    case SmallCellStatus2D::CandidateFound: return "candidate";
+    case SmallCellStatus2D::Unresolved: return "unresolved";
+    }
+    return "unknown";
+}
+
+bool writeVisualizationMetadata(const std::filesystem::path& path,
+                                const std::vector<CutCell2D>& cutCells,
+                                const SmallCellReport2D& smallReport,
+                                const AgglomerationResult2D& stabilized,
+                                std::string& error) {
+    using SourceKey = std::pair<std::uint64_t, std::size_t>;
+    std::map<SourceKey, const SmallCellRecord2D*> smallRecords;
+    for (const auto& record : smallReport.records) {
+        smallRecords[{record.sourceKey, record.sourceId}] = &record;
+    }
+
+    std::ofstream out(path);
+    if (!out) {
+        error = "failed to open visualization metadata output";
+        return false;
+    }
+    out << std::setprecision(17);
+    out << "{\n";
+    out << "  \"format\": \"cartmesh2d-viz-v1\",\n";
+    out << "  \"small_alpha_threshold\": "
+        << smallReport.policy.areaFractionThreshold << ",\n";
+    out << "  \"source_small_cell_count\": " << smallReport.smallCellCount << ",\n";
+    out << "  \"merged_small_cell_count\": " << stabilized.mergedSmallCellCount << ",\n";
+    out << "  \"source_cells\": [\n";
+
+    bool first = true;
+    for (const auto& cut : cutCells) {
+        if (cut.kind == CutCellKind::Empty || cut.kind == CutCellKind::Unsupported) continue;
+        const auto it = smallRecords.find({cut.sourceKey, cut.sourceId});
+        const SmallCellRecord2D* record = it == smallRecords.end() ? nullptr : it->second;
+        const bool isSmall = record != nullptr && record->status != SmallCellStatus2D::Stable;
+        if (!first) out << ",\n";
+        first = false;
+        out << "    {\"source_id\": " << cut.sourceId
+            << ", \"source_key\": " << cut.sourceKey
+            << ", \"level\": " << (cut.sourceKey & 0x3fULL)
+            << ", \"kind\": \"" << cutKindName(cut.kind) << "\""
+            << ", \"area_fraction\": " << cut.areaFraction
+            << ", \"small\": " << (isSmall ? "true" : "false")
+            << ", \"small_status\": \""
+            << (record != nullptr ? smallStatusName(record->status) : "unknown") << "\"";
+        if (record != nullptr) {
+            out << ", \"source_topology_cell_id\": " << record->topologyCellId;
+            if (record->targetTopologyCellId) {
+                out << ", \"target_topology_cell_id\": " << *record->targetTopologyCellId;
+            } else {
+                out << ", \"target_topology_cell_id\": null";
+            }
+        } else {
+            out << ", \"source_topology_cell_id\": null, \"target_topology_cell_id\": null";
+        }
+        out << ", \"background_bounds\": ["
+            << cut.backgroundBounds.min.x << ", " << cut.backgroundBounds.min.y << ", "
+            << cut.backgroundBounds.max.x << ", " << cut.backgroundBounds.max.y << "]";
+        if (cut.centroid) {
+            out << ", \"centroid\": [" << cut.centroid->x << ", " << cut.centroid->y << "]";
+        } else {
+            out << ", \"centroid\": null";
+        }
+        out << "}";
+    }
+    out << "\n  ]\n}\n";
+    if (!out.good()) {
+        error = "failed while writing visualization metadata";
+        return false;
     }
     return true;
 }
@@ -198,6 +289,7 @@ int main(int argc, char** argv) {
     const std::filesystem::path vtkPath = outputPrefix.string() + ".vtk";
     const std::filesystem::path cm2dPath = outputPrefix.string() + ".cm2d";
     const std::filesystem::path qualityPath = outputPrefix.string() + ".quality.json";
+    const std::filesystem::path vizPath = outputPrefix.string() + ".viz.json";
 
     error.clear();
     if (!writeLegacyVtk2D(stabilized.topology, vtkPath, &error)) {
@@ -221,6 +313,11 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
     }
+    error.clear();
+    if (!writeVisualizationMetadata(vizPath, cutCells, smallReport, stabilized, error)) {
+        std::cerr << error << '\n';
+        return EXIT_FAILURE;
+    }
 
     const MeshReadback2D readback = readCm2dTopology(cm2dPath);
     if (!readback.valid() || !sameReadbackTopology(stabilized.topology, readback.topology)) {
@@ -241,6 +338,7 @@ int main(int argc, char** argv) {
               << "max_centroid_skewness=" << quality.maxCentroidSkewness << '\n'
               << "vtk=" << vtkPath.string() << '\n'
               << "cm2d=" << cm2dPath.string() << '\n'
-              << "quality_json=" << qualityPath.string() << '\n';
+              << "quality_json=" << qualityPath.string() << '\n'
+              << "visualization_json=" << vizPath.string() << '\n';
     return EXIT_SUCCESS;
 }
