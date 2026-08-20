@@ -95,6 +95,17 @@ boundary file
 
 CMake 已注册四条 CLI end-to-end CTest。每条测试自身完成 VTK/CM2D/JSON 输出与独立 read-back 核对。
 
+## Exact-head CI gate
+
+新增 `.github/workflows/cartmesh2d-stage6.yml`，由 GitHub Actions 自己 checkout 当前 PR head，避免本地旧副本造成假通过。CI 必须执行：
+
+1. 根工程 `CARTMESH_BUILD_2D=ON` configure；
+2. 显式构建 2D-0～2D-6 全部测试 target 与 `cartmesh2d_cli`；
+3. `ctest -R '^cartmesh2d_stage' --output-on-failure`；
+4. 检查 rectangle / circle / concave / airfoil-like 的 `.vtk`、`.cm2d`、`.quality.json` 均真实生成；
+5. 检查 JSON `topologyPass=true` 与 CM2D header；
+6. 根工程 `CARTMESH_BUILD_2D=OFF` configure 仍成功。
+
 ## 当前待完成门禁
 
 - [x] quality evaluator implementation
@@ -107,12 +118,13 @@ CMake 已注册四条 CLI end-to-end CTest。每条测试自身完成 VTK/CM2D/J
 - [x] circle fixture registered
 - [x] concave fixture registered
 - [x] airfoil-like fixture registered
-- [ ] current-head root CMake configure
-- [ ] current-head full 2D build
-- [ ] Stage 0~6 unit/regression CTest
+- [x] exact-head GitHub Actions gate added
+- [ ] current-head root CMake configure PASS
+- [ ] current-head full 2D build PASS
+- [ ] Stage 0~6 unit/regression CTest PASS
 - [ ] four CLI end-to-end CTest actual PASS
-- [ ] output file independent inspection/count verification
-- [ ] branch isolation final audit
+- [ ] output file independent inspection/count verification PASS
+- [ ] branch isolation final audit PASS
 - [ ] final acceptance report / CLOSED marker
 
 因此当前 Stage 2D-6 只能记为 **IN PROGRESS / implementation complete enough for first integration build**，不能提前宣称产品完成。
