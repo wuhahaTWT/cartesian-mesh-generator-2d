@@ -2,7 +2,7 @@
 
 ## 状态
 
-**READY FOR VALIDATION — 2D-V 第一版已实现，并已在 GitHub Actions run #14 完成当前分支真实编译、renderer 回归与四类 acceptance SVG 生成。等待用户显式 `验证-v` 后做最终封口。**
+**PASS / CLOSED — 2D-V 已完成实现，并在用户显式 `验证-v` 后对当前 exact head 完成最终 GitHub Actions 封口验证。**
 
 Stage 2D-0 ~ 2D-6 保持 PASS / CLOSED；本阶段不修改核心 meshing 算法。
 
@@ -68,9 +68,13 @@ CLI 额外导出：
 - invalid：非零 CM2D audit 或 invalid quality 显式 banner；
 - 可视化与核心库无反向依赖：满足。
 
-## GitHub Actions run #14
+## 最终 exact-head GitHub Actions 验证
 
-Workflow run id: `32334947692`。
+最终实现 head：`dd2546a1ac2a95ea5a7baf07fbebcfb1a9a9c287`
+
+PR merge checkout：`fd52cb3288279f54f18f9ded6b1fa1f499cb150c`
+
+Workflow run #16：`32335057216`
 
 结果：**SUCCESS**。
 
@@ -78,15 +82,29 @@ Workflow run id: `32334947692`。
 
 1. root CMake configure with 2D ON；
 2. full native-2D target build；
-3. Stage 0~6 的 15 个 CTest 全通过；
-4. 四个 E2E `.vtk/.cm2d/.quality.json/.viz.json` 真实生成并校验；
-5. `tests/visualization_test.py` 通过；
-6. rectangle / circle / concave / airfoil-like 四个真实 CM2D 生成 SVG；
-7. 每个 SVG 检查 `source-background / cells / edges / Quality summary` 图层；
-8. SVG、CM2D、quality JSON、viz JSON 上传为 Actions artifact `cartmesh2d-acceptance-visualizations`；
-9. root `CARTMESH_BUILD_2D=OFF` configure 通过。
+3. Stage 0~6 的 15 个 CTest：**15/15 PASS**；
+4. rectangle / circle / concave / airfoil-like 的 `.vtk/.cm2d/.quality.json/.viz.json` 真实生成并校验；
+5. quality JSON `valid=true` 且 topology audit 全零；
+6. `viz.json` format/source-cell/alpha/level/bounds 与 small-cell count 校验通过；
+7. `tests/visualization_test.py` PASS，包括 invalid-state 显示回归；
+8. 四个真实 CM2D acceptance mesh 均成功生成 SVG；
+9. 每个 SVG 均检查 `source-background / cells / edges / Quality summary` 图层；
+10. Actions artifact `cartmesh2d-acceptance-visualizations` 上传成功；
+11. artifact 共 16 个文件，大小 104883 bytes，SHA256 `4d97b13578f1413fa95e3b86672c49d666e61dd667f8eab7636e973da839df3f`；
+12. root `CARTMESH_BUILD_2D=OFF` configure PASS。
 
-## 当前门禁
+## 分支隔离
+
+最终 `main...agent/native-2d-baseline`：
+
+- status: ahead
+- ahead_by: 113
+- behind_by: 0
+- merge base = main `8bec26d98eb8bd84033625ed2a41184c8cb223f1`
+
+改动保持在二维入口/文档/CI 与 `cartmesh2d/**`；没有修改三维算法目录 `include/cartmesh/**`、根 `src/**`、根 `apps/**`、根 `tests/**`。
+
+## 最终门禁
 
 - [x] dependency-free CM2D SVG renderer
 - [x] adaptive level visualization
@@ -98,6 +116,8 @@ Workflow run id: `32334947692`。
 - [x] four real E2E SVG renderings
 - [x] artifact upload
 - [x] 2D core regression remains green
-- [ ] user-triggered final `验证-v` closeout
+- [x] exact-head final validation
+- [x] branch isolation audit
+- [x] user-triggered final `验证-v` closeout
 
-因此当前 2D-V 为 **READY FOR VALIDATION**，尚不标记 CLOSED。
+因此 Stage 2D-V 正式记为 **PASS / CLOSED**。
