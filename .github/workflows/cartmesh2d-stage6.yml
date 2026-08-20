@@ -1,0 +1,63 @@
+name: cartmesh2d-stage6
+
+on:
+  pull_request:
+    paths:
+      - 'cartmesh2d/**'
+      - '.github/workflows/cartmesh2d-stage6.yml'
+      - 'CMakeLists.txt'
+  workflow_dispatch:
+
+jobs:
+  native-2d-stage6:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure root project with native 2D enabled
+        run: >-
+          cmake -S . -B build_2d
+          -DCMAKE_BUILD_TYPE=Release
+          -DCARTMESH_BUILD_2D=ON
+          -DCARTMESH_BUILD_TESTS=ON
+          -DCARTMESH_BUILD_BENCHMARKS=OFF
+
+      - name: Build native 2D targets
+        run: >-
+          cmake --build build_2d --target
+          cartmesh2d_geometry_tests
+          cartmesh2d_grid_tests
+          cartmesh2d_quadtree_tests
+          cartmesh2d_cutcell_tests
+          cartmesh2d_cutcell_quadtree_audit_tests
+          cartmesh2d_topology_tests
+          cartmesh2d_topology_quadtree_audit_tests
+          cartmesh2d_small_cell_tests
+          cartmesh2d_agglomeration_tests
+          cartmesh2d_quality_tests
+          cartmesh2d_io_tests
+          cartmesh2d_cli
+          -j2
+
+      - name: Run Stage 0-6 native 2D tests
+        run: ctest --test-dir build_2d -R '^cartmesh2d_stage' --output-on-failure
+
+      - name: Verify exported acceptance artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build_2d/cartmesh2d/acceptance
+          for case_name in rectangle circle concave airfoil_like; do
+            test -s "$out/${case_name}.vtk"
+            test -s "$out/${case_name}.cm2d"
+            test -s "$out/${case_name}.quality.json"
+            grep -q '"topologyPass": true' "$out/${case_name}.quality.json"
+            grep -q '^CM2D 1$' "$out/${case_name}.cm2d"
+          done
+
+      - name: Configure root project with native 2D disabled
+        run: >-
+          cmake -S . -B build_2d_off
+          -DCARTMESH_BUILD_2D=OFF
+          -DCARTMESH_BUILD_BENCHMARKS=OFF
