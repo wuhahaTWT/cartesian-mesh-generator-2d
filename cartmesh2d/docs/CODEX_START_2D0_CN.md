@@ -1,4 +1,4 @@
-# Codex 阶段状态：2D-0 ~ 2D-5 已关闭，2D-6 进行中
+# Codex 阶段状态：2D-0 ~ 2D-6 已关闭
 
 ## 当前状态
 
@@ -8,7 +8,7 @@
 - Stage 2D-3：PASS / CLOSED
 - Stage 2D-4：PASS / CLOSED
 - Stage 2D-5：PASS / CLOSED
-- Stage 2D-6：IN PROGRESS
+- Stage 2D-6：PASS / CLOSED
 - Stage 2D-V：NOT STARTED
 
 开始或继续任何二维修改前必须阅读：
@@ -19,75 +19,51 @@
 4. `cartmesh2d/docs/ARCHITECTURE_CN.md`；
 5. `cartmesh2d/docs/STAGE_PLAN_CN.md`；
 6. `cartmesh2d/docs/ACCEPTANCE_CN.md`；
-7. `cartmesh2d/docs/STAGE2D0_VERIFICATION.md`；
-8. `cartmesh2d/docs/STAGE2D1_VERIFICATION.md`；
-9. `cartmesh2d/docs/STAGE2D2_VERIFICATION.md`；
-10. `cartmesh2d/docs/STAGE2D3_VERIFICATION.md`；
-11. `cartmesh2d/docs/STAGE2D4_VERIFICATION.md`；
-12. `cartmesh2d/docs/STAGE2D5_VERIFICATION.md`；
-13. `cartmesh2d/docs/STAGE2D6_VERIFICATION.md`。
+7. `cartmesh2d/docs/STAGE2D0_VERIFICATION.md` ~ `STAGE2D6_VERIFICATION.md`。
 
 ## 已关闭能力
 
-2D-0 ~ 2D-5 已完成：原生二维 geometry、Cartesian/grid classification、Quadtree + 2:1、true Cut-cell polygon、global owner/neighbour topology、small-cell detection 与 topology-safe agglomeration。
-
-Stage 2D-5 最近一次实际根工程回归为 9/9 PASS；验证-5 时确认测试通过的 implementation head 未漂移后正式 CLOSED。
-
-## 2D-6 当前实现
-
-### 2D-6A Quality
-
-已加入：
-
-- geometry/topology quality evaluator；
-- min area / min edge；
-- max edge aspect ratio；
-- centroid skewness；
-- min Cut-cell alpha；
-- level distribution；
-- topology audit aggregation；
-- deterministic JSON report。
-
-### 2D-6B Export / Read-back
-
-已加入：
-
-- Legacy VTK polygon export；
-- deterministic `CM2D v1` solver-topology format；
-- CM2D independent reader；
-- byte-determinism / owner-neighbour / cell-loop read-back tests。
-
-### 2D-6C CLI / Acceptance
-
-已加入 `cartmesh2d_cli`：
+二维核心产品链已完成：
 
 ```text
-boundary.xy
--> Quadtree
--> 2:1
--> Cut-cell
--> topology
--> small-cell stabilization
--> quality
--> VTK/CM2D/JSON
+BoundaryLoop
+-> Cartesian domain
+-> Quadtree adaptive refinement
+-> 2:1 balance
+-> true Cut-cell polygon
+-> global owner/neighbour topology
+-> small-cell detection
+-> topology-safe agglomeration
+-> quality report
+-> VTK / CM2D / JSON export
+-> end-to-end CLI
 -> independent CM2D read-back
 ```
 
-已注册四类 end-to-end fixture：
+## Stage 2D-6 最终验收
 
-- rectangle
-- circle
-- concave
-- airfoil-like
+GitHub Actions `cartmesh2d-stage6` run #3 对 implementation head `15b383bee6292476e8348e28e1b0d7b9ce4d46ea` 完成真实根工程验证：
 
-## 当前停线
+- root `CARTMESH_BUILD_2D=ON` configure PASS
+- full native-2D build PASS
+- Stage 0~6 CTest：15/15 PASS
+- rectangle E2E PASS
+- circle E2E PASS
+- concave E2E PASS
+- airfoil-like E2E PASS
+- VTK / CM2D / JSON artifacts present and validated
+- JSON `valid=true`
+- all topology audit counters = 0
+- `min_cell_area > 0`
+- `min_edge_length > 0`
+- root `CARTMESH_BUILD_2D=OFF` configure PASS
 
-2D-6 尚未 CLOSED。当前实现必须先完成 exact-head 根 CMake 编译与所有 Stage 0~6 CTest；四类 CLI fixture 必须实际 PASS，导出文件必须独立核对。
+详见 `cartmesh2d/docs/STAGE2D6_VERIFICATION.md`。
 
-在 2D-6 正式关闭前禁止开始：
+## 下一允许阶段
 
-- Stage 2D-V visualization；
-- GUI；
-- 为展示效果复制/重写核心 meshing 算法。
+下一阶段仅为 **2D-V visualization**。
+
+2D-V 必须保持薄层：读取已经导出的网格/报告来展示 cell edges、Cut-cells、Quadtree level、boundary 与 quality/small-cell flags；不得复制或重写核心 meshing 算法。
 
 三维核心目录仍不得为二维功能修改。
