@@ -176,31 +176,13 @@ struct DirectedBoundaryUse2D {
         std::reverse(polygon.vertices.begin(), polygon.vertices.end());
     }
 
-    bool simplified = true;
-    while (simplified && polygon.vertices.size() > 3) {
-        simplified = false;
-        for (std::size_t i = 0; i < polygon.vertices.size(); ++i) {
-            const std::size_t prev = (i + polygon.vertices.size() - 1) % polygon.vertices.size();
-            const std::size_t nextIndex = (i + 1) % polygon.vertices.size();
-            if (pointOnSegment(polygon.vertices[i],
-                               {polygon.vertices[prev], polygon.vertices[nextIndex]}, tol)) {
-                polygon.vertices.erase(polygon.vertices.begin() + static_cast<std::ptrdiff_t>(i));
-                simplified = true;
-                break;
-            }
-        }
-    }
-
+    // Keep the exact exterior fragments inherited from the audited source topology.
+    // Tolerance-based collinear simplification can erase a genuine very short embedded
+    // boundary segment and replace it with a chord that no longer lies on the input boundary.
     const double area = polygon.area();
     if (!(area > tol.scale(std::max(1.0, area)))) {
         issue = {AgglomerationIssueCode2D::DegenerateMergedPolygon, start,
                  "agglomerated polygon has zero or near-zero area"};
-        return std::nullopt;
-    }
-    BoundaryLoop diagnosticLoop(polygon.vertices);
-    if (!diagnosticLoop.diagnose(tol).valid()) {
-        issue = {AgglomerationIssueCode2D::DegenerateMergedPolygon, start,
-                 "agglomerated polygon fails simple-boundary diagnostics"};
         return std::nullopt;
     }
     return polygon;
