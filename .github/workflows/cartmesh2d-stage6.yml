@@ -52,11 +52,14 @@ jobs:
             test -s "$out/${case_name}.vtk"
             test -s "$out/${case_name}.cm2d"
             test -s "$out/${case_name}.quality.json"
+            test -s "$out/${case_name}.viz.json"
             grep -q '^CM2D 1$' "$out/${case_name}.cm2d"
-            python3 - "$out/${case_name}.quality.json" <<'PY'
+            python3 - "$out/${case_name}.quality.json" "$out/${case_name}.viz.json" <<'PY'
           import json, sys
           with open(sys.argv[1], encoding='utf-8') as f:
               report = json.load(f)
+          with open(sys.argv[2], encoding='utf-8') as f:
+              viz = json.load(f)
           assert report['valid'] is True
           assert all(value == 0 for value in report['topology_audit'].values())
           assert report['counts']['vertices'] > 0
@@ -64,6 +67,14 @@ jobs:
           assert report['counts']['cells'] > 0
           assert report['quality']['min_cell_area'] > 0.0
           assert report['quality']['min_edge_length'] > 0.0
+          assert viz['format'] == 'cartmesh2d-viz-v1'
+          assert isinstance(viz['source_cells'], list) and len(viz['source_cells']) > 0
+          assert viz['source_small_cell_count'] == report['counts']['source_small_cells']
+          for cell in viz['source_cells']:
+              assert cell['kind'] in ('full', 'cut')
+              assert cell['level'] >= 0
+              assert len(cell['background_bounds']) == 4
+              assert 0.0 < cell['area_fraction'] <= 1.0
           PY
           done
 
@@ -80,9 +91,11 @@ jobs:
               "$out/${case_name}.cm2d" \
               "$out/${case_name}.svg" \
               --quality "$out/${case_name}.quality.json" \
+              --viz "$out/${case_name}.viz.json" \
               --color-by level
             test -s "$out/${case_name}.svg"
             grep -q '<svg' "$out/${case_name}.svg"
+            grep -q 'id="source-background"' "$out/${case_name}.svg"
             grep -q 'id="cells"' "$out/${case_name}.svg"
             grep -q 'id="edges"' "$out/${case_name}.svg"
             grep -q 'Quality summary' "$out/${case_name}.svg"
@@ -95,6 +108,7 @@ jobs:
           path: |
             build_2d/cartmesh2d/acceptance/*.svg
             build_2d/cartmesh2d/acceptance/*.quality.json
+            build_2d/cartmesh2d/acceptance/*.viz.json
             build_2d/cartmesh2d/acceptance/*.cm2d
           if-no-files-found: error
 
