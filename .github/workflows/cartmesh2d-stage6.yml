@@ -67,6 +67,37 @@ jobs:
           PY
           done
 
+      - name: Run 2D-V renderer regression
+        run: python3 cartmesh2d/tests/visualization_test.py
+
+      - name: Render real acceptance meshes
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build_2d/cartmesh2d/acceptance
+          for case_name in rectangle circle concave airfoil_like; do
+            python3 cartmesh2d/tools/visualization/render_cm2d.py \
+              "$out/${case_name}.cm2d" \
+              "$out/${case_name}.svg" \
+              --quality "$out/${case_name}.quality.json" \
+              --color-by level
+            test -s "$out/${case_name}.svg"
+            grep -q '<svg' "$out/${case_name}.svg"
+            grep -q 'id="cells"' "$out/${case_name}.svg"
+            grep -q 'id="edges"' "$out/${case_name}.svg"
+            grep -q 'Quality summary' "$out/${case_name}.svg"
+          done
+
+      - name: Upload 2D-V acceptance renderings
+        uses: actions/upload-artifact@v4
+        with:
+          name: cartmesh2d-acceptance-visualizations
+          path: |
+            build_2d/cartmesh2d/acceptance/*.svg
+            build_2d/cartmesh2d/acceptance/*.quality.json
+            build_2d/cartmesh2d/acceptance/*.cm2d
+          if-no-files-found: error
+
       - name: Configure root project with native 2D disabled
         run: >-
           cmake -S . -B build_2d_off
