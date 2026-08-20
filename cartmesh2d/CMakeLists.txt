@@ -114,11 +114,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
-    add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests
-             COMMAND cartmesh2d_cutcell_quadtree_audit_tests)
+    add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests COMMAND cartmesh2d_cutcell_quadtree_audit_tests)
     add_test(NAME cartmesh2d_stage4_topology_tests COMMAND cartmesh2d_topology_tests)
-    add_test(NAME cartmesh2d_stage4_adaptive_topology_audit_tests
-             COMMAND cartmesh2d_topology_quadtree_audit_tests)
+    add_test(NAME cartmesh2d_stage4_adaptive_topology_audit_tests COMMAND cartmesh2d_topology_quadtree_audit_tests)
     add_test(NAME cartmesh2d_stage5a_small_cell_tests COMMAND cartmesh2d_small_cell_tests)
     add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
@@ -126,19 +124,23 @@ if(CARTMESH2D_BUILD_TESTS)
 
     set(CARTMESH2D_ACCEPTANCE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/acceptance)
     add_test(NAME cartmesh2d_stage6c_rectangle_e2e
-        COMMAND cartmesh2d_cli
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
-        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/rectangle 5 0.25 0.05)
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/rectangle 5 0.25 0.05)
     add_test(NAME cartmesh2d_stage6c_circle_e2e
-        COMMAND cartmesh2d_cli
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
-        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/circle 5 0.25 0.05)
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/circle 5 0.25 0.05)
     add_test(NAME cartmesh2d_stage6c_concave_e2e
-        COMMAND cartmesh2d_cli
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy
-        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/concave 5 0.25 0.05)
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/concave 5 0.25 0.05)
     add_test(NAME cartmesh2d_stage6c_airfoil_like_e2e
-        COMMAND cartmesh2d_cli
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
-        ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
+
+    set(CARTMESH2D_ROBUSTNESS_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/robustness)
+    add_test(NAME cartmesh2d_stageR_gear_star_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/gear_star.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/gear_star 8 0.25 0.01)
+    add_test(NAME cartmesh2d_stageR_serpentine_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/serpentine_body.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/serpentine 7 0.20 0.01)
+    add_test(NAME cartmesh2d_stageR_nozzle_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nozzle_profile.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/nozzle 7 0.20 0.01)
+    add_test(NAME cartmesh2d_stageR_naca2412_dense_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/naca2412_dense.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/naca2412_dense 8 0.30 0.005)
+    add_test(NAME cartmesh2d_stageR_superellipse_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/superellipse_24.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/superellipse 7 0.25 0.01)
 endif()
