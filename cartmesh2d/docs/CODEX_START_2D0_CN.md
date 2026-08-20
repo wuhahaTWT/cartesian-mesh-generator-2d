@@ -1,4 +1,4 @@
-# Codex 阶段状态：2D-0 ~ 2D-6 已关闭，2D-V 待最终验证
+# Codex 阶段状态：2D-0 ~ 2D-V 全部关闭
 
 ## 当前状态
 
@@ -9,9 +9,9 @@
 - Stage 2D-4：PASS / CLOSED
 - Stage 2D-5：PASS / CLOSED
 - Stage 2D-6：PASS / CLOSED
-- Stage 2D-V：READY FOR VALIDATION
+- Stage 2D-V：PASS / CLOSED
 
-开始或继续任何二维修改前必须阅读：
+开始或修改任何二维功能前必须阅读：
 
 1. 根目录 `AGENTS.md` 中二维并行子项目例外；
 2. `cartmesh2d/AGENTS.md`；
@@ -22,9 +22,7 @@
 7. `cartmesh2d/docs/STAGE2D0_VERIFICATION.md` ~ `STAGE2D6_VERIFICATION.md`；
 8. `cartmesh2d/docs/STAGE2DV_VERIFICATION.md`。
 
-## 已关闭核心能力
-
-二维核心产品链已完成：
+## 已关闭产品链
 
 ```text
 BoundaryLoop
@@ -39,11 +37,12 @@ BoundaryLoop
 -> VTK / CM2D / JSON export
 -> end-to-end CLI
 -> independent CM2D read-back
+-> thin-layer visualization
 ```
 
-## Stage 2D-V 当前实现
+## Stage 2D-V 最终状态
 
-2D-V 保持薄层，不复制核心算法：
+2D-V 为薄层后处理：
 
 ```text
 CM2D + quality.json + viz.json
@@ -51,7 +50,7 @@ CM2D + quality.json + viz.json
 -> standalone SVG
 ```
 
-当前支持：
+支持：
 
 - final solver cell polygons / edges；
 - adaptive level / area coloring；
@@ -63,19 +62,24 @@ CM2D + quality.json + viz.json
 - quality/topology audit panel；
 - invalid topology/quality visible banner。
 
-CLI 额外输出 `<prefix>.viz.json`，仅保存已经由核心 pipeline 算出的 source-cell 展示元数据，不产生新的分类或 meshing 判断。
+CLI 输出 `<prefix>.viz.json`，只保存核心 pipeline 已计算的展示元数据，不产生新的分类或 meshing 判断。
 
-GitHub Actions run #14 (`32334947692`) 已实际通过：完整 C++ build、原 Stage 0~6 15/15 CTest、viz sidecar 校验、renderer regression、rectangle/circle/concave/airfoil-like 四个真实 SVG、artifact upload、2D-OFF configure 全部成功。
+最终 GitHub Actions run #16 (`32335057216`) 对 exact implementation head `dd2546a1ac2a95ea5a7baf07fbebcfb1a9a9c287` 验证成功：
+
+- root 2D-ON configure PASS；
+- full native-2D build PASS；
+- Stage 0~6：15/15 CTest PASS；
+- four E2E mesh exports PASS；
+- viz sidecar validation PASS；
+- renderer regression PASS；
+- rectangle/circle/concave/airfoil-like 四个真实 SVG PASS；
+- visualization artifact upload PASS；
+- root 2D-OFF configure PASS。
 
 详见 `cartmesh2d/docs/STAGE2DV_VERIFICATION.md`。
 
-## 当前停线
+## 后续修改规则
 
-等待用户显式 `验证-v` 后对当前最终 head 做封口并决定 PASS / CLOSED。
+二维 2D-0 ~ 2D-V 已全部封口。后续如需新增 GUI、更多输入格式、求解器接口或新网格能力，应新开阶段/任务，不应回写已关闭阶段的验收定义来伪装为原阶段工作。
 
-在此之前：
-
-- 不把 2D-V 宣称 CLOSED；
-- 不新增 GUI；
-- 不为展示效果修改核心 meshing 算法；
-- 三维核心目录仍不得为二维功能修改。
+三维核心目录仍不得因二维展示功能修改。
