@@ -20,4 +20,10 @@
 6. 原 15 项 Stage 0~6 acceptance 必须保持全绿。
 7. 复杂压力目标：gear_star / serpentine_body / nozzle_profile / naca2412_dense / superellipse_24 全部完整 CLI + topology + SVG PASS。
 
+## 本轮失败定位
+
+- `superellipse_24` 的轴端附近存在极短但真实的边界片段；旧的共线点删除用长度平方量和绝对 tolerance 直接比较，会把真实转折点误删，最终制造单 owner 的假边界边。
+- `naca2412_dense` 在高层 Quadtree 角点附近存在真实的极小 Cut-cell sliver；旧面积门限对所有小于 1 的 cell 都近似固定为 `1e-10`，会把约 `1e-11` 量级的真实流体片误判为空单元，造成相邻拓扑缺边。
+- 修复改为角度归一化的共线判断，并让面积容差随 background-cell area 缩放；极小合法 polygon 使用同一面积门限计算 centroid，同时保留显式自交检查。
+
 当前分支：`agent/native-2d-robustness`。
