@@ -52,8 +52,19 @@ jobs:
             test -s "$out/${case_name}.vtk"
             test -s "$out/${case_name}.cm2d"
             test -s "$out/${case_name}.quality.json"
-            grep -q '"topologyPass": true' "$out/${case_name}.quality.json"
             grep -q '^CM2D 1$' "$out/${case_name}.cm2d"
+            python3 - "$out/${case_name}.quality.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding='utf-8') as f:
+              report = json.load(f)
+          assert report['valid'] is True
+          assert all(value == 0 for value in report['topology_audit'].values())
+          assert report['counts']['vertices'] > 0
+          assert report['counts']['edges'] > 0
+          assert report['counts']['cells'] > 0
+          assert report['quality']['min_cell_area'] > 0.0
+          assert report['quality']['min_edge_length'] > 0.0
+          PY
           done
 
       - name: Configure root project with native 2D disabled
