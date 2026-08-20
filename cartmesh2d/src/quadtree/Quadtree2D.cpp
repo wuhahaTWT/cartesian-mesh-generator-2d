@@ -48,7 +48,21 @@ Quadtree2D::Quadtree2D(Domain2D domain,std::size_t maxLevel,const BoundaryLoop& 
 }
 std::uint64_t Quadtree2D::mortonPath(std::size_t level,std::uint64_t ix,std::uint64_t iy) noexcept { std::uint64_t code=0; for(std::size_t bit=0;bit<level;++bit){ code|=((ix>>bit)&1ULL)<<(2*bit); code|=((iy>>bit)&1ULL)<<(2*bit+1);} return code; }
 std::uint64_t Quadtree2D::makeKey(std::size_t level,std::uint64_t ix,std::uint64_t iy) noexcept { return (mortonPath(level,ix,iy)<<6)|static_cast<std::uint64_t>(level); }
-AABB2D Quadtree2D::boundsFor(std::size_t level,std::uint64_t ix,std::uint64_t iy) const noexcept { const double n=static_cast<double>(std::uint64_t{1}<<level); const double dx=domain_.width()/n,dy=domain_.height()/n; const double x0=domain_.bounds.min.x+static_cast<double>(ix)*dx,y0=domain_.bounds.min.y+static_cast<double>(iy)*dy; return {{x0,y0},{x0+dx,y0+dy}}; }
+AABB2D Quadtree2D::boundsFor(std::size_t level,std::uint64_t ix,std::uint64_t iy) const noexcept {
+    const std::uint64_t count = std::uint64_t{1} << level;
+    const double n = static_cast<double>(count);
+    const double dx = domain_.width() / n;
+    const double dy = domain_.height() / n;
+    const auto xAt = [&](std::uint64_t i) noexcept {
+        if (i == count) return domain_.bounds.max.x;
+        return domain_.bounds.min.x + static_cast<double>(i) * dx;
+    };
+    const auto yAt = [&](std::uint64_t j) noexcept {
+        if (j == count) return domain_.bounds.max.y;
+        return domain_.bounds.min.y + static_cast<double>(j) * dy;
+    };
+    return {{xAt(ix), yAt(iy)}, {xAt(ix + 1), yAt(iy + 1)}};
+}
 QuadtreeLeaf2D Quadtree2D::makeLeaf(std::size_t level,std::uint64_t ix,std::uint64_t iy,const BoundaryLoop& boundary,const TolerancePolicy& tol) const { QuadtreeLeaf2D leaf; leaf.key=makeKey(level,ix,iy); leaf.level=level; leaf.ix=ix; leaf.iy=iy; leaf.bounds=boundsFor(level,ix,iy); const CartesianCell2D cell{0,0,0,leaf.bounds,CellClass::Outside}; leaf.classification=classifyCartesianCell(cell,boundary,tol); return leaf; }
 bool Quadtree2D::splitLeafAt(std::size_t index,const BoundaryLoop& boundary,const TolerancePolicy& tol){ if(index>=leaves_.size()) return false; const auto parent=leaves_[index]; if(parent.level>=maxLevel_) return false; const std::size_t l=parent.level+1; const std::uint64_t x=parent.ix*2,y=parent.iy*2; QuadtreeLeaf2D children[4]={makeLeaf(l,x,y,boundary,tol),makeLeaf(l,x+1,y,boundary,tol),makeLeaf(l,x,y+1,boundary,tol),makeLeaf(l,x+1,y+1,boundary,tol)}; leaves_.erase(leaves_.begin()+static_cast<std::ptrdiff_t>(index)); leaves_.insert(leaves_.end(),std::begin(children),std::end(children)); sortAndAssignIds(); return true; }
 bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryLoop& boundary,const TolerancePolicy& tol){ const auto it=std::find_if(leaves_.begin(),leaves_.end(),[key](const auto& leaf){return leaf.key==key;}); if(it==leaves_.end()) return false; return splitLeafAt(static_cast<std::size_t>(std::distance(leaves_.begin(),it)),boundary,tol); }
