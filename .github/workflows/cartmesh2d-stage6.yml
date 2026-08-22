@@ -30,6 +30,7 @@ jobs:
           cartmesh2d_grid_tests
           cartmesh2d_quadtree_tests
           cartmesh2d_cutcell_tests
+          cartmesh2d_cutcell_components_tests
           cartmesh2d_cutcell_quadtree_audit_tests
           cartmesh2d_topology_tests
           cartmesh2d_topology_quadtree_audit_tests
@@ -71,8 +72,6 @@ jobs:
           assert report['quality']['min_cell_area'] > 0.0
           assert report['quality']['min_edge_length'] > 0.0
 
-          # Product semantics gate: acceptance inputs are SOLID obstacles and
-          # the retained CFD region must be outside them.
           assert viz['format'] == 'cartmesh2d-viz-v1'
           assert viz['fluid_region'] == 'exterior'
           assert viz['boundary_role'] == 'solid_wall'
@@ -87,7 +86,6 @@ jobs:
           edge_header = next(i for i, line in enumerate(cm2d) if line.startswith('EDGES '))
           edge_count = int(cm2d[edge_header].split()[1])
           patches = [int(cm2d[edge_header + 1 + i].split()[5]) for i in range(edge_count)]
-          # patch 1 = solid embedded wall, patch 2 = outer computational domain
           assert patches.count(1) > 0, 'missing solid EmbeddedBoundary'
           assert patches.count(2) > 0, 'missing outer DomainBoundary'
           PY
