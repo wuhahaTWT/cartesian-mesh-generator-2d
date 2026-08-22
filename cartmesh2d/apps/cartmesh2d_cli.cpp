@@ -312,14 +312,24 @@ int main(int argc, char** argv) {
     std::vector<CutCell2D> cutCells;
     cutCells.reserve(tree.leaves().size());
     std::size_t unsupported = 0;
+    std::size_t splitFluidLeaves = 0;
+    std::size_t nextSourceId = 0;
     double sourceFluidArea = 0.0;
     for (const auto& leaf : tree.leaves()) {
-        auto cut = buildCutCell(leaf, boundary, fluidRegion);
-        if (!cut.valid() && cut.kind == CutCellKind::Unsupported) ++unsupported;
-        if (cut.kind != CutCellKind::Empty && cut.kind != CutCellKind::Unsupported) {
-            sourceFluidArea += cut.area;
+        auto components = buildCutCells(leaf, boundary, fluidRegion);
+        if (components.size() > 1) ++splitFluidLeaves;
+        for (auto& cut : components) {
+            // A physical leaf can legally contribute multiple disconnected
+            // solver cells. Give every emitted component a unique deterministic
+            // source id while preserving the Quadtree key/level in sourceKey.
+            cut.sourceId = nextSourceId++;
+            cut.sourceKey = leaf.key;
+            if (!cut.valid() && cut.kind == CutCellKind::Unsupported) ++unsupported;
+            if (cut.kind != CutCellKind::Empty && cut.kind != CutCellKind::Unsupported) {
+                sourceFluidArea += cut.area;
+            }
+            cutCells.push_back(std::move(cut));
         }
-        cutCells.push_back(std::move(cut));
     }
     if (unsupported != 0) {
         std::cerr << "Cut-cell construction produced " << unsupported
@@ -438,6 +448,7 @@ int main(int argc, char** argv) {
               << "boundary_role="
               << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope") << '\n'
               << "leaf_count=" << tree.leaves().size() << '\n'
+              << "split_fluid_leaves=" << splitFluidLeaves << '\n'
               << "source_cells=" << sourceTopology.cells.size() << '\n'
               << "source_fluid_area=" << sourceFluidArea << '\n'
               << "expected_fluid_area=" << expectedFluidArea << '\n'
