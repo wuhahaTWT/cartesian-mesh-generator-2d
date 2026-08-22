@@ -69,6 +69,9 @@ int main() {
     const auto bad=agglomerateSmallCells(cells,topo,badAnalysis,domain,boundary);
     check(!bad.valid(), "self-targeting candidate is rejected explicitly");
 
+    // Preserve the historical small-cell agglomeration fixture as an explicit
+    // interior-flow regression. Product/CLI defaults are tested separately as
+    // exterior fluid around a solid obstacle.
     std::vector<Point2D> circle;
     constexpr std::size_t segments=64;
     constexpr double cx=0.07, cy=0.03;
@@ -84,7 +87,9 @@ int main() {
     const auto balance=tree.enforceTwoToOneBalance(circleBoundary);
     check(balance.violationsAfter==0,"shifted-circle tree is 2:1 balanced");
     std::vector<CutCell2D> circleCells;
-    for (const auto& leaf:tree.leaves()) circleCells.push_back(buildCutCell(leaf,circleBoundary));
+    for (const auto& leaf:tree.leaves()) {
+        circleCells.push_back(buildCutCell(leaf,circleBoundary,FluidRegion2D::Interior));
+    }
     const auto circleTopo=buildGlobalTopology(circleCells,circleDomain,circleBoundary);
     check(circleTopo.valid(),"shifted-circle source topology valid");
     const auto circleAnalysis=analyzeSmallCells(circleCells,circleTopo);
