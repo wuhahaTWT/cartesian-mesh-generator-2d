@@ -43,17 +43,27 @@ int main() {
     std::vector<CutCell2D> cutCells;
     std::size_t nonEmpty = 0;
     std::size_t unsupported = 0;
+    std::size_t solidInteriorEmpty = 0;
+    std::size_t exteriorFull = 0;
     for (const auto& leaf : tree.leaves()) {
         auto cut = buildCutCell(leaf, boundary);
         if (cut.kind == CutCellKind::Unsupported) ++unsupported;
+        if (leaf.classification == CellClass::Inside && cut.kind == CutCellKind::Empty) {
+            ++solidInteriorEmpty;
+        }
+        if (leaf.classification == CellClass::Outside && cut.kind == CutCellKind::Full) {
+            ++exteriorFull;
+        }
         if (cut.kind != CutCellKind::Empty && cut.kind != CutCellKind::Unsupported) ++nonEmpty;
         cutCells.push_back(std::move(cut));
     }
-    check(unsupported == 0, "circle fixture has no unsupported Cut-cell");
+    check(unsupported == 0, "external circle fixture has no unsupported Cut-cell");
+    check(solidInteriorEmpty > 0, "solid-interior leaves are removed from fluid mesh");
+    check(exteriorFull > 0, "far-field exterior leaves remain full fluid cells");
 
     const auto mesh = buildGlobalTopology(cutCells, domain, boundary);
-    check(mesh.valid(), "adaptive circle global topology passes audit");
-    check(mesh.cells.size() == nonEmpty, "all non-empty Cut-cells enter topology");
+    check(mesh.valid(), "external adaptive circle global topology passes audit");
+    check(mesh.cells.size() == nonEmpty, "all non-empty exterior fluid Cut-cells enter topology");
     check(mesh.audit.duplicateVertices == 0, "duplicate vertex audit = 0");
     check(mesh.audit.duplicateEdges == 0, "duplicate edge audit = 0");
     check(mesh.audit.orphanInternalEdges == 0, "orphan internal edge audit = 0");
@@ -110,15 +120,17 @@ int main() {
             ++domainEdges;
         }
     }
-    check(internalEdges > 0, "adaptive mesh has internal owner-neighbour edges");
-    check(embeddedEdges > 0, "circle produces embedded-boundary edges");
-    check(domainEdges == 0, "interior circle fluid does not touch outer domain boundary");
+    check(internalEdges > 0, "external mesh has internal owner-neighbour edges");
+    check(embeddedEdges > 0, "solid circle produces embedded wall edges");
+    check(domainEdges > 0, "external CFD mesh reaches the outer computational-domain boundary");
 
     double topologyArea = 0.0;
     for (const auto& cell : mesh.cells) topologyArea += cell.geometryArea;
-    const double inputArea = boundary.polygon().area();
-    check(std::abs(topologyArea - inputArea) <= 1.0e-10,
-          "global topology preserves total Cut-cell fluid area");
+    const double domainArea = domain.width() * domain.height();
+    const double solidArea = boundary.polygon().area();
+    const double expectedFluidArea = domainArea - solidArea;
+    check(std::abs(topologyArea - expectedFluidArea) <= 1.0e-10,
+          "global topology preserves external fluid area = domain - solid");
 
     const auto mesh2 = buildGlobalTopology(cutCells, domain, boundary);
     check(mesh2.vertices.size() == mesh.vertices.size() &&
@@ -147,6 +159,6 @@ int main() {
         std::cerr << failures << " test(s) failed\n";
         return EXIT_FAILURE;
     }
-    std::cout << "cartmesh2d 2D-4 adaptive topology audit passed\n";
+    std::cout << "cartmesh2d 2D-4 external adaptive topology audit passed\n";
     return EXIT_SUCCESS;
 }
