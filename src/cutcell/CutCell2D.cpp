@@ -214,15 +214,28 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
            (scalarNear(segment.a.y, box.max.y, tol) && scalarNear(segment.b.y, box.max.y, tol));
 }
 
+[[nodiscard]] bool pointStateIsFluid(PointInPolygon state,
+                                     FluidRegion2D fluidRegion) noexcept {
+    if (state == PointInPolygon::Boundary) return true;
+    if (fluidRegion == FluidRegion2D::Exterior) return state == PointInPolygon::Outside;
+    return state == PointInPolygon::Inside;
+}
+
 [[nodiscard]] std::vector<Segment2D> collectEmbeddedBoundary(
     const BoundaryLoop& boundary, const AABB2D& box,
-    const TolerancePolicy& tol) {
+    FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
     std::vector<Segment2D> fragments;
     const auto& vertices = boundary.vertices();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
-        const auto clipped = clipSegmentToAABB(edge, box, tol);
-        if (clipped && !liesOnBoxPerimeter(*clipped, box, tol)) fragments.push_back(*clipped);
+        auto clipped = clipSegmentToAABB(edge, box, tol);
+        if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
+        // BoundaryLoop is normalized CCW, therefore its interior lies to the
+        // left. For external CFD the fluid lies on the opposite side, so the
+        // embedded fragment must be reversed to keep the retained fluid on
+        // the left of every directed boundary edge.
+        if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
+        fragments.push_back(*clipped);
     }
     return fragments;
 }
@@ -295,9 +308,9 @@ struct LocalIntersectionResult {
 
 [[nodiscard]] LocalIntersectionResult buildLocalIntersection(
     const BoundaryLoop& boundary, const AABB2D& box,
-    const TolerancePolicy& tol) {
+    FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
     LocalIntersectionResult result;
-    result.embedded = collectEmbeddedBoundary(boundary, box, tol);
+    result.embedded = collectEmbeddedBoundary(boundary, box, fluidRegion, tol);
     if (result.embedded.empty()) return result;
 
     std::vector<Point2D> points;
@@ -308,6 +321,9 @@ struct LocalIntersectionResult {
         addDirectedEdge(edges, a, b);
     }
 
+    // Cartesian-cell perimeter is directed counter-clockwise so the box
+    // interior is always on the left. Retain only perimeter intervals whose
+    // midpoint is on the requested physical fluid side of the input loop.
     const std::vector<Segment2D> sides{
         {{box.min.x, box.min.y}, {box.max.x, box.min.y}},
         {{box.max.x, box.min.y}, {box.max.x, box.max.y}},
@@ -334,7 +350,7 @@ struct LocalIntersectionResult {
             const Point2D mid{0.5 * (unique[i].x + unique[i + 1].x),
                               0.5 * (unique[i].y + unique[i + 1].y)};
             const auto state = classifyPointInPolygon(mid, boundaryPolygon, tol);
-            if (state == PointInPolygon::Inside || state == PointInPolygon::Boundary) {
+            if (pointStateIsFluid(state, fluidRegion)) {
                 const std::size_t a = findOrAddPoint(points, unique[i], tol);
                 const std::size_t b = findOrAddPoint(points, unique[i + 1], tol);
                 addDirectedEdge(edges, a, b);
@@ -402,11 +418,29 @@ struct LocalIntersectionResult {
     return result;
 }
 
-} // namespace
+void setFullFluidCell(CutCell2D& result, const AABB2D& box,
+                      double fullArea, double areaEps) {
+    result.kind = CutCellKind::Full;
+    result.fluidPolygon = rectanglePolygon(box);
+    result.area = fullArea;
+    result.areaFraction = 1.0;
+    result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
+    result.embeddedBoundary.clear();
+}
 
-CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
-                       const BoundaryLoop& inputBoundary,
-                       const TolerancePolicy& tol) {
+void setEmptyFluidCell(CutCell2D& result) {
+    result.kind = CutCellKind::Empty;
+    result.fluidPolygon.vertices.clear();
+    result.area = 0.0;
+    result.areaFraction = 0.0;
+    result.centroid.reset();
+    result.embeddedBoundary.clear();
+}
+
+[[nodiscard]] CutCell2D buildCutCellImpl(
+    const AABB2D& box, CellClass classification,
+    const BoundaryLoop& inputBoundary, FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol) {
     CutCell2D result;
     result.backgroundBounds = box;
 
@@ -435,20 +469,25 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     }
 
     const double areaEps = areaTolerance(fullArea, tol);
+
     if (classification == CellClass::Outside) {
-        result.kind = CutCellKind::Empty;
+        if (fluidRegion == FluidRegion2D::Exterior) {
+            setFullFluidCell(result, box, fullArea, areaEps);
+        } else {
+            setEmptyFluidCell(result);
+        }
         return result;
     }
     if (classification == CellClass::Inside) {
-        result.kind = CutCellKind::Full;
-        result.fluidPolygon = rectanglePolygon(box);
-        result.area = fullArea;
-        result.areaFraction = 1.0;
-        result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
+        if (fluidRegion == FluidRegion2D::Exterior) {
+            setEmptyFluidCell(result);
+        } else {
+            setFullFluidCell(result, box, fullArea, areaEps);
+        }
         return result;
     }
 
-    const auto local = buildLocalIntersection(boundary, box, tol);
+    const auto local = buildLocalIntersection(boundary, box, fluidRegion, tol);
     result.embeddedBoundary = local.embedded;
     if (local.graphInvalid) {
         result.kind = CutCellKind::Unsupported;
@@ -458,17 +497,13 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     }
 
     if (local.components.empty()) {
-        const Point2D center{0.5 * (box.min.x + box.max.x), 0.5 * (box.min.y + box.max.y)};
+        const Point2D center{0.5 * (box.min.x + box.max.x),
+                             0.5 * (box.min.y + box.max.y)};
         const auto state = classifyPointInPolygon(center, boundary.polygon(), tol);
-        if (state == PointInPolygon::Inside || state == PointInPolygon::Boundary) {
-            result.kind = CutCellKind::Full;
-            result.fluidPolygon = rectanglePolygon(box);
-            result.area = fullArea;
-            result.areaFraction = 1.0;
-            result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
-            result.embeddedBoundary.clear();
+        if (pointStateIsFluid(state, fluidRegion)) {
+            setFullFluidCell(result, box, fullArea, areaEps);
         } else {
-            result.kind = CutCellKind::Empty;
+            setEmptyFluidCell(result);
         }
         return result;
     }
@@ -476,18 +511,14 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     if (local.components.size() > 1) {
         result.kind = CutCellKind::Unsupported;
         result.issues.push_back({CutCellIssueCode::MultipleEmbeddedComponents,
-                                 "multiple disconnected fluid components occur in one leaf"});
+                                 "multiple disconnected fluid components or a local hole occur in one leaf"});
         return result;
     }
 
     result.fluidPolygon = local.components.front();
     result.area = result.fluidPolygon.area();
     if (result.area <= areaEps) {
-        result.kind = CutCellKind::Empty;
-        result.fluidPolygon.vertices.clear();
-        result.area = 0.0;
-        result.areaFraction = 0.0;
-        result.centroid.reset();
+        setEmptyFluidCell(result);
         return result;
     }
     if (result.area > fullArea + areaEps) {
@@ -507,12 +538,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     }
 
     if (fullArea - result.area <= areaEps) {
-        result.kind = CutCellKind::Full;
-        result.fluidPolygon = rectanglePolygon(box);
-        result.area = fullArea;
-        result.areaFraction = 1.0;
-        result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
-        result.embeddedBoundary.clear();
+        setFullFluidCell(result, box, fullArea, areaEps);
         return result;
     }
 
@@ -528,10 +554,36 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
     return result;
 }
 
+} // namespace
+
+CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
+                       const BoundaryLoop& boundary,
+                       const TolerancePolicy& tol) {
+    return buildCutCellImpl(box, classification, boundary,
+                            FluidRegion2D::Exterior, tol);
+}
+
+CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
+                       const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                       const TolerancePolicy& tol) {
+    return buildCutCellImpl(box, classification, boundary, fluidRegion, tol);
+}
+
 CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
                        const BoundaryLoop& boundary,
                        const TolerancePolicy& tol) {
-    CutCell2D result = buildCutCell(leaf.bounds, leaf.classification, boundary, tol);
+    CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, boundary,
+                                        FluidRegion2D::Exterior, tol);
+    result.sourceId = leaf.id;
+    result.sourceKey = leaf.key;
+    return result;
+}
+
+CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
+                       const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                       const TolerancePolicy& tol) {
+    CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, boundary,
+                                        fluidRegion, tol);
     result.sourceId = leaf.id;
     result.sourceKey = leaf.key;
     return result;
