@@ -89,6 +89,22 @@ const char* cutKindName(CutCellKind kind) noexcept {
     return "unknown";
 }
 
+const char* fluidRegionName(FluidRegion2D region) noexcept {
+    return region == FluidRegion2D::Exterior ? "exterior" : "interior";
+}
+
+bool parseFluidRegion(const std::string& value, FluidRegion2D& region) {
+    if (value == "exterior" || value == "outside" || value == "external") {
+        region = FluidRegion2D::Exterior;
+        return true;
+    }
+    if (value == "interior" || value == "inside" || value == "internal") {
+        region = FluidRegion2D::Interior;
+        return true;
+    }
+    return false;
+}
+
 const char* smallStatusName(SmallCellStatus2D status) noexcept {
     switch (status) {
     case SmallCellStatus2D::Stable: return "stable";
@@ -142,6 +158,7 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
                                 const std::vector<CutCell2D>& cutCells,
                                 const SmallCellReport2D& smallReport,
                                 const AgglomerationResult2D& stabilized,
+                                FluidRegion2D fluidRegion,
                                 std::string& error) {
     using SourceKey = std::pair<std::uint64_t, std::size_t>;
     std::map<SourceKey, const SmallCellRecord2D*> smallRecords;
@@ -157,6 +174,10 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
     out << std::setprecision(17);
     out << "{\n";
     out << "  \"format\": \"cartmesh2d-viz-v1\",\n";
+    out << "  \"fluid_region\": \"" << fluidRegionName(fluidRegion) << "\",\n";
+    out << "  \"boundary_role\": \""
+        << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope")
+        << "\",\n";
     out << "  \"small_alpha_threshold\": "
         << smallReport.policy.areaFractionThreshold << ",\n";
     out << "  \"source_small_cell_count\": " << smallReport.smallCellCount << ",\n";
@@ -209,13 +230,15 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
 
 void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
-                 "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10]\n";
+                 "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
+                 "[fluid-region=exterior|interior]\n"
+                 "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3 || argc > 6) {
+    if (argc < 3 || argc > 7) {
         usage();
         return EXIT_FAILURE;
     }
@@ -225,12 +248,17 @@ int main(int argc, char** argv) {
     std::size_t maxLevel = 5;
     double paddingFraction = 0.25;
     double smallAlpha = 0.10;
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
     try {
         if (argc >= 4) maxLevel = static_cast<std::size_t>(std::stoul(argv[3]));
         if (argc >= 5) paddingFraction = std::stod(argv[4]);
         if (argc >= 6) smallAlpha = std::stod(argv[5]);
     } catch (const std::exception&) {
         std::cerr << "invalid numeric CLI argument\n";
+        return EXIT_FAILURE;
+    }
+    if (argc >= 7 && !parseFluidRegion(argv[6], fluidRegion)) {
+        std::cerr << "invalid fluid-region; expected exterior or interior\n";
         return EXIT_FAILURE;
     }
     if (maxLevel == 0 || maxLevel > 28 || !(paddingFraction > 0.0) ||
@@ -284,9 +312,13 @@ int main(int argc, char** argv) {
     std::vector<CutCell2D> cutCells;
     cutCells.reserve(tree.leaves().size());
     std::size_t unsupported = 0;
+    double sourceFluidArea = 0.0;
     for (const auto& leaf : tree.leaves()) {
-        auto cut = buildCutCell(leaf, boundary);
+        auto cut = buildCutCell(leaf, boundary, fluidRegion);
         if (!cut.valid() && cut.kind == CutCellKind::Unsupported) ++unsupported;
+        if (cut.kind != CutCellKind::Empty && cut.kind != CutCellKind::Unsupported) {
+            sourceFluidArea += cut.area;
+        }
         cutCells.push_back(std::move(cut));
     }
     if (unsupported != 0) {
@@ -295,11 +327,43 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    // Product-level physics gate. This catches the exact class of error where
+    // a mathematically self-consistent mesh is generated on the wrong side of
+    // the solid boundary.
+    const double domainArea = domain.width() * domain.height();
+    const double solidArea = boundary.polygon().area();
+    const double expectedFluidArea = fluidRegion == FluidRegion2D::Exterior
+        ? domainArea - solidArea
+        : solidArea;
+    const TolerancePolicy tol{};
+    const double areaEps = std::max(tol.absolute * tol.absolute,
+                                    tol.relative * std::max(1.0, std::abs(expectedFluidArea)));
+    if (std::abs(sourceFluidArea - expectedFluidArea) > areaEps) {
+        std::cerr << "fluid-side physics gate failed: region=" << fluidRegionName(fluidRegion)
+                  << " generated_area=" << std::setprecision(17) << sourceFluidArea
+                  << " expected_area=" << expectedFluidArea << '\n';
+        return EXIT_FAILURE;
+    }
+
     const TopologyMesh2D sourceTopology = buildGlobalTopology(cutCells, domain, boundary);
     if (!sourceTopology.valid()) {
         std::cerr << "source global topology audit failed\n";
         printTopologyDiagnostics(sourceTopology);
         return EXIT_FAILURE;
+    }
+
+    if (fluidRegion == FluidRegion2D::Exterior) {
+        std::size_t embeddedEdges = 0;
+        std::size_t domainEdges = 0;
+        for (const auto& edge : sourceTopology.edges) {
+            if (edge.patch == BoundaryPatch2D::EmbeddedBoundary) ++embeddedEdges;
+            if (edge.patch == BoundaryPatch2D::DomainBoundary) ++domainEdges;
+        }
+        if (embeddedEdges == 0 || domainEdges == 0) {
+            std::cerr << "external CFD boundary gate failed: embedded_wall_edges="
+                      << embeddedEdges << " domain_boundary_edges=" << domainEdges << '\n';
+            return EXIT_FAILURE;
+        }
     }
 
     SmallCellPolicy2D smallPolicy;
@@ -357,7 +421,8 @@ int main(int argc, char** argv) {
         }
     }
     error.clear();
-    if (!writeVisualizationMetadata(vizPath, cutCells, smallReport, stabilized, error)) {
+    if (!writeVisualizationMetadata(vizPath, cutCells, smallReport, stabilized,
+                                    fluidRegion, error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -369,8 +434,13 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "cartmesh2d end-to-end PASS\n"
+              << "fluid_region=" << fluidRegionName(fluidRegion) << '\n'
+              << "boundary_role="
+              << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope") << '\n'
               << "leaf_count=" << tree.leaves().size() << '\n'
               << "source_cells=" << sourceTopology.cells.size() << '\n'
+              << "source_fluid_area=" << sourceFluidArea << '\n'
+              << "expected_fluid_area=" << expectedFluidArea << '\n'
               << "small_cells=" << smallReport.smallCellCount << '\n'
               << "stabilized_cells=" << stabilized.topology.cells.size() << '\n'
               << "vertices=" << stabilized.topology.vertices.size() << '\n'
