@@ -1,76 +1,42 @@
 # Stage 2D-5 验证记录
 
-## 状态
+## 当前状态
 
-**PASS / CLOSED**
+**ALGORITHM IMPLEMENTED / EXTERNAL-DOMAIN REVALIDATION REQUIRED**
 
-2D-5A small-cell 检测/候选分析与 2D-5B topology-safe agglomeration 已完成。用户已显式执行 `验证-5`；封口时确认 PR head 未发生代码漂移，仍为此前实际通过根工程 9/9 CTest 的同一实现提交。
+2D-5A small-cell 检测和 2D-5B topology-safe agglomeration 的算法实现仍保留，但旧的主要 shifted-circle fixture 使用的是“circle interior = fluid”的历史语义。
 
-## 2D-5A
+2026-08-22 物理域纠正后，该 fixture 已显式改为：
 
-已实现：
+`FluidRegion2D::Interior`
 
-- configurable `areaFractionThreshold`
-- Cut-cell alpha histogram
-- deterministic `alpha < threshold` marking
-- topology internal-edge neighbour discovery
-- aggregate shared-interface length
-- stable-neighbour preference
-- deterministic tie-break
-- explicit unresolved report
+这样它继续只验证 small-cell / agglomeration 算法本身，而不再偷偷定义产品默认 fluid side。
 
-shifted-circle fixture：threshold `0.1` 下 small cells = `8`，minimum alpha ≈ `0.00120311`，unresolved = `0`。
+## 已实现能力
 
-## 2D-5B
+- configurable `areaFractionThreshold`；
+- Cut-cell alpha histogram；
+- deterministic `alpha < threshold` marking；
+- topology internal-edge neighbour discovery；
+- stable-neighbour preference；
+- deterministic tie-break；
+- explicit unresolved report；
+- topology-safe cell agglomeration；
+- member-area / merged-area 与总流体面积守恒；
+- global topology rebuild；
+- unsafe merge 显式失败。
 
-已实现：
+## 纠正后的产品硬门
 
-- `AgglomeratedCell2D` / `AgglomerationResult2D`
-- small -> stable-target grouping
-- 组内共享 directed edge fragment 消除
-- 单闭环 exterior reconstruction
-- 共线冗余顶点简化
-- member-area / merged-area 一致性
-- total fluid-area conservation
-- global topology rebuild
-- Stage 2D-4 topology audit 再验证
-- unsafe small->small / self-target / 断链 / 分叉 / 多环显式失败
+默认 `FluidRegion2D::Exterior` 上必须重新验证：
 
-真实 shifted-circle 聚合：
+- small-cell alpha 计算基于固体**外侧**真实流体面积；
+- 多 fluid components 作为独立 solver cells 后仍能正确选邻居；
+- agglomeration 不得跨越 `EmbeddedBoundary` 把两侧流体错误连通；
+- agglomeration 前后 `total fluid area = domain area - solid area`；
+- 聚合后固体内部仍为空；
+- rebuilt topology 同时保留 embedded wall 与 outer domain boundary。
 
-```text
-small cells detected = 8
-merged small cells = 8
-output cells = input cells - 8
-total fluid-area error <= 1e-10
+在 current corrected head 完成新的全量 CTest/复杂外流案例前，本阶段不再使用旧 “PASS/CLOSED” 作为产品完成证明。
 
-duplicateVertices = 0
-duplicateEdges = 0
-orphanInternalEdges = 0
-nonManifoldEdges = 0
-unclassifiedBoundaryEdges = 0
-openCellLoops = 0
-areaMismatches = 0
-```
-
-## 已执行根工程门禁
-
-```text
-cartmesh2d_stage0_geometry_tests .................. Passed
-cartmesh2d_stage1_grid_tests ...................... Passed
-cartmesh2d_stage2_quadtree_tests .................. Passed
-cartmesh2d_stage3_cutcell_tests ................... Passed
-cartmesh2d_stage3_quadtree_cutcell_audit_tests .... Passed
-cartmesh2d_stage4_topology_tests .................. Passed
-cartmesh2d_stage4_adaptive_topology_audit_tests ... Passed
-cartmesh2d_stage5a_small_cell_tests ............... Passed
-cartmesh2d_stage5b_agglomeration_tests ............ Passed
-
-100% tests passed, 0 tests failed out of 9
-```
-
-## 隔离
-
-二维实现仍限制在根二维入口/文档与 `cartmesh2d/**`；未修改三维 `include/cartmesh/**`、根 `src/**`、根 `apps/**`、根 `tests/**` 算法代码。
-
-Stage 2D-5 正式关闭；后续进入 Stage 2D-6 quality/export/final acceptance。
+完整审计：`docs/PHYSICAL_DOMAIN_AUDIT_2026-08-22.md`
