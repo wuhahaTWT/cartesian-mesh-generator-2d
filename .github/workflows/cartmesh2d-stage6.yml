@@ -43,7 +43,7 @@ jobs:
       - name: Run Stage 0-6 native 2D tests
         run: ctest --test-dir build_2d -R '^cartmesh2d_stage' --output-on-failure
 
-      - name: Verify exported acceptance artifacts
+      - name: Verify exported acceptance artifacts and CFD fluid side
         shell: bash
         run: |
           set -euo pipefail
@@ -54,12 +54,15 @@ jobs:
             test -s "$out/${case_name}.quality.json"
             test -s "$out/${case_name}.viz.json"
             grep -q '^CM2D 1$' "$out/${case_name}.cm2d"
-            python3 - "$out/${case_name}.quality.json" "$out/${case_name}.viz.json" <<'PY'
+            python3 - "$out/${case_name}.quality.json" "$out/${case_name}.viz.json" "$out/${case_name}.cm2d" <<'PY'
           import json, sys
           with open(sys.argv[1], encoding='utf-8') as f:
               report = json.load(f)
           with open(sys.argv[2], encoding='utf-8') as f:
               viz = json.load(f)
+          with open(sys.argv[3], encoding='utf-8') as f:
+              cm2d = [line.strip() for line in f if line.strip()]
+
           assert report['valid'] is True
           assert all(value == 0 for value in report['topology_audit'].values())
           assert report['counts']['vertices'] > 0
@@ -67,7 +70,12 @@ jobs:
           assert report['counts']['cells'] > 0
           assert report['quality']['min_cell_area'] > 0.0
           assert report['quality']['min_edge_length'] > 0.0
+
+          # Product semantics gate: acceptance inputs are SOLID obstacles and
+          # the retained CFD region must be outside them.
           assert viz['format'] == 'cartmesh2d-viz-v1'
+          assert viz['fluid_region'] == 'exterior'
+          assert viz['boundary_role'] == 'solid_wall'
           assert isinstance(viz['source_cells'], list) and len(viz['source_cells']) > 0
           assert viz['source_small_cell_count'] == report['counts']['source_small_cells']
           for cell in viz['source_cells']:
@@ -75,6 +83,13 @@ jobs:
               assert cell['level'] >= 0
               assert len(cell['background_bounds']) == 4
               assert 0.0 < cell['area_fraction'] <= 1.0
+
+          edge_header = next(i for i, line in enumerate(cm2d) if line.startswith('EDGES '))
+          edge_count = int(cm2d[edge_header].split()[1])
+          patches = [int(cm2d[edge_header + 1 + i].split()[5]) for i in range(edge_count)]
+          # patch 1 = solid embedded wall, patch 2 = outer computational domain
+          assert patches.count(1) > 0, 'missing solid EmbeddedBoundary'
+          assert patches.count(2) > 0, 'missing outer DomainBoundary'
           PY
           done
 
