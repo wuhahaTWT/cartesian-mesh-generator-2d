@@ -129,6 +129,9 @@ int main() {
     check(isolated.smallCellCount == 1 && isolated.unresolvedCount == 1,
           "isolated small cell is counted as unresolved");
 
+    // This fixture intentionally tests the historical interior-fluid
+    // stabilization geometry. Keep its physical side explicit so changing the
+    // product default can never silently change the regression's meaning.
     std::vector<Point2D> shiftedCircle;
     constexpr std::size_t circleSegments = 64;
     for (std::size_t i = 0; i < circleSegments; ++i) {
@@ -146,7 +149,7 @@ int main() {
     check(circleBalance.violationsAfter == 0, "shifted-circle Quadtree is 2:1 balanced");
     std::vector<CutCell2D> circleCuts;
     for (const auto& leaf : circleTree.leaves()) {
-        circleCuts.push_back(buildCutCell(leaf, circleBoundary));
+        circleCuts.push_back(buildCutCell(leaf, circleBoundary, FluidRegion2D::Interior));
     }
     const auto circleTopology = buildGlobalTopology(circleCuts, circleDomain, circleBoundary);
     check(circleTopology.valid(), "shifted-circle topology is valid");
