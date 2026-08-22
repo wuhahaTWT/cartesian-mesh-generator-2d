@@ -230,10 +230,6 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
         const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
         auto clipped = clipSegmentToAABB(edge, box, tol);
         if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
-        // BoundaryLoop is normalized CCW, therefore its interior lies to the
-        // left. For external CFD the fluid lies on the opposite side, so the
-        // embedded fragment must be reversed to keep the retained fluid on
-        // the left of every directed boundary edge.
         if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
         fragments.push_back(*clipped);
     }
@@ -304,6 +300,7 @@ struct LocalIntersectionResult {
     std::vector<Polygon2D> components;
     std::vector<Segment2D> embedded;
     bool graphInvalid = false;
+    bool hasHole = false;
 };
 
 [[nodiscard]] LocalIntersectionResult buildLocalIntersection(
@@ -321,9 +318,6 @@ struct LocalIntersectionResult {
         addDirectedEdge(edges, a, b);
     }
 
-    // Cartesian-cell perimeter is directed counter-clockwise so the box
-    // interior is always on the left. Retain only perimeter intervals whose
-    // midpoint is on the requested physical fluid side of the input loop.
     const std::vector<Segment2D> sides{
         {{box.min.x, box.min.y}, {box.max.x, box.min.y}},
         {{box.max.x, box.min.y}, {box.max.x, box.max.y}},
@@ -408,10 +402,19 @@ struct LocalIntersectionResult {
         if (loop.size() < 3) continue;
         Polygon2D polygon{loop};
         if (polygon.area() <= areaEps) continue;
-        if (polygon.signedArea() < 0.0) std::reverse(polygon.vertices.begin(), polygon.vertices.end());
         if (!simplePolygonLoop(polygon, tol)) {
             result.graphInvalid = true;
             return result;
+        }
+
+        // The directed boundary graph is constructed with retained fluid on
+        // the left. Therefore a positive loop is an actual fluid component;
+        // a negative loop bounds a hole inside that fluid region. Multiple
+        // positive loops can safely become multiple solver cells, but a hole
+        // requires polygon-with-holes topology and is not silently flattened.
+        if (polygon.signedArea() < 0.0) {
+            result.hasHole = true;
+            continue;
         }
         result.components.push_back(std::move(polygon));
     }
@@ -437,63 +440,67 @@ void setEmptyFluidCell(CutCell2D& result) {
     result.embeddedBoundary.clear();
 }
 
-[[nodiscard]] CutCell2D buildCutCellImpl(
+[[nodiscard]] CutCell2D unsupportedCell(const AABB2D& box,
+                                        CutCellIssueCode code,
+                                        std::string message) {
+    CutCell2D result;
+    result.backgroundBounds = box;
+    result.kind = CutCellKind::Unsupported;
+    result.issues.push_back({code, std::move(message)});
+    return result;
+}
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCellsImpl(
     const AABB2D& box, CellClass classification,
     const BoundaryLoop& inputBoundary, FluidRegion2D fluidRegion,
     const TolerancePolicy& tol) {
-    CutCell2D result;
-    result.backgroundBounds = box;
-
     const double fullArea = backgroundArea(box);
     if (!(fullArea > areaTolerance(fullArea, tol))) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::InvalidBackgroundCell,
-                                 "background cell has non-positive area"});
-        return result;
+        return {unsupportedCell(box, CutCellIssueCode::InvalidBackgroundCell,
+                                "background cell has non-positive area")};
     }
 
     const auto inputDiagnostics = inputBoundary.diagnose(tol);
     if (!inputDiagnostics.valid()) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::InvalidBoundary,
-                                 "boundary loop failed geometry diagnostics"});
-        return result;
+        return {unsupportedCell(box, CutCellIssueCode::InvalidBoundary,
+                                "boundary loop failed geometry diagnostics")};
     }
 
     BoundaryLoop boundary = inputBoundary;
     if (!boundary.normalizeCounterClockwise(tol)) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::InvalidBoundary,
-                                 "boundary loop could not be normalized to CCW"});
-        return result;
+        return {unsupportedCell(box, CutCellIssueCode::InvalidBoundary,
+                                "boundary loop could not be normalized to CCW")};
     }
 
     const double areaEps = areaTolerance(fullArea, tol);
+    CutCell2D simple;
+    simple.backgroundBounds = box;
 
     if (classification == CellClass::Outside) {
         if (fluidRegion == FluidRegion2D::Exterior) {
-            setFullFluidCell(result, box, fullArea, areaEps);
+            setFullFluidCell(simple, box, fullArea, areaEps);
         } else {
-            setEmptyFluidCell(result);
+            setEmptyFluidCell(simple);
         }
-        return result;
+        return {std::move(simple)};
     }
     if (classification == CellClass::Inside) {
         if (fluidRegion == FluidRegion2D::Exterior) {
-            setEmptyFluidCell(result);
+            setEmptyFluidCell(simple);
         } else {
-            setFullFluidCell(result, box, fullArea, areaEps);
+            setFullFluidCell(simple, box, fullArea, areaEps);
         }
-        return result;
+        return {std::move(simple)};
     }
 
     const auto local = buildLocalIntersection(boundary, box, fluidRegion, tol);
-    result.embeddedBoundary = local.embedded;
     if (local.graphInvalid) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::DegeneratePolygon,
-                                 "local Cut-cell boundary graph is open, branched or degenerate"});
-        return result;
+        return {unsupportedCell(box, CutCellIssueCode::DegeneratePolygon,
+                                "local Cut-cell boundary graph is open, branched or degenerate")};
+    }
+    if (local.hasHole) {
+        return {unsupportedCell(box, CutCellIssueCode::MultipleEmbeddedComponents,
+                                "local fluid region contains a hole; refine the leaf or add polygon-with-holes support")};
     }
 
     if (local.components.empty()) {
@@ -501,56 +508,68 @@ void setEmptyFluidCell(CutCell2D& result) {
                              0.5 * (box.min.y + box.max.y)};
         const auto state = classifyPointInPolygon(center, boundary.polygon(), tol);
         if (pointStateIsFluid(state, fluidRegion)) {
-            setFullFluidCell(result, box, fullArea, areaEps);
+            setFullFluidCell(simple, box, fullArea, areaEps);
         } else {
-            setEmptyFluidCell(result);
+            setEmptyFluidCell(simple);
         }
-        return result;
+        return {std::move(simple)};
     }
 
-    if (local.components.size() > 1) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::MultipleEmbeddedComponents,
-                                 "multiple disconnected fluid components or a local hole occur in one leaf"});
-        return result;
+    const std::size_t fragmentComponentCount = countFragmentComponents(local.embedded, tol);
+    if (fragmentComponentCount == 0) {
+        return {unsupportedCell(box, CutCellIssueCode::MissingEmbeddedBoundary,
+                                "partial fluid polygon has no embedded-boundary fragment")};
     }
 
-    result.fluidPolygon = local.components.front();
-    result.area = result.fluidPolygon.area();
-    if (result.area <= areaEps) {
-        setEmptyFluidCell(result);
-        return result;
-    }
-    if (result.area > fullArea + areaEps) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::AreaOutOfRange,
-                                 "local Cut-cell fluid area exceeds background-cell area"});
-        return result;
-    }
-
-    result.areaFraction = std::clamp(result.area / fullArea, 0.0, 1.0);
-    result.centroid = cutPolygonCentroid(result.fluidPolygon, areaEps);
-    if (!result.centroid) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::DegeneratePolygon,
-                                 "local Cut-cell polygon has no valid centroid"});
-        return result;
-    }
-
-    if (fullArea - result.area <= areaEps) {
-        setFullFluidCell(result, box, fullArea, areaEps);
-        return result;
+    std::vector<CutCell2D> result;
+    result.reserve(local.components.size());
+    double totalArea = 0.0;
+    for (const auto& polygon : local.components) {
+        CutCell2D component;
+        component.backgroundBounds = box;
+        component.fluidPolygon = polygon;
+        component.embeddedBoundary = local.embedded;
+        component.area = component.fluidPolygon.area();
+        if (component.area <= areaEps) continue;
+        if (component.area > fullArea + areaEps) {
+            return {unsupportedCell(box, CutCellIssueCode::AreaOutOfRange,
+                                    "local Cut-cell fluid component exceeds background-cell area")};
+        }
+        component.areaFraction = std::clamp(component.area / fullArea, 0.0, 1.0);
+        component.centroid = cutPolygonCentroid(component.fluidPolygon, areaEps);
+        if (!component.centroid) {
+            return {unsupportedCell(box, CutCellIssueCode::DegeneratePolygon,
+                                    "local Cut-cell polygon has no valid centroid")};
+        }
+        component.kind = CutCellKind::Cut;
+        totalArea += component.area;
+        result.push_back(std::move(component));
     }
 
-    const std::size_t componentCount = countFragmentComponents(result.embeddedBoundary, tol);
-    if (componentCount == 0) {
-        result.kind = CutCellKind::Unsupported;
-        result.issues.push_back({CutCellIssueCode::MissingEmbeddedBoundary,
-                                 "partial fluid polygon has no embedded-boundary fragment"});
-        return result;
+    if (result.empty()) {
+        setEmptyFluidCell(simple);
+        return {std::move(simple)};
     }
+    if (totalArea > fullArea + areaEps) {
+        return {unsupportedCell(box, CutCellIssueCode::AreaOutOfRange,
+                                "sum of local fluid components exceeds background-cell area")};
+    }
+    if (result.size() == 1 && fullArea - result.front().area <= areaEps) {
+        setFullFluidCell(result.front(), box, fullArea, areaEps);
+    }
+    return result;
+}
 
-    result.kind = CutCellKind::Cut;
+[[nodiscard]] CutCell2D buildCutCellImpl(
+    const AABB2D& box, CellClass classification,
+    const BoundaryLoop& inputBoundary, FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol) {
+    auto components = buildCutCellsImpl(box, classification, inputBoundary, fluidRegion, tol);
+    if (components.size() == 1) return std::move(components.front());
+
+    CutCell2D result = unsupportedCell(
+        box, CutCellIssueCode::MultipleEmbeddedComponents,
+        "multiple disconnected fluid components occur in one leaf; use buildCutCells() for solver topology");
     return result;
 }
 
@@ -586,6 +605,42 @@ CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
                                         fluidRegion, tol);
     result.sourceId = leaf.id;
     result.sourceKey = leaf.key;
+    return result;
+}
+
+std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification,
+                                     const BoundaryLoop& boundary,
+                                     const TolerancePolicy& tol) {
+    return buildCutCellsImpl(box, classification, boundary, FluidRegion2D::Exterior, tol);
+}
+
+std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification,
+                                     const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                                     const TolerancePolicy& tol) {
+    return buildCutCellsImpl(box, classification, boundary, fluidRegion, tol);
+}
+
+std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
+                                     const BoundaryLoop& boundary,
+                                     const TolerancePolicy& tol) {
+    auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, boundary,
+                                    FluidRegion2D::Exterior, tol);
+    for (auto& component : result) {
+        component.sourceId = leaf.id;
+        component.sourceKey = leaf.key;
+    }
+    return result;
+}
+
+std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
+                                     const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                                     const TolerancePolicy& tol) {
+    auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, boundary,
+                                    fluidRegion, tol);
+    for (auto& component : result) {
+        component.sourceId = leaf.id;
+        component.sourceKey = leaf.key;
+    }
     return result;
 }
 
