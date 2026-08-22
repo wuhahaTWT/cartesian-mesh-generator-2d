@@ -57,16 +57,15 @@ struct CutCell2D {
     }
 };
 
-// Default CFD semantics: BoundaryLoop is a solid obstacle and the retained
-// fluid is on the EXTERIOR side of the loop.
+// Single-component API. This remains convenient for unit tests and simple
+// leaves. If a leaf genuinely contains more than one disconnected fluid
+// component, this API returns Unsupported rather than silently dropping one.
 [[nodiscard]] CutCell2D buildCutCell(
     const AABB2D& backgroundBounds,
     CellClass classification,
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
 
-// Explicit physical-side override. Use Interior only for a deliberately
-// internal-flow domain represented by the loop interior.
 [[nodiscard]] CutCell2D buildCutCell(
     const AABB2D& backgroundBounds,
     CellClass classification,
@@ -80,6 +79,36 @@ struct CutCell2D {
     const TolerancePolicy& tol = {});
 
 [[nodiscard]] CutCell2D buildCutCell(
+    const QuadtreeLeaf2D& leaf,
+    const BoundaryLoop& boundary,
+    FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol = {});
+
+// Product/solver API. A single Cartesian/Quadtree leaf may contain multiple
+// disconnected fluid components for a strongly concave solid. Each component
+// must become its own solver cell instead of being discarded or bridged.
+// A true local hole (a solid loop fully enclosed by one leaf) is still
+// Unsupported in the current simple-polygon topology model and is reported
+// explicitly; refinement or future polygon-with-holes support is required.
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
+    const AABB2D& backgroundBounds,
+    CellClass classification,
+    const BoundaryLoop& boundary,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
+    const AABB2D& backgroundBounds,
+    CellClass classification,
+    const BoundaryLoop& boundary,
+    FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
+    const QuadtreeLeaf2D& leaf,
+    const BoundaryLoop& boundary,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
     const QuadtreeLeaf2D& leaf,
     const BoundaryLoop& boundary,
     FluidRegion2D fluidRegion,
