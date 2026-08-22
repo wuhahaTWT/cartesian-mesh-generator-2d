@@ -61,6 +61,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_cutcell_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_cutcell_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_cutcell_components_tests tests/cutcell_components_test.cpp)
+    target_link_libraries(cartmesh2d_cutcell_components_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_cutcell_components_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_cutcell_quadtree_audit_tests tests/cutcell_quadtree_audit_test.cpp)
     target_link_libraries(cartmesh2d_cutcell_quadtree_audit_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_cutcell_quadtree_audit_tests PRIVATE cxx_std_20)
@@ -94,6 +98,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_grid_tests
             cartmesh2d_quadtree_tests
             cartmesh2d_cutcell_tests
+            cartmesh2d_cutcell_components_tests
             cartmesh2d_cutcell_quadtree_audit_tests
             cartmesh2d_topology_tests
             cartmesh2d_topology_quadtree_audit_tests
@@ -114,6 +119,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
+    add_test(NAME cartmesh2d_stage3_cutcell_components_tests COMMAND cartmesh2d_cutcell_components_tests)
     add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests COMMAND cartmesh2d_cutcell_quadtree_audit_tests)
     add_test(NAME cartmesh2d_stage4_topology_tests COMMAND cartmesh2d_topology_tests)
     add_test(NAME cartmesh2d_stage4_adaptive_topology_audit_tests COMMAND cartmesh2d_topology_quadtree_audit_tests)
