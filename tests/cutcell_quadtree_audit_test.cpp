@@ -32,12 +32,20 @@ int main() {
     std::size_t unsupported = 0;
     std::size_t invalidPolygons = 0;
     std::size_t badAreaFractions = 0;
+    std::size_t emptySolidLeaves = 0;
+    std::size_t fullExteriorLeaves = 0;
 
     for (const auto& leaf : tree.leaves()) {
         const auto cut = buildCutCell(leaf, circle);
         if (cut.kind == CutCellKind::Unsupported) {
             ++unsupported;
             continue;
+        }
+        if (leaf.classification == CellClass::Inside && cut.kind == CutCellKind::Empty) {
+            ++emptySolidLeaves;
+        }
+        if (leaf.classification == CellClass::Outside && cut.kind == CutCellKind::Full) {
+            ++fullExteriorLeaves;
         }
         if (cut.kind == CutCellKind::Empty) continue;
 
@@ -49,18 +57,22 @@ int main() {
         if (!polygonLoop.diagnose().valid()) ++invalidPolygons;
     }
 
-    const double expectedArea = circle.polygon().area();
-    const double error = std::abs(totalFluidArea - expectedArea);
+    const double domainArea = domain.width() * domain.height();
+    const double solidArea = circle.polygon().area();
+    const double expectedFluidArea = domainArea - solidArea;
+    const double error = std::abs(totalFluidArea - expectedFluidArea);
 
     if (unsupported != 0 || invalidPolygons != 0 || badAreaFractions != 0 ||
-        error > 1.0e-9) {
+        emptySolidLeaves == 0 || fullExteriorLeaves == 0 || error > 1.0e-9) {
         std::cerr << "unsupported=" << unsupported
                   << " invalidPolygons=" << invalidPolygons
                   << " badAreaFractions=" << badAreaFractions
-                  << " areaError=" << error << '\n';
+                  << " emptySolidLeaves=" << emptySolidLeaves
+                  << " fullExteriorLeaves=" << fullExteriorLeaves
+                  << " fluidAreaError=" << error << '\n';
         return EXIT_FAILURE;
     }
 
-    std::cout << "cartmesh2d 2D-3 quadtree cut-cell conservation audit passed\n";
+    std::cout << "cartmesh2d 2D-3 external-domain conservation audit passed\n";
     return EXIT_SUCCESS;
 }
