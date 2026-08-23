@@ -12,7 +12,9 @@ add_library(cartmesh2d
     src/stabilization/SmallCell2D.cpp
     src/stabilization/Agglomeration2D.cpp
     src/quality/Quality2D.cpp
+    src/quality/SolverQuality2D.cpp
     src/io/MeshIO2D.cpp
+    src/io/OpenFoam2D.cpp
 )
 add_library(cartmesh2d::cartmesh2d ALIAS cartmesh2d)
 
@@ -46,6 +48,7 @@ option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_executable(cartmesh2d_geometry_tests tests/geometry_test.cpp)
     target_link_libraries(cartmesh2d_geometry_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_geometry_tests PRIVATE cxx_std_20)
@@ -65,6 +68,10 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_multiloop_tests tests/multiloop_test.cpp)
     target_link_libraries(cartmesh2d_multiloop_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_multiloop_tests PRIVATE cxx_std_20)
+
+    add_executable(cartmesh2d_solver_export_tests tests/solver_export_test.cpp)
+    target_link_libraries(cartmesh2d_solver_export_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_solver_export_tests PRIVATE cxx_std_20)
 
     add_executable(cartmesh2d_cutcell_tests tests/cutcell_test.cpp)
     target_link_libraries(cartmesh2d_cutcell_tests PRIVATE cartmesh2d::cartmesh2d)
@@ -108,6 +115,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_quadtree_tests
             cartmesh2d_spatial_index_tests
             cartmesh2d_multiloop_tests
+            cartmesh2d_solver_export_tests
             cartmesh2d_cutcell_tests
             cartmesh2d_cutcell_components_tests
             cartmesh2d_cutcell_quadtree_audit_tests
@@ -131,6 +139,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
+    add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_components_tests COMMAND cartmesh2d_cutcell_components_tests)
     add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests COMMAND cartmesh2d_cutcell_quadtree_audit_tests)
@@ -168,6 +177,17 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/annulus.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/annulus 7 0.25 0.05 interior)
     add_test(NAME cartmesh2d_stageD1_nested_island_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nested_island.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/nested_island 7 0.25 0.05 interior)
+    set(CARTMESH2D_SOLVER_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/solver_ready)
+    add_test(NAME cartmesh2d_stageS1_rectangle_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/rectangle 5 0.25 0.05 exterior
+                ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case)
+    add_test(NAME cartmesh2d_stageS1_independent_openfoam_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case
+                --report ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case/independent_check.json)
+    set_tests_properties(cartmesh2d_stageS1_independent_openfoam_reader PROPERTIES
+        DEPENDS cartmesh2d_stageS1_rectangle_openfoam_e2e)
     add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
     set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)
