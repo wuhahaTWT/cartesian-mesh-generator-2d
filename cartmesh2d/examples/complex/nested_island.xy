@@ -1,0 +1,17 @@
+# Even-odd depth 0: fluid material in explicit interior mode.
+0.0 0.0
+5.0 0.0
+5.0 5.0
+0.0 5.0
+
+# Depth 1: hole.
+1.0 1.0
+4.0 1.0
+4.0 4.0
+1.0 4.0
+
+# Depth 2: disconnected fluid island.
+2.0 2.0
+3.0 2.0
+3.0 3.0
+2.0 3.0

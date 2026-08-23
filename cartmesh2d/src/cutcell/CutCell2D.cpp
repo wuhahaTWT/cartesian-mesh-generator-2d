@@ -214,16 +214,18 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
 }
 
 [[nodiscard]] std::vector<Segment2D> collectEmbeddedBoundary(
-    const BoundaryLoop& boundary, const AABB2D& box,
+    const BoundaryRegion2D& boundary, const AABB2D& box,
     FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
     std::vector<Segment2D> fragments;
-    const auto& vertices = boundary.vertices();
-    for (std::size_t i = 0; i < vertices.size(); ++i) {
-        const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
-        auto clipped = clipSegmentToAABB(edge, box, tol);
-        if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
-        if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
-        fragments.push_back(*clipped);
+    for (const auto& loop : boundary.loops()) {
+        const auto& vertices = loop.vertices();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
+            auto clipped = clipSegmentToAABB(edge, box, tol);
+            if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
+            if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
+            fragments.push_back(*clipped);
+        }
     }
     return fragments;
 }
@@ -256,6 +258,45 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
         }
     }
     return components;
+}
+
+[[nodiscard]] bool pointOnBoxPerimeter(const Point2D& point, const AABB2D& box,
+                                       const TolerancePolicy& tol) noexcept {
+    return box.contains(point,tol) &&
+           (scalarNear(point.x,box.min.x,tol) || scalarNear(point.x,box.max.x,tol) ||
+            scalarNear(point.y,box.min.y,tol) || scalarNear(point.y,box.max.y,tol));
+}
+
+[[nodiscard]] bool hasClosedEmbeddedComponent(
+    const std::vector<Segment2D>& fragments, const AABB2D& box,
+    const TolerancePolicy& tol) {
+    std::vector<bool> visited(fragments.size(),false);
+    for (std::size_t start=0;start<fragments.size();++start) {
+        if (visited[start]) continue;
+        bool touchesPerimeter=false;
+        std::queue<std::size_t> pending;
+        pending.push(start);
+        visited[start]=true;
+        while (!pending.empty()) {
+            const std::size_t current=pending.front();
+            pending.pop();
+            const auto& fragment=fragments[current];
+            touchesPerimeter = touchesPerimeter ||
+                pointOnBoxPerimeter(fragment.a,box,tol) ||
+                pointOnBoxPerimeter(fragment.b,box,tol);
+            for (std::size_t candidate=0;candidate<fragments.size();++candidate) {
+                if (visited[candidate]) continue;
+                const auto& other=fragments[candidate];
+                if (pointNear(fragment.a,other.a,tol) || pointNear(fragment.a,other.b,tol) ||
+                    pointNear(fragment.b,other.a,tol) || pointNear(fragment.b,other.b,tol)) {
+                    visited[candidate]=true;
+                    pending.push(candidate);
+                }
+            }
+        }
+        if (!touchesPerimeter) return true;
+    }
+    return false;
 }
 
 struct HalfEdge {
@@ -346,11 +387,15 @@ struct LocalIntersectionResult {
 }
 
 [[nodiscard]] LocalIntersectionResult buildLocalIntersection(
-    const BoundaryLoop& boundary, const AABB2D& box,
+    const BoundaryRegion2D& boundary, const AABB2D& box,
     FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
     LocalIntersectionResult result;
     result.embedded = collectEmbeddedBoundary(boundary, box, fluidRegion, tol);
     if (result.embedded.empty()) return result;
+    if (hasClosedEmbeddedComponent(result.embedded,box,tol)) {
+        result.hasHole=true;
+        return result;
+    }
 
     std::vector<Point2D> points;
     std::vector<HalfEdge> edges;
@@ -366,8 +411,6 @@ struct LocalIntersectionResult {
         {{box.max.x, box.max.y}, {box.min.x, box.max.y}},
         {{box.min.x, box.max.y}, {box.min.x, box.min.y}}
     };
-    const Polygon2D boundaryPolygon = boundary.polygon();
-
     for (const auto& side : sides) {
         std::vector<Point2D> sidePoints{side.a, side.b};
         for (const auto& fragment : result.embedded) {
@@ -473,7 +516,7 @@ struct LocalIntersectionResult {
                                   ", area=" + std::to_string(polygon.area()) + ")";
             return result;
         }
-        const auto state = classifyPointInPolygon(*probe, boundaryPolygon, tol);
+        const auto state = boundary.classifyPoint(*probe, tol);
         if (!pointStateIsFluid(state, fluidRegion)) continue;
 
         LocalFluidComponent component;
@@ -528,7 +571,7 @@ void setEmptyFluidCell(CutCell2D& result) {
 
 [[nodiscard]] std::vector<CutCell2D> buildCutCellsImpl(
     const AABB2D& box, CellClass classification,
-    const BoundaryLoop& inputBoundary, FluidRegion2D fluidRegion,
+    const BoundaryRegion2D& inputBoundary, FluidRegion2D fluidRegion,
     const TolerancePolicy& tol) {
     const double fullArea = backgroundArea(box);
     if (!(fullArea > areaTolerance(fullArea, tol))) {
@@ -539,13 +582,13 @@ void setEmptyFluidCell(CutCell2D& result) {
     const auto inputDiagnostics = inputBoundary.diagnose(tol);
     if (!inputDiagnostics.valid()) {
         return {unsupportedCell(box, CutCellIssueCode::InvalidBoundary,
-                                "boundary loop failed geometry diagnostics")};
+                                "boundary region failed geometry diagnostics")};
     }
 
-    BoundaryLoop boundary = inputBoundary;
-    if (!boundary.normalizeCounterClockwise(tol)) {
+    BoundaryRegion2D boundary = inputBoundary;
+    if (!boundary.normalizeAlternating(tol)) {
         return {unsupportedCell(box, CutCellIssueCode::InvalidBoundary,
-                                "boundary loop could not be normalized to CCW")};
+                                "boundary region could not be normalized by nesting depth")};
     }
 
     const double areaEps = areaTolerance(fullArea, tol);
@@ -582,7 +625,7 @@ void setEmptyFluidCell(CutCell2D& result) {
     if (local.components.empty()) {
         const Point2D center{0.5 * (box.min.x + box.max.x),
                              0.5 * (box.min.y + box.max.y)};
-        const auto state = classifyPointInPolygon(center, boundary.polygon(), tol);
+        const auto state = boundary.classifyPoint(center, tol);
         if (pointStateIsFluid(state, fluidRegion)) {
             setFullFluidCell(simple, box, fullArea, areaEps);
         } else {
@@ -639,7 +682,7 @@ void setEmptyFluidCell(CutCell2D& result) {
 
 [[nodiscard]] CutCell2D buildCutCellImpl(
     const AABB2D& box, CellClass classification,
-    const BoundaryLoop& inputBoundary, FluidRegion2D fluidRegion,
+    const BoundaryRegion2D& inputBoundary, FluidRegion2D fluidRegion,
     const TolerancePolicy& tol) {
     auto components = buildCutCellsImpl(box, classification, inputBoundary, fluidRegion, tol);
     if (components.size() == 1) return std::move(components.front());
@@ -655,12 +698,18 @@ void setEmptyFluidCell(CutCell2D& result) {
 CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
                        const BoundaryLoop& boundary,
                        const TolerancePolicy& tol) {
-    return buildCutCellImpl(box, classification, boundary,
+    return buildCutCellImpl(box, classification, BoundaryRegion2D(boundary),
                             FluidRegion2D::Exterior, tol);
 }
 
 CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
                        const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                       const TolerancePolicy& tol) {
+    return buildCutCellImpl(box, classification, BoundaryRegion2D(boundary), fluidRegion, tol);
+}
+
+CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
+                       const BoundaryRegion2D& boundary, FluidRegion2D fluidRegion,
                        const TolerancePolicy& tol) {
     return buildCutCellImpl(box, classification, boundary, fluidRegion, tol);
 }
@@ -668,7 +717,7 @@ CutCell2D buildCutCell(const AABB2D& box, CellClass classification,
 CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
                        const BoundaryLoop& boundary,
                        const TolerancePolicy& tol) {
-    CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, boundary,
+    CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, BoundaryRegion2D(boundary),
                                         FluidRegion2D::Exterior, tol);
     result.sourceId = leaf.id;
     result.sourceKey = leaf.key;
@@ -677,6 +726,16 @@ CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
 
 CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
                        const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                       const TolerancePolicy& tol) {
+    CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, BoundaryRegion2D(boundary),
+                                        fluidRegion, tol);
+    result.sourceId = leaf.id;
+    result.sourceKey = leaf.key;
+    return result;
+}
+
+CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
+                       const BoundaryRegion2D& boundary, FluidRegion2D fluidRegion,
                        const TolerancePolicy& tol) {
     CutCell2D result = buildCutCellImpl(leaf.bounds, leaf.classification, boundary,
                                         fluidRegion, tol);
@@ -688,11 +747,18 @@ CutCell2D buildCutCell(const QuadtreeLeaf2D& leaf,
 std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification,
                                      const BoundaryLoop& boundary,
                                      const TolerancePolicy& tol) {
-    return buildCutCellsImpl(box, classification, boundary, FluidRegion2D::Exterior, tol);
+    return buildCutCellsImpl(box, classification, BoundaryRegion2D(boundary), FluidRegion2D::Exterior, tol);
 }
 
 std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification,
                                      const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                                     const TolerancePolicy& tol) {
+    return buildCutCellsImpl(box, classification, BoundaryRegion2D(boundary), fluidRegion, tol);
+}
+
+std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification,
+                                     const BoundaryRegion2D& boundary,
+                                     FluidRegion2D fluidRegion,
                                      const TolerancePolicy& tol) {
     return buildCutCellsImpl(box, classification, boundary, fluidRegion, tol);
 }
@@ -700,7 +766,7 @@ std::vector<CutCell2D> buildCutCells(const AABB2D& box, CellClass classification
 std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
                                      const BoundaryLoop& boundary,
                                      const TolerancePolicy& tol) {
-    auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, boundary,
+    auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, BoundaryRegion2D(boundary),
                                     FluidRegion2D::Exterior, tol);
     for (auto& component : result) {
         component.sourceId = leaf.id;
@@ -711,6 +777,19 @@ std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
 
 std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
                                      const BoundaryLoop& boundary, FluidRegion2D fluidRegion,
+                                     const TolerancePolicy& tol) {
+    auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, BoundaryRegion2D(boundary),
+                                    fluidRegion, tol);
+    for (auto& component : result) {
+        component.sourceId = leaf.id;
+        component.sourceKey = leaf.key;
+    }
+    return result;
+}
+
+std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
+                                     const BoundaryRegion2D& boundary,
+                                     FluidRegion2D fluidRegion,
                                      const TolerancePolicy& tol) {
     auto result = buildCutCellsImpl(leaf.bounds, leaf.classification, boundary,
                                     fluidRegion, tol);

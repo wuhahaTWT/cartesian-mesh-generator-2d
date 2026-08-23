@@ -514,4 +514,147 @@ bool BoundaryLoop::normalizeCounterClockwise(const TolerancePolicy& tol) {
     return true;
 }
 
+bool BoundaryLoop::normalizeClockwise(const TolerancePolicy& tol) {
+    const auto diagnostics = diagnose(tol);
+    if (!diagnostics.valid()) return false;
+    if (diagnostics.orientation == LoopOrientation::CounterClockwise) {
+        std::reverse(vertices_.begin(), vertices_.end());
+    }
+    return true;
+}
+
+BoundaryRegion2D::BoundaryRegion2D(std::vector<BoundaryLoop> loops)
+    : loops_(std::move(loops)) {}
+
+BoundaryRegion2D::BoundaryRegion2D(const BoundaryLoop& loop) : loops_{loop} {}
+
+BoundaryRegionDiagnostics2D BoundaryRegion2D::diagnose(
+    const TolerancePolicy& tol) const {
+    const bool sameTolerance=cacheTolerance_ &&
+        cacheTolerance_->absolute==tol.absolute && cacheTolerance_->relative==tol.relative;
+    if (sameTolerance && diagnosticsCache_) return *diagnosticsCache_;
+    if (!sameTolerance) {
+        diagnosticsCache_.reset();
+        nestingDepthCache_.reset();
+        cacheTolerance_=tol;
+    }
+    BoundaryRegionDiagnostics2D result;
+    if (loops_.empty()) {
+        result.issues.push_back({BoundaryRegionIssueCode::EmptyRegion, 0, 0,
+                                 "boundary region contains no loops"});
+        diagnosticsCache_=result;
+        return result;
+    }
+    for (std::size_t i = 0; i < loops_.size(); ++i) {
+        if (!loops_[i].diagnose(tol).valid()) {
+            result.issues.push_back({BoundaryRegionIssueCode::InvalidLoop, i, i,
+                                     "boundary region contains an invalid loop"});
+        }
+    }
+    if (!result.issues.empty()) {
+        diagnosticsCache_=result;
+        return result;
+    }
+
+    for (std::size_t i = 0; i < loops_.size(); ++i) {
+        const auto& a = loops_[i].vertices();
+        for (std::size_t j = i + 1; j < loops_.size(); ++j) {
+            const auto& b = loops_[j].vertices();
+            bool intersects = false;
+            for (std::size_t ea = 0; ea < a.size() && !intersects; ++ea) {
+                const Segment2D sa{a[ea], a[(ea + 1) % a.size()]};
+                for (std::size_t eb = 0; eb < b.size(); ++eb) {
+                    const Segment2D sb{b[eb], b[(eb + 1) % b.size()]};
+                    if (intersectSegments(sa, sb, tol).kind !=
+                        SegmentIntersectionKind::None) {
+                        intersects = true;
+                        break;
+                    }
+                }
+            }
+            if (intersects) {
+                result.issues.push_back({BoundaryRegionIssueCode::IntersectingLoops, i, j,
+                                         "boundary loops intersect or touch"});
+            }
+        }
+    }
+    diagnosticsCache_=result;
+    return result;
+}
+
+std::vector<std::size_t> BoundaryRegion2D::nestingDepths(
+    const TolerancePolicy& tol) const {
+    const bool sameTolerance=cacheTolerance_ &&
+        cacheTolerance_->absolute==tol.absolute && cacheTolerance_->relative==tol.relative;
+    if (sameTolerance && nestingDepthCache_) return *nestingDepthCache_;
+    if (!sameTolerance) {
+        diagnosticsCache_.reset();
+        nestingDepthCache_.reset();
+        cacheTolerance_=tol;
+    }
+    std::vector<std::size_t> depths(loops_.size(), 0);
+    if (!diagnose(tol).valid()) return depths;
+    for (std::size_t i = 0; i < loops_.size(); ++i) {
+        const Point2D probe = loops_[i].vertices().front();
+        for (std::size_t j = 0; j < loops_.size(); ++j) {
+            if (i == j) continue;
+            if (classifyPointInPolygon(probe, loops_[j].polygon(), tol) ==
+                PointInPolygon::Inside) {
+                ++depths[i];
+            }
+        }
+    }
+    nestingDepthCache_=depths;
+    return depths;
+}
+
+bool BoundaryRegion2D::normalizeAlternating(const TolerancePolicy& tol) {
+    if (!diagnose(tol).valid()) return false;
+    const auto depths = nestingDepths(tol);
+    for (std::size_t i = 0; i < loops_.size(); ++i) {
+        const bool ok = depths[i] % 2 == 0
+            ? loops_[i].normalizeCounterClockwise(tol)
+            : loops_[i].normalizeClockwise(tol);
+        if (!ok) return false;
+    }
+    diagnosticsCache_=BoundaryRegionDiagnostics2D{};
+    nestingDepthCache_=depths;
+    return true;
+}
+
+PointInPolygon BoundaryRegion2D::classifyPoint(
+    const Point2D& point, const TolerancePolicy& tol) const {
+    bool inside = false;
+    for (const auto& loop : loops_) {
+        const auto state = classifyPointInPolygon(point, loop.polygon(), tol);
+        if (state == PointInPolygon::Boundary) return PointInPolygon::Boundary;
+        if (state == PointInPolygon::Inside) inside = !inside;
+    }
+    return inside ? PointInPolygon::Inside : PointInPolygon::Outside;
+}
+
+AABB2D BoundaryRegion2D::bounds() const noexcept {
+    if (loops_.empty()) return {{0.0, 0.0}, {0.0, 0.0}};
+    AABB2D result = loops_.front().polygon().bounds();
+    for (std::size_t i = 1; i < loops_.size(); ++i) {
+        const AABB2D box = loops_[i].polygon().bounds();
+        result.min.x = std::min(result.min.x, box.min.x);
+        result.min.y = std::min(result.min.y, box.min.y);
+        result.max.x = std::max(result.max.x, box.max.x);
+        result.max.y = std::max(result.max.y, box.max.y);
+    }
+    return result;
+}
+
+double BoundaryRegion2D::area(const TolerancePolicy& tol) const {
+    if (!diagnose(tol).valid()) return 0.0;
+    const auto depths = nestingDepths(tol);
+    long double total = 0.0L;
+    for (std::size_t i = 0; i < loops_.size(); ++i) {
+        const long double loopArea = loops_[i].polygon().area();
+        total += depths[i] % 2 == 0 ? loopArea : -loopArea;
+    }
+    return static_cast<double>(total);
+}
+
 } // namespace cartmesh2d

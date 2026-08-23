@@ -74,6 +74,13 @@ struct CutCell2D {
     const TolerancePolicy& tol = {});
 
 [[nodiscard]] CutCell2D buildCutCell(
+    const AABB2D& backgroundBounds,
+    CellClass classification,
+    const BoundaryRegion2D& boundary,
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] CutCell2D buildCutCell(
     const QuadtreeLeaf2D& leaf,
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
@@ -82,6 +89,12 @@ struct CutCell2D {
     const QuadtreeLeaf2D& leaf,
     const BoundaryLoop& boundary,
     FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] CutCell2D buildCutCell(
+    const QuadtreeLeaf2D& leaf,
+    const BoundaryRegion2D& boundary,
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior,
     const TolerancePolicy& tol = {});
 
 // Product/solver API. A single Cartesian/Quadtree leaf may contain multiple
@@ -104,6 +117,13 @@ struct CutCell2D {
     const TolerancePolicy& tol = {});
 
 [[nodiscard]] std::vector<CutCell2D> buildCutCells(
+    const AABB2D& backgroundBounds,
+    CellClass classification,
+    const BoundaryRegion2D& boundary,
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
     const QuadtreeLeaf2D& leaf,
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
@@ -112,6 +132,12 @@ struct CutCell2D {
     const QuadtreeLeaf2D& leaf,
     const BoundaryLoop& boundary,
     FluidRegion2D fluidRegion,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCells(
+    const QuadtreeLeaf2D& leaf,
+    const BoundaryRegion2D& boundary,
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior,
     const TolerancePolicy& tol = {});
 
 } // namespace cartmesh2d

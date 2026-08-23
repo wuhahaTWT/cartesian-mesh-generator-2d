@@ -62,6 +62,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_spatial_index_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_spatial_index_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_multiloop_tests tests/multiloop_test.cpp)
+    target_link_libraries(cartmesh2d_multiloop_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_multiloop_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_cutcell_tests tests/cutcell_test.cpp)
     target_link_libraries(cartmesh2d_cutcell_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_cutcell_tests PRIVATE cxx_std_20)
@@ -103,6 +107,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_grid_tests
             cartmesh2d_quadtree_tests
             cartmesh2d_spatial_index_tests
+            cartmesh2d_multiloop_tests
             cartmesh2d_cutcell_tests
             cartmesh2d_cutcell_components_tests
             cartmesh2d_cutcell_quadtree_audit_tests
@@ -125,6 +130,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
+    add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_components_tests COMMAND cartmesh2d_cutcell_components_tests)
     add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests COMMAND cartmesh2d_cutcell_quadtree_audit_tests)
@@ -156,4 +162,13 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/naca2412_dense.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/naca2412_dense 8 0.30 0.005)
     add_test(NAME cartmesh2d_stageR_superellipse_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/superellipse_24.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/superellipse 7 0.25 0.01)
+    add_test(NAME cartmesh2d_stageD1_two_obstacles_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/two_obstacles.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/two_obstacles 7 0.25 0.05 exterior)
+    add_test(NAME cartmesh2d_stageD1_annulus_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/annulus.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/annulus 7 0.25 0.05 interior)
+    add_test(NAME cartmesh2d_stageD1_nested_island_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nested_island.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/nested_island 7 0.25 0.05 interior)
+    add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
+    set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)
 endif()

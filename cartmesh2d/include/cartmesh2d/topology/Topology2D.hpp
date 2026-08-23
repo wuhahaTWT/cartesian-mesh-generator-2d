@@ -92,4 +92,10 @@ struct TopologyMesh2D {
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
 
+[[nodiscard]] TopologyMesh2D buildGlobalTopology(
+    const std::vector<CutCell2D>& cutCells,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
 } // namespace cartmesh2d

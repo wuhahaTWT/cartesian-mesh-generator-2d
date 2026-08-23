@@ -108,6 +108,20 @@ int main() {
     check(!BoundarySegmentIndex2D(invalid, tol).valid(),
           "BVH refuses a self-intersecting boundary");
 
+    BoundaryRegion2D nested({
+        BoundaryLoop({{0.0,0.0},{4.0,0.0},{4.0,4.0},{0.0,4.0}}),
+        BoundaryLoop({{1.0,1.0},{3.0,1.0},{3.0,3.0},{1.0,3.0}}),
+        BoundaryLoop({{1.5,1.5},{2.5,1.5},{2.5,2.5},{1.5,2.5}})
+    });
+    const BoundarySegmentIndex2D nestedIndex(nested, tol);
+    check(nestedIndex.valid() && nestedIndex.segmentCount()==12,
+          "multi-loop spatial index contains every loop segment");
+    check(nestedIndex.classifyPoint({0.5,0.5},tol)==PointInPolygon::Inside &&
+          nestedIndex.classifyPoint({1.25,1.25},tol)==PointInPolygon::Outside &&
+          nestedIndex.classifyPoint({2.0,2.0},tol)==PointInPolygon::Inside,
+          "multi-loop spatial classification follows even-odd nesting");
+    check(nestedIndex.matches(nested),"multi-loop index matches its exact source region");
+
     if (failures != 0) {
         std::cerr << failures << " spatial index test(s) failed\n";
         return EXIT_FAILURE;

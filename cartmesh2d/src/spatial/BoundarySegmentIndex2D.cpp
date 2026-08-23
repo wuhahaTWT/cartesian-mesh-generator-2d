@@ -95,13 +95,23 @@ namespace {
 
 BoundarySegmentIndex2D::BoundarySegmentIndex2D(
     const BoundaryLoop& boundary, const TolerancePolicy& tol)
-    : boundaryVertices_(boundary.vertices()) {
+    : BoundarySegmentIndex2D(BoundaryRegion2D(boundary), tol) {}
+
+BoundarySegmentIndex2D::BoundarySegmentIndex2D(
+    const BoundaryRegion2D& boundary, const TolerancePolicy& tol) {
     if (!boundary.diagnose(tol).valid()) return;
-    segments_.reserve(boundaryVertices_.size());
-    for (std::size_t i = 0; i < boundaryVertices_.size(); ++i) {
-        const Segment2D segment{boundaryVertices_[i],
-                                boundaryVertices_[(i + 1U) % boundaryVertices_.size()]};
-        segments_.push_back({segment, segmentBounds(segment), i});
+    std::size_t segmentCount = 0;
+    for (const auto& loop : boundary.loops()) segmentCount += loop.vertices().size();
+    segments_.reserve(segmentCount);
+    boundaryLoops_.reserve(boundary.loops().size());
+    std::size_t sourceId = 0;
+    for (const auto& loop : boundary.loops()) {
+        boundaryLoops_.push_back(loop.vertices());
+        const auto& vertices = boundaryLoops_.back();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            const Segment2D segment{vertices[i], vertices[(i + 1U) % vertices.size()]};
+            segments_.push_back({segment, segmentBounds(segment), sourceId++});
+        }
     }
     order_.resize(segments_.size());
     std::iota(order_.begin(), order_.end(), 0U);
@@ -150,12 +160,19 @@ std::size_t BoundarySegmentIndex2D::buildNode(std::size_t begin, std::size_t end
     return nodeId;
 }
 
-bool BoundarySegmentIndex2D::matches(const BoundaryLoop& boundary) const noexcept {
-    const auto& vertices = boundary.vertices();
-    if (vertices.size() != boundaryVertices_.size()) return false;
-    for (std::size_t i = 0; i < vertices.size(); ++i) {
-        if (vertices[i].x != boundaryVertices_[i].x ||
-            vertices[i].y != boundaryVertices_[i].y) return false;
+bool BoundarySegmentIndex2D::matches(const BoundaryLoop& boundary) const {
+    return matches(BoundaryRegion2D(boundary));
+}
+
+bool BoundarySegmentIndex2D::matches(const BoundaryRegion2D& boundary) const noexcept {
+    if (boundary.loops().size() != boundaryLoops_.size()) return false;
+    for (std::size_t loopId = 0; loopId < boundaryLoops_.size(); ++loopId) {
+        const auto& vertices = boundary.loops()[loopId].vertices();
+        if (vertices.size() != boundaryLoops_[loopId].size()) return false;
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            if (vertices[i].x != boundaryLoops_[loopId][i].x ||
+                vertices[i].y != boundaryLoops_[loopId][i].y) return false;
+        }
     }
     return true;
 }
@@ -229,7 +246,7 @@ PointInPolygon BoundarySegmentIndex2D::classifyPoint(
             --winding;
         }
     }
-    return winding == 0 ? PointInPolygon::Outside : PointInPolygon::Inside;
+    return winding % 2 == 0 ? PointInPolygon::Outside : PointInPolygon::Inside;
 }
 
 double BoundarySegmentIndex2D::distanceToAABB(

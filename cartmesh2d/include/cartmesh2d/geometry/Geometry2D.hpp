@@ -116,9 +116,57 @@ public:
     [[nodiscard]] Polygon2D polygon() const { return Polygon2D{vertices_}; }
     [[nodiscard]] BoundaryDiagnostics diagnose(const TolerancePolicy& tol = {}) const;
     [[nodiscard]] bool normalizeCounterClockwise(const TolerancePolicy& tol = {});
+    [[nodiscard]] bool normalizeClockwise(const TolerancePolicy& tol = {});
 
 private:
     std::vector<Point2D> vertices_;
+};
+
+enum class BoundaryRegionIssueCode {
+    EmptyRegion,
+    InvalidLoop,
+    IntersectingLoops
+};
+
+struct BoundaryRegionIssue2D {
+    BoundaryRegionIssueCode code;
+    std::size_t loopA = 0;
+    std::size_t loopB = 0;
+    std::string message;
+};
+
+struct BoundaryRegionDiagnostics2D {
+    std::vector<BoundaryRegionIssue2D> issues;
+
+    [[nodiscard]] bool valid() const noexcept { return issues.empty(); }
+};
+
+// A deterministic even-odd region bounded by one or more disjoint or nested
+// simple loops.  Nesting alternates material/hole semantics: depth 0 is region,
+// depth 1 is a hole, depth 2 is an island, and so on.  Intersecting or touching
+// loops are rejected because their topology is ambiguous without arrangement
+// repair.
+class BoundaryRegion2D {
+public:
+    explicit BoundaryRegion2D(std::vector<BoundaryLoop> loops);
+    explicit BoundaryRegion2D(const BoundaryLoop& loop);
+
+    [[nodiscard]] const std::vector<BoundaryLoop>& loops() const noexcept { return loops_; }
+    [[nodiscard]] BoundaryRegionDiagnostics2D diagnose(
+        const TolerancePolicy& tol = {}) const;
+    [[nodiscard]] bool normalizeAlternating(const TolerancePolicy& tol = {});
+    [[nodiscard]] PointInPolygon classifyPoint(
+        const Point2D& point, const TolerancePolicy& tol = {}) const;
+    [[nodiscard]] std::vector<std::size_t> nestingDepths(
+        const TolerancePolicy& tol = {}) const;
+    [[nodiscard]] AABB2D bounds() const noexcept;
+    [[nodiscard]] double area(const TolerancePolicy& tol = {}) const;
+
+private:
+    std::vector<BoundaryLoop> loops_;
+    mutable std::optional<BoundaryRegionDiagnostics2D> diagnosticsCache_;
+    mutable std::optional<std::vector<std::size_t>> nestingDepthCache_;
+    mutable std::optional<TolerancePolicy> cacheTolerance_;
 };
 
 } // namespace cartmesh2d

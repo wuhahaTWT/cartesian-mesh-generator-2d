@@ -138,6 +138,56 @@ int main() {
                   {std::numeric_limits<double>::infinity(), 1.0}}.valid(tol),
           "non-finite Cartesian box is rejected");
 
+    BoundaryRegion2D nestedRegion({
+        BoundaryLoop({{0.0,0.0},{4.0,0.0},{4.0,4.0},{0.0,4.0}}),
+        BoundaryLoop({{1.0,1.0},{1.0,3.0},{3.0,3.0},{3.0,1.0}}),
+        BoundaryLoop({{1.5,1.5},{2.5,1.5},{2.5,2.5},{1.5,2.5}})
+    });
+    check(nestedRegion.diagnose(tol).valid(), "three-level nested boundary region is valid");
+    check(nestedRegion.classifyPoint({0.5,0.5},tol)==PointInPolygon::Inside,
+          "outer shell belongs to even-odd region");
+    check(nestedRegion.classifyPoint({1.25,1.25},tol)==PointInPolygon::Outside,
+          "nested depth-one loop is a hole");
+    check(nestedRegion.classifyPoint({2.0,2.0},tol)==PointInPolygon::Inside,
+          "nested depth-two loop is an island");
+    near(nestedRegion.area(tol),13.0,1e-12,"nested even-odd region area");
+    check(nestedRegion.normalizeAlternating(tol),"nested loops normalize by parity depth");
+    const auto normalizedDepths=nestedRegion.nestingDepths(tol);
+    check(normalizedDepths==std::vector<std::size_t>({0,1,2}),
+          "nesting depth is deterministic and orientation independent");
+    check(nestedRegion.loops()[0].diagnose(tol).orientation==LoopOrientation::CounterClockwise &&
+          nestedRegion.loops()[1].diagnose(tol).orientation==LoopOrientation::Clockwise &&
+          nestedRegion.loops()[2].diagnose(tol).orientation==LoopOrientation::CounterClockwise,
+          "alternating normalization orients region material on the left");
+
+    BoundaryRegion2D disconnectedRegion({
+        BoundaryLoop({{0.0,0.0},{1.0,0.0},{1.0,1.0},{0.0,1.0}}),
+        BoundaryLoop({{2.0,0.0},{3.0,0.0},{3.0,1.0},{2.0,1.0}})
+    });
+    check(disconnectedRegion.diagnose(tol).valid() &&
+          disconnectedRegion.classifyPoint({0.5,0.5},tol)==PointInPolygon::Inside &&
+          disconnectedRegion.classifyPoint({2.5,0.5},tol)==PointInPolygon::Inside,
+          "two disjoint loops form two region components");
+    near(disconnectedRegion.area(tol),2.0,1e-12,"disconnected region area sums components");
+
+    BoundaryRegion2D touchingRegion({
+        BoundaryLoop({{0.0,0.0},{2.0,0.0},{2.0,2.0},{0.0,2.0}}),
+        BoundaryLoop({{2.0,0.5},{3.0,0.5},{3.0,1.5},{2.0,1.5}})
+    });
+    check(!touchingRegion.diagnose(tol).valid(),
+          "touching loops are rejected instead of assigned ambiguous nesting");
+    BoundaryRegion2D emptyRegion(std::vector<BoundaryLoop>{});
+    check(!emptyRegion.diagnose(tol).valid() && emptyRegion.nestingDepths(tol).empty(),
+          "empty boundary region is rejected without unsafe nesting access");
+    BoundaryRegion2D toleranceRegion({
+        BoundaryLoop({{0.0,0.0},{1.0,0.0},{1.0,1.0},{0.0,1.0}}),
+        BoundaryLoop({{1.0001,0.0},{2.0001,0.0},{2.0001,1.0},{1.0001,1.0}})
+    });
+    TolerancePolicy looseTol=tol;
+    looseTol.absolute=1.0e-3;
+    check(toleranceRegion.diagnose(tol).valid() && !toleranceRegion.diagnose(looseTol).valid(),
+          "boundary-region diagnostic cache is keyed by tolerance policy");
+
     if (failures == 0) {
         std::cout << "cartmesh2d Stage 2D-0 geometry tests: PASS\n";
         return EXIT_SUCCESS;

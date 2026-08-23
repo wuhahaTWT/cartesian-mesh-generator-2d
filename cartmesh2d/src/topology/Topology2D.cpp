@@ -31,17 +31,19 @@ namespace {
     return dot(p - a, d) / denom;
 }
 
-[[nodiscard]] bool pointOnBoundary(const Point2D& p, const BoundaryLoop& boundary,
+[[nodiscard]] bool pointOnBoundary(const Point2D& p, const BoundaryRegion2D& boundary,
                                    const TolerancePolicy& tol) noexcept {
-    const auto& vertices = boundary.vertices();
-    for (std::size_t i = 0; i < vertices.size(); ++i) {
-        if (pointOnSegment(p, {vertices[i], vertices[(i + 1) % vertices.size()]}, tol)) return true;
+    for (const auto& loop : boundary.loops()) {
+        const auto& vertices = loop.vertices();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            if (pointOnSegment(p, {vertices[i], vertices[(i + 1) % vertices.size()]}, tol)) return true;
+        }
     }
     return false;
 }
 
 [[nodiscard]] bool segmentOnInputBoundary(const Point2D& a, const Point2D& b,
-                                          const BoundaryLoop& boundary,
+                                          const BoundaryRegion2D& boundary,
                                           const TolerancePolicy& tol) noexcept {
     const Point2D mid{0.5 * (a.x + b.x), 0.5 * (a.y + b.y)};
     return pointOnBoundary(a, boundary, tol) && pointOnBoundary(b, boundary, tol) &&
@@ -183,6 +185,13 @@ struct EdgeUse {
 TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    const Domain2D& domain,
                                    const BoundaryLoop& boundary,
+                                   const TolerancePolicy& tol) {
+    return buildGlobalTopology(inputCells,domain,BoundaryRegion2D(boundary),tol);
+}
+
+TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
+                                   const Domain2D& domain,
+                                   const BoundaryRegion2D& boundary,
                                    const TolerancePolicy& tol) {
     TopologyMesh2D mesh;
     if (!domain.valid(tol) || !boundary.diagnose(tol).valid()) {

@@ -236,6 +236,17 @@ AgglomerationResult2D agglomerateSmallCells(
     const Domain2D& domain,
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol) {
+    return agglomerateSmallCells(cutCells,topology,analysis,domain,
+                                 BoundaryRegion2D(boundary),tol);
+}
+
+AgglomerationResult2D agglomerateSmallCells(
+    const std::vector<CutCell2D>& cutCells,
+    const TopologyMesh2D& topology,
+    const SmallCellReport2D& analysis,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol) {
 
     (void)cutCells;
     AgglomerationResult2D result;
