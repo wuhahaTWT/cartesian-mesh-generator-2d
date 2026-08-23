@@ -1,10 +1,24 @@
 #include "cartmesh2d/grid/CartesianGrid2D.hpp"
+#include "cartmesh2d/spatial/BoundarySegmentIndex2D.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
 namespace cartmesh2d {
+namespace {
+
+[[nodiscard]] CellClass classifyCartesianCellIndexed(
+    const CartesianCell2D& cell, const BoundarySegmentIndex2D& index,
+    const TolerancePolicy& tol) {
+    if (index.intersects(cell.bounds, tol)) return CellClass::Intersected;
+    const auto pointClass = index.classifyPoint(cell.center(), tol);
+    if (pointClass == PointInPolygon::Inside) return CellClass::Inside;
+    if (pointClass == PointInPolygon::Boundary) return CellClass::Intersected;
+    return CellClass::Outside;
+}
+
+} // namespace
 
 bool Domain2D::valid(const TolerancePolicy& tol) const noexcept {
     if (!bounds.valid(tol)) return false;
@@ -77,21 +91,10 @@ bool segmentIntersectsClosedAABB(const Segment2D& segment, const AABB2D& box,
 
 CellClass classifyCartesianCell(const CartesianCell2D& cell,
                                 const BoundaryLoop& boundary,
-                                const TolerancePolicy& tol) noexcept {
-    const auto& vertices = boundary.vertices();
-    if (vertices.size() < 3) return CellClass::Outside;
-
-    for (std::size_t k = 0; k < vertices.size(); ++k) {
-        const Segment2D edge{vertices[k], vertices[(k + 1) % vertices.size()]};
-        if (segmentIntersectsClosedAABB(edge, cell.bounds, tol)) {
-            return CellClass::Intersected;
-        }
-    }
-
-    const auto pointClass = classifyPointInPolygon(cell.center(), boundary.polygon(), tol);
-    if (pointClass == PointInPolygon::Inside) return CellClass::Inside;
-    if (pointClass == PointInPolygon::Boundary) return CellClass::Intersected;
-    return CellClass::Outside;
+                                const TolerancePolicy& tol) {
+    const BoundarySegmentIndex2D index(boundary, tol);
+    if (!index.valid()) throw std::invalid_argument("cannot build boundary segment index");
+    return classifyCartesianCellIndexed(cell, index, tol);
 }
 
 ClassificationSummary classifyGrid(UniformCartesianGrid2D& grid,
@@ -101,9 +104,11 @@ ClassificationSummary classifyGrid(UniformCartesianGrid2D& grid,
         throw std::invalid_argument("cannot classify grid against invalid boundary loop");
     }
 
+    const BoundarySegmentIndex2D index(boundary, tol);
+    if (!index.valid()) throw std::invalid_argument("cannot build boundary segment index");
     ClassificationSummary summary;
     for (auto& cell : grid.cells()) {
-        cell.classification = classifyCartesianCell(cell, boundary, tol);
+        cell.classification = classifyCartesianCellIndexed(cell, index, tol);
         switch (cell.classification) {
         case CellClass::Inside: ++summary.inside; break;
         case CellClass::Outside: ++summary.outside; break;

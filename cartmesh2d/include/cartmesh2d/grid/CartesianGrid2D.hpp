@@ -64,7 +64,7 @@ struct ClassificationSummary {
 
 [[nodiscard]] CellClass classifyCartesianCell(
     const CartesianCell2D& cell, const BoundaryLoop& boundary,
-    const TolerancePolicy& tol = {}) noexcept;
+    const TolerancePolicy& tol = {});
 
 [[nodiscard]] ClassificationSummary classifyGrid(
     UniformCartesianGrid2D& grid, const BoundaryLoop& boundary,

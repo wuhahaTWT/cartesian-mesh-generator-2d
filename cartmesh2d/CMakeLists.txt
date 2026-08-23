@@ -5,6 +5,7 @@ project(cartmesh2d LANGUAGES CXX)
 add_library(cartmesh2d
     src/geometry/Geometry2D.cpp
     src/grid/CartesianGrid2D.cpp
+    src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
@@ -57,6 +58,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_quadtree_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_quadtree_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_spatial_index_tests tests/spatial_index_test.cpp)
+    target_link_libraries(cartmesh2d_spatial_index_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_spatial_index_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_cutcell_tests tests/cutcell_test.cpp)
     target_link_libraries(cartmesh2d_cutcell_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_cutcell_tests PRIVATE cxx_std_20)
@@ -97,6 +102,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
             cartmesh2d_quadtree_tests
+            cartmesh2d_spatial_index_tests
             cartmesh2d_cutcell_tests
             cartmesh2d_cutcell_components_tests
             cartmesh2d_cutcell_quadtree_audit_tests
@@ -118,6 +124,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage0_geometry_tests COMMAND cartmesh2d_geometry_tests)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
+    add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_components_tests COMMAND cartmesh2d_cutcell_components_tests)
     add_test(NAME cartmesh2d_stage3_quadtree_cutcell_audit_tests COMMAND cartmesh2d_cutcell_quadtree_audit_tests)

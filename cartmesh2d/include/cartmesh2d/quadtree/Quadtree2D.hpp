@@ -1,5 +1,6 @@
 #pragma once
 #include "cartmesh2d/grid/CartesianGrid2D.hpp"
+#include "cartmesh2d/spatial/BoundarySegmentIndex2D.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -29,6 +30,7 @@ public:
     [[nodiscard]] bool deterministicOrderingValid() const noexcept;
 private:
     Domain2D domain_; std::size_t maxLevel_ = 0; std::vector<QuadtreeLeaf2D> leaves_;
+    BoundarySegmentIndex2D boundaryIndex_;
     [[nodiscard]] static std::uint64_t mortonPath(std::size_t level, std::uint64_t ix, std::uint64_t iy) noexcept;
     [[nodiscard]] static std::uint64_t makeKey(std::size_t level, std::uint64_t ix, std::uint64_t iy) noexcept;
     [[nodiscard]] AABB2D boundsFor(std::size_t level, std::uint64_t ix, std::uint64_t iy) const noexcept;

@@ -389,6 +389,13 @@ int main(int argc, char** argv) {
     if (!stabilized.valid()) {
         std::cerr << "small-cell agglomeration failed with " << stabilized.issues.size()
                   << " issue(s)\n";
+        for (std::size_t i = 0; i < stabilized.issues.size(); ++i) {
+            const auto& issue = stabilized.issues[i];
+            std::cerr << "agglomeration_issue[" << i << "] code="
+                      << static_cast<int>(issue.code)
+                      << " object=" << issue.objectId
+                      << " message=" << issue.message << '\n';
+        }
         printTopologyDiagnostics(stabilized.topology);
         return EXIT_FAILURE;
     }
@@ -397,6 +404,17 @@ int main(int argc, char** argv) {
         evaluateMeshQuality(stabilized.topology, cutCells, &smallReport);
     if (!quality.valid()) {
         std::cerr << "final quality/topology report is invalid\n";
+        const std::size_t issueLimit = std::min<std::size_t>(quality.issues.size(), 20);
+        for (std::size_t i = 0; i < issueLimit; ++i) {
+            const auto& issue = quality.issues[i];
+            std::cerr << "quality_issue[" << i << "] code="
+                      << static_cast<int>(issue.code)
+                      << " object=" << issue.objectId
+                      << " message=" << issue.message << '\n';
+        }
+        if (quality.issues.size() > issueLimit) {
+            std::cerr << "quality_issue_omitted=" << quality.issues.size() - issueLimit << '\n';
+        }
         printTopologyDiagnostics(stabilized.topology);
         return EXIT_FAILURE;
     }

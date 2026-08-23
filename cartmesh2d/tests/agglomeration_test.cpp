@@ -69,6 +69,27 @@ int main() {
     const auto bad=agglomerateSmallCells(cells,topo,badAnalysis,domain,boundary);
     check(!bad.valid(), "self-targeting candidate is rejected explicitly");
 
+    // Area tolerances are dimensional.  This valid, locally resolved polygon
+    // has area below the coordinate tolerance but far above the corresponding
+    // area tolerance; it must not be rejected as a zero-area group.
+    constexpr double narrowWidth=1.5e-10;
+    const Domain2D narrowDomain{{{0.0,0.0},{2.0,1.0}}};
+    BoundaryLoop narrowBoundary({{0.0,0.0},{narrowWidth,0.0},
+                                 {narrowWidth,0.5},{0.0,0.5}});
+    std::vector<CutCell2D> narrowCells;
+    narrowCells.push_back(polygonCell(30,30,
+        {{0.0,0.0},{narrowWidth,0.0},{narrowWidth,0.5},{0.0,0.5}},
+        {{0.0,0.0},{narrowWidth,0.5}},CutCellKind::Full));
+    const auto narrowTopo=buildGlobalTopology(narrowCells,narrowDomain,narrowBoundary);
+    check(narrowTopo.valid(),"sub-coordinate-tolerance area fixture has valid topology");
+    const auto narrowAnalysis=analyzeSmallCells(narrowCells,narrowTopo);
+    const auto narrowMerged=agglomerateSmallCells(narrowCells,narrowTopo,narrowAnalysis,
+                                                   narrowDomain,narrowBoundary);
+    check(narrowMerged.valid(),"area-dimensional agglomeration tolerance preserves tiny valid cell");
+    check(narrowMerged.cells.size()==1 &&
+          std::abs(narrowMerged.cells.front().area-7.5e-11)<=1.0e-20,
+          "tiny valid cell retains its physical area");
+
     // Preserve the historical small-cell agglomeration fixture as an explicit
     // interior-flow regression. Product/CLI defaults are tested separately as
     // exterior fluid around a solid obstacle.

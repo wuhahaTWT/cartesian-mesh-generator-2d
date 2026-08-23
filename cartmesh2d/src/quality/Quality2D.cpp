@@ -68,9 +68,14 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
         }
         const double length = distance(topology.vertices[edge.v0].point,
                                        topology.vertices[edge.v1].point);
-        if (!(length > tol.scale(std::max(1.0, length)))) {
+        const double edgeEps = tol.scale(std::max(1.0, length));
+        if (!(length > edgeEps)) {
+            std::ostringstream detail;
+            detail << std::setprecision(17) << "edge length=" << length
+                   << " is at or below quality epsilon=" << edgeEps
+                   << " vertices=" << edge.v0 << ',' << edge.v1;
             report.issues.push_back({QualityIssueCode2D::InvalidEdgeGeometry, edge.id,
-                                     "edge length is zero or near zero"});
+                                     detail.str()});
             continue;
         }
         minEdge = std::min(minEdge, length);
@@ -91,9 +96,13 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
         }
 
         const double area = polygon.area();
-        if (!(area > tol.scale(std::max(1.0, area)))) {
+        const double areaEps = tol.scale(std::max(1.0, area));
+        if (!(area > areaEps)) {
+            std::ostringstream detail;
+            detail << std::setprecision(17) << "cell area=" << area
+                   << " is at or below quality epsilon=" << areaEps;
             report.issues.push_back({QualityIssueCode2D::InvalidCellGeometry, cell.id,
-                                     "cell area is zero or near zero"});
+                                     detail.str()});
             continue;
         }
         minArea = std::min(minArea, area);
@@ -106,9 +115,14 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
             cellMinEdge = std::min(cellMinEdge, length);
             cellMaxEdge = std::max(cellMaxEdge, length);
         }
-        if (!(cellMinEdge > tol.scale(std::max(1.0, cellMaxEdge)))) {
+        const double cellEdgeEps = tol.scale(std::max(1.0, cellMaxEdge));
+        if (!(cellMinEdge > cellEdgeEps)) {
+            std::ostringstream detail;
+            detail << std::setprecision(17) << "cell minimum edge=" << cellMinEdge
+                   << " is at or below quality epsilon=" << cellEdgeEps
+                   << " maximum edge=" << cellMaxEdge;
             report.issues.push_back({QualityIssueCode2D::InvalidCellGeometry, cell.id,
-                                     "cell contains a zero or near-zero polygon edge"});
+                                     detail.str()});
             continue;
         }
         maxAspect = std::max(maxAspect, cellMaxEdge / cellMinEdge);

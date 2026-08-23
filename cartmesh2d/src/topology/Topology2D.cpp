@@ -2,7 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <limits>
 #include <map>
+#include <numeric>
+#include <sstream>
 #include <set>
 #include <tuple>
 #include <utility>
@@ -74,13 +78,8 @@ namespace {
            (scalarNear(a.y, box.max.y, tol) && scalarNear(b.y, box.max.y, tol));
 }
 
-[[nodiscard]] bool isCartesianSegment(const Point2D& a, const Point2D& b,
-                                      const TolerancePolicy& tol) noexcept {
-    return scalarNear(a.x, b.x, tol) || scalarNear(a.y, b.y, tol);
-}
-
 [[nodiscard]] std::vector<Point2D> collectCanonicalPoints(
-    const std::vector<CutCell2D>& cells, const TolerancePolicy& tol) {
+    const std::vector<CutCell2D>& cells, double coordinateEps) {
     std::vector<Point2D> raw;
     for (const auto& cell : cells) {
         if (cell.kind == CutCellKind::Empty || cell.kind == CutCellKind::Unsupported) continue;
@@ -93,8 +92,9 @@ namespace {
     for (const auto& p : raw) {
         bool duplicate = false;
         for (auto it = result.rbegin(); it != result.rend(); ++it) {
-            if (p.x - it->x > tol.scale(std::max({1.0, std::abs(p.x), std::abs(it->x)}))) break;
-            if (pointNear(p, *it, tol)) {
+            if (p.x - it->x > coordinateEps) break;
+            if (std::abs(p.x - it->x) <= coordinateEps &&
+                std::abs(p.y - it->y) <= coordinateEps) {
                 duplicate = true;
                 break;
             }
@@ -106,11 +106,50 @@ namespace {
 
 [[nodiscard]] std::size_t findVertexId(const Point2D& p,
                                        const std::vector<Vertex2D>& vertices,
-                                       const TolerancePolicy& tol) noexcept {
-    for (const auto& vertex : vertices) {
-        if (pointNear(p, vertex.point, tol)) return vertex.id;
+                                       double coordinateEps) noexcept {
+    const auto begin = std::lower_bound(
+        vertices.begin(), vertices.end(), p.x - coordinateEps,
+        [](const Vertex2D& vertex, double x) { return vertex.point.x < x; });
+    for (auto it = begin; it != vertices.end() &&
+                          it->point.x <= p.x + coordinateEps; ++it) {
+        if (std::abs(p.x - it->point.x) <= coordinateEps &&
+            std::abs(p.y - it->point.y) <= coordinateEps) return it->id;
     }
     return vertices.size();
+}
+
+void appendCartesianEdgeVertices(
+    const Point2D& a, const Point2D& b,
+    const std::vector<Vertex2D>& vertices,
+    const std::vector<std::size_t>& verticesByY,
+    double coordinateEps, const TolerancePolicy& tol,
+    std::size_t aId, std::size_t bId,
+    std::vector<std::pair<double, std::size_t>>& onEdge) {
+    const bool vertical = std::abs(a.x - b.x) <= coordinateEps;
+    const double fixed = vertical ? a.x : a.y;
+    if (vertical) {
+        const auto begin = std::lower_bound(
+            vertices.begin(), vertices.end(), fixed - coordinateEps,
+            [](const Vertex2D& vertex, double value) { return vertex.point.x < value; });
+        for (auto it = begin; it != vertices.end() &&
+                              it->point.x <= fixed + coordinateEps; ++it) {
+            if (it->id == aId || it->id == bId) continue;
+            if (!pointOnSegment(it->point, {a, b}, tol)) continue;
+            onEdge.push_back({segmentParameter(it->point, a, b), it->id});
+        }
+        return;
+    }
+
+    const auto begin = std::lower_bound(
+        verticesByY.begin(), verticesByY.end(), fixed - coordinateEps,
+        [&](std::size_t id, double value) { return vertices[id].point.y < value; });
+    for (auto it = begin; it != verticesByY.end() &&
+                          vertices[*it].point.y <= fixed + coordinateEps; ++it) {
+        const std::size_t id = *it;
+        if (id == aId || id == bId) continue;
+        if (!pointOnSegment(vertices[id].point, {a, b}, tol)) continue;
+        onEdge.push_back({segmentParameter(vertices[id].point, a, b), id});
+    }
 }
 
 struct EdgeKey {
@@ -174,9 +213,33 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         }
     }
 
-    const auto canonicalPoints = collectCanonicalPoints(cells, tol);
+    // Vertex canonicalization is a local operation.  Scaling its tolerance by
+    // the whole domain can collapse two legitimate vertices of a very small
+    // high-level Cut-cell.  Use the smallest positive source-cell extent so
+    // shared round-off is absorbed without erasing resolved geometry.
+    double minCellExtent = std::numeric_limits<double>::infinity();
+    for (const auto& cell : cells) {
+        const double width = cell.backgroundBounds.max.x - cell.backgroundBounds.min.x;
+        const double height = cell.backgroundBounds.max.y - cell.backgroundBounds.min.y;
+        if (width > 0.0) minCellExtent = std::min(minCellExtent, width);
+        if (height > 0.0) minCellExtent = std::min(minCellExtent, height);
+    }
+    if (!std::isfinite(minCellExtent)) {
+        mesh.issues.push_back({TopologyIssueCode2D::InvalidCell, 0,
+                               "topology inputs have no positive background-cell extent"});
+        return mesh;
+    }
+    const double coordinateEps = tol.scale(minCellExtent);
+    const auto canonicalPoints = collectCanonicalPoints(cells, coordinateEps);
     mesh.vertices.reserve(canonicalPoints.size());
     for (std::size_t i = 0; i < canonicalPoints.size(); ++i) mesh.vertices.push_back({i, canonicalPoints[i]});
+    std::vector<std::size_t> verticesByY(mesh.vertices.size());
+    std::iota(verticesByY.begin(), verticesByY.end(), 0);
+    std::sort(verticesByY.begin(), verticesByY.end(), [&](std::size_t lhs, std::size_t rhs) {
+        const auto& a = mesh.vertices[lhs].point;
+        const auto& b = mesh.vertices[rhs].point;
+        return std::tie(a.y, a.x, lhs) < std::tie(b.y, b.x, rhs);
+    });
 
     std::map<EdgeKey, std::vector<EdgeUse>> uses;
     mesh.cells.reserve(cells.size());
@@ -199,26 +262,36 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                 return mesh;
             }
 
-            const std::size_t aId = findVertexId(a, mesh.vertices, tol);
-            const std::size_t bId = findVertexId(b, mesh.vertices, tol);
+            const std::size_t aId = findVertexId(a, mesh.vertices, coordinateEps);
+            const std::size_t bId = findVertexId(b, mesh.vertices, coordinateEps);
             if (aId >= mesh.vertices.size() || bId >= mesh.vertices.size() || aId == bId) {
+                std::ostringstream detail;
+                detail << std::setprecision(17)
+                       << "polygon edge endpoints could not be uniquely canonicalized"
+                       << " edge=" << e
+                       << " a=(" << a.x << ',' << a.y << ')'
+                       << " b=(" << b.x << ',' << b.y << ')'
+                       << " a_id=" << aId << " b_id=" << bId
+                       << " coordinate_eps=" << coordinateEps;
                 mesh.issues.push_back({TopologyIssueCode2D::OpenCellLoop, cellId,
-                                       "polygon edge endpoints could not be uniquely canonicalized"});
+                                       detail.str()});
                 return mesh;
             }
 
             std::vector<std::pair<double, std::size_t>> onEdge{{0.0, aId}, {1.0, bId}};
-            if (isCartesianSegment(a, b, tol)) {
-                const double edgeScale = std::max({1.0, std::abs(a.x), std::abs(a.y),
-                                                   std::abs(b.x), std::abs(b.y)});
-                const double tEps = tol.scale(edgeScale) /
-                                    std::max(std::sqrt(squaredNorm(b - a)), tol.scale(edgeScale));
-                for (const auto& vertex : mesh.vertices) {
-                    if (vertex.id == aId || vertex.id == bId) continue;
-                    if (!pointOnSegment(vertex.point, {a, b}, tol)) continue;
-                    const double t = segmentParameter(vertex.point, a, b);
-                    if (t > tEps && t < 1.0 - tEps) onEdge.push_back({t, vertex.id});
-                }
+            if (std::abs(a.x - b.x) <= coordinateEps ||
+                std::abs(a.y - b.y) <= coordinateEps) {
+                const double edgeLength = std::sqrt(squaredNorm(b - a));
+                const double tEps = coordinateEps /
+                                    std::max(edgeLength, coordinateEps);
+                const std::size_t before = onEdge.size();
+                appendCartesianEdgeVertices(a, b, mesh.vertices, verticesByY,
+                                            coordinateEps, tol, aId, bId, onEdge);
+                onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
+                                            onEdge.end(), [&](const auto& item) {
+                                                return item.first <= tEps ||
+                                                       item.first >= 1.0 - tEps;
+                                            }), onEdge.end());
             }
 
             std::sort(onEdge.begin(), onEdge.end(), [](const auto& lhs, const auto& rhs) {
@@ -235,9 +308,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                 if (from == to) continue;
                 const Point2D& p0 = mesh.vertices[from].point;
                 const Point2D& p1 = mesh.vertices[to].point;
-                const double lengthEps = tol.scale(std::max({1.0, std::abs(p0.x), std::abs(p0.y),
-                                                             std::abs(p1.x), std::abs(p1.y)}));
-                if (squaredNorm(p1 - p0) <= lengthEps * lengthEps) continue;
+                if (squaredNorm(p1 - p0) <= coordinateEps * coordinateEps) continue;
                 if (loop.empty()) loop.push_back(from);
                 if (loop.back() != from) {
                     mesh.issues.push_back({TopologyIssueCode2D::OpenCellLoop, cellId,

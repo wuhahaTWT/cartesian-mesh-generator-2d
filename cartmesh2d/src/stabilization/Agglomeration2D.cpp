@@ -47,7 +47,11 @@ struct DirectedBoundaryUse2D {
 };
 
 [[nodiscard]] bool nearlySameArea(double a, double b, const TolerancePolicy& tol) noexcept {
-    const double eps = tol.scale(std::max({1.0, std::abs(a), std::abs(b)}));
+    // Area comparisons require an area-dimensional tolerance.  Reusing the
+    // coordinate tolerance made valid level-17 cells (area ~1e-10) appear
+    // numerically indistinguishable from zero.
+    const double eps = tol.absolute * tol.absolute +
+                       tol.relative * std::max(std::abs(a), std::abs(b));
     return std::abs(a - b) <= eps;
 }
 
@@ -210,7 +214,12 @@ struct DirectedBoundaryUse2D {
     }
 
     const double area = polygon.area();
-    if (!(area > tol.scale(std::max(1.0, area)))) {
+    const AABB2D bounds = polygon.bounds();
+    const double span = std::max(bounds.max.x - bounds.min.x,
+                                 bounds.max.y - bounds.min.y);
+    const double areaEps = tol.absolute * tol.absolute +
+                           tol.relative * span * span;
+    if (!(area > areaEps)) {
         issue = {AgglomerationIssueCode2D::DegenerateMergedPolygon, start,
                  "agglomerated polygon has zero or near-zero area"};
         return std::nullopt;

@@ -123,6 +123,21 @@ int main() {
     const auto duplicateResult = buildGlobalTopology(duplicate, domain, boundary);
     check(!duplicateResult.valid(), "duplicate source cell is rejected");
 
+    // Regression retained from the first million-class level-17 run: a
+    // domain-scaled canonicalization epsilon collapsed the two x coordinates
+    // of a legitimate thin cell.  Its edge is above the geometry tolerance,
+    // so topology must preserve it rather than silently merge its vertices.
+    constexpr double thinWidth = 1.5e-10;
+    const Domain2D thinDomain{{{0.0, 0.0}, {2.0, 1.0}}};
+    BoundaryLoop thinBoundary({{0.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.0, 1.0}});
+    std::vector<CutCell2D> thinCells;
+    thinCells.push_back(fullCell(40, 40, {{0.0, 0.0}, {thinWidth, 1.0}}));
+    thinCells.push_back(fullCell(50, 50, {{thinWidth, 0.0}, {2.0, 1.0}}));
+    const auto thinMesh = buildGlobalTopology(thinCells, thinDomain, thinBoundary);
+    check(thinMesh.valid(), "locally resolved thin cell survives vertex canonicalization");
+    check(thinMesh.cells.size() == 2 && hasPoint(thinMesh, thinWidth, 0.0, 1.0e-14),
+          "thin-cell interface remains a distinct canonical coordinate");
+
     if (failures != 0) {
         std::cerr << failures << " test(s) failed\n";
         return EXIT_FAILURE;
