@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 using namespace cartmesh2d;
@@ -35,6 +36,26 @@ int main() {
 
     Polygon2D triangle{{{0, 0}, {4, 0}, {0, 2}}};
     near(triangle.area(), 4.0, 1e-12, "triangle area");
+
+    // The two products in the ordinary binary64 determinant both round to
+    // 2^54, although the exact determinant of the input doubles is -1.
+    const Point2D cancellationA{0.0, 0.0};
+    const Point2D cancellationB{134217729.0, 134217728.0};
+    const Point2D cancellationC{134217728.0, 134217727.0};
+    check(orientationSign(cancellationA, cancellationB, cancellationC) == -1,
+          "adaptive orientation recovers cancellation-hidden negative sign");
+    check(orientationSign(cancellationA, cancellationC, cancellationB) == 1,
+          "adaptive orientation recovers cancellation-hidden positive sign");
+    check(orientationSign({0.0, 0.0}, {1.0, 1.0}, {2.0, 2.0}) == 0,
+          "adaptive orientation identifies exact collinearity");
+
+    const double subnormal = std::numeric_limits<double>::denorm_min();
+    check(orientationSign({0.0, 0.0}, {subnormal, 0.0}, {0.0, subnormal}) == 1,
+          "exact fallback survives determinant underflow for subnormal inputs");
+    check(orientationSign({0.0, 0.0},
+                          {std::numeric_limits<double>::infinity(), 0.0},
+                          {0.0, 1.0}) == 0,
+          "orientation rejects non-finite input deterministically");
 
     Polygon2D concaveL{{{0, 0}, {3, 0}, {3, 1}, {1, 1}, {1, 3}, {0, 3}}};
     near(concaveL.area(), 5.0, 1e-12, "concave L area");
@@ -104,6 +125,18 @@ int main() {
     }
     check(duplicateFound, "duplicate diagnostic");
     check(zeroLengthFound, "zero edge diagnostic");
+
+    BoundaryLoop nonFinite({{0.0, 0.0},
+                            {1.0, 0.0},
+                            {std::numeric_limits<double>::quiet_NaN(), 1.0}});
+    const auto nonFiniteDiagnostics = nonFinite.diagnose(tol);
+    check(!nonFiniteDiagnostics.valid(), "non-finite boundary is rejected");
+    check(!nonFiniteDiagnostics.issues.empty() &&
+              nonFiniteDiagnostics.issues.front().code == BoundaryIssueCode::NonFiniteCoordinate,
+          "non-finite boundary reports its explicit issue code");
+    check(!AABB2D{{0.0, 0.0},
+                  {std::numeric_limits<double>::infinity(), 1.0}}.valid(tol),
+          "non-finite Cartesian box is rejected");
 
     if (failures == 0) {
         std::cout << "cartmesh2d Stage 2D-0 geometry tests: PASS\n";
