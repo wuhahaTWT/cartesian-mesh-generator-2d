@@ -66,8 +66,16 @@ struct ClassificationSummary {
     const CartesianCell2D& cell, const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
 
+[[nodiscard]] CellClass classifyCartesianCell(
+    const CartesianCell2D& cell, const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
 [[nodiscard]] ClassificationSummary classifyGrid(
     UniformCartesianGrid2D& grid, const BoundaryLoop& boundary,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] ClassificationSummary classifyGrid(
+    UniformCartesianGrid2D& grid, const BoundaryRegion2D& boundary,
     const TolerancePolicy& tol = {});
 
 } // namespace cartmesh2d

@@ -19,7 +19,7 @@ using namespace cartmesh2d;
 namespace {
 
 bool readBoundaryFile(const std::filesystem::path& path,
-                      std::vector<Point2D>& points,
+                      std::vector<std::vector<Point2D>>& loops,
                       std::string& error) {
     std::ifstream in(path);
     if (!in) {
@@ -28,10 +28,22 @@ bool readBoundaryFile(const std::filesystem::path& path,
     }
     std::string line;
     std::size_t lineNumber = 0;
+    std::vector<Point2D> points;
     while (std::getline(in, line)) {
         ++lineNumber;
         const auto first = line.find_first_not_of(" \t\r\n");
-        if (first == std::string::npos || line[first] == '#') continue;
+        if (first == std::string::npos) {
+            if (!points.empty()) {
+                if (points.size()<3) {
+                    error="each boundary loop must contain at least three vertices";
+                    return false;
+                }
+                loops.push_back(std::move(points));
+                points.clear();
+            }
+            continue;
+        }
+        if (line[first] == '#') continue;
         std::istringstream row(line.substr(first));
         Point2D point;
         if (!(row >> point.x >> point.y)) {
@@ -48,9 +60,16 @@ bool readBoundaryFile(const std::filesystem::path& path,
         }
         points.push_back(point);
     }
-    if (points.size() < 3) {
-        error = "boundary file must contain at least three vertices";
+    if (!points.empty()) loops.push_back(std::move(points));
+    if (loops.empty()) {
+        error = "boundary file must contain at least one loop";
         return false;
+    }
+    for (const auto& loop:loops) {
+        if (loop.size()<3) {
+            error="each boundary loop must contain at least three vertices";
+            return false;
+        }
     }
     return true;
 }
@@ -159,6 +178,7 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
                                 const SmallCellReport2D& smallReport,
                                 const AgglomerationResult2D& stabilized,
                                 FluidRegion2D fluidRegion,
+                                std::size_t boundaryLoopCount,
                                 std::string& error) {
     using SourceKey = std::pair<std::uint64_t, std::size_t>;
     std::map<SourceKey, const SmallCellRecord2D*> smallRecords;
@@ -175,6 +195,10 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
     out << "{\n";
     out << "  \"format\": \"cartmesh2d-viz-v1\",\n";
     out << "  \"fluid_region\": \"" << fluidRegionName(fluidRegion) << "\",\n";
+    if (boundaryLoopCount>1) {
+        out << "  \"boundary_loop_count\": " << boundaryLoopCount << ",\n";
+        out << "  \"boundary_semantics\": \"even_odd\",\n";
+    }
     out << "  \"boundary_role\": \""
         << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope")
         << "\",\n";
@@ -232,6 +256,7 @@ void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
                  "[fluid-region=exterior|interior]\n"
+                 "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
 
@@ -267,25 +292,35 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::vector<Point2D> points;
+    std::vector<std::vector<Point2D>> loopPoints;
     std::string error;
-    if (!readBoundaryFile(boundaryPath, points, error)) {
+    if (!readBoundaryFile(boundaryPath, loopPoints, error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
-    BoundaryLoop boundary(std::move(points));
+    std::vector<BoundaryLoop> loops;
+    loops.reserve(loopPoints.size());
+    for (auto& points:loopPoints) loops.emplace_back(std::move(points));
+    BoundaryRegion2D boundary(std::move(loops));
     const auto diagnostics = boundary.diagnose();
     if (!diagnostics.valid()) {
         std::cerr << "boundary diagnostics failed with " << diagnostics.issues.size()
                   << " issue(s)\n";
+        for (std::size_t i=0;i<diagnostics.issues.size();++i) {
+            const auto& issue=diagnostics.issues[i];
+            std::cerr<<"boundary_region_issue["<<i<<"] code="
+                     <<static_cast<int>(issue.code)
+                     <<" loop_a="<<issue.loopA<<" loop_b="<<issue.loopB
+                     <<" message="<<issue.message<<'\n';
+        }
         return EXIT_FAILURE;
     }
-    if (!boundary.normalizeCounterClockwise()) {
-        std::cerr << "failed to normalize boundary orientation\n";
+    if (!boundary.normalizeAlternating()) {
+        std::cerr << "failed to normalize boundary-region nesting/orientation\n";
         return EXIT_FAILURE;
     }
 
-    const AABB2D bounds = boundary.polygon().bounds();
+    const AABB2D bounds = boundary.bounds();
     const double width = bounds.max.x - bounds.min.x;
     const double height = bounds.max.y - bounds.min.y;
     const double span = std::max(width, height);
@@ -341,7 +376,7 @@ int main(int argc, char** argv) {
     // a mathematically self-consistent mesh is generated on the wrong side of
     // the solid boundary.
     const double domainArea = domain.width() * domain.height();
-    const double solidArea = boundary.polygon().area();
+    const double solidArea = boundary.area();
     const double expectedFluidArea = fluidRegion == FluidRegion2D::Exterior
         ? domainArea - solidArea
         : solidArea;
@@ -450,7 +485,7 @@ int main(int argc, char** argv) {
     }
     error.clear();
     if (!writeVisualizationMetadata(vizPath, cutCells, smallReport, stabilized,
-                                    fluidRegion, error)) {
+                                    fluidRegion, boundary.loops().size(), error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -465,6 +500,7 @@ int main(int argc, char** argv) {
               << "fluid_region=" << fluidRegionName(fluidRegion) << '\n'
               << "boundary_role="
               << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope") << '\n'
+              << "boundary_loops=" << boundary.loops().size() << '\n'
               << "leaf_count=" << tree.leaves().size() << '\n'
               << "split_fluid_leaves=" << splitFluidLeaves << '\n'
               << "source_cells=" << sourceTopology.cells.size() << '\n'

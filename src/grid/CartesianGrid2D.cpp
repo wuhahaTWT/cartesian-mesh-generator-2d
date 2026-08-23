@@ -92,6 +92,12 @@ bool segmentIntersectsClosedAABB(const Segment2D& segment, const AABB2D& box,
 CellClass classifyCartesianCell(const CartesianCell2D& cell,
                                 const BoundaryLoop& boundary,
                                 const TolerancePolicy& tol) {
+    return classifyCartesianCell(cell, BoundaryRegion2D(boundary), tol);
+}
+
+CellClass classifyCartesianCell(const CartesianCell2D& cell,
+                                const BoundaryRegion2D& boundary,
+                                const TolerancePolicy& tol) {
     const BoundarySegmentIndex2D index(boundary, tol);
     if (!index.valid()) throw std::invalid_argument("cannot build boundary segment index");
     return classifyCartesianCellIndexed(cell, index, tol);
@@ -100,8 +106,14 @@ CellClass classifyCartesianCell(const CartesianCell2D& cell,
 ClassificationSummary classifyGrid(UniformCartesianGrid2D& grid,
                                    const BoundaryLoop& boundary,
                                    const TolerancePolicy& tol) {
+    return classifyGrid(grid, BoundaryRegion2D(boundary), tol);
+}
+
+ClassificationSummary classifyGrid(UniformCartesianGrid2D& grid,
+                                   const BoundaryRegion2D& boundary,
+                                   const TolerancePolicy& tol) {
     if (!boundary.diagnose(tol).valid()) {
-        throw std::invalid_argument("cannot classify grid against invalid boundary loop");
+        throw std::invalid_argument("cannot classify grid against invalid boundary region");
     }
 
     const BoundarySegmentIndex2D index(boundary, tol);

@@ -56,10 +56,20 @@ double distanceAABBToBoundary(const AABB2D& box, const BoundaryLoop& boundary, c
         for(const auto& endpoint:{edge.a,edge.b}){ const double dx=endpoint.x<box.min.x?box.min.x-endpoint.x:endpoint.x>box.max.x?endpoint.x-box.max.x:0.0; const double dy=endpoint.y<box.min.y?box.min.y-endpoint.y:endpoint.y>box.max.y?endpoint.y-box.max.y:0.0; best=std::min(best,std::hypot(dx,dy)); }
     } return best;
 }
-Quadtree2D::Quadtree2D(Domain2D domain,std::size_t maxLevel,const BoundaryLoop& boundary,const TolerancePolicy& tol):domain_(domain),maxLevel_(maxLevel),boundaryIndex_(boundary,tol){
+double distanceAABBToBoundary(const AABB2D& box, const BoundaryRegion2D& boundary,
+                              const TolerancePolicy& tol) {
+    double best=std::numeric_limits<double>::infinity();
+    for (const auto& loop : boundary.loops()) {
+        best=std::min(best,distanceAABBToBoundary(box,loop,tol));
+    }
+    return best;
+}
+Quadtree2D::Quadtree2D(Domain2D domain,std::size_t maxLevel,const BoundaryLoop& boundary,const TolerancePolicy& tol)
+    :Quadtree2D(domain,maxLevel,BoundaryRegion2D(boundary),tol){}
+Quadtree2D::Quadtree2D(Domain2D domain,std::size_t maxLevel,const BoundaryRegion2D& boundary,const TolerancePolicy& tol):domain_(domain),maxLevel_(maxLevel),boundaryIndex_(boundary,tol){
     if (!domain_.valid(tol)) throw std::invalid_argument("invalid quadtree domain");
     if (maxLevel_ > 28) throw std::invalid_argument("maxLevel > 28 unsupported");
-    if (!boundary.diagnose(tol).valid()) throw std::invalid_argument("invalid boundary loop");
+    if (!boundary.diagnose(tol).valid()) throw std::invalid_argument("invalid boundary region");
     if (!boundaryIndex_.valid()) throw std::invalid_argument("invalid boundary segment index");
     leaves_.push_back(makeLeaf(0, 0, 0, boundary, tol));
     sortAndAssignIds();
@@ -81,10 +91,16 @@ AABB2D Quadtree2D::boundsFor(std::size_t level,std::uint64_t ix,std::uint64_t iy
     };
     return {{xAt(ix), yAt(iy)}, {xAt(ix + 1), yAt(iy + 1)}};
 }
-QuadtreeLeaf2D Quadtree2D::makeLeaf(std::size_t level,std::uint64_t ix,std::uint64_t iy,const BoundaryLoop& boundary,const TolerancePolicy& tol) const { (void)boundary; QuadtreeLeaf2D leaf; leaf.key=makeKey(level,ix,iy); leaf.level=level; leaf.ix=ix; leaf.iy=iy; leaf.bounds=boundsFor(level,ix,iy); if(boundaryIndex_.intersects(leaf.bounds,tol)) leaf.classification=CellClass::Intersected; else { const auto state=boundaryIndex_.classifyPoint(leaf.center(),tol); leaf.classification=state==PointInPolygon::Inside?CellClass::Inside:state==PointInPolygon::Boundary?CellClass::Intersected:CellClass::Outside; } return leaf; }
-bool Quadtree2D::splitLeafAt(std::size_t index,const BoundaryLoop& boundary,const TolerancePolicy& tol){ if(index>=leaves_.size()) return false; const auto parent=leaves_[index]; if(parent.level>=maxLevel_) return false; const std::size_t l=parent.level+1; const std::uint64_t x=parent.ix*2,y=parent.iy*2; QuadtreeLeaf2D children[4]={makeLeaf(l,x,y,boundary,tol),makeLeaf(l,x+1,y,boundary,tol),makeLeaf(l,x,y+1,boundary,tol),makeLeaf(l,x+1,y+1,boundary,tol)}; leaves_.erase(leaves_.begin()+static_cast<std::ptrdiff_t>(index)); leaves_.insert(leaves_.end(),std::begin(children),std::end(children)); sortAndAssignIds(); return true; }
-bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryLoop& boundary,const TolerancePolicy& tol){ if(!boundaryIndex_.matches(boundary)) throw std::invalid_argument("refinement boundary differs from indexed boundary"); const auto it=std::find_if(leaves_.begin(),leaves_.end(),[key](const auto& leaf){return leaf.key==key;}); if(it==leaves_.end()) return false; return splitLeafAt(static_cast<std::size_t>(std::distance(leaves_.begin(),it)),boundary,tol); }
+QuadtreeLeaf2D Quadtree2D::makeLeaf(std::size_t level,std::uint64_t ix,std::uint64_t iy,const BoundaryRegion2D& boundary,const TolerancePolicy& tol) const { (void)boundary; QuadtreeLeaf2D leaf; leaf.key=makeKey(level,ix,iy); leaf.level=level; leaf.ix=ix; leaf.iy=iy; leaf.bounds=boundsFor(level,ix,iy); if(boundaryIndex_.intersects(leaf.bounds,tol)) leaf.classification=CellClass::Intersected; else { const auto state=boundaryIndex_.classifyPoint(leaf.center(),tol); leaf.classification=state==PointInPolygon::Inside?CellClass::Inside:state==PointInPolygon::Boundary?CellClass::Intersected:CellClass::Outside; } return leaf; }
+bool Quadtree2D::splitLeafAt(std::size_t index,const BoundaryRegion2D& boundary,const TolerancePolicy& tol){ if(index>=leaves_.size()) return false; const auto parent=leaves_[index]; if(parent.level>=maxLevel_) return false; const std::size_t l=parent.level+1; const std::uint64_t x=parent.ix*2,y=parent.iy*2; QuadtreeLeaf2D children[4]={makeLeaf(l,x,y,boundary,tol),makeLeaf(l,x+1,y,boundary,tol),makeLeaf(l,x,y+1,boundary,tol),makeLeaf(l,x+1,y+1,boundary,tol)}; leaves_.erase(leaves_.begin()+static_cast<std::ptrdiff_t>(index)); leaves_.insert(leaves_.end(),std::begin(children),std::end(children)); sortAndAssignIds(); return true; }
+bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryLoop& boundary,const TolerancePolicy& tol){ return refineLeafByKey(key,BoundaryRegion2D(boundary),tol); }
+bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryRegion2D& boundary,const TolerancePolicy& tol){ if(!boundaryIndex_.matches(boundary)) throw std::invalid_argument("refinement boundary differs from indexed boundary"); const auto it=std::find_if(leaves_.begin(),leaves_.end(),[key](const auto& leaf){return leaf.key==key;}); if(it==leaves_.end()) return false; return splitLeafAt(static_cast<std::size_t>(std::distance(leaves_.begin(),it)),boundary,tol); }
 void Quadtree2D::refine(const BoundaryLoop& boundary,
+                        const QuadtreeRefinementPolicy2D& policy,
+                        const TolerancePolicy& tol) {
+    refine(BoundaryRegion2D(boundary),policy,tol);
+}
+void Quadtree2D::refine(const BoundaryRegion2D& boundary,
                         const QuadtreeRefinementPolicy2D& policy,
                         const TolerancePolicy& tol) {
     if (!boundary.diagnose(tol).valid()) throw std::invalid_argument("invalid boundary loop");
@@ -139,6 +155,10 @@ std::vector<FaceNeighborPair2D> Quadtree2D::faceNeighbors() const { FaceMap left
 std::size_t Quadtree2D::countBalanceViolations() const { std::size_t count=0; for(const auto& p:faceNeighbors()){ const auto a=leaves_[p.first].level,b=leaves_[p.second].level; if((a>b?a-b:b-a)>1) ++count; } return count; }
 QuadtreeBalanceReport2D Quadtree2D::enforceTwoToOneBalance(
     const BoundaryLoop& boundary, const TolerancePolicy& tol) {
+    return enforceTwoToOneBalance(BoundaryRegion2D(boundary),tol);
+}
+QuadtreeBalanceReport2D Quadtree2D::enforceTwoToOneBalance(
+    const BoundaryRegion2D& boundary, const TolerancePolicy& tol) {
     if (!boundaryIndex_.matches(boundary)) {
         throw std::invalid_argument("balance boundary differs from indexed boundary");
     }

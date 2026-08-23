@@ -1,0 +1,10 @@
+# Outer fluid envelope plus one hole; loop orientation is intentionally mixed.
+0.0 0.0
+4.0 0.0
+4.0 4.0
+0.0 4.0
+
+1.1 1.1
+1.1 2.9
+2.9 2.9
+2.9 1.1

@@ -1,0 +1,10 @@
+# Two disjoint solid-wall loops. Blank line separates loops.
+0.15 0.10
+1.15 0.10
+1.15 1.10
+0.15 1.10
+
+2.25 -0.10
+3.25 -0.10
+3.25 0.90
+2.25 0.90

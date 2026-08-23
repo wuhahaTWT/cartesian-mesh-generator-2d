@@ -7,17 +7,20 @@
 
 namespace cartmesh2d {
 
-// Deterministic AABB hierarchy over one closed boundary loop.  The index owns
+// Deterministic AABB hierarchy over a closed multi-loop boundary region.  The index owns
 // a copy of the input segments so repeated Cartesian-cell queries never rescan
 // the complete boundary.
 class BoundarySegmentIndex2D {
 public:
     explicit BoundarySegmentIndex2D(const BoundaryLoop& boundary,
                                     const TolerancePolicy& tol = {});
+    explicit BoundarySegmentIndex2D(const BoundaryRegion2D& boundary,
+                                    const TolerancePolicy& tol = {});
 
     [[nodiscard]] bool valid() const noexcept { return valid_; }
     [[nodiscard]] std::size_t segmentCount() const noexcept { return segments_.size(); }
-    [[nodiscard]] bool matches(const BoundaryLoop& boundary) const noexcept;
+    [[nodiscard]] bool matches(const BoundaryLoop& boundary) const;
+    [[nodiscard]] bool matches(const BoundaryRegion2D& boundary) const noexcept;
 
     [[nodiscard]] std::vector<std::size_t> querySegmentIds(
         const AABB2D& box, const TolerancePolicy& tol = {}) const;
@@ -46,7 +49,7 @@ private:
 
     [[nodiscard]] std::size_t buildNode(std::size_t begin, std::size_t end);
 
-    std::vector<Point2D> boundaryVertices_;
+    std::vector<std::vector<Point2D>> boundaryLoops_;
     std::vector<SegmentRecord> segments_;
     std::vector<std::size_t> order_;
     std::vector<Node> nodes_;

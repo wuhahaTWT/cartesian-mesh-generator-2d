@@ -18,14 +18,18 @@ struct QuadtreeBalanceReport2D { std::size_t iterations = 0; std::size_t refined
 class Quadtree2D {
 public:
     Quadtree2D(Domain2D domain, std::size_t maxLevel, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
+    Quadtree2D(Domain2D domain, std::size_t maxLevel, const BoundaryRegion2D& boundary, const TolerancePolicy& tol = {});
     [[nodiscard]] const Domain2D& domain() const noexcept { return domain_; }
     [[nodiscard]] std::size_t maxLevel() const noexcept { return maxLevel_; }
     [[nodiscard]] const std::vector<QuadtreeLeaf2D>& leaves() const noexcept { return leaves_; }
     void refine(const BoundaryLoop& boundary, const QuadtreeRefinementPolicy2D& policy, const TolerancePolicy& tol = {});
+    void refine(const BoundaryRegion2D& boundary, const QuadtreeRefinementPolicy2D& policy, const TolerancePolicy& tol = {});
     [[nodiscard]] bool refineLeafByKey(std::uint64_t key, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
+    [[nodiscard]] bool refineLeafByKey(std::uint64_t key, const BoundaryRegion2D& boundary, const TolerancePolicy& tol = {});
     [[nodiscard]] std::vector<FaceNeighborPair2D> faceNeighbors() const;
     [[nodiscard]] std::size_t countBalanceViolations() const;
     [[nodiscard]] QuadtreeBalanceReport2D enforceTwoToOneBalance(const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
+    [[nodiscard]] QuadtreeBalanceReport2D enforceTwoToOneBalance(const BoundaryRegion2D& boundary, const TolerancePolicy& tol = {});
     [[nodiscard]] double totalLeafArea() const noexcept;
     [[nodiscard]] bool deterministicOrderingValid() const noexcept;
 private:
@@ -34,10 +38,11 @@ private:
     [[nodiscard]] static std::uint64_t mortonPath(std::size_t level, std::uint64_t ix, std::uint64_t iy) noexcept;
     [[nodiscard]] static std::uint64_t makeKey(std::size_t level, std::uint64_t ix, std::uint64_t iy) noexcept;
     [[nodiscard]] AABB2D boundsFor(std::size_t level, std::uint64_t ix, std::uint64_t iy) const noexcept;
-    [[nodiscard]] QuadtreeLeaf2D makeLeaf(std::size_t level, std::uint64_t ix, std::uint64_t iy, const BoundaryLoop& boundary, const TolerancePolicy& tol) const;
-    [[nodiscard]] bool splitLeafAt(std::size_t index, const BoundaryLoop& boundary, const TolerancePolicy& tol);
+    [[nodiscard]] QuadtreeLeaf2D makeLeaf(std::size_t level, std::uint64_t ix, std::uint64_t iy, const BoundaryRegion2D& boundary, const TolerancePolicy& tol) const;
+    [[nodiscard]] bool splitLeafAt(std::size_t index, const BoundaryRegion2D& boundary, const TolerancePolicy& tol);
     void sortAndAssignIds();
 };
 [[nodiscard]] double distancePointToSegment(const Point2D& point, const Segment2D& segment) noexcept;
 [[nodiscard]] double distanceAABBToBoundary(const AABB2D& box, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
+[[nodiscard]] double distanceAABBToBoundary(const AABB2D& box, const BoundaryRegion2D& boundary, const TolerancePolicy& tol = {});
 } // namespace cartmesh2d

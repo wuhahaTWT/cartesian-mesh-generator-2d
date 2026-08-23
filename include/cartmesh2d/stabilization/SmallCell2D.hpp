@@ -125,4 +125,12 @@ struct AgglomerationResult2D {
     const BoundaryLoop& boundary,
     const TolerancePolicy& tol = {});
 
+[[nodiscard]] AgglomerationResult2D agglomerateSmallCells(
+    const std::vector<CutCell2D>& cutCells,
+    const TopologyMesh2D& topology,
+    const SmallCellReport2D& analysis,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
 } // namespace cartmesh2d
