@@ -18,7 +18,11 @@ void check(bool condition, const std::string& message) {
 }
 
 void near(double a, double b, double eps, const std::string& message) {
-    check(std::abs(a - b) <= eps, message);
+    if (std::abs(a - b) > eps) {
+        ++failures;
+        std::cerr << "FAIL: " << message << " actual=" << a
+                  << " expected=" << b << " tolerance=" << eps << '\n';
+    }
 }
 
 bool pointOnInputBoundary(const Point2D& point, const BoundaryLoop& boundary,
@@ -119,6 +123,42 @@ int main() {
     const auto tangentResult = buildCutCell(unit, CellClass::Intersected, tangent);
     check(tangentResult.valid() && tangentResult.kind == CutCellKind::Full,
           "zero-area solid tangent contact leaves the exterior fluid cell full");
+
+    // Minimal regression: a solid corner exactly coincident with a Cartesian
+    // corner must be classified deterministically, not emitted as an open or
+    // branched local boundary graph.
+    BoundaryLoop alignedRectangle({{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}});
+    const auto outsideCornerTouch = buildCutCell(
+        {{1.0, 1.0}, {2.0, 2.0}}, CellClass::Intersected, alignedRectangle);
+    check(outsideCornerTouch.valid() && outsideCornerTouch.kind == CutCellKind::Full,
+          "aligned exterior corner contact leaves a full fluid cell");
+    const auto insideAlignedCell = buildCutCell(
+        {{0.0, 0.0}, {0.5, 0.5}}, CellClass::Intersected, alignedRectangle);
+    check(insideAlignedCell.valid() && insideAlignedCell.kind == CutCellKind::Empty,
+          "aligned solid-side cell remains empty without a degenerate Cut-cell");
+
+    // Translation must not enlarge a local geometric tolerance.  This is the
+    // same diagonal Cut-cell at millimetre scale near a 1e9 coordinate offset.
+    constexpr double origin = 1.0e9;
+    // A binary-exact local scale keeps the intended geometry representable at
+    // this offset, so the regression measures predicate translation invariance
+    // rather than decimal-to-binary input quantization.
+    constexpr double localScale = 1.0 / 1024.0;
+    const AABB2D shiftedCell{{origin, origin},
+                             {origin + localScale, origin + localScale}};
+    BoundaryLoop shiftedDiagonal({
+        {origin - localScale, origin - localScale},
+        {origin + 2.0 * localScale, origin - localScale},
+        {origin - localScale, origin + 2.0 * localScale}});
+    const auto shiftedCut = buildCutCell(
+        shiftedCell, CellClass::Intersected, shiftedDiagonal);
+    check(shiftedCut.valid() && shiftedCut.kind == CutCellKind::Cut,
+          "Cut-cell predicates are invariant to a large coordinate translation");
+    const double representedCellArea =
+        (shiftedCell.max.x - shiftedCell.min.x) *
+        (shiftedCell.max.y - shiftedCell.min.y);
+    near(shiftedCut.area, 0.5 * representedCellArea, 2.0e-13,
+         "translated millimetre-scale Cut-cell conserves area");
 
     BoundaryLoop clockwise({{-1.0, 2.0}, {0.25, 2.0}, {0.25, -1.0}, {-1.0, -1.0}});
     const auto normalized = buildCutCell(unit, CellClass::Intersected, clockwise);

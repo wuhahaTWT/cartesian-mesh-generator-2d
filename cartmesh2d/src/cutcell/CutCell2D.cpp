@@ -47,7 +47,7 @@ namespace {
 }
 
 [[nodiscard]] bool scalarNear(double a, double b, const TolerancePolicy& tol) noexcept {
-    return std::abs(a - b) <= tol.scale(std::max({1.0, std::abs(a), std::abs(b)}));
+    return std::abs(a - b) <= tol.scale(std::abs(a - b));
 }
 
 [[nodiscard]] bool pointNear(const Point2D& a, const Point2D& b,
@@ -92,11 +92,7 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
             const Vector2D b = next - cur;
             const double lenA = std::sqrt(squaredNorm(a));
             const double lenB = std::sqrt(squaredNorm(b));
-            const double coordinateScale =
-                std::max({1.0, std::abs(prev.x), std::abs(prev.y),
-                          std::abs(cur.x), std::abs(cur.y),
-                          std::abs(next.x), std::abs(next.y)});
-            const double lengthEps = tol.scale(coordinateScale);
+            const double lengthEps = tol.scale(std::max(lenA, lenB));
             if (lenA <= lengthEps || lenB <= lengthEps) {
                 out.push_back(cur);
                 continue;
@@ -127,12 +123,8 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
     const Vector2D s = rhs.b - rhs.a;
     const double lenR = std::sqrt(squaredNorm(r));
     const double lenS = std::sqrt(squaredNorm(s));
-    const double coordinateScale =
-        std::max({1.0, std::abs(lhs.a.x), std::abs(lhs.a.y),
-                  std::abs(lhs.b.x), std::abs(lhs.b.y),
-                  std::abs(rhs.a.x), std::abs(rhs.a.y),
-                  std::abs(rhs.b.x), std::abs(rhs.b.y)});
-    const double lengthEps = tol.scale(coordinateScale);
+    const double lengthEps = tol.scale(std::max({lenR, lenS,
+        std::sqrt(squaredNorm(rhs.a - lhs.a))}));
     if (lenR <= lengthEps || lenS <= lengthEps) return true;
 
     const Vector2D q = rhs.a - lhs.a;
@@ -182,7 +174,7 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
     const double dy = segment.b.y - segment.a.y;
 
     auto update = [&](double p, double q) {
-        const double eps = tol.scale(std::max({1.0, std::abs(p), std::abs(q)}));
+        const double eps = tol.scale(std::max(std::abs(p), std::abs(q)));
         if (std::abs(p) <= eps) return q >= -eps;
         const double ratio = q / p;
         if (p < 0.0) t0 = std::max(t0, ratio);
@@ -266,9 +258,11 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
     return components;
 }
 
-struct DirectedEdge {
+struct HalfEdge {
     std::size_t from = 0;
     std::size_t to = 0;
+    std::size_t twin = 0;
+    std::size_t next = 0;
 };
 
 [[nodiscard]] std::size_t findOrAddPoint(std::vector<Point2D>& points,
@@ -281,12 +275,16 @@ struct DirectedEdge {
     return points.size() - 1;
 }
 
-void addDirectedEdge(std::vector<DirectedEdge>& edges, std::size_t from, std::size_t to) {
+void addUndirectedEdge(std::vector<HalfEdge>& edges, std::size_t from, std::size_t to) {
     if (from == to) return;
-    for (const auto& edge : edges) {
-        if (edge.from == from && edge.to == to) return;
+    for (std::size_t i = 0; i + 1 < edges.size(); i += 2) {
+        const auto& edge = edges[i];
+        if ((edge.from == from && edge.to == to) ||
+            (edge.from == to && edge.to == from)) return;
     }
-    edges.push_back({from, to});
+    const std::size_t first = edges.size();
+    edges.push_back({from, to, first + 1, first});
+    edges.push_back({to, from, first, first + 1});
 }
 
 [[nodiscard]] double sideParameter(const Point2D& p, const Segment2D& side) noexcept {
@@ -296,12 +294,56 @@ void addDirectedEdge(std::vector<DirectedEdge>& edges, std::size_t from, std::si
     return dot(p - side.a, d) / denom;
 }
 
+struct LocalFluidComponent {
+    Polygon2D polygon;
+    std::vector<Segment2D> embedded;
+};
+
 struct LocalIntersectionResult {
-    std::vector<Polygon2D> components;
+    std::vector<LocalFluidComponent> components;
     std::vector<Segment2D> embedded;
     bool graphInvalid = false;
     bool hasHole = false;
+    std::string graphFailure;
 };
+
+[[nodiscard]] bool pointOnPolygonBoundary(const Point2D& point,
+                                          const Polygon2D& polygon,
+                                          const TolerancePolicy& tol) noexcept {
+    for (std::size_t i = 0; i < polygon.vertices.size(); ++i) {
+        const Segment2D edge{polygon.vertices[i],
+                             polygon.vertices[(i + 1) % polygon.vertices.size()]};
+        if (pointOnSegment(point, edge, tol)) return true;
+    }
+    return false;
+}
+
+[[nodiscard]] std::optional<Point2D> interiorProbe(const Polygon2D& polygon,
+                                                   const AABB2D& box,
+                                                   const TolerancePolicy& tol) noexcept {
+    if (const auto centroid = polygon.centroid(tol)) {
+        if (classifyPointInPolygon(*centroid, polygon, tol) == PointInPolygon::Inside) {
+            return centroid;
+        }
+    }
+
+    const double cellScale = std::max(box.max.x - box.min.x, box.max.y - box.min.y);
+    const double offset = std::max(64.0 * tol.scale(cellScale),
+                                   1.0e-8 * cellScale);
+    for (std::size_t i = 0; i < polygon.vertices.size(); ++i) {
+        const Point2D& a = polygon.vertices[i];
+        const Point2D& b = polygon.vertices[(i + 1) % polygon.vertices.size()];
+        const Vector2D edge = b - a;
+        const double length = std::sqrt(squaredNorm(edge));
+        if (length <= offset) continue;
+        const Point2D probe{0.5 * (a.x + b.x) - offset * edge.y / length,
+                            0.5 * (a.y + b.y) + offset * edge.x / length};
+        if (classifyPointInPolygon(probe, polygon, tol) == PointInPolygon::Inside) {
+            return probe;
+        }
+    }
+    return std::nullopt;
+}
 
 [[nodiscard]] LocalIntersectionResult buildLocalIntersection(
     const BoundaryLoop& boundary, const AABB2D& box,
@@ -311,11 +353,11 @@ struct LocalIntersectionResult {
     if (result.embedded.empty()) return result;
 
     std::vector<Point2D> points;
-    std::vector<DirectedEdge> edges;
+    std::vector<HalfEdge> edges;
     for (const auto& fragment : result.embedded) {
         const std::size_t a = findOrAddPoint(points, fragment.a, tol);
         const std::size_t b = findOrAddPoint(points, fragment.b, tol);
-        addDirectedEdge(edges, a, b);
+        addUndirectedEdge(edges, a, b);
     }
 
     const std::vector<Segment2D> sides{
@@ -341,34 +383,49 @@ struct LocalIntersectionResult {
         }
         for (std::size_t i = 0; i + 1 < unique.size(); ++i) {
             if (pointNear(unique[i], unique[i + 1], tol)) continue;
-            const Point2D mid{0.5 * (unique[i].x + unique[i + 1].x),
-                              0.5 * (unique[i].y + unique[i + 1].y)};
-            const auto state = classifyPointInPolygon(mid, boundaryPolygon, tol);
-            if (pointStateIsFluid(state, fluidRegion)) {
-                const std::size_t a = findOrAddPoint(points, unique[i], tol);
-                const std::size_t b = findOrAddPoint(points, unique[i + 1], tol);
-                addDirectedEdge(edges, a, b);
-            }
+            const std::size_t a = findOrAddPoint(points, unique[i], tol);
+            const std::size_t b = findOrAddPoint(points, unique[i + 1], tol);
+            addUndirectedEdge(edges, a, b);
         }
     }
 
     if (edges.empty()) return result;
 
+    // Build a deterministic planar half-edge rotation system.  For a directed
+    // edge u->v, the predecessor of v->u in CCW order is the next edge around
+    // the face retained on the left.  Unlike the previous one-outgoing-edge
+    // assumption, this remains well-defined at aligned corners and tangencies.
     std::vector<std::vector<std::size_t>> outgoing(points.size());
-    std::vector<std::size_t> indegree(points.size(), 0);
     for (std::size_t i = 0; i < edges.size(); ++i) {
         outgoing[edges[i].from].push_back(i);
-        ++indegree[edges[i].to];
     }
-    for (std::size_t i = 0; i < points.size(); ++i) {
-        if (outgoing[i].size() != indegree[i]) {
+    for (auto& fan : outgoing) {
+        std::sort(fan.begin(), fan.end(), [&](std::size_t lhs, std::size_t rhs) {
+            const Point2D& origin = points[edges[lhs].from];
+            const Vector2D a = points[edges[lhs].to] - points[edges[lhs].from];
+            const Vector2D b = points[edges[rhs].to] - points[edges[rhs].from];
+            const bool upperA = a.y > 0.0 || (a.y == 0.0 && a.x >= 0.0);
+            const bool upperB = b.y > 0.0 || (b.y == 0.0 && b.x >= 0.0);
+            if (upperA != upperB) return upperA;
+            const int turn = orientationSign(origin, points[edges[lhs].to],
+                                              points[edges[rhs].to]);
+            if (turn != 0) return turn > 0;
+            const double lengthA = squaredNorm(a);
+            const double lengthB = squaredNorm(b);
+            if (lengthA != lengthB) return lengthA < lengthB;
+            return lhs < rhs;
+        });
+    }
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+        const auto& fan = outgoing[edges[i].to];
+        const auto twinIt = std::find(fan.begin(), fan.end(), edges[i].twin);
+        if (twinIt == fan.end() || fan.empty()) {
             result.graphInvalid = true;
+            result.graphFailure = "half-edge twin is missing from the destination rotation fan";
             return result;
         }
-        if (!outgoing[i].empty() && outgoing[i].size() != 1) {
-            result.graphInvalid = true;
-            return result;
-        }
+        const std::size_t position = static_cast<std::size_t>(std::distance(fan.begin(), twinIt));
+        edges[i].next = fan[(position + fan.size() - 1) % fan.size()];
     }
 
     std::vector<bool> used(edges.size(), false);
@@ -377,25 +434,23 @@ struct LocalIntersectionResult {
         if (used[startEdge]) continue;
         std::vector<Point2D> loop;
         std::size_t edgeId = startEdge;
-        const std::size_t startNode = edges[startEdge].from;
         std::size_t guard = 0;
         while (guard++ <= edges.size()) {
             if (used[edgeId]) {
+                if (edgeId == startEdge) break;
                 result.graphInvalid = true;
+                result.graphFailure = "face traversal reached a half-edge already owned by another face";
                 return result;
             }
             used[edgeId] = true;
             const auto edge = edges[edgeId];
             loop.push_back(points[edge.from]);
-            if (edge.to == startNode) break;
-            if (outgoing[edge.to].size() != 1) {
-                result.graphInvalid = true;
-                return result;
-            }
-            edgeId = outgoing[edge.to].front();
+            edgeId = edge.next;
+            if (edgeId == startEdge) break;
         }
         if (guard > edges.size() + 1) {
             result.graphInvalid = true;
+            result.graphFailure = "half-edge face traversal did not close";
             return result;
         }
         removeCollinearVertices(loop, tol);
@@ -404,19 +459,40 @@ struct LocalIntersectionResult {
         if (polygon.area() <= areaEps) continue;
         if (!simplePolygonLoop(polygon, tol)) {
             result.graphInvalid = true;
+            result.graphFailure = "half-edge traversal produced a non-simple polygon";
             return result;
         }
 
-        // The directed boundary graph is constructed with retained fluid on
-        // the left. Therefore a positive loop is an actual fluid component;
-        // a negative loop bounds a hole inside that fluid region. Multiple
-        // positive loops can safely become multiple solver cells, but a hole
-        // requires polygon-with-holes topology and is not silently flattened.
-        if (polygon.signedArea() < 0.0) {
+        if (polygon.signedArea() < 0.0) continue; // unbounded/right-hand face
+
+        const auto probe = interiorProbe(polygon, box, tol);
+        if (!probe) {
+            result.graphInvalid = true;
+            result.graphFailure = "half-edge face has no certified interior probe (vertices=" +
+                                  std::to_string(polygon.vertices.size()) +
+                                  ", area=" + std::to_string(polygon.area()) + ")";
+            return result;
+        }
+        const auto state = classifyPointInPolygon(*probe, boundaryPolygon, tol);
+        if (!pointStateIsFluid(state, fluidRegion)) continue;
+
+        LocalFluidComponent component;
+        component.polygon = std::move(polygon);
+        for (const auto& fragment : result.embedded) {
+            const Point2D midpoint{0.5 * (fragment.a.x + fragment.b.x),
+                                   0.5 * (fragment.a.y + fragment.b.y)};
+            if (pointOnPolygonBoundary(midpoint, component.polygon, tol)) {
+                component.embedded.push_back(fragment);
+            }
+        }
+        // A true partial Cut-cell component must touch the embedded boundary.
+        // This also rejects the outer loop of a disconnected polygon-with-hole
+        // arrangement instead of silently filling the hole.
+        if (component.embedded.empty()) {
             result.hasHole = true;
             continue;
         }
-        result.components.push_back(std::move(polygon));
+        result.components.push_back(std::move(component));
     }
     return result;
 }
@@ -496,7 +572,7 @@ void setEmptyFluidCell(CutCell2D& result) {
     const auto local = buildLocalIntersection(boundary, box, fluidRegion, tol);
     if (local.graphInvalid) {
         return {unsupportedCell(box, CutCellIssueCode::DegeneratePolygon,
-                                "local Cut-cell boundary graph is open, branched or degenerate")};
+                                "local Cut-cell boundary graph is invalid: " + local.graphFailure)};
     }
     if (local.hasHole) {
         return {unsupportedCell(box, CutCellIssueCode::MultipleEmbeddedComponents,
@@ -524,11 +600,12 @@ void setEmptyFluidCell(CutCell2D& result) {
     std::vector<CutCell2D> result;
     result.reserve(local.components.size());
     double totalArea = 0.0;
-    for (const auto& polygon : local.components) {
+    for (const auto& localComponent : local.components) {
+        const auto& polygon = localComponent.polygon;
         CutCell2D component;
         component.backgroundBounds = box;
         component.fluidPolygon = polygon;
-        component.embeddedBoundary = local.embedded;
+        component.embeddedBoundary = localComponent.embedded;
         component.area = component.fluidPolygon.area();
         if (component.area <= areaEps) continue;
         if (component.area > fullArea + areaEps) {

@@ -32,6 +32,11 @@ struct Point2D {
 [[nodiscard]] double cross(const Vector2D& a, const Vector2D& b) noexcept;
 [[nodiscard]] double squaredNorm(const Vector2D& v) noexcept;
 [[nodiscard]] double orientation(const Point2D& a, const Point2D& b, const Point2D& c) noexcept;
+// Adaptive exact sign for the orientation determinant of binary64 inputs.
+// The common path uses a floating-point error bound; uncertain cases fall
+// back to exact signed-integer arithmetic over the input dyadics.
+[[nodiscard]] int orientationSign(const Point2D& a, const Point2D& b,
+                                  const Point2D& c) noexcept;
 [[nodiscard]] bool nearlyEqual(const Point2D& a, const Point2D& b,
                                const TolerancePolicy& tol = {}) noexcept;
 
@@ -79,6 +84,7 @@ enum class PointInPolygon { Outside, Inside, Boundary };
 enum class LoopOrientation { Degenerate, Clockwise, CounterClockwise };
 
 enum class BoundaryIssueCode {
+    NonFiniteCoordinate,
     TooFewUniqueVertices,
     DuplicateConsecutiveVertex,
     ZeroLengthEdge,
