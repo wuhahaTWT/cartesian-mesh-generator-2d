@@ -167,14 +167,20 @@ SmallCellReport2D analyzeSmallCells(const std::vector<CutCell2D>& cutCells,
         if (small[record.topologyCellId]) ++report.smallCellCount;
     }
 
-    std::map<std::pair<std::size_t, std::size_t>, double> sharedLengths;
+    // Aggregate internal-edge lengths once into a deterministic, cell-local
+    // adjacency map.  The previous implementation stored the same pair data
+    // globally and rescanned every edge pair for every small cell (O(S * E)).
+    // Maps preserve the former ascending neighbour-id tie-break order while
+    // reducing candidate discovery to O(E log d + sum_small d).
+    std::vector<std::map<std::size_t, double>> neighbourLengths(topology.cells.size());
     for (const auto& edge : topology.edges) {
         if (!edge.neighbour) continue;
         const std::size_t a = edge.owner;
         const std::size_t b = *edge.neighbour;
         if (a >= topology.cells.size() || b >= topology.cells.size() || a == b) continue;
-        const auto key = std::minmax(a, b);
-        sharedLengths[{key.first, key.second}] += edgeLength(edge, topology);
+        const double length = edgeLength(edge, topology);
+        neighbourLengths[a][b] += length;
+        neighbourLengths[b][a] += length;
     }
 
     for (auto& record : report.records) {
@@ -185,18 +191,13 @@ SmallCellReport2D analyzeSmallCells(const std::vector<CutCell2D>& cutCells,
         }
 
         std::optional<NeighbourScore2D> best;
-        for (const auto& [pair, length] : sharedLengths) {
-            std::optional<std::size_t> target;
-            if (pair.first == cellId) target = pair.second;
-            if (pair.second == cellId) target = pair.first;
-            if (!target || *target >= topology.cells.size()) continue;
-
+        for (const auto& [target, length] : neighbourLengths[cellId]) {
             NeighbourScore2D candidate;
-            candidate.target = *target;
+            candidate.target = target;
             candidate.sharedLength = length;
-            candidate.targetAlpha = alphaByTopology[*target];
-            candidate.targetArea = areaByTopology[*target];
-            candidate.targetSmall = small[*target];
+            candidate.targetAlpha = alphaByTopology[target];
+            candidate.targetArea = areaByTopology[target];
+            candidate.targetSmall = small[target];
             if (!(candidate.sharedLength > tol.scale())) continue;
 
             if (!best || betterCandidate(candidate, *best, tol)) best = candidate;
