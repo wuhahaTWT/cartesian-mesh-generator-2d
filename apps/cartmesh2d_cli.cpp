@@ -1,5 +1,7 @@
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
+#include "cartmesh2d/quality/SolverQuality2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -9,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -255,7 +258,7 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
 void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
-                 "[fluid-region=exterior|interior]\n"
+                 "[fluid-region=exterior|interior] [openfoam-case-dir]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
@@ -263,7 +266,7 @@ void usage() {
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3 || argc > 7) {
+    if (argc < 3 || argc > 8) {
         usage();
         return EXIT_FAILURE;
     }
@@ -274,6 +277,7 @@ int main(int argc, char** argv) {
     double paddingFraction = 0.25;
     double smallAlpha = 0.10;
     FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
+    std::optional<std::filesystem::path> openFoamCase;
     try {
         if (argc >= 4) maxLevel = static_cast<std::size_t>(std::stoul(argv[3]));
         if (argc >= 5) paddingFraction = std::stod(argv[4]);
@@ -286,6 +290,7 @@ int main(int argc, char** argv) {
         std::cerr << "invalid fluid-region; expected exterior or interior\n";
         return EXIT_FAILURE;
     }
+    if (argc >= 8) openFoamCase=std::filesystem::path(argv[7]);
     if (maxLevel == 0 || maxLevel > 28 || !(paddingFraction > 0.0) ||
         !(smallAlpha > 0.0 && smallAlpha < 1.0)) {
         std::cerr << "invalid max-level, padding-fraction or small-alpha\n";
@@ -454,6 +459,24 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    std::optional<SolverQualityReport2D> solverQuality;
+    if (openFoamCase) {
+        solverQuality=evaluateSolverQuality2D(stabilized.topology);
+        if (!solverQuality->valid()) {
+            std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
+                     <<" issue(s); OpenFOAM mesh was not written\n";
+            const std::size_t limit=std::min<std::size_t>(solverQuality->issues.size(),20);
+            for (std::size_t i=0;i<limit;++i) {
+                const auto& issue=solverQuality->issues[i];
+                std::cerr<<"solver_quality_issue["<<i<<"] code="
+                         <<static_cast<int>(issue.code)<<" cell="<<issue.cellId
+                         <<" edge="<<issue.edgeId<<" measured="<<issue.measured
+                         <<" limit="<<issue.limit<<" message="<<issue.message<<'\n';
+            }
+            return EXIT_FAILURE;
+        }
+    }
+
     const auto parent = outputPrefix.parent_path();
     if (!parent.empty()) std::filesystem::create_directories(parent);
     const std::filesystem::path vtkPath = outputPrefix.string() + ".vtk";
@@ -490,6 +513,28 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    std::optional<OpenFoamWriteReport2D> openFoamReport;
+    if (openFoamCase) {
+        const double extrusionThickness=std::ldexp(span,-static_cast<int>(maxLevel));
+        error.clear();
+        openFoamReport=writeExtrudedOpenFoam2D(stabilized.topology,domain,boundary,
+                                               *openFoamCase,extrusionThickness,&error);
+        if (!openFoamReport->valid()) {
+            std::cerr<<error<<'\n';
+            return EXIT_FAILURE;
+        }
+        std::ofstream out(*openFoamCase/"solver_quality.json");
+        if (!out) {
+            std::cerr<<"failed to open solver-quality JSON output\n";
+            return EXIT_FAILURE;
+        }
+        out<<solverQualityReportToJson(*solverQuality);
+        if (!out.good()) {
+            std::cerr<<"failed while writing solver-quality JSON output\n";
+            return EXIT_FAILURE;
+        }
+    }
+
     const MeshReadback2D readback = readCm2dTopology(cm2dPath);
     if (!readback.valid() || !sameReadbackTopology(stabilized.topology, readback.topology)) {
         std::cerr << "independent CM2D read-back verification failed: " << readback.error << '\n';
@@ -518,5 +563,15 @@ int main(int argc, char** argv) {
               << "cm2d=" << cm2dPath.string() << '\n'
               << "quality_json=" << qualityPath.string() << '\n'
               << "visualization_json=" << vizPath.string() << '\n';
+    if (openFoamReport) {
+        std::cout<<"solver_quality=PASS\n"
+                 <<"solver_max_nonorthogonality_deg="<<solverQuality->maxNonOrthogonalityDeg<<'\n'
+                 <<"solver_max_internal_skewness="<<solverQuality->maxInternalSkewness<<'\n'
+                 <<"solver_max_cell_aspect="<<solverQuality->maxCellAspect<<'\n'
+                 <<"solver_min_face_length="<<solverQuality->minFaceLength<<'\n'
+                 <<"openfoam_case="<<openFoamCase->string()<<'\n'
+                 <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
+                 <<"openfoam_faces="<<openFoamReport->faceCount<<'\n';
+    }
     return EXIT_SUCCESS;
 }
