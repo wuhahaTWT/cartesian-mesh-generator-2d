@@ -9,6 +9,7 @@ import argparse
 import json
 import math
 import re
+import re
 from pathlib import Path
 
 
@@ -188,11 +189,40 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("case", type=Path)
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--require-patch", action="append", default=[],
+                        help="require an exact boundary patch as name:type")
+    parser.add_argument("--require-field-boundary", action="append", default=[],
+                        help="require name:type in both 0/U and 0/p")
     args = parser.parse_args()
     try:
         report = check(args.case)
     except (OSError, ValueError) as exc:
         report = {"valid": False, "issues": [str(exc)]}
+    if report.get("valid"):
+        available = {f'{patch["name"]}:{patch["type"]}' for patch in report["patches"]}
+        missing = sorted(set(args.require_patch) - available)
+        if missing:
+            report["valid"] = False
+            report["issues"].append("missing required patches: " + ", ".join(missing))
+        for required in args.require_field_boundary:
+            if ":" not in required:
+                report["valid"] = False
+                report["issues"].append("invalid required field boundary: " + required)
+                continue
+            name, boundary_type = required.split(":", 1)
+            pattern = re.compile(rf"\b{re.escape(name)}\s*\{{[^}}]*\btype\s+"
+                                 rf"{re.escape(boundary_type)}\s*;", re.DOTALL)
+            for relative in (Path("0/U"), Path("0/p")):
+                try:
+                    content = (args.case / relative).read_text(encoding="utf-8")
+                except OSError as exc:
+                    report["valid"] = False
+                    report["issues"].append(str(exc))
+                    continue
+                if not pattern.search(content):
+                    report["valid"] = False
+                    report["issues"].append(
+                        f"missing {required} in {relative.as_posix()}")
     encoded = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.report:
         args.report.write_text(encoded, encoding="utf-8")

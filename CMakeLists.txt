@@ -16,6 +16,7 @@ add_library(cartmesh2d
     src/quality/SolverQuality2D.cpp
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
+    src/io/BoundaryMetadata2D.cpp
     src/io/OpenFoam2D.cpp
     src/io/Dxf2D.cpp
 )
@@ -168,7 +169,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
     add_test(NAME cartmesh2d_stage6b_io_tests COMMAND cartmesh2d_io_tests)
-    add_test(NAME cartmesh2d_stageDXF1_import_tests COMMAND cartmesh2d_dxf_tests)
+    add_test(NAME cartmesh2d_stageDXF2_import_tests COMMAND cartmesh2d_dxf_tests)
 
     set(CARTMESH2D_DXF_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dxf)
     add_test(NAME cartmesh2d_stageDXF1_convert_e2e
@@ -195,6 +196,48 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/airfoil_like.dxf
                 ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.xy 0.001
                 ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.dxf.json)
+
+    add_test(NAME cartmesh2d_stageDXF2_convert_spline_mm_e2e
+        COMMAND cartmesh2d_dxf_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/spline_circle_mm.dxf
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle.xy 0.001
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle.dxf.json)
+    add_test(NAME cartmesh2d_stageDXF2_mesh_spline_mm_e2e
+        COMMAND cartmesh2d_cli
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle.xy
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle 6 0.25 0.05 exterior
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case 0 0)
+    set_tests_properties(cartmesh2d_stageDXF2_mesh_spline_mm_e2e PROPERTIES
+        DEPENDS cartmesh2d_stageDXF2_convert_spline_mm_e2e)
+    add_test(NAME cartmesh2d_stageDXF2_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case
+                --require-patch wall_spline:wall
+                --report ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case/independent_check.json)
+    set_tests_properties(cartmesh2d_stageDXF2_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageDXF2_mesh_spline_mm_e2e)
+
+    add_test(NAME cartmesh2d_stageDXF2_convert_symmetry_e2e
+        COMMAND cartmesh2d_dxf_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/symmetry_circle_m.dxf
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle.xy 0.01
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle.dxf.json)
+    add_test(NAME cartmesh2d_stageDXF2_mesh_symmetry_e2e
+        COMMAND cartmesh2d_cli
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle.xy
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle 6 0.25 0.05 exterior
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle-case 0 0)
+    set_tests_properties(cartmesh2d_stageDXF2_mesh_symmetry_e2e PROPERTIES
+        DEPENDS cartmesh2d_stageDXF2_convert_symmetry_e2e)
+    add_test(NAME cartmesh2d_stageDXF2_symmetry_patch_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle-case
+                --require-patch symmetry_curve:symmetryPlane
+                --require-field-boundary symmetry_curve:symmetryPlane)
+    set_tests_properties(cartmesh2d_stageDXF2_symmetry_patch_reader PROPERTIES
+        DEPENDS cartmesh2d_stageDXF2_mesh_symmetry_e2e)
 
     set(CARTMESH2D_ACCEPTANCE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/acceptance)
     add_test(NAME cartmesh2d_stage6c_rectangle_e2e

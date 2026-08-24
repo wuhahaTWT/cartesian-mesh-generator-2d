@@ -1,5 +1,8 @@
 # DXF-1：ASCII DXF 二维闭合轮廓导入
 
+> 本文保留 DXF-1 当时的验收边界。当前产品能力已由
+> `STAGE2D_DXF2_VERIFICATION_CN.md` 扩展，不应再用本文“非本阶段能力”判断当前状态。
+
 ## 1. 阶段边界
 
 本阶段只新增 CAD 输入适配层，不修改 Cartesian、Quadtree、Cut-cell、小单元、

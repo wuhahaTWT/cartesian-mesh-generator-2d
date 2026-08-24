@@ -25,6 +25,7 @@ namespace {
 
 bool readBoundaryFile(const std::filesystem::path& path,
                       std::vector<std::vector<Point2D>>& loops,
+                      std::vector<EmbeddedBoundaryPatch2D>& embeddedPatches,
                       std::string& error) {
     std::ifstream in(path);
     if (!in) {
@@ -34,21 +35,58 @@ bool readBoundaryFile(const std::filesystem::path& path,
     std::string line;
     std::size_t lineNumber = 0;
     std::vector<Point2D> points;
+    std::optional<EmbeddedBoundaryPatch2D> pendingPatch;
+    const auto finishLoop=[&]() {
+        if (points.empty()) return true;
+        if (points.size()<3) {
+            error="each boundary loop must contain at least three vertices";
+            return false;
+        }
+        const std::size_t loopId=loops.size();
+        loops.push_back(std::move(points));
+        points.clear();
+        embeddedPatches.push_back(pendingPatch.value_or(EmbeddedBoundaryPatch2D{
+            "wall_"+std::to_string(loopId),"wall",BoundaryConditionRole2D::Wall,""}));
+        pendingPatch.reset();
+        return true;
+    };
     while (std::getline(in, line)) {
         ++lineNumber;
         const auto first = line.find_first_not_of(" \t\r\n");
         if (first == std::string::npos) {
-            if (!points.empty()) {
-                if (points.size()<3) {
-                    error="each boundary loop must contain at least three vertices";
-                    return false;
-                }
-                loops.push_back(std::move(points));
-                points.clear();
-            }
+            if (!finishLoop()) return false;
             continue;
         }
-        if (line[first] == '#') continue;
+        if (line[first] == '#') {
+            std::istringstream metadata(line.substr(first+1));
+            std::string marker;
+            metadata>>marker;
+            if (marker!="cartmesh2d-loop") continue;
+            if (!points.empty() || pendingPatch) {
+                error="boundary metadata must appear once before its loop";
+                return false;
+            }
+            EmbeddedBoundaryPatch2D patch;
+            std::string key,role;
+            if (!(metadata>>key) || key!="patch" || !(metadata>>std::quoted(patch.name)) ||
+                !(metadata>>key) || key!="type" || !(metadata>>std::quoted(patch.type)) ||
+                !(metadata>>key) || key!="role" || !(metadata>>std::quoted(role)) ||
+                !(metadata>>key) || key!="layer" ||
+                !(metadata>>std::quoted(patch.sourceLayer)) ||
+                !parseBoundaryConditionRole(role,patch.role)) {
+                error="invalid cartmesh2d-loop metadata on line "+
+                      std::to_string(lineNumber);
+                return false;
+            }
+            std::string trailing;
+            if (metadata>>trailing) {
+                error="unexpected boundary metadata token on line "+
+                      std::to_string(lineNumber);
+                return false;
+            }
+            pendingPatch=std::move(patch);
+            continue;
+        }
         std::istringstream row(line.substr(first));
         Point2D point;
         if (!(row >> point.x >> point.y)) {
@@ -65,7 +103,11 @@ bool readBoundaryFile(const std::filesystem::path& path,
         }
         points.push_back(point);
     }
-    if (!points.empty()) loops.push_back(std::move(points));
+    if (!finishLoop()) return false;
+    if (pendingPatch) {
+        error="boundary metadata has no following loop";
+        return false;
+    }
     if (loops.empty()) {
         error = "boundary file must contain at least one loop";
         return false;
@@ -309,8 +351,9 @@ int main(int argc, char** argv) {
     }
 
     std::vector<std::vector<Point2D>> loopPoints;
+    std::vector<EmbeddedBoundaryPatch2D> embeddedPatches;
     std::string error;
-    if (!readBoundaryFile(boundaryPath, loopPoints, error)) {
+    if (!readBoundaryFile(boundaryPath, loopPoints, embeddedPatches, error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -595,7 +638,8 @@ int main(int argc, char** argv) {
         const double extrusionThickness=std::ldexp(span,-static_cast<int>(maxLevel));
         error.clear();
         openFoamReport=writeExtrudedOpenFoam2D(solverTopology->topology,domain,boundary,
-                                               *openFoamCase,extrusionThickness,&error);
+                                               *openFoamCase,extrusionThickness,&error,{},
+                                               embeddedPatches);
         if (!openFoamReport->valid()) {
             std::cerr<<error<<'\n';
             return EXIT_FAILURE;

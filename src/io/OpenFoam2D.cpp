@@ -19,6 +19,8 @@ struct FoamFace2D {
 struct PatchFaces2D {
     std::string name;
     std::string type;
+    BoundaryConditionRole2D role = BoundaryConditionRole2D::Wall;
+    std::string sourceLayer;
     std::vector<FoamFace2D> faces;
 };
 
@@ -106,7 +108,8 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,
     const std::filesystem::path& caseDirectory,double thickness,
-    std::string* error,const TolerancePolicy& tol) {
+    std::string* error,const TolerancePolicy& tol,
+    const std::vector<EmbeddedBoundaryPatch2D>& embeddedPatches) {
     OpenFoamWriteReport2D report;
     if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid() ||
         !(thickness>tol.absolute)) {
@@ -117,15 +120,40 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
     const std::size_t layerOffset=topology.vertices.size();
     std::vector<FoamFace2D> internalFaces;
     std::vector<PatchFaces2D> patches;
+    if (!embeddedPatches.empty() && embeddedPatches.size()!=boundary.loops().size()) {
+        setError(error,"embedded boundary patch metadata count does not match loops");
+        return report;
+    }
     for (std::size_t loopId=0;loopId<boundary.loops().size();++loopId) {
-        patches.push_back({"wall_"+std::to_string(loopId),"wall",{}});
+        EmbeddedBoundaryPatch2D spec;
+        if (embeddedPatches.empty()) {
+            spec={"wall_"+std::to_string(loopId),"wall",
+                  BoundaryConditionRole2D::Wall,""};
+        } else spec=embeddedPatches[loopId];
+        const std::string expectedType=spec.role==BoundaryConditionRole2D::Wall
+            ?"wall":(spec.role==BoundaryConditionRole2D::Symmetry?"symmetryPlane":"patch");
+        if (!spec.valid() || spec.type!=expectedType ||
+            spec.name=="left" || spec.name=="right" || spec.name=="bottom" ||
+            spec.name=="top" || spec.name=="frontAndBack") {
+            setError(error,"invalid or reserved embedded boundary patch metadata");
+            return report;
+        }
+        if (const auto* existing=findPatch(patches,spec.name);existing!=nullptr) {
+            if (existing->type!=spec.type || existing->role!=spec.role ||
+                existing->sourceLayer!=spec.sourceLayer) {
+                setError(error,"duplicate embedded patch name has conflicting metadata");
+                return report;
+            }
+            continue;
+        }
+        patches.push_back({spec.name,spec.type,spec.role,spec.sourceLayer,{}});
     }
     const std::vector<PatchFaces2D> domainPatches{
-        {"left","patch",{}},
-        {"right","patch",{}},
-        {"bottom","patch",{}},
-        {"top","patch",{}},
-        {"frontAndBack","empty",{}}
+        {"left","patch",BoundaryConditionRole2D::Inlet,"",{}},
+        {"right","patch",BoundaryConditionRole2D::Outlet,"",{}},
+        {"bottom","patch",BoundaryConditionRole2D::Slip,"",{}},
+        {"top","patch",BoundaryConditionRole2D::Slip,"",{}},
+        {"frontAndBack","empty",BoundaryConditionRole2D::Slip,"",{}}
     };
     patches.insert(patches.end(),domainPatches.begin(),domainPatches.end());
 
@@ -155,7 +183,8 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
                 setError(error,"OpenFOAM embedded boundary edge does not belong to exactly represented input loop");
                 return {};
             }
-            patchName="wall_"+std::to_string(*loopId);
+            patchName=embeddedPatches.empty()
+                ?"wall_"+std::to_string(*loopId):embeddedPatches[*loopId].name;
         } else if (edge.patch==BoundaryPatch2D::DomainBoundary) {
             patchName=domainPatchName(edge,topology,domain,tol);
         }
@@ -204,7 +233,7 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
     std::vector<OpenFoamPatchSummary2D> summaries;
     for (const auto& patch:patches) {
         if (patch.faces.empty()) continue;
-        summaries.push_back({patch.name,patch.type,patch.faces.size(),faces.size()});
+        summaries.push_back({patch.name,patch.type,patch.role,patch.faces.size(),faces.size()});
         faces.insert(faces.end(),patch.faces.begin(),patch.faces.end());
     }
 
@@ -329,9 +358,11 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
         for (const auto& patch:summaries) {
             out<<"    "<<patch.name<<" { ";
             if (patch.type=="empty") out<<"type empty;";
-            else if (patch.name=="left") out<<"type fixedValue; value uniform (0.1 0 0);";
-            else if (patch.name=="right") out<<"type zeroGradient;";
-            else if (patch.name=="top" || patch.name=="bottom") out<<"type slip;";
+            else if (patch.role==BoundaryConditionRole2D::Inlet)
+                out<<"type fixedValue; value uniform (0.1 0 0);";
+            else if (patch.role==BoundaryConditionRole2D::Outlet) out<<"type zeroGradient;";
+            else if (patch.role==BoundaryConditionRole2D::Slip) out<<"type slip;";
+            else if (patch.role==BoundaryConditionRole2D::Symmetry) out<<"type symmetryPlane;";
             else out<<"type noSlip;";
             out<<" }\n";
         }
@@ -346,7 +377,9 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
         for (const auto& patch:summaries) {
             out<<"    "<<patch.name<<" { ";
             if (patch.type=="empty") out<<"type empty;";
-            else if (patch.name=="right") out<<"type fixedValue; value uniform 0;";
+            else if (patch.role==BoundaryConditionRole2D::Outlet)
+                out<<"type fixedValue; value uniform 0;";
+            else if (patch.role==BoundaryConditionRole2D::Symmetry) out<<"type symmetryPlane;";
             else out<<"type zeroGradient;";
             out<<" }\n";
         }
