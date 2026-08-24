@@ -207,6 +207,33 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_SOLVER_OUTPUT}/nested-case)
     set_tests_properties(cartmesh2d_stageV1_nested_independent_reader PROPERTIES
         DEPENDS cartmesh2d_stageV1_nested_openfoam_e2e)
+    add_test(NAME cartmesh2d_stageV1b_circle_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/circle 6 0.25 0.05 exterior
+                ${CARTMESH2D_SOLVER_OUTPUT}/circle-case)
+    add_test(NAME cartmesh2d_stageV1b_circle_independent_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/circle-case)
+    set_tests_properties(cartmesh2d_stageV1b_circle_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageV1b_circle_openfoam_e2e)
+    add_test(NAME cartmesh2d_stageV1b_airfoil_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/airfoil 7 0.30 0.02 exterior
+                ${CARTMESH2D_SOLVER_OUTPUT}/airfoil-case)
+    add_test(NAME cartmesh2d_stageV1b_airfoil_independent_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/airfoil-case)
+    set_tests_properties(cartmesh2d_stageV1b_airfoil_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageV1b_airfoil_openfoam_e2e)
+    add_test(NAME cartmesh2d_stageV1b_two_obstacles_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/two_obstacles.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles 8 0.25 0.05 exterior
+                ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles-case)
+    add_test(NAME cartmesh2d_stageV1b_two_obstacles_independent_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles-case)
+    set_tests_properties(cartmesh2d_stageV1b_two_obstacles_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageV1b_two_obstacles_openfoam_e2e)
     add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
     set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)

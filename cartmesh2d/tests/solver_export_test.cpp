@@ -2,6 +2,8 @@
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -55,6 +57,9 @@ int main() {
     check(quality.maxNonOrthogonalityDeg<=1.0e-12 &&
           quality.maxInternalSkewness<=1.0e-12,
           "orthogonal fixture has zero non-orthogonality and skewness");
+    check(std::abs(quality.minFaceWeight-0.5)<=1.0e-12 &&
+          std::abs(quality.minVolumeRatio-1.0)<=1.0e-12,
+          "orthogonal equal-volume fixture matches OpenFOAM face metrics");
 
     const auto caseDir=std::filesystem::temp_directory_path()/"cartmesh2d-s1-openfoam-fixture";
     std::string error;
@@ -96,6 +101,45 @@ int main() {
     const auto rejected=evaluateSolverQuality2D(topology,strict);
     check(!rejected.valid(),"stricter solver policy rejects measured aspect instead of hiding it");
 
+    // OpenFOAM's allGeometry checks must be represented by the internal gate.
+    // A 0.5%-width cell beside a unit cell violates both the 0.05 face-weight
+    // and 0.01 neighbouring-volume-ratio policies.
+    const Domain2D imbalancedDomain{{{0.0,0.0},{1.005,1.0}}};
+    const BoundaryLoop imbalancedReference({{0.2,0.2},{0.3,0.2},{0.3,0.3},{0.2,0.3}});
+    const auto imbalanced=buildGlobalTopology({
+        fullCell(0,{{0.0,0.0},{0.005,1.0}}),
+        fullCell(1,{{0.005,0.0},{1.005,1.0}})
+    },imbalancedDomain,imbalancedReference);
+    const auto imbalancedQuality=evaluateSolverQuality2D(imbalanced);
+    const auto hasIssue=[&](SolverQualityIssueCode2D code) {
+        return std::any_of(imbalancedQuality.issues.begin(),imbalancedQuality.issues.end(),
+                           [&](const SolverQualityIssue2D& issue) { return issue.code==code; });
+    };
+    check(hasIssue(SolverQualityIssueCode2D::LowFaceWeight),
+          "OpenFOAM-equivalent low interpolation weight is fail-closed");
+    check(hasIssue(SolverQualityIssueCode2D::LowVolumeRatio),
+          "OpenFOAM-equivalent low neighbouring volume ratio is fail-closed");
+
+    // This 2:1-style hanging-face fixture has a short shared face but a long
+    // cell-centre connector. OpenFOAM normalises internal skewness by at least
+    // 0.2*|d|, not by face length alone.
+    CutCell2D coarse;
+    coarse.sourceId=0;
+    coarse.sourceKey=0;
+    coarse.backgroundBounds={{0.0,0.0},{1.0,1.0}};
+    coarse.kind=CutCellKind::Full;
+    coarse.fluidPolygon={{{0.0,0.0},{1.0,0.0},{1.0,0.02},{1.0,1.0},{0.0,1.0}}};
+    coarse.area=coarse.fluidPolygon.area();
+    coarse.areaFraction=1.0;
+    coarse.centroid=coarse.fluidPolygon.centroid();
+    const auto hanging=buildGlobalTopology({coarse,
+                                            fullCell(1,{{1.0,0.0},{2.0,0.02}}),
+                                            fullCell(2,{{1.0,0.02},{2.0,1.0}})},
+                                           {{{0.0,0.0},{2.0,1.0}}},embeddedReference);
+    const auto hangingQuality=evaluateSolverQuality2D(hanging);
+    check(hanging.valid() && hangingQuality.maxInternalSkewness<4.0,
+          "short hanging face uses OpenFOAM connector-based skew normalisation");
+
     CutCell2D transition;
     transition.sourceId=0;
     transition.sourceKey=0;
@@ -120,6 +164,29 @@ int main() {
         }
         check(strictConvex,"solver partition emits strictly convex cells");
     }
+
+    const Domain2D cornerDomain{{{0.75,-0.0659375},{0.775,-0.053125}}};
+    const BoundaryLoop cornerSolid({{0.775,-0.053125},{0.75,-0.0575},{0.75,-0.053125}});
+    CutCell2D corner;
+    corner.sourceId=0;
+    corner.sourceKey=0;
+    corner.backgroundBounds=cornerDomain.bounds;
+    corner.kind=CutCellKind::Cut;
+    corner.fluidPolygon={{{0.75,-0.0659375},{0.775,-0.0659375},
+                          {0.775,-0.05328125},{0.775,-0.053125},
+                          {0.75,-0.0575}}};
+    corner.area=corner.fluidPolygon.area();
+    corner.areaFraction=corner.area/
+        ((cornerDomain.bounds.max.x-cornerDomain.bounds.min.x)*
+         (cornerDomain.bounds.max.y-cornerDomain.bounds.min.y));
+    corner.centroid=corner.fluidPolygon.centroid();
+    const BoundaryRegion2D cornerBoundary(cornerSolid);
+    const auto cornerTopology=buildGlobalTopology({corner},cornerDomain,cornerBoundary);
+    const auto cornerRepaired=buildSolverTopology2D(
+        cornerTopology,cornerDomain,cornerBoundary);
+    check(cornerTopology.valid() && cornerRepaired.valid() &&
+          evaluateSolverQuality2D(cornerRepaired.topology).valid(),
+          "airfoil collinear-transition minimum regression is solver-valid");
 
     if (failures!=0) {
         std::cerr<<failures<<" solver export test(s) failed\n";

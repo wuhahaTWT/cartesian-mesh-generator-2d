@@ -2,6 +2,10 @@
 
 日期：2026-08-24
 
+> 后续状态：circle、airfoil-like 与 two-obstacles 已在 V1b 通过真实 OpenFOAM
+> `-allGeometry`；本文件下方的“剩余边界”是 V1a 当时的失败基线。当前证据见
+> `STAGE2DV1B_VERIFICATION.md`。NACA2412 dense 仍未验收。
+
 ## 结论
 
 V1 已完成一个可复现的矩形障碍物外流基准：生成器直接写出的 OpenFOAM 2606
