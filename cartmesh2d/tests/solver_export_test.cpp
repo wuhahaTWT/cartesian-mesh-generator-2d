@@ -120,6 +120,38 @@ int main() {
     check(hasIssue(SolverQualityIssueCode2D::LowVolumeRatio),
           "OpenFOAM-equivalent low neighbouring volume ratio is fail-closed");
 
+    // Minimal cell retained from the 128-segment circle regression that
+    // OpenFOAM 2606 reported at skewness 5.7043075454659755.  The very short
+    // wall fragment exposes why boundary skewness must use the normal
+    // owner-to-face distance, rather than the full owner-to-face distance.
+    CutCell2D boundarySkewCell;
+    boundarySkewCell.sourceId=0;
+    boundarySkewCell.sourceKey=0;
+    boundarySkewCell.backgroundBounds={{-0.890625,-0.515625},
+                                       {-0.85676465214179398,-0.46875}};
+    boundarySkewCell.kind=CutCellKind::Cut;
+    boundarySkewCell.fluidPolygon={{{-0.890625,-0.515625},
+                                     {-0.85676465214179398,-0.515625},
+                                     {-0.85772861000027223,-0.51410274419322155},
+                                     {-0.890625,-0.46875}}};
+    boundarySkewCell.area=boundarySkewCell.fluidPolygon.area();
+    boundarySkewCell.areaFraction=
+        boundarySkewCell.area/
+        ((boundarySkewCell.backgroundBounds.max.x-boundarySkewCell.backgroundBounds.min.x)*
+         (boundarySkewCell.backgroundBounds.max.y-boundarySkewCell.backgroundBounds.min.y));
+    boundarySkewCell.centroid=boundarySkewCell.fluidPolygon.centroid();
+    const BoundaryLoop skewBoundary(boundarySkewCell.fluidPolygon.vertices);
+    const auto boundarySkewTopology=buildGlobalTopology(
+        {boundarySkewCell},{boundarySkewCell.backgroundBounds},skewBoundary);
+    const auto boundarySkew=evaluateSolverQuality2D(boundarySkewTopology);
+    check(std::any_of(boundarySkew.issues.begin(),boundarySkew.issues.end(),
+                      [](const SolverQualityIssue2D& issue) {
+                          return issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness;
+                      }),
+          "OpenFOAM-equivalent boundary-face skewness is fail-closed");
+    check(std::abs(boundarySkew.maxBoundarySkewness-5.7043075454659755)<1.0e-11,
+          "boundary skewness matches the retained OpenFOAM 2606 regression value");
+
     // This 2:1-style hanging-face fixture has a short shared face but a long
     // cell-centre connector. OpenFOAM normalises internal skewness by at least
     // 0.2*|d|, not by face length alone.

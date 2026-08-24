@@ -126,9 +126,48 @@ SolverQualityReport2D evaluateSolverQuality2D(
             report.issues.push_back({SolverQualityIssueCode2D::ShortFace,edge.owner,edge.id,
                                      edgeLength,policy.minFaceLength,"face length is below solver limit"});
         }
-        if (!edge.neighbour || edge.owner>=centroids.size() ||
-            *edge.neighbour>=centroids.size() || !centroidValid[edge.owner] ||
-            !centroidValid[*edge.neighbour]) continue;
+        if (edge.owner>=centroids.size() || !centroidValid[edge.owner]) continue;
+
+        if (!edge.neighbour) {
+            const Point2D owner=centroids[edge.owner];
+            const Point2D faceCentre{0.5*(a.x+b.x),0.5*(a.y+b.y)};
+            const Vector2D ownerToFace=faceCentre-owner;
+            const Vector2D edgeVector=b-a;
+            const Vector2D normal{edgeVector.y,-edgeVector.x};
+            const double normalMagnitude=std::sqrt(squaredNorm(normal));
+            double skewness=std::numeric_limits<double>::infinity();
+            if (normalMagnitude>0.0) {
+                const Vector2D unitNormal=normal*(1.0/normalMagnitude);
+                const Vector2D normalProjection=unitNormal*dot(ownerToFace,unitNormal);
+                const Vector2D tangential{ownerToFace.x-normalProjection.x,
+                                          ownerToFace.y-normalProjection.y};
+                const double skewMagnitude=std::sqrt(squaredNorm(tangential));
+                double faceDirectionDistance=0.0;
+                if (skewMagnitude>0.0) {
+                    const Vector2D skewDirection=tangential*(1.0/skewMagnitude);
+                    faceDirectionDistance=std::max(
+                        std::abs(dot(skewDirection,a-faceCentre)),
+                        std::abs(dot(skewDirection,b-faceCentre)));
+                }
+                // OpenFOAM's boundary-face check mirrors the owner cell and
+                // normalises the tangential correction by the larger of
+                // 0.4 times the normal owner-to-face distance and the
+                // face-centre-to-edge distance in the skew direction.
+                const double normalization=std::max(
+                    0.4*std::sqrt(squaredNorm(normalProjection)),
+                    faceDirectionDistance)+std::numeric_limits<double>::min();
+                skewness=skewMagnitude/normalization;
+            }
+            report.maxBoundarySkewness=std::max(report.maxBoundarySkewness,skewness);
+            if (skewness>policy.maxBoundarySkewness) {
+                report.issues.push_back({SolverQualityIssueCode2D::ExcessiveBoundarySkewness,
+                                         edge.owner,edge.id,skewness,
+                                         policy.maxBoundarySkewness,
+                                         "boundary face skewness exceeds limit"});
+            }
+            continue;
+        }
+        if (*edge.neighbour>=centroids.size() || !centroidValid[*edge.neighbour]) continue;
 
         const Point2D owner=centroids[edge.owner];
         const Point2D neighbour=centroids[*edge.neighbour];
@@ -213,6 +252,7 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i1<<"\"policy\": {\n";
     out<<i2<<"\"max_non_orthogonality_deg\": "<<report.policy.maxNonOrthogonalityDeg<<",\n";
     out<<i2<<"\"max_internal_skewness\": "<<report.policy.maxInternalSkewness<<",\n";
+    out<<i2<<"\"max_boundary_skewness\": "<<report.policy.maxBoundarySkewness<<",\n";
     out<<i2<<"\"max_concavity_deg\": "<<report.policy.maxConcavityDeg<<",\n";
     out<<i2<<"\"max_cell_aspect\": "<<report.policy.maxCellAspect<<",\n";
     out<<i2<<"\"min_interior_angle_deg\": "<<report.policy.minInteriorAngleDeg<<",\n";
@@ -223,6 +263,7 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i1<<"\"metrics\": {\n";
     out<<i2<<"\"max_non_orthogonality_deg\": "<<report.maxNonOrthogonalityDeg<<",\n";
     out<<i2<<"\"max_internal_skewness\": "<<report.maxInternalSkewness<<",\n";
+    out<<i2<<"\"max_boundary_skewness\": "<<report.maxBoundarySkewness<<",\n";
     out<<i2<<"\"max_concavity_deg\": "<<report.maxConcavityDeg<<",\n";
     out<<i2<<"\"max_cell_aspect\": "<<report.maxCellAspect<<",\n";
     out<<i2<<"\"min_interior_angle_deg\": "<<report.minInteriorAngleDeg<<",\n";

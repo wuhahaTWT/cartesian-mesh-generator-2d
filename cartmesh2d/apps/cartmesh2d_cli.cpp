@@ -606,6 +606,7 @@ int main(int argc, char** argv) {
         std::cout<<"solver_quality=PASS\n"
                  <<"solver_max_nonorthogonality_deg="<<solverQuality->maxNonOrthogonalityDeg<<'\n'
                  <<"solver_max_internal_skewness="<<solverQuality->maxInternalSkewness<<'\n'
+                 <<"solver_max_boundary_skewness="<<solverQuality->maxBoundarySkewness<<'\n'
                  <<"solver_max_cell_aspect="<<solverQuality->maxCellAspect<<'\n'
                  <<"solver_min_face_length="<<solverQuality->minFaceLength<<'\n'
                  <<"solver_min_face_weight="<<solverQuality->minFaceWeight<<'\n'
