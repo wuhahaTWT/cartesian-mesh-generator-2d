@@ -1,5 +1,6 @@
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
+#include "cartmesh2d/quality/SolverTopology2D.hpp"
 
 #include <cstdlib>
 #include <filesystem>
@@ -69,6 +70,15 @@ int main() {
         check(std::filesystem::is_regular_file(polyMesh/name),
               std::string("OpenFOAM file exists: ")+name);
     }
+    for (const auto& relative:{std::filesystem::path("system/controlDict"),
+                              std::filesystem::path("system/fvSchemes"),
+                              std::filesystem::path("system/fvSolution"),
+                              std::filesystem::path("constant/transportProperties"),
+                              std::filesystem::path("constant/turbulenceProperties"),
+                              std::filesystem::path("0/U"),std::filesystem::path("0/p")}) {
+        check(std::filesystem::is_regular_file(caseDir/relative),
+              "runnable laminar OpenFOAM fixture exists: "+relative.string());
+    }
     const std::string boundary=readText(polyMesh/"boundary");
     check(boundary.find("frontAndBack")!=std::string::npos &&
           boundary.find("type empty;")!=std::string::npos,
@@ -85,6 +95,31 @@ int main() {
     strict.maxCellAspect=1.5;
     const auto rejected=evaluateSolverQuality2D(topology,strict);
     check(!rejected.valid(),"stricter solver policy rejects measured aspect instead of hiding it");
+
+    CutCell2D transition;
+    transition.sourceId=0;
+    transition.sourceKey=0;
+    transition.backgroundBounds=domain.bounds;
+    transition.kind=CutCellKind::Full;
+    transition.fluidPolygon={{{0.0,0.0},{1.0,0.0},{2.0,0.0},{2.0,1.0},{0.0,1.0}}};
+    transition.area=2.0;
+    transition.areaFraction=1.0;
+    transition.centroid=transition.fluidPolygon.centroid();
+    const auto transitionTopology=buildGlobalTopology({transition},domain,boundaryRegion);
+    const auto repaired=buildSolverTopology2D(transitionTopology,domain,boundaryRegion);
+    check(repaired.valid() && repaired.partitionedCellCount==1,
+          "solver topology partitions a collinear transition cell deterministically");
+    for (const auto& cell:repaired.topology.cells) {
+        bool strictConvex=true;
+        for (std::size_t i=0;i<cell.vertices.size();++i) {
+            const auto n=cell.vertices.size();
+            const auto& a=repaired.topology.vertices[cell.vertices[(i+n-1)%n]].point;
+            const auto& b=repaired.topology.vertices[cell.vertices[i]].point;
+            const auto& c=repaired.topology.vertices[cell.vertices[(i+1)%n]].point;
+            strictConvex=strictConvex && orientationSign(a,b,c)>0;
+        }
+        check(strictConvex,"solver partition emits strictly convex cells");
+    }
 
     if (failures!=0) {
         std::cerr<<failures<<" solver export test(s) failed\n";

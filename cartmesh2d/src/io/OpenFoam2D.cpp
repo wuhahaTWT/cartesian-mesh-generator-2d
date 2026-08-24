@@ -36,6 +36,16 @@ void writeHeader(std::ofstream& out, const char* className, const char* object) 
        <<"    object "<<object<<";\n}\n\n";
 }
 
+void writeCaseHeader(std::ofstream& out,const char* className,
+                     const char* location,const char* object) {
+    out<<"FoamFile\n{\n"
+       <<"    version 2.0;\n"
+       <<"    format ascii;\n"
+       <<"    class "<<className<<";\n"
+       <<"    location \""<<location<<"\";\n"
+       <<"    object "<<object<<";\n}\n\n";
+}
+
 [[nodiscard]] bool edgeDirectionForCell(const TopologyCell2D& cell,
                                         std::size_t v0,std::size_t v1,
                                         std::size_t& from,std::size_t& to) noexcept {
@@ -172,6 +182,16 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
         frontAndBack->faces.push_back({std::move(topFace),cell.id,std::nullopt});
     }
 
+    // OpenFOAM's upper-triangular addressing requires internal faces to be
+    // grouped by owner and then neighbour, in addition to owner < neighbour.
+    // Topology edge IDs are vertex-key ordered and therefore cannot be used as
+    // the polyMesh face order.
+    std::sort(internalFaces.begin(),internalFaces.end(),
+              [](const FoamFace2D& lhs,const FoamFace2D& rhs) {
+                  if (lhs.owner!=rhs.owner) return lhs.owner<rhs.owner;
+                  return *lhs.neighbour<*rhs.neighbour;
+              });
+
     const auto polyMesh=caseDirectory/"constant"/"polyMesh";
     std::error_code filesystemError;
     std::filesystem::create_directories(polyMesh,filesystemError);
@@ -239,6 +259,98 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
                <<"    startFace "<<patch.startFace<<";\n}\n";
         }
         out<<")\n";
+    }
+
+    // Emit a deliberately low-Reynolds-number laminar exterior-flow fixture.
+    // Products with left/right patches are directly consumable by simpleFoam;
+    // closed or disconnected regions retain the files for inspection but need
+    // problem-specific pressure references before flow validation.
+    const auto systemDirectory=caseDirectory/"system";
+    const auto zeroDirectory=caseDirectory/"0";
+    std::filesystem::create_directories(systemDirectory,filesystemError);
+    std::filesystem::create_directories(zeroDirectory,filesystemError);
+    if (filesystemError) {
+        setError(error,"failed to create OpenFOAM system/0 directories");
+        return {};
+    }
+    {
+        std::ofstream out(systemDirectory/"controlDict");
+        if (!out) { setError(error,"failed to open OpenFOAM controlDict"); return {}; }
+        writeCaseHeader(out,"dictionary","system","controlDict");
+        out<<"application simpleFoam;\nstartFrom startTime;\nstartTime 0;\n"
+           <<"stopAt endTime;\nendTime 300;\ndeltaT 1;\n"
+           <<"writeControl timeStep;\nwriteInterval 300;\npurgeWrite 0;\n"
+           <<"writeFormat ascii;\nwritePrecision 10;\nwriteCompression off;\n"
+           <<"timeFormat general;\ntimePrecision 6;\nrunTimeModifiable true;\n";
+    }
+    {
+        std::ofstream out(systemDirectory/"fvSchemes");
+        if (!out) { setError(error,"failed to open OpenFOAM fvSchemes"); return {}; }
+        writeCaseHeader(out,"dictionary","system","fvSchemes");
+        out<<"ddtSchemes { default steadyState; }\n"
+           <<"gradSchemes { default Gauss linear; }\n"
+           <<"divSchemes\n{\n    default none;\n"
+           <<"    div(phi,U) bounded Gauss upwind;\n"
+           <<"    div((nuEff*dev2(T(grad(U))))) Gauss linear;\n}\n"
+           <<"laplacianSchemes { default Gauss linear corrected; }\n"
+           <<"interpolationSchemes { default linear; }\n"
+           <<"snGradSchemes { default corrected; }\n"
+           <<"wallDist { method meshWave; }\n";
+    }
+    {
+        std::ofstream out(systemDirectory/"fvSolution");
+        if (!out) { setError(error,"failed to open OpenFOAM fvSolution"); return {}; }
+        writeCaseHeader(out,"dictionary","system","fvSolution");
+        out<<"solvers\n{\n"
+           <<"    p { solver GAMG; tolerance 1e-10; relTol 0.05; smoother GaussSeidel; }\n"
+           <<"    U { solver smoothSolver; smoother symGaussSeidel; tolerance 1e-10; relTol 0.05; }\n"
+           <<"}\nSIMPLE\n{\n    nNonOrthogonalCorrectors 1;\n"
+           <<"    residualControl { p 1e-7; U 1e-7; }\n}\n"
+           <<"relaxationFactors\n{\n    fields { p 0.2; }\n    equations { U 0.4; }\n}\n";
+    }
+    {
+        std::ofstream out(caseDirectory/"constant"/"transportProperties");
+        if (!out) { setError(error,"failed to open OpenFOAM transportProperties"); return {}; }
+        writeCaseHeader(out,"dictionary","constant","transportProperties");
+        out<<"transportModel Newtonian;\nnu [0 2 -1 0 0 0 0] 0.01;\n";
+    }
+    {
+        std::ofstream out(caseDirectory/"constant"/"turbulenceProperties");
+        if (!out) { setError(error,"failed to open OpenFOAM turbulenceProperties"); return {}; }
+        writeCaseHeader(out,"dictionary","constant","turbulenceProperties");
+        out<<"simulationType laminar;\n";
+    }
+    {
+        std::ofstream out(zeroDirectory/"U");
+        if (!out) { setError(error,"failed to open OpenFOAM U field"); return {}; }
+        writeCaseHeader(out,"volVectorField","0","U");
+        out<<"dimensions [0 1 -1 0 0 0 0];\ninternalField uniform (0.1 0 0);\n"
+           <<"boundaryField\n{\n";
+        for (const auto& patch:summaries) {
+            out<<"    "<<patch.name<<" { ";
+            if (patch.type=="empty") out<<"type empty;";
+            else if (patch.name=="left") out<<"type fixedValue; value uniform (0.1 0 0);";
+            else if (patch.name=="right") out<<"type zeroGradient;";
+            else if (patch.name=="top" || patch.name=="bottom") out<<"type slip;";
+            else out<<"type noSlip;";
+            out<<" }\n";
+        }
+        out<<"}\n";
+    }
+    {
+        std::ofstream out(zeroDirectory/"p");
+        if (!out) { setError(error,"failed to open OpenFOAM p field"); return {}; }
+        writeCaseHeader(out,"volScalarField","0","p");
+        out<<"dimensions [0 2 -2 0 0 0 0];\ninternalField uniform 0;\n"
+           <<"boundaryField\n{\n";
+        for (const auto& patch:summaries) {
+            out<<"    "<<patch.name<<" { ";
+            if (patch.type=="empty") out<<"type empty;";
+            else if (patch.name=="right") out<<"type fixedValue; value uniform 0;";
+            else out<<"type zeroGradient;";
+            out<<" }\n";
+        }
+        out<<"}\n";
     }
 
     report.pointCount=2*topology.vertices.size();

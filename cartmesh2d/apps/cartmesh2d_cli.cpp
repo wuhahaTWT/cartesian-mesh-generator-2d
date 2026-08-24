@@ -2,6 +2,7 @@
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
+#include "cartmesh2d/quality/SolverTopology2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -460,8 +461,16 @@ int main(int argc, char** argv) {
     }
 
     std::optional<SolverQualityReport2D> solverQuality;
+    std::optional<SolverTopologyResult2D> solverTopology;
     if (openFoamCase) {
-        solverQuality=evaluateSolverQuality2D(stabilized.topology);
+        solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
+        if (!solverTopology->valid()) {
+            std::cerr<<"solver topology partition failed";
+            for (const auto& issue:solverTopology->issues) std::cerr<<": "<<issue;
+            std::cerr<<'\n';
+            return EXIT_FAILURE;
+        }
+        solverQuality=evaluateSolverQuality2D(solverTopology->topology);
         if (!solverQuality->valid()) {
             std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
                      <<" issue(s); OpenFOAM mesh was not written\n";
@@ -517,7 +526,7 @@ int main(int argc, char** argv) {
     if (openFoamCase) {
         const double extrusionThickness=std::ldexp(span,-static_cast<int>(maxLevel));
         error.clear();
-        openFoamReport=writeExtrudedOpenFoam2D(stabilized.topology,domain,boundary,
+        openFoamReport=writeExtrudedOpenFoam2D(solverTopology->topology,domain,boundary,
                                                *openFoamCase,extrusionThickness,&error);
         if (!openFoamReport->valid()) {
             std::cerr<<error<<'\n';
@@ -569,6 +578,8 @@ int main(int argc, char** argv) {
                  <<"solver_max_internal_skewness="<<solverQuality->maxInternalSkewness<<'\n'
                  <<"solver_max_cell_aspect="<<solverQuality->maxCellAspect<<'\n'
                  <<"solver_min_face_length="<<solverQuality->minFaceLength<<'\n'
+                 <<"solver_partitioned_input_cells="<<solverTopology->partitionedCellCount<<'\n'
+                 <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"openfoam_case="<<openFoamCase->string()<<'\n'
                  <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
                  <<"openfoam_faces="<<openFoamReport->faceCount<<'\n';

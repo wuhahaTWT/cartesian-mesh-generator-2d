@@ -121,6 +121,9 @@ def check(case: Path):
     cell_count = 1 + max(owner + neighbour, default=-1)
     if any(owner[index] >= neighbour[index] for index in range(len(neighbour))):
         issues.append("internal face violates owner < neighbour ordering")
+    internal_pairs = [(owner[index], neighbour[index]) for index in range(len(neighbour))]
+    if internal_pairs != sorted(internal_pairs):
+        issues.append("internal faces are not in OpenFOAM upper-triangular order")
     next_face = len(neighbour)
     for patch in patches:
         if patch["startFace"] != next_face:
