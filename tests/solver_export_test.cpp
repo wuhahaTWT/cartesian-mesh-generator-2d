@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -151,6 +152,70 @@ int main() {
           "OpenFOAM-equivalent boundary-face skewness is fail-closed");
     check(std::abs(boundarySkew.maxBoundarySkewness-5.7043075454659755)<1.0e-11,
           "boundary skewness matches the retained OpenFOAM 2606 regression value");
+
+    // Retained NACA0012 leading-edge regression. Convex partitioning the
+    // right source Cut-cell alone forces the shared A-F interface onto a tiny
+    // triangle (OpenFOAM face weight 0.0352839). Quality-driven agglomeration
+    // must remove that source interface before repartitioning.
+    const Point2D nacaLeftBottom{-0.038281249999999982,-0.039687523669164407};
+    const Point2D nacaA{0.0031250000000000167,-0.039687523669164407};
+    const Point2D nacaB{0.044531250000000015,-0.039687523669164407};
+    const Point2D nacaC{0.044531250000000015,-0.031574243588545645};
+    const Point2D nacaD{0.021529832133895588,-0.024414813345507057};
+    const Point2D nacaE{0.0054117450176094928,-0.012689512036677586};
+    const Point2D nacaF{0.0031250000000000167,-0.0073275302117124094};
+    const Point2D nacaNose{0.0,0.0};
+    const Point2D nacaLeftTop{-0.038281249999999982,0.0};
+    const auto makeRegressionCell=[](std::size_t id,std::vector<Point2D> vertices) {
+        CutCell2D cell;
+        cell.sourceId=id;
+        cell.sourceKey=id;
+        cell.fluidPolygon={std::move(vertices)};
+        cell.backgroundBounds=cell.fluidPolygon.bounds();
+        cell.kind=CutCellKind::Cut;
+        cell.area=cell.fluidPolygon.area();
+        cell.areaFraction=0.5;
+        cell.centroid=cell.fluidPolygon.centroid();
+        return cell;
+    };
+    const auto nacaRegressionLeft=makeRegressionCell(
+        0,{nacaLeftBottom,nacaA,nacaF,nacaNose,nacaLeftTop});
+    const auto nacaRegressionRight=makeRegressionCell(
+        1,{nacaA,nacaB,nacaC,nacaD,nacaE,nacaF});
+    const BoundaryLoop nacaRegressionBoundary(
+        {nacaLeftBottom,nacaB,nacaC,nacaD,nacaE,nacaF,nacaNose,nacaLeftTop});
+    const BoundaryRegion2D nacaRegressionRegion(nacaRegressionBoundary);
+    const Domain2D nacaRegressionDomain{{nacaLeftBottom,{nacaB.x,0.0}}};
+    const auto nacaRegressionTopology=buildGlobalTopology(
+        {nacaRegressionLeft,nacaRegressionRight},nacaRegressionDomain,
+        nacaRegressionBoundary);
+    const auto nacaRegressionSolver=buildSolverTopology2D(
+        nacaRegressionTopology,nacaRegressionDomain,nacaRegressionRegion);
+    const auto nacaRegressionQuality=evaluateSolverQuality2D(
+        nacaRegressionSolver.topology);
+    check(nacaRegressionTopology.valid() && nacaRegressionSolver.valid() &&
+              nacaRegressionSolver.qualityAgglomeratedSourceCellCount==1 &&
+              nacaRegressionQuality.valid(),
+          "NACA leading-edge low-weight partition is repaired by source agglomeration");
+    double minimumSolverTurn=1.0;
+    for (const auto& cell:nacaRegressionSolver.topology.cells) {
+        for (std::size_t i=0;i<cell.vertices.size();++i) {
+            const auto n=cell.vertices.size();
+            const Point2D& previous=nacaRegressionSolver.topology.vertices[
+                cell.vertices[(i+n-1)%n]].point;
+            const Point2D& current=nacaRegressionSolver.topology.vertices[
+                cell.vertices[i]].point;
+            const Point2D& next=nacaRegressionSolver.topology.vertices[
+                cell.vertices[(i+1)%n]].point;
+            const Vector2D incoming=current-previous;
+            const Vector2D outgoing=next-current;
+            const double scale=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+            minimumSolverTurn=std::min(minimumSolverTurn,
+                cross(incoming,outgoing)/(scale+std::numeric_limits<double>::min()));
+        }
+    }
+    check(minimumSolverTurn>1.0e-10,
+          "near-collinear prism corners are explicitly partitioned for OpenFOAM");
 
     // This 2:1-style hanging-face fixture has a short shared face but a long
     // cell-centre connector. OpenFOAM normalises internal skewness by at least

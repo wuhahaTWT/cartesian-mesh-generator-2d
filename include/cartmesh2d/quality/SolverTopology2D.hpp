@@ -13,6 +13,7 @@ struct SolverTopologyResult2D {
     std::size_t inputCellCount = 0;
     std::size_t outputCellCount = 0;
     std::size_t partitionedCellCount = 0;
+    std::size_t qualityAgglomeratedSourceCellCount = 0;
     std::vector<std::string> issues;
 
     [[nodiscard]] bool valid() const noexcept {
