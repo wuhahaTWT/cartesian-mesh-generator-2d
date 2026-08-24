@@ -75,3 +75,16 @@ DomainBoundary > 0
 3. `docs/ARCHITECTURE_CN.md`
 4. `docs/STAGE_PLAN_CN.md`
 5. `docs/ACCEPTANCE_CN.md`
+
+## PDE 验证用全局最低层级
+
+边界自适应网格适合几何分辨，但单独增加 `max-level` 不会细化远场，不能构成受控的
+PDE 网格收敛序列。CLI 的最后一个可选参数 `minimum-level` 可对整个计算域设置
+Quadtree 层级下限；默认 `0` 完全保留原来的边界自适应行为：
+
+```text
+cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
+```
+
+上例是全域至少 level 6、嵌入边界达到 level 8。该参数用于验证或需要全域分辨率的
+仿真，不应被误写成边界自适应本身已经实现全局网格收敛。

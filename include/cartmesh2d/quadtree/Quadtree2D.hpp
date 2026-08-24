@@ -6,7 +6,13 @@
 #include <vector>
 namespace cartmesh2d {
 struct DistanceRefinementBand2D { double distance = 0.0; std::size_t targetLevel = 0; };
-struct QuadtreeRefinementPolicy2D { std::size_t boundaryLevel = 0; std::vector<DistanceRefinementBand2D> distanceBands; };
+struct QuadtreeRefinementPolicy2D {
+    // A global floor is required for controlled PDE grid-convergence studies;
+    // zero preserves the original boundary-only adaptive behaviour.
+    std::size_t minimumLevel = 0;
+    std::size_t boundaryLevel = 0;
+    std::vector<DistanceRefinementBand2D> distanceBands;
+};
 struct QuadtreeLeaf2D {
     std::size_t id = 0; std::uint64_t key = 0; std::size_t level = 0; std::uint64_t ix = 0; std::uint64_t iy = 0;
     AABB2D bounds; CellClass classification = CellClass::Outside;

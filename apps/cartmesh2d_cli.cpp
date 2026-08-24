@@ -259,7 +259,7 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
 void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
-                 "[fluid-region=exterior|interior] [openfoam-case-dir]\n"
+                 "[fluid-region=exterior|interior] [openfoam-case-dir] [minimum-level=0]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
@@ -267,7 +267,7 @@ void usage() {
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3 || argc > 8) {
+    if (argc < 3 || argc > 9) {
         usage();
         return EXIT_FAILURE;
     }
@@ -275,6 +275,7 @@ int main(int argc, char** argv) {
     const std::filesystem::path boundaryPath = argv[1];
     const std::filesystem::path outputPrefix = argv[2];
     std::size_t maxLevel = 5;
+    std::size_t minimumLevel = 0;
     double paddingFraction = 0.25;
     double smallAlpha = 0.10;
     FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
@@ -283,6 +284,7 @@ int main(int argc, char** argv) {
         if (argc >= 4) maxLevel = static_cast<std::size_t>(std::stoul(argv[3]));
         if (argc >= 5) paddingFraction = std::stod(argv[4]);
         if (argc >= 6) smallAlpha = std::stod(argv[5]);
+        if (argc >= 9) minimumLevel = static_cast<std::size_t>(std::stoul(argv[8]));
     } catch (const std::exception&) {
         std::cerr << "invalid numeric CLI argument\n";
         return EXIT_FAILURE;
@@ -292,9 +294,9 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     if (argc >= 8) openFoamCase=std::filesystem::path(argv[7]);
-    if (maxLevel == 0 || maxLevel > 28 || !(paddingFraction > 0.0) ||
+    if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
         !(smallAlpha > 0.0 && smallAlpha < 1.0)) {
-        std::cerr << "invalid max-level, padding-fraction or small-alpha\n";
+        std::cerr << "invalid max-level, minimum-level, padding-fraction or small-alpha\n";
         return EXIT_FAILURE;
     }
 
@@ -342,6 +344,7 @@ int main(int argc, char** argv) {
 
     Quadtree2D tree(domain, maxLevel, boundary);
     QuadtreeRefinementPolicy2D refinement;
+    refinement.minimumLevel = minimumLevel;
     refinement.boundaryLevel = maxLevel;
     tree.refine(boundary, refinement);
     const auto balance = tree.enforceTwoToOneBalance(boundary);
@@ -581,6 +584,7 @@ int main(int argc, char** argv) {
               << "boundary_role="
               << (fluidRegion == FluidRegion2D::Exterior ? "solid_wall" : "fluid_envelope") << '\n'
               << "boundary_loops=" << boundary.loops().size() << '\n'
+              << "minimum_level=" << minimumLevel << '\n'
               << "leaf_count=" << tree.leaves().size() << '\n'
               << "split_fluid_leaves=" << splitFluidLeaves << '\n'
               << "source_cells=" << sourceTopology.cells.size() << '\n'

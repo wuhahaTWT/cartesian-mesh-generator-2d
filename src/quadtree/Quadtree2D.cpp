@@ -105,6 +105,7 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
                         const TolerancePolicy& tol) {
     if (!boundary.diagnose(tol).valid()) throw std::invalid_argument("invalid boundary loop");
     if (!boundaryIndex_.matches(boundary)) throw std::invalid_argument("refinement boundary differs from indexed boundary");
+    if (policy.minimumLevel > maxLevel_) throw std::invalid_argument("minimumLevel exceeds maxLevel");
     if (policy.boundaryLevel > maxLevel_) throw std::invalid_argument("boundaryLevel exceeds maxLevel");
     for (const auto& band : policy.distanceBands) {
         if (band.distance < 0.0) throw std::invalid_argument("negative distance");
@@ -120,8 +121,10 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
         std::vector<QuadtreeLeaf2D> next;
         next.reserve(leaves_.size() * 2U);
         for (const auto& leaf : leaves_) {
-            std::size_t requested =
-                leaf.classification == CellClass::Intersected ? policy.boundaryLevel : 0U;
+            std::size_t requested = policy.minimumLevel;
+            if (leaf.classification == CellClass::Intersected) {
+                requested = std::max(requested, policy.boundaryLevel);
+            }
             if (!policy.distanceBands.empty()) {
                 const double distance = boundaryIndex_.distanceToAABB(leaf.bounds, tol);
                 for (const auto& band : policy.distanceBands) {
