@@ -1,0 +1,33 @@
+{
+  "name": "cartmesh2d-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop shell for the native cartmesh2d mesher",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack:mac": "electron-builder --mac dir"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.zhuanz.cartmesh2d",
+    "productName": "CartMesh2D",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "runtime/bin", "to": "bin" },
+      { "from": "runtime/examples", "to": "examples" }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": ["dir"],
+      "identity": null
+    }
+  }
+}

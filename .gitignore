@@ -1,4 +1,5 @@
 /build/
+/cartmesh2d/build-desktop/
 /artifacts/
 /.venv/
 /.idea/

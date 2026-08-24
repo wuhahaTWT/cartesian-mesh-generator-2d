@@ -4,6 +4,13 @@
 
 它不是三维 `cartmesh` 的 `z=0` 模式，也不通过把 `Point3D`、Octree 或 3D Cut-cell 代码模板化来复用三维核心。二维项目首先追求一个小而完整、可验证、可作为结题成果的二维 CFD 网格生成核心；三维项目继续独立推进。
 
+## macOS 桌面应用
+
+`desktop/` 提供可双击运行的 CartMesh2D 图形界面：选择 DXF、设置网格规模、生成并
+预览真实 CM2D 单元，以及导出 VTK/CM2D/JSON/OpenFOAM case。Apple Silicon 本地
+打包命令与产品边界见 `docs/PRODUCT1_MAC_DESKTOP_CN.md`。同一套 Electron 界面代码
+保留 Windows 打包能力，但 Windows 可执行文件必须在 Windows 环境另行构建和验收。
+
 ## 默认 CFD 物理语义
 
 二维产品默认与三维 `cartmesh` 保持一致：
