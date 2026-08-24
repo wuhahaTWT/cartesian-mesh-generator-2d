@@ -11,6 +11,7 @@ namespace cartmesh2d {
 struct SolverQualityPolicy2D {
     double maxNonOrthogonalityDeg = 70.0;
     double maxInternalSkewness = 4.0;
+    double maxBoundarySkewness = 4.0;
     double maxConcavityDeg = 80.0;
     double maxCellAspect = 1000.0;
     double minInteriorAngleDeg = 0.5;
@@ -25,6 +26,7 @@ enum class SolverQualityIssueCode2D {
     ShortFace,
     ExcessiveNonOrthogonality,
     ExcessiveSkewness,
+    ExcessiveBoundarySkewness,
     ExcessiveConcavity,
     ExcessiveAspect,
     SmallInteriorAngle,
@@ -45,6 +47,7 @@ struct SolverQualityReport2D {
     SolverQualityPolicy2D policy;
     double maxNonOrthogonalityDeg = 0.0;
     double maxInternalSkewness = 0.0;
+    double maxBoundarySkewness = 0.0;
     double maxConcavityDeg = 0.0;
     double maxCellAspect = 0.0;
     double minInteriorAngleDeg = 180.0;
