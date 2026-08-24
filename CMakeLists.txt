@@ -17,6 +17,7 @@ add_library(cartmesh2d
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
     src/io/OpenFoam2D.cpp
+    src/io/Dxf2D.cpp
 )
 add_library(cartmesh2d::cartmesh2d ALIAS cartmesh2d)
 
@@ -44,6 +45,17 @@ elseif(MSVC)
     target_compile_options(cartmesh2d_cli PRIVATE /W4 /permissive-)
 else()
     target_compile_options(cartmesh2d_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
+add_executable(cartmesh2d_dxf_cli apps/cartmesh2d_dxf_cli.cpp)
+target_link_libraries(cartmesh2d_dxf_cli PRIVATE cartmesh2d::cartmesh2d)
+target_compile_features(cartmesh2d_dxf_cli PRIVATE cxx_std_20)
+if(COMMAND cartmesh_enable_warnings)
+    cartmesh_enable_warnings(cartmesh2d_dxf_cli)
+elseif(MSVC)
+    target_compile_options(cartmesh2d_dxf_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(cartmesh2d_dxf_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
 endif()
 
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
@@ -111,6 +123,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_io_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_io_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_dxf_tests tests/dxf_test.cpp)
+    target_link_libraries(cartmesh2d_dxf_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_dxf_tests PRIVATE cxx_std_20)
+
     foreach(target
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
@@ -126,7 +142,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_small_cell_tests
             cartmesh2d_agglomeration_tests
             cartmesh2d_quality_tests
-            cartmesh2d_io_tests)
+            cartmesh2d_io_tests
+            cartmesh2d_dxf_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -151,6 +168,33 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
     add_test(NAME cartmesh2d_stage6b_io_tests COMMAND cartmesh2d_io_tests)
+    add_test(NAME cartmesh2d_stageDXF1_import_tests COMMAND cartmesh2d_dxf_tests)
+
+    set(CARTMESH2D_DXF_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dxf)
+    add_test(NAME cartmesh2d_stageDXF1_convert_e2e
+        COMMAND cartmesh2d_dxf_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/rounded_obstacle.dxf
+                ${CARTMESH2D_DXF_OUTPUT}/rounded_obstacle.xy 0.002
+                ${CARTMESH2D_DXF_OUTPUT}/rounded_obstacle.dxf.json)
+    add_test(NAME cartmesh2d_stageDXF1_mesh_e2e
+        COMMAND cartmesh2d_cli
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.xy
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like 7 0.30 0.02 exterior
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case 0 0)
+    set_tests_properties(cartmesh2d_stageDXF1_mesh_e2e PROPERTIES
+        DEPENDS cartmesh2d_stageDXF1_convert_airfoil_e2e)
+    add_test(NAME cartmesh2d_stageDXF1_independent_openfoam_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case
+                --report ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case/independent_check.json)
+    set_tests_properties(cartmesh2d_stageDXF1_independent_openfoam_reader PROPERTIES
+        DEPENDS cartmesh2d_stageDXF1_mesh_e2e)
+    add_test(NAME cartmesh2d_stageDXF1_convert_airfoil_e2e
+        COMMAND cartmesh2d_dxf_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/airfoil_like.dxf
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.xy 0.001
+                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.dxf.json)
 
     set(CARTMESH2D_ACCEPTANCE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/acceptance)
     add_test(NAME cartmesh2d_stage6c_rectangle_e2e

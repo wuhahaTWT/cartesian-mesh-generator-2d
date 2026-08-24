@@ -88,3 +88,33 @@ cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
 
 上例是全域至少 level 6、嵌入边界达到 level 8。该参数用于验证或需要全域分辨率的
 仿真，不应被误写成边界自适应本身已经实现全局网格收敛。
+
+## DXF-1：ASCII DXF 闭合轮廓导入
+
+二维 CAD 输入先经过独立、fail-closed 的转换器，再进入原有网格核心：
+
+```text
+ASCII DXF -> 严格实体/闭环诊断 -> normalized boundary.xy
+          -> cartmesh2d_cli -> Cartesian / Quadtree / Cut-cell / OpenFOAM
+```
+
+构建后运行：
+
+```sh
+./build/cartmesh2d_dxf_cli \
+  examples/dxf/airfoil_like.dxf \
+  artifacts/airfoil_like.xy \
+  0.001 \
+  artifacts/airfoil_like.dxf.json
+
+./build/cartmesh2d_cli \
+  artifacts/airfoil_like.xy artifacts/airfoil_like \
+  7 0.30 0.02 exterior artifacts/airfoil_like-case 0 0
+```
+
+第三个 DXF 参数是图纸单位下的绝对最大弦高误差。首版支持 `LINE`、`ARC`、
+`CIRCLE` 和 `LWPOLYLINE`（含 bulge）；保留并报告 `$INSUNITS` 代码和图层名，
+但不自动换算单位，也不把图层自动映射成 OpenFOAM patch。二进制 DXF、传统
+`POLYLINE`、`SPLINE`、`ELLIPSE`、`HATCH`、`INSERT/BLOCK`、非默认 OCS、带宽多段线
+和非零 thickness 会明确失败。详细边界和证据见
+`docs/STAGE2D_DXF1_VERIFICATION_CN.md`。
