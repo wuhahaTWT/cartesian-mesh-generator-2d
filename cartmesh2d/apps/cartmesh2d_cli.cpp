@@ -260,7 +260,7 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
 void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
-                 "[fluid-region=exterior|interior] [openfoam-case-dir] [minimum-level=0] "
+                 "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
                  "[boundary-simplify-cell-fraction=0]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
@@ -297,7 +297,9 @@ int main(int argc, char** argv) {
         std::cerr << "invalid fluid-region; expected exterior or interior\n";
         return EXIT_FAILURE;
     }
-    if (argc >= 8) openFoamCase=std::filesystem::path(argv[7]);
+    if (argc >= 8 && std::string(argv[7])!="-") {
+        openFoamCase=std::filesystem::path(argv[7]);
+    }
     if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
         !(smallAlpha > 0.0 && smallAlpha < 1.0) ||
         !std::isfinite(boundarySimplifyCellFraction) || boundarySimplifyCellFraction<0.0) {
@@ -509,7 +511,9 @@ int main(int argc, char** argv) {
         solverQuality=evaluateSolverQuality2D(solverTopology->topology);
         if (!solverQuality->valid()) {
             std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
-                     <<" issue(s); OpenFOAM mesh was not written\n";
+                     <<" issue(s) after "
+                     <<solverTopology->qualityAgglomeratedSourceCellCount
+                     <<" quality-driven source agglomeration(s); OpenFOAM mesh was not written\n";
             const std::size_t limit=std::min<std::size_t>(solverQuality->issues.size(),20);
             for (std::size_t i=0;i<limit;++i) {
                 const auto& issue=solverQuality->issues[i];
@@ -645,6 +649,8 @@ int main(int argc, char** argv) {
                  <<"solver_min_face_weight="<<solverQuality->minFaceWeight<<'\n'
                  <<"solver_min_volume_ratio="<<solverQuality->minVolumeRatio<<'\n'
                  <<"solver_partitioned_input_cells="<<solverTopology->partitionedCellCount<<'\n'
+                 <<"solver_quality_agglomerated_source_cells="
+                 <<solverTopology->qualityAgglomeratedSourceCellCount<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"openfoam_case="<<openFoamCase->string()<<'\n'
                  <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'

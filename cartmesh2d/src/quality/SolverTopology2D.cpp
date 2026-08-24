@@ -1,4 +1,5 @@
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "cartmesh2d/quality/SolverQuality2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -22,8 +23,18 @@ namespace {
     if (polygon.vertices.size()<3) return false;
     for (std::size_t i=0;i<polygon.vertices.size();++i) {
         const auto n=polygon.vertices.size();
-        if (orientationSign(polygon.vertices[(i+n-1)%n],polygon.vertices[i],
-                            polygon.vertices[(i+1)%n])<=0) return false;
+        const Point2D& previous=polygon.vertices[(i+n-1)%n];
+        const Point2D& current=polygon.vertices[i];
+        const Point2D& next=polygon.vertices[(i+1)%n];
+        if (orientationSign(previous,current,next)<=0) return false;
+        const Vector2D incoming=current-previous;
+        const Vector2D outgoing=next-current;
+        const double scale=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+        // OpenFOAM's face-plane concavity check treats numerically collinear
+        // prism corners as concave even when an exact binary predicate sees a
+        // tiny positive turn. Keep such transition vertices out of a single
+        // solver cell and partition them explicitly.
+        if (!(scale>0.0) || cross(incoming,outgoing)<=1.0e-10*scale) return false;
     }
     return true;
 }
@@ -116,6 +127,55 @@ namespace {
     const double areaTolerance=1.0e-12+1.0e-10*sourceArea;
     return strictlyConvex(merged) && std::abs(merged.area()-sourceArea)<=areaTolerance
         ?std::optional<Polygon2D>(merged):std::nullopt;
+}
+
+[[nodiscard]] std::optional<Polygon2D> mergeAdjacentPolygonsSimple(
+    const Polygon2D& first,const Polygon2D& second,const TolerancePolicy& tol) {
+    struct DirectedEdge { Point2D a; Point2D b; };
+    std::vector<DirectedEdge> remaining;
+    const auto same=[](const Point2D& a,const Point2D& b) {
+        return a.x==b.x && a.y==b.y;
+    };
+    const auto add=[&](const Polygon2D& polygon) {
+        for (std::size_t i=0;i<polygon.vertices.size();++i) {
+            DirectedEdge edge{polygon.vertices[i],
+                              polygon.vertices[(i+1)%polygon.vertices.size()]};
+            const auto reverse=std::find_if(remaining.begin(),remaining.end(),
+                [&](const DirectedEdge& other) {
+                    return same(other.a,edge.b) && same(other.b,edge.a);
+                });
+            if (reverse==remaining.end()) remaining.push_back(edge);
+            else remaining.erase(reverse);
+        }
+    };
+    add(first);
+    add(second);
+    if (remaining.size()<3) return std::nullopt;
+    const auto firstEdge=std::min_element(remaining.begin(),remaining.end(),
+        [](const DirectedEdge& lhs,const DirectedEdge& rhs) {
+            return std::tie(lhs.a.x,lhs.a.y,lhs.b.x,lhs.b.y)<
+                   std::tie(rhs.a.x,rhs.a.y,rhs.b.x,rhs.b.y);
+        });
+    const Point2D start=firstEdge->a;
+    Point2D next=firstEdge->b;
+    std::vector<Point2D> ordered{start};
+    remaining.erase(firstEdge);
+    while (!remaining.empty()) {
+        ordered.push_back(next);
+        const auto following=std::find_if(remaining.begin(),remaining.end(),
+            [&](const DirectedEdge& edge) { return same(edge.a,next); });
+        if (following==remaining.end()) return std::nullopt;
+        next=following->b;
+        remaining.erase(following);
+    }
+    if (!same(next,start)) return std::nullopt;
+    Polygon2D merged{ordered};
+    const double sourceArea=first.area()+second.area();
+    const double areaTolerance=tol.absolute*tol.absolute+tol.relative*sourceArea;
+    BoundaryLoop loop(ordered);
+    if (!loop.diagnose(tol).valid() || !(merged.signedArea()>0.0) ||
+        std::abs(merged.area()-sourceArea)>areaTolerance) return std::nullopt;
+    return merged;
 }
 
 [[nodiscard]] double minimumInteriorAngle(const Polygon2D& polygon) {
@@ -313,6 +373,100 @@ namespace {
     return cell;
 }
 
+struct PartitionAttempt2D {
+    TopologyMesh2D topology;
+    std::vector<std::size_t> sourceForCell;
+    std::size_t partitionedSourceCellCount = 0;
+    std::string error;
+};
+
+struct QualityScore2D {
+    std::size_t issueCount = 0;
+    double maximumSeverity = 0.0;
+    double totalSeverity = 0.0;
+};
+
+[[nodiscard]] QualityScore2D qualityScore(const SolverQualityReport2D& quality) {
+    QualityScore2D score;
+    score.issueCount=quality.issues.size();
+    for (const auto& issue:quality.issues) {
+        const bool lowerBound=
+            issue.code==SolverQualityIssueCode2D::ShortFace ||
+            issue.code==SolverQualityIssueCode2D::SmallInteriorAngle ||
+            issue.code==SolverQualityIssueCode2D::LowFaceWeight ||
+            issue.code==SolverQualityIssueCode2D::LowVolumeRatio;
+        const double severity=lowerBound
+            ?issue.limit/(issue.measured+std::numeric_limits<double>::min())
+            :issue.measured/(issue.limit+std::numeric_limits<double>::min());
+        score.maximumSeverity=std::max(score.maximumSeverity,severity);
+        score.totalSeverity+=severity;
+    }
+    return score;
+}
+
+[[nodiscard]] bool betterQualityScore(const QualityScore2D& candidate,
+                                      const QualityScore2D& current) noexcept {
+    return std::tie(candidate.issueCount,candidate.maximumSeverity,candidate.totalSeverity)<
+           std::tie(current.issueCount,current.maximumSeverity,current.totalSeverity);
+}
+
+[[nodiscard]] PartitionAttempt2D partitionSourcePolygons(
+    const std::vector<Polygon2D>& sourcePolygons,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    PartitionAttempt2D result;
+    std::vector<CutCell2D> cells;
+    cells.reserve(sourcePolygons.size());
+    for (std::size_t source=0;source<sourcePolygons.size();++source) {
+        const auto& polygon=sourcePolygons[source];
+        if (strictlyConvex(polygon)) {
+            cells.push_back(makeCell(cells.size(),polygon,tol));
+            result.sourceForCell.push_back(source);
+            continue;
+        }
+        const auto pieces=triangulate(polygon,domain,boundary,tol);
+        if (!pieces) {
+            result.error="deterministic convex partition failed for source cell "+
+                         std::to_string(source);
+            return result;
+        }
+        ++result.partitionedSourceCellCount;
+        for (const auto& piece:*pieces) {
+            cells.push_back(makeCell(cells.size(),piece,tol));
+            result.sourceForCell.push_back(source);
+        }
+    }
+    result.topology=buildGlobalTopology(cells,domain,boundary,tol);
+    if (!result.topology.valid()) result.error="partitioned solver topology audit failed";
+    return result;
+}
+
+[[nodiscard]] std::vector<std::pair<std::size_t,std::size_t>> sourceMergePairs(
+    const PartitionAttempt2D& partition,const SolverQualityReport2D& quality) {
+    std::vector<std::pair<std::size_t,std::size_t>> pairs;
+    const auto addEdge=[&](const Edge2D& edge) {
+        if (!edge.neighbour || edge.owner>=partition.sourceForCell.size() ||
+            *edge.neighbour>=partition.sourceForCell.size()) return;
+        const std::size_t first=partition.sourceForCell[edge.owner];
+        const std::size_t second=partition.sourceForCell[*edge.neighbour];
+        if (first!=second) pairs.emplace_back(std::min(first,second),std::max(first,second));
+    };
+    for (const auto& issue:quality.issues) {
+        if (issue.edgeId<partition.topology.edges.size()) {
+            addEdge(partition.topology.edges[issue.edgeId]);
+        }
+        if (issue.cellId>=partition.sourceForCell.size()) continue;
+        for (const auto& edge:partition.topology.edges) {
+            if (edge.owner==issue.cellId ||
+                (edge.neighbour && *edge.neighbour==issue.cellId)) {
+                addEdge(edge);
+            }
+        }
+    }
+    std::sort(pairs.begin(),pairs.end());
+    pairs.erase(std::unique(pairs.begin(),pairs.end()),pairs.end());
+    return pairs;
+}
+
 } // namespace
 
 SolverTopologyResult2D buildSolverTopology2D(
@@ -324,8 +478,8 @@ SolverTopologyResult2D buildSolverTopology2D(
         result.issues.push_back("solver topology repair requires valid inputs");
         return result;
     }
-    std::vector<CutCell2D> cells;
-    cells.reserve(topology.cells.size());
+    std::vector<Polygon2D> sourcePolygons;
+    sourcePolygons.reserve(topology.cells.size());
     for (const auto& cell:topology.cells) {
         Polygon2D polygon;
         polygon.vertices.reserve(cell.vertices.size());
@@ -336,22 +490,50 @@ SolverTopologyResult2D buildSolverTopology2D(
             }
             polygon.vertices.push_back(topology.vertices[vertex].point);
         }
-        if (strictlyConvex(polygon)) {
-            cells.push_back(makeCell(cells.size(),polygon,tol));
-            continue;
-        }
-        const auto triangles=triangulate(polygon,domain,boundary,tol);
-        if (!triangles) {
-            result.issues.push_back("deterministic convex partition failed for cell "+
-                                    std::to_string(cell.id));
-            return result;
-        }
-        ++result.partitionedCellCount;
-        for (const auto& triangle:*triangles) cells.push_back(makeCell(cells.size(),triangle,tol));
+        sourcePolygons.push_back(std::move(polygon));
     }
-    result.topology=buildGlobalTopology(cells,domain,boundary,tol);
+
+    PartitionAttempt2D partition=partitionSourcePolygons(
+        sourcePolygons,domain,boundary,tol);
+    if (!partition.error.empty()) {
+        result.issues.push_back(partition.error);
+        return result;
+    }
+    for (std::size_t iteration=0;iteration<32;++iteration) {
+        const auto quality=evaluateSolverQuality2D(partition.topology,{},tol);
+        if (quality.valid()) break;
+        const auto pairs=sourceMergePairs(partition,quality);
+        std::optional<PartitionAttempt2D> bestPartition;
+        std::optional<std::vector<Polygon2D>> bestPolygons;
+        QualityScore2D bestScore=qualityScore(quality);
+        for (const auto& [first,second]:pairs) {
+            if (second>=sourcePolygons.size()) continue;
+            const auto merged=mergeAdjacentPolygonsSimple(
+                sourcePolygons[first],sourcePolygons[second],tol);
+            if (!merged) continue;
+            auto candidatePolygons=sourcePolygons;
+            candidatePolygons[first]=*merged;
+            candidatePolygons.erase(
+                candidatePolygons.begin()+static_cast<std::ptrdiff_t>(second));
+            auto candidate=partitionSourcePolygons(
+                candidatePolygons,domain,boundary,tol);
+            if (!candidate.error.empty()) continue;
+            const auto candidateQuality=evaluateSolverQuality2D(candidate.topology,{},tol);
+            const auto candidateScore=qualityScore(candidateQuality);
+            if (betterQualityScore(candidateScore,bestScore)) {
+                bestScore=candidateScore;
+                bestPartition=std::move(candidate);
+                bestPolygons=std::move(candidatePolygons);
+            }
+        }
+        if (!bestPartition) break;
+        partition=std::move(*bestPartition);
+        sourcePolygons=std::move(*bestPolygons);
+        ++result.qualityAgglomeratedSourceCellCount;
+    }
+    result.topology=std::move(partition.topology);
+    result.partitionedCellCount=partition.partitionedSourceCellCount;
     result.outputCellCount=result.topology.cells.size();
-    if (!result.topology.valid()) result.issues.push_back("partitioned solver topology audit failed");
     return result;
 }
 
