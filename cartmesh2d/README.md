@@ -89,7 +89,7 @@ cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
 上例是全域至少 level 6、嵌入边界达到 level 8。该参数用于验证或需要全域分辨率的
 仿真，不应被误写成边界自适应本身已经实现全局网格收敛。
 
-## DXF-1：ASCII DXF 闭合轮廓导入
+## DXF-2：曲线、边界语义和单位换算
 
 二维 CAD 输入先经过独立、fail-closed 的转换器，再进入原有网格核心：
 
@@ -112,9 +112,9 @@ ASCII DXF -> 严格实体/闭环诊断 -> normalized boundary.xy
   7 0.30 0.02 exterior artifacts/airfoil_like-case 0 0
 ```
 
-第三个 DXF 参数是图纸单位下的绝对最大弦高误差。首版支持 `LINE`、`ARC`、
-`CIRCLE` 和 `LWPOLYLINE`（含 bulge）；保留并报告 `$INSUNITS` 代码和图层名，
-但不自动换算单位，也不把图层自动映射成 OpenFOAM patch。二进制 DXF、传统
-`POLYLINE`、`SPLINE`、`ELLIPSE`、`HATCH`、`INSERT/BLOCK`、非默认 OCS、带宽多段线
-和非零 thickness 会明确失败。详细边界和证据见
-`docs/STAGE2D_DXF1_VERIFICATION_CN.md`。
+第三个 DXF 参数是输出米制坐标下的绝对弦高误差。支持 `LINE`、`ARC`、`CIRCLE`、
+`LWPOLYLINE`（含 bulge）、`ELLIPSE` 和带显式 knot/control point 的 `SPLINE`。
+`$INSUNITS=1..24` 自动换算成米；缺失或 unitless 文件必须在最后一个参数显式给出
+源单位，例如 `mm`。DXF 图层按 `wall_*`、`inlet_*`、`outlet_*`、
+`slip_*/farfield_*`、`symmetry_*` 写入 `.xy` 元数据并传到 OpenFOAM patch 和场边界。
+详细边界和证据见 `docs/STAGE2D_DXF2_VERIFICATION_CN.md`。

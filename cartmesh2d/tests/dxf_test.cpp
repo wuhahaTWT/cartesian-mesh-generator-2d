@@ -41,8 +41,12 @@ std::string readText(const std::filesystem::path& path) {
     return out.str();
 }
 
-    const std::string prefix="0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n6\n"
-                             "0\nENDSEC\n0\nSECTION\n2\nENTITIES\n999\nDXF test\n";
+const std::string prefix="0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n6\n"
+                         "0\nENDSEC\n0\nSECTION\n2\nENTITIES\n999\nDXF test\n";
+const std::string prefixMm="0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n"
+                           "0\nENDSEC\n0\nSECTION\n2\nENTITIES\n";
+const std::string prefixUnitless="0\nSECTION\n2\nHEADER\n0\nENDSEC\n"
+                                 "0\nSECTION\n2\nENTITIES\n";
 const std::string suffix="0\nENDSEC\n0\nEOF\n";
 
 } // namespace
@@ -71,11 +75,20 @@ int main() {
         check(rectangleResult.report.insertionUnitsCodeDefined &&
               rectangleResult.report.insertionUnitsCode==6,
               "DXF insertion units code is preserved in the report");
+        check(rectangleResult.report.effectiveUnitsCode==6 &&
+              rectangleResult.report.coordinateScaleToMetres==1.0,
+              "metre DXF units are applied");
+        check(rectangleResult.embeddedPatches.size()==1 &&
+              rectangleResult.embeddedPatches[0].name=="wall" &&
+              rectangleResult.embeddedPatches[0].role==BoundaryConditionRole2D::Wall,
+              "wall layer maps to OpenFOAM wall metadata");
         const auto first=directory/"rectangle-a.xy";
         const auto second=directory/"rectangle-b.xy";
-        check(writeBoundaryXy2D(*rectangleResult.boundary,first),"write first XY");
+        check(writeBoundaryXy2D(*rectangleResult.boundary,first,nullptr,
+                                rectangleResult.embeddedPatches),"write first XY");
         const auto repeat=readAsciiDxfBoundary2D(rectangle,options);
-        check(repeat.valid() && writeBoundaryXy2D(*repeat.boundary,second),
+        check(repeat.valid() && writeBoundaryXy2D(*repeat.boundary,second,nullptr,
+                                                  repeat.embeddedPatches),
               "repeat import/write succeeds");
         check(readText(first)==readText(second),"repeat DXF conversion is byte-identical");
     }
@@ -134,13 +147,108 @@ int main() {
           bowtieResult.issues.front().code==DxfIssueCode2D::InvalidBoundaryRegion,
           "self-intersection is reported as invalid region");
 
-    const auto unsupported=writeText(directory,"spline.dxf",prefix+
-        "0\nSPLINE\n8\nwall\n70\n8\n"+suffix);
+    const auto unsupported=writeText(directory,"hatch.dxf",prefix+
+        "0\nHATCH\n8\nwall\n70\n0\n"+suffix);
     const auto unsupportedResult=readAsciiDxfBoundary2D(unsupported,options);
-    check(!unsupportedResult.valid(),"unsupported SPLINE fails closed");
+    check(!unsupportedResult.valid(),"unsupported HATCH fails closed");
     check(!unsupportedResult.issues.empty() &&
           unsupportedResult.issues.front().code==DxfIssueCode2D::UnsupportedEntity,
           "unsupported entity issue is explicit");
+
+    const auto ellipse=writeText(directory,"ellipse_mm.dxf",prefixMm+
+        "0\nELLIPSE\n8\nwall_ellipse\n10\n500\n20\n0\n30\n0\n"
+        "11\n500\n21\n0\n31\n0\n40\n0.2\n41\n0\n42\n6.283185307179586\n"+suffix);
+    auto curveOptions=options;
+    curveOptions.maximumChordError=5.0e-4;
+    const auto ellipseResult=readAsciiDxfBoundary2D(ellipse,curveOptions);
+    check(ellipseResult.valid(),"millimetre ELLIPSE imports");
+    if (ellipseResult.valid()) {
+        near(ellipseResult.boundary->area(),0.05*std::numbers::pi,0.003,
+             "ELLIPSE area and millimetre-to-metre scaling are correct");
+        near(ellipseResult.boundary->bounds().max.x,1.0,1e-12,
+             "ELLIPSE maximum x is converted to metres");
+        check(ellipseResult.report.effectiveUnitsCode==4 &&
+              ellipseResult.report.coordinateScaleToMetres==1.0e-3,
+              "millimetre conversion is reported");
+        check(ellipseResult.report.ellipseEntityCount==1 &&
+              ellipseResult.report.sampledEllipseSegmentCount>4,
+              "ELLIPSE is chord-error sampled");
+    }
+
+    const std::string splineKnots=
+        "40\n0\n40\n0\n40\n0\n40\n0\n40\n1\n40\n1\n40\n1\n40\n1\n";
+    const auto splineAirfoil=writeText(directory,"spline_airfoil_mm.dxf",prefixMm+
+        "0\nSPLINE\n8\nwall_airfoil\n70\n8\n71\n3\n72\n8\n73\n4\n74\n0\n"+
+        splineKnots+
+        "10\n0\n20\n0\n30\n0\n10\n250\n20\n180\n30\n0\n"
+        "10\n750\n20\n100\n30\n0\n10\n1000\n20\n0\n30\n0\n"
+        "0\nSPLINE\n8\nwall_airfoil\n70\n8\n71\n3\n72\n8\n73\n4\n74\n0\n"+
+        splineKnots+
+        "10\n1000\n20\n0\n30\n0\n10\n750\n20\n-80\n30\n0\n"
+        "10\n250\n20\n-120\n30\n0\n10\n0\n20\n0\n30\n0\n"+suffix);
+    const auto splineResult=readAsciiDxfBoundary2D(splineAirfoil,curveOptions);
+    check(splineResult.valid(),"two open cubic SPLINE entities form a closed airfoil");
+    if (splineResult.valid()) {
+        check(splineResult.report.splineEntityCount==2 &&
+              splineResult.report.sampledSplineSegmentCount>4,
+              "SPLINE entities are adaptively sampled");
+        check(splineResult.embeddedPatches.size()==1 &&
+              splineResult.embeddedPatches[0].name=="wall_airfoil",
+              "SPLINE loop layer reaches patch metadata");
+        near(splineResult.boundary->bounds().max.x,1.0,1e-12,
+             "SPLINE control points are converted from millimetres to metres");
+    }
+
+    const auto mixedLayers=writeText(directory,"mixed_layers.dxf",prefix+
+        "0\nLINE\n8\nwall_a\n10\n0\n20\n0\n11\n1\n21\n0\n"
+        "0\nLINE\n8\nwall_b\n10\n1\n20\n0\n11\n1\n21\n1\n"
+        "0\nLINE\n8\nwall_a\n10\n1\n20\n1\n11\n0\n21\n1\n"
+        "0\nLINE\n8\nwall_a\n10\n0\n20\n1\n11\n0\n21\n0\n"+suffix);
+    const auto mixedResult=readAsciiDxfBoundary2D(mixedLayers,options);
+    check(!mixedResult.valid(),"mixed boundary layers on one loop fail closed");
+    check(!mixedResult.issues.empty() &&
+          mixedResult.issues.front().code==DxfIssueCode2D::BoundaryMetadataConflict,
+          "mixed boundary roles report metadata conflict");
+
+    const auto collidingLayers=writeText(directory,"colliding_layers.dxf",prefix+
+        "0\nCIRCLE\n8\nwall-a\n10\n-2\n20\n0\n40\n0.5\n"
+        "0\nCIRCLE\n8\nwall_a\n10\n2\n20\n0\n40\n0.5\n"+suffix);
+    const auto collidingResult=readAsciiDxfBoundary2D(collidingLayers,options);
+    check(!collidingResult.valid(),
+          "distinct DXF layers that sanitize to one patch name fail closed");
+    check(!collidingResult.issues.empty() &&
+          collidingResult.issues.front().code==DxfIssueCode2D::BoundaryMetadataConflict,
+          "sanitized patch-name collision reports metadata conflict");
+
+    const auto unitless=writeText(directory,"unitless.dxf",prefixUnitless+
+        "0\nCIRCLE\n8\nwall\n10\n0\n20\n0\n40\n1\n"+suffix);
+    const auto unitlessResult=readAsciiDxfBoundary2D(unitless,options);
+    check(!unitlessResult.valid(),"unitless DXF fails without an explicit override");
+    check(!unitlessResult.issues.empty() &&
+          unitlessResult.issues.front().code==DxfIssueCode2D::UnknownOrUnitlessUnits,
+          "unitless failure is explicit");
+    auto overrideOptions=curveOptions;
+    overrideOptions.sourceUnitsOverrideCode=4;
+    const auto overrideResult=readAsciiDxfBoundary2D(unitless,overrideOptions);
+    check(overrideResult.valid() && overrideResult.report.unitsOverrideApplied,
+          "explicit millimetre override imports a unitless DXF");
+
+    const auto inletLayer=writeText(directory,"inlet_layer.dxf",prefix+
+        "0\nCIRCLE\n8\ninlet_feed\n10\n0\n20\n0\n40\n1\n"+suffix);
+    const auto inletResult=readAsciiDxfBoundary2D(inletLayer,options);
+    check(inletResult.valid() && inletResult.embeddedPatches.size()==1 &&
+          inletResult.embeddedPatches[0].name=="inlet_feed" &&
+          inletResult.embeddedPatches[0].type=="patch" &&
+          inletResult.embeddedPatches[0].role==BoundaryConditionRole2D::Inlet,
+          "inlet_* layer maps to inlet patch metadata");
+
+    const auto symmetryLayer=writeText(directory,"symmetry_layer.dxf",prefix+
+        "0\nCIRCLE\n8\nsymmetry_axis\n10\n0\n20\n0\n40\n1\n"+suffix);
+    const auto symmetryResult=readAsciiDxfBoundary2D(symmetryLayer,options);
+    check(symmetryResult.valid() && symmetryResult.embeddedPatches.size()==1 &&
+          symmetryResult.embeddedPatches[0].type=="symmetryPlane" &&
+          symmetryResult.embeddedPatches[0].role==BoundaryConditionRole2D::Symmetry,
+          "symmetry_* layer maps to symmetryPlane metadata");
 
     const auto extrusion=writeText(directory,"extrusion.dxf",prefix+
         "0\nCIRCLE\n8\nwall\n10\n0\n20\n0\n40\n1\n210\n1\n220\n0\n230\n0\n"+suffix);
@@ -185,6 +293,6 @@ int main() {
         std::cerr<<failures<<" DXF test(s) failed\n";
         return EXIT_FAILURE;
     }
-    std::cout<<"cartmesh2d DXF-1 tests passed\n";
+    std::cout<<"cartmesh2d DXF-2 tests passed\n";
     return EXIT_SUCCESS;
 }
