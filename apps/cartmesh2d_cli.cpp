@@ -513,7 +513,9 @@ int main(int argc, char** argv) {
             std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
                      <<" issue(s) after "
                      <<solverTopology->qualityAgglomeratedSourceCellCount
-                     <<" quality-driven source agglomeration(s); OpenFOAM mesh was not written\n";
+                     <<" quality-driven source agglomeration(s) and "
+                     <<solverTopology->qualityRepartitionCount
+                     <<" local repartition(s); OpenFOAM mesh was not written\n";
             const std::size_t limit=std::min<std::size_t>(solverQuality->issues.size(),20);
             for (std::size_t i=0;i<limit;++i) {
                 const auto& issue=solverQuality->issues[i];
@@ -651,6 +653,8 @@ int main(int argc, char** argv) {
                  <<"solver_partitioned_input_cells="<<solverTopology->partitionedCellCount<<'\n'
                  <<"solver_quality_agglomerated_source_cells="
                  <<solverTopology->qualityAgglomeratedSourceCellCount<<'\n'
+                 <<"solver_quality_local_repartitions="
+                 <<solverTopology->qualityRepartitionCount<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"openfoam_case="<<openFoamCase->string()<<'\n'
                  <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
