@@ -53,6 +53,7 @@ SolverQualityReport2D evaluateSolverQuality2D(
 
     std::vector<Point2D> centroids(topology.cells.size());
     std::vector<bool> centroidValid(topology.cells.size(),false);
+    std::vector<double> areas(topology.cells.size(),0.0);
     double minFace=std::numeric_limits<double>::infinity();
 
     for (const auto& cell:topology.cells) {
@@ -66,6 +67,7 @@ SolverQualityReport2D evaluateSolverQuality2D(
         }
         centroids[cell.id]=*centroid;
         centroidValid[cell.id]=true;
+        areas[cell.id]=polygon.area();
 
         double perimeter=0.0;
         double maxEdge=0.0;
@@ -151,13 +153,48 @@ SolverQualityReport2D evaluateSolverQuality2D(
             const double t=cross(owner-a,d)/lineDenominator;
             const Point2D intersection=a+e*t;
             const Point2D midpoint{0.5*(a.x+b.x),0.5*(a.y+b.y)};
-            skewness=length(intersection,midpoint)/edgeLength;
+            // Match OpenFOAM's internal-face normalization: the skew vector is
+            // scaled by at least 0.2*|cell-centre connector| and otherwise by
+            // the approximate face-centre-to-edge distance in the skew
+            // direction. For an extruded 2D edge the latter is half its length.
+            const double normalization=std::max(0.2*std::sqrt(squaredNorm(d)),
+                                                0.5*edgeLength)+
+                                       std::numeric_limits<double>::min();
+            skewness=length(intersection,midpoint)/normalization;
         }
         report.maxInternalSkewness=std::max(report.maxInternalSkewness,skewness);
         if (skewness>policy.maxInternalSkewness) {
             report.issues.push_back({SolverQualityIssueCode2D::ExcessiveSkewness,
                                      edge.owner,edge.id,skewness,policy.maxInternalSkewness,
                                      "internal face skewness exceeds limit"});
+        }
+
+        // OpenFOAM face interpolation weight: project each cell-centre to
+        // face-centre vector onto the face area vector, then divide the
+        // smaller absolute distance by their sum.  The face-area magnitude
+        // cancels in two dimensions, so the unnormalised edge normal is exact.
+        const Point2D faceCentre{0.5*(a.x+b.x),0.5*(a.y+b.y)};
+        const double dOwn=std::abs(dot(normal,faceCentre-owner));
+        const double dNei=std::abs(dot(normal,neighbour-faceCentre));
+        const double faceWeight=std::min(dOwn,dNei)/(dOwn+dNei+
+            std::numeric_limits<double>::min());
+        report.minFaceWeight=std::min(report.minFaceWeight,faceWeight);
+        if (faceWeight<policy.minFaceWeight) {
+            report.issues.push_back({SolverQualityIssueCode2D::LowFaceWeight,
+                                     edge.owner,edge.id,faceWeight,policy.minFaceWeight,
+                                     "internal face interpolation weight is below limit"});
+        }
+
+        // OpenFOAM volume-ratio check is min(Vowner,Vneighbour) / max(...).
+        // Extrusion thickness is common and cancels, leaving the 2D areas.
+        const double volumeRatio=std::min(areas[edge.owner],areas[*edge.neighbour])/
+            (std::max(areas[edge.owner],areas[*edge.neighbour])+
+             std::numeric_limits<double>::min());
+        report.minVolumeRatio=std::min(report.minVolumeRatio,volumeRatio);
+        if (volumeRatio<policy.minVolumeRatio) {
+            report.issues.push_back({SolverQualityIssueCode2D::LowVolumeRatio,
+                                     edge.owner,edge.id,volumeRatio,policy.minVolumeRatio,
+                                     "neighbouring cell volume ratio is below limit"});
         }
     }
     report.minFaceLength=std::isfinite(minFace)?minFace:0.0;
@@ -179,7 +216,9 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i2<<"\"max_concavity_deg\": "<<report.policy.maxConcavityDeg<<",\n";
     out<<i2<<"\"max_cell_aspect\": "<<report.policy.maxCellAspect<<",\n";
     out<<i2<<"\"min_interior_angle_deg\": "<<report.policy.minInteriorAngleDeg<<",\n";
-    out<<i2<<"\"min_face_length\": "<<report.policy.minFaceLength<<"\n";
+    out<<i2<<"\"min_face_length\": "<<report.policy.minFaceLength<<",\n";
+    out<<i2<<"\"min_face_weight\": "<<report.policy.minFaceWeight<<",\n";
+    out<<i2<<"\"min_volume_ratio\": "<<report.policy.minVolumeRatio<<"\n";
     out<<i1<<"},\n";
     out<<i1<<"\"metrics\": {\n";
     out<<i2<<"\"max_non_orthogonality_deg\": "<<report.maxNonOrthogonalityDeg<<",\n";
@@ -188,6 +227,8 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     out<<i2<<"\"max_cell_aspect\": "<<report.maxCellAspect<<",\n";
     out<<i2<<"\"min_interior_angle_deg\": "<<report.minInteriorAngleDeg<<",\n";
     out<<i2<<"\"min_face_length\": "<<report.minFaceLength<<",\n";
+    out<<i2<<"\"min_face_weight\": "<<report.minFaceWeight<<",\n";
+    out<<i2<<"\"min_volume_ratio\": "<<report.minVolumeRatio<<",\n";
     out<<i2<<"\"min_compactness\": "<<report.minCompactness<<"\n";
     out<<i1<<"},\n";
     out<<i1<<"\"issue_count\": "<<report.issues.size()<<",\n";

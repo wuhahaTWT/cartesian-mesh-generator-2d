@@ -15,6 +15,8 @@ struct SolverQualityPolicy2D {
     double maxCellAspect = 1000.0;
     double minInteriorAngleDeg = 0.5;
     double minFaceLength = 1.01e-10;
+    double minFaceWeight = 0.05;
+    double minVolumeRatio = 0.01;
 };
 
 enum class SolverQualityIssueCode2D {
@@ -25,7 +27,9 @@ enum class SolverQualityIssueCode2D {
     ExcessiveSkewness,
     ExcessiveConcavity,
     ExcessiveAspect,
-    SmallInteriorAngle
+    SmallInteriorAngle,
+    LowFaceWeight,
+    LowVolumeRatio
 };
 
 struct SolverQualityIssue2D {
@@ -45,6 +49,8 @@ struct SolverQualityReport2D {
     double maxCellAspect = 0.0;
     double minInteriorAngleDeg = 180.0;
     double minFaceLength = 0.0;
+    double minFaceWeight = 1.0;
+    double minVolumeRatio = 1.0;
     double minCompactness = 1.0;
     std::vector<SolverQualityIssue2D> issues;
 

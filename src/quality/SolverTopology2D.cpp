@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
+#include <numbers>
 #include <optional>
 #include <tuple>
 
@@ -60,41 +62,137 @@ namespace {
     return count;
 }
 
-[[nodiscard]] std::optional<Polygon2D> mergeAdjacentTriangles(
+[[nodiscard]] bool underDeterminedBoundaryCell(const Polygon2D& polygon,
+                                               const Domain2D& domain,
+                                               const BoundaryRegion2D& boundary,
+                                               const TolerancePolicy& tol) {
+    return polygon.vertices.size()==3 &&
+           boundaryEdgeCount(polygon,domain,boundary,tol)>=2;
+}
+
+[[nodiscard]] std::optional<Polygon2D> mergeAdjacentPolygons(
     const Polygon2D& first,const Polygon2D& second) {
-    std::vector<Point2D> unique=first.vertices;
-    for (const auto& point:second.vertices) {
-        const bool exists=std::any_of(unique.begin(),unique.end(),[&](const Point2D& other) {
-            return point.x==other.x && point.y==other.y;
+    struct DirectedEdge { Point2D a; Point2D b; };
+    std::vector<DirectedEdge> remaining;
+    const auto add=[&](const Polygon2D& polygon) {
+        for (std::size_t i=0;i<polygon.vertices.size();++i) {
+            DirectedEdge edge{polygon.vertices[i],polygon.vertices[(i+1)%polygon.vertices.size()]};
+            const auto reverse=std::find_if(remaining.begin(),remaining.end(),
+                [&](const DirectedEdge& other) {
+                    return other.a.x==edge.b.x && other.a.y==edge.b.y &&
+                           other.b.x==edge.a.x && other.b.y==edge.a.y;
+                });
+            if (reverse==remaining.end()) remaining.push_back(edge);
+            else remaining.erase(reverse);
+        }
+    };
+    add(first);
+    add(second);
+    if (remaining.size()<3 ||
+        remaining.size()!=first.vertices.size()+second.vertices.size()-2) return std::nullopt;
+
+    const auto firstEdge=std::min_element(remaining.begin(),remaining.end(),
+        [](const DirectedEdge& lhs,const DirectedEdge& rhs) {
+            return std::tie(lhs.a.x,lhs.a.y,lhs.b.x,lhs.b.y)<
+                   std::tie(rhs.a.x,rhs.a.y,rhs.b.x,rhs.b.y);
         });
-        if (!exists) unique.push_back(point);
+    const Point2D start=firstEdge->a;
+    Point2D next=firstEdge->b;
+    std::vector<Point2D> ordered{start};
+    remaining.erase(firstEdge);
+    while (!remaining.empty()) {
+        ordered.push_back(next);
+        const auto following=std::find_if(remaining.begin(),remaining.end(),
+            [&](const DirectedEdge& edge) {
+                return edge.a.x==next.x && edge.a.y==next.y;
+            });
+        if (following==remaining.end()) return std::nullopt;
+        next=following->b;
+        remaining.erase(following);
     }
-    if (unique.size()!=4) return std::nullopt;
-    Point2D center{};
-    for (const auto& point:unique) { center.x+=point.x; center.y+=point.y; }
-    center.x/=4.0;
-    center.y/=4.0;
-    std::sort(unique.begin(),unique.end(),[&](const Point2D& lhs,const Point2D& rhs) {
-        const double a=std::atan2(lhs.y-center.y,lhs.x-center.x);
-        const double b=std::atan2(rhs.y-center.y,rhs.x-center.x);
-        return a==b?std::tie(lhs.x,lhs.y)<std::tie(rhs.x,rhs.y):a<b;
-    });
-    Polygon2D merged{unique};
-    if (merged.signedArea()<0.0) std::reverse(merged.vertices.begin(),merged.vertices.end());
-    return strictlyConvex(merged)?std::optional<Polygon2D>(merged):std::nullopt;
+    if (next.x!=start.x || next.y!=start.y) return std::nullopt;
+    Polygon2D merged{ordered};
+    const double sourceArea=first.area()+second.area();
+    const double areaTolerance=1.0e-12+1.0e-10*sourceArea;
+    return strictlyConvex(merged) && std::abs(merged.area()-sourceArea)<=areaTolerance
+        ?std::optional<Polygon2D>(merged):std::nullopt;
+}
+
+[[nodiscard]] double minimumInteriorAngle(const Polygon2D& polygon) {
+    double minimum=360.0;
+    for (std::size_t i=0;i<polygon.vertices.size();++i) {
+        const auto n=polygon.vertices.size();
+        const Vector2D a=polygon.vertices[(i+n-1)%n]-polygon.vertices[i];
+        const Vector2D b=polygon.vertices[(i+1)%n]-polygon.vertices[i];
+        const double denominator=std::sqrt(squaredNorm(a)*squaredNorm(b));
+        if (!(denominator>0.0)) return 0.0;
+        minimum=std::min(minimum,
+            std::acos(std::clamp(dot(a,b)/denominator,-1.0,1.0))*180.0/
+            std::numbers::pi);
+    }
+    return minimum;
 }
 
 [[nodiscard]] std::optional<std::vector<Polygon2D>> triangulate(
     const Polygon2D& polygon,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
     if (polygon.vertices.size()<3 || !(polygon.signedArea()>0.0)) return std::nullopt;
+    const std::size_t polygonSize=polygon.vertices.size();
+    // A polygon with a reflex or collinear transition corner often admits
+    // more than one two-piece convex partition. Prefer the most area-balanced
+    // valid diagonal; this keeps every conformal boundary vertex and
+    // prevents a geometrically legal but solver-hostile sliver beside a much
+    // larger cell.  The area identity also rejects diagonals outside the
+    // polygon without relying on a floating-point point-in-polygon sample.
+    std::optional<std::vector<Polygon2D>> bestConvexSplit;
+    unsigned bestConvexBoundaryPenalty=std::numeric_limits<unsigned>::max();
+    double bestAreaBalance=-1.0;
+    double bestConvexAngle=-1.0;
+    for (std::size_t i=0;i<polygonSize;++i) {
+        for (std::size_t j=i+1;j<polygonSize;++j) {
+            if (j==i+1 || (i==0 && j+1==polygonSize)) continue;
+            Polygon2D first,second;
+            for (std::size_t k=i;;k=(k+1)%polygonSize) {
+                first.vertices.push_back(polygon.vertices[k]);
+                if (k==j) break;
+            }
+            for (std::size_t k=j;;k=(k+1)%polygonSize) {
+                second.vertices.push_back(polygon.vertices[k]);
+                if (k==i) break;
+            }
+            if (!strictlyConvex(first) || !strictlyConvex(second)) continue;
+            const double firstArea=first.area();
+            const double secondArea=second.area();
+            const double areaError=std::abs(firstArea+secondArea-polygon.area());
+            if (areaError>tol.absolute*tol.absolute+tol.relative*polygon.area()) continue;
+            const unsigned penalty=
+                static_cast<unsigned>(underDeterminedBoundaryCell(first,domain,boundary,tol))+
+                static_cast<unsigned>(underDeterminedBoundaryCell(second,domain,boundary,tol));
+            const double balance=std::min(firstArea,secondArea)/polygon.area();
+            const double angle=std::min(minimumInteriorAngle(first),
+                                        minimumInteriorAngle(second));
+            if (!bestConvexSplit || penalty<bestConvexBoundaryPenalty ||
+                (penalty==bestConvexBoundaryPenalty && balance>bestAreaBalance) ||
+                (penalty==bestConvexBoundaryPenalty && balance==bestAreaBalance &&
+                 angle>bestConvexAngle)) {
+                bestConvexSplit=std::vector<Polygon2D>{first,second};
+                bestConvexBoundaryPenalty=penalty;
+                bestAreaBalance=balance;
+                bestConvexAngle=angle;
+            }
+        }
+    }
+    if (bestConvexSplit) return bestConvexSplit;
+
     std::vector<std::size_t> remaining(polygon.vertices.size());
     std::iota(remaining.begin(),remaining.end(),0);
     std::vector<Polygon2D> triangles;
     triangles.reserve(polygon.vertices.size()-2);
     while (remaining.size()>3) {
         std::optional<std::size_t> selected;
-        unsigned selectedBoundaryEdges=3;
+        unsigned selectedBoundaryPenalty=2;
+        double selectedArea=-1.0;
+        double selectedAngle=-1.0;
         for (std::size_t pos=0;pos<remaining.size();++pos) {
             const std::size_t prev=remaining[(pos+remaining.size()-1)%remaining.size()];
             const std::size_t current=remaining[pos];
@@ -115,11 +213,19 @@ namespace {
             const unsigned boundaryEdges=
                 static_cast<unsigned>(boundaryEdge(a,b,domain,boundary,tol))+
                 static_cast<unsigned>(boundaryEdge(b,c,domain,boundary,tol));
-            if (!selected || boundaryEdges<selectedBoundaryEdges) {
+            const unsigned boundaryPenalty=static_cast<unsigned>(boundaryEdges>=2);
+            const Polygon2D ear{{a,b,c}};
+            const double earArea=ear.area();
+            const double earAngle=minimumInteriorAngle(ear);
+            if (!selected || boundaryPenalty<selectedBoundaryPenalty ||
+                (boundaryPenalty==selectedBoundaryPenalty && earArea>selectedArea) ||
+                (boundaryPenalty==selectedBoundaryPenalty && earArea==selectedArea &&
+                 earAngle>selectedAngle)) {
                 selected=pos;
-                selectedBoundaryEdges=boundaryEdges;
+                selectedBoundaryPenalty=boundaryPenalty;
+                selectedArea=earArea;
+                selectedAngle=earAngle;
             }
-            if (boundaryEdges==0) break;
         }
         if (!selected) return std::nullopt;
         const std::size_t pos=*selected;
@@ -147,13 +253,46 @@ namespace {
                 }
             }
             if (shared!=2) continue;
-            const auto merged=mergeAdjacentTriangles(triangles[i],triangles[j]);
+            const auto merged=mergeAdjacentPolygons(triangles[i],triangles[j]);
             if (!merged) continue;
             triangles[i]=*merged;
             triangles.erase(triangles.begin()+static_cast<std::ptrdiff_t>(j));
             if (j<i) --i;
             break;
         }
+    }
+    // Remove poor artificial diagonals introduced by ear clipping.  Among all
+    // adjacent triangle pairs, deterministically merge the pair whose convex
+    // quadrilateral gives the largest increase in minimum interior angle.
+    // Physical boundary vertices and total area are unchanged.
+    while (true) {
+        std::optional<std::pair<std::size_t,std::size_t>> bestPair;
+        std::optional<Polygon2D> bestPolygon;
+        double bestGain=1.0e-12;
+        for (std::size_t i=0;i<triangles.size();++i) {
+            for (std::size_t j=i+1;j<triangles.size();++j) {
+                unsigned shared=0;
+                for (const auto& a:triangles[i].vertices) {
+                    for (const auto& b:triangles[j].vertices) {
+                        if (a.x==b.x && a.y==b.y) ++shared;
+                    }
+                }
+                if (shared!=2) continue;
+                const auto merged=mergeAdjacentPolygons(triangles[i],triangles[j]);
+                if (!merged) continue;
+                const double before=std::min(minimumInteriorAngle(triangles[i]),
+                                             minimumInteriorAngle(triangles[j]));
+                const double gain=minimumInteriorAngle(*merged)-before;
+                if (gain>bestGain) {
+                    bestGain=gain;
+                    bestPair={{i,j}};
+                    bestPolygon=merged;
+                }
+            }
+        }
+        if (!bestPair) break;
+        triangles[bestPair->first]=*bestPolygon;
+        triangles.erase(triangles.begin()+static_cast<std::ptrdiff_t>(bestPair->second));
     }
     return triangles;
 }

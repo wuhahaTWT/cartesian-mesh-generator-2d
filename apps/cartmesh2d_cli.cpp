@@ -481,6 +481,32 @@ int main(int argc, char** argv) {
                          <<static_cast<int>(issue.code)<<" cell="<<issue.cellId
                          <<" edge="<<issue.edgeId<<" measured="<<issue.measured
                          <<" limit="<<issue.limit<<" message="<<issue.message<<'\n';
+                if (issue.cellId<solverTopology->topology.cells.size()) {
+                    std::cerr<<"solver_quality_cell_vertices["<<i<<"]=";
+                    for (const auto vertex:solverTopology->topology.cells[issue.cellId].vertices) {
+                        const auto& point=solverTopology->topology.vertices[vertex].point;
+                        std::cerr<<'('<<std::setprecision(17)<<point.x<<','<<point.y<<')';
+                    }
+                    std::cerr<<'\n';
+                }
+                if (issue.edgeId<solverTopology->topology.edges.size()) {
+                    const auto& edge=solverTopology->topology.edges[issue.edgeId];
+                    const auto& a=solverTopology->topology.vertices[edge.v0].point;
+                    const auto& b=solverTopology->topology.vertices[edge.v1].point;
+                    std::cerr<<"solver_quality_edge["<<i<<"]=("<<a.x<<','<<a.y<<")-("
+                             <<b.x<<','<<b.y<<") owner="<<edge.owner<<" neighbour=";
+                    if (edge.neighbour) std::cerr<<*edge.neighbour; else std::cerr<<"none";
+                    std::cerr<<'\n';
+                    if (edge.neighbour && *edge.neighbour<solverTopology->topology.cells.size()) {
+                        std::cerr<<"solver_quality_neighbour_vertices["<<i<<"]=";
+                        for (const auto vertex:
+                             solverTopology->topology.cells[*edge.neighbour].vertices) {
+                            const auto& point=solverTopology->topology.vertices[vertex].point;
+                            std::cerr<<'('<<point.x<<','<<point.y<<')';
+                        }
+                        std::cerr<<'\n';
+                    }
+                }
             }
             return EXIT_FAILURE;
         }
@@ -578,6 +604,8 @@ int main(int argc, char** argv) {
                  <<"solver_max_internal_skewness="<<solverQuality->maxInternalSkewness<<'\n'
                  <<"solver_max_cell_aspect="<<solverQuality->maxCellAspect<<'\n'
                  <<"solver_min_face_length="<<solverQuality->minFaceLength<<'\n'
+                 <<"solver_min_face_weight="<<solverQuality->minFaceWeight<<'\n'
+                 <<"solver_min_volume_ratio="<<solverQuality->minVolumeRatio<<'\n'
                  <<"solver_partitioned_input_cells="<<solverTopology->partitionedCellCount<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"openfoam_case="<<openFoamCase->string()<<'\n'
