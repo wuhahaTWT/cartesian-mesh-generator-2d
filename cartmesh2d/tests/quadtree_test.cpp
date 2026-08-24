@@ -28,6 +28,22 @@ int main(){
     check(sawFarCoarse,"far field remains coarser than boundary");
     check(maxOk,"max level not exceeded");
 
+    Quadtree2D globallyRefined(domain,5,boundary);
+    QuadtreeRefinementPolicy2D globalPolicy;
+    globalPolicy.minimumLevel=3;
+    globalPolicy.boundaryLevel=4;
+    globallyRefined.refine(boundary,globalPolicy);
+    bool allAtLeastThree=true;
+    bool boundaryAtFour=true;
+    for (const auto& leaf:globallyRefined.leaves()) {
+        allAtLeastThree=allAtLeastThree && leaf.level>=3;
+        if (leaf.classification==CellClass::Intersected) {
+            boundaryAtFour=boundaryAtFour && leaf.level==4;
+        }
+    }
+    check(allAtLeastThree,"minimum level globally refines the PDE background grid");
+    check(boundaryAtFour,"minimum level preserves finer boundary target");
+
     // Independent partition audit: every leaf must lie inside the domain, keys must be unique,
     // and no two distinct leaves may overlap with positive area. Together with the total-area
     // check above, this rules out both overlap and hidden coverage holes.
@@ -95,5 +111,6 @@ int main(){
     }
 
     bool threw=false; try{ QuadtreeRefinementPolicy2D bad; bad.boundaryLevel=6; Quadtree2D t(domain,5,boundary); t.refine(boundary,bad);}catch(const std::invalid_argument&){threw=true;} check(threw,"target level above max rejected");
+    threw=false; try{ QuadtreeRefinementPolicy2D bad; bad.minimumLevel=6; Quadtree2D t(domain,5,boundary); t.refine(boundary,bad);}catch(const std::invalid_argument&){threw=true;} check(threw,"minimum level above max rejected");
     if(failures){std::cerr<<failures<<" test(s) failed\n";return EXIT_FAILURE;} std::cout<<"cartmesh2d 2D-2 quadtree tests passed\n"; return EXIT_SUCCESS;
 }

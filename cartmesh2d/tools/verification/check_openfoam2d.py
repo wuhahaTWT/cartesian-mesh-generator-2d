@@ -163,10 +163,24 @@ def check(case: Path):
         issues.append(f"{len(bad_volume)} cells have non-positive volume")
     if not all(used):
         issues.append(f"{used.count(False)} points are unreferenced")
+    constant_flux = (0.7, -0.3, 0.0)
+    divergence_residual = [abs(dot(value, constant_flux)) / volume
+                           for value, volume in zip(closure, volumes) if volume > 0.0]
+    physical_boundary_area = (0.0, 0.0, 0.0)
+    front = next((patch for patch in patches if patch["name"] == "frontAndBack"), None)
+    front_faces = (set(range(front["startFace"], front["startFace"] + front["nFaces"]))
+                   if front else set())
+    for face_id in range(len(neighbour), len(faces)):
+        if face_id not in front_faces:
+            area, _ = face_geometry(faces[face_id], points)
+            physical_boundary_area = add(physical_boundary_area, area)
     return {"valid": not issues, "point_count": len(points), "face_count": len(faces),
             "internal_face_count": len(neighbour), "cell_count": cell_count,
             "min_volume": min(volumes, default=0.0),
             "max_closure_residual": max((math.sqrt(dot(v, v)) for v in closure), default=0.0),
+            "max_constant_flux_divergence_residual": max(divergence_residual, default=0.0),
+            "physical_boundary_area_vector": physical_boundary_area,
+            "global_constant_flux_balance": dot(physical_boundary_area, constant_flux),
             "patches": patches, "issues": issues}
 
 
