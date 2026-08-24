@@ -217,6 +217,36 @@ int main() {
     check(minimumSolverTurn>1.0e-10,
           "near-collinear prism corners are explicitly partitioned for OpenFOAM");
 
+    // Retained M11 leading-edge solver partition. The artificial B-C face
+    // has weight 0.0333906. Repartitioning the owner with its Cartesian
+    // neighbour changes only artificial diagonals and removes that face.
+    const Point2D m11A{-0.007226562499999983,-0.0099218809172911017};
+    const Point2D m11B{0.0031250000000000167,-0.0099218809172911017};
+    const Point2D m11E{0.0036110489721427955,-0.0099218809172911017};
+    const Point2D m11C{0.0013547716606548965,-0.0064540311838725203};
+    const Point2D m11Nose{0.0,0.0};
+    const Point2D m11D{-0.007226562499999983,0.0};
+    const Point2D m11A0{-0.007226562499999983,-0.019843761834582203};
+    const Point2D m11B0{0.0031250000000000167,-0.019843761834582203};
+    const auto m11Owner=makeRegressionCell(0,{m11A,m11B,m11C,m11D});
+    const auto m11Sliver=makeRegressionCell(1,{m11B,m11E,m11C});
+    const auto m11NoseCell=makeRegressionCell(2,{m11C,m11Nose,m11D});
+    const auto m11Below=makeRegressionCell(3,{m11A0,m11B0,m11B,m11A});
+    const BoundaryLoop m11Boundary(
+        {m11A0,m11B0,m11B,m11E,m11C,m11Nose,m11D,m11A});
+    const BoundaryRegion2D m11Region(m11Boundary);
+    const Domain2D m11Domain{{m11A0,{m11E.x,0.0}}};
+    const auto m11Topology=buildGlobalTopology(
+        {m11Owner,m11Sliver,m11NoseCell,m11Below},m11Domain,m11Region);
+    const auto m11InitialQuality=evaluateSolverQuality2D(m11Topology);
+    const auto m11Repartitioned=repartitionSolverTopologyByQuality2D(
+        m11Topology,m11Domain,m11Region);
+    const auto m11Quality=evaluateSolverQuality2D(m11Repartitioned.topology);
+    check(m11Topology.valid() && !m11InitialQuality.valid() &&
+              m11Repartitioned.valid() && m11Repartitioned.repartitionCount>0 &&
+              m11Quality.valid(),
+          "M11 low-weight artificial diagonal is repaired by local repartition");
+
     // This 2:1-style hanging-face fixture has a short shared face but a long
     // cell-centre connector. OpenFOAM normalises internal skewness by at least
     // 0.2*|d|, not by face length alone.
