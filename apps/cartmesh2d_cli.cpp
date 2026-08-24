@@ -1,5 +1,6 @@
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include "cartmesh2d/io/OpenFoam2D.hpp"
+#include "cartmesh2d/geometry/BoundarySimplification2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
@@ -259,7 +260,8 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
 void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
-                 "[fluid-region=exterior|interior] [openfoam-case-dir] [minimum-level=0]\n"
+                 "[fluid-region=exterior|interior] [openfoam-case-dir] [minimum-level=0] "
+                 "[boundary-simplify-cell-fraction=0]\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
@@ -267,7 +269,7 @@ void usage() {
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3 || argc > 9) {
+    if (argc < 3 || argc > 10) {
         usage();
         return EXIT_FAILURE;
     }
@@ -278,6 +280,7 @@ int main(int argc, char** argv) {
     std::size_t minimumLevel = 0;
     double paddingFraction = 0.25;
     double smallAlpha = 0.10;
+    double boundarySimplifyCellFraction = 0.0;
     FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
     std::optional<std::filesystem::path> openFoamCase;
     try {
@@ -285,6 +288,7 @@ int main(int argc, char** argv) {
         if (argc >= 5) paddingFraction = std::stod(argv[4]);
         if (argc >= 6) smallAlpha = std::stod(argv[5]);
         if (argc >= 9) minimumLevel = static_cast<std::size_t>(std::stoul(argv[8]));
+        if (argc >= 10) boundarySimplifyCellFraction = std::stod(argv[9]);
     } catch (const std::exception&) {
         std::cerr << "invalid numeric CLI argument\n";
         return EXIT_FAILURE;
@@ -295,8 +299,10 @@ int main(int argc, char** argv) {
     }
     if (argc >= 8) openFoamCase=std::filesystem::path(argv[7]);
     if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
-        !(smallAlpha > 0.0 && smallAlpha < 1.0)) {
-        std::cerr << "invalid max-level, minimum-level, padding-fraction or small-alpha\n";
+        !(smallAlpha > 0.0 && smallAlpha < 1.0) ||
+        !std::isfinite(boundarySimplifyCellFraction) || boundarySimplifyCellFraction<0.0) {
+        std::cerr << "invalid max-level, minimum-level, padding-fraction, small-alpha or "
+                     "boundary-simplify-cell-fraction\n";
         return EXIT_FAILURE;
     }
 
@@ -341,6 +347,33 @@ int main(int argc, char** argv) {
         {bounds.min.x - padding, bounds.min.y - padding},
         {bounds.max.x + padding, bounds.max.y + padding}
     }};
+
+    std::optional<BoundarySimplificationReport2D> simplificationReport;
+    if (boundarySimplifyCellFraction>0.0) {
+        const double finestCellScale=std::ldexp(
+            std::max(domain.width(),domain.height()),-static_cast<int>(maxLevel));
+        auto simplified=simplifyBoundaryRegion2D(
+            boundary,boundarySimplifyCellFraction*finestCellScale);
+        if (!simplified.valid()) {
+            std::cerr<<"boundary simplification failed: "<<simplified.error<<'\n';
+            return EXIT_FAILURE;
+        }
+        simplificationReport=simplified.report;
+        boundary=std::move(*simplified.boundary);
+        std::cout<<"boundary_simplification=APPLIED\n"
+                 <<"boundary_simplification_requested_deviation="
+                 <<simplificationReport->requestedDeviation<<'\n'
+                 <<"boundary_simplification_applied_deviation="
+                 <<simplificationReport->appliedDeviation<<'\n'
+                 <<"boundary_simplification_measured_max_deviation="
+                 <<simplificationReport->measuredMaxDeviation<<'\n'
+                 <<"boundary_original_vertices="
+                 <<simplificationReport->originalVertexCount<<'\n'
+                 <<"boundary_simplified_vertices="
+                 <<simplificationReport->simplifiedVertexCount<<'\n'
+                 <<"boundary_original_area="<<simplificationReport->originalArea<<'\n'
+                 <<"boundary_simplified_area="<<simplificationReport->simplifiedArea<<'\n';
+    }
 
     Quadtree2D tree(domain, maxLevel, boundary);
     QuadtreeRefinementPolicy2D refinement;

@@ -4,6 +4,7 @@ project(cartmesh2d LANGUAGES CXX)
 
 add_library(cartmesh2d
     src/geometry/Geometry2D.cpp
+    src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
