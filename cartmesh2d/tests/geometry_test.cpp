@@ -1,5 +1,7 @@
 #include "cartmesh2d/geometry/Geometry2D.hpp"
+#include "cartmesh2d/geometry/BoundarySimplification2D.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -187,6 +189,52 @@ int main() {
     looseTol.absolute=1.0e-3;
     check(toleranceRegion.diagnose(tol).valid() && !toleranceRegion.diagnose(looseTol).valid(),
           "boundary-region diagnostic cache is keyed by tolerance policy");
+
+    BoundaryRegion2D denseCircle{BoundaryLoop(circlePoints)};
+    const auto simplifiedCircle=simplifyBoundaryRegion2D(denseCircle,0.01,tol);
+    check(simplifiedCircle.valid(),"dense circle simplification preserves valid topology");
+    check(simplifiedCircle.report.simplifiedVertexCount<
+              simplifiedCircle.report.originalVertexCount,
+          "dense circle simplification removes sub-grid vertices");
+    check(simplifiedCircle.report.measuredMaxDeviation<=0.01+1.0e-12,
+          "simplification reports and respects its deviation bound");
+    check(simplifiedCircle.boundary->diagnose(tol).valid(),
+          "simplified circle remains independently diagnosable");
+
+    std::rotate(circlePoints.begin(),circlePoints.begin()+17,circlePoints.end());
+    const auto rotatedCircle=simplifyBoundaryRegion2D(
+        BoundaryRegion2D(BoundaryLoop(circlePoints)),0.01,tol);
+    const auto& canonicalCircle=simplifiedCircle.boundary->loops()[0].vertices();
+    const auto& canonicalRotated=rotatedCircle.boundary->loops()[0].vertices();
+    check(rotatedCircle.valid() && canonicalCircle.size()==canonicalRotated.size() &&
+              std::equal(canonicalCircle.begin(),canonicalCircle.end(),
+                         canonicalRotated.begin(),[](const Point2D& a,const Point2D& b) {
+                             return a.x==b.x && a.y==b.y;
+                         }),
+          "closed-loop simplification is invariant to cyclic input rotation");
+
+    const auto unchangedRectangle=simplifyBoundaryRegion2D(
+        BoundaryRegion2D(BoundaryLoop({{0.0,0.0},{4.0,0.0},{4.0,2.0},{0.0,2.0}})),
+        0.1,tol);
+    check(unchangedRectangle.valid() &&
+              unchangedRectangle.report.originalVertexCount==4 &&
+              unchangedRectangle.report.simplifiedVertexCount==4 &&
+              unchangedRectangle.report.measuredMaxDeviation==0.0,
+          "feature corners are preserved exactly");
+
+    const auto invalidSimplification=simplifyBoundaryRegion2D(emptyRegion,0.1,tol);
+    check(!invalidSimplification.valid(),"invalid source simplification fails closed");
+
+    BoundaryRegion2D notchAndIsland({
+        BoundaryLoop({{0.0,0.0},{4.0,0.0},{4.0,4.0},{2.5,4.0},
+                      {2.5,1.0},{1.5,1.0},{1.5,4.0},{0.0,4.0}}),
+        BoundaryLoop({{1.8,2.0},{2.2,2.0},{2.2,3.0},{1.8,3.0}})
+    });
+    const auto topologyPreserving=simplifyBoundaryRegion2D(notchAndIsland,10.0,tol);
+    check(topologyPreserving.valid() &&
+              topologyPreserving.boundary->nestingDepths(tol)==
+              notchAndIsland.nestingDepths(tol),
+          "simplification preserves multi-loop nesting depths");
 
     if (failures == 0) {
         std::cout << "cartmesh2d Stage 2D-0 geometry tests: PASS\n";
