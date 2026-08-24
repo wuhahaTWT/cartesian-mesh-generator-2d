@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CartMesh2D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="control-panel">
+      <header>
+        <div class="mark">C2</div>
+        <div><h1>CartMesh2D</h1><p>二维 Cartesian / Cut-cell 网格生成器</p></div>
+      </header>
+
+      <section>
+        <div class="section-title"><span>1</span>输入</div>
+        <button id="chooseDxf" class="file-button">选择 DXF 文件</button>
+        <div id="dxfPath" class="path-label">尚未选择文件</div>
+        <button id="useExample" class="text-button">使用内置曲线样例</button>
+        <label>无单位 DXF 的源单位
+          <select id="sourceUnits">
+            <option value="auto">自动读取 $INSUNITS</option>
+            <option value="mm">毫米 mm</option>
+            <option value="cm">厘米 cm</option>
+            <option value="m">米 m</option>
+            <option value="in">英寸 in</option>
+            <option value="ft">英尺 ft</option>
+          </select>
+        </label>
+      </section>
+
+      <section>
+        <div class="section-title"><span>2</span>网格规模</div>
+        <div class="preset-row">
+          <button class="preset" data-preset="quick">快速</button>
+          <button class="preset active" data-preset="standard">标准</button>
+          <button class="preset" data-preset="dense">较密</button>
+        </div>
+        <div class="field-grid">
+          <label>边界最高层级<input id="maxLevel" type="number" min="1" max="28" value="6"></label>
+          <label>全域最低层级<input id="minimumLevel" type="number" min="0" max="28" value="0"></label>
+          <label>计算域留白<input id="padding" type="number" min="0.01" step="0.05" value="0.25"></label>
+          <label>小单元阈值<input id="smallAlpha" type="number" min="0.001" max="0.999" step="0.01" value="0.05"></label>
+        </div>
+        <label>曲线最大弦高误差（米）<input id="chordError" type="number" min="0.000000001" step="0.0001" value="0.001"></label>
+        <p class="hint">层级每提高一级，二维全域规模最多约增至 4 倍；质量门可能拒绝不合格网格。</p>
+      </section>
+
+      <section>
+        <div class="section-title"><span>3</span>输出</div>
+        <button id="chooseOutput" class="file-button secondary">选择输出目录</button>
+        <div id="outputPath" class="path-label">尚未选择目录</div>
+      </section>
+
+      <button id="generate" class="generate" disabled>生成网格</button>
+    </aside>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <div><strong id="statusTitle">等待输入</strong><span id="statusText">选择一个 DXF 文件开始</span></div>
+        <button id="openOutput" class="open-output" hidden>在 Finder 中打开</button>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="meshCanvas"></canvas>
+        <div id="emptyState" class="empty-state"><div class="empty-grid"></div><h2>网格将在这里显示</h2><p>预览读取真实 CM2D 单元，不是示意图</p></div>
+        <div class="legend" hidden id="legend"><span><i class="internal"></i>Cartesian / Cut-cell</span><span><i class="embedded"></i>嵌入边界</span><span><i class="domain"></i>计算域边界</span></div>
+      </div>
+      <div class="result-bar">
+        <div><span>2D cells</span><strong id="cellCount">—</strong></div>
+        <div><span>OpenFOAM cells</span><strong id="foamCells">—</strong></div>
+        <div><span>Vertices</span><strong id="vertexCount">—</strong></div>
+        <div><span>质量门</span><strong id="quality">—</strong></div>
+      </div>
+      <details class="log-panel"><summary>运行信息</summary><pre id="log"></pre></details>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
