@@ -13,6 +13,7 @@ add_library(cartmesh2d
     src/stabilization/Agglomeration2D.cpp
     src/quality/Quality2D.cpp
     src/quality/SolverQuality2D.cpp
+    src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
     src/io/OpenFoam2D.cpp
 )
@@ -188,6 +189,24 @@ if(CARTMESH2D_BUILD_TESTS)
                 --report ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case/independent_check.json)
     set_tests_properties(cartmesh2d_stageS1_independent_openfoam_reader PROPERTIES
         DEPENDS cartmesh2d_stageS1_rectangle_openfoam_e2e)
+    add_test(NAME cartmesh2d_stageV1_annulus_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/annulus.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/annulus 7 0.25 0.05 interior
+                ${CARTMESH2D_SOLVER_OUTPUT}/annulus-case)
+    add_test(NAME cartmesh2d_stageV1_annulus_independent_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/annulus-case)
+    set_tests_properties(cartmesh2d_stageV1_annulus_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageV1_annulus_openfoam_e2e)
+    add_test(NAME cartmesh2d_stageV1_nested_openfoam_e2e
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nested_island.xy
+                ${CARTMESH2D_SOLVER_OUTPUT}/nested 7 0.25 0.05 interior
+                ${CARTMESH2D_SOLVER_OUTPUT}/nested-case)
+    add_test(NAME cartmesh2d_stageV1_nested_independent_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_SOLVER_OUTPUT}/nested-case)
+    set_tests_properties(cartmesh2d_stageV1_nested_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageV1_nested_openfoam_e2e)
     add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
     set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)
