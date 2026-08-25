@@ -249,6 +249,20 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage6c_airfoil_like_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
 
+    set(CARTMESH2D_SIZING_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sizing_field)
+    add_test(NAME cartmesh2d_stageH1_sizing_field_e2e
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/airfoil 7 0.30 0.02 exterior - 3 0
+                --distance-band 0.05 6
+                --refine-box 0.80 -0.10 1.30 0.10 6)
+    add_test(NAME cartmesh2d_stageH1_rejects_outside_box
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/invalid 6 0.30 0.02 exterior - 2 0
+                --refine-box 10 10 11 11 5)
+    set_tests_properties(cartmesh2d_stageH1_rejects_outside_box PROPERTIES WILL_FAIL TRUE)
+
     set(CARTMESH2D_ROBUSTNESS_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/robustness)
     add_test(NAME cartmesh2d_stageR_gear_star_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/gear_star.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/gear_star 8 0.25 0.01)

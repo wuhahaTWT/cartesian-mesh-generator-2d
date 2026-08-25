@@ -96,6 +96,25 @@ cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
 上例是全域至少 level 6、嵌入边界达到 level 8。该参数用于验证或需要全域分辨率的
 仿真，不应被误写成边界自适应本身已经实现全局网格收敛。
 
+## 高密度尺寸场
+
+在全域 `minimum-level` 和物面 `max-level` 之间，可以叠加任意数量的物面距离带与
+轴对齐矩形区域。所有尺寸场取最大的目标层级，因此参数顺序不会改变网格；目标层级仍受
+`max-level` 上限约束。下游矩形区域就是第一版确定性尾迹加密原语：
+
+```sh
+./build/cartmesh2d_cli \
+  examples/acceptance/airfoil_like.xy outputs/airfoil \
+  9 0.30 0.02 exterior - 4 0 \
+  --distance-band 0.05 7 \
+  --refine-box 0.80 -0.10 1.30 0.10 8
+```
+
+`--distance-band` 的距离以及 `--refine-box` 的坐标使用规范化边界文件的长度单位；DXF
+产品链中该单位是米。两个选项均可重复。程序额外写出 `.sizing.json`，记录计算域、完整
+尺寸场、层级直方图、每个矩形的叶单元数以及 2:1 平衡结果。退化矩形、层级越界和完全
+位于计算域外的矩形会明确失败。
+
 ## DXF-2：曲线、边界语义和单位换算
 
 二维 CAD 输入先经过独立、fail-closed 的转换器，再进入原有网格核心：

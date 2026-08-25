@@ -11,6 +11,10 @@ struct LatticeFace { std::size_t leafIndex = 0; std::uint64_t begin = 0; std::ui
 using FaceMap = std::map<std::uint64_t, std::vector<LatticeFace>>;
 std::uint64_t pow2(std::size_t exponent) { if (exponent >= 63) throw std::invalid_argument("quadtree level exceeds lattice capacity"); return std::uint64_t{1} << exponent; }
 bool intervalOverlapPositive(std::uint64_t a0, std::uint64_t a1, std::uint64_t b0, std::uint64_t b1) noexcept { return std::max(a0,b0) < std::min(a1,b1); }
+bool boxesOverlapPositive(const AABB2D& a, const AABB2D& b) noexcept {
+    return std::max(a.min.x, b.min.x) < std::min(a.max.x, b.max.x) &&
+           std::max(a.min.y, b.min.y) < std::min(a.max.y, b.max.y);
+}
 void appendMatches(const FaceMap& positiveFaces, const FaceMap& negativeFaces, std::vector<FaceNeighborPair2D>& result) {
     for (const auto& [coordinate, positives] : positiveFaces) {
         const auto it = negativeFaces.find(coordinate); if (it == negativeFaces.end()) continue;
@@ -108,8 +112,21 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
     if (policy.minimumLevel > maxLevel_) throw std::invalid_argument("minimumLevel exceeds maxLevel");
     if (policy.boundaryLevel > maxLevel_) throw std::invalid_argument("boundaryLevel exceeds maxLevel");
     for (const auto& band : policy.distanceBands) {
-        if (band.distance < 0.0) throw std::invalid_argument("negative distance");
+        if (!std::isfinite(band.distance) || band.distance < 0.0) {
+            throw std::invalid_argument("invalid distance refinement band");
+        }
         if (band.targetLevel > maxLevel_) throw std::invalid_argument("distance level exceeds maxLevel");
+    }
+    for (const auto& region : policy.boxRegions) {
+        if (!region.bounds.valid(tol)) {
+            throw std::invalid_argument("invalid box refinement region");
+        }
+        if (region.targetLevel == 0U || region.targetLevel > maxLevel_) {
+            throw std::invalid_argument("box refinement level outside [1,maxLevel]");
+        }
+        if (!boxesOverlapPositive(region.bounds, domain_.bounds)) {
+            throw std::invalid_argument("box refinement region does not overlap domain");
+        }
     }
 
     // Refine every eligible leaf once per level pass, then sort only after the
@@ -131,6 +148,11 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
                     if (distance <= band.distance + tol.scale(band.distance)) {
                         requested = std::max(requested, band.targetLevel);
                     }
+                }
+            }
+            for (const auto& region : policy.boxRegions) {
+                if (boxesOverlapPositive(leaf.bounds, region.bounds)) {
+                    requested = std::max(requested, region.targetLevel);
                 }
             }
 
