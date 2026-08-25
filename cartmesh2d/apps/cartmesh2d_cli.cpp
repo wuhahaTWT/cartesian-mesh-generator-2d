@@ -6,6 +6,7 @@
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -444,6 +445,11 @@ void usage() {
 } // namespace
 
 int main(int argc, char** argv) {
+    const auto totalStart = std::chrono::steady_clock::now();
+    const auto elapsedSeconds = [](const auto& start) {
+        return std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - start).count();
+    };
     if (argc < 3) {
         usage();
         return EXIT_FAILURE;
@@ -573,6 +579,7 @@ int main(int argc, char** argv) {
                  <<"boundary_simplified_area="<<simplificationReport->simplifiedArea<<'\n';
     }
 
+    const auto refinementStart = std::chrono::steady_clock::now();
     Quadtree2D tree(domain, maxLevel, boundary);
     QuadtreeRefinementPolicy2D refinement;
     refinement.minimumLevel = minimumLevel;
@@ -585,12 +592,16 @@ int main(int argc, char** argv) {
         std::cerr<<"invalid sizing field: "<<exception.what()<<'\n';
         return EXIT_FAILURE;
     }
+    const double refinementSeconds = elapsedSeconds(refinementStart);
+    const auto balanceStart = std::chrono::steady_clock::now();
     const auto balance = tree.enforceTwoToOneBalance(boundary);
+    const double balanceSeconds = elapsedSeconds(balanceStart);
     if (balance.violationsAfter != 0 || !tree.deterministicOrderingValid()) {
         std::cerr << "Quadtree balance/determinism gate failed\n";
         return EXIT_FAILURE;
     }
 
+    const auto cutCellStart = std::chrono::steady_clock::now();
     std::vector<CutCell2D> cutCells;
     cutCells.reserve(tree.leaves().size());
     std::size_t unsupported = 0;
@@ -618,6 +629,7 @@ int main(int argc, char** argv) {
                   << " unsupported leaf geometry case(s)\n";
         return EXIT_FAILURE;
     }
+    const double cutCellSeconds = elapsedSeconds(cutCellStart);
 
     // Product-level physics gate. This catches the exact class of error where
     // a mathematically self-consistent mesh is generated on the wrong side of
@@ -637,7 +649,9 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    const auto sourceTopologyStart = std::chrono::steady_clock::now();
     const TopologyMesh2D sourceTopology = buildGlobalTopology(cutCells, domain, boundary);
+    const double sourceTopologySeconds = elapsedSeconds(sourceTopologyStart);
     if (!sourceTopology.valid()) {
         std::cerr << "source global topology audit failed\n";
         printTopologyDiagnostics(sourceTopology);
@@ -658,6 +672,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    const auto agglomerationStart = std::chrono::steady_clock::now();
     SmallCellPolicy2D smallPolicy;
     smallPolicy.areaFractionThreshold = smallAlpha;
     const SmallCellReport2D smallReport = analyzeSmallCells(cutCells, sourceTopology, smallPolicy);
@@ -681,6 +696,7 @@ int main(int argc, char** argv) {
         printTopologyDiagnostics(stabilized.topology);
         return EXIT_FAILURE;
     }
+    const double agglomerationSeconds = elapsedSeconds(agglomerationStart);
 
     const MeshQualityReport2D quality =
         evaluateMeshQuality(stabilized.topology, cutCells, &smallReport);
@@ -701,6 +717,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    const auto solverTopologyStart = std::chrono::steady_clock::now();
     std::optional<SolverQualityReport2D> solverQuality;
     std::optional<SolverTopologyResult2D> solverTopology;
     if (openFoamCase) {
@@ -756,7 +773,9 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
     }
+    const double solverTopologySeconds = elapsedSeconds(solverTopologyStart);
 
+    const auto serializationStart = std::chrono::steady_clock::now();
     const auto parent = outputPrefix.parent_path();
     if (!parent.empty()) std::filesystem::create_directories(parent);
     const std::filesystem::path vtkPath = outputPrefix.string() + ".vtk";
@@ -828,6 +847,12 @@ int main(int argc, char** argv) {
         std::cerr << "independent CM2D read-back verification failed: " << readback.error << '\n';
         return EXIT_FAILURE;
     }
+    const double serializationSeconds = elapsedSeconds(serializationStart);
+    std::size_t geometricCutCellCount = 0;
+    for (const auto& cut : cutCells) {
+        if (cut.kind == CutCellKind::Cut) ++geometricCutCellCount;
+    }
+    const double totalSeconds = elapsedSeconds(totalStart);
 
     std::cout << "cartmesh2d end-to-end PASS\n"
               << "fluid_region=" << fluidRegionName(fluidRegion) << '\n'
@@ -836,7 +861,9 @@ int main(int argc, char** argv) {
               << "boundary_loops=" << boundary.loops().size() << '\n'
               << "minimum_level=" << minimumLevel << '\n'
               << "leaf_count=" << tree.leaves().size() << '\n'
+              << "sizeof_quadtree_leaf_bytes=" << sizeof(QuadtreeLeaf2D) << '\n'
               << "split_fluid_leaves=" << splitFluidLeaves << '\n'
+              << "cut_cells=" << geometricCutCellCount << '\n'
               << "source_cells=" << sourceTopology.cells.size() << '\n'
               << "source_fluid_area=" << sourceFluidArea << '\n'
               << "expected_fluid_area=" << expectedFluidArea << '\n'
@@ -852,6 +879,21 @@ int main(int argc, char** argv) {
               << "cm2d=" << cm2dPath.string() << '\n'
               << "quality_json=" << qualityPath.string() << '\n'
               << "visualization_json=" << vizPath.string() << '\n';
+    std::cout << std::setprecision(9)
+              << "timing_refinement_seconds=" << refinementSeconds << '\n'
+              << "timing_balance_seconds=" << balanceSeconds << '\n'
+              << "timing_neighbor_generation_seconds="
+              << balance.faceNeighborSeconds << '\n'
+              << "timing_neighbor_generation_calls="
+              << balance.faceNeighborCalls << '\n'
+              << "timing_balance_excluding_neighbors_seconds="
+              << std::max(0.0, balanceSeconds - balance.faceNeighborSeconds) << '\n'
+              << "timing_cut_cell_seconds=" << cutCellSeconds << '\n'
+              << "timing_source_topology_seconds=" << sourceTopologySeconds << '\n'
+              << "timing_agglomeration_seconds=" << agglomerationSeconds << '\n'
+              << "timing_solver_topology_seconds=" << solverTopologySeconds << '\n'
+              << "timing_serialization_export_seconds=" << serializationSeconds << '\n'
+              << "timing_total_seconds=" << totalSeconds << '\n';
     std::cout << "sizing_distance_bands=" << refinement.distanceBands.size() << '\n'
               << "sizing_box_regions=" << refinement.boxRegions.size() << '\n'
               << "sizing_json=" << sizingPath.string() << '\n';
@@ -870,6 +912,8 @@ int main(int argc, char** argv) {
                  <<"solver_quality_local_repartitions="
                  <<solverTopology->qualityRepartitionCount<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
+                 <<"solver_output_vertices="<<solverTopology->topology.vertices.size()<<'\n'
+                 <<"solver_output_faces="<<solverTopology->topology.edges.size()<<'\n'
                  <<"openfoam_case="<<openFoamCase->string()<<'\n'
                  <<"openfoam_cells="<<openFoamReport->cellCount<<'\n'
                  <<"openfoam_faces="<<openFoamReport->faceCount<<'\n';
