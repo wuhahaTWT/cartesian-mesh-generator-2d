@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -61,6 +62,18 @@ int main() {
     check(std::abs(quality.minFaceWeight-0.5)<=1.0e-12 &&
           std::abs(quality.minVolumeRatio-1.0)<=1.0e-12,
           "orthogonal equal-volume fixture matches OpenFOAM face metrics");
+    const BoundaryRegion2D embeddedRegion(embeddedReference);
+    const auto cleanSolverTopology=buildSolverTopology2D(
+        topology,domain,embeddedRegion);
+    check(cleanSolverTopology.valid() &&
+              cleanSolverTopology.profile.candidateTopologyCount==0 &&
+              cleanSolverTopology.profile.acceptedSourceRepairs==0 &&
+              cleanSolverTopology.profile.acceptedRepartitions==0,
+          "quality-clean topology performs no candidate rebuild or repair");
+    const auto independentPatches=selectIndependentSolverRepairPatches2D(
+        {{0,1,2},{2,3},{4,5}});
+    check(independentPatches==std::vector<std::size_t>({0,2}),
+          "conflicting repair halos cannot be selected in the same batch");
 
     const auto caseDir=std::filesystem::temp_directory_path()/"cartmesh2d-s1-openfoam-fixture";
     std::string error;
@@ -217,6 +230,43 @@ int main() {
     check(minimumSolverTurn>1.0e-10,
           "near-collinear prism corners are explicitly partitioned for OpenFOAM");
 
+    // Two disconnected copies of the retained NACA defect form independent
+    // closed one-ring patches. They must be repaired in one deterministic
+    // batch and followed by one authoritative global quality check.
+    const auto shifted=[](Point2D point,double dx) {
+        point.x+=dx;
+        return point;
+    };
+    const auto shiftedRegressionCell=[&](std::size_t id,const CutCell2D& source,double dx) {
+        std::vector<Point2D> vertices;
+        for (const auto& point:source.fluidPolygon.vertices) {
+            vertices.push_back(shifted(point,dx));
+        }
+        return makeRegressionCell(id,std::move(vertices));
+    };
+    const double copyShift=0.2;
+    const auto nacaCopyLeft=shiftedRegressionCell(2,nacaRegressionLeft,copyShift);
+    const auto nacaCopyRight=shiftedRegressionCell(3,nacaRegressionRight,copyShift);
+    std::vector<Point2D> shiftedBoundary;
+    for (const auto& point:nacaRegressionBoundary.vertices()) {
+        shiftedBoundary.push_back(shifted(point,copyShift));
+    }
+    BoundaryRegion2D doubleNacaRegion({nacaRegressionBoundary,
+                                       BoundaryLoop(std::move(shiftedBoundary))});
+    check(doubleNacaRegion.normalizeAlternating(),
+          "independent NACA repair fixture has a normalized boundary region");
+    const Domain2D doubleNacaDomain{{nacaLeftBottom,{nacaB.x+copyShift,0.0}}};
+    const auto doubleNacaTopology=buildGlobalTopology(
+        {nacaRegressionLeft,nacaRegressionRight,nacaCopyLeft,nacaCopyRight},
+        doubleNacaDomain,doubleNacaRegion);
+    const auto doubleNacaSolver=buildSolverTopology2D(
+        doubleNacaTopology,doubleNacaDomain,doubleNacaRegion);
+    check(doubleNacaTopology.valid() && doubleNacaSolver.valid() &&
+              doubleNacaSolver.profile.acceptedSourceRepairs==2 &&
+              doubleNacaSolver.profile.sourceRepairIterations==1 &&
+              doubleNacaSolver.profile.candidateTopologyCount==1,
+          "independent source defects are accepted in one deterministic batch");
+
     // Retained M11 leading-edge solver partition. The artificial B-C face
     // has weight 0.0333906. Repartitioning the owner with its Cartesian
     // neighbour changes only artificial diagonals and removes that face.
@@ -239,13 +289,39 @@ int main() {
     const auto m11Topology=buildGlobalTopology(
         {m11Owner,m11Sliver,m11NoseCell,m11Below},m11Domain,m11Region);
     const auto m11InitialQuality=evaluateSolverQuality2D(m11Topology);
+    std::vector<std::size_t> m11PatchCells(m11Topology.cells.size());
+    std::iota(m11PatchCells.begin(),m11PatchCells.end(),0);
+    const auto m11PatchQuality=evaluateSolverQualityPatch2D(
+        m11Topology,m11PatchCells);
+    check(std::abs(m11PatchQuality.maxNonOrthogonalityDeg-
+                   m11InitialQuality.maxNonOrthogonalityDeg)<1.0e-12 &&
+              std::abs(m11PatchQuality.maxInternalSkewness-
+                       m11InitialQuality.maxInternalSkewness)<1.0e-12 &&
+              std::abs(m11PatchQuality.minFaceWeight-
+                       m11InitialQuality.minFaceWeight)<1.0e-12 &&
+              std::abs(m11PatchQuality.minVolumeRatio-
+                       m11InitialQuality.minVolumeRatio)<1.0e-12,
+          "local closed-patch quality matches full quality on shared metrics");
     const auto m11Repartitioned=repartitionSolverTopologyByQuality2D(
         m11Topology,m11Domain,m11Region);
+    const auto m11Sequential=
+        repartitionSolverTopologyByQualitySequentialReference2D(
+            m11Topology,m11Domain,m11Region);
     const auto m11Quality=evaluateSolverQuality2D(m11Repartitioned.topology);
+    const auto m11SequentialQuality=evaluateSolverQuality2D(m11Sequential.topology);
+    const auto topologyArea=[](const TopologyMesh2D& mesh) {
+        double area=0.0;
+        for (const auto& cell:mesh.cells) area+=cell.geometryArea;
+        return area;
+    };
     check(m11Topology.valid() && !m11InitialQuality.valid() &&
               m11Repartitioned.valid() && m11Repartitioned.repartitionCount>0 &&
               m11Quality.valid(),
           "M11 low-weight artificial diagonal is repaired by local repartition");
+    check(m11Sequential.valid() && m11SequentialQuality.valid() &&
+              std::abs(topologyArea(m11Repartitioned.topology)-
+                       topologyArea(m11Sequential.topology))<1.0e-14,
+          "batch and retained sequential repair both conserve area and pass quality");
 
     // This 2:1-style hanging-face fixture has a short shared face but a long
     // cell-centre connector. OpenFOAM normalises internal skewness by at least

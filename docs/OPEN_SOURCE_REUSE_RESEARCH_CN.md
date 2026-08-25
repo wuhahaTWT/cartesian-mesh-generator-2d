@@ -1,7 +1,7 @@
 # H2 开源复用研究与审计
 
 日期：2026-08-25  
-范围：Stage 2D-H2；只研究大网格数据结构、空间索引、AMR/EB、尺寸场与未来边界层参考。本文不是法律意见；本仓库未发现顶层许可证文件，任何外部代码的链接、复制或分发均须先完成许可证复核。
+范围：Stage 2D-H2/H3；只研究大网格数据结构、空间索引、AMR/EB、尺寸场、solver topology transaction 与未来边界层参考。本文不是法律意见；本仓库未发现顶层许可证文件，任何外部代码的链接、复制或分发均须先完成许可证复核。
 
 ## 1. 复用等级
 
@@ -10,7 +10,10 @@
 - Level C：阅读论文与源码后独立重写项目所需的精简算法；记录思想来源，不复制表达性源码。
 - Level D：只借鉴架构思想或数据组织，不形成源码派生关系。
 
-本阶段实际决定：邻接 `sort+sweep` 为 Level C；稀疏 Cut-cell 存储、尺寸场组合、分阶段质量回退和 solution-driven AMR 仅为 Level D。H2 不新增外部依赖，也不复制第三方源码。
+H2 实测过邻接 `sort+sweep` Level C 原型，但它在当前二维 lattice coordinate
+分布下慢于 production 的 coordinate-bucket `std::map`，因此没有采用。稀疏 Cut-cell
+存储、尺寸场组合、分阶段质量回退和 solution-driven AMR 仅为 Level D。H2 没有新增
+外部依赖，也没有复制第三方源码；该二维结果不能直接外推到三维 octree。
 
 ## 2. 项目审计
 
@@ -22,7 +25,9 @@
 - 实读模块：`src/p4est.h`、`p4est_bits.h`、`p4est_search.h`、`p4est_balance.c`；关注 quadrant 整数坐标/level、连续 `sc_array_t`、Morton 顺序、祖先/重叠判断、递归搜索、balance 与 ghost/partition 接口。
 - 与当前二维的相似处：整数 `(level, ix, iy)`、Morton key、连续 leaf vector、批量 refine、2:1 balance、确定性排序。
 - 明显差距：当前每次邻接调用重建四棵 `std::map<coordinate, vector<face>>`；balance 多轮重复生成全邻接；leaf 同时保存可重建的 AABB 与分类；没有 coarsen、forest connectivity、ghost、partition、MPI。
-- 2D 复用：H2 用一个连续 `FaceRecord` 数组排序扫描，Level C；不链接 p4est。
+- 2D 复用：H2 实现并 benchmark 了连续 `FaceRecord` 排序扫描 Level C 原型，但在
+  486k leaves 下最好仍慢于 coordinate buckets，production 保留 `std::map`。三维需
+  单独评估 p8est/Morton/octree 邻接，不能沿用二维结论。
 - 3D 复用：p8est 对大规模八叉树、2:1、ghost、SFC partition 很有价值，优先做隔离后端原型，而不是把当前二维类型过度模板化。若产品许可证不兼容 GPL，则只可 Level D/C，需法务复核。
 - 风险：p8est 解决 AMR 拓扑与并行分区，不自动提供 STL Cut-cell、多面体求解器拓扑或 prism layer。
 
@@ -74,8 +79,23 @@
 
 ## 3. H2 实施决策与许可结论边界
 
-1. P0 邻接采用本项目独立实现的 flat record + deterministic sort + coordinate group sweep；只复用公开算法思想，不复制 p4est/Gmsh/OpenFOAM/CGAL/Basilisk 源码。
+1. P0 曾独立实现 flat record + deterministic sort + coordinate group sweep；benchmark
+   证明它在当前二维分布下回退，因此未进入 production。最终只复用 balance 同一状态的
+   邻接结果；没有复制 p4est/Gmsh/OpenFOAM/CGAL/Basilisk 源码。
 2. P1 避免 Quadtree leaf/vector 的重复复制与排序，必须由 benchmark 证明后再改。
 3. P2 topology CSR、P3 sparse cut-cell、P4 spatial index 只在前序 profile 显示为瓶颈时进入，避免为未来 3D 提前过度抽象。
 4. AMReX 是本轮唯一具备宽松许可证、值得做未来直接依赖原型的候选；p8est 的算法/并行价值最高，但 GPL 兼容性必须先评审。
 5. 本文不认定任何许可证与未来商业/闭源目标兼容；所有 Level A/B 都要在项目许可证明确后再次审核。
+
+### 3.1 H3 补充：OpenFOAM 批量 topology change
+
+- 参考：[OpenFOAM Foundation `polyTopoChange` API](https://cpp.openfoam.org/dev/polyTopoChange_8H_source.html)、
+  [`refineMesh` 调用路径](https://cpp.openfoam.org/dev/refineMesh_8C_source.html) 和
+  [`polyTopoChange::changeMesh`](https://cpp.openfoam.org/dev/polyTopoChange_8C_source.html)。
+- 源码架构先把 point/face/cell 的 add、modify、remove actions 记录到 mesh changer，随后
+  一次 `changeMesh()` 应用并返回 topology map，再由 mesh/object 执行映射更新。
+- H3 复用等级：Level D/C。只借鉴“收集局部 actions -> 确定性批量 apply -> authoritative
+  validation”的 transaction 思想；不复制 GPL-3.0-or-later 源码，不链接 OpenFOAM。
+- 当前边界：H3 第一版仍通过一次全局 topology rebuild 提交批次，避免直接维护局部
+  vertex/edge owner-neighbour 和 ID remap。只有 profile 证明 accepted-batch rebuild 仍是
+  主瓶颈，才单独评估真正 incremental topology。

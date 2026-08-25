@@ -9,7 +9,7 @@
 | 二维验证对象 | 三维目标 | 推荐来源/等级 | 进入 3D 前的证据门 |
 |---|---|---|---|
 | `(level,ix,iy)` + Morton + flat leaves | quadrant/octant + SFC forest | p4est/p8est Level A 或 D/C | 许可证、1M octant、2:1、确定性、ghost/partition 原型 |
-| flat face sort+sweep | 6-face octant adjacency | p4est思想，Level C | 2D 500k 的时间/RSS与邻接等价性；3D 内存估算 |
+| 2D coordinate buckets（flat sort+sweep 原型被 benchmark 否决） | 6-face octant adjacency | p4est思想，Level D/C | 二维结论不外推；3D 独立测试 p8est/Morton/octree 时间与内存 |
 | `BoundarySegmentIndex2D` flat BVH | STL triangle BVH | CGAL思想 Level D；CGAL Level A需许可复核 | closest/intersection exactness、退化三角形、确定顺序、百万三角形 profile |
 | full/cut/covered 分类 | 3D regular/cut/covered + multi-valued EB | AMReX Level A/D | sparse EB内存、multi-fragment、体积/面积闭合、AMR层间一致性 |
 | H1 sizing policy | `targetLevel(x,y,z,bounds)` | Gmsh思想 Level D | 连续尺寸到 dyadic level 规则、composition、determinism |
@@ -36,7 +36,8 @@ BSD-3-Clause 更适合直接依赖评估，并具备 block AMR、regular/cut/cov
 
 1. leaf/octant 核心保持 trivially movable 的整数坐标与 level；物理 bounds 可按需重建，是否删除缓存必须由 P1 benchmark 决定。
 2. regular geometry 隐式保存；只有 cut/multi-fragment 单元进入 sparse geometry pool。H2 先测 `sizeof(QuadtreeLeaf2D)` 与 CutCell 内存占比，再决定 P3。
-3. 邻接、拓扑与导出使用连续数组和稳定排序；CSR 只在 `vector`-per-cell 已被证明是内存热点时进入。
+3. 邻接布局由各维度 benchmark 决定；二维 flat 全局排序并未采用。拓扑与导出优先稳定
+   顺序；CSR 只在 `vector`-per-cell 已被证明是时间或内存热点时进入。
 4. 2D 与 3D 共享的是行为契约和测试语义，不强制共享模板实现：分类、守恒、2:1、deterministic IDs、失败可见、外部检查。
 
 ## 未来阶段顺序与停线条件
