@@ -44,6 +44,52 @@ int main(){
     check(allAtLeastThree,"minimum level globally refines the PDE background grid");
     check(boundaryAtFour,"minimum level preserves finer boundary target");
 
+    QuadtreeRefinementPolicy2D sizingPolicy;
+    sizingPolicy.minimumLevel=1;
+    sizingPolicy.boundaryLevel=3;
+    sizingPolicy.distanceBands={{0.20,3}};
+    sizingPolicy.boxRegions={
+        {{{2.75,1.50},{4.00,2.50}},4},
+        {{{3.25,1.75},{4.00,2.25}},5}
+    };
+    Quadtree2D sized(domain,5,boundary);
+    sized.refine(boundary,sizingPolicy);
+    bool wakeAtLeastFour=true;
+    bool wakeCoreAtFive=true;
+    bool untouchedCornerCoarse=false;
+    for (const auto& leaf:sized.leaves()) {
+        const auto overlaps=[](const AABB2D& a,const AABB2D& b) {
+            return std::max(a.min.x,b.min.x)<std::min(a.max.x,b.max.x) &&
+                   std::max(a.min.y,b.min.y)<std::min(a.max.y,b.max.y);
+        };
+        if (overlaps(leaf.bounds,sizingPolicy.boxRegions[0].bounds)) {
+            wakeAtLeastFour=wakeAtLeastFour && leaf.level>=4;
+        }
+        if (overlaps(leaf.bounds,sizingPolicy.boxRegions[1].bounds)) {
+            wakeCoreAtFive=wakeCoreAtFive && leaf.level==5;
+        }
+        if (leaf.bounds.max.x<=1.0 && leaf.bounds.max.y<=1.0 && leaf.level<4) {
+            untouchedCornerCoarse=true;
+        }
+    }
+    check(wakeAtLeastFour,"local box refines every overlapping wake leaf to its target");
+    check(wakeCoreAtFive,"overlapping wake core takes the greatest target level");
+    check(untouchedCornerCoarse,"local sizing field leaves an unrelated corner below wake level");
+
+    auto reversedSizing=sizingPolicy;
+    std::reverse(reversedSizing.boxRegions.begin(),reversedSizing.boxRegions.end());
+    std::reverse(reversedSizing.distanceBands.begin(),reversedSizing.distanceBands.end());
+    Quadtree2D sizedReversed(domain,5,boundary);
+    sizedReversed.refine(boundary,reversedSizing);
+    check(sized.leaves().size()==sizedReversed.leaves().size(),
+          "sizing field order preserves leaf count");
+    if (sized.leaves().size()==sizedReversed.leaves().size()) {
+        for (std::size_t i=0;i<sized.leaves().size();++i) {
+            check(sized.leaves()[i].key==sizedReversed.leaves()[i].key,
+                  "sizing field order preserves deterministic keys");
+        }
+    }
+
     // Independent partition audit: every leaf must lie inside the domain, keys must be unique,
     // and no two distinct leaves may overlap with positive area. Together with the total-area
     // check above, this rules out both overlap and hidden coverage holes.
@@ -112,5 +158,6 @@ int main(){
 
     bool threw=false; try{ QuadtreeRefinementPolicy2D bad; bad.boundaryLevel=6; Quadtree2D t(domain,5,boundary); t.refine(boundary,bad);}catch(const std::invalid_argument&){threw=true;} check(threw,"target level above max rejected");
     threw=false; try{ QuadtreeRefinementPolicy2D bad; bad.minimumLevel=6; Quadtree2D t(domain,5,boundary); t.refine(boundary,bad);}catch(const std::invalid_argument&){threw=true;} check(threw,"minimum level above max rejected");
+    threw=false; try{ QuadtreeRefinementPolicy2D bad; bad.boxRegions={{{{5.0,5.0},{6.0,6.0}},3}}; Quadtree2D t(domain,5,boundary); t.refine(boundary,bad);}catch(const std::invalid_argument&){threw=true;} check(threw,"box outside domain rejected");
     if(failures){std::cerr<<failures<<" test(s) failed\n";return EXIT_FAILURE;} std::cout<<"cartmesh2d 2D-2 quadtree tests passed\n"; return EXIT_SUCCESS;
 }

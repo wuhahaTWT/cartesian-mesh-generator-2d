@@ -6,12 +6,20 @@
 #include <vector>
 namespace cartmesh2d {
 struct DistanceRefinementBand2D { double distance = 0.0; std::size_t targetLevel = 0; };
+struct BoxRefinementRegion2D {
+    AABB2D bounds;
+    std::size_t targetLevel = 0;
+};
 struct QuadtreeRefinementPolicy2D {
     // A global floor is required for controlled PDE grid-convergence studies;
     // zero preserves the original boundary-only adaptive behaviour.
     std::size_t minimumLevel = 0;
     std::size_t boundaryLevel = 0;
     std::vector<DistanceRefinementBand2D> distanceBands;
+    // Axis-aligned regions provide a deterministic local sizing field.  A
+    // downstream box is also the first wake-refinement primitive; overlapping
+    // fields combine by taking the greatest requested target level.
+    std::vector<BoxRefinementRegion2D> boxRegions;
 };
 struct QuadtreeLeaf2D {
     std::size_t id = 0; std::uint64_t key = 0; std::size_t level = 0; std::uint64_t ix = 0; std::uint64_t iy = 0;

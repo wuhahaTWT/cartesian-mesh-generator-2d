@@ -171,6 +171,136 @@ bool parseFluidRegion(const std::string& value, FluidRegion2D& region) {
     return false;
 }
 
+bool parseExactDouble(const std::string& value, double& parsed) {
+    try {
+        std::size_t consumed=0;
+        parsed=std::stod(value,&consumed);
+        return consumed==value.size() && std::isfinite(parsed);
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+bool parseExactLevel(const std::string& value, std::size_t& parsed) {
+    try {
+        std::size_t consumed=0;
+        const auto raw=std::stoull(value,&consumed);
+        if (consumed!=value.size()) return false;
+        parsed=static_cast<std::size_t>(raw);
+        return static_cast<unsigned long long>(parsed)==raw;
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
+bool parseSizingOptions(int argc, char** argv, int first,
+                        std::vector<DistanceRefinementBand2D>& distanceBands,
+                        std::vector<BoxRefinementRegion2D>& boxRegions,
+                        std::string& error) {
+    int index=first;
+    while (index<argc) {
+        const std::string option=argv[index++];
+        if (option=="--distance-band") {
+            if (index+2>argc) {
+                error="--distance-band requires <distance> <target-level>";
+                return false;
+            }
+            DistanceRefinementBand2D band;
+            if (!parseExactDouble(argv[index],band.distance) ||
+                !parseExactLevel(argv[index+1],band.targetLevel)) {
+                error="invalid --distance-band value";
+                return false;
+            }
+            index+=2;
+            distanceBands.push_back(band);
+            continue;
+        }
+        if (option=="--refine-box") {
+            if (index+5>argc) {
+                error="--refine-box requires <xmin> <ymin> <xmax> <ymax> <target-level>";
+                return false;
+            }
+            BoxRefinementRegion2D region;
+            if (!parseExactDouble(argv[index],region.bounds.min.x) ||
+                !parseExactDouble(argv[index+1],region.bounds.min.y) ||
+                !parseExactDouble(argv[index+2],region.bounds.max.x) ||
+                !parseExactDouble(argv[index+3],region.bounds.max.y) ||
+                !parseExactLevel(argv[index+4],region.targetLevel)) {
+                error="invalid --refine-box value";
+                return false;
+            }
+            index+=5;
+            boxRegions.push_back(region);
+            continue;
+        }
+        error="unknown sizing option: "+option;
+        return false;
+    }
+    return true;
+}
+
+bool boxesOverlapPositive(const AABB2D& a,const AABB2D& b) noexcept {
+    return std::max(a.min.x,b.min.x)<std::min(a.max.x,b.max.x) &&
+           std::max(a.min.y,b.min.y)<std::min(a.max.y,b.max.y);
+}
+
+bool writeSizingFieldReport(const std::filesystem::path& path,
+                            const Domain2D& domain,
+                            const QuadtreeRefinementPolicy2D& policy,
+                            const Quadtree2D& tree,
+                            const QuadtreeBalanceReport2D& balance,
+                            std::string& error) {
+    std::map<std::size_t,std::size_t> levelCounts;
+    for (const auto& leaf:tree.leaves()) ++levelCounts[leaf.level];
+    std::ofstream out(path);
+    if (!out) {
+        error="failed to open sizing-field JSON output";
+        return false;
+    }
+    out<<std::setprecision(17)
+       <<"{\n  \"format\": \"cartmesh2d-sizing-v1\",\n"
+       <<"  \"domain\": ["<<domain.bounds.min.x<<", "<<domain.bounds.min.y<<", "
+       <<domain.bounds.max.x<<", "<<domain.bounds.max.y<<"],\n"
+       <<"  \"minimum_level\": "<<policy.minimumLevel<<",\n"
+       <<"  \"boundary_level\": "<<policy.boundaryLevel<<",\n"
+       <<"  \"distance_bands\": [";
+    for (std::size_t i=0;i<policy.distanceBands.size();++i) {
+        if (i!=0) out<<", ";
+        const auto& band=policy.distanceBands[i];
+        out<<"{\"distance\": "<<band.distance<<", \"target_level\": "
+           <<band.targetLevel<<"}";
+    }
+    out<<"],\n  \"box_regions\": [";
+    for (std::size_t i=0;i<policy.boxRegions.size();++i) {
+        if (i!=0) out<<", ";
+        const auto& region=policy.boxRegions[i];
+        std::size_t overlappingLeaves=0;
+        for (const auto& leaf:tree.leaves()) {
+            if (boxesOverlapPositive(leaf.bounds,region.bounds)) ++overlappingLeaves;
+        }
+        out<<"{\"bounds\": ["<<region.bounds.min.x<<", "<<region.bounds.min.y<<", "
+           <<region.bounds.max.x<<", "<<region.bounds.max.y<<"], \"target_level\": "
+           <<region.targetLevel<<", \"overlapping_leaf_count\": "<<overlappingLeaves<<"}";
+    }
+    out<<"],\n  \"level_histogram\": {";
+    bool first=true;
+    for (const auto& [level,count]:levelCounts) {
+        if (!first) out<<", ";
+        first=false;
+        out<<'\"'<<level<<"\": "<<count;
+    }
+    out<<"},\n  \"leaf_count\": "<<tree.leaves().size()<<",\n"
+       <<"  \"balance\": {\"iterations\": "<<balance.iterations
+       <<", \"refined_leaves\": "<<balance.refinedLeaves
+       <<", \"violations_before\": "<<balance.violationsBefore
+       <<", \"violations_after\": "<<balance.violationsAfter<<"}\n}\n";
+    if (!out.good()) {
+        error="failed while writing sizing-field JSON output";
+        return false;
+    }
+    return true;
+}
+
 const char* smallStatusName(SmallCellStatus2D status) noexcept {
     switch (status) {
     case SmallCellStatus2D::Stable: return "stable";
@@ -303,15 +433,30 @@ void usage() {
     std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
                  "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
-                 "[boundary-simplify-cell-fraction=0]\n"
+                 "[boundary-simplify-cell-fraction=0] "
+                 "[--distance-band <distance> <target-level>]... "
+                 "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]...\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
+                 "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3 || argc > 10) {
+    if (argc < 3) {
+        usage();
+        return EXIT_FAILURE;
+    }
+
+    int sizingOptionStart=argc;
+    for (int index=3;index<argc;++index) {
+        if (std::string(argv[index]).starts_with("--")) {
+            sizingOptionStart=index;
+            break;
+        }
+    }
+    if (sizingOptionStart>10) {
         usage();
         return EXIT_FAILURE;
     }
@@ -325,22 +470,30 @@ int main(int argc, char** argv) {
     double boundarySimplifyCellFraction = 0.0;
     FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
     std::optional<std::filesystem::path> openFoamCase;
+    std::vector<DistanceRefinementBand2D> distanceBands;
+    std::vector<BoxRefinementRegion2D> boxRegions;
     try {
-        if (argc >= 4) maxLevel = static_cast<std::size_t>(std::stoul(argv[3]));
-        if (argc >= 5) paddingFraction = std::stod(argv[4]);
-        if (argc >= 6) smallAlpha = std::stod(argv[5]);
-        if (argc >= 9) minimumLevel = static_cast<std::size_t>(std::stoul(argv[8]));
-        if (argc >= 10) boundarySimplifyCellFraction = std::stod(argv[9]);
+        if (sizingOptionStart >= 4) maxLevel = static_cast<std::size_t>(std::stoul(argv[3]));
+        if (sizingOptionStart >= 5) paddingFraction = std::stod(argv[4]);
+        if (sizingOptionStart >= 6) smallAlpha = std::stod(argv[5]);
+        if (sizingOptionStart >= 9) minimumLevel = static_cast<std::size_t>(std::stoul(argv[8]));
+        if (sizingOptionStart >= 10) boundarySimplifyCellFraction = std::stod(argv[9]);
     } catch (const std::exception&) {
         std::cerr << "invalid numeric CLI argument\n";
         return EXIT_FAILURE;
     }
-    if (argc >= 7 && !parseFluidRegion(argv[6], fluidRegion)) {
+    if (sizingOptionStart >= 7 && !parseFluidRegion(argv[6], fluidRegion)) {
         std::cerr << "invalid fluid-region; expected exterior or interior\n";
         return EXIT_FAILURE;
     }
-    if (argc >= 8 && std::string(argv[7])!="-") {
+    if (sizingOptionStart >= 8 && std::string(argv[7])!="-") {
         openFoamCase=std::filesystem::path(argv[7]);
+    }
+    std::string sizingError;
+    if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,sizingError)) {
+        std::cerr<<sizingError<<'\n';
+        usage();
+        return EXIT_FAILURE;
     }
     if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
         !(smallAlpha > 0.0 && smallAlpha < 1.0) ||
@@ -424,7 +577,14 @@ int main(int argc, char** argv) {
     QuadtreeRefinementPolicy2D refinement;
     refinement.minimumLevel = minimumLevel;
     refinement.boundaryLevel = maxLevel;
-    tree.refine(boundary, refinement);
+    refinement.distanceBands=distanceBands;
+    refinement.boxRegions=boxRegions;
+    try {
+        tree.refine(boundary, refinement);
+    } catch (const std::invalid_argument& exception) {
+        std::cerr<<"invalid sizing field: "<<exception.what()<<'\n';
+        return EXIT_FAILURE;
+    }
     const auto balance = tree.enforceTwoToOneBalance(boundary);
     if (balance.violationsAfter != 0 || !tree.deterministicOrderingValid()) {
         std::cerr << "Quadtree balance/determinism gate failed\n";
@@ -603,6 +763,13 @@ int main(int argc, char** argv) {
     const std::filesystem::path cm2dPath = outputPrefix.string() + ".cm2d";
     const std::filesystem::path qualityPath = outputPrefix.string() + ".quality.json";
     const std::filesystem::path vizPath = outputPrefix.string() + ".viz.json";
+    const std::filesystem::path sizingPath = outputPrefix.string() + ".sizing.json";
+
+    error.clear();
+    if (!writeSizingFieldReport(sizingPath,domain,refinement,tree,balance,error)) {
+        std::cerr<<error<<'\n';
+        return EXIT_FAILURE;
+    }
 
     error.clear();
     if (!writeLegacyVtk2D(stabilized.topology, vtkPath, &error)) {
@@ -685,6 +852,9 @@ int main(int argc, char** argv) {
               << "cm2d=" << cm2dPath.string() << '\n'
               << "quality_json=" << qualityPath.string() << '\n'
               << "visualization_json=" << vizPath.string() << '\n';
+    std::cout << "sizing_distance_bands=" << refinement.distanceBands.size() << '\n'
+              << "sizing_box_regions=" << refinement.boxRegions.size() << '\n'
+              << "sizing_json=" << sizingPath.string() << '\n';
     if (openFoamReport) {
         std::cout<<"solver_quality=PASS\n"
                  <<"solver_max_nonorthogonality_deg="<<solverQuality->maxNonOrthogonalityDeg<<'\n'
