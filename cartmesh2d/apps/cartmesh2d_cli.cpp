@@ -911,6 +911,55 @@ int main(int argc, char** argv) {
                  <<solverTopology->qualityAgglomeratedSourceCellCount<<'\n'
                  <<"solver_quality_local_repartitions="
                  <<solverTopology->qualityRepartitionCount<<'\n'
+                 <<"solver_profile_initial_partition_seconds="
+                 <<solverTopology->profile.initialPartitionSeconds<<'\n'
+                 <<"solver_profile_build_global_topology_seconds="
+                 <<solverTopology->profile.buildGlobalTopologySeconds<<'\n'
+                 <<"solver_profile_full_quality_seconds="
+                 <<solverTopology->profile.fullQualitySeconds<<'\n'
+                 <<"solver_profile_candidate_generation_seconds="
+                 <<solverTopology->profile.candidateGenerationSeconds<<'\n'
+                 <<"solver_profile_candidate_polygon_work_seconds="
+                 <<solverTopology->profile.candidatePolygonWorkSeconds<<'\n'
+                 <<"solver_profile_candidate_global_rebuild_seconds="
+                 <<solverTopology->profile.candidateGlobalRebuildSeconds<<'\n'
+                 <<"solver_profile_candidate_quality_seconds="
+                 <<solverTopology->profile.candidateQualitySeconds<<'\n'
+                 <<"solver_profile_source_repair_seconds="
+                 <<solverTopology->profile.sourceRepairSeconds<<'\n'
+                 <<"solver_profile_final_repartition_seconds="
+                 <<solverTopology->profile.finalRepartitionSeconds<<'\n'
+                 <<"solver_profile_global_topology_rebuild_calls="
+                 <<solverTopology->profile.globalTopologyRebuildCalls<<'\n'
+                 <<"solver_profile_full_quality_calls="
+                 <<solverTopology->profile.fullQualityCalls<<'\n'
+                 <<"solver_profile_candidate_topology_count="
+                 <<solverTopology->profile.candidateTopologyCount<<'\n'
+                 <<"solver_profile_candidate_quality_evaluation_count="
+                 <<solverTopology->profile.candidateQualityEvaluationCount<<'\n'
+                 <<"solver_profile_source_candidate_pairs="
+                 <<solverTopology->profile.sourceCandidatePairs<<'\n'
+                 <<"solver_profile_repartition_candidate_pairs="
+                 <<solverTopology->profile.repartitionCandidatePairs<<'\n'
+                 <<"solver_profile_candidate_splits="
+                 <<solverTopology->profile.candidateSplits<<'\n'
+                 <<"solver_profile_repair_patch_count="
+                 <<solverTopology->profile.repairPatchCount<<'\n'
+                 <<"solver_profile_accepted_topology_commit_count="
+                 <<solverTopology->profile.acceptedTopologyCommitCount<<'\n'
+                 <<"solver_profile_rejected_candidate_count="
+                 <<(solverTopology->profile.candidateTopologyCount-
+                    solverTopology->profile.acceptedTopologyCommitCount)<<'\n'
+                 <<"solver_profile_maximum_quality_issue_count="
+                 <<solverTopology->profile.maximumQualityIssueCount<<'\n'
+                 <<"solver_profile_accepted_source_repairs="
+                 <<solverTopology->profile.acceptedSourceRepairs<<'\n'
+                 <<"solver_profile_accepted_repartitions="
+                 <<solverTopology->profile.acceptedRepartitions<<'\n'
+                 <<"solver_profile_source_repair_iterations="
+                 <<solverTopology->profile.sourceRepairIterations<<'\n'
+                 <<"solver_profile_repartition_iterations="
+                 <<solverTopology->profile.repartitionIterations<<'\n'
                  <<"solver_output_cells="<<solverTopology->outputCellCount<<'\n'
                  <<"solver_output_vertices="<<solverTopology->topology.vertices.size()<<'\n'
                  <<"solver_output_faces="<<solverTopology->topology.edges.size()<<'\n'

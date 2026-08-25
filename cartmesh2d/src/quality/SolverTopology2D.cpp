@@ -2,8 +2,10 @@
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <numbers>
 #include <optional>
@@ -11,6 +13,12 @@
 
 namespace cartmesh2d {
 namespace {
+
+using ProfileClock = std::chrono::steady_clock;
+
+[[nodiscard]] double profileSeconds(ProfileClock::time_point start) noexcept {
+    return std::chrono::duration<double>(ProfileClock::now()-start).count();
+}
 
 [[nodiscard]] bool pointInOrOnTriangle(const Point2D& point,
                                        const Point2D& a,const Point2D& b,
@@ -386,6 +394,17 @@ struct QualityScore2D {
     double totalSeverity = 0.0;
 };
 
+struct LocalQualityRank2D {
+    QualityScore2D issues;
+    double maxNonOrthogonality = 0.0;
+    double maxInternalSkewness = 0.0;
+    double maxBoundarySkewness = 0.0;
+    double maxCellAspect = 0.0;
+    double negativeMinInteriorAngle = 0.0;
+    double negativeMinFaceWeight = 0.0;
+    double negativeMinVolumeRatio = 0.0;
+};
+
 [[nodiscard]] QualityScore2D qualityScore(const SolverQualityReport2D& quality) {
     QualityScore2D score;
     score.issueCount=quality.issues.size();
@@ -410,6 +429,73 @@ struct QualityScore2D {
            std::tie(current.issueCount,current.maximumSeverity,current.totalSeverity);
 }
 
+[[nodiscard]] bool betterLocalQualityRank(const LocalQualityRank2D& candidate,
+                                          const LocalQualityRank2D& current) noexcept {
+    return std::tie(candidate.issues.issueCount,
+                    candidate.issues.maximumSeverity,
+                    candidate.issues.totalSeverity,
+                    candidate.maxNonOrthogonality,
+                    candidate.maxInternalSkewness,
+                    candidate.maxBoundarySkewness,
+                    candidate.maxCellAspect,
+                    candidate.negativeMinInteriorAngle,
+                    candidate.negativeMinFaceWeight,
+                    candidate.negativeMinVolumeRatio)<
+           std::tie(current.issues.issueCount,
+                    current.issues.maximumSeverity,
+                    current.issues.totalSeverity,
+                    current.maxNonOrthogonality,
+                    current.maxInternalSkewness,
+                    current.maxBoundarySkewness,
+                    current.maxCellAspect,
+                    current.negativeMinInteriorAngle,
+                    current.negativeMinFaceWeight,
+                    current.negativeMinVolumeRatio);
+}
+
+[[nodiscard]] std::optional<std::vector<Polygon2D>> partitionOnePolygon(
+    const Polygon2D& polygon,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    if (strictlyConvex(polygon)) return std::vector<Polygon2D>{polygon};
+    return triangulate(polygon,domain,boundary,tol);
+}
+
+[[nodiscard]] std::optional<LocalQualityRank2D> localPartitionQualityRank(
+    const Polygon2D& outer,const std::vector<Polygon2D>& pieces,
+    const TolerancePolicy& tol) {
+    if (pieces.empty() || !(outer.signedArea()>0.0)) return std::nullopt;
+    BoundaryLoop localLoop(outer.vertices);
+    BoundaryRegion2D localBoundary(localLoop);
+    const Domain2D localDomain{outer.bounds()};
+    if (!localBoundary.diagnose(tol).valid() || !localDomain.valid(tol)) return std::nullopt;
+    std::vector<CutCell2D> cells;
+    cells.reserve(pieces.size());
+    for (std::size_t i=0;i<pieces.size();++i) cells.push_back(makeCell(i,pieces[i],tol));
+    const auto topology=buildGlobalTopology(cells,localDomain,localBoundary,tol);
+    if (!topology.valid()) return std::nullopt;
+    const auto quality=evaluateSolverQuality2D(topology,{},tol);
+    SolverQualityReport2D filtered;
+    filtered.policy=quality.policy;
+    for (const auto& issue:quality.issues) {
+        const bool cellIssue=issue.code==SolverQualityIssueCode2D::InvalidCell ||
+            issue.code==SolverQualityIssueCode2D::ExcessiveConcavity ||
+            issue.code==SolverQualityIssueCode2D::ExcessiveAspect ||
+            issue.code==SolverQualityIssueCode2D::SmallInteriorAngle;
+        const bool internalEdgeIssue=issue.edgeId<topology.edges.size() &&
+            topology.edges[issue.edgeId].neighbour.has_value();
+        if (cellIssue || internalEdgeIssue) filtered.issues.push_back(issue);
+    }
+    LocalQualityRank2D rank;
+    rank.issues=qualityScore(filtered);
+    rank.maxNonOrthogonality=quality.maxNonOrthogonalityDeg;
+    rank.maxInternalSkewness=quality.maxInternalSkewness;
+    rank.maxCellAspect=quality.maxCellAspect;
+    rank.negativeMinInteriorAngle=-quality.minInteriorAngleDeg;
+    rank.negativeMinFaceWeight=-quality.minFaceWeight;
+    rank.negativeMinVolumeRatio=-quality.minVolumeRatio;
+    return rank;
+}
+
 [[nodiscard]] bool internalInterfaceIssue(SolverQualityIssueCode2D code) noexcept {
     return code==SolverQualityIssueCode2D::ExcessiveNonOrthogonality ||
            code==SolverQualityIssueCode2D::ExcessiveSkewness ||
@@ -419,7 +505,8 @@ struct QualityScore2D {
 
 [[nodiscard]] PartitionAttempt2D partitionSourcePolygons(
     const std::vector<Polygon2D>& sourcePolygons,const Domain2D& domain,
-    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
+    SolverTopologyProfile2D* profile=nullptr,bool candidate=false) {
     PartitionAttempt2D result;
     std::vector<CutCell2D> cells;
     cells.reserve(sourcePolygons.size());
@@ -442,7 +529,17 @@ struct QualityScore2D {
             result.sourceForCell.push_back(source);
         }
     }
+    const auto topologyStart=ProfileClock::now();
     result.topology=buildGlobalTopology(cells,domain,boundary,tol);
+    if (profile) {
+        const double elapsed=profileSeconds(topologyStart);
+        profile->buildGlobalTopologySeconds+=elapsed;
+        ++profile->globalTopologyRebuildCalls;
+        if (candidate) {
+            profile->candidateGlobalRebuildSeconds+=elapsed;
+            ++profile->candidateTopologyCount;
+        }
+    }
     if (!result.topology.valid()) result.error="partitioned solver topology audit failed";
     return result;
 }
@@ -462,11 +559,11 @@ struct QualityScore2D {
         if (issue.edgeId<partition.topology.edges.size()) {
             addEdge(partition.topology.edges[issue.edgeId]);
         }
-        if (issue.cellId>=partition.sourceForCell.size()) continue;
-        for (const auto& edge:partition.topology.edges) {
-            if (edge.owner==issue.cellId ||
-                (edge.neighbour && *edge.neighbour==issue.cellId)) {
-                addEdge(edge);
+        if (issue.cellId>=partition.sourceForCell.size() ||
+            issue.cellId>=partition.topology.cells.size()) continue;
+        for (const auto edgeId:partition.topology.cells[issue.cellId].edges) {
+            if (edgeId<partition.topology.edges.size()) {
+                addEdge(partition.topology.edges[edgeId]);
             }
         }
     }
@@ -528,7 +625,9 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     affected.erase(std::unique(affected.begin(),affected.end()),affected.end());
     std::vector<std::pair<std::size_t,std::size_t>> pairs;
     for (const auto cell:affected) {
-        for (const auto& edge:topology.edges) {
+        for (const auto edgeId:topology.cells[cell].edges) {
+            if (edgeId>=topology.edges.size()) continue;
+            const auto& edge=topology.edges[edgeId];
             if (!edge.neighbour) continue;
             if (edge.owner==cell) pairs.emplace_back(std::min(cell,*edge.neighbour),
                                                      std::max(cell,*edge.neighbour));
@@ -545,7 +644,7 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     const TopologyMesh2D& topology,std::size_t first,std::size_t second,
     const Polygon2D& firstPiece,const Polygon2D& secondPiece,
     const Domain2D& domain,const BoundaryRegion2D& boundary,
-    const TolerancePolicy& tol) {
+    const TolerancePolicy& tol,SolverTopologyProfile2D* profile) {
     std::vector<CutCell2D> cells;
     cells.reserve(topology.cells.size());
     for (std::size_t cell=0;cell<topology.cells.size();++cell) {
@@ -556,14 +655,317 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
         if (cell==first || cell==second) continue;
         cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
     }
-    return buildGlobalTopology(cells,domain,boundary,tol);
+    const auto topologyStart=ProfileClock::now();
+    auto rebuilt=buildGlobalTopology(cells,domain,boundary,tol);
+    if (profile) {
+        const double elapsed=profileSeconds(topologyStart);
+        profile->buildGlobalTopologySeconds+=elapsed;
+        profile->candidateGlobalRebuildSeconds+=elapsed;
+        ++profile->globalTopologyRebuildCalls;
+        ++profile->candidateTopologyCount;
+    }
+    return rebuilt;
 }
 
-} // namespace
+struct SourceMergeProposal2D {
+    std::size_t first = 0;
+    std::size_t second = 0;
+    Polygon2D merged;
+    LocalQualityRank2D rank;
+    std::vector<std::size_t> halo;
+};
 
-SolverLocalRepartitionResult2D repartitionSolverTopologyByQuality2D(
+struct RepartitionProposal2D {
+    std::size_t first = 0;
+    std::size_t second = 0;
+    Polygon2D firstPiece;
+    Polygon2D secondPiece;
+    LocalQualityRank2D rank;
+    std::vector<std::size_t> halo;
+};
+
+[[nodiscard]] bool sortedSetsIntersect(const std::vector<std::size_t>& first,
+                                       const std::vector<std::size_t>& second) noexcept {
+    std::size_t i=0,j=0;
+    while (i<first.size() && j<second.size()) {
+        if (first[i]==second[j]) return true;
+        if (first[i]<second[j]) ++i;
+        else ++j;
+    }
+    return false;
+}
+
+[[nodiscard]] std::vector<std::vector<std::size_t>> sourceAdjacency(
+    const PartitionAttempt2D& partition,std::size_t sourceCount) {
+    std::vector<std::vector<std::size_t>> adjacency(sourceCount);
+    for (const auto& edge:partition.topology.edges) {
+        if (!edge.neighbour || edge.owner>=partition.sourceForCell.size() ||
+            *edge.neighbour>=partition.sourceForCell.size()) continue;
+        const auto first=partition.sourceForCell[edge.owner];
+        const auto second=partition.sourceForCell[*edge.neighbour];
+        if (first==second || first>=sourceCount || second>=sourceCount) continue;
+        adjacency[first].push_back(second);
+        adjacency[second].push_back(first);
+    }
+    for (auto& neighbours:adjacency) {
+        std::sort(neighbours.begin(),neighbours.end());
+        neighbours.erase(std::unique(neighbours.begin(),neighbours.end()),neighbours.end());
+    }
+    return adjacency;
+}
+
+[[nodiscard]] std::vector<std::size_t> sourcePairHalo(
+    std::size_t first,std::size_t second,
+    const std::vector<std::vector<std::size_t>>& adjacency) {
+    std::vector<std::size_t> halo{first,second};
+    if (first<adjacency.size()) halo.insert(halo.end(),adjacency[first].begin(),adjacency[first].end());
+    if (second<adjacency.size()) halo.insert(halo.end(),adjacency[second].begin(),adjacency[second].end());
+    std::sort(halo.begin(),halo.end());
+    halo.erase(std::unique(halo.begin(),halo.end()),halo.end());
+    return halo;
+}
+
+[[nodiscard]] std::vector<std::size_t> cellPairHalo(
+    const TopologyMesh2D& topology,std::size_t first,std::size_t second) {
+    std::vector<std::size_t> halo{first,second};
+    const auto addNeighbours=[&](std::size_t cell) {
+        if (cell>=topology.cells.size()) return;
+        for (const auto edgeId:topology.cells[cell].edges) {
+            if (edgeId>=topology.edges.size()) continue;
+            const auto& edge=topology.edges[edgeId];
+            if (edge.owner!=cell) halo.push_back(edge.owner);
+            if (edge.neighbour && *edge.neighbour!=cell) halo.push_back(*edge.neighbour);
+        }
+    };
+    addNeighbours(first);
+    addNeighbours(second);
+    std::sort(halo.begin(),halo.end());
+    halo.erase(std::unique(halo.begin(),halo.end()),halo.end());
+    return halo;
+}
+
+[[nodiscard]] std::optional<BoundaryRegion2D> patchBoundaryRegion(
+    const TopologyMesh2D& topology,const std::vector<std::size_t>& cells,
+    const TolerancePolicy& tol) {
+    const auto inside=[&](std::size_t cell) {
+        return std::binary_search(cells.begin(),cells.end(),cell);
+    };
+    std::map<std::size_t,std::vector<std::size_t>> adjacency;
+    for (const auto& edge:topology.edges) {
+        const bool ownerInside=inside(edge.owner);
+        const bool neighbourInside=edge.neighbour && inside(*edge.neighbour);
+        if (ownerInside==neighbourInside) continue;
+        adjacency[edge.v0].push_back(edge.v1);
+        adjacency[edge.v1].push_back(edge.v0);
+    }
+    for (auto& [vertex,neighbours]:adjacency) {
+        (void)vertex;
+        std::sort(neighbours.begin(),neighbours.end());
+        neighbours.erase(std::unique(neighbours.begin(),neighbours.end()),neighbours.end());
+        if (neighbours.size()!=2) return std::nullopt;
+    }
+    std::map<std::pair<std::size_t,std::size_t>,bool> used;
+    for (const auto& [vertex,neighbours]:adjacency) {
+        for (const auto neighbour:neighbours) {
+            used[{std::min(vertex,neighbour),std::max(vertex,neighbour)}]=false;
+        }
+    }
+    std::vector<BoundaryLoop> loops;
+    for (auto& [initialEdge,initialUsed]:used) {
+        if (initialUsed) continue;
+        const std::size_t start=initialEdge.first;
+        std::size_t previous=start;
+        std::size_t current=initialEdge.second;
+        initialUsed=true;
+        std::vector<Point2D> points{topology.vertices[start].point};
+        for (std::size_t guard=0;guard<=used.size();++guard) {
+            if (current==start) break;
+            if (current>=topology.vertices.size()) return std::nullopt;
+            points.push_back(topology.vertices[current].point);
+            const auto found=adjacency.find(current);
+            if (found==adjacency.end()) return std::nullopt;
+            const std::size_t next=found->second[0]==previous
+                ?found->second[1]:found->second[0];
+            const auto key=std::make_pair(std::min(current,next),std::max(current,next));
+            auto edgeUsed=used.find(key);
+            if (edgeUsed==used.end() || edgeUsed->second) return std::nullopt;
+            edgeUsed->second=true;
+            previous=current;
+            current=next;
+        }
+        if (current!=start || points.size()<3) return std::nullopt;
+        BoundaryLoop loop(std::move(points));
+        if (!loop.diagnose(tol).valid()) return std::nullopt;
+        loops.push_back(std::move(loop));
+    }
+    if (loops.empty()) return std::nullopt;
+    BoundaryRegion2D boundary(std::move(loops));
+    if (!boundary.normalizeAlternating(tol) || !boundary.diagnose(tol).valid()) {
+        return std::nullopt;
+    }
+    return boundary;
+}
+
+[[nodiscard]] std::optional<LocalQualityRank2D> localRepartitionQualityRank(
+    const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
+    std::size_t first,std::size_t second,
+    const Polygon2D& firstPiece,const Polygon2D& secondPiece,
+    const TolerancePolicy& tol) {
+    const auto boundary=patchBoundaryRegion(topology,halo,tol);
+    if (!boundary) return std::nullopt;
+    const Domain2D domain{boundary->bounds()};
+    if (!domain.valid(tol)) return std::nullopt;
+    std::vector<CutCell2D> cells;
+    cells.reserve(halo.size());
+    for (const auto cell:halo) {
+        if (cell==first) {
+            cells.push_back(makeCell(cells.size(),firstPiece,tol));
+            cells.push_back(makeCell(cells.size(),secondPiece,tol));
+        }
+        if (cell==first || cell==second) continue;
+        if (cell>=topology.cells.size()) return std::nullopt;
+        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+    }
+    const auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
+    if (!patch.valid()) return std::nullopt;
+    const auto quality=evaluateSolverQuality2D(patch,{},tol);
+    SolverQualityReport2D filtered;
+    filtered.policy=quality.policy;
+    double physicalBoundarySkewness=0.0;
+    const auto isPhysicalBoundaryEdge=[&](const Edge2D& patchEdge) {
+        const auto& patchA=patch.vertices[patchEdge.v0].point;
+        const auto& patchB=patch.vertices[patchEdge.v1].point;
+        for (const auto cell:halo) {
+            for (const auto edgeId:topology.cells[cell].edges) {
+                const auto& edge=topology.edges[edgeId];
+                if (edge.neighbour) continue;
+                const auto& a=topology.vertices[edge.v0].point;
+                const auto& b=topology.vertices[edge.v1].point;
+                if ((a.x==patchA.x && a.y==patchA.y &&
+                     b.x==patchB.x && b.y==patchB.y) ||
+                    (a.x==patchB.x && a.y==patchB.y &&
+                     b.x==patchA.x && b.y==patchA.y)) return true;
+            }
+        }
+        return false;
+    };
+    for (const auto& issue:quality.issues) {
+        if (issue.code!=SolverQualityIssueCode2D::ExcessiveBoundarySkewness ||
+            (issue.edgeId<patch.edges.size() && isPhysicalBoundaryEdge(patch.edges[issue.edgeId]))) {
+            filtered.issues.push_back(issue);
+            if (issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness) {
+                physicalBoundarySkewness=std::max(physicalBoundarySkewness,issue.measured);
+            }
+        }
+    }
+    LocalQualityRank2D rank;
+    rank.issues=qualityScore(filtered);
+    rank.maxNonOrthogonality=quality.maxNonOrthogonalityDeg;
+    rank.maxInternalSkewness=quality.maxInternalSkewness;
+    rank.maxBoundarySkewness=physicalBoundarySkewness;
+    rank.maxCellAspect=quality.maxCellAspect;
+    rank.negativeMinInteriorAngle=-quality.minInteriorAngleDeg;
+    rank.negativeMinFaceWeight=-quality.minFaceWeight;
+    rank.negativeMinVolumeRatio=-quality.minVolumeRatio;
+    return rank;
+}
+
+template<class Proposal>
+[[nodiscard]] std::vector<Proposal> selectIndependentProposals(
+    std::vector<Proposal> proposals) {
+    std::sort(proposals.begin(),proposals.end(),[](const Proposal& first,const Proposal& second) {
+        if (betterLocalQualityRank(first.rank,second.rank)) return true;
+        if (betterLocalQualityRank(second.rank,first.rank)) return false;
+        return std::tie(first.first,first.second)<std::tie(second.first,second.second);
+    });
+    std::vector<std::vector<std::size_t>> halos;
+    halos.reserve(proposals.size());
+    for (const auto& proposal:proposals) halos.push_back(proposal.halo);
+    const auto indices=selectIndependentSolverRepairPatches2D(halos);
+    std::vector<Proposal> selected;
+    selected.reserve(indices.size());
+    for (const auto index:indices) selected.push_back(std::move(proposals[index]));
+    return selected;
+}
+
+[[nodiscard]] std::vector<Polygon2D> applySourceMergeBatch(
+    const std::vector<Polygon2D>& sourcePolygons,
+    const std::vector<SourceMergeProposal2D>& selected) {
+    std::vector<bool> removed(sourcePolygons.size(),false);
+    std::vector<const Polygon2D*> replacements(sourcePolygons.size(),nullptr);
+    for (const auto& proposal:selected) {
+        if (proposal.first>=sourcePolygons.size() || proposal.second>=sourcePolygons.size()) continue;
+        replacements[proposal.first]=&proposal.merged;
+        removed[proposal.second]=true;
+    }
+    std::vector<Polygon2D> result;
+    result.reserve(sourcePolygons.size()-selected.size());
+    for (std::size_t source=0;source<sourcePolygons.size();++source) {
+        if (removed[source]) continue;
+        result.push_back(replacements[source]?*replacements[source]:sourcePolygons[source]);
+    }
+    return result;
+}
+
+[[nodiscard]] TopologyMesh2D applyRepartitionBatch(
+    const TopologyMesh2D& topology,
+    const std::vector<RepartitionProposal2D>& selected,
+    const Domain2D& domain,const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol,SolverTopologyProfile2D* profile) {
+    std::vector<const RepartitionProposal2D*> replacements(topology.cells.size(),nullptr);
+    std::vector<bool> removed(topology.cells.size(),false);
+    for (const auto& proposal:selected) {
+        if (proposal.first>=topology.cells.size() || proposal.second>=topology.cells.size()) continue;
+        replacements[proposal.first]=&proposal;
+        removed[proposal.second]=true;
+    }
+    std::vector<CutCell2D> cells;
+    cells.reserve(topology.cells.size());
+    for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+        if (removed[cell]) continue;
+        if (replacements[cell]) {
+            cells.push_back(makeCell(cells.size(),replacements[cell]->firstPiece,tol));
+            cells.push_back(makeCell(cells.size(),replacements[cell]->secondPiece,tol));
+        } else {
+            cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        }
+    }
+    const auto topologyStart=ProfileClock::now();
+    auto rebuilt=buildGlobalTopology(cells,domain,boundary,tol);
+    if (profile) {
+        const double elapsed=profileSeconds(topologyStart);
+        profile->buildGlobalTopologySeconds+=elapsed;
+        profile->candidateGlobalRebuildSeconds+=elapsed;
+        ++profile->globalTopologyRebuildCalls;
+        ++profile->candidateTopologyCount;
+    }
+    return rebuilt;
+}
+
+[[nodiscard]] SolverQualityReport2D timedFullQuality(
+    const TopologyMesh2D& topology,const TolerancePolicy& tol,
+    SolverTopologyProfile2D* profile,bool candidate) {
+    const auto start=ProfileClock::now();
+    auto quality=evaluateSolverQuality2D(topology,{},tol);
+    if (profile) {
+        const double elapsed=profileSeconds(start);
+        profile->fullQualitySeconds+=elapsed;
+        ++profile->fullQualityCalls;
+        if (candidate) {
+            profile->candidateQualitySeconds+=elapsed;
+            ++profile->candidateQualityEvaluationCount;
+        } else {
+            profile->maximumQualityIssueCount=std::max(
+                profile->maximumQualityIssueCount,quality.issues.size());
+        }
+    }
+    return quality;
+}
+
+SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
     const TopologyMesh2D& topology,const Domain2D& domain,
-    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
+    SolverTopologyProfile2D* profile,bool useBatch) {
     SolverLocalRepartitionResult2D result;
     result.topology=topology;
     if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid()) {
@@ -571,23 +973,103 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQuality2D(
         return result;
     }
     for (std::size_t iteration=0;iteration<32;++iteration) {
-        const auto quality=evaluateSolverQuality2D(result.topology,{},tol);
+        const auto quality=timedFullQuality(result.topology,tol,profile,false);
         if (quality.valid()) break;
+        if (profile) ++profile->repartitionIterations;
+        const auto generationStart=ProfileClock::now();
         const auto pairs=solverRepartitionPairs(result.topology,quality);
+        if (profile) {
+            profile->candidateGenerationSeconds+=profileSeconds(generationStart);
+            profile->repartitionCandidatePairs+=pairs.size();
+        }
+        bool acceptedBatch=false;
+        if (useBatch) {
+            std::vector<RepartitionProposal2D> proposals;
+            for (const auto& [first,second]:pairs) {
+                const auto polygonStart=ProfileClock::now();
+                const auto merged=mergeAdjacentPolygonsSimple(
+                    topologyCellPolygon(result.topology,first),
+                    topologyCellPolygon(result.topology,second),tol);
+                if (!merged) {
+                    if (profile) {
+                        profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+                    }
+                    continue;
+                }
+                const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol);
+                if (profile) profile->candidateSplits+=splits.size();
+                std::optional<RepartitionProposal2D> best;
+                const auto halo=cellPairHalo(result.topology,first,second);
+                for (const auto& [firstPiece,secondPiece]:splits) {
+                    const auto rank=localRepartitionQualityRank(
+                        result.topology,halo,first,second,firstPiece,secondPiece,tol);
+                    if (!rank) continue;
+                    RepartitionProposal2D proposal;
+                    proposal.first=first;
+                    proposal.second=second;
+                    proposal.firstPiece=firstPiece;
+                    proposal.secondPiece=secondPiece;
+                    proposal.rank=*rank;
+                    proposal.halo=halo;
+                    if (!best || betterLocalQualityRank(proposal.rank,best->rank)) {
+                        best=std::move(proposal);
+                    }
+                }
+                if (best) proposals.push_back(std::move(*best));
+                if (profile) {
+                    profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+                }
+            }
+            auto selected=selectIndependentProposals(std::move(proposals));
+            if (profile) profile->repairPatchCount+=selected.size();
+            for (std::size_t batchSize=selected.size();batchSize>0;) {
+                const std::vector<RepartitionProposal2D> batch(
+                    selected.begin(),selected.begin()+static_cast<std::ptrdiff_t>(batchSize));
+                auto candidate=applyRepartitionBatch(
+                    result.topology,batch,domain,boundary,tol,profile);
+                if (candidate.valid()) {
+                    const auto candidateQuality=timedFullQuality(candidate,tol,profile,true);
+                    if (betterQualityScore(qualityScore(candidateQuality),qualityScore(quality))) {
+                        result.topology=std::move(candidate);
+                        result.repartitionCount+=batchSize;
+                        if (profile) {
+                            profile->acceptedRepartitions+=batchSize;
+                            ++profile->acceptedTopologyCommitCount;
+                        }
+                        acceptedBatch=true;
+                        break;
+                    }
+                }
+                if (batchSize==1) break;
+                batchSize=(batchSize+1)/2;
+            }
+        }
+        if (acceptedBatch) continue;
+
+        // Fail closed to the H2 exhaustive global check if the locally ranked
+        // independent batch does not strictly improve the authoritative score.
         std::optional<TopologyMesh2D> bestTopology;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
+            const auto polygonStart=ProfileClock::now();
             const auto merged=mergeAdjacentPolygonsSimple(
                 topologyCellPolygon(result.topology,first),
                 topologyCellPolygon(result.topology,second),tol);
-            if (!merged) continue;
-            for (const auto& [firstPiece,secondPiece]:
-                 convexTwoPieceSplits(*merged,domain,boundary,tol)) {
+            if (!merged) {
+                if (profile) profile->candidatePolygonWorkSeconds+=
+                    profileSeconds(polygonStart);
+                continue;
+            }
+            const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol);
+            if (profile) {
+                profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+            }
+            for (const auto& [firstPiece,secondPiece]:splits) {
                 auto candidate=repartitionPair(result.topology,first,second,
                                                firstPiece,secondPiece,
-                                               domain,boundary,tol);
+                                               domain,boundary,tol,profile);
                 if (!candidate.valid()) continue;
-                const auto candidateQuality=evaluateSolverQuality2D(candidate,{},tol);
+                const auto candidateQuality=timedFullQuality(candidate,tol,profile,true);
                 const auto candidateScore=qualityScore(candidateQuality);
                 if (betterQualityScore(candidateScore,bestScore)) {
                     bestScore=candidateScore;
@@ -598,8 +1080,65 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQuality2D(
         if (!bestTopology) break;
         result.topology=std::move(*bestTopology);
         ++result.repartitionCount;
+        if (profile) ++profile->acceptedRepartitions;
+        if (profile) ++profile->acceptedTopologyCommitCount;
     }
     return result;
+}
+
+} // namespace
+
+std::vector<std::size_t> selectIndependentSolverRepairPatches2D(
+    const std::vector<std::vector<std::size_t>>& halos) {
+    std::vector<std::size_t> selected;
+    for (std::size_t candidate=0;candidate<halos.size();++candidate) {
+        bool conflict=false;
+        for (const auto accepted:selected) {
+            if (sortedSetsIntersect(halos[candidate],halos[accepted])) {
+                conflict=true;
+                break;
+            }
+        }
+        if (!conflict) selected.push_back(candidate);
+    }
+    return selected;
+}
+
+SolverQualityReport2D evaluateSolverQualityPatch2D(
+    const TopologyMesh2D& topology,
+    const std::vector<std::size_t>& sortedCellIds,
+    const TolerancePolicy& tol) {
+    if (!topology.valid() || sortedCellIds.empty() ||
+        !std::is_sorted(sortedCellIds.begin(),sortedCellIds.end()) ||
+        std::adjacent_find(sortedCellIds.begin(),sortedCellIds.end())!=sortedCellIds.end() ||
+        sortedCellIds.back()>=topology.cells.size()) {
+        return evaluateSolverQuality2D(TopologyMesh2D{}, {}, tol);
+    }
+    const auto boundary=patchBoundaryRegion(topology,sortedCellIds,tol);
+    if (!boundary) return evaluateSolverQuality2D(TopologyMesh2D{}, {}, tol);
+    const Domain2D domain{boundary->bounds()};
+    std::vector<CutCell2D> cells;
+    cells.reserve(sortedCellIds.size());
+    for (const auto cell:sortedCellIds) {
+        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+    }
+    const auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
+    return evaluateSolverQuality2D(patch,{},tol);
+}
+
+SolverLocalRepartitionResult2D repartitionSolverTopologyByQuality2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    return repartitionSolverTopologyByQualityImpl(
+        topology,domain,boundary,tol,nullptr,true);
+}
+
+SolverLocalRepartitionResult2D
+repartitionSolverTopologyByQualitySequentialReference2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    return repartitionSolverTopologyByQualityImpl(
+        topology,domain,boundary,tol,nullptr,false);
 }
 
 SolverTopologyResult2D buildSolverTopology2D(
@@ -626,32 +1165,98 @@ SolverTopologyResult2D buildSolverTopology2D(
         sourcePolygons.push_back(std::move(polygon));
     }
 
+    const auto initialPartitionStart=ProfileClock::now();
     PartitionAttempt2D partition=partitionSourcePolygons(
-        sourcePolygons,domain,boundary,tol);
+        sourcePolygons,domain,boundary,tol,&result.profile,false);
+    result.profile.initialPartitionSeconds=profileSeconds(initialPartitionStart);
     if (!partition.error.empty()) {
         result.issues.push_back(partition.error);
         return result;
     }
+    const auto sourceRepairStart=ProfileClock::now();
     for (std::size_t iteration=0;iteration<32;++iteration) {
-        const auto quality=evaluateSolverQuality2D(partition.topology,{},tol);
+        const auto quality=timedFullQuality(partition.topology,tol,&result.profile,false);
         if (quality.valid()) break;
+        ++result.profile.sourceRepairIterations;
+        const auto generationStart=ProfileClock::now();
         const auto pairs=sourceMergePairs(partition,quality);
+        result.profile.candidateGenerationSeconds+=profileSeconds(generationStart);
+        result.profile.sourceCandidatePairs+=pairs.size();
+        const auto adjacency=sourceAdjacency(partition,sourcePolygons.size());
+        std::vector<SourceMergeProposal2D> proposals;
+        for (const auto& [first,second]:pairs) {
+            if (second>=sourcePolygons.size()) continue;
+            const auto polygonStart=ProfileClock::now();
+            const auto merged=mergeAdjacentPolygonsSimple(
+                sourcePolygons[first],sourcePolygons[second],tol);
+            if (merged) {
+                const auto pieces=partitionOnePolygon(*merged,domain,boundary,tol);
+                if (pieces) {
+                    const auto rank=localPartitionQualityRank(*merged,*pieces,tol);
+                    if (rank) {
+                        SourceMergeProposal2D proposal;
+                        proposal.first=first;
+                        proposal.second=second;
+                        proposal.merged=*merged;
+                        proposal.rank=*rank;
+                        proposal.halo=sourcePairHalo(first,second,adjacency);
+                        proposals.push_back(std::move(proposal));
+                    }
+                }
+            }
+            result.profile.candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+        }
+        auto selected=selectIndependentProposals(std::move(proposals));
+        result.profile.repairPatchCount+=selected.size();
+        bool acceptedBatch=false;
+        for (std::size_t batchSize=selected.size();batchSize>0;) {
+            const std::vector<SourceMergeProposal2D> batch(
+                selected.begin(),selected.begin()+static_cast<std::ptrdiff_t>(batchSize));
+            auto candidatePolygons=applySourceMergeBatch(sourcePolygons,batch);
+            auto candidate=partitionSourcePolygons(
+                candidatePolygons,domain,boundary,tol,&result.profile,true);
+            if (candidate.error.empty()) {
+                const auto candidateQuality=timedFullQuality(
+                    candidate.topology,tol,&result.profile,true);
+                if (betterQualityScore(qualityScore(candidateQuality),qualityScore(quality))) {
+                    partition=std::move(candidate);
+                    sourcePolygons=std::move(candidatePolygons);
+                    result.qualityAgglomeratedSourceCellCount+=batchSize;
+                    result.profile.acceptedSourceRepairs+=batchSize;
+                    ++result.profile.acceptedTopologyCommitCount;
+                    acceptedBatch=true;
+                    break;
+                }
+            }
+            if (batchSize==1) break;
+            batchSize=(batchSize+1)/2;
+        }
+        if (acceptedBatch) continue;
+
+        // Preserve the H2 exhaustive path as a correctness fallback when the
+        // independent batch is invalid or does not improve the global score.
         std::optional<PartitionAttempt2D> bestPartition;
         std::optional<std::vector<Polygon2D>> bestPolygons;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
             if (second>=sourcePolygons.size()) continue;
+            const auto polygonStart=ProfileClock::now();
             const auto merged=mergeAdjacentPolygonsSimple(
                 sourcePolygons[first],sourcePolygons[second],tol);
-            if (!merged) continue;
+            if (!merged) {
+                result.profile.candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
+                continue;
+            }
             auto candidatePolygons=sourcePolygons;
             candidatePolygons[first]=*merged;
             candidatePolygons.erase(
                 candidatePolygons.begin()+static_cast<std::ptrdiff_t>(second));
+            result.profile.candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
             auto candidate=partitionSourcePolygons(
-                candidatePolygons,domain,boundary,tol);
+                candidatePolygons,domain,boundary,tol,&result.profile,true);
             if (!candidate.error.empty()) continue;
-            const auto candidateQuality=evaluateSolverQuality2D(candidate.topology,{},tol);
+            const auto candidateQuality=timedFullQuality(
+                candidate.topology,tol,&result.profile,true);
             const auto candidateScore=qualityScore(candidateQuality);
             if (betterQualityScore(candidateScore,bestScore)) {
                 bestScore=candidateScore;
@@ -663,9 +1268,14 @@ SolverTopologyResult2D buildSolverTopology2D(
         partition=std::move(*bestPartition);
         sourcePolygons=std::move(*bestPolygons);
         ++result.qualityAgglomeratedSourceCellCount;
+        ++result.profile.acceptedSourceRepairs;
+        ++result.profile.acceptedTopologyCommitCount;
     }
-    auto repartitioned=repartitionSolverTopologyByQuality2D(
-        partition.topology,domain,boundary,tol);
+    result.profile.sourceRepairSeconds=profileSeconds(sourceRepairStart);
+    const auto repartitionStart=ProfileClock::now();
+    auto repartitioned=repartitionSolverTopologyByQualityImpl(
+        partition.topology,domain,boundary,tol,&result.profile,true);
+    result.profile.finalRepartitionSeconds=profileSeconds(repartitionStart);
     if (!repartitioned.valid()) {
         result.issues.insert(result.issues.end(),repartitioned.issues.begin(),
                              repartitioned.issues.end());
