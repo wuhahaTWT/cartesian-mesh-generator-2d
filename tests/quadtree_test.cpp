@@ -119,6 +119,35 @@ int main(){
     }
     check(positiveAreaOverlaps == 0, "leaf positive-area overlap count is zero");
 
+    // Independent O(N^2) oracle for the small sizing fixture. This protects
+    // any future face-neighbor layout change from dropping coarse/fine contacts.
+    std::vector<FaceNeighborPair2D> bruteForceNeighbors;
+    for (std::size_t i=0;i<sized.leaves().size();++i) {
+        for (std::size_t j=i+1;j<sized.leaves().size();++j) {
+            const auto& a=sized.leaves()[i].bounds;
+            const auto& b=sized.leaves()[j].bounds;
+            const double xOverlap=std::min(a.max.x,b.max.x)-std::max(a.min.x,b.min.x);
+            const double yOverlap=std::min(a.max.y,b.max.y)-std::max(a.min.y,b.min.y);
+            const bool vertical=std::abs(a.max.x-b.min.x)<1e-12 ||
+                                std::abs(b.max.x-a.min.x)<1e-12;
+            const bool horizontal=std::abs(a.max.y-b.min.y)<1e-12 ||
+                                  std::abs(b.max.y-a.min.y)<1e-12;
+            if ((vertical && yOverlap>1e-12) || (horizontal && xOverlap>1e-12)) {
+                bruteForceNeighbors.push_back({i,j});
+            }
+        }
+    }
+    const auto sweptNeighbors=sized.faceNeighbors();
+    check(sweptNeighbors.size()==bruteForceNeighbors.size(),
+          "face-neighbor search matches brute-force neighbor count");
+    if (sweptNeighbors.size()==bruteForceNeighbors.size()) {
+        for (std::size_t i=0;i<sweptNeighbors.size();++i) {
+            check(sweptNeighbors[i].first==bruteForceNeighbors[i].first &&
+                  sweptNeighbors[i].second==bruteForceNeighbors[i].second,
+                  "face-neighbor search preserves exact deterministic neighbor pairs");
+        }
+    }
+
     Quadtree2D tree2(domain,5,boundary); tree2.refine(boundary,policy);
     check(tree.leaves().size()==tree2.leaves().size(),"repeat run leaf count stable");
     if(tree.leaves().size()==tree2.leaves().size()) for(std::size_t i=0;i<tree.leaves().size();++i){

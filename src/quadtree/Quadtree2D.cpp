@@ -1,5 +1,6 @@
 #include "cartmesh2d/quadtree/Quadtree2D.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -15,9 +16,11 @@ bool boxesOverlapPositive(const AABB2D& a, const AABB2D& b) noexcept {
     return std::max(a.min.x, b.min.x) < std::min(a.max.x, b.max.x) &&
            std::max(a.min.y, b.min.y) < std::min(a.max.y, b.max.y);
 }
-void appendMatches(const FaceMap& positiveFaces, const FaceMap& negativeFaces, std::vector<FaceNeighborPair2D>& result) {
+void appendMatches(const FaceMap& positiveFaces, const FaceMap& negativeFaces,
+                   std::vector<FaceNeighborPair2D>& result) {
     for (const auto& [coordinate, positives] : positiveFaces) {
-        const auto it = negativeFaces.find(coordinate); if (it == negativeFaces.end()) continue;
+        const auto it = negativeFaces.find(coordinate);
+        if (it == negativeFaces.end()) continue;
         auto lhs = positives;
         auto rhs = it->second;
         const auto byInterval = [](const LatticeFace& a, const LatticeFace& b) {
@@ -175,8 +178,25 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
     }
     sortAndAssignIds();
 }
-std::vector<FaceNeighborPair2D> Quadtree2D::faceNeighbors() const { FaceMap left,right,bottom,top; for(std::size_t index=0;index<leaves_.size();++index){ const auto& leaf=leaves_[index]; const std::uint64_t scale=pow2(maxLevel_-leaf.level),x0=leaf.ix*scale,x1=(leaf.ix+1)*scale,y0=leaf.iy*scale,y1=(leaf.iy+1)*scale; left[x0].push_back({index,y0,y1}); right[x1].push_back({index,y0,y1}); bottom[y0].push_back({index,x0,x1}); top[y1].push_back({index,x0,x1}); }
-    std::vector<FaceNeighborPair2D> result; appendMatches(right,left,result); appendMatches(top,bottom,result); std::sort(result.begin(),result.end(),[](const auto&a,const auto&b){return std::tie(a.first,a.second)<std::tie(b.first,b.second);}); result.erase(std::unique(result.begin(),result.end(),[](const auto&a,const auto&b){return a.first==b.first&&a.second==b.second;}),result.end()); return result; }
+std::vector<FaceNeighborPair2D> Quadtree2D::faceNeighbors() const {
+    FaceMap left,right,bottom,top;
+    for(std::size_t index=0;index<leaves_.size();++index){
+        const auto& leaf=leaves_[index];
+        const std::uint64_t scale=pow2(maxLevel_-leaf.level);
+        const std::uint64_t x0=leaf.ix*scale,x1=(leaf.ix+1)*scale;
+        const std::uint64_t y0=leaf.iy*scale,y1=(leaf.iy+1)*scale;
+        left[x0].push_back({index,y0,y1});
+        right[x1].push_back({index,y0,y1});
+        bottom[y0].push_back({index,x0,x1});
+        top[y1].push_back({index,x0,x1});
+    }
+    std::vector<FaceNeighborPair2D> result;
+    appendMatches(right,left,result);
+    appendMatches(top,bottom,result);
+    std::sort(result.begin(),result.end(),[](const auto&a,const auto&b){return std::tie(a.first,a.second)<std::tie(b.first,b.second);});
+    result.erase(std::unique(result.begin(),result.end(),[](const auto&a,const auto&b){return a.first==b.first&&a.second==b.second;}),result.end());
+    return result;
+}
 std::size_t Quadtree2D::countBalanceViolations() const { std::size_t count=0; for(const auto& p:faceNeighbors()){ const auto a=leaves_[p.first].level,b=leaves_[p.second].level; if((a>b?a-b:b-a)>1) ++count; } return count; }
 QuadtreeBalanceReport2D Quadtree2D::enforceTwoToOneBalance(
     const BoundaryLoop& boundary, const TolerancePolicy& tol) {
@@ -188,10 +208,28 @@ QuadtreeBalanceReport2D Quadtree2D::enforceTwoToOneBalance(
         throw std::invalid_argument("balance boundary differs from indexed boundary");
     }
     QuadtreeBalanceReport2D report;
-    report.violationsBefore = countBalanceViolations();
+    const auto timedFaceNeighbors = [&]() {
+        const auto start = std::chrono::steady_clock::now();
+        auto neighbors = faceNeighbors();
+        report.faceNeighborSeconds += std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - start).count();
+        ++report.faceNeighborCalls;
+        return neighbors;
+    };
+    const auto countViolations = [&](const std::vector<FaceNeighborPair2D>& neighbors) {
+        std::size_t count = 0;
+        for (const auto& pair : neighbors) {
+            const auto a = leaves_[pair.first].level;
+            const auto b = leaves_[pair.second].level;
+            if ((a > b ? a - b : b - a) > 1U) ++count;
+        }
+        return count;
+    };
+    auto neighbors = timedFaceNeighbors();
+    report.violationsBefore = countViolations(neighbors);
     while (true) {
         std::vector<std::uint64_t> keys;
-        for (const auto& pair : faceNeighbors()) {
+        for (const auto& pair : neighbors) {
             const auto& a = leaves_[pair.first];
             const auto& b = leaves_[pair.second];
             const auto difference = a.level > b.level ? a.level - b.level : b.level - a.level;
@@ -227,8 +265,9 @@ QuadtreeBalanceReport2D Quadtree2D::enforceTwoToOneBalance(
         if (report.iterations > maxLevel_ + 1U) {
             throw std::runtime_error("2:1 balance failed to converge");
         }
+        neighbors = timedFaceNeighbors();
     }
-    report.violationsAfter = countBalanceViolations();
+    report.violationsAfter = countViolations(neighbors);
     return report;
 }
 double Quadtree2D::totalLeafArea() const noexcept { double total=0.0; for(const auto& leaf:leaves_) total+=leaf.area(); return total; }

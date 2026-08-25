@@ -28,7 +28,14 @@ struct QuadtreeLeaf2D {
     [[nodiscard]] double area() const noexcept;
 };
 struct FaceNeighborPair2D { std::size_t first = 0; std::size_t second = 0; };
-struct QuadtreeBalanceReport2D { std::size_t iterations = 0; std::size_t refinedLeaves = 0; std::size_t violationsBefore = 0; std::size_t violationsAfter = 0; };
+struct QuadtreeBalanceReport2D {
+    std::size_t iterations = 0;
+    std::size_t refinedLeaves = 0;
+    std::size_t violationsBefore = 0;
+    std::size_t violationsAfter = 0;
+    std::size_t faceNeighborCalls = 0;
+    double faceNeighborSeconds = 0.0;
+};
 class Quadtree2D {
 public:
     Quadtree2D(Domain2D domain, std::size_t maxLevel, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
