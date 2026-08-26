@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(cartmesh2d LANGUAGES CXX)
 
 add_library(cartmesh2d
+    src/boundary_layer/BoundaryLayer2D.cpp
     src/geometry/Geometry2D.cpp
     src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
@@ -57,6 +58,17 @@ elseif(MSVC)
     target_compile_options(cartmesh2d_dxf_cli PRIVATE /W4 /permissive-)
 else()
     target_compile_options(cartmesh2d_dxf_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
+add_executable(cartmesh2d_boundary_layer_cli apps/cartmesh2d_boundary_layer_cli.cpp)
+target_link_libraries(cartmesh2d_boundary_layer_cli PRIVATE cartmesh2d::cartmesh2d)
+target_compile_features(cartmesh2d_boundary_layer_cli PRIVATE cxx_std_20)
+if(COMMAND cartmesh_enable_warnings)
+    cartmesh_enable_warnings(cartmesh2d_boundary_layer_cli)
+elseif(MSVC)
+    target_compile_options(cartmesh2d_boundary_layer_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(cartmesh2d_boundary_layer_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
 endif()
 
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
@@ -128,6 +140,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_dxf_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_dxf_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_boundary_layer_tests tests/boundary_layer_test.cpp)
+    target_link_libraries(cartmesh2d_boundary_layer_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_boundary_layer_tests PRIVATE cxx_std_20)
+
     foreach(target
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
@@ -144,7 +160,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_agglomeration_tests
             cartmesh2d_quality_tests
             cartmesh2d_io_tests
-            cartmesh2d_dxf_tests)
+            cartmesh2d_dxf_tests
+            cartmesh2d_boundary_layer_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -170,6 +187,66 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
     add_test(NAME cartmesh2d_stage6b_io_tests COMMAND cartmesh2d_io_tests)
     add_test(NAME cartmesh2d_stageDXF2_import_tests COMMAND cartmesh2d_dxf_tests)
+    add_test(NAME cartmesh2d_stageH4_1_boundary_layer_tests
+             COMMAND cartmesh2d_boundary_layer_tests)
+
+    set(CARTMESH2D_H4_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boundary_layer)
+    add_test(NAME cartmesh2d_stageH4_1_circle_e2e
+        COMMAND cartmesh2d_boundary_layer_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_H4_OUTPUT}/circle 4 first 0.02 1.2 exterior)
+    add_test(NAME cartmesh2d_stageH4_1_circle_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer2d.py
+                ${CARTMESH2D_H4_OUTPUT}/circle.layer.vtk
+                ${CARTMESH2D_H4_OUTPUT}/circle.layer.json
+                --report ${CARTMESH2D_H4_OUTPUT}/circle.independent.json)
+    set_tests_properties(cartmesh2d_stageH4_1_circle_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_1_circle_e2e)
+
+    add_test(NAME cartmesh2d_stageH4_1_rectangle_e2e
+        COMMAND cartmesh2d_boundary_layer_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
+                ${CARTMESH2D_H4_OUTPUT}/rectangle 3 first 0.04 1.25 exterior)
+    add_test(NAME cartmesh2d_stageH4_1_rectangle_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer2d.py
+                ${CARTMESH2D_H4_OUTPUT}/rectangle.layer.vtk
+                ${CARTMESH2D_H4_OUTPUT}/rectangle.layer.json
+                --report ${CARTMESH2D_H4_OUTPUT}/rectangle.independent.json)
+    set_tests_properties(cartmesh2d_stageH4_1_rectangle_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_1_rectangle_e2e)
+
+    add_test(NAME cartmesh2d_stageH4_1_concave_fails_closed
+        COMMAND cartmesh2d_boundary_layer_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy
+                ${CARTMESH2D_H4_OUTPUT}/concave 3 first 0.02 1.1 exterior)
+    set_tests_properties(cartmesh2d_stageH4_1_concave_fails_closed PROPERTIES
+        WILL_FAIL TRUE)
+    add_test(NAME cartmesh2d_stageH4_1_concave_failure_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer_failure.py
+                ${CARTMESH2D_H4_OUTPUT}/concave.layer.json
+                --reason concave_corner)
+    set_tests_properties(cartmesh2d_stageH4_1_concave_failure_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_1_concave_fails_closed)
+
+    add_test(NAME cartmesh2d_stageH4_1_circle_repeat_e2e
+        COMMAND cartmesh2d_boundary_layer_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_H4_OUTPUT}/circle_repeat 4 first 0.02 1.2 exterior)
+    add_test(NAME cartmesh2d_stageH4_1_circle_vtk_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_OUTPUT}/circle.layer.vtk
+                ${CARTMESH2D_H4_OUTPUT}/circle_repeat.layer.vtk)
+    set_tests_properties(cartmesh2d_stageH4_1_circle_vtk_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_1_circle_e2e;cartmesh2d_stageH4_1_circle_repeat_e2e")
+    add_test(NAME cartmesh2d_stageH4_1_circle_report_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_OUTPUT}/circle.layer.json
+                ${CARTMESH2D_H4_OUTPUT}/circle_repeat.layer.json)
+    set_tests_properties(cartmesh2d_stageH4_1_circle_report_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_1_circle_e2e;cartmesh2d_stageH4_1_circle_repeat_e2e")
 
     set(CARTMESH2D_DXF_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dxf)
     add_test(NAME cartmesh2d_stageDXF1_convert_e2e

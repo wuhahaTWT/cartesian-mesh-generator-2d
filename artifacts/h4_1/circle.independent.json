@@ -1,0 +1,10 @@
+{
+  "boundary_edge_count": 64,
+  "internal_edge_count": 224,
+  "issues": [],
+  "max_signed_area": 0.007388184679656434,
+  "min_signed_area": 0.003960082174523309,
+  "point_count": 160,
+  "quad_count": 128,
+  "valid": true
+}

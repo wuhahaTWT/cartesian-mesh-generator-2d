@@ -1,0 +1,13 @@
+{
+  "layer_status": "failed",
+  "failure_reason": "concave_corner",
+  "message": "solid-side concave corner is outside H4-1 capability",
+  "chain_id": 0,
+  "vertex_id": 3,
+  "edge_id": null,
+  "cell_id": null,
+  "requested_thickness": 0.066200000000000009,
+  "safe_thickness": null,
+  "n_layers": 3,
+  "growth_ratio": 1.1000000000000001
+}

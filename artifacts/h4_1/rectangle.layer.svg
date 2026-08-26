@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<style>.bg{fill:#f8fafc}.cell{stroke:#64748b;stroke-width:.65}.hair{stroke:#64748b;stroke-width:.7;stroke-dasharray:3 3;opacity:.7}.ring{fill:none;stroke:#2563eb;stroke-width:1.2}.wall{fill:none;stroke:#b91c1c;stroke-width:3}.outer{fill:none;stroke:#0f172a;stroke-width:2.5}.title{font:600 20px system-ui,sans-serif;fill:#111827}.subtitle{font:13px system-ui,sans-serif;fill:#475569}.panel-title{font:600 14px system-ui,sans-serif;fill:#111827}.panel{font:12px ui-monospace,monospace;fill:#334155}.legend{font:12px system-ui,sans-serif;fill:#334155}</style>
+<rect class="bg" x="0" y="0" width="1200" height="900"/>
+<text class="title" x="54" y="31">CartMesh2D H4-1 — body-fitted quad wrapper strip</text>
+<text class="subtitle" x="54" y="51">isolated candidate; no Cartesian/Cut-cell remainder integration</text>
+<polygon class="cell" fill="#dbeafe" points="107.32538,628.83731 93.338395,642.8243 820.66161,642.8243 806.67462,628.83731"/>
+<polygon class="cell" fill="#dbeafe" points="806.67462,628.83731 820.66161,642.8243 820.66161,265.1757 806.67462,279.16269"/>
+<polygon class="cell" fill="#dbeafe" points="806.67462,279.16269 820.66161,265.1757 93.338395,265.1757 107.32538,279.16269"/>
+<polygon class="cell" fill="#dbeafe" points="107.32538,279.16269 93.338395,265.1757 93.338395,642.8243 107.32538,628.83731"/>
+<polygon class="cell" fill="#bfdbfe" points="93.338395,642.8243 75.854664,660.30803 838.14534,660.30803 820.66161,642.8243"/>
+<polygon class="cell" fill="#bfdbfe" points="820.66161,642.8243 838.14534,660.30803 838.14534,247.69197 820.66161,265.1757"/>
+<polygon class="cell" fill="#bfdbfe" points="820.66161,265.1757 838.14534,247.69197 75.854664,247.69197 93.338395,265.1757"/>
+<polygon class="cell" fill="#bfdbfe" points="93.338395,265.1757 75.854664,247.69197 75.854664,660.30803 93.338395,642.8243"/>
+<polygon class="cell" fill="#93c5fd" points="75.854664,660.30803 54,682.16269 860,682.16269 838.14534,660.30803"/>
+<polygon class="cell" fill="#93c5fd" points="838.14534,660.30803 860,682.16269 860,225.83731 838.14534,247.69197"/>
+<polygon class="cell" fill="#93c5fd" points="838.14534,247.69197 860,225.83731 54,225.83731 75.854664,247.69197"/>
+<polygon class="cell" fill="#93c5fd" points="75.854664,247.69197 54,225.83731 54,682.16269 75.854664,660.30803"/>
+<polyline class="hair" points="107.32538,628.83731 93.338395,642.8243 75.854664,660.30803 54,682.16269"/>
+<polyline class="hair" points="806.67462,628.83731 820.66161,642.8243 838.14534,660.30803 860,682.16269"/>
+<polyline class="hair" points="806.67462,279.16269 820.66161,265.1757 838.14534,247.69197 860,225.83731"/>
+<polyline class="hair" points="107.32538,279.16269 93.338395,265.1757 75.854664,247.69197 54,225.83731"/>
+<polyline class="wall" points="107.32538,628.83731 806.67462,628.83731 806.67462,279.16269 107.32538,279.16269 107.32538,628.83731"/>
+<polyline class="ring" points="93.338395,642.8243 820.66161,642.8243 820.66161,265.1757 93.338395,265.1757 93.338395,642.8243"/>
+<polyline class="ring" points="75.854664,660.30803 838.14534,660.30803 838.14534,247.69197 75.854664,247.69197 75.854664,660.30803"/>
+<polyline class="outer" points="54,682.16269 860,682.16269 860,225.83731 54,225.83731 54,682.16269"/>
+<text class="panel-title" x="880" y="92">Verified H4-1 artifact</text>
+<text class="panel" x="880" y="120">patch: wall_0</text>
+<text class="panel" x="880" y="144">wall vertices: 4</text>
+<text class="panel" x="880" y="168">layers: 3</text>
+<text class="panel" x="880" y="192">quad cells: 12</text>
+<text class="panel" x="880" y="216">layer vertices: 16</text>
+<text class="panel" x="880" y="240">first thickness: 0.04</text>
+<text class="panel" x="880" y="264">total thickness: 0.1525</text>
+<text class="panel" x="880" y="288">growth ratio: 1.25</text>
+<text class="panel" x="880" y="312">min cell area: 0.0416</text>
+<text class="panel" x="880" y="336">max cell area: 0.14015625</text>
+<text class="panel" x="880" y="360">min hair spacing: 0.056568542</text>
+<text class="panel" x="880" y="384">max hair spacing: 0.088388348</text>
+<line class="wall" x1="880" y1="445" x2="918" y2="445"/>
+<text class="legend" x="928" y="449">wall</text>
+<line class="ring" x1="880" y1="473" x2="918" y2="473"/>
+<text class="legend" x="928" y="477">layer edge</text>
+<line class="hair" x1="880" y1="501" x2="918" y2="501"/>
+<text class="legend" x="928" y="505">hair edge</text>
+<line class="outer" x1="880" y1="529" x2="918" y2="529"/>
+<text class="legend" x="928" y="533">outer envelope</text>
+</svg>
