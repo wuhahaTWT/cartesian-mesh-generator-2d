@@ -1,0 +1,14 @@
+{
+  "layer_status": "success",
+  "failure_reason": "none",
+  "strip_count": 1,
+  "layer_vertex_count": 16,
+  "layer_cell_count": 12,
+  "min_cell_area": 0.041599999999999998,
+  "max_cell_area": 0.14015625000000007,
+  "min_layer_thickness": 0.056568542494923803,
+  "max_layer_thickness": 0.088388347648318502,
+  "strips": [
+    {"chain_id": 0, "patch": "wall_0", "closed": true, "fluid_side": "right", "wall_vertex_count": 4, "layer_vertex_count": 16, "layer_cell_count": 12, "n_layers": 3, "first_layer_thickness": 0.040000000000000001, "total_thickness": 0.15250000000000002, "growth_ratio": 1.25, "safe_thickness_limit": 0.45000000000000007}
+  ]
+}
