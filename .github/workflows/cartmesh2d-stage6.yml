@@ -100,13 +100,16 @@ jobs:
               assert report['non_two_valent_interface_vertices'] == 0, path
           PY
 
-          if command -v checkMesh >/dev/null 2>&1; then
-            checkMesh -case "$out/circle-case" | tee "$out/circle.checkMesh.log"
-            checkMesh -case "$out/superellipse-case" | tee "$out/superellipse.checkMesh.log"
-            printf 'checkMesh=PASS\n' | tee "$out/checkmesh_status.txt"
-          else
-            printf 'checkMesh=UNAVAILABLE\n' | tee "$out/checkmesh_status.txt"
-          fi
+          docker pull opencfd/openfoam-run:2606
+          for case_name in circle superellipse; do
+            docker run --rm \
+              -v "$PWD:/workspace" \
+              -w /workspace \
+              opencfd/openfoam-run:2606 \
+              checkMesh -case "/workspace/$out/${case_name}-case" \
+              2>&1 | tee "$out/${case_name}.checkMesh.log"
+          done
+          printf 'checkMesh=PASS\n' | tee "$out/checkmesh_status.txt"
 
       - name: Verify exported acceptance artifacts and CFD fluid side
         shell: bash
