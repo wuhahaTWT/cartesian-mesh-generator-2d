@@ -1,0 +1,10 @@
+# Minimum two-wall narrow-gap failure case. Blank line separates loops.
+0 0
+1 0
+1 1
+0 1
+
+1.2 0
+2.2 0
+2.2 1
+1.2 1

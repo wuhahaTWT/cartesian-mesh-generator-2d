@@ -1,0 +1,22 @@
+{
+  "h4_status": "success",
+  "mesh_mode": "pure_cutcell_fallback",
+  "layer_status": "failed",
+  "fallback_stage": "boundary_layer",
+  "layer_failure_reason": "sharp_corner",
+  "layer_failure_message": "wall turn exceeds the H4-1 sharp-corner limit",
+  "layer_failure_chain_id": 0,
+  "layer_failure_vertex_id": 1,
+  "layer_requested_thickness": 0.02,
+  "layer_safe_thickness": null,
+  "hybrid_failure_reason": "none",
+  "hybrid_failure_message": "",
+  "fallback_failure_message": "",
+  "cell_count": 720,
+  "expected_fluid_area": 10.35,
+  "actual_fluid_area": 10.35,
+  "area_error": 0,
+  "max_non_orthogonality_deg": 50.830203796252704,
+  "min_face_weight": 0.058646039834302312,
+  "min_volume_ratio": 0.037818517237404217
+}

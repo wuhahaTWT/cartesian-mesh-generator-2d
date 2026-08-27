@@ -93,7 +93,8 @@ bool writeText(const std::filesystem::path& path, const std::string& text,
         error = "failed to open report: " + path.string();
         return false;
     }
-    output << text << '\n';
+    output << text;
+    if (text.empty() || text.back() != '\n') output << '\n';
     if (!output.good()) {
         error = "failed while writing report: " + path.string();
         return false;
@@ -106,13 +107,16 @@ void usage() {
         << "usage: cartmesh2d_hybrid_cli <boundary.xy> <output-prefix> "
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
-           "[openfoam-case extrusion-thickness]\n";
+           "[openfoam-case extrusion-thickness] [--robust-fallback]\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 10 && argc != 12) {
+    const bool robustFallback=argc>1 &&
+        std::string(argv[argc-1])=="--robust-fallback";
+    const int inputArgc=argc-(robustFallback?1:0);
+    if (inputArgc != 10 && inputArgc != 12) {
         usage();
         return EXIT_FAILURE;
     }
@@ -167,7 +171,7 @@ int main(int argc, char** argv) {
         chains.push_back(std::move(*chain.chain));
     }
     const auto layers = buildBoundaryLayerStrips2D(chains, layerParameters);
-    if (!layers.success()) {
+    if (!layers.success() && !robustFallback) {
         std::cerr << "H4-1 prerequisite failed: "
                   << boundaryLayerFailureReasonName(layers.failure.reason)
                   << " " << layers.failure.message << '\n';
@@ -177,12 +181,94 @@ int main(int argc, char** argv) {
     const auto wallBounds = originalWalls.bounds();
     const Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
-    const auto hybrid = buildConformalHybridMesh2D(
-        layers, domain, originalWalls, maxLevel, refinement);
-
     const auto parent = outputPrefix.parent_path().empty()
         ? std::filesystem::path(".") : outputPrefix.parent_path();
     std::filesystem::create_directories(parent);
+
+    HybridMeshBuildResult2D hybrid;
+    RobustH4BuildResult2D robust;
+    if (robustFallback) {
+        robust=buildRobustH4Mesh2D(
+            layers,domain,originalWalls,maxLevel,refinement);
+        const auto robustReportPath=outputPrefix.string()+".h4.json";
+        if (!writeRobustH4ReportJson2D(robust,robustReportPath,&error)) {
+            std::cerr<<error<<'\n';
+            return EXIT_FAILURE;
+        }
+        if (!robust.success()) {
+            std::cerr<<"h4_status=failed mesh_mode="
+                     <<h4MeshModeName(robust.mode)
+                     <<" fallback_stage="
+                     <<h4FallbackStageName(robust.fallbackStage)
+                     <<" layer_failure="
+                     <<boundaryLayerFailureReasonName(layers.failure.reason)
+                     <<" fallback_failure="<<robust.fallback.failureMessage
+                     <<" report="<<robustReportPath<<'\n';
+            return EXIT_FAILURE;
+        }
+        if (robust.mode==H4MeshMode2D::PureCutCellFallback) {
+            const auto vtkPath=outputPrefix.string()+".fallback.vtk";
+            const auto cm2dPath=outputPrefix.string()+".fallback.cm2d";
+            const auto solverVtkPath=outputPrefix.string()+".fallback.solver.vtk";
+            const auto solverCm2dPath=outputPrefix.string()+".fallback.solver.cm2d";
+            const auto qualityPath=outputPrefix.string()+".fallback.quality.json";
+            const auto solverQualityPath=
+                outputPrefix.string()+".fallback.solver-quality.json";
+            const auto& fallback=robust.fallback;
+            if (!writeLegacyVtk2D(fallback.topology,vtkPath,&error) ||
+                !writeCm2dTopology(fallback.topology,cm2dPath,&error) ||
+                !writeLegacyVtk2D(fallback.solverTopology,solverVtkPath,&error) ||
+                !writeCm2dTopology(fallback.solverTopology,solverCm2dPath,&error) ||
+                !writeText(qualityPath,qualityReportToJson(fallback.meshQuality),error) ||
+                !writeText(solverQualityPath,
+                           solverQualityReportToJson(fallback.solverQuality),error)) {
+                std::cerr<<error<<'\n';
+                return EXIT_FAILURE;
+            }
+            const auto readback=readCm2dTopology(cm2dPath);
+            const auto solverReadback=readCm2dTopology(solverCm2dPath);
+            if (!readback.valid() || !solverReadback.valid()) {
+                std::cerr<<"fallback CM2D readback failed: "
+                         <<(readback.valid()?solverReadback.error:readback.error)<<'\n';
+                return EXIT_FAILURE;
+            }
+            std::string openFoamStatus="not_requested";
+            if (inputArgc==12) {
+                double thickness=0.0;
+                if (!parseDouble(argv[11],thickness) || thickness<=0.0) {
+                    std::cerr<<"extrusion thickness must be finite and positive\n";
+                    return EXIT_FAILURE;
+                }
+                const auto foam=writeExtrudedOpenFoam2D(
+                    fallback.solverTopology,domain,originalWalls,argv[10],
+                    thickness,&error);
+                if (!foam.valid()) {
+                    std::cerr<<"OpenFOAM output failed: "<<error<<'\n';
+                    return EXIT_FAILURE;
+                }
+                openFoamStatus="written";
+            }
+            std::cout<<"h4_status=success mesh_mode=pure_cutcell_fallback"
+                     <<" layer_status=failed fallback_stage="
+                     <<h4FallbackStageName(robust.fallbackStage)
+                     <<" layer_failure="
+                     <<boundaryLayerFailureReasonName(layers.failure.reason)
+                     <<" cells="<<fallback.solverTopology.cells.size()
+                     <<" area_error="<<fallback.areaError
+                     <<" solver_quality=pass max_nonorthogonality="
+                     <<fallback.solverQuality.maxNonOrthogonalityDeg
+                     <<" min_face_weight="<<fallback.solverQuality.minFaceWeight
+                     <<" min_volume_ratio="<<fallback.solverQuality.minVolumeRatio
+                     <<" openfoam="<<openFoamStatus<<" vtk="<<vtkPath
+                     <<" report="<<robustReportPath<<'\n';
+            return EXIT_SUCCESS;
+        }
+        hybrid=std::move(robust.hybridCandidate);
+    } else {
+        hybrid=buildConformalHybridMesh2D(
+            layers,domain,originalWalls,maxLevel,refinement);
+    }
+
     const auto jsonPath = outputPrefix.string() + ".hybrid.json";
     if (!writeHybridReportJson2D(hybrid, jsonPath, &error)) {
         std::cerr << error << '\n';
@@ -225,7 +311,7 @@ int main(int argc, char** argv) {
     }
 
     std::string openFoamStatus = "not_requested";
-    if (argc == 12) {
+    if (inputArgc == 12) {
         double thickness = 0.0;
         if (!parseDouble(argv[11], thickness) || thickness <= 0.0) {
             std::cerr << "extrusion thickness must be finite and positive\n";

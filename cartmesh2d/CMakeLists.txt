@@ -160,6 +160,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_hybrid_mesh_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_hybrid_mesh_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_h4_robustness_tests tests/h4_robustness_test.cpp)
+    target_link_libraries(cartmesh2d_h4_robustness_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_h4_robustness_tests PRIVATE cxx_std_20)
+
     foreach(target
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
@@ -178,7 +182,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_io_tests
             cartmesh2d_dxf_tests
             cartmesh2d_boundary_layer_tests
-            cartmesh2d_hybrid_mesh_tests)
+            cartmesh2d_hybrid_mesh_tests
+            cartmesh2d_h4_robustness_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -208,6 +213,8 @@ if(CARTMESH2D_BUILD_TESTS)
              COMMAND cartmesh2d_boundary_layer_tests)
     add_test(NAME cartmesh2d_stageH4_2_conformal_hybrid_tests
              COMMAND cartmesh2d_hybrid_mesh_tests)
+    add_test(NAME cartmesh2d_stageH4_3_robustness_rollback_tests
+             COMMAND cartmesh2d_h4_robustness_tests)
 
     set(CARTMESH2D_H4_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boundary_layer)
     add_test(NAME cartmesh2d_stageH4_1_circle_e2e
@@ -293,6 +300,33 @@ if(CARTMESH2D_BUILD_TESTS)
                 --output ${CARTMESH2D_H4_2_OUTPUT}/superellipse.independent.json)
     set_tests_properties(cartmesh2d_stageH4_2_superellipse_independent_reader PROPERTIES
         DEPENDS cartmesh2d_stageH4_2_superellipse_e2e)
+
+    set(CARTMESH2D_H4_3_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/h4_robustness)
+    add_test(NAME cartmesh2d_stageH4_3_concave_fallback_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy
+                ${CARTMESH2D_H4_3_OUTPUT}/concave 6 3 6 3 0.02 1.1 1.0
+                --robust-fallback)
+    add_test(NAME cartmesh2d_stageH4_3_concave_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_h4_fallback2d.py
+                ${CARTMESH2D_H4_3_OUTPUT}/concave.fallback.solver.vtk
+                ${CARTMESH2D_H4_3_OUTPUT}/concave.h4.json
+                --output ${CARTMESH2D_H4_3_OUTPUT}/concave.independent.json)
+    set_tests_properties(cartmesh2d_stageH4_3_concave_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_3_concave_fallback_e2e)
+
+    add_test(NAME cartmesh2d_stageH4_3_concave_repeat_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/concave.xy
+                ${CARTMESH2D_H4_3_OUTPUT}/concave_repeat 6 3 6 3 0.02 1.1 1.0
+                --robust-fallback)
+    add_test(NAME cartmesh2d_stageH4_3_fallback_topology_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_3_OUTPUT}/concave.fallback.solver.cm2d
+                ${CARTMESH2D_H4_3_OUTPUT}/concave_repeat.fallback.solver.cm2d)
+    set_tests_properties(cartmesh2d_stageH4_3_fallback_topology_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_3_concave_fallback_e2e;cartmesh2d_stageH4_3_concave_repeat_e2e")
 
     add_test(NAME cartmesh2d_stageH4_2_circle_repeat_e2e
         COMMAND cartmesh2d_hybrid_cli

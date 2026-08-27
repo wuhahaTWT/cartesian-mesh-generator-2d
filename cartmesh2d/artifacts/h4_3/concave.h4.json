@@ -1,0 +1,22 @@
+{
+  "h4_status": "success",
+  "mesh_mode": "pure_cutcell_fallback",
+  "layer_status": "failed",
+  "fallback_stage": "boundary_layer",
+  "layer_failure_reason": "concave_corner",
+  "layer_failure_message": "solid-side concave corner is outside H4-1 capability",
+  "layer_failure_chain_id": 0,
+  "layer_failure_vertex_id": 3,
+  "layer_requested_thickness": 0.066200000000000009,
+  "layer_safe_thickness": null,
+  "hybrid_failure_reason": "none",
+  "hybrid_failure_message": "",
+  "fallback_failure_message": "",
+  "cell_count": 568,
+  "expected_fluid_area": 13.44,
+  "actual_fluid_area": 13.440000000000007,
+  "area_error": 7.1054273576010019e-15,
+  "max_non_orthogonality_deg": 41.423665625002592,
+  "min_face_weight": 0.10784313725490142,
+  "min_volume_ratio": 0.09090909090909062
+}
