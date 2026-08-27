@@ -36,6 +36,35 @@ namespace {
     return result;
 }
 
+[[nodiscard]] std::vector<Point2D> transitionLoopPoints(
+    const BoundaryLayerStrip2D& strip,double normalDistance,
+    std::size_t subdivision) {
+    const std::size_t outerRing=strip.ringVertexIds.size()-1U;
+    const std::size_t previousRing=outerRing-1U;
+    const auto& outerIds=strip.ringVertexIds[outerRing];
+    const auto& previousIds=strip.ringVertexIds[previousRing];
+    const auto& cumulative=strip.parameters.cumulativeNormalDistances;
+    const double lastSpacing=cumulative.size()==1U?cumulative.front():
+        cumulative.back()-cumulative[cumulative.size()-2U];
+    const double factor=normalDistance/lastSpacing;
+    std::vector<Point2D> points;
+    points.reserve(outerIds.size()*subdivision);
+    for (std::size_t segment=0;segment<outerIds.size();++segment) {
+        const std::size_t next=(segment+1U)%outerIds.size();
+        const auto& a=strip.vertices[outerIds[segment]].point;
+        const auto& b=strip.vertices[outerIds[next]].point;
+        const Vector2D da=a-strip.vertices[previousIds[segment]].point;
+        const Vector2D db=b-strip.vertices[previousIds[next]].point;
+        for (std::size_t sub=0;sub<subdivision;++sub) {
+            const double t=static_cast<double>(sub)/static_cast<double>(subdivision);
+            const Point2D base{a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t};
+            const Vector2D delta{da.x+(db.x-da.x)*t,da.y+(db.y-da.y)*t};
+            points.push_back(base+delta*factor);
+        }
+    }
+    return points;
+}
+
 [[nodiscard]] bool pointOnRegionBoundary(const Point2D& point,
                                          const BoundaryRegion2D& region,
                                          const TolerancePolicy& tol) noexcept {
@@ -188,7 +217,7 @@ void writeJsonString(std::ostream& out, const std::string& value) {
 
 } // namespace
 
-HybridMeshBuildResult2D buildConformalHybridMesh2D(
+static HybridMeshBuildResult2D buildConformalHybridMeshCandidate2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
     const Domain2D& domain,
     const BoundaryRegion2D& originalWalls,
@@ -262,22 +291,22 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     // The first row preserves every outer-envelope edge as one shared face;
     // later rows double the tangential resolution gradually. This prevents a
     // long layer face from meeting many tiny Cartesian fragments in one jump.
-    const double transitionRingThickness=policy.transitionCellWidthMultiplier*std::ldexp(
+    const double backgroundSpacing=std::ldexp(
         std::max(domain.width(),domain.height()),
         -static_cast<int>(remainderRefinement.boundaryLevel));
-    if (policy.transitionRingCount==0U || !(transitionRingThickness>0.0)) {
+    if (policy.transitionRingCount==0U || !(backgroundSpacing>0.0)) {
         return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,
                       "H4 transition fan requires positive width and ring count");
     }
+    const double transitionRingThickness=
+        policy.transitionCellWidthMultiplier*backgroundSpacing;
     std::vector<BoundaryLoop> remainderBoundaryLoops;
     std::vector<Polygon2D> transitionPolygons;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
     for (std::size_t stripId=0;stripId<boundaryLayers.strips.size();++stripId) {
         const auto& strip=boundaryLayers.strips[stripId];
         const std::size_t outerRing=strip.ringVertexIds.size()-1U;
-        const std::size_t previousRing=outerRing-1U;
         const auto& outerIds=strip.ringVertexIds[outerRing];
-        const auto& previousIds=strip.ringVertexIds[previousRing];
         const auto& cumulative=strip.parameters.cumulativeNormalDistances;
         const double lastNormalSpacing=cumulative.size()==1U
             ?cumulative.front()
@@ -292,27 +321,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         std::size_t innerSubdivision=1U;
         for (std::size_t ring=0;ring<policy.transitionRingCount;++ring) {
             const std::size_t outerSubdivision=ring==0U?1U:innerSubdivision*2U;
-            std::vector<Point2D> transitionOuter;
-            transitionOuter.reserve(outerIds.size()*outerSubdivision);
-            const double factor=transitionRingThickness*static_cast<double>(ring+1U)/
-                                lastNormalSpacing;
-            for (std::size_t segment=0;segment<outerIds.size();++segment) {
-                const std::size_t next=(segment+1U)%outerIds.size();
-                const auto& a=strip.vertices[outerIds[segment]].point;
-                const auto& b=strip.vertices[outerIds[next]].point;
-                const Vector2D da=strip.vertices[outerIds[segment]].point-
-                                  strip.vertices[previousIds[segment]].point;
-                const Vector2D db=strip.vertices[outerIds[next]].point-
-                                  strip.vertices[previousIds[next]].point;
-                for (std::size_t sub=0;sub<outerSubdivision;++sub) {
-                    const double t=static_cast<double>(sub)/
-                                   static_cast<double>(outerSubdivision);
-                    const Point2D base{a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t};
-                    const Vector2D delta{da.x+(db.x-da.x)*t,
-                                         da.y+(db.y-da.y)*t};
-                    transitionOuter.push_back(base+delta*factor);
-                }
-            }
+            std::vector<Point2D> transitionOuter=transitionLoopPoints(
+                strip,transitionRingThickness*static_cast<double>(ring+1U),
+                outerSubdivision);
             BoundaryLoop transitionLoop(transitionOuter);
             if (!transitionLoop.diagnose(policy.tolerance).valid()) {
                 return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,
@@ -387,7 +398,6 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t nextSourceId = 0U;
     std::size_t remainderCartesianCount = 0U;
     std::size_t remainderCutCount = 0U;
-    std::size_t transitionPolygonCount = 0U;
     double remainderArea = 0.0;
     for (const auto& leaf : remainderTree->leaves()) {
         auto components = buildCutCells(leaf, remainderBoundaryRegion,
@@ -423,9 +433,6 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                 ++remainderCartesianCount;
             } else {
                 ++remainderCutCount;
-                if (component.fluidPolygon.vertices.size() != 4U) {
-                    ++transitionPolygonCount;
-                }
             }
             remainderArea += component.area;
             remainderSourceCells.push_back(std::move(component));
@@ -489,7 +496,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     for (const auto& polygon:transitionPolygons) {
         HybridSourceCell2D source;
         source.id=hybridSources.size();
-        source.kind=HybridCellKind2D::RemainderCut;
+        source.kind=HybridCellKind2D::Transition;
         source.polygon=polygon;
         source.area=polygon.area();
         transitionArea+=source.area;
@@ -624,16 +631,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     solverConstraints.inputPolygonOverrides.reserve(topology.cells.size());
     for (const auto& cell:topology.cells) {
         const auto& source=hybridSources[cell.sourceId];
-        const bool transition=source.kind==HybridCellKind2D::RemainderCut &&
-                              !source.quadtreeSourceKey.has_value();
+        const bool transition=source.kind==HybridCellKind2D::Transition;
         solverConstraints.immutableInputCells.push_back(
             source.kind==HybridCellKind2D::BoundaryLayer);
         solverConstraints.preserveInputCells.push_back(transition);
-        if (transition || source.kind==HybridCellKind2D::BoundaryLayer) {
-            solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
-        } else {
-            solverConstraints.inputPolygonOverrides.emplace_back(std::nullopt);
-        }
+        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
     }
     auto solverTopologyReport=buildSolverTopology2D(
         topology,domain,originalWalls,solverConstraints,policy.tolerance);
@@ -711,8 +713,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.remainderCartesianCellCount = remainderCartesianCount;
     result.metrics.remainderCutCellCount = remainderCutCount;
     result.metrics.boundaryLayerCellCount = layerCellCount;
-    result.metrics.transitionPolygonCount = transitionPolygonCount+
-                                            transitionPolygons.size();
+    result.metrics.transitionPolygonCount = transitionPolygons.size();
     result.metrics.remainderSmallCellCount=result.remainderSmallCells.smallCellCount;
     result.metrics.remainderAgglomeratedCellCount=
         result.remainderStabilization.mergedSmallCellCount;
@@ -731,7 +732,52 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.expectedFluidArea = expectedFluidArea;
     result.metrics.actualFluidArea = actualFluidArea;
     result.metrics.areaError = areaError;
+    result.metrics.selectedTransitionWidthMultiplier=
+        policy.transitionCellWidthMultiplier;
     return result;
+}
+
+HybridMeshBuildResult2D buildConformalHybridMesh2D(
+    const BoundaryLayerBuildResult2D& boundaryLayers,
+    const Domain2D& domain,
+    const BoundaryRegion2D& originalWalls,
+    std::size_t remainderMaxLevel,
+    const QuadtreeRefinementPolicy2D& remainderRefinement,
+    const HybridMeshPolicy2D& policy) {
+    constexpr std::array<double,9> offsets{
+        0.0,-0.01,-0.02,0.01,-0.03,0.02,-0.04,0.03,0.04};
+    std::optional<HybridMeshBuildResult2D> bestFailure;
+    std::size_t bestIssueCount=std::numeric_limits<std::size_t>::max();
+    for (const double offset:offsets) {
+        HybridMeshPolicy2D candidatePolicy=policy;
+        candidatePolicy.transitionCellWidthMultiplier+=offset;
+        if (!(candidatePolicy.transitionCellWidthMultiplier>0.0)) continue;
+        auto candidate=buildConformalHybridMeshCandidate2D(
+            boundaryLayers,domain,originalWalls,remainderMaxLevel,
+            remainderRefinement,candidatePolicy);
+        if (candidate.success()) return candidate;
+        const bool transitionRepairable=
+            candidate.failure.reason==HybridMeshFailureReason2D::SolverQualityFailed ||
+            candidate.failure.reason==HybridMeshFailureReason2D::SolverTopologyFailed ||
+            candidate.failure.reason==HybridMeshFailureReason2D::InvalidOuterEnvelope ||
+            candidate.failure.reason==HybridMeshFailureReason2D::OuterEnvelopeOutsideDomain;
+        if (!transitionRepairable) return candidate;
+        const std::size_t issueCount=candidate.solverQuality.issues.empty()
+            ?std::numeric_limits<std::size_t>::max()-1U
+            :candidate.solverQuality.issues.size();
+        if (!bestFailure || issueCount<bestIssueCount) {
+            bestIssueCount=issueCount;
+            bestFailure=std::move(candidate);
+        }
+    }
+    if (!bestFailure) {
+        return failed(HybridMeshFailureReason2D::SolverQualityFailed,
+                      "no valid deterministic layer-aware transition candidate");
+    }
+    bestFailure->failure.message=
+        "all deterministic layer-aware transition candidates failed; "+
+        bestFailure->failure.message;
+    return std::move(*bestFailure);
 }
 
 const char* hybridMeshFailureReasonName(HybridMeshFailureReason2D reason) noexcept {
@@ -762,6 +808,7 @@ const char* hybridCellKindName(HybridCellKind2D kind) noexcept {
     case HybridCellKind2D::BoundaryLayer: return "boundary_layer";
     case HybridCellKind2D::RemainderCut: return "remainder_cut";
     case HybridCellKind2D::RemainderCartesian: return "remainder_cartesian";
+    case HybridCellKind2D::Transition: return "transition";
     }
     return "unknown";
 }
@@ -852,6 +899,16 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"remainder_cut_cell_count\": " << metrics.remainderCutCellCount << ",\n";
         out << "  \"remainder_cartesian_cell_count\": " << metrics.remainderCartesianCellCount << ",\n";
         out << "  \"transition_polygon_count\": " << metrics.transitionPolygonCount << ",\n";
+        out << "  \"remainder_small_cell_count\": " << metrics.remainderSmallCellCount << ",\n";
+        out << "  \"remainder_agglomerated_cell_count\": "
+            << metrics.remainderAgglomeratedCellCount << ",\n";
+        out << "  \"solver_cell_count\": " << metrics.solverCellCount << ",\n";
+        out << "  \"solver_quality_agglomerations\": "
+            << metrics.solverQualityAgglomerations << ",\n";
+        out << "  \"solver_quality_repartitions\": "
+            << metrics.solverQualityRepartitions << ",\n";
+        out << "  \"selected_transition_width_multiplier\": "
+            << metrics.selectedTransitionWidthMultiplier << ",\n";
         out << "  \"vertex_count\": " << metrics.unifiedVertexCount << ",\n";
         out << "  \"edge_count\": " << metrics.unifiedEdgeCount << ",\n";
         out << "  \"cell_count\": " << metrics.unifiedCellCount << ",\n";
@@ -874,6 +931,10 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"mesh_quality_valid\": " << (result.meshQuality.valid() ? "true" : "false") << ",\n";
         out << "  \"solver_quality_valid\": " << (result.solverQuality.valid() ? "true" : "false") << ",\n";
         out << "  \"solver_quality_issue_count\": " << result.solverQuality.issues.size() << ",\n";
+        out << "  \"max_non_orthogonality_deg\": "
+            << result.solverQuality.maxNonOrthogonalityDeg << ",\n";
+        out << "  \"min_face_weight\": " << result.solverQuality.minFaceWeight << ",\n";
+        out << "  \"min_volume_ratio\": " << result.solverQuality.minVolumeRatio << ",\n";
         out << "  \"balance_violations_after\": " << result.balance.violationsAfter << "\n}\n";
     }
     if (!out.good()) {

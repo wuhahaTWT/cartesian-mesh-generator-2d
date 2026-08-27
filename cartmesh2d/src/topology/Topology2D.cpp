@@ -413,8 +413,12 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             }
         } else {
             ++mesh.audit.nonManifoldEdges;
+            std::string detail="edge has more than two incident cells:";
+            for (const auto& use:incident) {
+                detail+=" "+std::to_string(use.cellId);
+            }
             mesh.issues.push_back({TopologyIssueCode2D::NonManifoldEdge, edge.id,
-                                   "edge has more than two incident cells"});
+                                   std::move(detail)});
         }
         edgeIds[key] = edge.id;
         mesh.edges.push_back(edge);

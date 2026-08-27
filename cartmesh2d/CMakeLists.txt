@@ -304,6 +304,12 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_H4_2_OUTPUT}/circle_repeat.hybrid.cm2d)
     set_tests_properties(cartmesh2d_stageH4_2_circle_topology_deterministic PROPERTIES
         DEPENDS "cartmesh2d_stageH4_2_circle_e2e;cartmesh2d_stageH4_2_circle_repeat_e2e")
+    add_test(NAME cartmesh2d_stageH4_2_circle_solver_topology_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.solver.cm2d
+                ${CARTMESH2D_H4_2_OUTPUT}/circle_repeat.hybrid.solver.cm2d)
+    set_tests_properties(cartmesh2d_stageH4_2_circle_solver_topology_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_2_circle_e2e;cartmesh2d_stageH4_2_circle_repeat_e2e")
     add_test(NAME cartmesh2d_stageH4_2_circle_report_deterministic
         COMMAND ${CMAKE_COMMAND} -E compare_files
                 ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.json

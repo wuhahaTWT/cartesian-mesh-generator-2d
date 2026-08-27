@@ -60,6 +60,8 @@ def render(vtk: Path, report_path: Path, output: Path) -> None:
             fill = colors[min(max(layers[cid], 0), len(colors)-1)]
         elif kinds[cid] == 1:
             fill = "#fed7aa"
+        elif kinds[cid] == 3:
+            fill = "#fde68a"
         else:
             fill = "#ecfccb"
         out.append(f'<polygon points="{polygon(cells[cid])}" fill="{fill}" stroke="#64748b" stroke-width="0.55"/>')
@@ -73,9 +75,9 @@ def render(vtk: Path, report_path: Path, output: Path) -> None:
     out.append(f'<text x="{px}" y="92" font-family="system-ui" font-size="15" font-weight="650">H4-2 topology audit</text>')
     rows = [
         ("layer cells", report["boundary_layer_cell_count"]),
-        ("transition / cut", report["remainder_cut_cell_count"]),
+        ("transition cells", report["transition_polygon_count"]),
+        ("remainder cut cells", report["remainder_cut_cell_count"]),
         ("Cartesian cells", report["remainder_cartesian_cell_count"]),
-        ("general polygons", report["transition_polygon_count"]),
         ("shared interface edges", report["interface_edge_count"]),
         ("single-owner interface", report["single_owner_interface_edges"]),
         ("wrong interface pairs", report["wrong_cell_pair_interface_edges"]),
@@ -85,7 +87,7 @@ def render(vtk: Path, report_path: Path, output: Path) -> None:
     ]
     for i, (key, value) in enumerate(rows):
         out.append(f'<text x="{px}" y="{124+i*25}" font-family="ui-monospace,monospace" font-size="12" fill="#334155">{html.escape(str(key))}: {html.escape(str(value))}</text>')
-    legend = [("#b91c1c", "wall"), ("#60a5fa", "boundary layers"), ("#111827", "shared outer envelope"), ("#fed7aa", "transition / cut cells"), ("#ecfccb", "Cartesian region")]
+    legend = [("#b91c1c", "wall"), ("#60a5fa", "boundary layers"), ("#111827", "shared outer envelope"), ("#fde68a", "graded transition fan"), ("#fed7aa", "remainder cut cells"), ("#ecfccb", "Cartesian region")]
     y = 430
     for color, label in legend:
         out.append(f'<rect x="{px}" y="{y-11}" width="34" height="14" fill="{color}"/><text x="{px+46}" y="{y}" font-family="system-ui" font-size="12" fill="#334155">{label}</text>')

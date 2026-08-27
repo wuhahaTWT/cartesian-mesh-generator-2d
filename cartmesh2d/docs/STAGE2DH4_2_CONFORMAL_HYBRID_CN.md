@@ -1,81 +1,76 @@
-# CartMesh2D H4-2：边界层与 Cartesian/Cut-cell 共形拼接
+# CartMesh2D H4：共形 hybrid mesh solver-ready 收口
 
 日期：2026-08-27  
-状态：H4-2 实现与验收完成；OpenFOAM 求解器质量门禁未通过，未宣称可用
+状态：circle / superellipse 原生二维 hybrid mesh 已通过既有 solver-quality 门禁
 
-## 1. 本阶段边界
+## 1. 实现边界
 
-本阶段把 H4-1 的固定层数、闭合外流场 boundary-layer strip 接入现有二维
-Cartesian/Cut-cell 网格。未实现 local layer dropping、复杂 termination、Delaunay
-transition、三维或 overset，也未改动三维核心代码。
+本轮保留 H4-1 固定 boundary-layer strip 与 H4-2 outer-envelope 共形接口，不实现
+local layer dropping、复杂 termination、Delaunay、overset 或三维功能，也未修改三维核心。
 
-## 2. 实现路径
+## 2. Solver-ready 路径
 
-1. 从每个成功的 H4-1 strip 提取最后一圈顶点，构造 `BoundaryRegion2D`
-   outer envelope；该区域必须有效、逆时针、彼此不嵌套并严格位于计算域内部。
-2. 用 outer envelope 作为新的固体边界，重新建立 remainder quadtree，并对每个叶子
-   调用原生 `buildCutCells(..., FluidRegion2D::Exterior)`。因此 strip 占据的区域不会
-   进入 remainder，和 envelope 相交的背景单元会被真实重新裁剪。
-3. 将 H4-1 quad 和 remainder polygon 都转换为不可变的拓扑源，交给一次
-   `buildGlobalTopology`。全局拓扑装配现在会对任意方向边（不仅水平/竖直边）执行
-   共线顶点公共分割，因而 Cut-cell 在 envelope 上产生的交点也会分割 layer 外边。
-4. 接口审计逐条要求 outer-envelope edge 恰有两个 owner，且必须是一侧 layer、
-   一侧 remainder；接口顶点度数必须为 2，接口总长度必须与 envelope 周长闭合。
-5. 重新从相同不可变源构建一次拓扑，并逐项比较坐标、ID、owner/neighbour 和连接，
-   防止非确定性。任一步失败只返回空失败候选，不修改 H4-1 输入或既有网格。
+1. H4-1 的 wall、层数、layer quad 和 outer envelope 全部保持不变。
+2. outer envelope 外增加三圈可修复的渐进 transition fan；第一圈与每条 envelope edge
+   一一共享，后续圈逐级加密切向分辨率，避免长 layer face 直接连接许多细小 Cut-cell face。
+3. transition 宽度使用确定性、事务式候选修复：每个候选都完整运行 remainder Cut-cell、
+   small-cell analysis、agglomeration、统一拓扑、`buildSolverTopology2D` 和原 solver-quality
+   阈值；仅返回首个真实 PASS 的候选，失败候选不会修改 H4-1 输入。
+4. solver repair 新增 immutable/preserve 约束：固定 layer cell 不允许合并或重分区；
+   transition/remainder 可以参与既有 quality agglomeration 和 local repartition。
+5. `BoundaryLayer`、`Transition`、`RemainderCut`、`RemainderCartesian` 使用明确的 hybrid
+   source 类型。layer/transition 没有伪造 quadtree key，质量报告只从真实 remainder
+   Cut-cell 统计 cut 数量与 level distribution。
+6. H4-1 strip 审计显式要求每个 quad 严格凸，并包含制造的正面积凹四边形回归。
 
-## 3. 验收结果
+## 3. 验收指标
 
-| 样例 | layer | remainder cut | Cartesian | 一般 polygon | 接口边/点 | 面积误差 |
-|---|---:|---:|---:|---:|---:|---:|
-| 32 边形圆，4 层 | 128 | 140 | 208 | 92 | 168 / 168 | `-2.31e-14` |
-| 温和凸 superellipse，3 层 | 72 | 148 | 276 | 63 | 171 / 171 | `-1.07e-14` |
+| 样例 | layer | transition | remainder cut | Cartesian | base/solver cells | 接口边 | 面积误差 | max non-orth | min face weight | min volume ratio |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| shifted 32-segment circle，4 层 | 128 | 128 | 188 | 304 | 700 / 728 | 32 | `-1.07e-14` | `55.3968°` | `0.0872106` | `0.0270379` |
+| `superellipse_24`，3 层 | 72 | 96 | 200 | 336 | 680 / 703 | 24 | `5.15e-14` | `69.8923°` | `0.0937449` | `0.0104554` |
 
-两例均满足：
+两例均为：conformal interface PASS、area conservation PASS、topology PASS、
+solver-quality PASS。阈值仍为 non-orthogonality `70°`、face weight `0.05`、volume ratio
+`0.01`，没有放宽或隐藏失败。
 
-- `single_owner_interface_edges = 0`；
-- `wrong_cell_pair_interface_edges = 0`；
-- `non_two_valent_interface_vertices = 0`；
-- 所有单元有正面积；
-- 全局拓扑有效，2:1 balance violation 为 0；
-- 独立 Python 读取器确认无 overlap、无 non-manifold edge，面积覆盖闭合；
-- 同输入重复生成的 `.cm2d` 和 JSON 字节一致。
+独立 hybrid reader 验证两例均无 overlap、non-manifold edge 或非正面积；OpenFOAM
+独立 reader 验证 solver topology 写出的 case 闭合、owner/neighbour 有效且最小体积为正：
 
-构建和完整回归命令：
+- circle：728 cells，3212 faces，最小体积 `4.14567e-05`；
+- superellipse：703 cells，3100 faces，最小体积 `2.93687e-05`。
 
-```bash
-cmake -S . -B build/release-2d -DCMAKE_BUILD_TYPE=Release
-cmake --build build/release-2d -j4
-ctest --test-dir build/release-2d --output-on-failure
-```
+完整构建与回归：`98/98 PASS`；H4 专项：`19/19 PASS`。circle 的 base CM2D、solver
+CM2D 和 JSON 重复输出均字节一致。
 
-结果：`97/97` 通过，其中 H4-2 专项 `8/8` 通过；H1-H3、H4-1 继续通过。
+## 4. H3 scalability
 
-## 4. 独立产物与可视化
+Release、单进程/单线程、Apple M1 MacBook Air 8 GB，NACA0012 约 100k 路径：
 
-- `artifacts/h4_2/circle_hybrid.hybrid.{vtk,cm2d,json}`
-- `artifacts/h4_2/circle_hybrid.independent.json`
-- `artifacts/h4_2/circle_hybrid.{svg,png}`
-- `artifacts/h4_2/superellipse_hybrid.hybrid.{vtk,cm2d,json}`
-- `artifacts/h4_2/superellipse_hybrid.independent.json`
-- `artifacts/h4_2/superellipse_hybrid.{svg,png}`
+| 指标 | 修改前 | 修改后 | 变化 |
+|---|---:|---:|---:|
+| leaves | 101734 | 101734 | 0 |
+| solver cells / faces | 102218 / 204678 | 102218 / 204678 | 0 |
+| solver topology | 6.143073 s | 6.049187 s | -1.5% |
+| total internal | 10.167817 s | 10.028113 s | -1.4% |
+| external wall clock | 10.21 s | 10.07 s | -1.4% |
+| peak RSS | 381008 KiB | 373328 KiB | -2.0% |
 
-图中红线为 wall，蓝色带为 boundary layers，黑粗线为双方共享的 outer envelope，
-橙色为 transition/Cut-cell，浅绿色为 Cartesian region。
+任意方向 edge splitting 使用窄坐标范围候选搜索；本轮未观察到 H3 scalability 退化。
 
-## 5. OpenFOAM 边界
+## 5. 产物与 OpenFOAM 状态
 
-现有 writer 的输入就是统一 `TopologyMesh2D`，接口形式无需重构；H4-2 CLI 已接入可选
-OpenFOAM 输出路径。但两个验收候选都未通过既有 solver-quality gate：圆形有 128 项、
-superellipse 有 175 项，主要是 envelope 与笛卡尔网格任意相交形成的极小体积比、低
-face weight 和超过 70 度的非正交面。本机也没有 `checkMesh`/`foamVersion`。
+`cartmesh2d/artifacts/h4_2/` 保存 circle 与 superellipse 的：
 
-因此本阶段没有绕过质量门禁写出 case，也没有伪报真实 `checkMesh` 成功。后续若要进入
-OpenFOAM，应单独处理 transition 小单元/质量稳定化，而不是放宽阈值或隐藏失败。
+- 分类可视化 `.hybrid.vtk`、base `.hybrid.cm2d`、JSON/quality 报告；
+- solver-ready `.hybrid.solver.vtk` 与 `.hybrid.solver.cm2d`；
+- 独立检查 JSON 与 `.svg`/`.png` 可视化。
 
-## 6. 已知限制
+CLI 已用 `solverTopology` 写出两套真实 OpenFOAM case，独立 reader PASS。本机
+`checkMesh` 不在 PATH，因此真实 `checkMesh` 状态为 **UNAVAILABLE / NOT RUN**，没有伪报。
 
-- 当前仅支持 H4-1 已明确支持的闭合、外流场、固定层数 strip；
-- nested wall、local dropping 和复杂 termination 仍明确拒绝；
-- 已验收样例不存在已知非共形接口；
-- 已知失败边界是求解器质量，不是 H4-2 的几何/拓扑共形性。
+## 6. 已知边界
+
+- 当前仍仅支持 H4-1 已支持的闭合外流、固定层数 strip；
+- nested wall、local dropping 和复杂 termination 继续 fail closed；
+- 已验收 circle/superellipse 不存在已知非共形接口或 solver-quality 失败。

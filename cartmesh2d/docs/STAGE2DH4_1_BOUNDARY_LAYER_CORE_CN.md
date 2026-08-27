@@ -103,6 +103,7 @@ fluid 在左时使用镜像顺序。算法不会在发现负面积后临时 reve
 一层 wrapper 先独立检查：
 
 - quad signed area 大于尺度化面积 tolerance；
+- quad 每个连续转角均为严格正向，明确保证凸四边形；
 - quad 不自交；
 - ring 无自交且不穿 wall；
 - 非邻接 cell 无边相交或内部重叠；
