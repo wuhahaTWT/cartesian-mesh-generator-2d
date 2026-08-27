@@ -198,11 +198,15 @@ int main(int argc, char** argv) {
 
     const auto vtkPath = outputPrefix.string() + ".hybrid.vtk";
     const auto cm2dPath = outputPrefix.string() + ".hybrid.cm2d";
+    const auto solverVtkPath = outputPrefix.string() + ".hybrid.solver.vtk";
+    const auto solverCm2dPath = outputPrefix.string() + ".hybrid.solver.cm2d";
     const auto qualityPath = outputPrefix.string() + ".hybrid.quality.json";
     const auto solverQualityPath = outputPrefix.string() +
                                    ".hybrid.solver-quality.json";
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||
         !writeCm2dTopology(hybrid.topology, cm2dPath, &error) ||
+        !writeLegacyVtk2D(hybrid.solverTopology, solverVtkPath, &error) ||
+        !writeCm2dTopology(hybrid.solverTopology, solverCm2dPath, &error) ||
         !writeText(qualityPath, qualityReportToJson(hybrid.meshQuality), error) ||
         !writeText(solverQualityPath,
                    solverQualityReportToJson(hybrid.solverQuality), error)) {
@@ -210,8 +214,10 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     const auto readback = readCm2dTopology(cm2dPath);
-    if (!readback.valid()) {
-        std::cerr << "CM2D readback failed: " << readback.error << '\n';
+    const auto solverReadback = readCm2dTopology(solverCm2dPath);
+    if (!readback.valid() || !solverReadback.valid() ||
+        solverReadback.topology.cells.size() != hybrid.solverTopology.cells.size()) {
+        std::cerr << "CM2D readback failed for hybrid or solver topology\n";
         return EXIT_FAILURE;
     }
 
@@ -222,12 +228,12 @@ int main(int argc, char** argv) {
             std::cerr << "extrusion thickness must be finite and positive\n";
             return EXIT_FAILURE;
         }
-        if (!hybrid.solverQuality.valid()) {
+        if (!hybrid.solverQuality.valid() || !hybrid.solverTopology.valid()) {
             std::cerr << "hybrid solver-quality gate failed; refusing OpenFOAM output\n";
             return EXIT_FAILURE;
         }
         const auto foam = writeExtrudedOpenFoam2D(
-            hybrid.topology, domain, originalWalls, argv[10], thickness, &error);
+            hybrid.solverTopology, domain, originalWalls, argv[10], thickness, &error);
         if (!foam.valid()) {
             std::cerr << "OpenFOAM output failed: " << error << '\n';
             return EXIT_FAILURE;
@@ -236,16 +242,26 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "hybrid_status=success cells=" << hybrid.metrics.unifiedCellCount
+              << " solver_cells=" << hybrid.metrics.solverCellCount
               << " layer_cells=" << hybrid.metrics.boundaryLayerCellCount
               << " remainder_cut=" << hybrid.metrics.remainderCutCellCount
               << " remainder_cartesian="
               << hybrid.metrics.remainderCartesianCellCount
+              << " transition_rings=" << hybrid.metrics.transitionRingCount
+              << " transition_final_subdivision="
+              << hybrid.metrics.transitionFinalTangentialSubdivision
+              << " transition_target_h=" << hybrid.metrics.transitionTargetCellSize
+              << " transition_ring_thickness="
+              << hybrid.metrics.transitionRingThickness
               << " interface_edges=" << hybrid.interfaceAudit.interfaceEdgeCount
               << " interface_vertices=" << hybrid.interfaceAudit.interfaceVertexCount
               << " area_error=" << hybrid.metrics.areaError
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
               << " openfoam=" << openFoamStatus
-              << " vtk=" << vtkPath << " report=" << jsonPath << '\n';
+              << " vtk=" << vtkPath
+              << " solver_vtk=" << solverVtkPath
+              << " solver_cm2d=" << solverCm2dPath
+              << " report=" << jsonPath << '\n';
     return EXIT_SUCCESS;
 }

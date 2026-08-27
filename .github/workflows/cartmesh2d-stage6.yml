@@ -29,6 +29,9 @@ jobs:
           cartmesh2d_geometry_tests
           cartmesh2d_grid_tests
           cartmesh2d_quadtree_tests
+          cartmesh2d_spatial_index_tests
+          cartmesh2d_multiloop_tests
+          cartmesh2d_solver_export_tests
           cartmesh2d_cutcell_tests
           cartmesh2d_cutcell_components_tests
           cartmesh2d_cutcell_quadtree_audit_tests
@@ -38,10 +41,16 @@ jobs:
           cartmesh2d_agglomeration_tests
           cartmesh2d_quality_tests
           cartmesh2d_io_tests
+          cartmesh2d_dxf_tests
+          cartmesh2d_boundary_layer_tests
+          cartmesh2d_hybrid_mesh_tests
           cartmesh2d_cli
+          cartmesh2d_dxf_cli
+          cartmesh2d_boundary_layer_cli
+          cartmesh2d_hybrid_cli
           -j2
 
-      - name: Run Stage 0-6 native 2D tests
+      - name: Run native 2D stage tests
         run: ctest --test-dir build_2d -R '^cartmesh2d_stage' --output-on-failure
 
       - name: Verify exported acceptance artifacts and CFD fluid side
