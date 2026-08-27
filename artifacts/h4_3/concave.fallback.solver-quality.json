@@ -1,0 +1,28 @@
+{
+  "valid": true,
+  "policy": {
+    "max_non_orthogonality_deg": 70,
+    "max_internal_skewness": 4,
+    "max_boundary_skewness": 4,
+    "max_concavity_deg": 80,
+    "max_cell_aspect": 1000,
+    "min_interior_angle_deg": 0.5,
+    "min_face_length": 1.01e-10,
+    "min_face_weight": 0.050000000000000003,
+    "min_volume_ratio": 0.01
+  },
+  "metrics": {
+    "max_non_orthogonality_deg": 41.423665625002592,
+    "max_internal_skewness": 0.48343901101901565,
+    "max_boundary_skewness": 0.33333333333333331,
+    "max_concavity_deg": 0,
+    "max_cell_aspect": 7.3168437612944333,
+    "min_interior_angle_deg": 26.56505117707799,
+    "min_face_length": 0.012499999999999956,
+    "min_face_weight": 0.10784313725490142,
+    "min_volume_ratio": 0.09090909090909062,
+    "min_compactness": 0.38409806645421452
+  },
+  "issue_count": 0,
+  "issues": []
+}

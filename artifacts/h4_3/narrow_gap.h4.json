@@ -1,0 +1,22 @@
+{
+  "h4_status": "success",
+  "mesh_mode": "pure_cutcell_fallback",
+  "layer_status": "failed",
+  "fallback_stage": "boundary_layer",
+  "layer_failure_reason": "thickness_exceeds_safe_limit",
+  "layer_failure_message": "requested total thickness exceeds the computed geometric safety limit",
+  "layer_failure_chain_id": 0,
+  "layer_failure_vertex_id": null,
+  "layer_requested_thickness": 0.11,
+  "layer_safe_thickness": 0.089999999999999983,
+  "hybrid_failure_reason": "none",
+  "hybrid_failure_message": "",
+  "fallback_failure_message": "",
+  "cell_count": 931,
+  "expected_fluid_area": 10.600000000000001,
+  "actual_fluid_area": 10.599999999999994,
+  "area_error": -7.1054273576010019e-15,
+  "max_non_orthogonality_deg": 49.987099327734697,
+  "min_face_weight": 0.050183598531202522,
+  "min_volume_ratio": 0.048780487804875004
+}

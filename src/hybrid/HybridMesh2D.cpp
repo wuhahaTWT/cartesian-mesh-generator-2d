@@ -780,6 +780,160 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     return std::move(*bestFailure);
 }
 
+static PureCutCellFallback2D buildPureCutCellFallback2D(
+    const Domain2D& domain,const BoundaryRegion2D& originalWalls,
+    std::size_t maxLevel,const QuadtreeRefinementPolicy2D& refinement,
+    const HybridMeshPolicy2D& policy) {
+    PureCutCellFallback2D result;
+    if (!domain.valid(policy.tolerance) ||
+        !originalWalls.diagnose(policy.tolerance).valid() ||
+        refinement.minimumLevel>maxLevel || refinement.boundaryLevel>maxLevel) {
+        result.failureMessage="pure Cut-cell fallback requires valid inputs";
+        return result;
+    }
+    std::optional<Quadtree2D> tree;
+    try {
+        tree.emplace(domain,maxLevel,originalWalls,policy.tolerance);
+        tree->refine(originalWalls,refinement,policy.tolerance);
+        result.balance=tree->enforceTwoToOneBalance(originalWalls,policy.tolerance);
+    } catch (const std::exception& exception) {
+        result.failureMessage=std::string("pure Cut-cell fallback refinement failed: ")+
+                              exception.what();
+        return result;
+    }
+    if (result.balance.violationsAfter!=0U || !tree->deterministicOrderingValid()) {
+        result.failureMessage="pure Cut-cell fallback quadtree is not balanced/deterministic";
+        return result;
+    }
+    result.quadtreeLeafCount=tree->leaves().size();
+    std::size_t sourceId=0U;
+    for (const auto& leaf:tree->leaves()) {
+        auto components=buildCutCells(
+            leaf,originalWalls,FluidRegion2D::Exterior,policy.tolerance);
+        for (auto& component:components) {
+            if (!component.valid() || component.kind==CutCellKind::Unsupported) {
+                result.failureMessage=component.issues.empty()
+                    ?"pure Cut-cell fallback encountered unsupported geometry"
+                    :component.issues.front().message;
+                return result;
+            }
+            component.sourceId=sourceId++;
+            component.sourceKey=leaf.key;
+            if (component.kind!=CutCellKind::Empty) {
+                result.actualFluidArea+=component.area;
+            }
+            result.sourceCells.push_back(std::move(component));
+        }
+    }
+    result.expectedFluidArea=domain.width()*domain.height()-
+                             originalWalls.area(policy.tolerance);
+    result.areaError=result.actualFluidArea-result.expectedFluidArea;
+    const double areaTolerance=policy.areaToleranceMultiplier*
+        (policy.tolerance.absolute*policy.tolerance.absolute+
+         policy.tolerance.relative*std::max(1.0,result.expectedFluidArea));
+    if (std::abs(result.areaError)>areaTolerance) {
+        result.failureMessage="pure Cut-cell fallback failed fluid-area conservation";
+        return result;
+    }
+    const auto sourceTopology=buildGlobalTopology(
+        result.sourceCells,domain,originalWalls,policy.tolerance);
+    if (!sourceTopology.valid()) {
+        result.failureMessage=sourceTopology.issues.empty()
+            ?"pure Cut-cell fallback source topology failed"
+            :sourceTopology.issues.front().message;
+        return result;
+    }
+    SmallCellPolicy2D smallPolicy;
+    smallPolicy.areaFractionThreshold=0.10;
+    result.smallCells=analyzeSmallCells(
+        result.sourceCells,sourceTopology,smallPolicy,policy.tolerance);
+    if (!result.smallCells.valid()) {
+        result.failureMessage="pure Cut-cell fallback small-cell analysis failed";
+        return result;
+    }
+    result.stabilization=agglomerateSmallCells(
+        result.sourceCells,sourceTopology,result.smallCells,
+        domain,originalWalls,policy.tolerance);
+    if (!result.stabilization.valid()) {
+        result.failureMessage=result.stabilization.issues.empty()
+            ?"pure Cut-cell fallback agglomeration failed"
+            :result.stabilization.issues.front().message;
+        return result;
+    }
+    result.topology=result.stabilization.topology;
+    result.meshQuality=evaluateMeshQuality(
+        result.topology,result.sourceCells,&result.smallCells,policy.tolerance);
+    if (!result.meshQuality.valid()) {
+        result.failureMessage="pure Cut-cell fallback mesh-quality audit failed";
+        return result;
+    }
+    result.solverTopologyReport=buildSolverTopology2D(
+        result.topology,domain,originalWalls,policy.tolerance);
+    if (!result.solverTopologyReport.valid()) {
+        result.failureMessage=result.solverTopologyReport.issues.empty()
+            ?"pure Cut-cell fallback solver topology failed"
+            :result.solverTopologyReport.issues.front();
+        return result;
+    }
+    result.solverTopology=result.solverTopologyReport.topology;
+    result.solverQuality=evaluateSolverQuality2D(
+        result.solverTopology,{},policy.tolerance);
+    if (!result.solverQuality.valid()) {
+        std::ostringstream message;
+        message<<"pure Cut-cell fallback solver quality failed: issues="
+               <<result.solverQuality.issues.size()
+               <<" max_nonorthogonality="
+               <<result.solverQuality.maxNonOrthogonalityDeg
+               <<" min_face_weight="<<result.solverQuality.minFaceWeight
+               <<" min_volume_ratio="<<result.solverQuality.minVolumeRatio;
+        result.failureMessage=message.str();
+    }
+    return result;
+}
+
+RobustH4BuildResult2D buildRobustH4Mesh2D(
+    const BoundaryLayerBuildResult2D& boundaryLayers,
+    const Domain2D& domain,const BoundaryRegion2D& originalWalls,
+    std::size_t maxLevel,const QuadtreeRefinementPolicy2D& refinement,
+    const HybridMeshPolicy2D& hybridPolicy) {
+    RobustH4BuildResult2D result;
+    result.layerCandidate=boundaryLayers;
+    if (boundaryLayers.success()) {
+        result.hybridCandidate=buildConformalHybridMesh2D(
+            boundaryLayers,domain,originalWalls,maxLevel,refinement,hybridPolicy);
+        if (result.hybridCandidate.success()) {
+            result.mode=H4MeshMode2D::Hybrid;
+            return result;
+        }
+        result.fallbackStage=H4FallbackStage2D::HybridCandidate;
+    } else {
+        result.fallbackStage=H4FallbackStage2D::BoundaryLayer;
+    }
+    result.fallback=buildPureCutCellFallback2D(
+        domain,originalWalls,maxLevel,refinement,hybridPolicy);
+    result.mode=result.fallback.valid()
+        ?H4MeshMode2D::PureCutCellFallback:H4MeshMode2D::Failed;
+    return result;
+}
+
+const char* h4MeshModeName(H4MeshMode2D mode) noexcept {
+    switch (mode) {
+    case H4MeshMode2D::Failed: return "failed";
+    case H4MeshMode2D::Hybrid: return "hybrid";
+    case H4MeshMode2D::PureCutCellFallback: return "pure_cutcell_fallback";
+    }
+    return "unknown";
+}
+
+const char* h4FallbackStageName(H4FallbackStage2D stage) noexcept {
+    switch (stage) {
+    case H4FallbackStage2D::None: return "none";
+    case H4FallbackStage2D::BoundaryLayer: return "boundary_layer";
+    case H4FallbackStage2D::HybridCandidate: return "hybrid_candidate";
+    }
+    return "unknown";
+}
+
 const char* hybridMeshFailureReasonName(HybridMeshFailureReason2D reason) noexcept {
     switch (reason) {
     case HybridMeshFailureReason2D::None: return "none";
@@ -939,6 +1093,71 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
     }
     if (!out.good()) {
         setError(error, "failed while writing H4-2 JSON report");
+        return false;
+    }
+    return true;
+}
+
+bool writeRobustH4ReportJson2D(const RobustH4BuildResult2D& result,
+                               const std::filesystem::path& path,
+                               std::string* error) {
+    std::ofstream out(path);
+    if (!out) {
+        setError(error,"failed to open H4-3 robustness report");
+        return false;
+    }
+    out<<std::setprecision(17);
+    out<<"{\n  \"h4_status\": \""<<(result.success()?"success":"failed")
+       <<"\",\n  \"mesh_mode\": \""<<h4MeshModeName(result.mode)
+       <<"\",\n  \"layer_status\": \""
+       <<(result.layerEnabled()?"enabled":"failed")
+       <<"\",\n  \"fallback_stage\": \""
+       <<h4FallbackStageName(result.fallbackStage)<<"\",\n";
+    out<<"  \"layer_failure_reason\": \""
+       <<boundaryLayerFailureReasonName(result.layerCandidate.failure.reason)
+       <<"\",\n  \"layer_failure_message\": ";
+    writeJsonString(out,result.layerCandidate.failure.message);
+    out<<",\n  \"layer_failure_chain_id\": "
+       <<result.layerCandidate.failure.chainId
+       <<",\n  \"layer_failure_vertex_id\": ";
+    if (result.layerCandidate.failure.vertexId) {
+        out<<*result.layerCandidate.failure.vertexId;
+    } else out<<"null";
+    out<<",\n  \"layer_requested_thickness\": "
+       <<result.layerCandidate.failure.requestedThickness
+       <<",\n  \"layer_safe_thickness\": ";
+    if (result.layerCandidate.failure.safeThickness) {
+        out<<*result.layerCandidate.failure.safeThickness;
+    } else out<<"null";
+    out<<",\n  \"hybrid_failure_reason\": \""
+       <<hybridMeshFailureReasonName(result.hybridCandidate.failure.reason)
+       <<"\",\n  \"hybrid_failure_message\": ";
+    writeJsonString(out,result.hybridCandidate.failure.message);
+    out<<",\n  \"fallback_failure_message\": ";
+    writeJsonString(out,result.fallback.failureMessage);
+    if (result.mode==H4MeshMode2D::Hybrid) {
+        const auto& hybrid=result.hybridCandidate;
+        out<<",\n  \"cell_count\": "<<hybrid.solverTopology.cells.size()
+           <<",\n  \"expected_fluid_area\": "<<hybrid.metrics.expectedFluidArea
+           <<",\n  \"actual_fluid_area\": "<<hybrid.metrics.actualFluidArea
+           <<",\n  \"area_error\": "<<hybrid.metrics.areaError
+           <<",\n  \"max_non_orthogonality_deg\": "
+           <<hybrid.solverQuality.maxNonOrthogonalityDeg
+           <<",\n  \"min_face_weight\": "<<hybrid.solverQuality.minFaceWeight
+           <<",\n  \"min_volume_ratio\": "<<hybrid.solverQuality.minVolumeRatio;
+    } else {
+        out<<",\n  \"cell_count\": "<<result.fallback.solverTopology.cells.size()
+           <<",\n  \"expected_fluid_area\": "<<result.fallback.expectedFluidArea
+           <<",\n  \"actual_fluid_area\": "<<result.fallback.actualFluidArea
+           <<",\n  \"area_error\": "<<result.fallback.areaError
+           <<",\n  \"max_non_orthogonality_deg\": "
+           <<result.fallback.solverQuality.maxNonOrthogonalityDeg
+           <<",\n  \"min_face_weight\": "<<result.fallback.solverQuality.minFaceWeight
+           <<",\n  \"min_volume_ratio\": "<<result.fallback.solverQuality.minVolumeRatio;
+    }
+    out<<"\n}\n";
+    if (!out.good()) {
+        setError(error,"failed while writing H4-3 robustness report");
         return false;
     }
     return true;

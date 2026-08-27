@@ -148,6 +148,48 @@ struct HybridMeshBuildResult2D {
     }
 };
 
+enum class H4MeshMode2D { Failed, Hybrid, PureCutCellFallback };
+enum class H4FallbackStage2D { None, BoundaryLayer, HybridCandidate };
+
+struct PureCutCellFallback2D {
+    std::vector<CutCell2D> sourceCells;
+    TopologyMesh2D topology;
+    TopologyMesh2D solverTopology;
+    SmallCellReport2D smallCells;
+    AgglomerationResult2D stabilization;
+    MeshQualityReport2D meshQuality;
+    SolverTopologyResult2D solverTopologyReport;
+    SolverQualityReport2D solverQuality;
+    QuadtreeBalanceReport2D balance;
+    std::size_t quadtreeLeafCount = 0;
+    double expectedFluidArea = 0.0;
+    double actualFluidArea = 0.0;
+    double areaError = 0.0;
+    std::string failureMessage;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return failureMessage.empty() && topology.valid() &&
+               solverTopology.valid() && meshQuality.valid() &&
+               solverQuality.valid();
+    }
+};
+
+struct RobustH4BuildResult2D {
+    H4MeshMode2D mode = H4MeshMode2D::Failed;
+    H4FallbackStage2D fallbackStage = H4FallbackStage2D::None;
+    BoundaryLayerBuildResult2D layerCandidate;
+    HybridMeshBuildResult2D hybridCandidate;
+    PureCutCellFallback2D fallback;
+
+    [[nodiscard]] bool success() const noexcept {
+        return mode==H4MeshMode2D::Hybrid ||
+               (mode==H4MeshMode2D::PureCutCellFallback && fallback.valid());
+    }
+    [[nodiscard]] bool layerEnabled() const noexcept {
+        return mode==H4MeshMode2D::Hybrid && hybridCandidate.success();
+    }
+};
+
 // H4-2 transaction: the H4-1 strips and all inputs are immutable. The outer
 // envelopes are used as the solid boundary for a fresh remainder quadtree and
 // Cut-cell pass. Layer and remainder polygons then enter one global topology
@@ -159,6 +201,26 @@ struct HybridMeshBuildResult2D {
     std::size_t remainderMaxLevel,
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& policy = {});
+
+// H4-3 transaction. A failed layer or hybrid candidate is retained for
+// diagnostics, then the original wall is meshed through the existing pure
+// Cut-cell stabilization/solver-quality chain. Fallback is never reported as
+// a successful boundary layer.
+[[nodiscard]] RobustH4BuildResult2D buildRobustH4Mesh2D(
+    const BoundaryLayerBuildResult2D& boundaryLayers,
+    const Domain2D& domain,
+    const BoundaryRegion2D& originalWalls,
+    std::size_t maxLevel,
+    const QuadtreeRefinementPolicy2D& refinement,
+    const HybridMeshPolicy2D& hybridPolicy = {});
+
+[[nodiscard]] const char* h4MeshModeName(H4MeshMode2D mode) noexcept;
+[[nodiscard]] const char* h4FallbackStageName(H4FallbackStage2D stage) noexcept;
+
+[[nodiscard]] bool writeRobustH4ReportJson2D(
+    const RobustH4BuildResult2D& result,
+    const std::filesystem::path& path,
+    std::string* error = nullptr);
 
 [[nodiscard]] const char* hybridMeshFailureReasonName(
     HybridMeshFailureReason2D reason) noexcept;

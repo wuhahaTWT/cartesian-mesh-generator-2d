@@ -1,0 +1,13 @@
+{
+  "area_error": 0.0,
+  "area_sum": 10.35,
+  "boundary_edge_count": 199,
+  "cell_count": 720,
+  "internal_edge_count": 1259,
+  "issues": [],
+  "minimum_signed_area": 6.465588585805038e-05,
+  "non_manifold_edge_count": 0,
+  "overlap_count": 0,
+  "valid": true,
+  "vertex_count": 738
+}
