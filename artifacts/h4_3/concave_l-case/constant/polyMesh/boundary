@@ -1,0 +1,49 @@
+FoamFile
+{
+    version 2.0;
+    format ascii;
+    arch "LSB;label=32;scalar=64";
+    class polyBoundaryMesh;
+    location "constant/polyMesh";
+    object boundary;
+}
+
+6
+(
+wall_0
+{
+    type wall;
+    nFaces 420;
+    startFace 11529;
+}
+left
+{
+    type patch;
+    nFaces 14;
+    startFace 11949;
+}
+right
+{
+    type patch;
+    nFaces 14;
+    startFace 11963;
+}
+bottom
+{
+    type patch;
+    nFaces 14;
+    startFace 11977;
+}
+top
+{
+    type patch;
+    nFaces 14;
+    startFace 11991;
+}
+frontAndBack
+{
+    type empty;
+    nFaces 10904;
+    startFace 12005;
+}
+)

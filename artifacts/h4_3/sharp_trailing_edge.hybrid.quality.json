@@ -1,0 +1,38 @@
+{
+  "valid": true,
+  "counts": {
+    "vertices": 4160,
+    "edges": 7572,
+    "cells": 3412,
+    "internal_edges": 7258,
+    "boundary_edges": 314,
+    "source_cut_cells": 594,
+    "source_full_cells": 1058,
+    "source_small_cells": 130
+  },
+  "quality": {
+    "min_cell_area": 1.9541481246874172e-07,
+    "min_edge_length": 9.8493354812045908e-06,
+    "max_edge_aspect_ratio": 2379.6021614580595,
+    "max_centroid_skewness": 0.74424492354593208,
+    "min_cut_cell_area_fraction": 9.4186794901264348e-07
+  },
+  "level_distribution": {
+    "3": 26,
+    "4": 58,
+    "5": 112,
+    "6": 202,
+    "7": 358,
+    "8": 896
+  },
+  "topology_audit": {
+    "duplicate_vertices": 0,
+    "duplicate_edges": 0,
+    "orphan_internal_edges": 0,
+    "non_manifold_edges": 0,
+    "unclassified_boundary_edges": 0,
+    "open_cell_loops": 0,
+    "area_mismatches": 0
+  },
+  "issue_count": 0
+}

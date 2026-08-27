@@ -20,7 +20,8 @@ namespace cartmesh2d {
 enum class HybridCellKind2D {
     BoundaryLayer,
     RemainderCut,
-    RemainderCartesian
+    RemainderCartesian,
+    Termination
 };
 
 struct HybridCellRecord2D {
@@ -40,6 +41,10 @@ struct HybridSourceCell2D {
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;
     std::vector<Segment2D> embeddedBoundary;
+    // True only for geometric cells whose exact one-cell identity is part of
+    // the committed layer/termination construction. Remainder cells stay
+    // repairable even when they carry the Termination reporting kind.
+    bool solverImmutable = false;
 };
 
 struct HybridInterfaceAudit2D {
@@ -76,6 +81,10 @@ struct HybridMeshMetrics2D {
     std::size_t remainderCartesianCellCount = 0;
     std::size_t remainderCutCellCount = 0;
     std::size_t boundaryLayerCellCount = 0;
+    std::size_t requestedBoundaryLayerCellCount = 0;
+    std::size_t zeroLayerColumnCount = 0;
+    std::size_t terminationCellCount = 0;
+    std::size_t terminationEdgeCount = 0;
     std::size_t transitionPolygonCount = 0;
     std::size_t transitionRingCount = 0;
     std::size_t transitionFinalTangentialSubdivision = 1;
@@ -92,6 +101,7 @@ struct HybridMeshMetrics2D {
     double transitionMaxLastLayerSpacing = 0.0;
     double transitionRingThickness = 0.0;
     double transitionTotalThickness = 0.0;
+    double terminationGrowthRatio = 0.0;
     double solidArea = 0.0;
     double outerEnvelopeArea = 0.0;
     double layerArea = 0.0;
@@ -140,6 +150,7 @@ struct HybridMeshPolicy2D {
     // which derives these values from interface length scale and remainder h.
     double transitionCellWidthMultiplier = 1.2;
     std::size_t transitionRingCount = 3U;
+    double terminationGrowthRatio = 1.45;
 };
 
 enum class HybridMeshStatus2D { Success, Failed };
@@ -168,6 +179,61 @@ struct HybridMeshBuildResult2D {
         return status == HybridMeshStatus2D::Success;
     }
 };
+
+enum class H4MeshMode2D { Failed, Hybrid, PureCutCellFallback };
+enum class H4FallbackStage2D { None, RequestedLayers, LocalReduction, HybridCandidate };
+
+struct PureCutCellFallback2D {
+    std::vector<CutCell2D> sourceCells;
+    TopologyMesh2D topology;
+    TopologyMesh2D solverTopology;
+    SmallCellReport2D smallCells;
+    AgglomerationResult2D stabilization;
+    MeshQualityReport2D meshQuality;
+    SolverTopologyResult2D solverTopologyReport;
+    SolverQualityReport2D solverQuality;
+    QuadtreeBalanceReport2D balance;
+    std::size_t quadtreeLeafCount = 0;
+    double expectedFluidArea = 0.0;
+    double actualFluidArea = 0.0;
+    double areaError = 0.0;
+    std::string failureMessage;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return failureMessage.empty() && topology.valid() && solverTopology.valid() &&
+               meshQuality.valid() && solverQuality.valid();
+    }
+};
+
+struct RobustH4BuildResult2D {
+    H4MeshMode2D mode = H4MeshMode2D::Failed;
+    H4FallbackStage2D fallbackStage = H4FallbackStage2D::None;
+    BoundaryLayerBuildResult2D requestedLayerCandidate;
+    BoundaryLayerBuildResult2D localLayerCandidate;
+    HybridMeshBuildResult2D hybridCandidate;
+    PureCutCellFallback2D fallback;
+
+    [[nodiscard]] bool success() const noexcept {
+        return mode==H4MeshMode2D::Hybrid ||
+               (mode==H4MeshMode2D::PureCutCellFallback && fallback.valid());
+    }
+};
+
+// Transactional H4-3 product path. Pure Cut-cell is attempted only after the
+// requested strip, local reduction/termination and conformal hybrid candidates
+// have all failed their unchanged topology and solver-quality gates.
+[[nodiscard]] RobustH4BuildResult2D buildRobustH4Mesh2D(
+    const std::vector<WallChain2D>& wallChains,
+    const LayerParameters2D& layerParameters,
+    const Domain2D& domain,
+    const BoundaryRegion2D& originalWalls,
+    std::size_t maxLevel,
+    const QuadtreeRefinementPolicy2D& refinement,
+    const BoundaryLayerPolicy2D& layerPolicy = {},
+    const HybridMeshPolicy2D& hybridPolicy = {});
+
+[[nodiscard]] const char* h4MeshModeName(H4MeshMode2D mode) noexcept;
+[[nodiscard]] const char* h4FallbackStageName(H4FallbackStage2D stage) noexcept;
 
 // Expert/internal entry point with an already resolved transition policy.
 [[nodiscard]] HybridMeshBuildResult2D buildConformalHybridMesh2D(
@@ -289,10 +355,28 @@ resolveAutomaticHybridTransitionPlan2D(
     HybridMeshPolicy2D resolvedPolicy;
     resolvedPolicy.transitionRingCount = plan->ringCount;
     resolvedPolicy.transitionCellWidthMultiplier =
+        plan->ringCount==0U?1.0:
         plan->ringThickness / plan->targetCellSize;
-    auto result = buildConformalHybridMesh2D(
-        boundaryLayers, domain, originalWalls, remainderMaxLevel,
-        remainderRefinement, resolvedPolicy);
+    HybridMeshBuildResult2D result;
+    if (boundaryLayers.localReductionApplied) {
+        // Different valid quadtree phases can place a graded termination front
+        // arbitrarily close to a nested Cartesian line. Try a short, fixed and
+        // deterministic family of geometric growth ratios; commit only a fully
+        // solver-valid candidate. Every attempt is transactional.
+        constexpr double candidates[]{1.45,1.55,1.50};
+        for (const double growth:candidates) {
+            resolvedPolicy.terminationGrowthRatio=growth;
+            auto attempt=buildConformalHybridMesh2D(
+                boundaryLayers,domain,originalWalls,remainderMaxLevel,
+                remainderRefinement,resolvedPolicy);
+            result=std::move(attempt);
+            if (result.success()) break;
+        }
+    } else {
+        result = buildConformalHybridMesh2D(
+            boundaryLayers, domain, originalWalls, remainderMaxLevel,
+            remainderRefinement, resolvedPolicy);
+    }
     result.metrics.transitionRingCount = plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
         plan->finalTangentialSubdivision;

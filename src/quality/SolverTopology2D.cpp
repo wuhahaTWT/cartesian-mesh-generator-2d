@@ -695,6 +695,38 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     return rebuilt;
 }
 
+[[nodiscard]] RepartitionBatch2D agglomerateCellPair(
+    const TopologyMesh2D& topology,std::size_t first,std::size_t second,
+    const Polygon2D& merged,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
+    SolverTopologyProfile2D* profile,const std::vector<bool>& immutableCells) {
+    std::vector<CutCell2D> cells;
+    std::vector<bool> rebuiltImmutable;
+    cells.reserve(topology.cells.size()-1U);
+    rebuiltImmutable.reserve(topology.cells.size()-1U);
+    for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+        if (cell==first) {
+            cells.push_back(makeCell(cells.size(),merged,tol));
+            rebuiltImmutable.push_back(false);
+        }
+        if (cell==first || cell==second) continue;
+        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        rebuiltImmutable.push_back(!immutableCells.empty() && immutableCells[cell]);
+    }
+    const auto topologyStart=ProfileClock::now();
+    RepartitionBatch2D rebuilt;
+    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol);
+    rebuilt.immutableCells=std::move(rebuiltImmutable);
+    if (profile) {
+        const double elapsed=profileSeconds(topologyStart);
+        profile->buildGlobalTopologySeconds+=elapsed;
+        profile->candidateGlobalRebuildSeconds+=elapsed;
+        ++profile->globalTopologyRebuildCalls;
+        ++profile->candidateTopologyCount;
+    }
+    return rebuilt;
+}
+
 struct SourceMergeProposal2D {
     std::size_t first = 0;
     std::size_t second = 0;
@@ -1044,7 +1076,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         result.issues.push_back("local solver repartition requires valid inputs");
         return result;
     }
-    for (std::size_t iteration=0;iteration<32;++iteration) {
+    for (std::size_t iteration=0;iteration<128;++iteration) {
         const auto quality=timedFullQuality(result.topology,tol,profile,false);
         if (quality.valid()) break;
         if (profile) ++profile->repartitionIterations;
@@ -1135,6 +1167,26 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 if (profile) profile->candidatePolygonWorkSeconds+=
                     profileSeconds(polygonStart);
                 continue;
+            }
+            // A deterministic convex partition may create a tiny triangle
+            // beside a regular cell. If their exact union is already convex,
+            // retaining two cells cannot improve interpolation weight or
+            // volume ratio. Allow a true solver-cell agglomeration, subject to
+            // the same full-topology validity and strict quality-score gate.
+            if (strictlyConvex(*merged) &&
+                !underDeterminedBoundaryCell(*merged,domain,boundary,tol)) {
+                auto candidate=agglomerateCellPair(
+                    result.topology,first,second,*merged,domain,boundary,tol,
+                    profile,result.immutableCells);
+                if (candidate.topology.valid()) {
+                    const auto candidateQuality=timedFullQuality(
+                        candidate.topology,tol,profile,true);
+                    const auto candidateScore=qualityScore(candidateQuality);
+                    if (betterQualityScore(candidateScore,bestScore)) {
+                        bestScore=candidateScore;
+                        bestTopology=std::move(candidate);
+                    }
+                }
             }
             const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol);
             if (profile) {
