@@ -20,17 +20,21 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('cartmesh2d/src/hybrid/HybridMesh2D.cpp')
           s = p.read_text()
-          old = '''        if (transition || source.kind==HybridCellKind2D::BoundaryLayer) {
-              solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
-          } else {
-              solverConstraints.inputPolygonOverrides.emplace_back(std::nullopt);
-          }'''
-          new = '''        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);'''
-          if old not in s:
-              raise SystemExit('diagnostic patch target not found')
-          p.write_text(s.replace(old, new, 1))
+          pattern = re.compile(
+              r'\s*if \(transition \|\| source\.kind==HybridCellKind2D::BoundaryLayer\) \{\s*'
+              r'solverConstraints\.inputPolygonOverrides\.emplace_back\(source\.polygon\);\s*'
+              r'\} else \{\s*'
+              r'solverConstraints\.inputPolygonOverrides\.emplace_back\(std::nullopt\);\s*'
+              r'\}')
+          s2, count = pattern.subn(
+              '\n        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);',
+              s, count=1)
+          if count != 1:
+              raise SystemExit(f'diagnostic patch target count={count}')
+          p.write_text(s2)
           PY
 
       - name: Configure root project with native 2D enabled
