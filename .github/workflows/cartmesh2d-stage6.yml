@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
       - name: Configure root project with native 2D enabled
         run: >-
@@ -52,6 +54,128 @@ jobs:
 
       - name: Run native 2D stage tests
         run: ctest --test-dir build_2d -R '^cartmesh2d_stage' --output-on-failure
+
+      - name: Verify H4 solver-ready OpenFOAM export
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build_2d/cartmesh2d/h4_solver_ready
+          exe=build_2d/cartmesh2d/cartmesh2d_hybrid_cli
+          mkdir -p "$out"
+
+          "$exe" \
+            cartmesh2d/examples/acceptance/circle.xy \
+            "$out/circle" 6 3 6 4 0.02 1.2 1.0 \
+            "$out/circle-case" 0.01
+          python3 cartmesh2d/tools/verification/check_openfoam2d.py \
+            "$out/circle-case" \
+            --report "$out/circle-case/independent_check.json"
+
+          "$exe" \
+            cartmesh2d/examples/complex/superellipse_24.xy \
+            "$out/superellipse" 6 3 6 3 0.015 1.15 1.0 \
+            "$out/superellipse-case" 0.01
+          python3 cartmesh2d/tools/verification/check_openfoam2d.py \
+            "$out/superellipse-case" \
+            --report "$out/superellipse-case/independent_check.json"
+
+          if command -v checkMesh >/dev/null 2>&1; then
+            checkMesh -case "$out/circle-case" | tee "$out/circle.checkMesh.log"
+            checkMesh -case "$out/superellipse-case" | tee "$out/superellipse.checkMesh.log"
+            printf 'checkMesh=PASS\n' | tee "$out/checkmesh_status.txt"
+          else
+            printf 'checkMesh=UNAVAILABLE\n' | tee "$out/checkmesh_status.txt"
+          fi
+
+      - name: H3 solver-topology performance regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture=/tmp/h3_naca0012_256.xy
+          python3 - "$fixture" <<'PY'
+          import math, sys
+          path = sys.argv[1]
+          t = 0.12
+          # 256-point closed NACA0012-style loop with cosine spacing.
+          n_upper = 129
+          xs = [(1.0 - math.cos(math.pi*i/(n_upper-1))) * 0.5 for i in range(n_upper)]
+          def yt(x):
+              return 5.0*t*(0.2969*math.sqrt(max(x,0.0)) - 0.1260*x
+                            - 0.3516*x*x + 0.2843*x**3 - 0.1015*x**4)
+          points = []
+          for x in reversed(xs):
+              points.append((x, yt(x)))
+          # Omit both duplicate end points so the loop contains 256 vertices.
+          for x in xs[1:-1]:
+              points.append((x, -yt(x)))
+          with open(path, 'w', encoding='utf-8') as f:
+              for x, y in points:
+                  f.write(f'{x:.17g} {y:.17g}\n')
+          assert len(points) == 256
+          PY
+
+          base_sha=96616c68718eb2fd825544831a1cac6ec563e03c
+          git fetch --depth=1 origin "$base_sha"
+          git worktree add --detach /tmp/cartmesh-h3-base FETCH_HEAD
+          cmake -S /tmp/cartmesh-h3-base -B /tmp/cartmesh-h3-base-build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCARTMESH_BUILD_2D=ON \
+            -DCARTMESH_BUILD_TESTS=OFF \
+            -DCARTMESH_BUILD_BENCHMARKS=OFF
+          cmake --build /tmp/cartmesh-h3-base-build --target cartmesh2d_cli -j2
+
+          mkdir -p /tmp/h3-base /tmp/h3-head
+          /usr/bin/time -v -o /tmp/h3-base/time.txt \
+            /tmp/cartmesh-h3-base-build/cartmesh2d/cartmesh2d_cli \
+            "$fixture" /tmp/h3-base/naca 10 0.30 0.005 exterior \
+            /tmp/h3-base/case 8 0 > /tmp/h3-base/run.txt
+          /usr/bin/time -v -o /tmp/h3-head/time.txt \
+            build_2d/cartmesh2d/cartmesh2d_cli \
+            "$fixture" /tmp/h3-head/naca 10 0.30 0.005 exterior \
+            /tmp/h3-head/case 8 0 > /tmp/h3-head/run.txt
+
+          python3 - <<'PY'
+          from pathlib import Path
+          def read_kv(path):
+              out = {}
+              for line in Path(path).read_text().splitlines():
+                  if '=' in line:
+                      k, v = line.split('=', 1)
+                      out[k.strip()] = v.strip()
+              return out
+          def rss(path):
+              for line in Path(path).read_text().splitlines():
+                  if 'Maximum resident set size' in line:
+                      return int(line.split(':',1)[1].strip())
+              raise RuntimeError('missing RSS')
+          base = read_kv('/tmp/h3-base/run.txt')
+          head = read_kv('/tmp/h3-head/run.txt')
+          identity = ['leaf_count','solver_output_cells','solver_output_faces']
+          for key in identity:
+              assert base[key] == head[key], (key, base[key], head[key])
+          quality = ['solver_max_nonorthogonality_deg','solver_min_face_weight',
+                     'solver_min_volume_ratio']
+          for key in quality:
+              b, h = float(base[key]), float(head[key])
+              assert abs(b-h) <= 1e-10*max(1.0,abs(b),abs(h)), (key,b,h)
+          b_solver = float(base['timing_solver_topology_seconds'])
+          h_solver = float(head['timing_solver_topology_seconds'])
+          b_total = float(base['timing_total_seconds'])
+          h_total = float(head['timing_total_seconds'])
+          b_rss, h_rss = rss('/tmp/h3-base/time.txt'), rss('/tmp/h3-head/time.txt')
+          # Same-run guard: reject a material H3 regression but leave normal
+          # hosted-runner jitter headroom.
+          assert h_solver <= max(b_solver*1.35, b_solver+0.75), (b_solver,h_solver)
+          print('H3_BASE solver_topology_s=', b_solver, 'total_s=', b_total,
+                'rss_kib=', b_rss, 'leaves=', base['leaf_count'],
+                'solver_cells=', base['solver_output_cells'])
+          print('H3_HEAD solver_topology_s=', h_solver, 'total_s=', h_total,
+                'rss_kib=', h_rss, 'leaves=', head['leaf_count'],
+                'solver_cells=', head['solver_output_cells'])
+          print('H3_RATIO solver=', h_solver/b_solver if b_solver else 0.0,
+                'total=', h_total/b_total if b_total else 0.0,
+                'rss=', h_rss/b_rss if b_rss else 0.0)
+          PY
 
       - name: Verify exported acceptance artifacts and CFD fluid side
         shell: bash
@@ -132,6 +256,8 @@ jobs:
             build_2d/cartmesh2d/acceptance/*.quality.json
             build_2d/cartmesh2d/acceptance/*.viz.json
             build_2d/cartmesh2d/acceptance/*.cm2d
+            build_2d/cartmesh2d/h4_solver_ready/*.hybrid.*
+            build_2d/cartmesh2d/h4_solver_ready/checkmesh_status.txt
           if-no-files-found: error
 
       - name: Configure root project with native 2D disabled
