@@ -7,6 +7,7 @@ add_library(cartmesh2d
     src/geometry/Geometry2D.cpp
     src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
+    src/hybrid/HybridMesh2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
     src/cutcell/CutCell2D.cpp
@@ -69,6 +70,17 @@ elseif(MSVC)
     target_compile_options(cartmesh2d_boundary_layer_cli PRIVATE /W4 /permissive-)
 else()
     target_compile_options(cartmesh2d_boundary_layer_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
+add_executable(cartmesh2d_hybrid_cli apps/cartmesh2d_hybrid_cli.cpp)
+target_link_libraries(cartmesh2d_hybrid_cli PRIVATE cartmesh2d::cartmesh2d)
+target_compile_features(cartmesh2d_hybrid_cli PRIVATE cxx_std_20)
+if(COMMAND cartmesh_enable_warnings)
+    cartmesh_enable_warnings(cartmesh2d_hybrid_cli)
+elseif(MSVC)
+    target_compile_options(cartmesh2d_hybrid_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(cartmesh2d_hybrid_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
 endif()
 
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
@@ -144,6 +156,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_boundary_layer_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_boundary_layer_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_hybrid_mesh_tests tests/hybrid_mesh_test.cpp)
+    target_link_libraries(cartmesh2d_hybrid_mesh_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_hybrid_mesh_tests PRIVATE cxx_std_20)
+
     foreach(target
             cartmesh2d_geometry_tests
             cartmesh2d_grid_tests
@@ -161,7 +177,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_quality_tests
             cartmesh2d_io_tests
             cartmesh2d_dxf_tests
-            cartmesh2d_boundary_layer_tests)
+            cartmesh2d_boundary_layer_tests
+            cartmesh2d_hybrid_mesh_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -189,6 +206,8 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stageDXF2_import_tests COMMAND cartmesh2d_dxf_tests)
     add_test(NAME cartmesh2d_stageH4_1_boundary_layer_tests
              COMMAND cartmesh2d_boundary_layer_tests)
+    add_test(NAME cartmesh2d_stageH4_2_conformal_hybrid_tests
+             COMMAND cartmesh2d_hybrid_mesh_tests)
 
     set(CARTMESH2D_H4_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boundary_layer)
     add_test(NAME cartmesh2d_stageH4_1_circle_e2e
@@ -247,6 +266,50 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_H4_OUTPUT}/circle_repeat.layer.json)
     set_tests_properties(cartmesh2d_stageH4_1_circle_report_deterministic PROPERTIES
         DEPENDS "cartmesh2d_stageH4_1_circle_e2e;cartmesh2d_stageH4_1_circle_repeat_e2e")
+
+    set(CARTMESH2D_H4_2_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hybrid_mesh)
+    add_test(NAME cartmesh2d_stageH4_2_circle_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_H4_2_OUTPUT}/circle 6 3 6 4 0.02 1.2 1.0)
+    add_test(NAME cartmesh2d_stageH4_2_circle_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
+                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.vtk
+                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.json
+                --output ${CARTMESH2D_H4_2_OUTPUT}/circle.independent.json)
+    set_tests_properties(cartmesh2d_stageH4_2_circle_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_2_circle_e2e)
+
+    add_test(NAME cartmesh2d_stageH4_2_superellipse_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/superellipse_24.xy
+                ${CARTMESH2D_H4_2_OUTPUT}/superellipse 6 3 6 3 0.015 1.15 1.0)
+    add_test(NAME cartmesh2d_stageH4_2_superellipse_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
+                ${CARTMESH2D_H4_2_OUTPUT}/superellipse.hybrid.vtk
+                ${CARTMESH2D_H4_2_OUTPUT}/superellipse.hybrid.json
+                --output ${CARTMESH2D_H4_2_OUTPUT}/superellipse.independent.json)
+    set_tests_properties(cartmesh2d_stageH4_2_superellipse_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageH4_2_superellipse_e2e)
+
+    add_test(NAME cartmesh2d_stageH4_2_circle_repeat_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_H4_2_OUTPUT}/circle_repeat 6 3 6 4 0.02 1.2 1.0)
+    add_test(NAME cartmesh2d_stageH4_2_circle_topology_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.cm2d
+                ${CARTMESH2D_H4_2_OUTPUT}/circle_repeat.hybrid.cm2d)
+    set_tests_properties(cartmesh2d_stageH4_2_circle_topology_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_2_circle_e2e;cartmesh2d_stageH4_2_circle_repeat_e2e")
+    add_test(NAME cartmesh2d_stageH4_2_circle_report_deterministic
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.json
+                ${CARTMESH2D_H4_2_OUTPUT}/circle_repeat.hybrid.json)
+    set_tests_properties(cartmesh2d_stageH4_2_circle_report_deterministic PROPERTIES
+        DEPENDS "cartmesh2d_stageH4_2_circle_e2e;cartmesh2d_stageH4_2_circle_repeat_e2e")
 
     set(CARTMESH2D_DXF_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dxf)
     add_test(NAME cartmesh2d_stageDXF1_convert_e2e

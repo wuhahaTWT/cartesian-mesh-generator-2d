@@ -154,6 +154,38 @@ void appendCartesianEdgeVertices(
     }
 }
 
+// H4-2 requires a common partition on a non-axis-aligned outer envelope:
+// remainder Cut-cells contribute grid/envelope intersection vertices while a
+// boundary-layer quad initially owns the complete envelope segment. Search the
+// canonical x-sorted vertex set and split that segment at the exact same IDs.
+// The established Cartesian fast path above remains unchanged.
+void appendGeneralEdgeVertices(
+    const Point2D& a, const Point2D& b,
+    const std::vector<Vertex2D>& vertices,
+    const std::vector<std::size_t>& verticesByY,
+    double coordinateEps, const TolerancePolicy& tol,
+    std::size_t aId, std::size_t bId,
+    std::vector<std::pair<double, std::size_t>>& onEdge) {
+    if (std::abs(a.x - b.x) <= coordinateEps ||
+        std::abs(a.y - b.y) <= coordinateEps) {
+        appendCartesianEdgeVertices(a, b, vertices, verticesByY,
+                                    coordinateEps, tol, aId, bId, onEdge);
+        return;
+    }
+    const double minX = std::min(a.x, b.x) - coordinateEps;
+    const double maxX = std::max(a.x, b.x) + coordinateEps;
+    const auto begin = std::lower_bound(
+        vertices.begin(), vertices.end(), minX,
+        [](const Vertex2D& vertex, double value) {
+            return vertex.point.x < value;
+        });
+    for (auto it = begin; it != vertices.end() && it->point.x <= maxX; ++it) {
+        if (it->id == aId || it->id == bId) continue;
+        if (!pointOnSegment(it->point, {a, b}, tol)) continue;
+        onEdge.push_back({segmentParameter(it->point, a, b), it->id});
+    }
+}
+
 struct EdgeKey {
     std::size_t a = 0;
     std::size_t b = 0;
@@ -288,20 +320,17 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             }
 
             std::vector<std::pair<double, std::size_t>> onEdge{{0.0, aId}, {1.0, bId}};
-            if (std::abs(a.x - b.x) <= coordinateEps ||
-                std::abs(a.y - b.y) <= coordinateEps) {
-                const double edgeLength = std::sqrt(squaredNorm(b - a));
-                const double tEps = coordinateEps /
-                                    std::max(edgeLength, coordinateEps);
-                const std::size_t before = onEdge.size();
-                appendCartesianEdgeVertices(a, b, mesh.vertices, verticesByY,
-                                            coordinateEps, tol, aId, bId, onEdge);
-                onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
-                                            onEdge.end(), [&](const auto& item) {
-                                                return item.first <= tEps ||
-                                                       item.first >= 1.0 - tEps;
-                                            }), onEdge.end());
-            }
+            const double edgeLength = std::sqrt(squaredNorm(b - a));
+            const double tEps = coordinateEps /
+                                std::max(edgeLength, coordinateEps);
+            const std::size_t before = onEdge.size();
+            appendGeneralEdgeVertices(a, b, mesh.vertices, verticesByY,
+                                      coordinateEps, tol, aId, bId, onEdge);
+            onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
+                                        onEdge.end(), [&](const auto& item) {
+                                            return item.first <= tEps ||
+                                                   item.first >= 1.0 - tEps;
+                                        }), onEdge.end());
 
             std::sort(onEdge.begin(), onEdge.end(), [](const auto& lhs, const auto& rhs) {
                 if (lhs.first != rhs.first) return lhs.first < rhs.first;
