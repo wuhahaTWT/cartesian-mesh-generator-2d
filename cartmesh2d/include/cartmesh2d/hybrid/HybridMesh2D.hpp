@@ -179,11 +179,11 @@ struct HybridMeshBuildResult2D {
     const HybridMeshPolicy2D& policy);
 
 // Resolve a conservative progressive-fan plan from geometry instead of
-// case-specific tuning. The final tangential spacing is driven toward at most
-// two boundary-level Cartesian cells. At least three rows are retained so the
-// interface never jumps directly from a fixed H4-1 edge to the final split
-// density. The radial extent is tied to both h, the longest fixed outer edge,
-// and the last H4-1 normal spacing.
+// case-specific tuning. The longest fixed outer edge controls tangential
+// subdivision toward the remainder target h. At least three rows are retained
+// so the interface never jumps directly from a fixed H4-1 edge to the final
+// split density. Radial extent is driven by h and the last H4-1 normal spacing,
+// avoiding geometry-specific width fitting.
 [[nodiscard]] inline std::optional<HybridTransitionPlan2D>
 resolveAutomaticHybridTransitionPlan2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
@@ -230,8 +230,7 @@ resolveAutomaticHybridTransitionPlan2D(
     constexpr std::size_t minimumRingCount = 3U;
     constexpr std::size_t maximumRingCount = 8U;
     constexpr double targetTangentialMultiplier = 2.0;
-    constexpr double minimumTotalWidthCells = 3.6;
-    constexpr double edgeWidthFraction = 0.60;
+    constexpr double minimumTotalWidthCells = 5.4;
 
     std::size_t ringCount = 1U;
     std::size_t finalSubdivision = 1U;
@@ -248,10 +247,9 @@ resolveAutomaticHybridTransitionPlan2D(
         ++ringCount;
     }
 
-    const double totalThickness = std::max({
+    const double totalThickness = std::max(
         minimumTotalWidthCells * targetCellSize,
-        edgeWidthFraction * maxOuterEdgeLength,
-        static_cast<double>(ringCount) * maxLastLayerSpacing});
+        static_cast<double>(ringCount) * maxLastLayerSpacing);
     const double ringThickness = totalThickness / static_cast<double>(ringCount);
     if (!std::isfinite(totalThickness) || !std::isfinite(ringThickness) ||
         !(ringThickness > 0.0)) {
