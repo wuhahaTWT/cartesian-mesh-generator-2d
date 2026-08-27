@@ -15,43 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Temporary H4 diagnostic patch
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          p = Path('cartmesh2d/src/hybrid/HybridMesh2D.cpp')
-          s = p.read_text()
-          pattern = re.compile(
-              r'\s*if \(transition \|\| source\.kind==HybridCellKind2D::BoundaryLayer\) \{\s*'
-              r'solverConstraints\.inputPolygonOverrides\.emplace_back\(source\.polygon\);\s*'
-              r'\} else \{\s*'
-              r'solverConstraints\.inputPolygonOverrides\.emplace_back\(std::nullopt\);\s*'
-              r'\}')
-          s2, count = pattern.subn(
-              '\n        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);',
-              s, count=1)
-          if count != 1:
-              raise SystemExit(f'diagnostic source-polygon patch target count={count}')
-          p.write_text(s2)
-
-          h = Path('cartmesh2d/include/cartmesh2d/hybrid/HybridMesh2D.hpp')
-          text = h.read_text()
-          replacements = {
-              'constexpr double minimumTotalWidthCells = 3.6;':
-                  'constexpr double minimumTotalWidthCells = 5.4;',
-              'constexpr double edgeWidthFraction = 0.60;':
-                  'constexpr double edgeWidthFraction = 0.0;',
-          }
-          for old, new in replacements.items():
-              if text.count(old) != 1:
-                  raise SystemExit(f'diagnostic rule patch target not found: {old}')
-              text = text.replace(old, new, 1)
-          h.write_text(text)
-          PY
-
       - name: Configure root project with native 2D enabled
         run: >-
           cmake -S . -B build_2d
