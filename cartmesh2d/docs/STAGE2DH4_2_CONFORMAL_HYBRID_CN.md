@@ -1,59 +1,73 @@
-# Stage 2D-H4-2：Conformal Hybrid Mesh
+# CartMesh2D H4-2：边界层与 Cartesian/Cut-cell 共形拼接
 
-## 阶段目标
+日期：2026-08-27  
+状态：H4-2 solver-ready 收尾验证通过；真实 OpenFOAM `checkMesh` 仍需在安装 OpenFOAM 的环境补跑
 
-H4-2 将 H4-1 已生成的贴壁层 strip 与外部 Cartesian / Quadtree / Cut-cell 区域组装为一个统一、共形、可进入求解器质量门的二维混合网格。
+## 1. 本阶段边界
 
-核心约束：H4-1 strip 与原始 wall 在 H4-2 中视为固定输入；为了与 Cartesian 区域连接，只允许在 strip 外侧构造确定性的 transition fan，并对其外侧 remainder 执行 Quadtree refinement、Cut-cell、small-cell stabilization 与 solver-topology repair。
+H4-2 将 H4-1 的固定层数、闭合外流场 boundary-layer strip 接入现有二维 Cartesian / Quadtree / Cut-cell 网格。H4-1 strip 与原始 wall 在 H4-2 中是固定输入；只允许在 strip 外侧构造确定性的 transition fan，并对其外侧 remainder 执行 refinement、Cut-cell、small-cell stabilization 与 solver-topology repair。
 
-## 当前实现
+本阶段未实现 local layer dropping、复杂 termination、Delaunay transition、三维或 overset，也未改动三维核心代码。H4-1 仍明确拒绝严重凹角和超过当前 sharp-corner 阈值的尖锐尾缘。
 
-生产入口 `buildConformalHybridMesh2D(...)` 自动从 H4-1 outer-envelope 边长、最后一层法向间距和 remainder boundary-level 对应的 Cartesian 尺寸 `h` 推导 transition plan。相同几何与 refinement 输入必须得到相同 ring count、切向细分和 transition 宽度。
+## 2. 当前实现路径
 
-统一网格包含三类 source cell：
+1. 提取 H4-1 outer envelope，检查方向、合法性、相互关系和计算域包含关系。
+2. 自动从 outer-envelope 边长、H4-1 最后一层法向间距和 remainder boundary-level 对应的 Cartesian 尺寸 `h` 推导 progressive transition plan；不依赖样例专用常数。
+3. 在 transition 外侧重新建立 remainder quadtree，执行 2:1 balance、Cut-cell 和 small-cell stabilization。
+4. 将 BoundaryLayer、transition/remainder Cut polygon 和 remainder Cartesian cell 组装到统一 `TopologyMesh2D`。
+5. 对同一不可变 source 重复构建 topology，逐项检查坐标、ID、owner/neighbour 与 connectivity 的确定性。
+6. outer-envelope 接口必须是闭合、双 owner、layer/remainder 一一配对、顶点二价的公共分割，并检查接口长度闭合。
+7. 检查 layer、transition、remainder 和全域面积守恒。
+8. 进入 constrained solver-topology repair；H4-1 layer cell 不允许被修改，transition 可要求保留原始 polygon。
+9. 执行 solver-quality gate，并在 solver repair 后再次检查固定 outer-envelope 接口。
+10. 只有 solver topology 与 solver quality 均通过时，CLI 才允许输出 extruded OpenFOAM case。
 
-- `BoundaryLayer`：H4-1 固定贴壁层；
-- `RemainderCut`：transition polygon、remainder Cut-cell 及 stabilization 后的非 Cartesian polygon；
-- `RemainderCartesian`：保留 Cartesian 形态的 remainder cell。
+## 3. 最终 solver-ready 验证
 
-最终构造后执行：
+2026-08-27 GitHub Actions `cartmesh2d-stage6` 最终 run `33058822714`：完整 native 2D stage CTest `71/71 PASS`。
 
-1. remainder Quadtree 2:1 balance 与确定性检查；
-2. remainder Cut-cell 和 small-cell stabilization；
-3. layer + transition + remainder 全局 topology；
-4. 重复 topology build，检查 canonical ID / connectivity 确定性；
-5. H4-1 outer-envelope 共形接口审计；
-6. 面积守恒；
-7. mesh quality；
-8. constrained solver-topology repair；
-9. solver quality；
-10. solver repair 后再次审计固定 outer-envelope 接口。
+### Circle
 
-## 产品输出
+- hybrid cells：700；solver cells：728；H4-1 layer cells：128；
+- transition rings：3；最终切向细分：4；
+- area error：`-8.88e-15`；
+- fixed outer-envelope：32 edges / 32 vertices，single-owner、wrong-pair、non-two-valent 均为 0；
+- solver max non-orthogonality：`55.3968°`；
+- solver min face weight：`0.08721`；
+- solver min volume ratio：`0.02704`；
+- 独立 OpenFOAM reader：728 cells、3212 faces、最小体积 `4.14567e-06`、issues 为空。
 
-`cartmesh2d_hybrid_cli` 可输出：
+### Superellipse
 
-- `.hybrid.vtk`
-- `.hybrid.cm2d`
-- `.hybrid.json`
-- `.hybrid.quality.json`
-- `.hybrid.solver.vtk`
-- `.hybrid.solver.cm2d`
-- `.hybrid.solver-quality.json`
-- 可选的 extruded OpenFOAM case
+- hybrid cells：772；solver cells：791；H4-1 layer cells：72；
+- transition rings：4；最终切向细分：8；
+- area error：`2.49e-14`；
+- fixed outer-envelope：24 edges / 24 vertices，single-owner、wrong-pair、non-two-valent 均为 0；
+- solver max non-orthogonality：`63.4869°`；
+- solver min face weight：`0.07802`；
+- solver min volume ratio：`0.01918`；
+- 独立 OpenFOAM reader：791 cells、3552 faces、最小体积 `2.09489e-06`、issues 为空。
 
-只有 solver topology 与 solver quality 均通过时才允许写 OpenFOAM case。
+两例均满足既有 solver-quality 阈值，没有放宽质量门，也没有绕过失败写出 OpenFOAM case。CI runner 未安装 OpenFOAM，因此明确记录 `checkMesh=UNAVAILABLE`；独立 reader 不能冒充真实 `checkMesh`。
 
-## 最终 CI 验证口径
+## 4. 验证覆盖
 
-H4 收尾 CI 使用 circle 与 superellipse 两个 solver-ready 案例，要求：
+完整 CTest 同时覆盖：H4-1 circle/rectangle、凹角和尖角 fail-closed、H4-2 circle/ellipse/superellipse/参数变化、重复生成确定性、DXF、复杂几何、multi-loop、OpenFOAM writer/reader、quality、small-cell、agglomeration、solver topology 等既有二维回归。
 
-- 完整 native 2D stage CTest 通过；
-- H4 hybrid topology / mesh quality / solver quality 均 valid；
-- 2:1 balance 无残留 violation；
-- fixed outer-envelope 接口无 single-owner、wrong-pair、non-two-valent 错误；
-- OpenFOAM 输出通过项目外置的独立 reader；
-- runner 若存在真实 `checkMesh` 则执行并保存日志，否则明确记录 `checkMesh=UNAVAILABLE`，不得冒充通过；
-- acceptance 与 H4 solver-ready 证据作为 CI artifact 上传。
+H3 的 100k solver-topology 性能已在独立 H3 阶段完成并有固定报告。H4 最终 CI 不使用参数不同的 NACA workload 冒充 H3 benchmark；generic solver-topology 功能回归由完整 CTest 继续覆盖。
 
-H3 的 100k solver-topology 性能已经在独立 H3 阶段完成并有固定报告；H4 最终 CI 不重新制造一个参数不同的 NACA workload 来冒充 H3 benchmark。H4 对 generic solver-topology path 的功能回归由完整 CTest 覆盖，H3 性能基线保持独立证据，不作为本阶段重复的阻塞门。
+## 5. CI 证据
+
+最终 workflow 上传 `cartmesh2d-final-validation` artifact，包含：
+
+- rectangle / circle / concave / airfoil-like acceptance 的 `.cm2d`、quality/viz JSON 和 SVG；
+- circle / superellipse 的 hybrid 与 solver VTK/CM2D/quality/report；
+- 两个完整 OpenFOAM case 及独立 reader 报告；
+- `checkmesh_status.txt`。
+
+## 6. 已知限制
+
+- 当前 H4 仅支持 H4-1 已支持的闭合外流 fixed-layer strip；
+- nested wall、local layer dropping、复杂 termination 仍不在本阶段；
+- H4-1 对严重凹角 fail-closed；超过 `maxConvexTurnRadians=135°` 的尖锐尾缘也 fail-closed，因此当前 `airfoil_like.xy` 的尖尾缘不能直接用于 H4 boundary layer；
+- 当前最终 CI 证明的是 solver-ready topology、项目 solver-quality gate 与 OpenFOAM 格式/守恒独立读取通过；真实 OpenFOAM `checkMesh` 仍需在具备 OpenFOAM 的环境补一轮。
