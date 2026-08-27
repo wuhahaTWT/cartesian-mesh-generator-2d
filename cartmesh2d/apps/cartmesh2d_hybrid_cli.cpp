@@ -166,23 +166,72 @@ int main(int argc, char** argv) {
         }
         chains.push_back(std::move(*chain.chain));
     }
-    const auto layers = buildBoundaryLayerStrips2D(chains, layerParameters);
-    if (!layers.success()) {
-        std::cerr << "H4-1 prerequisite failed: "
-                  << boundaryLayerFailureReasonName(layers.failure.reason)
-                  << " " << layers.failure.message << '\n';
-        return EXIT_FAILURE;
-    }
-
     const auto wallBounds = originalWalls.bounds();
     const Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
-    const auto hybrid = buildConformalHybridMesh2D(
-        layers, domain, originalWalls, maxLevel, refinement);
+    auto robust=buildRobustH4Mesh2D(
+        chains,layerParameters,domain,originalWalls,maxLevel,refinement);
 
     const auto parent = outputPrefix.parent_path().empty()
         ? std::filesystem::path(".") : outputPrefix.parent_path();
     std::filesystem::create_directories(parent);
+    if (!robust.success()) {
+        std::cerr<<"h4_status=failed mesh_mode="<<h4MeshModeName(robust.mode)
+                 <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)
+                 <<" requested_layer_failure="
+                 <<boundaryLayerFailureReasonName(
+                       robust.requestedLayerCandidate.failure.reason)
+                 <<" local_layer_failure="
+                 <<boundaryLayerFailureReasonName(
+                       robust.localLayerCandidate.failure.reason)
+                 <<" hybrid_failure="
+                 <<hybridMeshFailureReasonName(robust.hybridCandidate.failure.reason)
+                 <<" fallback_failure="<<robust.fallback.failureMessage<<'\n';
+        return EXIT_FAILURE;
+    }
+    if (robust.mode==H4MeshMode2D::PureCutCellFallback) {
+        const auto vtkPath=outputPrefix.string()+".fallback.vtk";
+        const auto cm2dPath=outputPrefix.string()+".fallback.cm2d";
+        const auto solverVtkPath=outputPrefix.string()+".fallback.solver.vtk";
+        const auto solverCm2dPath=outputPrefix.string()+".fallback.solver.cm2d";
+        const auto qualityPath=outputPrefix.string()+".fallback.quality.json";
+        const auto solverQualityPath=outputPrefix.string()+
+                                     ".fallback.solver-quality.json";
+        const auto& fallback=robust.fallback;
+        if (!writeLegacyVtk2D(fallback.topology,vtkPath,&error) ||
+            !writeCm2dTopology(fallback.topology,cm2dPath,&error) ||
+            !writeLegacyVtk2D(fallback.solverTopology,solverVtkPath,&error) ||
+            !writeCm2dTopology(fallback.solverTopology,solverCm2dPath,&error) ||
+            !writeText(qualityPath,qualityReportToJson(fallback.meshQuality),error) ||
+            !writeText(solverQualityPath,
+                       solverQualityReportToJson(fallback.solverQuality),error)) {
+            std::cerr<<error<<'\n';
+            return EXIT_FAILURE;
+        }
+        std::string openFoamStatus="not_requested";
+        if (argc==12) {
+            double thickness=0.0;
+            if (!parseDouble(argv[11],thickness) || thickness<=0.0) {
+                std::cerr<<"extrusion thickness must be finite and positive\n";
+                return EXIT_FAILURE;
+            }
+            const auto foam=writeExtrudedOpenFoam2D(
+                fallback.solverTopology,domain,originalWalls,argv[10],thickness,&error);
+            if (!foam.valid()) {
+                std::cerr<<"OpenFOAM output failed: "<<error<<'\n';
+                return EXIT_FAILURE;
+            }
+            openFoamStatus="written";
+        }
+        std::cout<<"h4_status=success mesh_mode=pure_cutcell_fallback"
+                 <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)
+                 <<" solver_cells="<<fallback.solverTopology.cells.size()
+                 <<" area_error="<<fallback.areaError
+                 <<" solver_quality=pass openfoam="<<openFoamStatus
+                 <<" vtk="<<vtkPath<<'\n';
+        return EXIT_SUCCESS;
+    }
+    auto hybrid=std::move(robust.hybridCandidate);
     const auto jsonPath = outputPrefix.string() + ".hybrid.json";
     if (!writeHybridReportJson2D(hybrid, jsonPath, &error)) {
         std::cerr << error << '\n';

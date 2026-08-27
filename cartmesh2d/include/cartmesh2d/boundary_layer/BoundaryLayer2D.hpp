@@ -103,6 +103,9 @@ struct BoundaryLayerPolicy2D {
     double maxConvexTurnRadians = 2.3561944901923448;    // 135 degrees
     double cornerLengthFraction = 0.45;
     double collisionClearanceFraction = 0.45;
+    // Internal H4-3 termination fronts may march through their artificial
+    // concave staircase corners. Physical wall builders leave this false.
+    bool permitConcaveTerminationMarching = false;
 };
 
 enum class BoundaryLayerFailureReason2D {
@@ -168,6 +171,10 @@ struct BoundaryLayerMetrics2D {
     double requestedTotalThickness = 0.0;
     double usedTotalThickness = 0.0;
     double safeThicknessLimit = 0.0;
+    std::size_t requestedColumnCellCount = 0;
+    std::size_t retainedColumnCellCount = 0;
+    std::size_t zeroLayerColumnCount = 0;
+    std::size_t terminationEdgeCount = 0;
 };
 
 struct BoundaryLayerStrip2D {
@@ -176,6 +183,11 @@ struct BoundaryLayerStrip2D {
     std::vector<WallVertexKind2D> wallVertexKinds;
     std::vector<Vector2D> marchingDirections;
     std::vector<std::vector<std::size_t>> ringVertexIds;
+    // H4-3 local columns may stop on different rings. The ordered IDs trace
+    // the exact boundary of the retained layer union, including exposed hair
+    // edges at terminations and original-wall edges on 0-layer patches.
+    std::vector<std::size_t> outerEnvelopeVertexIds;
+    std::vector<std::size_t> actualLayerCounts;
     std::vector<BoundaryLayerVertex2D> vertices;
     std::vector<BoundaryLayerCell2D> cells;
     BoundaryLayerMetrics2D metrics;
@@ -188,6 +200,7 @@ enum class BoundaryLayerStatus2D { Success, Failed };
 struct BoundaryLayerBuildResult2D {
     BoundaryLayerStatus2D status = BoundaryLayerStatus2D::Failed;
     std::vector<BoundaryLayerStrip2D> strips;
+    bool localReductionApplied = false;
     BoundaryLayerFailure2D failure;
 
     [[nodiscard]] bool success() const noexcept {
@@ -203,6 +216,23 @@ struct BoundaryLayerBuildResult2D {
     const BoundaryLayerPolicy2D& policy = {});
 
 [[nodiscard]] BoundaryLayerBuildResult2D buildBoundaryLayerStrip2D(
+    const WallChain2D& wallChain,
+    const LayerParameters2D& parameters,
+    const BoundaryLayerPolicy2D& policy = {});
+
+// H4-3 extension. Requested layers are attempted first. Unsafe columns lose
+// only their outermost layers, and adjacent counts are deterministically
+// limited to a one-layer step so the exposed hair edges form a conformal
+// termination front. The strict H4-1 builders above retain their fail-closed
+// behavior and are not changed into silently adaptive APIs.
+[[nodiscard]] BoundaryLayerBuildResult2D
+buildLocallyReducedBoundaryLayerStrips2D(
+    const std::vector<WallChain2D>& wallChains,
+    const LayerParameters2D& parameters,
+    const BoundaryLayerPolicy2D& policy = {});
+
+[[nodiscard]] BoundaryLayerBuildResult2D
+buildLocallyReducedBoundaryLayerStrip2D(
     const WallChain2D& wallChain,
     const LayerParameters2D& parameters,
     const BoundaryLayerPolicy2D& policy = {});

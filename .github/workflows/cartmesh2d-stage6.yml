@@ -51,6 +51,7 @@ jobs:
           cartmesh2d_dxf_tests
           cartmesh2d_boundary_layer_tests
           cartmesh2d_hybrid_mesh_tests
+          cartmesh2d_h4_local_termination_tests
           cartmesh2d_cli
           cartmesh2d_dxf_cli
           cartmesh2d_boundary_layer_cli
@@ -84,6 +85,21 @@ jobs:
             "$out/superellipse-case" \
             --report "$out/superellipse-case/independent_check.json"
 
+          "$exe" cartmesh2d/examples/h4_3/concave_l.xy \
+            "$out/concave_l" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/concave_l-case" 0.01
+          "$exe" cartmesh2d/examples/h4_3/sharp_trailing_edge.xy \
+            "$out/sharp_trailing_edge" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/sharp_trailing_edge-case" 0.01
+          "$exe" cartmesh2d/examples/h4_3/narrow_gap.xy \
+            "$out/narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/narrow_gap-case" 0.01
+          for case_name in concave_l sharp_trailing_edge narrow_gap; do
+            python3 cartmesh2d/tools/verification/check_openfoam2d.py \
+              "$out/${case_name}-case" \
+              --report "$out/${case_name}-case/independent_check.json"
+          done
+
           python3 - "$out/circle.hybrid.json" "$out/superellipse.hybrid.json" <<'PY'
           import json, sys
           for path in sys.argv[1:]:
@@ -100,10 +116,26 @@ jobs:
               assert report['non_two_valent_interface_vertices'] == 0, path
           PY
 
+          python3 - "$out/concave_l.hybrid.json" \
+            "$out/sharp_trailing_edge.hybrid.json" \
+            "$out/narrow_gap.hybrid.json" <<'PY'
+          import json, sys
+          for path in sys.argv[1:]:
+              with open(path, encoding='utf-8') as f:
+                  report = json.load(f)
+              assert report['hybrid_status'] == 'success', path
+              assert report['solver_quality_valid'] is True, path
+              assert report['boundary_layer_cell_count'] > 0, path
+              assert report['boundary_layer_cell_count'] < report['requested_boundary_layer_cell_count'], path
+              assert report['termination_cell_count'] > 0, path
+              assert report['termination_edge_count'] > 0, path
+              assert abs(report['area_error']) < 1.0e-8, path
+          PY
+
           image=opencfd/openfoam-run:2606
           container_root=/home/openfoam/workingDir
           docker pull "$image"
-          for case_name in circle superellipse; do
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
             log="$out/${case_name}.checkMesh.log"
             docker run --rm \
               -v "$PWD:$container_root" \

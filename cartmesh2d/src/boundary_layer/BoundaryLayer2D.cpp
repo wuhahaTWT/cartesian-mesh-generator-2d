@@ -170,6 +170,8 @@ struct ChainGeometry2D {
     std::vector<WallVertexKind2D> kinds;
     std::vector<Vector2D> directions;
     std::vector<double> miterCosines;
+    std::vector<double> vertexSafeThickness;
+    std::vector<double> segmentSafeThickness;
     double safeThickness = std::numeric_limits<double>::infinity();
 };
 
@@ -182,7 +184,8 @@ struct ChainGeometryResult2D {
     const WallChain2D& chain,
     const std::vector<WallChain2D>& allChains,
     const ResolvedLayerParameters2D& parameters,
-    const BoundaryLayerPolicy2D& policy) {
+    const BoundaryLayerPolicy2D& policy,
+    bool allowLocalReduction = false) {
     ChainGeometryResult2D result;
     const double scale = geometryScale(chain);
     const double epsilon = policy.tolerance.scale(scale);
@@ -199,6 +202,10 @@ struct ChainGeometryResult2D {
     geometry.kinds.resize(chain.vertices.size(), WallVertexKind2D::Smooth);
     geometry.directions.resize(chain.vertices.size());
     geometry.miterCosines.resize(chain.vertices.size(), 1.0);
+    geometry.vertexSafeThickness.resize(
+        chain.vertices.size(), std::numeric_limits<double>::infinity());
+    geometry.segmentSafeThickness.resize(
+        chain.segments.size(), std::numeric_limits<double>::infinity());
 
     std::vector<Vector2D> tangents;
     std::vector<double> lengths;
@@ -239,21 +246,37 @@ struct ChainGeometryResult2D {
                                           dot(tangents[previous], tangents[next]));
         const double solidTurn = chain.fluidSide == FluidSide2D::Right
                                ? rawTurn : -rawTurn;
+        bool marchingConcave=false;
         if (solidTurn < -policy.smoothTurnRadians) {
             geometry.kinds[vertexId] = WallVertexKind2D::Concave;
-            result.failure = failedResult(
-                BoundaryLayerFailureReason2D::ConcaveCorner,
-                "solid-side concave corner is outside H4-1 capability", chain.id,
-                &parameters, vertexId);
-            return result;
+            if (!allowLocalReduction) {
+                result.failure = failedResult(
+                    BoundaryLayerFailureReason2D::ConcaveCorner,
+                    "solid-side concave corner is outside H4-1 capability", chain.id,
+                    &parameters, vertexId);
+                return result;
+            }
+            if (!policy.permitConcaveTerminationMarching) {
+                geometry.vertexSafeThickness[vertexId] = 0.0;
+                geometry.directions[vertexId] = previousNormal;
+                geometry.miterCosines[vertexId] = 1.0;
+                continue;
+            }
+            marchingConcave=true;
         }
         if (solidTurn > policy.maxConvexTurnRadians) {
             geometry.kinds[vertexId] = WallVertexKind2D::Sharp;
-            result.failure = failedResult(
-                BoundaryLayerFailureReason2D::SharpCorner,
-                "wall turn exceeds the H4-1 sharp-corner limit", chain.id,
-                &parameters, vertexId);
-            return result;
+            if (!allowLocalReduction) {
+                result.failure = failedResult(
+                    BoundaryLayerFailureReason2D::SharpCorner,
+                    "wall turn exceeds the H4-1 sharp-corner limit", chain.id,
+                    &parameters, vertexId);
+                return result;
+            }
+            geometry.vertexSafeThickness[vertexId] = 0.0;
+            geometry.directions[vertexId] = previousNormal;
+            geometry.miterCosines[vertexId] = 1.0;
+            continue;
         }
 
         const Vector2D sum{previousNormal.x + nextNormal.x,
@@ -261,11 +284,17 @@ struct ChainGeometryResult2D {
         const auto marching = unit(sum, epsilon);
         if (!marching) {
             geometry.kinds[vertexId] = WallVertexKind2D::Degenerate;
-            result.failure = failedResult(
-                BoundaryLayerFailureReason2D::ConflictingHalfPlanes,
-                "adjacent fluid-side half-planes have no stable marching direction",
-                chain.id, &parameters, vertexId);
-            return result;
+            if (!allowLocalReduction) {
+                result.failure = failedResult(
+                    BoundaryLayerFailureReason2D::ConflictingHalfPlanes,
+                    "adjacent fluid-side half-planes have no stable marching direction",
+                    chain.id, &parameters, vertexId);
+                return result;
+            }
+            geometry.vertexSafeThickness[vertexId] = 0.0;
+            geometry.directions[vertexId] = previousNormal;
+            geometry.miterCosines[vertexId] = 1.0;
+            continue;
         }
         const double previousCosine = dot(*marching, previousNormal);
         const double nextCosine = dot(*marching, nextNormal);
@@ -273,23 +302,32 @@ struct ChainGeometryResult2D {
         const double cosineEpsilon = std::max(1.0e-8, epsilon / scale);
         if (!std::isfinite(miterCosine) || miterCosine <= cosineEpsilon) {
             geometry.kinds[vertexId] = WallVertexKind2D::Degenerate;
-            result.failure = failedResult(
-                BoundaryLayerFailureReason2D::ConflictingHalfPlanes,
-                "marching direction violates a fluid-side half-plane", chain.id,
-                &parameters, vertexId);
-            return result;
+            if (!allowLocalReduction) {
+                result.failure = failedResult(
+                    BoundaryLayerFailureReason2D::ConflictingHalfPlanes,
+                    "marching direction violates a fluid-side half-plane", chain.id,
+                    &parameters, vertexId);
+                return result;
+            }
+            geometry.vertexSafeThickness[vertexId] = 0.0;
+            geometry.directions[vertexId] = previousNormal;
+            geometry.miterCosines[vertexId] = 1.0;
+            continue;
         }
         geometry.directions[vertexId] = *marching;
         geometry.miterCosines[vertexId] = miterCosine;
-        geometry.kinds[vertexId] = std::abs(solidTurn) <= policy.smoothTurnRadians
-                                 ? WallVertexKind2D::Smooth
-                                 : WallVertexKind2D::MildConvex;
+        geometry.kinds[vertexId] = marchingConcave
+            ?WallVertexKind2D::Concave:
+             (std::abs(solidTurn) <= policy.smoothTurnRadians
+                ?WallVertexKind2D::Smooth:WallVertexKind2D::MildConvex);
 
         const double tangentialAmplification = std::abs(std::tan(0.5 * solidTurn));
         if (tangentialAmplification > cosineEpsilon) {
             const double localLimit = policy.cornerLengthFraction *
                 std::min(lengths[previous], lengths[next]) / tangentialAmplification;
             geometry.safeThickness = std::min(geometry.safeThickness, localLimit);
+            geometry.vertexSafeThickness[vertexId] = std::min(
+                geometry.vertexSafeThickness[vertexId], localLimit);
         }
     }
 
@@ -311,25 +349,33 @@ struct ChainGeometryResult2D {
                                            geometry.miterCosines[vertexId];
                 geometry.safeThickness = std::min(geometry.safeThickness,
                                                    normalLimit);
+                geometry.vertexSafeThickness[vertexId] = std::min(
+                    geometry.vertexSafeThickness[vertexId], normalLimit);
             }
         }
     }
 
-    // For distinct chains use a symmetric gap bound. Two strips each retain
-    // less than half of the measured wall-to-wall gap.
+    // For distinct chains retain a segment-local symmetric gap bound. This is
+    // the H4-3 clearance signal: only columns facing a narrow neighbour lose
+    // outer layers; unrelated parts of the same wall keep the request.
     for (const auto& otherChain : allChains) {
         if (otherChain.id == chain.id) continue;
-        double gap = std::numeric_limits<double>::infinity();
-        for (const auto& lhs : chain.segments) {
+        for (std::size_t localSegment=0;localSegment<chain.segments.size();
+             ++localSegment) {
+            double gap = std::numeric_limits<double>::infinity();
+            const auto& lhs=chain.segments[localSegment];
             for (const auto& rhs : otherChain.segments) {
                 gap = std::min(gap, segmentDistance(lhs, rhs, policy.tolerance));
             }
+            const double limit=policy.collisionClearanceFraction*gap;
+            geometry.segmentSafeThickness[localSegment]=std::min(
+                geometry.segmentSafeThickness[localSegment],limit);
+            geometry.safeThickness=std::min(geometry.safeThickness,limit);
         }
-        geometry.safeThickness = std::min(
-            geometry.safeThickness, policy.collisionClearanceFraction * gap);
     }
 
-    if (parameters.totalThickness > geometry.safeThickness + epsilon) {
+    if (!allowLocalReduction &&
+        parameters.totalThickness > geometry.safeThickness + epsilon) {
         result.failure = failedResult(
             BoundaryLayerFailureReason2D::ThicknessExceedsSafeLimit,
             "requested total thickness exceeds the computed geometric safety limit",
@@ -384,9 +430,22 @@ struct ChainGeometryResult2D {
                                         policy.tolerance.relative * scale * scale);
     const std::size_t ringSize = strip.wallChain.vertices.size();
     const std::size_t ringCount = strip.ringVertexIds.size();
+    const bool variableColumns=strip.actualLayerCounts.size()==
+        strip.wallChain.segments.size() &&
+        std::any_of(strip.actualLayerCounts.begin(),strip.actualLayerCounts.end(),
+                    [&](std::size_t count) {
+                        return count!=strip.parameters.nLayers;
+                    });
+    std::vector<bool> usedVertices(strip.vertices.size(),false);
+    for (const auto& cell:strip.cells) {
+        for (const auto id:cell.vertices) usedVertices[id]=true;
+    }
+    for (const auto id:strip.outerEnvelopeVertexIds) usedVertices[id]=true;
 
     for (std::size_t lhs = 0; lhs < strip.vertices.size(); ++lhs) {
+        if (!usedVertices[lhs]) continue;
         for (std::size_t rhs = lhs + 1U; rhs < strip.vertices.size(); ++rhs) {
+            if (!usedVertices[rhs]) continue;
             if (nearlyEqual(strip.vertices[lhs].point, strip.vertices[rhs].point,
                             policy.tolerance)) {
                 return failedResult(
@@ -397,9 +456,10 @@ struct ChainGeometryResult2D {
         }
     }
 
-    // Every ring must be simple. Open rings are checked for non-adjacent edge
-    // intersections; closed rings additionally check the closing edge.
-    for (std::size_t ring = 0; ring < ringCount; ++ring) {
+    // Strict H4-1 retains complete rings. H4-3 validates the exact stepped
+    // outer envelope instead, because unused points beyond a terminated column
+    // are deliberately not part of the mesh.
+    if (!variableColumns) for (std::size_t ring = 0; ring < ringCount; ++ring) {
         const auto& ids = strip.ringVertexIds[ring];
         const std::size_t edgeCount = strip.wallChain.closed ? ids.size() : ids.size() - 1U;
         for (std::size_t i = 0; i < edgeCount; ++i) {
@@ -419,10 +479,21 @@ struct ChainGeometryResult2D {
             }
         }
     }
+    if (strip.wallChain.closed) {
+        BoundaryLoop envelope(strip.outerEnvelope());
+        const auto diagnostics=envelope.diagnose(policy.tolerance);
+        if (!diagnostics.valid() ||
+            diagnostics.orientation!=LoopOrientation::CounterClockwise) {
+            return failedResult(
+                BoundaryLayerFailureReason2D::EnvelopeSelfIntersection,
+                "retained local-layer envelope is not a simple counter-clockwise loop",
+                strip.wallChain.id,&strip.parameters);
+        }
+    }
 
     // Outer envelope and every non-wall ring must not intersect the original
     // wall. Hair edges may touch only their own wall vertex.
-    for (std::size_t ring = 1U; ring < ringCount; ++ring) {
+    if (!variableColumns) for (std::size_t ring = 1U; ring < ringCount; ++ring) {
         const auto& ids = strip.ringVertexIds[ring];
         const std::size_t edgeCount = strip.wallChain.closed ? ids.size() : ids.size() - 1U;
         for (std::size_t edgeId = 0; edgeId < edgeCount; ++edgeId) {
@@ -442,7 +513,14 @@ struct ChainGeometryResult2D {
         }
     }
     for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
-        for (std::size_t ring = 0; ring + 1U < ringCount; ++ring) {
+        const std::size_t previousCount=vertexId==0U
+            ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
+            :strip.actualLayerCounts[vertexId-1U];
+        const std::size_t nextCount=vertexId<strip.actualLayerCounts.size()
+            ?strip.actualLayerCounts[vertexId]
+            :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
+        const std::size_t usedLayerCount=std::max(previousCount,nextCount);
+        for (std::size_t ring = 0; ring < usedLayerCount; ++ring) {
             const Segment2D hair{
                 strip.vertices[strip.ringVertexIds[ring][vertexId]].point,
                 strip.vertices[strip.ringVertexIds[ring + 1U][vertexId]].point};
@@ -513,13 +591,32 @@ struct ChainGeometryResult2D {
         const auto& b = strip.vertices[edge.second];
         std::size_t expected = 0;
         if (a.ring == b.ring) {
-            if (a.ring == 0U || a.ring + 1U == ringCount) expected = 1U;
-            else expected = 2U;
+            std::optional<std::size_t> segment;
+            for (std::size_t candidate=0;candidate<strip.wallChain.segmentCount();
+                 ++candidate) {
+                const std::size_t next=(candidate+1U)%ringSize;
+                if ((a.chainVertex==candidate && b.chainVertex==next) ||
+                    (b.chainVertex==candidate && a.chainVertex==next)) {
+                    segment=candidate;
+                    break;
+                }
+            }
+            if (segment && a.ring<=strip.actualLayerCounts[*segment]) {
+                expected=(a.ring==0U ||
+                          a.ring==strip.actualLayerCounts[*segment])?1U:2U;
+            }
         } else if (a.chainVertex == b.chainVertex &&
                    (a.ring + 1U == b.ring || b.ring + 1U == a.ring)) {
-            const bool openEnd = !strip.wallChain.closed &&
-                (a.chainVertex == 0U || a.chainVertex + 1U == ringSize);
-            expected = openEnd ? 1U : 2U;
+            const std::size_t layer=std::min(a.ring,b.ring);
+            const std::size_t previousCount=a.chainVertex==0U
+                ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
+                :strip.actualLayerCounts[a.chainVertex-1U];
+            const std::size_t nextCount=
+                a.chainVertex<strip.actualLayerCounts.size()
+                ?strip.actualLayerCounts[a.chainVertex]
+                :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
+            expected=static_cast<std::size_t>(layer<previousCount)+
+                     static_cast<std::size_t>(layer<nextCount);
         }
         if (expected == 0U || count != expected) {
             return failedResult(BoundaryLayerFailureReason2D::TopologyConflict,
@@ -594,8 +691,15 @@ struct ChainGeometryResult2D {
 
     double minLayerThickness = std::numeric_limits<double>::infinity();
     double maxLayerThickness = 0.0;
-    for (std::size_t ring = 0; ring + 1U < ringCount; ++ring) {
-        for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
+    for (std::size_t vertexId = 0; vertexId < ringSize; ++vertexId) {
+        const std::size_t previousCount=vertexId==0U
+            ?(strip.wallChain.closed?strip.actualLayerCounts.back():0U)
+            :strip.actualLayerCounts[vertexId-1U];
+        const std::size_t nextCount=vertexId<strip.actualLayerCounts.size()
+            ?strip.actualLayerCounts[vertexId]
+            :(strip.wallChain.closed?strip.actualLayerCounts.front():0U);
+        const std::size_t usedLayerCount=std::max(previousCount,nextCount);
+        for (std::size_t ring=0;ring<usedLayerCount;++ring) {
             const double thickness = norm(
                 strip.vertices[strip.ringVertexIds[ring + 1U][vertexId]].point -
                 strip.vertices[strip.ringVertexIds[ring][vertexId]].point);
@@ -606,7 +710,7 @@ struct ChainGeometryResult2D {
             }
             minLayerThickness = std::min(minLayerThickness, thickness);
             maxLayerThickness = std::max(maxLayerThickness, thickness);
-        }
+    }
     }
     strip.metrics.vertexCount = strip.vertices.size();
     strip.metrics.cellCount = strip.cells.size();
@@ -623,13 +727,19 @@ struct ChainGeometryResult2D {
 
 [[nodiscard]] BoundaryLayerStrip2D constructStrip(
     const WallChain2D& chain, const ResolvedLayerParameters2D& parameters,
-    const ChainGeometry2D& geometry, const std::vector<double>& cumulative) {
+    const ChainGeometry2D& geometry, const std::vector<double>& cumulative,
+    std::vector<std::size_t> actualLayerCounts = {}) {
     BoundaryLayerStrip2D strip;
     strip.wallChain = chain;
     strip.parameters = parameters;
     strip.wallVertexKinds = geometry.kinds;
     strip.marchingDirections = geometry.directions;
     const std::size_t ringSize = chain.vertices.size();
+    const std::size_t segmentCount = chain.segments.size();
+    if (actualLayerCounts.empty()) {
+        actualLayerCounts.assign(segmentCount,cumulative.size());
+    }
+    strip.actualLayerCounts=std::move(actualLayerCounts);
     strip.ringVertexIds.resize(cumulative.size() + 1U);
     strip.vertices.reserve((cumulative.size() + 1U) * ringSize);
     for (std::size_t ring = 0; ring <= cumulative.size(); ++ring) {
@@ -645,10 +755,10 @@ struct ChainGeometryResult2D {
         }
     }
 
-    const std::size_t segmentCount = chain.segments.size();
     strip.cells.reserve(cumulative.size() * segmentCount);
     for (std::size_t layer = 0; layer < cumulative.size(); ++layer) {
         for (std::size_t segment = 0; segment < segmentCount; ++segment) {
+            if (layer>=strip.actualLayerCounts[segment]) continue;
             const std::size_t next = (segment + 1U) % ringSize;
             BoundaryLayerCell2D cell;
             cell.id = strip.cells.size();
@@ -668,9 +778,56 @@ struct ChainGeometryResult2D {
             strip.cells.push_back(cell);
         }
     }
+
+    // Trace the exact boundary of the retained column union. A count change
+    // contributes one or more exposed hair-edge fragments; these are the real
+    // conformal termination interface consumed by H4-2/H4-3.
+    if (chain.closed && !strip.actualLayerCounts.empty()) {
+        const std::size_t firstCount=strip.actualLayerCounts.front();
+        strip.outerEnvelopeVertexIds.push_back(
+            strip.ringVertexIds[firstCount][0U]);
+        for (std::size_t segment=0;segment<segmentCount;++segment) {
+            const std::size_t next=(segment+1U)%ringSize;
+            const std::size_t count=strip.actualLayerCounts[segment];
+            const std::size_t nextCount=
+                strip.actualLayerCounts[(segment+1U)%segmentCount];
+            const auto edgeEnd=strip.ringVertexIds[count][next];
+            if (edgeEnd!=strip.outerEnvelopeVertexIds.front()) {
+                strip.outerEnvelopeVertexIds.push_back(edgeEnd);
+            }
+            if (count<nextCount) {
+                for (std::size_t ring=count+1U;ring<=nextCount;++ring) {
+                    const auto id=strip.ringVertexIds[ring][next];
+                    if (id!=strip.outerEnvelopeVertexIds.front()) {
+                        strip.outerEnvelopeVertexIds.push_back(id);
+                    }
+                }
+            } else {
+                for (std::size_t ring=count;ring>nextCount;--ring) {
+                    const auto id=strip.ringVertexIds[ring-1U][next];
+                    if (id!=strip.outerEnvelopeVertexIds.front()) {
+                        strip.outerEnvelopeVertexIds.push_back(id);
+                    }
+                }
+            }
+        }
+    }
     strip.metrics.requestedTotalThickness = parameters.totalThickness;
-    strip.metrics.usedTotalThickness = cumulative.back();
+    const auto maximumCount=*std::max_element(
+        strip.actualLayerCounts.begin(),strip.actualLayerCounts.end());
+    strip.metrics.usedTotalThickness=maximumCount==0U
+        ?0.0:cumulative[maximumCount-1U];
     strip.metrics.safeThicknessLimit = geometry.safeThickness;
+    strip.metrics.requestedColumnCellCount=segmentCount*parameters.nLayers;
+    strip.metrics.retainedColumnCellCount=strip.cells.size();
+    strip.metrics.zeroLayerColumnCount=static_cast<std::size_t>(std::count(
+        strip.actualLayerCounts.begin(),strip.actualLayerCounts.end(),0U));
+    for (std::size_t segment=0;segment<segmentCount;++segment) {
+        if (strip.actualLayerCounts[segment]!=
+            strip.actualLayerCounts[(segment+1U)%segmentCount]) {
+            ++strip.metrics.terminationEdgeCount;
+        }
+    }
     return strip;
 }
 
@@ -707,6 +864,64 @@ struct ChainGeometryResult2D {
         }
     }
     return false;
+}
+
+[[nodiscard]] std::size_t layersWithinLimit(
+    const std::vector<double>& cumulative,double limit,double epsilon) noexcept {
+    if (!std::isfinite(limit)) return cumulative.size();
+    return static_cast<std::size_t>(std::upper_bound(
+        cumulative.begin(),cumulative.end(),limit+epsilon)-cumulative.begin());
+}
+
+void enforceOneLayerTaper(std::vector<std::size_t>& counts,bool closed) {
+    if (counts.size()<2U) return;
+    bool changed=true;
+    while (changed) {
+        changed=false;
+        for (std::size_t segment=0;segment<counts.size();++segment) {
+            if (!closed && segment==0U) continue;
+            const std::size_t previous=segment==0U?counts.size()-1U:segment-1U;
+            if (counts[segment]>counts[previous]+1U) {
+                counts[segment]=counts[previous]+1U;
+                changed=true;
+            }
+            if (counts[previous]>counts[segment]+1U) {
+                counts[previous]=counts[segment]+1U;
+                changed=true;
+            }
+        }
+    }
+}
+
+[[nodiscard]] std::vector<std::size_t> planLocalLayerCounts(
+    const WallChain2D& chain,const ResolvedLayerParameters2D& parameters,
+    const ChainGeometry2D& geometry,const BoundaryLayerPolicy2D& policy) {
+    std::vector<std::size_t> counts(chain.segmentCount(),parameters.nLayers);
+    const double epsilon=policy.tolerance.scale(geometryScale(chain));
+    for (std::size_t segment=0;segment<chain.segmentCount();++segment) {
+        const std::size_t next=(segment+1U)%chain.vertices.size();
+        const bool dangerous=
+            (!policy.permitConcaveTerminationMarching &&
+             geometry.kinds[segment]==WallVertexKind2D::Concave) ||
+            geometry.kinds[segment]==WallVertexKind2D::Sharp ||
+            geometry.kinds[segment]==WallVertexKind2D::Degenerate ||
+            (!policy.permitConcaveTerminationMarching &&
+             geometry.kinds[next]==WallVertexKind2D::Concave) ||
+            geometry.kinds[next]==WallVertexKind2D::Sharp ||
+            geometry.kinds[next]==WallVertexKind2D::Degenerate;
+        if (dangerous) {
+            counts[segment]=0U;
+            continue;
+        }
+        const double limit=std::min({
+            geometry.segmentSafeThickness[segment],
+            geometry.vertexSafeThickness[segment],
+            geometry.vertexSafeThickness[next]});
+        counts[segment]=layersWithinLimit(
+            parameters.cumulativeNormalDistances,limit,epsilon);
+    }
+    enforceOneLayerTaper(counts,chain.closed);
+    return counts;
 }
 
 void setError(std::string* error, const std::string& message) {
@@ -927,8 +1142,10 @@ LayerParameterResult2D resolveLayerParameters2D(
 std::vector<Point2D> BoundaryLayerStrip2D::outerEnvelope() const {
     std::vector<Point2D> result;
     if (ringVertexIds.empty()) return result;
-    result.reserve(ringVertexIds.back().size());
-    for (const auto id : ringVertexIds.back()) result.push_back(vertices[id].point);
+    const auto& ids=outerEnvelopeVertexIds.empty()
+        ?ringVertexIds.back():outerEnvelopeVertexIds;
+    result.reserve(ids.size());
+    for (const auto id : ids) result.push_back(vertices[id].point);
     return result;
 }
 
@@ -1010,6 +1227,156 @@ BoundaryLayerBuildResult2D buildBoundaryLayerStrip2D(
     const LayerParameters2D& parameters,
     const BoundaryLayerPolicy2D& policy) {
     return buildBoundaryLayerStrips2D({wallChain}, parameters, policy);
+}
+
+BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrips2D(
+    const std::vector<WallChain2D>& wallChains,
+    const LayerParameters2D& parameters,
+    const BoundaryLayerPolicy2D& policy) {
+    if (!policyValid(policy)) {
+        return failedResult(BoundaryLayerFailureReason2D::InvalidParameters,
+                            "boundary-layer tolerance/angle policy is invalid",0U,
+                            nullptr);
+    }
+    const auto resolvedResult=resolveLayerParameters2D(parameters);
+    if (!resolvedResult.success()) {
+        auto failure=failedResult(BoundaryLayerFailureReason2D::InvalidParameters,
+                                  resolvedResult.message,0U,nullptr);
+        failure.failure.nLayers=parameters.nLayers;
+        failure.failure.growthRatio=parameters.growthRatio;
+        failure.failure.requestedThickness=parameters.thickness;
+        return failure;
+    }
+    const auto& resolved=*resolvedResult.parameters;
+    if (wallChains.empty()) {
+        return failedResult(BoundaryLayerFailureReason2D::InvalidChain,
+                            "at least one wall chain is required",0U,&resolved);
+    }
+    std::set<std::size_t> chainIds;
+    for (const auto& chain:wallChains) {
+        if (!chainIds.insert(chain.id).second) {
+            return failedResult(BoundaryLayerFailureReason2D::InvalidChain,
+                                "wall chain IDs must be unique",chain.id,&resolved);
+        }
+    }
+
+    // A solver-ready layer column cannot span an arbitrarily long straight
+    // wall edge: the common Cartesian partition would attach many small faces
+    // to one distant cell centre. Refine only the H4-3 working chain with exact
+    // collinear points; the physical wall geometry and patch identity remain
+    // unchanged. Four first-layer heights gives bounded layer aspect while
+    // leaving the strict H4-1 builder and its historical IDs untouched.
+    const double maximumColumnLength=4.0*resolved.firstLayerThickness;
+    std::vector<WallChain2D> workingChains;
+    workingChains.reserve(wallChains.size());
+    for (const auto& chain:wallChains) {
+        std::vector<Point2D> points;
+        for (std::size_t segment=0;segment<chain.segments.size();++segment) {
+            const auto& a=chain.vertices[segment];
+            const auto& b=chain.vertices[(segment+1U)%chain.vertices.size()];
+            const double length=norm(b-a);
+            const auto minimumPieces=std::max<std::size_t>(
+                1U,static_cast<std::size_t>(std::ceil(length/maximumColumnLength)));
+            std::size_t pieces=1U;
+            while (pieces<minimumPieces) pieces*=2U;
+            for (std::size_t piece=0;piece<pieces;++piece) {
+                const double t=static_cast<double>(piece)/static_cast<double>(pieces);
+                points.push_back({a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t});
+            }
+        }
+        if (chain.closed) {
+            const auto refined=makeClosedWallChain2D(
+                BoundaryLoop(std::move(points)),chain.id,chain.patchIdentity,
+                chain.orientation==WallChainOrientation2D::CounterClockwise
+                    ?WallFluidRegion2D::Exterior:WallFluidRegion2D::Interior,
+                policy.tolerance);
+            if (!refined.success()) {
+                return failedResult(BoundaryLayerFailureReason2D::InvalidChain,
+                                    "locally refined wall chain is invalid",
+                                    chain.id,&resolved);
+            }
+            workingChains.push_back(*refined.chain);
+        } else {
+            points.push_back(chain.vertices.back());
+            const auto refined=makeOpenWallChain2D(
+                std::move(points),chain.id,chain.patchIdentity,chain.fluidSide,
+                policy.tolerance);
+            if (!refined.success()) {
+                return failedResult(BoundaryLayerFailureReason2D::InvalidChain,
+                                    "locally refined open wall chain is invalid",
+                                    chain.id,&resolved);
+            }
+            workingChains.push_back(*refined.chain);
+        }
+    }
+
+    std::vector<ChainGeometry2D> geometries;
+    std::vector<std::vector<std::size_t>> counts;
+    geometries.reserve(workingChains.size());
+    counts.reserve(workingChains.size());
+    for (const auto& chain:workingChains) {
+        auto analysed=analyseChain(chain,workingChains,resolved,policy,true);
+        if (!analysed.geometry) return analysed.failure;
+        counts.push_back(planLocalLayerCounts(
+            chain,resolved,*analysed.geometry,policy));
+        geometries.push_back(std::move(*analysed.geometry));
+    }
+
+    std::vector<BoundaryLayerStrip2D> accepted;
+    accepted.reserve(workingChains.size());
+    bool reduced=false;
+    for (std::size_t chainIndex=0;chainIndex<workingChains.size();++chainIndex) {
+        BoundaryLayerBuildResult2D validation;
+        constexpr std::size_t maximumRepairPasses=32U;
+        for (std::size_t pass=0;pass<maximumRepairPasses;++pass) {
+            auto strip=constructStrip(
+                workingChains[chainIndex],resolved,geometries[chainIndex],
+                resolved.cumulativeNormalDistances,counts[chainIndex]);
+            if (strip.cells.empty()) {
+                return failedResult(
+                    BoundaryLayerFailureReason2D::ThicknessExceedsSafeLimit,
+                    "local reduction removed every boundary-layer column",
+                    workingChains[chainIndex].id,&resolved);
+            }
+            validation=validateStrip(strip,policy);
+            if (validation.success()) break;
+            if (!validation.failure.cellId ||
+                *validation.failure.cellId>=strip.cells.size()) return validation;
+            const auto segment=strip.cells[*validation.failure.cellId].wallSegment;
+            if (counts[chainIndex][segment]==0U) return validation;
+            --counts[chainIndex][segment];
+            enforceOneLayerTaper(counts[chainIndex],workingChains[chainIndex].closed);
+        }
+        if (!validation.success()) return validation;
+        reduced=reduced || std::any_of(
+            counts[chainIndex].begin(),counts[chainIndex].end(),
+            [&](std::size_t count) { return count<resolved.nLayers; });
+        accepted.push_back(std::move(validation.strips.front()));
+    }
+
+    for (std::size_t lhs=0;lhs<accepted.size();++lhs) {
+        for (std::size_t rhs=lhs+1U;rhs<accepted.size();++rhs) {
+            if (stripsIntersect(accepted[lhs],accepted[rhs],policy.tolerance)) {
+                return failedResult(
+                    BoundaryLayerFailureReason2D::ChainCollision,
+                    "locally reduced strips from distinct wall chains still collide",
+                    accepted[rhs].wallChain.id,&resolved);
+            }
+        }
+    }
+
+    BoundaryLayerBuildResult2D result;
+    result.status=BoundaryLayerStatus2D::Success;
+    result.strips=std::move(accepted);
+    result.localReductionApplied=reduced;
+    return result;
+}
+
+BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrip2D(
+    const WallChain2D& wallChain,const LayerParameters2D& parameters,
+    const BoundaryLayerPolicy2D& policy) {
+    return buildLocallyReducedBoundaryLayerStrips2D(
+        {wallChain},parameters,policy);
 }
 
 const char* boundaryLayerFailureReasonName(
