@@ -629,11 +629,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         solverConstraints.immutableInputCells.push_back(
             source.kind==HybridCellKind2D::BoundaryLayer);
         solverConstraints.preserveInputCells.push_back(transition);
-        if (transition || source.kind==HybridCellKind2D::BoundaryLayer) {
-            solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
-        } else {
-            solverConstraints.inputPolygonOverrides.emplace_back(std::nullopt);
-        }
+        // Global common-partition vertices are interface bookkeeping, not
+        // geometric corners of the solver source. Preserve every hybrid
+        // source polygon so repair cannot repartition on artificial collinear
+        // points and create overlapping or non-manifold fragments.
+        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
     }
     auto solverTopologyReport=buildSolverTopology2D(
         topology,domain,originalWalls,solverConstraints,policy.tolerance);
