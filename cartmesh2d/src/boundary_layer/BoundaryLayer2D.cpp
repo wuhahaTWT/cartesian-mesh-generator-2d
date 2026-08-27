@@ -466,13 +466,22 @@ struct ChainGeometryResult2D {
     double maxArea = 0.0;
     for (auto& cell : strip.cells) {
         Polygon2D polygon;
+        std::array<Point2D, 4> quadPoints{};
+        std::size_t pointIndex = 0U;
         for (const auto vertexId : cell.vertices) {
+            quadPoints[pointIndex++] = strip.vertices[vertexId].point;
             polygon.vertices.push_back(strip.vertices[vertexId].point);
         }
         const double signedArea = polygon.signedArea();
         if (!std::isfinite(signedArea) || signedArea <= areaEpsilon) {
             return failedResult(BoundaryLayerFailureReason2D::NegativeAreaCell,
                                 "layer quad has non-positive or tolerance-scale area",
+                                strip.wallChain.id, &strip.parameters,
+                                std::nullopt, std::nullopt, cell.id);
+        }
+        if (!isConvexBoundaryLayerQuad2D(quadPoints, policy.tolerance)) {
+            return failedResult(BoundaryLayerFailureReason2D::NonConvexCell,
+                                "layer quad is not strictly convex",
                                 strip.wallChain.id, &strip.parameters,
                                 std::nullopt, std::nullopt, cell.id);
         }
@@ -720,6 +729,23 @@ void writeJsonString(std::ostream& out, const std::string& value) {
 }
 
 } // namespace
+
+bool isConvexBoundaryLayerQuad2D(
+    const std::array<Point2D, 4>& points,
+    const TolerancePolicy& tol) noexcept {
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        const Point2D& previous = points[(i + points.size() - 1U) % points.size()];
+        const Point2D& current = points[i];
+        const Point2D& next = points[(i + 1U) % points.size()];
+        const Vector2D incoming = current - previous;
+        const Vector2D outgoing = next - current;
+        const double product = std::sqrt(squaredNorm(incoming) * squaredNorm(outgoing));
+        if (!(product > 0.0) || cross(incoming, outgoing) <= tol.scale(product)) {
+            return false;
+        }
+    }
+    return true;
+}
 
 WallChainBuildResult2D makeClosedWallChain2D(
     const BoundaryLoop& boundary, std::size_t chainId,
@@ -1001,6 +1027,7 @@ const char* boundaryLayerFailureReasonName(
     case BoundaryLayerFailureReason2D::EnvelopeWallIntersection: return "envelope_wall_intersection";
     case BoundaryLayerFailureReason2D::ChainCollision: return "chain_collision";
     case BoundaryLayerFailureReason2D::NegativeAreaCell: return "negative_area_cell";
+    case BoundaryLayerFailureReason2D::NonConvexCell: return "non_convex_cell";
     case BoundaryLayerFailureReason2D::SelfIntersectingCell: return "self_intersecting_cell";
     case BoundaryLayerFailureReason2D::OverlappingCells: return "overlapping_cells";
     case BoundaryLayerFailureReason2D::DuplicateGeometricVertex: return "duplicate_geometric_vertex";

@@ -118,6 +118,7 @@ enum class BoundaryLayerFailureReason2D {
     EnvelopeWallIntersection,
     ChainCollision,
     NegativeAreaCell,
+    NonConvexCell,
     SelfIntersectingCell,
     OverlappingCells,
     DuplicateGeometricVertex,
@@ -152,6 +153,10 @@ struct BoundaryLayerCell2D {
     std::array<std::size_t, 4> vertices{};
     double area = 0.0;
 };
+
+[[nodiscard]] bool isConvexBoundaryLayerQuad2D(
+    const std::array<Point2D, 4>& points,
+    const TolerancePolicy& tol = {}) noexcept;
 
 struct BoundaryLayerMetrics2D {
     std::size_t vertexCount = 0;

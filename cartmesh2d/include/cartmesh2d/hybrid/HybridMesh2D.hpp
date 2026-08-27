@@ -3,9 +3,11 @@
 #include "cartmesh2d/boundary_layer/BoundaryLayer2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
+#include "cartmesh2d/quality/SolverTopology2D.hpp"
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -25,6 +27,17 @@ struct HybridCellRecord2D {
     HybridCellKind2D kind = HybridCellKind2D::RemainderCartesian;
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;
+};
+
+struct HybridSourceCell2D {
+    std::size_t id = 0;
+    HybridCellKind2D kind = HybridCellKind2D::RemainderCartesian;
+    Polygon2D polygon;
+    double area = 0.0;
+    std::optional<std::uint64_t> quadtreeSourceKey;
+    std::optional<std::size_t> layerIndex;
+    std::optional<std::size_t> wallSegment;
+    std::vector<Segment2D> embeddedBoundary;
 };
 
 struct HybridInterfaceAudit2D {
@@ -52,6 +65,11 @@ struct HybridMeshMetrics2D {
     std::size_t remainderCutCellCount = 0;
     std::size_t boundaryLayerCellCount = 0;
     std::size_t transitionPolygonCount = 0;
+    std::size_t remainderSmallCellCount = 0;
+    std::size_t remainderAgglomeratedCellCount = 0;
+    std::size_t solverCellCount = 0;
+    std::size_t solverQualityAgglomerations = 0;
+    std::size_t solverQualityRepartitions = 0;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -72,12 +90,15 @@ enum class HybridMeshFailureReason2D {
     InvalidOuterEnvelope,
     RemainderRefinementFailed,
     RemainderCutCellFailed,
+    RemainderStabilizationFailed,
     LayerConversionFailed,
     UnifiedTopologyFailed,
     NonConformalInterface,
     AreaConservationFailed,
     RegionClassificationConflict,
     QualityFailed,
+    SolverTopologyFailed,
+    SolverQualityFailed,
     IoFailure
 };
 
@@ -94,6 +115,8 @@ struct HybridMeshPolicy2D {
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
+    double transitionCellWidthMultiplier = 1.2;
+    std::size_t transitionRingCount = 3U;
 };
 
 enum class HybridMeshStatus2D { Success, Failed };
@@ -102,13 +125,19 @@ struct HybridMeshBuildResult2D {
     HybridMeshStatus2D status = HybridMeshStatus2D::Failed;
     std::vector<BoundaryLayerStrip2D> strips;
     BoundaryRegion2D outerEnvelopeRegion{std::vector<BoundaryLoop>{}};
-    std::vector<CutCell2D> sourceCells;
+    std::vector<CutCell2D> remainderSourceCells;
+    std::vector<HybridSourceCell2D> sourceCells;
     TopologyMesh2D topology;
+    TopologyMesh2D solverTopology;
     std::vector<HybridCellRecord2D> cellRecords;
     HybridInterfaceAudit2D interfaceAudit;
+    HybridInterfaceAudit2D solverInterfaceAudit;
     HybridMeshMetrics2D metrics;
     MeshQualityReport2D meshQuality;
     SolverQualityReport2D solverQuality;
+    SmallCellReport2D remainderSmallCells;
+    AgglomerationResult2D remainderStabilization;
+    SolverTopologyResult2D solverTopologyReport;
     QuadtreeBalanceReport2D balance;
     HybridMeshFailure2D failure;
 

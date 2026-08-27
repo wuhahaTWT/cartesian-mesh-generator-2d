@@ -3,6 +3,7 @@
 #include "cartmesh2d/topology/Topology2D.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -43,6 +44,7 @@ struct SolverTopologyResult2D {
     std::size_t partitionedCellCount = 0;
     std::size_t qualityAgglomeratedSourceCellCount = 0;
     std::size_t qualityRepartitionCount = 0;
+    std::vector<bool> immutableOutputCells;
     SolverTopologyProfile2D profile;
     std::vector<std::string> issues;
 
@@ -51,8 +53,25 @@ struct SolverTopologyResult2D {
     }
 };
 
+// Optional solver-repair constraints. An immutable input cell is retained as
+// one cell, is never merged or repartitioned, and may acquire only collinear
+// common-partition vertices on its edges. H4 uses this for fixed layer quads.
+struct SolverTopologyConstraints2D {
+    std::vector<bool> immutableInputCells;
+    // Retained through the initial convex-partition pass to avoid collinear
+    // common-partition triangulation. Unlike immutable cells, these may be
+    // merged or repartitioned by later quality repair.
+    std::vector<bool> preserveInputCells;
+    // Optional unsplit source geometry for preserved/immutable cells. Global
+    // topology may contain common-partition vertices that are not geometric
+    // corners; retaining the original polygon prevents repair from treating
+    // those collinear interface points as mandatory partition vertices.
+    std::vector<std::optional<Polygon2D>> inputPolygonOverrides;
+};
+
 struct SolverLocalRepartitionResult2D {
     TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
     std::size_t repartitionCount = 0;
     std::vector<std::string> issues;
 
@@ -98,6 +117,13 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] SolverTopologyResult2D buildSolverTopology2D(
+    const TopologyMesh2D& topology,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const SolverTopologyConstraints2D& constraints,
     const TolerancePolicy& tol = {});
 
 } // namespace cartmesh2d

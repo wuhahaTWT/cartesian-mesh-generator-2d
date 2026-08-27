@@ -384,6 +384,7 @@ using ProfileClock = std::chrono::steady_clock;
 struct PartitionAttempt2D {
     TopologyMesh2D topology;
     std::vector<std::size_t> sourceForCell;
+    std::vector<bool> immutableForCell;
     std::size_t partitionedSourceCellCount = 0;
     std::string error;
 };
@@ -506,15 +507,20 @@ struct LocalQualityRank2D {
 [[nodiscard]] PartitionAttempt2D partitionSourcePolygons(
     const std::vector<Polygon2D>& sourcePolygons,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
-    SolverTopologyProfile2D* profile=nullptr,bool candidate=false) {
+    SolverTopologyProfile2D* profile=nullptr,bool candidate=false,
+    const std::vector<bool>& immutableSources={},
+    const std::vector<bool>& preserveSources={}) {
     PartitionAttempt2D result;
     std::vector<CutCell2D> cells;
     cells.reserve(sourcePolygons.size());
     for (std::size_t source=0;source<sourcePolygons.size();++source) {
         const auto& polygon=sourcePolygons[source];
-        if (strictlyConvex(polygon)) {
+        const bool immutable=!immutableSources.empty() && immutableSources[source];
+        const bool preserve=!preserveSources.empty() && preserveSources[source];
+        if (immutable || preserve || strictlyConvex(polygon)) {
             cells.push_back(makeCell(cells.size(),polygon,tol));
             result.sourceForCell.push_back(source);
+            result.immutableForCell.push_back(immutable);
             continue;
         }
         const auto pieces=triangulate(polygon,domain,boundary,tol);
@@ -527,6 +533,7 @@ struct LocalQualityRank2D {
         for (const auto& piece:*pieces) {
             cells.push_back(makeCell(cells.size(),piece,tol));
             result.sourceForCell.push_back(source);
+            result.immutableForCell.push_back(false);
         }
     }
     const auto topologyStart=ProfileClock::now();
@@ -540,18 +547,26 @@ struct LocalQualityRank2D {
             ++profile->candidateTopologyCount;
         }
     }
-    if (!result.topology.valid()) result.error="partitioned solver topology audit failed";
+    if (!result.topology.valid()) {
+        result.error="partitioned solver topology audit failed";
+        if (!result.topology.issues.empty()) {
+            result.error+=": "+result.topology.issues.front().message;
+        }
+    }
     return result;
 }
 
 [[nodiscard]] std::vector<std::pair<std::size_t,std::size_t>> sourceMergePairs(
-    const PartitionAttempt2D& partition,const SolverQualityReport2D& quality) {
+    const PartitionAttempt2D& partition,const SolverQualityReport2D& quality,
+    const std::vector<bool>& immutableSources) {
     std::vector<std::pair<std::size_t,std::size_t>> pairs;
     const auto addEdge=[&](const Edge2D& edge) {
         if (!edge.neighbour || edge.owner>=partition.sourceForCell.size() ||
             *edge.neighbour>=partition.sourceForCell.size()) return;
         const std::size_t first=partition.sourceForCell[edge.owner];
         const std::size_t second=partition.sourceForCell[*edge.neighbour];
+        if ((!immutableSources.empty() && immutableSources[first]) ||
+            (!immutableSources.empty() && immutableSources[second])) return;
         if (first!=second) pairs.emplace_back(std::min(first,second),std::max(first,second));
     };
     for (const auto& issue:quality.issues) {
@@ -583,6 +598,11 @@ struct LocalQualityRank2D {
     return polygon;
 }
 
+struct RepartitionBatch2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+};
+
 [[nodiscard]] std::vector<std::pair<Polygon2D,Polygon2D>> convexTwoPieceSplits(
     const Polygon2D& polygon,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
@@ -613,7 +633,8 @@ struct LocalQualityRank2D {
 
 [[nodiscard]] std::vector<std::pair<std::size_t,std::size_t>>
 solverRepartitionPairs(const TopologyMesh2D& topology,
-                       const SolverQualityReport2D& quality) {
+                       const SolverQualityReport2D& quality,
+                       const std::vector<bool>& immutableCells={}) {
     std::vector<std::size_t> affected;
     for (const auto& issue:quality.issues) {
         if (!internalInterfaceIssue(issue.code)) continue;
@@ -629,10 +650,10 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
             if (edgeId>=topology.edges.size()) continue;
             const auto& edge=topology.edges[edgeId];
             if (!edge.neighbour) continue;
-            if (edge.owner==cell) pairs.emplace_back(std::min(cell,*edge.neighbour),
-                                                     std::max(cell,*edge.neighbour));
-            else if (*edge.neighbour==cell) pairs.emplace_back(std::min(cell,edge.owner),
-                                                                std::max(cell,edge.owner));
+            const std::size_t other=edge.owner==cell?*edge.neighbour:edge.owner;
+            if ((!immutableCells.empty() && immutableCells[cell]) ||
+                (!immutableCells.empty() && immutableCells[other])) continue;
+            pairs.emplace_back(std::min(cell,other),std::max(cell,other));
         }
     }
     std::sort(pairs.begin(),pairs.end());
@@ -640,23 +661,30 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     return pairs;
 }
 
-[[nodiscard]] TopologyMesh2D repartitionPair(
+[[nodiscard]] RepartitionBatch2D repartitionPair(
     const TopologyMesh2D& topology,std::size_t first,std::size_t second,
     const Polygon2D& firstPiece,const Polygon2D& secondPiece,
     const Domain2D& domain,const BoundaryRegion2D& boundary,
-    const TolerancePolicy& tol,SolverTopologyProfile2D* profile) {
+    const TolerancePolicy& tol,SolverTopologyProfile2D* profile,
+    const std::vector<bool>& immutableCells) {
     std::vector<CutCell2D> cells;
+    std::vector<bool> rebuiltImmutable;
     cells.reserve(topology.cells.size());
     for (std::size_t cell=0;cell<topology.cells.size();++cell) {
         if (cell==first) {
             cells.push_back(makeCell(cells.size(),firstPiece,tol));
             cells.push_back(makeCell(cells.size(),secondPiece,tol));
+            rebuiltImmutable.push_back(false);
+            rebuiltImmutable.push_back(false);
         }
         if (cell==first || cell==second) continue;
         cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        rebuiltImmutable.push_back(!immutableCells.empty() && immutableCells[cell]);
     }
     const auto topologyStart=ProfileClock::now();
-    auto rebuilt=buildGlobalTopology(cells,domain,boundary,tol);
+    RepartitionBatch2D rebuilt;
+    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol);
+    rebuilt.immutableCells=std::move(rebuiltImmutable);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
         profile->buildGlobalTopologySeconds+=elapsed;
@@ -907,11 +935,46 @@ template<class Proposal>
     return result;
 }
 
-[[nodiscard]] TopologyMesh2D applyRepartitionBatch(
+[[nodiscard]] std::vector<bool> applySourceMergeProtection(
+    const std::vector<bool>& immutableSources,
+    const std::vector<SourceMergeProposal2D>& selected) {
+    if (immutableSources.empty()) return {};
+    std::vector<bool> removed(immutableSources.size(),false);
+    for (const auto& proposal:selected) {
+        if (proposal.second<removed.size()) removed[proposal.second]=true;
+    }
+    std::vector<bool> result;
+    result.reserve(immutableSources.size()-selected.size());
+    for (std::size_t source=0;source<immutableSources.size();++source) {
+        if (!removed[source]) result.push_back(immutableSources[source]);
+    }
+    return result;
+}
+
+[[nodiscard]] std::vector<bool> applySourceMergePreservation(
+    const std::vector<bool>& preserveSources,
+    const std::vector<SourceMergeProposal2D>& selected) {
+    if (preserveSources.empty()) return {};
+    std::vector<bool> removed(preserveSources.size(),false);
+    std::vector<bool> resultFlags=preserveSources;
+    for (const auto& proposal:selected) {
+        if (proposal.first<resultFlags.size()) resultFlags[proposal.first]=false;
+        if (proposal.second<removed.size()) removed[proposal.second]=true;
+    }
+    std::vector<bool> result;
+    result.reserve(preserveSources.size()-selected.size());
+    for (std::size_t source=0;source<preserveSources.size();++source) {
+        if (!removed[source]) result.push_back(resultFlags[source]);
+    }
+    return result;
+}
+
+[[nodiscard]] RepartitionBatch2D applyRepartitionBatch(
     const TopologyMesh2D& topology,
     const std::vector<RepartitionProposal2D>& selected,
     const Domain2D& domain,const BoundaryRegion2D& boundary,
-    const TolerancePolicy& tol,SolverTopologyProfile2D* profile) {
+    const TolerancePolicy& tol,SolverTopologyProfile2D* profile,
+    const std::vector<bool>& immutableCells) {
     std::vector<const RepartitionProposal2D*> replacements(topology.cells.size(),nullptr);
     std::vector<bool> removed(topology.cells.size(),false);
     for (const auto& proposal:selected) {
@@ -920,18 +983,25 @@ template<class Proposal>
         removed[proposal.second]=true;
     }
     std::vector<CutCell2D> cells;
+    std::vector<bool> rebuiltImmutable;
     cells.reserve(topology.cells.size());
+    rebuiltImmutable.reserve(topology.cells.size());
     for (std::size_t cell=0;cell<topology.cells.size();++cell) {
         if (removed[cell]) continue;
         if (replacements[cell]) {
             cells.push_back(makeCell(cells.size(),replacements[cell]->firstPiece,tol));
             cells.push_back(makeCell(cells.size(),replacements[cell]->secondPiece,tol));
+            rebuiltImmutable.push_back(false);
+            rebuiltImmutable.push_back(false);
         } else {
             cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+            rebuiltImmutable.push_back(!immutableCells.empty() && immutableCells[cell]);
         }
     }
     const auto topologyStart=ProfileClock::now();
-    auto rebuilt=buildGlobalTopology(cells,domain,boundary,tol);
+    RepartitionBatch2D rebuilt;
+    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol);
+    rebuilt.immutableCells=std::move(rebuiltImmutable);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
         profile->buildGlobalTopologySeconds+=elapsed;
@@ -965,9 +1035,11 @@ template<class Proposal>
 SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
-    SolverTopologyProfile2D* profile,bool useBatch) {
+    SolverTopologyProfile2D* profile,bool useBatch,
+    const std::vector<bool>& initialImmutableCells={}) {
     SolverLocalRepartitionResult2D result;
     result.topology=topology;
+    result.immutableCells=initialImmutableCells;
     if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid()) {
         result.issues.push_back("local solver repartition requires valid inputs");
         return result;
@@ -977,7 +1049,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         if (quality.valid()) break;
         if (profile) ++profile->repartitionIterations;
         const auto generationStart=ProfileClock::now();
-        const auto pairs=solverRepartitionPairs(result.topology,quality);
+        const auto pairs=solverRepartitionPairs(
+            result.topology,quality,result.immutableCells);
         if (profile) {
             profile->candidateGenerationSeconds+=profileSeconds(generationStart);
             profile->repartitionCandidatePairs+=pairs.size();
@@ -1026,11 +1099,14 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 const std::vector<RepartitionProposal2D> batch(
                     selected.begin(),selected.begin()+static_cast<std::ptrdiff_t>(batchSize));
                 auto candidate=applyRepartitionBatch(
-                    result.topology,batch,domain,boundary,tol,profile);
-                if (candidate.valid()) {
-                    const auto candidateQuality=timedFullQuality(candidate,tol,profile,true);
+                    result.topology,batch,domain,boundary,tol,profile,
+                    result.immutableCells);
+                if (candidate.topology.valid()) {
+                    const auto candidateQuality=timedFullQuality(
+                        candidate.topology,tol,profile,true);
                     if (betterQualityScore(qualityScore(candidateQuality),qualityScore(quality))) {
-                        result.topology=std::move(candidate);
+                        result.topology=std::move(candidate.topology);
+                        result.immutableCells=std::move(candidate.immutableCells);
                         result.repartitionCount+=batchSize;
                         if (profile) {
                             profile->acceptedRepartitions+=batchSize;
@@ -1048,7 +1124,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
 
         // Fail closed to the H2 exhaustive global check if the locally ranked
         // independent batch does not strictly improve the authoritative score.
-        std::optional<TopologyMesh2D> bestTopology;
+        std::optional<RepartitionBatch2D> bestTopology;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
             const auto polygonStart=ProfileClock::now();
@@ -1067,9 +1143,11 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             for (const auto& [firstPiece,secondPiece]:splits) {
                 auto candidate=repartitionPair(result.topology,first,second,
                                                firstPiece,secondPiece,
-                                               domain,boundary,tol,profile);
-                if (!candidate.valid()) continue;
-                const auto candidateQuality=timedFullQuality(candidate,tol,profile,true);
+                                               domain,boundary,tol,profile,
+                                               result.immutableCells);
+                if (!candidate.topology.valid()) continue;
+                const auto candidateQuality=timedFullQuality(
+                    candidate.topology,tol,profile,true);
                 const auto candidateScore=qualityScore(candidateQuality);
                 if (betterQualityScore(candidateScore,bestScore)) {
                     bestScore=candidateScore;
@@ -1078,7 +1156,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             }
         }
         if (!bestTopology) break;
-        result.topology=std::move(*bestTopology);
+        result.topology=std::move(bestTopology->topology);
+        result.immutableCells=std::move(bestTopology->immutableCells);
         ++result.repartitionCount;
         if (profile) ++profile->acceptedRepartitions;
         if (profile) ++profile->acceptedTopologyCommitCount;
@@ -1144,15 +1223,47 @@ repartitionSolverTopologyByQualitySequentialReference2D(
 SolverTopologyResult2D buildSolverTopology2D(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    return buildSolverTopology2D(
+        topology,domain,boundary,SolverTopologyConstraints2D{},tol);
+}
+
+SolverTopologyResult2D buildSolverTopology2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const SolverTopologyConstraints2D& constraints,
+    const TolerancePolicy& tol) {
     SolverTopologyResult2D result;
     result.inputCellCount=topology.cells.size();
-    if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid()) {
+    if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid() ||
+        (!constraints.immutableInputCells.empty() &&
+         constraints.immutableInputCells.size()!=topology.cells.size()) ||
+        (!constraints.preserveInputCells.empty() &&
+         constraints.preserveInputCells.size()!=topology.cells.size()) ||
+        (!constraints.inputPolygonOverrides.empty() &&
+         constraints.inputPolygonOverrides.size()!=topology.cells.size())) {
         result.issues.push_back("solver topology repair requires valid inputs");
         return result;
     }
     std::vector<Polygon2D> sourcePolygons;
     sourcePolygons.reserve(topology.cells.size());
-    for (const auto& cell:topology.cells) {
+    for (std::size_t cellId=0;cellId<topology.cells.size();++cellId) {
+        const auto& cell=topology.cells[cellId];
+        if (!constraints.inputPolygonOverrides.empty() &&
+            constraints.inputPolygonOverrides[cellId].has_value()) {
+            const auto& polygon=*constraints.inputPolygonOverrides[cellId];
+            const BoundaryLoop loop(polygon.vertices);
+            const double areaScale=std::max(std::abs(polygon.area()),
+                                            std::abs(cell.geometryArea));
+            if (!loop.diagnose(tol).valid() || !(polygon.signedArea()>0.0) ||
+                std::abs(polygon.area()-cell.geometryArea)>
+                    tol.absolute*tol.absolute+tol.relative*areaScale) {
+                result.issues.push_back(
+                    "solver topology polygon override does not match input cell");
+                return result;
+            }
+            sourcePolygons.push_back(polygon);
+            continue;
+        }
         Polygon2D polygon;
         polygon.vertices.reserve(cell.vertices.size());
         for (const auto vertex:cell.vertices) {
@@ -1167,7 +1278,10 @@ SolverTopologyResult2D buildSolverTopology2D(
 
     const auto initialPartitionStart=ProfileClock::now();
     PartitionAttempt2D partition=partitionSourcePolygons(
-        sourcePolygons,domain,boundary,tol,&result.profile,false);
+        sourcePolygons,domain,boundary,tol,&result.profile,false,
+        constraints.immutableInputCells,constraints.preserveInputCells);
+    std::vector<bool> immutableSources=constraints.immutableInputCells;
+    std::vector<bool> preserveSources=constraints.preserveInputCells;
     result.profile.initialPartitionSeconds=profileSeconds(initialPartitionStart);
     if (!partition.error.empty()) {
         result.issues.push_back(partition.error);
@@ -1179,7 +1293,7 @@ SolverTopologyResult2D buildSolverTopology2D(
         if (quality.valid()) break;
         ++result.profile.sourceRepairIterations;
         const auto generationStart=ProfileClock::now();
-        const auto pairs=sourceMergePairs(partition,quality);
+        const auto pairs=sourceMergePairs(partition,quality,immutableSources);
         result.profile.candidateGenerationSeconds+=profileSeconds(generationStart);
         result.profile.sourceCandidatePairs+=pairs.size();
         const auto adjacency=sourceAdjacency(partition,sourcePolygons.size());
@@ -1213,14 +1327,19 @@ SolverTopologyResult2D buildSolverTopology2D(
             const std::vector<SourceMergeProposal2D> batch(
                 selected.begin(),selected.begin()+static_cast<std::ptrdiff_t>(batchSize));
             auto candidatePolygons=applySourceMergeBatch(sourcePolygons,batch);
+            auto candidateImmutable=applySourceMergeProtection(immutableSources,batch);
+            auto candidatePreserve=applySourceMergePreservation(preserveSources,batch);
             auto candidate=partitionSourcePolygons(
-                candidatePolygons,domain,boundary,tol,&result.profile,true);
+                candidatePolygons,domain,boundary,tol,&result.profile,true,
+                candidateImmutable,candidatePreserve);
             if (candidate.error.empty()) {
                 const auto candidateQuality=timedFullQuality(
                     candidate.topology,tol,&result.profile,true);
                 if (betterQualityScore(qualityScore(candidateQuality),qualityScore(quality))) {
                     partition=std::move(candidate);
                     sourcePolygons=std::move(candidatePolygons);
+                    immutableSources=std::move(candidateImmutable);
+                    preserveSources=std::move(candidatePreserve);
                     result.qualityAgglomeratedSourceCellCount+=batchSize;
                     result.profile.acceptedSourceRepairs+=batchSize;
                     ++result.profile.acceptedTopologyCommitCount;
@@ -1237,6 +1356,8 @@ SolverTopologyResult2D buildSolverTopology2D(
         // independent batch is invalid or does not improve the global score.
         std::optional<PartitionAttempt2D> bestPartition;
         std::optional<std::vector<Polygon2D>> bestPolygons;
+        std::optional<std::vector<bool>> bestImmutable;
+        std::optional<std::vector<bool>> bestPreserve;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
             if (second>=sourcePolygons.size()) continue;
@@ -1248,12 +1369,24 @@ SolverTopologyResult2D buildSolverTopology2D(
                 continue;
             }
             auto candidatePolygons=sourcePolygons;
+            auto candidateImmutable=immutableSources;
+            auto candidatePreserve=preserveSources;
             candidatePolygons[first]=*merged;
             candidatePolygons.erase(
                 candidatePolygons.begin()+static_cast<std::ptrdiff_t>(second));
+            if (!candidateImmutable.empty()) {
+                candidateImmutable.erase(
+                    candidateImmutable.begin()+static_cast<std::ptrdiff_t>(second));
+            }
+            if (!candidatePreserve.empty()) {
+                candidatePreserve[first]=false;
+                candidatePreserve.erase(
+                    candidatePreserve.begin()+static_cast<std::ptrdiff_t>(second));
+            }
             result.profile.candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
             auto candidate=partitionSourcePolygons(
-                candidatePolygons,domain,boundary,tol,&result.profile,true);
+                candidatePolygons,domain,boundary,tol,&result.profile,true,
+                candidateImmutable,candidatePreserve);
             if (!candidate.error.empty()) continue;
             const auto candidateQuality=timedFullQuality(
                 candidate.topology,tol,&result.profile,true);
@@ -1262,11 +1395,15 @@ SolverTopologyResult2D buildSolverTopology2D(
                 bestScore=candidateScore;
                 bestPartition=std::move(candidate);
                 bestPolygons=std::move(candidatePolygons);
+                bestImmutable=std::move(candidateImmutable);
+                bestPreserve=std::move(candidatePreserve);
             }
         }
         if (!bestPartition) break;
         partition=std::move(*bestPartition);
         sourcePolygons=std::move(*bestPolygons);
+        immutableSources=std::move(*bestImmutable);
+        preserveSources=std::move(*bestPreserve);
         ++result.qualityAgglomeratedSourceCellCount;
         ++result.profile.acceptedSourceRepairs;
         ++result.profile.acceptedTopologyCommitCount;
@@ -1274,7 +1411,8 @@ SolverTopologyResult2D buildSolverTopology2D(
     result.profile.sourceRepairSeconds=profileSeconds(sourceRepairStart);
     const auto repartitionStart=ProfileClock::now();
     auto repartitioned=repartitionSolverTopologyByQualityImpl(
-        partition.topology,domain,boundary,tol,&result.profile,true);
+        partition.topology,domain,boundary,tol,&result.profile,true,
+        partition.immutableForCell);
     result.profile.finalRepartitionSeconds=profileSeconds(repartitionStart);
     if (!repartitioned.valid()) {
         result.issues.insert(result.issues.end(),repartitioned.issues.begin(),
@@ -1284,6 +1422,7 @@ SolverTopologyResult2D buildSolverTopology2D(
     partition.topology=std::move(repartitioned.topology);
     result.qualityRepartitionCount=repartitioned.repartitionCount;
     result.topology=std::move(partition.topology);
+    result.immutableOutputCells=std::move(repartitioned.immutableCells);
     result.partitionedCellCount=partition.partitionedSourceCellCount;
     result.outputCellCount=result.topology.cells.size();
     return result;

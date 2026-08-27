@@ -1,5 +1,6 @@
 #include "cartmesh2d/hybrid/HybridMesh2D.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -29,6 +30,18 @@ std::vector<Point2D> ellipse(std::size_t count, double a, double b,
                              static_cast<double>(i) / static_cast<double>(count);
         points.push_back({center.x + a * std::cos(angle),
                           center.y + b * std::sin(angle)});
+    }
+    return points;
+}
+
+std::vector<Point2D> superellipse(std::size_t count,double a,double b) {
+    std::vector<Point2D> points;
+    for (std::size_t i=0;i<count;++i) {
+        const double angle=2.0*std::numbers::pi*static_cast<double>(i)/
+                           static_cast<double>(count);
+        const double cosine=std::cos(angle),sine=std::sin(angle);
+        points.push_back({a*std::copysign(std::sqrt(std::abs(cosine)),cosine),
+                          b*std::copysign(std::sqrt(std::abs(sine)),sine)});
     }
     return points;
 }
@@ -74,9 +87,50 @@ void checkInterfacePairs(const HybridMeshBuildResult2D& result,
           label + " every geometric interface edge is one layer/remainder pair");
 }
 
+void printSolverDiagnostics(const HybridMeshBuildResult2D& result) {
+    for (std::size_t i=0;i<std::min<std::size_t>(4U,result.solverQuality.issues.size());++i) {
+        const auto& issue=result.solverQuality.issues[i];
+        if (issue.edgeId>=result.solverTopology.edges.size()) continue;
+        const auto& edge=result.solverTopology.edges[issue.edgeId];
+        const auto& a=result.solverTopology.vertices[edge.v0].point;
+        const auto& b=result.solverTopology.vertices[edge.v1].point;
+        std::cerr<<" diagnostic edge="<<issue.edgeId<<" ("<<a.x<<','<<a.y
+                 <<")-("<<b.x<<','<<b.y<<") owner="<<edge.owner<<" neighbour=";
+        if (edge.neighbour) std::cerr<<*edge.neighbour;
+        else std::cerr<<"none";
+        std::cerr<<'\n';
+        for (const auto cellId:{edge.owner,*edge.neighbour}) {
+            std::cerr<<"  cell "<<cellId<<':' ;
+            for (const auto vertex:result.solverTopology.cells[cellId].vertices) {
+                const auto& point=result.solverTopology.vertices[vertex].point;
+                std::cerr<<" ("<<point.x<<','<<point.y<<')';
+            }
+            std::cerr<<'\n';
+        }
+    }
+}
+
 } // namespace
 
 int main() {
+    if (std::getenv("H4_SWEEP")!=nullptr) {
+        const BoundaryLoop wall(superellipse(24U,1.8,0.8));
+        const auto layers=layersFor(wall,3U,0.015,1.15);
+        QuadtreeRefinementPolicy2D refine; refine.minimumLevel=3U; refine.boundaryLevel=6U;
+        const Domain2D sweepDomain{{{-2.8,-1.8},{2.8,1.8}}};
+        for (const double factor:{1.8}) {
+            HybridMeshPolicy2D policy; policy.transitionCellWidthMultiplier=factor;
+            const auto value=buildConformalHybridMesh2D(
+                layers,sweepDomain,BoundaryRegion2D(wall),6U,refine,policy);
+            std::cerr<<"factor="<<factor<<" success="<<value.success();
+            if (!value.success()) std::cerr<<" "<<value.failure.message;
+            else std::cerr<<" nonorth="<<value.solverQuality.maxNonOrthogonalityDeg
+                          <<" weight="<<value.solverQuality.minFaceWeight
+                          <<" ratio="<<value.solverQuality.minVolumeRatio;
+            std::cerr<<'\n';
+        }
+        return 0;
+    }
     const Domain2D domain{{{-2.0, -2.0}, {2.0, 2.0}}};
     const BoundaryLoop circleWall(ellipse(32U, 1.0, 1.0, {0.07, 0.03}));
     const auto circleLayers = layersFor(circleWall, 4U, 0.02, 1.2);
@@ -93,6 +147,7 @@ int main() {
         std::cerr << "circle hybrid failure: "
                   << hybridMeshFailureReasonName(circleHybrid.failure.reason)
                   << " " << circleHybrid.failure.message << '\n';
+        printSolverDiagnostics(circleHybrid);
     }
     check(circleHybrid.success(), "circle layer and remainder build one hybrid mesh");
     check(circleLayers.success() &&
@@ -129,6 +184,7 @@ int main() {
         std::cerr << "ellipse hybrid failure: "
                   << hybridMeshFailureReasonName(ellipseHybrid.failure.reason)
                   << " " << ellipseHybrid.failure.message << '\n';
+        printSolverDiagnostics(ellipseHybrid);
     }
     check(ellipseHybrid.success(), "non-uniform-curvature ellipse hybrid succeeds");
     if (ellipseHybrid.success()) {
