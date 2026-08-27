@@ -24,7 +24,7 @@ H4-2 将 H4-1 的固定层数、闭合外流场 boundary-layer strip 接入现�
 
 ## 3. 最终 solver-ready 验证
 
-2026-08-27 GitHub Actions `cartmesh2d-stage6` 最终 run `33058822714`：完整 native 2D stage CTest `71/71 PASS`。
+2026-08-27 GitHub Actions `cartmesh2d-stage6` 最终 run `33059252115`：完整 native 2D stage CTest `71/71 PASS`。
 
 ### Circle
 
@@ -64,6 +64,8 @@ H3 的 100k solver-topology 性能已在独立 H3 阶段完成并有固定报告
 - circle / superellipse 的 hybrid 与 solver VTK/CM2D/quality/report；
 - 两个完整 OpenFOAM case 及独立 reader 报告；
 - `checkmesh_status.txt`。
+
+最终 artifact ID `9640997919`；workflow SHA `d15154718be317b0b16286212054f60354d5fb11` 对应的验证全部通过。
 
 ## 6. 已知限制
 
