@@ -190,8 +190,9 @@ int main() {
         check(circleHybrid.metrics.transitionPolygonCount > 0U,
               "circle transition contains legal general polygons");
         check(circleHybrid.interfaceAudit.pass(1.0e-8) &&
-              circleHybrid.interfaceAudit.interfaceEdgeCount > 32U,
-              "circle outer envelope is split into a closed conformal interface");
+              circleHybrid.interfaceAudit.interfaceEdgeCount ==
+                  circleWall.vertices().size(),
+              "circle preserves the fixed H4-1 outer-envelope partition as a closed interface");
         check(circleHybrid.solverInterfaceAudit.pass(1.0e-8),
               "circle solver repair preserves the H4-1 shared interface");
         check(std::abs(circleHybrid.metrics.areaError) < 1.0e-8,
