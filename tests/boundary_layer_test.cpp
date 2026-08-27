@@ -1,6 +1,7 @@
 #include "cartmesh2d/boundary_layer/BoundaryLayer2D.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -80,6 +81,15 @@ bool samePoints(const std::vector<Point2D>& lhs,
 int main() {
     const TolerancePolicy tolerance{};
 
+    const std::array<Point2D, 4> convexQuad{{
+        {0.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.0, 1.0}}};
+    const std::array<Point2D, 4> concaveQuad{{
+        {0.0, 0.0}, {2.0, 0.0}, {0.8, 0.4}, {0.0, 1.0}}};
+    check(isConvexBoundaryLayerQuad2D(convexQuad, tolerance),
+          "explicit H4-1 convex-quad gate accepts a strict convex quad");
+    check(!isConvexBoundaryLayerQuad2D(concaveQuad, tolerance),
+          "explicit H4-1 convex-quad gate rejects a reflex quad");
+
     const auto resolvedOne = resolveLayerParameters2D(
         {4U, LayerThicknessMode2D::FirstLayerThickness, 0.1, 1.0});
     check(resolvedOne.success(), "growth ratio one resolves without cancellation");
@@ -142,6 +152,14 @@ int main() {
               "circle layer quads have positive audited areas");
         check(strip.outerEnvelope().size() == circlePoints.size(),
               "circle outer envelope is a complete closed ring");
+        for (const auto& cell : strip.cells) {
+            std::array<Point2D, 4> points{};
+            for (std::size_t i = 0; i < cell.vertices.size(); ++i) {
+                points[i] = strip.vertices[cell.vertices[i]].point;
+            }
+            check(isConvexBoundaryLayerQuad2D(points, tolerance),
+                  "every accepted circle layer cell remains strictly convex");
+        }
     }
 
     auto rotatedCircle = circlePoints;
