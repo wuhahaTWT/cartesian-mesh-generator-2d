@@ -172,17 +172,34 @@ void appendGeneralEdgeVertices(
                                     coordinateEps, tol, aId, bId, onEdge);
         return;
     }
-    const double minX = std::min(a.x, b.x) - coordinateEps;
-    const double maxX = std::max(a.x, b.x) + coordinateEps;
-    const auto begin = std::lower_bound(
-        vertices.begin(), vertices.end(), minX,
-        [](const Vertex2D& vertex, double value) {
-            return vertex.point.x < value;
-        });
-    for (auto it = begin; it != vertices.end() && it->point.x <= maxX; ++it) {
-        if (it->id == aId || it->id == bId) continue;
-        if (!pointOnSegment(it->point, {a, b}, tol)) continue;
-        onEdge.push_back({segmentParameter(it->point, a, b), it->id});
+    if (std::abs(b.x - a.x) >= std::abs(b.y - a.y)) {
+        const double minimum = std::min(a.x, b.x) - coordinateEps;
+        const double maximum = std::max(a.x, b.x) + coordinateEps;
+        const auto begin = std::lower_bound(
+            vertices.begin(), vertices.end(), minimum,
+            [](const Vertex2D& vertex, double value) {
+                return vertex.point.x < value;
+            });
+        for (auto it = begin; it != vertices.end() && it->point.x <= maximum; ++it) {
+            if (it->id == aId || it->id == bId) continue;
+            if (!pointOnSegment(it->point, {a, b}, tol)) continue;
+            onEdge.push_back({segmentParameter(it->point, a, b), it->id});
+        }
+    } else {
+        const double minimum = std::min(a.y, b.y) - coordinateEps;
+        const double maximum = std::max(a.y, b.y) + coordinateEps;
+        const auto begin = std::lower_bound(
+            verticesByY.begin(), verticesByY.end(), minimum,
+            [&](std::size_t vertexId, double value) {
+                return vertices[vertexId].point.y < value;
+            });
+        for (auto it = begin; it != verticesByY.end() &&
+             vertices[*it].point.y <= maximum; ++it) {
+            const auto vertexId = *it;
+            if (vertexId == aId || vertexId == bId) continue;
+            if (!pointOnSegment(vertices[vertexId].point, {a, b}, tol)) continue;
+            onEdge.push_back({segmentParameter(vertices[vertexId].point, a, b), vertexId});
+        }
     }
 }
 
