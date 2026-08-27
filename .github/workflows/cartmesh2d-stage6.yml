@@ -39,11 +39,17 @@ jobs:
 
           h = Path('cartmesh2d/include/cartmesh2d/hybrid/HybridMesh2D.hpp')
           text = h.read_text()
-          old = 'constexpr double minimumTotalWidthCells = 3.6;'
-          new = 'constexpr double minimumTotalWidthCells = 5.4;'
-          if text.count(old) != 1:
-              raise SystemExit('diagnostic width-rule patch target not found')
-          h.write_text(text.replace(old, new, 1))
+          replacements = {
+              'constexpr double minimumTotalWidthCells = 3.6;':
+                  'constexpr double minimumTotalWidthCells = 5.4;',
+              'constexpr double edgeWidthFraction = 0.60;':
+                  'constexpr double edgeWidthFraction = 0.0;',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'diagnostic rule patch target not found: {old}')
+              text = text.replace(old, new, 1)
+          h.write_text(text)
           PY
 
       - name: Configure root project with native 2D enabled
