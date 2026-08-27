@@ -21,6 +21,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           p = Path('cartmesh2d/src/hybrid/HybridMesh2D.cpp')
           s = p.read_text()
           pattern = re.compile(
@@ -33,8 +34,16 @@ jobs:
               '\n        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);',
               s, count=1)
           if count != 1:
-              raise SystemExit(f'diagnostic patch target count={count}')
+              raise SystemExit(f'diagnostic source-polygon patch target count={count}')
           p.write_text(s2)
+
+          h = Path('cartmesh2d/include/cartmesh2d/hybrid/HybridMesh2D.hpp')
+          text = h.read_text()
+          old = 'constexpr double minimumTotalWidthCells = 3.6;'
+          new = 'constexpr double minimumTotalWidthCells = 5.4;'
+          if text.count(old) != 1:
+              raise SystemExit('diagnostic width-rule patch target not found')
+          h.write_text(text.replace(old, new, 1))
           PY
 
       - name: Configure root project with native 2D enabled
