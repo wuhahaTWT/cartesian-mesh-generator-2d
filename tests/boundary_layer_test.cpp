@@ -140,9 +140,22 @@ int main() {
         check(strip.metrics.minCellArea > 0.0 &&
               strip.metrics.maxCellArea >= strip.metrics.minCellArea,
               "circle layer quads have positive audited areas");
+        check(std::all_of(strip.cells.begin(),strip.cells.end(),
+                          [&](const BoundaryLayerCell2D& cell) {
+                              std::array<Point2D,4> quad{};
+                              for (std::size_t i=0;i<quad.size();++i) {
+                                  quad[i]=strip.vertices[cell.vertices[i]].point;
+                              }
+                              return isConvexBoundaryLayerQuad2D(quad);
+                          }),
+              "every generated boundary-layer cell is an explicitly convex quad");
         check(strip.outerEnvelope().size() == circlePoints.size(),
               "circle outer envelope is a complete closed ring");
     }
+
+    check(!isConvexBoundaryLayerQuad2D(
+              {{{0.0,0.0},{2.0,0.0},{0.5,0.25},{0.0,1.0}}}),
+          "manufactured positive-area concave quad fails the convexity predicate");
 
     auto rotatedCircle = circlePoints;
     std::rotate(rotatedCircle.begin(), rotatedCircle.begin() + 17,

@@ -18,7 +18,8 @@ namespace cartmesh2d {
 enum class HybridCellKind2D {
     BoundaryLayer,
     RemainderCut,
-    RemainderCartesian
+    RemainderCartesian,
+    Transition
 };
 
 struct HybridCellRecord2D {
@@ -80,6 +81,7 @@ struct HybridMeshMetrics2D {
     double expectedFluidArea = 0.0;
     double actualFluidArea = 0.0;
     double areaError = 0.0;
+    double selectedTransitionWidthMultiplier = 0.0;
 };
 
 enum class HybridMeshFailureReason2D {
@@ -115,7 +117,7 @@ struct HybridMeshPolicy2D {
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
-    double transitionCellWidthMultiplier = 1.2;
+    double transitionCellWidthMultiplier = 1.8;
     std::size_t transitionRingCount = 3U;
 };
 

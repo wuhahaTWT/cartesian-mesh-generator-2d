@@ -2,9 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <iostream>
 #include <numbers>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -99,6 +99,7 @@ void printSolverDiagnostics(const HybridMeshBuildResult2D& result) {
         if (edge.neighbour) std::cerr<<*edge.neighbour;
         else std::cerr<<"none";
         std::cerr<<'\n';
+        if (!edge.neighbour) continue;
         for (const auto cellId:{edge.owner,*edge.neighbour}) {
             std::cerr<<"  cell "<<cellId<<':' ;
             for (const auto vertex:result.solverTopology.cells[cellId].vertices) {
@@ -113,24 +114,6 @@ void printSolverDiagnostics(const HybridMeshBuildResult2D& result) {
 } // namespace
 
 int main() {
-    if (std::getenv("H4_SWEEP")!=nullptr) {
-        const BoundaryLoop wall(superellipse(24U,1.8,0.8));
-        const auto layers=layersFor(wall,3U,0.015,1.15);
-        QuadtreeRefinementPolicy2D refine; refine.minimumLevel=3U; refine.boundaryLevel=6U;
-        const Domain2D sweepDomain{{{-2.8,-1.8},{2.8,1.8}}};
-        for (const double factor:{1.8}) {
-            HybridMeshPolicy2D policy; policy.transitionCellWidthMultiplier=factor;
-            const auto value=buildConformalHybridMesh2D(
-                layers,sweepDomain,BoundaryRegion2D(wall),6U,refine,policy);
-            std::cerr<<"factor="<<factor<<" success="<<value.success();
-            if (!value.success()) std::cerr<<" "<<value.failure.message;
-            else std::cerr<<" nonorth="<<value.solverQuality.maxNonOrthogonalityDeg
-                          <<" weight="<<value.solverQuality.minFaceWeight
-                          <<" ratio="<<value.solverQuality.minVolumeRatio;
-            std::cerr<<'\n';
-        }
-        return 0;
-    }
     const Domain2D domain{{{-2.0, -2.0}, {2.0, 2.0}}};
     const BoundaryLoop circleWall(ellipse(32U, 1.0, 1.0, {0.07, 0.03}));
     const auto circleLayers = layersFor(circleWall, 4U, 0.02, 1.2);
@@ -163,11 +146,42 @@ int main() {
               "circle contains true remainder Cut-cells and Cartesian cells");
         check(circleHybrid.metrics.transitionPolygonCount > 0U,
               "circle transition contains legal general polygons");
+        const auto layerSources=std::count_if(
+            circleHybrid.sourceCells.begin(),circleHybrid.sourceCells.end(),
+            [](const HybridSourceCell2D& source) {
+                return source.kind==HybridCellKind2D::BoundaryLayer &&
+                       !source.quadtreeSourceKey.has_value();
+            });
+        const auto transitionSources=std::count_if(
+            circleHybrid.sourceCells.begin(),circleHybrid.sourceCells.end(),
+            [](const HybridSourceCell2D& source) {
+                return source.kind==HybridCellKind2D::Transition &&
+                       !source.quadtreeSourceKey.has_value();
+            });
+        check(layerSources==static_cast<std::ptrdiff_t>(
+                  circleHybrid.metrics.boundaryLayerCellCount) &&
+              transitionSources==static_cast<std::ptrdiff_t>(
+                  circleHybrid.metrics.transitionPolygonCount),
+              "layer and transition sources have explicit non-quadtree semantics");
+        check(circleHybrid.meshQuality.sourceCutCellCount+
+                  circleHybrid.meshQuality.sourceFullCellCount==
+                  circleHybrid.remainderSourceCells.size(),
+              "quality source statistics contain only real quadtree remainder cells");
+        check(std::accumulate(circleHybrid.meshQuality.levelDistribution.begin(),
+                  circleHybrid.meshQuality.levelDistribution.end(),std::size_t{0},
+                  [](std::size_t sum,const auto& entry) { return sum+entry.second; })==
+                  circleHybrid.remainderSourceCells.size() &&
+              std::all_of(circleHybrid.meshQuality.levelDistribution.begin(),
+                  circleHybrid.meshQuality.levelDistribution.end(),
+                  [](const auto& entry) { return entry.first<=6U; }),
+              "quality level statistics decode only real quadtree keys");
         check(circleHybrid.interfaceAudit.pass(1.0e-8) &&
-              circleHybrid.interfaceAudit.interfaceEdgeCount > 32U,
-              "circle outer envelope is split into a closed conformal interface");
+              circleHybrid.interfaceAudit.interfaceEdgeCount == 32U,
+              "circle outer envelope is one closed conformal interface");
         check(std::abs(circleHybrid.metrics.areaError) < 1.0e-8,
               "circle hybrid conserves domain minus solid area");
+        check(circleHybrid.solverQuality.valid(),
+              "circle hybrid solver quality passes unchanged thresholds");
         checkInterfacePairs(circleHybrid, "circle");
     }
 
@@ -195,7 +209,33 @@ int main() {
               "ellipse has no non-manifold or unclassified interface edge");
         check(std::abs(ellipseHybrid.metrics.areaError) < 1.0e-8,
               "ellipse hybrid area closes");
+        check(ellipseHybrid.solverQuality.valid(),
+              "ellipse hybrid solver quality passes unchanged thresholds");
         checkInterfacePairs(ellipseHybrid, "ellipse");
+    }
+
+    const Domain2D superellipseDomain{{{-2.8, -1.8}, {2.8, 1.8}}};
+    const BoundaryLoop superellipseWall(superellipse(24U, 1.8, 0.8));
+    const auto superellipseLayers=layersFor(superellipseWall,3U,0.015,1.15);
+    const auto superellipseHybrid=buildConformalHybridMesh2D(
+        superellipseLayers,superellipseDomain,
+        BoundaryRegion2D(superellipseWall),6U,ellipseRefinement);
+    if (!superellipseHybrid.success()) {
+        std::cerr<<"superellipse hybrid failure: "
+                 <<hybridMeshFailureReasonName(superellipseHybrid.failure.reason)
+                 <<" "<<superellipseHybrid.failure.message<<'\n';
+        printSolverDiagnostics(superellipseHybrid);
+    }
+    check(superellipseHybrid.success(),
+          "24-segment superellipse hybrid is solver-ready");
+    if (superellipseHybrid.success()) {
+        check(superellipseHybrid.interfaceAudit.pass(1.0e-8),
+              "superellipse interface is closed and conformal");
+        check(std::abs(superellipseHybrid.metrics.areaError)<1.0e-8,
+              "superellipse hybrid area closes");
+        check(superellipseHybrid.solverQuality.valid(),
+              "superellipse solver quality passes unchanged thresholds");
+        checkInterfacePairs(superellipseHybrid,"superellipse");
     }
 
     const Domain2D tooSmall{{{-1.02, -1.02}, {1.02, 1.02}}};

@@ -1,18 +1,18 @@
 {
   "area_error": 1.7763568394002505e-15,
   "area_sum": 14.871177621957498,
-  "boundary_edge_count": 64,
-  "cell_count": 496,
-  "interface_edge_count": 171,
-  "interface_length": 9.582978084430327,
-  "interface_vertex_count": 171,
-  "internal_edge_count": 1117,
+  "boundary_edge_count": 92,
+  "cell_count": 680,
+  "interface_edge_count": 24,
+  "interface_length": 9.582978084430325,
+  "interface_vertex_count": 24,
+  "internal_edge_count": 1579,
   "issues": [],
   "layer_cell_count": 72,
-  "minimum_signed_area": 4.163321247752094e-07,
+  "minimum_signed_area": 0.0006507013203832512,
   "non_manifold_edge_count": 0,
   "overlap_count": 0,
-  "remainder_cell_count": 424,
+  "remainder_cell_count": 608,
   "valid": true,
-  "vertex_count": 685
+  "vertex_count": 991
 }

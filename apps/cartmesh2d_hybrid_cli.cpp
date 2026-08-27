@@ -198,11 +198,15 @@ int main(int argc, char** argv) {
 
     const auto vtkPath = outputPrefix.string() + ".hybrid.vtk";
     const auto cm2dPath = outputPrefix.string() + ".hybrid.cm2d";
+    const auto solverVtkPath = outputPrefix.string() + ".hybrid.solver.vtk";
+    const auto solverCm2dPath = outputPrefix.string() + ".hybrid.solver.cm2d";
     const auto qualityPath = outputPrefix.string() + ".hybrid.quality.json";
     const auto solverQualityPath = outputPrefix.string() +
                                    ".hybrid.solver-quality.json";
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||
         !writeCm2dTopology(hybrid.topology, cm2dPath, &error) ||
+        !writeLegacyVtk2D(hybrid.solverTopology,solverVtkPath,&error) ||
+        !writeCm2dTopology(hybrid.solverTopology,solverCm2dPath,&error) ||
         !writeText(qualityPath, qualityReportToJson(hybrid.meshQuality), error) ||
         !writeText(solverQualityPath,
                    solverQualityReportToJson(hybrid.solverQuality), error)) {
@@ -212,6 +216,11 @@ int main(int argc, char** argv) {
     const auto readback = readCm2dTopology(cm2dPath);
     if (!readback.valid()) {
         std::cerr << "CM2D readback failed: " << readback.error << '\n';
+        return EXIT_FAILURE;
+    }
+    const auto solverReadback=readCm2dTopology(solverCm2dPath);
+    if (!solverReadback.valid()) {
+        std::cerr<<"solver CM2D readback failed: "<<solverReadback.error<<'\n';
         return EXIT_FAILURE;
     }
 
@@ -227,7 +236,7 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
         const auto foam = writeExtrudedOpenFoam2D(
-            hybrid.topology, domain, originalWalls, argv[10], thickness, &error);
+            hybrid.solverTopology, domain, originalWalls, argv[10], thickness, &error);
         if (!foam.valid()) {
             std::cerr << "OpenFOAM output failed: " << error << '\n';
             return EXIT_FAILURE;
@@ -245,6 +254,12 @@ int main(int argc, char** argv) {
               << " area_error=" << hybrid.metrics.areaError
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << " max_nonorthogonality="
+              << hybrid.solverQuality.maxNonOrthogonalityDeg
+              << " min_face_weight="<<hybrid.solverQuality.minFaceWeight
+              << " min_volume_ratio="<<hybrid.solverQuality.minVolumeRatio
+              << " transition_width_multiplier="
+              << hybrid.metrics.selectedTransitionWidthMultiplier
               << " openfoam=" << openFoamStatus
               << " vtk=" << vtkPath << " report=" << jsonPath << '\n';
     return EXIT_SUCCESS;

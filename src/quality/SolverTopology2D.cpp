@@ -550,7 +550,9 @@ struct LocalQualityRank2D {
     if (!result.topology.valid()) {
         result.error="partitioned solver topology audit failed";
         if (!result.topology.issues.empty()) {
-            result.error+=": "+result.topology.issues.front().message;
+            result.error+=": object="+
+                std::to_string(result.topology.issues.front().objectId)+" "+
+                result.topology.issues.front().message;
         }
     }
     return result;
