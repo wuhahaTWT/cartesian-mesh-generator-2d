@@ -100,16 +100,23 @@ jobs:
               assert report['non_two_valent_interface_vertices'] == 0, path
           PY
 
-          docker pull opencfd/openfoam-run:2606
+          image=opencfd/openfoam-run:2606
+          container_root=/home/openfoam/workingDir
+          docker pull "$image"
           for case_name in circle superellipse; do
+            log="$out/${case_name}.checkMesh.log"
             docker run --rm \
-              -v "$PWD:/workspace" \
-              -w /workspace \
-              opencfd/openfoam-run:2606 \
-              checkMesh -case "/workspace/$out/${case_name}-case" \
-              2>&1 | tee "$out/${case_name}.checkMesh.log"
+              -v "$PWD:$container_root" \
+              -w "$container_root" \
+              "$image" \
+              checkMesh -case "$container_root/$out/${case_name}-case" \
+              2>&1 | tee "$log"
+            if ! grep -q 'Mesh OK' "$log"; then
+              echo "OpenFOAM v2606 checkMesh did not report Mesh OK for $case_name" >&2
+              exit 1
+            fi
           done
-          printf 'checkMesh=PASS\n' | tee "$out/checkmesh_status.txt"
+          printf 'checkMesh=PASS (OpenFOAM v2606)\n' | tee "$out/checkmesh_status.txt"
 
       - name: Verify exported acceptance artifacts and CFD fluid side
         shell: bash
