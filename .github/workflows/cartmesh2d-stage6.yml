@@ -15,6 +15,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Temporary H4 diagnostic patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('cartmesh2d/src/hybrid/HybridMesh2D.cpp')
+          s = p.read_text()
+          old = '''        if (transition || source.kind==HybridCellKind2D::BoundaryLayer) {
+              solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);
+          } else {
+              solverConstraints.inputPolygonOverrides.emplace_back(std::nullopt);
+          }'''
+          new = '''        solverConstraints.inputPolygonOverrides.emplace_back(source.polygon);'''
+          if old not in s:
+              raise SystemExit('diagnostic patch target not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+
       - name: Configure root project with native 2D enabled
         run: >-
           cmake -S . -B build_2d
