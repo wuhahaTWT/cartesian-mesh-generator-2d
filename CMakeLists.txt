@@ -15,6 +15,7 @@ add_library(cartmesh2d
     src/stabilization/SmallCell2D.cpp
     src/stabilization/Agglomeration2D.cpp
     src/quality/Quality2D.cpp
+    src/quality/QualityContract2D.cpp
     src/quality/SolverQuality2D.cpp
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
@@ -144,6 +145,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_quality_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_quality_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_quality_contract_tests tests/quality_contract_test.cpp)
+    target_link_libraries(cartmesh2d_quality_contract_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_quality_contract_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_io_tests tests/io_test.cpp)
     target_link_libraries(cartmesh2d_io_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_io_tests PRIVATE cxx_std_20)
@@ -181,6 +186,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_small_cell_tests
             cartmesh2d_agglomeration_tests
             cartmesh2d_quality_tests
+            cartmesh2d_quality_contract_tests
             cartmesh2d_io_tests
             cartmesh2d_dxf_tests
             cartmesh2d_boundary_layer_tests
@@ -209,6 +215,8 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage5a_small_cell_tests COMMAND cartmesh2d_small_cell_tests)
     add_test(NAME cartmesh2d_stage5b_agglomeration_tests COMMAND cartmesh2d_agglomeration_tests)
     add_test(NAME cartmesh2d_stage6a_quality_tests COMMAND cartmesh2d_quality_tests)
+    add_test(NAME cartmesh2d_stageQ1_quality_contract_tests
+             COMMAND cartmesh2d_quality_contract_tests)
     add_test(NAME cartmesh2d_stage6b_io_tests COMMAND cartmesh2d_io_tests)
     add_test(NAME cartmesh2d_stageDXF2_import_tests COMMAND cartmesh2d_dxf_tests)
     add_test(NAME cartmesh2d_stageH4_1_boundary_layer_tests

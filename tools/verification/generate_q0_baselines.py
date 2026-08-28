@@ -18,7 +18,7 @@ from typing import Any, Iterable
 
 FORMAT_VERSION = "cartmesh2d-q0-quality-v1"
 KIND_NAMES = {0: "boundary_layer", 1: "remainder_cut",
-              2: "remainder_cartesian", 3: "termination"}
+              2: "remainder_cartesian", 3: "termination", 4: "transition"}
 CASES = {
     "circle": ("examples/acceptance/circle.xy", [6, 3, 6, 4, 0.02, 1.2, 1.0]),
     "superellipse": ("examples/complex/superellipse_24.xy", [6, 3, 6, 3, 0.015, 1.15, 1.0]),

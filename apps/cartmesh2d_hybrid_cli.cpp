@@ -254,13 +254,17 @@ int main(int argc, char** argv) {
         outputPrefix.string() + ".hybrid.construction-quality.json";
     const auto solverQualityPath = outputPrefix.string() +
                                    ".hybrid.solver-quality.json";
+    const auto qualityContractPath = outputPrefix.string() +
+                                     ".hybrid.quality-contract.json";
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||
         !writeCm2dTopology(hybrid.topology, cm2dPath, &error) ||
         !writeLegacyVtk2D(hybrid.solverTopology, solverVtkPath, &error) ||
         !writeCm2dTopology(hybrid.solverTopology, solverCm2dPath, &error) ||
         !writeText(qualityPath, qualityReportToJson(hybrid.meshQuality), error) ||
         !writeText(solverQualityPath,
-                   solverQualityReportToJson(hybrid.solverQuality), error)) {
+                   solverQualityReportToJson(hybrid.solverQuality), error) ||
+        !writeText(qualityContractPath,
+                   qualityContractReportToJson(hybrid.qualityContract),error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -309,6 +313,8 @@ int main(int argc, char** argv) {
               << " area_error=" << hybrid.metrics.areaError
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << " quality_contract="
+              << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus
               << " vtk=" << vtkPath
               << " solver_vtk=" << solverVtkPath

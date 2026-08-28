@@ -87,6 +87,7 @@ jobs:
               assert report['mesh_quality_valid'] is True, path
               assert report['solver_quality_valid'] is True, path
               assert report['solver_quality_issue_count'] == 0, path
+              assert report['quality_contract_status'] in ('PASS', 'WARN', 'FAIL'), path
               assert report['balance_violations_after'] == 0, path
               assert report['single_owner_interface_edges'] == 0, path
               assert report['wrong_cell_pair_interface_edges'] == 0, path
@@ -103,6 +104,52 @@ jobs:
               assert report['termination_cell_count'] > 0, path
               assert report['termination_edge_count'] > 0, path
           PY
+
+      - name: Verify Q1 typed dimensionless quality contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build/h4_solver_ready
+          python3 - "$out" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          names = ('circle', 'superellipse', 'concave_l',
+                   'sharp_trailing_edge', 'narrow_gap')
+          for name in names:
+              path = root / f'{name}.hybrid.quality-contract.json'
+              report = json.loads(path.read_text(encoding='utf-8'))
+              assert report['quality_class'] == 'solver_quality_contract', path
+              assert report['dimensionless'] is True, path
+              assert report['status'] in ('PASS', 'WARN', 'FAIL'), path
+              assert report['input_issues'] == [], path
+              assert report['legacy_hard_safety']['valid'] is True, path
+              for metric in ('face_length_over_local_background_h',
+                             'face_length_over_sqrt_owner_area',
+                             'face_length_over_sqrt_neighbour_area'):
+                  assert metric in report['ordinary_metrics'], (path, metric)
+              assert 'boundary_layer' in report['by_cell_type'], path
+              for metric in ('wall_normal_orthogonality_error_deg', 'growth_ratio',
+                             'tangential_normal_spacing_ratio',
+                             'adjacent_column_thickness_variation',
+                             'scaled_jacobian', 'first_layer_continuity'):
+                  assert metric in report['boundary_layer_metrics'], (path, metric)
+
+          superellipse = json.loads((root /
+              'superellipse.hybrid.quality-contract.json').read_text(encoding='utf-8'))
+          assert superellipse['legacy_hard_safety']['min_face_length_absolute'] < 1.0e-8
+          hard_short = [issue for issue in superellipse['issues']
+                        if issue['level'] == 'hard' and
+                        issue['metric'] == 'face_length_over_local_background_h']
+          assert hard_short
+          assert min(issue['measured'] for issue in hard_short) < 1.0e-6
+          PY
+
+          python3 tools/verification/verify_q1_scale_invariance.py \
+            --repo . --build-dir build --reference-dir "$out" \
+            --output-dir build/q1_scale --scale 1000
 
       - name: Run OpenFOAM v2606 checkMesh
         shell: bash
@@ -142,6 +189,20 @@ jobs:
             --source-commit "$GITHUB_SHA" --collect-only
           diff -ru build/q0_baselines build/q0_baselines_repeat
 
+      - name: Deterministically collect Q1 compact baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/verification/generate_q1_baselines.py \
+            --repo . --build-dir build --evidence-dir build/h4_solver_ready \
+            --output-dir build/q1_baselines --source-commit "$GITHUB_SHA" \
+            --collect-only
+          python3 tools/verification/generate_q1_baselines.py \
+            --repo . --build-dir build --evidence-dir build/h4_solver_ready \
+            --output-dir build/q1_baselines_repeat --source-commit "$GITHUB_SHA" \
+            --collect-only
+          diff -ru build/q1_baselines build/q1_baselines_repeat
+
       - name: Upload acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -152,4 +213,6 @@ jobs:
             build/h4_solver_ready/*.checkMesh.log
             build/h4_solver_ready/checkmesh_status.txt
             build/q0_baselines/*.json
+            build/q1_baselines/*.json
+            build/q1_scale/**
           if-no-files-found: error

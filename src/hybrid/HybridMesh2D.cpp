@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <numeric>
+#include <numbers>
 #include <optional>
 #include <sstream>
 #include <tuple>
@@ -269,6 +270,160 @@ void writeJsonString(std::ostream& out, const std::string& value) {
     }
     audit.lengthError=audit.actualLength-audit.expectedLength;
     return audit;
+}
+
+[[nodiscard]] QualityCellType2D qualityType(HybridCellKind2D kind) noexcept {
+    switch (kind) {
+    case HybridCellKind2D::BoundaryLayer: return QualityCellType2D::BoundaryLayer;
+    case HybridCellKind2D::RemainderCut: return QualityCellType2D::RemainderCut;
+    case HybridCellKind2D::RemainderCartesian: return QualityCellType2D::Cartesian;
+    case HybridCellKind2D::Termination: return QualityCellType2D::Termination;
+    case HybridCellKind2D::Transition: return QualityCellType2D::Transition;
+    }
+    return QualityCellType2D::Unknown;
+}
+
+[[nodiscard]] std::vector<QualityCellMetadata2D> qualityMetadataForSolver(
+    const TopologyMesh2D& topology,const std::vector<HybridSourceCell2D>& sources,
+    std::vector<std::optional<std::size_t>>& sourceForCell,
+    const TolerancePolicy& tol) {
+    std::vector<QualityCellMetadata2D> metadata(topology.cells.size());
+    sourceForCell.assign(topology.cells.size(),std::nullopt);
+    for (const auto& cell:topology.cells) {
+        Polygon2D polygon;
+        for (const auto vertex:cell.vertices) {
+            if (vertex<topology.vertices.size()) {
+                polygon.vertices.push_back(topology.vertices[vertex].point);
+            }
+        }
+        const auto centroid=polygon.centroid(tol);
+        if (!centroid) continue;
+        std::optional<std::size_t> boundaryCandidate;
+        for (std::size_t sourceId=0;sourceId<sources.size();++sourceId) {
+            const auto& source=sources[sourceId];
+            if (!source.polygon.bounds().contains(*centroid,tol)) continue;
+            const auto state=classifyPointInPolygon(*centroid,source.polygon,tol);
+            if (state==PointInPolygon::Inside) {
+                sourceForCell[cell.id]=sourceId;
+                break;
+            }
+            if (state==PointInPolygon::Boundary && !boundaryCandidate) {
+                boundaryCandidate=sourceId;
+            }
+        }
+        if (!sourceForCell[cell.id]) sourceForCell[cell.id]=boundaryCandidate;
+        if (!sourceForCell[cell.id]) continue;
+        const auto& source=sources[*sourceForCell[cell.id]];
+        metadata[cell.id].type=qualityType(source.kind);
+        metadata[cell.id].localBackgroundH=source.localBackgroundH;
+        metadata[cell.id].sourceId=source.id;
+        metadata[cell.id].layerIndex=source.layerIndex;
+        metadata[cell.id].wallSegment=source.wallSegment;
+    }
+    return metadata;
+}
+
+[[nodiscard]] double orthogonalityErrorDeg(const Vector2D& a,
+                                           const Vector2D& b) noexcept {
+    const double denominator=std::sqrt(squaredNorm(a)*squaredNorm(b));
+    if (!(denominator>0.0)) return 90.0;
+    return std::asin(std::clamp(std::abs(dot(a,b))/denominator,0.0,1.0))*
+           180.0/std::numbers::pi;
+}
+
+[[nodiscard]] double scaledJacobian(const Polygon2D& polygon) noexcept {
+    double result=1.0;
+    for (std::size_t i=0;i<polygon.vertices.size();++i) {
+        const auto& previous=polygon.vertices[(i+polygon.vertices.size()-1U)%
+                                               polygon.vertices.size()];
+        const auto& current=polygon.vertices[i];
+        const auto& next=polygon.vertices[(i+1U)%polygon.vertices.size()];
+        const Vector2D incoming=current-previous;
+        const Vector2D outgoing=next-current;
+        const double denominator=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+        if (!(denominator>0.0)) return 0.0;
+        result=std::min(result,cross(incoming,outgoing)/denominator);
+    }
+    return result;
+}
+
+[[nodiscard]] BoundaryLayerQualitySamples2D boundaryLayerQualitySamples(
+    const std::vector<HybridSourceCell2D>& sources,
+    const std::vector<std::optional<std::size_t>>& sourceForSolverCell,
+    const std::vector<BoundaryLayerStrip2D>& strips,
+    const TolerancePolicy& tol) {
+    BoundaryLayerQualitySamples2D result;
+    std::vector<std::optional<std::size_t>> solverForSource(sources.size(),std::nullopt);
+    for (std::size_t cellId=0;cellId<sourceForSolverCell.size();++cellId) {
+        if (sourceForSolverCell[cellId] &&
+            *sourceForSolverCell[cellId]<solverForSource.size()) {
+            solverForSource[*sourceForSolverCell[cellId]]=cellId;
+        }
+    }
+    struct LayerCellInfo {
+        std::size_t sourceId=0;
+        double thickness=0.0;
+        QualityEntity2D entity;
+    };
+    std::map<std::tuple<std::size_t,std::size_t,std::size_t>,LayerCellInfo> cells;
+    for (const auto& source:sources) {
+        if (source.kind!=HybridCellKind2D::BoundaryLayer ||
+            !source.layerIndex || !source.wallSegment || !source.stripId ||
+            *source.stripId>=strips.size() ||
+            source.polygon.vertices.size()!=4U || source.id>=solverForSource.size() ||
+            !solverForSource[source.id]) continue;
+        const auto& p=source.polygon.vertices;
+        const bool fluidOnRight=strips[*source.stripId].wallChain.fluidSide==
+                                FluidSide2D::Right;
+        const double side01=segmentLength(p[0],p[1]);
+        const double side12=segmentLength(p[1],p[2]);
+        const double side23=segmentLength(p[2],p[3]);
+        const double side30=segmentLength(p[3],p[0]);
+        const double tangential0=fluidOnRight?side30:side01;
+        const double normal1=fluidOnRight?side23:side12;
+        const double tangential1=fluidOnRight?side12:side23;
+        const double normal0=fluidOnRight?side01:side30;
+        const double tangential=0.5*(tangential0+tangential1);
+        const double normal=0.5*(normal0+normal1);
+        const auto centroid=source.polygon.centroid(tol);
+        if (!centroid || !(normal>0.0)) continue;
+        QualityEntity2D entity{*solverForSource[source.id],std::nullopt,*centroid,
+            QualityCellType2D::BoundaryLayer,source.id,*solverForSource[source.id],
+            std::nullopt,source.localBackgroundH};
+        const double orthogonality=std::max({
+            orthogonalityErrorDeg(p[1]-p[0],p[3]-p[0]),
+            orthogonalityErrorDeg(p[1]-p[0],p[2]-p[1]),
+            orthogonalityErrorDeg(p[2]-p[3],p[3]-p[0]),
+            orthogonalityErrorDeg(p[2]-p[3],p[2]-p[1])});
+        result.wallNormalOrthogonalityDeg.push_back({orthogonality,entity});
+        result.tangentialNormalSpacingRatio.push_back({tangential/normal,entity});
+        result.scaledJacobian.push_back({scaledJacobian(source.polygon),entity});
+        cells[std::make_tuple(*source.stripId,*source.wallSegment,*source.layerIndex)]=
+            {source.id,normal,entity};
+    }
+    for (const auto& [key,info]:cells) {
+        const auto [stripId,segment,layer]=key;
+        if (layer>0U) {
+            const auto previous=cells.find({stripId,segment,layer-1U});
+            if (previous!=cells.end() && previous->second.thickness>0.0) {
+                result.growthRatio.push_back(
+                    {info.thickness/previous->second.thickness,info.entity});
+            }
+        }
+        if (stripId>=strips.size() || strips[stripId].wallChain.segmentCount()==0U) continue;
+        const auto nextSegment=(segment+1U)%strips[stripId].wallChain.segmentCount();
+        const auto adjacent=cells.find({stripId,nextSegment,layer});
+        if (adjacent==cells.end()) continue;
+        const double maximum=std::max(info.thickness,adjacent->second.thickness);
+        if (!(maximum>0.0)) continue;
+        result.adjacentColumnThicknessVariation.push_back(
+            {std::abs(info.thickness-adjacent->second.thickness)/maximum,info.entity});
+        if (layer==0U) {
+            result.firstLayerContinuity.push_back(
+                {std::min(info.thickness,adjacent->second.thickness)/maximum,info.entity});
+        }
+    }
+    return result;
 }
 
 } // namespace
@@ -662,6 +817,22 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             if (termination) ++terminationCellCount;
             source.polygon=piece;
             source.area=piece.area();
+            source.localBackgroundH=std::numeric_limits<double>::infinity();
+            for (const auto memberSourceId:cell.memberSourceIds) {
+                if (memberSourceId>=remainderSourceCells.size()) continue;
+                const auto& sourceBounds=
+                    remainderSourceCells[memberSourceId].backgroundBounds;
+                source.localBackgroundH=std::min(
+                    source.localBackgroundH,
+                    std::max(sourceBounds.max.x-sourceBounds.min.x,
+                             sourceBounds.max.y-sourceBounds.min.y));
+            }
+            if (!std::isfinite(source.localBackgroundH)) {
+                const auto pieceBounds=piece.bounds();
+                source.localBackgroundH=std::max(
+                    pieceBounds.max.x-pieceBounds.min.x,
+                    pieceBounds.max.y-pieceBounds.min.y);
+            }
             if (!termination && cell.memberSourceIds.size()==1U) {
                 const auto sourceId=cell.memberSourceIds.front();
                 if (sourceId<remainderSourceCells.size()) {
@@ -677,9 +848,10 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         HybridSourceCell2D source;
         source.id=hybridSources.size();
         source.kind=localTermination?HybridCellKind2D::Termination:
-                                     HybridCellKind2D::RemainderCut;
+                                     HybridCellKind2D::Transition;
         source.polygon=polygon;
         source.area=polygon.area();
+        source.localBackgroundH=transitionRingThickness;
         transitionArea+=source.area;
         if (localTermination) ++terminationCellCount;
         hybridSources.push_back(std::move(source));
@@ -696,6 +868,10 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             source.solverImmutable=true;
             source.layerIndex=layerCell.layer;
             source.wallSegment=layerCell.wallSegment;
+            source.stripId=stripId;
+            source.localBackgroundH=segmentLength(
+                strip.wallChain.segments[layerCell.wallSegment].a,
+                strip.wallChain.segments[layerCell.wallSegment].b);
             for (const auto vertexId : layerCell.vertices) {
                 source.polygon.vertices.push_back(strip.vertices[vertexId].point);
             }
@@ -814,8 +990,12 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     solverConstraints.inputPolygonOverrides.reserve(topology.cells.size());
     for (const auto& cell:topology.cells) {
         const auto& source=hybridSources[cell.sourceId];
-        const bool transition=source.kind==HybridCellKind2D::RemainderCut &&
-                              !source.quadtreeSourceKey.has_value();
+        // Preserve the pre-Q1 solver-repair constraints exactly.  Q1 gives
+        // geometric transition sources an explicit reporting type, but does
+        // not change which legacy source cells are protected from repair.
+        const bool transition=source.kind==HybridCellKind2D::Transition ||
+            (source.kind==HybridCellKind2D::RemainderCut &&
+             !source.quadtreeSourceKey.has_value());
         solverConstraints.immutableInputCells.push_back(source.solverImmutable);
         solverConstraints.preserveInputCells.push_back(transition);
         // Global common-partition vertices are interface bookkeeping, not
@@ -879,6 +1059,15 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         failure.solverTopologyReport=std::move(solverTopologyReport);
         return failure;
     }
+    std::vector<std::optional<std::size_t>> sourceForSolverCell;
+    const auto contractMetadata=qualityMetadataForSolver(
+        solverTopologyReport.topology,hybridSources,sourceForSolverCell,
+        policy.tolerance);
+    const auto boundaryLayerSamples=boundaryLayerQualitySamples(
+        hybridSources,sourceForSolverCell,boundaryLayers.strips,policy.tolerance);
+    auto qualityContract=evaluateQualityContract2D(
+        solverTopologyReport.topology,contractMetadata,boundaryLayerSamples,{},
+        &solverQuality,policy.tolerance);
 
     HybridMeshBuildResult2D result;
     result.status = HybridMeshStatus2D::Success;
@@ -893,6 +1082,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.solverInterfaceAudit=solverInterfaceAudit;
     result.meshQuality = std::move(meshQuality);
     result.solverQuality = std::move(solverQuality);
+    result.qualityContract=std::move(qualityContract);
     result.remainderSmallCells=std::move(remainderSmallCells);
     result.remainderStabilization=std::move(remainderStabilization);
     result.solverTopologyReport=std::move(solverTopologyReport);
@@ -1133,6 +1323,7 @@ const char* hybridCellKindName(HybridCellKind2D kind) noexcept {
     case HybridCellKind2D::RemainderCut: return "remainder_cut";
     case HybridCellKind2D::RemainderCartesian: return "remainder_cartesian";
     case HybridCellKind2D::Termination: return "termination";
+    case HybridCellKind2D::Transition: return "transition";
     }
     return "unknown";
 }
@@ -1254,6 +1445,8 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"topology_valid\": " << (result.topology.valid() ? "true" : "false") << ",\n";
         out << "  \"mesh_quality_valid\": " << (result.meshQuality.valid() ? "true" : "false") << ",\n";
         out << "  \"solver_quality_valid\": " << (result.solverQuality.valid() ? "true" : "false") << ",\n";
+        out << "  \"quality_contract_status\": \""
+            << qualityContractStatusName(result.qualityContract.status()) << "\",\n";
         out << "  \"solver_quality_issue_count\": " << result.solverQuality.issues.size() << ",\n";
         out << "  \"max_non_orthogonality_deg\": "
             << result.solverQuality.maxNonOrthogonalityDeg << ",\n";

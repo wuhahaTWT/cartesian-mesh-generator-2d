@@ -2,6 +2,7 @@
 
 #include "cartmesh2d/boundary_layer/BoundaryLayer2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
+#include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 
@@ -21,7 +22,8 @@ enum class HybridCellKind2D {
     BoundaryLayer,
     RemainderCut,
     RemainderCartesian,
-    Termination
+    Termination,
+    Transition
 };
 
 struct HybridCellRecord2D {
@@ -40,6 +42,8 @@ struct HybridSourceCell2D {
     std::optional<std::uint64_t> quadtreeSourceKey;
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;
+    std::optional<std::size_t> stripId;
+    double localBackgroundH = 0.0;
     std::vector<Segment2D> embeddedBoundary;
     // True only for geometric cells whose exact one-cell identity is part of
     // the committed layer/termination construction. Remainder cells stay
@@ -169,6 +173,7 @@ struct HybridMeshBuildResult2D {
     HybridMeshMetrics2D metrics;
     MeshQualityReport2D meshQuality;
     SolverQualityReport2D solverQuality;
+    QualityContractReport2D qualityContract;
     SmallCellReport2D remainderSmallCells;
     AgglomerationResult2D remainderStabilization;
     SolverTopologyResult2D solverTopologyReport;

@@ -73,7 +73,7 @@ def read_vtk(path: Path):
     scalar_at = tokens.index("hybrid_kind", data_at)
     lookup_at = tokens.index("LOOKUP_TABLE", scalar_at)
     kinds = [int(v) for v in tokens[lookup_at + 2:lookup_at + 2 + n_cells]]
-    if len(kinds) != n_cells or any(v not in (0, 1, 2) for v in kinds):
+    if len(kinds) != n_cells or any(v not in (0, 1, 2, 3, 4) for v in kinds):
         raise CheckError("invalid hybrid_kind cell data")
     return points, cells, kinds
 
