@@ -67,10 +67,10 @@ int main() {
           "minimum solver-cell area is exact");
     check(std::abs(report.minEdgeLength - 0.5) <= 1.0e-12,
           "minimum global edge length is exact");
-    check(std::abs(report.maxEdgeAspectRatio - 2.0) <= 1.0e-12,
-          "edge aspect ratio is max-edge/min-edge");
-    check(report.maxCentroidSkewness <= 1.0e-12,
-          "rectangular cells have zero centroid skewness");
+    check(std::abs(report.maxCellEdgeLengthRatio - 2.0) <= 1.0e-12,
+          "construction edge-length ratio is max-edge/min-edge");
+    check(report.maxCentroidVertexMeanOffsetNormalized <= 1.0e-12,
+          "rectangular cells have zero construction centroid offset");
     check(std::abs(report.minCutCellAreaFraction - 0.5) <= 1.0e-12,
           "minimum Cut-cell alpha is exact");
     check(report.levelDistribution.size() == 2 &&
@@ -96,8 +96,8 @@ int main() {
         Domain2D{{{0.0,0.0},{2.0,1.0}}}, skewBoundary);
     check(skewTopology.valid(), "skew fixture topology is valid");
     const auto skewReport = evaluateMeshQuality(skewTopology, skewCells);
-    check(skewReport.maxCentroidSkewness > 0.0,
-          "asymmetric trapezoid produces positive centroid skewness");
+    check(skewReport.maxCentroidVertexMeanOffsetNormalized > 0.0,
+          "asymmetric trapezoid produces positive construction centroid offset");
 
     auto invalidTopology = topology;
     invalidTopology.audit.duplicateEdges = 1;

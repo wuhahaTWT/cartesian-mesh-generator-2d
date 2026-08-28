@@ -248,6 +248,8 @@ std::string solverQualityReportToJson(const SolverQualityReport2D& report,
     std::ostringstream out;
     out<<std::setprecision(17);
     out<<"{\n";
+    out<<i1<<"\"quality_class\": \"solver_quality\",\n";
+    out<<i1<<"\"metric_semantics\": \"native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence\",\n";
     out<<i1<<"\"valid\": "<<(report.valid()?"true":"false")<<",\n";
     out<<i1<<"\"policy\": {\n";
     out<<i2<<"\"max_non_orthogonality_deg\": "<<report.policy.maxNonOrthogonalityDeg<<",\n";

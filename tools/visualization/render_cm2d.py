@@ -316,8 +316,8 @@ def render_svg(
             f"small source: {counts.get('source_small_cells', '?')}",
             f"min area: {q.get('min_cell_area', '?')}",
             f"min edge: {q.get('min_edge_length', '?')}",
-            f"max aspect: {q.get('max_edge_aspect_ratio', '?')}",
-            f"max skew: {q.get('max_centroid_skewness', '?')}",
+            f"max edge ratio: {q.get('max_cell_edge_length_ratio', q.get('max_edge_aspect_ratio', '?'))}",
+            f"max centroid offset: {q.get('max_centroid_vertex_mean_offset_normalized', q.get('max_centroid_skewness', '?'))}",
             "", "topology audit:",
         ]
         for key in ("duplicate_vertices", "duplicate_edges", "orphan_internal_edges", "non_manifold_edges", "unclassified_boundary_edges", "open_cell_loops", "area_mismatches"):

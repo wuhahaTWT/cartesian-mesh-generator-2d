@@ -49,7 +49,8 @@ END
                     "counts": {"vertices": 6, "edges": 7, "cells": 2,
                                "source_cut_cells": 1, "source_small_cells": 1},
                     "quality": {"min_cell_area": 1.0, "min_edge_length": 1.0,
-                                "max_edge_aspect_ratio": 1.0, "max_centroid_skewness": 0.0},
+                                "max_cell_edge_length_ratio": 1.0,
+                                "max_centroid_vertex_mean_offset_normalized": 0.0},
                     "topology_audit": {
                         "duplicate_vertices": 0, "duplicate_edges": 0,
                         "orphan_internal_edges": 0, "non_manifold_edges": 0,

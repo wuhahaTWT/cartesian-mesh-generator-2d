@@ -35,8 +35,10 @@ struct MeshQualityReport2D {
 
     double minCellArea = 0.0;
     double minEdgeLength = 0.0;
-    double maxEdgeAspectRatio = 0.0;
-    double maxCentroidSkewness = 0.0;
+    // Construction-only polygon diagnostics. These are deliberately not
+    // solver or OpenFOAM aspect/skewness metrics.
+    double maxCellEdgeLengthRatio = 0.0;
+    double maxCentroidVertexMeanOffsetNormalized = 0.0;
     double minCutCellAreaFraction = 1.0;
 
     std::map<unsigned, std::size_t> levelDistribution;

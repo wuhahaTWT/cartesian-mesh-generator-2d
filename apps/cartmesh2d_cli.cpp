@@ -780,7 +780,8 @@ int main(int argc, char** argv) {
     if (!parent.empty()) std::filesystem::create_directories(parent);
     const std::filesystem::path vtkPath = outputPrefix.string() + ".vtk";
     const std::filesystem::path cm2dPath = outputPrefix.string() + ".cm2d";
-    const std::filesystem::path qualityPath = outputPrefix.string() + ".quality.json";
+    const std::filesystem::path qualityPath =
+        outputPrefix.string() + ".construction-quality.json";
     const std::filesystem::path vizPath = outputPrefix.string() + ".viz.json";
     const std::filesystem::path sizingPath = outputPrefix.string() + ".sizing.json";
 
@@ -873,8 +874,10 @@ int main(int argc, char** argv) {
               << "edges=" << stabilized.topology.edges.size() << '\n'
               << "min_cell_area=" << quality.minCellArea << '\n'
               << "min_edge_length=" << quality.minEdgeLength << '\n'
-              << "max_edge_aspect_ratio=" << quality.maxEdgeAspectRatio << '\n'
-              << "max_centroid_skewness=" << quality.maxCentroidSkewness << '\n'
+              << "construction_max_cell_edge_length_ratio="
+              << quality.maxCellEdgeLengthRatio << '\n'
+              << "construction_max_centroid_vertex_mean_offset_normalized="
+              << quality.maxCentroidVertexMeanOffsetNormalized << '\n'
               << "vtk=" << vtkPath.string() << '\n'
               << "cm2d=" << cm2dPath.string() << '\n'
               << "quality_json=" << qualityPath.string() << '\n'

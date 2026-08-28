@@ -119,11 +119,28 @@ jobs:
               -w "$container_root" \
               "$image" \
               checkMesh -case "$container_root/$out/${case_name}-case" \
+              -writeAllFields \
               2>&1 | tee "$log"
             grep -q 'Mesh OK' "$log"
           done
           printf 'checkMesh=PASS (OpenFOAM v2606)\n' \
             | tee "$out/checkmesh_status.txt"
+
+      - name: Build and deterministically replay Q0 quality baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/verification/generate_q0_baselines.py \
+            --repo . --build-dir build \
+            --evidence-dir build/h4_solver_ready \
+            --output-dir build/q0_baselines \
+            --source-commit "$GITHUB_SHA" --collect-only
+          python3 tools/verification/generate_q0_baselines.py \
+            --repo . --build-dir build \
+            --evidence-dir build/h4_solver_ready \
+            --output-dir build/q0_baselines_repeat \
+            --source-commit "$GITHUB_SHA" --collect-only
+          diff -ru build/q0_baselines build/q0_baselines_repeat
 
       - name: Upload acceptance evidence
         uses: actions/upload-artifact@v4
@@ -134,4 +151,5 @@ jobs:
             build/h4_solver_ready/*-case/**
             build/h4_solver_ready/*.checkMesh.log
             build/h4_solver_ready/checkmesh_status.txt
+            build/q0_baselines/*.json
           if-no-files-found: error

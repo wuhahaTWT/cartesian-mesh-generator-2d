@@ -141,14 +141,15 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
         const double invCount = 1.0 / static_cast<double>(polygon.vertices.size());
         vertexMean.x *= invCount;
         vertexMean.y *= invCount;
-        const double skewness = distance(*centroid, vertexMean) / std::sqrt(area);
-        maxSkewness = std::max(maxSkewness, skewness);
+        const double normalizedOffset =
+            distance(*centroid, vertexMean) / std::sqrt(area);
+        maxSkewness = std::max(maxSkewness, normalizedOffset);
     }
 
     report.minCellArea = std::isfinite(minArea) ? minArea : 0.0;
     report.minEdgeLength = std::isfinite(minEdge) ? minEdge : 0.0;
-    report.maxEdgeAspectRatio = maxAspect;
-    report.maxCentroidSkewness = maxSkewness;
+    report.maxCellEdgeLengthRatio = maxAspect;
+    report.maxCentroidVertexMeanOffsetNormalized = maxSkewness;
 
     bool hasCutFraction = false;
     for (const auto& cut : sourceCutCells) {
@@ -186,6 +187,11 @@ std::string qualityReportToJson(const MeshQualityReport2D& report, int indentSpa
     std::ostringstream out;
     out << std::setprecision(17);
     out << "{\n";
+    out << i1 << "\"quality_class\": \"construction_quality\",\n";
+    out << i1 << "\"metric_semantics\": {\n";
+    out << i2 << "\"cell_edge_length_ratio\": \"max polygon edge length / min polygon edge length\",\n";
+    out << i2 << "\"centroid_vertex_mean_offset_normalized\": \"distance(area centroid, arithmetic vertex mean) / sqrt(cell area)\"\n";
+    out << i1 << "},\n";
     out << i1 << "\"valid\": " << (report.valid() ? "true" : "false") << ",\n";
     out << i1 << "\"counts\": {\n";
     out << i2 << "\"vertices\": " << report.vertexCount << ",\n";
@@ -200,8 +206,10 @@ std::string qualityReportToJson(const MeshQualityReport2D& report, int indentSpa
     out << i1 << "\"quality\": {\n";
     out << i2 << "\"min_cell_area\": " << report.minCellArea << ",\n";
     out << i2 << "\"min_edge_length\": " << report.minEdgeLength << ",\n";
-    out << i2 << "\"max_edge_aspect_ratio\": " << report.maxEdgeAspectRatio << ",\n";
-    out << i2 << "\"max_centroid_skewness\": " << report.maxCentroidSkewness << ",\n";
+    out << i2 << "\"max_cell_edge_length_ratio\": "
+        << report.maxCellEdgeLengthRatio << ",\n";
+    out << i2 << "\"max_centroid_vertex_mean_offset_normalized\": "
+        << report.maxCentroidVertexMeanOffsetNormalized << ",\n";
     out << i2 << "\"min_cut_cell_area_fraction\": " << report.minCutCellAreaFraction << "\n";
     out << i1 << "},\n";
     out << i1 << "\"level_distribution\": {";

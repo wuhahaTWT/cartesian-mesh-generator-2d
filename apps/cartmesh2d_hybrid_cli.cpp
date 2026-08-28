@@ -194,7 +194,8 @@ int main(int argc, char** argv) {
         const auto cm2dPath=outputPrefix.string()+".fallback.cm2d";
         const auto solverVtkPath=outputPrefix.string()+".fallback.solver.vtk";
         const auto solverCm2dPath=outputPrefix.string()+".fallback.solver.cm2d";
-        const auto qualityPath=outputPrefix.string()+".fallback.quality.json";
+        const auto qualityPath=
+            outputPrefix.string()+".fallback.construction-quality.json";
         const auto solverQualityPath=outputPrefix.string()+
                                      ".fallback.solver-quality.json";
         const auto& fallback=robust.fallback;
@@ -249,7 +250,8 @@ int main(int argc, char** argv) {
     const auto cm2dPath = outputPrefix.string() + ".hybrid.cm2d";
     const auto solverVtkPath = outputPrefix.string() + ".hybrid.solver.vtk";
     const auto solverCm2dPath = outputPrefix.string() + ".hybrid.solver.cm2d";
-    const auto qualityPath = outputPrefix.string() + ".hybrid.quality.json";
+    const auto qualityPath =
+        outputPrefix.string() + ".hybrid.construction-quality.json";
     const auto solverQualityPath = outputPrefix.string() +
                                    ".hybrid.solver-quality.json";
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||
