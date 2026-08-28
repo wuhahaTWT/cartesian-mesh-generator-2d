@@ -9,19 +9,19 @@
 namespace cartmesh2d {
 
 struct SolverQualityPolicy2D {
-    // These are production repair targets, not merely catastrophic-failure
-    // limits. buildSolverTopology2D keeps agglomerating/repartitioning while
-    // any target is violated, so accepted meshes retain numerical margin
-    // instead of stopping immediately at the OpenFOAM-style safety boundary.
-    double maxNonOrthogonalityDeg = 65.0;
-    double maxInternalSkewness = 3.5;
-    double maxBoundarySkewness = 3.0;
-    double maxConcavityDeg = 60.0;
-    double maxCellAspect = 200.0;
-    double minInteriorAngleDeg = 1.0;
+    // Hard solver-safety limits. These remain the fail-closed acceptance
+    // boundary; preferred quality margins are handled separately by solver
+    // topology optimization so an unattainable margin does not turn a usable
+    // mesh into a hard failure.
+    double maxNonOrthogonalityDeg = 70.0;
+    double maxInternalSkewness = 4.0;
+    double maxBoundarySkewness = 4.0;
+    double maxConcavityDeg = 80.0;
+    double maxCellAspect = 1000.0;
+    double minInteriorAngleDeg = 0.5;
     double minFaceLength = 1.01e-10;
-    double minFaceWeight = 0.08;
-    double minVolumeRatio = 0.02;
+    double minFaceWeight = 0.05;
+    double minVolumeRatio = 0.01;
 };
 
 enum class SolverQualityIssueCode2D {
