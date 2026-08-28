@@ -1,0 +1,54 @@
+name: apply-quality-hardening
+
+on:
+  push:
+    branches: [quality/solver-margin-hardening]
+    paths:
+      - tools/development/apply_quality_margin_hardening.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: quality/solver-margin-hardening
+
+      - name: Apply quality-margin optimizer patch
+        run: python3 tools/development/apply_quality_margin_hardening.py
+
+      - name: Configure
+        run: cmake -S . -B build-quality -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_TESTS=ON
+
+      - name: Build H3/H4 targets
+        run: >-
+          cmake --build build-quality -j2 --target
+          cartmesh2d_solver_export_tests
+          cartmesh2d_hybrid_mesh_tests
+          cartmesh2d_h4_local_termination_tests
+          cartmesh2d_hybrid_cli
+
+      - name: Run focused topology tests
+        run: >-
+          ctest --test-dir build-quality
+          -R 'cartmesh2d_stage(S1_solver_export|H4_2_conformal_hybrid|H4_3_local_termination)_tests'
+          --output-on-failure
+
+      - name: Commit applied source patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/quality/SolverTopology2D.cpp
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit'
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m 'quality: optimize solver meshes beyond hard validity'
+          git push origin HEAD:quality/solver-margin-hardening
