@@ -406,6 +406,22 @@ struct LocalQualityRank2D {
     double negativeMinVolumeRatio = 0.0;
 };
 
+[[nodiscard]] SolverQualityPolicy2D preferredSolverQualityPolicy() noexcept {
+    SolverQualityPolicy2D policy;
+    // cfMesh treats 65 degrees as a low-quality non-orthogonality boundary;
+    // the remaining targets deliberately retain margin over the hard safety
+    // gate without pretending that every geometry can reach ideal values.
+    policy.maxNonOrthogonalityDeg = 65.0;
+    policy.maxInternalSkewness = 3.5;
+    policy.maxBoundarySkewness = 3.0;
+    policy.maxConcavityDeg = 60.0;
+    policy.maxCellAspect = 200.0;
+    policy.minInteriorAngleDeg = 1.0;
+    policy.minFaceWeight = 0.08;
+    policy.minVolumeRatio = 0.02;
+    return policy;
+}
+
 [[nodiscard]] QualityScore2D qualityScore(const SolverQualityReport2D& quality) {
     QualityScore2D score;
     score.issueCount=quality.issues.size();
@@ -870,7 +886,7 @@ struct RepartitionProposal2D {
     const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
     std::size_t first,std::size_t second,
     const Polygon2D& firstPiece,const Polygon2D& secondPiece,
-    const TolerancePolicy& tol) {
+    const TolerancePolicy& tol,const SolverQualityPolicy2D& qualityPolicy) {
     const auto boundary=patchBoundaryRegion(topology,halo,tol);
     if (!boundary) return std::nullopt;
     const Domain2D domain{boundary->bounds()};
@@ -888,7 +904,7 @@ struct RepartitionProposal2D {
     }
     const auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
     if (!patch.valid()) return std::nullopt;
-    const auto quality=evaluateSolverQuality2D(patch,{},tol);
+    const auto quality=evaluateSolverQuality2D(patch,qualityPolicy,tol);
     SolverQualityReport2D filtered;
     filtered.policy=quality.policy;
     double physicalBoundarySkewness=0.0;
@@ -1046,9 +1062,10 @@ template<class Proposal>
 
 [[nodiscard]] SolverQualityReport2D timedFullQuality(
     const TopologyMesh2D& topology,const TolerancePolicy& tol,
-    SolverTopologyProfile2D* profile,bool candidate) {
+    SolverTopologyProfile2D* profile,bool candidate,
+    const SolverQualityPolicy2D& qualityPolicy = {}) {
     const auto start=ProfileClock::now();
-    auto quality=evaluateSolverQuality2D(topology,{},tol);
+    auto quality=evaluateSolverQuality2D(topology,qualityPolicy,tol);
     if (profile) {
         const double elapsed=profileSeconds(start);
         profile->fullQualitySeconds+=elapsed;
@@ -1068,7 +1085,9 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
     SolverTopologyProfile2D* profile,bool useBatch,
-    const std::vector<bool>& initialImmutableCells={}) {
+    const std::vector<bool>& initialImmutableCells={},
+    const SolverQualityPolicy2D& qualityPolicy = {},
+    std::size_t maximumIterations = 128U) {
     SolverLocalRepartitionResult2D result;
     result.topology=topology;
     result.immutableCells=initialImmutableCells;
@@ -1076,8 +1095,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         result.issues.push_back("local solver repartition requires valid inputs");
         return result;
     }
-    for (std::size_t iteration=0;iteration<128;++iteration) {
-        const auto quality=timedFullQuality(result.topology,tol,profile,false);
+    for (std::size_t iteration=0;iteration<maximumIterations;++iteration) {
+        const auto quality=timedFullQuality(result.topology,tol,profile,false,qualityPolicy);
         if (quality.valid()) break;
         if (profile) ++profile->repartitionIterations;
         const auto generationStart=ProfileClock::now();
@@ -1107,7 +1126,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 const auto halo=cellPairHalo(result.topology,first,second);
                 for (const auto& [firstPiece,secondPiece]:splits) {
                     const auto rank=localRepartitionQualityRank(
-                        result.topology,halo,first,second,firstPiece,secondPiece,tol);
+                        result.topology,halo,first,second,firstPiece,secondPiece,
+                        tol,qualityPolicy);
                     if (!rank) continue;
                     RepartitionProposal2D proposal;
                     proposal.first=first;
@@ -1465,14 +1485,34 @@ SolverTopologyResult2D buildSolverTopology2D(
     auto repartitioned=repartitionSolverTopologyByQualityImpl(
         partition.topology,domain,boundary,tol,&result.profile,true,
         partition.immutableForCell);
-    result.profile.finalRepartitionSeconds=profileSeconds(repartitionStart);
     if (!repartitioned.valid()) {
         result.issues.insert(result.issues.end(),repartitioned.issues.begin(),
                              repartitioned.issues.end());
         return result;
     }
+
+    // A hard-valid mesh is only the beginning. Run a bounded second pass with
+    // preferred quality margins, analogous to a mature mesher's low-quality
+    // face optimization stage. Every accepted candidate must improve the
+    // stricter score; immutable H4 layer cells remain protected. If the
+    // preferred target is geometrically unattainable, retain the best hard-
+    // valid topology rather than failing or spinning indefinitely.
+    std::size_t totalRepartitionCount=repartitioned.repartitionCount;
+    const auto preferredPolicy=preferredSolverQualityPolicy();
+    auto marginOptimized=repartitionSolverTopologyByQualityImpl(
+        repartitioned.topology,domain,boundary,tol,&result.profile,true,
+        repartitioned.immutableCells,preferredPolicy,16U);
+    if (marginOptimized.valid()) {
+        const auto hardQuality=evaluateSolverQuality2D(
+            marginOptimized.topology,SolverQualityPolicy2D{},tol);
+        if (hardQuality.valid()) {
+            totalRepartitionCount+=marginOptimized.repartitionCount;
+            repartitioned=std::move(marginOptimized);
+        }
+    }
+    result.profile.finalRepartitionSeconds=profileSeconds(repartitionStart);
     partition.topology=std::move(repartitioned.topology);
-    result.qualityRepartitionCount=repartitioned.repartitionCount;
+    result.qualityRepartitionCount=totalRepartitionCount;
     result.topology=std::move(partition.topology);
     result.immutableOutputCells=std::move(repartitioned.immutableCells);
     result.partitionedCellCount=partition.partitionedSourceCellCount;
