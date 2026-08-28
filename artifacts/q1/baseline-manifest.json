@@ -1,0 +1,131 @@
+{
+  "cases": {
+    "circle": {
+      "baseline_sha256": "baffa2881965d41e4688adf30143afb7b2d5a68216b3aec9cb7355aba597959d",
+      "input": "examples/acceptance/circle.xy",
+      "input_sha256": "babcc2f63b07bfb3e44a4a6b8747cbbdb7600de6dd404fdac786ce3185ac719f",
+      "primary_hard_failure": {
+        "entity": {
+          "cell_id": 442,
+          "cell_type": "remainder_cut",
+          "coordinates": [
+            0.3673990660551655,
+            1.444627729878834
+          ],
+          "edge_id": 1005,
+          "local_h": 0.1125,
+          "neighbour": 581,
+          "owner": 442,
+          "source_id": 418
+        },
+        "level": "hard",
+        "limit": 0.05,
+        "measured": 0.02703787129285704,
+        "metric": "volume_ratio"
+      },
+      "status": "FAIL"
+    },
+    "concave_l": {
+      "baseline_sha256": "ea6c54abe489dd6f5b41c8f99495f14d97a802eebee741c72e2f96904e44c647",
+      "input": "examples/h4_3/concave_l.xy",
+      "input_sha256": "6b323507fbdb66a52795d2833b3e89176beeb7a6d5a5303f3f5d5889862226b1",
+      "primary_hard_failure": {
+        "entity": {
+          "cell_id": 2469,
+          "cell_type": "termination",
+          "coordinates": [
+            0.96875,
+            3.02461875
+          ],
+          "edge_id": 3780,
+          "local_h": 0.01953125,
+          "neighbour": 4616,
+          "owner": 2469,
+          "source_id": 2489
+        },
+        "level": "hard",
+        "limit": 0.05,
+        "measured": 0.01069972826086891,
+        "metric": "volume_ratio"
+      },
+      "status": "FAIL"
+    },
+    "narrow_gap": {
+      "baseline_sha256": "d1a397aae37a0caae57cce4c54a8d84e3338fa014f6ca56f4dd238d2ac1af358",
+      "input": "examples/h4_3/narrow_gap.xy",
+      "input_sha256": "c878fe433b07dcee6ad7053e3e697fb64333542e27ec8b19185e540ec5643542",
+      "primary_hard_failure": {
+        "entity": {
+          "cell_id": 884,
+          "cell_type": "termination",
+          "coordinates": [
+            0.15984375,
+            -0.10645927499999999
+          ],
+          "edge_id": 1626,
+          "local_h": 0.028687500000000005,
+          "neighbour": 2045,
+          "owner": 884,
+          "source_id": 897
+        },
+        "level": "hard",
+        "limit": 0.05,
+        "measured": 0.011853263410370605,
+        "metric": "volume_ratio"
+      },
+      "status": "FAIL"
+    },
+    "sharp_trailing_edge": {
+      "baseline_sha256": "13f857c23feb8f463f30c9d3f1b282ab4802b06bcee2fd11da8e165bb740dd28",
+      "input": "examples/h4_3/sharp_trailing_edge.xy",
+      "input_sha256": "96afe707b026b00030189e52e10249dbd2c2503ac2c49d789e03f201dba50b29",
+      "primary_hard_failure": {
+        "entity": {
+          "cell_id": 1075,
+          "cell_type": "termination",
+          "coordinates": [
+            1.796875,
+            -0.3398388253322594
+          ],
+          "edge_id": 5230,
+          "local_h": 0.0234375,
+          "neighbour": 1078,
+          "owner": 1075,
+          "source_id": 1078
+        },
+        "level": "hard",
+        "limit": 0.01,
+        "measured": 0.0004202383138647292,
+        "metric": "face_length_over_local_background_h"
+      },
+      "status": "FAIL"
+    },
+    "superellipse": {
+      "baseline_sha256": "7d07b8ccc9a36df28c6e3909d4e799a48def3dcc3d8f7e0a5523f4ed6afb6526",
+      "input": "examples/complex/superellipse_24.xy",
+      "input_sha256": "77b3159f8a12339d712a2b72bef7524765047beb09f32fd4f7120919f06872af",
+      "primary_hard_failure": {
+        "entity": {
+          "cell_id": 623,
+          "cell_type": "transition",
+          "coordinates": [
+            -2.326100423594548,
+            4.884676955554503e-09
+          ],
+          "edge_id": 185,
+          "local_h": 0.118125,
+          "neighbour": 623,
+          "owner": 373,
+          "source_id": 604
+        },
+        "level": "hard",
+        "limit": 0.01,
+        "measured": 7.671931437413685e-08,
+        "metric": "face_length_over_sqrt_neighbour_area"
+      },
+      "status": "FAIL"
+    }
+  },
+  "format_version": "cartmesh2d-q1-quality-contract-v1",
+  "generator_commit": "0ed88b3a9e5d6ef85f6b67be49d00c1bdeda01d8"
+}

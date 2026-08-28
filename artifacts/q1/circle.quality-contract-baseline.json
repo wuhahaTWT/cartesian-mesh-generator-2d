@@ -1,0 +1,593 @@
+{
+  "boundary_layer_metrics": {
+    "adjacent_column_thickness_variation": {
+      "count": 128,
+      "p50": 1.286145879677341e-13,
+      "p95": 1.798302404470579e-13,
+      "p99": 1.8025032388874227e-13,
+      "worst": 1.8040569721648834e-13,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 632,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          -0.9522850561056724,
+          -0.0706862898068637
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065901615,
+        "neighbour": null,
+        "owner": 632,
+        "source_id": 604
+      }
+    },
+    "first_layer_continuity": {
+      "count": 32,
+      "p50": 0.999999999999872,
+      "p95": 1,
+      "p99": 1,
+      "worst": 0.9999999999998245,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 600,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          -0.9303774891875497,
+          -0.06852858279694896
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065901615,
+        "neighbour": null,
+        "owner": 600,
+        "source_id": 572
+      }
+    },
+    "growth_ratio": {
+      "count": 96,
+      "p50": 1.2,
+      "p95": 1.2000000000000046,
+      "p99": 1.2000000000000062,
+      "worst": 1.2000000000000062,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 632,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          -0.9522850561056724,
+          -0.0706862898068637
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065901615,
+        "neighbour": null,
+        "owner": 632,
+        "source_id": 604
+      }
+    },
+    "scaled_jacobian": {
+      "count": 128,
+      "p50": 0.9951847266720302,
+      "p95": 0.9951847266722468,
+      "p99": 0.9951847266722469,
+      "worst": 0.9951847266719839,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 602,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          -0.8165230307947818,
+          -0.4438564322367413
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065920167,
+        "neighbour": null,
+        "owner": 602,
+        "source_id": 574
+      }
+    },
+    "tangential_normal_spacing_ratio": {
+      "count": 128,
+      "p50": 7.780812965335681,
+      "p95": 9.852533241139955,
+      "p99": 9.852533241139962,
+      "worst": 9.852533241139966,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 605,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          -0.4038564322367413,
+          -0.8565230307947819
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065920167,
+        "neighbour": null,
+        "owner": 605,
+        "source_id": 577
+      }
+    },
+    "wall_normal_orthogonality_error_deg": {
+      "count": 128,
+      "p50": 5.625000000097494,
+      "p95": 5.625000000124433,
+      "p99": 5.625000000124451,
+      "worst": 5.625000000124462,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 708,
+        "cell_type": "boundary_layer",
+        "coordinates": [
+          0.9089918734319489,
+          -0.6585428362031196
+        ],
+        "edge_id": null,
+        "local_h": 0.19603428065916487,
+        "neighbour": null,
+        "owner": 708,
+        "source_id": 680
+      }
+    }
+  },
+  "by_cell_type": {
+    "boundary_layer": {
+      "cell_count": 128,
+      "hard_issue_count": 0,
+      "preferred_issue_count": 0,
+      "rated": false,
+      "status": "OBSERVED"
+    },
+    "cartesian": {
+      "cell_count": 296,
+      "hard_issue_count": 0,
+      "preferred_issue_count": 8,
+      "rated": true,
+      "status": "WARN"
+    },
+    "remainder_cut": {
+      "cell_count": 176,
+      "hard_issue_count": 80,
+      "preferred_issue_count": 128,
+      "rated": true,
+      "status": "FAIL"
+    },
+    "transition": {
+      "cell_count": 128,
+      "hard_issue_count": 0,
+      "preferred_issue_count": 0,
+      "rated": true,
+      "status": "PASS"
+    }
+  },
+  "case": "circle",
+  "contract": {
+    "cartesian": {
+      "face_length_over_local_background_h": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_neighbour_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_owner_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_weight": {
+        "direction": "min",
+        "hard": 0.1,
+        "preferred": 0.15
+      },
+      "hydraulic_aspect": {
+        "direction": "max",
+        "hard": 50,
+        "preferred": 20
+      },
+      "minimum_interior_angle_deg": {
+        "direction": "min",
+        "hard": 10,
+        "preferred": 20
+      },
+      "non_orthogonality_deg": {
+        "direction": "max",
+        "hard": 65,
+        "preferred": 55
+      },
+      "skewness": {
+        "direction": "max",
+        "hard": 3,
+        "preferred": 2
+      },
+      "volume_ratio": {
+        "direction": "min",
+        "hard": 0.05,
+        "preferred": 0.1
+      }
+    },
+    "remainder_cut": {
+      "face_length_over_local_background_h": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_neighbour_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_owner_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_weight": {
+        "direction": "min",
+        "hard": 0.1,
+        "preferred": 0.15
+      },
+      "hydraulic_aspect": {
+        "direction": "max",
+        "hard": 50,
+        "preferred": 20
+      },
+      "minimum_interior_angle_deg": {
+        "direction": "min",
+        "hard": 10,
+        "preferred": 20
+      },
+      "non_orthogonality_deg": {
+        "direction": "max",
+        "hard": 65,
+        "preferred": 55
+      },
+      "skewness": {
+        "direction": "max",
+        "hard": 3,
+        "preferred": 2
+      },
+      "volume_ratio": {
+        "direction": "min",
+        "hard": 0.05,
+        "preferred": 0.1
+      }
+    },
+    "termination": {
+      "face_length_over_local_background_h": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_neighbour_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_owner_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_weight": {
+        "direction": "min",
+        "hard": 0.1,
+        "preferred": 0.15
+      },
+      "hydraulic_aspect": {
+        "direction": "max",
+        "hard": 50,
+        "preferred": 20
+      },
+      "minimum_interior_angle_deg": {
+        "direction": "min",
+        "hard": 10,
+        "preferred": 20
+      },
+      "non_orthogonality_deg": {
+        "direction": "max",
+        "hard": 65,
+        "preferred": 55
+      },
+      "skewness": {
+        "direction": "max",
+        "hard": 3,
+        "preferred": 2
+      },
+      "volume_ratio": {
+        "direction": "min",
+        "hard": 0.05,
+        "preferred": 0.1
+      }
+    },
+    "transition": {
+      "face_length_over_local_background_h": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_neighbour_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_length_over_sqrt_owner_area": {
+        "direction": "min",
+        "hard": 0.01,
+        "preferred": 0.03
+      },
+      "face_weight": {
+        "direction": "min",
+        "hard": 0.1,
+        "preferred": 0.15
+      },
+      "hydraulic_aspect": {
+        "direction": "max",
+        "hard": 50,
+        "preferred": 20
+      },
+      "minimum_interior_angle_deg": {
+        "direction": "min",
+        "hard": 10,
+        "preferred": 20
+      },
+      "non_orthogonality_deg": {
+        "direction": "max",
+        "hard": 65,
+        "preferred": 55
+      },
+      "skewness": {
+        "direction": "max",
+        "hard": 3,
+        "preferred": 2
+      },
+      "volume_ratio": {
+        "direction": "min",
+        "hard": 0.05,
+        "preferred": 0.1
+      }
+    }
+  },
+  "dimensionless": true,
+  "format_version": "cartmesh2d-q1-quality-contract-v1",
+  "generation_command": [
+    "build/q1/cartmesh2d_hybrid_cli",
+    "examples/acceptance/circle.xy",
+    "build/q1_evidence/circle",
+    "6",
+    "3",
+    "6",
+    "4",
+    "0.02",
+    "1.2",
+    "1.0"
+  ],
+  "hard_issue_counts": {
+    "face_weight": 24,
+    "volume_ratio": 56
+  },
+  "input_issues": [],
+  "legacy_hard_safety": {
+    "issue_count": 0,
+    "max_boundary_skewness": 2.345965652233366e-13,
+    "max_cell_aspect": 11.06348670145588,
+    "max_internal_skewness": 1.6865852783368245,
+    "max_non_orthogonality_deg": 55.396817084758666,
+    "min_face_length_absolute": 0.002871423803657125,
+    "min_face_weight": 0.08721056076783554,
+    "min_volume_ratio": 0.02703787129285704,
+    "valid": true
+  },
+  "ordinary_metrics": {
+    "face_length_over_local_background_h": {
+      "count": 1500,
+      "p50": 0.8894307634150509,
+      "p95": 1.162237716886771,
+      "p99": 2.1274926270523515,
+      "worst": 0.045942780858514,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 440,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          0.5074999999999998,
+          1.4035642880981714
+        ],
+        "edge_id": 1070,
+        "local_h": 0.0625,
+        "neighbour": 441,
+        "owner": 440,
+        "source_id": 416
+      }
+    },
+    "face_length_over_sqrt_neighbour_area": {
+      "count": 1420,
+      "p50": 1,
+      "p95": 1.425959009604342,
+      "p99": 2.188439031216538,
+      "worst": 0.048582860760311646,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 320,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          1.4435642880981714,
+          -0.4075
+        ],
+        "edge_id": 1568,
+        "local_h": 0.0625,
+        "neighbour": 320,
+        "owner": 319,
+        "source_id": 307
+      }
+    },
+    "face_length_over_sqrt_owner_area": {
+      "count": 1500,
+      "p50": 0.9085341637906863,
+      "p95": 1.5500704421682905,
+      "p99": 2.72082781879625,
+      "worst": 0.048582860760311625,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 440,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          0.5074999999999998,
+          1.4035642880981714
+        ],
+        "edge_id": 1070,
+        "local_h": 0.0625,
+        "neighbour": 441,
+        "owner": 440,
+        "source_id": 416
+      }
+    },
+    "face_weight": {
+      "count": 1452,
+      "p50": 0.37972297061829785,
+      "p95": 0.5,
+      "p99": 0.5,
+      "worst": 0.08721056076783554,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 455,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          0.8469585323775932,
+          1.2475565475840362
+        ],
+        "edge_id": 1207,
+        "local_h": 0.1125,
+        "neighbour": 578,
+        "owner": 455,
+        "source_id": 429
+      }
+    },
+    "hydraulic_aspect": {
+      "count": 600,
+      "p50": 2.0000000000000018,
+      "p95": 6.174165959560608,
+      "p99": 11.063486701455536,
+      "worst": 11.06348670145588,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 310,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          1.2983710317226909,
+          -0.7379723549183955
+        ],
+        "edge_id": null,
+        "local_h": 0.0625,
+        "neighbour": null,
+        "owner": 310,
+        "source_id": 299
+      }
+    },
+    "minimum_interior_angle_deg": {
+      "count": 600,
+      "p50": 90,
+      "p95": 90,
+      "p99": 90,
+      "worst": 12.865131765831206,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 310,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          1.2983710317226909,
+          -0.7379723549183955
+        ],
+        "edge_id": null,
+        "local_h": 0.0625,
+        "neighbour": null,
+        "owner": 310,
+        "source_id": 299
+      }
+    },
+    "non_orthogonality_deg": {
+      "count": 1452,
+      "p50": 11.690582726079327,
+      "p95": 41.94978427589507,
+      "p99": 53.57391102263988,
+      "worst": 55.396817084758666,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 380,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          -0.7382085323775933,
+          1.229624995360243
+        ],
+        "edge_id": 553,
+        "local_h": 0.1125,
+        "neighbour": 590,
+        "owner": 380,
+        "source_id": 361
+      }
+    },
+    "skewness": {
+      "count": 1500,
+      "p50": 0.18189409872867116,
+      "p95": 1.1176055338388609,
+      "p99": 1.6040507238975612,
+      "worst": 1.6865852783368245,
+      "worst_direction": "max",
+      "worst_entity": {
+        "cell_id": 312,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          1.3042713361455354,
+          -0.7156873624478072
+        ],
+        "edge_id": 1485,
+        "local_h": 0.1125,
+        "neighbour": 562,
+        "owner": 312,
+        "source_id": 300
+      }
+    },
+    "volume_ratio": {
+      "count": 1452,
+      "p50": 0.28770697377215537,
+      "p95": 1,
+      "p99": 1,
+      "worst": 0.02703787129285704,
+      "worst_direction": "min",
+      "worst_entity": {
+        "cell_id": 442,
+        "cell_type": "remainder_cut",
+        "coordinates": [
+          0.3673990660551655,
+          1.444627729878834
+        ],
+        "edge_id": 1005,
+        "local_h": 0.1125,
+        "neighbour": 581,
+        "owner": 442,
+        "source_id": 418
+      }
+    }
+  },
+  "primary_hard_failure": {
+    "entity": {
+      "cell_id": 442,
+      "cell_type": "remainder_cut",
+      "coordinates": [
+        0.3673990660551655,
+        1.444627729878834
+      ],
+      "edge_id": 1005,
+      "local_h": 0.1125,
+      "neighbour": 581,
+      "owner": 442,
+      "source_id": 418
+    },
+    "level": "hard",
+    "limit": 0.05,
+    "measured": 0.02703787129285704,
+    "metric": "volume_ratio"
+  },
+  "source_commit": "0ed88b3a9e5d6ef85f6b67be49d00c1bdeda01d8",
+  "status": "FAIL"
+}
