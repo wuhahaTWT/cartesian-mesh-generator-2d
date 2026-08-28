@@ -1,0 +1,137 @@
+name: cartmesh2d-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: cartmesh2d-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-2d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Verify standalone repository boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -d cartmesh2d
+          test ! -d include/cartmesh
+          if grep -R -n -E '#include[[:space:]]*[<"]cartmesh/' include src apps; then
+            echo 'native 2D source must not depend on the 3D cartmesh library' >&2
+            exit 1
+          fi
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCARTMESH2D_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build -j2
+
+      - name: Run complete native 2D test suite
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate solver-ready H4 acceptance cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build/h4_solver_ready
+          exe=build/cartmesh2d_hybrid_cli
+          mkdir -p "$out"
+
+          "$exe" examples/acceptance/circle.xy \
+            "$out/circle" 6 3 6 4 0.02 1.2 1.0 \
+            "$out/circle-case" 0.01
+          "$exe" examples/complex/superellipse_24.xy \
+            "$out/superellipse" 6 3 6 3 0.015 1.15 1.0 \
+            "$out/superellipse-case" 0.01
+          "$exe" examples/h4_3/concave_l.xy \
+            "$out/concave_l" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/concave_l-case" 0.01
+          "$exe" examples/h4_3/sharp_trailing_edge.xy \
+            "$out/sharp_trailing_edge" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/sharp_trailing_edge-case" 0.01
+          "$exe" examples/h4_3/narrow_gap.xy \
+            "$out/narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/narrow_gap-case" 0.01
+
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
+            python3 tools/verification/check_openfoam2d.py \
+              "$out/${case_name}-case" \
+              --report "$out/${case_name}-case/independent_check.json"
+          done
+
+          python3 - "$out" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          for name in ('circle', 'superellipse', 'concave_l',
+                       'sharp_trailing_edge', 'narrow_gap'):
+              path = root / f'{name}.hybrid.json'
+              with path.open(encoding='utf-8') as stream:
+                  report = json.load(stream)
+              assert report['hybrid_status'] == 'success', path
+              assert report['topology_valid'] is True, path
+              assert report['mesh_quality_valid'] is True, path
+              assert report['solver_quality_valid'] is True, path
+              assert report['solver_quality_issue_count'] == 0, path
+              assert report['balance_violations_after'] == 0, path
+              assert report['single_owner_interface_edges'] == 0, path
+              assert report['wrong_cell_pair_interface_edges'] == 0, path
+              assert report['non_two_valent_interface_vertices'] == 0, path
+              assert abs(report['area_error']) < 1.0e-8, path
+
+          for name in ('concave_l', 'sharp_trailing_edge', 'narrow_gap'):
+              path = root / f'{name}.hybrid.json'
+              with path.open(encoding='utf-8') as stream:
+                  report = json.load(stream)
+              assert report['boundary_layer_cell_count'] > 0, path
+              assert (report['boundary_layer_cell_count'] <
+                      report['requested_boundary_layer_cell_count']), path
+              assert report['termination_cell_count'] > 0, path
+              assert report['termination_edge_count'] > 0, path
+          PY
+
+      - name: Run OpenFOAM v2606 checkMesh
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=build/h4_solver_ready
+          image=opencfd/openfoam-run:2606
+          container_root=/home/openfoam/workingDir
+          docker pull "$image"
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
+            log="$out/${case_name}.checkMesh.log"
+            docker run --rm \
+              -v "$PWD:$container_root" \
+              -w "$container_root" \
+              "$image" \
+              checkMesh -case "$container_root/$out/${case_name}-case" \
+              2>&1 | tee "$log"
+            grep -q 'Mesh OK' "$log"
+          done
+          printf 'checkMesh=PASS (OpenFOAM v2606)\n' \
+            | tee "$out/checkmesh_status.txt"
+
+      - name: Upload acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cartmesh2d-h4-validation
+          path: |
+            build/h4_solver_ready/*.hybrid.*
+            build/h4_solver_ready/*-case/**
+            build/h4_solver_ready/*.checkMesh.log
+            build/h4_solver_ready/checkmesh_status.txt
+          if-no-files-found: error

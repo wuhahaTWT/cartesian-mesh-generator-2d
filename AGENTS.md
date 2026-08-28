@@ -2,87 +2,74 @@
 
 ## 0. 项目身份
 
-`cartmesh2d` 是原生二维 Cartesian / Quadtree / Cut-cell 网格生成器，是三维 `cartmesh` 的并行子项目。
+本仓库是独立的原生二维 Cartesian / Quadtree / Cut-cell 网格生成器。
+它与 `cartesian-mesh-generator` 原生三维仓库并行开发，但不依赖、不链接、
+也不复制三维核心。
 
-**严禁把三维项目压成 `z=0` 来冒充二维实现。**
+严禁把三维项目压成 `z=0` 来冒充二维实现。二维核心对象必须保持为
+`Point2D`、`Segment2D`、`AABB2D`、`Polygon2D`、二维 Cartesian cell、
+Quadtree leaf、CutPolygon 和 Edge2D。
 
-二维核心对象必须是二维对象：`Point2D`、`Segment2D`、`AABB2D`、`Polygon2D`、二维 Cartesian cell、Quadtree leaf、CutPolygon、Edge2D。
+## 1. CFD 物理侧定义（硬约束）
 
-### 0.1 CFD 物理侧定义（硬约束）
-
-默认产品语义必须与三维 `cartmesh` 一致：
-
-- 输入闭合 `BoundaryLoop` 默认表示**固体壁面/障碍物轮廓**；
+- 输入闭合 `BoundaryLoop` 默认表示固体壁面/障碍物轮廓；
 - `Domain2D` 表示外部计算域；
-- 默认流体区域必须是 `Domain2D - solid interior`；
-- 几何 `Inside` 单元默认属于固体，不能进入最终流体网格；
-- 几何 `Outside` 单元默认属于流体，应保留为 full fluid cell；
-- `Intersected` 单元的 Cut-cell 必须保留边界**外侧**的真实流体 polygon；
-- 外部 CFD 网格必须同时具有固体 `EmbeddedBoundary` 与外部 `DomainBoundary`；
-- 内部流/管道流只有在调用者显式选择 `FluidRegion2D::Interior` 时才允许。
+- 默认流体区域是 `Domain2D - solid interior`；
+- `Inside` 单元属于固体，不进入最终流体网格；
+- `Outside` 单元属于流体；
+- `Intersected` 单元必须保留边界外侧的真实流体 polygon；
+- 外流网格必须同时具有 `EmbeddedBoundary` 与 `DomainBoundary`；
+- 内部流只有调用者显式选择 `FluidRegion2D::Interior` 时才允许。
 
-任何默认路径、CLI、验收案例或可视化若把闭合固体轮廓内部当成默认 CFD 流体域，均属于阻断级错误，不得以“测试全绿”或“图能画出来”通过验收。
+任何默认路径、CLI、验收案例或可视化若把闭合固体轮廓内部当成默认 CFD
+流体域，均属于阻断级错误，不得以测试全绿或图片可见通过验收。
 
-## 1. 隔离边界（硬约束）
+## 2. 仓库边界
 
-二维任务默认只允许修改：
+二维代码全部位于本仓库根目录的 `include/`、`src/`、`apps/`、`tests/`、
+`tools/`、`examples/`、`desktop/`、`docs/` 与 `artifacts/`。
 
-- `cartmesh2d/**`
-- 顶层 `CMakeLists.txt` 中专门用于 `add_subdirectory(cartmesh2d)` 的接入代码
-- 顶层文档中用于说明二维子项目存在的少量链接/说明
+- 不得引入 `cartmesh/*` 三维头文件或链接三维 library；
+- 不得把本仓库重新作为长期分支塞回三维仓库；
+- 二维和三维若共享算法思想，应通过文档和独立实现协调，除非用户明确批准
+  创建稳定、独立、带版本的公共库；
+- 历史验证文档中出现的 `cartmesh2d/` 子目录命令仅代表拆仓前环境，当前构建
+  一律从本仓库根目录执行。
 
-不得为了二维功能重构或修改三维核心：
+## 3. 当前阶段边界
 
-- `include/cartmesh/**`
-- `src/**`
-- `apps/**`
-- `tests/**`
-- 三维 Stage 6 / Stage 7 算法
-
-不得把三维核心改写为 `Point<Dim>`、`AABB<Dim>`、`Tree<Dim>` 等泛型架构，除非未来二维、三维均已稳定且用户单独批准工程化重构。
-
-## 2. 开发顺序
-
-严格执行：
+已完成并形成回归门：
 
 `2D-0 -> 2D-1 -> 2D-2 -> 2D-3 -> 2D-4 -> 2D-5 -> 2D-6 -> 2D-V`
 
-每次只推进用户明确批准的一个阶段或子阶段。不得因为“顺手”提前实现后续算法。
+后续精细化已完成：H1 sizing、H2 scalability、H3 solver topology、
+H4-1 boundary-layer core、H4-2 conformal hybrid、H4-3 local dropping and
+termination。未经用户明确批准，不得把后续阶段冒充当前已完成范围。
 
-## 3. 核心真实性规则
+## 4. 核心真实性规则
 
 1. 几何与拓扑正确性高于可视化。
-2. 不得把“删除相交格子”“单元中心 inside/outside 采样”称为 Cut-cell。
-3. `Cut-cell` 必须输出真实二维流体 polygon，并能计算正面积、质心及边界边。
-4. 默认外流案例必须满足 `total_fluid_area = domain_area - solid_area`（tolerance 内），不得只验证 `solid_area`。
-5. 默认外流拓扑必须同时出现 `EmbeddedBoundary` 和 `DomainBoundary`；若外部计算域存在但 `DomainBoundary=0`，必须直接失败。
-6. 任何几何失败、自交、零面积、重复边、孤立边、非流形关系必须显式报错或报告，不能静默修补后宣称成功。
-7. 相同输入、相同参数必须产生确定性的 cell/edge/vertex 顺序、ID、报告和输出。
-8. 所有 tolerance 必须集中管理、命名清楚，不得在算法内部散落魔法常数。
-9. 所有阶段必须有最小失败案例和回归测试。
-10. 测试必须验证物理含义，不能只验证内部实现自洽；尤其禁止用与产品相反的 fluid-side 语义构造全部 acceptance。
+2. 不得把删除相交格子或单元中心采样称为 Cut-cell。
+3. Cut-cell 必须输出真实二维流体 polygon，并能计算正面积、质心及边界边。
+4. 默认外流必须满足 `fluid_area = domain_area - solid_area`（tolerance 内）。
+5. 默认外流拓扑必须同时出现固体壁面与外部计算域边界。
+6. 自交、零面积、重复边、孤立边、非流形或分类冲突必须显式失败。
+7. 相同输入和参数必须产生确定性的 ID、拓扑、报告和输出。
+8. tolerance 必须集中管理，不得散落未命名魔法常数。
+9. 几何修复必须保留最小失败案例和回归测试。
+10. 不得降低 solver-quality 阈值、删除坏单元或隐藏告警来通过验收。
+11. Boundary-layer、termination 与 remainder 必须进入统一共形 owner/neighbour
+    拓扑；pure Cut-cell 只能作为明确的最后一级 fallback。
+12. 每个重要里程碑除项目测试外，还必须通过独立读取器；OpenFOAM 能运行时
+    必须真实执行 `checkMesh`，不得以内部读取器冒充。
 
-## 4. 可视化禁令
+## 5. 当前验证基线
 
-在 `2D-6` 核心验收前：
+- 原生二维 CTest：72 项；
+- H4-3 验收：concave L、sharp trailing edge、narrow gap；
+- H4-2 回归：circle、superellipse；
+- OpenFOAM 验证镜像：`opencfd/openfoam-run:2606`；
+- 当前 H4-3 事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md` 与
+  `artifacts/h4_3/`。
 
-- 不开发 GUI；
-- 不以截图是否“好看”作为算法验收；
-- `tools/visualization/` 只保留目录，不实现产品功能；
-- 如调试必须输出几何，可用纯文本/JSON/VTK 调试数据，但不得让绘图代码进入核心库依赖。
-
-## 5. 2D-0 当前起点
-
-当用户明确批准开始 `2D-0` 后，第一批允许实现的对象只有：
-
-- `Point2D` / `Vector2D`
-- `Segment2D`
-- `AABB2D`
-- `Polygon2D`
-- `BoundaryLoop`
-- orientation / signed area / centroid
-- robust segment intersection
-- point-in-polygon（inside/outside/boundary）
-- 闭合、退化、自交、方向等输入诊断
-
-在 2D-0 验收前不得实现 Quadtree、Cut-cell、GUI 或求解器导出。
+任何新修改都必须保持工作区确定性、原有回归和真实输出证据。

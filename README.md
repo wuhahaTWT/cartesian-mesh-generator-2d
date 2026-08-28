@@ -1,6 +1,6 @@
 # cartmesh2d — 原生二维自适应 Cartesian / Cut-cell 网格生成器
 
-`cartmesh2d` 是主仓库中的**独立、封闭、原生二维**子项目。
+`cartmesh2d` 是一个**独立、封闭、原生二维**仓库。
 
 它不是三维 `cartmesh` 的 `z=0` 模式，也不通过把 `Point3D`、Octree 或 3D Cut-cell 代码模板化来复用三维核心。二维项目首先追求一个小而完整、可验证、可作为结题成果的二维 CFD 网格生成核心；三维项目继续独立推进。
 
@@ -60,6 +60,30 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 - **2D-5**：小 Cut-cell 检测与稳定化/聚合
 - **2D-6**：质量、导出、最终 CFD 语义验收
 - **2D-V**：可视化；只有 2D-6 核心验收后才进入
+
+基础阶段之后已经完成以下精细化路线：
+
+- **H1**：可控高密度 sizing field；
+- **H2**：大规模 Quadtree / topology scalability；
+- **H3**：solver topology 与质量稳定化；
+- **H4-1**：原生二维 boundary-layer quad strip；
+- **H4-2**：outer envelope 与 Cartesian/Cut-cell remainder 共形拼接；
+- **H4-3**：复杂几何局部降层、真实 layer termination 和最终 pure Cut-cell fallback。
+
+当前 H4-3 基线同时验证 circle、superellipse、concave L、sharp trailing edge
+和 narrow gap，并通过 OpenFOAM v2606 `checkMesh`。详细证据见
+`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md` 和 `artifacts/h4_3/`。
+
+## 独立构建与测试
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_TESTS=ON
+cmake --build build -j4
+ctest --test-dir build --output-on-failure
+```
+
+本仓库不需要三维 `cartmesh` 源码，也不再使用
+`-DCARTMESH_BUILD_2D=ON` 或 `add_subdirectory(cartmesh2d)`。
 
 ## 关键验收不变量
 
