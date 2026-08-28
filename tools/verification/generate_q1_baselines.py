@@ -73,6 +73,8 @@ def main() -> int:
                         default=pathlib.Path("artifacts/q1"))
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--collect-only", action="store_true")
+    parser.add_argument("--expect-superellipse-short-faces", choices=("present", "absent"),
+                        default="present", help="present reproduces historical Q1; absent validates the Q2 superellipse fix")
     args = parser.parse_args()
 
     repo = args.repo.resolve()
@@ -117,10 +119,14 @@ def main() -> int:
     superellipse = json.loads((output_dir /
         "superellipse.quality-contract-baseline.json").read_text(encoding="utf-8"))
     micro = superellipse["ordinary_metrics"]["face_length_over_local_background_h"]
-    if not micro["worst"] < 0.01 or not any(
-            key.startswith("face_length_over_")
-            for key in superellipse["hard_issue_counts"]):
-        raise RuntimeError("superellipse micro internal face is not a Q1 hard failure")
+    if args.expect_superellipse_short_faces == "present":
+        if not micro["worst"] < 0.01 or not any(
+                key.startswith("face_length_over_")
+                for key in superellipse["hard_issue_counts"]):
+            raise RuntimeError("superellipse micro internal face is not a Q1 hard failure")
+    elif micro["worst"] < 0.01 or any(
+            key.startswith("face_length_over_") for key in superellipse["hard_issue_counts"]):
+        raise RuntimeError("Q2 superellipse still contains a Q1 hard short-face violation")
     manifest_path = output_dir / "baseline-manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n",
                              encoding="utf-8")

@@ -234,6 +234,11 @@ int main() {
         superRefinement);
     checkSolverReady(superHybrid, "superellipse");
     if (superHybrid.success()) {
+        const auto& micro=superHybrid.qualityContract.ordinaryMetrics.at("face_length_over_local_background_h");
+        check(micro.worst>=QualityContract2D{}.transition.faceOverLocalBackgroundH.hard,
+              "Q2 superellipse final solver face/local_h satisfies Q1 hard limit");
+        check(!superHybrid.canonicalizedIntersections.empty(),
+              "Q2 retains canonical intersection provenance");
         check(superHybrid.interfaceAudit.pass(1.0e-8) &&
               superHybrid.solverInterfaceAudit.pass(1.0e-8),
               "superellipse geometric and solver interfaces stay conformal");

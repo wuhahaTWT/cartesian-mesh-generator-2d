@@ -1,4 +1,5 @@
 #include "cartmesh2d/hybrid/HybridMesh2D.hpp"
+#include "cartmesh2d/hybrid/TransitionCanonicalization2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -25,6 +26,7 @@ namespace {
 [[nodiscard]] double segmentLength(const Point2D& a, const Point2D& b) noexcept {
     return std::sqrt(squaredNorm(b - a));
 }
+
 
 [[nodiscard]] bool convexPolygon(const Polygon2D& polygon,
                                  const TolerancePolicy& tol) noexcept {
@@ -657,6 +659,14 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         remainderBoundaryLoops.push_back(std::move(transitionLoop));
     }
     }
+    IntersectionRegistry2D envelopeRegistry({TransitionCanonicalizationPolicy2D{}.minimumFaceFraction});
+    std::string canonicalizationError;
+    if (!canonicalizeTransitionEnvelope2D(
+            remainderBoundaryLoops,transitionPolygons,outerRegion,domain,
+            remainderRefinement.boundaryLevel,transitionRingThickness,
+            localTermination,envelopeRegistry,policy.tolerance,canonicalizationError)) {
+        return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,canonicalizationError);
+    }
     BoundaryRegion2D remainderBoundaryRegion(std::move(remainderBoundaryLoops));
     if (!remainderBoundaryRegion.diagnose(policy.tolerance).valid()) {
         return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,
@@ -706,6 +716,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                               detail, std::nullopt, leaf.id);
             }
             if (component.kind == CutCellKind::Empty) continue;
+            component.sourceId = nextSourceId;
+            component.sourceKey = leaf.key;
             if (!(component.area > 0.0) || !component.centroid) {
                 return failed(HybridMeshFailureReason2D::RemainderCutCellFailed,
                               "remainder cell has non-positive area or missing centroid",
@@ -731,8 +743,6 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                               detail.str(),
                               std::nullopt, leaf.id);
             }
-            component.sourceId = nextSourceId;
-            component.sourceKey = leaf.key;
             const auto kind = component.kind == CutCellKind::Full
                 ? HybridCellKind2D::RemainderCartesian
                 : HybridCellKind2D::RemainderCut;
@@ -911,9 +921,19 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     TopologyMesh2D topology = buildGlobalTopology(
         topologyAdapters, domain, originalWalls, policy.tolerance);
     if (!topology.valid()) {
-        const std::string detail = topology.issues.empty()
+        std::string detail = topology.issues.empty()
             ? "unified global topology audit failed"
             : topology.issues.front().message;
+        if (!topology.issues.empty() &&
+            topology.issues.front().code==TopologyIssueCode2D::UnclassifiedBoundaryEdge) {
+            const auto& e=topology.edges[topology.issues.front().objectId];
+            const auto a=topology.vertices[e.v0].point;
+            const auto b=topology.vertices[e.v1].point;
+            std::ostringstream diagnostics;
+            diagnostics<<std::setprecision(17)<<" edge="<<e.id<<" owner="<<e.owner
+                       <<" a=("<<a.x<<','<<a.y<<") b=("<<b.x<<','<<b.y<<')';
+            detail+=diagnostics.str();
+        }
         return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed, detail);
     }
 
@@ -1086,6 +1106,25 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.remainderSmallCells=std::move(remainderSmallCells);
     result.remainderStabilization=std::move(remainderStabilization);
     result.solverTopologyReport=std::move(solverTopologyReport);
+    result.canonicalizedIntersections=envelopeRegistry.records();
+    for (const auto& cell:result.remainderSourceCells) {
+        for (auto record:cell.canonicalizedIntersections) {
+            record.source=IntersectionSource2D::TransitionEnvelopeCartesian;
+            record.sourceId=cell.sourceId;
+            result.canonicalizedIntersections.push_back(record);
+        }
+    }
+    for (std::size_t i=0U;i<result.canonicalizedIntersections.size();++i) {
+        auto& record=result.canonicalizedIntersections[i];
+        record.id=i;
+        for (const auto& vertex:result.solverTopology.vertices) {
+            if (segmentLength(vertex.point,record.canonicalVertex.point)<=
+                policy.tolerance.relative*record.localH) {
+                record.solverVertexId=vertex.id;
+                break;
+            }
+        }
+    }
     result.balance = balance;
     result.metrics.quadtreeLeafCount = remainderTree->leaves().size();
     result.metrics.remainderCartesianCellCount = remainderCartesianCount;

@@ -5,9 +5,11 @@ project(cartmesh2d LANGUAGES CXX)
 add_library(cartmesh2d
     src/boundary_layer/BoundaryLayer2D.cpp
     src/geometry/Geometry2D.cpp
+    src/geometry/IntersectionRegistry2D.cpp
     src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
     src/hybrid/HybridMesh2D.cpp
+    src/hybrid/TransitionCanonicalization2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
     src/cutcell/CutCell2D.cpp
@@ -202,6 +204,9 @@ if(CARTMESH2D_BUILD_TESTS)
     endforeach()
 
     add_test(NAME cartmesh2d_stage0_geometry_tests COMMAND cartmesh2d_geometry_tests)
+    add_executable(cartmesh2d_intersection_registry_tests tests/intersection_registry_test.cpp)
+    target_link_libraries(cartmesh2d_intersection_registry_tests PRIVATE cartmesh2d::cartmesh2d)
+    add_test(NAME cartmesh2d_stageQ2_intersection_registry_tests COMMAND cartmesh2d_intersection_registry_tests)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)

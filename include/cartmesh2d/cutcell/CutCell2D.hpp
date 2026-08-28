@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cartmesh2d/quadtree/Quadtree2D.hpp"
+#include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -51,6 +52,7 @@ struct CutCell2D {
     std::optional<Point2D> centroid;
     std::vector<Segment2D> embeddedBoundary;
     std::vector<CutCellIssue2D> issues;
+    std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
 
     [[nodiscard]] bool valid() const noexcept {
         return issues.empty() && kind != CutCellKind::Unsupported;

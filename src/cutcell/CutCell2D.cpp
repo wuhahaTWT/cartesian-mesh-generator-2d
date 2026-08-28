@@ -57,10 +57,12 @@ namespace {
 
 [[nodiscard]] Point2D snapPointToBox(Point2D point, const AABB2D& box,
                                      const TolerancePolicy& tol) noexcept {
-    if (scalarNear(point.x, box.min.x, tol)) point.x = box.min.x;
-    if (scalarNear(point.x, box.max.x, tol)) point.x = box.max.x;
-    if (scalarNear(point.y, box.min.y, tol)) point.y = box.min.y;
-    if (scalarNear(point.y, box.max.y, tol)) point.y = box.max.y;
+    const double localH=std::min(box.max.x-box.min.x,box.max.y-box.min.y);
+    const double epsilon=tol.relative*localH;
+    if (std::abs(point.x-box.min.x)<=epsilon) point.x = box.min.x;
+    if (std::abs(point.x-box.max.x)<=epsilon) point.x = box.max.x;
+    if (std::abs(point.y-box.min.y)<=epsilon) point.y = box.min.y;
+    if (std::abs(point.y-box.max.y)<=epsilon) point.y = box.max.y;
     return point;
 }
 
@@ -167,7 +169,8 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
 
 [[nodiscard]] std::optional<Segment2D> clipSegmentToAABB(
     const Segment2D& segment, const AABB2D& box,
-    const TolerancePolicy& tol) noexcept {
+    const TolerancePolicy& tol,std::size_t supportId,
+    std::vector<CanonicalizedIntersection2D>& records) {
     double t0 = 0.0;
     double t1 = 1.0;
     const double dx = segment.b.x - segment.a.x;
@@ -191,8 +194,30 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
     t1 = std::clamp(t1, 0.0, 1.0);
     Segment2D clipped{{segment.a.x + t0 * dx, segment.a.y + t0 * dy},
                       {segment.a.x + t1 * dx, segment.a.y + t1 * dy}};
-    clipped.a = snapPointToBox(clipped.a, box, tol);
-    clipped.b = snapPointToBox(clipped.b, box, tol);
+    const double localH=std::min(box.max.x-box.min.x,box.max.y-box.min.y);
+    IntersectionRegistry2D registry({std::max(tol.relative,
+        IntersectionRegistryPolicy2D{}.snapFractionOfLocalH)});
+    for (const auto& anchor:{segment.a,segment.b}) {
+        (void)registry.addCanonicalVertex(anchor,localH,
+            IntersectionFeature2D::WallSharpCorner,supportId,supportId);
+    }
+    for (const auto& raw:{clipped.a,clipped.b}) {
+        (void)registry.addCanonicalVertex(snapPointToBox(raw,box,tol),localH,
+            IntersectionFeature2D::CartesianGridLine,std::nullopt,supportId);
+    }
+    // Actual wall samples are immutable. Only computed intersections can
+    // canonicalize to incident samples or local grid supports.
+    clipped.a=t0==0.0?segment.a:registry.canonicalize(clipped.a,localH,
+        IntersectionSource2D::WallCartesian,supportId,IntersectionFeature2D::None,
+        std::nullopt,supportId);
+    clipped.b=t1==1.0?segment.b:registry.canonicalize(clipped.b,localH,
+        IntersectionSource2D::WallCartesian,supportId,IntersectionFeature2D::None,
+        std::nullopt,supportId);
+    for (auto record:registry.records()) {
+        record.id=records.size();
+        record.sourceSegment=segment;
+        records.push_back(record);
+    }
     if (pointNear(clipped.a, clipped.b, tol)) return std::nullopt;
     return clipped;
 }
@@ -215,13 +240,15 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
 
 [[nodiscard]] std::vector<Segment2D> collectEmbeddedBoundary(
     const BoundaryRegion2D& boundary, const AABB2D& box,
-    FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
+    FluidRegion2D fluidRegion, const TolerancePolicy& tol,
+    std::vector<CanonicalizedIntersection2D>& records) {
     std::vector<Segment2D> fragments;
+    std::size_t supportId=0U;
     for (const auto& loop : boundary.loops()) {
         const auto& vertices = loop.vertices();
         for (std::size_t i = 0; i < vertices.size(); ++i) {
             const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
-            auto clipped = clipSegmentToAABB(edge, box, tol);
+            auto clipped = clipSegmentToAABB(edge, box, tol,supportId++,records);
             if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
             if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
             fragments.push_back(*clipped);
@@ -346,6 +373,7 @@ struct LocalIntersectionResult {
     bool graphInvalid = false;
     bool hasHole = false;
     std::string graphFailure;
+    std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
 };
 
 [[nodiscard]] bool pointOnPolygonBoundary(const Point2D& point,
@@ -390,7 +418,8 @@ struct LocalIntersectionResult {
     const BoundaryRegion2D& boundary, const AABB2D& box,
     FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
     LocalIntersectionResult result;
-    result.embedded = collectEmbeddedBoundary(boundary, box, fluidRegion, tol);
+    result.embedded = collectEmbeddedBoundary(boundary, box, fluidRegion, tol,
+                                             result.canonicalizedIntersections);
     if (result.embedded.empty()) return result;
     if (hasClosedEmbeddedComponent(result.embedded,box,tol)) {
         result.hasHole=true;
@@ -649,6 +678,7 @@ void setEmptyFluidCell(CutCell2D& result) {
         component.backgroundBounds = box;
         component.fluidPolygon = polygon;
         component.embeddedBoundary = localComponent.embedded;
+        component.canonicalizedIntersections=local.canonicalizedIntersections;
         component.area = component.fluidPolygon.area();
         if (component.area <= areaEps) continue;
         if (component.area > fullArea + areaEps) {

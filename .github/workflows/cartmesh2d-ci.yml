@@ -196,10 +196,12 @@ jobs:
           python3 tools/verification/generate_q1_baselines.py \
             --repo . --build-dir build --evidence-dir build/h4_solver_ready \
             --output-dir build/q1_baselines --source-commit "$GITHUB_SHA" \
+            --expect-superellipse-short-faces absent \
             --collect-only
           python3 tools/verification/generate_q1_baselines.py \
             --repo . --build-dir build --evidence-dir build/h4_solver_ready \
             --output-dir build/q1_baselines_repeat --source-commit "$GITHUB_SHA" \
+            --expect-superellipse-short-faces absent \
             --collect-only
           diff -ru build/q1_baselines build/q1_baselines_repeat
 

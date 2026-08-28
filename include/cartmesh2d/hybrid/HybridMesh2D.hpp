@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cartmesh2d/boundary_layer/BoundaryLayer2D.hpp"
+#include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
@@ -177,6 +178,7 @@ struct HybridMeshBuildResult2D {
     SmallCellReport2D remainderSmallCells;
     AgglomerationResult2D remainderStabilization;
     SolverTopologyResult2D solverTopologyReport;
+    std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
     QuadtreeBalanceReport2D balance;
     HybridMeshFailure2D failure;
 

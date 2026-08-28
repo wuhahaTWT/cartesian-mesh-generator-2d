@@ -186,6 +186,7 @@ int main(int argc, char** argv) {
                        robust.localLayerCandidate.failure.reason)
                  <<" hybrid_failure="
                  <<hybridMeshFailureReasonName(robust.hybridCandidate.failure.reason)
+                 <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" fallback_failure="<<robust.fallback.failureMessage<<'\n';
         return EXIT_FAILURE;
     }
@@ -226,6 +227,7 @@ int main(int argc, char** argv) {
         }
         std::cout<<"h4_status=success mesh_mode=pure_cutcell_fallback"
                  <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)
+                 <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" solver_cells="<<fallback.solverTopology.cells.size()
                  <<" area_error="<<fallback.areaError
                  <<" solver_quality=pass openfoam="<<openFoamStatus
@@ -233,6 +235,11 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
     auto hybrid=std::move(robust.hybridCandidate);
+    if (!writeText(outputPrefix.string()+".hybrid.intersections.json",
+                   intersectionRecordsToJson(hybrid.canonicalizedIntersections),error)) {
+        std::cerr<<error<<'\n';
+        return EXIT_FAILURE;
+    }
     const auto jsonPath = outputPrefix.string() + ".hybrid.json";
     if (!writeHybridReportJson2D(hybrid, jsonPath, &error)) {
         std::cerr << error << '\n';
