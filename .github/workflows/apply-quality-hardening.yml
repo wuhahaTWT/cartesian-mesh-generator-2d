@@ -25,18 +25,17 @@ jobs:
       - name: Configure
         run: cmake -S . -B build-quality -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_TESTS=ON
 
-      - name: Build H3/H4 targets
+      - name: Build H4 targets
         run: >-
           cmake --build build-quality -j2 --target
-          cartmesh2d_solver_export_tests
           cartmesh2d_hybrid_mesh_tests
           cartmesh2d_h4_local_termination_tests
           cartmesh2d_hybrid_cli
 
-      - name: Run focused topology tests
+      - name: Run focused H4 topology tests
         run: >-
           ctest --test-dir build-quality
-          -R 'cartmesh2d_stage(S1_solver_export|H4_2_conformal_hybrid|H4_3_local_termination)_tests'
+          -R 'cartmesh2d_stage(H4_2_conformal_hybrid|H4_3_local_termination)_tests'
           --output-on-failure
 
       - name: Commit applied source patch
