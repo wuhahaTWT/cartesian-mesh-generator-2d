@@ -1,3 +1,4 @@
+# One-shot branch applicator; retained only while the quality hardening PR is under validation.
 from pathlib import Path
 
 path = Path("src/quality/SolverTopology2D.cpp")
