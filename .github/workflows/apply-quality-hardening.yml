@@ -5,6 +5,7 @@ on:
     branches: [quality/solver-margin-hardening]
     paths:
       - tools/development/apply_quality_margin_hardening.py
+      - .github/workflows/apply-quality-hardening.yml
 
 permissions:
   contents: write
