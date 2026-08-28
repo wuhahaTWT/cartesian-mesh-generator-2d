@@ -69,7 +69,7 @@ termination。未经用户明确批准，不得把后续阶段冒充当前已完
 - H4-3 验收：concave L、sharp trailing edge、narrow gap；
 - H4-2 回归：circle、superellipse；
 - OpenFOAM 验证镜像：`opencfd/openfoam-run:2606`；
-- 当前 H4-3 事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md` 与
-  `artifacts/h4_3/`。
+- 当前 H4 算法事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；当前质量
+  事实来源：`docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 与 `artifacts/q0/`。
 
 任何新修改都必须保持工作区确定性、原有回归和真实输出证据。

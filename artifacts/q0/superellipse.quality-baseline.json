@@ -1,0 +1,581 @@
+{
+  "case": "superellipse",
+  "construction_quality": {
+    "metric_semantics": {
+      "cell_edge_length_ratio": "max edge / min edge within one polygon",
+      "centroid_vertex_mean_offset_normalized": "distance(area centroid, vertex mean) / sqrt(area)"
+    },
+    "metrics": {
+      "cell_area": {
+        "count": 772,
+        "p50": 0.011808895303005218,
+        "p95": 0.07874999999999988,
+        "p99": 0.10931336164440775,
+        "worst": 0.0009093791952322627,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 420,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.1884314004080208,
+            1.2881335077075389
+          ],
+          "edge_id": null,
+          "local_h": 0.030155914763645666,
+          "neighbour": null,
+          "owner": 420,
+          "source_id": 420,
+          "source_key": 420
+        }
+      },
+      "cell_edge_length_ratio": {
+        "count": 772,
+        "p50": 3.1111111111111107,
+        "p95": 45.66010883362783,
+        "p99": 121.82711762100838,
+        "worst": 16567973.039566275,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 676,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -0.11829484520258368,
+            1.26388233744868
+          ],
+          "edge_id": null,
+          "local_h": 0.16718299202806014,
+          "neighbour": null,
+          "owner": 676,
+          "source_id": 676,
+          "source_key": 676
+        }
+      },
+      "centroid_vertex_mean_offset_normalized": {
+        "count": 772,
+        "p50": 0.07559329706132317,
+        "p95": 0.23026899082398578,
+        "p99": 0.25610855792079845,
+        "worst": 0.3329910589389822,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 186,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -2.1761289403667563,
+            -0.7683286995435936
+          ],
+          "edge_id": null,
+          "local_h": 0.03132059825314211,
+          "neighbour": null,
+          "owner": 186,
+          "source_id": 186,
+          "source_key": 186
+        }
+      },
+      "edge_length": {
+        "count": 1951,
+        "p50": 0.08749999999999991,
+        "p95": 0.3500000000000001,
+        "p99": 0.807919933860294,
+        "worst": 9.79752897103936e-09,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 363,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -2.326100423594548,
+            4.884676955554503e-09
+          ],
+          "edge_id": 184,
+          "local_h": 0.08713243917379572,
+          "neighbour": 604,
+          "owner": 363,
+          "source_id": 363,
+          "source_key": 363
+        }
+      }
+    },
+    "quality_class": "construction_quality",
+    "source": "native_unified_2d_topology"
+  },
+  "evidence": {
+    "construction_topology_sha256": "f478c0e38cc520412aa73a9ca835b3a8d62cd5c72cdd5cff732e01cf31ae1390",
+    "normalized_checkmesh_log_sha256": "555d9075181d44d17663c373143c195a1b3ffa0288e6150fb0a5708a2cfd8336",
+    "openfoam_poly_mesh": {
+      "boundary": "b15e5260c919c28c65d35711401aae85383a664fe4edfef4a4da5e98f0e79a9f",
+      "faces": "4c3192cf6cf82a6eb62cb32086f0467b793ee9c4f087ed3a2ab9c771d99af48c",
+      "neighbour": "a9276c8d1920116a5d789207d1ea8669d44caf6e3245c1f9a9ec5af42254dac1",
+      "owner": "428e8344beeb17cba637a9d59dd9926ddab4f50838f87a8d220d6ee7e748f87e",
+      "points": "9f9a820e2faa14542780aa6d44120741426887278c5e3b3a526031278f7f2e28"
+    },
+    "openfoam_quality_fields": {
+      "aspectRatio": "2fc7452d32d9ce38af074287ecd7dc4f743e45c220873e6447f93a7883729e85",
+      "cellAspectRatio": "fe0ab4b8177812f17e21e1f40e7efd9cfd81ab69924723e6ace64f2afae49245",
+      "cellDeterminant": "b3f2b977153b79bbfc9e33c49930d8dffe6949ef44ec0a7f31a13fc9ba6a57d0",
+      "cellVolume": "d33966390db661bda12759fc22065c256607bfe5b90076184a7d94ebc5c7f511",
+      "cellVolumeRatio": "812d63e337aa6a19e22d595c8c5169320ddea891a10201aa2061678b492f997e",
+      "faceWeight": "71170ecfdf0ac1962f1e4207e1dd4b216487ad4c63d3d63417e46c4fd11a0b10",
+      "nonOrthoAngle": "ebf3ef81a48f10e83772aababafd8c6f43254400cfa0e3b7dee983a97ed3a58d",
+      "skewness": "75a5498dc6bd06ad8b35fb7ace38fa43c0d63ff332376fc5f5996be7dc2bff7e"
+    },
+    "solver_topology_sha256": "c9b010f6964b32c97f17a958689eaddc3a36b510daa17a325346b7281b72b31c"
+  },
+  "format_version": "cartmesh2d-q0-quality-v1",
+  "generation": {
+    "command": [
+      "cartmesh2d_hybrid_cli",
+      "examples/complex/superellipse_24.xy",
+      "$EVIDENCE/superellipse",
+      "6",
+      "3",
+      "6",
+      "3",
+      "0.015",
+      "1.15",
+      "1.0",
+      "$EVIDENCE/superellipse-case",
+      "0.01"
+    ],
+    "config": {
+      "boundary_level": 6,
+      "domain_padding": 1.0,
+      "extrusion_thickness": 0.01,
+      "first_thickness": 0.015,
+      "growth_ratio": 1.15,
+      "layers": 3,
+      "max_level": 6,
+      "minimum_level": 3
+    }
+  },
+  "generator_commit": "fc87f2e3346b37c3f164c1ef27f2a1879bfd13cc",
+  "input": {
+    "path": "examples/complex/superellipse_24.xy",
+    "sha256": "77b3159f8a12339d712a2b72bef7524765047beb09f32fd4f7120919f06872af"
+  },
+  "openfoam_quality": {
+    "distribution_source": "checkMesh -writeAllFields volScalarField",
+    "metrics": {
+      "approximate_cell_aspect_ratio": {
+        "count": 791,
+        "openfoam_field": "cellAspectRatio",
+        "p50": 5.266532006,
+        "p95": 19.243946809999997,
+        "p99": 46.614777139000054,
+        "worst": 51.24097137,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 725,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            0.45811501429259055,
+            -0.8006245900505033
+          ],
+          "edge_id": null,
+          "local_h": 0.11723906571225574,
+          "neighbour": null,
+          "owner": 725,
+          "source_id": 725,
+          "source_key": 725
+        }
+      },
+      "aspect_ratio": {
+        "count": 791,
+        "openfoam_field": "aspectRatio",
+        "p50": 1.555555556,
+        "p95": 6.0027132385,
+        "p99": 27.56567676700005,
+        "worst": 31.88659624,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 725,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            0.45811501429259055,
+            -0.8006245900505033
+          ],
+          "edge_id": null,
+          "local_h": 0.11723906571225574,
+          "neighbour": null,
+          "owner": 725,
+          "source_id": 725,
+          "source_key": 725
+        }
+      },
+      "cell_determinant": {
+        "count": 791,
+        "openfoam_field": "cellDeterminant",
+        "p50": 0.4844970703,
+        "p95": 2.8666085275,
+        "p99": 4.8007428890999995,
+        "worst": 0.002625264643,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 749,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            0.4586452864031598,
+            -0.8167438782764014
+          ],
+          "edge_id": null,
+          "local_h": 0.12579763220286946,
+          "neighbour": null,
+          "owner": 749,
+          "source_id": 749,
+          "source_key": 749
+        }
+      },
+      "cell_volume": {
+        "count": 791,
+        "openfoam_field": "cellVolume",
+        "p50": 0.0001092072774,
+        "p95": 0.0007875,
+        "p99": 0.0010913897994000003,
+        "worst": 2.094893076e-06,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 90,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.7461048823882082,
+            -1.1599284775380088
+          ],
+          "edge_id": null,
+          "local_h": 0.01447374545732658,
+          "neighbour": null,
+          "owner": 90,
+          "source_id": 90,
+          "source_key": 90
+        }
+      },
+      "cell_volume_ratio": {
+        "count": 791,
+        "openfoam_field": "cellVolumeRatio",
+        "p50": 0.25,
+        "p95": 0.5868685801,
+        "p99": 1.0,
+        "worst": 0.01918272412,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 90,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.7461048823882082,
+            -1.1599284775380088
+          ],
+          "edge_id": null,
+          "local_h": 0.01447374545732658,
+          "neighbour": null,
+          "owner": 90,
+          "source_id": 90,
+          "source_key": 90
+        }
+      },
+      "face_weight": {
+        "count": 791,
+        "openfoam_field": "faceWeight",
+        "p50": 0.3333333333,
+        "p95": 1.0,
+        "p99": 1.0,
+        "worst": 0.07801826099,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 82,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.7960305992953303,
+            -1.1545771464367038
+          ],
+          "edge_id": null,
+          "local_h": 0.06788303329030922,
+          "neighbour": null,
+          "owner": 82,
+          "source_id": 82,
+          "source_key": 82
+        }
+      },
+      "non_orthogonality_deg": {
+        "count": 791,
+        "openfoam_field": "nonOrthoAngle",
+        "p50": 27.40757544,
+        "p95": 54.24749596,
+        "p99": 63.124986355000004,
+        "worst": 63.48692826,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 557,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            0.46541056770003797,
+            -1.0223958765241516
+          ],
+          "edge_id": null,
+          "local_h": 0.3316097167640442,
+          "neighbour": null,
+          "owner": 557,
+          "source_id": 557,
+          "source_key": 557
+        }
+      },
+      "skewness": {
+        "count": 791,
+        "openfoam_field": "skewness",
+        "p50": 0.3668576277,
+        "p95": 1.7851294295,
+        "p99": 2.2321684267000004,
+        "worst": 2.244477636,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 149,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.1884314004079506,
+            -1.2881335077074783
+          ],
+          "edge_id": null,
+          "local_h": 0.03015591476364751,
+          "neighbour": null,
+          "owner": 149,
+          "source_id": 149,
+          "source_key": 149
+        }
+      }
+    },
+    "openfoam_version": "2606",
+    "quality_class": "openfoam_quality",
+    "source": "external_checkMesh",
+    "status": "pass",
+    "summary_extrema": {
+      "max_aspect_ratio": 31.88659624,
+      "max_non_orthogonality_deg": 63.48692826,
+      "max_skewness": 2.244477636,
+      "min_cell_volume": 2.094893076e-06
+    }
+  },
+  "solver_quality": {
+    "metric_semantics": "native 2D solver metrics; not external OpenFOAM evidence",
+    "metrics": {
+      "boundary_skewness": {
+        "count": 92,
+        "p50": 5.8154539385127246e-15,
+        "p95": 0.0028997885009641733,
+        "p99": 0.003125213380346781,
+        "worst": 0.003125213380346781,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 721,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            -1.59435114695,
+            -0.61920127855
+          ],
+          "edge_id": 565,
+          "local_h": 0.05429964195247194,
+          "neighbour": null,
+          "owner": 721,
+          "source_id": 721,
+          "source_key": 721
+        }
+      },
+      "cell_compactness": {
+        "count": 791,
+        "p50": 0.7482810479249744,
+        "p95": 0.7788666534059998,
+        "p99": 0.7829893860501069,
+        "worst": 0.04978225591933989,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 725,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            0.45811501429259055,
+            -0.8006245900505033
+          ],
+          "edge_id": null,
+          "local_h": 0.11723906571225574,
+          "neighbour": null,
+          "owner": 725,
+          "source_id": 725,
+          "source_key": 725
+        }
+      },
+      "cell_concavity_deg": {
+        "count": 791,
+        "p50": 0.0,
+        "p95": 8.537736562175269e-07,
+        "p99": 1.2074182791366184e-06,
+        "worst": 26.288210219441197,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 202,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -2.315684372962827,
+            -0.5922569326400999
+          ],
+          "edge_id": null,
+          "local_h": 0.07220748155910298,
+          "neighbour": null,
+          "owner": 202,
+          "source_id": 202,
+          "source_key": 202
+        }
+      },
+      "cell_hydraulic_aspect": {
+        "count": 791,
+        "p50": 2.5555555555555705,
+        "p95": 17.013098716762695,
+        "p99": 48.0287460811897,
+        "worst": 62.12300915662188,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 725,
+          "cell_source_type": "boundary_layer",
+          "coordinates": [
+            0.45811501429259055,
+            -0.8006245900505033
+          ],
+          "edge_id": null,
+          "local_h": 0.11723906571225574,
+          "neighbour": null,
+          "owner": 725,
+          "source_id": 725,
+          "source_key": 725
+        }
+      },
+      "cell_min_interior_angle_deg": {
+        "count": 791,
+        "p50": 88.9759417774454,
+        "p95": 90.0,
+        "p99": 90.0,
+        "worst": 16.159105699575875,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 482,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            0.02916666666666758,
+            1.3415488698701614
+          ],
+          "edge_id": null,
+          "local_h": 0.033304816911990255,
+          "neighbour": null,
+          "owner": 482,
+          "source_id": 482,
+          "source_key": 482
+        }
+      },
+      "face_length": {
+        "count": 1970,
+        "p50": 0.08749999999999991,
+        "p95": 0.3500000000000001,
+        "p99": 0.7669103589933706,
+        "worst": 9.79752897103936e-09,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 373,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -2.326100423594548,
+            4.884676955554503e-09
+          ],
+          "edge_id": 185,
+          "local_h": 0.07985103454985068,
+          "neighbour": 623,
+          "owner": 373,
+          "source_id": 373,
+          "source_key": 373
+        }
+      },
+      "internal_face_weight": {
+        "count": 1878,
+        "p50": 0.43904987842168297,
+        "p95": 0.4999999999999994,
+        "p99": 0.5,
+        "worst": 0.07801826099038327,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 82,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.75,
+            -1.163322487625698
+          ],
+          "edge_id": 525,
+          "local_h": 0.041178389373817896,
+          "neighbour": 90,
+          "owner": 82,
+          "source_id": 82,
+          "source_key": 82
+        }
+      },
+      "internal_non_orthogonality_deg": {
+        "count": 1878,
+        "p50": 6.275229159088001,
+        "p95": 44.720439057880185,
+        "p99": 59.054703318765014,
+        "worst": 63.486928256189316,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 557,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            0.701025146779184,
+            -1.0778456230416538
+          ],
+          "edge_id": 1084,
+          "local_h": 0.28353485051639477,
+          "neighbour": 588,
+          "owner": 557,
+          "source_id": 557,
+          "source_key": 557
+        }
+      },
+      "internal_skewness": {
+        "count": 1878,
+        "p50": 0.1589534897207634,
+        "p95": 0.969371476408548,
+        "p99": 1.8322105440600869,
+        "worst": 2.244477635932759,
+        "worst_direction": "max",
+        "worst_entity": {
+          "cell_id": 149,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.2215982846986027,
+            -1.2786371566302102
+          ],
+          "edge_id": 739,
+          "local_h": 0.07099626980280775,
+          "neighbour": 640,
+          "owner": 149,
+          "source_id": 149,
+          "source_key": 149
+        }
+      },
+      "internal_volume_ratio": {
+        "count": 1878,
+        "p50": 0.5329583260635582,
+        "p95": 1.0,
+        "p99": 1.0,
+        "worst": 0.019182724124554105,
+        "worst_direction": "min",
+        "worst_entity": {
+          "cell_id": 90,
+          "cell_source_type": "remainder_cut",
+          "coordinates": [
+            -1.7441573235820538,
+            -1.149267716306829
+          ],
+          "edge_id": 528,
+          "local_h": 0.059488015645760436,
+          "neighbour": 634,
+          "owner": 90,
+          "source_id": 90,
+          "source_key": 90
+        }
+      }
+    },
+    "quality_class": "solver_quality",
+    "source": "native_solver_repaired_topology"
+  }
+}

@@ -72,7 +72,8 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 
 当前 H4-3 基线同时验证 circle、superellipse、concave L、sharp trailing edge
 和 narrow gap，并通过 OpenFOAM v2606 `checkMesh`。详细证据见
-`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md` 和 `artifacts/h4_3/`。
+H4 算法说明见 `docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；当前质量基线与
+provenance 见 `docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 和 `artifacts/q0/`。
 
 ## 独立构建与测试
 
