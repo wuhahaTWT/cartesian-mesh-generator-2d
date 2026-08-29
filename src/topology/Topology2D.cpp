@@ -1,4 +1,5 @@
 #include "cartmesh2d/topology/Topology2D.hpp"
+#include "cartmesh2d/topology/SharedEdgePartition2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -241,8 +242,10 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
 TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    const Domain2D& domain,
                                    const BoundaryRegion2D& boundary,
-                                   const TolerancePolicy& tol) {
+                                   const TolerancePolicy& tol,
+                                   std::shared_ptr<IntersectionRegistry2D> registry) {
     TopologyMesh2D mesh;
+    mesh.constructionRegistry=registry;
     if (!domain.valid(tol) || !boundary.diagnose(tol).valid()) {
         mesh.issues.push_back({TopologyIssueCode2D::InvalidCell, 0,
                                "invalid domain or boundary supplied to topology builder"});
@@ -288,10 +291,42 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         return mesh;
     }
     const double coordinateEps = tol.scale(minCellExtent);
-    const auto canonicalPoints = collectCanonicalPoints(cells, coordinateEps);
+    std::optional<SharedEdgePartition2D> sharedPartition;
+    std::vector<Point2D> canonicalPoints;
+    if (registry) {
+        std::vector<std::size_t> active;
+        for (auto& cell:cells) {
+            const auto& points=cell.fluidPolygon.vertices;
+            if (!cell.canonicalVertexIds.empty() && cell.canonicalRegistry!=registry.get()) {
+                mesh.issues.push_back({TopologyIssueCode2D::InvalidCell,cell.sourceId,"foreign construction context"});
+                return mesh;
+            }
+            if (cell.canonicalVertexIds.empty()) {
+                for (const auto& p:points)
+                    cell.canonicalVertexIds.push_back(registry->internVertex(p,minCellExtent));
+            }
+            if (cell.canonicalVertexIds.size()!=points.size()) {
+                mesh.issues.push_back({TopologyIssueCode2D::InvalidCell,cell.sourceId,"canonical handle count mismatch"});
+                return mesh;
+            }
+            for (std::size_t i=0;i<points.size();++i) {
+                const auto id=cell.canonicalVertexIds[i];
+                if (id>=registry->vertices().size() ||
+                    registry->vertices()[id].point.x!=points[i].x ||
+                    registry->vertices()[id].point.y!=points[i].y) {
+                    mesh.issues.push_back({TopologyIssueCode2D::InvalidCell,cell.sourceId,"stale or foreign canonical vertex handle"});
+                    return mesh;
+                }
+                active.push_back(id);
+            }
+        }
+        sharedPartition.emplace(*registry,std::move(active));
+        canonicalPoints=sharedPartition->points();
+        mesh.canonicalVertexIds=sharedPartition->handles();
+    } else canonicalPoints=collectCanonicalPoints(cells,coordinateEps);
     mesh.vertices.reserve(canonicalPoints.size());
     for (std::size_t i = 0; i < canonicalPoints.size(); ++i) mesh.vertices.push_back({i, canonicalPoints[i]});
-    std::vector<std::size_t> verticesByY(mesh.vertices.size());
+    std::vector<std::size_t> verticesByY(registry?0U:mesh.vertices.size());
     std::iota(verticesByY.begin(), verticesByY.end(), 0);
     std::sort(verticesByY.begin(), verticesByY.end(), [&](std::size_t lhs, std::size_t rhs) {
         const auto& a = mesh.vertices[lhs].point;
@@ -320,8 +355,12 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                 return mesh;
             }
 
-            const std::size_t aId = findVertexId(a, mesh.vertices, coordinateEps);
-            const std::size_t bId = findVertexId(b, mesh.vertices, coordinateEps);
+            const std::size_t aId = sharedPartition
+                ?sharedPartition->denseId(source.canonicalVertexIds[e])
+                :findVertexId(a, mesh.vertices, coordinateEps);
+            const std::size_t bId = sharedPartition
+                ?sharedPartition->denseId(source.canonicalVertexIds[(e+1U)%polygon.size()])
+                :findVertexId(b, mesh.vertices, coordinateEps);
             if (aId >= mesh.vertices.size() || bId >= mesh.vertices.size() || aId == bId) {
                 std::ostringstream detail;
                 detail << std::setprecision(17)
@@ -341,8 +380,15 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             const double tEps = coordinateEps /
                                 std::max(edgeLength, coordinateEps);
             const std::size_t before = onEdge.size();
-            appendGeneralEdgeVertices(a, b, mesh.vertices, verticesByY,
-                                      coordinateEps, tol, aId, bId, onEdge);
+            if (sharedPartition) {
+                onEdge=sharedPartition->partition(aId,bId,coordinateEps,tol);
+                if (aId>bId) {
+                    std::reverse(onEdge.begin(),onEdge.end());
+                    for (auto& item:onEdge) item.first=1-item.first;
+                }
+            } else appendGeneralEdgeVertices(a, b, mesh.vertices, verticesByY,
+                                             coordinateEps, tol, aId, bId, onEdge);
+            if (!sharedPartition)
             onEdge.erase(std::remove_if(onEdge.begin() + static_cast<std::ptrdiff_t>(before),
                                         onEdge.end(), [&](const auto& item) {
                                             return item.first <= tEps ||
@@ -451,6 +497,10 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             mesh.issues.push_back({TopologyIssueCode2D::OrphanInternalEdge, edge.id,
                                    "internal edge owner equals neighbour"});
         }
+    }
+    if (sharedPartition) {
+        mesh.sharedPartitionCount=sharedPartition->partitionCount();
+        mesh.sharedPartitionCacheHits=sharedPartition->cacheHits();
     }
     return mesh;
 }

@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "cells": 10000,
+      "legacy_median_seconds": 0.044566,
+      "runs": [
+        {
+          "cells": 10000,
+          "identical": true,
+          "legacy_seconds": 0.047047,
+          "partition_cache_hits": 19800,
+          "shared_seconds": 0.034012
+        },
+        {
+          "cells": 10000,
+          "identical": true,
+          "legacy_seconds": 0.044566,
+          "partition_cache_hits": 19800,
+          "shared_seconds": 0.035001
+        },
+        {
+          "cells": 10000,
+          "identical": true,
+          "legacy_seconds": 0.044356,
+          "partition_cache_hits": 19800,
+          "shared_seconds": 0.034733
+        }
+      ],
+      "shared_median_seconds": 0.034733
+    },
+    {
+      "cells": 99856,
+      "legacy_median_seconds": 0.982997,
+      "runs": [
+        {
+          "cells": 99856,
+          "identical": true,
+          "legacy_seconds": 0.982997,
+          "partition_cache_hits": 199080,
+          "shared_seconds": 0.430429
+        },
+        {
+          "cells": 99856,
+          "identical": true,
+          "legacy_seconds": 1.0106,
+          "partition_cache_hits": 199080,
+          "shared_seconds": 0.449512
+        },
+        {
+          "cells": 99856,
+          "identical": true,
+          "legacy_seconds": 0.95464,
+          "partition_cache_hits": 199080,
+          "shared_seconds": 0.470262
+        }
+      ],
+      "shared_median_seconds": 0.449512
+    }
+  ],
+  "executable_sha256": "e2581e824b49f17e04e457d337936f1b44fc3b847fdb696b3210bbfc4ac4303e",
+  "order": "legacy then shared; three process runs per size",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "scope": "isolated topology; uniform rectangles; shared includes exact interning and index construction"
+}

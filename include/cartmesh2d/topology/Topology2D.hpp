@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace cartmesh2d {
 
@@ -80,6 +81,10 @@ struct TopologyMesh2D {
     std::vector<TopologyCell2D> cells;
     std::vector<TopologyIssue2D> issues;
     TopologyAudit2D audit;
+    std::shared_ptr<IntersectionRegistry2D> constructionRegistry;
+    std::vector<std::size_t> canonicalVertexIds;
+    std::size_t sharedPartitionCount = 0;
+    std::size_t sharedPartitionCacheHits = 0;
 
     [[nodiscard]] bool valid() const noexcept {
         return issues.empty() && audit.pass();
@@ -96,6 +101,7 @@ struct TopologyMesh2D {
     const std::vector<CutCell2D>& cutCells,
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
-    const TolerancePolicy& tol = {});
+    const TolerancePolicy& tol = {},
+    std::shared_ptr<IntersectionRegistry2D> registry = {});
 
 } // namespace cartmesh2d

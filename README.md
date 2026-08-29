@@ -77,6 +77,13 @@ provenance 见 `docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 和 `artifacts/q0/`�
 无量纲 typed solver-quality contract 见
 `docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`。
 
+Q2 当前仍为部分完成：superellipse 微短面修复见
+`docs/Q2_INTERSECTION_CANONICALIZATION_PARTIAL_CN.md`；共享交点构造、公共边分割
+及新旧路径对照见 `docs/Q2A_SHARED_CONSTRUCTION_DESIGN_CN.md` 和 `artifacts/q2a/`。
+hybrid CLI 默认使用共享路径，末尾 `--legacy-construction` 可运行旧路径。
+narrow gap / sharp trailing edge 的 Q1 短面失败尚未解决，不能以 `checkMesh` 通过
+登记 Q2 全部完成。
+
 ## 独立构建与测试
 
 ```sh

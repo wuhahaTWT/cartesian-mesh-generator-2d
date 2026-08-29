@@ -1,0 +1,19 @@
+{
+  "scope": "Q2-A shared construction; not full Q2 quality acceptance",
+  "ctest": {
+    "command": "ctest --test-dir build-q2a --output-on-failure -j4",
+    "passed": 75,
+    "total": 75,
+    "wall_seconds": 56.09,
+    "log": "build-q2a/Testing/Temporary/LastTest.log",
+    "log_sha256": "c9522d422b27a8eb54daf5253264aec234f6364600dd4b43c0e428eba46ecc82"
+  },
+  "scale_invariance": {
+    "command": "python3 tools/verification/verify_q1_scale_invariance.py --build-dir build-q2a --reference-dir build-q2/after --output-dir build-q2a/scale --scale 1000",
+    "scale": 1000,
+    "circle_maximum_absolute_metric_delta": 7.442935157087049e-13,
+    "superellipse_maximum_absolute_metric_delta": 2.8350655156827997e-12,
+    "typed_status_unchanged": true,
+    "report_sha256": "839f8891e091f699526a1bcd3537872d9ba6e3f7931fa046bdf458f14b00ad72"
+  }
+}

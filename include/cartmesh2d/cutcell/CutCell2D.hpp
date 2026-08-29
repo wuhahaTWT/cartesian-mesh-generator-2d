@@ -53,11 +53,23 @@ struct CutCell2D {
     std::vector<Segment2D> embeddedBoundary;
     std::vector<CutCellIssue2D> issues;
     std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
+    // Handles in the explicitly supplied construction registry, not output IDs.
+    std::vector<std::size_t> canonicalVertexIds;
+    // Non-owning identity guard; the caller must retain the registry while
+    // consuming these handles. TopologyMesh2D retains shared ownership.
+    const IntersectionRegistry2D* canonicalRegistry = nullptr;
 
     [[nodiscard]] bool valid() const noexcept {
         return issues.empty() && kind != CutCellKind::Unsupported;
     }
 };
+
+[[nodiscard]] std::vector<CutCell2D> buildCutCellsShared(
+    const QuadtreeLeaf2D& leaf, const BoundaryRegion2D& boundary,
+    IntersectionRegistry2D& registry,
+    IntersectionSource2D source = IntersectionSource2D::WallCartesian,
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior,
+    const TolerancePolicy& tol = {});
 
 // Single-component API. This remains convenient for unit tests and simple
 // leaves. If a leaf genuinely contains more than one disconnected fluid

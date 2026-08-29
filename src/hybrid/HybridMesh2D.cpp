@@ -697,6 +697,25 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     }
 
     std::vector<CutCell2D> remainderSourceCells;
+    std::shared_ptr<IntersectionRegistry2D> constructionRegistry;
+    if (policy.sharedIntersectionConstruction) {
+        constructionRegistry=std::make_shared<IntersectionRegistry2D>();
+        constructionRegistry->configureGrid(domain.bounds,remainderMaxLevel);
+        const double h=std::ldexp(std::min(domain.bounds.max.x-domain.bounds.min.x,
+                                         domain.bounds.max.y-domain.bounds.min.y),
+                                  -static_cast<int>(remainderMaxLevel));
+        // Use H4's existing feature classification; do not guess sharpness
+        // from a new angular threshold or move the physical wall.
+        for (const auto& strip:boundaryLayers.strips) {
+            for (std::size_t i=0;i<strip.wallChain.vertices.size();++i) {
+                const auto kind=strip.wallVertexKinds.at(i);
+                const auto feature=kind==WallVertexKind2D::Sharp?IntersectionFeature2D::WallSharpCorner:
+                    kind==WallVertexKind2D::Concave?IntersectionFeature2D::WallConcaveCorner:
+                    IntersectionFeature2D::Smooth;
+                (void)constructionRegistry->internVertex(strip.wallChain.vertices[i],h,feature);
+            }
+        }
+    }
     remainderSourceCells.reserve(remainderTree->leaves().size());
     std::size_t nextSourceId = 0U;
     std::size_t remainderCartesianCount = 0U;
@@ -704,7 +723,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t transitionPolygonCount = 0U;
     double remainderArea = 0.0;
     for (const auto& leaf : remainderTree->leaves()) {
-        auto components = buildCutCells(leaf, remainderBoundaryRegion,
+        auto components = constructionRegistry
+            ?buildCutCellsShared(leaf,remainderBoundaryRegion,*constructionRegistry,
+                                IntersectionSource2D::TransitionEnvelopeCartesian,
+                                FluidRegion2D::Exterior,policy.tolerance)
+            :buildCutCells(leaf, remainderBoundaryRegion,
                                         FluidRegion2D::Exterior,
                                         policy.tolerance);
         for (auto& component : components) {
@@ -761,7 +784,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     }
 
     const auto remainderTopology=buildGlobalTopology(
-        remainderSourceCells,domain,remainderBoundaryRegion,policy.tolerance);
+        remainderSourceCells,domain,remainderBoundaryRegion,policy.tolerance,constructionRegistry);
     if (!remainderTopology.valid()) {
         return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed,
                       "remainder topology failed before H4 stabilization");
@@ -919,7 +942,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         topologyAdapters.push_back(topologyAdapter(source,policy.tolerance));
     }
     TopologyMesh2D topology = buildGlobalTopology(
-        topologyAdapters, domain, originalWalls, policy.tolerance);
+        topologyAdapters, domain, originalWalls, policy.tolerance,constructionRegistry);
     if (!topology.valid()) {
         std::string detail = topology.issues.empty()
             ? "unified global topology audit failed"
@@ -940,7 +963,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     // Rebuild a second time from immutable sources. This is both a transaction
     // boundary check and a direct determinism guard for canonical interface IDs.
     const TopologyMesh2D repeatedTopology = buildGlobalTopology(
-        topologyAdapters, domain, originalWalls, policy.tolerance);
+        topologyAdapters, domain, originalWalls, policy.tolerance,constructionRegistry);
     if (!repeatedTopology.valid() || !sameTopology(topology, repeatedTopology)) {
         return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed,
                       "repeated unified topology build changed IDs or connectivity");
@@ -1281,8 +1304,9 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     result.requestedLayerCandidate=buildBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
     if (result.requestedLayerCandidate.success()) {
-        result.hybridCandidate=buildConformalHybridMesh2D(
-            result.requestedLayerCandidate,domain,originalWalls,maxLevel,refinement);
+        result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
+            result.requestedLayerCandidate,domain,originalWalls,maxLevel,refinement,
+            hybridPolicy.sharedIntersectionConstruction);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             return result;
@@ -1295,8 +1319,9 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     result.localLayerCandidate=buildLocallyReducedBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
     if (result.localLayerCandidate.success()) {
-        result.hybridCandidate=buildConformalHybridMesh2D(
-            result.localLayerCandidate,domain,originalWalls,maxLevel,refinement);
+        result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
+            result.localLayerCandidate,domain,originalWalls,maxLevel,refinement,
+            hybridPolicy.sharedIntersectionConstruction);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             result.fallbackStage=H4FallbackStage2D::None;

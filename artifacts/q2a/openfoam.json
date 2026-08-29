@@ -1,0 +1,101 @@
+{
+  "cases": {
+    "circle": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/home/openfoam/workingDir",
+        "-w",
+        "/home/openfoam/workingDir",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/build-q2a/evidence/circle-case",
+        "-writeAllFields"
+      ],
+      "log_sha256": "34fc0a47e0ed3bc69bd891839026e4a6c6802b1afb07269fe4cce896e8abef45",
+      "status": "PASS",
+      "wall_seconds": 0.5755669579957612
+    },
+    "concave_l": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/home/openfoam/workingDir",
+        "-w",
+        "/home/openfoam/workingDir",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/build-q2a/evidence/concave_l-case",
+        "-writeAllFields"
+      ],
+      "log_sha256": "34c361eaa6095af414e561354c515002e5d0ed7e4aa17d3169ff94d46ef91c63",
+      "status": "PASS",
+      "wall_seconds": 0.46445508299802896
+    },
+    "narrow_gap": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/home/openfoam/workingDir",
+        "-w",
+        "/home/openfoam/workingDir",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/build-q2a/evidence/narrow_gap-case",
+        "-writeAllFields"
+      ],
+      "log_sha256": "c825de946ff2eea2e71f8f8c56698cafcb40202ae30a5992fffffc4c311ebecc",
+      "status": "PASS",
+      "wall_seconds": 0.37683379200461786
+    },
+    "sharp_trailing_edge": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/home/openfoam/workingDir",
+        "-w",
+        "/home/openfoam/workingDir",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/build-q2a/evidence/sharp_trailing_edge-case",
+        "-writeAllFields"
+      ],
+      "log_sha256": "407f94e6cfbde13753babe387023cf5f4445153f0ceb9df18e67447b28730a1e",
+      "status": "PASS",
+      "wall_seconds": 0.423987041998771
+    },
+    "superellipse": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d:/home/openfoam/workingDir",
+        "-w",
+        "/home/openfoam/workingDir",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/build-q2a/evidence/superellipse-case",
+        "-writeAllFields"
+      ],
+      "log_sha256": "ced4d9cf8f4f4323c51a4ca4e4d4fb63a0e345cf899643fb77d0539c3b9bd655",
+      "status": "PASS",
+      "wall_seconds": 0.39440808299696073
+    }
+  },
+  "image": "opencfd/openfoam-run:2606",
+  "image_id": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb"
+}

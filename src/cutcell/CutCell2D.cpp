@@ -170,31 +170,47 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
 [[nodiscard]] std::optional<Segment2D> clipSegmentToAABB(
     const Segment2D& segment, const AABB2D& box,
     const TolerancePolicy& tol,std::size_t supportId,
-    std::vector<CanonicalizedIntersection2D>& records) {
+    std::vector<CanonicalizedIntersection2D>& records,
+    IntersectionRegistry2D* shared=nullptr,
+    IntersectionSource2D source=IntersectionSource2D::WallCartesian) {
     double t0 = 0.0;
     double t1 = 1.0;
+    std::optional<std::pair<unsigned,double>> enter,leave;
     const double dx = segment.b.x - segment.a.x;
     const double dy = segment.b.y - segment.a.y;
 
-    auto update = [&](double p, double q) {
+    auto update = [&](double p, double q, unsigned axis,double coordinate) {
         const double eps = tol.scale(std::max(std::abs(p), std::abs(q)));
         if (std::abs(p) <= eps) return q >= -eps;
         const double ratio = q / p;
-        if (p < 0.0) t0 = std::max(t0, ratio);
-        else t1 = std::min(t1, ratio);
+        if (p < 0.0 && ratio>t0) {t0=ratio;enter=std::pair(axis,coordinate);}
+        else if (p>0.0 && ratio<t1) {t1=ratio;leave=std::pair(axis,coordinate);}
         return t0 <= t1 + eps;
     };
 
-    if (!update(-dx, segment.a.x - box.min.x) ||
-        !update(dx, box.max.x - segment.a.x) ||
-        !update(-dy, segment.a.y - box.min.y) ||
-        !update(dy, box.max.y - segment.a.y)) return std::nullopt;
+    if (!update(-dx, segment.a.x - box.min.x,0,box.min.x) ||
+        !update(dx, box.max.x - segment.a.x,0,box.max.x) ||
+        !update(-dy, segment.a.y - box.min.y,1,box.min.y) ||
+        !update(dy, box.max.y - segment.a.y,1,box.max.y)) return std::nullopt;
 
     t0 = std::clamp(t0, 0.0, 1.0);
     t1 = std::clamp(t1, 0.0, 1.0);
     Segment2D clipped{{segment.a.x + t0 * dx, segment.a.y + t0 * dy},
                       {segment.a.x + t1 * dx, segment.a.y + t1 * dy}};
     const double localH=std::min(box.max.x-box.min.x,box.max.y-box.min.y);
+    if (shared) {
+        const auto support=shared->registerSegment(segment,localH,source);
+        const auto resolve=[&](Point2D original,const auto& crossing) {
+            if (!crossing) return original;
+            const auto id=shared->intersectGridLine(support,
+                shared->gridLine(crossing->first,crossing->second),localH);
+            return shared->vertices()[id].point;
+        };
+        clipped.a=t0==0.0?segment.a:resolve(clipped.a,enter);
+        clipped.b=t1==1.0?segment.b:resolve(clipped.b,leave);
+        if (pointNear(clipped.a,clipped.b,tol)) return std::nullopt;
+        return clipped;
+    }
     IntersectionRegistry2D registry({std::max(tol.relative,
         IntersectionRegistryPolicy2D{}.snapFractionOfLocalH)});
     for (const auto& anchor:{segment.a,segment.b}) {
@@ -241,14 +257,16 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
 [[nodiscard]] std::vector<Segment2D> collectEmbeddedBoundary(
     const BoundaryRegion2D& boundary, const AABB2D& box,
     FluidRegion2D fluidRegion, const TolerancePolicy& tol,
-    std::vector<CanonicalizedIntersection2D>& records) {
+    std::vector<CanonicalizedIntersection2D>& records,
+    IntersectionRegistry2D* shared=nullptr,
+    IntersectionSource2D source=IntersectionSource2D::WallCartesian) {
     std::vector<Segment2D> fragments;
     std::size_t supportId=0U;
     for (const auto& loop : boundary.loops()) {
         const auto& vertices = loop.vertices();
         for (std::size_t i = 0; i < vertices.size(); ++i) {
             const Segment2D edge{vertices[i], vertices[(i + 1) % vertices.size()]};
-            auto clipped = clipSegmentToAABB(edge, box, tol,supportId++,records);
+            auto clipped = clipSegmentToAABB(edge, box, tol,supportId++,records,shared,source);
             if (!clipped || liesOnBoxPerimeter(*clipped, box, tol)) continue;
             if (fluidRegion == FluidRegion2D::Exterior) std::swap(clipped->a, clipped->b);
             fragments.push_back(*clipped);
@@ -416,10 +434,12 @@ struct LocalIntersectionResult {
 
 [[nodiscard]] LocalIntersectionResult buildLocalIntersection(
     const BoundaryRegion2D& boundary, const AABB2D& box,
-    FluidRegion2D fluidRegion, const TolerancePolicy& tol) {
+    FluidRegion2D fluidRegion, const TolerancePolicy& tol,
+    IntersectionRegistry2D* shared=nullptr,
+    IntersectionSource2D source=IntersectionSource2D::WallCartesian) {
     LocalIntersectionResult result;
     result.embedded = collectEmbeddedBoundary(boundary, box, fluidRegion, tol,
-                                             result.canonicalizedIntersections);
+                                             result.canonicalizedIntersections,shared,source);
     if (result.embedded.empty()) return result;
     if (hasClosedEmbeddedComponent(result.embedded,box,tol)) {
         result.hasHole=true;
@@ -601,7 +621,8 @@ void setEmptyFluidCell(CutCell2D& result) {
 [[nodiscard]] std::vector<CutCell2D> buildCutCellsImpl(
     const AABB2D& box, CellClass classification,
     const BoundaryRegion2D& inputBoundary, FluidRegion2D fluidRegion,
-    const TolerancePolicy& tol) {
+    const TolerancePolicy& tol, IntersectionRegistry2D* shared=nullptr,
+    IntersectionSource2D source=IntersectionSource2D::WallCartesian) {
     const double fullArea = backgroundArea(box);
     if (!(fullArea > areaTolerance(fullArea, tol))) {
         return {unsupportedCell(box, CutCellIssueCode::InvalidBackgroundCell,
@@ -641,7 +662,7 @@ void setEmptyFluidCell(CutCell2D& result) {
         return {std::move(simple)};
     }
 
-    const auto local = buildLocalIntersection(boundary, box, fluidRegion, tol);
+    const auto local = buildLocalIntersection(boundary, box, fluidRegion, tol,shared,source);
     if (local.graphInvalid) {
         return {unsupportedCell(box, CutCellIssueCode::DegeneratePolygon,
                                 "local Cut-cell boundary graph is invalid: " + local.graphFailure)};
@@ -828,6 +849,21 @@ std::vector<CutCell2D> buildCutCells(const QuadtreeLeaf2D& leaf,
         component.sourceKey = leaf.key;
     }
     return result;
+}
+
+std::vector<CutCell2D> buildCutCellsShared(
+    const QuadtreeLeaf2D& leaf,const BoundaryRegion2D& boundary,
+    IntersectionRegistry2D& registry,IntersectionSource2D source,
+    FluidRegion2D fluidRegion,const TolerancePolicy& tol) {
+    auto cells=buildCutCellsImpl(leaf.bounds,leaf.classification,boundary,fluidRegion,tol,&registry,source);
+    const double h=std::min(leaf.bounds.max.x-leaf.bounds.min.x,leaf.bounds.max.y-leaf.bounds.min.y);
+    for (auto& cell:cells) {
+        cell.sourceId=leaf.id;cell.sourceKey=leaf.key;
+        cell.canonicalRegistry=&registry;
+        for (const auto& p:cell.fluidPolygon.vertices)
+            cell.canonicalVertexIds.push_back(registry.internVertex(p,h));
+    }
+    return cells;
 }
 
 } // namespace cartmesh2d

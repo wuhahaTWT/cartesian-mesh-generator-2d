@@ -146,6 +146,7 @@ struct HybridMeshFailure2D {
 };
 
 struct HybridMeshPolicy2D {
+    bool sharedIntersectionConstruction = true;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -343,12 +344,13 @@ resolveAutomaticHybridTransitionPlan2D(
 // Product entry point. H4-1 strips and the original wall are immutable; only
 // the transition/remainder is adapted. The transition plan is deterministic
 // for identical geometry and refinement input.
-[[nodiscard]] inline HybridMeshBuildResult2D buildConformalHybridMesh2D(
+[[nodiscard]] inline HybridMeshBuildResult2D buildAutomaticHybridWithConstruction2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
     const Domain2D& domain,
     const BoundaryRegion2D& originalWalls,
     std::size_t remainderMaxLevel,
-    const QuadtreeRefinementPolicy2D& remainderRefinement) {
+    const QuadtreeRefinementPolicy2D& remainderRefinement,
+    bool sharedIntersectionConstruction) {
     const auto plan = resolveAutomaticHybridTransitionPlan2D(
         boundaryLayers, domain, remainderRefinement);
     if (!plan) {
@@ -360,6 +362,7 @@ resolveAutomaticHybridTransitionPlan2D(
     }
 
     HybridMeshPolicy2D resolvedPolicy;
+    resolvedPolicy.sharedIntersectionConstruction=sharedIntersectionConstruction;
     resolvedPolicy.transitionRingCount = plan->ringCount;
     resolvedPolicy.transitionCellWidthMultiplier =
         plan->ringCount==0U?1.0:
@@ -393,6 +396,18 @@ resolveAutomaticHybridTransitionPlan2D(
     result.metrics.transitionRingThickness = plan->ringThickness;
     result.metrics.transitionTotalThickness = plan->totalThickness;
     return result;
+}
+
+// Keep the original five-argument API and the six-argument policy overload
+// unambiguous, including callers that explicitly pass {} as their policy.
+[[nodiscard]] inline HybridMeshBuildResult2D buildConformalHybridMesh2D(
+    const BoundaryLayerBuildResult2D& boundaryLayers,
+    const Domain2D& domain,
+    const BoundaryRegion2D& originalWalls,
+    std::size_t remainderMaxLevel,
+    const QuadtreeRefinementPolicy2D& remainderRefinement) {
+    return buildAutomaticHybridWithConstruction2D(boundaryLayers,domain,originalWalls,
+        remainderMaxLevel,remainderRefinement,true);
 }
 
 [[nodiscard]] const char* hybridMeshFailureReasonName(

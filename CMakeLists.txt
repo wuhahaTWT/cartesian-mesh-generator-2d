@@ -6,6 +6,7 @@ add_library(cartmesh2d
     src/boundary_layer/BoundaryLayer2D.cpp
     src/geometry/Geometry2D.cpp
     src/geometry/IntersectionRegistry2D.cpp
+    src/geometry/IntersectionConstruction2D.cpp
     src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
     src/hybrid/HybridMesh2D.cpp
@@ -14,6 +15,7 @@ add_library(cartmesh2d
     src/quadtree/Quadtree2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
+    src/topology/SharedEdgePartition2D.cpp
     src/stabilization/SmallCell2D.cpp
     src/stabilization/Agglomeration2D.cpp
     src/quality/Quality2D.cpp
@@ -207,6 +209,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_intersection_registry_tests tests/intersection_registry_test.cpp)
     target_link_libraries(cartmesh2d_intersection_registry_tests PRIVATE cartmesh2d::cartmesh2d)
     add_test(NAME cartmesh2d_stageQ2_intersection_registry_tests COMMAND cartmesh2d_intersection_registry_tests)
+    add_executable(cartmesh2d_shared_construction_tests tests/shared_construction_test.cpp)
+    target_link_libraries(cartmesh2d_shared_construction_tests PRIVATE cartmesh2d::cartmesh2d)
+    add_test(NAME cartmesh2d_stageQ2A_shared_construction_tests COMMAND cartmesh2d_shared_construction_tests)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)

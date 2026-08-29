@@ -106,12 +106,14 @@ void usage() {
         << "usage: cartmesh2d_hybrid_cli <boundary.xy> <output-prefix> "
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
-           "[openfoam-case extrusion-thickness]\n";
+           "[openfoam-case extrusion-thickness] [--legacy-construction]\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
+    const bool legacyConstruction=argc>1 && std::string(argv[argc-1])=="--legacy-construction";
+    if (legacyConstruction) --argc;
     if (argc != 10 && argc != 12) {
         usage();
         return EXIT_FAILURE;
@@ -169,8 +171,10 @@ int main(int argc, char** argv) {
     const auto wallBounds = originalWalls.bounds();
     const Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
+    HybridMeshPolicy2D hybridPolicy;
+    hybridPolicy.sharedIntersectionConstruction=!legacyConstruction;
     auto robust=buildRobustH4Mesh2D(
-        chains,layerParameters,domain,originalWalls,maxLevel,refinement);
+        chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
     const auto parent = outputPrefix.parent_path().empty()
         ? std::filesystem::path(".") : outputPrefix.parent_path();
@@ -235,6 +239,14 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
     auto hybrid=std::move(robust.hybridCandidate);
+    if (hybrid.solverTopology.constructionRegistry &&
+        !writeText(outputPrefix.string()+".hybrid.construction.json",
+            intersectionConstructionToJson(*hybrid.solverTopology.constructionRegistry,
+                hybrid.solverTopology.canonicalVertexIds,
+                hybrid.solverTopology.sharedPartitionCount,
+                hybrid.solverTopology.sharedPartitionCacheHits),error)) {
+        std::cerr<<error<<'\n';return EXIT_FAILURE;
+    }
     if (!writeText(outputPrefix.string()+".hybrid.intersections.json",
                    intersectionRecordsToJson(hybrid.canonicalizedIntersections),error)) {
         std::cerr<<error<<'\n';
