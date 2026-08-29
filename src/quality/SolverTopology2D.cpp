@@ -186,6 +186,36 @@ using ProfileClock = std::chrono::steady_clock;
     return merged;
 }
 
+[[nodiscard]] Polygon2D removeArtificialCollinearVertices(
+    Polygon2D polygon,const TolerancePolicy& tol) {
+    bool changed=true;
+    while (changed && polygon.vertices.size()>3U) {
+        changed=false;
+        for (std::size_t i=0;i<polygon.vertices.size();++i) {
+            const auto n=polygon.vertices.size();
+            const auto& previous=polygon.vertices[(i+n-1U)%n];
+            const auto& current=polygon.vertices[i];
+            const auto& next=polygon.vertices[(i+1U)%n];
+            const Vector2D incoming=current-previous;
+            const Vector2D outgoing=next-current;
+            const double scale=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+            if (!(scale>0.0) || dot(incoming,outgoing)<0.0 ||
+                std::abs(cross(incoming,outgoing))>
+                    64.0*std::numeric_limits<double>::epsilon()*scale) continue;
+            auto candidate=polygon;
+            candidate.vertices.erase(candidate.vertices.begin()+
+                static_cast<std::ptrdiff_t>(i));
+            const double areaScale=std::max(polygon.area(),candidate.area());
+            if (std::abs(candidate.area()-polygon.area())>
+                tol.absolute*tol.absolute+tol.relative*areaScale) continue;
+            polygon=std::move(candidate);
+            changed=true;
+            break;
+        }
+    }
+    return polygon;
+}
+
 [[nodiscard]] double minimumInteriorAngle(const Polygon2D& polygon) {
     double minimum=360.0;
     for (std::size_t i=0;i<polygon.vertices.size();++i) {
@@ -667,7 +697,7 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     const Polygon2D& firstPiece,const Polygon2D& secondPiece,
     const Domain2D& domain,const BoundaryRegion2D& boundary,
     const TolerancePolicy& tol,SolverTopologyProfile2D* profile,
-    const std::vector<bool>& immutableCells) {
+    const std::vector<bool>& immutableCells,bool restoreImmutableSupports=false) {
     std::vector<CutCell2D> cells;
     std::vector<bool> rebuiltImmutable;
     cells.reserve(topology.cells.size());
@@ -679,7 +709,10 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
             rebuiltImmutable.push_back(false);
         }
         if (cell==first || cell==second) continue;
-        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        auto polygon=topologyCellPolygon(topology,cell);
+        if (restoreImmutableSupports && !immutableCells.empty() && immutableCells[cell])
+            polygon=removeArtificialCollinearVertices(std::move(polygon),tol);
+        cells.push_back(makeCell(cells.size(),polygon,tol));
         rebuiltImmutable.push_back(!immutableCells.empty() && immutableCells[cell]);
     }
     const auto topologyStart=ProfileClock::now();
@@ -700,7 +733,8 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     const TopologyMesh2D& topology,std::size_t first,std::size_t second,
     const Polygon2D& merged,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
-    SolverTopologyProfile2D* profile,const std::vector<bool>& immutableCells) {
+    SolverTopologyProfile2D* profile,const std::vector<bool>& immutableCells,
+    bool restoreImmutableSupports=false) {
     std::vector<CutCell2D> cells;
     std::vector<bool> rebuiltImmutable;
     cells.reserve(topology.cells.size()-1U);
@@ -711,7 +745,10 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
             rebuiltImmutable.push_back(false);
         }
         if (cell==first || cell==second) continue;
-        cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
+        auto polygon=topologyCellPolygon(topology,cell);
+        if (restoreImmutableSupports && !immutableCells.empty() && immutableCells[cell])
+            polygon=removeArtificialCollinearVertices(std::move(polygon),tol);
+        cells.push_back(makeCell(cells.size(),polygon,tol));
         rebuiltImmutable.push_back(!immutableCells.empty() && immutableCells[cell]);
     }
     const auto topologyStart=ProfileClock::now();
@@ -725,6 +762,36 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
         ++profile->globalTopologyRebuildCalls;
         ++profile->candidateTopologyCount;
     }
+    return rebuilt;
+}
+
+[[nodiscard]] RepartitionBatch2D replaceCellPatch(
+    const TopologyMesh2D& topology,const std::vector<std::size_t>& selected,
+    const std::vector<Polygon2D>& pieces,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
+    const std::vector<bool>& immutableCells,bool restoreImmutableSupports) {
+    RepartitionBatch2D rebuilt;
+    if (selected.empty() || pieces.empty()) return rebuilt;
+    std::vector<CutCell2D> cells;
+    cells.reserve(topology.cells.size()-selected.size()+pieces.size());
+    rebuilt.immutableCells.reserve(cells.capacity());
+    const auto first=selected.front();
+    for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+        if (cell==first) {
+            for (const auto& piece:pieces) {
+                cells.push_back(makeCell(cells.size(),piece,tol));
+                rebuilt.immutableCells.push_back(false);
+            }
+        }
+        if (std::binary_search(selected.begin(),selected.end(),cell)) continue;
+        auto polygon=topologyCellPolygon(topology,cell);
+        if (restoreImmutableSupports && immutableCells[cell])
+            polygon=removeArtificialCollinearVertices(std::move(polygon),tol);
+        cells.push_back(makeCell(cells.size(),polygon,tol));
+        rebuilt.immutableCells.push_back(immutableCells[cell]);
+    }
+    rebuilt.topology=buildGlobalTopology(
+        cells,domain,boundary,tol,topology.constructionRegistry);
     return rebuilt;
 }
 
@@ -1271,6 +1338,322 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
     return repartitionSolverTopologyByQualityImpl(
         topology,domain,boundary,tol,nullptr,false);
+}
+
+SolverShortFaceRepairResult2D repairSolverShortFaces2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    const std::vector<double>& localBackgroundH,
+    const std::vector<bool>& ratedCells,double minimumFaceOverLocalH,
+    const TolerancePolicy& tol) {
+    SolverShortFaceRepairResult2D result;
+    result.topology=topology;
+    result.immutableCells=immutableCells;
+    if (!topology.valid() || !domain.valid(tol) ||
+        !boundary.diagnose(tol).valid() || immutableCells.size()!=topology.cells.size() ||
+        localBackgroundH.size()!=topology.cells.size() ||
+        ratedCells.size()!=topology.cells.size() ||
+        !(minimumFaceOverLocalH>0.0) || !std::isfinite(minimumFaceOverLocalH)) {
+        result.issues.push_back("dimensionless short-face repair requires valid inputs");
+        return result;
+    }
+    for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+        if (ratedCells[cell] && (!(localBackgroundH[cell]>0.0) ||
+                                 !std::isfinite(localBackgroundH[cell]))) {
+            result.issues.push_back("rated short-face repair cell has invalid local_h");
+            return result;
+        }
+    }
+
+    struct FaceScore {
+        std::size_t hardCount=0;
+        double maximumSeverity=0.0;
+        double totalSeverity=0.0;
+        double negativeMinimumRatio=0.0;
+    };
+    const auto faceScore=[&](const TopologyMesh2D& mesh,
+                             const std::vector<double>& localH,
+                             const std::vector<bool>& rated) {
+        FaceScore score;
+        double minimum=std::numeric_limits<double>::infinity();
+        for (const auto& edge:mesh.edges) {
+            if (edge.v0>=mesh.vertices.size() || edge.v1>=mesh.vertices.size() ||
+                edge.owner>=rated.size()) continue;
+            double h=0.0;
+            if (rated[edge.owner]) h=std::max(h,localH[edge.owner]);
+            if (edge.neighbour && *edge.neighbour<rated.size() && rated[*edge.neighbour])
+                h=std::max(h,localH[*edge.neighbour]);
+            if (!(h>0.0)) continue;
+            const double ratio=std::sqrt(squaredNorm(
+                mesh.vertices[edge.v1].point-mesh.vertices[edge.v0].point))/h;
+            minimum=std::min(minimum,ratio);
+            if (ratio<minimumFaceOverLocalH) {
+                ++score.hardCount;
+                const double severity=minimumFaceOverLocalH/
+                    (ratio+std::numeric_limits<double>::min());
+                score.maximumSeverity=std::max(score.maximumSeverity,severity);
+                score.totalSeverity+=severity;
+            }
+        }
+        score.negativeMinimumRatio=std::isfinite(minimum)?-minimum:0.0;
+        return score;
+    };
+    const auto betterFaceScore=[](const FaceScore& lhs,const FaceScore& rhs) {
+        return std::tie(lhs.hardCount,lhs.maximumSeverity,lhs.totalSeverity,
+                        lhs.negativeMinimumRatio)<
+               std::tie(rhs.hardCount,rhs.maximumSeverity,rhs.totalSeverity,
+                        rhs.negativeMinimumRatio);
+    };
+    const auto legacyNoWorse=[](const SolverQualityReport2D& candidate,
+                                const SolverQualityReport2D& current) {
+        if (!candidate.valid()) return false;
+        const auto upper=[](double after,double before) {
+            return after-before<=1.0e-8*std::max(1.0,std::abs(before));
+        };
+        const auto lower=[](double after,double before) {
+            return before-after<=1.0e-8*std::max(1.0,std::abs(before));
+        };
+        return upper(candidate.maxNonOrthogonalityDeg,current.maxNonOrthogonalityDeg) &&
+               upper(candidate.maxInternalSkewness,current.maxInternalSkewness) &&
+               upper(candidate.maxBoundarySkewness,current.maxBoundarySkewness) &&
+               upper(candidate.maxConcavityDeg,current.maxConcavityDeg) &&
+               upper(candidate.maxCellAspect,current.maxCellAspect) &&
+               lower(candidate.minInteriorAngleDeg,current.minInteriorAngleDeg) &&
+               lower(candidate.minFaceLength,current.minFaceLength) &&
+               lower(candidate.minFaceWeight,current.minFaceWeight) &&
+               lower(candidate.minVolumeRatio,current.minVolumeRatio) &&
+               lower(candidate.minCompactness,current.minCompactness);
+    };
+    const auto currentQuality=evaluateSolverQuality2D(topology,{},tol);
+    if (!currentQuality.valid()) {
+        // The enclosing H4 transaction owns the unchanged legacy-quality
+        // rejection and may try another termination growth candidate. Q2-B
+        // must not mask that diagnostic or repair a legacy-invalid mesh.
+        return result;
+    }
+    const auto currentScore=faceScore(topology,localBackgroundH,ratedCells);
+    result.hardFaceCountBefore=currentScore.hardCount;
+    result.hardFaceCountAfter=currentScore.hardCount;
+    result.minimumFaceOverLocalHBefore=-currentScore.negativeMinimumRatio;
+    result.minimumFaceOverLocalHAfter=result.minimumFaceOverLocalHBefore;
+    if (currentScore.hardCount==0U) return result;
+
+    std::vector<std::tuple<double,std::size_t,std::size_t>> shortCandidates;
+    for (const auto& edge:topology.edges) {
+        if (!edge.neighbour) continue;
+        double h=0.0;
+        if (ratedCells[edge.owner]) h=std::max(h,localBackgroundH[edge.owner]);
+        if (ratedCells[*edge.neighbour]) h=std::max(h,localBackgroundH[*edge.neighbour]);
+        if (!(h>0.0)) continue;
+        const double ratio=std::sqrt(squaredNorm(
+            topology.vertices[edge.v1].point-topology.vertices[edge.v0].point))/h;
+        if (ratio<minimumFaceOverLocalH) {
+            shortCandidates.emplace_back(ratio,
+                std::min(edge.owner,*edge.neighbour),
+                std::max(edge.owner,*edge.neighbour));
+        }
+    }
+    std::sort(shortCandidates.begin(),shortCandidates.end());
+    if (shortCandidates.empty()) return result;
+    const auto selectedShort=shortCandidates.front();
+    const std::vector<std::pair<std::size_t,std::size_t>> shortPairs{{
+        std::get<1>(selectedShort),std::get<2>(selectedShort)}};
+    const std::vector<std::size_t> affected{
+        std::get<1>(selectedShort),std::get<2>(selectedShort)};
+    std::vector<std::pair<std::size_t,std::size_t>> pairs;
+    for (const auto cell:affected) {
+        if (immutableCells[cell]) continue;
+        for (const auto edgeId:topology.cells[cell].edges) {
+            if (edgeId>=topology.edges.size()) continue;
+            const auto& edge=topology.edges[edgeId];
+            if (!edge.neighbour) continue;
+            const auto other=edge.owner==cell?*edge.neighbour:edge.owner;
+            if (immutableCells[other]) continue;
+            pairs.emplace_back(std::min(cell,other),std::max(cell,other));
+        }
+    }
+    std::sort(pairs.begin(),pairs.end());
+    pairs.erase(std::unique(pairs.begin(),pairs.end()),pairs.end());
+
+    struct AcceptedCandidate {
+        RepartitionBatch2D batch;
+        std::vector<double> localH;
+        std::vector<bool> rated;
+        FaceScore face;
+        SolverQualityReport2D quality;
+    };
+    std::optional<AcceptedCandidate> best;
+    std::size_t validTopologyCandidates=0U;
+    std::size_t legacyValidCandidates=0U;
+    std::size_t improvingCandidates=0U;
+    std::optional<FaceScore> bestObservedScore;
+    std::pair<std::size_t,std::size_t> bestObservedPair{0U,0U};
+    bool bestObservedAgglomerated=false;
+    const auto candidateMetadata=[&](std::size_t first,std::size_t second,
+                                     bool agglomerated) {
+        std::pair<std::vector<double>,std::vector<bool>> rebuilt;
+        rebuilt.first.reserve(topology.cells.size()-(agglomerated?1U:0U));
+        rebuilt.second.reserve(rebuilt.first.capacity());
+        const double pairH=std::max(localBackgroundH[first],localBackgroundH[second]);
+        const bool pairRated=ratedCells[first] || ratedCells[second];
+        for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+            if (cell==first) {
+                rebuilt.first.push_back(pairH);rebuilt.second.push_back(pairRated);
+                if (!agglomerated) {
+                    rebuilt.first.push_back(pairH);rebuilt.second.push_back(pairRated);
+                }
+            }
+            if (cell==first || cell==second) continue;
+            rebuilt.first.push_back(localBackgroundH[cell]);
+            rebuilt.second.push_back(ratedCells[cell]);
+        }
+        return rebuilt;
+    };
+    const auto patchMetadata=[&](const std::vector<std::size_t>& selected,
+                                 std::size_t pieceCount) {
+        std::pair<std::vector<double>,std::vector<bool>> rebuilt;
+        rebuilt.first.reserve(topology.cells.size()-selected.size()+pieceCount);
+        rebuilt.second.reserve(rebuilt.first.capacity());
+        double patchH=0.0;
+        bool patchRated=false;
+        for (const auto cell:selected) {
+            patchH=std::max(patchH,localBackgroundH[cell]);
+            patchRated=patchRated || ratedCells[cell];
+        }
+        for (std::size_t cell=0;cell<topology.cells.size();++cell) {
+            if (cell==selected.front()) for (std::size_t piece=0;piece<pieceCount;++piece) {
+                rebuilt.first.push_back(patchH);
+                rebuilt.second.push_back(patchRated);
+            }
+            if (std::binary_search(selected.begin(),selected.end(),cell)) continue;
+            rebuilt.first.push_back(localBackgroundH[cell]);
+            rebuilt.second.push_back(ratedCells[cell]);
+        }
+        return rebuilt;
+    };
+    const auto consider=[&](std::size_t first,std::size_t second,bool agglomerated,
+                            RepartitionBatch2D candidate,
+                            std::vector<double> candidateH,
+                            std::vector<bool> candidateRated) {
+        ++result.candidateCount;
+        if (!candidate.topology.valid()) return;
+        ++validTopologyCandidates;
+        const auto quality=evaluateSolverQuality2D(candidate.topology,{},tol);
+        if (!legacyNoWorse(quality,currentQuality)) return;
+        ++legacyValidCandidates;
+        const auto score=faceScore(candidate.topology,candidateH,candidateRated);
+        if (!bestObservedScore || betterFaceScore(score,*bestObservedScore)) {
+            bestObservedScore=score;
+            bestObservedPair={first,second};
+            bestObservedAgglomerated=agglomerated;
+        }
+        if (!betterFaceScore(score,currentScore)) return;
+        ++improvingCandidates;
+        if (!best || betterFaceScore(score,best->face) ||
+            (!betterFaceScore(best->face,score) &&
+             betterQualityScore(qualityScore(quality),qualityScore(best->quality)))) {
+            best=AcceptedCandidate{std::move(candidate),std::move(candidateH),
+                                   std::move(candidateRated),score,quality};
+        }
+    };
+    for (const auto& [first,second]:pairs) {
+        const auto merged=mergeAdjacentPolygonsSimple(
+            topologyCellPolygon(topology,first),topologyCellPolygon(topology,second),tol);
+        if (!merged) continue;
+        const auto repairUnion=removeArtificialCollinearVertices(*merged,tol);
+        if (strictlyConvex(repairUnion) &&
+            !underDeterminedBoundaryCell(repairUnion,domain,boundary,tol)) {
+            auto metadata=candidateMetadata(first,second,true);
+            consider(first,second,true,
+                     agglomerateCellPair(topology,first,second,repairUnion,domain,boundary,
+                                         tol,nullptr,immutableCells,true),
+                     std::move(metadata.first),std::move(metadata.second));
+            if (best) break;
+        }
+        for (const auto& [firstPiece,secondPiece]:
+             convexTwoPieceSplits(repairUnion,domain,boundary,tol)) {
+            auto metadata=candidateMetadata(first,second,false);
+            consider(first,second,false,
+                     repartitionPair(topology,first,second,firstPiece,secondPiece,
+                     domain,boundary,tol,nullptr,immutableCells,true),
+                     std::move(metadata.first),std::move(metadata.second));
+            if (best) break;
+        }
+        if (best) break;
+    }
+    std::vector<std::vector<std::size_t>> triples;
+    if (!best) for (const auto& [first,second]:shortPairs) {
+        if (immutableCells[first] || immutableCells[second]) continue;
+        for (const auto base:{first,second}) {
+            for (const auto edgeId:topology.cells[base].edges) {
+                if (edgeId>=topology.edges.size()) continue;
+                const auto& edge=topology.edges[edgeId];
+                if (!edge.neighbour) continue;
+                const auto third=edge.owner==base?*edge.neighbour:edge.owner;
+                if (third==first || third==second || immutableCells[third]) continue;
+                std::vector<std::size_t> selected{first,second,third};
+                std::sort(selected.begin(),selected.end());
+                triples.push_back(std::move(selected));
+            }
+        }
+    }
+    std::sort(triples.begin(),triples.end());
+    triples.erase(std::unique(triples.begin(),triples.end()),triples.end());
+    if (!best) for (const auto& selected:triples) {
+        const auto firstUnion=mergeAdjacentPolygonsSimple(
+            topologyCellPolygon(topology,selected[0]),
+            topologyCellPolygon(topology,selected[1]),tol);
+        std::optional<Polygon2D> merged;
+        if (firstUnion) merged=mergeAdjacentPolygonsSimple(
+            *firstUnion,topologyCellPolygon(topology,selected[2]),tol);
+        if (!merged) {
+            const auto alternate=mergeAdjacentPolygonsSimple(
+                topologyCellPolygon(topology,selected[0]),
+                topologyCellPolygon(topology,selected[2]),tol);
+            if (alternate) merged=mergeAdjacentPolygonsSimple(
+                *alternate,topologyCellPolygon(topology,selected[1]),tol);
+        }
+        if (!merged) continue;
+        const auto repairUnion=removeArtificialCollinearVertices(*merged,tol);
+        std::optional<std::vector<Polygon2D>> pieces;
+        if (strictlyConvex(repairUnion) &&
+            !underDeterminedBoundaryCell(repairUnion,domain,boundary,tol)) {
+            pieces=std::vector<Polygon2D>{repairUnion};
+        } else {
+            pieces=triangulate(repairUnion,domain,boundary,tol);
+        }
+        if (!pieces || pieces->empty()) continue;
+        auto metadata=patchMetadata(selected,pieces->size());
+        consider(selected.front(),selected.back(),pieces->size()<selected.size(),
+                 replaceCellPatch(topology,selected,*pieces,domain,boundary,tol,
+                                  immutableCells,true),
+                 std::move(metadata.first),std::move(metadata.second));
+        if (best) break;
+    }
+    if (best) {
+        result.topology=std::move(best->batch.topology);
+        result.immutableCells=std::move(best->batch.immutableCells);
+        result.accepted=true;
+        result.hardFaceCountAfter=best->face.hardCount;
+        result.minimumFaceOverLocalHAfter=-best->face.negativeMinimumRatio;
+    } else {
+        std::ostringstream detail;
+        detail<<"no safe dimensionless short-face repair candidate: hard_faces="
+              <<currentScore.hardCount<<" mutable_pairs="<<pairs.size()
+              <<" candidates="<<result.candidateCount
+              <<" topology_valid="<<validTopologyCandidates
+              <<" legacy_valid="<<legacyValidCandidates
+              <<" q1_improving="<<improvingCandidates;
+        if (bestObservedScore) {
+            detail<<" best_hard_faces="<<bestObservedScore->hardCount
+                  <<" best_severity="<<bestObservedScore->maximumSeverity
+                  <<" best_total_severity="<<bestObservedScore->totalSeverity
+                  <<" best_pair=("<<bestObservedPair.first<<','<<bestObservedPair.second<<')'
+                  <<" best_mode="<<(bestObservedAgglomerated?"agglomerate":"repartition");
+        }
+        result.issues.push_back(detail.str());
+    }
+    return result;
 }
 
 SolverTopologyResult2D buildSolverTopology2D(

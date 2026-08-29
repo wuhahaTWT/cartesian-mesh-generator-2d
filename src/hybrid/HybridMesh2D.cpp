@@ -1055,6 +1055,55 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             :solverTopologyReport.issues.front();
         return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
     }
+    const std::size_t q2bInitialSolverCellCount=
+        solverTopologyReport.topology.cells.size();
+    std::size_t q2bShortFaceCandidates=0U;
+    std::size_t q2bAcceptedTransactions=0U;
+    if (localTermination) {
+        bool q2bConverged=false;
+        const double minimumFaceFraction=
+            QualityContract2D{}.termination.faceOverLocalBackgroundH.hard;
+        for (std::size_t iteration=0;iteration<32U;++iteration) {
+            std::vector<std::optional<std::size_t>> repairSources;
+            const auto repairMetadata=qualityMetadataForSolver(
+                solverTopologyReport.topology,hybridSources,repairSources,
+                policy.tolerance);
+            std::vector<double> localH;
+            std::vector<bool> rated;
+            localH.reserve(repairMetadata.size());
+            rated.reserve(repairMetadata.size());
+            for (const auto& metadata:repairMetadata) {
+                localH.push_back(metadata.localBackgroundH);
+                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
+                                metadata.type!=QualityCellType2D::Unknown);
+            }
+            auto repair=repairSolverShortFaces2D(
+                solverTopologyReport.topology,domain,originalWalls,
+                solverTopologyReport.immutableOutputCells,localH,rated,
+                minimumFaceFraction,policy.tolerance);
+            q2bShortFaceCandidates+=repair.candidateCount;
+            if (!repair.valid()) {
+                const std::string detail=repair.issues.empty()
+                    ?"Q2-B local short-face transaction failed"
+                    :repair.issues.front();
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+            }
+            if (!repair.accepted) {
+                q2bConverged=repair.hardFaceCountBefore==0U;
+                break;
+            }
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            ++q2bAcceptedTransactions;
+            ++solverTopologyReport.qualityRepartitionCount;
+            ++solverTopologyReport.profile.acceptedTopologyCommitCount;
+        }
+        if (!q2bConverged) {
+            return failed(HybridMeshFailureReason2D::SolverTopologyFailed,
+                          "Q2-B short-face transactions did not converge");
+        }
+        solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+    }
     if (std::count(solverTopologyReport.immutableOutputCells.begin(),
         solverTopologyReport.immutableOutputCells.end(),true)!=
         static_cast<std::ptrdiff_t>(layerCellCount)) {
@@ -1170,6 +1219,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         result.solverTopologyReport.qualityAgglomeratedSourceCellCount;
     result.metrics.solverQualityRepartitions=
         result.solverTopologyReport.qualityRepartitionCount;
+    result.metrics.q2bShortFaceCandidates=q2bShortFaceCandidates;
+    result.metrics.q2bAcceptedTransactions=q2bAcceptedTransactions;
+    result.metrics.q2bSolverCellReduction=q2bInitialSolverCellCount>=
+        result.solverTopology.cells.size()
+        ?q2bInitialSolverCellCount-result.solverTopology.cells.size():0U;
     result.metrics.unifiedVertexCount = result.topology.vertices.size();
     result.metrics.unifiedEdgeCount = result.topology.edges.size();
     result.metrics.unifiedCellCount = result.topology.cells.size();
@@ -1491,6 +1545,13 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"vertex_count\": " << metrics.unifiedVertexCount << ",\n";
         out << "  \"edge_count\": " << metrics.unifiedEdgeCount << ",\n";
         out << "  \"cell_count\": " << metrics.unifiedCellCount << ",\n";
+        out << "  \"solver_cell_count\": " << metrics.solverCellCount << ",\n";
+        out << "  \"q2b_short_face_candidate_count\": "
+            << metrics.q2bShortFaceCandidates << ",\n";
+        out << "  \"q2b_accepted_transaction_count\": "
+            << metrics.q2bAcceptedTransactions << ",\n";
+        out << "  \"q2b_solver_cell_reduction\": "
+            << metrics.q2bSolverCellReduction << ",\n";
         out << "  \"solid_area\": " << metrics.solidArea << ",\n";
         out << "  \"outer_envelope_area\": " << metrics.outerEnvelopeArea << ",\n";
         out << "  \"layer_area\": " << metrics.layerArea << ",\n";

@@ -98,6 +98,9 @@ struct HybridMeshMetrics2D {
     std::size_t solverCellCount = 0;
     std::size_t solverQualityAgglomerations = 0;
     std::size_t solverQualityRepartitions = 0;
+    std::size_t q2bShortFaceCandidates = 0;
+    std::size_t q2bAcceptedTransactions = 0;
+    std::size_t q2bSolverCellReduction = 0;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;

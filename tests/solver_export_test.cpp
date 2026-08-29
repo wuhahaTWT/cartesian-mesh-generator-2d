@@ -36,6 +36,19 @@ CutCell2D fullCell(std::size_t id,const AABB2D& box) {
     return cell;
 }
 
+CutCell2D polygonCell(std::size_t id,std::vector<Point2D> vertices) {
+    CutCell2D cell;
+    cell.sourceId=id;
+    cell.sourceKey=id;
+    cell.fluidPolygon={std::move(vertices)};
+    cell.backgroundBounds=cell.fluidPolygon.bounds();
+    cell.kind=CutCellKind::Cut;
+    cell.area=cell.fluidPolygon.area();
+    cell.areaFraction=1.0;
+    cell.centroid=cell.fluidPolygon.centroid();
+    return cell;
+}
+
 std::string readText(const std::filesystem::path& path) {
     std::ifstream in(path);
     std::ostringstream text;
@@ -74,6 +87,46 @@ int main() {
         {{0,1,2},{2,3},{4,5}});
     check(independentPatches==std::vector<std::size_t>({0,2}),
           "conflicting repair halos cannot be selected in the same batch");
+
+    // Q2-B fixture: a mutable two-cell partition places x=0.009 on the
+    // straight lower support of an immutable cell. The 0.009/1.0 atomic face
+    // is below the dimensionless hard limit even though both mutable cells
+    // have healthy area. Repair must recover the immutable straight support
+    // and agglomerate the mutable pair without moving any feature vertex.
+    const double q2Short=0.009;
+    const auto q2Topology=buildGlobalTopology({
+        polygonCell(0,{{0,0.4},{2,0.4},{2,1},{0,1}}),
+        polygonCell(1,{{0,0},{1,0},{q2Short,0.4},{0,0.4}}),
+        polygonCell(2,{{1,0},{1,0.4},{q2Short,0.4}}),
+        polygonCell(3,{{1,0},{2,0},{2,0.4},{1,0.4}})
+    },domain,embeddedReference);
+    const auto q2Repair=repairSolverShortFaces2D(
+        q2Topology,domain,BoundaryRegion2D(embeddedReference),
+        {true,false,false,false},{1,1,1,1},{false,true,true,true},0.01);
+    const auto q2InitialQuality=evaluateSolverQuality2D(q2Topology);
+    check(q2Topology.valid() && q2InitialQuality.valid(),
+          "Q2-B fixture starts as a legacy-valid conformal topology: issues="+
+          std::to_string(q2InitialQuality.issues.size())+" nonorth="+
+          std::to_string(q2InitialQuality.maxNonOrthogonalityDeg)+" weight="+
+          std::to_string(q2InitialQuality.minFaceWeight)+" code="+
+          (q2InitialQuality.issues.empty()?std::string("none"):
+           std::to_string(static_cast<int>(q2InitialQuality.issues.front().code)))+
+          " measured="+(q2InitialQuality.issues.empty()?std::string("none"):
+           std::to_string(q2InitialQuality.issues.front().measured)));
+    check(q2Repair.valid() && q2Repair.accepted &&
+              q2Repair.topology.cells.size()==3U &&
+              q2Repair.hardFaceCountBefore==1U &&
+              q2Repair.hardFaceCountAfter==0U &&
+              std::abs(q2Repair.minimumFaceOverLocalHBefore-q2Short)<1.0e-15 &&
+              q2Repair.minimumFaceOverLocalHAfter>=0.01 &&
+              std::count(q2Repair.immutableCells.begin(),
+                         q2Repair.immutableCells.end(),true)==1,
+          "dimensionless short face is repaired only on the mutable side");
+    check(std::any_of(q2Repair.topology.vertices.begin(),q2Repair.topology.vertices.end(),
+                      [](const Vertex2D& vertex) {
+                          return vertex.point.x==0.0 && vertex.point.y==0.4;
+                      }) && evaluateSolverQuality2D(q2Repair.topology).valid(),
+          "Q2-B repair preserves the fixed feature and full solver-quality gate");
 
     const auto caseDir=std::filesystem::temp_directory_path()/"cartmesh2d-s1-openfoam-fixture";
     std::string error;

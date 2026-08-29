@@ -80,6 +80,22 @@ struct SolverLocalRepartitionResult2D {
     }
 };
 
+struct SolverShortFaceRepairResult2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+    bool accepted = false;
+    std::size_t candidateCount = 0;
+    std::size_t hardFaceCountBefore = 0;
+    std::size_t hardFaceCountAfter = 0;
+    double minimumFaceOverLocalHBefore = 0.0;
+    double minimumFaceOverLocalHAfter = 0.0;
+    std::vector<std::string> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && topology.valid();
+    }
+};
+
 // Returns the input-order indices of a deterministic greedy independent set.
 // Each halo must contain sorted unique cell/source IDs. A shared ID is a
 // repair conflict and prevents both patches from being committed together.
@@ -108,6 +124,22 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
+// Performs at most one deterministic, area-preserving local transaction for
+// a face below minimumFaceOverLocalH. Immutable cells are never changed. If a
+// short face touches an immutable cell, only a neighbouring mutable pair may
+// be agglomerated/repartitioned. A candidate is committed only when the full
+// legacy solver-quality audit remains valid and its worst metrics do not
+// regress while the dimensionless short-face score strictly improves.
+[[nodiscard]] SolverShortFaceRepairResult2D repairSolverShortFaces2D(
+    const TopologyMesh2D& topology,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const std::vector<bool>& immutableCells,
+    const std::vector<double>& localBackgroundH,
+    const std::vector<bool>& ratedCells,
+    double minimumFaceOverLocalH,
     const TolerancePolicy& tol = {});
 
 // Retains strictly convex cells and deterministically ear-clips cells with
