@@ -53,6 +53,7 @@ struct TopologyCell2D {
     std::size_t id = 0;
     std::size_t sourceId = 0;
     std::uint64_t sourceKey = 0;
+    std::vector<std::size_t> sourceLineage;
     double geometryArea = 0.0;
     std::vector<std::size_t> vertices;
     std::vector<std::size_t> edges;

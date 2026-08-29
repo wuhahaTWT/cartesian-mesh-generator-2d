@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cartmesh2d/geometry/ConstructionIdentity2D.hpp"
 #include "cartmesh2d/geometry/Geometry2D.hpp"
 
 #include <cstddef>
@@ -112,11 +113,15 @@ public:
     [[nodiscard]] const std::vector<CanonicalizedIntersection2D>& records() const noexcept {
         return records_;
     }
+    [[nodiscard]] const ConstructionVertexStore2D& shadowVertexStore() const noexcept {
+        return shadowVertexStore_;
+    }
 
 private:
     IntersectionRegistryPolicy2D policy_;
     std::vector<CanonicalVertex2D> vertices_;
     std::vector<CanonicalizedIntersection2D> records_;
+    ConstructionVertexStore2D shadowVertexStore_;
     struct Support {
         Segment2D segment;
         std::size_t a, b;

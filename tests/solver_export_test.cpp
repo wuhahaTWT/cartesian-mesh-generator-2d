@@ -70,6 +70,12 @@ int main() {
               cleanSolverTopology.profile.acceptedSourceRepairs==0 &&
               cleanSolverTopology.profile.acceptedRepartitions==0,
           "quality-clean topology performs no candidate rebuild or repair");
+    check(cleanSolverTopology.topology.cells.size()==2U &&
+              cleanSolverTopology.topology.cells[0].sourceLineage==
+                  std::vector<std::size_t>{0U} &&
+              cleanSolverTopology.topology.cells[1].sourceLineage==
+                  std::vector<std::size_t>{1U},
+          "clean solver topology preserves one-source lineage without geometry lookup");
     const auto independentPatches=selectIndependentSolverRepairPatches2D(
         {{0,1,2},{2,3},{4,5}});
     check(independentPatches==std::vector<std::size_t>({0,2}),
@@ -210,6 +216,12 @@ int main() {
               nacaRegressionSolver.qualityAgglomeratedSourceCellCount==1 &&
               nacaRegressionQuality.valid(),
           "NACA leading-edge low-weight partition is repaired by source agglomeration");
+    check(std::all_of(nacaRegressionSolver.topology.cells.begin(),
+                      nacaRegressionSolver.topology.cells.end(),
+                      [](const TopologyCell2D& cell) {
+                          return cell.sourceLineage==std::vector<std::size_t>({0U,1U});
+                      }),
+          "source agglomeration propagates the union of original source ids");
     double minimumSolverTurn=1.0;
     for (const auto& cell:nacaRegressionSolver.topology.cells) {
         for (std::size_t i=0;i<cell.vertices.size();++i) {
@@ -346,6 +358,7 @@ int main() {
     CutCell2D transition;
     transition.sourceId=0;
     transition.sourceKey=0;
+    transition.sourceLineage={42U};
     transition.backgroundBounds=domain.bounds;
     transition.kind=CutCellKind::Full;
     transition.fluidPolygon={{{0.0,0.0},{1.0,0.0},{2.0,0.0},{2.0,1.0},{0.0,1.0}}};
@@ -357,6 +370,8 @@ int main() {
     check(repaired.valid() && repaired.partitionedCellCount==1,
           "solver topology partitions a collinear transition cell deterministically");
     for (const auto& cell:repaired.topology.cells) {
+        check(cell.sourceLineage==std::vector<std::size_t>{42U},
+              "every solver partition child retains its original stable lineage");
         bool strictConvex=true;
         for (std::size_t i=0;i<cell.vertices.size();++i) {
             const auto n=cell.vertices.size();

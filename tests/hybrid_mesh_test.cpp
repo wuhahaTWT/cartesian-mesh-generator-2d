@@ -176,6 +176,17 @@ int main() {
     const auto circleHybrid = buildConformalHybridMesh2D(
         circleLayers, domain, BoundaryRegion2D(circleWall), 6U, refinement);
     checkSolverReady(circleHybrid, "circle");
+    HybridMeshPolicy2D lineageOraclePolicy;
+    lineageOraclePolicy.verifySourceLineageOracle=true;
+    const auto circleLineageVerified=buildAutomaticHybridWithConstruction2D(
+        circleLayers,domain,BoundaryRegion2D(circleWall),6U,refinement,
+        lineageOraclePolicy);
+    check(circleLineageVerified.success() &&
+              circleLineageVerified.sourceLineageAudit.oracleVerified &&
+              circleLineageVerified.sourceLineageAudit.mismatchedCells==0U &&
+              circleLineageVerified.sourceLineageAudit.oracleCandidateChecks>
+                  circleLineageVerified.sourceLineageAudit.lineageCandidateChecks,
+          "R1-A opt-in source-lineage oracle matches the propagated production path");
     check(circleLayers.success() &&
           samePoints(savedLayerVertices, circleLayers.strips.front().vertices),
           "H4-2 transaction does not mutate the H4-1 strip");

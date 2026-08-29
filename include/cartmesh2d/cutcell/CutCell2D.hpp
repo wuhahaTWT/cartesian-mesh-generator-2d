@@ -44,6 +44,9 @@ struct CutCellIssue2D {
 struct CutCell2D {
     std::size_t sourceId = 0;
     std::uint64_t sourceKey = 0;
+    // Stable construction lineage. Empty means the legacy one-source identity
+    // and is normalized to {sourceId} by the topology builder.
+    std::vector<std::size_t> sourceLineage;
     AABB2D backgroundBounds;
     CutCellKind kind = CutCellKind::Empty;
     Polygon2D fluidPolygon;

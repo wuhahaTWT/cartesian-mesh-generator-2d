@@ -343,6 +343,12 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         topo.id = cellId;
         topo.sourceId = source.sourceId;
         topo.sourceKey = source.sourceKey;
+        topo.sourceLineage = source.sourceLineage;
+        if (topo.sourceLineage.empty()) topo.sourceLineage.push_back(source.sourceId);
+        std::sort(topo.sourceLineage.begin(), topo.sourceLineage.end());
+        topo.sourceLineage.erase(
+            std::unique(topo.sourceLineage.begin(), topo.sourceLineage.end()),
+            topo.sourceLineage.end());
         topo.geometryArea = source.area;
 
         const auto& polygon = source.fluidPolygon.vertices;

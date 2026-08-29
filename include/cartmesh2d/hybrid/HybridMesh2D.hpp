@@ -116,6 +116,16 @@ struct HybridMeshMetrics2D {
     double areaError = 0.0;
 };
 
+struct SourceLineageAudit2D {
+    std::size_t solverCellCount = 0;
+    std::size_t lineageCandidateChecks = 0;
+    std::size_t oracleCandidateChecks = 0;
+    std::size_t mismatchedCells = 0;
+    bool oracleVerified = false;
+
+    [[nodiscard]] bool pass() const noexcept { return mismatchedCells == 0; }
+};
+
 enum class HybridMeshFailureReason2D {
     None,
     InvalidInput,
@@ -147,6 +157,9 @@ struct HybridMeshFailure2D {
 
 struct HybridMeshPolicy2D {
     bool sharedIntersectionConstruction = true;
+    // Debug/acceptance oracle. Production uses propagated lineage directly;
+    // the opt-in oracle rescans all source polygons and fails on disagreement.
+    bool verifySourceLineageOracle = false;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -179,6 +192,7 @@ struct HybridMeshBuildResult2D {
     SmallCellReport2D remainderSmallCells;
     AgglomerationResult2D remainderStabilization;
     SolverTopologyResult2D solverTopologyReport;
+    SourceLineageAudit2D sourceLineageAudit;
     std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
     QuadtreeBalanceReport2D balance;
     HybridMeshFailure2D failure;
@@ -350,7 +364,7 @@ resolveAutomaticHybridTransitionPlan2D(
     const BoundaryRegion2D& originalWalls,
     std::size_t remainderMaxLevel,
     const QuadtreeRefinementPolicy2D& remainderRefinement,
-    bool sharedIntersectionConstruction) {
+    const HybridMeshPolicy2D& basePolicy) {
     const auto plan = resolveAutomaticHybridTransitionPlan2D(
         boundaryLayers, domain, remainderRefinement);
     if (!plan) {
@@ -361,8 +375,7 @@ resolveAutomaticHybridTransitionPlan2D(
         return result;
     }
 
-    HybridMeshPolicy2D resolvedPolicy;
-    resolvedPolicy.sharedIntersectionConstruction=sharedIntersectionConstruction;
+    HybridMeshPolicy2D resolvedPolicy=basePolicy;
     resolvedPolicy.transitionRingCount = plan->ringCount;
     resolvedPolicy.transitionCellWidthMultiplier =
         plan->ringCount==0U?1.0:
@@ -396,6 +409,20 @@ resolveAutomaticHybridTransitionPlan2D(
     result.metrics.transitionRingThickness = plan->ringThickness;
     result.metrics.transitionTotalThickness = plan->totalThickness;
     return result;
+}
+
+[[nodiscard]] inline HybridMeshBuildResult2D buildAutomaticHybridWithConstruction2D(
+    const BoundaryLayerBuildResult2D& boundaryLayers,
+    const Domain2D& domain,
+    const BoundaryRegion2D& originalWalls,
+    std::size_t remainderMaxLevel,
+    const QuadtreeRefinementPolicy2D& remainderRefinement,
+    bool sharedIntersectionConstruction) {
+    HybridMeshPolicy2D policy;
+    policy.sharedIntersectionConstruction=sharedIntersectionConstruction;
+    return buildAutomaticHybridWithConstruction2D(
+        boundaryLayers,domain,originalWalls,remainderMaxLevel,
+        remainderRefinement,policy);
 }
 
 // Keep the original five-argument API and the six-argument policy overload

@@ -12,6 +12,40 @@ namespace {
 // policy may be larger, but must not enlarge this construction budget.
 constexpr double arithmeticFractionOfLocalH =
     IntersectionRegistryPolicy2D{}.snapFractionOfLocalH;
+
+[[nodiscard]] ConstructionFeatureClass2D shadowFeature(
+    IntersectionFeature2D feature) noexcept {
+    switch (feature) {
+    case IntersectionFeature2D::Smooth:
+        return ConstructionFeatureClass2D::Smooth;
+    case IntersectionFeature2D::WallSharpCorner:
+        return ConstructionFeatureClass2D::ConvexSharp;
+    case IntersectionFeature2D::WallConcaveCorner:
+        return ConstructionFeatureClass2D::ConcaveSharp;
+    case IntersectionFeature2D::CartesianGridVertex:
+    case IntersectionFeature2D::CartesianGridLine:
+        return ConstructionFeatureClass2D::Grid;
+    case IntersectionFeature2D::TransitionVertex:
+        return ConstructionFeatureClass2D::TransitionMutable;
+    case IntersectionFeature2D::None:
+        return ConstructionFeatureClass2D::Unclassified;
+    }
+    return ConstructionFeatureClass2D::Unclassified;
+}
+
+[[nodiscard]] ConstructionSourceKind2D shadowSource(
+    IntersectionSource2D source) noexcept {
+    switch (source) {
+    case IntersectionSource2D::WallCartesian:
+    case IntersectionSource2D::WallTransitionEnvelope:
+        return ConstructionSourceKind2D::WallSegment;
+    case IntersectionSource2D::TransitionEnvelopeCartesian:
+        return ConstructionSourceKind2D::TransitionSegment;
+    case IntersectionSource2D::Unknown:
+        return ConstructionSourceKind2D::Unknown;
+    }
+    return ConstructionSourceKind2D::Unknown;
+}
 }
 
 void IntersectionRegistry2D::configureGrid(const AABB2D& bounds, std::size_t level) {
@@ -82,6 +116,9 @@ std::size_t IntersectionRegistry2D::internVertex(const Point2D& p,double h,Inter
             return 6;
         };
         if (rank(feature)<rank(vertex.feature)) vertex.feature=feature;
+        shadowVertexStore_.updateMetadata(
+            static_cast<StableVertexId2D>(vertex.id), vertex.localH,
+            shadowFeature(vertex.feature), std::nullopt);
         return it->second;
     }
     const auto id=addCanonicalVertex(p,h,feature);
@@ -101,15 +138,26 @@ std::size_t IntersectionRegistry2D::registerSegment(const Segment2D& s,double h,
     const bool forward=std::tie(s.a.x,s.a.y)<std::tie(s.b.x,s.b.y);
     supports_.push_back({forward?s:Segment2D{s.b,s.a},forward?a:b,forward?b:a,source});
     supportKeys_.emplace(key,id);
+    const SourceRef2D sourceRef{shadowSource(source),
+                                static_cast<std::uint64_t>(id), 0U, 0.0, 1.0, 0};
+    shadowVertexStore_.addSourceRef(static_cast<StableVertexId2D>(forward?a:b), sourceRef);
+    shadowVertexStore_.addSourceRef(static_cast<StableVertexId2D>(forward?b:a), sourceRef);
     return id;
 }
 
 std::string intersectionConstructionToJson(const IntersectionRegistry2D& registry,
     const std::vector<std::size_t>& handles,std::size_t partitions,std::size_t hits) {
     std::ostringstream out;out<<std::setprecision(17);
+    const auto& shadow=registry.shadowVertexStore();
+    const auto& profile=shadow.indexProfile();
     out<<"{\"format\":\"cartmesh2d-shared-construction-v1\",\"intersection_evaluations\":"
        <<registry.events().size()<<",\"intersection_cache_hits\":"<<registry.intersectionCacheHits()
        <<",\"solver_partition_count\":"<<partitions<<",\"solver_partition_cache_hits\":"<<hits
+       <<",\"r1a_shadow_vertex_count\":"<<shadow.records().size()
+       <<",\"r1a_index_insertions\":"<<profile.insertionCount
+       <<",\"r1a_index_queries\":"<<profile.queryCount
+       <<",\"r1a_index_examined_candidates\":"<<profile.examinedCandidateCount
+       <<",\"r1a_index_maximum_query_candidates\":"<<profile.maximumQueryCandidateCount
        <<",\"solver_vertex_handles\":[";
     for (std::size_t i=0;i<handles.size();++i) out<<(i?",":"")<<handles[i];
     out<<"],\"events\":[";
@@ -136,6 +184,9 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
         events_[it->second].localH=std::min(events_[it->second].localH,h);
         auto& vertex=vertices_[events_[it->second].canonicalVertex];
         vertex.localH=std::min(vertex.localH,h);
+        shadowVertexStore_.updateMetadata(
+            static_cast<StableVertexId2D>(vertex.id), vertex.localH,
+            shadowFeature(vertex.feature), std::nullopt);
         return events_[it->second].canonicalVertex;
     }
     const auto& s=supports_.at(support);
@@ -198,6 +249,11 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     eventKeys_.emplace(key,events_.size());
     vertexEvents_[id].push_back(events_.size());
     events_.push_back({support,line,raw,id,std::sqrt(squaredNorm(canonical-raw)),h,s.source,s.segment});
+    shadowVertexStore_.addSourceRef(
+        static_cast<StableVertexId2D>(id),
+        {shadowSource(s.source), static_cast<std::uint64_t>(support),
+         static_cast<std::uint64_t>(line.coordinate), t, t,
+         static_cast<int>(line.axis)});
     return id;
 }
 

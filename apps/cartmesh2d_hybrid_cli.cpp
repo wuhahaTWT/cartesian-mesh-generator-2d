@@ -106,14 +106,22 @@ void usage() {
         << "usage: cartmesh2d_hybrid_cli <boundary.xy> <output-prefix> "
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
-           "[openfoam-case extrusion-thickness] [--legacy-construction]\n";
+           "[openfoam-case extrusion-thickness] [--legacy-construction] "
+           "[--verify-source-lineage]\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-    const bool legacyConstruction=argc>1 && std::string(argv[argc-1])=="--legacy-construction";
-    if (legacyConstruction) --argc;
+    bool legacyConstruction=false;
+    bool verifySourceLineage=false;
+    while (argc>1) {
+        const std::string option=argv[argc-1];
+        if (option=="--legacy-construction") legacyConstruction=true;
+        else if (option=="--verify-source-lineage") verifySourceLineage=true;
+        else break;
+        --argc;
+    }
     if (argc != 10 && argc != 12) {
         usage();
         return EXIT_FAILURE;
@@ -173,6 +181,7 @@ int main(int argc, char** argv) {
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
     HybridMeshPolicy2D hybridPolicy;
     hybridPolicy.sharedIntersectionConstruction=!legacyConstruction;
+    hybridPolicy.verifySourceLineageOracle=verifySourceLineage;
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
@@ -330,6 +339,12 @@ int main(int argc, char** argv) {
               << " interface_edges=" << hybrid.interfaceAudit.interfaceEdgeCount
               << " interface_vertices=" << hybrid.interfaceAudit.interfaceVertexCount
               << " area_error=" << hybrid.metrics.areaError
+              << " lineage_checks="
+              << hybrid.sourceLineageAudit.lineageCandidateChecks
+              << " lineage_oracle_checks="
+              << hybrid.sourceLineageAudit.oracleCandidateChecks
+              << " lineage_mismatches="
+              << hybrid.sourceLineageAudit.mismatchedCells
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
               << " quality_contract="

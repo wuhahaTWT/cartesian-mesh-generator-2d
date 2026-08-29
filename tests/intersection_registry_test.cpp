@@ -52,6 +52,17 @@ int main() {
         check(repeat==intersectionRecordsToJson(registry.records()),"provenance serialization is deterministic");
         check(repeat.find("displacement_over_local_h")!=std::string::npos,
               "machine-readable provenance includes dimensionless displacement");
+        const auto& shadow=registry.shadowVertexStore();
+        check(shadow.records().size()==registry.vertices().size(),
+              "R1-A shadow store has one stable record per canonical vertex");
+        check(shadow.indexProfile().queryCount>0U &&
+              shadow.indexProfile().maximumQueryCandidateCount<=registry.vertices().size(),
+              "R1-A feature index shadows every legacy canonicalization query");
+        for (std::size_t i=0;i<shadow.records().size();++i) {
+            check(shadow.records()[i].id==i &&
+                  shadow.records()[i].key.kind==StableVertexKeyKind2D::LegacyCanonical,
+                  "shadow stable ids and typed legacy keys are deterministic");
+        }
     }
     {
         IntersectionRegistry2D registry({.01});

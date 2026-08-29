@@ -204,6 +204,7 @@ void writeJsonString(std::ostream& out, const std::string& value) {
         const auto& b = rhs.cells[i];
         if (a.id != b.id || a.sourceId != b.sourceId ||
             a.sourceKey != b.sourceKey || a.geometryArea != b.geometryArea ||
+            a.sourceLineage != b.sourceLineage ||
             a.vertices != b.vertices || a.edges != b.edges) return false;
     }
     return true;
@@ -216,6 +217,7 @@ void writeJsonString(std::ostream& out, const std::string& value) {
     // This is an ordering key only. Quadtree provenance remains explicit in
     // HybridSourceCell2D::quadtreeSourceKey and is never decoded for layers.
     adapter.sourceKey = source.id;
+    adapter.sourceLineage = {source.id};
     adapter.backgroundBounds = source.polygon.bounds();
     adapter.kind = source.kind == HybridCellKind2D::RemainderCartesian
         ? CutCellKind::Full : CutCellKind::Cut;
@@ -288,9 +290,13 @@ void writeJsonString(std::ostream& out, const std::string& value) {
 [[nodiscard]] std::vector<QualityCellMetadata2D> qualityMetadataForSolver(
     const TopologyMesh2D& topology,const std::vector<HybridSourceCell2D>& sources,
     std::vector<std::optional<std::size_t>>& sourceForCell,
+    SourceLineageAudit2D& lineageAudit,bool verifyOracle,
     const TolerancePolicy& tol) {
     std::vector<QualityCellMetadata2D> metadata(topology.cells.size());
     sourceForCell.assign(topology.cells.size(),std::nullopt);
+    lineageAudit={};
+    lineageAudit.solverCellCount=topology.cells.size();
+    lineageAudit.oracleVerified=verifyOracle;
     for (const auto& cell:topology.cells) {
         Polygon2D polygon;
         for (const auto vertex:cell.vertices) {
@@ -300,20 +306,40 @@ void writeJsonString(std::ostream& out, const std::string& value) {
         }
         const auto centroid=polygon.centroid(tol);
         if (!centroid) continue;
-        std::optional<std::size_t> boundaryCandidate;
-        for (std::size_t sourceId=0;sourceId<sources.size();++sourceId) {
-            const auto& source=sources[sourceId];
-            if (!source.polygon.bounds().contains(*centroid,tol)) continue;
-            const auto state=classifyPointInPolygon(*centroid,source.polygon,tol);
-            if (state==PointInPolygon::Inside) {
-                sourceForCell[cell.id]=sourceId;
-                break;
+        const auto locate=[&](const std::vector<std::size_t>& candidates,
+                              std::size_t& checkCount) {
+            std::optional<std::size_t> found;
+            std::optional<std::size_t> boundaryCandidate;
+            for (const auto sourceId:candidates) {
+                ++checkCount;
+                if (sourceId>=sources.size()) continue;
+                const auto& source=sources[sourceId];
+                if (!source.polygon.bounds().contains(*centroid,tol)) continue;
+                const auto state=classifyPointInPolygon(*centroid,source.polygon,tol);
+                if (state==PointInPolygon::Inside) {
+                    found=sourceId;
+                    break;
+                }
+                if (state==PointInPolygon::Boundary && !boundaryCandidate) {
+                    boundaryCandidate=sourceId;
+                }
             }
-            if (state==PointInPolygon::Boundary && !boundaryCandidate) {
-                boundaryCandidate=sourceId;
+            return found?found:boundaryCandidate;
+        };
+        auto lineage=cell.sourceLineage;
+        if (lineage.empty()) lineage.push_back(cell.sourceId);
+        std::sort(lineage.begin(),lineage.end());
+        lineage.erase(std::unique(lineage.begin(),lineage.end()),lineage.end());
+        const auto indexed=locate(lineage,lineageAudit.lineageCandidateChecks);
+        if (verifyOracle) {
+            std::vector<std::size_t> allSources(sources.size());
+            std::iota(allSources.begin(),allSources.end(),0U);
+            const auto oracle=locate(allSources,lineageAudit.oracleCandidateChecks);
+            if (indexed!=oracle) {
+                ++lineageAudit.mismatchedCells;
             }
         }
-        if (!sourceForCell[cell.id]) sourceForCell[cell.id]=boundaryCandidate;
+        sourceForCell[cell.id]=indexed;
         if (!sourceForCell[cell.id]) continue;
         const auto& source=sources[*sourceForCell[cell.id]];
         metadata[cell.id].type=qualityType(source.kind);
@@ -1103,9 +1129,14 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         return failure;
     }
     std::vector<std::optional<std::size_t>> sourceForSolverCell;
+    SourceLineageAudit2D sourceLineageAudit;
     const auto contractMetadata=qualityMetadataForSolver(
         solverTopologyReport.topology,hybridSources,sourceForSolverCell,
-        policy.tolerance);
+        sourceLineageAudit,policy.verifySourceLineageOracle,policy.tolerance);
+    if (!sourceLineageAudit.pass()) {
+        return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
+                      "R1-A solver source lineage disagrees with full-scan oracle");
+    }
     const auto boundaryLayerSamples=boundaryLayerQualitySamples(
         hybridSources,sourceForSolverCell,boundaryLayers.strips,policy.tolerance);
     auto qualityContract=evaluateQualityContract2D(
@@ -1129,6 +1160,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.remainderSmallCells=std::move(remainderSmallCells);
     result.remainderStabilization=std::move(remainderStabilization);
     result.solverTopologyReport=std::move(solverTopologyReport);
+    result.sourceLineageAudit=sourceLineageAudit;
     result.canonicalizedIntersections=envelopeRegistry.records();
     for (const auto& cell:result.remainderSourceCells) {
         for (auto record:cell.canonicalizedIntersections) {
@@ -1306,7 +1338,7 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     if (result.requestedLayerCandidate.success()) {
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.requestedLayerCandidate,domain,originalWalls,maxLevel,refinement,
-            hybridPolicy.sharedIntersectionConstruction);
+            hybridPolicy);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             return result;
@@ -1321,7 +1353,7 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     if (result.localLayerCandidate.success()) {
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.localLayerCandidate,domain,originalWalls,maxLevel,refinement,
-            hybridPolicy.sharedIntersectionConstruction);
+            hybridPolicy);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             result.fallbackStage=H4FallbackStage2D::None;
@@ -1498,6 +1530,16 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"expected_fluid_area\": " << metrics.expectedFluidArea << ",\n";
         out << "  \"actual_fluid_area\": " << metrics.actualFluidArea << ",\n";
         out << "  \"area_error\": " << metrics.areaError << ",\n";
+        out << "  \"source_lineage_solver_cell_count\": "
+            << result.sourceLineageAudit.solverCellCount << ",\n";
+        out << "  \"source_lineage_candidate_checks\": "
+            << result.sourceLineageAudit.lineageCandidateChecks << ",\n";
+        out << "  \"source_lineage_oracle_candidate_checks\": "
+            << result.sourceLineageAudit.oracleCandidateChecks << ",\n";
+        out << "  \"source_lineage_mismatched_cells\": "
+            << result.sourceLineageAudit.mismatchedCells << ",\n";
+        out << "  \"source_lineage_oracle_verified\": "
+            << (result.sourceLineageAudit.oracleVerified?"true":"false") << ",\n";
         out << "  \"interface_edge_count\": " << interface.interfaceEdgeCount << ",\n";
         out << "  \"interface_vertex_count\": " << interface.interfaceVertexCount << ",\n";
         out << "  \"single_owner_interface_edges\": " << interface.singleOwnerInterfaceEdges << ",\n";

@@ -94,6 +94,10 @@ int main(int argc,char** argv) {
         check(report==intersectionConstructionToJson(registry,{id},0,0) &&
               report.find("source_segment")!=std::string::npos && report.find("wall_sharp_corner")!=std::string::npos,
               "deterministic provenance includes source geometry and feature");
+        const auto& stable=registry.shadowVertexStore().records();
+        check(stable.size()==registry.vertices().size() &&
+              !stable[id].sourceRefs.empty(),
+              "shared construction events retain stable source lineage");
         rejects([&]{(void)registry.intersectGridLine(support,x,0);},"invalid local_h rejected on cached event");
         rejects([&]{(void)registry.intersectGridLine(support,registry.gridLine(0,0),scale);},"out-of-segment intersection rejected");
         rejects([&]{(void)registry.gridLine(0,.123*scale);},"non-dyadic coordinate is not silently rounded");

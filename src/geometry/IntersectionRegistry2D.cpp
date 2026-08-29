@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <iomanip>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
@@ -41,6 +42,39 @@ namespace {
            *candidateId == *anchor.featureId;
 }
 
+[[nodiscard]] ConstructionFeatureClass2D shadowFeature(
+    IntersectionFeature2D feature) noexcept {
+    switch (feature) {
+    case IntersectionFeature2D::Smooth:
+        return ConstructionFeatureClass2D::Smooth;
+    case IntersectionFeature2D::WallSharpCorner:
+        return ConstructionFeatureClass2D::ConvexSharp;
+    case IntersectionFeature2D::WallConcaveCorner:
+        return ConstructionFeatureClass2D::ConcaveSharp;
+    case IntersectionFeature2D::CartesianGridVertex:
+    case IntersectionFeature2D::CartesianGridLine:
+        return ConstructionFeatureClass2D::Grid;
+    case IntersectionFeature2D::TransitionVertex:
+        return ConstructionFeatureClass2D::TransitionMutable;
+    case IntersectionFeature2D::None:
+        return ConstructionFeatureClass2D::Unclassified;
+    }
+    return ConstructionFeatureClass2D::Unclassified;
+}
+
+[[nodiscard]] std::optional<FeatureOwner2D> shadowOwner(
+    IntersectionFeature2D feature, std::optional<std::size_t> featureId,
+    std::size_t supportId) {
+    if (!featureId && feature == IntersectionFeature2D::None) return std::nullopt;
+    return FeatureOwner2D{
+        feature == IntersectionFeature2D::CartesianGridVertex ||
+                feature == IntersectionFeature2D::CartesianGridLine
+            ? ConstructionSourceKind2D::CartesianGrid
+            : ConstructionSourceKind2D::Unknown,
+        static_cast<std::uint64_t>(featureId.value_or(supportId)),
+        static_cast<std::uint64_t>(supportId)};
+}
+
 } // namespace
 
 IntersectionRegistry2D::IntersectionRegistry2D(IntersectionRegistryPolicy2D policy)
@@ -61,6 +95,12 @@ std::size_t IntersectionRegistry2D::addCanonicalVertex(
     }
     const std::size_t id = vertices_.size();
     vertices_.push_back({id, point, localH, feature, featureId, supportId});
+    const auto stableId = shadowVertexStore_.addShadowVertex(
+        point, localH, shadowFeature(feature),
+        shadowOwner(feature, featureId, supportId), supportId);
+    if (stableId != static_cast<StableVertexId2D>(id)) {
+        throw std::logic_error("R1-A shadow stable vertex id diverged from canonical id");
+    }
     return id;
 }
 
@@ -74,18 +114,17 @@ Point2D IntersectionRegistry2D::canonicalize(
         throw std::invalid_argument("intersection requires finite coordinates and local_h");
     }
 
-    std::optional<std::size_t> best;
-    double bestDistance = std::numeric_limits<double>::infinity();
-    for (std::size_t i = 0U; i < vertices_.size(); ++i) {
+    const auto consider = [&](std::size_t i, std::optional<std::size_t>& best,
+                              double& bestDistance) {
         const auto& anchor = vertices_[i];
         if (anchor.supportId!=supportId ||
-            !featureCompatible(feature, featureId, anchor)) continue;
+            !featureCompatible(feature, featureId, anchor)) return;
         const double admissible = policy_.snapFractionOfLocalH *
                                   std::min(localH, anchor.localH);
         const double distance = std::sqrt(squaredNorm(anchor.point - originalPoint));
         // An input feature is an immutable anchor, not a movable sample.
-        if (protectedFeature(feature) && distance!=0.0) continue;
-        if (distance > admissible) continue;
+        if (protectedFeature(feature) && distance!=0.0) return;
+        if (distance > admissible) return;
         if (!best || std::tuple(distance, anchorPriority(anchor.feature),
                                 anchor.point.x, anchor.point.y, anchor.id) <
                     std::tuple(bestDistance,
@@ -96,6 +135,30 @@ Point2D IntersectionRegistry2D::canonicalize(
             best = i;
             bestDistance = distance;
         }
+    };
+
+    std::optional<std::size_t> best;
+    double bestDistance = std::numeric_limits<double>::infinity();
+    for (std::size_t i = 0U; i < vertices_.size(); ++i) {
+        consider(i, best, bestDistance);
+    }
+
+    // R1-A shadow mode: the index must select exactly the same canonical
+    // vertex as the authoritative legacy scan before it may enter production.
+    std::optional<std::size_t> indexedBest;
+    double indexedDistance = std::numeric_limits<double>::infinity();
+    const auto indexedCandidates = shadowVertexStore_.query(
+        originalPoint, policy_.snapFractionOfLocalH * localH, supportId);
+    for (const auto stableId : indexedCandidates) {
+        if (stableId >= vertices_.size()) {
+            throw std::logic_error("R1-A shadow index returned an invalid stable vertex id");
+        }
+        consider(static_cast<std::size_t>(stableId), indexedBest, indexedDistance);
+    }
+    if (indexedBest != best ||
+        (best && indexedDistance != bestDistance)) {
+        throw std::runtime_error(
+            "R1-A shadow feature index disagrees with legacy canonicalization scan");
     }
     if (!best || bestDistance == 0.0) return originalPoint;
 
