@@ -81,11 +81,36 @@ struct PatchLocalQuality2D {
 [[nodiscard]] bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
                                               const PatchLocalQuality2D& base) noexcept;
 
-// Deterministic total order used to pick the single winner: fewest hard short
-// faces, then lowest short-face severity, then the solver-issue score, then
-// each authoritative aggregate in a fixed sequence.
-[[nodiscard]] bool patchLocalQualityRanksBetter2D(const PatchLocalQuality2D& candidate,
-                                                  const PatchLocalQuality2D& current) noexcept;
+// Deterministic total order used to pick the single winner among candidates
+// whose patches, and therefore whose evaluation scopes, differ. Absolute local
+// aggregates are not comparable across different scopes, so the ordering is on
+// each candidate's improvement over its own base scope first, and falls back to
+// absolute values only as a tiebreak.
+struct PatchLocalRank2D {
+    // Signed: negative means the candidate removed hard short faces.
+    std::ptrdiff_t hardShortFaceDelta = 0;
+    double maximumShortFaceSeverityDelta = 0.0;
+    double totalShortFaceSeverityDelta = 0.0;
+    std::ptrdiff_t issueDelta = 0;
+    double maximumIssueSeverityDelta = 0.0;
+    double totalIssueSeverityDelta = 0.0;
+    // Absolute worst values that remain in the candidate scope.
+    double maximumShortFaceSeverity = 0.0;
+    double maxNonOrthogonalityDeg = 0.0;
+    double maxInternalSkewness = 0.0;
+    double maxCellAspect = 0.0;
+    // Final tiebreak so the order is total regardless of evaluation order.
+    std::size_t firstCellId = 0;
+    std::size_t secondCellId = 0;
+};
+
+[[nodiscard]] PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
+                                                const PatchLocalQuality2D& candidate,
+                                                std::size_t firstCellId,
+                                                std::size_t secondCellId) noexcept;
+
+[[nodiscard]] bool patchLocalRankBetter2D(const PatchLocalRank2D& candidate,
+                                          const PatchLocalRank2D& current) noexcept;
 
 struct PatchLocalScope2D {
     std::vector<PatchLocalCell2D> cells;

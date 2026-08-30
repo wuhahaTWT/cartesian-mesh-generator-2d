@@ -35,18 +35,18 @@
       "solver_cm2d_sha256": "6ef16a5deddc0376aee5824f816f6a852e4d12e5d974dff79539219813e0bf60",
       "solver_quality_sha256": "cb44b8e052d6efc8b8194e6b9bed8cd05bdbfc34d17b0d886061f7b245f83e59",
       "wall_time_seconds_not_reproducible": {
-        "build_global_topology_seconds": 0.9045349999999139,
+        "build_global_topology_seconds": 0.9365129999999482,
         "measurement_class": "wall_time",
-        "r1_repair_seconds": 2.8355269999999995,
+        "r1_repair_seconds": 2.88964,
         "reproducible": false,
-        "solver_profile_candidate_global_rebuild_seconds": 0.813281,
-        "solver_profile_candidate_polygon_work_seconds": 0.014597999999999995,
-        "solver_profile_candidate_quality_seconds": 0.07272099999999998,
-        "solver_profile_final_repartition_seconds": 0.032454,
-        "solver_profile_full_quality_seconds": 0.084895,
-        "solver_profile_initial_partition_seconds": 0.011823,
-        "solver_profile_source_repair_seconds": 0.953251,
-        "solver_repair_seconds": 3.8330549999999994
+        "solver_profile_candidate_global_rebuild_seconds": 0.8439329999999999,
+        "solver_profile_candidate_polygon_work_seconds": 0.0148,
+        "solver_profile_candidate_quality_seconds": 0.07517299999999998,
+        "solver_profile_final_repartition_seconds": 0.03303,
+        "solver_profile_full_quality_seconds": 0.08739399999999997,
+        "solver_profile_initial_partition_seconds": 0.011656,
+        "solver_profile_source_repair_seconds": 0.989383,
+        "solver_repair_seconds": 3.9237089999999997
       }
     },
     "sharp_trailing_edge": {
@@ -95,7 +95,7 @@
   "command": "cartmesh2d_hybrid_cli examples/h4_3/narrow_gap.xy <prefix> 8 3 8 4 0.012 1.15 1.0",
   "compiler": "/Applications/mesasdk/bin/c++",
   "format_version": "cartmesh2d-r1-local-quality-selection-v1",
-  "generator_commit": "bc5ca4d37f209fc4ebac6473323709a8790f9d14",
+  "generator_commit": "040fa2c73b7e692e9ac7f063f701d1e936f34a57",
   "narrow_gap_end_to_end_wall_seconds_not_reproducible": {
     "baseline_commit_runs": [
       45.71,
