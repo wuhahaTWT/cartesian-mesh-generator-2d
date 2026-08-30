@@ -112,4 +112,10 @@ struct TopologyMesh2D {
 // the rest of the generator.
 [[nodiscard]] std::size_t globalTopologyBuildCount2D() noexcept;
 
+// Total seconds spent inside buildGlobalTopology, and the total input cell
+// count summed over all calls. Together with the call count these separate
+// "many small patch builds" from "few whole-mesh rebuilds".
+[[nodiscard]] double globalTopologyBuildSeconds2D() noexcept;
+[[nodiscard]] std::size_t globalTopologyBuildInputCells2D() noexcept;
+
 } // namespace cartmesh2d

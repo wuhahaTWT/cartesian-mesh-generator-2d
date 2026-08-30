@@ -109,6 +109,13 @@ struct HybridMeshMetrics2D {
     std::size_t r1GlobalOracleBuilds = 0;
     std::size_t r1MaximumWinnerGlobalOracleBuilds = 0;
     std::size_t r1AuthoritativeFullQualityEvaluations = 0;
+    // Whole-build measured totals, so the R1 counts above can be read against
+    // the cost of the rest of the pipeline instead of in isolation.
+    std::size_t buildGlobalTopologyCalls = 0;
+    std::size_t buildGlobalTopologyInputCells = 0;
+    double buildGlobalTopologySeconds = 0.0;
+    std::size_t fullSolverQualityEvaluations = 0;
+    double solverRepairSeconds = 0.0;
     double r1MinimumFaceOverLocalHBefore = 0.0;
     double r1MinimumFaceOverLocalHAfter = 0.0;
     double r1RepairSeconds = 0.0;
