@@ -36,8 +36,23 @@ struct TopologyPatchCommitGate2D {
 
 struct TopologyDeltaVertex2D {
     StableVertexId2D stableId = 0;
+    StableVertexKey2D constructionKey;
     Point2D point;
     bool existedAtBaseRevision = false;
+};
+
+// A replacement polygon is identified when it is produced.  Patch topology
+// never recovers identity by searching coordinates: every loop vertex carries
+// either an existing stable id or a typed PatchGenerated construction key.
+struct TopologyReplacementCell2D {
+    CutCell2D cell;
+    std::vector<TopologyDeltaVertex2D> vertices;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return cell.valid() && cell.kind!=CutCellKind::Empty &&
+               cell.kind!=CutCellKind::Unsupported &&
+               vertices.size()==cell.fluidPolygon.vertices.size();
+    }
 };
 
 using TopologySourceIdentity2D = std::pair<std::uint64_t,std::size_t>;
@@ -52,6 +67,7 @@ struct TopologyDeltaEdge2D {
     StableEdgeKey2D stableEdge;
     std::size_t incidenceCount = 0;
     bool boundaryLocked = false;
+    BoundaryPatch2D patch = BoundaryPatch2D::None;
 };
 
 struct TopologyDelta2D {
@@ -88,11 +104,24 @@ struct RevisionedEdgeUse2D {
     StableVertexId2D to = 0;
 };
 
+enum class RevisionedVertexState2D {
+    Active,
+    Tombstone
+};
+
+struct RevisionedVertex2D {
+    Point2D point;
+    StableVertexKey2D constructionKey;
+    std::size_t referenceCount = 0;
+    RevisionedVertexState2D state = RevisionedVertexState2D::Tombstone;
+};
+
 struct RevisionedTopology2D {
     std::uint64_t revision = 0;
-    std::map<StableVertexId2D,Point2D> vertices;
+    std::map<StableVertexId2D,RevisionedVertex2D> vertices;
     std::map<TopologySourceIdentity2D,TopologyDeltaCell2D> cells;
     std::map<StableEdgeKey2D,std::vector<RevisionedEdgeUse2D>> edgeIncidences;
+    std::map<StableEdgeKey2D,BoundaryPatch2D> edgePatches;
     std::vector<std::string> issues;
 
     [[nodiscard]] bool valid() const noexcept { return issues.empty(); }
@@ -124,12 +153,13 @@ struct TopologyPatchCommitResult2D {
 
 // Builds and audits only the replacement patch. One-incidence edges must match
 // an exact boundary lock; all other edges must have two opposite incidences.
-// New interior vertices receive deterministic IDs after the maximum base ID.
+// Every endpoint identity is supplied by the replacement producer; new
+// interior vertices must carry a typed PatchGenerated key.
 [[nodiscard]] TopologyDelta2D buildTopologyDelta2D(
     const TopologyMesh2D& baseTopology,
     const EdgeIncidenceStore2D& baseIncidence,
     const TopologyPatchTransaction2D& transaction,
-    const std::vector<CutCell2D>& replacementCells,
+    const std::vector<TopologyReplacementCell2D>& replacementCells,
     const TolerancePolicy& tol = {});
 
 [[nodiscard]] RevisionedTopology2D buildRevisionedTopology2D(
@@ -147,17 +177,16 @@ struct TopologyPatchCommitResult2D {
     const TopologyMesh2D& oracle,
     const TolerancePolicy& tol = {});
 
-// Current R1-D oracle path: rebuilds the candidate globally, then proves the
-// patch boundary lock, exact source replacement, area conservation and hard
-// quality gate before advancing the revision. Rejection returns the unchanged
-// base topology and incidence. A later incremental implementation must remain
-// byte/topology equivalent to this function.
+// Final oracle/materialization path. Candidate production must already have
+// passed patch-local identity, boundary, area and incidence gates before this
+// function is called. Its one global rebuild is counted separately and is not
+// candidate-local work. Rejection returns the unchanged base revision.
 [[nodiscard]] TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
     const TopologyMesh2D& baseTopology,
     const EdgeIncidenceStore2D& baseIncidence,
     const TopologyPatchTransaction2D& transaction,
     const std::vector<CutCell2D>& baseSourceCells,
-    const std::vector<CutCell2D>& replacementCells,
+    const std::vector<TopologyReplacementCell2D>& replacementCells,
     const Domain2D& domain, const BoundaryRegion2D& boundary,
     const TopologyPatchCommitGate2D& gate,
     const TolerancePolicy& tol = {});

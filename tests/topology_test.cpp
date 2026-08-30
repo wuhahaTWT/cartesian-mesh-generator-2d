@@ -138,13 +138,43 @@ int main() {
                                        {2.0,1.0},{1.0,1.0},{1.0,0.5}};
     replacement.area=replacement.fluidPolygon.area();
     replacement.centroid=replacement.fluidPolygon.centroid();
+    const auto identify=[&](CutCell2D cell,
+                            std::optional<std::pair<Point2D,StableVertexId2D>> generated=
+                                std::nullopt) {
+        TopologyReplacementCell2D result;
+        result.cell=std::move(cell);
+        for (const auto& point:result.cell.fluidPolygon.vertices) {
+            bool found=false;
+            for (std::size_t dense=0;dense<mesh.vertices.size();++dense) {
+                if (mesh.vertices[dense].point.x==point.x &&
+                    mesh.vertices[dense].point.y==point.y) {
+                    result.vertices.push_back({incidence.stableVertexIds[dense],
+                        {StableVertexKeyKind2D::LegacyCanonical,
+                         incidence.stableVertexIds[dense],0U,0U,0U},point,true});
+                    found=true;
+                    break;
+                }
+            }
+            if (!found && generated && generated->first.x==point.x &&
+                generated->first.y==point.y) {
+                result.vertices.push_back({generated->second,
+                    {StableVertexKeyKind2D::PatchGenerated,200U,generated->second,0U,0U},
+                    point,false});
+                found=true;
+            }
+            check(found,"test replacement producer assigns every stable identity");
+        }
+        return result;
+    };
+    const auto identifiedReplacement=identify(replacement);
     const auto rejectedQuality=evaluateTopologyPatchTransactionOracle2D(
-        mesh,incidence,transaction,cells,{replacement},domain,
+        mesh,incidence,transaction,cells,{identifiedReplacement},domain,
         BoundaryRegion2D(boundary),{false,0.0});
     check(!rejectedQuality.accepted && rejectedQuality.revision==17U &&
           rejectedQuality.topology.cells.size()==mesh.cells.size(),
           "hard-quality rejection rolls back without advancing revision");
-    const auto localDelta=buildTopologyDelta2D(mesh,incidence,transaction,{replacement});
+    const auto localDelta=buildTopologyDelta2D(
+        mesh,incidence,transaction,{identifiedReplacement});
     check(localDelta.valid() && localDelta.baseRevision==17U &&
           localDelta.candidateRevision==18U && localDelta.internalEdgeCount==0U &&
           localDelta.lockedBoundaryEdgeCount==transaction.boundaryLocks.size() &&
@@ -167,8 +197,13 @@ int main() {
         patchTriangle(202U,{{2.0,0.5},{2.0,1.0},patchCenter}),
         patchTriangle(203U,{{2.0,1.0},{1.0,1.0},{1.0,0.5},patchCenter}),
         patchTriangle(204U,{{1.0,0.5},{1.0,0.0},patchCenter})};
+    StableVertexId2D generatedId=0;
+    for (const auto id:incidence.stableVertexIds) generatedId=std::max(generatedId,id+1U);
+    std::vector<TopologyReplacementCell2D> identifiedFourPiece;
+    for (const auto& cell:fourPiecePatch)
+        identifiedFourPiece.push_back(identify(cell,{{patchCenter,generatedId}}));
     const auto newVertexDelta=buildTopologyDelta2D(
-        mesh,incidence,transaction,fourPiecePatch);
+        mesh,incidence,transaction,identifiedFourPiece);
     check(newVertexDelta.valid() && newVertexDelta.internalEdgeCount==4U &&
           std::count_if(newVertexDelta.vertices.begin(),newVertexDelta.vertices.end(),
               [](const auto& vertex) { return !vertex.existedAtBaseRevision; })==1 &&
@@ -182,7 +217,9 @@ int main() {
           revisionedPatch.revision==18U && revisionedPatch.cells.size()==5U &&
           revisionedPatch.cells.at(leftIdentity).vertices==
               revisionedBase.cells.at(leftIdentity).vertices &&
-          revisionedPatch.edgeIncidences.size()==13U,
+          revisionedPatch.edgeIncidences.size()==13U &&
+          revisionedPatch.vertices.at(generatedId).referenceCount==4U &&
+          revisionedPatch.vertices.at(generatedId).state==RevisionedVertexState2D::Active,
           "revisioned topology applies only delta and preserves untouched stable IDs");
     auto fourPieceSources=cells;
     fourPieceSources.erase(fourPieceSources.begin()+1,fourPieceSources.end());
@@ -191,8 +228,35 @@ int main() {
     check(fourPieceOracle.valid() &&
           revisionedTopologyMatchesOracle2D(revisionedPatch,fourPieceOracle),
           "revisioned patch-local result is geometrically equal to global oracle");
+    auto badActiveVertex=revisionedPatch;
+    badActiveVertex.vertices.at(generatedId).state=RevisionedVertexState2D::Tombstone;
+    check(!revisionedTopologyMatchesOracle2D(badActiveVertex,fourPieceOracle),
+          "global oracle comparison rejects an incorrect active-vertex lifecycle");
+    auto badCellLoop=revisionedPatch;
+    std::swap(badCellLoop.cells.begin()->second.vertices[0],
+              badCellLoop.cells.begin()->second.vertices[1]);
+    check(!revisionedTopologyMatchesOracle2D(badCellLoop,fourPieceOracle),
+          "global oracle comparison rejects a changed stable cell loop");
+    auto badPatch=revisionedPatch;
+    badPatch.edgePatches.begin()->second=BoundaryPatch2D::Unclassified;
+    check(!revisionedTopologyMatchesOracle2D(badPatch,fourPieceOracle),
+          "global oracle comparison rejects boundary-patch drift");
+    auto badIncidence=revisionedPatch;
+    badIncidence.edgeIncidences.begin()->second.front().source={999U,999U};
+    check(!revisionedTopologyMatchesOracle2D(badIncidence,fourPieceOracle),
+          "global oracle comparison rejects owner/neighbour incidence drift");
+    TopologyDelta2D removeFourPiece;
+    removeFourPiece.baseRevision=18U;
+    removeFourPiece.candidateRevision=19U;
+    for (const auto& cell:fourPiecePatch)
+        removeFourPiece.removedSources.push_back({cell.sourceKey,cell.sourceId});
+    const auto tombstonedPatch=applyTopologyDelta2D(revisionedPatch,removeFourPiece);
+    check(tombstonedPatch.valid() &&
+          tombstonedPatch.vertices.at(generatedId).referenceCount==0U &&
+          tombstonedPatch.vertices.at(generatedId).state==RevisionedVertexState2D::Tombstone,
+          "deleting a patch tombstones its unreferenced stable vertex explicitly");
     const auto committed=evaluateTopologyPatchTransactionOracle2D(
-        mesh,incidence,transaction,cells,{replacement},domain,
+        mesh,incidence,transaction,cells,{identifiedReplacement},domain,
         BoundaryRegion2D(boundary),{true,0.5});
     check(committed.valid() && committed.accepted && committed.revision==18U &&
           committed.topology.cells.size()==2U && committed.globalOracleBuildCount==1U &&
@@ -208,8 +272,11 @@ int main() {
     movedReplacement.fluidPolygon.vertices[0].x=1.1;
     movedReplacement.area=movedReplacement.fluidPolygon.area();
     movedReplacement.centroid=movedReplacement.fluidPolygon.centroid();
+    auto identifiedMoved=identifiedReplacement;
+    identifiedMoved.cell=movedReplacement;
+    identifiedMoved.vertices.front().point=movedReplacement.fluidPolygon.vertices.front();
     const auto rejectedLock=evaluateTopologyPatchTransactionOracle2D(
-        mesh,incidence,transaction,cells,{movedReplacement},domain,
+        mesh,incidence,transaction,cells,{identifiedMoved},domain,
         BoundaryRegion2D(boundary),{true,0.4});
     check(!rejectedLock.accepted && rejectedLock.revision==17U &&
           rejectedLock.globalOracleBuildCount==0U,

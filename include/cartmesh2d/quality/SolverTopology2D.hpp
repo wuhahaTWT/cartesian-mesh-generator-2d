@@ -80,6 +80,27 @@ struct SolverLocalRepartitionResult2D {
     }
 };
 
+struct SolverShortFaceRepairResult2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+    bool applicable = false;
+    bool accepted = false;
+    std::size_t candidateCount = 0;
+    std::size_t candidateGlobalTopologyBuildCount = 0;
+    std::size_t globalOracleBuildCount = 0;
+    std::size_t hardFaceCountBefore = 0;
+    std::size_t hardFaceCountAfter = 0;
+    double minimumFaceOverLocalHBefore = 0.0;
+    double minimumFaceOverLocalHAfter = 0.0;
+    bool patchOutsideStableIdsUnchanged = false;
+    bool localDeltaMatchesGlobalOracle = false;
+    std::vector<std::string> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && topology.valid();
+    }
+};
+
 // Returns the input-order indices of a deterministic greedy independent set.
 // Each halo must contain sorted unique cell/source IDs. A shared ID is a
 // repair conflict and prevents both patches from being committed together.
@@ -108,6 +129,20 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol = {});
+
+// Performs at most one deterministic short-face repair. Candidate generation,
+// identity assignment, topology delta, boundary locking and incidence checks
+// are patch-local. A global topology build is permitted only after selection,
+// as the separately-counted final oracle/materialization step.
+[[nodiscard]] SolverShortFaceRepairResult2D repairSolverShortFaces2D(
+    const TopologyMesh2D& topology,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const std::vector<bool>& immutableCells,
+    const std::vector<double>& localBackgroundH,
+    const std::vector<bool>& ratedCells,
+    double minimumFaceOverLocalH,
     const TolerancePolicy& tol = {});
 
 // Retains strictly convex cells and deterministically ear-clips cells with

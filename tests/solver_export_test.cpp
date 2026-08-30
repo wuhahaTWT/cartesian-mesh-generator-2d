@@ -36,6 +36,18 @@ CutCell2D fullCell(std::size_t id,const AABB2D& box) {
     return cell;
 }
 
+CutCell2D polygonCell(std::size_t id,std::vector<Point2D> vertices) {
+    CutCell2D cell;
+    cell.sourceId=id;cell.sourceKey=id;
+    cell.fluidPolygon={std::move(vertices)};
+    cell.backgroundBounds=cell.fluidPolygon.bounds();
+    cell.kind=CutCellKind::Cut;
+    cell.area=cell.fluidPolygon.area();
+    cell.areaFraction=1.0;
+    cell.centroid=cell.fluidPolygon.centroid();
+    return cell;
+}
+
 std::string readText(const std::filesystem::path& path) {
     std::ifstream in(path);
     std::ostringstream text;
@@ -80,6 +92,34 @@ int main() {
         {{0,1,2},{2,3},{4,5}});
     check(independentPatches==std::vector<std::size_t>({0,2}),
           "conflicting repair halos cannot be selected in the same batch");
+
+    const double r1Short=0.009;
+    const auto r1Topology=buildGlobalTopology({
+        polygonCell(0,{{0,0.4},{2,0.4},{2,1},{0,1}}),
+        polygonCell(1,{{0,0},{1,0},{r1Short,0.4},{0,0.4}}),
+        polygonCell(2,{{1,0},{1,0.4},{r1Short,0.4}}),
+        polygonCell(3,{{1,0},{2,0},{2,0.4},{1,0.4}})
+    },domain,embeddedReference);
+    const auto r1Repair=repairSolverShortFaces2D(
+        r1Topology,domain,BoundaryRegion2D(embeddedReference),
+        {true,false,false,false},{1,1,1,1},{false,true,true,true},0.01);
+    check(r1Repair.valid() && r1Repair.accepted &&
+          r1Repair.candidateGlobalTopologyBuildCount==0U &&
+          r1Repair.globalOracleBuildCount==1U &&
+          r1Repair.patchOutsideStableIdsUnchanged &&
+          r1Repair.localDeltaMatchesGlobalOracle &&
+          r1Repair.hardFaceCountBefore==1U && r1Repair.hardFaceCountAfter==0U &&
+          r1Repair.minimumFaceOverLocalHAfter>=0.01,
+          "R1 transaction repairs the Q2-B short face with local candidates and one final oracle"
+          " valid="+std::to_string(r1Repair.valid())+
+          " accepted="+std::to_string(r1Repair.accepted)+
+          " candidates="+std::to_string(r1Repair.candidateCount)+
+          " candidate_global="+std::to_string(r1Repair.candidateGlobalTopologyBuildCount)+
+          " oracle="+std::to_string(r1Repair.globalOracleBuildCount)+
+          " before="+std::to_string(r1Repair.hardFaceCountBefore)+
+          " after="+std::to_string(r1Repair.hardFaceCountAfter)+
+          " min_after="+std::to_string(r1Repair.minimumFaceOverLocalHAfter)+
+          " issue="+(r1Repair.issues.empty()?std::string("none"):r1Repair.issues.front()));
 
     const auto caseDir=std::filesystem::temp_directory_path()/"cartmesh2d-s1-openfoam-fixture";
     std::string error;

@@ -23,13 +23,6 @@ using SourceIdentity = TopologySourceIdentity2D;
                                 std::abs(b.x),std::abs(b.y)});
     return squaredNorm(a-b)<=tol.scale(scale)*tol.scale(scale);
 }
-[[nodiscard]] bool sameSegment(const Point2D& a,const Point2D& b,
-                               const Point2D& c,const Point2D& d,
-                               const TolerancePolicy& tol) {
-    return (samePoint(a,c,tol) && samePoint(b,d,tol)) ||
-           (samePoint(a,d,tol) && samePoint(b,c,tol));
-}
-
 struct DirectedDeltaUse {
     StableVertexId2D from = 0;
     StableVertexId2D to = 0;
@@ -96,8 +89,10 @@ TopologyPatchTransaction2D prepareTopologyPatchTransaction2D(
 TopologyDelta2D buildTopologyDelta2D(
     const TopologyMesh2D& baseTopology,const EdgeIncidenceStore2D& baseIncidence,
     const TopologyPatchTransaction2D& transaction,
-    const std::vector<CutCell2D>& replacementCells,const TolerancePolicy& tol) {
+    const std::vector<TopologyReplacementCell2D>& replacementCells,
+    const TolerancePolicy& tol) {
     TopologyDelta2D result;
+    (void)tol;
     result.baseRevision=transaction.baseRevision;
     result.candidateRevision=transaction.baseRevision+1U;
     if (!baseTopology.valid() || !baseIncidence.valid() || !transaction.valid() ||
@@ -113,20 +108,31 @@ TopologyDelta2D buildTopologyDelta2D(
         for (const auto edge:baseTopology.cells[cell].edges)
             affectedStableEdges.insert(baseIncidence.stableEdgeKeys[edge]);
 
-    std::vector<Point2D> newPoints;
-    for (const auto& cell:replacementCells) {
-        if (!cell.valid() || cell.kind==CutCellKind::Empty ||
-            cell.kind==CutCellKind::Unsupported) {
+    std::map<StableVertexId2D,TopologyDeltaVertex2D> identifiedVertices;
+    for (const auto& replacement:replacementCells) {
+        const auto& cell=replacement.cell;
+        if (!replacement.valid()) {
             result.issues.push_back("topology delta replacement cell is invalid");
             return result;
         }
         result.addedSources.push_back(sourceIdentity(cell));
         result.area+=cell.area;
-        for (const auto& point:cell.fluidPolygon.vertices) {
-            bool found=false;
-            for (const auto& base:baseTopology.vertices)
-                if (samePoint(point,base.point,tol)) { found=true;break; }
-            if (!found) newPoints.push_back(point);
+        for (std::size_t i=0;i<replacement.vertices.size();++i) {
+            const auto& vertex=replacement.vertices[i];
+            const auto& point=cell.fluidPolygon.vertices[i];
+            if (vertex.point.x!=point.x || vertex.point.y!=point.y) {
+                result.issues.push_back("replacement stable identity point is not its polygon vertex");
+                return result;
+            }
+            const auto found=identifiedVertices.find(vertex.stableId);
+            if (found!=identifiedVertices.end() &&
+                (found->second.point.x!=point.x || found->second.point.y!=point.y ||
+                 found->second.constructionKey!=vertex.constructionKey ||
+                 found->second.existedAtBaseRevision!=vertex.existedAtBaseRevision)) {
+                result.issues.push_back("replacement stable identity is internally inconsistent");
+                return result;
+            }
+            identifiedVertices.emplace(vertex.stableId,vertex);
         }
     }
     std::sort(result.addedSources.begin(),result.addedSources.end());
@@ -135,56 +141,42 @@ TopologyDelta2D buildTopologyDelta2D(
         result.issues.push_back("topology delta has duplicate replacement source identity");
         return result;
     }
-    std::sort(newPoints.begin(),newPoints.end(),[](const auto& lhs,const auto& rhs) {
-        return std::tie(lhs.x,lhs.y)<std::tie(rhs.x,rhs.y);
-    });
-    newPoints.erase(std::unique(newPoints.begin(),newPoints.end(),[&](const auto& lhs,
-                                                                     const auto& rhs) {
-        return samePoint(lhs,rhs,tol);
-    }),newPoints.end());
-    StableVertexId2D nextId=0;
-    for (const auto id:baseIncidence.stableVertexIds)
-        nextId=std::max(nextId,id+1U);
-    for (std::size_t ordinal=0;ordinal<newPoints.size();++ordinal) {
-        result.vertices.push_back({nextId+ordinal,newPoints[ordinal],false});
+    std::map<StableVertexId2D,std::size_t> denseBaseVertex;
+    for (std::size_t vertex=0;vertex<baseIncidence.stableVertexIds.size();++vertex)
+        denseBaseVertex.emplace(baseIncidence.stableVertexIds[vertex],vertex);
+    for (const auto& [stableId,vertex]:identifiedVertices) {
+        const auto base=denseBaseVertex.find(stableId);
+        if (vertex.existedAtBaseRevision) {
+            if (base==denseBaseVertex.end() ||
+                baseTopology.vertices[base->second].point.x!=vertex.point.x ||
+                baseTopology.vertices[base->second].point.y!=vertex.point.y) {
+                result.issues.push_back("replacement references a stale existing stable vertex");
+                return result;
+            }
+        } else if (base!=denseBaseVertex.end() ||
+                   vertex.constructionKey.kind!=StableVertexKeyKind2D::PatchGenerated) {
+            result.issues.push_back("new replacement vertex lacks a unique typed patch identity");
+            return result;
+        }
+        result.vertices.push_back(vertex);
     }
-
-    const auto stableVertex=[&](const Point2D& point)->std::optional<StableVertexId2D> {
-        for (std::size_t vertex=0;vertex<baseTopology.vertices.size();++vertex)
-            if (samePoint(point,baseTopology.vertices[vertex].point,tol))
-                return baseIncidence.stableVertexIds[vertex];
-        for (std::size_t vertex=0;vertex<result.vertices.size();++vertex)
-            if (samePoint(point,result.vertices[vertex].point,tol))
-                return result.vertices[vertex].stableId;
-        return std::nullopt;
-    };
-    for (std::size_t vertex=0;vertex<baseTopology.vertices.size();++vertex) {
-        bool used=false;
-        for (const auto& cell:replacementCells) for (const auto& point:cell.fluidPolygon.vertices)
-            if (samePoint(point,baseTopology.vertices[vertex].point,tol)) used=true;
-        if (used) result.vertices.push_back({baseIncidence.stableVertexIds[vertex],
-                                             baseTopology.vertices[vertex].point,true});
-    }
-    std::sort(result.vertices.begin(),result.vertices.end(),[](const auto& lhs,const auto& rhs) {
-        return lhs.stableId<rhs.stableId;
-    });
 
     std::map<StableEdgeKey2D,std::vector<DirectedDeltaUse>> uses;
-    for (const auto& cell:replacementCells) {
+    for (const auto& replacement:replacementCells) {
+        const auto& cell=replacement.cell;
         const auto& polygon=cell.fluidPolygon.vertices;
         TopologyDeltaCell2D deltaCell;
         deltaCell.source=sourceIdentity(cell);
         deltaCell.area=cell.area;
         for (std::size_t edge=0;edge<polygon.size();++edge) {
-            const auto from=stableVertex(polygon[edge]);
-            const auto to=stableVertex(polygon[(edge+1U)%polygon.size()]);
-            if (!from || !to || *from==*to) {
+            const auto from=replacement.vertices[edge].stableId;
+            const auto to=replacement.vertices[(edge+1U)%polygon.size()].stableId;
+            if (from==to) {
                 result.issues.push_back("topology delta could not assign distinct stable endpoints");
                 return result;
             }
-            deltaCell.vertices.push_back(*from);
-            const auto endpoints=std::minmax(*from,*to);
-            uses[{endpoints.first,endpoints.second}].push_back({*from,*to});
+            deltaCell.vertices.push_back(from);
+            uses[edgeKey(from,to)].push_back({from,to});
         }
         result.cells.push_back(std::move(deltaCell));
     }
@@ -197,17 +189,11 @@ TopologyDelta2D buildTopologyDelta2D(
         affectedStableEdges.insert(key);
         TopologyDeltaEdge2D edge{key,incidences.size(),false};
         if (incidences.size()==1U) {
-            const auto& use=incidences.front();
-            const auto pointFor=[&](StableVertexId2D id)->std::optional<Point2D> {
-                for (const auto& vertex:result.vertices)
-                    if (vertex.stableId==id) return vertex.point;
-                return std::nullopt;
-            };
-            const auto a=pointFor(use.from),b=pointFor(use.to);
             for (std::size_t lockId=0;lockId<transaction.boundaryLocks.size();++lockId) {
                 const auto& lock=transaction.boundaryLocks[lockId];
-                if (a && b && sameSegment(*a,*b,lock.a,lock.b,tol)) {
+                if (key==lock.stableEdge) {
                     edge.boundaryLocked=true;
+                    edge.patch=lock.patch;
                     matchedLocks.insert(lockId);
                     break;
                 }
@@ -239,8 +225,11 @@ RevisionedTopology2D buildRevisionedTopology2D(
         return result;
     }
     for (std::size_t vertex=0;vertex<topology.vertices.size();++vertex) {
-        if (!result.vertices.emplace(incidence.stableVertexIds[vertex],
-                                     topology.vertices[vertex].point).second) {
+        RevisionedVertex2D record;
+        record.point=topology.vertices[vertex].point;
+        record.constructionKey={StableVertexKeyKind2D::LegacyCanonical,
+                                incidence.stableVertexIds[vertex],0U,0U,0U};
+        if (!result.vertices.emplace(incidence.stableVertexIds[vertex],record).second) {
             result.issues.push_back("revisioned topology has duplicate stable vertex id");
             return result;
         }
@@ -258,9 +247,14 @@ RevisionedTopology2D buildRevisionedTopology2D(
         for (std::size_t edge=0;edge<record.vertices.size();++edge) {
             const auto from=record.vertices[edge];
             const auto to=record.vertices[(edge+1U)%record.vertices.size()];
+            auto& vertex=result.vertices.at(from);
+            ++vertex.referenceCount;
+            vertex.state=RevisionedVertexState2D::Active;
             result.edgeIncidences[edgeKey(from,to)].push_back({record.source,from,to});
         }
     }
+    for (const auto& edge:topology.edges)
+        result.edgePatches[incidence.stableEdgeKeys[edge.id]]=edge.patch;
     for (auto& [key,uses]:result.edgeIncidences) {
         (void)key;
         sortEdgeUses(uses);
@@ -291,6 +285,12 @@ RevisionedTopology2D applyTopologyDelta2D(
         }
         const auto& vertices=found->second.vertices;
         for (std::size_t edge=0;edge<vertices.size();++edge) {
+            auto& vertex=result.vertices.at(vertices[edge]);
+            if (vertex.referenceCount==0U) {
+                result.issues.push_back("removed source underflowed stable vertex references");
+                return result;
+            }
+            --vertex.referenceCount;
             const auto key=edgeKey(vertices[edge],vertices[(edge+1U)%vertices.size()]);
             affectedEdges.insert(key);
             auto edgeFound=result.edgeIncidences.find(key);
@@ -308,13 +308,15 @@ RevisionedTopology2D applyTopologyDelta2D(
     for (const auto& vertex:delta.vertices) {
         const auto found=result.vertices.find(vertex.stableId);
         if (vertex.existedAtBaseRevision) {
-            if (found==result.vertices.end() || found->second.x!=vertex.point.x ||
-                found->second.y!=vertex.point.y) {
+            if (found==result.vertices.end() || found->second.point.x!=vertex.point.x ||
+                found->second.point.y!=vertex.point.y) {
                 result.issues.push_back("topology delta changed an existing stable vertex");
                 return result;
             }
         } else if (found!=result.vertices.end() ||
-                   !result.vertices.emplace(vertex.stableId,vertex.point).second) {
+                   !result.vertices.emplace(vertex.stableId,RevisionedVertex2D{
+                       vertex.point,vertex.constructionKey,0U,
+                       RevisionedVertexState2D::Tombstone}).second) {
             result.issues.push_back("topology delta reused a stable id for a new vertex");
             return result;
         }
@@ -331,6 +333,9 @@ RevisionedTopology2D applyTopologyDelta2D(
                 result.issues.push_back("topology delta cell references an invalid stable vertex");
                 return result;
             }
+            auto& vertex=result.vertices.at(from);
+            ++vertex.referenceCount;
+            vertex.state=RevisionedVertexState2D::Active;
             const auto key=edgeKey(from,to);
             affectedEdges.insert(key);
             result.edgeIncidences[key].push_back({cell.source,from,to});
@@ -342,6 +347,7 @@ RevisionedTopology2D applyTopologyDelta2D(
         auto& uses=found->second;
         if (uses.empty()) {
             result.edgeIncidences.erase(found);
+            result.edgePatches.erase(key);
             continue;
         }
         sortEdgeUses(uses);
@@ -350,6 +356,14 @@ RevisionedTopology2D applyTopologyDelta2D(
             result.issues.push_back("applied topology delta created invalid edge incidence");
             return result;
         }
+        const auto deltaEdge=std::find_if(delta.edges.begin(),delta.edges.end(),
+            [&](const auto& edge) { return edge.stableEdge==key; });
+        if (deltaEdge!=delta.edges.end()) result.edgePatches[key]=deltaEdge->patch;
+    }
+    for (auto& [id,vertex]:result.vertices) {
+        (void)id;
+        vertex.state=vertex.referenceCount>0U
+            ?RevisionedVertexState2D::Active:RevisionedVertexState2D::Tombstone;
     }
     result.revision=delta.candidateRevision;
     return result;
@@ -359,32 +373,73 @@ bool revisionedTopologyMatchesOracle2D(
     const RevisionedTopology2D& revisioned,const TopologyMesh2D& oracle,
     const TolerancePolicy& tol) {
     if (!revisioned.valid() || !oracle.valid() ||
-        revisioned.cells.size()!=oracle.cells.size()) return false;
-    const auto cyclicPointsEqual=[&](const std::vector<StableVertexId2D>& stable,
-                                     const std::vector<std::size_t>& dense) {
+        revisioned.cells.size()!=oracle.cells.size() ||
+        revisioned.edgeIncidences.size()!=oracle.edges.size() ||
+        revisioned.edgePatches.size()!=oracle.edges.size()) return false;
+    std::vector<StableVertexId2D> active;
+    for (const auto& [id,vertex]:revisioned.vertices)
+        if (vertex.state==RevisionedVertexState2D::Active) {
+            if (vertex.referenceCount==0U) return false;
+            active.push_back(id);
+        } else if (vertex.referenceCount!=0U) return false;
+    if (active.size()!=oracle.vertices.size()) return false;
+    std::vector<StableVertexId2D> oracleStable(oracle.vertices.size());
+    std::set<StableVertexId2D> matched;
+    for (std::size_t dense=0;dense<oracle.vertices.size();++dense) {
+        std::optional<StableVertexId2D> id;
+        for (const auto candidate:active) {
+            if (matched.contains(candidate)) continue;
+            if (samePoint(revisioned.vertices.at(candidate).point,
+                          oracle.vertices[dense].point,tol)) {
+                if (id) return false;
+                id=candidate;
+            }
+        }
+        if (!id) return false;
+        oracleStable[dense]=*id;
+        matched.insert(*id);
+    }
+    const auto cyclicIdsEqual=[](const std::vector<StableVertexId2D>& stable,
+                                 const std::vector<StableVertexId2D>& dense) {
         if (stable.size()!=dense.size() || stable.empty()) return false;
         for (std::size_t offset=0;offset<dense.size();++offset) {
             bool same=true;
-            for (std::size_t i=0;i<stable.size();++i) {
-                const auto point=revisioned.vertices.find(stable[i]);
-                if (point==revisioned.vertices.end() ||
-                    !samePoint(point->second,oracle.vertices[dense[(i+offset)%dense.size()]].point,
-                               tol)) { same=false;break; }
-            }
+            for (std::size_t i=0;i<stable.size();++i)
+                if (stable[i]!=dense[(i+offset)%dense.size()]) { same=false;break; }
             if (same) return true;
         }
         return false;
     };
+    double revisionedArea=0.0,oracleArea=0.0;
     for (const auto& cell:oracle.cells) {
         const auto found=revisioned.cells.find(sourceIdentity(cell));
+        std::vector<StableVertexId2D> loop;
+        for (const auto vertex:cell.vertices) loop.push_back(oracleStable.at(vertex));
         if (found==revisioned.cells.end() ||
             std::abs(found->second.area-cell.geometryArea)>
                 tol.scale(std::max({1.0,found->second.area,cell.geometryArea})) ||
-            !cyclicPointsEqual(found->second.vertices,cell.vertices)) return false;
+            !cyclicIdsEqual(found->second.vertices,loop)) return false;
+        revisionedArea+=found->second.area;
+        oracleArea+=cell.geometryArea;
     }
-    if (revisioned.edgeIncidences.size()!=oracle.edges.size()) return false;
-    // Cell loops plus a valid oracle uniquely determine edge incidence. This
-    // final count guard catches an otherwise hidden extra/missing stable edge.
+    if (std::abs(revisionedArea-oracleArea)>
+        tol.scale(std::max({1.0,revisionedArea,oracleArea}))) return false;
+    for (const auto& edge:oracle.edges) {
+        const auto key=edgeKey(oracleStable.at(edge.v0),oracleStable.at(edge.v1));
+        const auto uses=revisioned.edgeIncidences.find(key);
+        const auto patch=revisioned.edgePatches.find(key);
+        if (uses==revisioned.edgeIncidences.end() ||
+            patch==revisioned.edgePatches.end() || patch->second!=edge.patch ||
+            uses->second.size()!=(edge.neighbour?2U:1U)) return false;
+        std::set<SourceIdentity> expected{sourceIdentity(oracle.cells.at(edge.owner))};
+        if (edge.neighbour) expected.insert(sourceIdentity(oracle.cells.at(*edge.neighbour)));
+        std::set<SourceIdentity> actual;
+        for (const auto& use:uses->second) {
+            if (edgeKey(use.from,use.to)!=key) return false;
+            actual.insert(use.source);
+        }
+        if (actual!=expected) return false;
+    }
     return true;
 }
 
@@ -392,7 +447,7 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
     const TopologyMesh2D& baseTopology,const EdgeIncidenceStore2D& baseIncidence,
     const TopologyPatchTransaction2D& transaction,
     const std::vector<CutCell2D>& baseSourceCells,
-    const std::vector<CutCell2D>& replacementCells,
+    const std::vector<TopologyReplacementCell2D>& replacementCells,
     const Domain2D& domain,const BoundaryRegion2D& boundary,
     const TopologyPatchCommitGate2D& gate,const TolerancePolicy& tol) {
     TopologyPatchCommitResult2D result;
@@ -445,9 +500,9 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
         return result;
     }
     std::set<SourceIdentity> replacementIdentities;
-    for (const auto& cell:replacementCells) {
-        if (!cell.valid() || cell.kind==CutCellKind::Empty ||
-            cell.kind==CutCellKind::Unsupported ||
+    for (const auto& replacement:replacementCells) {
+        const auto& cell=replacement.cell;
+        if (!replacement.valid() ||
             !replacementIdentities.insert(sourceIdentity(cell)).second) {
             result.issues.push_back("replacement patch contains invalid or duplicate source cells");
             return result;
@@ -464,7 +519,8 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
 
     ++result.globalOracleBuildCount;
     ++result.profile.globalOracleBuildCount;
-    auto candidate=buildGlobalTopology(candidateSources,domain,boundary,tol);
+    auto candidate=buildGlobalTopology(candidateSources,domain,boundary,tol,
+                                       baseTopology.constructionRegistry);
     if (!candidate.valid()) {
         result.issues.push_back("replacement patch failed the global topology oracle");
         return result;
@@ -487,19 +543,17 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
         return result;
     }
     for (const auto& lock:transaction.boundaryLocks) {
-        bool matched=false;
-        for (const auto& edge:candidate.edges) {
-            const auto& a=candidate.vertices[edge.v0].point;
-            const auto& b=candidate.vertices[edge.v1].point;
-            if (!sameSegment(lock.a,lock.b,a,b,tol)) continue;
-            const bool ownerSelected=candidatePatchCells.contains(edge.owner);
-            const bool neighbourSelected=edge.neighbour &&
-                candidatePatchCells.contains(*edge.neighbour);
-            if (lock.physicalBoundary) {
-                matched=!edge.neighbour && ownerSelected && edge.patch==lock.patch;
-            } else matched=edge.neighbour && ownerSelected!=neighbourSelected;
-            if (matched) break;
-        }
+        const auto uses=result.revisionedTopology.edgeIncidences.find(lock.stableEdge);
+        const auto patch=result.revisionedTopology.edgePatches.find(lock.stableEdge);
+        bool matched=uses!=result.revisionedTopology.edgeIncidences.end() &&
+                     patch!=result.revisionedTopology.edgePatches.end() &&
+                     patch->second==lock.patch;
+        std::size_t selectedUses=0U;
+        if (matched) for (const auto& use:uses->second)
+            if (replacementIdentities.contains(use.source)) ++selectedUses;
+        if (lock.physicalBoundary)
+            matched=matched && uses->second.size()==1U && selectedUses==1U;
+        else matched=matched && uses->second.size()==2U && selectedUses==1U;
         if (!matched) {
             result.issues.push_back("replacement patch changed a locked boundary edge");
             return result;

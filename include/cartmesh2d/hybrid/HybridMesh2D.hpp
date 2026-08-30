@@ -100,6 +100,14 @@ struct HybridMeshMetrics2D {
     std::size_t solverCellCount = 0;
     std::size_t solverQualityAgglomerations = 0;
     std::size_t solverQualityRepartitions = 0;
+    std::size_t r1ShortFaceCandidates = 0;
+    std::size_t r1AcceptedTransactions = 0;
+    std::size_t r1CandidateGlobalTopologyBuilds = 0;
+    std::size_t r1GlobalOracleBuilds = 0;
+    double r1MinimumFaceOverLocalHBefore = 0.0;
+    double r1MinimumFaceOverLocalHAfter = 0.0;
+    bool r1PatchOutsideStableIdsUnchanged = true;
+    bool r1LocalDeltaMatchesGlobalOracle = true;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;

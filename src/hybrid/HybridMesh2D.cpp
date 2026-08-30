@@ -1134,6 +1134,65 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             :solverTopologyReport.issues.front();
         return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
     }
+    std::size_t r1ShortFaceCandidates=0U;
+    std::size_t r1AcceptedTransactions=0U;
+    std::size_t r1CandidateGlobalTopologyBuilds=0U;
+    std::size_t r1GlobalOracleBuilds=0U;
+    double r1MinimumFaceOverLocalHBefore=0.0;
+    double r1MinimumFaceOverLocalHAfter=0.0;
+    bool r1PatchOutsideStableIdsUnchanged=true;
+    bool r1LocalDeltaMatchesGlobalOracle=true;
+    if (localTermination) {
+        bool converged=false;
+        const double minimumFaceFraction=
+            QualityContract2D{}.termination.faceOverLocalBackgroundH.hard;
+        for (std::size_t iteration=0;iteration<32U;++iteration) {
+            std::vector<std::optional<std::size_t>> repairSources;
+            SourceLineageAudit2D repairLineageAudit;
+            const auto repairMetadata=qualityMetadataForSolver(
+                solverTopologyReport.topology,hybridSources,repairSources,
+                repairLineageAudit,false,policy.tolerance);
+            std::vector<double> localH;
+            std::vector<bool> rated;
+            for (const auto& metadata:repairMetadata) {
+                localH.push_back(metadata.localBackgroundH);
+                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
+                                metadata.type!=QualityCellType2D::Unknown);
+            }
+            auto repair=repairSolverShortFaces2D(
+                solverTopologyReport.topology,domain,originalWalls,
+                solverTopologyReport.immutableOutputCells,localH,rated,
+                minimumFaceFraction,policy.tolerance);
+            if (iteration==0U)
+                r1MinimumFaceOverLocalHBefore=repair.minimumFaceOverLocalHBefore;
+            r1MinimumFaceOverLocalHAfter=repair.minimumFaceOverLocalHAfter;
+            r1ShortFaceCandidates+=repair.candidateCount;
+            r1CandidateGlobalTopologyBuilds+=repair.candidateGlobalTopologyBuildCount;
+            r1GlobalOracleBuilds+=repair.globalOracleBuildCount;
+            if (!repair.valid()) {
+                const std::string detail=repair.issues.empty()
+                    ?"R1 patch-local short-face repair failed":repair.issues.front();
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+            }
+            if (!repair.accepted) {
+                converged=!repair.applicable || repair.hardFaceCountBefore==0U;
+                break;
+            }
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            r1PatchOutsideStableIdsUnchanged=
+                r1PatchOutsideStableIdsUnchanged && repair.patchOutsideStableIdsUnchanged;
+            r1LocalDeltaMatchesGlobalOracle=
+                r1LocalDeltaMatchesGlobalOracle && repair.localDeltaMatchesGlobalOracle;
+            ++r1AcceptedTransactions;
+            ++solverTopologyReport.qualityRepartitionCount;
+            ++solverTopologyReport.profile.acceptedTopologyCommitCount;
+        }
+        if (!converged)
+            return failed(HybridMeshFailureReason2D::SolverTopologyFailed,
+                          "R1 patch-local short-face transactions did not converge");
+        solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+    }
     if (std::count(solverTopologyReport.immutableOutputCells.begin(),
         solverTopologyReport.immutableOutputCells.end(),true)!=
         static_cast<std::ptrdiff_t>(layerCellCount)) {
@@ -1268,6 +1327,14 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         result.solverTopologyReport.qualityAgglomeratedSourceCellCount;
     result.metrics.solverQualityRepartitions=
         result.solverTopologyReport.qualityRepartitionCount;
+    result.metrics.r1ShortFaceCandidates=r1ShortFaceCandidates;
+    result.metrics.r1AcceptedTransactions=r1AcceptedTransactions;
+    result.metrics.r1CandidateGlobalTopologyBuilds=r1CandidateGlobalTopologyBuilds;
+    result.metrics.r1GlobalOracleBuilds=r1GlobalOracleBuilds;
+    result.metrics.r1MinimumFaceOverLocalHBefore=r1MinimumFaceOverLocalHBefore;
+    result.metrics.r1MinimumFaceOverLocalHAfter=r1MinimumFaceOverLocalHAfter;
+    result.metrics.r1PatchOutsideStableIdsUnchanged=r1PatchOutsideStableIdsUnchanged;
+    result.metrics.r1LocalDeltaMatchesGlobalOracle=r1LocalDeltaMatchesGlobalOracle;
     result.metrics.unifiedVertexCount = result.topology.vertices.size();
     result.metrics.unifiedEdgeCount = result.topology.edges.size();
     result.metrics.unifiedCellCount = result.topology.cells.size();
@@ -1597,6 +1664,23 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"vertex_count\": " << metrics.unifiedVertexCount << ",\n";
         out << "  \"edge_count\": " << metrics.unifiedEdgeCount << ",\n";
         out << "  \"cell_count\": " << metrics.unifiedCellCount << ",\n";
+        out << "  \"solver_cell_count\": " << metrics.solverCellCount << ",\n";
+        out << "  \"r1_short_face_candidate_count\": "
+            << metrics.r1ShortFaceCandidates << ",\n";
+        out << "  \"r1_accepted_transaction_count\": "
+            << metrics.r1AcceptedTransactions << ",\n";
+        out << "  \"r1_candidate_global_topology_build_count\": "
+            << metrics.r1CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"r1_global_oracle_build_count\": "
+            << metrics.r1GlobalOracleBuilds << ",\n";
+        out << "  \"r1_minimum_face_over_local_h_before\": "
+            << metrics.r1MinimumFaceOverLocalHBefore << ",\n";
+        out << "  \"r1_minimum_face_over_local_h_after\": "
+            << metrics.r1MinimumFaceOverLocalHAfter << ",\n";
+        out << "  \"r1_patch_outside_stable_ids_unchanged\": "
+            << (metrics.r1PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"r1_local_delta_matches_global_oracle\": "
+            << (metrics.r1LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
         out << "  \"construction_half_edge_count\": "
             << result.constructionIncidence.audit.halfEdges << ",\n";
         out << "  \"construction_twin_pair_count\": "
