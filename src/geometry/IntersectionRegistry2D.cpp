@@ -75,6 +75,20 @@ namespace {
         static_cast<std::uint64_t>(supportId)};
 }
 
+[[nodiscard]] const char* constructionDecisionName(
+    ConstructionDecision2D decision) noexcept {
+    switch (decision) {
+    case ConstructionDecision2D::ShadowOnly: return "shadow_only";
+    case ConstructionDecision2D::ReusedExactKey: return "reused_exact_key";
+    case ConstructionDecision2D::Accepted: return "accepted";
+    case ConstructionDecision2D::Rejected: return "rejected";
+    case ConstructionDecision2D::Refine: return "refine";
+    case ConstructionDecision2D::Resample: return "resample";
+    case ConstructionDecision2D::Rephase: return "rephase";
+    }
+    return "rejected";
+}
+
 } // namespace
 
 IntersectionRegistry2D::IntersectionRegistry2D(IntersectionRegistryPolicy2D policy)
@@ -143,29 +157,29 @@ Point2D IntersectionRegistry2D::canonicalize(
         consider(i, best, bestDistance);
     }
 
-    // R1-A shadow mode: the index must select exactly the same canonical
-    // vertex as the authoritative legacy scan before it may enter production.
-    std::optional<std::size_t> indexedBest;
-    double indexedDistance = std::numeric_limits<double>::infinity();
-    const auto indexedCandidates = shadowVertexStore_.query(
-        originalPoint, policy_.snapFractionOfLocalH * localH, supportId);
-    for (const auto stableId : indexedCandidates) {
-        if (stableId >= vertices_.size()) {
-            throw std::logic_error("R1-A shadow index returned an invalid stable vertex id");
-        }
-        consider(static_cast<std::size_t>(stableId), indexedBest, indexedDistance);
-    }
+    // R1-B production decision: typed feature compatibility and the spatial
+    // index select the anchor.  The legacy full scan remains a fail-closed
+    // oracle until the later hot-path-removal milestone.
+    auto proposalOwner = shadowOwner(feature, featureId, supportId);
+    if (protectedFeature(feature) && !featureId) proposalOwner.reset();
+    const auto decision = shadowVertexStore_.decideProximity({
+        originalPoint, localH, policy_.snapFractionOfLocalH,
+        shadowFeature(feature), proposalOwner, supportId,
+        protectedFeature(feature)});
+    const auto indexedBest = decision.canonicalId
+        ? std::optional<std::size_t>{static_cast<std::size_t>(*decision.canonicalId)}
+        : std::nullopt;
     if (indexedBest != best ||
-        (best && indexedDistance != bestDistance)) {
+        (best && decision.displacement != bestDistance)) {
         throw std::runtime_error(
-            "R1-A shadow feature index disagrees with legacy canonicalization scan");
+            "R1-B construction decision disagrees with legacy canonicalization scan");
     }
-    if (!best || bestDistance == 0.0) return originalPoint;
+    if (!indexedBest || decision.displacement == 0.0) return originalPoint;
 
-    const auto& canonical = vertices_[*best];
+    const auto& canonical = vertices_[*indexedBest];
     records_.push_back({records_.size(), source, sourceId, originalPoint,
-                        canonical, bestDistance, localH, feature, supportId,
-                        std::nullopt,std::nullopt});
+                        canonical, decision.displacement, localH, feature, supportId,
+                        std::nullopt,std::nullopt,decision.decision,decision.reason});
     return canonical.point;
 }
 
@@ -218,6 +232,10 @@ std::string intersectionRecordsToJson(
         if (r.solverVertexId) out<<*r.solverVertexId; else out<<"null";
         out<<", \"displacement\": "<<r.displacement<<", \"local_h\": "<<r.localH
            <<", \"displacement_over_local_h\": "<<r.displacement/r.localH
+           <<", \"construction_decision\": \""
+           <<constructionDecisionName(r.constructionDecision)
+           <<"\", \"construction_decision_reason\": \""
+           <<r.constructionDecisionReason<<"\""
            <<", \"feature_classification\": \""<<intersectionFeatureName(r.feature)
            <<"\", \"source_segment\": ";
         if (r.sourceSegment) {

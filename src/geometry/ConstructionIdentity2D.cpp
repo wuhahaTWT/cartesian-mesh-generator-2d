@@ -32,7 +32,54 @@ namespace {
                     b.parameterEnd, b.side);
 }
 
+[[nodiscard]] bool protectedProposal(ConstructionFeatureClass2D feature) noexcept {
+    return feature == ConstructionFeatureClass2D::ConvexSharp ||
+           feature == ConstructionFeatureClass2D::ConcaveSharp ||
+           feature == ConstructionFeatureClass2D::DomainCorner ||
+           feature == ConstructionFeatureClass2D::TransitionFixed;
+}
+
+[[nodiscard]] bool gapSide(ConstructionFeatureClass2D feature) noexcept {
+    return feature == ConstructionFeatureClass2D::GapSideA ||
+           feature == ConstructionFeatureClass2D::GapSideB;
+}
+
+[[nodiscard]] int anchorPriority(ConstructionFeatureClass2D feature) noexcept {
+    switch (feature) {
+    case ConstructionFeatureClass2D::ConvexSharp:
+    case ConstructionFeatureClass2D::ConcaveSharp:
+    case ConstructionFeatureClass2D::DomainCorner: return 0;
+    case ConstructionFeatureClass2D::TransitionFixed: return 1;
+    case ConstructionFeatureClass2D::TransitionMutable: return 2;
+    case ConstructionFeatureClass2D::Grid: return 3;
+    case ConstructionFeatureClass2D::GapSideA:
+    case ConstructionFeatureClass2D::GapSideB: return 4;
+    case ConstructionFeatureClass2D::Smooth: return 5;
+    case ConstructionFeatureClass2D::Unclassified: return 6;
+    }
+    return 6;
+}
+
 } // namespace
+
+ConstructionFeatureCompatibility2D constructionFeaturesCompatible(
+    ConstructionFeatureClass2D candidateClass,
+    const std::optional<FeatureOwner2D>& candidateOwner,
+    ConstructionFeatureClass2D anchorClass,
+    const std::optional<FeatureOwner2D>& anchorOwner) {
+    if (gapSide(candidateClass) || gapSide(anchorClass)) {
+        const bool same = candidateClass == anchorClass && candidateOwner &&
+                          anchorOwner && *candidateOwner == *anchorOwner;
+        return {same, same ? "same_gap_side_owner" : "gap_side_conflict"};
+    }
+    if (protectedProposal(candidateClass)) {
+        const bool same = candidateClass == anchorClass && candidateOwner &&
+                          anchorOwner && *candidateOwner == *anchorOwner;
+        return {same, same ? "same_protected_feature_owner"
+                           : "immutable_feature_conflict"};
+    }
+    return {true, "compatible_mutable_proposal"};
+}
 
 void FeatureVertexIndex2D::insert(StableVertexId2D id, const Point2D& point,
                                   double localH, std::size_t supportId) {
@@ -102,6 +149,7 @@ StableVertexId2D ConstructionVertexStore2D::addShadowVertex(
     record.id = id;
     record.key = {StableVertexKeyKind2D::LegacyCanonical,
                   static_cast<std::uint64_t>(supportId), id, 0, 0};
+    record.exactAliases.push_back(record.key);
     record.originalPosition = point;
     record.position = point;
     record.localH = localH;
@@ -109,8 +157,86 @@ StableVertexId2D ConstructionVertexStore2D::addShadowVertex(
     record.featureOwner = featureOwner;
     record.creationRevision = id;
     records_.push_back(std::move(record));
+    exactKeys_.emplace(records_.back().key, id);
     index_.insert(id, point, localH, supportId);
     return id;
+}
+
+void ConstructionVertexStore2D::bindExactKey(
+    const StableVertexKey2D& key, StableVertexId2D id) {
+    if (id >= records_.size()) {
+        throw std::out_of_range("exact construction key has invalid stable vertex id");
+    }
+    const auto [it, inserted] = exactKeys_.emplace(key, id);
+    if (!inserted && it->second != id) {
+        throw std::runtime_error("exact construction key conflicts with stable vertex id");
+    }
+    auto& aliases = records_[static_cast<std::size_t>(id)].exactAliases;
+    const auto position = std::lower_bound(aliases.begin(), aliases.end(), key);
+    if (position == aliases.end() || *position != key) aliases.insert(position, key);
+}
+
+std::optional<StableVertexId2D> ConstructionVertexStore2D::resolveExactKey(
+    const StableVertexKey2D& key) const {
+    const auto found = exactKeys_.find(key);
+    if (found == exactKeys_.end()) return std::nullopt;
+    return found->second;
+}
+
+ConstructionVertexDecisionResult2D ConstructionVertexStore2D::decideProximity(
+    const ConstructionVertexProposal2D& proposal) const {
+    if (!std::isfinite(proposal.originalPosition.x) ||
+        !std::isfinite(proposal.originalPosition.y) ||
+        !std::isfinite(proposal.localH) || !(proposal.localH > 0.0) ||
+        !std::isfinite(proposal.snapFraction) || proposal.snapFraction < 0.0 ||
+        proposal.snapFraction >= 0.5) {
+        throw std::invalid_argument("invalid construction vertex proposal");
+    }
+    ConstructionVertexDecisionResult2D result;
+    result.canonicalPoint = proposal.originalPosition;
+    const auto candidates = query(proposal.originalPosition,
+                                  proposal.snapFraction * proposal.localH,
+                                  proposal.supportId);
+    result.examinedCandidates = candidates.size();
+    std::optional<StableVertexId2D> best;
+    double bestDistance = std::numeric_limits<double>::infinity();
+    for (const auto id : candidates) {
+        if (id >= records_.size()) {
+            throw std::logic_error("feature index returned invalid stable vertex id");
+        }
+        const auto& anchor = records_[static_cast<std::size_t>(id)];
+        const auto compatibility = constructionFeaturesCompatible(
+            proposal.featureClass, proposal.featureOwner,
+            anchor.featureClass, anchor.featureOwner);
+        if (!compatibility.compatible) continue;
+        const double distance = std::sqrt(
+            squaredNorm(anchor.position - proposal.originalPosition));
+        const double admissible = proposal.snapFraction *
+                                  std::min(proposal.localH, anchor.localH);
+        if (proposal.immutableInputFeature && distance != 0.0) continue;
+        if (distance > admissible) continue;
+        if (!best || std::tuple(distance, anchorPriority(anchor.featureClass),
+                                anchor.position.x, anchor.position.y, anchor.id) <
+                     std::tuple(bestDistance,
+                                anchorPriority(records_[static_cast<std::size_t>(*best)].featureClass),
+                                records_[static_cast<std::size_t>(*best)].position.x,
+                                records_[static_cast<std::size_t>(*best)].position.y,
+                                records_[static_cast<std::size_t>(*best)].id)) {
+            best = id;
+            bestDistance = distance;
+        }
+    }
+    if (!best) {
+        result.reason = "no_compatible_anchor";
+        return result;
+    }
+    result.decision = ConstructionDecision2D::Accepted;
+    result.canonicalId = best;
+    result.canonicalPoint = records_[static_cast<std::size_t>(*best)].position;
+    result.displacement = bestDistance;
+    result.reason = bestDistance == 0.0 ? "exact_position_anchor"
+                                        : "compatible_proximity_anchor";
+    return result;
 }
 
 void ConstructionVertexStore2D::updateMetadata(

@@ -142,6 +142,12 @@ std::size_t IntersectionRegistry2D::registerSegment(const Segment2D& s,double h,
                                 static_cast<std::uint64_t>(id), 0U, 0.0, 1.0, 0};
     shadowVertexStore_.addSourceRef(static_cast<StableVertexId2D>(forward?a:b), sourceRef);
     shadowVertexStore_.addSourceRef(static_cast<StableVertexId2D>(forward?b:a), sourceRef);
+    shadowVertexStore_.bindExactKey(
+        {StableVertexKeyKind2D::SourceVertex, static_cast<std::uint64_t>(id),
+         0U, 0U, 0U}, static_cast<StableVertexId2D>(forward ? a : b));
+    shadowVertexStore_.bindExactKey(
+        {StableVertexKeyKind2D::SourceVertex, static_cast<std::uint64_t>(id),
+         1U, 0U, 0U}, static_cast<StableVertexId2D>(forward ? b : a));
     return id;
 }
 
@@ -158,6 +164,8 @@ std::string intersectionConstructionToJson(const IntersectionRegistry2D& registr
        <<",\"r1a_index_queries\":"<<profile.queryCount
        <<",\"r1a_index_examined_candidates\":"<<profile.examinedCandidateCount
        <<",\"r1a_index_maximum_query_candidates\":"<<profile.maximumQueryCandidateCount
+       <<",\"r1b_exact_key_count\":"<<shadow.exactKeyCount()
+       <<",\"r1b_proximity_decision_api\":true"
        <<",\"solver_vertex_handles\":[";
     for (std::size_t i=0;i<handles.size();++i) out<<(i?",":"")<<handles[i];
     out<<"],\"events\":[";
@@ -179,6 +187,13 @@ std::string intersectionConstructionToJson(const IntersectionRegistry2D& registr
 std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLineIdentity2D line,double h) {
     if (!(h>0) || !std::isfinite(h)) throw std::invalid_argument("intersection requires positive local_h");
     const auto key=std::pair(support,line);
+    const auto keyKind = supports_.at(support).source ==
+            IntersectionSource2D::TransitionEnvelopeCartesian
+        ? StableVertexKeyKind2D::TransitionVertex
+        : StableVertexKeyKind2D::WallGridIntersection;
+    const StableVertexKey2D typedEventKey{
+        keyKind, static_cast<std::uint64_t>(support),
+        static_cast<std::uint64_t>(line.axis), line.coordinate, 0U};
     if (const auto it=eventKeys_.find(key);it!=eventKeys_.end()) {
         ++cacheHits_;
         events_[it->second].localH=std::min(events_[it->second].localH,h);
@@ -187,6 +202,11 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
         shadowVertexStore_.updateMetadata(
             static_cast<StableVertexId2D>(vertex.id), vertex.localH,
             shadowFeature(vertex.feature), std::nullopt);
+        const auto typedId = shadowVertexStore_.resolveExactKey(typedEventKey);
+        if (!typedId || *typedId != static_cast<StableVertexId2D>(vertex.id)) {
+            throw std::runtime_error(
+                "typed intersection event key disagrees with event cache");
+        }
         return events_[it->second].canonicalVertex;
     }
     const auto& s=supports_.at(support);
@@ -226,7 +246,36 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
                 feature=IntersectionFeature2D::CartesianGridVertex;
             }
         }
-        id=internVertex(p,h,feature);
+        std::optional<StableVertexKey2D> gridVertexKey;
+        if (feature == IntersectionFeature2D::CartesianGridVertex) {
+            const auto x = gridLine(0U, p.x);
+            const auto y = gridLine(1U, p.y);
+            gridVertexKey = StableVertexKey2D{
+                StableVertexKeyKind2D::GridVertex, 0U, 0U,
+                x.coordinate, y.coordinate};
+        }
+        if (gridVertexKey) {
+            const auto stableId = shadowVertexStore_.resolveExactKey(*gridVertexKey);
+            if (stableId) {
+                if (*stableId >= vertices_.size() ||
+                    vertices_[static_cast<std::size_t>(*stableId)].point.x != p.x ||
+                    vertices_[static_cast<std::size_t>(*stableId)].point.y != p.y) {
+                    throw std::runtime_error(
+                        "typed grid vertex key disagrees with committed geometry");
+                }
+                id = static_cast<std::size_t>(*stableId);
+                vertices_[id].localH = std::min(vertices_[id].localH, h);
+                shadowVertexStore_.updateMetadata(
+                    *stableId, vertices_[id].localH,
+                    shadowFeature(vertices_[id].feature), std::nullopt);
+            } else {
+                id=internVertex(p,h,feature);
+                shadowVertexStore_.bindExactKey(
+                    *gridVertexKey, static_cast<StableVertexId2D>(id));
+            }
+        } else {
+            id=internVertex(p,h,feature);
+        }
         const auto anchorFeature=vertices_[id].feature;
         if (squaredNorm(p-raw)>0 &&
             (anchorFeature==IntersectionFeature2D::Smooth ||
@@ -254,6 +303,15 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
         {shadowSource(s.source), static_cast<std::uint64_t>(support),
          static_cast<std::uint64_t>(line.coordinate), t, t,
          static_cast<int>(line.axis)});
+    shadowVertexStore_.bindExactKey(
+        typedEventKey, static_cast<StableVertexId2D>(id));
+    if (vertices_[id].feature == IntersectionFeature2D::CartesianGridVertex) {
+        const auto x = gridLine(0U, canonical.x);
+        const auto y = gridLine(1U, canonical.y);
+        shadowVertexStore_.bindExactKey(
+            {StableVertexKeyKind2D::GridVertex, 0U, 0U,
+             x.coordinate, y.coordinate}, static_cast<StableVertexId2D>(id));
+    }
     return id;
 }
 

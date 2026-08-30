@@ -19,6 +19,78 @@ int main() {
     check(TransitionCanonicalizationPolicy2D{}.minimumFaceFraction==
           QualityContract2D{}.transition.faceOverLocalBackgroundH.hard,
           "sampling criterion equals the unchanged Q1 face/local_h hard limit");
+    {
+        const FeatureOwner2D ownerA{ConstructionSourceKind2D::WallSegment, 7U, 1U};
+        const FeatureOwner2D ownerB{ConstructionSourceKind2D::WallSegment, 8U, 1U};
+        check(constructionFeaturesCompatible(
+                  ConstructionFeatureClass2D::ConvexSharp, ownerA,
+                  ConstructionFeatureClass2D::ConvexSharp, ownerA).compatible,
+              "same sharp feature owner is compatible");
+        check(!constructionFeaturesCompatible(
+                   ConstructionFeatureClass2D::ConvexSharp, ownerA,
+                   ConstructionFeatureClass2D::ConcaveSharp, ownerA).compatible &&
+              !constructionFeaturesCompatible(
+                   ConstructionFeatureClass2D::ConcaveSharp, ownerA,
+                   ConstructionFeatureClass2D::ConcaveSharp, ownerB).compatible,
+              "sharp/concave type and owner conflicts are explicit");
+        check(!constructionFeaturesCompatible(
+                   ConstructionFeatureClass2D::GapSideA, ownerA,
+                   ConstructionFeatureClass2D::GapSideB, ownerA).compatible &&
+              !constructionFeaturesCompatible(
+                   ConstructionFeatureClass2D::GapSideA, ownerA,
+                   ConstructionFeatureClass2D::GapSideA, ownerB).compatible &&
+              constructionFeaturesCompatible(
+                   ConstructionFeatureClass2D::GapSideA, ownerA,
+                   ConstructionFeatureClass2D::GapSideA, ownerA).compatible,
+              "gap sides require identical side class and owner");
+        check(constructionFeaturesCompatible(
+                  ConstructionFeatureClass2D::Smooth, std::nullopt,
+                  ConstructionFeatureClass2D::ConvexSharp, ownerA).compatible,
+              "a movable sample may reuse an immutable sharp anchor");
+    }
+    {
+        ConstructionVertexStore2D store;
+        const auto left = store.addShadowVertex(
+            {-0.25, 0.0}, 1.0, ConstructionFeatureClass2D::Smooth,
+            std::nullopt, 3U);
+        const auto right = store.addShadowVertex(
+            {0.25, 0.0}, 1.0, ConstructionFeatureClass2D::Smooth,
+            std::nullopt, 3U);
+        const StableVertexKey2D key{StableVertexKeyKind2D::GridVertex,
+                                    0U, 0U, 4U, 5U};
+        store.bindExactKey(key, left);
+        store.bindExactKey(key, left);
+        check(store.resolveExactKey(key) == left,
+              "typed exact key binding is idempotent");
+        bool conflict = false;
+        try { store.bindExactKey(key, right); }
+        catch (const std::runtime_error&) { conflict = true; }
+        check(conflict, "typed exact key conflict fails closed");
+        const auto decision = store.decideProximity(
+            {{0.0, 0.0}, 1.0, 0.3, ConstructionFeatureClass2D::Smooth,
+             std::nullopt, 3U, false});
+        check(decision.canonicalId == left && equal(decision.canonicalPoint, {-0.25, 0.0}),
+              "equidistant proximity decision is geometric and deterministic");
+    }
+    {
+        ConstructionVertexStore2D store;
+        const FeatureOwner2D sideA{ConstructionSourceKind2D::WallSegment, 10U, 0U};
+        const FeatureOwner2D sideB{ConstructionSourceKind2D::WallSegment, 11U, 0U};
+        (void)store.addShadowVertex({0.0, 0.0}, 1.0,
+                                    ConstructionFeatureClass2D::GapSideA,
+                                    sideA, 9U);
+        const auto gapDecision = store.decideProximity(
+            {{1.e-3, 0.0}, 1.0, 0.1, ConstructionFeatureClass2D::GapSideB,
+             sideB, 9U, false});
+        check(!gapDecision.canonicalId &&
+              equal(gapDecision.canonicalPoint, {1.e-3, 0.0}),
+              "opposite gap sides remain distinct inside snap radius");
+        const auto sharpDecision = store.decideProximity(
+            {{1.e-3, 0.0}, 1.0, 0.1, ConstructionFeatureClass2D::ConvexSharp,
+             sideA, 9U, true});
+        check(!sharpDecision.canonicalId,
+              "immutable sharp proposal is never displaced");
+    }
     for (const double scale:{1.e-6,1.0,1.e6}) {
         IntersectionRegistry2D registry({1.e-6});
         // Exact Q1 failure coordinates, not a zeroed/truncated fixture.

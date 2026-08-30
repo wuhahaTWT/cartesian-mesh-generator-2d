@@ -88,6 +88,7 @@ enum class ConstructionDecision2D {
 struct ConstructionVertexRecord2D {
     StableVertexId2D id = 0;
     StableVertexKey2D key;
+    std::vector<StableVertexKey2D> exactAliases;
     Point2D originalPosition;
     Point2D position;
     double localH = 0.0;
@@ -99,6 +100,37 @@ struct ConstructionVertexRecord2D {
     ConstructionDecision2D decision = ConstructionDecision2D::ShadowOnly;
     std::string decisionReason = "r1a_shadow";
     std::uint64_t creationRevision = 0;
+};
+
+struct ConstructionFeatureCompatibility2D {
+    bool compatible = false;
+    std::string reason;
+};
+
+[[nodiscard]] ConstructionFeatureCompatibility2D constructionFeaturesCompatible(
+    ConstructionFeatureClass2D candidateClass,
+    const std::optional<FeatureOwner2D>& candidateOwner,
+    ConstructionFeatureClass2D anchorClass,
+    const std::optional<FeatureOwner2D>& anchorOwner);
+
+struct ConstructionVertexProposal2D {
+    Point2D originalPosition;
+    double localH = 0.0;
+    double snapFraction = 0.0;
+    ConstructionFeatureClass2D featureClass =
+        ConstructionFeatureClass2D::Unclassified;
+    std::optional<FeatureOwner2D> featureOwner;
+    std::size_t supportId = 0;
+    bool immutableInputFeature = false;
+};
+
+struct ConstructionVertexDecisionResult2D {
+    ConstructionDecision2D decision = ConstructionDecision2D::Rejected;
+    std::optional<StableVertexId2D> canonicalId;
+    Point2D canonicalPoint;
+    double displacement = 0.0;
+    std::string reason;
+    std::size_t examinedCandidates = 0;
 };
 
 struct FeatureVertexIndexProfile2D {
@@ -147,6 +179,11 @@ public:
                         ConstructionFeatureClass2D featureClass,
                         std::optional<FeatureOwner2D> featureOwner);
     void addSourceRef(StableVertexId2D id, SourceRef2D sourceRef);
+    void bindExactKey(const StableVertexKey2D& key, StableVertexId2D id);
+    [[nodiscard]] std::optional<StableVertexId2D> resolveExactKey(
+        const StableVertexKey2D& key) const;
+    [[nodiscard]] ConstructionVertexDecisionResult2D decideProximity(
+        const ConstructionVertexProposal2D& proposal) const;
     [[nodiscard]] std::vector<StableVertexId2D> query(
         const Point2D& point, double radius, std::size_t supportId) const;
 
@@ -156,10 +193,14 @@ public:
     [[nodiscard]] const FeatureVertexIndexProfile2D& indexProfile() const noexcept {
         return index_.profile();
     }
+    [[nodiscard]] std::size_t exactKeyCount() const noexcept {
+        return exactKeys_.size();
+    }
 
 private:
     std::vector<ConstructionVertexRecord2D> records_;
     FeatureVertexIndex2D index_;
+    std::map<StableVertexKey2D, StableVertexId2D> exactKeys_;
 };
 
 } // namespace cartmesh2d

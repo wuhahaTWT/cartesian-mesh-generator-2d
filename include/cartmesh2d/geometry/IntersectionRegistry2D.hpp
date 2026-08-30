@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <optional>
 #include <limits>
+#include <string>
 #include <vector>
 #include <map>
 #include <tuple>
@@ -52,6 +53,8 @@ struct CanonicalizedIntersection2D {
     std::size_t supportId = 0U;
     std::optional<Segment2D> sourceSegment;
     std::optional<std::size_t> solverVertexId;
+    ConstructionDecision2D constructionDecision = ConstructionDecision2D::Accepted;
+    std::string constructionDecisionReason = "compatible_proximity_anchor";
 };
 
 struct IntersectionRegistryPolicy2D {

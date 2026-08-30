@@ -81,6 +81,19 @@ int main(int argc,char** argv) {
         check(id==registry.intersectGridLine(support,x,scale/8),"coarse/fine calls reuse one intersection");
         const auto y=registry.gridLine(1,.5*scale);
         check(id==registry.intersectGridLine(support,y,scale/8),"exact grid corner shares one vertex");
+        const auto& exactStore=registry.shadowVertexStore();
+        check(exactStore.resolveExactKey(
+                  {StableVertexKeyKind2D::SourceVertex,
+                   static_cast<std::uint64_t>(support),0U,0U,0U}) ==
+                  static_cast<StableVertexId2D>(registry.internVertex(
+                      s.a,scale/8,IntersectionFeature2D::Smooth)),
+              "source endpoint has a typed exact alias");
+        check(exactStore.resolveExactKey(
+                  {StableVertexKeyKind2D::WallGridIntersection,
+                   static_cast<std::uint64_t>(support),0U,8U,0U}) == id &&
+              exactStore.resolveExactKey(
+                  {StableVertexKeyKind2D::GridVertex,0U,0U,8U,8U}) == id,
+              "wall-grid event and grid corner resolve to one stable id");
         check(registry.events().size()==2 && registry.intersectionCacheHits()==1,"one solve per support/grid line");
         check(registry.events()[0].localH==scale/8,"event records smallest incident local_h");
         const auto sharp=registry.internVertex(s.a,scale/8,IntersectionFeature2D::WallSharpCorner);
