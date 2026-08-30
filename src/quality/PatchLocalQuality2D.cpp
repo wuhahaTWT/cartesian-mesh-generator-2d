@@ -40,27 +40,6 @@ struct ScopeUse {
     return before-after<=1.0e-8*std::max(1.0,std::abs(before));
 }
 
-// A patch-local short-face improvement must remain a strict improvement after
-// any unchanged outside-of-scope contribution is restored. If the hard-count
-// drops, the global hard-count necessarily drops by the same amount. Otherwise
-// the local maximum severity may not increase and the additive total severity
-// must strictly decrease. The latter is essential: a local decrease in maximum
-// severity alone can be hidden by a worse unchanged face outside the patch,
-// exposing an increased total severity and reversing the global lexicographic
-// score.
-[[nodiscard]] constexpr bool shortFaceImprovementImpliesGlobal(
-    std::size_t candidateHard,double candidateMaximum,double candidateTotal,
-    std::size_t baseHard,double baseMaximum,double baseTotal) noexcept {
-    if (candidateHard<baseHard) return true;
-    if (candidateHard!=baseHard) return false;
-    return candidateMaximum<=baseMaximum && candidateTotal<baseTotal;
-}
-
-static_assert(shortFaceImprovementImpliesGlobal(0U,100.0,100.0,1U,1.0,1.0));
-static_assert(shortFaceImprovementImpliesGlobal(1U,4.0,4.0,1U,5.0,5.0));
-static_assert(!shortFaceImprovementImpliesGlobal(1U,4.0,6.0,1U,5.0,5.0));
-static_assert(!shortFaceImprovementImpliesGlobal(1U,6.0,4.0,1U,5.0,5.0));
-
 } // namespace
 
 PatchLocalQuality2D evaluatePatchLocalQuality2D(
@@ -239,7 +218,7 @@ bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
         noWorseLower(candidate.minFaceWeight,base.minFaceWeight) &&
         noWorseLower(candidate.minVolumeRatio,base.minVolumeRatio) &&
         noWorseLower(candidate.minCompactness,base.minCompactness);
-    return solverNoWorse && shortFaceImprovementImpliesGlobal(
+    return solverNoWorse && detail::patchLocalShortFaceImprovementImpliesGlobal(
         candidate.hardShortFaceCount,candidate.maximumShortFaceSeverity,
         candidate.totalShortFaceSeverity,base.hardShortFaceCount,
         base.maximumShortFaceSeverity,base.totalShortFaceSeverity);
@@ -275,30 +254,7 @@ PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
 
 bool patchLocalRankBetter2D(const PatchLocalRank2D& candidate,
                            const PatchLocalRank2D& current) noexcept {
-    return std::tie(candidate.hardShortFaceDelta,
-                    candidate.maximumShortFaceSeverityDelta,
-                    candidate.totalShortFaceSeverityDelta,
-                    candidate.issueDelta,
-                    candidate.maximumIssueSeverityDelta,
-                    candidate.totalIssueSeverityDelta,
-                    candidate.maximumShortFaceSeverity,
-                    candidate.maxNonOrthogonalityDeg,
-                    candidate.maxInternalSkewness,
-                    candidate.maxCellAspect,
-                    candidate.firstCellId,
-                    candidate.secondCellId)<
-           std::tie(current.hardShortFaceDelta,
-                    current.maximumShortFaceSeverityDelta,
-                    current.totalShortFaceSeverityDelta,
-                    current.issueDelta,
-                    current.maximumIssueSeverityDelta,
-                    current.totalIssueSeverityDelta,
-                    current.maximumShortFaceSeverity,
-                    current.maxNonOrthogonalityDeg,
-                    current.maxInternalSkewness,
-                    current.maxCellAspect,
-                    current.firstCellId,
-                    current.secondCellId);
+    return detail::patchLocalRankKeyLess(candidate,current);
 }
 
 PatchLocalScope2D buildPatchLocalScope2D(
