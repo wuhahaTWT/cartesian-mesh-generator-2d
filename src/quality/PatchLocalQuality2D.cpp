@@ -218,30 +218,60 @@ bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
            noWorseLower(candidate.minCompactness,base.minCompactness);
 }
 
-bool patchLocalQualityRanksBetter2D(const PatchLocalQuality2D& candidate,
-                                   const PatchLocalQuality2D& current) noexcept {
-    if (!candidate.valid()) return false;
-    if (!current.valid()) return true;
-    return std::tie(candidate.hardShortFaceCount,
+PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
+                                 const PatchLocalQuality2D& candidate,
+                                 std::size_t firstCellId,
+                                 std::size_t secondCellId) noexcept {
+    PatchLocalRank2D rank;
+    const auto signedDelta=[](std::size_t after,std::size_t before) {
+        return static_cast<std::ptrdiff_t>(after)-static_cast<std::ptrdiff_t>(before);
+    };
+    rank.hardShortFaceDelta=signedDelta(candidate.hardShortFaceCount,
+                                        base.hardShortFaceCount);
+    rank.maximumShortFaceSeverityDelta=
+        candidate.maximumShortFaceSeverity-base.maximumShortFaceSeverity;
+    rank.totalShortFaceSeverityDelta=
+        candidate.totalShortFaceSeverity-base.totalShortFaceSeverity;
+    rank.issueDelta=signedDelta(candidate.issueCount,base.issueCount);
+    rank.maximumIssueSeverityDelta=
+        candidate.maximumIssueSeverity-base.maximumIssueSeverity;
+    rank.totalIssueSeverityDelta=
+        candidate.totalIssueSeverity-base.totalIssueSeverity;
+    rank.maximumShortFaceSeverity=candidate.maximumShortFaceSeverity;
+    rank.maxNonOrthogonalityDeg=candidate.maxNonOrthogonalityDeg;
+    rank.maxInternalSkewness=candidate.maxInternalSkewness;
+    rank.maxCellAspect=candidate.maxCellAspect;
+    rank.firstCellId=firstCellId;
+    rank.secondCellId=secondCellId;
+    return rank;
+}
+
+bool patchLocalRankBetter2D(const PatchLocalRank2D& candidate,
+                           const PatchLocalRank2D& current) noexcept {
+    return std::tie(candidate.hardShortFaceDelta,
+                    candidate.maximumShortFaceSeverityDelta,
+                    candidate.totalShortFaceSeverityDelta,
+                    candidate.issueDelta,
+                    candidate.maximumIssueSeverityDelta,
+                    candidate.totalIssueSeverityDelta,
                     candidate.maximumShortFaceSeverity,
-                    candidate.totalShortFaceSeverity,
-                    candidate.issueCount,
-                    candidate.maximumIssueSeverity,
-                    candidate.totalIssueSeverity,
                     candidate.maxNonOrthogonalityDeg,
                     candidate.maxInternalSkewness,
-                    candidate.maxBoundarySkewness,
-                    candidate.maxCellAspect)<
-           std::tie(current.hardShortFaceCount,
+                    candidate.maxCellAspect,
+                    candidate.firstCellId,
+                    candidate.secondCellId)<
+           std::tie(current.hardShortFaceDelta,
+                    current.maximumShortFaceSeverityDelta,
+                    current.totalShortFaceSeverityDelta,
+                    current.issueDelta,
+                    current.maximumIssueSeverityDelta,
+                    current.totalIssueSeverityDelta,
                     current.maximumShortFaceSeverity,
-                    current.totalShortFaceSeverity,
-                    current.issueCount,
-                    current.maximumIssueSeverity,
-                    current.totalIssueSeverity,
                     current.maxNonOrthogonalityDeg,
                     current.maxInternalSkewness,
-                    current.maxBoundarySkewness,
-                    current.maxCellAspect);
+                    current.maxCellAspect,
+                    current.firstCellId,
+                    current.secondCellId);
 }
 
 PatchLocalScope2D buildPatchLocalScope2D(    const TopologyMesh2D& topology,const EdgeIncidenceStore2D& incidence,

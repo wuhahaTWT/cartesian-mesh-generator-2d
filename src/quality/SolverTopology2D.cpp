@@ -1533,8 +1533,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
         std::vector<std::size_t> selected;
         TopologyPatchTransaction2D transaction;
         std::vector<TopologyReplacementCell2D> replacements;
-        PatchLocalQuality2D baseLocal;
-        PatchLocalQuality2D candidateLocal;
+        PatchLocalRank2D rank;
     };
     std::optional<ShortFaceCandidate2D> winner;
     std::string localRejectReason;
@@ -1697,10 +1696,9 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
             localRejectReason="patch-local candidate does not reduce the local short-face score";
             continue;
         }
-        ShortFaceCandidate2D accepted{first,second,selected,transaction,
-                                      replacements,baseLocal,candidateLocal};
-        if (!winner || patchLocalQualityRanksBetter2D(candidateLocal,
-                                                     winner->candidateLocal))
+        ShortFaceCandidate2D accepted{first,second,selected,transaction,replacements,
+            patchLocalRank2D(baseLocal,candidateLocal,first,second)};
+        if (!winner || patchLocalRankBetter2D(accepted.rank,winner->rank))
             winner=std::move(accepted);
     }
     if (!winner) {
