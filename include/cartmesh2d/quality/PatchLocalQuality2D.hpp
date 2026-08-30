@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace cartmesh2d {
@@ -74,10 +75,39 @@ struct PatchLocalQuality2D {
     const std::vector<PatchLocalCell2D>& scope, double minimumFaceOverLocalH,
     const SolverQualityPolicy2D& policy = {}, const TolerancePolicy& tol = {});
 
-// Mirrors the authoritative no-worse comparison used against full global
-// quality, restricted to the local scope.  Because the excluded remainder is
-// identical in both states, a local pass implies the same global pass for each
-// monotone aggregate.
+namespace detail {
+
+// Sufficient condition for the local short-face lexicographic score to remain
+// a strict improvement after any unchanged outside-of-scope faces are restored.
+// When hard count is unchanged, maximum severity may not increase and the
+// additive total severity must strictly decrease. A local maximum-only decrease
+// is insufficient because an unchanged worse face outside the patch can hide it.
+[[nodiscard]] constexpr bool patchLocalShortFaceImprovementImpliesGlobal(
+    std::size_t candidateHard,double candidateMaximum,double candidateTotal,
+    std::size_t baseHard,double baseMaximum,double baseTotal) noexcept {
+    if (candidateHard<baseHard) return true;
+    if (candidateHard!=baseHard) return false;
+    return candidateMaximum<=baseMaximum && candidateTotal<baseTotal;
+}
+
+static_assert(patchLocalShortFaceImprovementImpliesGlobal(
+    0U,100.0,100.0,1U,1.0,1.0));
+static_assert(patchLocalShortFaceImprovementImpliesGlobal(
+    1U,4.0,4.0,1U,5.0,5.0));
+// Counterexample closed by R1 closeout: a lower local maximum accompanied by a
+// higher total can become globally worse when an unchanged outside face owns
+// the global maximum.
+static_assert(!patchLocalShortFaceImprovementImpliesGlobal(
+    1U,4.0,6.0,1U,5.0,5.0));
+static_assert(!patchLocalShortFaceImprovementImpliesGlobal(
+    1U,6.0,4.0,1U,5.0,5.0));
+
+} // namespace detail
+
+// Patch-local commit gate. Besides the authoritative solver no-worse metrics,
+// this enforces the sufficient short-face condition above, so a local pass
+// implies that restoring the unchanged remainder cannot reverse the global
+// short-face lexicographic improvement.
 [[nodiscard]] bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
                                               const PatchLocalQuality2D& base) noexcept;
 
@@ -103,6 +133,79 @@ struct PatchLocalRank2D {
     std::size_t firstCellId = 0;
     std::size_t secondCellId = 0;
 };
+
+namespace detail {
+
+[[nodiscard]] constexpr bool patchLocalRankKeyLess(
+    const PatchLocalRank2D& candidate,const PatchLocalRank2D& current) noexcept {
+    return std::tuple{
+               candidate.hardShortFaceDelta,
+               candidate.maximumShortFaceSeverityDelta,
+               candidate.totalShortFaceSeverityDelta,
+               candidate.issueDelta,
+               candidate.maximumIssueSeverityDelta,
+               candidate.totalIssueSeverityDelta,
+               candidate.maximumShortFaceSeverity,
+               candidate.maxNonOrthogonalityDeg,
+               candidate.maxInternalSkewness,
+               candidate.maxCellAspect,
+               candidate.firstCellId,
+               candidate.secondCellId}<
+           std::tuple{
+               current.hardShortFaceDelta,
+               current.maximumShortFaceSeverityDelta,
+               current.totalShortFaceSeverityDelta,
+               current.issueDelta,
+               current.maximumIssueSeverityDelta,
+               current.totalIssueSeverityDelta,
+               current.maximumShortFaceSeverity,
+               current.maxNonOrthogonalityDeg,
+               current.maxInternalSkewness,
+               current.maxCellAspect,
+               current.firstCellId,
+               current.secondCellId};
+}
+
+constexpr PatchLocalRank2D relativeImprovementRank=[] {
+    PatchLocalRank2D rank;
+    rank.hardShortFaceDelta=-1;
+    rank.maximumShortFaceSeverityDelta=-2.0;
+    rank.totalShortFaceSeverityDelta=-8.0;
+    rank.maximumShortFaceSeverity=8.0;
+    rank.firstCellId=10U;
+    rank.secondCellId=11U;
+    return rank;
+}();
+constexpr PatchLocalRank2D lowerAbsoluteButSmallerImprovementRank=[] {
+    PatchLocalRank2D rank;
+    rank.hardShortFaceDelta=-1;
+    rank.maximumShortFaceSeverityDelta=-2.0;
+    rank.totalShortFaceSeverityDelta=-3.0;
+    rank.maximumShortFaceSeverity=0.0;
+    rank.firstCellId=1U;
+    rank.secondCellId=2U;
+    return rank;
+}();
+static_assert(patchLocalRankKeyLess(
+    relativeImprovementRank,lowerAbsoluteButSmallerImprovementRank));
+
+constexpr PatchLocalRank2D lowIdTieRank=[] {
+    PatchLocalRank2D rank;
+    rank.hardShortFaceDelta=-1;
+    rank.totalShortFaceSeverityDelta=-1.0;
+    rank.firstCellId=2U;
+    rank.secondCellId=3U;
+    return rank;
+}();
+constexpr PatchLocalRank2D highIdTieRank=[] {
+    PatchLocalRank2D rank=lowIdTieRank;
+    rank.firstCellId=7U;
+    rank.secondCellId=8U;
+    return rank;
+}();
+static_assert(patchLocalRankKeyLess(lowIdTieRank,highIdTieRank));
+
+} // namespace detail
 
 [[nodiscard]] PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
                                                 const PatchLocalQuality2D& candidate,
