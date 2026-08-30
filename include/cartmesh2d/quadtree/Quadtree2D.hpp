@@ -1,6 +1,7 @@
 #pragma once
 #include "cartmesh2d/grid/CartesianGrid2D.hpp"
 #include "cartmesh2d/spatial/BoundarySegmentIndex2D.hpp"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -36,6 +37,25 @@ struct QuadtreeBalanceReport2D {
     std::size_t faceNeighborCalls = 0;
     double faceNeighborSeconds = 0.0;
 };
+struct QuadtreeRefinementLineage2D {
+    std::uint64_t parentKey = 0;
+    std::size_t parentLevel = 0;
+    std::array<std::uint64_t,4> childKeys{};
+    bool closure = false;
+};
+struct QuadtreeLocalRefinementReport2D {
+    std::vector<std::uint64_t> requestedKeys;
+    std::vector<std::uint64_t> rejectedKeys;
+    std::vector<QuadtreeRefinementLineage2D> lineage;
+    std::size_t requestedRefinedLeaves = 0;
+    std::size_t closureRefinedLeaves = 0;
+    std::size_t closureIterations = 0;
+    std::size_t violationsBefore = 0;
+    std::size_t violationsAfter = 0;
+    [[nodiscard]] bool pass() const noexcept {
+        return rejectedKeys.empty() && violationsAfter == 0;
+    }
+};
 class Quadtree2D {
 public:
     Quadtree2D(Domain2D domain, std::size_t maxLevel, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
@@ -47,6 +67,12 @@ public:
     void refine(const BoundaryRegion2D& boundary, const QuadtreeRefinementPolicy2D& policy, const TolerancePolicy& tol = {});
     [[nodiscard]] bool refineLeafByKey(std::uint64_t key, const BoundaryLoop& boundary, const TolerancePolicy& tol = {});
     [[nodiscard]] bool refineLeafByKey(std::uint64_t key, const BoundaryRegion2D& boundary, const TolerancePolicy& tol = {});
+    [[nodiscard]] QuadtreeLocalRefinementReport2D refineLeavesWithClosure(
+        std::vector<std::uint64_t> keys, const BoundaryLoop& boundary,
+        const TolerancePolicy& tol = {});
+    [[nodiscard]] QuadtreeLocalRefinementReport2D refineLeavesWithClosure(
+        std::vector<std::uint64_t> keys, const BoundaryRegion2D& boundary,
+        const TolerancePolicy& tol = {});
     [[nodiscard]] std::vector<FaceNeighborPair2D> faceNeighbors() const;
     [[nodiscard]] std::size_t countBalanceViolations() const;
     [[nodiscard]] QuadtreeBalanceReport2D enforceTwoToOneBalance(const BoundaryLoop& boundary, const TolerancePolicy& tol = {});

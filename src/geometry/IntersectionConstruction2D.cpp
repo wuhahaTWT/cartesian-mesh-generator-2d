@@ -46,6 +46,60 @@ constexpr double arithmeticFractionOfLocalH =
     }
     return ConstructionSourceKind2D::Unknown;
 }
+
+[[nodiscard]] const char* decisionName(ConstructionDecision2D decision) noexcept {
+    switch (decision) {
+    case ConstructionDecision2D::ShadowOnly: return "shadow_only";
+    case ConstructionDecision2D::ReusedExactKey: return "reused_exact_key";
+    case ConstructionDecision2D::Accepted: return "accepted";
+    case ConstructionDecision2D::Rejected: return "rejected";
+    case ConstructionDecision2D::Refine: return "refine";
+    case ConstructionDecision2D::Resample: return "resample";
+    case ConstructionDecision2D::Rephase: return "rephase";
+    }
+    return "rejected";
+}
+}
+
+ConstructionConflict2D::ConstructionConflict2D(
+    ConstructionRecoveryRequest2D request)
+    : std::runtime_error(request.reason), request_(std::move(request)) {}
+
+const char* constructionConflictName(ConstructionConflictKind2D kind) noexcept {
+    switch (kind) {
+    case ConstructionConflictKind2D::LateNonIncidentFeature:
+        return "late_nonincident_feature";
+    case ConstructionConflictKind2D::NonIncidentFeatureSnap:
+        return "nonincident_feature_snap";
+    case ConstructionConflictKind2D::NonIncidentGridCorner:
+        return "nonincident_grid_corner";
+    }
+    return "nonincident_feature_snap";
+}
+
+[[noreturn]] void IntersectionRegistry2D::raiseConstructionConflict(
+    ConstructionConflictKind2D kind,std::size_t support,GridLineIdentity2D line,
+    const Point2D& originalPoint,const Point2D& conflictingPoint,double localH,
+    double sourceParameter,std::string reason) {
+    const auto& source=supports_.at(support);
+    const auto keyKind=source.source==IntersectionSource2D::TransitionEnvelopeCartesian
+        ?StableVertexKeyKind2D::TransitionVertex
+        :StableVertexKeyKind2D::WallGridIntersection;
+    ConstructionRecoveryRequest2D request;
+    request.conflictKey={keyKind,static_cast<std::uint64_t>(support),
+        static_cast<std::uint64_t>(line.axis),line.coordinate,0U};
+    request.kind=kind;
+    request.supportId=support;
+    request.gridLine=line;
+    request.source=source.source;
+    request.sourceSegment=source.segment;
+    request.sourceParameter=sourceParameter;
+    request.originalPoint=originalPoint;
+    request.conflictingPoint=conflictingPoint;
+    request.localH=localH;
+    request.reason=std::move(reason);
+    recoveryRequests_.push_back(request);
+    throw ConstructionConflict2D(std::move(request));
 }
 
 void IntersectionRegistry2D::configureGrid(const AABB2D& bounds, std::size_t level) {
@@ -96,8 +150,15 @@ std::size_t IntersectionRegistry2D::internVertex(const Point2D& p,double h,Inter
             const auto found=vertexEvents_.find(vertex.id);
             if (found!=vertexEvents_.end()) for (const auto eventId:found->second) {
                 const auto& event=events_[eventId];const auto& support=supports_[event.supportId];
-                if (event.displacement>0 && vertex.id!=support.a && vertex.id!=support.b)
-                    throw std::runtime_error("late nonincident feature conflicts with grid-corner snap; local support resampling required");
+                if (event.displacement>0 && vertex.id!=support.a && vertex.id!=support.b) {
+                    const auto d=support.segment.b-support.segment.a;
+                    const auto parameter=dot(event.originalPoint-support.segment.a,d)/squaredNorm(d);
+                    raiseConstructionConflict(
+                        ConstructionConflictKind2D::LateNonIncidentFeature,
+                        event.supportId,event.gridLine,event.originalPoint,p,
+                        std::min(h,event.localH),parameter,
+                        "late nonincident feature conflicts with grid-corner event");
+                }
             }
         }
         vertex.localH=std::min(vertex.localH,h);
@@ -166,6 +227,7 @@ std::string intersectionConstructionToJson(const IntersectionRegistry2D& registr
        <<",\"r1a_index_maximum_query_candidates\":"<<profile.maximumQueryCandidateCount
        <<",\"r1b_exact_key_count\":"<<shadow.exactKeyCount()
        <<",\"r1b_proximity_decision_api\":true"
+       <<",\"r1c_recovery_request_count\":"<<registry.recoveryRequests().size()
        <<",\"solver_vertex_handles\":[";
     for (std::size_t i=0;i<handles.size();++i) out<<(i?",":"")<<handles[i];
     out<<"],\"events\":[";
@@ -180,6 +242,23 @@ std::string intersectionConstructionToJson(const IntersectionRegistry2D& registr
            <<",\"source_segment\":[["<<e.sourceSegment.a.x<<','<<e.sourceSegment.a.y
            <<"],["<<e.sourceSegment.b.x<<','<<e.sourceSegment.b.y<<"]]"
            <<",\"feature_classification\":\""<<intersectionFeatureName(v.feature)<<"\"}";
+    }
+    out<<"],\"recovery_requests\":[";
+    for (std::size_t i=0;i<registry.recoveryRequests().size();++i) {
+        const auto& request=registry.recoveryRequests()[i];
+        out<<(i?",":"")<<"{\"kind\":\""<<constructionConflictName(request.kind)
+           <<"\",\"recommended_decision\":\""<<decisionName(request.recommendedDecision)
+           <<"\",\"support_id\":"<<request.supportId
+           <<",\"grid_axis\":"<<request.gridLine.axis
+           <<",\"grid_coordinate\":"<<request.gridLine.coordinate
+           <<",\"source_parameter\":"<<request.sourceParameter
+           <<",\"source_parameter_only\":"<<(request.sourceParameterOnly?"true":"false")
+           <<",\"original_position\":["<<request.originalPoint.x<<','<<request.originalPoint.y
+           <<"],\"conflicting_position\":["<<request.conflictingPoint.x<<','<<request.conflictingPoint.y
+           <<"],\"local_h\":"<<request.localH<<",\"fallback_order\":[";
+        for (std::size_t j=0;j<request.fallbackOrder.size();++j)
+            out<<(j?",":"")<<'\"'<<decisionName(request.fallbackOrder[j])<<'\"';
+        out<<"],\"reason\":\""<<request.reason<<"\"}";
     }
     out<<"]}";return out.str();
 }
@@ -282,7 +361,10 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
              anchorFeature==IntersectionFeature2D::TransitionVertex ||
              anchorFeature==IntersectionFeature2D::WallSharpCorner ||
              anchorFeature==IntersectionFeature2D::WallConcaveCorner))
-            throw std::runtime_error("unsafe snap onto nonincident feature vertex; local support resampling required");
+            raiseConstructionConflict(
+                ConstructionConflictKind2D::NonIncidentFeatureSnap,
+                support,line,raw,vertices_[id].point,h,t,
+                "unsafe snap onto nonincident feature vertex");
     }
     const auto canonical=vertices_[id].point;
     // Check endpoints too: registration order cannot make an unrelated wall
@@ -293,7 +375,10 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
         const auto& prior=supports_[event.supportId];
         if (s.a!=prior.a && s.a!=prior.b && s.b!=prior.a && s.b!=prior.b &&
             (event.displacement>0 || squaredNorm(canonical-raw)>0))
-            throw std::runtime_error("unsafe nonincident grid-corner snap; local support resampling required");
+            raiseConstructionConflict(
+                ConstructionConflictKind2D::NonIncidentGridCorner,
+                support,line,raw,canonical,h,t,
+                "unsafe nonincident grid-corner snap");
     }
     eventKeys_.emplace(key,events_.size());
     vertexEvents_[id].push_back(events_.size());

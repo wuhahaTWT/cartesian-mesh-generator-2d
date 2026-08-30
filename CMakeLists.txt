@@ -6,6 +6,7 @@ add_library(cartmesh2d
     src/boundary_layer/BoundaryLayer2D.cpp
     src/geometry/Geometry2D.cpp
     src/geometry/ConstructionIdentity2D.cpp
+    src/geometry/ConstructionRecovery2D.cpp
     src/geometry/IntersectionRegistry2D.cpp
     src/geometry/IntersectionConstruction2D.cpp
     src/geometry/BoundarySimplification2D.cpp

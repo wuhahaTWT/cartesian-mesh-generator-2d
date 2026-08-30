@@ -57,6 +57,7 @@ struct TopologyCell2D {
     double geometryArea = 0.0;
     std::vector<std::size_t> vertices;
     std::vector<std::size_t> edges;
+    std::vector<std::uint64_t> refinementLineageKeys;
 };
 
 struct TopologyAudit2D {

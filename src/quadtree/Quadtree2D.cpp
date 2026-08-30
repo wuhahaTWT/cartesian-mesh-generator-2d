@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <tuple>
 namespace cartmesh2d {
@@ -102,6 +103,91 @@ QuadtreeLeaf2D Quadtree2D::makeLeaf(std::size_t level,std::uint64_t ix,std::uint
 bool Quadtree2D::splitLeafAt(std::size_t index,const BoundaryRegion2D& boundary,const TolerancePolicy& tol){ if(index>=leaves_.size()) return false; const auto parent=leaves_[index]; if(parent.level>=maxLevel_) return false; const std::size_t l=parent.level+1; const std::uint64_t x=parent.ix*2,y=parent.iy*2; QuadtreeLeaf2D children[4]={makeLeaf(l,x,y,boundary,tol),makeLeaf(l,x+1,y,boundary,tol),makeLeaf(l,x,y+1,boundary,tol),makeLeaf(l,x+1,y+1,boundary,tol)}; leaves_.erase(leaves_.begin()+static_cast<std::ptrdiff_t>(index)); leaves_.insert(leaves_.end(),std::begin(children),std::end(children)); sortAndAssignIds(); return true; }
 bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryLoop& boundary,const TolerancePolicy& tol){ return refineLeafByKey(key,BoundaryRegion2D(boundary),tol); }
 bool Quadtree2D::refineLeafByKey(std::uint64_t key,const BoundaryRegion2D& boundary,const TolerancePolicy& tol){ if(!boundaryIndex_.matches(boundary)) throw std::invalid_argument("refinement boundary differs from indexed boundary"); const auto it=std::find_if(leaves_.begin(),leaves_.end(),[key](const auto& leaf){return leaf.key==key;}); if(it==leaves_.end()) return false; return splitLeafAt(static_cast<std::size_t>(std::distance(leaves_.begin(),it)),boundary,tol); }
+QuadtreeLocalRefinementReport2D Quadtree2D::refineLeavesWithClosure(
+    std::vector<std::uint64_t> keys,const BoundaryLoop& boundary,
+    const TolerancePolicy& tol) {
+    return refineLeavesWithClosure(std::move(keys),BoundaryRegion2D(boundary),tol);
+}
+QuadtreeLocalRefinementReport2D Quadtree2D::refineLeavesWithClosure(
+    std::vector<std::uint64_t> keys,const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol) {
+    if (!boundaryIndex_.matches(boundary)) {
+        throw std::invalid_argument("local refinement boundary differs from indexed boundary");
+    }
+    QuadtreeLocalRefinementReport2D report;
+    std::sort(keys.begin(),keys.end());
+    keys.erase(std::unique(keys.begin(),keys.end()),keys.end());
+    report.requestedKeys=keys;
+    const auto countViolations=[&]() {
+        std::size_t count=0;
+        for (const auto& pair:faceNeighbors()) {
+            const auto a=leaves_[pair.first].level,b=leaves_[pair.second].level;
+            if ((a>b?a-b:b-a)>1U) ++count;
+        }
+        return count;
+    };
+    report.violationsBefore=countViolations();
+    for (const auto key:keys) {
+        const auto leaf=std::find_if(leaves_.begin(),leaves_.end(),
+            [key](const auto& item){return item.key==key;});
+        if (leaf==leaves_.end() || leaf->level>=maxLevel_)
+            report.rejectedKeys.push_back(key);
+    }
+    if (!report.rejectedKeys.empty()) {
+        report.violationsAfter=report.violationsBefore;
+        return report;
+    }
+    const auto splitBatch=[&](const std::vector<std::uint64_t>& batch,bool closure) {
+        std::vector<QuadtreeLeaf2D> next;
+        next.reserve(leaves_.size()+3U*batch.size());
+        for (const auto& leaf:leaves_) {
+            if (!std::binary_search(batch.begin(),batch.end(),leaf.key)) {
+                next.push_back(leaf);continue;
+            }
+            if (leaf.level>=maxLevel_) {
+                next.push_back(leaf);continue;
+            }
+            const auto childLevel=leaf.level+1U;
+            const auto childX=leaf.ix*2U,childY=leaf.iy*2U;
+            std::array<QuadtreeLeaf2D,4> children{
+                makeLeaf(childLevel,childX,childY,boundary,tol),
+                makeLeaf(childLevel,childX+1U,childY,boundary,tol),
+                makeLeaf(childLevel,childX,childY+1U,boundary,tol),
+                makeLeaf(childLevel,childX+1U,childY+1U,boundary,tol)};
+            QuadtreeRefinementLineage2D lineage;
+            lineage.parentKey=leaf.key;lineage.parentLevel=leaf.level;lineage.closure=closure;
+            for (std::size_t i=0;i<children.size();++i) {
+                lineage.childKeys[i]=children[i].key;
+                next.push_back(std::move(children[i]));
+            }
+            report.lineage.push_back(lineage);
+            if (closure) ++report.closureRefinedLeaves;
+            else ++report.requestedRefinedLeaves;
+        }
+        leaves_.swap(next);sortAndAssignIds();
+    };
+    splitBatch(keys,false);
+    while (true) {
+        std::vector<std::uint64_t> closureKeys;
+        for (const auto& pair:faceNeighbors()) {
+            const auto& a=leaves_[pair.first];const auto& b=leaves_[pair.second];
+            const auto difference=a.level>b.level?a.level-b.level:b.level-a.level;
+            if (difference>1U) closureKeys.push_back((a.level<b.level?a:b).key);
+        }
+        if (closureKeys.empty()) break;
+        std::sort(closureKeys.begin(),closureKeys.end());
+        closureKeys.erase(std::unique(closureKeys.begin(),closureKeys.end()),closureKeys.end());
+        splitBatch(closureKeys,true);
+        if (++report.closureIterations>maxLevel_+1U) {
+            throw std::runtime_error("local 2:1 refinement closure failed to converge");
+        }
+    }
+    std::sort(report.rejectedKeys.begin(),report.rejectedKeys.end());
+    report.rejectedKeys.erase(std::unique(report.rejectedKeys.begin(),report.rejectedKeys.end()),
+                              report.rejectedKeys.end());
+    report.violationsAfter=countViolations();
+    return report;
+}
 void Quadtree2D::refine(const BoundaryLoop& boundary,
                         const QuadtreeRefinementPolicy2D& policy,
                         const TolerancePolicy& tol) {

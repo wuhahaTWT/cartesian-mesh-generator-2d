@@ -33,7 +33,8 @@ enum class CutCellIssueCode {
     DegeneratePolygon,
     MissingEmbeddedBoundary,
     MultipleEmbeddedComponents,
-    AreaOutOfRange
+    AreaOutOfRange,
+    ConstructionRecoveryRequired
 };
 
 struct CutCellIssue2D {
@@ -47,6 +48,9 @@ struct CutCell2D {
     // Stable construction lineage. Empty means the legacy one-source identity
     // and is normalized to {sourceId} by the topology builder.
     std::vector<std::size_t> sourceLineage;
+    // Parent/ancestor Quadtree keys created by an R1-C local refinement
+    // transaction. Kept separate from solver source IDs.
+    std::vector<std::uint64_t> refinementLineageKeys;
     AABB2D backgroundBounds;
     CutCellKind kind = CutCellKind::Empty;
     Polygon2D fluidPolygon;
@@ -56,6 +60,7 @@ struct CutCell2D {
     std::vector<Segment2D> embeddedBoundary;
     std::vector<CutCellIssue2D> issues;
     std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
+    std::vector<ConstructionRecoveryRequest2D> constructionRecoveryRequests;
     // Handles in the explicitly supplied construction registry, not output IDs.
     std::vector<std::size_t> canonicalVertexIds;
     // Non-owning identity guard; the caller must retain the registry while

@@ -855,15 +855,27 @@ std::vector<CutCell2D> buildCutCellsShared(
     const QuadtreeLeaf2D& leaf,const BoundaryRegion2D& boundary,
     IntersectionRegistry2D& registry,IntersectionSource2D source,
     FluidRegion2D fluidRegion,const TolerancePolicy& tol) {
-    auto cells=buildCutCellsImpl(leaf.bounds,leaf.classification,boundary,fluidRegion,tol,&registry,source);
-    const double h=std::min(leaf.bounds.max.x-leaf.bounds.min.x,leaf.bounds.max.y-leaf.bounds.min.y);
-    for (auto& cell:cells) {
-        cell.sourceId=leaf.id;cell.sourceKey=leaf.key;
+    try {
+        auto cells=buildCutCellsImpl(leaf.bounds,leaf.classification,boundary,fluidRegion,tol,&registry,source);
+        const double h=std::min(leaf.bounds.max.x-leaf.bounds.min.x,leaf.bounds.max.y-leaf.bounds.min.y);
+        for (auto& cell:cells) {
+            cell.sourceId=leaf.id;cell.sourceKey=leaf.key;
+            cell.canonicalRegistry=&registry;
+            for (const auto& p:cell.fluidPolygon.vertices)
+                cell.canonicalVertexIds.push_back(registry.internVertex(p,h));
+        }
+        return cells;
+    } catch (const ConstructionConflict2D& conflict) {
+        auto cell=unsupportedCell(
+            leaf.bounds,CutCellIssueCode::ConstructionRecoveryRequired,
+            std::string("typed construction recovery required: ")+
+                constructionConflictName(conflict.request().kind)+": "+conflict.what());
+        cell.sourceId=leaf.id;
+        cell.sourceKey=leaf.key;
         cell.canonicalRegistry=&registry;
-        for (const auto& p:cell.fluidPolygon.vertices)
-            cell.canonicalVertexIds.push_back(registry.internVertex(p,h));
+        cell.constructionRecoveryRequests.push_back(conflict.request());
+        return {std::move(cell)};
     }
-    return cells;
 }
 
 } // namespace cartmesh2d

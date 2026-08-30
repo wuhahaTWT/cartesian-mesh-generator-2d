@@ -52,12 +52,16 @@ int main() {
 
     std::vector<CutCell2D> cells;
     cells.push_back(fullCell(10, 10, {{0.0, 0.0}, {1.0, 1.0}}));
+    cells.back().refinementLineageKeys={101U,202U};
     cells.push_back(fullCell(20, 20, {{1.0, 0.0}, {2.0, 0.5}}));
     cells.push_back(fullCell(30, 30, {{1.0, 0.5}, {2.0, 1.0}}));
 
     const auto mesh = buildGlobalTopology(cells, domain, boundary);
     check(mesh.valid(), "coarse-fine topology passes audit");
     check(mesh.cells.size() == 3, "three fluid cells retained");
+    check(mesh.cells.front().refinementLineageKeys==
+          std::vector<std::uint64_t>({101U,202U}),
+          "R1-C refinement lineage is retained separately from solver source ids");
     check(hasPoint(mesh, 1.0, 0.5), "hanging-node point exists globally");
 
     std::size_t internalCount = 0;

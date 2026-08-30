@@ -175,6 +175,73 @@ int main(){
     check(unbalanced.countBalanceViolations()==0,"final face neighbors satisfy 2:1");
     near(unbalanced.totalLeafArea(),16.0,1e-10,"balance preserves area");
 
+    // R1-C local refinement is one deterministic transaction: requested
+    // leaves split first, then face-neighbour 2:1 closure propagates. Every
+    // split records parent->children lineage instead of forcing callers to
+    // reconstruct it from coordinates.
+    Quadtree2D local(domain,5,boundary),localRepeat(domain,5,boundary);
+    std::size_t closureRefined=0;
+    for (int step=0;step<5;++step) {
+        const auto cornerKey=[&](const Quadtree2D& candidate) {
+            if (candidate.leaves().size()==1U) return candidate.leaves().front().key;
+            const double interfaceX=0.5*(domain.bounds.min.x+domain.bounds.max.x);
+            const auto it=std::max_element(candidate.leaves().begin(),candidate.leaves().end(),
+                [&](const auto& lhs,const auto& rhs) {
+                    const bool lhsEligible=std::abs(lhs.bounds.max.x-interfaceX)<1.e-12 &&
+                        std::abs(lhs.bounds.min.y-domain.bounds.min.y)<1.e-12;
+                    const bool rhsEligible=std::abs(rhs.bounds.max.x-interfaceX)<1.e-12 &&
+                        std::abs(rhs.bounds.min.y-domain.bounds.min.y)<1.e-12;
+                    return std::tie(lhsEligible,lhs.level,lhs.key)<
+                           std::tie(rhsEligible,rhs.level,rhs.key);
+                });
+            return it->key;
+        };
+        const auto key=cornerKey(local);
+        const auto repeatKey=cornerKey(localRepeat);
+        check(key==repeatKey,"local refinement request key is deterministic");
+        const auto transaction=local.refineLeavesWithClosure({key},boundary);
+        const auto repeated=localRepeat.refineLeavesWithClosure({repeatKey},boundary);
+        check(transaction.pass() && repeated.pass(),"local refinement transaction closes 2:1");
+        check(transaction.requestedRefinedLeaves==1U &&
+              transaction.lineage.size()==1U+transaction.closureRefinedLeaves,
+              "local transaction records every requested and closure split");
+        check(transaction.requestedRefinedLeaves==repeated.requestedRefinedLeaves &&
+              transaction.closureRefinedLeaves==repeated.closureRefinedLeaves &&
+              transaction.closureIterations==repeated.closureIterations &&
+              transaction.lineage.size()==repeated.lineage.size(),
+              "local closure report is deterministic");
+        if (transaction.lineage.size()==repeated.lineage.size()) {
+            for (std::size_t i=0;i<transaction.lineage.size();++i) {
+                check(transaction.lineage[i].parentKey==repeated.lineage[i].parentKey &&
+                      transaction.lineage[i].childKeys==repeated.lineage[i].childKeys &&
+                      transaction.lineage[i].closure==repeated.lineage[i].closure,
+                      "parent-child refinement lineage is deterministic");
+            }
+        }
+        closureRefined+=transaction.closureRefinedLeaves;
+    }
+    check(closureRefined>0U,"deep local path triggers neighbour-driven closure");
+    check(local.countBalanceViolations()==0U && local.deterministicOrderingValid(),
+          "local refinement result is balanced and deterministically ordered");
+    near(local.totalLeafArea(),16.0,1e-10,"local refinement closure preserves area");
+    check(local.leaves().size()==localRepeat.leaves().size(),
+          "repeated local refinement has stable leaf count");
+    const auto maxLeaf=std::max_element(local.leaves().begin(),local.leaves().end(),
+        [](const auto& lhs,const auto& rhs){return lhs.level<rhs.level;});
+    const auto maxLeafKey=maxLeaf->key;
+    const auto refinableLeaf=std::find_if(local.leaves().begin(),local.leaves().end(),
+        [&](const auto& leaf){return leaf.level<local.maxLevel();});
+    check(refinableLeaf!=local.leaves().end(),"mixed local transaction has refinable peer");
+    const auto refinableLeafKey=refinableLeaf==local.leaves().end()
+        ?maxLeafKey:refinableLeaf->key;
+    const auto leafCountBeforeReject=local.leaves().size();
+    const auto rejected=local.refineLeavesWithClosure(
+        {maxLeafKey,refinableLeafKey},boundary);
+    check(!rejected.pass() && rejected.rejectedKeys==std::vector<std::uint64_t>{maxLeafKey} &&
+          rejected.lineage.empty() && local.leaves().size()==leafCountBeforeReject &&
+          local.countBalanceViolations()==0U,
+          "mixed max-level request fails atomically without partial refinement");
+
     // Every reported neighbor must share a face segment, not merely a corner.
     for(const auto& pair:unbalanced.faceNeighbors()){
         const auto&a=unbalanced.leaves()[pair.first]; const auto&b=unbalanced.leaves()[pair.second];

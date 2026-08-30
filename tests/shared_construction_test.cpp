@@ -1,6 +1,7 @@
 #include "cartmesh2d/topology/SharedEdgePartition2D.hpp"
 #include "cartmesh2d/topology/Topology2D.hpp"
 #include "cartmesh2d/hybrid/HybridMesh2D.hpp"
+#include "cartmesh2d/geometry/ConstructionRecovery2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -130,16 +131,74 @@ int main(int argc,char** argv) {
         const auto a=r.registerSegment({{.1,.5},{.9,.5}},.25,IntersectionSource2D::WallCartesian);
         const auto b=r.registerSegment({{.1,.5+2.e-16},{.9,.5+2.e-16}},.25,IntersectionSource2D::WallCartesian);
         (void)r.intersectGridLine(a,r.gridLine(0,.5),.25);
-        rejects([&]{(void)r.intersectGridLine(b,r.gridLine(0,.5),.25);},
-                "even sub-roundoff nonincident walls must not be silently welded");
+        bool typed=false;
+        std::optional<ConstructionRecoveryRequest2D> captured;
+        try {(void)r.intersectGridLine(b,r.gridLine(0,.5),.25);}
+        catch (const ConstructionConflict2D& conflict) {
+            const auto& request=conflict.request();
+            captured=request;
+            typed=request.kind==ConstructionConflictKind2D::NonIncidentGridCorner &&
+                request.supportId==b && request.gridLine.axis==0U &&
+                request.gridLine.coordinate==8U && request.sourceParameterOnly &&
+                request.sourceParameter>.49 && request.sourceParameter<.51 &&
+                request.fallbackOrder==std::vector<ConstructionDecision2D>{
+                    ConstructionDecision2D::Refine,ConstructionDecision2D::Rephase,
+                    ConstructionDecision2D::Resample};
+        }
+        check(typed && r.recoveryRequests().size()==1U,
+              "sub-roundoff nonincident wall produces typed recovery request");
+        const auto recoveryJson=intersectionConstructionToJson(r,{},0U,0U);
+        check(recoveryJson.find("\"r1c_recovery_request_count\":1")!=std::string::npos &&
+              recoveryJson.find("\"source_parameter_only\":true")!=std::string::npos,
+              "typed recovery request is machine-readable");
+        if (captured) {
+            const auto candidates=planConstructionRecoveryCandidates(*captured);
+            check(candidates.size()==7U &&
+                  candidates.front().decision==ConstructionDecision2D::Refine,
+                  "recovery candidates follow refine/rephase/resample order");
+            bool boundedPhase=true,sourceOnly=true;
+            for (const auto& candidate:candidates) {
+                if (candidate.decision==ConstructionDecision2D::Rephase) {
+                    boundedPhase=boundedPhase && candidate.gridPhaseOffset &&
+                        std::abs(*candidate.gridPhaseOffset)<=.25*captured->localH;
+                }
+                if (candidate.decision==ConstructionDecision2D::Resample) {
+                    const auto expected=captured->sourceSegment.a+
+                        (captured->sourceSegment.b-captured->sourceSegment.a)*
+                        *candidate.sourceParameter;
+                    sourceOnly=sourceOnly && candidate.preservesSourceSegment &&
+                        candidate.sourceParameter && *candidate.sourceParameter>0.0 &&
+                        *candidate.sourceParameter<1.0 &&
+                        candidate.sourcePoint->x==expected.x &&
+                        candidate.sourcePoint->y==expected.y;
+                }
+            }
+            check(boundedPhase && sourceOnly,
+                  "phase candidates are bounded and resampling stays on source parameter");
+            std::vector<ConstructionRecoveryCandidateEvaluation2D> evaluations;
+            for (const auto& candidate:candidates)
+                evaluations.push_back({candidate.ordinal,true,true,false,
+                                       static_cast<double>(candidate.ordinal)});
+            check(!selectConstructionRecoveryCandidate(candidates,evaluations),
+                  "candidate without unchanged hard-quality pass cannot commit");
+            evaluations.back().hardQualityPass=true;
+            check(selectConstructionRecoveryCandidate(candidates,evaluations)->ordinal==
+                  candidates.back().ordinal,
+                  "fully checked candidate is selected without relaxing quality gate");
+        }
     }
     {
         IntersectionRegistry2D r;r.configureGrid({{0,0},{1,1}},4);
         (void)r.internVertex({.5,.5},.25,IntersectionFeature2D::WallSharpCorner);
         const auto support=r.registerSegment({{.1,.5+2.e-16},{.9,.5+2.e-16}},.25,
                                              IntersectionSource2D::WallCartesian);
-        rejects([&]{(void)r.intersectGridLine(support,r.gridLine(0,.5),.25);},
-                "pre-registered nonincident sharp feature is protected even without prior events");
+        bool sharpTyped=false;
+        try {(void)r.intersectGridLine(support,r.gridLine(0,.5),.25);}
+        catch (const ConstructionConflict2D& conflict) {
+            sharpTyped=conflict.request().kind==
+                ConstructionConflictKind2D::NonIncidentFeatureSnap;
+        }
+        check(sharpTyped,"pre-registered nonincident sharp feature returns typed conflict");
         const auto small=r.registerSegment({{.5-4.e-16,.4},{.5+4.e-16,.4}},1,
                                            IntersectionSource2D::WallCartesian);
         const auto a=r.internVertex({.5-4.e-16,.4},1), b=r.internVertex({.5+4.e-16,.4},1);
@@ -151,8 +210,33 @@ int main(int argc,char** argv) {
         const auto support=r.registerSegment({{.1,.5+2.e-16},{.9,.5+2.e-16}},.25,
                                              IntersectionSource2D::WallCartesian);
         (void)r.intersectGridLine(support,r.gridLine(0,.5),.25);
-        rejects([&]{(void)r.internVertex({.5,.5},.25,IntersectionFeature2D::WallSharpCorner);},
-                "late feature registration cannot silently legitimize a nonincident snap");
+        bool lateTyped=false;
+        try {(void)r.internVertex({.5,.5},.25,IntersectionFeature2D::WallSharpCorner);}
+        catch (const ConstructionConflict2D& conflict) {
+            lateTyped=conflict.request().kind==
+                ConstructionConflictKind2D::LateNonIncidentFeature;
+        }
+        check(lateTyped,"late feature registration returns typed recovery conflict");
+    }
+    {
+        IntersectionRegistry2D r;r.configureGrid({{0,0},{1,1}},4);
+        (void)r.internVertex({.5,.5},.2,IntersectionFeature2D::WallSharpCorner);
+        const BoundaryRegion2D wall(BoundaryLoop(
+            {{.1,.5+2.e-16},{.9,.5+2.e-16},{.9,.8},{.1,.8}}));
+        QuadtreeLeaf2D leaf;
+        leaf.id=17U;leaf.key=1234U;leaf.level=4U;
+        leaf.bounds={{.5,.4},{.75,.6}};
+        leaf.classification=CellClass::Intersected;
+        const auto cells=buildCutCellsShared(
+            leaf,wall,r,IntersectionSource2D::WallCartesian,
+            FluidRegion2D::Exterior);
+        check(cells.size()==1U && cells.front().kind==CutCellKind::Unsupported &&
+              !cells.front().valid() &&
+              cells.front().issues.front().code==
+                  CutCellIssueCode::ConstructionRecoveryRequired &&
+              cells.front().constructionRecoveryRequests.size()==1U &&
+              cells.front().sourceKey==leaf.key,
+              "shared Cut-cell converts typed signal into leaf-scoped recovery request");
     }
     {
         const Domain2D domain{{{0,0},{2,1}}};

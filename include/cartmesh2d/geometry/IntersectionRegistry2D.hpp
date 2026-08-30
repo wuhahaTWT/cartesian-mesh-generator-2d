@@ -7,6 +7,7 @@
 #include <optional>
 #include <limits>
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <map>
 #include <tuple>
@@ -80,6 +81,43 @@ struct SharedIntersectionEvent2D {
     Segment2D sourceSegment;
 };
 
+enum class ConstructionConflictKind2D {
+    LateNonIncidentFeature,
+    NonIncidentFeatureSnap,
+    NonIncidentGridCorner
+};
+
+struct ConstructionRecoveryRequest2D {
+    StableVertexKey2D conflictKey;
+    ConstructionConflictKind2D kind =
+        ConstructionConflictKind2D::NonIncidentFeatureSnap;
+    ConstructionDecision2D recommendedDecision = ConstructionDecision2D::Refine;
+    std::vector<ConstructionDecision2D> fallbackOrder{
+        ConstructionDecision2D::Refine,
+        ConstructionDecision2D::Rephase,
+        ConstructionDecision2D::Resample};
+    std::size_t supportId = 0;
+    GridLineIdentity2D gridLine;
+    IntersectionSource2D source = IntersectionSource2D::Unknown;
+    Segment2D sourceSegment;
+    double sourceParameter = 0.0;
+    Point2D originalPoint;
+    Point2D conflictingPoint;
+    double localH = 0.0;
+    bool sourceParameterOnly = true;
+    std::string reason;
+};
+
+class ConstructionConflict2D final : public std::runtime_error {
+public:
+    explicit ConstructionConflict2D(ConstructionRecoveryRequest2D request);
+    [[nodiscard]] const ConstructionRecoveryRequest2D& request() const noexcept {
+        return request_;
+    }
+private:
+    ConstructionRecoveryRequest2D request_;
+};
+
 class IntersectionRegistry2D {
 public:
     explicit IntersectionRegistry2D(IntersectionRegistryPolicy2D policy = {});
@@ -108,6 +146,9 @@ public:
     [[nodiscard]] std::size_t intersectGridLine(std::size_t support,
         GridLineIdentity2D line, double localH);
     [[nodiscard]] const std::vector<SharedIntersectionEvent2D>& events() const { return events_; }
+    [[nodiscard]] const std::vector<ConstructionRecoveryRequest2D>& recoveryRequests() const {
+        return recoveryRequests_;
+    }
     [[nodiscard]] std::size_t intersectionCacheHits() const { return cacheHits_; }
 
     [[nodiscard]] const std::vector<CanonicalVertex2D>& vertices() const noexcept {
@@ -139,11 +180,18 @@ private:
     std::map<std::pair<std::size_t,GridLineIdentity2D>,std::size_t> eventKeys_;
     std::map<std::size_t,std::vector<std::size_t>> vertexEvents_;
     std::vector<SharedIntersectionEvent2D> events_;
+    std::vector<ConstructionRecoveryRequest2D> recoveryRequests_;
     std::size_t cacheHits_ = 0;
+    [[noreturn]] void raiseConstructionConflict(
+        ConstructionConflictKind2D kind, std::size_t support,
+        GridLineIdentity2D line, const Point2D& originalPoint,
+        const Point2D& conflictingPoint, double localH,
+        double sourceParameter, std::string reason);
 };
 
 [[nodiscard]] const char* intersectionSourceName(IntersectionSource2D source) noexcept;
 [[nodiscard]] const char* intersectionFeatureName(IntersectionFeature2D feature) noexcept;
+[[nodiscard]] const char* constructionConflictName(ConstructionConflictKind2D kind) noexcept;
 [[nodiscard]] std::string intersectionRecordsToJson(
     const std::vector<CanonicalizedIntersection2D>& records);
 [[nodiscard]] std::string intersectionConstructionToJson(

@@ -41,6 +41,7 @@ struct HybridSourceCell2D {
     Polygon2D polygon;
     double area = 0.0;
     std::optional<std::uint64_t> quadtreeSourceKey;
+    std::vector<std::uint64_t> refinementLineageKeys;
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;
     std::optional<std::size_t> stripId;
@@ -194,6 +195,8 @@ struct HybridMeshBuildResult2D {
     SolverTopologyResult2D solverTopologyReport;
     SourceLineageAudit2D sourceLineageAudit;
     std::vector<CanonicalizedIntersection2D> canonicalizedIntersections;
+    std::vector<ConstructionRecoveryRequest2D> constructionRecoveryRequests;
+    std::vector<QuadtreeLocalRefinementReport2D> constructionRecoveryRefinements;
     QuadtreeBalanceReport2D balance;
     HybridMeshFailure2D failure;
 

@@ -350,6 +350,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             std::unique(topo.sourceLineage.begin(), topo.sourceLineage.end()),
             topo.sourceLineage.end());
         topo.geometryArea = source.area;
+        topo.refinementLineageKeys = source.refinementLineageKeys;
 
         const auto& polygon = source.fluidPolygon.vertices;
         std::vector<std::size_t> loop;

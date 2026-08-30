@@ -205,6 +205,7 @@ void writeJsonString(std::ostream& out, const std::string& value) {
         if (a.id != b.id || a.sourceId != b.sourceId ||
             a.sourceKey != b.sourceKey || a.geometryArea != b.geometryArea ||
             a.sourceLineage != b.sourceLineage ||
+            a.refinementLineageKeys != b.refinementLineageKeys ||
             a.vertices != b.vertices || a.edges != b.edges) return false;
     }
     return true;
@@ -218,6 +219,7 @@ void writeJsonString(std::ostream& out, const std::string& value) {
     // HybridSourceCell2D::quadtreeSourceKey and is never decoded for layers.
     adapter.sourceKey = source.id;
     adapter.sourceLineage = {source.id};
+    adapter.refinementLineageKeys = source.refinementLineageKeys;
     adapter.backgroundBounds = source.polygon.bounds();
     adapter.kind = source.kind == HybridCellKind2D::RemainderCartesian
         ? CutCellKind::Full : CutCellKind::Cut;
@@ -724,89 +726,130 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
 
     std::vector<CutCell2D> remainderSourceCells;
     std::shared_ptr<IntersectionRegistry2D> constructionRegistry;
-    if (policy.sharedIntersectionConstruction) {
-        constructionRegistry=std::make_shared<IntersectionRegistry2D>();
-        constructionRegistry->configureGrid(domain.bounds,remainderMaxLevel);
-        const double h=std::ldexp(std::min(domain.bounds.max.x-domain.bounds.min.x,
-                                         domain.bounds.max.y-domain.bounds.min.y),
-                                  -static_cast<int>(remainderMaxLevel));
-        // Use H4's existing feature classification; do not guess sharpness
-        // from a new angular threshold or move the physical wall.
-        for (const auto& strip:boundaryLayers.strips) {
-            for (std::size_t i=0;i<strip.wallChain.vertices.size();++i) {
-                const auto kind=strip.wallVertexKinds.at(i);
-                const auto feature=kind==WallVertexKind2D::Sharp?IntersectionFeature2D::WallSharpCorner:
-                    kind==WallVertexKind2D::Concave?IntersectionFeature2D::WallConcaveCorner:
-                    IntersectionFeature2D::Smooth;
-                (void)constructionRegistry->internVertex(strip.wallChain.vertices[i],h,feature);
-            }
-        }
-    }
-    remainderSourceCells.reserve(remainderTree->leaves().size());
+    std::vector<ConstructionRecoveryRequest2D> constructionRecoveryRequests;
+    std::vector<QuadtreeLocalRefinementReport2D> constructionRecoveryRefinements;
+    std::map<std::uint64_t,std::vector<std::uint64_t>> refinementAncestors;
     std::size_t nextSourceId = 0U;
     std::size_t remainderCartesianCount = 0U;
     std::size_t remainderCutCount = 0U;
     std::size_t transitionPolygonCount = 0U;
     double remainderArea = 0.0;
-    for (const auto& leaf : remainderTree->leaves()) {
-        auto components = constructionRegistry
-            ?buildCutCellsShared(leaf,remainderBoundaryRegion,*constructionRegistry,
-                                IntersectionSource2D::TransitionEnvelopeCartesian,
-                                FluidRegion2D::Exterior,policy.tolerance)
-            :buildCutCells(leaf, remainderBoundaryRegion,
-                                        FluidRegion2D::Exterior,
-                                        policy.tolerance);
-        for (auto& component : components) {
-            if (!component.valid() || component.kind == CutCellKind::Unsupported) {
-                const std::string detail = component.issues.empty()
-                    ? "unsupported remainder Cut-cell"
-                    : component.issues.front().message;
-                return failed(HybridMeshFailureReason2D::RemainderCutCellFailed,
-                              detail, std::nullopt, leaf.id);
-            }
-            if (component.kind == CutCellKind::Empty) continue;
-            component.sourceId = nextSourceId;
-            component.sourceKey = leaf.key;
-            if (!(component.area > 0.0) || !component.centroid) {
-                return failed(HybridMeshFailureReason2D::RemainderCutCellFailed,
-                              "remainder cell has non-positive area or missing centroid",
-                              std::nullopt, leaf.id);
-            }
-            const auto centroidState = remainderBoundaryRegion.classifyPoint(*component.centroid,
-                                                                  policy.tolerance);
-            // A certified exterior component may be concave around a stepped
-            // termination corner and its area centroid may lie inside the
-            // excluded envelope. That is not a classification conflict: it is
-            // partitioned into convex solver cells below. For a convex source,
-            // however, an inside centroid proves the cutter chose the wrong face.
-            if (centroidState == PointInPolygon::Inside &&
-                convexPolygon(component.fluidPolygon,policy.tolerance)) {
-                std::ostringstream detail;
-                detail<<"remainder cell centroid lies inside the outer envelope at ("
-                      <<component.centroid->x<<','<<component.centroid->y
-                      <<") polygon=";
-                for (const auto& point:component.fluidPolygon.vertices) {
-                    detail<<'('<<point.x<<','<<point.y<<')';
-                }
-                return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
-                              detail.str(),
-                              std::nullopt, leaf.id);
-            }
-            const auto kind = component.kind == CutCellKind::Full
-                ? HybridCellKind2D::RemainderCartesian
-                : HybridCellKind2D::RemainderCut;
-            if (kind == HybridCellKind2D::RemainderCartesian) {
-                ++remainderCartesianCount;
-            } else {
-                ++remainderCutCount;
-                if (component.fluidPolygon.vertices.size() != 4U) {
-                    ++transitionPolygonCount;
-                }
-            }
-            remainderArea += component.area;
-            remainderSourceCells.push_back(std::move(component));
-            ++nextSourceId;
+    for (std::size_t recoveryPass=0;;++recoveryPass) {
+        if (recoveryPass>remainderMaxLevel+1U) {
+            return failed(HybridMeshFailureReason2D::RemainderRefinementFailed,
+                          "typed construction recovery exceeded bounded refinement passes");
         }
+        remainderSourceCells.clear();
+        remainderSourceCells.reserve(remainderTree->leaves().size());
+        nextSourceId=0U;
+        remainderCartesianCount=0U;
+        remainderCutCount=0U;
+        transitionPolygonCount=0U;
+        remainderArea=0.0;
+        if (policy.sharedIntersectionConstruction) {
+            constructionRegistry=std::make_shared<IntersectionRegistry2D>();
+            constructionRegistry->configureGrid(domain.bounds,remainderMaxLevel);
+            const double h=std::ldexp(std::min(
+                domain.bounds.max.x-domain.bounds.min.x,
+                domain.bounds.max.y-domain.bounds.min.y),
+                -static_cast<int>(remainderMaxLevel));
+            // Use H4's established feature classification. Physical wall
+            // vertices remain immutable through every recovery pass.
+            for (const auto& strip:boundaryLayers.strips) {
+                for (std::size_t i=0;i<strip.wallChain.vertices.size();++i) {
+                    const auto kind=strip.wallVertexKinds.at(i);
+                    const auto feature=kind==WallVertexKind2D::Sharp
+                        ?IntersectionFeature2D::WallSharpCorner:
+                        kind==WallVertexKind2D::Concave
+                        ?IntersectionFeature2D::WallConcaveCorner:
+                        IntersectionFeature2D::Smooth;
+                    (void)constructionRegistry->internVertex(
+                        strip.wallChain.vertices[i],h,feature);
+                }
+            }
+        } else constructionRegistry.reset();
+
+        std::optional<std::uint64_t> recoveryLeafKey;
+        for (const auto& leaf : remainderTree->leaves()) {
+            auto components = constructionRegistry
+                ?buildCutCellsShared(leaf,remainderBoundaryRegion,*constructionRegistry,
+                                    IntersectionSource2D::TransitionEnvelopeCartesian,
+                                    FluidRegion2D::Exterior,policy.tolerance)
+                :buildCutCells(leaf,remainderBoundaryRegion,
+                               FluidRegion2D::Exterior,policy.tolerance);
+            bool requestedRecovery=false;
+            for (auto& component : components) {
+                if (!component.constructionRecoveryRequests.empty()) {
+                    constructionRecoveryRequests.insert(
+                        constructionRecoveryRequests.end(),
+                        component.constructionRecoveryRequests.begin(),
+                        component.constructionRecoveryRequests.end());
+                    recoveryLeafKey=leaf.key;
+                    requestedRecovery=true;
+                    break;
+                }
+                if (!component.valid() || component.kind == CutCellKind::Unsupported) {
+                    const std::string detail = component.issues.empty()
+                        ? "unsupported remainder Cut-cell"
+                        : component.issues.front().message;
+                    return failed(HybridMeshFailureReason2D::RemainderCutCellFailed,
+                                  detail, std::nullopt, leaf.id);
+                }
+                if (component.kind == CutCellKind::Empty) continue;
+                component.sourceId = nextSourceId;
+                component.sourceKey = leaf.key;
+                if (const auto lineage=refinementAncestors.find(leaf.key);
+                    lineage!=refinementAncestors.end()) {
+                    component.refinementLineageKeys=lineage->second;
+                }
+                if (!(component.area > 0.0) || !component.centroid) {
+                    return failed(HybridMeshFailureReason2D::RemainderCutCellFailed,
+                                  "remainder cell has non-positive area or missing centroid",
+                                  std::nullopt, leaf.id);
+                }
+                const auto centroidState = remainderBoundaryRegion.classifyPoint(
+                    *component.centroid,policy.tolerance);
+                if (centroidState == PointInPolygon::Inside &&
+                    convexPolygon(component.fluidPolygon,policy.tolerance)) {
+                    std::ostringstream detail;
+                    detail<<"remainder cell centroid lies inside the outer envelope at ("
+                          <<component.centroid->x<<','<<component.centroid->y
+                          <<") polygon=";
+                    for (const auto& point:component.fluidPolygon.vertices)
+                        detail<<'('<<point.x<<','<<point.y<<')';
+                    return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
+                                  detail.str(),std::nullopt,leaf.id);
+                }
+                const auto kind = component.kind == CutCellKind::Full
+                    ? HybridCellKind2D::RemainderCartesian
+                    : HybridCellKind2D::RemainderCut;
+                if (kind == HybridCellKind2D::RemainderCartesian) {
+                    ++remainderCartesianCount;
+                } else {
+                    ++remainderCutCount;
+                    if (component.fluidPolygon.vertices.size() != 4U)
+                        ++transitionPolygonCount;
+                }
+                remainderArea += component.area;
+                remainderSourceCells.push_back(std::move(component));
+                ++nextSourceId;
+            }
+            if (requestedRecovery) break;
+        }
+        if (!recoveryLeafKey) break;
+        auto refinement=remainderTree->refineLeavesWithClosure(
+            {*recoveryLeafKey},remainderBoundaryRegion,policy.tolerance);
+        if (!refinement.pass() || refinement.requestedRefinedLeaves!=1U) {
+            return failed(HybridMeshFailureReason2D::RemainderRefinementFailed,
+                          "typed construction conflict cannot be locally refined");
+        }
+        for (const auto& lineage:refinement.lineage) {
+            auto ancestors=refinementAncestors[lineage.parentKey];
+            ancestors.push_back(lineage.parentKey);
+            for (const auto child:lineage.childKeys)
+                refinementAncestors[child]=ancestors;
+        }
+        constructionRecoveryRefinements.push_back(std::move(refinement));
     }
 
     const auto remainderTopology=buildGlobalTopology(
@@ -885,7 +928,17 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                     source.localBackgroundH,
                     std::max(sourceBounds.max.x-sourceBounds.min.x,
                              sourceBounds.max.y-sourceBounds.min.y));
+                source.refinementLineageKeys.insert(
+                    source.refinementLineageKeys.end(),
+                    remainderSourceCells[memberSourceId].refinementLineageKeys.begin(),
+                    remainderSourceCells[memberSourceId].refinementLineageKeys.end());
             }
+            std::sort(source.refinementLineageKeys.begin(),
+                      source.refinementLineageKeys.end());
+            source.refinementLineageKeys.erase(
+                std::unique(source.refinementLineageKeys.begin(),
+                            source.refinementLineageKeys.end()),
+                source.refinementLineageKeys.end());
             if (!std::isfinite(source.localBackgroundH)) {
                 const auto pieceBounds=piece.bounds();
                 source.localBackgroundH=std::max(
@@ -1162,6 +1215,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.solverTopologyReport=std::move(solverTopologyReport);
     result.sourceLineageAudit=sourceLineageAudit;
     result.canonicalizedIntersections=envelopeRegistry.records();
+    result.constructionRecoveryRequests=std::move(constructionRecoveryRequests);
+    result.constructionRecoveryRefinements=std::move(constructionRecoveryRefinements);
     for (const auto& cell:result.remainderSourceCells) {
         for (auto record:cell.canonicalizedIntersections) {
             record.source=IntersectionSource2D::TransitionEnvelopeCartesian;
@@ -1504,6 +1559,14 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
     } else {
         const auto& metrics = result.metrics;
         const auto& interface = result.interfaceAudit;
+        std::size_t recoveryRequestedRefined=0U,recoveryClosureRefined=0U;
+        std::size_t recoveryClosureIterations=0U,recoveryLineageSplits=0U;
+        for (const auto& refinement:result.constructionRecoveryRefinements) {
+            recoveryRequestedRefined+=refinement.requestedRefinedLeaves;
+            recoveryClosureRefined+=refinement.closureRefinedLeaves;
+            recoveryClosureIterations+=refinement.closureIterations;
+            recoveryLineageSplits+=refinement.lineage.size();
+        }
         out << "  \"failure_reason\": \"none\",\n";
         out << "  \"quadtree_leaf_count\": " << metrics.quadtreeLeafCount << ",\n";
         out << "  \"boundary_layer_cell_count\": " << metrics.boundaryLayerCellCount << ",\n";
@@ -1540,6 +1603,18 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << result.sourceLineageAudit.mismatchedCells << ",\n";
         out << "  \"source_lineage_oracle_verified\": "
             << (result.sourceLineageAudit.oracleVerified?"true":"false") << ",\n";
+        out << "  \"construction_recovery_request_count\": "
+            << result.constructionRecoveryRequests.size() << ",\n";
+        out << "  \"construction_recovery_refinement_passes\": "
+            << result.constructionRecoveryRefinements.size() << ",\n";
+        out << "  \"construction_recovery_requested_refined_leaves\": "
+            << recoveryRequestedRefined << ",\n";
+        out << "  \"construction_recovery_closure_refined_leaves\": "
+            << recoveryClosureRefined << ",\n";
+        out << "  \"construction_recovery_closure_iterations\": "
+            << recoveryClosureIterations << ",\n";
+        out << "  \"construction_recovery_lineage_splits\": "
+            << recoveryLineageSplits << ",\n";
         out << "  \"interface_edge_count\": " << interface.interfaceEdgeCount << ",\n";
         out << "  \"interface_vertex_count\": " << interface.interfaceVertexCount << ",\n";
         out << "  \"single_owner_interface_edges\": " << interface.singleOwnerInterfaceEdges << ",\n";
