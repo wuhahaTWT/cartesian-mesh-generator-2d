@@ -137,14 +137,17 @@ jobs:
                              'scaled_jacobian', 'first_layer_continuity'):
                   assert metric in report['boundary_layer_metrics'], (path, metric)
 
+          # Q2 removed the historical superellipse micro-face hard failure.
+          # Keep this assertion aligned with generate_q1_baselines.py below:
+          # absolute face length is not the contract; dimensionless face/local-h is.
           superellipse = json.loads((root /
               'superellipse.hybrid.quality-contract.json').read_text(encoding='utf-8'))
-          assert superellipse['legacy_hard_safety']['min_face_length_absolute'] < 1.0e-8
+          micro = superellipse['ordinary_metrics']['face_length_over_local_background_h']
           hard_short = [issue for issue in superellipse['issues']
                         if issue['level'] == 'hard' and
-                        issue['metric'] == 'face_length_over_local_background_h']
-          assert hard_short
-          assert min(issue['measured'] for issue in hard_short) < 1.0e-6
+                        issue['metric'].startswith('face_length_over_')]
+          assert micro['worst'] >= 0.01
+          assert hard_short == []
           PY
 
           python3 tools/verification/verify_q1_scale_invariance.py \
