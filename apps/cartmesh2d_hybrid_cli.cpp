@@ -266,6 +266,11 @@ int main(int argc, char** argv) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
+    const auto profilePath = outputPrefix.string() + ".hybrid.profile.json";
+    if (!writeHybridProfileJson2D(hybrid, profilePath, &error)) {
+        std::cerr << error << '\n';
+        return EXIT_FAILURE;
+    }
     if (!hybrid.success()) {
         std::cerr << "hybrid_status=failed failure_reason="
                   << hybridMeshFailureReasonName(hybrid.failure.reason)

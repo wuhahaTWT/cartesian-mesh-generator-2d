@@ -1732,13 +1732,10 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.r1MaximumWinnerGlobalOracleBuilds << ",\n";
         out << "  \"r1_authoritative_full_quality_evaluation_count\": "
             << metrics.r1AuthoritativeFullQualityEvaluations << ",\n";
-        out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "
             << metrics.buildGlobalTopologyInputCells << ",\n";
-        out << "  \"build_global_topology_seconds\": "
-            << metrics.buildGlobalTopologySeconds << ",\n";
         out << "  \"full_solver_quality_evaluation_count\": "
             << metrics.fullSolverQualityEvaluations << ",\n";
         // Attribution of the two totals above. The legacy agglomeration and
@@ -1753,24 +1750,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << profile.fullQualityCalls << ",\n";
         out << "  \"solver_profile_candidate_quality_evaluation_count\": "
             << profile.candidateQualityEvaluationCount << ",\n";
-        out << "  \"solver_profile_candidate_global_rebuild_seconds\": "
-            << profile.candidateGlobalRebuildSeconds << ",\n";
-        out << "  \"solver_profile_candidate_quality_seconds\": "
-            << profile.candidateQualitySeconds << ",\n";
-        // Phase attribution for the solver stage. These already existed in the
-        // profile struct but were never reported, so wall time could not be
-        // assigned to a phase without an external sampler.
-        out << "  \"solver_profile_initial_partition_seconds\": "
-            << profile.initialPartitionSeconds << ",\n";
-        out << "  \"solver_profile_source_repair_seconds\": "
-            << profile.sourceRepairSeconds << ",\n";
-        out << "  \"solver_profile_final_repartition_seconds\": "
-            << profile.finalRepartitionSeconds << ",\n";
-        out << "  \"solver_profile_candidate_polygon_work_seconds\": "
-            << profile.candidatePolygonWorkSeconds << ",\n";
-        out << "  \"solver_profile_full_quality_seconds\": "
-            << profile.fullQualitySeconds << ",\n";
-        out << "  \"solver_repair_seconds\": " << metrics.solverRepairSeconds << ",\n";
         out << "  \"r1_minimum_face_over_local_h_before\": "
             << metrics.r1MinimumFaceOverLocalHBefore << ",\n";
         out << "  \"r1_minimum_face_over_local_h_after\": "
@@ -1842,6 +1821,46 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
     }
     if (!out.good()) {
         setError(error, "failed while writing H4-2 JSON report");
+        return false;
+    }
+    return true;
+}
+
+bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
+                              const std::filesystem::path& path,
+                              std::string* error) {
+    std::ofstream out(path);
+    if (!out) {
+        setError(error, "failed to open hybrid profile JSON");
+        return false;
+    }
+    const auto& metrics=result.metrics;
+    const auto& profile=result.solverTopologyReport.profile;
+    out << std::setprecision(17);
+    out << "{\n";
+    out << "  \"measurement_class\": \"wall_time\",\n";
+    out << "  \"reproducible\": false,\n";
+    out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
+    out << "  \"build_global_topology_seconds\": "
+        << metrics.buildGlobalTopologySeconds << ",\n";
+    out << "  \"solver_repair_seconds\": " << metrics.solverRepairSeconds << ",\n";
+    out << "  \"solver_profile_initial_partition_seconds\": "
+        << profile.initialPartitionSeconds << ",\n";
+    out << "  \"solver_profile_source_repair_seconds\": "
+        << profile.sourceRepairSeconds << ",\n";
+    out << "  \"solver_profile_final_repartition_seconds\": "
+        << profile.finalRepartitionSeconds << ",\n";
+    out << "  \"solver_profile_candidate_polygon_work_seconds\": "
+        << profile.candidatePolygonWorkSeconds << ",\n";
+    out << "  \"solver_profile_candidate_global_rebuild_seconds\": "
+        << profile.candidateGlobalRebuildSeconds << ",\n";
+    out << "  \"solver_profile_candidate_quality_seconds\": "
+        << profile.candidateQualitySeconds << ",\n";
+    out << "  \"solver_profile_full_quality_seconds\": "
+        << profile.fullQualitySeconds << "\n";
+    out << "}\n";
+    if (!out.good()) {
+        setError(error, "failed while writing hybrid profile JSON");
         return false;
     }
     return true;
