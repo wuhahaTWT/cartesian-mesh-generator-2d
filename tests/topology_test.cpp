@@ -174,12 +174,34 @@ int main() {
               [](const auto& vertex) { return !vertex.existedAtBaseRevision; })==1 &&
           newVertexDelta.lockedBoundaryEdgeCount==transaction.boundaryLocks.size(),
           "patch-local delta assigns one deterministic interior ID and twin incidences");
+    const auto revisionedBase=buildRevisionedTopology2D(mesh,incidence);
+    const auto revisionedPatch=applyTopologyDelta2D(revisionedBase,newVertexDelta);
+    const auto leftIdentity=TopologySourceIdentity2D{mesh.cells.front().sourceKey,
+                                                    mesh.cells.front().sourceId};
+    check(revisionedBase.valid() && revisionedPatch.valid() &&
+          revisionedPatch.revision==18U && revisionedPatch.cells.size()==5U &&
+          revisionedPatch.cells.at(leftIdentity).vertices==
+              revisionedBase.cells.at(leftIdentity).vertices &&
+          revisionedPatch.edgeIncidences.size()==13U,
+          "revisioned topology applies only delta and preserves untouched stable IDs");
+    auto fourPieceSources=cells;
+    fourPieceSources.erase(fourPieceSources.begin()+1,fourPieceSources.end());
+    fourPieceSources.insert(fourPieceSources.end(),fourPiecePatch.begin(),fourPiecePatch.end());
+    const auto fourPieceOracle=buildGlobalTopology(fourPieceSources,domain,boundary);
+    check(fourPieceOracle.valid() &&
+          revisionedTopologyMatchesOracle2D(revisionedPatch,fourPieceOracle),
+          "revisioned patch-local result is geometrically equal to global oracle");
     const auto committed=evaluateTopologyPatchTransactionOracle2D(
         mesh,incidence,transaction,cells,{replacement},domain,
         BoundaryRegion2D(boundary),{true,0.5});
     check(committed.valid() && committed.accepted && committed.revision==18U &&
           committed.topology.cells.size()==2U && committed.globalOracleBuildCount==1U &&
-          committed.delta.valid() &&
+          committed.delta.valid() && committed.deltaMatchesGlobalOracle &&
+          committed.revisionedTopology.valid() &&
+          committed.profile.removedCellCount==2U &&
+          committed.profile.addedCellCount==1U &&
+          committed.profile.globalOracleBuildCount==1U &&
+          committed.profile.affectedEdgeCount<mesh.edges.size() &&
           std::abs(committed.candidatePatchArea-committed.originalPatchArea)<=1.0e-12,
           "area-preserving locked patch commits as one revision");
     auto movedReplacement=replacement;
