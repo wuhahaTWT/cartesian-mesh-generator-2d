@@ -1,0 +1,102 @@
+{
+  "format_version": "cartmesh2d-r1-closeout-v1",
+  "r1_status": "CLOSED_FOR_NARROW_GAP_SCOPE",
+  "validated_code_head": "6068f59da894162bb4547efa1c19f7d92a9f7e5f",
+  "closeout_base": "c3f865012f0af13c6a333ecb52880d1653c05345",
+  "github_validation": {
+    "pull_request": 2,
+    "workflow": "cartmesh2d-ci",
+    "run_id": 33315949353,
+    "run_number": 24,
+    "conclusion": "success",
+    "tested_merge_commit": "be72d66ef647874de52d88b436058443763c7cb4",
+    "artifact_id": 9733481868,
+    "artifact_name": "cartmesh2d-h4-validation",
+    "artifact_sha256": "c7c8ec33286a95226ab01fcb1c3a117df3ce6dca7753f92327c317c484f529a3",
+    "ctest": {
+      "passed": 75,
+      "failed": 0
+    },
+    "openfoam": {
+      "version": "v2606",
+      "checkmesh": "PASS",
+      "cases": [
+        "circle",
+        "superellipse",
+        "concave_l",
+        "sharp_trailing_edge",
+        "narrow_gap"
+      ]
+    },
+    "q0_deterministic_replay": "PASS",
+    "q1_deterministic_replay": "PASS",
+    "q1_scale_invariance": "PASS"
+  },
+  "narrow_gap": {
+    "solver_cell_count": 3187,
+    "area_error": -3.375077994860476e-14,
+    "interface_edge_count": 592,
+    "r1_short_face_candidate_count": 12,
+    "r1_local_candidate_count": 4,
+    "r1_local_quality_evaluation_count": 8,
+    "r1_candidate_global_topology_build_count": 0,
+    "r1_candidate_full_global_quality_evaluation_count": 0,
+    "r1_global_oracle_build_count": 4,
+    "r1_maximum_winner_global_oracle_builds_per_transaction": 1,
+    "r1_authoritative_full_quality_evaluation_count": 9,
+    "r1_minimum_face_over_local_h_before": 0.007843137254903904,
+    "r1_minimum_face_over_local_h_after": 0.014619607843136694,
+    "r1_local_winner_matches_global_authority": true,
+    "r1_patch_outside_stable_ids_unchanged": true,
+    "r1_local_delta_matches_global_oracle": true,
+    "solver_quality_issue_count": 0,
+    "solver_metrics": {
+      "max_non_orthogonality_deg": 68.81332467755405,
+      "max_internal_skewness": 2.8781178953208646,
+      "min_face_weight": 0.05157451029010556,
+      "min_volume_ratio": 0.011853263410370789,
+      "min_interior_angle_deg": 2.4658288034208566,
+      "max_cell_aspect": 63.386304815502285
+    },
+    "q1_status": "FAIL",
+    "q1_hard_issue_counts": {
+      "face_weight": 95,
+      "volume_ratio": 295,
+      "minimum_interior_angle_deg": 20,
+      "non_orthogonality_deg": 14,
+      "hydraulic_aspect": 2
+    },
+    "sha256": {
+      "solver_cm2d": "f95b12bc1495989e3531a4354633710c15ab59109b7bbac2336b182f76288d31",
+      "solver_quality": "4ab9d344bbb766f70bb547533d50c3ed7e66f9076f58e85071a887d9fb48056c",
+      "quality_contract": "162ab2a6a49e63a798c6c3fd4f296da60db212b3698797e8fc6c3a3a84cba8ae"
+    },
+    "profile_seconds": {
+      "r1_repair": 1.696259067,
+      "solver_repair_including_r1": 2.11976745,
+      "build_global_topology_process_total": 0.424665681999997
+    }
+  },
+  "sharp_trailing_edge": {
+    "migration_status": "NO_GO",
+    "r1_short_face_candidate_count": 0,
+    "r1_local_candidate_count": 0,
+    "r1_global_oracle_build_count": 0,
+    "minimum_face_over_local_h": 0.0004202383138623607,
+    "q1_status": "FAIL",
+    "reason": "mutable/mutable migration remains intentionally gated; no production evidence yet for its closure size or candidate behavior"
+  },
+  "closeout_changes": {
+    "local_short_face_gate": "A local acceptance is now a sufficient condition for strict global short-face lexicographic improvement after restoring any unchanged outside scope.",
+    "counterexample_regression": "The local (hard=1,max=4,total=6) vs base (hard=1,max=5,total=5) case is rejected at compile time because an outside dominant maximum can otherwise reverse the global result.",
+    "ranking_regression": "Scope-relative improvement remains primary and exact ties remain cell-id deterministic.",
+    "ci_q1_fix": "The workflow no longer asserts the historical pre-Q2 superellipse micro-face failure while later expecting that Q2 removed it."
+  },
+  "performance_status": {
+    "r1_candidate_global_work": "eliminated_and_measured_zero",
+    "overall_hotspot": "UNATTRIBUTED",
+    "partition_source_polygons_is_confirmed_hotspot": false,
+    "policy": "Do not optimize a presumed partition hotspot until top-level phase timing accounts for the remaining end-to-end wall time."
+  },
+  "provenance_note": "GitHub Actions validates the PR merge result on Ubuntu/GCC. Claude's earlier macOS/MesaSDK artifact reported 3185 narrow-gap solver cells while this independent CI run reports 3187; therefore no cross-compiler byte-identity claim is made. Correctness gates, R1 zero-count requirements, solver quality, deterministic replay, independent reader and OpenFOAM v2606 checkMesh are the closeout authority."
+}
