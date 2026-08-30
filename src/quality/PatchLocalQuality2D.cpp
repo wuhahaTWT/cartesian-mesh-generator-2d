@@ -40,6 +40,27 @@ struct ScopeUse {
     return before-after<=1.0e-8*std::max(1.0,std::abs(before));
 }
 
+// A patch-local short-face improvement must remain a strict improvement after
+// any unchanged outside-of-scope contribution is restored. If the hard-count
+// drops, the global hard-count necessarily drops by the same amount. Otherwise
+// the local maximum severity may not increase and the additive total severity
+// must strictly decrease. The latter is essential: a local decrease in maximum
+// severity alone can be hidden by a worse unchanged face outside the patch,
+// exposing an increased total severity and reversing the global lexicographic
+// score.
+[[nodiscard]] constexpr bool shortFaceImprovementImpliesGlobal(
+    std::size_t candidateHard,double candidateMaximum,double candidateTotal,
+    std::size_t baseHard,double baseMaximum,double baseTotal) noexcept {
+    if (candidateHard<baseHard) return true;
+    if (candidateHard!=baseHard) return false;
+    return candidateMaximum<=baseMaximum && candidateTotal<baseTotal;
+}
+
+static_assert(shortFaceImprovementImpliesGlobal(0U,100.0,100.0,1U,1.0,1.0));
+static_assert(shortFaceImprovementImpliesGlobal(1U,4.0,4.0,1U,5.0,5.0));
+static_assert(!shortFaceImprovementImpliesGlobal(1U,4.0,6.0,1U,5.0,5.0));
+static_assert(!shortFaceImprovementImpliesGlobal(1U,6.0,4.0,1U,5.0,5.0));
+
 } // namespace
 
 PatchLocalQuality2D evaluatePatchLocalQuality2D(
@@ -105,6 +126,7 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
     double minimumFaceLength=std::numeric_limits<double>::infinity();
     double minimumRatio=std::numeric_limits<double>::infinity();
     for (const auto& [key,incidences]:uses) {
+        (void)key;
         if (incidences.size()>2U) {
             result.issues.push_back("patch-local scope face is non-manifold");
             return result;
@@ -206,16 +228,21 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
 bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
                                const PatchLocalQuality2D& base) noexcept {
     if (!candidate.valid() || !base.valid()) return false;
-    return noWorseUpper(candidate.maxNonOrthogonalityDeg,base.maxNonOrthogonalityDeg) &&
-           noWorseUpper(candidate.maxInternalSkewness,base.maxInternalSkewness) &&
-           noWorseUpper(candidate.maxBoundarySkewness,base.maxBoundarySkewness) &&
-           noWorseUpper(candidate.maxConcavityDeg,base.maxConcavityDeg) &&
-           noWorseUpper(candidate.maxCellAspect,base.maxCellAspect) &&
-           noWorseLower(candidate.minInteriorAngleDeg,base.minInteriorAngleDeg) &&
-           noWorseLower(candidate.minFaceLength,base.minFaceLength) &&
-           noWorseLower(candidate.minFaceWeight,base.minFaceWeight) &&
-           noWorseLower(candidate.minVolumeRatio,base.minVolumeRatio) &&
-           noWorseLower(candidate.minCompactness,base.minCompactness);
+    const bool solverNoWorse=
+        noWorseUpper(candidate.maxNonOrthogonalityDeg,base.maxNonOrthogonalityDeg) &&
+        noWorseUpper(candidate.maxInternalSkewness,base.maxInternalSkewness) &&
+        noWorseUpper(candidate.maxBoundarySkewness,base.maxBoundarySkewness) &&
+        noWorseUpper(candidate.maxConcavityDeg,base.maxConcavityDeg) &&
+        noWorseUpper(candidate.maxCellAspect,base.maxCellAspect) &&
+        noWorseLower(candidate.minInteriorAngleDeg,base.minInteriorAngleDeg) &&
+        noWorseLower(candidate.minFaceLength,base.minFaceLength) &&
+        noWorseLower(candidate.minFaceWeight,base.minFaceWeight) &&
+        noWorseLower(candidate.minVolumeRatio,base.minVolumeRatio) &&
+        noWorseLower(candidate.minCompactness,base.minCompactness);
+    return solverNoWorse && shortFaceImprovementImpliesGlobal(
+        candidate.hardShortFaceCount,candidate.maximumShortFaceSeverity,
+        candidate.totalShortFaceSeverity,base.hardShortFaceCount,
+        base.maximumShortFaceSeverity,base.totalShortFaceSeverity);
 }
 
 PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
@@ -274,7 +301,8 @@ bool patchLocalRankBetter2D(const PatchLocalRank2D& candidate,
                     current.secondCellId);
 }
 
-PatchLocalScope2D buildPatchLocalScope2D(    const TopologyMesh2D& topology,const EdgeIncidenceStore2D& incidence,
+PatchLocalScope2D buildPatchLocalScope2D(
+    const TopologyMesh2D& topology,const EdgeIncidenceStore2D& incidence,
     const std::vector<std::size_t>& sortedPatchCellIds,
     const std::vector<double>& localBackgroundH,
     const std::vector<bool>& ratedCells) {
