@@ -479,4 +479,12 @@ resolveAutomaticHybridTransitionPlan2D(
     const std::filesystem::path& path,
     std::string* error = nullptr);
 
+// Wall-time measurements are written separately from the report because the
+// report is compared byte-for-byte by the determinism regressions and timings
+// are not reproducible.
+[[nodiscard]] bool writeHybridProfileJson2D(
+    const HybridMeshBuildResult2D& result,
+    const std::filesystem::path& path,
+    std::string* error = nullptr);
+
 } // namespace cartmesh2d
