@@ -1,4 +1,6 @@
 #include "cartmesh2d/topology/Topology2D.hpp"
+#include "cartmesh2d/topology/EdgeIncidence2D.hpp"
+#include "cartmesh2d/topology/PatchTransaction2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -95,6 +97,69 @@ int main() {
           "coarse face is split into two owner-neighbour fragments");
     check(!sawLongUnsplitInterface, "no T-junction-spanning coarse edge remains");
     check(boundaryCount == 7, "outer rectangle is represented by seven boundary fragments");
+
+    const auto incidence=buildEdgeIncidenceStore2D(mesh,17U);
+    const auto repeatedIncidence=buildEdgeIncidenceStore2D(mesh,17U);
+    check(incidence.valid(),"half-edge-lite incidence passes audit");
+    check(incidence.revision==17U && incidence.audit.internalEdges==internalCount &&
+          incidence.audit.boundaryEdges==boundaryCount &&
+          incidence.audit.halfEdges==2U*internalCount+boundaryCount &&
+          incidence.audit.twinPairs==internalCount,
+          "edge incidence has exact boundary/internal/twin counts");
+    check(incidence.stableEdgeKeys==repeatedIncidence.stableEdgeKeys &&
+          incidence.cellHalfEdges==repeatedIncidence.cellHalfEdges &&
+          incidence.edgeHalfEdges==repeatedIncidence.edgeHalfEdges,
+          "half-edge-lite incidence is deterministic");
+    bool halfEdgeLinksClose=true;
+    for (const auto& use:incidence.halfEdges) {
+        halfEdgeLinksClose=halfEdgeLinksClose &&
+            incidence.halfEdges[use.next].previous==use.id &&
+            incidence.halfEdges[use.previous].next==use.id;
+        if (use.twin) halfEdgeLinksClose=halfEdgeLinksClose &&
+            incidence.halfEdges[*use.twin].twin==use.id;
+    }
+    check(halfEdgeLinksClose,"half-edge next/previous/twin links close exactly");
+
+    auto ownerMismatch=mesh;
+    for (auto& edge:ownerMismatch.edges) if (edge.neighbour) {
+        edge.owner=*edge.neighbour;
+        break;
+    }
+    check(!buildEdgeIncidenceStore2D(ownerMismatch).valid(),
+          "edge-incidence audit rejects owner/neighbour corruption");
+
+    const auto transaction=prepareTopologyPatchTransaction2D(mesh,incidence,{1U,2U});
+    check(transaction.valid() && transaction.baseRevision==17U &&
+          transaction.boundaryLocks.size()==6U &&
+          std::abs(transaction.originalPatchArea-1.0)<=1.0e-12,
+          "patch transaction locks its complete external boundary");
+    CutCell2D replacement=fullCell(200U,200U,{{1.0,0.0},{2.0,1.0}});
+    replacement.fluidPolygon.vertices={{1.0,0.0},{2.0,0.0},{2.0,0.5},
+                                       {2.0,1.0},{1.0,1.0},{1.0,0.5}};
+    replacement.area=replacement.fluidPolygon.area();
+    replacement.centroid=replacement.fluidPolygon.centroid();
+    const auto rejectedQuality=evaluateTopologyPatchTransactionOracle2D(
+        mesh,incidence,transaction,cells,{replacement},domain,
+        BoundaryRegion2D(boundary),{false,0.0});
+    check(!rejectedQuality.accepted && rejectedQuality.revision==17U &&
+          rejectedQuality.topology.cells.size()==mesh.cells.size(),
+          "hard-quality rejection rolls back without advancing revision");
+    const auto committed=evaluateTopologyPatchTransactionOracle2D(
+        mesh,incidence,transaction,cells,{replacement},domain,
+        BoundaryRegion2D(boundary),{true,0.5});
+    check(committed.valid() && committed.accepted && committed.revision==18U &&
+          committed.topology.cells.size()==2U &&
+          std::abs(committed.candidatePatchArea-committed.originalPatchArea)<=1.0e-12,
+          "area-preserving locked patch commits as one revision");
+    auto movedReplacement=replacement;
+    movedReplacement.fluidPolygon.vertices[0].x=1.1;
+    movedReplacement.area=movedReplacement.fluidPolygon.area();
+    movedReplacement.centroid=movedReplacement.fluidPolygon.centroid();
+    const auto rejectedLock=evaluateTopologyPatchTransactionOracle2D(
+        mesh,incidence,transaction,cells,{movedReplacement},domain,
+        BoundaryRegion2D(boundary),{true,0.4});
+    check(!rejectedLock.accepted && rejectedLock.revision==17U,
+          "boundary-lock violation rolls back without advancing revision");
 
     for (const auto& cell : mesh.cells) {
         check(cell.vertices.size() == cell.edges.size(), "cell edge loop closes");

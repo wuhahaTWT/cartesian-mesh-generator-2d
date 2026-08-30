@@ -1196,6 +1196,15 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         solverTopologyReport.topology,contractMetadata,boundaryLayerSamples,{},
         &solverQuality,policy.tolerance);
 
+    auto constructionIncidence=buildEdgeIncidenceStore2D(topology,0U);
+    auto solverIncidence=buildEdgeIncidenceStore2D(solverTopologyReport.topology,0U);
+    if (!constructionIncidence.valid() || !solverIncidence.valid()) {
+        const auto& issues=!constructionIncidence.valid()
+            ?constructionIncidence.issues:solverIncidence.issues;
+        return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed,
+                      issues.empty()?"edge-incidence audit failed":issues.front().message);
+    }
+
     HybridMeshBuildResult2D result;
     result.status = HybridMeshStatus2D::Success;
     result.strips = boundaryLayers.strips;
@@ -1204,6 +1213,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.sourceCells = std::move(hybridSources);
     result.topology = std::move(topology);
     result.solverTopology=solverTopologyReport.topology;
+    result.constructionIncidence=std::move(constructionIncidence);
+    result.solverIncidence=std::move(solverIncidence);
     result.cellRecords = std::move(records);
     result.interfaceAudit = interfaceAudit;
     result.solverInterfaceAudit=solverInterfaceAudit;
@@ -1586,6 +1597,14 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"vertex_count\": " << metrics.unifiedVertexCount << ",\n";
         out << "  \"edge_count\": " << metrics.unifiedEdgeCount << ",\n";
         out << "  \"cell_count\": " << metrics.unifiedCellCount << ",\n";
+        out << "  \"construction_half_edge_count\": "
+            << result.constructionIncidence.audit.halfEdges << ",\n";
+        out << "  \"construction_twin_pair_count\": "
+            << result.constructionIncidence.audit.twinPairs << ",\n";
+        out << "  \"solver_half_edge_count\": "
+            << result.solverIncidence.audit.halfEdges << ",\n";
+        out << "  \"solver_twin_pair_count\": "
+            << result.solverIncidence.audit.twinPairs << ",\n";
         out << "  \"solid_area\": " << metrics.solidArea << ",\n";
         out << "  \"outer_envelope_area\": " << metrics.outerEnvelopeArea << ",\n";
         out << "  \"layer_area\": " << metrics.layerArea << ",\n";

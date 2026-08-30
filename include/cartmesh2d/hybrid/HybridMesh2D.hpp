@@ -6,6 +6,7 @@
 #include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "cartmesh2d/topology/EdgeIncidence2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -183,6 +184,8 @@ struct HybridMeshBuildResult2D {
     std::vector<HybridSourceCell2D> sourceCells;
     TopologyMesh2D topology;
     TopologyMesh2D solverTopology;
+    EdgeIncidenceStore2D constructionIncidence;
+    EdgeIncidenceStore2D solverIncidence;
     std::vector<HybridCellRecord2D> cellRecords;
     HybridInterfaceAudit2D interfaceAudit;
     HybridInterfaceAudit2D solverInterfaceAudit;

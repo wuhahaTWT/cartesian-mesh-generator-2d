@@ -17,6 +17,8 @@ add_library(cartmesh2d
     src/quadtree/Quadtree2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
+    src/topology/EdgeIncidence2D.cpp
+    src/topology/PatchTransaction2D.cpp
     src/topology/SharedEdgePartition2D.cpp
     src/stabilization/SmallCell2D.cpp
     src/stabilization/Agglomeration2D.cpp

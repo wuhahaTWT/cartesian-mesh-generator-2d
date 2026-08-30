@@ -147,6 +147,15 @@ void checkSolverReady(const HybridMeshBuildResult2D& result,
         return;
     }
     check(result.solverTopology.valid(), label + " solver topology is valid");
+    check(result.constructionIncidence.valid() && result.solverIncidence.valid(),
+          label + " construction and solver half-edge-lite incidence pass");
+    check(result.constructionIncidence.audit.halfEdges==
+              result.topology.edges.size()+
+              result.constructionIncidence.audit.internalEdges &&
+          result.solverIncidence.audit.halfEdges==
+              result.solverTopology.edges.size()+
+              result.solverIncidence.audit.internalEdges,
+          label + " each internal edge has two directed incidences");
     check(result.solverQuality.valid(), label + " solver-quality gate passes");
     check(result.solverQuality.maxNonOrthogonalityDeg <= 70.0,
           label + " non-orthogonality stays within production gate");
