@@ -1135,13 +1135,20 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
     }
     std::size_t r1ShortFaceCandidates=0U;
+    std::size_t r1LocalCandidates=0U;
+    std::size_t r1LocalQualityEvaluations=0U;
     std::size_t r1AcceptedTransactions=0U;
     std::size_t r1CandidateGlobalTopologyBuilds=0U;
+    std::size_t r1CandidateFullGlobalQualityEvaluations=0U;
     std::size_t r1GlobalOracleBuilds=0U;
+    std::size_t r1MaximumWinnerGlobalOracleBuilds=0U;
+    std::size_t r1AuthoritativeFullQualityEvaluations=0U;
     double r1MinimumFaceOverLocalHBefore=0.0;
     double r1MinimumFaceOverLocalHAfter=0.0;
+    double r1RepairSeconds=0.0;
     bool r1PatchOutsideStableIdsUnchanged=true;
     bool r1LocalDeltaMatchesGlobalOracle=true;
+    bool r1LocalWinnerMatchesGlobalAuthority=true;
     if (localTermination) {
         bool converged=false;
         const double minimumFaceFraction=
@@ -1167,8 +1174,22 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                 r1MinimumFaceOverLocalHBefore=repair.minimumFaceOverLocalHBefore;
             r1MinimumFaceOverLocalHAfter=repair.minimumFaceOverLocalHAfter;
             r1ShortFaceCandidates+=repair.candidateCount;
+            r1LocalCandidates+=repair.localCandidateCount;
+            r1LocalQualityEvaluations+=repair.localQualityEvaluationCount;
             r1CandidateGlobalTopologyBuilds+=repair.candidateGlobalTopologyBuildCount;
+            r1CandidateFullGlobalQualityEvaluations+=
+                repair.candidateFullGlobalQualityEvaluationCount;
             r1GlobalOracleBuilds+=repair.globalOracleBuildCount;
+            r1MaximumWinnerGlobalOracleBuilds=std::max(
+                r1MaximumWinnerGlobalOracleBuilds,repair.globalOracleBuildCount);
+            r1AuthoritativeFullQualityEvaluations+=
+                repair.authoritativeFullQualityEvaluationCount;
+            r1RepairSeconds+=repair.repairSeconds;
+            // Only meaningful once a winner reached the authoritative check.
+            if (repair.globalOracleBuildCount>0U)
+                r1LocalWinnerMatchesGlobalAuthority=
+                    r1LocalWinnerMatchesGlobalAuthority &&
+                    repair.localWinnerMatchesGlobalAuthority;
             if (!repair.valid()) {
                 const std::string detail=repair.issues.empty()
                     ?"R1 patch-local short-face repair failed":repair.issues.front();
@@ -1328,13 +1349,23 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.solverQualityRepartitions=
         result.solverTopologyReport.qualityRepartitionCount;
     result.metrics.r1ShortFaceCandidates=r1ShortFaceCandidates;
+    result.metrics.r1LocalCandidates=r1LocalCandidates;
+    result.metrics.r1LocalQualityEvaluations=r1LocalQualityEvaluations;
     result.metrics.r1AcceptedTransactions=r1AcceptedTransactions;
     result.metrics.r1CandidateGlobalTopologyBuilds=r1CandidateGlobalTopologyBuilds;
+    result.metrics.r1CandidateFullGlobalQualityEvaluations=
+        r1CandidateFullGlobalQualityEvaluations;
     result.metrics.r1GlobalOracleBuilds=r1GlobalOracleBuilds;
+    result.metrics.r1MaximumWinnerGlobalOracleBuilds=r1MaximumWinnerGlobalOracleBuilds;
+    result.metrics.r1AuthoritativeFullQualityEvaluations=
+        r1AuthoritativeFullQualityEvaluations;
+    result.metrics.r1RepairSeconds=r1RepairSeconds;
     result.metrics.r1MinimumFaceOverLocalHBefore=r1MinimumFaceOverLocalHBefore;
     result.metrics.r1MinimumFaceOverLocalHAfter=r1MinimumFaceOverLocalHAfter;
     result.metrics.r1PatchOutsideStableIdsUnchanged=r1PatchOutsideStableIdsUnchanged;
     result.metrics.r1LocalDeltaMatchesGlobalOracle=r1LocalDeltaMatchesGlobalOracle;
+    result.metrics.r1LocalWinnerMatchesGlobalAuthority=
+        r1LocalWinnerMatchesGlobalAuthority;
     result.metrics.unifiedVertexCount = result.topology.vertices.size();
     result.metrics.unifiedEdgeCount = result.topology.edges.size();
     result.metrics.unifiedCellCount = result.topology.cells.size();
@@ -1667,18 +1698,31 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"solver_cell_count\": " << metrics.solverCellCount << ",\n";
         out << "  \"r1_short_face_candidate_count\": "
             << metrics.r1ShortFaceCandidates << ",\n";
+        out << "  \"r1_local_candidate_count\": "
+            << metrics.r1LocalCandidates << ",\n";
+        out << "  \"r1_local_quality_evaluation_count\": "
+            << metrics.r1LocalQualityEvaluations << ",\n";
         out << "  \"r1_accepted_transaction_count\": "
             << metrics.r1AcceptedTransactions << ",\n";
         out << "  \"r1_candidate_global_topology_build_count\": "
             << metrics.r1CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"r1_candidate_full_global_quality_evaluation_count\": "
+            << metrics.r1CandidateFullGlobalQualityEvaluations << ",\n";
         out << "  \"r1_global_oracle_build_count\": "
             << metrics.r1GlobalOracleBuilds << ",\n";
+        out << "  \"r1_maximum_winner_global_oracle_builds_per_transaction\": "
+            << metrics.r1MaximumWinnerGlobalOracleBuilds << ",\n";
+        out << "  \"r1_authoritative_full_quality_evaluation_count\": "
+            << metrics.r1AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
         out << "  \"r1_minimum_face_over_local_h_before\": "
             << metrics.r1MinimumFaceOverLocalHBefore << ",\n";
         out << "  \"r1_minimum_face_over_local_h_after\": "
             << metrics.r1MinimumFaceOverLocalHAfter << ",\n";
         out << "  \"r1_patch_outside_stable_ids_unchanged\": "
             << (metrics.r1PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"r1_local_winner_matches_global_authority\": "
+            << (metrics.r1LocalWinnerMatchesGlobalAuthority?"true":"false") << ",\n";
         out << "  \"r1_local_delta_matches_global_oracle\": "
             << (metrics.r1LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
         out << "  \"construction_half_edge_count\": "

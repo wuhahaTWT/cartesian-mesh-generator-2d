@@ -1,4 +1,5 @@
 #include "cartmesh2d/io/OpenFoam2D.hpp"
+#include "cartmesh2d/quality/PatchLocalQuality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 
@@ -100,12 +101,55 @@ int main() {
         polygonCell(2,{{1,0},{1,0.4},{r1Short,0.4}}),
         polygonCell(3,{{1,0},{2,0},{2,0.4},{1,0.4}})
     },domain,embeddedReference);
+    const std::vector<double> r1LocalH{1,1,1,1};
+    const std::vector<bool> r1Rated{false,true,true,true};
+    const auto r1Incidence=buildEdgeIncidenceStore2D(r1Topology,0U);
+    check(r1Incidence.valid(),"R1 fixture incidence is valid");
+
+    // A scope that covers every cell must reproduce the authoritative global
+    // aggregates exactly, otherwise the local evaluator has drifted.
+    const std::vector<std::size_t> allCells{0,1,2,3};
+    const auto wholeMeshScope=buildPatchLocalScope2D(
+        r1Topology,r1Incidence,allCells,r1LocalH,r1Rated);
+    const auto wholeMeshLocal=evaluatePatchLocalQuality2D(
+        wholeMeshScope.cells,0.01);
+    const auto wholeMeshGlobal=evaluateSolverQuality2D(r1Topology);
+    check(wholeMeshScope.valid() && wholeMeshLocal.valid() &&
+          wholeMeshScope.cells.size()==r1Topology.cells.size() &&
+          wholeMeshLocal.ratedCellCount==r1Topology.cells.size() &&
+          wholeMeshLocal.ratedFaceCount==r1Topology.edges.size(),
+          "whole-mesh patch-local scope covers every cell and face");
+    check(wholeMeshLocal.maxNonOrthogonalityDeg==wholeMeshGlobal.maxNonOrthogonalityDeg &&
+          wholeMeshLocal.maxInternalSkewness==wholeMeshGlobal.maxInternalSkewness &&
+          wholeMeshLocal.maxBoundarySkewness==wholeMeshGlobal.maxBoundarySkewness &&
+          wholeMeshLocal.maxConcavityDeg==wholeMeshGlobal.maxConcavityDeg &&
+          wholeMeshLocal.maxCellAspect==wholeMeshGlobal.maxCellAspect &&
+          wholeMeshLocal.minInteriorAngleDeg==wholeMeshGlobal.minInteriorAngleDeg &&
+          wholeMeshLocal.minFaceLength==wholeMeshGlobal.minFaceLength &&
+          wholeMeshLocal.minFaceWeight==wholeMeshGlobal.minFaceWeight &&
+          wholeMeshLocal.minVolumeRatio==wholeMeshGlobal.minVolumeRatio &&
+          wholeMeshLocal.minCompactness==wholeMeshGlobal.minCompactness &&
+          wholeMeshLocal.issueCount==wholeMeshGlobal.issues.size(),
+          "patch-local quality equals authoritative global quality on the full scope");
+
+    // A patch cell whose neighbour is dropped cannot be evaluated: the halo is
+    // what makes the local metrics authoritative, so this must fail closed.
+    auto truncated=wholeMeshScope.cells;
+    truncated.pop_back();
+    check(!evaluatePatchLocalQuality2D(truncated,0.01).valid(),
+          "patch-local quality fails closed when a patch face loses its neighbour");
+
     const auto r1Repair=repairSolverShortFaces2D(
         r1Topology,domain,BoundaryRegion2D(embeddedReference),
-        {true,false,false,false},{1,1,1,1},{false,true,true,true},0.01);
+        {true,false,false,false},r1LocalH,r1Rated,0.01);
     check(r1Repair.valid() && r1Repair.accepted &&
           r1Repair.candidateGlobalTopologyBuildCount==0U &&
+          r1Repair.candidateFullGlobalQualityEvaluationCount==0U &&
           r1Repair.globalOracleBuildCount==1U &&
+          r1Repair.localCandidateCount>0U &&
+          r1Repair.localQualityEvaluationCount==2U*r1Repair.localCandidateCount &&
+          r1Repair.authoritativeFullQualityEvaluationCount==2U &&
+          r1Repair.localWinnerMatchesGlobalAuthority &&
           r1Repair.patchOutsideStableIdsUnchanged &&
           r1Repair.localDeltaMatchesGlobalOracle &&
           r1Repair.hardFaceCountBefore==1U && r1Repair.hardFaceCountAfter==0U &&
@@ -114,12 +158,26 @@ int main() {
           " valid="+std::to_string(r1Repair.valid())+
           " accepted="+std::to_string(r1Repair.accepted)+
           " candidates="+std::to_string(r1Repair.candidateCount)+
+          " local_candidates="+std::to_string(r1Repair.localCandidateCount)+
+          " local_quality="+std::to_string(r1Repair.localQualityEvaluationCount)+
           " candidate_global="+std::to_string(r1Repair.candidateGlobalTopologyBuildCount)+
+          " candidate_full_quality="+
+              std::to_string(r1Repair.candidateFullGlobalQualityEvaluationCount)+
           " oracle="+std::to_string(r1Repair.globalOracleBuildCount)+
+          " authoritative_quality="+
+              std::to_string(r1Repair.authoritativeFullQualityEvaluationCount)+
           " before="+std::to_string(r1Repair.hardFaceCountBefore)+
           " after="+std::to_string(r1Repair.hardFaceCountAfter)+
           " min_after="+std::to_string(r1Repair.minimumFaceOverLocalHAfter)+
           " issue="+(r1Repair.issues.empty()?std::string("none"):r1Repair.issues.front()));
+    const auto repeatedRepair=repairSolverShortFaces2D(
+        r1Topology,domain,BoundaryRegion2D(embeddedReference),
+        {true,false,false,false},r1LocalH,r1Rated,0.01);
+    check(repeatedRepair.accepted &&
+          repeatedRepair.candidateCount==r1Repair.candidateCount &&
+          repeatedRepair.localCandidateCount==r1Repair.localCandidateCount &&
+          repeatedRepair.minimumFaceOverLocalHAfter==r1Repair.minimumFaceOverLocalHAfter,
+          "local winner selection is deterministic across repeated runs");
 
     const auto caseDir=std::filesystem::temp_directory_path()/"cartmesh2d-s1-openfoam-fixture";
     std::string error;

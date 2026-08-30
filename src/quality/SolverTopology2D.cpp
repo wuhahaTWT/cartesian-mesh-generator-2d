@@ -1,4 +1,5 @@
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "cartmesh2d/quality/PatchLocalQuality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/topology/PatchTransaction2D.hpp"
 
@@ -10,6 +11,7 @@
 #include <numeric>
 #include <numbers>
 #include <optional>
+#include <set>
 #include <tuple>
 
 namespace cartmesh2d {
@@ -1360,6 +1362,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     const std::vector<double>& localBackgroundH,
     const std::vector<bool>& ratedCells,double minimumFaceOverLocalH,
     const TolerancePolicy& tol) {
+    const auto repairStart=ProfileClock::now();
     SolverShortFaceRepairResult2D result;
     result.topology=topology;
     result.immutableCells=immutableCells;
@@ -1425,13 +1428,20 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
                lower(candidate.minCompactness,current.minCompactness);
     };
     const auto currentQuality=evaluateSolverQuality2D(topology,{},tol);
-    if (!currentQuality.valid()) return result;
+    ++result.authoritativeFullQualityEvaluationCount;
+    if (!currentQuality.valid()) {
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
     const auto currentScore=scoreFaces(topology,localBackgroundH,ratedCells);
     result.hardFaceCountBefore=currentScore.hardCount;
     result.hardFaceCountAfter=currentScore.hardCount;
     result.minimumFaceOverLocalHBefore=currentScore.minimum;
     result.minimumFaceOverLocalHAfter=currentScore.minimum;
-    if (currentScore.hardCount==0U) return result;
+    if (currentScore.hardCount==0U) {
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
 
     std::vector<std::tuple<double,std::size_t,std::size_t>> shortEdges;
     for (const auto& edge:topology.edges) {
@@ -1447,14 +1457,20 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
                                     std::max(edge.owner,*edge.neighbour));
     }
     std::sort(shortEdges.begin(),shortEdges.end());
-    if (shortEdges.empty()) return result;
+    if (shortEdges.empty()) {
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
     const std::vector<std::size_t> affected{std::get<1>(shortEdges.front()),
                                             std::get<2>(shortEdges.front())};
     // This R1 checkpoint migrates the narrow-gap Q2-B mode only: the failing
     // atomic face is a common-partition fragment on an immutable layer
     // support. Mutable/mutable sharp-tail patches still belong to the later
     // migration stage and must retain their pre-R1 behavior.
-    if (!immutableCells[affected[0]] && !immutableCells[affected[1]]) return result;
+    if (!immutableCells[affected[0]] && !immutableCells[affected[1]]) {
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
     result.applicable=true;
     std::vector<std::pair<std::size_t,std::size_t>> pairs;
     if (!immutableCells[affected[0]] && !immutableCells[affected[1]])
@@ -1475,6 +1491,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     const auto incidence=buildEdgeIncidenceStore2D(topology,0U);
     if (!incidence.valid()) {
         result.issues.push_back("short-face base incidence is invalid");
+        result.repairSeconds=profileSeconds(repairStart);
         return result;
     }
     std::map<std::pair<double,double>,TopologyDeltaVertex2D> identityByPoint;
@@ -1507,6 +1524,24 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     for (const auto& cell:topology.cells)
         baseSources.push_back(sourceCell(cell.id,topologyCellPolygon(topology,cell.id)));
 
+    // Phase 1: every candidate is generated, validated and ranked using only
+    // the affected patch and its one-ring halo. No global topology build and no
+    // full global quality evaluation may happen in this loop.
+    struct ShortFaceCandidate2D {
+        std::size_t first = 0;
+        std::size_t second = 0;
+        std::vector<std::size_t> selected;
+        TopologyPatchTransaction2D transaction;
+        std::vector<TopologyReplacementCell2D> replacements;
+        PatchLocalQuality2D baseLocal;
+        PatchLocalQuality2D candidateLocal;
+    };
+    std::optional<ShortFaceCandidate2D> winner;
+    std::string localRejectReason;
+    // Measured, not asserted: any accidental global rebuild or full-quality
+    // evaluation inside the selection loop shows up in these deltas.
+    const auto selectionStartGlobalBuilds=globalTopologyBuildCount2D();
+    const auto selectionStartFullQuality=solverQualityEvaluationCount2D();
     for (const auto& [first,second]:pairs) {
         ++result.candidateCount;
         const auto merged=mergeAdjacentPolygonsSimple(
@@ -1588,74 +1623,167 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
             return replacement;
         };
         std::vector<TopologyReplacementCell2D> replacements;
+        std::vector<std::pair<double,bool>> replacementMetadata;
         replacements.push_back(identified(first,repairUnion));
         replacements.back().cell.sourceLineage=mergedLineage(
             topology.cells[first].sourceLineage,topology.cells[second].sourceLineage);
-        for (const auto& [cell,polygon]:simplifiedImmutable)
+        replacementMetadata.emplace_back(
+            std::max(localBackgroundH[first],localBackgroundH[second]),
+            ratedCells[first] || ratedCells[second]);
+        for (const auto& [cell,polygon]:simplifiedImmutable) {
             replacements.push_back(identified(cell,polygon));
+            replacementMetadata.emplace_back(localBackgroundH[cell],ratedCells[cell]);
+        }
         const auto localDelta=buildTopologyDelta2D(
             topology,incidence,transaction,replacements,tol);
         if (!localDelta.valid()) {
-            if (!localDelta.issues.empty()) result.issues=localDelta.issues;
+            if (!localDelta.issues.empty()) localRejectReason=localDelta.issues.front();
             continue;
         }
+        ++result.localCandidateCount;
 
-        const auto committed=evaluateTopologyPatchTransactionOracle2D(
-            topology,incidence,transaction,baseSources,replacements,domain,boundary,
-            {true,0.0},tol);
-        result.globalOracleBuildCount+=committed.globalOracleBuildCount;
-        if (!committed.accepted || !committed.deltaMatchesGlobalOracle) {
-            if (!committed.issues.empty()) result.issues=committed.issues;
+        const auto baseScope=buildPatchLocalScope2D(
+            topology,incidence,selected,localBackgroundH,ratedCells);
+        if (!baseScope.valid()) {
+            localRejectReason=baseScope.issues.front();
             continue;
         }
-        std::map<TopologySourceIdentity2D,std::pair<double,bool>> metadata;
-        std::set<TopologySourceIdentity2D> immutableIdentities;
-        for (const auto& cell:topology.cells)
-        {
-            const TopologySourceIdentity2D identity{cell.sourceKey,cell.sourceId};
-            metadata[identity]={localBackgroundH[cell.id],ratedCells[cell.id]};
-            if (immutableCells[cell.id]) immutableIdentities.insert(identity);
+        std::set<StableEdgeKey2D> physicalLocks;
+        for (const auto& lock:transaction.boundaryLocks)
+            if (lock.physicalBoundary) physicalLocks.insert(lock.stableEdge);
+        std::vector<PatchLocalCell2D> candidateScope;
+        for (std::size_t i=0;i<baseScope.cells.size();++i)
+            if (!baseScope.cells[i].inPatch) candidateScope.push_back(baseScope.cells[i]);
+        for (std::size_t i=0;i<replacements.size();++i) {
+            const auto& replacement=replacements[i];
+            PatchLocalCell2D entry;
+            entry.inPatch=true;
+            entry.localBackgroundH=replacementMetadata[i].first;
+            entry.ratedForFaceLength=replacementMetadata[i].second;
+            entry.polygon=replacement.cell.fluidPolygon;
+            for (std::size_t local=0;local<replacement.vertices.size();++local) {
+                const auto from=replacement.vertices[local].stableId;
+                const auto to=replacement.vertices[
+                    (local+1U)%replacement.vertices.size()].stableId;
+                const auto endpoints=std::minmax(from,to);
+                entry.loop.push_back(from);
+                entry.physicalBoundaryFace.push_back(
+                    physicalLocks.contains(StableEdgeKey2D{endpoints.first,endpoints.second}));
+            }
+            candidateScope.push_back(std::move(entry));
         }
-        const double mergedH=std::max(localBackgroundH[first],localBackgroundH[second]);
-        const bool mergedRated=ratedCells[first] || ratedCells[second];
-        metadata[{topology.cells[first].sourceKey,topology.cells[first].sourceId}]=
-            {mergedH,mergedRated};
-        std::vector<double> candidateH;
-        std::vector<bool> candidateRated,candidateImmutable;
-        for (const auto& cell:committed.topology.cells) {
-            const auto identity=TopologySourceIdentity2D{cell.sourceKey,cell.sourceId};
-            const auto item=metadata.at(identity);
-            candidateH.push_back(item.first);
-            candidateRated.push_back(item.second);
-            candidateImmutable.push_back(immutableIdentities.contains(identity));
-        }
-        const auto candidateQuality=evaluateSolverQuality2D(committed.topology,{},tol);
-        const auto candidateScore=scoreFaces(committed.topology,candidateH,candidateRated);
-        if (!legacyNoWorse(candidateQuality,currentQuality) ||
-            !better(candidateScore,currentScore)) {
-            result.issues={"final patch oracle passed but global quality score did not improve"};
+        const auto baseLocal=evaluatePatchLocalQuality2D(
+            baseScope.cells,minimumFaceOverLocalH,{},tol);
+        const auto candidateLocal=evaluatePatchLocalQuality2D(
+            candidateScope,minimumFaceOverLocalH,{},tol);
+        result.localQualityEvaluationCount+=2U;
+        if (!baseLocal.valid() || !candidateLocal.valid()) {
+            localRejectReason=baseLocal.valid()?candidateLocal.issues.front()
+                                               :baseLocal.issues.front();
             continue;
         }
-        const std::set<std::size_t> selectedSet(selected.begin(),selected.end());
-        bool outsideStable=true;
-        const auto revisionedBase=buildRevisionedTopology2D(topology,incidence);
-        for (const auto& cell:topology.cells) if (!selectedSet.contains(cell.id)) {
-            const TopologySourceIdentity2D identity{cell.sourceKey,cell.sourceId};
-            outsideStable=outsideStable &&
-                committed.revisionedTopology.cells.at(identity).vertices==
-                revisionedBase.cells.at(identity).vertices;
+        // Every excluded cell and face is identical in both scopes, so a local
+        // improvement on a monotone aggregate is also a global improvement.
+        if (!patchLocalQualityNoWorse2D(candidateLocal,baseLocal)) {
+            localRejectReason="patch-local candidate quality is worse than the patch it replaces";
+            continue;
         }
-        result.topology=committed.topology;
-        result.immutableCells=std::move(candidateImmutable);
-        result.accepted=true;
-        result.hardFaceCountAfter=candidateScore.hardCount;
-        result.minimumFaceOverLocalHAfter=candidateScore.minimum;
-        result.patchOutsideStableIdsUnchanged=outsideStable;
-        result.localDeltaMatchesGlobalOracle=committed.deltaMatchesGlobalOracle;
+        if (!(std::tie(candidateLocal.hardShortFaceCount,
+                       candidateLocal.maximumShortFaceSeverity,
+                       candidateLocal.totalShortFaceSeverity)<
+              std::tie(baseLocal.hardShortFaceCount,
+                       baseLocal.maximumShortFaceSeverity,
+                       baseLocal.totalShortFaceSeverity))) {
+            localRejectReason="patch-local candidate does not reduce the local short-face score";
+            continue;
+        }
+        ShortFaceCandidate2D accepted{first,second,selected,transaction,
+                                      replacements,baseLocal,candidateLocal};
+        if (!winner || patchLocalQualityRanksBetter2D(candidateLocal,
+                                                     winner->candidateLocal))
+            winner=std::move(accepted);
+    }
+    if (!winner) {
+        result.candidateGlobalTopologyBuildCount=
+            globalTopologyBuildCount2D()-selectionStartGlobalBuilds;
+        result.candidateFullGlobalQualityEvaluationCount=
+            solverQualityEvaluationCount2D()-selectionStartFullQuality;
+        result.issues.push_back(localRejectReason.empty()
+            ?"no patch-local short-face candidate passed the local quality gate"
+            :localRejectReason);
+        result.repairSeconds=profileSeconds(repairStart);
         return result;
     }
-    if (result.issues.empty())
-        result.issues.push_back("no patch-local short-face candidate passed final oracle and quality gates");
+    result.candidateGlobalTopologyBuildCount=
+        globalTopologyBuildCount2D()-selectionStartGlobalBuilds;
+    result.candidateFullGlobalQualityEvaluationCount=
+        solverQualityEvaluationCount2D()-selectionStartFullQuality;
+
+    // Phase 2: exactly one global oracle/materialization and one authoritative
+    // full-quality evaluation, for the selected winner only. A disagreement
+    // fails the transaction closed rather than retrying other candidates.
+    const auto& first=winner->first;
+    const auto& second=winner->second;
+    const auto& selected=winner->selected;
+    const auto committed=evaluateTopologyPatchTransactionOracle2D(
+        topology,incidence,winner->transaction,baseSources,winner->replacements,
+        domain,boundary,{true,0.0},tol);
+    result.globalOracleBuildCount+=committed.globalOracleBuildCount;
+    if (!committed.accepted || !committed.deltaMatchesGlobalOracle) {
+        result.issues.push_back(committed.issues.empty()
+            ?"winner patch transaction failed the global oracle"
+            :committed.issues.front());
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
+    std::map<TopologySourceIdentity2D,std::pair<double,bool>> metadata;
+    std::set<TopologySourceIdentity2D> immutableIdentities;
+    for (const auto& cell:topology.cells) {
+        const TopologySourceIdentity2D identity{cell.sourceKey,cell.sourceId};
+        metadata[identity]={localBackgroundH[cell.id],ratedCells[cell.id]};
+        if (immutableCells[cell.id]) immutableIdentities.insert(identity);
+    }
+    metadata[{topology.cells[first].sourceKey,topology.cells[first].sourceId}]=
+        {std::max(localBackgroundH[first],localBackgroundH[second]),
+         ratedCells[first] || ratedCells[second]};
+    std::vector<double> candidateH;
+    std::vector<bool> candidateRated,candidateImmutable;
+    for (const auto& cell:committed.topology.cells) {
+        const auto identity=TopologySourceIdentity2D{cell.sourceKey,cell.sourceId};
+        const auto item=metadata.at(identity);
+        candidateH.push_back(item.first);
+        candidateRated.push_back(item.second);
+        candidateImmutable.push_back(immutableIdentities.contains(identity));
+    }
+    const auto candidateQuality=evaluateSolverQuality2D(committed.topology,{},tol);
+    ++result.authoritativeFullQualityEvaluationCount;
+    const auto candidateScore=scoreFaces(committed.topology,candidateH,candidateRated);
+    result.localWinnerMatchesGlobalAuthority=
+        legacyNoWorse(candidateQuality,currentQuality) &&
+        better(candidateScore,currentScore);
+    if (!result.localWinnerMatchesGlobalAuthority) {
+        result.issues.push_back(
+            "patch-local winner disagrees with the authoritative global quality result");
+        result.repairSeconds=profileSeconds(repairStart);
+        return result;
+    }
+    const std::set<std::size_t> selectedSet(selected.begin(),selected.end());
+    bool outsideStable=true;
+    const auto revisionedBase=buildRevisionedTopology2D(topology,incidence);
+    for (const auto& cell:topology.cells) if (!selectedSet.contains(cell.id)) {
+        const TopologySourceIdentity2D identity{cell.sourceKey,cell.sourceId};
+        outsideStable=outsideStable &&
+            committed.revisionedTopology.cells.at(identity).vertices==
+            revisionedBase.cells.at(identity).vertices;
+    }
+    result.topology=committed.topology;
+    result.immutableCells=std::move(candidateImmutable);
+    result.accepted=true;
+    result.hardFaceCountAfter=candidateScore.hardCount;
+    result.minimumFaceOverLocalHAfter=candidateScore.minimum;
+    result.patchOutsideStableIdsUnchanged=outsideStable;
+    result.localDeltaMatchesGlobalOracle=committed.deltaMatchesGlobalOracle;
+    result.repairSeconds=profileSeconds(repairStart);
     return result;
 }
 

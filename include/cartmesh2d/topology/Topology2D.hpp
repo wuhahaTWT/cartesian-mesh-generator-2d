@@ -106,4 +106,10 @@ struct TopologyMesh2D {
     const TolerancePolicy& tol = {},
     std::shared_ptr<IntersectionRegistry2D> registry = {});
 
+// Monotonic count of buildGlobalTopology calls in this process. Instrumentation
+// only: it lets a caller prove by measurement, rather than by assertion, that a
+// code path performed no global rebuild. Single-threaded by construction, like
+// the rest of the generator.
+[[nodiscard]] std::size_t globalTopologyBuildCount2D() noexcept;
+
 } // namespace cartmesh2d

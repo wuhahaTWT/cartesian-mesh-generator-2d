@@ -25,6 +25,7 @@ add_library(cartmesh2d
     src/quality/Quality2D.cpp
     src/quality/QualityContract2D.cpp
     src/quality/SolverQuality2D.cpp
+    src/quality/PatchLocalQuality2D.cpp
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
     src/io/BoundaryMetadata2D.cpp
