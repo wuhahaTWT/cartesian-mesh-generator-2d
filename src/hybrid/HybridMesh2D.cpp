@@ -465,6 +465,10 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t remainderMaxLevel,
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& policy) {
+    const auto buildStartGlobalTopologies=globalTopologyBuildCount2D();
+    const auto buildStartGlobalTopologyCells=globalTopologyBuildInputCells2D();
+    const auto buildStartGlobalTopologySeconds=globalTopologyBuildSeconds2D();
+    const auto buildStartFullQuality=solverQualityEvaluationCount2D();
     if (!policyValid(policy) || !domain.valid(policy.tolerance) ||
         !originalWalls.diagnose(policy.tolerance).valid() ||
         !boundaryLayers.success() || boundaryLayers.strips.empty()) {
@@ -1366,6 +1370,19 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.r1LocalDeltaMatchesGlobalOracle=r1LocalDeltaMatchesGlobalOracle;
     result.metrics.r1LocalWinnerMatchesGlobalAuthority=
         r1LocalWinnerMatchesGlobalAuthority;
+    result.metrics.buildGlobalTopologyCalls=
+        globalTopologyBuildCount2D()-buildStartGlobalTopologies;
+    result.metrics.buildGlobalTopologyInputCells=
+        globalTopologyBuildInputCells2D()-buildStartGlobalTopologyCells;
+    result.metrics.buildGlobalTopologySeconds=
+        globalTopologyBuildSeconds2D()-buildStartGlobalTopologySeconds;
+    result.metrics.fullSolverQualityEvaluations=
+        solverQualityEvaluationCount2D()-buildStartFullQuality;
+    result.metrics.solverRepairSeconds=
+        result.solverTopologyReport.profile.initialPartitionSeconds+
+        result.solverTopologyReport.profile.sourceRepairSeconds+
+        result.solverTopologyReport.profile.finalRepartitionSeconds+
+        r1RepairSeconds;
     result.metrics.unifiedVertexCount = result.topology.vertices.size();
     result.metrics.unifiedEdgeCount = result.topology.edges.size();
     result.metrics.unifiedCellCount = result.topology.cells.size();
@@ -1668,6 +1685,7 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
     } else {
         const auto& metrics = result.metrics;
         const auto& interface = result.interfaceAudit;
+        const auto& profile = result.solverTopologyReport.profile;
         std::size_t recoveryRequestedRefined=0U,recoveryClosureRefined=0U;
         std::size_t recoveryClosureIterations=0U,recoveryLineageSplits=0U;
         for (const auto& refinement:result.constructionRecoveryRefinements) {
@@ -1715,6 +1733,44 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"r1_authoritative_full_quality_evaluation_count\": "
             << metrics.r1AuthoritativeFullQualityEvaluations << ",\n";
         out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
+        out << "  \"build_global_topology_call_count\": "
+            << metrics.buildGlobalTopologyCalls << ",\n";
+        out << "  \"build_global_topology_input_cell_total\": "
+            << metrics.buildGlobalTopologyInputCells << ",\n";
+        out << "  \"build_global_topology_seconds\": "
+            << metrics.buildGlobalTopologySeconds << ",\n";
+        out << "  \"full_solver_quality_evaluation_count\": "
+            << metrics.fullSolverQualityEvaluations << ",\n";
+        // Attribution of the two totals above. The legacy agglomeration and
+        // repartition passes build small patch topologies through the same
+        // entry point; those are counted here so the R1 zeros above cannot be
+        // mistaken for the whole pipeline being rebuild-free.
+        out << "  \"solver_profile_global_topology_rebuild_calls\": "
+            << profile.globalTopologyRebuildCalls << ",\n";
+        out << "  \"solver_profile_candidate_topology_count\": "
+            << profile.candidateTopologyCount << ",\n";
+        out << "  \"solver_profile_full_quality_calls\": "
+            << profile.fullQualityCalls << ",\n";
+        out << "  \"solver_profile_candidate_quality_evaluation_count\": "
+            << profile.candidateQualityEvaluationCount << ",\n";
+        out << "  \"solver_profile_candidate_global_rebuild_seconds\": "
+            << profile.candidateGlobalRebuildSeconds << ",\n";
+        out << "  \"solver_profile_candidate_quality_seconds\": "
+            << profile.candidateQualitySeconds << ",\n";
+        // Phase attribution for the solver stage. These already existed in the
+        // profile struct but were never reported, so wall time could not be
+        // assigned to a phase without an external sampler.
+        out << "  \"solver_profile_initial_partition_seconds\": "
+            << profile.initialPartitionSeconds << ",\n";
+        out << "  \"solver_profile_source_repair_seconds\": "
+            << profile.sourceRepairSeconds << ",\n";
+        out << "  \"solver_profile_final_repartition_seconds\": "
+            << profile.finalRepartitionSeconds << ",\n";
+        out << "  \"solver_profile_candidate_polygon_work_seconds\": "
+            << profile.candidatePolygonWorkSeconds << ",\n";
+        out << "  \"solver_profile_full_quality_seconds\": "
+            << profile.fullQualitySeconds << ",\n";
+        out << "  \"solver_repair_seconds\": " << metrics.solverRepairSeconds << ",\n";
         out << "  \"r1_minimum_face_over_local_h_before\": "
             << metrics.r1MinimumFaceOverLocalHBefore << ",\n";
         out << "  \"r1_minimum_face_over_local_h_after\": "

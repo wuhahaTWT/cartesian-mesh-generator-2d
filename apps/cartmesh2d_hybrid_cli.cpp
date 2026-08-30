@@ -324,8 +324,7 @@ int main(int argc, char** argv) {
         openFoamStatus = "written";
     }
 
-    std::cout << "hybrid_status=success cells=" << hybrid.metrics.unifiedCellCount
-              << " solver_cells=" << hybrid.metrics.solverCellCount
+    std::cout << "hybrid_status=success cells=" << hybrid.metrics.unifiedCellCount              << " solver_cells=" << hybrid.metrics.solverCellCount
               << " layer_cells=" << hybrid.metrics.boundaryLayerCellCount
               << " remainder_cut=" << hybrid.metrics.remainderCutCellCount
               << " remainder_cartesian="
@@ -347,6 +346,17 @@ int main(int argc, char** argv) {
               << hybrid.sourceLineageAudit.mismatchedCells
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << " r1_candidates=" << hybrid.metrics.r1ShortFaceCandidates
+              << " r1_local_quality_evals="
+              << hybrid.metrics.r1LocalQualityEvaluations
+              << " r1_candidate_global_builds="
+              << hybrid.metrics.r1CandidateGlobalTopologyBuilds
+              << " r1_candidate_full_quality="
+              << hybrid.metrics.r1CandidateFullGlobalQualityEvaluations
+              << " r1_winner_oracle_builds="
+              << hybrid.metrics.r1GlobalOracleBuilds
+              << " r1_accepted=" << hybrid.metrics.r1AcceptedTransactions
+              << " r1_repair_seconds=" << hybrid.metrics.r1RepairSeconds
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus

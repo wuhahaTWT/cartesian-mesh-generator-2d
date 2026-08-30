@@ -2,6 +2,7 @@
 #include "cartmesh2d/topology/SharedEdgePartition2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -16,6 +17,17 @@ namespace cartmesh2d {
 namespace {
 
 std::size_t globalTopologyBuilds=0U;
+std::size_t globalTopologyBuildCells=0U;
+double globalTopologyBuildSeconds=0.0;
+
+// Accumulates on every exit path, including the early validation returns.
+struct GlobalTopologyBuildTimer {
+    std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
+    ~GlobalTopologyBuildTimer() {
+        globalTopologyBuildSeconds+=
+            std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+    }
+};
 
 [[nodiscard]] bool scalarNear(double a, double b, const TolerancePolicy& tol) noexcept {
     return std::abs(a - b) <= tol.scale(std::max({1.0, std::abs(a), std::abs(b)}));
@@ -247,6 +259,8 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    const TolerancePolicy& tol,
                                    std::shared_ptr<IntersectionRegistry2D> registry) {
     ++globalTopologyBuilds;
+    globalTopologyBuildCells+=inputCells.size();
+    const GlobalTopologyBuildTimer buildTimer;
     TopologyMesh2D mesh;
     mesh.constructionRegistry=registry;
     if (!domain.valid(tol) || !boundary.diagnose(tol).valid()) {
@@ -516,5 +530,11 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
 }
 
 std::size_t globalTopologyBuildCount2D() noexcept { return globalTopologyBuilds; }
+
+double globalTopologyBuildSeconds2D() noexcept { return globalTopologyBuildSeconds; }
+
+std::size_t globalTopologyBuildInputCells2D() noexcept {
+    return globalTopologyBuildCells;
+}
 
 } // namespace cartmesh2d
