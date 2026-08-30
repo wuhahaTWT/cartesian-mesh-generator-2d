@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/topology/Topology2D.hpp"
 
 #include <cstddef>
@@ -8,8 +9,6 @@
 #include <vector>
 
 namespace cartmesh2d {
-
-struct SolverQualityReport2D;
 
 struct SolverTopologyProfile2D {
     double initialPartitionSeconds = 0.0;
@@ -86,14 +85,31 @@ struct SolverShortFaceRepairResult2D {
     bool applicable = false;
     bool accepted = false;
     std::size_t candidateCount = 0;
+    // Candidates whose patch-local topology delta was valid and therefore
+    // reached patch-local quality evaluation.
+    std::size_t localCandidateCount = 0;
+    std::size_t localQualityEvaluationCount = 0;
+    // Must remain zero: candidate selection may not build global topology.
     std::size_t candidateGlobalTopologyBuildCount = 0;
+    // Must remain zero: candidate selection may not run the full global
+    // solver-quality evaluator.
+    std::size_t candidateFullGlobalQualityEvaluationCount = 0;
+    // At most one per transaction, for the selected winner only.
     std::size_t globalOracleBuildCount = 0;
+    // Authoritative full-mesh quality evaluations: one for the pre-transaction
+    // baseline and one for the winner. Never inside candidate selection.
+    std::size_t authoritativeFullQualityEvaluationCount = 0;
     std::size_t hardFaceCountBefore = 0;
     std::size_t hardFaceCountAfter = 0;
     double minimumFaceOverLocalHBefore = 0.0;
     double minimumFaceOverLocalHAfter = 0.0;
     bool patchOutsideStableIdsUnchanged = false;
     bool localDeltaMatchesGlobalOracle = false;
+    // True when the patch-local accept verdict for the winner was confirmed by
+    // the authoritative global evaluation. False means the transaction was
+    // rejected fail-closed without trying further candidates.
+    bool localWinnerMatchesGlobalAuthority = false;
+    double repairSeconds = 0.0;
     std::vector<std::string> issues;
 
     [[nodiscard]] bool valid() const noexcept {
@@ -131,10 +147,14 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const BoundaryRegion2D& boundary,
     const TolerancePolicy& tol = {});
 
-// Performs at most one deterministic short-face repair. Candidate generation,
-// identity assignment, topology delta, boundary locking and incidence checks
-// are patch-local. A global topology build is permitted only after selection,
-// as the separately-counted final oracle/materialization step.
+// Performs at most one deterministic short-face transaction. Every candidate is
+// scored only by patch-local topology and patch-local quality over the affected
+// patch plus its one-ring halo: candidate selection calls neither
+// buildGlobalTopology() nor evaluateSolverQuality2D(). The single ranked winner
+// then performs one global oracle/materialization and one authoritative full
+// quality evaluation. A disagreement between the local verdict and that
+// authoritative result fails the transaction closed; no further candidate is
+// attempted.
 [[nodiscard]] SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,

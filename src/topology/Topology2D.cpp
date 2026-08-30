@@ -15,6 +15,8 @@
 namespace cartmesh2d {
 namespace {
 
+std::size_t globalTopologyBuilds=0U;
+
 [[nodiscard]] bool scalarNear(double a, double b, const TolerancePolicy& tol) noexcept {
     return std::abs(a - b) <= tol.scale(std::max({1.0, std::abs(a), std::abs(b)}));
 }
@@ -244,6 +246,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    const BoundaryRegion2D& boundary,
                                    const TolerancePolicy& tol,
                                    std::shared_ptr<IntersectionRegistry2D> registry) {
+    ++globalTopologyBuilds;
     TopologyMesh2D mesh;
     mesh.constructionRegistry=registry;
     if (!domain.valid(tol) || !boundary.diagnose(tol).valid()) {
@@ -511,5 +514,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
     }
     return mesh;
 }
+
+std::size_t globalTopologyBuildCount2D() noexcept { return globalTopologyBuilds; }
 
 } // namespace cartmesh2d

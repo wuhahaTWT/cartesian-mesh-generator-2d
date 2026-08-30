@@ -43,6 +43,42 @@ struct SolverQualityIssue2D {
     std::string message;
 };
 
+// Per-entity metric kernels.  These are the single authoritative definition of
+// every solver metric: both the global evaluator below and the patch-local
+// evaluator call them, so a local decision cannot use a different formula.
+struct SolverCellMetrics2D {
+    bool valid = false;
+    Point2D centroid;
+    double area = 0.0;
+    double perimeter = 0.0;
+    double minInteriorAngleDeg = 360.0;
+    double maxConcavityDeg = 0.0;
+    double hydraulicAspect = 0.0;
+    double compactness = 0.0;
+};
+
+[[nodiscard]] SolverCellMetrics2D evaluateSolverCellMetrics2D(
+    const Polygon2D& polygon, const TolerancePolicy& tol = {});
+
+struct SolverInternalFaceMetrics2D {
+    // False when the owner/neighbour connector or the face normal degenerates.
+    // The global evaluator skips every internal metric in that case.
+    bool orientationValid = false;
+    double length = 0.0;
+    double nonOrthogonalityDeg = 0.0;
+    double skewness = 0.0;
+    double faceWeight = 0.0;
+    double volumeRatio = 0.0;
+};
+
+[[nodiscard]] SolverInternalFaceMetrics2D evaluateSolverInternalFaceMetrics2D(
+    const Point2D& a, const Point2D& b, const Point2D& ownerCentroid,
+    const Point2D& neighbourCentroid, double ownerArea, double neighbourArea,
+    const TolerancePolicy& tol = {});
+
+[[nodiscard]] double evaluateSolverBoundaryFaceSkewness2D(
+    const Point2D& a, const Point2D& b, const Point2D& ownerCentroid);
+
 struct SolverQualityReport2D {
     SolverQualityPolicy2D policy;
     double maxNonOrthogonalityDeg = 0.0;
@@ -64,6 +100,10 @@ struct SolverQualityReport2D {
     const TopologyMesh2D& topology,
     const SolverQualityPolicy2D& policy = {},
     const TolerancePolicy& tol = {});
+
+// Monotonic count of full-mesh solver-quality evaluations in this process.
+// Instrumentation only, mirroring globalTopologyBuildCount2D().
+[[nodiscard]] std::size_t solverQualityEvaluationCount2D() noexcept;
 
 [[nodiscard]] std::string solverQualityReportToJson(
     const SolverQualityReport2D& report, int indentSpaces = 2);
