@@ -30,6 +30,11 @@ using SourceIdentity = std::pair<std::uint64_t,std::size_t>;
            (samePoint(a,d,tol) && samePoint(b,c,tol));
 }
 
+struct DirectedDeltaUse {
+    StableVertexId2D from = 0;
+    StableVertexId2D to = 0;
+};
+
 } // namespace
 
 TopologyPatchTransaction2D prepareTopologyPatchTransaction2D(
@@ -75,6 +80,128 @@ TopologyPatchTransaction2D prepareTopologyPatchTransaction2D(
     return result;
 }
 
+TopologyDelta2D buildTopologyDelta2D(
+    const TopologyMesh2D& baseTopology,const EdgeIncidenceStore2D& baseIncidence,
+    const TopologyPatchTransaction2D& transaction,
+    const std::vector<CutCell2D>& replacementCells,const TolerancePolicy& tol) {
+    TopologyDelta2D result;
+    result.baseRevision=transaction.baseRevision;
+    result.candidateRevision=transaction.baseRevision+1U;
+    if (!baseTopology.valid() || !baseIncidence.valid() || !transaction.valid() ||
+        transaction.baseRevision!=baseIncidence.revision) {
+        result.issues.push_back("cannot build topology delta from invalid or stale base");
+        return result;
+    }
+    for (const auto cell:transaction.selectedCellIds)
+        result.removedSources.push_back(sourceIdentity(baseTopology.cells[cell]));
+    std::sort(result.removedSources.begin(),result.removedSources.end());
+
+    std::vector<Point2D> newPoints;
+    for (const auto& cell:replacementCells) {
+        if (!cell.valid() || cell.kind==CutCellKind::Empty ||
+            cell.kind==CutCellKind::Unsupported) {
+            result.issues.push_back("topology delta replacement cell is invalid");
+            return result;
+        }
+        result.addedSources.push_back(sourceIdentity(cell));
+        result.area+=cell.area;
+        for (const auto& point:cell.fluidPolygon.vertices) {
+            bool found=false;
+            for (const auto& base:baseTopology.vertices)
+                if (samePoint(point,base.point,tol)) { found=true;break; }
+            if (!found) newPoints.push_back(point);
+        }
+    }
+    std::sort(result.addedSources.begin(),result.addedSources.end());
+    if (std::adjacent_find(result.addedSources.begin(),result.addedSources.end())!=
+        result.addedSources.end()) {
+        result.issues.push_back("topology delta has duplicate replacement source identity");
+        return result;
+    }
+    std::sort(newPoints.begin(),newPoints.end(),[](const auto& lhs,const auto& rhs) {
+        return std::tie(lhs.x,lhs.y)<std::tie(rhs.x,rhs.y);
+    });
+    newPoints.erase(std::unique(newPoints.begin(),newPoints.end(),[&](const auto& lhs,
+                                                                     const auto& rhs) {
+        return samePoint(lhs,rhs,tol);
+    }),newPoints.end());
+    StableVertexId2D nextId=0;
+    for (const auto id:baseIncidence.stableVertexIds)
+        nextId=std::max(nextId,id+1U);
+    for (std::size_t ordinal=0;ordinal<newPoints.size();++ordinal) {
+        result.vertices.push_back({nextId+ordinal,newPoints[ordinal],false});
+    }
+
+    const auto stableVertex=[&](const Point2D& point)->std::optional<StableVertexId2D> {
+        for (std::size_t vertex=0;vertex<baseTopology.vertices.size();++vertex)
+            if (samePoint(point,baseTopology.vertices[vertex].point,tol))
+                return baseIncidence.stableVertexIds[vertex];
+        for (std::size_t vertex=0;vertex<result.vertices.size();++vertex)
+            if (samePoint(point,result.vertices[vertex].point,tol))
+                return result.vertices[vertex].stableId;
+        return std::nullopt;
+    };
+    for (std::size_t vertex=0;vertex<baseTopology.vertices.size();++vertex) {
+        bool used=false;
+        for (const auto& cell:replacementCells) for (const auto& point:cell.fluidPolygon.vertices)
+            if (samePoint(point,baseTopology.vertices[vertex].point,tol)) used=true;
+        if (used) result.vertices.push_back({baseIncidence.stableVertexIds[vertex],
+                                             baseTopology.vertices[vertex].point,true});
+    }
+    std::sort(result.vertices.begin(),result.vertices.end(),[](const auto& lhs,const auto& rhs) {
+        return lhs.stableId<rhs.stableId;
+    });
+
+    std::map<StableEdgeKey2D,std::vector<DirectedDeltaUse>> uses;
+    for (const auto& cell:replacementCells) {
+        const auto& polygon=cell.fluidPolygon.vertices;
+        for (std::size_t edge=0;edge<polygon.size();++edge) {
+            const auto from=stableVertex(polygon[edge]);
+            const auto to=stableVertex(polygon[(edge+1U)%polygon.size()]);
+            if (!from || !to || *from==*to) {
+                result.issues.push_back("topology delta could not assign distinct stable endpoints");
+                return result;
+            }
+            const auto endpoints=std::minmax(*from,*to);
+            uses[{endpoints.first,endpoints.second}].push_back({*from,*to});
+        }
+    }
+
+    std::set<std::size_t> matchedLocks;
+    for (const auto& [key,incidences]:uses) {
+        TopologyDeltaEdge2D edge{key,incidences.size(),false};
+        if (incidences.size()==1U) {
+            const auto& use=incidences.front();
+            const auto pointFor=[&](StableVertexId2D id)->std::optional<Point2D> {
+                for (const auto& vertex:result.vertices)
+                    if (vertex.stableId==id) return vertex.point;
+                return std::nullopt;
+            };
+            const auto a=pointFor(use.from),b=pointFor(use.to);
+            for (std::size_t lockId=0;lockId<transaction.boundaryLocks.size();++lockId) {
+                const auto& lock=transaction.boundaryLocks[lockId];
+                if (a && b && sameSegment(*a,*b,lock.a,lock.b,tol)) {
+                    edge.boundaryLocked=true;
+                    matchedLocks.insert(lockId);
+                    break;
+                }
+            }
+            if (!edge.boundaryLocked)
+                result.issues.push_back("topology delta has an unlocked one-incidence edge");
+            else ++result.lockedBoundaryEdgeCount;
+        } else if (incidences.size()==2U) {
+            if (incidences[0].from!=incidences[1].to ||
+                incidences[0].to!=incidences[1].from)
+                result.issues.push_back("topology delta internal incidences are not opposite");
+            else ++result.internalEdgeCount;
+        } else result.issues.push_back("topology delta edge is non-manifold");
+        result.edges.push_back(edge);
+    }
+    if (matchedLocks.size()!=transaction.boundaryLocks.size())
+        result.issues.push_back("topology delta does not preserve every locked boundary edge");
+    return result;
+}
+
 TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
     const TopologyMesh2D& baseTopology,const EdgeIncidenceStore2D& baseIncidence,
     const TopologyPatchTransaction2D& transaction,
@@ -96,6 +223,13 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
     }
     if (!gate.hardQualityPass) {
         result.issues.push_back("topology patch candidate failed the authoritative hard-quality gate");
+        return result;
+    }
+
+    result.delta=buildTopologyDelta2D(baseTopology,baseIncidence,transaction,
+                                      replacementCells,tol);
+    if (!result.delta.valid()) {
+        result.issues=result.delta.issues;
         return result;
     }
 
@@ -132,6 +266,7 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
         return result;
     }
 
+    ++result.globalOracleBuildCount;
     auto candidate=buildGlobalTopology(candidateSources,domain,boundary,tol);
     if (!candidate.valid()) {
         result.issues.push_back("replacement patch failed the global topology oracle");

@@ -7,9 +7,11 @@ edge-incidence/half-edge-lite 数据模型、revisioned patch transaction、完�
 boundary lock、面积与 hard-quality 提交门，并在生产 hybrid build 对 construction 与
 solver topology 都执行 incidence 审计。
 
-当前事务仍使用 `buildGlobalTopology()` 作为候选拓扑 oracle。它证明事务语义与回滚门，
-但还没有证明 patch-local 增量更新与全局结果等价；因此不得登记 R1-D 完成，也不得把
-global rebuild profile 记为已经消除。
+当前事务在调用 `buildGlobalTopology()` oracle 之前，已先从 replacement polygons 独立
+构建 `TopologyDelta2D`。它不读取未修改 cell 的 polygon：锁边必须恰好一属主，patch
+内部边必须恰好双属主且方向相反；新内部点按坐标序在 base 最大 stable ID 后确定性分配。
+全局 builder 目前仍负责把已接受 delta 物化为 legacy `TopologyMesh2D` 输出。因此不得
+登记 R1-D 完成，也不得把 global rebuild profile 记为已经消除。
 
 ## 2. half-edge-lite / edge-incidence
 
@@ -44,6 +46,10 @@ edge key 重复均显式失败。
 5. 全局 topology oracle 有效；
 6. 每条锁定 interface/physical boundary 在候选中原坐标、邻接语义与 patch 类型不变；
 7. 候选 edge-incidence 审计有效。
+
+其中第 3--5 项之前还会先执行 patch-local delta 门：所有一属主边必须逐条匹配 lock，
+所有未锁边必须形成反向 twin。测试中的四片中心扇形只新增一个 interior stable vertex，
+产生四条内部 twin edges，并保留六条 coarse/fine 分段 lock；该检查不调用 global builder。
 
 接受时 revision 只增加 1；任何拒绝都返回未改变的 base topology、base incidence 与原
 revision。测试覆盖 hard-quality rollback、boundary-lock rollback 与合法 2-cell -> 1-cell
@@ -80,8 +86,9 @@ Docker/OpenFOAM 本 checkpoint 未运行；独立 reader 不能替代真实 `che
 
 ## 5. 下一步
 
-1. 以 locked boundary 为输入只重建 patch interior incidence，形成 `TopologyDelta2D`；
-2. 与本文件的全局 oracle 逐 vertex/edge/cell/incidence 比较；
+1. 将已通过局部门的 delta 直接物化到 revisioned topology，并与本文件的全局 oracle
+   逐 vertex/edge/cell/incidence 比较；
+2. 验证 stable IDs 不因未修改 patch 外几何而重排；
 3. 记录 patch size、global oracle rebuild count、cache invalidation 与 revision；
 4. 在等价门通过后，把 R1-C bounded rephase/resample 的真实 polygon rebuild 接入事务；
 5. 候选必须比较 area、feature compatibility 与完整 typed Q1 hard metrics，不能只比较

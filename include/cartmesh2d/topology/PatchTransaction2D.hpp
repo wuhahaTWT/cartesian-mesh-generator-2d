@@ -33,6 +33,33 @@ struct TopologyPatchCommitGate2D {
     double qualityRank = 0.0;
 };
 
+struct TopologyDeltaVertex2D {
+    StableVertexId2D stableId = 0;
+    Point2D point;
+    bool existedAtBaseRevision = false;
+};
+
+struct TopologyDeltaEdge2D {
+    StableEdgeKey2D stableEdge;
+    std::size_t incidenceCount = 0;
+    bool boundaryLocked = false;
+};
+
+struct TopologyDelta2D {
+    std::uint64_t baseRevision = 0;
+    std::uint64_t candidateRevision = 0;
+    std::vector<std::pair<std::uint64_t,std::size_t>> removedSources;
+    std::vector<std::pair<std::uint64_t,std::size_t>> addedSources;
+    std::vector<TopologyDeltaVertex2D> vertices;
+    std::vector<TopologyDeltaEdge2D> edges;
+    std::size_t internalEdgeCount = 0;
+    std::size_t lockedBoundaryEdgeCount = 0;
+    double area = 0.0;
+    std::vector<std::string> issues;
+
+    [[nodiscard]] bool valid() const noexcept { return issues.empty(); }
+};
+
 struct TopologyPatchCommitResult2D {
     TopologyMesh2D topology;
     EdgeIncidenceStore2D incidence;
@@ -41,6 +68,8 @@ struct TopologyPatchCommitResult2D {
     double originalPatchArea = 0.0;
     double candidatePatchArea = 0.0;
     std::size_t lockedBoundaryEdgeCount = 0;
+    TopologyDelta2D delta;
+    std::size_t globalOracleBuildCount = 0;
     std::vector<std::string> issues;
 
     [[nodiscard]] bool valid() const noexcept {
@@ -51,6 +80,16 @@ struct TopologyPatchCommitResult2D {
 [[nodiscard]] TopologyPatchTransaction2D prepareTopologyPatchTransaction2D(
     const TopologyMesh2D& topology, const EdgeIncidenceStore2D& incidence,
     std::vector<std::size_t> selectedCellIds);
+
+// Builds and audits only the replacement patch. One-incidence edges must match
+// an exact boundary lock; all other edges must have two opposite incidences.
+// New interior vertices receive deterministic IDs after the maximum base ID.
+[[nodiscard]] TopologyDelta2D buildTopologyDelta2D(
+    const TopologyMesh2D& baseTopology,
+    const EdgeIncidenceStore2D& baseIncidence,
+    const TopologyPatchTransaction2D& transaction,
+    const std::vector<CutCell2D>& replacementCells,
+    const TolerancePolicy& tol = {});
 
 // Current R1-D oracle path: rebuilds the candidate globally, then proves the
 // patch boundary lock, exact source replacement, area conservation and hard

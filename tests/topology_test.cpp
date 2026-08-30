@@ -144,11 +144,42 @@ int main() {
     check(!rejectedQuality.accepted && rejectedQuality.revision==17U &&
           rejectedQuality.topology.cells.size()==mesh.cells.size(),
           "hard-quality rejection rolls back without advancing revision");
+    const auto localDelta=buildTopologyDelta2D(mesh,incidence,transaction,{replacement});
+    check(localDelta.valid() && localDelta.baseRevision==17U &&
+          localDelta.candidateRevision==18U && localDelta.internalEdgeCount==0U &&
+          localDelta.lockedBoundaryEdgeCount==transaction.boundaryLocks.size() &&
+          localDelta.area==transaction.originalPatchArea,
+          "patch-local delta closes on locked boundary before global oracle");
+    const auto patchTriangle=[](std::size_t id,std::vector<Point2D> points) {
+        CutCell2D cell;
+        cell.sourceId=id;cell.sourceKey=static_cast<std::uint64_t>(id);
+        cell.backgroundBounds={{1.0,0.0},{2.0,1.0}};
+        cell.kind=CutCellKind::Cut;
+        cell.fluidPolygon.vertices=std::move(points);
+        cell.area=cell.fluidPolygon.area();
+        cell.areaFraction=cell.area;
+        cell.centroid=cell.fluidPolygon.centroid();
+        return cell;
+    };
+    const Point2D patchCenter{1.5,0.5};
+    const std::vector<CutCell2D> fourPiecePatch{
+        patchTriangle(201U,{{1.0,0.0},{2.0,0.0},{2.0,0.5},patchCenter}),
+        patchTriangle(202U,{{2.0,0.5},{2.0,1.0},patchCenter}),
+        patchTriangle(203U,{{2.0,1.0},{1.0,1.0},{1.0,0.5},patchCenter}),
+        patchTriangle(204U,{{1.0,0.5},{1.0,0.0},patchCenter})};
+    const auto newVertexDelta=buildTopologyDelta2D(
+        mesh,incidence,transaction,fourPiecePatch);
+    check(newVertexDelta.valid() && newVertexDelta.internalEdgeCount==4U &&
+          std::count_if(newVertexDelta.vertices.begin(),newVertexDelta.vertices.end(),
+              [](const auto& vertex) { return !vertex.existedAtBaseRevision; })==1 &&
+          newVertexDelta.lockedBoundaryEdgeCount==transaction.boundaryLocks.size(),
+          "patch-local delta assigns one deterministic interior ID and twin incidences");
     const auto committed=evaluateTopologyPatchTransactionOracle2D(
         mesh,incidence,transaction,cells,{replacement},domain,
         BoundaryRegion2D(boundary),{true,0.5});
     check(committed.valid() && committed.accepted && committed.revision==18U &&
-          committed.topology.cells.size()==2U &&
+          committed.topology.cells.size()==2U && committed.globalOracleBuildCount==1U &&
+          committed.delta.valid() &&
           std::abs(committed.candidatePatchArea-committed.originalPatchArea)<=1.0e-12,
           "area-preserving locked patch commits as one revision");
     auto movedReplacement=replacement;
@@ -158,7 +189,8 @@ int main() {
     const auto rejectedLock=evaluateTopologyPatchTransactionOracle2D(
         mesh,incidence,transaction,cells,{movedReplacement},domain,
         BoundaryRegion2D(boundary),{true,0.4});
-    check(!rejectedLock.accepted && rejectedLock.revision==17U,
+    check(!rejectedLock.accepted && rejectedLock.revision==17U &&
+          rejectedLock.globalOracleBuildCount==0U,
           "boundary-lock violation rolls back without advancing revision");
 
     for (const auto& cell : mesh.cells) {
