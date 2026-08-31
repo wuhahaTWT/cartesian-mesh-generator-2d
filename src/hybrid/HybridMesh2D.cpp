@@ -27,6 +27,58 @@ namespace {
     return std::sqrt(squaredNorm(b - a));
 }
 
+[[nodiscard]] Polygon2D topologyCellPolygon(
+    const TopologyMesh2D& topology,std::size_t cellId) {
+    Polygon2D polygon;
+    if (cellId>=topology.cells.size()) return polygon;
+    polygon.vertices.reserve(topology.cells[cellId].vertices.size());
+    for (const auto vertexId:topology.cells[cellId].vertices) {
+        if (vertexId>=topology.vertices.size()) return {};
+        polygon.vertices.push_back(topology.vertices[vertexId].point);
+    }
+    return polygon;
+}
+
+[[nodiscard]] bool axisAlignedCartesianPolygon(const Polygon2D& polygon) noexcept {
+    if (polygon.vertices.size()!=4U) return false;
+    const auto bounds=polygon.bounds();
+    return std::all_of(polygon.vertices.begin(),polygon.vertices.end(),
+                       [&](const Point2D& point) {
+        return (point.x==bounds.min.x || point.x==bounds.max.x) &&
+               (point.y==bounds.min.y || point.y==bounds.max.y);
+    });
+}
+
+[[nodiscard]] Polygon2D removeConstructionCollinearVertices(
+    Polygon2D polygon,const TolerancePolicy& tol) {
+    bool changed=true;
+    while (changed && polygon.vertices.size()>3U) {
+        changed=false;
+        for (std::size_t i=0;i<polygon.vertices.size();++i) {
+            const auto n=polygon.vertices.size();
+            const auto& previous=polygon.vertices[(i+n-1U)%n];
+            const auto& current=polygon.vertices[i];
+            const auto& next=polygon.vertices[(i+1U)%n];
+            const Vector2D incoming=current-previous;
+            const Vector2D outgoing=next-current;
+            const double scale=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+            if (!(scale>0.0) || dot(incoming,outgoing)<0.0 ||
+                std::abs(cross(incoming,outgoing))>
+                    64.0*std::numeric_limits<double>::epsilon()*scale) continue;
+            auto candidate=polygon;
+            candidate.vertices.erase(candidate.vertices.begin()+
+                static_cast<std::ptrdiff_t>(i));
+            const double areaScale=std::max(polygon.area(),candidate.area());
+            if (std::abs(candidate.area()-polygon.area())>
+                tol.absolute*tol.absolute+tol.relative*areaScale) continue;
+            polygon=std::move(candidate);
+            changed=true;
+            break;
+        }
+    }
+    return polygon;
+}
+
 
 [[nodiscard]] bool convexPolygon(const Polygon2D& polygon,
                                  const TolerancePolicy& tol) noexcept {
@@ -880,12 +932,234 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         return failed(HybridMeshFailureReason2D::RemainderStabilizationFailed,detail);
     }
 
+    // Q4-1 construction choice: the dominant remaining narrow-gap family is a
+    // termination remainder patch produced before the graded strip meets the
+    // Cartesian remainder. Select retain-vs-strictly-convex union in the
+    // worst face's bounded one-ring before either source is committed to the
+    // unified H4 topology. Candidate scoring remains patch-local; only the
+    // unique winner reaches the construction-context topology oracle.
+    std::size_t q41ConstructionCandidates=0U,q41LocalCandidates=0U;
+    std::size_t q41LocalQualityEvaluations=0U,q41AcceptedConstructions=0U;
+    std::size_t q41CandidateGlobalTopologyBuilds=0U;
+    std::size_t q41CandidateFullGlobalQualityEvaluations=0U;
+    std::size_t q41GlobalOracleBuilds=0U,q41MaximumWinnerGlobalOracleBuilds=0U;
+    std::size_t q41AuthoritativeFullQualityEvaluations=0U;
+    std::size_t q41HardVolumeRatioBefore=0U,q41HardVolumeRatioAfter=0U;
+    std::size_t q41HardFaceWeightBefore=0U,q41HardFaceWeightAfter=0U;
+    std::size_t q41HardShortFaceBefore=0U,q41HardShortFaceAfter=0U;
+    double q41ConstructionSelectionSeconds=0.0;
+    bool q41PatchOutsideStableIdsUnchanged=true;
+    bool q41LocalDeltaMatchesGlobalOracle=true;
+    bool q41LocalWinnerMatchesGlobalAuthority=true;
+    bool q41ConstructionBoundReached=false;
+    std::vector<AgglomeratedCell2D> remainderConstructionCells=
+        remainderStabilization.cells;
+    if (policy.enableTerminationConstructionQualitySelection && localTermination) {
+        // Include the already-built graded termination strip in the temporary
+        // construction context. On the remainder alone its interface is an
+        // artificial boundary and legacy boundary-skewness is not meaningful;
+        // in this context that same interface has its real two-cell incidence.
+        const std::size_t remainderConstructionSourceCount=
+            remainderStabilization.cells.size();
+        std::vector<CutCell2D> constructionContextSources;
+        constructionContextSources.reserve(
+            remainderConstructionSourceCount+transitionPolygons.size());
+        for (const auto& cell:remainderStabilization.cells) {
+            CutCell2D source;
+            source.sourceId=constructionContextSources.size();
+            source.sourceKey=source.sourceId;
+            source.sourceLineage={source.sourceId};
+            source.backgroundBounds=cell.polygon.bounds();
+            source.kind=CutCellKind::Cut;
+            source.fluidPolygon=cell.polygon;
+            source.area=cell.area;
+            source.centroid=cell.centroid;
+            constructionContextSources.push_back(std::move(source));
+        }
+        for (const auto& polygon:transitionPolygons) {
+            CutCell2D source;
+            source.sourceId=constructionContextSources.size();
+            source.sourceKey=source.sourceId;
+            source.sourceLineage={source.sourceId};
+            source.backgroundBounds=polygon.bounds();
+            source.kind=CutCellKind::Cut;
+            source.fluidPolygon=polygon;
+            source.area=polygon.area();
+            source.centroid=polygon.centroid(policy.tolerance);
+            constructionContextSources.push_back(std::move(source));
+        }
+        auto constructionTopology=buildGlobalTopology(
+            constructionContextSources,domain,outerRegion,policy.tolerance,
+            constructionRegistry);
+        if (!constructionTopology.valid()) {
+            return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed,
+                          "Q4-1 construction context topology is invalid");
+        }
+        const auto characterize=[&](const TopologyMesh2D& candidate,
+                                    std::vector<bool>& termination,
+                                    std::vector<bool>& cartesian,
+                                    std::vector<double>& localH,
+                                    std::vector<bool>& rated,
+                                    std::vector<bool>& immutable) {
+            termination.clear();
+            cartesian.clear();
+            localH.clear();
+            rated.assign(candidate.cells.size(),true);
+            immutable.clear();
+            termination.reserve(candidate.cells.size());
+            cartesian.reserve(candidate.cells.size());
+            localH.reserve(candidate.cells.size());
+            immutable.reserve(candidate.cells.size());
+            for (const auto& cell:candidate.cells) {
+                const auto polygon=topologyCellPolygon(candidate,cell.id);
+                auto groups=cell.sourceLineage;
+                if (groups.empty()) groups.push_back(cell.sourceId);
+                const bool transitionSource=std::any_of(
+                    groups.begin(),groups.end(),[&](std::size_t groupId) {
+                        return groupId>=remainderConstructionSourceCount;
+                    });
+                bool onTermination=false;
+                for (std::size_t edge=0;edge<polygon.vertices.size();++edge) {
+                    if (edgeOnRegionBoundary(
+                            polygon.vertices[edge],
+                            polygon.vertices[(edge+1U)%polygon.vertices.size()],
+                            remainderBoundaryRegion,policy.tolerance)) {
+                        onTermination=true;
+                        break;
+                    }
+                }
+                termination.push_back(onTermination || transitionSource);
+                cartesian.push_back(!transitionSource &&
+                                    axisAlignedCartesianPolygon(polygon));
+                immutable.push_back(transitionSource);
+                double h=std::numeric_limits<double>::infinity();
+                for (const auto groupId:groups) {
+                    if (groupId>=remainderConstructionSourceCount) {
+                        h=std::min(h,transitionRingThickness);
+                        continue;
+                    }
+                    for (const auto sourceId:
+                         remainderStabilization.cells[groupId].memberSourceIds) {
+                        if (sourceId>=remainderSourceCells.size()) continue;
+                        const auto& bounds=remainderSourceCells[sourceId].backgroundBounds;
+                        h=std::min(h,std::max(bounds.max.x-bounds.min.x,
+                                              bounds.max.y-bounds.min.y));
+                    }
+                }
+                if (!std::isfinite(h)) {
+                    const auto bounds=polygon.bounds();
+                    h=std::max(bounds.max.x-bounds.min.x,
+                               bounds.max.y-bounds.min.y);
+                }
+                localH.push_back(h);
+            }
+        };
+        const auto& limits=QualityContract2D{}.termination;
+        constexpr std::size_t maximumQ41Constructions=8U;
+        bool converged=false;
+        for (std::size_t iteration=0;iteration<maximumQ41Constructions;++iteration) {
+            std::vector<bool> termination,cartesian,rated,immutable;
+            std::vector<double> localH;
+            characterize(constructionTopology,termination,cartesian,localH,rated,
+                         immutable);
+            auto selection=repairSolverTerminationQuality2D(
+                constructionTopology,domain,outerRegion,immutable,
+                termination,cartesian,localH,rated,
+                limits.faceOverLocalBackgroundH.hard,limits.faceWeight.hard,
+                limits.volumeRatio.hard,
+                TerminationQualityCandidateMode2D::ConstructionAgglomeration,
+                policy.tolerance);
+            if (iteration==0U) {
+                q41HardVolumeRatioBefore=selection.hardVolumeRatioCountBefore;
+                q41HardFaceWeightBefore=selection.hardFaceWeightCountBefore;
+                q41HardShortFaceBefore=selection.hardShortFaceCountBefore;
+            }
+            q41HardVolumeRatioAfter=selection.hardVolumeRatioCountAfter;
+            q41HardFaceWeightAfter=selection.hardFaceWeightCountAfter;
+            q41HardShortFaceAfter=selection.hardShortFaceCountAfter;
+            q41ConstructionCandidates+=selection.candidateCount;
+            q41LocalCandidates+=selection.localCandidateCount;
+            q41LocalQualityEvaluations+=selection.localQualityEvaluationCount;
+            q41CandidateGlobalTopologyBuilds+=
+                selection.candidateGlobalTopologyBuildCount;
+            q41CandidateFullGlobalQualityEvaluations+=
+                selection.candidateFullGlobalQualityEvaluationCount;
+            q41GlobalOracleBuilds+=selection.globalOracleBuildCount;
+            q41MaximumWinnerGlobalOracleBuilds=std::max(
+                q41MaximumWinnerGlobalOracleBuilds,selection.globalOracleBuildCount);
+            q41AuthoritativeFullQualityEvaluations+=
+                selection.authoritativeFullQualityEvaluationCount;
+            q41ConstructionSelectionSeconds+=selection.repairSeconds;
+            if (!selection.issues.empty()) {
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,
+                              std::string("Q4-1 construction selection failed: ")+
+                              selection.issues.front());
+            }
+            if (!selection.applicable || !selection.accepted) {
+                converged=true;
+                break;
+            }
+            q41PatchOutsideStableIdsUnchanged=
+                q41PatchOutsideStableIdsUnchanged &&
+                selection.patchOutsideStableIdsUnchanged;
+            q41LocalDeltaMatchesGlobalOracle=
+                q41LocalDeltaMatchesGlobalOracle &&
+                selection.localDeltaMatchesGlobalOracle;
+            q41LocalWinnerMatchesGlobalAuthority=
+                q41LocalWinnerMatchesGlobalAuthority &&
+                selection.localWinnerMatchesGlobalAuthority;
+            constructionTopology=std::move(selection.topology);
+            ++q41AcceptedConstructions;
+        }
+        q41ConstructionBoundReached=!converged &&
+            q41AcceptedConstructions==maximumQ41Constructions;
+
+        remainderConstructionCells.clear();
+        remainderConstructionCells.reserve(constructionTopology.cells.size());
+        for (const auto& cell:constructionTopology.cells) {
+            auto groups=cell.sourceLineage;
+            if (groups.empty()) groups.push_back(cell.sourceId);
+            if (std::any_of(groups.begin(),groups.end(),[&](std::size_t groupId) {
+                    return groupId>=remainderConstructionSourceCount;
+                })) continue;
+            AgglomeratedCell2D converted;
+            converted.id=remainderConstructionCells.size();
+            converted.polygon=removeConstructionCollinearVertices(
+                topologyCellPolygon(constructionTopology,cell.id),policy.tolerance);
+            converted.area=converted.polygon.area();
+            converted.centroid=converted.polygon.centroid(policy.tolerance);
+            for (const auto groupId:groups) {
+                if (groupId>=remainderStabilization.cells.size()) continue;
+                converted.memberTopologyCellIds.insert(
+                    converted.memberTopologyCellIds.end(),
+                    remainderStabilization.cells[groupId].memberTopologyCellIds.begin(),
+                    remainderStabilization.cells[groupId].memberTopologyCellIds.end());
+                converted.memberSourceIds.insert(
+                    converted.memberSourceIds.end(),
+                    remainderStabilization.cells[groupId].memberSourceIds.begin(),
+                    remainderStabilization.cells[groupId].memberSourceIds.end());
+            }
+            std::sort(converted.memberTopologyCellIds.begin(),
+                      converted.memberTopologyCellIds.end());
+            converted.memberTopologyCellIds.erase(
+                std::unique(converted.memberTopologyCellIds.begin(),
+                            converted.memberTopologyCellIds.end()),
+                converted.memberTopologyCellIds.end());
+            std::sort(converted.memberSourceIds.begin(),converted.memberSourceIds.end());
+            converted.memberSourceIds.erase(
+                std::unique(converted.memberSourceIds.begin(),
+                            converted.memberSourceIds.end()),
+                converted.memberSourceIds.end());
+            remainderConstructionCells.push_back(std::move(converted));
+        }
+    }
+
     std::vector<HybridSourceCell2D> hybridSources;
     std::size_t requestedLayerCells=0U;
     for (const auto& strip:boundaryLayers.strips) requestedLayerCells+=strip.cells.size();
     std::size_t terminationCellCount=0U;
-    hybridSources.reserve(remainderStabilization.cells.size()+requestedLayerCells);
-    for (const auto& cell:remainderStabilization.cells) {
+    hybridSources.reserve(remainderConstructionCells.size()+requestedLayerCells);
+    for (const auto& cell:remainderConstructionCells) {
         const auto& polygon=cell.polygon;
         bool cartesian=polygon.vertices.size()==4U;
         const auto bounds=polygon.bounds();
@@ -1761,6 +2035,34 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.q33LocalWinnerMatchesGlobalAuthority=
         q33LocalWinnerMatchesGlobalAuthority;
     result.metrics.q33TransactionBoundReached=q33TransactionBoundReached;
+    result.metrics.q41ConstructionCandidates=q41ConstructionCandidates;
+    result.metrics.q41LocalCandidates=q41LocalCandidates;
+    result.metrics.q41LocalQualityEvaluations=q41LocalQualityEvaluations;
+    result.metrics.q41AcceptedConstructions=q41AcceptedConstructions;
+    result.metrics.q41CandidateGlobalTopologyBuilds=
+        q41CandidateGlobalTopologyBuilds;
+    result.metrics.q41CandidateFullGlobalQualityEvaluations=
+        q41CandidateFullGlobalQualityEvaluations;
+    result.metrics.q41GlobalOracleBuilds=q41GlobalOracleBuilds;
+    result.metrics.q41MaximumWinnerGlobalOracleBuilds=
+        q41MaximumWinnerGlobalOracleBuilds;
+    result.metrics.q41AuthoritativeFullQualityEvaluations=
+        q41AuthoritativeFullQualityEvaluations;
+    result.metrics.q41HardVolumeRatioBefore=q41HardVolumeRatioBefore;
+    result.metrics.q41HardVolumeRatioAfter=q41HardVolumeRatioAfter;
+    result.metrics.q41HardFaceWeightBefore=q41HardFaceWeightBefore;
+    result.metrics.q41HardFaceWeightAfter=q41HardFaceWeightAfter;
+    result.metrics.q41HardShortFaceBefore=q41HardShortFaceBefore;
+    result.metrics.q41HardShortFaceAfter=q41HardShortFaceAfter;
+    result.metrics.q41ConstructionSelectionSeconds=
+        q41ConstructionSelectionSeconds;
+    result.metrics.q41PatchOutsideStableIdsUnchanged=
+        q41PatchOutsideStableIdsUnchanged;
+    result.metrics.q41LocalDeltaMatchesGlobalOracle=
+        q41LocalDeltaMatchesGlobalOracle;
+    result.metrics.q41LocalWinnerMatchesGlobalAuthority=
+        q41LocalWinnerMatchesGlobalAuthority;
+    result.metrics.q41ConstructionBoundReached=q41ConstructionBoundReached;
     result.metrics.buildGlobalTopologyCalls=
         globalTopologyBuildCount2D()-buildStartGlobalTopologies;
     result.metrics.buildGlobalTopologyInputCells=
@@ -2251,6 +2553,46 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << (metrics.q33LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
         out << "  \"q33_transaction_bound_reached\": "
             << (metrics.q33TransactionBoundReached?"true":"false") << ",\n";
+        out << "  \"q41_construction_candidate_count\": "
+            << metrics.q41ConstructionCandidates << ",\n";
+        out << "  \"q41_local_candidate_count\": "
+            << metrics.q41LocalCandidates << ",\n";
+        out << "  \"q41_local_quality_evaluation_count\": "
+            << metrics.q41LocalQualityEvaluations << ",\n";
+        out << "  \"q41_accepted_construction_count\": "
+            << metrics.q41AcceptedConstructions << ",\n";
+        out << "  \"q41_candidate_global_topology_build_count\": "
+            << metrics.q41CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"q41_candidate_full_global_quality_evaluation_count\": "
+            << metrics.q41CandidateFullGlobalQualityEvaluations << ",\n";
+        out << "  \"q41_global_oracle_build_count\": "
+            << metrics.q41GlobalOracleBuilds << ",\n";
+        out << "  \"q41_maximum_winner_global_oracle_builds_per_construction\": "
+            << metrics.q41MaximumWinnerGlobalOracleBuilds << ",\n";
+        out << "  \"q41_authoritative_full_quality_evaluation_count\": "
+            << metrics.q41AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"q41_hard_volume_ratio_count_before\": "
+            << metrics.q41HardVolumeRatioBefore << ",\n";
+        out << "  \"q41_hard_volume_ratio_count_after\": "
+            << metrics.q41HardVolumeRatioAfter << ",\n";
+        out << "  \"q41_hard_face_weight_count_before\": "
+            << metrics.q41HardFaceWeightBefore << ",\n";
+        out << "  \"q41_hard_face_weight_count_after\": "
+            << metrics.q41HardFaceWeightAfter << ",\n";
+        out << "  \"q41_hard_short_face_count_before\": "
+            << metrics.q41HardShortFaceBefore << ",\n";
+        out << "  \"q41_hard_short_face_count_after\": "
+            << metrics.q41HardShortFaceAfter << ",\n";
+        out << "  \"q41_construction_selection_seconds\": "
+            << metrics.q41ConstructionSelectionSeconds << ",\n";
+        out << "  \"q41_patch_outside_stable_ids_unchanged\": "
+            << (metrics.q41PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"q41_local_winner_matches_global_authority\": "
+            << (metrics.q41LocalWinnerMatchesGlobalAuthority?"true":"false") << ",\n";
+        out << "  \"q41_local_delta_matches_global_oracle\": "
+            << (metrics.q41LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
+        out << "  \"q41_construction_bound_reached\": "
+            << (metrics.q41ConstructionBoundReached?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "

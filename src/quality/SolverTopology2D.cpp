@@ -1973,9 +1973,34 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
                lower(candidate.minVolumeRatio,current.minVolumeRatio) &&
                lower(candidate.minCompactness,current.minCompactness);
     };
+    const auto constructionContextNoWorse=[&](
+        const SolverQualityReport2D& candidate,
+        const SolverQualityReport2D& current) {
+        const auto upper=[](double after,double before) {
+            return after-before<=1.0e-8*std::max(1.0,std::abs(before));
+        };
+        const auto lower=[](double after,double before) {
+            return before-after<=1.0e-8*std::max(1.0,std::abs(before));
+        };
+        return candidate.issues.size()<=current.issues.size() &&
+               upper(candidate.maxNonOrthogonalityDeg,
+                     current.maxNonOrthogonalityDeg) &&
+               upper(candidate.maxInternalSkewness,current.maxInternalSkewness) &&
+               upper(candidate.maxBoundarySkewness,current.maxBoundarySkewness) &&
+               upper(candidate.maxConcavityDeg,current.maxConcavityDeg) &&
+               upper(candidate.maxCellAspect,current.maxCellAspect) &&
+               lower(candidate.minInteriorAngleDeg,current.minInteriorAngleDeg) &&
+               lower(candidate.minFaceLength,current.minFaceLength) &&
+               lower(candidate.minFaceWeight,current.minFaceWeight) &&
+               lower(candidate.minVolumeRatio,current.minVolumeRatio) &&
+               lower(candidate.minCompactness,current.minCompactness);
+    };
     const auto currentQuality=evaluateSolverQuality2D(topology,{},tol);
     ++result.authoritativeFullQualityEvaluationCount;
-    if (!currentQuality.valid()) {
+    const bool constructionSelection=
+        candidateMode==
+            TerminationQualityCandidateMode2D::ConstructionAgglomeration;
+    if (!constructionSelection && !currentQuality.valid()) {
         result.issues.push_back(
             "Q3 termination repair requires a solver-safe input topology");
         result.repairSeconds=profileSeconds(repairStart);
@@ -2007,7 +2032,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
         if (!edge.neighbour ||
             (!terminationCells[edge.owner] && !terminationCells[*edge.neighbour]) ||
             (!ratedCells[edge.owner] && !ratedCells[*edge.neighbour])) continue;
-        if (candidateMode!=TerminationQualityCandidateMode2D::Agglomeration) {
+        if (candidateMode!=TerminationQualityCandidateMode2D::Agglomeration &&
+            candidateMode!=
+                TerminationQualityCandidateMode2D::ConstructionAgglomeration) {
             const bool terminationCartesian=
                 (terminationCells[edge.owner] && cartesianCells[*edge.neighbour]) ||
                 (cartesianCells[edge.owner] && terminationCells[*edge.neighbour]);
@@ -2047,7 +2074,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
     }
     result.applicable=true;
     std::vector<std::vector<std::size_t>> patches;
-    if (candidateMode==TerminationQualityCandidateMode2D::Agglomeration) {
+    if (candidateMode==TerminationQualityCandidateMode2D::Agglomeration ||
+        candidateMode==
+            TerminationQualityCandidateMode2D::ConstructionAgglomeration) {
         const std::array<std::size_t,2> affected{
             targetEdges.front().first,targetEdges.front().second};
         if (!immutableCells[affected[0]] && !immutableCells[affected[1]])
@@ -2268,7 +2297,11 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
     for (const auto& selected:patches) {
         const std::size_t first=selected[0];
         const std::size_t second=selected[1];
-        if (candidateMode==TerminationQualityCandidateMode2D::Agglomeration)
+        const bool agglomerationMode=
+            candidateMode==TerminationQualityCandidateMode2D::Agglomeration ||
+            candidateMode==
+                TerminationQualityCandidateMode2D::ConstructionAgglomeration;
+        if (agglomerationMode)
             ++result.candidateCount;
         std::optional<Polygon2D> merged=topologyCellPolygon(topology,selected[0]);
         for (std::size_t i=1U;i<selected.size() && merged;++i)
@@ -2362,9 +2395,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
             agglomerationCanImprove=evaluateReplacements(
                 {std::move(replacement)},
                 false,
-                candidateMode==TerminationQualityCandidateMode2D::Agglomeration);
+                agglomerationMode);
         }
-        if (candidateMode==TerminationQualityCandidateMode2D::Agglomeration ||
+        if (agglomerationMode ||
             agglomerationCanImprove) continue;
 
         std::vector<std::size_t> lineage;
@@ -2487,7 +2520,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
         winnerTermination=winnerTermination || terminationCells[cell];
     }
     const std::size_t retainedSources=
-        candidateMode==TerminationQualityCandidateMode2D::Agglomeration
+        (candidateMode==TerminationQualityCandidateMode2D::Agglomeration ||
+         candidateMode==
+             TerminationQualityCandidateMode2D::ConstructionAgglomeration)
         ?1U:winner->selected.size();
     for (std::size_t i=0;i<retainedSources;++i) {
         const auto cell=winner->selected[i];
@@ -2509,7 +2544,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
     const auto candidateShort=scoreShort(
         committed.topology,candidateH,candidateRated);
     result.localWinnerMatchesGlobalAuthority=
-        solverNoWorse(candidateQuality,currentQuality) &&
+        (constructionSelection
+             ?constructionContextNoWorse(candidateQuality,currentQuality)
+             :solverNoWorse(candidateQuality,currentQuality)) &&
         targetBetter(candidateTarget,currentTarget) &&
         shortNoWorse(candidateShort,currentShort);
     if (!result.localWinnerMatchesGlobalAuthority) {

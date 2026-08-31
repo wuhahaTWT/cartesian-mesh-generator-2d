@@ -108,7 +108,8 @@ void usage() {
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
            "[openfoam-case extrusion-thickness] [--legacy-construction] "
            "[--verify-source-lineage] [--q3-termination-quality] "
-           "[--q3-termination-repartition] [--q3-termination-grouped]\n";
+           "[--q3-termination-repartition] [--q3-termination-grouped] "
+           "[--q4-termination-construction]\n";
 }
 
 } // namespace
@@ -119,6 +120,7 @@ int main(int argc, char** argv) {
     bool q3TerminationQuality=false;
     bool q3TerminationRepartition=false;
     bool q3TerminationGrouped=false;
+    bool q4TerminationConstruction=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
         if (option=="--legacy-construction") legacyConstruction=true;
@@ -132,6 +134,9 @@ int main(int argc, char** argv) {
             q3TerminationQuality=true;
             q3TerminationRepartition=true;
             q3TerminationGrouped=true;
+        }
+        else if (option=="--q4-termination-construction") {
+            q4TerminationConstruction=true;
         }
         else break;
         --argc;
@@ -199,6 +204,8 @@ int main(int argc, char** argv) {
     hybridPolicy.enableTerminationQualityOptimization=q3TerminationQuality;
     hybridPolicy.enableTerminationQualityRepartition=q3TerminationRepartition;
     hybridPolicy.enableTerminationGroupedRepartition=q3TerminationGrouped;
+    hybridPolicy.enableTerminationConstructionQualitySelection=
+        q4TerminationConstruction;
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
@@ -430,6 +437,29 @@ int main(int argc, char** argv) {
               << " q33_short_face_hard=" << hybrid.metrics.q33HardShortFaceBefore
               << "->" << hybrid.metrics.q33HardShortFaceAfter
               << " q33_repair_seconds=" << hybrid.metrics.q33RepairSeconds
+              << " q41_candidates=" << hybrid.metrics.q41ConstructionCandidates
+              << " q41_local_quality_evals="
+              << hybrid.metrics.q41LocalQualityEvaluations
+              << " q41_candidate_global_builds="
+              << hybrid.metrics.q41CandidateGlobalTopologyBuilds
+              << " q41_candidate_full_quality="
+              << hybrid.metrics.q41CandidateFullGlobalQualityEvaluations
+              << " q41_winner_oracle_builds="
+              << hybrid.metrics.q41GlobalOracleBuilds
+              << " q41_accepted=" << hybrid.metrics.q41AcceptedConstructions
+              << " q41_bound_reached="
+              << hybrid.metrics.q41ConstructionBoundReached
+              << " q41_volume_hard="
+              << hybrid.metrics.q41HardVolumeRatioBefore << "->"
+              << hybrid.metrics.q41HardVolumeRatioAfter
+              << " q41_face_weight_hard="
+              << hybrid.metrics.q41HardFaceWeightBefore << "->"
+              << hybrid.metrics.q41HardFaceWeightAfter
+              << " q41_short_face_hard="
+              << hybrid.metrics.q41HardShortFaceBefore << "->"
+              << hybrid.metrics.q41HardShortFaceAfter
+              << " q41_selection_seconds="
+              << hybrid.metrics.q41ConstructionSelectionSeconds
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus

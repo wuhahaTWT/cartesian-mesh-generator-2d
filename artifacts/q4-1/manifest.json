@@ -1,0 +1,81 @@
+{
+  "stage": "Q4-1 pre-commit H4 termination construction quality selection",
+  "date": "2026-08-31",
+  "command": "build-q3/cartmesh2d_hybrid_cli examples/h4_3/narrow_gap.xy build-q3/evidence/q4-1-h4/q41_narrow_gap 8 3 8 4 0.012 1.15 1.0 build-q3/evidence/q4-1-h4/q41_narrow_gap-case 0.01 --q4-termination-construction --q3-termination-grouped",
+  "q3_3_baseline": {
+    "solver_cells": 3153,
+    "hard_volume_ratio": 239,
+    "hard_face_weight": 50,
+    "hard_short_face": 0,
+    "hard_minimum_angle": 11,
+    "hard_non_orthogonality": 11,
+    "hard_skewness": 4,
+    "hard_hydraulic_aspect": 2
+  },
+  "source_attribution": {
+    "volume_ratio_hard_from_remainder_termination_construction": 224,
+    "volume_ratio_hard_from_graded_transition_strip": 15,
+    "face_weight_hard_from_remainder_termination_construction": 50,
+    "face_weight_hard_from_graded_transition_strip": 0,
+    "remainder_volume_ratio_by_polygon": {
+      "triangle": 62,
+      "quad": 111,
+      "other_convex_polygon": 51
+    },
+    "selected_template": "retain versus strictly-convex union in the worst termination-adjacent remainder patch one-ring"
+  },
+  "q4_1_construction_context": {
+    "hard_volume_ratio_before": 168,
+    "hard_volume_ratio_after": 160,
+    "hard_face_weight_before": 60,
+    "hard_face_weight_after": 56,
+    "hard_short_face_before": 4,
+    "hard_short_face_after": 4,
+    "candidate_count": 16,
+    "local_candidate_count": 11,
+    "local_quality_evaluation_count": 22,
+    "accepted_construction_count": 4,
+    "winner_global_oracle_build_count": 5,
+    "maximum_winner_global_oracle_builds_per_construction": 1,
+    "authoritative_full_quality_evaluation_count": 10,
+    "candidate_global_topology_build_count": 0,
+    "candidate_full_global_quality_evaluation_count": 0,
+    "construction_selection_seconds": 2.239792
+  },
+  "q4_1_final_after_q3_fallback": {
+    "solver_cells": 3149,
+    "hard_volume_ratio": 231,
+    "hard_face_weight": 46,
+    "hard_short_face": 0,
+    "hard_minimum_angle": 11,
+    "hard_non_orthogonality": 11,
+    "hard_skewness": 4,
+    "hard_hydraulic_aspect": 2,
+    "minimum_volume_ratio": 0.017121664820609221,
+    "minimum_face_weight": 0.057408155822136937,
+    "maximum_non_orthogonality_deg": 68.813324677553737,
+    "maximum_skewness": 3.4423943777762349,
+    "area_error": -3.375077994860476e-14
+  },
+  "invariants": {
+    "solver_quality_issue_count": 0,
+    "patch_outside_stable_ids_unchanged": true,
+    "local_delta_matches_global_oracle": true,
+    "local_winner_matches_global_authority": true,
+    "source_lineage_oracle_mismatches": 0,
+    "deterministic_replay": true,
+    "independent_hybrid_reader_narrow_gap": "PASS",
+    "independent_openfoam_reader_all_cases": "PASS",
+    "ctest": "75/75 PASS",
+    "h4_cases": "5/5 PASS",
+    "openfoam_version": "2606",
+    "openfoam_checkMesh": "6/6 Mesh OK"
+  },
+  "deterministic_sha256": {
+    "hybrid_cm2d": "f6ef15a034fbea957023c3e3eaf338c6d32b9eec2d860ff58842185458e56cf3",
+    "solver_cm2d": "e058ec5bca3c84f8b6985ba0752d09a95ee3b5dc9b56c33fd793db84465250cd",
+    "quality_contract_json": "081a48fcc990ff83f58b85cb70c8eae746fda2a7b58930973f0bc7df53cd9cf3",
+    "openfoam_owner": "13ee379e3c6e13450bd1611509e3777a17326df95031dbb3c4364950634415de"
+  },
+  "preview": "artifacts/q4-1/narrow-gap-after.png"
+}
