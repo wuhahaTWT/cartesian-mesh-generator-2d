@@ -2593,6 +2593,8 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << (metrics.q41LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
         out << "  \"q41_construction_bound_reached\": "
             << (metrics.q41ConstructionBoundReached?"true":"false") << ",\n";
+        out << "  \"q41_construction_selection_declined\": "
+            << (metrics.q41ConstructionSelectionDeclined?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "

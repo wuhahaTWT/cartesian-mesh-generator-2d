@@ -242,8 +242,25 @@ int main() {
         BoundaryRegion2D({leftWall,rightWall}),8U,refinement(8U));
     checkHybrid(gapHybrid,"narrow gap",false);
 
-    const BoundaryLoop fallbackWall({{0.3,0.3},{0.7,0.3},{0.7,0.7},{0.3,0.7}});
-    const auto fallbackChain=makeClosedWallChain2D(fallbackWall,0U,"wall_0");
+    // Q4-1 construction selection must never cost the whole boundary layer.
+    // On this taper the Q4 candidate fails a final gate, so the committed mesh
+    // must be the unchanged non-Q4 hybrid rather than pure Cut-cell fallback.
+    HybridMeshPolicy2D q4Policy;
+    q4Policy.enableTerminationConstructionQualitySelection=true;
+    const auto sharpQ4=sharpChain.success()
+        ?buildRobustH4Mesh2D(
+             {*sharpChain.chain},fourLayers(),Domain2D{{{-2.0,-1.5},{4.0,1.5}}},
+             BoundaryRegion2D(sharpWall),8U,refinement(8U),{},q4Policy)
+        :RobustH4BuildResult2D{};
+    check(sharpQ4.success() && sharpQ4.mode==H4MeshMode2D::Hybrid,
+          "sharp taper keeps a hybrid mesh when Q4-1 selection is requested");
+    check(sharpQ4.hybridCandidate.metrics.q41ConstructionSelectionDeclined,
+          "declined Q4-1 selection is reported instead of silently succeeding");
+    check(sharpQ4.hybridCandidate.metrics.boundaryLayerCellCount==
+              sharpHybrid.metrics.boundaryLayerCellCount,
+          "declined Q4-1 selection retains every non-Q4 boundary-layer cell");
+
+    const BoundaryLoop fallbackWall({{0.3,0.3},{0.7,0.3},{0.7,0.7},{0.3,0.7}});    const auto fallbackChain=makeClosedWallChain2D(fallbackWall,0U,"wall_0");
     LayerParameters2D invalidLayers=fourLayers();
     invalidLayers.nLayers=0U;
     const auto fallback=fallbackChain.success()
