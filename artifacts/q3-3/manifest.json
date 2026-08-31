@@ -1,0 +1,65 @@
+{
+  "stage": "Q3-3 bounded grouped termination-Cartesian repartition",
+  "date": "2026-08-31",
+  "command": "build-q3/cartmesh2d_hybrid_cli examples/h4_3/narrow_gap.xy build-q3/evidence/q3-3-final/narrow_gap 8 3 8 4 0.012 1.15 1.0 build-q3/evidence/q3-3-final/narrow_gap-case 0.01 --q3-termination-grouped",
+  "baseline": {
+    "solver_cells": 3185,
+    "hard_volume_ratio": 295,
+    "hard_face_weight": 95,
+    "hard_short_face": 0
+  },
+  "q3_1": {
+    "solver_cells": 3153,
+    "hard_volume_ratio": 265,
+    "hard_face_weight": 65,
+    "hard_short_face": 0
+  },
+  "q3_2": {
+    "solver_cells": 3153,
+    "hard_volume_ratio": 241,
+    "hard_face_weight": 50,
+    "hard_short_face": 0
+  },
+  "q3_3": {
+    "solver_cells": 3153,
+    "hard_volume_ratio": 239,
+    "hard_face_weight": 50,
+    "hard_short_face": 0,
+    "hard_minimum_angle": 11,
+    "hard_non_orthogonality": 11,
+    "hard_skewness": 4,
+    "hard_hydraulic_aspect": 2,
+    "candidate_count": 27,
+    "local_candidate_count": 27,
+    "local_quality_evaluation_count": 33,
+    "accepted_transaction_count": 2,
+    "transaction_bound_reached": false,
+    "candidate_global_topology_build_count": 0,
+    "candidate_full_global_quality_evaluation_count": 0,
+    "winner_global_oracle_build_count": 2,
+    "maximum_winner_global_oracle_builds_per_transaction": 1,
+    "authoritative_full_quality_evaluation_count": 5,
+    "repair_seconds": 1.437321,
+    "area_error": -3.375077994860476e-14
+  },
+  "invariants": {
+    "q3_3_cell_count_neutral": true,
+    "solver_quality_issue_count": 0,
+    "patch_outside_stable_ids_unchanged": true,
+    "local_delta_matches_global_oracle": true,
+    "local_winner_matches_global_authority": true,
+    "deterministic_replay": true,
+    "independent_hybrid_reader": "PASS",
+    "independent_openfoam_reader": "PASS",
+    "ctest": "75/75 PASS",
+    "openfoam_version": "2606",
+    "openfoam_checkMesh": "Mesh OK"
+  },
+  "deterministic_sha256": {
+    "hybrid_cm2d": "04f012148ab0da40f421ec23563553275709545a72a217f997b1cbba9e8cf12b",
+    "solver_cm2d": "f797afbd02c969de249dbdc8eee68a056cbeab8fddbdd8b9ec3a29eafdcd6a5a",
+    "quality_contract_json": "e66df7f8683a2d4968d8eaec6e7bf8df527dfd0b7159bbaf5207f89665cdb3c7",
+    "openfoam_owner": "b08ea126a72224560e1732cae97dfcd537ac651a299adabf00626ecf4c227e00"
+  },
+  "preview": "artifacts/q3-3/narrow-gap-after.png"
+}

@@ -44,7 +44,8 @@ struct ScopeUse {
 
 PatchLocalQuality2D evaluatePatchLocalQuality2D(
     const std::vector<PatchLocalCell2D>& scope,double minimumFaceOverLocalH,
-    const SolverQualityPolicy2D& policy,const TolerancePolicy& tol) {
+    const SolverQualityPolicy2D& policy,const TolerancePolicy& tol,
+    const PatchLocalHardLimits2D& hardLimits) {
     PatchLocalQuality2D result;
     result.policy=policy;
     if (scope.empty() || !(minimumFaceOverLocalH>0.0)) {
@@ -71,6 +72,10 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
         result.minInteriorAngleDeg=std::min(result.minInteriorAngleDeg,
                                             metrics[index].minInteriorAngleDeg);
         result.minCompactness=std::min(result.minCompactness,metrics[index].compactness);
+        if (metrics[index].minInteriorAngleDeg<hardLimits.minimumInteriorAngleDeg)
+            ++result.hardMinimumInteriorAngleCount;
+        if (metrics[index].hydraulicAspect>hardLimits.maximumAspect)
+            ++result.hardAspectCount;
         const auto addIssue=[&](double severity) {
             ++result.issueCount;
             result.maximumIssueSeverity=std::max(result.maximumIssueSeverity,severity);
@@ -187,6 +192,26 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
         result.maxInternalSkewness=std::max(result.maxInternalSkewness,face.skewness);
         result.minFaceWeight=std::min(result.minFaceWeight,face.faceWeight);
         result.minVolumeRatio=std::min(result.minVolumeRatio,face.volumeRatio);
+        if (face.nonOrthogonalityDeg>hardLimits.maximumNonOrthogonalityDeg)
+            ++result.hardNonOrthogonalityCount;
+        if (face.skewness>hardLimits.maximumSkewness)
+            ++result.hardSkewnessCount;
+        if (face.volumeRatio<hardLimits.minimumVolumeRatio) {
+            ++result.hardVolumeRatioCount;
+            const double severity=lowerBoundSeverity(
+                face.volumeRatio,hardLimits.minimumVolumeRatio);
+            result.maximumVolumeRatioSeverity=
+                std::max(result.maximumVolumeRatioSeverity,severity);
+            result.totalVolumeRatioSeverity+=severity;
+        }
+        if (face.faceWeight<hardLimits.minimumFaceWeight) {
+            ++result.hardFaceWeightCount;
+            const double severity=lowerBoundSeverity(
+                face.faceWeight,hardLimits.minimumFaceWeight);
+            result.maximumFaceWeightSeverity=
+                std::max(result.maximumFaceWeightSeverity,severity);
+            result.totalFaceWeightSeverity+=severity;
+        }
         if (face.nonOrthogonalityDeg>policy.maxNonOrthogonalityDeg)
             addIssue(upperBoundSeverity(face.nonOrthogonalityDeg,
                                         policy.maxNonOrthogonalityDeg));
@@ -202,6 +227,108 @@ PatchLocalQuality2D evaluatePatchLocalQuality2D(
     if (result.ratedCellCount==0U)
         result.issues.push_back("patch-local scope contains no in-patch cell");
     return result;
+}
+
+bool patchLocalTerminationQualityNoWorse2D(
+    const PatchLocalQuality2D& candidate,
+    const PatchLocalQuality2D& base) noexcept {
+    if (!candidate.valid() || !base.valid()) return false;
+    const bool targetCountsNoWorse=
+        candidate.hardVolumeRatioCount<=base.hardVolumeRatioCount &&
+        candidate.hardFaceWeightCount<=base.hardFaceWeightCount;
+    const bool shortFacesNoWorse=
+        candidate.hardShortFaceCount<=base.hardShortFaceCount &&
+        candidate.maximumShortFaceSeverity<=base.maximumShortFaceSeverity &&
+        candidate.totalShortFaceSeverity<=base.totalShortFaceSeverity;
+    const bool solverIssuesNoWorse=
+        candidate.issueCount<=base.issueCount &&
+        candidate.maximumIssueSeverity<=base.maximumIssueSeverity &&
+        candidate.totalIssueSeverity<=base.totalIssueSeverity;
+    const bool secondaryHardCountsNoWorse=
+        candidate.hardMinimumInteriorAngleCount<=
+            base.hardMinimumInteriorAngleCount &&
+        candidate.hardNonOrthogonalityCount<=base.hardNonOrthogonalityCount &&
+        candidate.hardSkewnessCount<=base.hardSkewnessCount &&
+        candidate.hardAspectCount<=base.hardAspectCount;
+    // Angle/non-orthogonality/skewness/aspect are lower-priority rank keys,
+    // not absolute-extrema locks. Solver hard safety still fails closed through
+    // issueCount here and the authoritative full-quality oracle after ranking.
+    return targetCountsNoWorse && shortFacesNoWorse && solverIssuesNoWorse &&
+           secondaryHardCountsNoWorse;
+}
+
+PatchLocalTerminationRank2D patchLocalTerminationRank2D(
+    const PatchLocalQuality2D& base,const PatchLocalQuality2D& candidate,
+    std::size_t firstCellId,std::size_t secondCellId) noexcept {
+    const auto delta=[](std::size_t after,std::size_t before) {
+        return static_cast<std::ptrdiff_t>(after)-
+               static_cast<std::ptrdiff_t>(before);
+    };
+    PatchLocalTerminationRank2D rank;
+    rank.hardVolumeRatioDelta=delta(
+        candidate.hardVolumeRatioCount,base.hardVolumeRatioCount);
+    rank.hardFaceWeightDelta=delta(
+        candidate.hardFaceWeightCount,base.hardFaceWeightCount);
+    rank.hardViolationDelta=rank.hardVolumeRatioDelta+rank.hardFaceWeightDelta;
+    rank.maximumVolumeRatioSeverityDelta=
+        candidate.maximumVolumeRatioSeverity-base.maximumVolumeRatioSeverity;
+    rank.totalVolumeRatioSeverityDelta=
+        candidate.totalVolumeRatioSeverity-base.totalVolumeRatioSeverity;
+    rank.maximumFaceWeightSeverityDelta=
+        candidate.maximumFaceWeightSeverity-base.maximumFaceWeightSeverity;
+    rank.totalFaceWeightSeverityDelta=
+        candidate.totalFaceWeightSeverity-base.totalFaceWeightSeverity;
+    rank.hardShortFaceDelta=delta(
+        candidate.hardShortFaceCount,base.hardShortFaceCount);
+    rank.maximumShortFaceSeverityDelta=
+        candidate.maximumShortFaceSeverity-base.maximumShortFaceSeverity;
+    rank.totalShortFaceSeverityDelta=
+        candidate.totalShortFaceSeverity-base.totalShortFaceSeverity;
+    rank.minInteriorAngleDelta=
+        base.minInteriorAngleDeg-candidate.minInteriorAngleDeg;
+    rank.maxNonOrthogonalityDelta=
+        candidate.maxNonOrthogonalityDeg-base.maxNonOrthogonalityDeg;
+    rank.maxInternalSkewnessDelta=
+        candidate.maxInternalSkewness-base.maxInternalSkewness;
+    rank.maxCellAspectDelta=candidate.maxCellAspect-base.maxCellAspect;
+    rank.firstCellId=firstCellId;
+    rank.secondCellId=secondCellId;
+    return rank;
+}
+
+bool patchLocalTerminationRankBetter2D(
+    const PatchLocalTerminationRank2D& candidate,
+    const PatchLocalTerminationRank2D& current) noexcept {
+    return std::tie(candidate.hardViolationDelta,
+                    candidate.hardVolumeRatioDelta,
+                    candidate.maximumVolumeRatioSeverityDelta,
+                    candidate.totalVolumeRatioSeverityDelta,
+                    candidate.hardFaceWeightDelta,
+                    candidate.maximumFaceWeightSeverityDelta,
+                    candidate.totalFaceWeightSeverityDelta,
+                    candidate.hardShortFaceDelta,
+                    candidate.maximumShortFaceSeverityDelta,
+                    candidate.totalShortFaceSeverityDelta,
+                    candidate.minInteriorAngleDelta,
+                    candidate.maxNonOrthogonalityDelta,
+                    candidate.maxInternalSkewnessDelta,
+                    candidate.maxCellAspectDelta,
+                    candidate.firstCellId,candidate.secondCellId)<
+           std::tie(current.hardViolationDelta,
+                    current.hardVolumeRatioDelta,
+                    current.maximumVolumeRatioSeverityDelta,
+                    current.totalVolumeRatioSeverityDelta,
+                    current.hardFaceWeightDelta,
+                    current.maximumFaceWeightSeverityDelta,
+                    current.totalFaceWeightSeverityDelta,
+                    current.hardShortFaceDelta,
+                    current.maximumShortFaceSeverityDelta,
+                    current.totalShortFaceSeverityDelta,
+                    current.minInteriorAngleDelta,
+                    current.maxNonOrthogonalityDelta,
+                    current.maxInternalSkewnessDelta,
+                    current.maxCellAspectDelta,
+                    current.firstCellId,current.secondCellId);
 }
 
 bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
@@ -320,9 +447,17 @@ bool patchLocalQualityMatches2D(const PatchLocalQuality2D& lhs,
            lhs.ratedFaceCount==rhs.ratedFaceCount &&
            lhs.ratedInternalFaceCount==rhs.ratedInternalFaceCount &&
            lhs.hardShortFaceCount==rhs.hardShortFaceCount &&
+           lhs.hardVolumeRatioCount==rhs.hardVolumeRatioCount &&
+           lhs.hardFaceWeightCount==rhs.hardFaceWeightCount &&
+           lhs.hardMinimumInteriorAngleCount==rhs.hardMinimumInteriorAngleCount &&
+           lhs.hardNonOrthogonalityCount==rhs.hardNonOrthogonalityCount &&
+           lhs.hardSkewnessCount==rhs.hardSkewnessCount &&
+           lhs.hardAspectCount==rhs.hardAspectCount &&
            lhs.issueCount==rhs.issueCount &&
            lhs.minimumFaceOverLocalH==rhs.minimumFaceOverLocalH &&
            lhs.maximumShortFaceSeverity==rhs.maximumShortFaceSeverity &&
+           lhs.maximumVolumeRatioSeverity==rhs.maximumVolumeRatioSeverity &&
+           lhs.maximumFaceWeightSeverity==rhs.maximumFaceWeightSeverity &&
            lhs.maxNonOrthogonalityDeg==rhs.maxNonOrthogonalityDeg &&
            lhs.maxInternalSkewness==rhs.maxInternalSkewness &&
            lhs.maxBoundarySkewness==rhs.maxBoundarySkewness &&
@@ -335,6 +470,8 @@ bool patchLocalQualityMatches2D(const PatchLocalQuality2D& lhs,
            lhs.minCompactness==rhs.minCompactness &&
            lhs.maximumIssueSeverity==rhs.maximumIssueSeverity &&
            sameSum(lhs.totalShortFaceSeverity,rhs.totalShortFaceSeverity) &&
+           sameSum(lhs.totalVolumeRatioSeverity,rhs.totalVolumeRatioSeverity) &&
+           sameSum(lhs.totalFaceWeightSeverity,rhs.totalFaceWeightSeverity) &&
            sameSum(lhs.totalIssueSeverity,rhs.totalIssueSeverity);
 }
 

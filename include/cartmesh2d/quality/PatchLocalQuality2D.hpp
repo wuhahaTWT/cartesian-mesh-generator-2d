@@ -46,6 +46,19 @@ struct PatchLocalQuality2D {
     double maximumShortFaceSeverity = 0.0;
     double totalShortFaceSeverity = 0.0;
 
+    // Q1 hard-contract counts kept separate from the legacy solver-safety
+    // policy.  Q3 ranks these without changing SolverQualityPolicy2D.
+    std::size_t hardVolumeRatioCount = 0;
+    double maximumVolumeRatioSeverity = 0.0;
+    double totalVolumeRatioSeverity = 0.0;
+    std::size_t hardFaceWeightCount = 0;
+    double maximumFaceWeightSeverity = 0.0;
+    double totalFaceWeightSeverity = 0.0;
+    std::size_t hardMinimumInteriorAngleCount = 0;
+    std::size_t hardNonOrthogonalityCount = 0;
+    std::size_t hardSkewnessCount = 0;
+    std::size_t hardAspectCount = 0;
+
     double maxNonOrthogonalityDeg = 0.0;
     double maxInternalSkewness = 0.0;
     double maxBoundarySkewness = 0.0;
@@ -68,12 +81,22 @@ struct PatchLocalQuality2D {
     [[nodiscard]] bool valid() const noexcept { return issues.empty(); }
 };
 
+struct PatchLocalHardLimits2D {
+    double minimumFaceWeight = 0.10;
+    double minimumVolumeRatio = 0.05;
+    double minimumInteriorAngleDeg = 10.0;
+    double maximumNonOrthogonalityDeg = 65.0;
+    double maximumSkewness = 3.0;
+    double maximumAspect = 50.0;
+};
+
 // Evaluates one scope.  Fails closed when a rated face does not carry its
 // complete incidence, because an incomplete halo cannot bound the metrics of
 // the faces it touches.
 [[nodiscard]] PatchLocalQuality2D evaluatePatchLocalQuality2D(
     const std::vector<PatchLocalCell2D>& scope, double minimumFaceOverLocalH,
-    const SolverQualityPolicy2D& policy = {}, const TolerancePolicy& tol = {});
+    const SolverQualityPolicy2D& policy = {}, const TolerancePolicy& tol = {},
+    const PatchLocalHardLimits2D& hardLimits = {});
 
 namespace detail {
 
@@ -110,6 +133,42 @@ static_assert(!patchLocalShortFaceImprovementImpliesGlobal(
 // short-face lexicographic improvement.
 [[nodiscard]] bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
                                               const PatchLocalQuality2D& base) noexcept;
+
+// Q3 gate: targeted Q1 face-weight/volume-ratio hard counts may improve, while
+// the dimensionless short-face score and every non-target solver metric remain
+// no worse.  Each targeted count is independently non-increasing.
+[[nodiscard]] bool patchLocalTerminationQualityNoWorse2D(
+    const PatchLocalQuality2D& candidate,
+    const PatchLocalQuality2D& base) noexcept;
+
+struct PatchLocalTerminationRank2D {
+    std::ptrdiff_t hardViolationDelta = 0;
+    std::ptrdiff_t hardVolumeRatioDelta = 0;
+    double maximumVolumeRatioSeverityDelta = 0.0;
+    double totalVolumeRatioSeverityDelta = 0.0;
+    std::ptrdiff_t hardFaceWeightDelta = 0;
+    double maximumFaceWeightSeverityDelta = 0.0;
+    double totalFaceWeightSeverityDelta = 0.0;
+    std::ptrdiff_t hardShortFaceDelta = 0;
+    double maximumShortFaceSeverityDelta = 0.0;
+    double totalShortFaceSeverityDelta = 0.0;
+    double minInteriorAngleDelta = 0.0;
+    double maxNonOrthogonalityDelta = 0.0;
+    double maxInternalSkewnessDelta = 0.0;
+    double maxCellAspectDelta = 0.0;
+    std::size_t firstCellId = 0;
+    std::size_t secondCellId = 0;
+};
+
+[[nodiscard]] PatchLocalTerminationRank2D patchLocalTerminationRank2D(
+    const PatchLocalQuality2D& base,
+    const PatchLocalQuality2D& candidate,
+    std::size_t firstCellId,
+    std::size_t secondCellId) noexcept;
+
+[[nodiscard]] bool patchLocalTerminationRankBetter2D(
+    const PatchLocalTerminationRank2D& candidate,
+    const PatchLocalTerminationRank2D& current) noexcept;
 
 // Deterministic total order used to pick the single winner among candidates
 // whose patches, and therefore whose evaluation scopes, differ. Absolute local

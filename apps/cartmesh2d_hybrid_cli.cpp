@@ -107,7 +107,8 @@ void usage() {
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
            "[openfoam-case extrusion-thickness] [--legacy-construction] "
-           "[--verify-source-lineage]\n";
+           "[--verify-source-lineage] [--q3-termination-quality] "
+           "[--q3-termination-repartition] [--q3-termination-grouped]\n";
 }
 
 } // namespace
@@ -115,10 +116,23 @@ void usage() {
 int main(int argc, char** argv) {
     bool legacyConstruction=false;
     bool verifySourceLineage=false;
+    bool q3TerminationQuality=false;
+    bool q3TerminationRepartition=false;
+    bool q3TerminationGrouped=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
         if (option=="--legacy-construction") legacyConstruction=true;
         else if (option=="--verify-source-lineage") verifySourceLineage=true;
+        else if (option=="--q3-termination-quality") q3TerminationQuality=true;
+        else if (option=="--q3-termination-repartition") {
+            q3TerminationQuality=true;
+            q3TerminationRepartition=true;
+        }
+        else if (option=="--q3-termination-grouped") {
+            q3TerminationQuality=true;
+            q3TerminationRepartition=true;
+            q3TerminationGrouped=true;
+        }
         else break;
         --argc;
     }
@@ -182,6 +196,9 @@ int main(int argc, char** argv) {
     HybridMeshPolicy2D hybridPolicy;
     hybridPolicy.sharedIntersectionConstruction=!legacyConstruction;
     hybridPolicy.verifySourceLineageOracle=verifySourceLineage;
+    hybridPolicy.enableTerminationQualityOptimization=q3TerminationQuality;
+    hybridPolicy.enableTerminationQualityRepartition=q3TerminationRepartition;
+    hybridPolicy.enableTerminationGroupedRepartition=q3TerminationGrouped;
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
@@ -362,6 +379,57 @@ int main(int argc, char** argv) {
               << hybrid.metrics.r1GlobalOracleBuilds
               << " r1_accepted=" << hybrid.metrics.r1AcceptedTransactions
               << " r1_repair_seconds=" << hybrid.metrics.r1RepairSeconds
+              << " q3_candidates=" << hybrid.metrics.q3TerminationCandidates
+              << " q3_local_quality_evals="
+              << hybrid.metrics.q3LocalQualityEvaluations
+              << " q3_candidate_global_builds="
+              << hybrid.metrics.q3CandidateGlobalTopologyBuilds
+              << " q3_candidate_full_quality="
+              << hybrid.metrics.q3CandidateFullGlobalQualityEvaluations
+              << " q3_winner_oracle_builds="
+              << hybrid.metrics.q3GlobalOracleBuilds
+              << " q3_accepted=" << hybrid.metrics.q3AcceptedTransactions
+              << " q3_bound_reached="
+              << hybrid.metrics.q3TransactionBoundReached
+              << " q3_volume_hard=" << hybrid.metrics.q3HardVolumeRatioBefore
+              << "->" << hybrid.metrics.q3HardVolumeRatioAfter
+              << " q3_face_weight_hard=" << hybrid.metrics.q3HardFaceWeightBefore
+              << "->" << hybrid.metrics.q3HardFaceWeightAfter
+              << " q3_short_face_hard=" << hybrid.metrics.q3HardShortFaceBefore
+              << "->" << hybrid.metrics.q3HardShortFaceAfter
+              << " q3_repair_seconds=" << hybrid.metrics.q3RepairSeconds
+              << " q32_candidates=" << hybrid.metrics.q32RepartitionCandidates
+              << " q32_local_quality_evals="
+              << hybrid.metrics.q32LocalQualityEvaluations
+              << " q32_winner_oracle_builds="
+              << hybrid.metrics.q32GlobalOracleBuilds
+              << " q32_accepted=" << hybrid.metrics.q32AcceptedTransactions
+              << " q32_bound_reached="
+              << hybrid.metrics.q32TransactionBoundReached
+              << " q32_volume_hard=" << hybrid.metrics.q32HardVolumeRatioBefore
+              << "->" << hybrid.metrics.q32HardVolumeRatioAfter
+              << " q32_face_weight_hard="
+              << hybrid.metrics.q32HardFaceWeightBefore
+              << "->" << hybrid.metrics.q32HardFaceWeightAfter
+              << " q32_short_face_hard=" << hybrid.metrics.q32HardShortFaceBefore
+              << "->" << hybrid.metrics.q32HardShortFaceAfter
+              << " q32_repair_seconds=" << hybrid.metrics.q32RepairSeconds
+              << " q33_candidates=" << hybrid.metrics.q33GroupedCandidates
+              << " q33_local_quality_evals="
+              << hybrid.metrics.q33LocalQualityEvaluations
+              << " q33_winner_oracle_builds="
+              << hybrid.metrics.q33GlobalOracleBuilds
+              << " q33_accepted=" << hybrid.metrics.q33AcceptedTransactions
+              << " q33_bound_reached="
+              << hybrid.metrics.q33TransactionBoundReached
+              << " q33_volume_hard=" << hybrid.metrics.q33HardVolumeRatioBefore
+              << "->" << hybrid.metrics.q33HardVolumeRatioAfter
+              << " q33_face_weight_hard="
+              << hybrid.metrics.q33HardFaceWeightBefore
+              << "->" << hybrid.metrics.q33HardFaceWeightAfter
+              << " q33_short_face_hard=" << hybrid.metrics.q33HardShortFaceBefore
+              << "->" << hybrid.metrics.q33HardShortFaceAfter
+              << " q33_repair_seconds=" << hybrid.metrics.q33RepairSeconds
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus

@@ -64,12 +64,30 @@ jobs:
           "$exe" examples/h4_3/narrow_gap.xy \
             "$out/narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
             "$out/narrow_gap-case" 0.01
+          "$exe" examples/h4_3/narrow_gap.xy \
+            "$out/q3_narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/q3_narrow_gap-case" 0.01 --q3-termination-quality
+          "$exe" examples/h4_3/narrow_gap.xy \
+            "$out/q32_narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/q32_narrow_gap-case" 0.01 --q3-termination-repartition
+          "$exe" examples/h4_3/narrow_gap.xy \
+            "$out/q33_narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/q33_narrow_gap-case" 0.01 --q3-termination-grouped
 
           for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
             python3 tools/verification/check_openfoam2d.py \
               "$out/${case_name}-case" \
               --report "$out/${case_name}-case/independent_check.json"
           done
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q3_narrow_gap-case" \
+            --report "$out/q3_narrow_gap-case/independent_check.json"
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q32_narrow_gap-case" \
+            --report "$out/q32_narrow_gap-case/independent_check.json"
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q33_narrow_gap-case" \
+            --report "$out/q33_narrow_gap-case/independent_check.json"
 
           python3 - "$out" <<'PY'
           import json
@@ -103,6 +121,56 @@ jobs:
                       report['requested_boundary_layer_cell_count']), path
               assert report['termination_cell_count'] > 0, path
               assert report['termination_edge_count'] > 0, path
+
+          q3_path = root / 'q3_narrow_gap.hybrid.json'
+          q3 = json.loads(q3_path.read_text(encoding='utf-8'))
+          assert q3['hybrid_status'] == 'success', q3_path
+          assert q3['solver_quality_valid'] is True, q3_path
+          assert q3['solver_quality_issue_count'] == 0, q3_path
+          assert q3['q3_hard_volume_ratio_count_after'] < q3['q3_hard_volume_ratio_count_before'], q3_path
+          assert q3['q3_hard_face_weight_count_after'] < q3['q3_hard_face_weight_count_before'], q3_path
+          assert q3['q3_hard_short_face_count_before'] == 0, q3_path
+          assert q3['q3_hard_short_face_count_after'] == 0, q3_path
+          assert q3['q3_candidate_global_topology_build_count'] == 0, q3_path
+          assert q3['q3_candidate_full_global_quality_evaluation_count'] == 0, q3_path
+          assert q3['q3_maximum_winner_global_oracle_builds_per_transaction'] <= 1, q3_path
+          assert q3['q3_patch_outside_stable_ids_unchanged'] is True, q3_path
+          assert q3['q3_local_delta_matches_global_oracle'] is True, q3_path
+          assert q3['q3_local_winner_matches_global_authority'] is True, q3_path
+
+          q32_path = root / 'q32_narrow_gap.hybrid.json'
+          q32 = json.loads(q32_path.read_text(encoding='utf-8'))
+          assert q32['hybrid_status'] == 'success', q32_path
+          assert q32['solver_quality_valid'] is True, q32_path
+          assert q32['solver_quality_issue_count'] == 0, q32_path
+          assert q32['q32_hard_volume_ratio_count_after'] < q32['q32_hard_volume_ratio_count_before'], q32_path
+          assert q32['q32_hard_face_weight_count_after'] < q32['q32_hard_face_weight_count_before'], q32_path
+          assert q32['q32_hard_short_face_count_before'] == 0, q32_path
+          assert q32['q32_hard_short_face_count_after'] == 0, q32_path
+          assert q32['q32_candidate_global_topology_build_count'] == 0, q32_path
+          assert q32['q32_candidate_full_global_quality_evaluation_count'] == 0, q32_path
+          assert q32['q32_maximum_winner_global_oracle_builds_per_transaction'] <= 1, q32_path
+          assert q32['q32_patch_outside_stable_ids_unchanged'] is True, q32_path
+          assert q32['q32_local_delta_matches_global_oracle'] is True, q32_path
+          assert q32['q32_local_winner_matches_global_authority'] is True, q32_path
+          assert q32['solver_cell_count'] == q3['solver_cell_count'], q32_path
+
+          q33_path = root / 'q33_narrow_gap.hybrid.json'
+          q33 = json.loads(q33_path.read_text(encoding='utf-8'))
+          assert q33['hybrid_status'] == 'success', q33_path
+          assert q33['solver_quality_valid'] is True, q33_path
+          assert q33['solver_quality_issue_count'] == 0, q33_path
+          assert q33['q33_hard_volume_ratio_count_after'] < q33['q33_hard_volume_ratio_count_before'], q33_path
+          assert q33['q33_hard_face_weight_count_after'] <= q33['q33_hard_face_weight_count_before'], q33_path
+          assert q33['q33_hard_short_face_count_before'] == 0, q33_path
+          assert q33['q33_hard_short_face_count_after'] == 0, q33_path
+          assert q33['q33_candidate_global_topology_build_count'] == 0, q33_path
+          assert q33['q33_candidate_full_global_quality_evaluation_count'] == 0, q33_path
+          assert q33['q33_maximum_winner_global_oracle_builds_per_transaction'] <= 1, q33_path
+          assert q33['q33_patch_outside_stable_ids_unchanged'] is True, q33_path
+          assert q33['q33_local_delta_matches_global_oracle'] is True, q33_path
+          assert q33['q33_local_winner_matches_global_authority'] is True, q33_path
+          assert q33['solver_cell_count'] == q32['solver_cell_count'], q33_path
           PY
 
       - name: Verify Q1 typed dimensionless quality contract
@@ -162,7 +230,7 @@ jobs:
           image=opencfd/openfoam-run:2606
           container_root=/home/openfoam/workingDir
           docker pull "$image"
-          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap; do
             log="$out/${case_name}.checkMesh.log"
             docker run --rm \
               -v "$PWD:$container_root" \
