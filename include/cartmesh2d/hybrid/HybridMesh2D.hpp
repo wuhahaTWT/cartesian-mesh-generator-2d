@@ -206,6 +206,10 @@ struct HybridMeshMetrics2D {
     bool q41LocalDeltaMatchesGlobalOracle = true;
     bool q41LocalWinnerMatchesGlobalAuthority = true;
     bool q41ConstructionBoundReached = false;
+    // True when Q4-1 was requested but every attempt with it enabled failed a
+    // final gate, so the committed mesh is the unchanged non-Q4 hybrid. All
+    // q41* counters above then describe no committed construction.
+    bool q41ConstructionSelectionDeclined = false;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -500,25 +504,41 @@ resolveAutomaticHybridTransitionPlan2D(
         plan->ringCount==0U?1.0:
         plan->ringThickness / plan->targetCellSize;
     HybridMeshBuildResult2D result;
-    if (boundaryLayers.localReductionApplied) {
-        // Different valid quadtree phases can place a graded termination front
-        // arbitrarily close to a nested Cartesian line. Try a short, fixed and
-        // deterministic family of geometric growth ratios; commit only a fully
-        // solver-valid candidate. Every attempt is transactional.
-        constexpr double candidates[]{1.45,1.55,1.50};
-        for (const double growth:candidates) {
-            resolvedPolicy.terminationGrowthRatio=growth;
-            auto attempt=buildConformalHybridMesh2D(
-                boundaryLayers,domain,originalWalls,remainderMaxLevel,
-                remainderRefinement,resolvedPolicy);
-            result=std::move(attempt);
-            if (result.success()) break;
+    // Q4-1 construction selection is an optional quality improvement, never a
+    // precondition for producing a hybrid mesh. If every growth-ratio attempt
+    // with it enabled fails, retry the same geometry with it disabled before
+    // the caller is allowed to consider pure Cut-cell fallback: losing the
+    // whole boundary layer is a far larger regression than declining one
+    // bounded construction choice.
+    const bool retryWithoutConstructionSelection=
+        resolvedPolicy.enableTerminationConstructionQualitySelection;
+    for (std::size_t pass=0;pass<(retryWithoutConstructionSelection?2U:1U);++pass) {
+        if (pass==1U)
+            resolvedPolicy.enableTerminationConstructionQualitySelection=false;
+        if (boundaryLayers.localReductionApplied) {
+            // Different valid quadtree phases can place a graded termination front
+            // arbitrarily close to a nested Cartesian line. Try a short, fixed and
+            // deterministic family of geometric growth ratios; commit only a fully
+            // solver-valid candidate. Every attempt is transactional.
+            constexpr double candidates[]{1.45,1.55,1.50};
+            for (const double growth:candidates) {
+                resolvedPolicy.terminationGrowthRatio=growth;
+                auto attempt=buildConformalHybridMesh2D(
+                    boundaryLayers,domain,originalWalls,remainderMaxLevel,
+                    remainderRefinement,resolvedPolicy);
+                result=std::move(attempt);
+                if (result.success()) break;
+            }
+        } else {
+            result = buildConformalHybridMesh2D(
+                boundaryLayers, domain, originalWalls, remainderMaxLevel,
+                remainderRefinement, resolvedPolicy);
         }
-    } else {
-        result = buildConformalHybridMesh2D(
-            boundaryLayers, domain, originalWalls, remainderMaxLevel,
-            remainderRefinement, resolvedPolicy);
+        if (result.success()) break;
     }
+    result.metrics.q41ConstructionSelectionDeclined=
+        retryWithoutConstructionSelection && result.success() &&
+        !resolvedPolicy.enableTerminationConstructionQualitySelection;
     result.metrics.transitionRingCount = plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
         plan->finalTangentialSubdivision;

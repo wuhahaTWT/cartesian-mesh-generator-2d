@@ -1,0 +1,129 @@
+{
+  "stage": "Q4-1 fallback safety: declined construction selection must not cost the boundary layer",
+  "date": "2026-08-31",
+  "baseline_commit": "366f1700187f6f45b197367a8792f4640c7bfae6",
+  "defect": {
+    "symptom": "Enabling --q4-termination-construction on sharp_trailing_edge dropped the whole mesh to pure Cut-cell fallback.",
+    "before": {
+      "command": "cartmesh2d_hybrid_cli examples/h4_3/sharp_trailing_edge.xy <prefix> 8 3 8 4 0.012 1.15 1.0 --q4-termination-construction",
+      "mesh_mode": "pure_cutcell_fallback",
+      "fallback_stage": "hybrid_candidate",
+      "solver_cells": 1888,
+      "boundary_layer_cell_count": 0,
+      "hybrid_detail": "solver quality remains invalid after constrained repair: issues=8 min_face_weight=0.0339435 min_volume_ratio=0.01008"
+    },
+    "root_cause": "buildAutomaticHybridWithConstruction2D tried only the three termination growth ratios with the requested policy. A Q4-1 construction commit that later failed the final unchanged solver-quality gate therefore exhausted every hybrid candidate, and buildRobustH4Mesh2D went straight to pure Cut-cell. Q4-1 is an optional quality improvement, so its failure must not remove the boundary layer."
+  },
+  "fix": {
+    "location": "include/cartmesh2d/hybrid/HybridMesh2D.hpp buildAutomaticHybridWithConstruction2D",
+    "behaviour": "When Q4-1 selection was requested and every growth-ratio attempt with it enabled fails, the same geometry is retried once with enableTerminationConstructionQualitySelection=false before any caller may consider pure Cut-cell. No threshold, gate, wall geometry or Q3 pass was changed.",
+    "new_reported_field": "q41_construction_selection_declined"
+  },
+  "after": {
+    "sharp_trailing_edge_q4_only": {
+      "command": "cartmesh2d_hybrid_cli examples/h4_3/sharp_trailing_edge.xy <prefix> 8 3 8 4 0.012 1.15 1.0 --q4-termination-construction",
+      "hybrid_status": "success",
+      "mesh_mode": "hybrid",
+      "solver_cells": 3391,
+      "boundary_layer_cell_count": 1044,
+      "q41_accepted_construction_count": 0,
+      "q41_construction_selection_declined": true,
+      "byte_identical_to_no_flag_build": [
+        "hybrid.cm2d",
+        "hybrid.solver.cm2d",
+        "hybrid.quality-contract.json"
+      ]
+    },
+    "sharp_trailing_edge_q4_plus_q33": {
+      "hybrid_status": "success",
+      "solver_cells": 3389,
+      "boundary_layer_cell_count": 1044,
+      "area_error": 2.13163e-14,
+      "q3_volume_hard": "156->156",
+      "q32_volume_hard": "156->150",
+      "q33_volume_hard": "150->149",
+      "q33_face_weight_hard": "137->136",
+      "q41_construction_selection_declined": true,
+      "deterministic_replay_identical": [
+        "hybrid.cm2d",
+        "hybrid.solver.cm2d",
+        "hybrid.quality-contract.json",
+        "hybrid.solver-quality.json"
+      ],
+      "independent_openfoam_reader": "PASS"
+    },
+    "narrow_gap_q4_plus_q33_unchanged": {
+      "solver_cells": 3149,
+      "q41_accepted_construction_count": 4,
+      "q41_construction_selection_declined": false,
+      "q41_hard_volume_ratio": "168->160",
+      "q41_hard_face_weight": "60->56",
+      "q33_hard_volume_ratio_count_after": 231,
+      "q33_hard_face_weight_count_after": 46,
+      "area_error": -3.375077994860476e-14,
+      "solver_cm2d_sha256": "e058ec5bca3c84f8b6985ba0752d09a95ee3b5dc9b56c33fd793db84465250cd",
+      "note": "byte-identical to the pre-fix Q4-1 narrow-gap artifact, so the accepted-Q4 path is untouched"
+    }
+  },
+  "generality_probe": {
+    "purpose": "Measure whether Q3/Q4 termination optimization applies beyond narrow-gap. Recorded as fact, not as a claim of convergence.",
+    "circle": {
+      "termination_cell_count": 0,
+      "q41_candidates": 0,
+      "quality_contract": "FAIL",
+      "hard_issues": "remainder_cut only: volume_ratio 56, face_weight 24",
+      "conclusion": "no local termination, so Q3/Q4 are inert; remaining hard faces are RemainderCut, an untreated family"
+    },
+    "superellipse": {
+      "termination_cell_count": 0,
+      "q41_candidates": 0,
+      "quality_contract": "FAIL",
+      "hard_issues": "remainder_cut only: volume_ratio 10, face_weight 16",
+      "conclusion": "same as circle"
+    },
+    "concave_l": {
+      "q3_volume_hard": "107->59",
+      "q3_face_weight_hard": "64->32",
+      "q33_volume_hard": "49->49",
+      "q41_candidates": 8,
+      "q41_accepted": 0,
+      "conclusion": "Q3-1 transfers to a second geometry; the Q4-1 convex-union template finds candidates but none pass, consistent with the Q4-1 doc's own template-boundary conclusion"
+    },
+    "sharp_trailing_edge": {
+      "q3_volume_hard": "156->156",
+      "q32_volume_hard": "156->150",
+      "q33_volume_hard": "150->149",
+      "q41_accepted": 0,
+      "conclusion": "Q3-2/Q3-3 transfer weakly; Q3-1 pair agglomeration and Q4-1 do not apply here"
+    }
+  },
+  "regression_gates_added": {
+    "unit_test": "tests/h4_local_termination_test.cpp asserts the sharp taper stays Hybrid under a Q4-1 policy, reports the decline, and retains every non-Q4 boundary-layer cell",
+    "ci": "cartmesh2d-ci.yml adds a q41_sharp_trailing_edge case with declined=true, accepted=0, layer-count equality against the baseline case, and OpenFOAM checkMesh coverage"
+  },
+  "verification": {
+    "ctest": "75/75 PASS",
+    "build": "Release, /Applications/mesasdk/bin/c++",
+    "openfoam_checkMesh": {
+      "image": "opencfd/openfoam-run:2606",
+      "q41_sharp_trailing_edge": {
+        "result": "Mesh OK",
+        "max_aspect_ratio": 13.91200364,
+        "max_non_orthogonality_deg": 69.3953455,
+        "max_skewness": 3.34005325,
+        "minimum_face_area": 9.849335481e-08
+      },
+      "q41_narrow_gap": {
+        "result": "Mesh OK",
+        "max_aspect_ratio": 11.26802885,
+        "max_non_orthogonality_deg": 68.81332468,
+        "max_skewness": 3.442394378,
+        "minimum_face_area": 2.33e-06
+      }
+    }
+  },
+  "previews": {
+    "sharp_tail_before_after": "artifacts/q4-1/sharp-tail-fallback-before-after.png",
+    "narrow_gap_q41_sample": "artifacts/q4-1/narrow-gap-q41-sample.png"
+  }
+}

@@ -460,6 +460,8 @@ int main(int argc, char** argv) {
               << hybrid.metrics.q41HardShortFaceAfter
               << " q41_selection_seconds="
               << hybrid.metrics.q41ConstructionSelectionSeconds
+              << " q41_declined="
+              << hybrid.metrics.q41ConstructionSelectionDeclined
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus

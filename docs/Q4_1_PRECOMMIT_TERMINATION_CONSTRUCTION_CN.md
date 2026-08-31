@@ -84,3 +84,64 @@ authoritative full-quality evaluations=10。本机 construction selection wall t
 另一类 H4 termination/transition 构造：优先处理不能形成严格凸 union 的
 termination remainder 与 graded-strip interface partition，但仍保持 pre-commit、typed、
 bounded，不回到 Q3 post-repair 模板堆叠。
+
+## 6. 补记：declined Q4-1 不得代价整层（2026-08-31 后续修复）
+
+初版 Q4-1 只在 narrow-gap 上验证过。在 sharp trailing edge 上打开
+`--q4-termination-construction` 会把整个网格降级为 pure Cut-cell fallback：
+
+```text
+mesh_mode=pure_cutcell_fallback fallback_stage=hybrid_candidate
+solver_cells=1888 boundary_layer_cell_count=0
+hybrid_detail=solver quality remains invalid after constrained repair: issues=8
+```
+
+原因不在 Q4-1 的候选或 gate，而在 `buildAutomaticHybridWithConstruction2D` 的
+候选族：它只用 requested policy 试 1.45/1.55/1.50 三个 termination growth ratio。
+一个通过局部 authority、却在最终 unchanged solver-quality gate 失败的 Q4-1 提交，
+因此耗尽全部 hybrid 候选，`buildRobustH4Mesh2D` 直接落到 pure Cut-cell。
+
+Q4-1 是可选质量改进，不是产出 hybrid 网格的前提，所以修复是：当请求了 Q4-1 而
+所有启用它的尝试都失败时，先用同一几何、关闭 Q4-1 重试一次，之后调用方才允许
+考虑 pure Cut-cell。没有修改任何阈值、gate、壁面几何或 Q3 各遍。
+
+修复后 sharp trailing edge：
+
+| 指标 | 修复前 | 修复后 |
+|---|---:|---:|
+| mesh_mode | pure_cutcell_fallback | hybrid |
+| solver cells | 1888 | 3391 |
+| boundary-layer cells | 0 | 1044 |
+
+新增 `q41_construction_selection_declined` 报告位。declined 路径的
+`hybrid.cm2d`、`hybrid.solver.cm2d`、`hybrid.quality-contract.json` 与完全不加
+flag 的构建逐字节相同，即 declined Q4-1 是真正的 no-op；narrow-gap 的
+accepted 路径 solver `.cm2d` 与修复前同为
+`e058ec5bca3c84f8b6985ba0752d09a95ee3b5dc9b56c33fd793db84465250cd`。
+
+回归门：`tests/h4_local_termination_test.cpp` 断言 sharp taper 在 Q4-1 policy 下
+仍为 Hybrid、上报 declined、且 boundary-layer cell 数与非 Q4 构建相同；CI 增加
+`q41_sharp_trailing_edge` case 与其 OpenFOAM `checkMesh` 覆盖。CTest 75/75 PASS。
+
+本机 `opencfd/openfoam-run:2606` 对新的 declined case 与原 accepted case 均为
+`Mesh OK`：sharp-tail max aspect 13.912、max non-orth 69.3953455、max skewness
+3.34005325；narrow-gap max aspect 11.268、max non-orth 68.81332468、max skewness
+3.442394378。
+
+机器可读证据：`artifacts/q4-1/fallback-safety-manifest.json`，其中还记录了
+circle / superellipse / concave-L / sharp-tail 四例的 Q3/Q4 适用性实测。
+
+## 7. 剩余未做项（按证据排序）
+
+1. **RemainderCut 家族没有任何 construction-time 处理。** circle 与 superellipse
+   的 `termination_cell_count=0`，Q3/Q4 全部 inert，但两者 Q1 仍为 FAIL，且全部
+   hard face 都在 RemainderCut：circle volume-ratio 56 / face-weight 24，
+   superellipse volume-ratio 10 / face-weight 16。这是覆盖面最广的空白。
+2. **Q4-1 模板只对 narrow-gap 有收益。** concave-L 产生 8 个候选、0 接受；
+   sharp-tail 0 接受。与 §5 的判断一致：需要新模板，而不是放宽同一个。
+3. **BoundaryLayer 六项指标仍为 OBSERVED。** 没有 hard/preferred 数值，因此不参与
+   总判级，Q1 的 PASS 定义目前不覆盖近壁网格质量。
+4. **顶层 phase attribution 仍未补完。** narrow-gap Q4+Q3 端到端约 84 s，而
+   `q3+q32+q33+q41` 计时合计约 37 s；R1F §7 的前置条件未满足，性能优化不应开工。
+5. **sharp-tail 的 Q1 hard 数仍高**（volume-ratio 149、face-weight 136），
+   Q3-2/Q3-3 只带来个位数改善。
