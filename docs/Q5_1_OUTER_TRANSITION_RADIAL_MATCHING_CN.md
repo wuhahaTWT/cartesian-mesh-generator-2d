@@ -93,13 +93,40 @@ opt-in flag：`--q5-outer-transition-radial`。新增上报位
   transition 行增加、接口共形、面积守恒、typed hard 数严格下降；CI 增加
   `q51_circle` 与 `q51_superellipse` 两个 case 及其 checkMesh。
 
-## 5. 剩余
+## 5. 剩余 —— superellipse 那 12 个也已实测到底
 
-1. superellipse 还剩 12 个 hard（face_weight 4、volume_ratio 4、
-   non-orthogonality 4）。其中 4 个 RemainderCut↔RemainderCut hard face 在 Q5-1
-   射程之外，需要单独处理；细化后的 fan 内部新出现 4 个 non-orth hard face，
-   净 hard 数仍减半。
-2. concave-L 206、sharp-tail 377、narrow-gap 430。这三例的 transition 来自 graded
-   termination buffer 而不是 fan，所以 Q5-1 对它们完全 inert。把同一条径向尺寸匹配
-   规则搬到 termination buffer 是最自然的下一步，本轮没有实现。
-3. BoundaryLayer 六项指标仍为 OBSERVED，因此 WARN 还不能认定近壁网格质量合格。
+Q5-1 之后 superellipse 剩 12 个 hard，构成为：RemainderCut↔RemainderCut 的
+face_weight 4 + volume_ratio 4，以及 RemainderCut↔Transition 的
+non-orthogonality 4。两族都追到了根：
+
+**RemainderCut↔RemainderCut（8 个面，4 个对称单元 89/315/408/499）。** 该单元
+面积 1.648384e-3 = 0.2153 h²，是一个薄楔形，带一个**真实的 −16.943389° 凹角**
+（另有一个 −0.000002° 的近共线凹角）。真实凹角必须切分（OpenFOAM 会把它报成
+concave polyhedron），而薄楔形的任何凸切分都会产生 sliver：committed 子单元为
+1.43889e-3 与 2.0949e-4，最小子/母 = 0.12709，最差面比 0.045461，距 0.05 门槛
+差 9%。逐一实测三条出路，全部无效：
+
+| 尝试 | 最好能达到的最差面比 |
+|---|---:|
+| 现状（面积最均衡对角线） | 0.045461 |
+| 穷举全部 ≤3 片凸切分 | 0.045461 |
+| 先删近共线凹点再重划分 | 0.045461 |
+| 与 RemainderCut 邻居合并后切分 | union 根本无合法凸切分 |
+| 与 RemainderCartesian 邻居合并后切分 | 0.013579（**更差**）|
+
+所以它同样**不是** remainder 构造缺陷：合并会让结果更糟，而不是更好。真正的出路只有
+两条，且都已被本项目记录为受阻——放宽严格凸性（`strictlyConvex` 的注释说明这是为了
+OpenFOAM 的 concavity 检查而故意收紧的），或局部 quadtree 加密改变切割本身（Q2 文档
+记载该路线"failed the unchanged solver gate"，Q2 因此仍为 partial）。
+
+**non-orthogonality（4 个面）。** 实测 65.0532228°，门槛 65°，仅超 0.08%，且出现在
+新细化后的 fan 内部——同一批面在 Q5-1 之前是低于门槛的。这是本轮唯一的负向代价，
+净 hard 数仍从 26 减到 12。
+
+## 6. 下一步
+
+1. concave-L 206、sharp-tail 377、narrow-gap 430。这三例的 transition 来自 graded
+   termination buffer 而不是 fan，Q5-1 对它们完全 inert。把同一条径向尺寸匹配规则
+   搬到 termination buffer 是最自然的下一步，本轮没有实现。
+2. BoundaryLayer 六项指标仍为 OBSERVED，因此 WARN 还不能认定近壁网格质量合格。
+
