@@ -109,7 +109,8 @@ void usage() {
            "[openfoam-case extrusion-thickness] [--legacy-construction] "
            "[--verify-source-lineage] [--q3-termination-quality] "
            "[--q3-termination-repartition] [--q3-termination-grouped] "
-           "[--q4-termination-construction]\n";
+           "[--q4-termination-construction] "
+           "[--q5-outer-transition-radial]\n";
 }
 
 } // namespace
@@ -121,10 +122,14 @@ int main(int argc, char** argv) {
     bool q3TerminationRepartition=false;
     bool q3TerminationGrouped=false;
     bool q4TerminationConstruction=false;
+    bool q5OuterTransitionRadial=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
         if (option=="--legacy-construction") legacyConstruction=true;
         else if (option=="--verify-source-lineage") verifySourceLineage=true;
+        else if (option=="--q5-outer-transition-radial") {
+            q5OuterTransitionRadial=true;
+        }
         else if (option=="--q3-termination-quality") q3TerminationQuality=true;
         else if (option=="--q3-termination-repartition") {
             q3TerminationQuality=true;
@@ -206,6 +211,7 @@ int main(int argc, char** argv) {
     hybridPolicy.enableTerminationGroupedRepartition=q3TerminationGrouped;
     hybridPolicy.enableTerminationConstructionQualitySelection=
         q4TerminationConstruction;
+    hybridPolicy.enableOuterTransitionRadialMatching=q5OuterTransitionRadial;
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
@@ -462,6 +468,10 @@ int main(int argc, char** argv) {
               << hybrid.metrics.q41ConstructionSelectionSeconds
               << " q41_declined="
               << hybrid.metrics.q41ConstructionSelectionDeclined
+              << " q51_radial_rows="
+              << hybrid.metrics.q51OuterTransitionRadialSubdivision
+              << " q51_declined="
+              << hybrid.metrics.q51OuterTransitionRadialDeclined
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus

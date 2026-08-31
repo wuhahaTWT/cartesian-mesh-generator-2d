@@ -680,10 +680,31 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         for (const auto vertex:outerIds) innerLoop.push_back(strip.vertices[vertex].point);
         std::size_t innerSubdivision=1U;
         for (std::size_t ring=0;ring<policy.transitionRingCount;++ring) {
-            const std::size_t outerSubdivision=ring==0U?1U:innerSubdivision*2U;
+            // Q5-1: the fan is graded tangentially but every ring keeps the
+            // full ring thickness, so the outermost ring can be several
+            // background cells deep while the Cut cells it borders are a
+            // fraction of one. Cut that last ring into radial rows. The last
+            // row's offset is arithmetically identical to the single-row
+            // offset, so the committed outer envelope -- and therefore the
+            // whole remainder quadtree and its Cut cells -- is unchanged.
+            const bool lastRing=ring+1U==policy.transitionRingCount;
+            const std::size_t radialRows=lastRing
+                ?std::max<std::size_t>(
+                     1U,policy.transitionOuterRingRadialSubdivision)
+                :1U;
+            const std::size_t ringSubdivision=ring==0U?1U:innerSubdivision*2U;
+            for (std::size_t row=0;row<radialRows;++row) {
+            // Only the first row of a ring carries that ring's tangential
+            // refinement; later radial rows keep it, so every added face is
+            // interior to the transition strip.
+            const std::size_t outerSubdivision=
+                row==0U?ringSubdivision:innerSubdivision;
             std::vector<Point2D> transitionOuter;
             transitionOuter.reserve(outerIds.size()*outerSubdivision);
-            const double factor=transitionRingThickness*static_cast<double>(ring+1U)/
+            const double factor=transitionRingThickness*
+                                (static_cast<double>(ring)+
+                                 static_cast<double>(row+1U)/
+                                 static_cast<double>(radialRows))/
                                 lastNormalSpacing;
             for (std::size_t segment=0;segment<outerIds.size();++segment) {
                 const std::size_t next=(segment+1U)%outerIds.size();
@@ -734,6 +755,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             }
             innerLoop=std::move(transitionOuter);
             innerSubdivision=outerSubdivision;
+            }
         }
         BoundaryLoop transitionLoop(innerLoop);
         if (!transitionLoop.diagnose(policy.tolerance).valid()) {
@@ -2595,6 +2617,10 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << (metrics.q41ConstructionBoundReached?"true":"false") << ",\n";
         out << "  \"q41_construction_selection_declined\": "
             << (metrics.q41ConstructionSelectionDeclined?"true":"false") << ",\n";
+        out << "  \"q51_outer_transition_radial_subdivision\": "
+            << metrics.q51OuterTransitionRadialSubdivision << ",\n";
+        out << "  \"q51_outer_transition_radial_declined\": "
+            << (metrics.q51OuterTransitionRadialDeclined?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "

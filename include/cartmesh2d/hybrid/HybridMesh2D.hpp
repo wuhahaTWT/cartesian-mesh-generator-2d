@@ -76,6 +76,10 @@ struct HybridInterfaceAudit2D {
 struct HybridTransitionPlan2D {
     std::size_t ringCount = 0U;
     std::size_t finalTangentialSubdivision = 1U;
+    // Q5-1: radial rows the outermost ring is cut into so no transition row is
+    // radially thicker than the remainder background cell it borders. 1 keeps
+    // the historical single-row outer fan.
+    std::size_t outerRingRadialSubdivision = 1U;
     double targetCellSize = 0.0;
     double maxOuterEdgeLength = 0.0;
     double maxLastLayerSpacing = 0.0;
@@ -210,6 +214,10 @@ struct HybridMeshMetrics2D {
     // final gate, so the committed mesh is the unchanged non-Q4 hybrid. All
     // q41* counters above then describe no committed construction.
     bool q41ConstructionSelectionDeclined = false;
+    // Q5-1: radial rows actually committed in the outermost transition ring and
+    // whether the requested subdivision had to be declined to keep the mesh.
+    std::size_t q51OuterTransitionRadialSubdivision = 1;
+    bool q51OuterTransitionRadialDeclined = false;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -279,6 +287,15 @@ struct HybridMeshPolicy2D {
     // Q4-1 moves one bounded typed convex termination-patch construction
     // choice to the H4 remainder boundary, before unified topology commit.
     bool enableTerminationConstructionQualitySelection = false;
+    // Q5-1 cuts the outermost transition row radially so it is not thicker
+    // than the remainder background cell it borders. Opt-in while validation
+    // is limited to the two no-termination geometries that motivated it.
+    bool enableOuterTransitionRadialMatching = false;
+    // Radial rows are added only while the outer row stays thicker than this
+    // multiple of the remainder background cell size. A value of 1 means the
+    // outer transition row may be at most one background cell thick.
+    double outerTransitionRadialTargetCells = 1.0;
+    std::size_t maximumOuterTransitionRadialSubdivision = 4U;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -288,6 +305,8 @@ struct HybridMeshPolicy2D {
     // which derives these values from interface length scale and remainder h.
     double transitionCellWidthMultiplier = 1.2;
     std::size_t transitionRingCount = 3U;
+    // Resolved Q5-1 value. 1 reproduces the historical single-row outer fan.
+    std::size_t transitionOuterRingRadialSubdivision = 1U;
     double terminationGrowthRatio = 1.45;
 };
 
@@ -399,7 +418,9 @@ struct RobustH4BuildResult2D {
 resolveAutomaticHybridTransitionPlan2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
     const Domain2D& domain,
-    const QuadtreeRefinementPolicy2D& remainderRefinement) noexcept {
+    const QuadtreeRefinementPolicy2D& remainderRefinement,
+    double radialTargetCells = 1.0,
+    std::size_t maximumRadialSubdivision = 4U) noexcept {
     if (!boundaryLayers.success() || boundaryLayers.strips.empty() ||
         remainderRefinement.boundaryLevel >
             static_cast<std::size_t>(std::numeric_limits<int>::max())) {
@@ -470,6 +491,19 @@ resolveAutomaticHybridTransitionPlan2D(
     HybridTransitionPlan2D plan;
     plan.ringCount = ringCount;
     plan.finalTangentialSubdivision = finalSubdivision;
+    // Q5-1 radial matching. The fan is graded tangentially but every row keeps
+    // the full ring thickness, so the outermost row can be several background
+    // cells deep while the Cut cells it borders are a fraction of one. Report
+    // the row count that brings the outer row to at most one background cell;
+    // whether it is applied is a policy decision in the builder.
+    plan.outerRingRadialSubdivision = 1U;
+    if (radialTargetCells > 0.0 && maximumRadialSubdivision > 1U) {
+        while (plan.outerRingRadialSubdivision < maximumRadialSubdivision &&
+               ringThickness / static_cast<double>(plan.outerRingRadialSubdivision) >
+                   radialTargetCells * targetCellSize) {
+            ++plan.outerRingRadialSubdivision;
+        }
+    }
     plan.targetCellSize = targetCellSize;
     plan.maxOuterEdgeLength = maxOuterEdgeLength;
     plan.maxLastLayerSpacing = maxLastLayerSpacing;
@@ -489,7 +523,9 @@ resolveAutomaticHybridTransitionPlan2D(
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& basePolicy) {
     const auto plan = resolveAutomaticHybridTransitionPlan2D(
-        boundaryLayers, domain, remainderRefinement);
+        boundaryLayers, domain, remainderRefinement,
+        basePolicy.outerTransitionRadialTargetCells,
+        basePolicy.maximumOuterTransitionRadialSubdivision);
     if (!plan) {
         HybridMeshBuildResult2D result;
         result.failure.reason = HybridMeshFailureReason2D::InvalidInput;
@@ -503,18 +539,28 @@ resolveAutomaticHybridTransitionPlan2D(
     resolvedPolicy.transitionCellWidthMultiplier =
         plan->ringCount==0U?1.0:
         plan->ringThickness / plan->targetCellSize;
+    resolvedPolicy.transitionOuterRingRadialSubdivision =
+        basePolicy.enableOuterTransitionRadialMatching
+            ?plan->outerRingRadialSubdivision:1U;
     HybridMeshBuildResult2D result;
-    // Q4-1 construction selection is an optional quality improvement, never a
-    // precondition for producing a hybrid mesh. If every growth-ratio attempt
-    // with it enabled fails, retry the same geometry with it disabled before
-    // the caller is allowed to consider pure Cut-cell fallback: losing the
-    // whole boundary layer is a far larger regression than declining one
-    // bounded construction choice.
-    const bool retryWithoutConstructionSelection=
-        resolvedPolicy.enableTerminationConstructionQualitySelection;
-    for (std::size_t pass=0;pass<(retryWithoutConstructionSelection?2U:1U);++pass) {
-        if (pass==1U)
-            resolvedPolicy.enableTerminationConstructionQualitySelection=false;
+    // Optional construction-quality selections are improvements, never
+    // preconditions for producing a hybrid mesh. Relax them one at a time --
+    // newest and most invasive first -- before the caller is allowed to
+    // consider pure Cut-cell fallback: losing the whole boundary layer is a far
+    // larger regression than declining a bounded construction choice.
+    std::vector<HybridMeshPolicy2D> ladder{resolvedPolicy};
+    if (resolvedPolicy.enableTerminationConstructionQualitySelection) {
+        auto step=ladder.back();
+        step.enableTerminationConstructionQualitySelection=false;
+        ladder.push_back(step);
+    }
+    if (ladder.back().transitionOuterRingRadialSubdivision>1U) {
+        auto step=ladder.back();
+        step.transitionOuterRingRadialSubdivision=1U;
+        ladder.push_back(step);
+    }
+    for (std::size_t pass=0;pass<ladder.size();++pass) {
+        resolvedPolicy=ladder[pass];
         if (boundaryLayers.localReductionApplied) {
             // Different valid quadtree phases can place a graded termination front
             // arbitrarily close to a nested Cartesian line. Try a short, fixed and
@@ -537,8 +583,15 @@ resolveAutomaticHybridTransitionPlan2D(
         if (result.success()) break;
     }
     result.metrics.q41ConstructionSelectionDeclined=
-        retryWithoutConstructionSelection && result.success() &&
+        ladder.front().enableTerminationConstructionQualitySelection &&
+        result.success() &&
         !resolvedPolicy.enableTerminationConstructionQualitySelection;
+    result.metrics.q51OuterTransitionRadialSubdivision=
+        result.success()?resolvedPolicy.transitionOuterRingRadialSubdivision:1U;
+    result.metrics.q51OuterTransitionRadialDeclined=
+        ladder.front().transitionOuterRingRadialSubdivision>1U &&
+        result.success() &&
+        resolvedPolicy.transitionOuterRingRadialSubdivision<=1U;
     result.metrics.transitionRingCount = plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
         plan->finalTangentialSubdivision;
