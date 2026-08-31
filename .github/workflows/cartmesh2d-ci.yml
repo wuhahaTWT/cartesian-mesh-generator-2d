@@ -73,6 +73,10 @@ jobs:
           "$exe" examples/h4_3/narrow_gap.xy \
             "$out/q33_narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
             "$out/q33_narrow_gap-case" 0.01 --q3-termination-grouped
+          "$exe" examples/h4_3/narrow_gap.xy \
+            "$out/q41_narrow_gap" 8 3 8 4 0.012 1.15 1.0 \
+            "$out/q41_narrow_gap-case" 0.01 \
+            --q4-termination-construction --q3-termination-grouped
 
           for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
             python3 tools/verification/check_openfoam2d.py \
@@ -88,6 +92,9 @@ jobs:
           python3 tools/verification/check_openfoam2d.py \
             "$out/q33_narrow_gap-case" \
             --report "$out/q33_narrow_gap-case/independent_check.json"
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q41_narrow_gap-case" \
+            --report "$out/q41_narrow_gap-case/independent_check.json"
 
           python3 - "$out" <<'PY'
           import json
@@ -171,6 +178,25 @@ jobs:
           assert q33['q33_local_delta_matches_global_oracle'] is True, q33_path
           assert q33['q33_local_winner_matches_global_authority'] is True, q33_path
           assert q33['solver_cell_count'] == q32['solver_cell_count'], q33_path
+
+          q41_path = root / 'q41_narrow_gap.hybrid.json'
+          q41 = json.loads(q41_path.read_text(encoding='utf-8'))
+          assert q41['hybrid_status'] == 'success', q41_path
+          assert q41['solver_quality_valid'] is True, q41_path
+          assert q41['solver_quality_issue_count'] == 0, q41_path
+          assert q41['q41_accepted_construction_count'] > 0, q41_path
+          assert q41['q41_hard_volume_ratio_count_after'] < q41['q41_hard_volume_ratio_count_before'], q41_path
+          assert q41['q41_hard_face_weight_count_after'] < q41['q41_hard_face_weight_count_before'], q41_path
+          assert q41['q41_hard_short_face_count_after'] <= q41['q41_hard_short_face_count_before'], q41_path
+          assert q41['q41_candidate_global_topology_build_count'] == 0, q41_path
+          assert q41['q41_candidate_full_global_quality_evaluation_count'] == 0, q41_path
+          assert q41['q41_maximum_winner_global_oracle_builds_per_construction'] <= 1, q41_path
+          assert q41['q41_patch_outside_stable_ids_unchanged'] is True, q41_path
+          assert q41['q41_local_delta_matches_global_oracle'] is True, q41_path
+          assert q41['q41_local_winner_matches_global_authority'] is True, q41_path
+          assert q41['q33_hard_volume_ratio_count_after'] < q33['q33_hard_volume_ratio_count_after'], q41_path
+          assert q41['q33_hard_face_weight_count_after'] < q33['q33_hard_face_weight_count_after'], q41_path
+          assert q41['q33_hard_short_face_count_after'] == 0, q41_path
           PY
 
       - name: Verify Q1 typed dimensionless quality contract
@@ -230,7 +256,7 @@ jobs:
           image=opencfd/openfoam-run:2606
           container_root=/home/openfoam/workingDir
           docker pull "$image"
-          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap; do
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap q41_narrow_gap; do
             log="$out/${case_name}.checkMesh.log"
             docker run --rm \
               -v "$PWD:$container_root" \

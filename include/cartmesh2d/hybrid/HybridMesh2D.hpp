@@ -136,6 +136,15 @@ struct HybridMeshMetrics2D {
     std::size_t q33GlobalOracleBuilds = 0;
     std::size_t q33MaximumWinnerGlobalOracleBuilds = 0;
     std::size_t q33AuthoritativeFullQualityEvaluations = 0;
+    std::size_t q41ConstructionCandidates = 0;
+    std::size_t q41LocalCandidates = 0;
+    std::size_t q41LocalQualityEvaluations = 0;
+    std::size_t q41AcceptedConstructions = 0;
+    std::size_t q41CandidateGlobalTopologyBuilds = 0;
+    std::size_t q41CandidateFullGlobalQualityEvaluations = 0;
+    std::size_t q41GlobalOracleBuilds = 0;
+    std::size_t q41MaximumWinnerGlobalOracleBuilds = 0;
+    std::size_t q41AuthoritativeFullQualityEvaluations = 0;
     std::size_t q3HardVolumeRatioBefore = 0;
     std::size_t q3HardVolumeRatioAfter = 0;
     std::size_t q3HardFaceWeightBefore = 0;
@@ -154,6 +163,12 @@ struct HybridMeshMetrics2D {
     std::size_t q33HardFaceWeightAfter = 0;
     std::size_t q33HardShortFaceBefore = 0;
     std::size_t q33HardShortFaceAfter = 0;
+    std::size_t q41HardVolumeRatioBefore = 0;
+    std::size_t q41HardVolumeRatioAfter = 0;
+    std::size_t q41HardFaceWeightBefore = 0;
+    std::size_t q41HardFaceWeightAfter = 0;
+    std::size_t q41HardShortFaceBefore = 0;
+    std::size_t q41HardShortFaceAfter = 0;
     // Whole-build measured totals, so the R1 counts above can be read against
     // the cost of the rest of the pipeline instead of in isolation.
     std::size_t buildGlobalTopologyCalls = 0;
@@ -171,6 +186,7 @@ struct HybridMeshMetrics2D {
     double q3RepairSeconds = 0.0;
     double q32RepairSeconds = 0.0;
     double q33RepairSeconds = 0.0;
+    double q41ConstructionSelectionSeconds = 0.0;
     bool r1PatchOutsideStableIdsUnchanged = true;
     bool r1LocalDeltaMatchesGlobalOracle = true;
     bool r1LocalWinnerMatchesGlobalAuthority = true;
@@ -186,6 +202,10 @@ struct HybridMeshMetrics2D {
     bool q33LocalDeltaMatchesGlobalOracle = true;
     bool q33LocalWinnerMatchesGlobalAuthority = true;
     bool q33TransactionBoundReached = false;
+    bool q41PatchOutsideStableIdsUnchanged = true;
+    bool q41LocalDeltaMatchesGlobalOracle = true;
+    bool q41LocalWinnerMatchesGlobalAuthority = true;
+    bool q41ConstructionBoundReached = false;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -252,6 +272,9 @@ struct HybridMeshPolicy2D {
     bool enableTerminationQualityOptimization = false;
     bool enableTerminationQualityRepartition = false;
     bool enableTerminationGroupedRepartition = false;
+    // Q4-1 moves one bounded typed convex termination-patch construction
+    // choice to the H4 remainder boundary, before unified topology commit.
+    bool enableTerminationConstructionQualitySelection = false;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;

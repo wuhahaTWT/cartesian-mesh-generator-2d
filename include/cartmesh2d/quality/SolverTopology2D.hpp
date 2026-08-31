@@ -154,7 +154,11 @@ struct SolverTerminationQualityRepairResult2D {
 enum class TerminationQualityCandidateMode2D {
     Agglomeration,
     Repartition,
-    GroupedRepartition
+    GroupedRepartition,
+    // Pre-commit H4 construction context. The temporary inner boundary is not
+    // yet connected to immutable H4-1 cells, so final-mesh legacy boundary
+    // safety is deferred; patch-local authoritative hard gates remain active.
+    ConstructionAgglomeration
 };
 
 // Returns the input-order indices of a deterministic greedy independent set.
