@@ -121,8 +121,41 @@
     }
   },
   "remaining": {
-    "superellipse": "12 hard issues left: 4 face_weight, 4 volume_ratio, 4 non_orthogonality. The 4 RemainderCut-to-RemainderCut hard faces are outside Q5-1's reach and need their own treatment.",
-    "termination_geometries": "concave_l 206, sharp_trailing_edge 377, narrow_gap 430 typed hard issues. The equivalent radial size-matching rule for the graded termination buffer is the natural next step and is not implemented here.",
+    "superellipse_residual_measured": {
+      "total_hard": 12,
+      "composition": {
+        "remainder_cut__remainder_cut": {"face_weight": 4, "volume_ratio": 4},
+        "remainder_cut__transition": {"non_orthogonality_deg": 4}
+      },
+      "remainder_cut_family": {
+        "violating_construction_cells": [89, 315, 408, 499],
+        "note": "four symmetric copies of the same wedge",
+        "cell_area": 0.001648384,
+        "cell_area_in_h2": 0.2153,
+        "genuine_reflex_corner_deg": -16.943389,
+        "near_collinear_reflex_corner_deg": -0.000002,
+        "committed_children": [0.00143889, 0.00020949],
+        "smallest_child_over_parent": 0.12709,
+        "worst_face_ratio": 0.045461,
+        "hard_gate": 0.05,
+        "shortfall": "9 percent",
+        "best_over_all_convex_partitions_up_to_three_pieces": 0.045461,
+        "drop_near_collinear_vertex_then_repartition": 0.045461,
+        "single_remainder_neighbour_merge": {
+          "remainder_cut_partners": "union has no valid convex partition at all",
+          "remainder_cartesian_partner": 0.013579,
+          "verdict": "every candidate is either non-partitionable or strictly worse than doing nothing"
+        },
+        "conclusion": "Not a remainder construction defect either. The cell is a thin wedge with a real 16.9 degree concavity, so OpenFOAM requires it split, and any convex split of a wedge yields a sliver. Neither a near-collinear vertex drop, a different diagonal, nor a one-neighbour merge reaches the gate."
+      },
+      "non_orthogonality_family": {
+        "measured_deg": 65.0532228,
+        "limit_deg": 65,
+        "over_limit": "0.08 percent",
+        "note": "appears inside the newly refined fan; the same faces measure below the limit before Q5-1"
+      }
+    },
+    "termination_geometries": "concave_l 206, sharp_trailing_edge 377, narrow_gap 430 typed hard issues. Their transition comes from the graded termination buffer rather than the fan, so Q5-1 is inert. Carrying the same radial size-matching rule into that buffer is the natural next step and is not implemented here.",
     "boundary_layer_metrics": "still OBSERVED, so a WARN status does not yet certify near-wall quality"
   },
   "previews": {
