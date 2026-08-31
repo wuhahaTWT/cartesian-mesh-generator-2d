@@ -1,0 +1,77 @@
+{
+  "stage": "Q3-1 termination local quality",
+  "date": "2026-08-31",
+  "baseline": {
+    "ref": "origin/gpt/r1-closeout-20260830",
+    "commit": "fe34b111460c4aef3c1825f687118975bc4ed7fd",
+    "command": "build-q3/cartmesh2d_hybrid_cli examples/h4_3/narrow_gap.xy build-q3/evidence/q3-1-baseline/narrow_gap 8 3 8 4 0.012 1.15 1.0 build-q3/evidence/q3-1-baseline/narrow_gap-case 0.01",
+    "solver_cells": 3185,
+    "hard_volume_ratio": 295,
+    "hard_face_weight": 95,
+    "hard_short_face": 0,
+    "minimum_volume_ratio": 0.011853263410370605,
+    "minimum_face_weight": 0.051574510290106325,
+    "area_error": -3.375077994860476e-14
+  },
+  "diagnosis": {
+    "classification": "topology_template_dominant",
+    "reason": "Hard failures cluster on termination-adjacent discrete area jumps and centroid-to-face placement; a single global sizing change does not explain the repeated local patterns.",
+    "volume_ratio_hard_by_cell_type": {
+      "termination": 260,
+      "cartesian": 35
+    },
+    "face_weight_hard_by_cell_type": {
+      "termination": 54,
+      "cartesian": 41
+    },
+    "maximum_volume_ratio_severity": 4.218247605655521,
+    "maximum_face_weight_severity": 1.938942307692319
+  },
+  "after": {
+    "command": "build-q3/cartmesh2d_hybrid_cli examples/h4_3/narrow_gap.xy build-q3/evidence/q3-1-final/narrow_gap 8 3 8 4 0.012 1.15 1.0 build-q3/evidence/q3-1-final/narrow_gap-case 0.01 --q3-termination-quality",
+    "solver_cells": 3153,
+    "hard_volume_ratio": 265,
+    "hard_face_weight": 65,
+    "hard_short_face": 0,
+    "hard_minimum_angle": 12,
+    "hard_non_orthogonality": 12,
+    "hard_skewness": 4,
+    "hard_hydraulic_aspect": 2,
+    "minimum_volume_ratio": 0.01712166482060922,
+    "minimum_face_weight": 0.05740815582213694,
+    "maximum_volume_ratio_severity": 2.9202767677016648,
+    "maximum_face_weight_severity": 1.7419127747252838,
+    "area_error": -3.375077994860476e-14,
+    "candidate_count": 256,
+    "local_candidate_count": 87,
+    "local_quality_evaluation_count": 174,
+    "accepted_transaction_count": 32,
+    "transaction_bound_reached": true,
+    "candidate_global_topology_build_count": 0,
+    "candidate_full_global_quality_evaluation_count": 0,
+    "winner_global_oracle_build_count": 32,
+    "maximum_winner_global_oracle_builds_per_transaction": 1,
+    "authoritative_full_quality_evaluation_count": 64,
+    "q3_repair_seconds": 22.765274,
+    "end_to_end_wall_seconds": 68.60
+  },
+  "invariants": {
+    "solver_quality_issue_count": 0,
+    "patch_outside_stable_ids_unchanged": true,
+    "local_delta_matches_global_oracle": true,
+    "local_winner_matches_global_authority": true,
+    "construction_topology_unchanged": true,
+    "deterministic_replay": true,
+    "independent_reader": "PASS",
+    "openfoam_reader": "PASS",
+    "openfoam_version": "2606",
+    "openfoam_checkMesh": "Mesh OK",
+    "ctest": "75/75 PASS"
+  },
+  "deterministic_sha256": {
+    "hybrid_cm2d": "04f012148ab0da40f421ec23563553275709545a72a217f997b1cbba9e8cf12b",
+    "solver_cm2d": "b3126ae92de99be55173ed43f085bd86ede55428524469244fe01486eb410290",
+    "quality_contract_json": "3d45edef6ec3fd52220b6a54d6afca2c16ba0e9cc63646c5a610310ae4a0cc62"
+  },
+  "preview": "artifacts/q3-1/narrow-gap-after.svg.png"
+}

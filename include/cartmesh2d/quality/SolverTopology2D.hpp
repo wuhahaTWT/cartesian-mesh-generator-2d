@@ -117,6 +117,46 @@ struct SolverShortFaceRepairResult2D {
     }
 };
 
+struct SolverTerminationQualityRepairResult2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+    std::vector<bool> terminationCells;
+    bool applicable = false;
+    bool accepted = false;
+    std::size_t candidateCount = 0;
+    std::size_t localCandidateCount = 0;
+    std::size_t localQualityEvaluationCount = 0;
+    std::size_t candidateGlobalTopologyBuildCount = 0;
+    std::size_t candidateFullGlobalQualityEvaluationCount = 0;
+    std::size_t globalOracleBuildCount = 0;
+    std::size_t authoritativeFullQualityEvaluationCount = 0;
+    std::size_t hardVolumeRatioCountBefore = 0;
+    std::size_t hardVolumeRatioCountAfter = 0;
+    std::size_t hardFaceWeightCountBefore = 0;
+    std::size_t hardFaceWeightCountAfter = 0;
+    double maximumVolumeRatioSeverityBefore = 0.0;
+    double maximumVolumeRatioSeverityAfter = 0.0;
+    double maximumFaceWeightSeverityBefore = 0.0;
+    double maximumFaceWeightSeverityAfter = 0.0;
+    std::size_t hardShortFaceCountBefore = 0;
+    std::size_t hardShortFaceCountAfter = 0;
+    bool patchOutsideStableIdsUnchanged = false;
+    bool localDeltaMatchesGlobalOracle = false;
+    bool localWinnerMatchesGlobalAuthority = false;
+    double repairSeconds = 0.0;
+    std::vector<std::string> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && topology.valid();
+    }
+};
+
+enum class TerminationQualityCandidateMode2D {
+    Agglomeration,
+    Repartition,
+    GroupedRepartition
+};
+
 // Returns the input-order indices of a deterministic greedy independent set.
 // Each halo must contain sorted unique cell/source IDs. A shared ID is a
 // repair conflict and prevents both patches from being committed together.
@@ -163,6 +203,29 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const std::vector<double>& localBackgroundH,
     const std::vector<bool>& ratedCells,
     double minimumFaceOverLocalH,
+    const TolerancePolicy& tol = {});
+
+// Performs at most one bounded Q3 transaction. Agglomeration uses the worst
+// termination-adjacent face and its immediate one-ring; pair repartition uses
+// a small prefix of direct termination-Cartesian faces; grouped repartition
+// uses only a Cartesian cell, one hard termination neighbour, and one thin
+// termination companion. Candidate selection is patch-local and only the
+// unique winner reaches the global oracle.
+[[nodiscard]] SolverTerminationQualityRepairResult2D
+repairSolverTerminationQuality2D(
+    const TopologyMesh2D& topology,
+    const Domain2D& domain,
+    const BoundaryRegion2D& boundary,
+    const std::vector<bool>& immutableCells,
+    const std::vector<bool>& terminationCells,
+    const std::vector<bool>& cartesianCells,
+    const std::vector<double>& localBackgroundH,
+    const std::vector<bool>& ratedCells,
+    double minimumFaceOverLocalH,
+    double minimumFaceWeight,
+    double minimumVolumeRatio,
+    TerminationQualityCandidateMode2D candidateMode =
+        TerminationQualityCandidateMode2D::Agglomeration,
     const TolerancePolicy& tol = {});
 
 // Retains strictly convex cells and deterministically ear-clips cells with

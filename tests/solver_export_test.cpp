@@ -238,6 +238,31 @@ int main() {
     check(hasIssue(SolverQualityIssueCode2D::LowVolumeRatio),
           "OpenFOAM-equivalent low neighbouring volume ratio is fail-closed");
 
+    PatchLocalQuality2D q3Base,q3Candidate,q3ShortRegression;
+    q3Base.hardVolumeRatioCount=4U;
+    q3Base.hardFaceWeightCount=3U;
+    q3Base.maximumVolumeRatioSeverity=4.0;
+    q3Base.totalVolumeRatioSeverity=10.0;
+    q3Base.maximumFaceWeightSeverity=2.0;
+    q3Base.totalFaceWeightSeverity=5.0;
+    q3Candidate=q3Base;
+    q3Candidate.hardVolumeRatioCount=3U;
+    q3Candidate.maximumVolumeRatioSeverity=3.0;
+    q3Candidate.totalVolumeRatioSeverity=7.0;
+    const auto q3Rank=patchLocalTerminationRank2D(q3Base,q3Candidate,7U,9U);
+    const auto q3RepeatedRank=patchLocalTerminationRank2D(q3Base,q3Candidate,7U,9U);
+    check(patchLocalTerminationQualityNoWorse2D(q3Candidate,q3Base) &&
+          q3Rank.hardViolationDelta==-1 &&
+          !patchLocalTerminationRankBetter2D(q3Rank,q3RepeatedRank) &&
+          !patchLocalTerminationRankBetter2D(q3RepeatedRank,q3Rank),
+          "Q3 ranks hard count before volume/weight severity deterministically");
+    q3ShortRegression=q3Candidate;
+    q3ShortRegression.hardShortFaceCount=1U;
+    q3ShortRegression.maximumShortFaceSeverity=2.0;
+    q3ShortRegression.totalShortFaceSeverity=2.0;
+    check(!patchLocalTerminationQualityNoWorse2D(q3ShortRegression,q3Base),
+          "Q3 rejects a target-quality improvement that creates a hard short face");
+
     // Minimal cell retained from the 128-segment circle regression that
     // OpenFOAM 2606 reported at skewness 5.7043075454659755.  The very short
     // wall fragment exposes why boundary skewness must use the normal

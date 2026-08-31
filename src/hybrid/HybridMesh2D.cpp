@@ -1153,6 +1153,55 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     bool r1PatchOutsideStableIdsUnchanged=true;
     bool r1LocalDeltaMatchesGlobalOracle=true;
     bool r1LocalWinnerMatchesGlobalAuthority=true;
+    std::size_t q3TerminationCandidates=0U;
+    std::size_t q3LocalCandidates=0U;
+    std::size_t q3LocalQualityEvaluations=0U;
+    std::size_t q3AcceptedTransactions=0U;
+    std::size_t q3CandidateGlobalTopologyBuilds=0U;
+    std::size_t q3CandidateFullGlobalQualityEvaluations=0U;
+    std::size_t q3GlobalOracleBuilds=0U;
+    std::size_t q3MaximumWinnerGlobalOracleBuilds=0U;
+    std::size_t q3AuthoritativeFullQualityEvaluations=0U;
+    std::size_t q3HardVolumeRatioBefore=0U,q3HardVolumeRatioAfter=0U;
+    std::size_t q3HardFaceWeightBefore=0U,q3HardFaceWeightAfter=0U;
+    std::size_t q3HardShortFaceBefore=0U,q3HardShortFaceAfter=0U;
+    double q3MaximumVolumeRatioSeverityBefore=0.0;
+    double q3MaximumVolumeRatioSeverityAfter=0.0;
+    double q3MaximumFaceWeightSeverityBefore=0.0;
+    double q3MaximumFaceWeightSeverityAfter=0.0;
+    double q3RepairSeconds=0.0;
+    bool q3PatchOutsideStableIdsUnchanged=true;
+    bool q3LocalDeltaMatchesGlobalOracle=true;
+    bool q3LocalWinnerMatchesGlobalAuthority=true;
+    bool q3TransactionBoundReached=false;
+    std::size_t q32RepartitionCandidates=0U,q32LocalCandidates=0U;
+    std::size_t q32LocalQualityEvaluations=0U,q32AcceptedTransactions=0U;
+    std::size_t q32CandidateGlobalTopologyBuilds=0U;
+    std::size_t q32CandidateFullGlobalQualityEvaluations=0U;
+    std::size_t q32GlobalOracleBuilds=0U,q32MaximumWinnerGlobalOracleBuilds=0U;
+    std::size_t q32AuthoritativeFullQualityEvaluations=0U;
+    std::size_t q32HardVolumeRatioBefore=0U,q32HardVolumeRatioAfter=0U;
+    std::size_t q32HardFaceWeightBefore=0U,q32HardFaceWeightAfter=0U;
+    std::size_t q32HardShortFaceBefore=0U,q32HardShortFaceAfter=0U;
+    double q32RepairSeconds=0.0;
+    bool q32PatchOutsideStableIdsUnchanged=true;
+    bool q32LocalDeltaMatchesGlobalOracle=true;
+    bool q32LocalWinnerMatchesGlobalAuthority=true;
+    bool q32TransactionBoundReached=false;
+    std::size_t q33GroupedCandidates=0U,q33LocalCandidates=0U;
+    std::size_t q33LocalQualityEvaluations=0U,q33AcceptedTransactions=0U;
+    std::size_t q33CandidateGlobalTopologyBuilds=0U;
+    std::size_t q33CandidateFullGlobalQualityEvaluations=0U;
+    std::size_t q33GlobalOracleBuilds=0U,q33MaximumWinnerGlobalOracleBuilds=0U;
+    std::size_t q33AuthoritativeFullQualityEvaluations=0U;
+    std::size_t q33HardVolumeRatioBefore=0U,q33HardVolumeRatioAfter=0U;
+    std::size_t q33HardFaceWeightBefore=0U,q33HardFaceWeightAfter=0U;
+    std::size_t q33HardShortFaceBefore=0U,q33HardShortFaceAfter=0U;
+    double q33RepairSeconds=0.0;
+    bool q33PatchOutsideStableIdsUnchanged=true;
+    bool q33LocalDeltaMatchesGlobalOracle=true;
+    bool q33LocalWinnerMatchesGlobalAuthority=true;
+    bool q33TransactionBoundReached=false;
     if (localTermination) {
         bool converged=false;
         const double minimumFaceFraction=
@@ -1216,6 +1265,260 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         if (!converged)
             return failed(HybridMeshFailureReason2D::SolverTopologyFailed,
                           "R1 patch-local short-face transactions did not converge");
+        solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+    }
+    if (localTermination && (policy.enableTerminationQualityOptimization ||
+                             policy.enableTerminationQualityRepartition ||
+                             policy.enableTerminationGroupedRepartition)) {
+        bool converged=false;
+        const auto& limits=QualityContract2D{}.termination;
+        // Q3-1 is deliberately bounded: at most 32 winner-only transactions
+        // in one build, even when additional eligible faces remain.
+        constexpr std::size_t maximumQ3Transactions=32U;
+        for (std::size_t iteration=0;iteration<maximumQ3Transactions;++iteration) {
+            std::vector<std::optional<std::size_t>> repairSources;
+            SourceLineageAudit2D repairLineageAudit;
+            const auto repairMetadata=qualityMetadataForSolver(
+                solverTopologyReport.topology,hybridSources,repairSources,
+                repairLineageAudit,false,policy.tolerance);
+            std::vector<double> localH;
+            std::vector<bool> rated,termination,cartesian;
+            localH.reserve(repairMetadata.size());
+            rated.reserve(repairMetadata.size());
+            termination.reserve(repairMetadata.size());
+            cartesian.reserve(repairMetadata.size());
+            for (const auto& metadata:repairMetadata) {
+                localH.push_back(metadata.localBackgroundH);
+                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
+                                metadata.type!=QualityCellType2D::Unknown);
+                termination.push_back(metadata.type==QualityCellType2D::Termination);
+                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+            }
+            auto repair=repairSolverTerminationQuality2D(
+                solverTopologyReport.topology,domain,originalWalls,
+                solverTopologyReport.immutableOutputCells,termination,cartesian,
+                localH,rated,
+                limits.faceOverLocalBackgroundH.hard,limits.faceWeight.hard,
+                limits.volumeRatio.hard,
+                TerminationQualityCandidateMode2D::Agglomeration,policy.tolerance);
+            if (iteration==0U) {
+                q3HardVolumeRatioBefore=repair.hardVolumeRatioCountBefore;
+                q3HardFaceWeightBefore=repair.hardFaceWeightCountBefore;
+                q3HardShortFaceBefore=repair.hardShortFaceCountBefore;
+                q3MaximumVolumeRatioSeverityBefore=
+                    repair.maximumVolumeRatioSeverityBefore;
+                q3MaximumFaceWeightSeverityBefore=
+                    repair.maximumFaceWeightSeverityBefore;
+            }
+            q3HardVolumeRatioAfter=repair.hardVolumeRatioCountAfter;
+            q3HardFaceWeightAfter=repair.hardFaceWeightCountAfter;
+            q3HardShortFaceAfter=repair.hardShortFaceCountAfter;
+            q3MaximumVolumeRatioSeverityAfter=
+                repair.maximumVolumeRatioSeverityAfter;
+            q3MaximumFaceWeightSeverityAfter=
+                repair.maximumFaceWeightSeverityAfter;
+            q3TerminationCandidates+=repair.candidateCount;
+            q3LocalCandidates+=repair.localCandidateCount;
+            q3LocalQualityEvaluations+=repair.localQualityEvaluationCount;
+            q3CandidateGlobalTopologyBuilds+=
+                repair.candidateGlobalTopologyBuildCount;
+            q3CandidateFullGlobalQualityEvaluations+=
+                repair.candidateFullGlobalQualityEvaluationCount;
+            q3GlobalOracleBuilds+=repair.globalOracleBuildCount;
+            q3MaximumWinnerGlobalOracleBuilds=std::max(
+                q3MaximumWinnerGlobalOracleBuilds,repair.globalOracleBuildCount);
+            q3AuthoritativeFullQualityEvaluations+=
+                repair.authoritativeFullQualityEvaluationCount;
+            q3RepairSeconds+=repair.repairSeconds;
+            if (repair.globalOracleBuildCount>0U)
+                q3LocalWinnerMatchesGlobalAuthority=
+                    q3LocalWinnerMatchesGlobalAuthority &&
+                    repair.localWinnerMatchesGlobalAuthority;
+            if (!repair.valid()) {
+                const std::string detail=repair.issues.empty()
+                    ?"Q3 termination quality repair failed":repair.issues.front();
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+            }
+            if (!repair.accepted) {
+                converged=true;
+                break;
+            }
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            q3PatchOutsideStableIdsUnchanged=
+                q3PatchOutsideStableIdsUnchanged &&
+                repair.patchOutsideStableIdsUnchanged;
+            q3LocalDeltaMatchesGlobalOracle=
+                q3LocalDeltaMatchesGlobalOracle && repair.localDeltaMatchesGlobalOracle;
+            ++q3AcceptedTransactions;
+            ++solverTopologyReport.qualityRepartitionCount;
+            ++solverTopologyReport.profile.acceptedTopologyCommitCount;
+        }
+        // Hitting the explicit bound is a successful partial Q3 pass, not a
+        // claim of global convergence. The report exposes accepted/count data.
+        q3TransactionBoundReached=!converged &&
+            q3AcceptedTransactions==maximumQ3Transactions;
+        solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+    }
+    if (localTermination && (policy.enableTerminationQualityRepartition ||
+                             policy.enableTerminationGroupedRepartition)) {
+        bool converged=false;
+        const auto& limits=QualityContract2D{}.termination;
+        // Q3-2 keeps the search local and cell-count neutral: no more than 16
+        // two-cell/two-cell winner-only repartition transactions per build.
+        constexpr std::size_t maximumQ32Transactions=16U;
+        for (std::size_t iteration=0;iteration<maximumQ32Transactions;++iteration) {
+            std::vector<std::optional<std::size_t>> repairSources;
+            SourceLineageAudit2D repairLineageAudit;
+            const auto repairMetadata=qualityMetadataForSolver(
+                solverTopologyReport.topology,hybridSources,repairSources,
+                repairLineageAudit,false,policy.tolerance);
+            std::vector<double> localH;
+            std::vector<bool> rated,termination,cartesian;
+            localH.reserve(repairMetadata.size());
+            rated.reserve(repairMetadata.size());
+            termination.reserve(repairMetadata.size());
+            cartesian.reserve(repairMetadata.size());
+            for (const auto& metadata:repairMetadata) {
+                localH.push_back(metadata.localBackgroundH);
+                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
+                                metadata.type!=QualityCellType2D::Unknown);
+                termination.push_back(metadata.type==QualityCellType2D::Termination);
+                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+            }
+            auto repair=repairSolverTerminationQuality2D(
+                solverTopologyReport.topology,domain,originalWalls,
+                solverTopologyReport.immutableOutputCells,termination,cartesian,
+                localH,rated,limits.faceOverLocalBackgroundH.hard,
+                limits.faceWeight.hard,limits.volumeRatio.hard,
+                TerminationQualityCandidateMode2D::Repartition,policy.tolerance);
+            if (iteration==0U) {
+                q32HardVolumeRatioBefore=repair.hardVolumeRatioCountBefore;
+                q32HardFaceWeightBefore=repair.hardFaceWeightCountBefore;
+                q32HardShortFaceBefore=repair.hardShortFaceCountBefore;
+            }
+            q32HardVolumeRatioAfter=repair.hardVolumeRatioCountAfter;
+            q32HardFaceWeightAfter=repair.hardFaceWeightCountAfter;
+            q32HardShortFaceAfter=repair.hardShortFaceCountAfter;
+            q32RepartitionCandidates+=repair.candidateCount;
+            q32LocalCandidates+=repair.localCandidateCount;
+            q32LocalQualityEvaluations+=repair.localQualityEvaluationCount;
+            q32CandidateGlobalTopologyBuilds+=
+                repair.candidateGlobalTopologyBuildCount;
+            q32CandidateFullGlobalQualityEvaluations+=
+                repair.candidateFullGlobalQualityEvaluationCount;
+            q32GlobalOracleBuilds+=repair.globalOracleBuildCount;
+            q32MaximumWinnerGlobalOracleBuilds=std::max(
+                q32MaximumWinnerGlobalOracleBuilds,repair.globalOracleBuildCount);
+            q32AuthoritativeFullQualityEvaluations+=
+                repair.authoritativeFullQualityEvaluationCount;
+            q32RepairSeconds+=repair.repairSeconds;
+            if (repair.globalOracleBuildCount>0U)
+                q32LocalWinnerMatchesGlobalAuthority=
+                    q32LocalWinnerMatchesGlobalAuthority &&
+                    repair.localWinnerMatchesGlobalAuthority;
+            if (!repair.valid()) {
+                const std::string detail=repair.issues.empty()
+                    ?"Q3-2 termination repartition failed":repair.issues.front();
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+            }
+            if (!repair.accepted) {
+                converged=true;
+                break;
+            }
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            q32PatchOutsideStableIdsUnchanged=
+                q32PatchOutsideStableIdsUnchanged &&
+                repair.patchOutsideStableIdsUnchanged;
+            q32LocalDeltaMatchesGlobalOracle=
+                q32LocalDeltaMatchesGlobalOracle &&
+                repair.localDeltaMatchesGlobalOracle;
+            ++q32AcceptedTransactions;
+            ++solverTopologyReport.qualityRepartitionCount;
+            ++solverTopologyReport.profile.acceptedTopologyCommitCount;
+        }
+        q32TransactionBoundReached=!converged &&
+            q32AcceptedTransactions==maximumQ32Transactions;
+        solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+    }
+    if (localTermination && policy.enableTerminationGroupedRepartition) {
+        bool converged=false;
+        const auto& limits=QualityContract2D{}.termination;
+        // Q3-3 handles only a fixed Cartesian-plus-two-termination template.
+        // Three cells are replaced by three cells, with at most 8 commits.
+        constexpr std::size_t maximumQ33Transactions=8U;
+        for (std::size_t iteration=0;iteration<maximumQ33Transactions;++iteration) {
+            std::vector<std::optional<std::size_t>> repairSources;
+            SourceLineageAudit2D repairLineageAudit;
+            const auto repairMetadata=qualityMetadataForSolver(
+                solverTopologyReport.topology,hybridSources,repairSources,
+                repairLineageAudit,false,policy.tolerance);
+            std::vector<double> localH;
+            std::vector<bool> rated,termination,cartesian;
+            for (const auto& metadata:repairMetadata) {
+                localH.push_back(metadata.localBackgroundH);
+                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
+                                metadata.type!=QualityCellType2D::Unknown);
+                termination.push_back(metadata.type==QualityCellType2D::Termination);
+                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+            }
+            auto repair=repairSolverTerminationQuality2D(
+                solverTopologyReport.topology,domain,originalWalls,
+                solverTopologyReport.immutableOutputCells,termination,cartesian,
+                localH,rated,limits.faceOverLocalBackgroundH.hard,
+                limits.faceWeight.hard,limits.volumeRatio.hard,
+                TerminationQualityCandidateMode2D::GroupedRepartition,
+                policy.tolerance);
+            if (iteration==0U) {
+                q33HardVolumeRatioBefore=repair.hardVolumeRatioCountBefore;
+                q33HardFaceWeightBefore=repair.hardFaceWeightCountBefore;
+                q33HardShortFaceBefore=repair.hardShortFaceCountBefore;
+            }
+            q33HardVolumeRatioAfter=repair.hardVolumeRatioCountAfter;
+            q33HardFaceWeightAfter=repair.hardFaceWeightCountAfter;
+            q33HardShortFaceAfter=repair.hardShortFaceCountAfter;
+            q33GroupedCandidates+=repair.candidateCount;
+            q33LocalCandidates+=repair.localCandidateCount;
+            q33LocalQualityEvaluations+=repair.localQualityEvaluationCount;
+            q33CandidateGlobalTopologyBuilds+=
+                repair.candidateGlobalTopologyBuildCount;
+            q33CandidateFullGlobalQualityEvaluations+=
+                repair.candidateFullGlobalQualityEvaluationCount;
+            q33GlobalOracleBuilds+=repair.globalOracleBuildCount;
+            q33MaximumWinnerGlobalOracleBuilds=std::max(
+                q33MaximumWinnerGlobalOracleBuilds,repair.globalOracleBuildCount);
+            q33AuthoritativeFullQualityEvaluations+=
+                repair.authoritativeFullQualityEvaluationCount;
+            q33RepairSeconds+=repair.repairSeconds;
+            if (repair.globalOracleBuildCount>0U)
+                q33LocalWinnerMatchesGlobalAuthority=
+                    q33LocalWinnerMatchesGlobalAuthority &&
+                    repair.localWinnerMatchesGlobalAuthority;
+            if (!repair.valid()) {
+                const std::string detail=repair.issues.empty()
+                    ?"Q3-3 grouped termination repartition failed":
+                     repair.issues.front();
+                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+            }
+            if (!repair.accepted) {
+                converged=true;
+                break;
+            }
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            q33PatchOutsideStableIdsUnchanged=
+                q33PatchOutsideStableIdsUnchanged &&
+                repair.patchOutsideStableIdsUnchanged;
+            q33LocalDeltaMatchesGlobalOracle=
+                q33LocalDeltaMatchesGlobalOracle &&
+                repair.localDeltaMatchesGlobalOracle;
+            ++q33AcceptedTransactions;
+            ++solverTopologyReport.qualityRepartitionCount;
+            ++solverTopologyReport.profile.acceptedTopologyCommitCount;
+        }
+        q33TransactionBoundReached=!converged &&
+            q33AcceptedTransactions==maximumQ33Transactions;
         solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
     }
     if (std::count(solverTopologyReport.immutableOutputCells.begin(),
@@ -1370,6 +1673,94 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.r1LocalDeltaMatchesGlobalOracle=r1LocalDeltaMatchesGlobalOracle;
     result.metrics.r1LocalWinnerMatchesGlobalAuthority=
         r1LocalWinnerMatchesGlobalAuthority;
+    result.metrics.q3TerminationCandidates=q3TerminationCandidates;
+    result.metrics.q3LocalCandidates=q3LocalCandidates;
+    result.metrics.q3LocalQualityEvaluations=q3LocalQualityEvaluations;
+    result.metrics.q3AcceptedTransactions=q3AcceptedTransactions;
+    result.metrics.q3CandidateGlobalTopologyBuilds=q3CandidateGlobalTopologyBuilds;
+    result.metrics.q3CandidateFullGlobalQualityEvaluations=
+        q3CandidateFullGlobalQualityEvaluations;
+    result.metrics.q3GlobalOracleBuilds=q3GlobalOracleBuilds;
+    result.metrics.q3MaximumWinnerGlobalOracleBuilds=
+        q3MaximumWinnerGlobalOracleBuilds;
+    result.metrics.q3AuthoritativeFullQualityEvaluations=
+        q3AuthoritativeFullQualityEvaluations;
+    result.metrics.q3HardVolumeRatioBefore=q3HardVolumeRatioBefore;
+    result.metrics.q3HardVolumeRatioAfter=q3HardVolumeRatioAfter;
+    result.metrics.q3HardFaceWeightBefore=q3HardFaceWeightBefore;
+    result.metrics.q3HardFaceWeightAfter=q3HardFaceWeightAfter;
+    result.metrics.q3HardShortFaceBefore=q3HardShortFaceBefore;
+    result.metrics.q3HardShortFaceAfter=q3HardShortFaceAfter;
+    result.metrics.q3MaximumVolumeRatioSeverityBefore=
+        q3MaximumVolumeRatioSeverityBefore;
+    result.metrics.q3MaximumVolumeRatioSeverityAfter=
+        q3MaximumVolumeRatioSeverityAfter;
+    result.metrics.q3MaximumFaceWeightSeverityBefore=
+        q3MaximumFaceWeightSeverityBefore;
+    result.metrics.q3MaximumFaceWeightSeverityAfter=
+        q3MaximumFaceWeightSeverityAfter;
+    result.metrics.q3RepairSeconds=q3RepairSeconds;
+    result.metrics.q3PatchOutsideStableIdsUnchanged=
+        q3PatchOutsideStableIdsUnchanged;
+    result.metrics.q3LocalDeltaMatchesGlobalOracle=
+        q3LocalDeltaMatchesGlobalOracle;
+    result.metrics.q3LocalWinnerMatchesGlobalAuthority=
+        q3LocalWinnerMatchesGlobalAuthority;
+    result.metrics.q3TransactionBoundReached=q3TransactionBoundReached;
+    result.metrics.q32RepartitionCandidates=q32RepartitionCandidates;
+    result.metrics.q32LocalCandidates=q32LocalCandidates;
+    result.metrics.q32LocalQualityEvaluations=q32LocalQualityEvaluations;
+    result.metrics.q32AcceptedTransactions=q32AcceptedTransactions;
+    result.metrics.q32CandidateGlobalTopologyBuilds=
+        q32CandidateGlobalTopologyBuilds;
+    result.metrics.q32CandidateFullGlobalQualityEvaluations=
+        q32CandidateFullGlobalQualityEvaluations;
+    result.metrics.q32GlobalOracleBuilds=q32GlobalOracleBuilds;
+    result.metrics.q32MaximumWinnerGlobalOracleBuilds=
+        q32MaximumWinnerGlobalOracleBuilds;
+    result.metrics.q32AuthoritativeFullQualityEvaluations=
+        q32AuthoritativeFullQualityEvaluations;
+    result.metrics.q32HardVolumeRatioBefore=q32HardVolumeRatioBefore;
+    result.metrics.q32HardVolumeRatioAfter=q32HardVolumeRatioAfter;
+    result.metrics.q32HardFaceWeightBefore=q32HardFaceWeightBefore;
+    result.metrics.q32HardFaceWeightAfter=q32HardFaceWeightAfter;
+    result.metrics.q32HardShortFaceBefore=q32HardShortFaceBefore;
+    result.metrics.q32HardShortFaceAfter=q32HardShortFaceAfter;
+    result.metrics.q32RepairSeconds=q32RepairSeconds;
+    result.metrics.q32PatchOutsideStableIdsUnchanged=
+        q32PatchOutsideStableIdsUnchanged;
+    result.metrics.q32LocalDeltaMatchesGlobalOracle=
+        q32LocalDeltaMatchesGlobalOracle;
+    result.metrics.q32LocalWinnerMatchesGlobalAuthority=
+        q32LocalWinnerMatchesGlobalAuthority;
+    result.metrics.q32TransactionBoundReached=q32TransactionBoundReached;
+    result.metrics.q33GroupedCandidates=q33GroupedCandidates;
+    result.metrics.q33LocalCandidates=q33LocalCandidates;
+    result.metrics.q33LocalQualityEvaluations=q33LocalQualityEvaluations;
+    result.metrics.q33AcceptedTransactions=q33AcceptedTransactions;
+    result.metrics.q33CandidateGlobalTopologyBuilds=
+        q33CandidateGlobalTopologyBuilds;
+    result.metrics.q33CandidateFullGlobalQualityEvaluations=
+        q33CandidateFullGlobalQualityEvaluations;
+    result.metrics.q33GlobalOracleBuilds=q33GlobalOracleBuilds;
+    result.metrics.q33MaximumWinnerGlobalOracleBuilds=
+        q33MaximumWinnerGlobalOracleBuilds;
+    result.metrics.q33AuthoritativeFullQualityEvaluations=
+        q33AuthoritativeFullQualityEvaluations;
+    result.metrics.q33HardVolumeRatioBefore=q33HardVolumeRatioBefore;
+    result.metrics.q33HardVolumeRatioAfter=q33HardVolumeRatioAfter;
+    result.metrics.q33HardFaceWeightBefore=q33HardFaceWeightBefore;
+    result.metrics.q33HardFaceWeightAfter=q33HardFaceWeightAfter;
+    result.metrics.q33HardShortFaceBefore=q33HardShortFaceBefore;
+    result.metrics.q33HardShortFaceAfter=q33HardShortFaceAfter;
+    result.metrics.q33RepairSeconds=q33RepairSeconds;
+    result.metrics.q33PatchOutsideStableIdsUnchanged=
+        q33PatchOutsideStableIdsUnchanged;
+    result.metrics.q33LocalDeltaMatchesGlobalOracle=
+        q33LocalDeltaMatchesGlobalOracle;
+    result.metrics.q33LocalWinnerMatchesGlobalAuthority=
+        q33LocalWinnerMatchesGlobalAuthority;
+    result.metrics.q33TransactionBoundReached=q33TransactionBoundReached;
     result.metrics.buildGlobalTopologyCalls=
         globalTopologyBuildCount2D()-buildStartGlobalTopologies;
     result.metrics.buildGlobalTopologyInputCells=
@@ -1382,7 +1773,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         result.solverTopologyReport.profile.initialPartitionSeconds+
         result.solverTopologyReport.profile.sourceRepairSeconds+
         result.solverTopologyReport.profile.finalRepartitionSeconds+
-        r1RepairSeconds;
+        r1RepairSeconds+q3RepairSeconds+q32RepairSeconds+q33RepairSeconds;
     result.metrics.unifiedVertexCount = result.topology.vertices.size();
     result.metrics.unifiedEdgeCount = result.topology.edges.size();
     result.metrics.unifiedCellCount = result.topology.cells.size();
@@ -1732,6 +2123,134 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.r1MaximumWinnerGlobalOracleBuilds << ",\n";
         out << "  \"r1_authoritative_full_quality_evaluation_count\": "
             << metrics.r1AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"q3_termination_candidate_count\": "
+            << metrics.q3TerminationCandidates << ",\n";
+        out << "  \"q3_local_candidate_count\": "
+            << metrics.q3LocalCandidates << ",\n";
+        out << "  \"q3_local_quality_evaluation_count\": "
+            << metrics.q3LocalQualityEvaluations << ",\n";
+        out << "  \"q3_accepted_transaction_count\": "
+            << metrics.q3AcceptedTransactions << ",\n";
+        out << "  \"q3_candidate_global_topology_build_count\": "
+            << metrics.q3CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"q3_candidate_full_global_quality_evaluation_count\": "
+            << metrics.q3CandidateFullGlobalQualityEvaluations << ",\n";
+        out << "  \"q3_global_oracle_build_count\": "
+            << metrics.q3GlobalOracleBuilds << ",\n";
+        out << "  \"q3_maximum_winner_global_oracle_builds_per_transaction\": "
+            << metrics.q3MaximumWinnerGlobalOracleBuilds << ",\n";
+        out << "  \"q3_authoritative_full_quality_evaluation_count\": "
+            << metrics.q3AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"q3_hard_volume_ratio_count_before\": "
+            << metrics.q3HardVolumeRatioBefore << ",\n";
+        out << "  \"q3_hard_volume_ratio_count_after\": "
+            << metrics.q3HardVolumeRatioAfter << ",\n";
+        out << "  \"q3_hard_face_weight_count_before\": "
+            << metrics.q3HardFaceWeightBefore << ",\n";
+        out << "  \"q3_hard_face_weight_count_after\": "
+            << metrics.q3HardFaceWeightAfter << ",\n";
+        out << "  \"q3_hard_short_face_count_before\": "
+            << metrics.q3HardShortFaceBefore << ",\n";
+        out << "  \"q3_hard_short_face_count_after\": "
+            << metrics.q3HardShortFaceAfter << ",\n";
+        out << "  \"q3_maximum_volume_ratio_severity_before\": "
+            << metrics.q3MaximumVolumeRatioSeverityBefore << ",\n";
+        out << "  \"q3_maximum_volume_ratio_severity_after\": "
+            << metrics.q3MaximumVolumeRatioSeverityAfter << ",\n";
+        out << "  \"q3_maximum_face_weight_severity_before\": "
+            << metrics.q3MaximumFaceWeightSeverityBefore << ",\n";
+        out << "  \"q3_maximum_face_weight_severity_after\": "
+            << metrics.q3MaximumFaceWeightSeverityAfter << ",\n";
+        out << "  \"q3_repair_seconds\": "
+            << metrics.q3RepairSeconds << ",\n";
+        out << "  \"q3_patch_outside_stable_ids_unchanged\": "
+            << (metrics.q3PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"q3_local_winner_matches_global_authority\": "
+            << (metrics.q3LocalWinnerMatchesGlobalAuthority?"true":"false") << ",\n";
+        out << "  \"q3_local_delta_matches_global_oracle\": "
+            << (metrics.q3LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
+        out << "  \"q3_transaction_bound_reached\": "
+            << (metrics.q3TransactionBoundReached?"true":"false") << ",\n";
+        out << "  \"q32_repartition_candidate_count\": "
+            << metrics.q32RepartitionCandidates << ",\n";
+        out << "  \"q32_local_candidate_count\": "
+            << metrics.q32LocalCandidates << ",\n";
+        out << "  \"q32_local_quality_evaluation_count\": "
+            << metrics.q32LocalQualityEvaluations << ",\n";
+        out << "  \"q32_accepted_transaction_count\": "
+            << metrics.q32AcceptedTransactions << ",\n";
+        out << "  \"q32_candidate_global_topology_build_count\": "
+            << metrics.q32CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"q32_candidate_full_global_quality_evaluation_count\": "
+            << metrics.q32CandidateFullGlobalQualityEvaluations << ",\n";
+        out << "  \"q32_global_oracle_build_count\": "
+            << metrics.q32GlobalOracleBuilds << ",\n";
+        out << "  \"q32_maximum_winner_global_oracle_builds_per_transaction\": "
+            << metrics.q32MaximumWinnerGlobalOracleBuilds << ",\n";
+        out << "  \"q32_authoritative_full_quality_evaluation_count\": "
+            << metrics.q32AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"q32_hard_volume_ratio_count_before\": "
+            << metrics.q32HardVolumeRatioBefore << ",\n";
+        out << "  \"q32_hard_volume_ratio_count_after\": "
+            << metrics.q32HardVolumeRatioAfter << ",\n";
+        out << "  \"q32_hard_face_weight_count_before\": "
+            << metrics.q32HardFaceWeightBefore << ",\n";
+        out << "  \"q32_hard_face_weight_count_after\": "
+            << metrics.q32HardFaceWeightAfter << ",\n";
+        out << "  \"q32_hard_short_face_count_before\": "
+            << metrics.q32HardShortFaceBefore << ",\n";
+        out << "  \"q32_hard_short_face_count_after\": "
+            << metrics.q32HardShortFaceAfter << ",\n";
+        out << "  \"q32_repair_seconds\": "
+            << metrics.q32RepairSeconds << ",\n";
+        out << "  \"q32_patch_outside_stable_ids_unchanged\": "
+            << (metrics.q32PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"q32_local_winner_matches_global_authority\": "
+            << (metrics.q32LocalWinnerMatchesGlobalAuthority?"true":"false") << ",\n";
+        out << "  \"q32_local_delta_matches_global_oracle\": "
+            << (metrics.q32LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
+        out << "  \"q32_transaction_bound_reached\": "
+            << (metrics.q32TransactionBoundReached?"true":"false") << ",\n";
+        out << "  \"q33_grouped_candidate_count\": "
+            << metrics.q33GroupedCandidates << ",\n";
+        out << "  \"q33_local_candidate_count\": "
+            << metrics.q33LocalCandidates << ",\n";
+        out << "  \"q33_local_quality_evaluation_count\": "
+            << metrics.q33LocalQualityEvaluations << ",\n";
+        out << "  \"q33_accepted_transaction_count\": "
+            << metrics.q33AcceptedTransactions << ",\n";
+        out << "  \"q33_candidate_global_topology_build_count\": "
+            << metrics.q33CandidateGlobalTopologyBuilds << ",\n";
+        out << "  \"q33_candidate_full_global_quality_evaluation_count\": "
+            << metrics.q33CandidateFullGlobalQualityEvaluations << ",\n";
+        out << "  \"q33_global_oracle_build_count\": "
+            << metrics.q33GlobalOracleBuilds << ",\n";
+        out << "  \"q33_maximum_winner_global_oracle_builds_per_transaction\": "
+            << metrics.q33MaximumWinnerGlobalOracleBuilds << ",\n";
+        out << "  \"q33_authoritative_full_quality_evaluation_count\": "
+            << metrics.q33AuthoritativeFullQualityEvaluations << ",\n";
+        out << "  \"q33_hard_volume_ratio_count_before\": "
+            << metrics.q33HardVolumeRatioBefore << ",\n";
+        out << "  \"q33_hard_volume_ratio_count_after\": "
+            << metrics.q33HardVolumeRatioAfter << ",\n";
+        out << "  \"q33_hard_face_weight_count_before\": "
+            << metrics.q33HardFaceWeightBefore << ",\n";
+        out << "  \"q33_hard_face_weight_count_after\": "
+            << metrics.q33HardFaceWeightAfter << ",\n";
+        out << "  \"q33_hard_short_face_count_before\": "
+            << metrics.q33HardShortFaceBefore << ",\n";
+        out << "  \"q33_hard_short_face_count_after\": "
+            << metrics.q33HardShortFaceAfter << ",\n";
+        out << "  \"q33_repair_seconds\": "
+            << metrics.q33RepairSeconds << ",\n";
+        out << "  \"q33_patch_outside_stable_ids_unchanged\": "
+            << (metrics.q33PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
+        out << "  \"q33_local_winner_matches_global_authority\": "
+            << (metrics.q33LocalWinnerMatchesGlobalAuthority?"true":"false") << ",\n";
+        out << "  \"q33_local_delta_matches_global_oracle\": "
+            << (metrics.q33LocalDeltaMatchesGlobalOracle?"true":"false") << ",\n";
+        out << "  \"q33_transaction_bound_reached\": "
+            << (metrics.q33TransactionBoundReached?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "
