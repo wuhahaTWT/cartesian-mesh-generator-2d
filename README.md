@@ -117,6 +117,24 @@ DomainBoundary > 0
 4. `docs/STAGE_PLAN_CN.md`
 5. `docs/ACCEPTANCE_CN.md`
 
+如果你要接手当前这一轮（R2：加密鲁棒性与 CFD 可解性），先读
+`docs/R2_HANDOFF_CN.md`：它给出两条并行主线的关键问题、已被实测排除的路线，以及
+每条改动的验收清单。实测数据与根因在 `docs/R2_REFINEMENT_ROBUSTNESS_CN.md`，
+参考项目的许可证与借鉴等级在 `docs/R2_REFERENCE_AUDIT_CN.md`。
+
+## 加密鲁棒性当前边界
+
+```text
+纯 Cut-cell（cartmesh2d_cli）      稳到 level 9（13024 solver cells、0.54 s）
+                                   level 10 失败：格点 spur -> boundary skewness 8.6
+hybrid 边界层（hybrid_cli）        稳到 level 8
+                                   level 9 失败：壁面切向分辨率被输入折线顶点数锁死
+```
+
+阶梯测量与回归门：`tools/verification/refinement_ladder.py`，基线
+`artifacts/r2/w0-baseline-manifest.json`。任何与加密相关的改动都必须给出改动前后
+两份 manifest。
+
 ## PDE 验证用全局最低层级
 
 边界自适应网格适合几何分辨，但单独增加 `max-level` 不会细化远场，不能构成受控的
