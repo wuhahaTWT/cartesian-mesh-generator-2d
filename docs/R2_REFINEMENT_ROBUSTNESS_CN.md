@@ -188,10 +188,79 @@ circle:hybrid:level 9 exited 1 (solver_quality_failed)
 
 - 没有修改任何网格生成、termination、repair 或导出算法；
 - 没有降低 `SolverQualityPolicy2D` 或 Q1 contract 的任何阈值；
-- 完整 CTest 从 75 项增加到 77 项，全部通过（`ctest --test-dir build`，
+- 完整 CTest 从 75 项增加到 78 项，全部通过（`ctest --test-dir build`，
   macOS 下需先 `export DYLD_LIBRARY_PATH=/Applications/mesasdk/lib`）。
+  逐字节证据见第 8 节。
 
-### 6.1 网格产物逐字节不变的实测证据
+## 7. W1 进展：三种局部方案已被实测排除，机制已落地，迁移未完成
+
+W1 的目标是把纯 Cut-cell 推到 level 10/11。本节记录实测排除的路线、已落地的机制，
+以及仍然阻塞的那一步。**level 6–9 的行为完全没有改变**。
+
+### 7.1 被实测排除的三种局部方案
+
+| 方案 | 结果 |
+|---|---|
+| 对已遍历的 **face loop** 做退化顶点塌缩 | 共享同一 spur 的两个 face 会做出不同决定，局部图不再共形，leaf 报 `local fluid region contains a hole` |
+| 对 **per-leaf 点集** 在建半边图之前焦合 | cell-side 点是与邻居 leaf 共享的，邻居独立焦合 → 共享边不一致，audit 报 `unclassifiedBoundaryEdges=24` |
+| 同时焦合 embedded fragment 坐标 | 无效，24 个不变；跨 leaf 分歧才是原因 |
+
+结论：一致的焦合必须发生在**全局 canonical vertex 空间**里，也就是
+`IntersectionRegistry2D`。
+
+### 7.2 面积不变量是第二个独立约束
+
+circle level 10 上，焦合预算与实测面积误差：
+
+| 焦合预算（h 的比例） | 面积误差 | 是否消除 spur |
+|---|---:|---|
+| `1e-3` | `1.17e-8` | 是 |
+| `1e-4` | `1.79e-9` | 是 |
+| `3e-5` | —（先撞跨 leaf 不一致） | 是 |
+| `1e-5` | — | **否**，spur 仍在（`code=5` boundary skewness） |
+
+而 `cartmesh2d_cli` 的物理门只允许
+`1e-10 * max(1, area) = 5.88e-10`（注意它**没有** hybrid 路径的 256 倍
+`areaToleranceMultiplier`）。所以任何能真正消除 spur 的预算都会超门 3–20 倍。
+spur 本身的两点间距是 `4e-5 · h`，这是预算的下界。
+
+### 7.3 已落地的机制（默认行为零变化）
+
+`IntersectionRegistryPolicy2D` 增加 `gridCornerWeldFractionOfLocalH`，与原有的
+`snapFractionOfLocalH` 分开：
+
+- 默认值等于原来硬编码的 `64 · DBL_EPSILON`，因此**所有现有调用方逐字节不变**；
+- `intersectGridLine` 的 grid-corner 吸附改用这个新字段，需要几何焦合的调用方
+  显式提高它并承担后果；
+- 构造函数**拒绝** `>= 0.01` 的值：Q1 的短面硬限是 `face_length/local_h >= 0.01`，
+  预算达到这个量级就可能销毁一个质量合同本会接受的面；
+- `gridLine()` 里那个纯算术校验（判断一个坐标**已经是** dyadic grid side）仍用
+  roundoff 常量，注释已改写清楚二者的区别。
+
+回归：`tests/weld_budget_test.cpp` 钉住默认值、Q1 上界拒绝、非有限值拒绝，以及
+原有 proximity 预算校验不变。完整 CTest 78 项通过。
+
+### 7.4 仍然阻塞的一步
+
+把 `cartmesh2d_cli` 迁到 `buildCutCellsShared` + 单一全局 registry 的尝试稳定复现
+一个具体错误：
+
+```text
+terminate called after throwing an instance of 'std::invalid_argument'
+  what():  grid line lies outside construction support
+```
+
+抛出点是 `src/geometry/IntersectionConstruction2D.cpp:301`
+（`t=(target-origin)/delta` 要求 `t ∈ [0,1]`，即 grid line 必须真的穿过被注册的
+support 线段）。hybrid 路径用同一份代码工作正常，所以差异在 setup：hybrid 裁剪的是
+transition envelope 且 `configureGrid` 用 `remainderMaxLevel`，纯路径裁剪的是原始
+wall 且用 `maxLevel`。尚未定位到确切的 setup 差异，因此**这次没有提交迁移**，
+工作区保持 level 6–9 的既有行为与全绿回归。
+
+下一步的最小任务是单独复现这一个 support/grid-line 组合并定位 setup 差异，
+而不是继续在 CLI 层试错。
+
+## 8. W0 网格产物逐字节不变的实测证据
 
 从改动前的 `051f45103ffb34c7568a4210cfb7de93046af89f` 用 `git archive` 取出干净
 源码树、独立 Release 构建，与本轮工作区用**同一条旧命令行**（不带任何新开关）
