@@ -601,6 +601,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     double terminationBufferGrowthRatio=0.0;
     double terminationBufferOuterRowThickness=0.0;
     double terminationBufferRowCap=0.0;
+    bool terminationBufferRowCapReachable=true;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
     if (localTermination) {
         double lastLayerSpacing=0.0;
@@ -661,23 +662,34 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                     policy.maximumTerminationBufferRows;
                 while (rows<maximumRows && total/static_cast<double>(rows)>cap)
                     ++rows;
-                // Keep as much near-wall grading as the cap allows: a larger
-                // ratio makes the first row thinner at fixed total thickness.
-                double low=1.0,high=terminationParameters.growthRatio;
-                if (rowThickness(total,rows,high)>cap) {
-                    for (int step=0;step<60;++step) {
-                        const double middle=0.5*(low+high);
-                        if (rowThickness(total,rows,middle)>cap) high=middle;
-                        else low=middle;
+                // The bounded row count may run out before the cap is reachable.
+                // A uniform march is the thinnest outer row this row count can
+                // produce, so if that still exceeds the cap the rule cannot be
+                // satisfied here: leave the historical march untouched instead of
+                // reporting a matched buffer that still violates its own cap.
+                // This is also what makes ratio 1 a valid bisection lower bound,
+                // because rowThickness(total,rows,1) is exactly total/rows.
+                if (total/static_cast<double>(rows)<=cap) {
+                    // Keep as much near-wall grading as the cap allows: a larger
+                    // ratio makes the first row thinner at fixed total thickness.
+                    double low=1.0,high=terminationParameters.growthRatio;
+                    if (rowThickness(total,rows,high)>cap) {
+                        for (int step=0;step<60;++step) {
+                            const double middle=0.5*(low+high);
+                            if (rowThickness(total,rows,middle)>cap) high=middle;
+                            else low=middle;
+                        }
+                    } else {
+                        low=high;
                     }
+                    terminationParameters.nLayers=rows;
+                    terminationParameters.thicknessMode=
+                        LayerThicknessMode2D::TotalThickness;
+                    terminationParameters.thickness=total;
+                    terminationParameters.growthRatio=low;
                 } else {
-                    low=high;
+                    terminationBufferRowCapReachable=false;
                 }
-                terminationParameters.nLayers=rows;
-                terminationParameters.thicknessMode=
-                    LayerThicknessMode2D::TotalThickness;
-                terminationParameters.thickness=total;
-                terminationParameters.growthRatio=low;
             }
             terminationBufferRowCap=cap;
         }
@@ -2154,6 +2166,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.q52TerminationBufferOuterRowThickness=
         terminationBufferOuterRowThickness;
     result.metrics.q52TerminationBufferRowCap=terminationBufferRowCap;
+    result.metrics.q52TerminationBufferRowCapReachable=
+        terminationBufferRowCapReachable;
     result.metrics.buildGlobalTopologyCalls=
         globalTopologyBuildCount2D()-buildStartGlobalTopologies;
     result.metrics.buildGlobalTopologyInputCells=
@@ -2690,6 +2704,9 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q51OuterTransitionRadialSubdivision << ",\n";
         out << "  \"q51_outer_transition_radial_declined\": "
             << (metrics.q51OuterTransitionRadialDeclined?"true":"false") << ",\n";
+        out << "  \"q51_outer_transition_radial_target_reachable\": "
+            << (metrics.q51OuterTransitionRadialTargetReachable?"true":"false")
+            << ",\n";
         out << "  \"q52_termination_buffer_radial_committed\": "
             << (metrics.q52TerminationBufferRadialCommitted?"true":"false") << ",\n";
         out << "  \"q52_termination_buffer_hard_with_matching\": "
@@ -2704,6 +2721,8 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q52TerminationBufferOuterRowThickness << ",\n";
         out << "  \"q52_termination_buffer_row_cap\": "
             << metrics.q52TerminationBufferRowCap << ",\n";
+        out << "  \"q52_termination_buffer_row_cap_reachable\": "
+            << (metrics.q52TerminationBufferRowCapReachable?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "

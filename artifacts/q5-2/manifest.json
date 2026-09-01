@@ -1,14 +1,15 @@
 {
   "stage": "Q5-2 graded termination buffer radial size matching, self-gated",
   "date": "2026-09-01",
-  "baseline_commit": "9ef19a24fd6d5e5b9c9f4c6a3e0a8c1e5d2b7f30",
+  "baseline_commit": "aa284cec79704f75ca3aa35e95dddf3e64d9d99e",
   "rule": {
     "statement": "No graded termination buffer row may be radially thicker than the remainder background cell it borders. The buffer is a locally reduced march, so it is re-resolved with more, thinner rows at the same total thickness rather than cut afterwards.",
     "row_count": "smallest rows with total/rows <= cap",
     "growth_ratio": "largest ratio in (1, original] whose outermost row is <= cap; at fixed total thickness a larger ratio keeps the first row thinner, preserving near-wall grading",
     "cap": "outerTransitionRadialTargetCells * remainderCellSize, reusing the Q5-1 value of 1.0",
     "maximum_rows": 12,
-    "new_tunables": "none"
+    "new_tunables": "none",
+    "bounded_search_feasibility": "Both radial rules use a bounded search. If the bound is exhausted before the cap is reachable, the historical construction is kept and the report says the target was unreachable. A row count is never published as a matched plan when the committed mesh still exceeds the cap; for Q5-2 this is also what makes ratio 1 a valid bisection lower bound, since rowThickness(total,rows,1) is exactly total/rows."
   },
   "why_self_gated": {
     "difference_from_q5_1": "The fan is explicitly interpolated ring by ring, so Q5-1 could write the last row offset as ring + rows/rows and keep the outer envelope bit-identical. The buffer front is stepped and produced by buildLocallyReducedBoundaryLayerStrips2D, where each column's layer count comes from a local collision/concavity test.",
@@ -19,14 +20,44 @@
   "diagnosis": {
     "method": "every hard face split by the cell kinds on both sides; Termination cells further separated into buffer rows 1/2/3 versus remainder-derived by graph distance from the H4-1 layer",
     "dominant_family": {
-      "narrow_gap": {"pair": "Term(rem) <- Term(buf3)", "volume_ratio": 160, "face_weight": 16, "share": "176 of 430"},
-      "sharp_trailing_edge": {"pair": "Term(rem) <- Term(buf3)", "face_weight": 100, "volume_ratio": 76, "share": "176 of 377"},
-      "concave_l": {"pair": "Term(buf1) <- BL", "volume_ratio": 31, "face_weight": 13, "share": "44 of 206"}
+      "narrow_gap": {
+        "pair": "Term(rem) <- Term(buf3)",
+        "volume_ratio": 160,
+        "face_weight": 16,
+        "share": "176 of 430"
+      },
+      "sharp_trailing_edge": {
+        "pair": "Term(rem) <- Term(buf3)",
+        "face_weight": 100,
+        "volume_ratio": 76,
+        "share": "176 of 377"
+      },
+      "concave_l": {
+        "pair": "Term(buf1) <- BL",
+        "volume_ratio": 31,
+        "face_weight": 13,
+        "share": "44 of 206"
+      }
     },
     "buffer_row_areas_in_background_cells": {
-      "concave_l": {"h": 0.01953125, "row1": 1.495, "row2": 2.168, "row3": 3.143},
-      "sharp_trailing_edge": {"h": 0.01657282, "row1": 1.69, "row2": 2.451, "row3": 3.554},
-      "narrow_gap": {"h": 0.01366629, "row1": 0.891, "row2": 4.733, "row3": 7.336}
+      "concave_l": {
+        "h": 0.01953125,
+        "row1": 1.495,
+        "row2": 2.168,
+        "row3": 3.143
+      },
+      "sharp_trailing_edge": {
+        "h": 0.01657282,
+        "row1": 1.69,
+        "row2": 2.451,
+        "row3": 3.554
+      },
+      "narrow_gap": {
+        "h": 0.01366629,
+        "row1": 0.891,
+        "row2": 4.733,
+        "row3": 7.336
+      }
     }
   },
   "results": {
@@ -73,8 +104,17 @@
   },
   "verification": {
     "ctest": "75/75 PASS",
-    "declined_builds_byte_identical_to_baseline": ["hybrid.cm2d", "hybrid.solver.cm2d", "hybrid.quality-contract.json"],
-    "deterministic_replay_identical": ["hybrid.cm2d", "hybrid.solver.cm2d", "hybrid.quality-contract.json", "hybrid.solver-quality.json"],
+    "declined_builds_byte_identical_to_baseline": [
+      "hybrid.cm2d",
+      "hybrid.solver.cm2d",
+      "hybrid.quality-contract.json"
+    ],
+    "deterministic_replay_identical": [
+      "hybrid.cm2d",
+      "hybrid.solver.cm2d",
+      "hybrid.quality-contract.json",
+      "hybrid.solver-quality.json"
+    ],
     "independent_openfoam_reader": "PASS",
     "openfoam_checkMesh": {
       "image": "opencfd/openfoam-run:2606",
@@ -86,7 +126,8 @@
         "minimum_face_area": 9.849335481e-08,
         "note": "max aspect ratio improves from 13.912 on the Q4-1 sharp-tail mesh"
       }
-    }
+    },
+    "bounded_search_invariants": "tests/h4_local_termination_test.cpp sweeps radialTargetCells over 1.0/0.1/0.01/0.001 and requires the plan to either meet the cap or report outerRingRadialTargetReachable=false with a single row; with an unreachable Q5-2 cap it requires cap_reachable=false, nothing committed, and a hybrid mesh still produced."
   },
   "cost": "With the flag on, every localTermination geometry builds two fronts, i.e. two full hybrid builds. This is a global candidate comparison rather than a patch-local selection. Zero cost with the flag off.",
   "regression_gates_added": {
@@ -97,5 +138,6 @@
     "term_buf1_versus_boundary_layer": "concave_l 44, sharp_trailing_edge 38, narrow_gap 34 hard faces where the buffer's FIRST row is larger than the H4-1 layer cell under it. Opposite direction to this rule; raising the growth ratio already thins that row but no criterion targets it.",
     "declined_geometries": "concave_l and narrow_gap keep their Term(rem) <- Term(buf3) family (176 faces on narrow_gap). Reaching it needs a buffer subdivision that preserves the stepped front, which first requires resolving collinear vertices being classified concave by strictlyConvex, the route the Q2 document records as blocked.",
     "boundary_layer_metrics": "still OBSERVED"
-  }
+  },
+  "baseline_commit_note": "rebased RemainderCut closeout; the branch was rebased onto origin/main to drop a commit already merged there, so this replaces the pre-rebase hash 9ef19a2296008d4a955f8e5bab6c53fc876a1043"
 }

@@ -332,6 +332,15 @@ jobs:
               root / 'q51_circle.hybrid.quality-contract.json')
           assert circle_after == 0, circle_after
           assert circle_status == 'WARN', circle_status
+          # A bounded radial search must never publish a matched plan it does not
+          # satisfy: a reported subdivision above one implies the target was
+          # actually reachable.
+          for name in ('circle', 'superellipse'):
+              report = json.loads(
+                  (root / f'q51_{name}.hybrid.json').read_text(encoding='utf-8'))
+              if report['q51_outer_transition_radial_subdivision'] > 1:
+                  assert report['q51_outer_transition_radial_target_reachable'] \
+                      is True, name
 
           # Q5-2 is self-gated: the re-resolved graded termination buffer is
           # committed only when it strictly lowers the typed hard count, so no
@@ -347,6 +356,14 @@ jobs:
               matched = report['q52_termination_buffer_hard_with_matching']
               historical = report['q52_termination_buffer_hard_with_historical_march']
               assert committed == (matched < historical), (name, matched, historical)
+              # Same rule for the buffer: nothing is committed under an
+              # unreachable row cap.
+              if committed:
+                  assert report['q52_termination_buffer_row_cap_reachable'] \
+                      is True, name
+                  assert (report['q52_termination_buffer_outer_row_thickness'] <=
+                          report['q52_termination_buffer_row_cap'] *
+                          (1.0 + 1.0e-12)), name
               assert historical == before, (name, historical, before)
               assert after <= before, (name, before, after)
               assert report['solver_quality_valid'] is True, name

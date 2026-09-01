@@ -285,6 +285,44 @@ int main() {
               "the sharp taper is a measured Q5-2 win");
     }
 
+    // A bounded row/subdivision search may run out before its own thickness
+    // target is reachable. Neither rule may then report a matched plan: doing so
+    // would publish a cap the committed mesh does not satisfy.
+    for (const double target:{1.0,0.1,0.01,0.001}) {
+        const auto tight=resolveAutomaticHybridTransitionPlan2D(
+            sharpLayers,Domain2D{{{-2.0,-1.5},{4.0,1.5}}},refinement(8U),target,4U);
+        if (!tight) continue;
+        const double cap=target*tight->targetCellSize;
+        const double row=tight->ringThickness/
+            static_cast<double>(tight->outerRingRadialSubdivision);
+        check(tight->outerRingRadialTargetReachable
+                  ?row<=cap*(1.0+1.0e-12)
+                  :tight->outerRingRadialSubdivision==1U,
+              "Q5-1 reports a matched outer row only when it really meets the cap");
+    }
+    HybridMeshPolicy2D q52Tight;
+    q52Tight.enableTerminationBufferRadialMatching=true;
+    q52Tight.outerTransitionRadialTargetCells=0.01;
+    const auto sharpTight=sharpChain.success()
+        ?buildRobustH4Mesh2D(
+             {*sharpChain.chain},fourLayers(),Domain2D{{{-2.0,-1.5},{4.0,1.5}}},
+             BoundaryRegion2D(sharpWall),8U,refinement(8U),{},q52Tight)
+        :RobustH4BuildResult2D{};
+    check(sharpTight.success() && sharpTight.mode==H4MeshMode2D::Hybrid,
+          "an unreachable Q5-2 cap still leaves a hybrid mesh");
+    if (sharpTight.mode==H4MeshMode2D::Hybrid) {
+        const auto& m=sharpTight.hybridCandidate.metrics;
+        check(!m.q52TerminationBufferRowCapReachable,
+              "Q5-2 reports an unreachable row cap instead of pretending to match");
+        check(!m.q52TerminationBufferRadialCommitted,
+              "Q5-2 commits nothing when its row cap is unreachable");
+        check(m.q52TerminationBufferRowCap<=0.0 ||
+              m.q52TerminationBufferOuterRowThickness<=
+                  m.q52TerminationBufferRowCap*(1.0+1.0e-12) ||
+              !m.q52TerminationBufferRadialCommitted,
+              "a committed Q5-2 buffer never exceeds the cap it reports");
+    }
+
     const BoundaryLoop fallbackWall({{0.3,0.3},{0.7,0.3},{0.7,0.7},{0.3,0.7}});    const auto fallbackChain=makeClosedWallChain2D(fallbackWall,0U,"wall_0");
     LayerParameters2D invalidLayers=fourLayers();
     invalidLayers.nLayers=0U;
