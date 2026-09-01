@@ -80,6 +80,21 @@ sharp-tail 实测：`rows 3 → 4`、`g 1.45 → 1.08698`、最外行
 没有新增可调常数：`cap` 沿用 Q5-1 的 `outerTransitionRadialTargetCells = 1.0`，
 行数上限 `maximumTerminationBufferRows = 12`。
 
+**有界搜索的可行性必须显式检查。** 行数上限可能在 cap 变得可达之前就用完。均匀
+march（`ratio = 1`）是给定行数下最薄的最外行，因此若 `total / rows > cap` 仍然成立，
+这条规则在此几何上就是不可满足的：此时**保留历史 march**，并把
+`q52_termination_buffer_row_cap_reachable` 报为 false，而不是把一个仍然超标的行数
+当成"已匹配"提交。这同时也是二分法成立的前提——只有在 `total / rows <= cap` 之后，
+`ratio = 1` 才真的是可行下界，否则 `f(low) > cap`，二分会收敛到一个仍然违反 cap 的
+比率。Q5-1 的 `maximumOuterTransitionRadialSubdivision` 有完全相同的结构，同样加了
+循环后的可行性检查；不可达时回到单行 fan 并报
+`q51_outer_transition_radial_target_reachable = false`。
+
+这两处是 codex 独立审查发现的 P1，实测确认：把 `outerTransitionRadialTargetCells`
+收紧到 0.01 时，修复前会提交一个最外行远超 cap 的网格（仅因 hard 数下降就通过），
+修复后 `committed = false`、`cap_reachable = false`，网格保持为历史 march 的 Hybrid。
+默认参数落在可行区内，因此五个 Q5 案例的 solver `.cm2d` 在修复前后逐字节相同。
+
 ## 4. sharp-tail 收益构成
 
 | metric | baseline | Q5-2 | 变化 |

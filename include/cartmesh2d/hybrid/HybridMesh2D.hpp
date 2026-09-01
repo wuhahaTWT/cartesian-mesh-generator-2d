@@ -80,6 +80,10 @@ struct HybridTransitionPlan2D {
     // radially thicker than the remainder background cell it borders. 1 keeps
     // the historical single-row outer fan.
     std::size_t outerRingRadialSubdivision = 1U;
+    // False when the bounded subdivision ran out before the target thickness was
+    // reachable. The plan then reports a single row rather than a row count that
+    // does not actually satisfy the rule.
+    bool outerRingRadialTargetReachable = true;
     double targetCellSize = 0.0;
     double maxOuterEdgeLength = 0.0;
     double maxLastLayerSpacing = 0.0;
@@ -218,6 +222,7 @@ struct HybridMeshMetrics2D {
     // whether the requested subdivision had to be declined to keep the mesh.
     std::size_t q51OuterTransitionRadialSubdivision = 1;
     bool q51OuterTransitionRadialDeclined = false;
+    bool q51OuterTransitionRadialTargetReachable = true;
     // Q5-2: the graded termination buffer re-resolved with more, thinner rows is
     // only committed when it strictly lowers the typed hard count. Both counts
     // are reported so a decline is a measurement, not a silent no-op.
@@ -230,6 +235,10 @@ struct HybridMeshMetrics2D {
     double q52TerminationBufferGrowthRatio = 0.0;
     double q52TerminationBufferOuterRowThickness = 0.0;
     double q52TerminationBufferRowCap = 0.0;
+    // False when the bounded row count ran out before the cap became reachable.
+    // The historical march is then kept, so a reported cap is never claimed for a
+    // buffer that still exceeds it.
+    bool q52TerminationBufferRowCapReachable = true;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -515,11 +524,21 @@ resolveAutomaticHybridTransitionPlan2D(
     // the row count that brings the outer row to at most one background cell;
     // whether it is applied is a policy decision in the builder.
     plan.outerRingRadialSubdivision = 1U;
+    plan.outerRingRadialTargetReachable = true;
     if (radialTargetCells > 0.0 && maximumRadialSubdivision > 1U) {
-        while (plan.outerRingRadialSubdivision < maximumRadialSubdivision &&
-               ringThickness / static_cast<double>(plan.outerRingRadialSubdivision) >
-                   radialTargetCells * targetCellSize) {
-            ++plan.outerRingRadialSubdivision;
+        const double rowCap = radialTargetCells * targetCellSize;
+        std::size_t rows = 1U;
+        while (rows < maximumRadialSubdivision &&
+               ringThickness / static_cast<double>(rows) > rowCap) {
+            ++rows;
+        }
+        // The bound may run out before the target is reachable. Claiming that
+        // row count as a matched plan would report a rule the mesh does not
+        // satisfy, so keep the historical single-row fan and say so instead.
+        if (ringThickness / static_cast<double>(rows) <= rowCap) {
+            plan.outerRingRadialSubdivision = rows;
+        } else {
+            plan.outerRingRadialTargetReachable = false;
         }
     }
     plan.targetCellSize = targetCellSize;
@@ -628,6 +647,12 @@ resolveAutomaticHybridTransitionPlan2D(
     // can never change bytes without a measured reason.
     std::size_t q52HardMatched=0U,q52HardHistorical=0U;
     bool q52Committed=false;
+    // The cap and whether it was reachable describe the attempt, so they are
+    // carried onto whichever front is committed. Rows, ratio and the outer row
+    // thickness keep describing the committed mesh.
+    double q52AttemptRowCap=result.metrics.q52TerminationBufferRowCap;
+    bool q52AttemptCapReachable=
+        result.metrics.q52TerminationBufferRowCapReachable;
     if (resolvedPolicy.enableTerminationBufferRadialMatching &&
         boundaryLayers.localReductionApplied) {
         auto historicalPolicy=resolvedPolicy;
@@ -645,12 +670,16 @@ resolveAutomaticHybridTransitionPlan2D(
     }
     resolvedPolicy=appliedPolicy;
     result.metrics.q52TerminationBufferRadialCommitted=q52Committed;
+    result.metrics.q52TerminationBufferRowCap=q52AttemptRowCap;
+    result.metrics.q52TerminationBufferRowCapReachable=q52AttemptCapReachable;
     result.metrics.q52TerminationBufferHardWithMatching=q52HardMatched;
     result.metrics.q52TerminationBufferHardWithHistoricalMarch=q52HardHistorical;
     result.metrics.q41ConstructionSelectionDeclined=
         resolvedPolicy.enableTerminationConstructionQualitySelection==false &&
         basePolicy.enableTerminationConstructionQualitySelection &&
         result.success();
+    result.metrics.q51OuterTransitionRadialTargetReachable=
+        plan->outerRingRadialTargetReachable;
     result.metrics.q51OuterTransitionRadialSubdivision=
         result.success()?resolvedPolicy.transitionOuterRingRadialSubdivision:1U;
     result.metrics.q51OuterTransitionRadialDeclined=
