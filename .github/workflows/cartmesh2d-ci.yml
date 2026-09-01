@@ -87,6 +87,11 @@ jobs:
           "$exe" examples/complex/superellipse_24.xy \
             "$out/q51_superellipse" 6 3 6 3 0.015 1.15 1.0 \
             "$out/q51_superellipse-case" 0.01 --q5-outer-transition-radial
+          for case_name in concave_l sharp_trailing_edge narrow_gap; do
+            "$exe" "examples/h4_3/${case_name}.xy" \
+              "$out/q52_${case_name}" 8 3 8 4 0.012 1.15 1.0 \
+              "$out/q52_${case_name}-case" 0.01 --q5-termination-buffer-radial
+          done
 
           for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
             python3 tools/verification/check_openfoam2d.py \
@@ -111,6 +116,11 @@ jobs:
           python3 tools/verification/check_openfoam2d.py \
             "$out/q51_circle-case" \
             --report "$out/q51_circle-case/independent_check.json"
+          for case_name in concave_l sharp_trailing_edge narrow_gap; do
+            python3 tools/verification/check_openfoam2d.py \
+              "$out/q52_${case_name}-case" \
+              --report "$out/q52_${case_name}-case/independent_check.json"
+          done
           python3 tools/verification/check_openfoam2d.py \
             "$out/q51_superellipse-case" \
             --report "$out/q51_superellipse-case/independent_check.json"
@@ -322,6 +332,37 @@ jobs:
               root / 'q51_circle.hybrid.quality-contract.json')
           assert circle_after == 0, circle_after
           assert circle_status == 'WARN', circle_status
+
+          # Q5-2 is self-gated: the re-resolved graded termination buffer is
+          # committed only when it strictly lowers the typed hard count, so no
+          # geometry may come out worse than its own baseline, and a decline must
+          # reproduce the baseline mesh byte for byte.
+          for name in ('concave_l', 'sharp_trailing_edge', 'narrow_gap'):
+              before, _ = hard_count(root / f'{name}.hybrid.quality-contract.json')
+              after, _ = hard_count(
+                  root / f'q52_{name}.hybrid.quality-contract.json')
+              report = json.loads(
+                  (root / f'q52_{name}.hybrid.json').read_text(encoding='utf-8'))
+              committed = report['q52_termination_buffer_radial_committed']
+              matched = report['q52_termination_buffer_hard_with_matching']
+              historical = report['q52_termination_buffer_hard_with_historical_march']
+              assert committed == (matched < historical), (name, matched, historical)
+              assert historical == before, (name, historical, before)
+              assert after <= before, (name, before, after)
+              assert report['solver_quality_valid'] is True, name
+              assert report['solver_quality_issue_count'] == 0, name
+              assert abs(report['area_error']) < 1.0e-8, name
+              if not committed:
+                  for suffix in ('hybrid.cm2d', 'hybrid.solver.cm2d',
+                                 'hybrid.quality-contract.json'):
+                      assert ((root / f'q52_{name}.{suffix}').read_bytes() ==
+                              (root / f'{name}.{suffix}').read_bytes()), (name, suffix)
+          # The sharp taper is the measured win this rule was added for.
+          sharp_before, _ = hard_count(
+              root / 'sharp_trailing_edge.hybrid.quality-contract.json')
+          sharp_after, _ = hard_count(
+              root / 'q52_sharp_trailing_edge.hybrid.quality-contract.json')
+          assert sharp_after < sharp_before, (sharp_before, sharp_after)
           PY
 
           python3 tools/verification/verify_q1_scale_invariance.py \
@@ -336,7 +377,7 @@ jobs:
           image=opencfd/openfoam-run:2606
           container_root=/home/openfoam/workingDir
           docker pull "$image"
-          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap q41_narrow_gap q41_sharp_trailing_edge q51_circle q51_superellipse; do
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap q41_narrow_gap q41_sharp_trailing_edge q51_circle q51_superellipse q52_concave_l q52_sharp_trailing_edge q52_narrow_gap; do
             log="$out/${case_name}.checkMesh.log"
             docker run --rm \
               -v "$PWD:$container_root" \

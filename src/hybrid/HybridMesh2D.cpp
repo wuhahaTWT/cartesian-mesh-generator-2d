@@ -597,6 +597,10 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         -static_cast<int>(remainderRefinement.boundaryLevel));
     std::vector<BoundaryLoop> remainderBoundaryLoops;
     std::vector<Polygon2D> transitionPolygons;
+    std::size_t terminationBufferRows=0U;
+    double terminationBufferGrowthRatio=0.0;
+    double terminationBufferOuterRowThickness=0.0;
+    double terminationBufferRowCap=0.0;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
     if (localTermination) {
         double lastLayerSpacing=0.0;
@@ -630,9 +634,69 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         // A non-dyadic ratio prevents the outer front from repeatedly landing
         // almost on nested quadtree lines while retaining monotone grading.
         terminationParameters.growthRatio=policy.terminationGrowthRatio;
+        // Q5-2 EXPERIMENT: cap every buffer row at one remainder background cell
+        // while holding the total buffer thickness -- and therefore the outer
+        // front position -- at the value the ungated march would have produced.
+        if (policy.enableTerminationBufferRadialMatching) {
+            const double remainderCellSize=std::ldexp(
+                std::max(domain.width(),domain.height()),
+                -static_cast<int>(remainderRefinement.boundaryLevel));
+            const double cap=policy.outerTransitionRadialTargetCells*remainderCellSize;
+            const auto rowThickness=[](double total,std::size_t rows,double ratio) {
+                if (rows==0U) return 0.0;
+                if (std::abs(ratio-1.0)<1.0e-12)
+                    return total/static_cast<double>(rows);
+                const double power=std::pow(ratio,static_cast<double>(rows-1U));
+                return total*power*(ratio-1.0)/
+                       (std::pow(ratio,static_cast<double>(rows))-1.0);
+            };
+            const auto baseline=resolveLayerParameters2D(terminationParameters);
+            if (baseline.success() && cap>0.0 &&
+                rowThickness(baseline.parameters->totalThickness,
+                             terminationParameters.nLayers,
+                             terminationParameters.growthRatio)>cap) {
+                const double total=baseline.parameters->totalThickness;
+                std::size_t rows=terminationParameters.nLayers;
+                const std::size_t maximumRows=
+                    policy.maximumTerminationBufferRows;
+                while (rows<maximumRows && total/static_cast<double>(rows)>cap)
+                    ++rows;
+                // Keep as much near-wall grading as the cap allows: a larger
+                // ratio makes the first row thinner at fixed total thickness.
+                double low=1.0,high=terminationParameters.growthRatio;
+                if (rowThickness(total,rows,high)>cap) {
+                    for (int step=0;step<60;++step) {
+                        const double middle=0.5*(low+high);
+                        if (rowThickness(total,rows,middle)>cap) high=middle;
+                        else low=middle;
+                    }
+                } else {
+                    low=high;
+                }
+                terminationParameters.nLayers=rows;
+                terminationParameters.thicknessMode=
+                    LayerThicknessMode2D::TotalThickness;
+                terminationParameters.thickness=total;
+                terminationParameters.growthRatio=low;
+            }
+            terminationBufferRowCap=cap;
+        }
         BoundaryLayerPolicy2D terminationPolicy;
         terminationPolicy.tolerance=policy.tolerance;
         terminationPolicy.permitConcaveTerminationMarching=true;
+        terminationBufferRows=terminationParameters.nLayers;
+        terminationBufferGrowthRatio=terminationParameters.growthRatio;
+        if (const auto resolved=resolveLayerParameters2D(terminationParameters);
+            resolved.success() &&
+            resolved.parameters->cumulativeNormalDistances.size()>=2U) {
+            const auto& d=resolved.parameters->cumulativeNormalDistances;
+            terminationBufferOuterRowThickness=d.back()-d[d.size()-2U];
+        } else if (const auto single=resolveLayerParameters2D(terminationParameters);
+                   single.success()) {
+            terminationBufferOuterRowThickness=
+                single.parameters->cumulativeNormalDistances.empty()
+                    ?0.0:single.parameters->cumulativeNormalDistances.front();
+        }
         const auto terminationLayers=buildLocallyReducedBoundaryLayerStrips2D(
             terminationChains,terminationParameters,terminationPolicy);
         if (!terminationLayers.success()) {
@@ -2085,6 +2149,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.q41LocalWinnerMatchesGlobalAuthority=
         q41LocalWinnerMatchesGlobalAuthority;
     result.metrics.q41ConstructionBoundReached=q41ConstructionBoundReached;
+    result.metrics.q52TerminationBufferRows=terminationBufferRows;
+    result.metrics.q52TerminationBufferGrowthRatio=terminationBufferGrowthRatio;
+    result.metrics.q52TerminationBufferOuterRowThickness=
+        terminationBufferOuterRowThickness;
+    result.metrics.q52TerminationBufferRowCap=terminationBufferRowCap;
     result.metrics.buildGlobalTopologyCalls=
         globalTopologyBuildCount2D()-buildStartGlobalTopologies;
     result.metrics.buildGlobalTopologyInputCells=
@@ -2621,6 +2690,20 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q51OuterTransitionRadialSubdivision << ",\n";
         out << "  \"q51_outer_transition_radial_declined\": "
             << (metrics.q51OuterTransitionRadialDeclined?"true":"false") << ",\n";
+        out << "  \"q52_termination_buffer_radial_committed\": "
+            << (metrics.q52TerminationBufferRadialCommitted?"true":"false") << ",\n";
+        out << "  \"q52_termination_buffer_hard_with_matching\": "
+            << metrics.q52TerminationBufferHardWithMatching << ",\n";
+        out << "  \"q52_termination_buffer_hard_with_historical_march\": "
+            << metrics.q52TerminationBufferHardWithHistoricalMarch << ",\n";
+        out << "  \"q52_termination_buffer_rows\": "
+            << metrics.q52TerminationBufferRows << ",\n";
+        out << "  \"q52_termination_buffer_growth_ratio\": "
+            << metrics.q52TerminationBufferGrowthRatio << ",\n";
+        out << "  \"q52_termination_buffer_outer_row_thickness\": "
+            << metrics.q52TerminationBufferOuterRowThickness << ",\n";
+        out << "  \"q52_termination_buffer_row_cap\": "
+            << metrics.q52TerminationBufferRowCap << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "

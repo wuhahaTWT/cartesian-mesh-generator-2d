@@ -110,7 +110,8 @@ void usage() {
            "[--verify-source-lineage] [--q3-termination-quality] "
            "[--q3-termination-repartition] [--q3-termination-grouped] "
            "[--q4-termination-construction] "
-           "[--q5-outer-transition-radial]\n";
+           "[--q5-outer-transition-radial] "
+           "[--q5-termination-buffer-radial]\n";
 }
 
 } // namespace
@@ -123,10 +124,14 @@ int main(int argc, char** argv) {
     bool q3TerminationGrouped=false;
     bool q4TerminationConstruction=false;
     bool q5OuterTransitionRadial=false;
+    bool q5TerminationBufferRadial=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
         if (option=="--legacy-construction") legacyConstruction=true;
         else if (option=="--verify-source-lineage") verifySourceLineage=true;
+        else if (option=="--q5-termination-buffer-radial") {
+            q5TerminationBufferRadial=true;
+        }
         else if (option=="--q5-outer-transition-radial") {
             q5OuterTransitionRadial=true;
         }
@@ -212,6 +217,7 @@ int main(int argc, char** argv) {
     hybridPolicy.enableTerminationConstructionQualitySelection=
         q4TerminationConstruction;
     hybridPolicy.enableOuterTransitionRadialMatching=q5OuterTransitionRadial;
+    hybridPolicy.enableTerminationBufferRadialMatching=q5TerminationBufferRadial;
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
 
