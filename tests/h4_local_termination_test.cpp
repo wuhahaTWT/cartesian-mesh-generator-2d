@@ -291,6 +291,8 @@ int main() {
     for (const double target:{1.0,0.1,0.01,0.001}) {
         const auto tight=resolveAutomaticHybridTransitionPlan2D(
             sharpLayers,Domain2D{{{-2.0,-1.5},{4.0,1.5}}},refinement(8U),target,4U);
+        check(tight.has_value(),
+              "Q5-1 bounded-search plan resolves for every scanned target");
         if (!tight) continue;
         const double cap=target*tight->targetCellSize;
         const double row=tight->ringThickness/
