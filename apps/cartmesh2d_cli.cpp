@@ -627,6 +627,24 @@ int main(int argc, char** argv) {
     if (unsupported != 0) {
         std::cerr << "Cut-cell construction produced " << unsupported
                   << " unsupported leaf geometry case(s)\n";
+        // Name the reasons instead of only counting them: an unnamed count is
+        // exactly the diagnostic gap R2/W0 set out to close.
+        std::size_t reported = 0;
+        for (const auto& cut : cutCells) {
+            if (cut.valid() || cut.kind != CutCellKind::Unsupported) continue;
+            if (reported >= 5) break;
+            std::cerr << "unsupported_leaf[" << reported << "] source=" << cut.sourceId
+                      << " key=" << cut.sourceKey
+                      << " bounds=(" << cut.backgroundBounds.min.x << ','
+                      << cut.backgroundBounds.min.y << ")-("
+                      << cut.backgroundBounds.max.x << ','
+                      << cut.backgroundBounds.max.y << ')';
+            for (const auto& issue : cut.issues) {
+                std::cerr << " issue=" << issue.message;
+            }
+            std::cerr << '\n';
+            ++reported;
+        }
         return EXIT_FAILURE;
     }
     const double cutCellSeconds = elapsedSeconds(cutCellStart);
