@@ -2,6 +2,7 @@
 #include "cartmesh2d/hybrid/TransitionCanonicalization2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -17,6 +18,17 @@
 
 namespace cartmesh2d {
 namespace {
+
+using H4ProfileClock = std::chrono::steady_clock;
+
+[[nodiscard]] double h4ProfileSeconds(H4ProfileClock::time_point start) noexcept {
+    return std::chrono::duration<double>(H4ProfileClock::now()-start).count();
+}
+
+// Process-wide instrumentation counter, single-threaded by construction like
+// globalTopologyBuilds in Topology2D.cpp.
+std::size_t conformalHybridBuilds=0U;
+
 
 [[nodiscard]] double polygonBoundsArea(const Polygon2D& polygon) noexcept {
     const auto bounds = polygon.bounds();
@@ -517,6 +529,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t remainderMaxLevel,
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& policy) {
+    ++conformalHybridBuilds;
     const auto buildStartGlobalTopologies=globalTopologyBuildCount2D();
     const auto buildStartGlobalTopologyCells=globalTopologyBuildInputCells2D();
     const auto buildStartGlobalTopologySeconds=globalTopologyBuildSeconds2D();
@@ -2207,42 +2220,68 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     const BoundaryLayerPolicy2D& layerPolicy,
     const HybridMeshPolicy2D& hybridPolicy) {
     RobustH4BuildResult2D result;
+    const auto totalStart=H4ProfileClock::now();
+    const auto startConformalBuilds=conformalHybridBuildCount2D();
+    const auto finish=[&]() -> RobustH4BuildResult2D& {
+        result.profile.totalSeconds=h4ProfileSeconds(totalStart);
+        result.profile.conformalHybridBuildCalls=
+            conformalHybridBuildCount2D()-startConformalBuilds;
+        return result;
+    };
+
+    auto stageStart=H4ProfileClock::now();
     result.requestedLayerCandidate=buildBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
+    result.profile.requestedLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.requestedLayerCandidate.success()) {
+        stageStart=H4ProfileClock::now();
+        ++result.profile.requestedHybridAttempts;
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.requestedLayerCandidate,domain,originalWalls,maxLevel,refinement,
             hybridPolicy);
+        result.profile.requestedHybridSeconds=h4ProfileSeconds(stageStart);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
-            return result;
+            return finish();
         }
         result.fallbackStage=H4FallbackStage2D::HybridCandidate;
     } else {
         result.fallbackStage=H4FallbackStage2D::RequestedLayers;
     }
 
+    stageStart=H4ProfileClock::now();
     result.localLayerCandidate=buildLocallyReducedBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
+    result.profile.localLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.localLayerCandidate.success()) {
+        stageStart=H4ProfileClock::now();
+        ++result.profile.localHybridAttempts;
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.localLayerCandidate,domain,originalWalls,maxLevel,refinement,
             hybridPolicy);
+        result.profile.localHybridSeconds=h4ProfileSeconds(stageStart);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             result.fallbackStage=H4FallbackStage2D::None;
-            return result;
+            return finish();
         }
         result.fallbackStage=H4FallbackStage2D::HybridCandidate;
     } else {
         result.fallbackStage=H4FallbackStage2D::LocalReduction;
     }
 
+    stageStart=H4ProfileClock::now();
+    ++result.profile.pureCutCellFallbackAttempts;
     result.fallback=buildPureCutCellFallback2D(
         domain,originalWalls,maxLevel,refinement,hybridPolicy);
+    result.profile.pureCutCellFallbackSeconds=h4ProfileSeconds(stageStart);
     result.mode=result.fallback.valid()
         ?H4MeshMode2D::PureCutCellFallback:H4MeshMode2D::Failed;
-    return result;
+    return finish();
+}
+
+std::size_t conformalHybridBuildCount2D() noexcept {
+    return conformalHybridBuilds;
 }
 
 const char* h4MeshModeName(H4MeshMode2D mode) noexcept {
@@ -2691,7 +2730,8 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
 
 bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
                               const std::filesystem::path& path,
-                              std::string* error) {
+                              std::string* error,
+                              const RobustH4Profile2D* robustProfile) {
     std::ofstream out(path);
     if (!out) {
         setError(error, "failed to open hybrid profile JSON");
@@ -2720,7 +2760,33 @@ bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
     out << "  \"solver_profile_candidate_quality_seconds\": "
         << profile.candidateQualitySeconds << ",\n";
     out << "  \"solver_profile_full_quality_seconds\": "
-        << profile.fullQualitySeconds << "\n";
+        << profile.fullQualitySeconds;
+    if (robustProfile) {
+        out << ",\n";
+        out << "  \"h4_total_seconds\": " << robustProfile->totalSeconds << ",\n";
+        out << "  \"h4_requested_layer_seconds\": "
+            << robustProfile->requestedLayerSeconds << ",\n";
+        out << "  \"h4_requested_hybrid_seconds\": "
+            << robustProfile->requestedHybridSeconds << ",\n";
+        out << "  \"h4_local_layer_seconds\": "
+            << robustProfile->localLayerSeconds << ",\n";
+        out << "  \"h4_local_hybrid_seconds\": "
+            << robustProfile->localHybridSeconds << ",\n";
+        out << "  \"h4_pure_cutcell_fallback_seconds\": "
+            << robustProfile->pureCutCellFallbackSeconds << ",\n";
+        out << "  \"h4_unattributed_seconds\": "
+            << robustProfile->unattributedSeconds() << ",\n";
+        out << "  \"h4_requested_hybrid_attempts\": "
+            << robustProfile->requestedHybridAttempts << ",\n";
+        out << "  \"h4_local_hybrid_attempts\": "
+            << robustProfile->localHybridAttempts << ",\n";
+        out << "  \"h4_pure_cutcell_fallback_attempts\": "
+            << robustProfile->pureCutCellFallbackAttempts << ",\n";
+        out << "  \"h4_conformal_hybrid_build_calls\": "
+            << robustProfile->conformalHybridBuildCalls << "\n";
+    } else {
+        out << "\n";
+    }
     out << "}\n";
     if (!out.good()) {
         setError(error, "failed while writing hybrid profile JSON");
