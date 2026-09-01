@@ -71,18 +71,20 @@
   },
   "implemented_rule": {
     "name": "Q5-1 outermost-transition radial size matching",
-    "statement": "No transition row may be radially thicker than the remainder background cell it borders. The outermost ring is cut into ceil(ringThickness / targetCellSize) radial rows, capped at 4.",
+    "statement": "No transition row may be radially thicker than the remainder background cell it borders. The outermost ring is cut into the smallest number of radial rows that satisfies the target, capped at 4 for the recorded runs. If the bounded search exhausts that cap before the target is reachable, the historical single-row construction is retained and the report marks the target unreachable rather than publishing a false match.",
     "derivation": "Both quantities already exist in the plan: ringThickness = totalThickness / ringCount and targetCellSize = domainScale * 2^-boundaryLevel. No new tuned constant.",
     "resolved_rows": {
       "circle": 2,
       "superellipse": 2
     },
+    "reachability_semantics": "q51_outer_transition_radial_target_reachable is true only when the resolved subdivision satisfies ringThickness/subdivision <= outerTransitionRadialTargetCells*targetCellSize. If the bounded search cannot satisfy the cap, subdivision falls back to 1 and reachable=false.",
     "safety_property": "The last row's radial offset is ring + rows/rows, arithmetically identical to the single-row offset ring + 1, so the committed outer envelope is unchanged. The remainder quadtree, its Cut cells and the immutable H4-1 layer are therefore untouched: only faces interior to the transition strip are added.",
-    "location": "resolveAutomaticHybridTransitionPlan2D (row count) and the transition fan loop in buildConformalHybridMesh2D (row emission)",
+    "location": "resolveAutomaticHybridTransitionPlan2D (row count and reachability) and the transition fan loop in buildConformalHybridMesh2D (row emission)",
     "opt_in_flag": "--q5-outer-transition-radial",
     "reported_fields": [
       "q51_outer_transition_radial_subdivision",
-      "q51_outer_transition_radial_declined"
+      "q51_outer_transition_radial_declined",
+      "q51_outer_transition_radial_target_reachable"
     ]
   },
   "results": {
