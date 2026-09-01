@@ -64,7 +64,7 @@ Level D 只借鉴架构思想。
 
 | 需求 | 实读位置与深度 | 取什么 | 等级 |
 |---|---|---|---|
-| 按局部长度比例塌缩退化边 | `OpenFOAM/src/dynamicMesh/polyTopoChange/polyTopoChange/edgeCollapser.{C,H}`、`applications/utilities/mesh/advanced/collapseEdges`（**仅确认存在，尚未逐行读**） | 「退化判据用局部边长比例而非绝对值」这一原则 | C/D |
+| 按局部长度比例塌缩退化边 | `OpenFOAM/src/dynamicMesh/polyTopoChange/polyTopoChange/edgeCollapser.{C,H}`、`applications/utilities/mesh/advanced/collapseEdges`（**仅确认存在，尚未逐行读**） | 「退化判据用局部边长比例而非绝对值」这一原则。**W1 已消费**：`IntersectionRegistryPolicy2D::gridCornerWeldFractionOfLocalH` 是 h 的比例而不是绝对 epsilon。同时 W1 实测确认了 OpenFOAM 把 snap 与 collapse 分成两个阶段的理由——在本项目里，逐 face 塌缩会让共享 spur 的两个面不一致，逐 leaf 焦合会让邻居 leaf 不一致，只有全局 canonical vertex 空间可行 | C/D |
 | 相对层厚与最小厚度语义 | `OpenFOAM/src/mesh/snappyHexMesh/snappyHexMeshDriver/layerParameters/layerParameters.H`（读成员与访问器清单：`relativeSizes_`、`firstLayerThickness_`、`finalLayerThickness_`、`expansionRatio_`、`minThickness_`、`featureAngle_`、`nGrow_`、`maxFaceThicknessRatio_`、`nBufferCellsNoExtrude_`、`nLayerIter_`、`nRelaxedIter_`） | 参数语义：厚度可相对局部尺寸给定；低于 `minThickness` 就不挤出；失败后有 relaxed 迭代 | D |
 | 窄缝层厚上限 | `OpenFOAM/src/mesh/snappyHexMesh/externalDisplacementMeshMover/medialAxisMeshMover.C:1378`（`maxThicknessToMedialRatio`）、`:151`（`minMedialAxisAngle`）、`:182`（`nMedialAxisIter`）（**读参数取用点，未逐行读求解过程**） | 「总层厚不超过到 medial axis 距离的固定比例」这一思想。二维将用「到最近非相邻 wall segment 的距离」作代理，且**不移动网格** | C/D |
 | 质量失败后的退层重试阶段机 | `OpenFOAM/src/mesh/snappyHexMesh/snappyHexMeshDriver/snappyLayerDriver.C`（**仅确认存在**；H2 审计曾读过其 extrusion unmark 路径） | 「挤出 → 质量检查 → unmark/减薄 → 重试」的分阶段回退结构 | D |

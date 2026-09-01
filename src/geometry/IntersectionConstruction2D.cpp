@@ -8,8 +8,11 @@
 
 namespace cartmesh2d {
 namespace {
-// Shared construction only absorbs arithmetic roundoff. The legacy sampling
-// policy may be larger, but must not enlarge this construction budget.
+// Roundoff budget for validating that a coordinate already *is* a dyadic grid
+// side. This is arithmetic bookkeeping, not a geometric snap, so it stays at
+// roundoff scale regardless of any weld budget the caller chose: see
+// IntersectionRegistryPolicy2D::gridCornerWeldFractionOfLocalH for the budget
+// that actually moves a point.
 constexpr double arithmeticFractionOfLocalH =
     IntersectionRegistryPolicy2D{}.snapFractionOfLocalH;
 
@@ -299,12 +302,17 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     const Point2D raw=s.segment.a+d*t;
     Point2D p=raw;
     if (line.axis==0U) p.x=target; else p.y=target;
-    // Only incident endpoints or this support's arithmetic grid corner may
-    // absorb roundoff. No nearest-feature search or Q1-sized movement occurs.
+    // Only incident endpoints or this support's grid corner may absorb the
+    // offset. No nearest-feature search or Q1-sized movement occurs.
+    //
+    // R2/W1: the budget is policy_.gridCornerWeldFractionOfLocalH, which defaults
+    // to the same roundoff value this used to hard-code. A caller that opts into a
+    // geometric weld gets consistent cross-leaf identity here, because these
+    // canonical vertices are shared by every leaf that touches them.
     const double gridH=std::ldexp(std::min(gridBounds_.max.x-gridBounds_.min.x,
                                          gridBounds_.max.y-gridBounds_.min.y),
                                   -static_cast<int>(gridLevel_));
-    const double eps=arithmeticFractionOfLocalH*
+    const double eps=policy_.gridCornerWeldFractionOfLocalH*
         std::min({h,gridH,vertices_[s.a].localH,vertices_[s.b].localH,
                   std::sqrt(squaredNorm(d))});
     std::size_t id;

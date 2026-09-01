@@ -62,6 +62,37 @@ struct IntersectionRegistryPolicy2D {
     // Dimensionless: the admissible displacement is this fraction of the
     // smaller local background scale. No absolute coordinate epsilon is used.
     double snapFractionOfLocalH = 64.0*std::numeric_limits<double>::epsilon();
+
+    // R2/W1: the budget for canonicalizing an intersection onto *this support's*
+    // arithmetic grid corner, separate from the proximity budget above.
+    //
+    // It defaults to the same roundoff-sized value, so every existing caller
+    // keeps byte-identical construction. A caller that needs a *geometric* weld
+    // raises it explicitly and owns the consequence.
+    //
+    // Why a geometric budget is sometimes needed. Refinement keeps producing
+    // wall/grid intersections that land a few 1e-5 of a cell from a grid corner.
+    // At roundoff budget they stay two distinct vertices and emit a corner spur
+    // with ~1e-7 long faces on a ~3e-3 cell; measured at circle level 10 that
+    // spur produced boundary face skewness 8.6 and the solver-quality gate
+    // rejected the whole mesh. The registry is the only place where welding can
+    // be consistent, because its canonical vertices are shared across leaves: a
+    // per-leaf or per-face weld makes neighbouring leaves disagree about a shared
+    // cell-side vertex, which was measured to produce 24 unclassified boundary
+    // edges (docs/R2_REFINEMENT_ROBUSTNESS_CN.md).
+    //
+    // Cost, and why it is bounded rather than free. Welding moves a point by at
+    // most this fraction of h, so each incident cell's area changes by at most
+    // about 1.5 * fraction * h^2, and the total over a boundary of length L is
+    // bounded by about 1.5 * fraction * h * L. That is a real, derived
+    // perturbation of the fluid-area invariant and callers must budget for it
+    // explicitly; see cartmesh2d_cli's physics gate.
+    //
+    // Anchoring: Q1 already declares any face with face_length / local_h < 0.01
+    // a hard failure, so a geometric budget must stay well under 0.01 to be
+    // unable to destroy a face the quality contract would have accepted.
+    double gridCornerWeldFractionOfLocalH =
+        64.0*std::numeric_limits<double>::epsilon();
 };
 
 struct GridLineIdentity2D {

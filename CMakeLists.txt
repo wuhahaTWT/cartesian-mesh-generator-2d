@@ -180,6 +180,10 @@ if(CARTMESH2D_BUILD_TESTS)
                           PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_h4_local_termination_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_weld_budget_tests tests/weld_budget_test.cpp)
+    target_link_libraries(cartmesh2d_weld_budget_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_weld_budget_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_refinement_attribution_tests
                    tests/refinement_attribution_test.cpp)
     target_link_libraries(cartmesh2d_refinement_attribution_tests
@@ -208,7 +212,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_boundary_layer_tests
             cartmesh2d_hybrid_mesh_tests
             cartmesh2d_h4_local_termination_tests
-            cartmesh2d_refinement_attribution_tests)
+            cartmesh2d_refinement_attribution_tests
+            cartmesh2d_weld_budget_tests)
         if(COMMAND cartmesh_enable_warnings)
             cartmesh_enable_warnings(${target})
         elseif(MSVC)
@@ -248,6 +253,8 @@ if(CARTMESH2D_BUILD_TESTS)
              COMMAND cartmesh2d_hybrid_mesh_tests)
     add_test(NAME cartmesh2d_stageH4_3_local_termination_tests
              COMMAND cartmesh2d_h4_local_termination_tests)
+    add_test(NAME cartmesh2d_stageR2_weld_budget_tests
+             COMMAND cartmesh2d_weld_budget_tests)
     add_test(NAME cartmesh2d_stageR2_refinement_attribution_tests
              COMMAND cartmesh2d_refinement_attribution_tests)
     add_test(NAME cartmesh2d_stageR2_refinement_ladder_gate_tests
