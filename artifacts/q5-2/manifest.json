@@ -1,0 +1,101 @@
+{
+  "stage": "Q5-2 graded termination buffer radial size matching, self-gated",
+  "date": "2026-09-01",
+  "baseline_commit": "9ef19a24fd6d5e5b9c9f4c6a3e0a8c1e5d2b7f30",
+  "rule": {
+    "statement": "No graded termination buffer row may be radially thicker than the remainder background cell it borders. The buffer is a locally reduced march, so it is re-resolved with more, thinner rows at the same total thickness rather than cut afterwards.",
+    "row_count": "smallest rows with total/rows <= cap",
+    "growth_ratio": "largest ratio in (1, original] whose outermost row is <= cap; at fixed total thickness a larger ratio keeps the first row thinner, preserving near-wall grading",
+    "cap": "outerTransitionRadialTargetCells * remainderCellSize, reusing the Q5-1 value of 1.0",
+    "maximum_rows": 12,
+    "new_tunables": "none"
+  },
+  "why_self_gated": {
+    "difference_from_q5_1": "The fan is explicitly interpolated ring by ring, so Q5-1 could write the last row offset as ring + rows/rows and keep the outer envelope bit-identical. The buffer front is stepped and produced by buildLocallyReducedBoundaryLayerStrips2D, where each column's layer count comes from a local collision/concavity test.",
+    "consequence": "Holding the requested total thickness does not hold the actual stepped front: a column that could only march 2 of 3 rows to 0.0447 may march 3 of 6 thinner rows to 0.0554. The remainder therefore changes.",
+    "post_hoc_subdivision_rejected": "At a step the outermost cell's radial face is itself on the outer envelope, so radial subdivision inserts collinear vertices into the remainder boundary loop. strictlyConvex treats cross <= 1e-10*scale as concave, so every such Cut cell would be force-ear-clipped, which is the sliver mechanism measured during the Q5-1 closeout. canonicalizeTransitionEnvelope2D early-returns under localTermination, so nothing removes those vertices.",
+    "gate": "Build both fronts, commit the re-resolved one only on a strict typed hard-count decrease. A tie keeps the historical march."
+  },
+  "diagnosis": {
+    "method": "every hard face split by the cell kinds on both sides; Termination cells further separated into buffer rows 1/2/3 versus remainder-derived by graph distance from the H4-1 layer",
+    "dominant_family": {
+      "narrow_gap": {"pair": "Term(rem) <- Term(buf3)", "volume_ratio": 160, "face_weight": 16, "share": "176 of 430"},
+      "sharp_trailing_edge": {"pair": "Term(rem) <- Term(buf3)", "face_weight": 100, "volume_ratio": 76, "share": "176 of 377"},
+      "concave_l": {"pair": "Term(buf1) <- BL", "volume_ratio": 31, "face_weight": 13, "share": "44 of 206"}
+    },
+    "buffer_row_areas_in_background_cells": {
+      "concave_l": {"h": 0.01953125, "row1": 1.495, "row2": 2.168, "row3": 3.143},
+      "sharp_trailing_edge": {"h": 0.01657282, "row1": 1.69, "row2": 2.451, "row3": 3.554},
+      "narrow_gap": {"h": 0.01366629, "row1": 0.891, "row2": 4.733, "row3": 7.336}
+    }
+  },
+  "results": {
+    "sharp_trailing_edge": {
+      "committed": true,
+      "hard_with_historical_march": 377,
+      "hard_with_matching": 238,
+      "reduction": "37 percent",
+      "rows": "3 -> 4",
+      "growth_ratio": "1.45 -> 1.08698",
+      "outer_row_thickness": "0.0383717 -> 0.0234375",
+      "row_cap": 0.0234375,
+      "solver_cells": "3391 -> 3629",
+      "boundary_layer_cells": "1044 -> 1044",
+      "area_error": 4.619e-14,
+      "per_metric": {
+        "volume_ratio": "156 -> 78",
+        "face_weight": "145 -> 78",
+        "face_length_over_local_background_h": "14 -> 14",
+        "face_length_over_sqrt_owner_area": "10 -> 10",
+        "face_length_over_sqrt_neighbour_area": "14 -> 14",
+        "minimum_interior_angle_deg": "23 -> 25",
+        "non_orthogonality_deg": "11 -> 12",
+        "skewness": "2 -> 4",
+        "hydraulic_aspect": "2 -> 3"
+      }
+    },
+    "concave_l": {
+      "committed": false,
+      "hard_with_historical_march": 206,
+      "hard_with_matching": 255,
+      "outcome": "declined; hybrid.cm2d, hybrid.solver.cm2d and hybrid.quality-contract.json byte-identical to baseline"
+    },
+    "narrow_gap": {
+      "committed": false,
+      "hard_with_historical_march": 430,
+      "hard_with_matching": 749,
+      "outcome": "declined; byte-identical to baseline",
+      "note": "without the gate this geometry would have gained 74 percent more hard issues, which is why the rule is not applied unconditionally"
+    },
+    "circle_and_superellipse": {
+      "outcome": "localReductionApplied is false, so Q5-2 is inert; solver .cm2d byte-identical to the Q5-1-only build (circle WARN with 0 hard, superellipse 12 hard)"
+    }
+  },
+  "verification": {
+    "ctest": "75/75 PASS",
+    "declined_builds_byte_identical_to_baseline": ["hybrid.cm2d", "hybrid.solver.cm2d", "hybrid.quality-contract.json"],
+    "deterministic_replay_identical": ["hybrid.cm2d", "hybrid.solver.cm2d", "hybrid.quality-contract.json", "hybrid.solver-quality.json"],
+    "independent_openfoam_reader": "PASS",
+    "openfoam_checkMesh": {
+      "image": "opencfd/openfoam-run:2606",
+      "q52_sharp_trailing_edge": {
+        "result": "Mesh OK",
+        "max_aspect_ratio": 8.32883709,
+        "max_non_orthogonality_deg": 69.3203693,
+        "max_skewness": 3.34005325,
+        "minimum_face_area": 9.849335481e-08,
+        "note": "max aspect ratio improves from 13.912 on the Q4-1 sharp-tail mesh"
+      }
+    }
+  },
+  "cost": "With the flag on, every localTermination geometry builds two fronts, i.e. two full hybrid builds. This is a global candidate comparison rather than a patch-local selection. Zero cost with the flag off.",
+  "regression_gates_added": {
+    "unit_test": "tests/h4_local_termination_test.cpp asserts the sharp taper stays Hybrid under a Q5-2 policy, that committed equals matched < historical, and that this geometry is a measured win",
+    "ci": "cartmesh2d-ci.yml builds q52_concave_l, q52_sharp_trailing_edge and q52_narrow_gap; asserts committed == (matched < historical), historical == baseline, after <= before, byte identity with the baseline when declined, a strict decrease on the sharp taper, plus independent reader and checkMesh coverage"
+  },
+  "remaining": {
+    "term_buf1_versus_boundary_layer": "concave_l 44, sharp_trailing_edge 38, narrow_gap 34 hard faces where the buffer's FIRST row is larger than the H4-1 layer cell under it. Opposite direction to this rule; raising the growth ratio already thins that row but no criterion targets it.",
+    "declined_geometries": "concave_l and narrow_gap keep their Term(rem) <- Term(buf3) family (176 faces on narrow_gap). Reaching it needs a buffer subdivision that preserves the stepped front, which first requires resolving collinear vertices being classified concave by strictlyConvex, the route the Q2 document records as blocked.",
+    "boundary_layer_metrics": "still OBSERVED"
+  }
+}

@@ -260,6 +260,31 @@ int main() {
               sharpHybrid.metrics.boundaryLayerCellCount,
           "declined Q4-1 selection retains every non-Q4 boundary-layer cell");
 
+    // Q5-2 re-resolves the graded termination buffer with more, thinner rows.
+    // The march is locally reduced, so that moves the stepped front and changes
+    // the remainder: the outcome must be measured, and the re-resolved front may
+    // only be committed when it strictly lowers the typed hard count.
+    HybridMeshPolicy2D q52Policy;
+    q52Policy.enableTerminationBufferRadialMatching=true;
+    const auto sharpQ52=sharpChain.success()
+        ?buildRobustH4Mesh2D(
+             {*sharpChain.chain},fourLayers(),Domain2D{{{-2.0,-1.5},{4.0,1.5}}},
+             BoundaryRegion2D(sharpWall),8U,refinement(8U),{},q52Policy)
+        :RobustH4BuildResult2D{};
+    check(sharpQ52.success() && sharpQ52.mode==H4MeshMode2D::Hybrid,
+          "sharp taper keeps a hybrid mesh under a Q5-2 policy");
+    if (sharpQ52.mode==H4MeshMode2D::Hybrid) {
+        const auto& m=sharpQ52.hybridCandidate.metrics;
+        check(m.q52TerminationBufferRadialCommitted==
+                  (m.q52TerminationBufferHardWithMatching<
+                   m.q52TerminationBufferHardWithHistoricalMarch),
+              "Q5-2 commits the re-resolved buffer only on a strict hard-count win");
+        check(m.q52TerminationBufferHardWithHistoricalMarch>0U,
+              "Q5-2 reports the historical march hard count it was measured against");
+        check(m.q52TerminationBufferRadialCommitted,
+              "the sharp taper is a measured Q5-2 win");
+    }
+
     const BoundaryLoop fallbackWall({{0.3,0.3},{0.7,0.3},{0.7,0.7},{0.3,0.7}});    const auto fallbackChain=makeClosedWallChain2D(fallbackWall,0U,"wall_0");
     LayerParameters2D invalidLayers=fourLayers();
     invalidLayers.nLayers=0U;

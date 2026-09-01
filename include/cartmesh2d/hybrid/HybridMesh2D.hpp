@@ -218,6 +218,18 @@ struct HybridMeshMetrics2D {
     // whether the requested subdivision had to be declined to keep the mesh.
     std::size_t q51OuterTransitionRadialSubdivision = 1;
     bool q51OuterTransitionRadialDeclined = false;
+    // Q5-2: the graded termination buffer re-resolved with more, thinner rows is
+    // only committed when it strictly lowers the typed hard count. Both counts
+    // are reported so a decline is a measurement, not a silent no-op.
+    bool q52TerminationBufferRadialCommitted = false;
+    std::size_t q52TerminationBufferHardWithMatching = 0;
+    std::size_t q52TerminationBufferHardWithHistoricalMarch = 0;
+    // Rows and growth ratio the buffer march actually used, so the committed
+    // grading is evidence rather than something re-derived from the rule.
+    std::size_t q52TerminationBufferRows = 0;
+    double q52TerminationBufferGrowthRatio = 0.0;
+    double q52TerminationBufferOuterRowThickness = 0.0;
+    double q52TerminationBufferRowCap = 0.0;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -296,6 +308,12 @@ struct HybridMeshPolicy2D {
     // outer transition row may be at most one background cell thick.
     double outerTransitionRadialTargetCells = 1.0;
     std::size_t maximumOuterTransitionRadialSubdivision = 4U;
+    // Q5-2 carries the same rule into the graded local-termination buffer. The
+    // buffer is a boundary-layer march, so instead of cutting rows afterwards it
+    // is re-resolved with more, thinner rows at the same total thickness, which
+    // keeps the outer front where the ungated march put it.
+    bool enableTerminationBufferRadialMatching = false;
+    std::size_t maximumTerminationBufferRows = 12U;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -548,48 +566,96 @@ resolveAutomaticHybridTransitionPlan2D(
     // newest and most invasive first -- before the caller is allowed to
     // consider pure Cut-cell fallback: losing the whole boundary layer is a far
     // larger regression than declining a bounded construction choice.
-    std::vector<HybridMeshPolicy2D> ladder{resolvedPolicy};
-    if (resolvedPolicy.enableTerminationConstructionQualitySelection) {
-        auto step=ladder.back();
-        step.enableTerminationConstructionQualitySelection=false;
-        ladder.push_back(step);
-    }
-    if (ladder.back().transitionOuterRingRadialSubdivision>1U) {
-        auto step=ladder.back();
-        step.transitionOuterRingRadialSubdivision=1U;
-        ladder.push_back(step);
-    }
-    for (std::size_t pass=0;pass<ladder.size();++pass) {
-        resolvedPolicy=ladder[pass];
-        if (boundaryLayers.localReductionApplied) {
-            // Different valid quadtree phases can place a graded termination front
-            // arbitrarily close to a nested Cartesian line. Try a short, fixed and
-            // deterministic family of geometric growth ratios; commit only a fully
-            // solver-valid candidate. Every attempt is transactional.
-            constexpr double candidates[]{1.45,1.55,1.50};
-            for (const double growth:candidates) {
-                resolvedPolicy.terminationGrowthRatio=growth;
-                auto attempt=buildConformalHybridMesh2D(
-                    boundaryLayers,domain,originalWalls,remainderMaxLevel,
-                    remainderRefinement,resolvedPolicy);
-                result=std::move(attempt);
-                if (result.success()) break;
-            }
-        } else {
-            result = buildConformalHybridMesh2D(
-                boundaryLayers, domain, originalWalls, remainderMaxLevel,
-                remainderRefinement, resolvedPolicy);
+    const auto buildThroughLadder=[&](const HybridMeshPolicy2D& base,
+                                      HybridMeshPolicy2D& applied) {
+        std::vector<HybridMeshPolicy2D> ladder{base};
+        if (base.enableTerminationConstructionQualitySelection) {
+            auto step=ladder.back();
+            step.enableTerminationConstructionQualitySelection=false;
+            ladder.push_back(step);
         }
-        if (result.success()) break;
+        if (ladder.back().transitionOuterRingRadialSubdivision>1U) {
+            auto step=ladder.back();
+            step.transitionOuterRingRadialSubdivision=1U;
+            ladder.push_back(step);
+        }
+        HybridMeshBuildResult2D candidate;
+        for (std::size_t pass=0;pass<ladder.size();++pass) {
+            applied=ladder[pass];
+            if (boundaryLayers.localReductionApplied) {
+                // Different valid quadtree phases can place a graded termination
+                // front arbitrarily close to a nested Cartesian line. Try a
+                // short, fixed and deterministic family of geometric growth
+                // ratios; commit only a fully solver-valid candidate. Every
+                // attempt is transactional.
+                constexpr double candidates[]{1.45,1.55,1.50};
+                for (const double growth:candidates) {
+                    applied.terminationGrowthRatio=growth;
+                    auto attempt=buildConformalHybridMesh2D(
+                        boundaryLayers,domain,originalWalls,remainderMaxLevel,
+                        remainderRefinement,applied);
+                    candidate=std::move(attempt);
+                    if (candidate.success()) break;
+                }
+            } else {
+                candidate = buildConformalHybridMesh2D(
+                    boundaryLayers, domain, originalWalls, remainderMaxLevel,
+                    remainderRefinement, applied);
+            }
+            if (candidate.success()) break;
+        }
+        return candidate;
+    };
+    const auto hardIssueCount=[](const HybridMeshBuildResult2D& candidate) {
+        return candidate.success()
+            ?static_cast<std::size_t>(std::count_if(
+                 candidate.qualityContract.issues.begin(),
+                 candidate.qualityContract.issues.end(),
+                 [](const QualityContractIssue2D& issue) {
+                     return issue.level==QualityContractLevel2D::Hard;
+                 }))
+            :std::numeric_limits<std::size_t>::max();
+    };
+    HybridMeshPolicy2D appliedPolicy=resolvedPolicy;
+    result=buildThroughLadder(resolvedPolicy,appliedPolicy);
+    // Q5-2: unlike the explicitly interpolated fan, the graded termination
+    // buffer is a locally reduced march. Re-resolving it with more, thinner rows
+    // holds the requested total thickness but not the actual stepped front,
+    // because every reduced column now stops at a different distance. The
+    // remainder therefore changes and the outcome is measured, not assumed:
+    // build both fronts and commit the re-resolved one only when it strictly
+    // lowers the typed hard count. A tie keeps the historical march, so the flag
+    // can never change bytes without a measured reason.
+    std::size_t q52HardMatched=0U,q52HardHistorical=0U;
+    bool q52Committed=false;
+    if (resolvedPolicy.enableTerminationBufferRadialMatching &&
+        boundaryLayers.localReductionApplied) {
+        auto historicalPolicy=resolvedPolicy;
+        historicalPolicy.enableTerminationBufferRadialMatching=false;
+        HybridMeshPolicy2D historicalApplied=historicalPolicy;
+        auto historical=buildThroughLadder(historicalPolicy,historicalApplied);
+        q52HardMatched=hardIssueCount(result);
+        q52HardHistorical=hardIssueCount(historical);
+        if (q52HardMatched<q52HardHistorical) {
+            q52Committed=true;
+        } else {
+            result=std::move(historical);
+            appliedPolicy=historicalApplied;
+        }
     }
+    resolvedPolicy=appliedPolicy;
+    result.metrics.q52TerminationBufferRadialCommitted=q52Committed;
+    result.metrics.q52TerminationBufferHardWithMatching=q52HardMatched;
+    result.metrics.q52TerminationBufferHardWithHistoricalMarch=q52HardHistorical;
     result.metrics.q41ConstructionSelectionDeclined=
-        ladder.front().enableTerminationConstructionQualitySelection &&
-        result.success() &&
-        !resolvedPolicy.enableTerminationConstructionQualitySelection;
+        resolvedPolicy.enableTerminationConstructionQualitySelection==false &&
+        basePolicy.enableTerminationConstructionQualitySelection &&
+        result.success();
     result.metrics.q51OuterTransitionRadialSubdivision=
         result.success()?resolvedPolicy.transitionOuterRingRadialSubdivision:1U;
     result.metrics.q51OuterTransitionRadialDeclined=
-        ladder.front().transitionOuterRingRadialSubdivision>1U &&
+        basePolicy.enableOuterTransitionRadialMatching &&
+        plan->outerRingRadialSubdivision>1U &&
         result.success() &&
         resolvedPolicy.transitionOuterRingRadialSubdivision<=1U;
     result.metrics.transitionRingCount = plan->ringCount;
