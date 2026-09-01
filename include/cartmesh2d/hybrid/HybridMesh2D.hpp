@@ -350,6 +350,37 @@ struct PureCutCellFallback2D {
     }
 };
 
+// Top-level attribution for the H4 product path. R1F recorded that the existing
+// solver-side sub-phase numbers cannot explain the end-to-end wall time: the
+// robust path may run buildConformalHybridMesh2D up to twelve times (two layer
+// candidates x two construction-selection passes x three growth ratios) before
+// it reaches the pure Cut-cell fallback, and none of that was attributed.
+//
+// The seconds are wall time and therefore not reproducible; only the call
+// counters are deterministic and may be compared across runs.
+struct RobustH4Profile2D {
+    double requestedLayerSeconds = 0.0;
+    double requestedHybridSeconds = 0.0;
+    double localLayerSeconds = 0.0;
+    double localHybridSeconds = 0.0;
+    double pureCutCellFallbackSeconds = 0.0;
+    double totalSeconds = 0.0;
+    // Deterministic: how many times each stage entered, and how many conformal
+    // hybrid builds the whole robust path consumed.
+    std::size_t requestedHybridAttempts = 0;
+    std::size_t localHybridAttempts = 0;
+    std::size_t pureCutCellFallbackAttempts = 0;
+    std::size_t conformalHybridBuildCalls = 0;
+
+    // Seconds that the stage timers above do not account for.
+    [[nodiscard]] double unattributedSeconds() const noexcept {
+        const double attributed = requestedLayerSeconds + requestedHybridSeconds +
+                                  localLayerSeconds + localHybridSeconds +
+                                  pureCutCellFallbackSeconds;
+        return totalSeconds > attributed ? totalSeconds - attributed : 0.0;
+    }
+};
+
 struct RobustH4BuildResult2D {
     H4MeshMode2D mode = H4MeshMode2D::Failed;
     H4FallbackStage2D fallbackStage = H4FallbackStage2D::None;
@@ -357,12 +388,19 @@ struct RobustH4BuildResult2D {
     BoundaryLayerBuildResult2D localLayerCandidate;
     HybridMeshBuildResult2D hybridCandidate;
     PureCutCellFallback2D fallback;
+    RobustH4Profile2D profile;
 
     [[nodiscard]] bool success() const noexcept {
         return mode==H4MeshMode2D::Hybrid ||
                (mode==H4MeshMode2D::PureCutCellFallback && fallback.valid());
     }
 };
+
+// Monotonic count of buildConformalHybridMesh2D calls in this process, in the
+// same instrumentation style as globalTopologyBuildCount2D(). It lets a caller
+// prove by measurement how many full hybrid constructions a run consumed.
+[[nodiscard]] std::size_t conformalHybridBuildCount2D() noexcept;
+
 
 // Transactional H4-3 product path. Pure Cut-cell is attempted only after the
 // requested strip, local reduction/termination and conformal hybrid candidates
@@ -593,9 +631,15 @@ resolveAutomaticHybridTransitionPlan2D(
 // Wall-time measurements are written separately from the report because the
 // report is compared byte-for-byte by the determinism regressions and timings
 // are not reproducible.
+//
+// Passing a RobustH4Profile2D adds the top-level H4 stage attribution, so the
+// profile can be checked against the measured end-to-end wall time instead of
+// only describing the one hybrid candidate that happened to be committed.
 [[nodiscard]] bool writeHybridProfileJson2D(
     const HybridMeshBuildResult2D& result,
     const std::filesystem::path& path,
-    std::string* error = nullptr);
+    std::string* error = nullptr,
+    const RobustH4Profile2D* robustProfile = nullptr);
+
 
 } // namespace cartmesh2d

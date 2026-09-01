@@ -326,6 +326,32 @@ jobs:
             --collect-only
           diff -ru build/q1_baselines build/q1_baselines_repeat
 
+      - name: Gate the pure Cut-cell refinement ladder
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This ladder already holds every SolverQualityPolicy2D hard limit up to
+          # level 9 (about 20k leaves in under a second), so it is gated: it is a
+          # real regression guard on refinement behaviour that works today.
+          python3 tools/verification/refinement_ladder.py \
+            --repo . --build-dir build --evidence-dir build/r2_ladder \
+            --output-dir build/r2_ladder --manifest-name cutcell-ladder-manifest.json \
+            --gate \
+            --ladder circle:cutcell:6,7,8,9
+
+      - name: Record the hybrid refinement ladder
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Not gated yet, and deliberately so: Q1 hard issue counts still grow
+          # with refinement and level 9 still fails, both documented in
+          # docs/R2_REFINEMENT_ROBUSTNESS_CN.md. R2/W2 flips this to --gate.
+          # Level 9 is left to the local long ladder because it costs ~150 s.
+          python3 tools/verification/refinement_ladder.py \
+            --repo . --build-dir build --evidence-dir build/r2_ladder \
+            --output-dir build/r2_ladder --manifest-name hybrid-ladder-manifest.json \
+            --ladder circle:hybrid:6,7,8
+
       - name: Upload acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -338,4 +364,5 @@ jobs:
             build/q0_baselines/*.json
             build/q1_baselines/*.json
             build/q1_scale/**
+            build/r2_ladder/*-ladder-manifest.json
           if-no-files-found: error
