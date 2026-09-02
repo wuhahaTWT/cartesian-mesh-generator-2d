@@ -1,15 +1,32 @@
-# cartmesh2d — 原生二维自适应 Cartesian / Cut-cell 网格生成器
+# cartmesh2d — 原生二维自适应 Cartesian / Cut-cell / Hybrid CFD 网格生成器
 
-`cartmesh2d` 是一个**独立、封闭、原生二维**仓库。
+`cartmesh2d` 是一个**独立、封闭、原生二维**的 CFD 网格生成项目。
 
-它不是三维 `cartmesh` 的 `z=0` 模式，也不通过把 `Point3D`、Octree 或 3D Cut-cell 代码模板化来复用三维核心。二维项目首先追求一个小而完整、可验证、可作为结题成果的二维 CFD 网格生成核心；三维项目继续独立推进。
+它不是三维 `cartmesh` 的 `z=0` 模式，也不依赖把 `Point3D`、Octree 或 3D Cut-cell
+代码模板化来复用三维核心。二维项目的目标是形成一个完整、可验证、可独立交付的二维
+Cartesian / Cut-cell / Hybrid 网格生成器；三维项目继续独立推进。
 
-## macOS 桌面应用
+## 当前项目状态
 
-`desktop/` 提供可双击运行的 CartMesh2D 图形界面：选择 DXF、设置网格规模、生成并
-预览真实 CM2D 单元，以及导出 VTK/CM2D/JSON/OpenFOAM case。Apple Silicon 本地
-打包命令与产品边界见 `docs/PRODUCT1_MAC_DESKTOP_CN.md`。同一套 Electron 界面代码
-保留 Windows 打包能力，但 Windows 可执行文件必须在 Windows 环境另行构建和验收。
+当前质量状态、五个验收案例、加密上限、各轮次关闭情况与正在推进的技术主线统一维护于：
+
+**[docs/CURRENT_STATE_CN.md](docs/CURRENT_STATE_CN.md)**
+
+README 只描述相对稳定的产品能力与使用入口，不重复登记会随开发变化的测试数字和阶段状态。
+
+## 核心能力
+
+- 原生二维 Cartesian 背景网格；
+- 自适应 Quadtree 细化与 2:1 balance；
+- 外流默认语义下的真实二维 Cut-cell polygon；
+- 小 Cut-cell 检测、稳定化与 solver topology；
+- 原生二维 boundary-layer quad strip 与 Cartesian/Cut-cell remainder 共形拼接；
+- 复杂几何下的局部 layer termination 与 pure Cut-cell fallback；
+- 无量纲、分类型的 solver-quality / Q1 质量合同；
+- DXF 曲线离散、单位换算与边界 patch 语义传递；
+- VTK、CM2D、JSON 与 OpenFOAM case 导出；
+- 全域最低层级、物面距离带与矩形区域等确定性 sizing controls；
+- macOS Electron 桌面应用，并保留 Windows 打包能力。
 
 ## 默认 CFD 物理语义
 
@@ -17,11 +34,11 @@
 
 ```text
 Domain2D = 外部计算域
-BoundaryLoop = 固体壁面/障碍物轮廓
+BoundaryLoop = 固体壁面 / 障碍物轮廓
 默认 fluid region = Domain2D - solid interior
 ```
 
-因此，对一个放在矩形计算域中的翼型、圆柱、叶片截面或其他闭合物体：
+因此，对放在矩形计算域中的翼型、圆柱、叶片截面或其他闭合物体：
 
 - 物体内部**不生成流体网格**；
 - 物体外部到计算域边界之间生成 Cartesian / Quadtree / Cut-cell 流体网格；
@@ -29,7 +46,7 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 - 计算域外框形成 `DomainBoundary`；
 - 边界附近局部细化并由 Cut-cell 表达真实几何。
 
-只有明确的内部流/管道流场景才使用 `FluidRegion2D::Interior`。内部流不是默认产品语义。
+只有明确的内部流 / 管道流场景才使用 `FluidRegion2D::Interior`。内部流不是默认产品语义。
 
 ## 核心流水线
 
@@ -37,59 +54,20 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 2D solid closed boundary + outer computational domain
     -> geometry validation
     -> Cartesian background grid
-    -> boundary/cell intersection classification
+    -> boundary / cell intersection classification
     -> adaptive Quadtree refinement
     -> 2:1 balance
     -> geometric inside / outside / intersected classification
     -> physical fluid-side selection (default: exterior)
-    -> exterior Cut-cell polygon construction
+    -> Cut-cell / hybrid construction
     -> small-cell handling
-    -> cell-edge-neighbor topology
-    -> mesh quality validation
-    -> solver/standard export
-    -> visualization (last)
+    -> cell-edge-neighbour solver topology
+    -> mesh / solver quality validation
+    -> VTK / CM2D / JSON / OpenFOAM export
+    -> visualization
 ```
 
-## 阶段
-
-- **2D-0**：二维几何内核
-- **2D-1**：均匀 Cartesian 网格与几何分类
-- **2D-2**：Quadtree 自适应与 2:1 平衡
-- **2D-3**：真实二维 Cut-cell polygon + 明确 fluid-side
-- **2D-4**：完整 cell-edge-neighbor 拓扑，含 solid wall 与 outer domain boundary
-- **2D-5**：小 Cut-cell 检测与稳定化/聚合
-- **2D-6**：质量、导出、最终 CFD 语义验收
-- **2D-V**：可视化；只有 2D-6 核心验收后才进入
-
-基础阶段之后已经完成以下精细化路线：
-
-- **H1**：可控高密度 sizing field；
-- **H2**：大规模 Quadtree / topology scalability；
-- **H3**：solver topology 与质量稳定化；
-- **H4-1**：原生二维 boundary-layer quad strip；
-- **H4-2**：outer envelope 与 Cartesian/Cut-cell remainder 共形拼接；
-- **H4-3**：复杂几何局部降层、真实 layer termination 和最终 pure Cut-cell fallback。
-
-当前 H4-3 基线同时验证 circle、superellipse、concave L、sharp trailing edge
-和 narrow gap，五例均通过 OpenFOAM v2606 `checkMesh`。但**通过 `checkMesh` 不等于
-通过 Q1 质量合同**：sharp trailing edge 与 narrow gap 的 Q1 短面仍为 FAIL，
-sharp-tail 的 R1 迁移正式结论是 NO-GO。逐案例 × 逐门的准确状态见
-`docs/CURRENT_STATE_CN.md`。
-
-H4 算法说明见 `docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；质量事实基线与
-provenance 见 `docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 和 `artifacts/q0/`；
-无量纲 typed solver-quality contract 见
-`docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`；
-termination 局部质量修复的四个变体见 `docs/Q3_Q4_TERMINATION_QUALITY_CN.md`。
-
-Q2 当前仍为部分完成：superellipse 微短面修复见
-`docs/Q2_INTERSECTION_CANONICALIZATION_PARTIAL_CN.md`；共享交点构造、公共边分割
-及新旧路径对照见 `docs/Q2A_SHARED_CONSTRUCTION_DESIGN_CN.md` 和 `artifacts/q2a/`。
-hybrid CLI 默认使用共享路径，末尾 `--legacy-construction` 可运行旧路径。
-narrow gap / sharp trailing edge 的 Q1 短面失败尚未解决，不能以 `checkMesh` 通过
-登记 Q2 全部完成。
-
-## 独立构建与测试
+## 快速构建与测试
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_TESTS=ON
@@ -97,8 +75,30 @@ cmake --build build -j4
 ctest --test-dir build --output-on-failure
 ```
 
-本仓库不需要三维 `cartmesh` 源码，也不再使用
+本仓库不需要三维 `cartmesh` 源码，也不使用
 `-DCARTMESH_BUILD_2D=ON` 或 `add_subdirectory(cartmesh2d)`。
+
+主要命令行入口包括：
+
+```text
+cartmesh2d_cli          纯 Cartesian / Quadtree / Cut-cell 路径
+cartmesh2d_hybrid_cli   boundary-layer + Cartesian / Cut-cell hybrid 路径
+cartmesh2d_dxf_cli      DXF -> normalized 2D boundary 转换
+```
+
+## 质量与验证体系
+
+项目不会用“图片看起来正常”或单一 `checkMesh` 结果代替内部质量合同。主要验证层彼此独立：
+
+| 验证层 | 作用 |
+|---|---|
+| topology audit | 检查重复、孤立、非流形边以及面积守恒等拓扑不变量 |
+| solver quality | 检查 face weight、volume ratio、non-orthogonality、boundary skewness 等硬限 |
+| OpenFOAM `checkMesh` | 外部求解器生态的独立网格检查 |
+| Q1 contract | 无量纲、分类型的产品质量合同，用于比一般 solver gate 更细地定位缺陷 |
+
+当前逐案例结果和各门的准确关系只在
+[docs/CURRENT_STATE_CN.md](docs/CURRENT_STATE_CN.md) 中维护。
 
 ## 关键验收不变量
 
@@ -114,50 +114,20 @@ DomainBoundary > 0
 
 如果上述任意一条不满足，即使 topology audit 为 0、CI 全绿或图片能画出来，也不得宣称网格正确。
 
-## 开发前必读
+## 自适应与 sizing controls
 
-1. `AGENTS.md`
-2. `docs/PROJECT_BRIEF_CN.md`
-3. `docs/ARCHITECTURE_CN.md`
-4. `docs/STAGE_PLAN_CN.md`
-5. `docs/ACCEPTANCE_CN.md`
+边界自适应网格用于几何分辨；如果需要受控 PDE 收敛序列，可以用 `minimum-level`
+为整个计算域设置 Quadtree 层级下限。默认值保留原有边界自适应行为。
 
-如果你要接手当前这一轮（R2：加密鲁棒性与 CFD 可解性），先读
-`docs/R2_HANDOFF_CN.md`：它给出两条并行主线的关键问题、已被实测排除的路线，以及
-每条改动的验收清单。实测数据与根因在 `docs/R2_REFINEMENT_ROBUSTNESS_CN.md`，
-参考项目的许可证与借鉴等级在 `docs/R2_REFERENCE_AUDIT_CN.md`。
+在全域 `minimum-level` 和物面 `max-level` 之间，还可以叠加：
 
-## 加密鲁棒性当前边界
+- `--distance-band`：按物面距离设置目标层级；
+- `--refine-box`：对轴对齐矩形区域设置目标层级，可用于尾迹等区域加密。
 
-```text
-纯 Cut-cell（cartmesh2d_cli）      稳到 level 9（13024 solver cells、0.54 s）
-                                   level 10 失败：格点 spur -> boundary skewness 8.6
-hybrid 边界层（hybrid_cli）        稳到 level 8
-                                   level 9 失败：壁面切向分辨率被输入折线顶点数锁死
-```
+多个 sizing 条件取最大的目标层级，并继续受 `max-level` 上限约束。程序会输出
+`.sizing.json` 记录计算域、尺寸场、层级直方图和 2:1 balance 结果。
 
-阶梯测量与回归门：`tools/verification/refinement_ladder.py`，基线
-`artifacts/r2/w0-baseline-manifest.json`。任何与加密相关的改动都必须给出改动前后
-两份 manifest。
-
-## PDE 验证用全局最低层级
-
-边界自适应网格适合几何分辨，但单独增加 `max-level` 不会细化远场，不能构成受控的
-PDE 网格收敛序列。CLI 的最后一个可选参数 `minimum-level` 可对整个计算域设置
-Quadtree 层级下限；默认 `0` 完全保留原来的边界自适应行为：
-
-```text
-cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
-```
-
-上例是全域至少 level 6、嵌入边界达到 level 8。该参数用于验证或需要全域分辨率的
-仿真，不应被误写成边界自适应本身已经实现全局网格收敛。
-
-## 高密度尺寸场
-
-在全域 `minimum-level` 和物面 `max-level` 之间，可以叠加任意数量的物面距离带与
-轴对齐矩形区域。所有尺寸场取最大的目标层级，因此参数顺序不会改变网格；目标层级仍受
-`max-level` 上限约束。下游矩形区域就是第一版确定性尾迹加密原语：
+示例：
 
 ```sh
 ./build/cartmesh2d_cli \
@@ -167,21 +137,19 @@ cartmesh2d_cli boundary.xy output 8 0.25 0.20 exterior openfoam-case 6
   --refine-box 0.80 -0.10 1.30 0.10 8
 ```
 
-`--distance-band` 的距离以及 `--refine-box` 的坐标使用规范化边界文件的长度单位；DXF
-产品链中该单位是米。两个选项均可重复。程序额外写出 `.sizing.json`，记录计算域、完整
-尺寸场、层级直方图、每个矩形的叶单元数以及 2:1 平衡结果。退化矩形、层级越界和完全
-位于计算域外的矩形会明确失败。
+## DXF 输入
 
-## DXF-2：曲线、边界语义和单位换算
-
-二维 CAD 输入先经过独立、fail-closed 的转换器，再进入原有网格核心：
+二维 CAD 输入先经过独立、fail-closed 的转换器，再进入网格核心：
 
 ```text
-ASCII DXF -> 严格实体/闭环诊断 -> normalized boundary.xy
-          -> cartmesh2d_cli -> Cartesian / Quadtree / Cut-cell / OpenFOAM
+ASCII DXF
+    -> 严格实体 / 闭环诊断
+    -> normalized boundary.xy
+    -> cartmesh2d_cli / cartmesh2d_hybrid_cli
+    -> Cartesian / Cut-cell / Hybrid / OpenFOAM
 ```
 
-构建后运行：
+示例：
 
 ```sh
 ./build/cartmesh2d_dxf_cli \
@@ -189,15 +157,54 @@ ASCII DXF -> 严格实体/闭环诊断 -> normalized boundary.xy
   artifacts/airfoil_like.xy \
   0.001 \
   artifacts/airfoil_like.dxf.json
-
-./build/cartmesh2d_cli \
-  artifacts/airfoil_like.xy artifacts/airfoil_like \
-  7 0.30 0.02 exterior artifacts/airfoil_like-case 0 0
 ```
 
-第三个 DXF 参数是输出米制坐标下的绝对弦高误差。支持 `LINE`、`ARC`、`CIRCLE`、
-`LWPOLYLINE`（含 bulge）、`ELLIPSE` 和带显式 knot/control point 的 `SPLINE`。
-`$INSUNITS=1..24` 自动换算成米；缺失或 unitless 文件必须在最后一个参数显式给出
-源单位，例如 `mm`。DXF 图层按 `wall_*`、`inlet_*`、`outlet_*`、
-`slip_*/farfield_*`、`symmetry_*` 写入 `.xy` 元数据并传到 OpenFOAM patch 和场边界。
-详细边界和证据见 `docs/STAGE2D_DXF2_VERIFICATION_CN.md`。
+支持 `LINE`、`ARC`、`CIRCLE`、`LWPOLYLINE`（含 bulge）、`ELLIPSE` 和带显式
+knot / control point 的 `SPLINE`。DXF 单位会转换到米；边界图层语义可传递到 OpenFOAM patch。
+
+详细设计与验收见
+[docs/STAGE2D_DXF2_VERIFICATION_CN.md](docs/STAGE2D_DXF2_VERIFICATION_CN.md)。
+
+## macOS 桌面应用
+
+`desktop/` 提供可双击运行的 CartMesh2D 图形界面，可选择 DXF、设置网格规模、生成并预览
+真实 CM2D 单元，以及导出 VTK / CM2D / JSON / OpenFOAM case。
+
+Apple Silicon 本地打包命令与产品边界见
+[docs/PRODUCT1_MAC_DESKTOP_CN.md](docs/PRODUCT1_MAC_DESKTOP_CN.md)。同一套 Electron
+界面保留 Windows 打包能力，但 Windows 可执行文件需要在 Windows 环境单独构建和验收。
+
+## 开发路线
+
+基础二维核心 `2D-0 ~ 2D-V` 建立几何、Cartesian、Quadtree、Cut-cell、拓扑、稳定化、
+质量、导出和可视化能力；`H1 ~ H4` 继续建立高密度 sizing、scalability、solver topology
+和 hybrid boundary-layer 路线。之后的 `Q / R` 系列用于质量合同、构造鲁棒性和加密能力提升。
+
+README 不登记这些轮次的实时完成状态。完整阶段历史见：
+
+- [docs/STAGE_PLAN_CN.md](docs/STAGE_PLAN_CN.md)
+- [docs/CURRENT_STATE_CN.md](docs/CURRENT_STATE_CN.md)
+
+## 文档导航
+
+首次阅读：
+
+1. [docs/PROJECT_BRIEF_CN.md](docs/PROJECT_BRIEF_CN.md) — 项目边界与目标；
+2. [docs/ARCHITECTURE_CN.md](docs/ARCHITECTURE_CN.md) — 核心架构；
+3. [docs/STAGE_PLAN_CN.md](docs/STAGE_PLAN_CN.md) — 阶段路线；
+4. [docs/ACCEPTANCE_CN.md](docs/ACCEPTANCE_CN.md) — 验收原则；
+5. [docs/CURRENT_STATE_CN.md](docs/CURRENT_STATE_CN.md) — **唯一当前状态事实源**。
+
+质量与鲁棒性：
+
+- [docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md](docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md)
+- [docs/Q2A_SHARED_CONSTRUCTION_DESIGN_CN.md](docs/Q2A_SHARED_CONSTRUCTION_DESIGN_CN.md)
+- [docs/Q3_Q4_TERMINATION_QUALITY_CN.md](docs/Q3_Q4_TERMINATION_QUALITY_CN.md)
+- [docs/R2_REFINEMENT_ROBUSTNESS_CN.md](docs/R2_REFINEMENT_ROBUSTNESS_CN.md)
+
+接手开发时先读 `CURRENT_STATE_CN.md`，再按其中指向进入当前轮次的 handoff 文档，避免从历史阶段文档推断现状。
+
+## 开发者约束
+
+提交代码前还应阅读 [AGENTS.md](AGENTS.md)。历史轮次文档保留当时的测量数据作为证据，
+但不得用历史文档覆盖 `CURRENT_STATE_CN.md` 中登记的当前事实。
