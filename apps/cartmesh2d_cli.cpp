@@ -430,8 +430,18 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
     return true;
 }
 
-void usage() {
-    std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
+// R2/W1: geometric grid-corner weld budget for the shared construction path, as
+// a fraction of the local background h.
+//
+// Chosen by measurement, not by feel. At circle level 10 the corner spur that
+// made the solver-quality gate reject the mesh separates two intersections by
+// 4e-5 * h, and welding needs a budget above that. Q1's short-face hard limit is
+// face_length / local_h >= 0.01, so this stays two decades under the shortest
+// face the quality contract would accept. Measured cost at that level: about
+// 1.8e-9 of fluid area (see the physics gate below, which budgets for it).
+constexpr double gridCornerWeldFraction = 1.0e-4;
+
+void usage() {    std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
                  "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
                  "[boundary-simplify-cell-fraction=0] "
@@ -608,10 +618,46 @@ int main(int argc, char** argv) {
     std::size_t splitFluidLeaves = 0;
     std::size_t nextSourceId = 0;
     double sourceFluidArea = 0.0;
+
+    // R2/W1: build through the shared construction registry so wall/grid
+    // intersections have one canonical identity across every leaf that touches
+    // them. A per-leaf weld cannot be consistent — neighbouring leaves disagree
+    // about a shared cell-side vertex — and that was measured to produce
+    // unclassified boundary edges. The registry's grid-corner weld budget is
+    // raised to a geometric fraction here because refinement puts intersections
+    // a few 1e-5 of a cell from grid corners, and at roundoff budget those emit
+    // corner spurs that the solver-quality gate rejects.
+    IntersectionRegistryPolicy2D registryPolicy;
+    registryPolicy.gridCornerWeldFractionOfLocalH = gridCornerWeldFraction;
+    auto constructionRegistry =
+        std::make_shared<IntersectionRegistry2D>(registryPolicy);
+    constructionRegistry->configureGrid(domain.bounds, maxLevel);
+    {
+        const double finestH = std::ldexp(
+            std::min(domain.bounds.max.x - domain.bounds.min.x,
+                     domain.bounds.max.y - domain.bounds.min.y),
+            -static_cast<int>(maxLevel));
+        // Input wall vertices are immutable anchors, never movable samples.
+        for (const auto& loop : boundary.loops()) {
+            for (const auto& vertex : loop.vertices()) {
+                (void)constructionRegistry->internVertex(
+                    vertex, finestH, IntersectionFeature2D::Smooth);
+            }
+        }
+    }
+
+    std::vector<ConstructionRecoveryRequest2D> recoveryRequests;
     for (const auto& leaf : tree.leaves()) {
-        auto components = buildCutCells(leaf, boundary, fluidRegion);
+        auto components = buildCutCellsShared(
+            leaf, boundary, *constructionRegistry,
+            IntersectionSource2D::WallCartesian, fluidRegion);
         if (components.size() > 1) ++splitFluidLeaves;
         for (auto& cut : components) {
+            if (!cut.constructionRecoveryRequests.empty()) {
+                recoveryRequests.insert(recoveryRequests.end(),
+                                        cut.constructionRecoveryRequests.begin(),
+                                        cut.constructionRecoveryRequests.end());
+            }
             // A physical leaf can legally contribute multiple disconnected
             // solver cells. Give every emitted component a unique deterministic
             // source id while preserving the Quadtree key/level in sourceKey.
@@ -623,6 +669,22 @@ int main(int argc, char** argv) {
             }
             cutCells.push_back(std::move(cut));
         }
+    }
+    if (!recoveryRequests.empty()) {
+        // Fail closed and name it. The plain CLI has no local-refinement recovery
+        // loop; the hybrid path is the one that retries. Silently continuing
+        // would commit geometry the construction itself flagged as unsafe.
+        std::cerr << "shared construction requested "
+                  << recoveryRequests.size()
+                  << " local recovery pass(es); the plain CLI has no recovery loop\n";
+        for (std::size_t i = 0; i < std::min<std::size_t>(recoveryRequests.size(), 5); ++i) {
+            const auto& request = recoveryRequests[i];
+            std::cerr << "construction_recovery[" << i << "] support="
+                      << request.supportId << " local_h=" << request.localH
+                      << " at=(" << request.originalPoint.x << ','
+                      << request.originalPoint.y << ") reason=" << request.reason << '\n';
+        }
+        return EXIT_FAILURE;
     }
     if (unsupported != 0) {
         std::cerr << "Cut-cell construction produced " << unsupported
@@ -658,8 +720,36 @@ int main(int argc, char** argv) {
         ? domainArea - solidArea
         : solidArea;
     const TolerancePolicy tol{};
-    const double areaEps = std::max(tol.absolute * tol.absolute,
-                                    tol.relative * std::max(1.0, std::abs(expectedFluidArea)));
+    // Roundoff part of the budget, unchanged.
+    const double roundoffAreaEps =
+        std::max(tol.absolute * tol.absolute,
+                 tol.relative * std::max(1.0, std::abs(expectedFluidArea)));
+    // R2/W1 geometric part, derived rather than tuned. A grid-corner weld moves a
+    // point by at most gridCornerWeldFraction * h, which changes the incident
+    // polygon area by at most about 1.5 * that displacement * h. The number of
+    // welds is bounded by the number of wall/grid intersections, i.e. by the wall
+    // length divided by h, so the total is bounded by
+    //     1.5 * gridCornerWeldFraction * h * wallLength
+    // independently of the refinement level. The factor 2 is headroom.
+    //
+    // This widens the invariant, and it is stated rather than hidden: welding is
+    // the only cross-leaf-consistent way to remove refinement-induced corner
+    // spurs, and it necessarily perturbs area. The gate still fails closed on
+    // anything larger, and it is *not* level dependent in the limit.
+    double wallLength = 0.0;
+    for (const auto& loop : boundary.loops()) {
+        const auto& vertices = loop.vertices();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            const auto& a = vertices[i];
+            const auto& b = vertices[(i + 1) % vertices.size()];
+            wallLength += std::hypot(b.x - a.x, b.y - a.y);
+        }
+    }
+    const double finestCellH = std::ldexp(
+        std::min(domain.width(), domain.height()), -static_cast<int>(maxLevel));
+    const double weldAreaEps =
+        2.0 * 1.5 * gridCornerWeldFraction * finestCellH * wallLength;
+    const double areaEps = roundoffAreaEps + weldAreaEps;
     if (std::abs(sourceFluidArea - expectedFluidArea) > areaEps) {
         std::cerr << "fluid-side physics gate failed: region=" << fluidRegionName(fluidRegion)
                   << " generated_area=" << std::setprecision(17) << sourceFluidArea
@@ -668,7 +758,9 @@ int main(int argc, char** argv) {
     }
 
     const auto sourceTopologyStart = std::chrono::steady_clock::now();
-    const TopologyMesh2D sourceTopology = buildGlobalTopology(cutCells, domain, boundary);
+    const TopologyMesh2D sourceTopology =
+        buildGlobalTopology(cutCells, domain, boundary, TolerancePolicy{},
+                            constructionRegistry);
     const double sourceTopologySeconds = elapsedSeconds(sourceTopologyStart);
     if (!sourceTopology.valid()) {
         std::cerr << "source global topology audit failed\n";
@@ -754,7 +846,10 @@ int main(int argc, char** argv) {
     std::optional<SolverQualityReport2D> solverQuality;
     std::optional<SolverTopologyResult2D> solverTopology;
     if (openFoamCase) {
-        solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
+        solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary,
+                                             SolverTopologyConstraints2D{},
+                                             TolerancePolicy{},
+                                             cutCells);
         if (!solverTopology->valid()) {
             std::cerr<<"solver topology partition failed";
             for (const auto& issue:solverTopology->issues) std::cerr<<": "<<issue;

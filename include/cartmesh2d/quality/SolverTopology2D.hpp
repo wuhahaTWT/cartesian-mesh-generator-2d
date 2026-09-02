@@ -241,11 +241,15 @@ repairSolverTerminationQuality2D(
     const BoundaryRegion2D& boundary,
     const TolerancePolicy& tol = {});
 
+// R2/W1: the overload that takes sourceCells uses their wall fragments to
+// classify wall-touching pieces as embedded boundary, which the polygon-only
+// path cannot do reliably once a non-convex cell is ear-clipped.
 [[nodiscard]] SolverTopologyResult2D buildSolverTopology2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
     const SolverTopologyConstraints2D& constraints,
-    const TolerancePolicy& tol = {});
+    const TolerancePolicy& tol = {},
+    const std::vector<CutCell2D>& sourceCells = {});
 
 } // namespace cartmesh2d
