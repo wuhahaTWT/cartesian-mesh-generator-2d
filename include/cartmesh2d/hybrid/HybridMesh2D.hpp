@@ -76,6 +76,14 @@ struct HybridInterfaceAudit2D {
 struct HybridTransitionPlan2D {
     std::size_t ringCount = 0U;
     std::size_t finalTangentialSubdivision = 1U;
+    // Q5-1: radial rows the outermost ring is cut into so no transition row is
+    // radially thicker than the remainder background cell it borders. 1 keeps
+    // the historical single-row outer fan.
+    std::size_t outerRingRadialSubdivision = 1U;
+    // False when the bounded subdivision ran out before the target thickness was
+    // reachable. The plan then reports a single row rather than a row count that
+    // does not actually satisfy the rule.
+    bool outerRingRadialTargetReachable = true;
     double targetCellSize = 0.0;
     double maxOuterEdgeLength = 0.0;
     double maxLastLayerSpacing = 0.0;
@@ -210,6 +218,27 @@ struct HybridMeshMetrics2D {
     // final gate, so the committed mesh is the unchanged non-Q4 hybrid. All
     // q41* counters above then describe no committed construction.
     bool q41ConstructionSelectionDeclined = false;
+    // Q5-1: radial rows actually committed in the outermost transition ring and
+    // whether the requested subdivision had to be declined to keep the mesh.
+    std::size_t q51OuterTransitionRadialSubdivision = 1;
+    bool q51OuterTransitionRadialDeclined = false;
+    bool q51OuterTransitionRadialTargetReachable = true;
+    // Q5-2: the graded termination buffer re-resolved with more, thinner rows is
+    // only committed when it strictly lowers the typed hard count. Both counts
+    // are reported so a decline is a measurement, not a silent no-op.
+    bool q52TerminationBufferRadialCommitted = false;
+    std::size_t q52TerminationBufferHardWithMatching = 0;
+    std::size_t q52TerminationBufferHardWithHistoricalMarch = 0;
+    // Rows and growth ratio the buffer march actually used, so the committed
+    // grading is evidence rather than something re-derived from the rule.
+    std::size_t q52TerminationBufferRows = 0;
+    double q52TerminationBufferGrowthRatio = 0.0;
+    double q52TerminationBufferOuterRowThickness = 0.0;
+    double q52TerminationBufferRowCap = 0.0;
+    // False when the bounded row count ran out before the cap became reachable.
+    // The historical march is then kept, so a reported cap is never claimed for a
+    // buffer that still exceeds it.
+    bool q52TerminationBufferRowCapReachable = true;
     std::size_t unifiedVertexCount = 0;
     std::size_t unifiedEdgeCount = 0;
     std::size_t unifiedCellCount = 0;
@@ -279,6 +308,21 @@ struct HybridMeshPolicy2D {
     // Q4-1 moves one bounded typed convex termination-patch construction
     // choice to the H4 remainder boundary, before unified topology commit.
     bool enableTerminationConstructionQualitySelection = false;
+    // Q5-1 cuts the outermost transition row radially so it is not thicker
+    // than the remainder background cell it borders. Opt-in while validation
+    // is limited to the two no-termination geometries that motivated it.
+    bool enableOuterTransitionRadialMatching = false;
+    // Radial rows are added only while the outer row stays thicker than this
+    // multiple of the remainder background cell size. A value of 1 means the
+    // outer transition row may be at most one background cell thick.
+    double outerTransitionRadialTargetCells = 1.0;
+    std::size_t maximumOuterTransitionRadialSubdivision = 4U;
+    // Q5-2 carries the same rule into the graded local-termination buffer. The
+    // buffer is a boundary-layer march, so instead of cutting rows afterwards it
+    // is re-resolved with more, thinner rows at the same total thickness, which
+    // keeps the outer front where the ungated march put it.
+    bool enableTerminationBufferRadialMatching = false;
+    std::size_t maximumTerminationBufferRows = 12U;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -288,6 +332,8 @@ struct HybridMeshPolicy2D {
     // which derives these values from interface length scale and remainder h.
     double transitionCellWidthMultiplier = 1.2;
     std::size_t transitionRingCount = 3U;
+    // Resolved Q5-1 value. 1 reproduces the historical single-row outer fan.
+    std::size_t transitionOuterRingRadialSubdivision = 1U;
     double terminationGrowthRatio = 1.45;
 };
 
@@ -350,6 +396,37 @@ struct PureCutCellFallback2D {
     }
 };
 
+// Top-level attribution for the H4 product path. R1F recorded that the existing
+// solver-side sub-phase numbers cannot explain the end-to-end wall time: the
+// robust path may run buildConformalHybridMesh2D up to twelve times (two layer
+// candidates x two construction-selection passes x three growth ratios) before
+// it reaches the pure Cut-cell fallback, and none of that was attributed.
+//
+// The seconds are wall time and therefore not reproducible; only the call
+// counters are deterministic and may be compared across runs.
+struct RobustH4Profile2D {
+    double requestedLayerSeconds = 0.0;
+    double requestedHybridSeconds = 0.0;
+    double localLayerSeconds = 0.0;
+    double localHybridSeconds = 0.0;
+    double pureCutCellFallbackSeconds = 0.0;
+    double totalSeconds = 0.0;
+    // Deterministic: how many times each stage entered, and how many conformal
+    // hybrid builds the whole robust path consumed.
+    std::size_t requestedHybridAttempts = 0;
+    std::size_t localHybridAttempts = 0;
+    std::size_t pureCutCellFallbackAttempts = 0;
+    std::size_t conformalHybridBuildCalls = 0;
+
+    // Seconds that the stage timers above do not account for.
+    [[nodiscard]] double unattributedSeconds() const noexcept {
+        const double attributed = requestedLayerSeconds + requestedHybridSeconds +
+                                  localLayerSeconds + localHybridSeconds +
+                                  pureCutCellFallbackSeconds;
+        return totalSeconds > attributed ? totalSeconds - attributed : 0.0;
+    }
+};
+
 struct RobustH4BuildResult2D {
     H4MeshMode2D mode = H4MeshMode2D::Failed;
     H4FallbackStage2D fallbackStage = H4FallbackStage2D::None;
@@ -357,12 +434,19 @@ struct RobustH4BuildResult2D {
     BoundaryLayerBuildResult2D localLayerCandidate;
     HybridMeshBuildResult2D hybridCandidate;
     PureCutCellFallback2D fallback;
+    RobustH4Profile2D profile;
 
     [[nodiscard]] bool success() const noexcept {
         return mode==H4MeshMode2D::Hybrid ||
                (mode==H4MeshMode2D::PureCutCellFallback && fallback.valid());
     }
 };
+
+// Monotonic count of buildConformalHybridMesh2D calls in this process, in the
+// same instrumentation style as globalTopologyBuildCount2D(). It lets a caller
+// prove by measurement how many full hybrid constructions a run consumed.
+[[nodiscard]] std::size_t conformalHybridBuildCount2D() noexcept;
+
 
 // Transactional H4-3 product path. Pure Cut-cell is attempted only after the
 // requested strip, local reduction/termination and conformal hybrid candidates
@@ -399,7 +483,9 @@ struct RobustH4BuildResult2D {
 resolveAutomaticHybridTransitionPlan2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
     const Domain2D& domain,
-    const QuadtreeRefinementPolicy2D& remainderRefinement) noexcept {
+    const QuadtreeRefinementPolicy2D& remainderRefinement,
+    double radialTargetCells = 1.0,
+    std::size_t maximumRadialSubdivision = 4U) noexcept {
     if (!boundaryLayers.success() || boundaryLayers.strips.empty() ||
         remainderRefinement.boundaryLevel >
             static_cast<std::size_t>(std::numeric_limits<int>::max())) {
@@ -470,6 +556,29 @@ resolveAutomaticHybridTransitionPlan2D(
     HybridTransitionPlan2D plan;
     plan.ringCount = ringCount;
     plan.finalTangentialSubdivision = finalSubdivision;
+    // Q5-1 radial matching. The fan is graded tangentially but every row keeps
+    // the full ring thickness, so the outermost row can be several background
+    // cells deep while the Cut cells it borders are a fraction of one. Report
+    // the row count that brings the outer row to at most one background cell;
+    // whether it is applied is a policy decision in the builder.
+    plan.outerRingRadialSubdivision = 1U;
+    plan.outerRingRadialTargetReachable = true;
+    if (radialTargetCells > 0.0 && maximumRadialSubdivision > 1U) {
+        const double rowCap = radialTargetCells * targetCellSize;
+        std::size_t rows = 1U;
+        while (rows < maximumRadialSubdivision &&
+               ringThickness / static_cast<double>(rows) > rowCap) {
+            ++rows;
+        }
+        // The bound may run out before the target is reachable. Claiming that
+        // row count as a matched plan would report a rule the mesh does not
+        // satisfy, so keep the historical single-row fan and say so instead.
+        if (ringThickness / static_cast<double>(rows) <= rowCap) {
+            plan.outerRingRadialSubdivision = rows;
+        } else {
+            plan.outerRingRadialTargetReachable = false;
+        }
+    }
     plan.targetCellSize = targetCellSize;
     plan.maxOuterEdgeLength = maxOuterEdgeLength;
     plan.maxLastLayerSpacing = maxLastLayerSpacing;
@@ -489,7 +598,9 @@ resolveAutomaticHybridTransitionPlan2D(
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& basePolicy) {
     const auto plan = resolveAutomaticHybridTransitionPlan2D(
-        boundaryLayers, domain, remainderRefinement);
+        boundaryLayers, domain, remainderRefinement,
+        basePolicy.outerTransitionRadialTargetCells,
+        basePolicy.maximumOuterTransitionRadialSubdivision);
     if (!plan) {
         HybridMeshBuildResult2D result;
         result.failure.reason = HybridMeshFailureReason2D::InvalidInput;
@@ -503,42 +614,117 @@ resolveAutomaticHybridTransitionPlan2D(
     resolvedPolicy.transitionCellWidthMultiplier =
         plan->ringCount==0U?1.0:
         plan->ringThickness / plan->targetCellSize;
+    resolvedPolicy.transitionOuterRingRadialSubdivision =
+        basePolicy.enableOuterTransitionRadialMatching
+            ?plan->outerRingRadialSubdivision:1U;
     HybridMeshBuildResult2D result;
-    // Q4-1 construction selection is an optional quality improvement, never a
-    // precondition for producing a hybrid mesh. If every growth-ratio attempt
-    // with it enabled fails, retry the same geometry with it disabled before
-    // the caller is allowed to consider pure Cut-cell fallback: losing the
-    // whole boundary layer is a far larger regression than declining one
-    // bounded construction choice.
-    const bool retryWithoutConstructionSelection=
-        resolvedPolicy.enableTerminationConstructionQualitySelection;
-    for (std::size_t pass=0;pass<(retryWithoutConstructionSelection?2U:1U);++pass) {
-        if (pass==1U)
-            resolvedPolicy.enableTerminationConstructionQualitySelection=false;
-        if (boundaryLayers.localReductionApplied) {
-            // Different valid quadtree phases can place a graded termination front
-            // arbitrarily close to a nested Cartesian line. Try a short, fixed and
-            // deterministic family of geometric growth ratios; commit only a fully
-            // solver-valid candidate. Every attempt is transactional.
-            constexpr double candidates[]{1.45,1.55,1.50};
-            for (const double growth:candidates) {
-                resolvedPolicy.terminationGrowthRatio=growth;
-                auto attempt=buildConformalHybridMesh2D(
-                    boundaryLayers,domain,originalWalls,remainderMaxLevel,
-                    remainderRefinement,resolvedPolicy);
-                result=std::move(attempt);
-                if (result.success()) break;
-            }
-        } else {
-            result = buildConformalHybridMesh2D(
-                boundaryLayers, domain, originalWalls, remainderMaxLevel,
-                remainderRefinement, resolvedPolicy);
+    // Optional construction-quality selections are improvements, never
+    // preconditions for producing a hybrid mesh. Relax them one at a time --
+    // newest and most invasive first -- before the caller is allowed to
+    // consider pure Cut-cell fallback: losing the whole boundary layer is a far
+    // larger regression than declining a bounded construction choice.
+    const auto buildThroughLadder=[&](const HybridMeshPolicy2D& base,
+                                      HybridMeshPolicy2D& applied) {
+        std::vector<HybridMeshPolicy2D> ladder{base};
+        if (base.enableTerminationConstructionQualitySelection) {
+            auto step=ladder.back();
+            step.enableTerminationConstructionQualitySelection=false;
+            ladder.push_back(step);
         }
-        if (result.success()) break;
+        if (ladder.back().transitionOuterRingRadialSubdivision>1U) {
+            auto step=ladder.back();
+            step.transitionOuterRingRadialSubdivision=1U;
+            ladder.push_back(step);
+        }
+        HybridMeshBuildResult2D candidate;
+        for (std::size_t pass=0;pass<ladder.size();++pass) {
+            applied=ladder[pass];
+            if (boundaryLayers.localReductionApplied) {
+                // Different valid quadtree phases can place a graded termination
+                // front arbitrarily close to a nested Cartesian line. Try a
+                // short, fixed and deterministic family of geometric growth
+                // ratios; commit only a fully solver-valid candidate. Every
+                // attempt is transactional.
+                constexpr double candidates[]{1.45,1.55,1.50};
+                for (const double growth:candidates) {
+                    applied.terminationGrowthRatio=growth;
+                    auto attempt=buildConformalHybridMesh2D(
+                        boundaryLayers,domain,originalWalls,remainderMaxLevel,
+                        remainderRefinement,applied);
+                    candidate=std::move(attempt);
+                    if (candidate.success()) break;
+                }
+            } else {
+                candidate = buildConformalHybridMesh2D(
+                    boundaryLayers, domain, originalWalls, remainderMaxLevel,
+                    remainderRefinement, applied);
+            }
+            if (candidate.success()) break;
+        }
+        return candidate;
+    };
+    const auto hardIssueCount=[](const HybridMeshBuildResult2D& candidate) {
+        return candidate.success()
+            ?static_cast<std::size_t>(std::count_if(
+                 candidate.qualityContract.issues.begin(),
+                 candidate.qualityContract.issues.end(),
+                 [](const QualityContractIssue2D& issue) {
+                     return issue.level==QualityContractLevel2D::Hard;
+                 }))
+            :std::numeric_limits<std::size_t>::max();
+    };
+    HybridMeshPolicy2D appliedPolicy=resolvedPolicy;
+    result=buildThroughLadder(resolvedPolicy,appliedPolicy);
+    // Q5-2: unlike the explicitly interpolated fan, the graded termination
+    // buffer is a locally reduced march. Re-resolving it with more, thinner rows
+    // holds the requested total thickness but not the actual stepped front,
+    // because every reduced column now stops at a different distance. The
+    // remainder therefore changes and the outcome is measured, not assumed:
+    // build both fronts and commit the re-resolved one only when it strictly
+    // lowers the typed hard count. A tie keeps the historical march, so the flag
+    // can never change bytes without a measured reason.
+    std::size_t q52HardMatched=0U,q52HardHistorical=0U;
+    bool q52Committed=false;
+    // The cap and whether it was reachable describe the attempt, so they are
+    // carried onto whichever front is committed. Rows, ratio and the outer row
+    // thickness keep describing the committed mesh.
+    double q52AttemptRowCap=result.metrics.q52TerminationBufferRowCap;
+    bool q52AttemptCapReachable=
+        result.metrics.q52TerminationBufferRowCapReachable;
+    if (resolvedPolicy.enableTerminationBufferRadialMatching &&
+        boundaryLayers.localReductionApplied) {
+        auto historicalPolicy=resolvedPolicy;
+        historicalPolicy.enableTerminationBufferRadialMatching=false;
+        HybridMeshPolicy2D historicalApplied=historicalPolicy;
+        auto historical=buildThroughLadder(historicalPolicy,historicalApplied);
+        q52HardMatched=hardIssueCount(result);
+        q52HardHistorical=hardIssueCount(historical);
+        if (q52HardMatched<q52HardHistorical) {
+            q52Committed=true;
+        } else {
+            result=std::move(historical);
+            appliedPolicy=historicalApplied;
+        }
     }
+    resolvedPolicy=appliedPolicy;
+    result.metrics.q52TerminationBufferRadialCommitted=q52Committed;
+    result.metrics.q52TerminationBufferRowCap=q52AttemptRowCap;
+    result.metrics.q52TerminationBufferRowCapReachable=q52AttemptCapReachable;
+    result.metrics.q52TerminationBufferHardWithMatching=q52HardMatched;
+    result.metrics.q52TerminationBufferHardWithHistoricalMarch=q52HardHistorical;
     result.metrics.q41ConstructionSelectionDeclined=
-        retryWithoutConstructionSelection && result.success() &&
-        !resolvedPolicy.enableTerminationConstructionQualitySelection;
+        resolvedPolicy.enableTerminationConstructionQualitySelection==false &&
+        basePolicy.enableTerminationConstructionQualitySelection &&
+        result.success();
+    result.metrics.q51OuterTransitionRadialTargetReachable=
+        plan->outerRingRadialTargetReachable;
+    result.metrics.q51OuterTransitionRadialSubdivision=
+        result.success()?resolvedPolicy.transitionOuterRingRadialSubdivision:1U;
+    result.metrics.q51OuterTransitionRadialDeclined=
+        basePolicy.enableOuterTransitionRadialMatching &&
+        plan->outerRingRadialSubdivision>1U &&
+        result.success() &&
+        resolvedPolicy.transitionOuterRingRadialSubdivision<=1U;
     result.metrics.transitionRingCount = plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
         plan->finalTangentialSubdivision;
@@ -593,9 +779,15 @@ resolveAutomaticHybridTransitionPlan2D(
 // Wall-time measurements are written separately from the report because the
 // report is compared byte-for-byte by the determinism regressions and timings
 // are not reproducible.
+//
+// Passing a RobustH4Profile2D adds the top-level H4 stage attribution, so the
+// profile can be checked against the measured end-to-end wall time instead of
+// only describing the one hybrid candidate that happened to be committed.
 [[nodiscard]] bool writeHybridProfileJson2D(
     const HybridMeshBuildResult2D& result,
     const std::filesystem::path& path,
-    std::string* error = nullptr);
+    std::string* error = nullptr,
+    const RobustH4Profile2D* robustProfile = nullptr);
+
 
 } // namespace cartmesh2d

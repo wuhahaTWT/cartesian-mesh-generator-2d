@@ -1,0 +1,671 @@
+{
+  "format_version": "cartmesh2d-refinement-ladder-v1",
+  "gate_violations": [
+    "circle:cutcell:level 10 exited 1 (solver_quality:excessive_boundary_skewness)",
+    "circle:hybrid:level 7 Q1 hard issues grew 80 -> 132",
+    "circle:hybrid:level 8 Q1 hard issues grew 132 -> 360",
+    "circle:hybrid:level 9 exited 1 (solver_quality_failed)"
+  ],
+  "hard_limits": {
+    "max_non_orthogonality_deg": 70.0,
+    "min_face_weight": 0.05,
+    "min_volume_ratio": 0.01,
+    "source": "include/cartmesh2d/quality/SolverQuality2D.hpp"
+  },
+  "ladders": [
+    {
+      "case": "circle",
+      "input": "examples/acceptance/circle.xy",
+      "levels": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "mode": "cutcell",
+      "rungs": [
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.09354899998288602,
+              "timing_agglomeration_seconds": 0.001971,
+              "timing_balance_seconds": 0.000699,
+              "timing_cut_cell_seconds": 0.00391,
+              "timing_refinement_seconds": 0.000664,
+              "timing_serialization_export_seconds": 0.009484,
+              "timing_solver_topology_seconds": 0.002957,
+              "timing_source_topology_seconds": 0.0015,
+              "timing_total_seconds": 0.022387
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L6",
+            "6",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L6-case",
+            "4"
+          ],
+          "exit_code": 0,
+          "level": 6,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 412,
+            "cut_cell_count": 172,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 3.234910190955217,
+            "max_cell_aspect": 23.89975588115784,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.747391917,
+            "max_non_orthogonality_deg": 68.5611289,
+            "min_compactness": 0.12731683410088104,
+            "min_face_length": 0.00115613712,
+            "min_face_weight": 0.0527137581,
+            "min_interior_angle_deg": 5.221022426097274,
+            "min_volume_ratio": 0.04319934,
+            "quadtree_leaf_count": 712,
+            "small_cell_count": 40,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 452
+          },
+          "minimum_level": 4,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.09353800001554191,
+              "timing_agglomeration_seconds": 0.005778,
+              "timing_balance_seconds": 0.001443,
+              "timing_cut_cell_seconds": 0.009541,
+              "timing_refinement_seconds": 0.001107,
+              "timing_serialization_export_seconds": 0.021206,
+              "timing_solver_topology_seconds": 0.006573,
+              "timing_source_topology_seconds": 0.003926,
+              "timing_total_seconds": 0.049829
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L7",
+            "7",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L7-case",
+            "5"
+          ],
+          "exit_code": 0,
+          "level": 7,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 1280,
+            "cut_cell_count": 340,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.2456281125966073,
+            "max_cell_aspect": 15.190429378300335,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.613202661,
+            "max_non_orthogonality_deg": 61.754408,
+            "min_compactness": 0.1959110613708005,
+            "min_face_length": 0.000221401574,
+            "min_face_weight": 0.151038096,
+            "min_interior_angle_deg": 12.763307493963808,
+            "min_volume_ratio": 0.113145419,
+            "quadtree_leaf_count": 1984,
+            "small_cell_count": 64,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 1344
+          },
+          "minimum_level": 5,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.6182705830433406,
+              "timing_agglomeration_seconds": 0.018281,
+              "timing_balance_seconds": 0.004096,
+              "timing_cut_cell_seconds": 0.027228,
+              "timing_refinement_seconds": 0.003118,
+              "timing_serialization_export_seconds": 0.053909,
+              "timing_solver_topology_seconds": 0.451856,
+              "timing_source_topology_seconds": 0.013395,
+              "timing_total_seconds": 0.572462
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L8",
+            "8",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L8-case",
+            "6"
+          ],
+          "exit_code": 0,
+          "level": 8,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 3828,
+            "cut_cell_count": 684,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.2057993276791528,
+            "max_cell_aspect": 11.581843890453039,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.826877153,
+            "max_non_orthogonality_deg": 59.9574303,
+            "min_compactness": 0.24873302624443566,
+            "min_face_length": 8.75021512e-05,
+            "min_face_weight": 0.0826928694,
+            "min_interior_angle_deg": 16.87500000001241,
+            "min_volume_ratio": 0.0552238339,
+            "quadtree_leaf_count": 5980,
+            "small_cell_count": 136,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 3964
+          },
+          "minimum_level": 6,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.5407597909797914,
+              "timing_agglomeration_seconds": 0.07429,
+              "timing_balance_seconds": 0.013054,
+              "timing_cut_cell_seconds": 0.086888,
+              "timing_refinement_seconds": 0.011198,
+              "timing_serialization_export_seconds": 0.174343,
+              "timing_solver_topology_seconds": 0.074336,
+              "timing_source_topology_seconds": 0.057505,
+              "timing_total_seconds": 0.493062
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L9",
+            "9",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L9-case",
+            "7"
+          ],
+          "exit_code": 0,
+          "level": 9,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 13024,
+            "cut_cell_count": 1364,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.272922967413513,
+            "max_cell_aspect": 19.2003958179931,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.694522917,
+            "max_non_orthogonality_deg": 42.3128298,
+            "min_compactness": 0.15831843721960742,
+            "min_face_length": 8.75021512e-05,
+            "min_face_weight": 0.0953577948,
+            "min_interior_angle_deg": 16.87500000001182,
+            "min_volume_ratio": 0.0247082084,
+            "quadtree_leaf_count": 20188,
+            "small_cell_count": 264,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 13288
+          },
+          "minimum_level": 7,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 17.82957741699647,
+              "timing_agglomeration_seconds": 0.418191,
+              "timing_balance_seconds": 0.048567,
+              "timing_cut_cell_seconds": 0.306494,
+              "timing_refinement_seconds": 0.044093,
+              "timing_solver_topology_seconds": 16.62,
+              "timing_source_topology_seconds": 0.308108,
+              "timing_total_seconds": 17.7498
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L10",
+            "10",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-cutcell-L10-case",
+            "8"
+          ],
+          "exit_code": 1,
+          "level": 10,
+          "mesh": {
+            "failure_reason": "solver_quality:excessive_boundary_skewness",
+            "hybrid_status": "failed"
+          },
+          "minimum_level": 8,
+          "stderr_tail": ")\nsolver_quality_edge[16]=(0.39812499999999984,0.97042965203175124)-(0.39812499999999984,0.97042968750000003) owner=49180 neighbour=49186\nsolver_quality_neighbour_vertices[16]=(0.39812499999999984,0.97042965203175124)(0.40105468749999984,0.96954094104461974)(0.40105468749999984,0.97042968750000003)(0.39812499999999984,0.97042968750000003)\nsolver_quality_issue[17] code=10 cell=49180 edge=56360 measured=1.5926624073969467e-09 limit=0.01 message=neighbouring cell volume ratio is below limit\nsolver_quality_cell_vertices[17]=(0.39812488307685323,0.97042968750000003)(0.39812499999999984,0.97042965203175124)(0.39812499999999984,0.97042968750000003)\nsolver_quality_edge[17]=(0.39812499999999984,0.97042965203175124)-(0.39812499999999984,0.97042968750000003) owner=49180 neighbour=49186\nsolver_quality_neighbour_vertices[17]=(0.39812499999999984,0.97042965203175124)(0.40105468749999984,0.96954094104461974)(0.40105468749999984,0.97042968750000003)(0.39812499999999984,0.97042968750000003)\nsolver_quality_issue[18] code=5 cell=47196 edge=74337 measured=8.5955364477930178 limit=4 message=boundary face skewness exceeds limit\nsolver_quality_cell_vertices[18]=(1.0133593749999998,-0.29519531249999997)(1.0113183630188829,-0.29519531249999997)(1.0104296874999998,-0.29812488307685392)(1.0104296520317513,-0.29812499999999997)(1.0104296874999998,-0.29812499999999997)\nsolver_quality_edge[18]=(1.0104296520317513,-0.29812499999999997)-(1.0104296874999998,-0.29812488307685392) owner=47196 neighbour=none\nsolver_quality_issue[19] code=5 cell=48724 edge=74338 measured=8.5955364435657344 limit=4 message=boundary face skewness exceeds limit\nsolver_quality_cell_vertices[19]=(1.0104296874999998,0.35812500000000003)(1.0104296520317513,0.35812500000000003)(1.0104296874999998,0.35812488307685392)(1.0113183630188829,0.35519531250000003)(1.0133593749999998,0.35519531250000003)\nsolver_quality_edge[19]=(1.0104296520317513,0.35812500000000003)-(1.0104296874999998,0.35812488307685392) owner=48724 neighbour=none\n",
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "case": "circle",
+      "input": "examples/acceptance/circle.xy",
+      "levels": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "mode": "hybrid",
+      "rungs": [
+        {
+          "attribution": {
+            "deterministic_counters": {
+              "h4_conformal_hybrid_build_calls": 1,
+              "h4_local_hybrid_attempts": 0,
+              "h4_pure_cutcell_fallback_attempts": 0,
+              "h4_requested_hybrid_attempts": 1
+            },
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "h4_local_hybrid_seconds": 0.0,
+              "h4_local_layer_seconds": 0.0,
+              "h4_pure_cutcell_fallback_seconds": 0.0,
+              "h4_requested_hybrid_seconds": 0.070092,
+              "h4_requested_layer_seconds": 0.000551,
+              "h4_total_seconds": 0.070645,
+              "h4_unattributed_seconds": 2e-06,
+              "measured_wall_seconds": 0.14133883302565664,
+              "timing_build_seconds": 0.071296,
+              "timing_export_seconds": 0.020472,
+              "timing_input_seconds": 0.000843,
+              "timing_total_seconds": 0.092612
+            }
+          },
+          "command": [
+            "cartmesh2d_hybrid_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L6",
+            "6",
+            "3",
+            "6",
+            "4",
+            "0.02",
+            "1.2",
+            "1.0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L6-case",
+            "0.01"
+          ],
+          "exit_code": 0,
+          "level": 6,
+          "mesh": {
+            "area_error": -1.0658141036401503e-14,
+            "boundary_layer_cell_count": 128,
+            "cell_count": 700,
+            "failure_reason": "none",
+            "fallback_stage": null,
+            "hard_issue_counts": {
+              "face_weight": 24,
+              "volume_ratio": 56
+            },
+            "hard_issue_total": 80,
+            "hybrid_status": "success",
+            "interface_length_error": 0,
+            "max_non_orthogonality_deg": 55.39681708475863,
+            "mesh_mode": "hybrid",
+            "mesh_quality_valid": true,
+            "min_face_weight": 0.08721056076783554,
+            "min_volume_ratio": 0.02703787129285704,
+            "quadtree_leaf_count": 724,
+            "quality_contract_status": "FAIL",
+            "remainder_cartesian_cell_count": 304,
+            "remainder_cut_cell_count": 188,
+            "solver_cell_count": 728,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "termination_cell_count": 0,
+            "topology_valid": true,
+            "transition_polygon_count": 268,
+            "zero_layer_column_count": 0
+          },
+          "minimum_level": 3,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {
+              "h4_conformal_hybrid_build_calls": 1,
+              "h4_local_hybrid_attempts": 0,
+              "h4_pure_cutcell_fallback_attempts": 0,
+              "h4_requested_hybrid_attempts": 1
+            },
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "h4_local_hybrid_seconds": 0.0,
+              "h4_local_layer_seconds": 0.0,
+              "h4_pure_cutcell_fallback_seconds": 0.0,
+              "h4_requested_hybrid_seconds": 0.120349,
+              "h4_requested_layer_seconds": 0.000403,
+              "h4_total_seconds": 0.120753,
+              "h4_unattributed_seconds": 1e-06,
+              "measured_wall_seconds": 0.192920665955171,
+              "timing_build_seconds": 0.121654,
+              "timing_export_seconds": 0.026604,
+              "timing_input_seconds": 0.000119,
+              "timing_total_seconds": 0.148378
+            }
+          },
+          "command": [
+            "cartmesh2d_hybrid_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L7",
+            "7",
+            "3",
+            "7",
+            "4",
+            "0.02",
+            "1.2",
+            "1.0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L7-case",
+            "0.01"
+          ],
+          "exit_code": 0,
+          "level": 7,
+          "mesh": {
+            "area_error": 1.5987211554602254e-14,
+            "boundary_layer_cell_count": 128,
+            "cell_count": 1084,
+            "failure_reason": "none",
+            "fallback_stage": null,
+            "hard_issue_counts": {
+              "face_length_over_sqrt_neighbour_area": 16,
+              "face_weight": 8,
+              "non_orthogonality_deg": 12,
+              "volume_ratio": 96
+            },
+            "hard_issue_total": 132,
+            "hybrid_status": "success",
+            "interface_length_error": 0,
+            "max_non_orthogonality_deg": 68.72314984621228,
+            "mesh_mode": "hybrid",
+            "mesh_quality_valid": true,
+            "min_face_weight": 0.08908730881510828,
+            "min_volume_ratio": 0.010717883631846468,
+            "quadtree_leaf_count": 1336,
+            "quality_contract_status": "FAIL",
+            "remainder_cartesian_cell_count": 572,
+            "remainder_cut_cell_count": 324,
+            "solver_cell_count": 1100,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "termination_cell_count": 0,
+            "topology_valid": true,
+            "transition_polygon_count": 328,
+            "zero_layer_column_count": 0
+          },
+          "minimum_level": 3,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {
+              "h4_conformal_hybrid_build_calls": 1,
+              "h4_local_hybrid_attempts": 0,
+              "h4_pure_cutcell_fallback_attempts": 0,
+              "h4_requested_hybrid_attempts": 1
+            },
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "h4_local_hybrid_seconds": 0.0,
+              "h4_local_layer_seconds": 0.0,
+              "h4_pure_cutcell_fallback_seconds": 0.0,
+              "h4_requested_hybrid_seconds": 0.956312,
+              "h4_requested_layer_seconds": 0.000407,
+              "h4_total_seconds": 0.956719,
+              "h4_unattributed_seconds": 0.0,
+              "measured_wall_seconds": 1.0501117500243708,
+              "timing_build_seconds": 0.958535,
+              "timing_export_seconds": 0.04605,
+              "timing_input_seconds": 0.000115,
+              "timing_total_seconds": 1.0047
+            }
+          },
+          "command": [
+            "cartmesh2d_hybrid_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L8",
+            "8",
+            "3",
+            "8",
+            "4",
+            "0.02",
+            "1.2",
+            "1.0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L8-case",
+            "0.01"
+          ],
+          "exit_code": 0,
+          "level": 8,
+          "mesh": {
+            "area_error": -4.796163466380676e-14,
+            "boundary_layer_cell_count": 128,
+            "cell_count": 2028,
+            "failure_reason": "none",
+            "fallback_stage": null,
+            "hard_issue_counts": {
+              "face_weight": 64,
+              "non_orthogonality_deg": 8,
+              "volume_ratio": 288
+            },
+            "hard_issue_total": 360,
+            "hybrid_status": "success",
+            "interface_length_error": 0,
+            "max_non_orthogonality_deg": 67.90844380786413,
+            "mesh_mode": "hybrid",
+            "mesh_quality_valid": true,
+            "min_face_weight": 0.06426786767595191,
+            "min_volume_ratio": 0.01193801691192862,
+            "quadtree_leaf_count": 2656,
+            "quality_contract_status": "FAIL",
+            "remainder_cartesian_cell_count": 1136,
+            "remainder_cut_cell_count": 620,
+            "solver_cell_count": 2072,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "termination_cell_count": 0,
+            "topology_valid": true,
+            "transition_polygon_count": 644,
+            "zero_layer_column_count": 0
+          },
+          "minimum_level": 3,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {
+              "h4_conformal_hybrid_build_calls": 2,
+              "h4_local_hybrid_attempts": 1,
+              "h4_pure_cutcell_fallback_attempts": 1,
+              "h4_requested_hybrid_attempts": 1
+            },
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "h4_local_hybrid_seconds": 109.503,
+              "h4_local_layer_seconds": 0.002643,
+              "h4_pure_cutcell_fallback_seconds": 0.072272,
+              "h4_requested_hybrid_seconds": 22.4881,
+              "h4_requested_layer_seconds": 0.000412,
+              "h4_total_seconds": 132.066,
+              "h4_unattributed_seconds": 2e-06,
+              "measured_wall_seconds": 132.12146404199302,
+              "timing_build_seconds": 132.069,
+              "timing_export_seconds": 0.0001,
+              "timing_input_seconds": 0.00012,
+              "timing_total_seconds": 132.069
+            }
+          },
+          "command": [
+            "cartmesh2d_hybrid_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L9",
+            "9",
+            "3",
+            "9",
+            "4",
+            "0.02",
+            "1.2",
+            "1.0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/circle-hybrid-L9-case",
+            "0.01"
+          ],
+          "exit_code": 1,
+          "level": 9,
+          "mesh": {
+            "failure_reason": "solver_quality_failed",
+            "fallback_issue_count": 16.0,
+            "fallback_max_non_orthogonality_deg": 45.859,
+            "fallback_min_face_weight": 0.110669,
+            "fallback_min_volume_ratio": 0.0787994,
+            "fallback_stage": "hybrid_candidate",
+            "hard_issue_counts": null,
+            "hybrid_status": "failed",
+            "max_non_orthogonality_deg": 78.6117,
+            "mesh_mode": "failed",
+            "min_face_weight": 0.0244111,
+            "min_volume_ratio": 0.00228732,
+            "rejected_issue_count": 233.0
+          },
+          "minimum_level": 3,
+          "stderr_tail": "h4_status=failed mesh_mode=failed fallback_stage=hybrid_candidate requested_layer_failure=none local_layer_failure=none hybrid_failure=solver_quality_failed hybrid_detail=solver quality remains invalid after constrained repair: issues=233 max_nonorthogonality=78.6117 min_face_weight=0.0244111 min_volume_ratio=0.00228732 issue[0]=(code=9,cell=1723,edge=486,measured=0.0244111) issue[1]=(code=10,cell=1723,edge=486,measured=0.00531195) issue[2]=(code=9,cell=2462,edge=487,measured=0.0244111) issue[3]=(code=10,cell=2462,edge=487,measured=0.00531195) fallback_failure=pure Cut-cell fallback solver quality failed: issues=16 max_nonorthogonality=45.859 min_face_weight=0.110669 min_volume_ratio=0.0787994\n",
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "case": "narrow_gap",
+      "input": "examples/h4_3/narrow_gap.xy",
+      "levels": [
+        8
+      ],
+      "mode": "hybrid",
+      "rungs": [
+        {
+          "attribution": {
+            "deterministic_counters": {
+              "h4_conformal_hybrid_build_calls": 2,
+              "h4_local_hybrid_attempts": 1,
+              "h4_pure_cutcell_fallback_attempts": 0,
+              "h4_requested_hybrid_attempts": 0
+            },
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "h4_local_hybrid_seconds": 46.3819,
+              "h4_local_layer_seconds": 0.007909,
+              "h4_pure_cutcell_fallback_seconds": 0.0,
+              "h4_requested_hybrid_seconds": 0.0,
+              "h4_requested_layer_seconds": 4.6e-05,
+              "h4_total_seconds": 46.3899,
+              "h4_unattributed_seconds": 1e-06,
+              "measured_wall_seconds": 46.505892708024476,
+              "timing_build_seconds": 46.3923,
+              "timing_export_seconds": 0.06106,
+              "timing_input_seconds": 0.000315,
+              "timing_total_seconds": 46.4537
+            }
+          },
+          "command": [
+            "cartmesh2d_hybrid_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/examples/h4_3/narrow_gap.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/narrow_gap-hybrid-L8",
+            "8",
+            "3",
+            "8",
+            "4",
+            "0.012",
+            "1.15",
+            "1.0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/adoring-fermat-c1cc47/build/r2_ladder/narrow_gap-hybrid-L8-case",
+            "0.01"
+          ],
+          "exit_code": 0,
+          "level": 8,
+          "mesh": {
+            "area_error": -3.375077994860476e-14,
+            "boundary_layer_cell_count": 820,
+            "cell_count": 3244,
+            "failure_reason": "none",
+            "fallback_stage": null,
+            "hard_issue_counts": {
+              "face_weight": 95,
+              "hydraulic_aspect": 2,
+              "minimum_interior_angle_deg": 20,
+              "non_orthogonality_deg": 14,
+              "skewness": 4,
+              "volume_ratio": 295
+            },
+            "hard_issue_total": 430,
+            "hybrid_status": "success",
+            "interface_length_error": -7.105427357601002e-15,
+            "max_non_orthogonality_deg": 68.81332467755374,
+            "mesh_mode": "hybrid",
+            "mesh_quality_valid": true,
+            "min_face_weight": 0.051574510290106325,
+            "min_volume_ratio": 0.011853263410370605,
+            "quadtree_leaf_count": 3028,
+            "quality_contract_status": "FAIL",
+            "remainder_cartesian_cell_count": 1104,
+            "remainder_cut_cell_count": 732,
+            "solver_cell_count": 3185,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "termination_cell_count": 1328,
+            "topology_valid": true,
+            "transition_polygon_count": 468,
+            "zero_layer_column_count": 0
+          },
+          "minimum_level": 3,
+          "timed_out": false
+        }
+      ]
+    }
+  ],
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+}

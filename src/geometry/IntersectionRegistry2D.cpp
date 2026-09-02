@@ -98,6 +98,15 @@ IntersectionRegistry2D::IntersectionRegistry2D(IntersectionRegistryPolicy2D poli
         throw std::invalid_argument(
             "intersection snap fraction must be finite, positive and dimensionless");
     }
+    // A geometric weld budget at or above Q1's short-face hard limit could
+    // destroy a face the quality contract would have accepted, so it is refused
+    // outright rather than merely discouraged.
+    if (!finitePositive(policy_.gridCornerWeldFractionOfLocalH) ||
+        policy_.gridCornerWeldFractionOfLocalH >= 0.01) {
+        throw std::invalid_argument(
+            "grid-corner weld fraction must be finite, positive and below the Q1 "
+            "short-face hard limit of 0.01");
+    }
 }
 
 std::size_t IntersectionRegistry2D::addCanonicalVertex(

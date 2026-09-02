@@ -71,11 +71,16 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 - **H4-3**：复杂几何局部降层、真实 layer termination 和最终 pure Cut-cell fallback。
 
 当前 H4-3 基线同时验证 circle、superellipse、concave L、sharp trailing edge
-和 narrow gap，并通过 OpenFOAM v2606 `checkMesh`。详细证据见
+和 narrow gap，五例均通过 OpenFOAM v2606 `checkMesh`。但**通过 `checkMesh` 不等于
+通过 Q1 质量合同**：sharp trailing edge 与 narrow gap 的 Q1 短面仍为 FAIL，
+sharp-tail 的 R1 迁移正式结论是 NO-GO。逐案例 × 逐门的准确状态见
+`docs/CURRENT_STATE_CN.md`。
+
 H4 算法说明见 `docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；质量事实基线与
 provenance 见 `docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 和 `artifacts/q0/`；
 无量纲 typed solver-quality contract 见
-`docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`。
+`docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`；
+termination 局部质量修复的四个变体见 `docs/Q3_Q4_TERMINATION_QUALITY_CN.md`。
 
 Q2 当前仍为部分完成：superellipse 微短面修复见
 `docs/Q2_INTERSECTION_CANONICALIZATION_PARTIAL_CN.md`；共享交点构造、公共边分割
@@ -116,6 +121,24 @@ DomainBoundary > 0
 3. `docs/ARCHITECTURE_CN.md`
 4. `docs/STAGE_PLAN_CN.md`
 5. `docs/ACCEPTANCE_CN.md`
+
+如果你要接手当前这一轮（R2：加密鲁棒性与 CFD 可解性），先读
+`docs/R2_HANDOFF_CN.md`：它给出两条并行主线的关键问题、已被实测排除的路线，以及
+每条改动的验收清单。实测数据与根因在 `docs/R2_REFINEMENT_ROBUSTNESS_CN.md`，
+参考项目的许可证与借鉴等级在 `docs/R2_REFERENCE_AUDIT_CN.md`。
+
+## 加密鲁棒性当前边界
+
+```text
+纯 Cut-cell（cartmesh2d_cli）      稳到 level 9（13024 solver cells、0.54 s）
+                                   level 10 失败：格点 spur -> boundary skewness 8.6
+hybrid 边界层（hybrid_cli）        稳到 level 8
+                                   level 9 失败：壁面切向分辨率被输入折线顶点数锁死
+```
+
+阶梯测量与回归门：`tools/verification/refinement_ladder.py`，基线
+`artifacts/r2/w0-baseline-manifest.json`。任何与加密相关的改动都必须给出改动前后
+两份 manifest。
 
 ## PDE 验证用全局最低层级
 
