@@ -1,5 +1,10 @@
 # Codex 当前接管状态：二维物理域纠正后重新验收中
 
+> **历史文档，已完全过时。** 这是 2026-08-22 的一次性接管快照。下面的 `REOPENED`
+> 表格已由 `docs/R1F_PATCH_LOCAL_CLOSEOUT_CN.md` 第 3 节结清；阅读清单里的
+> `cartmesh2d/` 路径前缀属于拆仓前的目录布局，CI 现在明确断言该目录不存在。
+> 接手本项目请读 `docs/R2_HANDOFF_CN.md` 与 `docs/CURRENT_STATE_CN.md`。
+
 ## 当前状态（2026-08-22）
 
 - Stage 2D-0：几何算法保留，PASS 历史有效
