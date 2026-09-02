@@ -46,6 +46,10 @@ Quadtree leaf、CutPolygon 和 Edge2D。
 H4-1 boundary-layer core、H4-2 conformal hybrid、H4-3 local dropping and
 termination。未经用户明确批准，不得把后续阶段冒充当前已完成范围。
 
+`docs/STAGE2D3/4/5/6/V_VERIFICATION.md` 顶部的 `REOPENED` 横幅是
+2026-08-22 物理域纠正之前留下的，已由 `docs/R1F_PATCH_LOCAL_CLOSEOUT_CN.md`
+第 3 节的独立 CI 运行结清；那些横幅是历史记录，不是当前状态。
+
 ## 4. 核心真实性规则
 
 1. 几何与拓扑正确性高于可视化。
@@ -65,13 +69,19 @@ termination。未经用户明确批准，不得把后续阶段冒充当前已完
 
 ## 5. 当前验证基线
 
-- 原生二维 CTest：73 项；
-- H4-3 验收：concave L、sharp trailing edge、narrow gap；
-- H4-2 回归：circle、superellipse；
+单一事实来源是 `docs/CURRENT_STATE_CN.md`：逐案例 × 逐门的状态表、各条路径的
+最高稳定 level、以及每一轮的证据指针都在那里。本节只保留不会随轮次漂移的部分。
+
+- 原生二维 CTest 项数：以 `grep -c add_test CMakeLists.txt` 为准，不在本文写死；
+  任何一轮新增测试后不得低于当轮记录的数字；
 - OpenFOAM 验证镜像：`opencfd/openfoam-run:2606`；
-- 当前 H4 算法事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；当前质量
-  事实来源：`docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md`、
-  `docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md`、`artifacts/q0/` 与
-  `artifacts/q1/`。
+- 当前 H4 算法事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；
+- 质量合同事实来源：`docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 与
+  `docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md`；
+- 加密鲁棒性事实来源：`docs/R2_REFINEMENT_ROBUSTNESS_CN.md`，
+  基线 `artifacts/r2/w0-baseline-manifest.json`。
+
+历史说明：本节曾把 CTest 项数写成固定值，并把"当前质量事实来源"只列到 Q0/Q1，
+结果落后了五轮（Q2、Q2-A、Q3、Q4、R1、R2 均在其后）。现在改为指针式，不再重复登记。
 
 任何新修改都必须保持工作区确定性、原有回归和真实输出证据。

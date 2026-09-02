@@ -71,11 +71,16 @@ BoundaryLoop = 固体壁面/障碍物轮廓
 - **H4-3**：复杂几何局部降层、真实 layer termination 和最终 pure Cut-cell fallback。
 
 当前 H4-3 基线同时验证 circle、superellipse、concave L、sharp trailing edge
-和 narrow gap，并通过 OpenFOAM v2606 `checkMesh`。详细证据见
+和 narrow gap，五例均通过 OpenFOAM v2606 `checkMesh`。但**通过 `checkMesh` 不等于
+通过 Q1 质量合同**：sharp trailing edge 与 narrow gap 的 Q1 短面仍为 FAIL，
+sharp-tail 的 R1 迁移正式结论是 NO-GO。逐案例 × 逐门的准确状态见
+`docs/CURRENT_STATE_CN.md`。
+
 H4 算法说明见 `docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；质量事实基线与
 provenance 见 `docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 和 `artifacts/q0/`；
 无量纲 typed solver-quality contract 见
-`docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`。
+`docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md` 和 `artifacts/q1/`；
+termination 局部质量修复的四个变体见 `docs/Q3_Q4_TERMINATION_QUALITY_CN.md`。
 
 Q2 当前仍为部分完成：superellipse 微短面修复见
 `docs/Q2_INTERSECTION_CANONICALIZATION_PARTIAL_CN.md`；共享交点构造、公共边分割

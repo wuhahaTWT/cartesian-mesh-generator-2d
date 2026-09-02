@@ -1,5 +1,10 @@
 # Stage 2D-3 验证记录
 
+> **历史文档。** 下面的 `REOPENED` 结论属于 2026-08-22 物理域纠正当时的状态，
+> 已由 `docs/R1F_PATCH_LOCAL_CLOSEOUT_CN.md` 第 3 节的独立 CI 运行结清：
+> 当前 exterior 语义下的验收测试全部在 CI 中运行且通过。当前状态见
+> `docs/CURRENT_STATE_CN.md`；本文保留原文作为纠正过程的记录。
+
 ## 当前状态
 
 **REOPENED / HISTORICAL PASS INVALIDATED FOR DEFAULT CFD PRODUCT**
