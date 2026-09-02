@@ -2502,8 +2502,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q3MaximumFaceWeightSeverityBefore << ",\n";
         out << "  \"q3_maximum_face_weight_severity_after\": "
             << metrics.q3MaximumFaceWeightSeverityAfter << ",\n";
-        out << "  \"q3_repair_seconds\": "
-            << metrics.q3RepairSeconds << ",\n";
         out << "  \"q3_patch_outside_stable_ids_unchanged\": "
             << (metrics.q3PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q3_local_winner_matches_global_authority\": "
@@ -2542,8 +2540,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q32HardShortFaceBefore << ",\n";
         out << "  \"q32_hard_short_face_count_after\": "
             << metrics.q32HardShortFaceAfter << ",\n";
-        out << "  \"q32_repair_seconds\": "
-            << metrics.q32RepairSeconds << ",\n";
         out << "  \"q32_patch_outside_stable_ids_unchanged\": "
             << (metrics.q32PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q32_local_winner_matches_global_authority\": "
@@ -2582,8 +2578,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q33HardShortFaceBefore << ",\n";
         out << "  \"q33_hard_short_face_count_after\": "
             << metrics.q33HardShortFaceAfter << ",\n";
-        out << "  \"q33_repair_seconds\": "
-            << metrics.q33RepairSeconds << ",\n";
         out << "  \"q33_patch_outside_stable_ids_unchanged\": "
             << (metrics.q33PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q33_local_winner_matches_global_authority\": "
@@ -2622,8 +2616,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q41HardShortFaceBefore << ",\n";
         out << "  \"q41_hard_short_face_count_after\": "
             << metrics.q41HardShortFaceAfter << ",\n";
-        out << "  \"q41_construction_selection_seconds\": "
-            << metrics.q41ConstructionSelectionSeconds << ",\n";
         out << "  \"q41_patch_outside_stable_ids_unchanged\": "
             << (metrics.q41PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q41_local_winner_matches_global_authority\": "
@@ -2744,6 +2736,15 @@ bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
     out << "  \"measurement_class\": \"wall_time\",\n";
     out << "  \"reproducible\": false,\n";
     out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
+    // The optional termination-repair variants report their wall time here, not
+    // in the byte-compared report: two runs of the same input legitimately
+    // differ in seconds, which would otherwise make the determinism comparison
+    // fail on an unchanged mesh.
+    out << "  \"q3_repair_seconds\": " << metrics.q3RepairSeconds << ",\n";
+    out << "  \"q32_repair_seconds\": " << metrics.q32RepairSeconds << ",\n";
+    out << "  \"q33_repair_seconds\": " << metrics.q33RepairSeconds << ",\n";
+    out << "  \"q41_construction_selection_seconds\": "
+        << metrics.q41ConstructionSelectionSeconds << ",\n";
     out << "  \"build_global_topology_seconds\": "
         << metrics.buildGlobalTopologySeconds << ",\n";
     out << "  \"solver_repair_seconds\": " << metrics.solverRepairSeconds << ",\n";
