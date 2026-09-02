@@ -7,6 +7,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <iomanip>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -411,7 +412,8 @@ using ProfileClock = std::chrono::steady_clock;
 
 [[nodiscard]] CutCell2D makeCell(std::size_t id,const Polygon2D& polygon,
                                  const TolerancePolicy& tol,
-                                 std::vector<std::size_t> sourceLineage={}) {
+                                 std::vector<std::size_t> sourceLineage={},
+                                 std::vector<Segment2D> embeddedBoundary={}) {
     CutCell2D cell;
     cell.sourceId=id;
     cell.sourceKey=id;
@@ -424,6 +426,7 @@ using ProfileClock = std::chrono::steady_clock;
                          (cell.backgroundBounds.max.y-cell.backgroundBounds.min.y);
     cell.areaFraction=boxArea>0.0?cell.area/boxArea:0.0;
     cell.centroid=polygon.centroid(tol);
+    cell.embeddedBoundary=std::move(embeddedBoundary);
     return cell;
 }
 
@@ -550,6 +553,83 @@ struct LocalQualityRank2D {
            code==SolverQualityIssueCode2D::LowVolumeRatio;
 }
 
+[[nodiscard]] std::vector<Segment2D> boundaryFragments(
+    const std::vector<CutCell2D>& sourceCells,
+    std::size_t source,
+    const Polygon2D& polygon,
+    const TolerancePolicy& tol) {
+    if (sourceCells.empty() || source >= sourceCells.size()) return {};
+    const auto& orig = sourceCells[source];
+    // Collect every fragment whose midpoint lies on *any* edge of the source
+    // polygon, and additionally any fragment that lies entirely inside the
+    // polygon's bounding box: a piece may own a wall edge that is a strict
+    // sub-segment of a longer fragment, so midpoint-on-piece-edge is too strict.
+    const AABB2D box = polygon.bounds();
+    std::vector<Segment2D> out;
+    out.reserve(orig.embeddedBoundary.size());
+    for (const auto& fragment : orig.embeddedBoundary) {
+        const Point2D midpoint{0.5 * (fragment.a.x + fragment.b.x),
+                               0.5 * (fragment.a.y + fragment.b.y)};
+        bool include=false;
+        for (std::size_t e=0;e<polygon.vertices.size();++e) {
+            const auto& a=polygon.vertices[e];
+            const auto& b=polygon.vertices[(e+1)%polygon.vertices.size()];
+            if (pointOnSegment(midpoint, {a,b}, tol)) {
+                include=true;
+                break;
+            }
+        }
+        if (!include && box.contains(midpoint, tol)) include=true;
+        if (include) out.push_back(fragment);
+    }
+    return out;
+}
+
+// R2/W1: after triangulating a non-convex cell into strictly convex pieces, a
+// piece may own a boundary edge whose midpoint does not lie on any inherited
+// wall fragment. That happens when the piece's wall edge is a sub-segment of a
+// longer fragment (its midpoint is on the fragment, not on the piece edge). We
+// then extend the fragment list with that piece edge so the topology classifier
+// can still find it. This does not change area — the edge already belongs to
+// the piece — it only names an already-present boundary segment.
+[[nodiscard]] std::vector<Segment2D> extendFragmentsForPiece(
+    std::vector<Segment2D> fragments,
+    const Polygon2D& piece,
+    const BoundaryRegion2D& boundary,
+    const TolerancePolicy& tol) {
+    for (std::size_t e=0;e<piece.vertices.size();++e) {
+        const auto& a=piece.vertices[e];
+        const auto& b=piece.vertices[(e+1)%piece.vertices.size()];
+        const Point2D midpoint{0.5*(a.x+b.x),0.5*(a.y+b.y)};
+        // A piece edge is a wall edge when its midpoint lies on the input wall
+        // curve. After a grid-corner weld the endpoints may have moved off the
+        // exact curve, so also accept the case where both endpoints lie on the
+        // same source boundary segment.
+        bool onWall = boundary.classifyPoint(midpoint,tol)==PointInPolygon::Boundary;
+        if (!onWall) {
+            for (const auto& loop : boundary.loops()) {
+                const auto& vertices = loop.vertices();
+                for (std::size_t i=0;i<vertices.size();++i) {
+                    const auto& a0=vertices[i];
+                    const auto& b0=vertices[(i+1)%vertices.size()];
+                    if (pointOnSegment(a,{a0,b0},tol) && pointOnSegment(b,{a0,b0},tol)) {
+                        onWall=true;
+                        break;
+                    }
+                }
+                if (onWall) break;
+            }
+        }
+        if (!onWall) continue;
+        bool covered=false;
+        for (const auto& fragment:fragments) {
+            if (pointOnSegment(midpoint,fragment,tol)) {covered=true;break;}
+        }
+        if (!covered) fragments.push_back({a,b});
+    }
+    return fragments;
+}
+
 [[nodiscard]] PartitionAttempt2D partitionSourcePolygons(
     const std::vector<Polygon2D>& sourcePolygons,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
@@ -557,7 +637,13 @@ struct LocalQualityRank2D {
     const std::vector<bool>& immutableSources={},
     const std::vector<bool>& preserveSources={},
     const std::vector<std::vector<std::size_t>>& sourceLineages={},
-    std::shared_ptr<IntersectionRegistry2D> registry={}) {
+    std::shared_ptr<IntersectionRegistry2D> registry={},
+    // R2/W1: collect the wall fragments once per source cell. A triangulated
+    // piece may lose its wall edges if they are sub-segments of a longer
+    // fragment whose midpoint does not lie on the piece edge; extending the
+    // fragment list with the piece edge itself keeps the topology classifier
+    // able to recognise the boundary.
+    const std::vector<CutCell2D>& sourceCells={}) {
     PartitionAttempt2D result;
     std::vector<CutCell2D> cells;
     cells.reserve(sourcePolygons.size());
@@ -569,10 +655,13 @@ struct LocalQualityRank2D {
         const auto& polygon=sourcePolygons[source];
         const bool immutable=!immutableSources.empty() && immutableSources[source];
         const bool preserve=!preserveSources.empty() && preserveSources[source];
+        const std::vector<Segment2D> sourceEmbedded =
+            boundaryFragments(sourceCells, source, polygon, tol);
         if (immutable || preserve || strictlyConvex(polygon)) {
             cells.push_back(makeCell(
                 cells.size(),polygon,tol,
-                sourceLineages.empty()?std::vector<std::size_t>{source}:sourceLineages[source]));
+                sourceLineages.empty()?std::vector<std::size_t>{source}:sourceLineages[source],
+                sourceEmbedded));
             result.sourceForCell.push_back(source);
             result.immutableForCell.push_back(immutable);
             continue;
@@ -587,7 +676,8 @@ struct LocalQualityRank2D {
         for (const auto& piece:*pieces) {
             cells.push_back(makeCell(
                 cells.size(),piece,tol,
-                sourceLineages.empty()?std::vector<std::size_t>{source}:sourceLineages[source]));
+                sourceLineages.empty()?std::vector<std::size_t>{source}:sourceLineages[source],
+                extendFragmentsForPiece(sourceEmbedded,piece,boundary,tol)));
             result.sourceForCell.push_back(source);
             result.immutableForCell.push_back(false);
         }
@@ -607,6 +697,23 @@ struct LocalQualityRank2D {
         result.error="partitioned solver topology audit failed";
         if (!result.topology.issues.empty()) {
             result.error+=": "+result.topology.issues.front().message;
+        }
+        // Name the failing edge so a caller can reproduce it without a debugger.
+        for (const auto& issue : result.topology.issues) {
+            if (issue.code != TopologyIssueCode2D::UnclassifiedBoundaryEdge) continue;
+            const std::size_t edgeId = issue.objectId;
+            if (edgeId >= result.topology.edges.size()) break;
+            const auto& edge = result.topology.edges[edgeId];
+            const auto& a = result.topology.vertices[edge.v0].point;
+            const auto& b = result.topology.vertices[edge.v1].point;
+            std::ostringstream detail;
+            detail << std::setprecision(17)
+                   << " edge=" << edgeId
+                   << " a=(" << a.x << ',' << a.y << ')'
+                   << " b=(" << b.x << ',' << b.y << ')'
+                   << " owner_cell=" << edge.owner;
+            result.error += detail.str();
+            break;
         }
     }
     return result;
@@ -2585,14 +2692,15 @@ SolverTopologyResult2D buildSolverTopology2D(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
     return buildSolverTopology2D(
-        topology,domain,boundary,SolverTopologyConstraints2D{},tol);
+        topology,domain,boundary,SolverTopologyConstraints2D{},tol,{});
 }
 
 SolverTopologyResult2D buildSolverTopology2D(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,
     const SolverTopologyConstraints2D& constraints,
-    const TolerancePolicy& tol) {
+    const TolerancePolicy& tol,
+    const std::vector<CutCell2D>& sourceCells) {
     SolverTopologyResult2D result;
     result.inputCellCount=topology.cells.size();
     if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid() ||
@@ -2645,7 +2753,7 @@ SolverTopologyResult2D buildSolverTopology2D(
     PartitionAttempt2D partition=partitionSourcePolygons(
         sourcePolygons,domain,boundary,tol,&result.profile,false,
         constraints.immutableInputCells,constraints.preserveInputCells,
-        sourceLineages,topology.constructionRegistry);
+        sourceLineages,topology.constructionRegistry,sourceCells);
     std::vector<bool> immutableSources=constraints.immutableInputCells;
     std::vector<bool> preserveSources=constraints.preserveInputCells;
     result.profile.initialPartitionSeconds=profileSeconds(initialPartitionStart);

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <set>
 #include <tuple>
 #include <utility>
 
@@ -318,6 +319,17 @@ AgglomerationResult2D agglomerateSmallCells(
         return a.front() < b.front();
     });
 
+    // Maps a topology source id (index into the per-leaf CutCell2D vector) back
+    // to its cells, so an agglomerated group can inherit the union of its
+    // members' wall fragments. A group may legally contain zero wall-touching
+    // members; the empty union is then correct.
+    std::vector<std::vector<std::size_t>> cellsBySourceId(cutCells.size());
+    for (const auto& cell : topology.cells) {
+        if (cell.sourceId < cutCells.size()) {
+            cellsBySourceId[cell.sourceId].push_back(cell.id);
+        }
+    }
+
     std::vector<CutCell2D> synthetic;
     synthetic.reserve(groups.size());
     result.cells.reserve(groups.size());
@@ -335,12 +347,84 @@ AgglomerationResult2D agglomerateSmallCells(
         AgglomeratedCell2D merged;
         merged.id = groupId;
         merged.memberTopologyCellIds = groups[groupId];
+        std::vector<Segment2D> mergedEmbedded;
+        // Collect each distinct source's wall fragments exactly once. A split
+        // leaf contributes several member cells with the same source id, and
+        // duplicating its fragments would make the union disagree with the
+        // merged polygon's boundary edges downstream.
+        std::set<std::size_t> collectedSources;
         for (const std::size_t member : groups[groupId]) {
             const auto& source = topology.cells[member];
             sourceArea += source.geometryArea;
             minSourceKey = std::min(minSourceKey, source.sourceKey);
             merged.memberSourceIds.push_back(source.sourceId);
+            if (source.sourceId < cutCells.size() &&
+                collectedSources.insert(source.sourceId).second) {
+                const auto& orig = cutCells[source.sourceId];
+                mergedEmbedded.insert(mergedEmbedded.end(),
+                                     orig.embeddedBoundary.begin(),
+                                     orig.embeddedBoundary.end());
+            }
         }
+        // Deterministic fragment order: sort by (a.x, a.y, b.x, b.y) so the
+        // result does not depend on member iteration order.
+        std::sort(mergedEmbedded.begin(), mergedEmbedded.end(),
+                  [](const Segment2D& lhs, const Segment2D& rhs) {
+                      return std::tie(lhs.a.x, lhs.a.y, lhs.b.x, lhs.b.y) <
+                             std::tie(rhs.a.x, rhs.a.y, rhs.b.x, rhs.b.y);
+                  });
+        // The merged polygon's wall boundary edges must each coincide with one
+        // of these fragments. Verify coverage here so a mismatch is a named
+        // issue, not a downstream unclassified-edge audit failure.
+        if (!mergedEmbedded.empty()) {
+            std::vector<Segment2D> polygonEdges;
+            for (std::size_t i = 0; i < polygon->vertices.size(); ++i) {
+                const auto& a = polygon->vertices[i];
+                const auto& b = polygon->vertices[(i + 1) % polygon->vertices.size()];
+                polygonEdges.push_back({a, b});
+            }
+            std::size_t unmatched = 0;
+            for (const auto& edge : polygonEdges) {
+                bool onWall = false;
+                for (const auto& fragment : mergedEmbedded) {
+                    // An edge lies on the wall when both its endpoints lie on
+                    // the same fragment (the fragment may be longer than the
+                    // edge after welding or subdivision).
+                    if (pointOnSegment(edge.a, fragment, tol) &&
+                        pointOnSegment(edge.b, fragment, tol)) {
+                        onWall = true;
+                        break;
+                    }
+                }
+                if (!onWall) ++unmatched;
+            }
+            // Not every polygon edge must be on the wall — only the ones the
+            // downstream classifier will look up. What must hold is that every
+            // fragment's midpoint lies on the merged polygon boundary; a
+            // fragment entirely interior to the merged area is a bug.
+            std::size_t orphanFragments = 0;
+            for (const auto& fragment : mergedEmbedded) {
+                const Point2D midpoint{(fragment.a.x + fragment.b.x) * 0.5,
+                                       (fragment.a.y + fragment.b.y) * 0.5};
+                bool onBoundary = false;
+                for (const auto& edge : polygonEdges) {
+                    if (pointOnSegment(midpoint, edge, tol)) {
+                        onBoundary = true;
+                        break;
+                    }
+                }
+                if (!onBoundary) ++orphanFragments;
+            }
+            if (orphanFragments != 0) {
+                result.issues.push_back(
+                    {AgglomerationIssueCode2D::DisconnectedBoundary, groupId,
+                     "agglomerated cell inherits wall fragments that do not lie "
+                     "on the merged polygon boundary"});
+                return result;
+            }
+            (void)unmatched;
+        }
+
         merged.polygon = *polygon;
         merged.area = merged.polygon.area();
         merged.centroid = merged.polygon.centroid();
@@ -362,6 +446,7 @@ AgglomerationResult2D agglomerateSmallCells(
         adapter.area = merged.area;
         adapter.areaFraction = 1.0;
         adapter.centroid = merged.centroid;
+        adapter.embeddedBoundary = std::move(mergedEmbedded);
         synthetic.push_back(std::move(adapter));
     }
 
