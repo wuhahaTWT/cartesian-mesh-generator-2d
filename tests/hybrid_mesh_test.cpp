@@ -199,6 +199,46 @@ int main() {
     check(circleLayers.success() &&
           samePoints(savedLayerVertices, circleLayers.strips.front().vertices),
           "H4-2 transaction does not mutate the H4-1 strip");
+
+    // Q5-1 cuts the outermost transition row radially. The last row's offset is
+    // arithmetically the single-row offset, so the committed outer envelope --
+    // and therefore the whole remainder quadtree -- must be untouched: only
+    // faces interior to the transition strip are added.
+    HybridMeshPolicy2D radialPolicy;
+    radialPolicy.enableOuterTransitionRadialMatching=true;
+    const auto circleRadial=buildAutomaticHybridWithConstruction2D(
+        circleLayers,domain,BoundaryRegion2D(circleWall),6U,refinement,
+        radialPolicy);
+    check(circleRadial.success(),"Q5-1 radial outer transition commits a hybrid mesh");
+    if (circleRadial.success() && circleHybrid.success()) {
+        check(circleRadial.metrics.q51OuterTransitionRadialSubdivision>1U &&
+              !circleRadial.metrics.q51OuterTransitionRadialDeclined,
+              "Q5-1 reports the radial rows it actually committed");
+        check(circleRadial.metrics.remainderCutCellCount==
+                  circleHybrid.metrics.remainderCutCellCount &&
+              circleRadial.metrics.remainderCartesianCellCount==
+                  circleHybrid.metrics.remainderCartesianCellCount,
+              "Q5-1 leaves every remainder Cut and Cartesian cell unchanged");
+        check(circleRadial.metrics.boundaryLayerCellCount==
+                  circleHybrid.metrics.boundaryLayerCellCount,
+              "Q5-1 leaves the immutable H4-1 layer untouched");
+        check(circleRadial.metrics.transitionPolygonCount>
+                  circleHybrid.metrics.transitionPolygonCount,
+              "Q5-1 adds transition rows rather than moving existing faces");
+        check(circleRadial.interfaceAudit.pass(1.0e-8) &&
+              circleRadial.solverInterfaceAudit.pass(1.0e-8) &&
+              std::abs(circleRadial.metrics.areaError)<1.0e-8,
+              "Q5-1 keeps the interface conformal and conserves fluid area");
+        const auto hardCount=[](const QualityContractReport2D& report) {
+            std::size_t hard=0U;
+            for (const auto& issue:report.issues)
+                if (issue.level==QualityContractLevel2D::Hard) ++hard;
+            return hard;
+        };
+        check(hardCount(circleRadial.qualityContract)<
+                  hardCount(circleHybrid.qualityContract),
+              "Q5-1 strictly reduces the typed hard-issue count on the circle");
+    }
     if (circleHybrid.success()) {
         check(circleHybrid.topology.valid() && circleHybrid.meshQuality.valid(),
               "circle unified topology and base quality pass");

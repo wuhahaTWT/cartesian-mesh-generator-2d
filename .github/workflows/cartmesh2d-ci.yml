@@ -81,6 +81,17 @@ jobs:
             "$out/q41_sharp_trailing_edge" 8 3 8 4 0.012 1.15 1.0 \
             "$out/q41_sharp_trailing_edge-case" 0.01 \
             --q4-termination-construction --q3-termination-grouped
+          "$exe" examples/acceptance/circle.xy \
+            "$out/q51_circle" 6 3 6 4 0.02 1.2 1.0 \
+            "$out/q51_circle-case" 0.01 --q5-outer-transition-radial
+          "$exe" examples/complex/superellipse_24.xy \
+            "$out/q51_superellipse" 6 3 6 3 0.015 1.15 1.0 \
+            "$out/q51_superellipse-case" 0.01 --q5-outer-transition-radial
+          for case_name in concave_l sharp_trailing_edge narrow_gap; do
+            "$exe" "examples/h4_3/${case_name}.xy" \
+              "$out/q52_${case_name}" 8 3 8 4 0.012 1.15 1.0 \
+              "$out/q52_${case_name}-case" 0.01 --q5-termination-buffer-radial
+          done
 
           for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap; do
             python3 tools/verification/check_openfoam2d.py \
@@ -102,6 +113,17 @@ jobs:
           python3 tools/verification/check_openfoam2d.py \
             "$out/q41_sharp_trailing_edge-case" \
             --report "$out/q41_sharp_trailing_edge-case/independent_check.json"
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q51_circle-case" \
+            --report "$out/q51_circle-case/independent_check.json"
+          for case_name in concave_l sharp_trailing_edge narrow_gap; do
+            python3 tools/verification/check_openfoam2d.py \
+              "$out/q52_${case_name}-case" \
+              --report "$out/q52_${case_name}-case/independent_check.json"
+          done
+          python3 tools/verification/check_openfoam2d.py \
+            "$out/q51_superellipse-case" \
+            --report "$out/q51_superellipse-case/independent_check.json"
 
           python3 - "$out" <<'PY'
           import json
@@ -221,6 +243,33 @@ jobs:
           assert (q41_sharp['boundary_layer_cell_count'] ==
                   sharp['boundary_layer_cell_count']), q41_sharp_path
           assert abs(q41_sharp['area_error']) < 1.0e-8, q41_sharp_path
+
+          # Q5-1 cuts the outermost transition row radially. The last row's
+          # offset is arithmetically the single-row offset, so the remainder
+          # quadtree must be untouched: identical Cut/Cartesian/layer counts,
+          # strictly more transition rows, and fewer typed hard issues.
+          for name in ('circle', 'superellipse'):
+              base = json.loads(
+                  (root / f'{name}.hybrid.json').read_text(encoding='utf-8'))
+              radial_path = root / f'q51_{name}.hybrid.json'
+              radial = json.loads(radial_path.read_text(encoding='utf-8'))
+              assert radial['hybrid_status'] == 'success', radial_path
+              assert radial['solver_quality_valid'] is True, radial_path
+              assert radial['solver_quality_issue_count'] == 0, radial_path
+              assert radial['q51_outer_transition_radial_subdivision'] > 1, radial_path
+              assert radial['q51_outer_transition_radial_declined'] is False, radial_path
+              assert (radial['remainder_cut_cell_count'] ==
+                      base['remainder_cut_cell_count']), radial_path
+              assert (radial['remainder_cartesian_cell_count'] ==
+                      base['remainder_cartesian_cell_count']), radial_path
+              assert (radial['boundary_layer_cell_count'] ==
+                      base['boundary_layer_cell_count']), radial_path
+              assert (radial['transition_polygon_count'] >
+                      base['transition_polygon_count']), radial_path
+              assert radial['single_owner_interface_edges'] == 0, radial_path
+              assert radial['wrong_cell_pair_interface_edges'] == 0, radial_path
+              assert radial['non_two_valent_interface_vertices'] == 0, radial_path
+              assert abs(radial['area_error']) < 1.0e-8, radial_path
           PY
 
       - name: Verify Q1 typed dimensionless quality contract
@@ -266,6 +315,71 @@ jobs:
                         issue['metric'].startswith('face_length_over_')]
           assert micro['worst'] >= 0.01
           assert hard_short == []
+
+          # Q5-1 must strictly reduce the typed hard-issue count on the two
+          # no-termination geometries, and clear the circle outright.
+          def hard_count(path):
+              report = json.loads(path.read_text(encoding='utf-8'))
+              return sum(1 for issue in report['issues']
+                         if issue['level'] == 'hard'), report['status']
+
+          for name in ('circle', 'superellipse'):
+              before, _ = hard_count(root / f'{name}.hybrid.quality-contract.json')
+              after, status = hard_count(
+                  root / f'q51_{name}.hybrid.quality-contract.json')
+              assert after < before, (name, before, after)
+          circle_after, circle_status = hard_count(
+              root / 'q51_circle.hybrid.quality-contract.json')
+          assert circle_after == 0, circle_after
+          assert circle_status == 'WARN', circle_status
+          # A bounded radial search must never publish a matched plan it does not
+          # satisfy: a reported subdivision above one implies the target was
+          # actually reachable.
+          for name in ('circle', 'superellipse'):
+              report = json.loads(
+                  (root / f'q51_{name}.hybrid.json').read_text(encoding='utf-8'))
+              if report['q51_outer_transition_radial_subdivision'] > 1:
+                  assert report['q51_outer_transition_radial_target_reachable'] \
+                      is True, name
+
+          # Q5-2 is self-gated: the re-resolved graded termination buffer is
+          # committed only when it strictly lowers the typed hard count, so no
+          # geometry may come out worse than its own baseline, and a decline must
+          # reproduce the baseline mesh byte for byte.
+          for name in ('concave_l', 'sharp_trailing_edge', 'narrow_gap'):
+              before, _ = hard_count(root / f'{name}.hybrid.quality-contract.json')
+              after, _ = hard_count(
+                  root / f'q52_{name}.hybrid.quality-contract.json')
+              report = json.loads(
+                  (root / f'q52_{name}.hybrid.json').read_text(encoding='utf-8'))
+              committed = report['q52_termination_buffer_radial_committed']
+              matched = report['q52_termination_buffer_hard_with_matching']
+              historical = report['q52_termination_buffer_hard_with_historical_march']
+              assert committed == (matched < historical), (name, matched, historical)
+              # Same rule for the buffer: nothing is committed under an
+              # unreachable row cap.
+              if committed:
+                  assert report['q52_termination_buffer_row_cap_reachable'] \
+                      is True, name
+                  assert (report['q52_termination_buffer_outer_row_thickness'] <=
+                          report['q52_termination_buffer_row_cap'] *
+                          (1.0 + 1.0e-12)), name
+              assert historical == before, (name, historical, before)
+              assert after <= before, (name, before, after)
+              assert report['solver_quality_valid'] is True, name
+              assert report['solver_quality_issue_count'] == 0, name
+              assert abs(report['area_error']) < 1.0e-8, name
+              if not committed:
+                  for suffix in ('hybrid.cm2d', 'hybrid.solver.cm2d',
+                                 'hybrid.quality-contract.json'):
+                      assert ((root / f'q52_{name}.{suffix}').read_bytes() ==
+                              (root / f'{name}.{suffix}').read_bytes()), (name, suffix)
+          # The sharp taper is the measured win this rule was added for.
+          sharp_before, _ = hard_count(
+              root / 'sharp_trailing_edge.hybrid.quality-contract.json')
+          sharp_after, _ = hard_count(
+              root / 'q52_sharp_trailing_edge.hybrid.quality-contract.json')
+          assert sharp_after < sharp_before, (sharp_before, sharp_after)
           PY
 
           python3 tools/verification/verify_q1_scale_invariance.py \
@@ -280,7 +394,7 @@ jobs:
           image=opencfd/openfoam-run:2606
           container_root=/home/openfoam/workingDir
           docker pull "$image"
-          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap q41_narrow_gap q41_sharp_trailing_edge; do
+          for case_name in circle superellipse concave_l sharp_trailing_edge narrow_gap q3_narrow_gap q32_narrow_gap q33_narrow_gap q41_narrow_gap q41_sharp_trailing_edge q51_circle q51_superellipse q52_concave_l q52_sharp_trailing_edge q52_narrow_gap; do
             log="$out/${case_name}.checkMesh.log"
             docker run --rm \
               -v "$PWD:$container_root" \
@@ -326,6 +440,32 @@ jobs:
             --collect-only
           diff -ru build/q1_baselines build/q1_baselines_repeat
 
+      - name: Gate the pure Cut-cell refinement ladder
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This ladder already holds every SolverQualityPolicy2D hard limit up to
+          # level 9 (about 20k leaves in under a second), so it is gated: it is a
+          # real regression guard on refinement behaviour that works today.
+          python3 tools/verification/refinement_ladder.py \
+            --repo . --build-dir build --evidence-dir build/r2_ladder \
+            --output-dir build/r2_ladder --manifest-name cutcell-ladder-manifest.json \
+            --gate \
+            --ladder circle:cutcell:6,7,8,9
+
+      - name: Record the hybrid refinement ladder
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Not gated yet, and deliberately so: Q1 hard issue counts still grow
+          # with refinement and level 9 still fails, both documented in
+          # docs/R2_REFINEMENT_ROBUSTNESS_CN.md. R2/W2 flips this to --gate.
+          # Level 9 is left to the local long ladder because it costs ~150 s.
+          python3 tools/verification/refinement_ladder.py \
+            --repo . --build-dir build --evidence-dir build/r2_ladder \
+            --output-dir build/r2_ladder --manifest-name hybrid-ladder-manifest.json \
+            --ladder circle:hybrid:6,7,8
+
       - name: Upload acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -338,4 +478,5 @@ jobs:
             build/q0_baselines/*.json
             build/q1_baselines/*.json
             build/q1_scale/**
+            build/r2_ladder/*-ladder-manifest.json
           if-no-files-found: error

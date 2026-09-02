@@ -3,6 +3,7 @@
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -109,22 +110,41 @@ void usage() {
            "[openfoam-case extrusion-thickness] [--legacy-construction] "
            "[--verify-source-lineage] [--q3-termination-quality] "
            "[--q3-termination-repartition] [--q3-termination-grouped] "
-           "[--q4-termination-construction]\n";
+           "[--q4-termination-construction] "
+           "[--q5-outer-transition-radial] "
+           "[--q5-termination-buffer-radial]\n";
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
+    // Top-level attribution. R1F recorded that the existing solver sub-phase
+    // timings cannot explain the end-to-end wall time; the H4 stage timers plus
+    // these bracket timers must. Printed on the failure path too, because a
+    // rejected mesh is exactly the case where the time went somewhere unknown.
+    const auto totalStart = std::chrono::steady_clock::now();
+    const auto elapsedSeconds = [](const auto& start) {
+        return std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - start).count();
+    };
     bool legacyConstruction=false;
     bool verifySourceLineage=false;
     bool q3TerminationQuality=false;
     bool q3TerminationRepartition=false;
     bool q3TerminationGrouped=false;
     bool q4TerminationConstruction=false;
+    bool q5OuterTransitionRadial=false;
+    bool q5TerminationBufferRadial=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
         if (option=="--legacy-construction") legacyConstruction=true;
         else if (option=="--verify-source-lineage") verifySourceLineage=true;
+        else if (option=="--q5-termination-buffer-radial") {
+            q5TerminationBufferRadial=true;
+        }
+        else if (option=="--q5-outer-transition-radial") {
+            q5OuterTransitionRadial=true;
+        }
         else if (option=="--q3-termination-quality") q3TerminationQuality=true;
         else if (option=="--q3-termination-repartition") {
             q3TerminationQuality=true;
@@ -206,8 +226,42 @@ int main(int argc, char** argv) {
     hybridPolicy.enableTerminationGroupedRepartition=q3TerminationGrouped;
     hybridPolicy.enableTerminationConstructionQualitySelection=
         q4TerminationConstruction;
+    hybridPolicy.enableOuterTransitionRadialMatching=q5OuterTransitionRadial;
+    hybridPolicy.enableTerminationBufferRadialMatching=q5TerminationBufferRadial;
+    const double inputSeconds = elapsedSeconds(totalStart);
+    const auto buildStart = std::chrono::steady_clock::now();
     auto robust=buildRobustH4Mesh2D(
         chains,layerParameters,domain,originalWalls,maxLevel,refinement,{},hybridPolicy);
+    const double buildSeconds = elapsedSeconds(buildStart);
+    const auto exportStart = std::chrono::steady_clock::now();
+
+    // Every exit path below reports the same attribution keys, so a rejected
+    // mesh still explains where its wall time went.
+    const auto printTiming = [&](double exportSeconds) {
+        std::cout << "timing_input_seconds=" << inputSeconds
+                  << " timing_build_seconds=" << buildSeconds
+                  << " timing_export_seconds=" << exportSeconds
+                  << " timing_total_seconds=" << elapsedSeconds(totalStart)
+                  << " h4_total_seconds=" << robust.profile.totalSeconds
+                  << " h4_requested_layer_seconds="
+                  << robust.profile.requestedLayerSeconds
+                  << " h4_requested_hybrid_seconds="
+                  << robust.profile.requestedHybridSeconds
+                  << " h4_local_layer_seconds=" << robust.profile.localLayerSeconds
+                  << " h4_local_hybrid_seconds=" << robust.profile.localHybridSeconds
+                  << " h4_pure_cutcell_fallback_seconds="
+                  << robust.profile.pureCutCellFallbackSeconds
+                  << " h4_unattributed_seconds="
+                  << robust.profile.unattributedSeconds()
+                  << " h4_requested_hybrid_attempts="
+                  << robust.profile.requestedHybridAttempts
+                  << " h4_local_hybrid_attempts="
+                  << robust.profile.localHybridAttempts
+                  << " h4_pure_cutcell_fallback_attempts="
+                  << robust.profile.pureCutCellFallbackAttempts
+                  << " h4_conformal_hybrid_build_calls="
+                  << robust.profile.conformalHybridBuildCalls << '\n';
+    };
 
     const auto parent = outputPrefix.parent_path().empty()
         ? std::filesystem::path(".") : outputPrefix.parent_path();
@@ -225,6 +279,7 @@ int main(int argc, char** argv) {
                  <<hybridMeshFailureReasonName(robust.hybridCandidate.failure.reason)
                  <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" fallback_failure="<<robust.fallback.failureMessage<<'\n';
+        printTiming(elapsedSeconds(exportStart));
         return EXIT_FAILURE;
     }
     if (robust.mode==H4MeshMode2D::PureCutCellFallback) {
@@ -269,6 +324,7 @@ int main(int argc, char** argv) {
                  <<" area_error="<<fallback.areaError
                  <<" solver_quality=pass openfoam="<<openFoamStatus
                  <<" vtk="<<vtkPath<<'\n';
+        printTiming(elapsedSeconds(exportStart));
         return EXIT_SUCCESS;
     }
     auto hybrid=std::move(robust.hybridCandidate);
@@ -291,7 +347,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     const auto profilePath = outputPrefix.string() + ".hybrid.profile.json";
-    if (!writeHybridProfileJson2D(hybrid, profilePath, &error)) {
+    if (!writeHybridProfileJson2D(hybrid, profilePath, &error, &robust.profile)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -300,6 +356,7 @@ int main(int argc, char** argv) {
                   << hybridMeshFailureReasonName(hybrid.failure.reason)
                   << " message=" << hybrid.failure.message
                   << " report=" << jsonPath << '\n';
+        printTiming(elapsedSeconds(exportStart));
         return EXIT_FAILURE;
     }
 
@@ -462,6 +519,10 @@ int main(int argc, char** argv) {
               << hybrid.metrics.q41ConstructionSelectionSeconds
               << " q41_declined="
               << hybrid.metrics.q41ConstructionSelectionDeclined
+              << " q51_radial_rows="
+              << hybrid.metrics.q51OuterTransitionRadialSubdivision
+              << " q51_declined="
+              << hybrid.metrics.q51OuterTransitionRadialDeclined
               << " quality_contract="
               << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus
@@ -469,5 +530,6 @@ int main(int argc, char** argv) {
               << " solver_vtk=" << solverVtkPath
               << " solver_cm2d=" << solverCm2dPath
               << " report=" << jsonPath << '\n';
+    printTiming(elapsedSeconds(exportStart));
     return EXIT_SUCCESS;
 }

@@ -627,6 +627,24 @@ int main(int argc, char** argv) {
     if (unsupported != 0) {
         std::cerr << "Cut-cell construction produced " << unsupported
                   << " unsupported leaf geometry case(s)\n";
+        // Name the reasons instead of only counting them: an unnamed count is
+        // exactly the diagnostic gap R2/W0 set out to close.
+        std::size_t reported = 0;
+        for (const auto& cut : cutCells) {
+            if (cut.valid() || cut.kind != CutCellKind::Unsupported) continue;
+            if (reported >= 5) break;
+            std::cerr << "unsupported_leaf[" << reported << "] source=" << cut.sourceId
+                      << " key=" << cut.sourceKey
+                      << " bounds=(" << cut.backgroundBounds.min.x << ','
+                      << cut.backgroundBounds.min.y << ")-("
+                      << cut.backgroundBounds.max.x << ','
+                      << cut.backgroundBounds.max.y << ')';
+            for (const auto& issue : cut.issues) {
+                std::cerr << " issue=" << issue.message;
+            }
+            std::cerr << '\n';
+            ++reported;
+        }
         return EXIT_FAILURE;
     }
     const double cutCellSeconds = elapsedSeconds(cutCellStart);
@@ -698,6 +716,20 @@ int main(int argc, char** argv) {
     }
     const double agglomerationSeconds = elapsedSeconds(agglomerationStart);
 
+    // A rejected mesh is exactly the case where the time went somewhere unknown,
+    // so the late failure paths report the phases they already completed instead
+    // of exiting silently. solverPhaseSeconds covers the phase that was still
+    // running when the gate rejected the mesh, so nothing stays implicit.
+    const auto printFailureTiming = [&](double solverPhaseSeconds = 0.0) {
+        std::cout << "timing_refinement_seconds=" << refinementSeconds
+                  << " timing_balance_seconds=" << balanceSeconds
+                  << " timing_cut_cell_seconds=" << cutCellSeconds
+                  << " timing_source_topology_seconds=" << sourceTopologySeconds
+                  << " timing_agglomeration_seconds=" << agglomerationSeconds
+                  << " timing_solver_topology_seconds=" << solverPhaseSeconds
+                  << " timing_total_seconds=" << elapsedSeconds(totalStart) << '\n';
+    };
+
     const MeshQualityReport2D quality =
         evaluateMeshQuality(stabilized.topology, cutCells, &smallReport);
     if (!quality.valid()) {
@@ -714,6 +746,7 @@ int main(int argc, char** argv) {
             std::cerr << "quality_issue_omitted=" << quality.issues.size() - issueLimit << '\n';
         }
         printTopologyDiagnostics(stabilized.topology);
+        printFailureTiming();
         return EXIT_FAILURE;
     }
 
@@ -726,6 +759,7 @@ int main(int argc, char** argv) {
             std::cerr<<"solver topology partition failed";
             for (const auto& issue:solverTopology->issues) std::cerr<<": "<<issue;
             std::cerr<<'\n';
+            printFailureTiming(elapsedSeconds(solverTopologyStart));
             return EXIT_FAILURE;
         }
         solverQuality=evaluateSolverQuality2D(solverTopology->topology);
@@ -770,6 +804,7 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            printFailureTiming(elapsedSeconds(solverTopologyStart));
             return EXIT_FAILURE;
         }
     }

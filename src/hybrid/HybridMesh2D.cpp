@@ -2,6 +2,7 @@
 #include "cartmesh2d/hybrid/TransitionCanonicalization2D.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -17,6 +18,17 @@
 
 namespace cartmesh2d {
 namespace {
+
+using H4ProfileClock = std::chrono::steady_clock;
+
+[[nodiscard]] double h4ProfileSeconds(H4ProfileClock::time_point start) noexcept {
+    return std::chrono::duration<double>(H4ProfileClock::now()-start).count();
+}
+
+// Process-wide instrumentation counter, single-threaded by construction like
+// globalTopologyBuilds in Topology2D.cpp.
+std::size_t conformalHybridBuilds=0U;
+
 
 [[nodiscard]] double polygonBoundsArea(const Polygon2D& polygon) noexcept {
     const auto bounds = polygon.bounds();
@@ -517,6 +529,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t remainderMaxLevel,
     const QuadtreeRefinementPolicy2D& remainderRefinement,
     const HybridMeshPolicy2D& policy) {
+    ++conformalHybridBuilds;
     const auto buildStartGlobalTopologies=globalTopologyBuildCount2D();
     const auto buildStartGlobalTopologyCells=globalTopologyBuildInputCells2D();
     const auto buildStartGlobalTopologySeconds=globalTopologyBuildSeconds2D();
@@ -597,6 +610,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         -static_cast<int>(remainderRefinement.boundaryLevel));
     std::vector<BoundaryLoop> remainderBoundaryLoops;
     std::vector<Polygon2D> transitionPolygons;
+    std::size_t terminationBufferRows=0U;
+    double terminationBufferGrowthRatio=0.0;
+    double terminationBufferOuterRowThickness=0.0;
+    double terminationBufferRowCap=0.0;
+    bool terminationBufferRowCapReachable=true;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
     if (localTermination) {
         double lastLayerSpacing=0.0;
@@ -630,9 +648,80 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         // A non-dyadic ratio prevents the outer front from repeatedly landing
         // almost on nested quadtree lines while retaining monotone grading.
         terminationParameters.growthRatio=policy.terminationGrowthRatio;
+        // Q5-2 EXPERIMENT: cap every buffer row at one remainder background cell
+        // while holding the total buffer thickness -- and therefore the outer
+        // front position -- at the value the ungated march would have produced.
+        if (policy.enableTerminationBufferRadialMatching) {
+            const double remainderCellSize=std::ldexp(
+                std::max(domain.width(),domain.height()),
+                -static_cast<int>(remainderRefinement.boundaryLevel));
+            const double cap=policy.outerTransitionRadialTargetCells*remainderCellSize;
+            const auto rowThickness=[](double total,std::size_t rows,double ratio) {
+                if (rows==0U) return 0.0;
+                if (std::abs(ratio-1.0)<1.0e-12)
+                    return total/static_cast<double>(rows);
+                const double power=std::pow(ratio,static_cast<double>(rows-1U));
+                return total*power*(ratio-1.0)/
+                       (std::pow(ratio,static_cast<double>(rows))-1.0);
+            };
+            const auto baseline=resolveLayerParameters2D(terminationParameters);
+            if (baseline.success() && cap>0.0 &&
+                rowThickness(baseline.parameters->totalThickness,
+                             terminationParameters.nLayers,
+                             terminationParameters.growthRatio)>cap) {
+                const double total=baseline.parameters->totalThickness;
+                std::size_t rows=terminationParameters.nLayers;
+                const std::size_t maximumRows=
+                    policy.maximumTerminationBufferRows;
+                while (rows<maximumRows && total/static_cast<double>(rows)>cap)
+                    ++rows;
+                // The bounded row count may run out before the cap is reachable.
+                // A uniform march is the thinnest outer row this row count can
+                // produce, so if that still exceeds the cap the rule cannot be
+                // satisfied here: leave the historical march untouched instead of
+                // reporting a matched buffer that still violates its own cap.
+                // This is also what makes ratio 1 a valid bisection lower bound,
+                // because rowThickness(total,rows,1) is exactly total/rows.
+                if (total/static_cast<double>(rows)<=cap) {
+                    // Keep as much near-wall grading as the cap allows: a larger
+                    // ratio makes the first row thinner at fixed total thickness.
+                    double low=1.0,high=terminationParameters.growthRatio;
+                    if (rowThickness(total,rows,high)>cap) {
+                        for (int step=0;step<60;++step) {
+                            const double middle=0.5*(low+high);
+                            if (rowThickness(total,rows,middle)>cap) high=middle;
+                            else low=middle;
+                        }
+                    } else {
+                        low=high;
+                    }
+                    terminationParameters.nLayers=rows;
+                    terminationParameters.thicknessMode=
+                        LayerThicknessMode2D::TotalThickness;
+                    terminationParameters.thickness=total;
+                    terminationParameters.growthRatio=low;
+                } else {
+                    terminationBufferRowCapReachable=false;
+                }
+            }
+            terminationBufferRowCap=cap;
+        }
         BoundaryLayerPolicy2D terminationPolicy;
         terminationPolicy.tolerance=policy.tolerance;
         terminationPolicy.permitConcaveTerminationMarching=true;
+        terminationBufferRows=terminationParameters.nLayers;
+        terminationBufferGrowthRatio=terminationParameters.growthRatio;
+        if (const auto resolved=resolveLayerParameters2D(terminationParameters);
+            resolved.success() &&
+            resolved.parameters->cumulativeNormalDistances.size()>=2U) {
+            const auto& d=resolved.parameters->cumulativeNormalDistances;
+            terminationBufferOuterRowThickness=d.back()-d[d.size()-2U];
+        } else if (const auto single=resolveLayerParameters2D(terminationParameters);
+                   single.success()) {
+            terminationBufferOuterRowThickness=
+                single.parameters->cumulativeNormalDistances.empty()
+                    ?0.0:single.parameters->cumulativeNormalDistances.front();
+        }
         const auto terminationLayers=buildLocallyReducedBoundaryLayerStrips2D(
             terminationChains,terminationParameters,terminationPolicy);
         if (!terminationLayers.success()) {
@@ -680,10 +769,31 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         for (const auto vertex:outerIds) innerLoop.push_back(strip.vertices[vertex].point);
         std::size_t innerSubdivision=1U;
         for (std::size_t ring=0;ring<policy.transitionRingCount;++ring) {
-            const std::size_t outerSubdivision=ring==0U?1U:innerSubdivision*2U;
+            // Q5-1: the fan is graded tangentially but every ring keeps the
+            // full ring thickness, so the outermost ring can be several
+            // background cells deep while the Cut cells it borders are a
+            // fraction of one. Cut that last ring into radial rows. The last
+            // row's offset is arithmetically identical to the single-row
+            // offset, so the committed outer envelope -- and therefore the
+            // whole remainder quadtree and its Cut cells -- is unchanged.
+            const bool lastRing=ring+1U==policy.transitionRingCount;
+            const std::size_t radialRows=lastRing
+                ?std::max<std::size_t>(
+                     1U,policy.transitionOuterRingRadialSubdivision)
+                :1U;
+            const std::size_t ringSubdivision=ring==0U?1U:innerSubdivision*2U;
+            for (std::size_t row=0;row<radialRows;++row) {
+            // Only the first row of a ring carries that ring's tangential
+            // refinement; later radial rows keep it, so every added face is
+            // interior to the transition strip.
+            const std::size_t outerSubdivision=
+                row==0U?ringSubdivision:innerSubdivision;
             std::vector<Point2D> transitionOuter;
             transitionOuter.reserve(outerIds.size()*outerSubdivision);
-            const double factor=transitionRingThickness*static_cast<double>(ring+1U)/
+            const double factor=transitionRingThickness*
+                                (static_cast<double>(ring)+
+                                 static_cast<double>(row+1U)/
+                                 static_cast<double>(radialRows))/
                                 lastNormalSpacing;
             for (std::size_t segment=0;segment<outerIds.size();++segment) {
                 const std::size_t next=(segment+1U)%outerIds.size();
@@ -734,6 +844,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             }
             innerLoop=std::move(transitionOuter);
             innerSubdivision=outerSubdivision;
+            }
         }
         BoundaryLoop transitionLoop(innerLoop);
         if (!transitionLoop.diagnose(policy.tolerance).valid()) {
@@ -2063,6 +2174,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.metrics.q41LocalWinnerMatchesGlobalAuthority=
         q41LocalWinnerMatchesGlobalAuthority;
     result.metrics.q41ConstructionBoundReached=q41ConstructionBoundReached;
+    result.metrics.q52TerminationBufferRows=terminationBufferRows;
+    result.metrics.q52TerminationBufferGrowthRatio=terminationBufferGrowthRatio;
+    result.metrics.q52TerminationBufferOuterRowThickness=
+        terminationBufferOuterRowThickness;
+    result.metrics.q52TerminationBufferRowCap=terminationBufferRowCap;
+    result.metrics.q52TerminationBufferRowCapReachable=
+        terminationBufferRowCapReachable;
     result.metrics.buildGlobalTopologyCalls=
         globalTopologyBuildCount2D()-buildStartGlobalTopologies;
     result.metrics.buildGlobalTopologyInputCells=
@@ -2207,42 +2325,68 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     const BoundaryLayerPolicy2D& layerPolicy,
     const HybridMeshPolicy2D& hybridPolicy) {
     RobustH4BuildResult2D result;
+    const auto totalStart=H4ProfileClock::now();
+    const auto startConformalBuilds=conformalHybridBuildCount2D();
+    const auto finish=[&]() -> RobustH4BuildResult2D& {
+        result.profile.totalSeconds=h4ProfileSeconds(totalStart);
+        result.profile.conformalHybridBuildCalls=
+            conformalHybridBuildCount2D()-startConformalBuilds;
+        return result;
+    };
+
+    auto stageStart=H4ProfileClock::now();
     result.requestedLayerCandidate=buildBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
+    result.profile.requestedLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.requestedLayerCandidate.success()) {
+        stageStart=H4ProfileClock::now();
+        ++result.profile.requestedHybridAttempts;
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.requestedLayerCandidate,domain,originalWalls,maxLevel,refinement,
             hybridPolicy);
+        result.profile.requestedHybridSeconds=h4ProfileSeconds(stageStart);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
-            return result;
+            return finish();
         }
         result.fallbackStage=H4FallbackStage2D::HybridCandidate;
     } else {
         result.fallbackStage=H4FallbackStage2D::RequestedLayers;
     }
 
+    stageStart=H4ProfileClock::now();
     result.localLayerCandidate=buildLocallyReducedBoundaryLayerStrips2D(
         wallChains,layerParameters,layerPolicy);
+    result.profile.localLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.localLayerCandidate.success()) {
+        stageStart=H4ProfileClock::now();
+        ++result.profile.localHybridAttempts;
         result.hybridCandidate=buildAutomaticHybridWithConstruction2D(
             result.localLayerCandidate,domain,originalWalls,maxLevel,refinement,
             hybridPolicy);
+        result.profile.localHybridSeconds=h4ProfileSeconds(stageStart);
         if (result.hybridCandidate.success()) {
             result.mode=H4MeshMode2D::Hybrid;
             result.fallbackStage=H4FallbackStage2D::None;
-            return result;
+            return finish();
         }
         result.fallbackStage=H4FallbackStage2D::HybridCandidate;
     } else {
         result.fallbackStage=H4FallbackStage2D::LocalReduction;
     }
 
+    stageStart=H4ProfileClock::now();
+    ++result.profile.pureCutCellFallbackAttempts;
     result.fallback=buildPureCutCellFallback2D(
         domain,originalWalls,maxLevel,refinement,hybridPolicy);
+    result.profile.pureCutCellFallbackSeconds=h4ProfileSeconds(stageStart);
     result.mode=result.fallback.valid()
         ?H4MeshMode2D::PureCutCellFallback:H4MeshMode2D::Failed;
-    return result;
+    return finish();
+}
+
+std::size_t conformalHybridBuildCount2D() noexcept {
+    return conformalHybridBuilds;
 }
 
 const char* h4MeshModeName(H4MeshMode2D mode) noexcept {
@@ -2463,8 +2607,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q3MaximumFaceWeightSeverityBefore << ",\n";
         out << "  \"q3_maximum_face_weight_severity_after\": "
             << metrics.q3MaximumFaceWeightSeverityAfter << ",\n";
-        out << "  \"q3_repair_seconds\": "
-            << metrics.q3RepairSeconds << ",\n";
         out << "  \"q3_patch_outside_stable_ids_unchanged\": "
             << (metrics.q3PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q3_local_winner_matches_global_authority\": "
@@ -2503,8 +2645,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q32HardShortFaceBefore << ",\n";
         out << "  \"q32_hard_short_face_count_after\": "
             << metrics.q32HardShortFaceAfter << ",\n";
-        out << "  \"q32_repair_seconds\": "
-            << metrics.q32RepairSeconds << ",\n";
         out << "  \"q32_patch_outside_stable_ids_unchanged\": "
             << (metrics.q32PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q32_local_winner_matches_global_authority\": "
@@ -2543,8 +2683,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q33HardShortFaceBefore << ",\n";
         out << "  \"q33_hard_short_face_count_after\": "
             << metrics.q33HardShortFaceAfter << ",\n";
-        out << "  \"q33_repair_seconds\": "
-            << metrics.q33RepairSeconds << ",\n";
         out << "  \"q33_patch_outside_stable_ids_unchanged\": "
             << (metrics.q33PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q33_local_winner_matches_global_authority\": "
@@ -2583,8 +2721,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << metrics.q41HardShortFaceBefore << ",\n";
         out << "  \"q41_hard_short_face_count_after\": "
             << metrics.q41HardShortFaceAfter << ",\n";
-        out << "  \"q41_construction_selection_seconds\": "
-            << metrics.q41ConstructionSelectionSeconds << ",\n";
         out << "  \"q41_patch_outside_stable_ids_unchanged\": "
             << (metrics.q41PatchOutsideStableIdsUnchanged?"true":"false") << ",\n";
         out << "  \"q41_local_winner_matches_global_authority\": "
@@ -2595,6 +2731,29 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << (metrics.q41ConstructionBoundReached?"true":"false") << ",\n";
         out << "  \"q41_construction_selection_declined\": "
             << (metrics.q41ConstructionSelectionDeclined?"true":"false") << ",\n";
+        out << "  \"q51_outer_transition_radial_subdivision\": "
+            << metrics.q51OuterTransitionRadialSubdivision << ",\n";
+        out << "  \"q51_outer_transition_radial_declined\": "
+            << (metrics.q51OuterTransitionRadialDeclined?"true":"false") << ",\n";
+        out << "  \"q51_outer_transition_radial_target_reachable\": "
+            << (metrics.q51OuterTransitionRadialTargetReachable?"true":"false")
+            << ",\n";
+        out << "  \"q52_termination_buffer_radial_committed\": "
+            << (metrics.q52TerminationBufferRadialCommitted?"true":"false") << ",\n";
+        out << "  \"q52_termination_buffer_hard_with_matching\": "
+            << metrics.q52TerminationBufferHardWithMatching << ",\n";
+        out << "  \"q52_termination_buffer_hard_with_historical_march\": "
+            << metrics.q52TerminationBufferHardWithHistoricalMarch << ",\n";
+        out << "  \"q52_termination_buffer_rows\": "
+            << metrics.q52TerminationBufferRows << ",\n";
+        out << "  \"q52_termination_buffer_growth_ratio\": "
+            << metrics.q52TerminationBufferGrowthRatio << ",\n";
+        out << "  \"q52_termination_buffer_outer_row_thickness\": "
+            << metrics.q52TerminationBufferOuterRowThickness << ",\n";
+        out << "  \"q52_termination_buffer_row_cap\": "
+            << metrics.q52TerminationBufferRowCap << ",\n";
+        out << "  \"q52_termination_buffer_row_cap_reachable\": "
+            << (metrics.q52TerminationBufferRowCapReachable?"true":"false") << ",\n";
         out << "  \"build_global_topology_call_count\": "
             << metrics.buildGlobalTopologyCalls << ",\n";
         out << "  \"build_global_topology_input_cell_total\": "
@@ -2691,7 +2850,8 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
 
 bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
                               const std::filesystem::path& path,
-                              std::string* error) {
+                              std::string* error,
+                              const RobustH4Profile2D* robustProfile) {
     std::ofstream out(path);
     if (!out) {
         setError(error, "failed to open hybrid profile JSON");
@@ -2704,6 +2864,15 @@ bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
     out << "  \"measurement_class\": \"wall_time\",\n";
     out << "  \"reproducible\": false,\n";
     out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
+    // The optional termination-repair variants report their wall time here, not
+    // in the byte-compared report: two runs of the same input legitimately
+    // differ in seconds, which would otherwise make the determinism comparison
+    // fail on an unchanged mesh.
+    out << "  \"q3_repair_seconds\": " << metrics.q3RepairSeconds << ",\n";
+    out << "  \"q32_repair_seconds\": " << metrics.q32RepairSeconds << ",\n";
+    out << "  \"q33_repair_seconds\": " << metrics.q33RepairSeconds << ",\n";
+    out << "  \"q41_construction_selection_seconds\": "
+        << metrics.q41ConstructionSelectionSeconds << ",\n";
     out << "  \"build_global_topology_seconds\": "
         << metrics.buildGlobalTopologySeconds << ",\n";
     out << "  \"solver_repair_seconds\": " << metrics.solverRepairSeconds << ",\n";
@@ -2720,7 +2889,33 @@ bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
     out << "  \"solver_profile_candidate_quality_seconds\": "
         << profile.candidateQualitySeconds << ",\n";
     out << "  \"solver_profile_full_quality_seconds\": "
-        << profile.fullQualitySeconds << "\n";
+        << profile.fullQualitySeconds;
+    if (robustProfile) {
+        out << ",\n";
+        out << "  \"h4_total_seconds\": " << robustProfile->totalSeconds << ",\n";
+        out << "  \"h4_requested_layer_seconds\": "
+            << robustProfile->requestedLayerSeconds << ",\n";
+        out << "  \"h4_requested_hybrid_seconds\": "
+            << robustProfile->requestedHybridSeconds << ",\n";
+        out << "  \"h4_local_layer_seconds\": "
+            << robustProfile->localLayerSeconds << ",\n";
+        out << "  \"h4_local_hybrid_seconds\": "
+            << robustProfile->localHybridSeconds << ",\n";
+        out << "  \"h4_pure_cutcell_fallback_seconds\": "
+            << robustProfile->pureCutCellFallbackSeconds << ",\n";
+        out << "  \"h4_unattributed_seconds\": "
+            << robustProfile->unattributedSeconds() << ",\n";
+        out << "  \"h4_requested_hybrid_attempts\": "
+            << robustProfile->requestedHybridAttempts << ",\n";
+        out << "  \"h4_local_hybrid_attempts\": "
+            << robustProfile->localHybridAttempts << ",\n";
+        out << "  \"h4_pure_cutcell_fallback_attempts\": "
+            << robustProfile->pureCutCellFallbackAttempts << ",\n";
+        out << "  \"h4_conformal_hybrid_build_calls\": "
+            << robustProfile->conformalHybridBuildCalls << "\n";
+    } else {
+        out << "\n";
+    }
     out << "}\n";
     if (!out.good()) {
         setError(error, "failed while writing hybrid profile JSON");

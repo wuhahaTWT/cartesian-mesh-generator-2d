@@ -1,0 +1,264 @@
+{
+  "stage": "Q5-1 outermost-transition radial size matching",
+  "date": "2026-08-31",
+  "baseline_commit": "051f45103ffb34c7568a4210cfb7de93046af89f",
+  "diagnosis": {
+    "question": "Why is the RemainderCut family the widest untreated Q1 hard group?",
+    "finding": "It is not a RemainderCut construction defect. Every hard face on the two no-termination geometries is a RemainderCut-to-Transition face, and the small side is a legitimate Cut fragment while the big side is an oversized transition cell.",
+    "hard_face_pairs_by_cell_kind": {
+      "circle": {
+        "remainder_cut__transition": {
+          "volume_ratio": 56,
+          "face_weight": 24
+        }
+      },
+      "superellipse": {
+        "remainder_cut__transition": {
+          "face_weight": 12,
+          "volume_ratio": 6
+        },
+        "remainder_cut__remainder_cut": {
+          "face_weight": 4,
+          "volume_ratio": 4
+        }
+      }
+    },
+    "size_mismatch": {
+      "circle": {
+        "remainder_background_cell_area_h2": 0.00390625,
+        "outermost_transition_cell_area_in_h2": 3.93,
+        "remainder_cut_area_in_h2": {
+          "min": 0.155,
+          "median": 0.749
+        },
+        "worst_parent_volume_ratio": 0.039382,
+        "hard_gate": 0.05
+      },
+      "superellipse": {
+        "remainder_background_cell_area_h2": 0.00765625,
+        "outermost_transition_cell_area_in_h2": {
+          "min": 2.48,
+          "median": 4.73,
+          "max": 25.5
+        },
+        "remainder_cut_area_in_h2": {
+          "min": 0.211,
+          "median": 0.689
+        },
+        "worst_parent_volume_ratio": 0.072707
+      }
+    },
+    "root_cause": "The graded fan is subdivided tangentially as it moves outward but every ring keeps the full ring thickness. On the circle the ring is 1.8 remainder background cells deep (0.1125 against h=0.0625), so the outermost row is about four background cells in area while the Cut fragments it borders are a sixth of one. A face between them cannot reach the 0.05 dimensionless volume-ratio gate no matter how the remainder is partitioned."
+  },
+  "refuted_approaches": {
+    "purpose": "Recorded so the same templates are not proposed again for this family.",
+    "q4_style_strictly_convex_union": {
+      "measured": "0 of 40 (circle) and 0 of 14 (superellipse) RemainderCut cells carrying a hard face admit an area-exact strictly convex union with any mutable remainder neighbour",
+      "reason": "The transition front is a polygonal offset of a convex wall, so from the remainder side it is concave: unions of front-hugging Cut cells keep a reflex corner"
+    },
+    "two_piece_convex_repartition_of_a_simple_union": {
+      "measured": "clears 8 of 88 (circle) and 18 of 65 (superellipse) violators",
+      "reason": "the union is large enough but non-convex, so ear-clipping splits it back into a sliver"
+    },
+    "neighbour_aware_ear_clip_diagonal": {
+      "measured": "0 of 24 (circle) and 0 of 10 (superellipse) reflex parents admit a diagonal that lowers the hard count; the existing area-balanced choice is already optimal",
+      "reason": "the parent is already smaller than 2x the hard gate against its transition neighbour, so both pieces of any split fail"
+    },
+    "global_transition_sizing_retune": {
+      "measured": "minimumTotalWidthCells 5.4/4.5/4.0/3.6/3.2 gives circle total hard 80/56/8/56/36 and superellipse 26/98/12/84 - non-monotone; minimumRingCount 4 clears the circle but drops sharp_trailing_edge to pure Cut-cell fallback and raises concave_l from 206 to 241",
+      "reason": "a single global width or ring constant is a quadtree-phase lottery, not a rule"
+    }
+  },
+  "implemented_rule": {
+    "name": "Q5-1 outermost-transition radial size matching",
+    "statement": "No transition row may be radially thicker than the remainder background cell it borders. The outermost ring is cut into the smallest number of radial rows that satisfies the target, capped at 4 for the recorded runs. If the bounded search exhausts that cap before the target is reachable, the historical single-row construction is retained and the report marks the target unreachable rather than publishing a false match.",
+    "derivation": "Both quantities already exist in the plan: ringThickness = totalThickness / ringCount and targetCellSize = domainScale * 2^-boundaryLevel. No new tuned constant.",
+    "resolved_rows": {
+      "circle": 2,
+      "superellipse": 2
+    },
+    "reachability_semantics": "q51_outer_transition_radial_target_reachable is true only when the resolved subdivision satisfies ringThickness/subdivision <= outerTransitionRadialTargetCells*targetCellSize. If the bounded search cannot satisfy the cap, subdivision falls back to 1 and reachable=false.",
+    "safety_property": "The last row's radial offset is ring + rows/rows, arithmetically identical to the single-row offset ring + 1, so the committed outer envelope is unchanged. The remainder quadtree, its Cut cells and the immutable H4-1 layer are therefore untouched: only faces interior to the transition strip are added.",
+    "location": "resolveAutomaticHybridTransitionPlan2D (row count and reachability) and the transition fan loop in buildConformalHybridMesh2D (row emission)",
+    "opt_in_flag": "--q5-outer-transition-radial",
+    "reported_fields": [
+      "q51_outer_transition_radial_subdivision",
+      "q51_outer_transition_radial_declined",
+      "q51_outer_transition_radial_target_reachable"
+    ]
+  },
+  "results": {
+    "circle": {
+      "command": "cartmesh2d_hybrid_cli examples/acceptance/circle.xy <prefix> 6 3 6 4 0.02 1.2 1.0 <case> 0.01 --q5-outer-transition-radial",
+      "quality_contract_status": "FAIL -> WARN",
+      "typed_hard_issues": {
+        "before": 80,
+        "after": 0
+      },
+      "hard_by_metric_before": {
+        "volume_ratio": 56,
+        "face_weight": 24
+      },
+      "hard_by_metric_after": {},
+      "solver_cells": {
+        "before": 728,
+        "after": 856
+      },
+      "transition_polygons": {
+        "before": 268,
+        "after": 396
+      },
+      "remainder_cut_cell_count": {
+        "before": 188,
+        "after": 188
+      },
+      "remainder_cartesian_cell_count": {
+        "before": 304,
+        "after": 304
+      },
+      "boundary_layer_cell_count": {
+        "before": 128,
+        "after": 128
+      },
+      "area_error": -1.06581e-14,
+      "note": "first geometry in the project with zero Q1 hard violations"
+    },
+    "superellipse": {
+      "quality_contract_status": "FAIL -> FAIL",
+      "typed_hard_issues": {
+        "before": 26,
+        "after": 12
+      },
+      "hard_by_metric_before": {
+        "face_weight": 16,
+        "volume_ratio": 10
+      },
+      "hard_by_metric_after": {
+        "face_weight": 4,
+        "volume_ratio": 4,
+        "non_orthogonality_deg": 4
+      },
+      "solver_cells": {
+        "before": 795,
+        "after": 987
+      },
+      "remainder_cut_cell_count": {
+        "before": 196,
+        "after": 196
+      },
+      "remainder_cartesian_cell_count": {
+        "before": 332,
+        "after": 332
+      },
+      "note": "4 new hard non-orthogonality faces appear inside the refined fan; net hard count still halves"
+    },
+    "concave_l": {
+      "unchanged": true,
+      "solver_cells": 5452,
+      "typed_hard_issues": 206
+    },
+    "sharp_trailing_edge": {
+      "unchanged": true,
+      "solver_cells": 3391,
+      "typed_hard_issues": 377
+    },
+    "narrow_gap": {
+      "unchanged": true,
+      "solver_cells": 3185,
+      "typed_hard_issues": 430
+    },
+    "unchanged_reason": "The three termination geometries build their transition from the graded termination buffer, not the fan, so Q5-1 is inert there. Cut/Cartesian/layer counts and hard counts are identical with the flag on."
+  },
+  "verification": {
+    "ctest": "75/75 PASS",
+    "deterministic_replay_identical": [
+      "hybrid.cm2d",
+      "hybrid.solver.cm2d",
+      "hybrid.quality-contract.json",
+      "hybrid.solver-quality.json",
+      "hybrid.vtk"
+    ],
+    "independent_openfoam_reader": {
+      "circle": "PASS",
+      "cells": 856,
+      "points": 2312
+    },
+    "openfoam_checkMesh": {
+      "image": "opencfd/openfoam-run:2606",
+      "q51_circle": {
+        "result": "Mesh OK",
+        "max_aspect_ratio": 5.06241311,
+        "max_non_orthogonality_deg": 56.98720338,
+        "max_skewness": 1.328876647,
+        "minimum_face_area": 2.871423804e-05
+      },
+      "q51_superellipse": {
+        "result": "Mesh OK",
+        "max_aspect_ratio": 31.88659624,
+        "max_non_orthogonality_deg": 65.0532228,
+        "max_skewness": 2.119583125,
+        "minimum_face_area": 1.916333584e-05
+      }
+    },
+    "regression_gates_added": {
+      "unit_test": "tests/hybrid_mesh_test.cpp asserts the circle keeps identical Cut/Cartesian/layer counts, gains transition rows, stays conformal, conserves area, and strictly reduces the typed hard count",
+      "ci": "cartmesh2d-ci.yml adds q51_circle and q51_superellipse cases with the untouched-remainder invariants, a strict hard-count reduction, circle WARN with zero hard, and OpenFOAM checkMesh"
+    }
+  },
+  "remaining": {
+    "superellipse_residual_measured": {
+      "total_hard": 12,
+      "composition": {
+        "remainder_cut__remainder_cut": {
+          "face_weight": 4,
+          "volume_ratio": 4
+        },
+        "remainder_cut__transition": {
+          "non_orthogonality_deg": 4
+        }
+      },
+      "remainder_cut_family": {
+        "violating_construction_cells": [
+          89,
+          315,
+          408,
+          499
+        ],
+        "note": "four symmetric copies of the same wedge",
+        "cell_area": 0.001648384,
+        "cell_area_in_h2": 0.2153,
+        "genuine_reflex_corner_deg": -16.943389,
+        "near_collinear_reflex_corner_deg": -2e-06,
+        "committed_children": [
+          0.00143889,
+          0.00020949
+        ],
+        "smallest_child_over_parent": 0.12709,
+        "worst_face_ratio": 0.045461,
+        "hard_gate": 0.05,
+        "shortfall": "9 percent",
+        "best_over_all_convex_partitions_up_to_three_pieces": 0.045461,
+        "drop_near_collinear_vertex_then_repartition": 0.045461,
+        "single_remainder_neighbour_merge": {
+          "remainder_cut_partners": "union has no valid convex partition at all",
+          "remainder_cartesian_partner": 0.013579,
+          "verdict": "every candidate is either non-partitionable or strictly worse than doing nothing"
+        },
+        "conclusion": "Not a remainder construction defect either. The cell is a thin wedge with a real 16.9 degree concavity, so OpenFOAM requires it split, and any convex split of a wedge yields a sliver. Neither a near-collinear vertex drop, a different diagonal, nor a one-neighbour merge reaches the gate."
+      },
+      "non_orthogonality_family": {
+        "measured_deg": 65.0532228,
+        "limit_deg": 65,
+        "over_limit": "0.08 percent",
+        "note": "appears inside the newly refined fan; the same faces measure below the limit before Q5-1"
+      }
+    },
+    "termination_geometries": "concave_l 206, sharp_trailing_edge 377, narrow_gap 430 typed hard issues. Their transition comes from the graded termination buffer rather than the fan, so Q5-1 is inert. Carrying the same radial size-matching rule into that buffer is the natural next step and is not implemented here.",
+    "boundary_layer_metrics": "still OBSERVED, so a WARN status does not yet certify near-wall quality"
+  },
+  "previews": {
+    "circle_before_after": "artifacts/q5-1/circle-before-after.png",
+    "circle_sample": "artifacts/q5-1/circle-radial-sample.png"
+  },
+  "baseline_commit_note": "origin/main equivalent of the Q4-1 decline fix; the branch was rebased onto origin/main to drop a commit already merged there, so this replaces the pre-rebase hash 998775c82f47910a05e9f8c0b700fd9fb75699da"
+}
