@@ -199,6 +199,13 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
                       {segment.a.x + t1 * dx, segment.a.y + t1 * dy}};
     const double localH=std::min(box.max.x-box.min.x,box.max.y-box.min.y);
     if (shared) {
+        // A tangential touch crosses no grid line through the box: the
+        // tolerance-based admission above can leave t0 > t1 by roundoff, and
+        // asking the registry for that intersection is invalid (it was the
+        // "grid line lies outside construction support" failure on the migrated
+        // plain-CLI path). A zero-length touch contributes no cut-cell geometry
+        // or wall length, so drop it before registering the support.
+        if (t0 >= t1) return std::nullopt;
         const auto support=shared->registerSegment(segment,localH,source);
         const auto resolve=[&](Point2D original,const auto& crossing) {
             if (!crossing) return original;
