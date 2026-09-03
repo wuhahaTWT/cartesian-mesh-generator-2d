@@ -1,0 +1,35 @@
+{
+  "format": "cartmesh2d-r2-w1-validation-v1",
+  "status": "PASS",
+  "ctest": {
+    "passed": 83,
+    "total": 83
+  },
+  "refinement_ladder": {
+    "levels": [6, 7, 8, 9, 10, 11],
+    "manifest": "artifacts/r2/w1-after-manifest.json",
+    "manifest_sha256": "17848a19fd50c45bac1ac186762211d1fca864de2ccf50f77d10e8c95c277c6d"
+  },
+  "independent_reader": {
+    "status": "PASS",
+    "report": "artifacts/r2/w1-l11-independent-check.json",
+    "report_sha256": "23c79d8b3f707011fdb8f590799b13a38fd7d0f11fd67a0b0732fec9cca6810d"
+  },
+  "openfoam": {
+    "status": "Mesh OK",
+    "image": "opencfd/openfoam-run:2606",
+    "image_id": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+    "command": "checkMesh -writeAllFields",
+    "log": "artifacts/r2/w1-l11.checkMesh.log",
+    "log_sha256": "4c6a5035fceda10a0154089224acfd7654f16f445dd1dc64b378912de598a2d0"
+  },
+  "deterministic_replay_sha256": {
+    "points": "87be8fa09a5f30595e2d8d675e385e3ae01e2ff842fc90539c947cf62b4970ec",
+    "faces": "eb8ec58034f4da1108f5c4b889a9975eb87e0490441ee3b350438fb05f51c0c2",
+    "owner": "c3295ded3db007e9e04b0ef546681e3c45c1377d177d6216c8fdc9cec70fc835",
+    "neighbour": "528f37fc6f137cc66501506b646f58060fa888896ba60cc454a9bce6520909ed",
+    "boundary": "4e88159282457aaf62dad33642177b3f81c646298e6f2f688c6e672b6845b318",
+    "cm2d": "8755f00421b18fd10c1e996dbeb7910c7b58bcdcfaa543852b5809b6af9a463a"
+  },
+  "preview": "artifacts/r2/w1-circle-l10.png"
+}

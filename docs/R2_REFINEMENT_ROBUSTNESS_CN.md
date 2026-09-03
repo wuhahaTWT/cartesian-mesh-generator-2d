@@ -192,10 +192,11 @@ circle:hybrid:level 9 exited 1 (solver_quality_failed)
   macOS 下需先 `export DYLD_LIBRARY_PATH=/Applications/mesasdk/lib`）。
   逐字节证据见第 8 节。
 
-## 7. W1 进展：三种局部方案已被实测排除，机制已落地，迁移未完成
+## 7. W1 结项：纯 Cut-cell 共享构造通过 level 10/11
 
-W1 的目标是把纯 Cut-cell 推到 level 10/11。本节记录实测排除的路线、已落地的机制，
-以及仍然阻塞的那一步。**level 6–9 的行为完全没有改变**。
+W1 的目标是把纯 Cut-cell 推到 level 10/11。本节记录实测排除的路线、最终机制与
+改前/改后证据。共享路径会保留输入 wall sample、焦合近格点构造交点，因此产物字节
+允许发生可解释变化；物理面积、拓扑和质量门仍全部 fail closed。
 
 ### 7.1 被实测排除的三种局部方案
 
@@ -238,27 +239,57 @@ spur 本身的两点间距是 `4e-5 · h`，这是预算的下界。
   roundoff 常量，注释已改写清楚二者的区别。
 
 回归：`tests/weld_budget_test.cpp` 钉住默认值、Q1 上界拒绝、非有限值拒绝，以及
-原有 proximity 预算校验不变。完整 CTest 78 项通过。
+原有 proximity 预算校验不变；`shared_construction_test.cpp` 保存了 W1 的精确
+support/grid-line 算术失败。产品回归另含 circle L10 生成与独立 OpenFOAM 读取器。
 
-### 7.4 仍然阻塞的一步
+### 7.4 support/grid-line 算术契约修复
 
-把 `cartmesh2d_cli` 迁到 `buildCutCellsShared` + 单一全局 registry 的尝试稳定复现
-一个具体错误：
+迁移最初稳定复现：
 
 ```text
 terminate called after throwing an instance of 'std::invalid_argument'
   what():  grid line lies outside construction support
 ```
 
-抛出点是 `src/geometry/IntersectionConstruction2D.cpp:301`
-（`t=(target-origin)/delta` 要求 `t ∈ [0,1]`，即 grid line 必须真的穿过被注册的
-support 线段）。hybrid 路径用同一份代码工作正常，所以差异在 setup：hybrid 裁剪的是
-transition envelope 且 `configureGrid` 用 `remainderMaxLevel`，纯路径裁剪的是原始
-wall 且用 `maxLevel`。尚未定位到确切的 setup 差异，因此**这次没有提交迁移**，
-工作区保持 level 6–9 的既有行为与全绿回归。
+最小复现确认：`gridLine()` 已把 wall endpoint 的十进制坐标识别为同一 dyadic grid
+identity，但 `intersectGridLine()` 用重建后的 grid coordinate 再算 `t`，得到约
+`-8.5e-16`，两层 API 的算术契约不一致。修复只在目标 grid coordinate 与 support
+端点处于同一 roundoff identity budget 时把 `t` 夹到 0/1；真正非相交 grid line
+仍抛异常。几何焦合预算没有参与这个修复。
 
-下一步的最小任务是单独复现这一个 support/grid-line 组合并定位 setup 差异，
-而不是继续在 CLI 层试错。
+### 7.5 跨阶段保留 wall 语义
+
+L10 首次迁移后，源拓扑通过，但聚合与 solver convex partition 的重建曾产生 16 条
+`UnclassifiedBoundaryEdge`。根因是重建只复制 polygon 坐标，丢掉了已焦合边的
+`EmbeddedBoundary` 身份；焦合点可在解析预算内轻微偏离原输入 segment，不能再靠
+坐标猜语义。现在 `TopologyMesh2D` 显式携带已分类 wall fragments，聚合、solver
+partition 和 patch transaction 都继续传递；OpenFOAM patch 归属用 registry 中实际
+提交的 event displacement 验证，而不是使用后续分割会改变的 `local_h`。
+
+对称 superellipse 还暴露了一个边界：几何 `f*h` 不得把输入 endpoint 捕获到相邻
+grid line，否则顶点会跨 leaf。最终实现只允许 endpoint 做 roundoff 归并，把几何预算
+限制在真实 grid corner；切触产生的 `A-B-A` 零面积半边图 spur 在 polygon 验证前按
+明确的即时回退模式删除，不删除任何正面积单元。
+
+### 7.6 验收结果
+
+`artifacts/r2/w1-before-manifest.json` 保留 L10 的原始 boundary-skewness 失败；
+`artifacts/r2/w1-after-manifest.json` 的 circle L6–L11 全部通过。关键新增层级：
+
+| level | leaves | stabilized cells | boundary skewness | min face weight | min volume ratio |
+|---:|---:|---:|---:|---:|---:|
+| 10 | 73120 | 47460 | 1.2972 | 0.07126 | 0.04660 |
+| 11 | 277336 | 180468 | 1.9234 | 0.06559 | 0.04238 |
+
+没有降低 solver-quality 或 Q1 阈值。L12 尚未测，不在 W1 完成声明内。
+
+最终本机验收：CTest **83/83**；独立 OpenFOAM reader 对 L11 读得 184380 cells、
+739440 faces、最大闭合残差 `4.24e-22`、issues 为空；真实
+`opencfd/openfoam-run:2606 checkMesh -writeAllFields` 报告 `Mesh OK`，最大
+non-orthogonality `42.3128°`、最大 skewness `1.92337`。同输入重复生成的
+`points/faces/owner/neighbour/boundary` 与 `.cm2d` 均逐字节一致。证据：
+`artifacts/r2/w1-l11-independent-check.json`、`artifacts/r2/w1-l11.checkMesh.log`、
+`artifacts/r2/w1-circle-l10.png`。
 
 ## 8. W0 网格产物逐字节不变的实测证据
 
@@ -297,5 +328,3 @@ h4_pure_cutcell_fallback_attempts / h4_conformal_hybrid_build_calls
 
 另外两条 CLI 在 stdout 上新增了 `timing_*` / `h4_*` 键。stdout 不参与任何逐字节
 比较，`.hybrid.json` 与全部网格文件不变。
-
-
