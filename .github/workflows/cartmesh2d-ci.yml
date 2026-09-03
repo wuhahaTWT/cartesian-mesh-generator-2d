@@ -467,7 +467,7 @@ jobs:
             --ladder circle:hybrid:6,7,8
 
       - name: Upload acceptance evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cartmesh2d-h4-validation
           path: |
