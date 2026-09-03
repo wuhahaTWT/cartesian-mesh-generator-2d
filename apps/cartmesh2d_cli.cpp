@@ -430,8 +430,8 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
     return true;
 }
 
-void usage() {
-    std::cerr << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
+void usage(std::ostream& out = std::cerr) {
+    out << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
                  "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
                  "[boundary-simplify-cell-fraction=0] "
@@ -450,6 +450,11 @@ int main(int argc, char** argv) {
         return std::chrono::duration<double>(
             std::chrono::steady_clock::now() - start).count();
     };
+    if (argc == 2 && (std::string(argv[1]) == "--help" ||
+                      std::string(argv[1]) == "-h")) {
+        usage(std::cout);
+        return EXIT_SUCCESS;
+    }
     if (argc < 3) {
         usage();
         return EXIT_FAILURE;

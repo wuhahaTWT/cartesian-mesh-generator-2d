@@ -13,8 +13,8 @@ using namespace cartmesh2d;
 
 namespace {
 
-void usage() {
-    std::cerr<<"usage: cartmesh2d_dxf_cli <input-ascii.dxf> <output.xy> "
+void usage(std::ostream& out = std::cerr) {
+    out<<"usage: cartmesh2d_dxf_cli <input-ascii.dxf> <output.xy> "
                "<maximum-chord-error-metres> [report.json] "
                "[endpoint-weld-tolerance-metres=1e-10] "
                "[source-unit=auto|in|ft|mm|cm|m|km|1..24]\n";
@@ -43,6 +43,11 @@ std::optional<long long> unitCode(const std::string& value,bool& valid) {
 } // namespace
 
 int main(int argc,char** argv) {
+    if (argc == 2 && (std::string(argv[1]) == "--help" ||
+                      std::string(argv[1]) == "-h")) {
+        usage(std::cout);
+        return EXIT_SUCCESS;
+    }
     if (argc<4 || argc>7) {
         usage();
         return EXIT_FAILURE;
