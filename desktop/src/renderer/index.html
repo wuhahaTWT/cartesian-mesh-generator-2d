@@ -11,7 +11,7 @@
     <aside class="control-panel">
       <header>
         <div class="mark">C2</div>
-        <div><h1>CartMesh2D</h1><p>二维 Cartesian / Cut-cell 网格生成器</p></div>
+        <div><h1>CartMesh2D</h1><p>二维 CFD 网格工具箱</p></div>
       </header>
 
       <section>
@@ -29,10 +29,20 @@
             <option value="ft">英尺 ft</option>
           </select>
         </label>
+        <details class="advanced-panel">
+          <summary>几何离散高级设置</summary>
+          <label>曲线最大弦高误差（米）<input id="chordError" type="number" min="0.000000001" step="0.0001" value="0.001"></label>
+        </details>
       </section>
 
       <section>
-        <div class="section-title"><span>2</span>网格规模</div>
+        <div class="section-title"><span>2</span>生成方法</div>
+        <div id="methodCards" class="method-cards"></div>
+        <p id="methodBoundary" class="method-boundary"></p>
+      </section>
+
+      <section>
+        <div class="section-title"><span>3</span>基础精细度</div>
         <div class="preset-row">
           <button class="preset" data-preset="quick">快速</button>
           <button class="preset active" data-preset="standard">标准</button>
@@ -40,19 +50,53 @@
         </div>
         <div class="field-grid">
           <label>物面最高层级<input id="maxLevel" type="number" min="1" max="28" value="6"></label>
-          <label>全域最低层级（高级）<input id="minimumLevel" type="number" min="0" max="28" value="0"></label>
-          <label>计算域留白<input id="padding" type="number" min="0.01" step="0.05" value="0.25"></label>
-          <label>小单元阈值<input id="smallAlpha" type="number" min="0.001" max="0.999" step="0.01" value="0.05"></label>
+          <label>最大单元预算<input id="cellBudget" type="number" min="100" step="10000" value="250000"></label>
         </div>
-        <label>曲线最大弦高误差（米）<input id="chordError" type="number" min="0.000000001" step="0.0001" value="0.001"></label>
-        <p class="hint" id="refinementCostHint"></p>
-        <p class="hint">质量门可能拒绝不合格网格；实际生成前还应增加单元预算预估。</p>
+        <div class="estimate-card">
+          <span>最低规模预估</span>
+          <strong id="globalLeafEstimate">—</strong>
+          <p id="refinementCostHint"></p>
+        </div>
+        <details class="advanced-panel" open>
+          <summary>远场与方法参数</summary>
+          <label>全域最低层级<input id="minimumLevel" type="number" min="0" max="28" value="0"></label>
+          <div id="cutcellParameters">
+            <label>计算域留白比例<input id="paddingFraction" type="number" min="0.01" step="0.05" value="0.25"></label>
+            <label>小单元合并阈值<input id="smallAlpha" type="number" min="0.001" max="0.999" step="0.01" value="0.05"></label>
+          </div>
+          <div id="hybridParameters" hidden>
+            <div class="field-grid">
+              <label>连接层级<input id="boundaryLevel" type="number" min="1" max="28" value="6"></label>
+              <label>壁面层数<input id="nLayers" type="number" min="1" max="64" value="4"></label>
+              <label>首层厚度（米）<input id="firstThickness" type="number" min="0.000000001" step="0.001" value="0.02"></label>
+              <label>层增长率<input id="growthRatio" type="number" min="1" max="5" step="0.05" value="1.2"></label>
+              <label>留白距离（米）<input id="domainPadding" type="number" min="0.000000001" step="0.1" value="1"></label>
+              <label>挤出厚度（米）<input id="extrusionThickness" type="number" min="0.000000001" step="0.001" value="0.01"></label>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="localRefinementSection">
+        <div class="section-title"><span>4</span>局部加密</div>
+        <p class="hint section-hint">只加密需要的位置，不抬高整个远场。</p>
+        <details class="advanced-panel">
+          <summary>距离带</summary>
+          <div id="distanceBandRows" class="parameter-rows"></div>
+          <button id="addDistanceBand" class="add-row" type="button">＋ 添加距离带</button>
+        </details>
+        <details class="advanced-panel">
+          <summary>矩形 / 尾迹区域</summary>
+          <div id="refinementBoxRows" class="parameter-rows"></div>
+          <button id="addRefinementBox" class="add-row" type="button">＋ 添加区域</button>
+        </details>
       </section>
 
       <section>
-        <div class="section-title"><span>3</span>输出</div>
+        <div class="section-title"><span>5</span>输出与验证</div>
         <button id="chooseOutput" class="file-button secondary">选择输出目录</button>
         <div id="outputPath" class="path-label">尚未选择目录</div>
+        <p class="hint">保存可复现 Job JSON、CM2D、VTK 和质量报告；只有稳定且质量合格的方法才输出 OpenFOAM case。</p>
       </section>
 
       <button id="generate" class="generate" disabled>生成网格</button>
@@ -60,7 +104,7 @@
 
     <section class="workspace">
       <div class="toolbar">
-        <div><strong id="statusTitle">等待输入</strong><span id="statusText">选择一个 DXF 文件开始</span></div>
+        <div><strong id="statusTitle">等待输入</strong><span id="statusText">选择输入、方法和精细度</span></div>
         <button id="openOutput" class="open-output" hidden>在 Finder 中打开</button>
       </div>
       <div class="canvas-wrap">
@@ -69,6 +113,7 @@
         <div class="legend" hidden id="legend"><span><i class="internal"></i>Cartesian / Cut-cell</span><span><i class="embedded"></i>嵌入边界</span><span><i class="domain"></i>计算域边界</span></div>
       </div>
       <div class="result-bar">
+        <div><span>实际方法</span><strong id="actualMethod">—</strong></div>
         <div><span>2D cells</span><strong id="cellCount">—</strong></div>
         <div><span>OpenFOAM cells</span><strong id="foamCells">—</strong></div>
         <div><span>Vertices</span><strong id="vertexCount">—</strong></div>
