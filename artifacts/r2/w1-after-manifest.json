@@ -1,0 +1,352 @@
+{
+  "format_version": "cartmesh2d-refinement-ladder-v1",
+  "gate_violations": [],
+  "hard_limits": {
+    "max_non_orthogonality_deg": 70.0,
+    "min_face_weight": 0.05,
+    "min_volume_ratio": 0.01,
+    "source": "include/cartmesh2d/quality/SolverQuality2D.hpp"
+  },
+  "ladders": [
+    {
+      "case": "circle",
+      "input": "examples/acceptance/circle.xy",
+      "levels": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "mode": "cutcell",
+      "rungs": [
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.036604291992262006,
+              "timing_agglomeration_seconds": 0.002383,
+              "timing_balance_seconds": 0.000512,
+              "timing_cut_cell_seconds": 0.004085,
+              "timing_refinement_seconds": 0.000374,
+              "timing_serialization_export_seconds": 0.008903,
+              "timing_solver_topology_seconds": 0.002974,
+              "timing_source_topology_seconds": 0.001684,
+              "timing_total_seconds": 0.021073
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L6",
+            "6",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L6-case",
+            "4"
+          ],
+          "exit_code": 0,
+          "level": 6,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 412,
+            "cut_cell_count": 172,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 3.234910190955217,
+            "max_cell_aspect": 23.89975588115784,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.747391917,
+            "max_non_orthogonality_deg": 68.5611289,
+            "min_compactness": 0.12731683410088104,
+            "min_face_length": 0.00115613712,
+            "min_face_weight": 0.0527137581,
+            "min_interior_angle_deg": 5.221022426097274,
+            "min_volume_ratio": 0.04319934,
+            "quadtree_leaf_count": 712,
+            "small_cell_count": 40,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 452
+          },
+          "minimum_level": 4,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.06903100002091378,
+              "timing_agglomeration_seconds": 0.006826,
+              "timing_balance_seconds": 0.001451,
+              "timing_cut_cell_seconds": 0.010703,
+              "timing_refinement_seconds": 0.001003,
+              "timing_serialization_export_seconds": 0.020129,
+              "timing_solver_topology_seconds": 0.007494,
+              "timing_source_topology_seconds": 0.004468,
+              "timing_total_seconds": 0.052353
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L7",
+            "7",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L7-case",
+            "5"
+          ],
+          "exit_code": 0,
+          "level": 7,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 1280,
+            "cut_cell_count": 340,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.2456281125966073,
+            "max_cell_aspect": 15.190429378300335,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.613202661,
+            "max_non_orthogonality_deg": 61.754408,
+            "min_compactness": 0.1959110613708005,
+            "min_face_length": 0.000221401574,
+            "min_face_weight": 0.151038096,
+            "min_interior_angle_deg": 12.763307493963808,
+            "min_volume_ratio": 0.113145419,
+            "quadtree_leaf_count": 1984,
+            "small_cell_count": 64,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 1344
+          },
+          "minimum_level": 5,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.6181857920018956,
+              "timing_agglomeration_seconds": 0.019889,
+              "timing_balance_seconds": 0.003863,
+              "timing_cut_cell_seconds": 0.0306,
+              "timing_refinement_seconds": 0.003213,
+              "timing_serialization_export_seconds": 0.054305,
+              "timing_solver_topology_seconds": 0.475193,
+              "timing_source_topology_seconds": 0.012783,
+              "timing_total_seconds": 0.600365
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L8",
+            "8",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L8-case",
+            "6"
+          ],
+          "exit_code": 0,
+          "level": 8,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 3828,
+            "cut_cell_count": 684,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.2057993276791528,
+            "max_cell_aspect": 11.581843890453039,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.826877153,
+            "max_non_orthogonality_deg": 59.9574303,
+            "min_compactness": 0.24873302624443566,
+            "min_face_length": 8.75021512e-05,
+            "min_face_weight": 0.0826928694,
+            "min_interior_angle_deg": 16.875000000012367,
+            "min_volume_ratio": 0.0552238339,
+            "quadtree_leaf_count": 5980,
+            "small_cell_count": 136,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 3964
+          },
+          "minimum_level": 6,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 0.495013750041835,
+              "timing_agglomeration_seconds": 0.06986,
+              "timing_balance_seconds": 0.013123,
+              "timing_cut_cell_seconds": 0.096247,
+              "timing_refinement_seconds": 0.01128,
+              "timing_serialization_export_seconds": 0.169074,
+              "timing_solver_topology_seconds": 0.066426,
+              "timing_source_topology_seconds": 0.045605,
+              "timing_total_seconds": 0.473089
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L9",
+            "9",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L9-case",
+            "7"
+          ],
+          "exit_code": 0,
+          "level": 9,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 13024,
+            "cut_cell_count": 1364,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.272922967413394,
+            "max_cell_aspect": 19.2003958179931,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.694522917,
+            "max_non_orthogonality_deg": 42.3128298,
+            "min_compactness": 0.15831843721960742,
+            "min_face_length": 8.75021512e-05,
+            "min_face_weight": 0.0953577948,
+            "min_interior_angle_deg": 16.87500000001182,
+            "min_volume_ratio": 0.0247082084,
+            "quadtree_leaf_count": 20188,
+            "small_cell_count": 264,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 13288
+          },
+          "minimum_level": 7,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 1.7806426250026561,
+              "timing_agglomeration_seconds": 0.275153,
+              "timing_balance_seconds": 0.049987,
+              "timing_cut_cell_seconds": 0.339511,
+              "timing_refinement_seconds": 0.043569,
+              "timing_serialization_export_seconds": 0.597582,
+              "timing_solver_topology_seconds": 0.256095,
+              "timing_source_topology_seconds": 0.171206,
+              "timing_total_seconds": 1.738504
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L10",
+            "10",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L10-case",
+            "8"
+          ],
+          "exit_code": 0,
+          "level": 10,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 47460,
+            "cut_cell_count": 2724,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.297164276985989,
+            "max_cell_aspect": 20.91667281541134,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.804611603,
+            "max_non_orthogonality_deg": 48.275912,
+            "min_compactness": 0.14627607303494744,
+            "min_face_length": 1.91878866e-05,
+            "min_face_weight": 0.0712590074,
+            "min_interior_angle_deg": 16.875000000010484,
+            "min_volume_ratio": 0.0466032817,
+            "quadtree_leaf_count": 73120,
+            "small_cell_count": 520,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 47980
+          },
+          "minimum_level": 8,
+          "timed_out": false
+        },
+        {
+          "attribution": {
+            "deterministic_counters": {},
+            "measurement_class": "wall_time",
+            "reproducible": false,
+            "seconds": {
+              "measured_wall_seconds": 6.857540917000733,
+              "timing_agglomeration_seconds": 1.11024,
+              "timing_balance_seconds": 0.205697,
+              "timing_cut_cell_seconds": 1.267709,
+              "timing_refinement_seconds": 0.182469,
+              "timing_serialization_export_seconds": 2.272095,
+              "timing_solver_topology_seconds": 0.970755,
+              "timing_source_topology_seconds": 0.711351,
+              "timing_total_seconds": 6.739122
+            }
+          },
+          "command": [
+            "cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L11",
+            "11",
+            "0.25",
+            "0.1",
+            "exterior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/w1_after_final/circle-cutcell-L11-case",
+            "9"
+          ],
+          "exit_code": 0,
+          "level": 11,
+          "mesh": {
+            "area_error": 0.0,
+            "cell_count": 180468,
+            "cut_cell_count": 5452,
+            "hybrid_status": "success",
+            "max_boundary_skewness": 1.923369452693036,
+            "max_cell_aspect": 20.518516789189032,
+            "max_concavity_deg": 0,
+            "max_internal_skewness": 0.766052577,
+            "max_non_orthogonality_deg": 42.3128298,
+            "min_compactness": 0.14890469604326503,
+            "min_face_length": 3.17779089e-06,
+            "min_face_weight": 0.0655924133,
+            "min_interior_angle_deg": 16.875000000008335,
+            "min_volume_ratio": 0.0423754097,
+            "quadtree_leaf_count": 277336,
+            "small_cell_count": 1048,
+            "solver_quality_issue_count": 0,
+            "solver_quality_valid": true,
+            "source_cell_count": 181516
+          },
+          "minimum_level": 9,
+          "timed_out": false
+        }
+      ]
+    }
+  ],
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+}

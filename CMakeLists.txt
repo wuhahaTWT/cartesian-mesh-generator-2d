@@ -447,6 +447,23 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage6c_airfoil_like_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
 
+    # R2/W1 regression: the shared construction path must remove the level-10
+    # grid-corner spur, preserve wall patch identity through stabilization and
+    # solver partitioning, and emit independently readable OpenFOAM topology.
+    set(CARTMESH2D_W1_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/r2_w1)
+    add_test(NAME cartmesh2d_stageR2_w1_circle_l10_e2e
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10 10 0.25 0.10 exterior
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10-case 8)
+    add_test(NAME cartmesh2d_stageR2_w1_circle_l10_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10-case
+                --report ${CARTMESH2D_W1_OUTPUT}/circle_l10-case/independent_check.json)
+    set_tests_properties(cartmesh2d_stageR2_w1_circle_l10_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageR2_w1_circle_l10_e2e)
+
     set(CARTMESH2D_SIZING_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sizing_field)
     add_test(NAME cartmesh2d_stageH1_sizing_field_e2e
         COMMAND cartmesh2d_cli

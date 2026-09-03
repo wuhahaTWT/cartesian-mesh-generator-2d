@@ -4,7 +4,9 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <optional>
+#include <sstream>
 #include <utility>
 
 namespace cartmesh2d {
@@ -85,6 +87,16 @@ void writeCaseHeader(std::ofstream& out,const char* className,
     return nullptr;
 }
 
+[[nodiscard]] double pointSegmentDistance(const Point2D& point,
+                                          const Segment2D& segment) noexcept {
+    const Vector2D direction=segment.b-segment.a;
+    const double lengthSquared=squaredNorm(direction);
+    if (!(lengthSquared>0.0)) return std::sqrt(squaredNorm(point-segment.a));
+    const double parameter=std::clamp(
+        dot(point-segment.a,direction)/lengthSquared,0.0,1.0);
+    return std::sqrt(squaredNorm(point-(segment.a+direction*parameter)));
+}
+
 [[nodiscard]] std::optional<std::size_t> embeddedLoopId(
     const Edge2D& edge,const TopologyMesh2D& topology,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
@@ -99,7 +111,52 @@ void writeCaseHeader(std::ofstream& out,const char* className,
             }
         }
     }
-    return std::nullopt;
+    // A shared-construction grid-corner weld is deliberately allowed to move
+    // an embedded fragment off the piecewise-linear input by a bounded f*h.
+    // The topology has already classified the edge as physical wall; here we
+    // only recover its deterministic loop/patch identity within that exact
+    // construction budget. Ambiguous loop ownership still fails closed.
+    if (!topology.constructionRegistry ||
+        topology.canonicalVertexIds.size()!=topology.vertices.size()) {
+        return std::nullopt;
+    }
+    const auto& registry=*topology.constructionRegistry;
+    const auto handle0=topology.canonicalVertexIds[edge.v0];
+    const auto handle1=topology.canonicalVertexIds[edge.v1];
+    if (handle0>=registry.vertices().size() || handle1>=registry.vertices().size()) {
+        return std::nullopt;
+    }
+    const double arithmeticBudget=
+        tol.scale(std::max({1.0,std::abs(face.a.x),std::abs(face.a.y),
+                           std::abs(face.b.x),std::abs(face.b.y)}));
+    double distanceBudgetA=arithmeticBudget;
+    double distanceBudgetB=arithmeticBudget;
+    // Use the committed event displacement, not mutable local_h metadata from
+    // a later convex-partition rebuild. This is a tighter provenance check and
+    // remains valid after the same vertex participates in smaller solver cells.
+    for (const auto& event:registry.events()) {
+        if (event.canonicalVertex==handle0)
+            distanceBudgetA=std::max(distanceBudgetA,event.displacement+arithmeticBudget);
+        if (event.canonicalVertex==handle1)
+            distanceBudgetB=std::max(distanceBudgetB,event.displacement+arithmeticBudget);
+    }
+    std::optional<std::size_t> matchedLoop;
+    for (std::size_t loopId=0;loopId<boundary.loops().size();++loopId) {
+        const auto& vertices=boundary.loops()[loopId].vertices();
+        bool matches=false;
+        for (std::size_t i=0;i<vertices.size();++i) {
+            const Segment2D segment{vertices[i],vertices[(i+1)%vertices.size()]};
+            if (pointSegmentDistance(face.a,segment)<=distanceBudgetA &&
+                pointSegmentDistance(face.b,segment)<=distanceBudgetB) {
+                matches=true;
+                break;
+            }
+        }
+        if (!matches) continue;
+        if (matchedLoop && *matchedLoop!=loopId) return std::nullopt;
+        matchedLoop=loopId;
+    }
+    return matchedLoop;
 }
 
 } // namespace
@@ -180,7 +237,25 @@ OpenFoamWriteReport2D writeExtrudedOpenFoam2D(
         if (edge.patch==BoundaryPatch2D::EmbeddedBoundary) {
             const auto loopId=embeddedLoopId(edge,topology,boundary,tol);
             if (!loopId) {
-                setError(error,"OpenFOAM embedded boundary edge does not belong to exactly represented input loop");
+                const auto& a=topology.vertices[edge.v0].point;
+                const auto& b=topology.vertices[edge.v1].point;
+                double closestA=std::numeric_limits<double>::infinity();
+                double closestB=std::numeric_limits<double>::infinity();
+                for (const auto& loop:boundary.loops()) {
+                    const auto& vertices=loop.vertices();
+                    for (std::size_t i=0;i<vertices.size();++i) {
+                        const Segment2D segment{vertices[i],vertices[(i+1)%vertices.size()]};
+                        closestA=std::min(closestA,pointSegmentDistance(a,segment));
+                        closestB=std::min(closestB,pointSegmentDistance(b,segment));
+                    }
+                }
+                std::ostringstream detail;
+                detail<<std::setprecision(17)
+                      <<"OpenFOAM embedded boundary edge has no unique input-loop identity within the construction budget"
+                      <<" edge="<<edge.id<<" a=("<<a.x<<','<<a.y<<')'
+                      <<" b=("<<b.x<<','<<b.y<<')'
+                      <<" nearest_a="<<closestA<<" nearest_b="<<closestB;
+                setError(error,detail.str());
                 return {};
             }
             patchName=embeddedPatches.empty()

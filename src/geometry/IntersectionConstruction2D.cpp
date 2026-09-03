@@ -297,8 +297,24 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     const double origin=line.axis==0U?s.segment.a.x:s.segment.a.y;
     const double target=gridCoordinate(line);
     if (delta==0) throw std::invalid_argument("parallel support has no isolated intersection");
-    const double t=(target-origin)/delta;
-    if (t<0 || t>1) throw std::invalid_argument("grid line lies outside construction support");
+    double t=(target-origin)/delta;
+    if (t<0.0 || t>1.0) {
+        // gridLine() accepts an input coordinate within
+        // arithmeticFractionOfLocalH of a dyadic grid side in logical space.
+        // Reconstructing that side as lo + index * spacing can therefore put it
+        // a few ulps beyond an incident source endpoint. Keep the two APIs on
+        // the same arithmetic contract: only clamp to an endpoint when the
+        // coordinate discrepancy is within that grid-identity budget. This is
+        // not the geometric grid-corner weld budget and cannot move an interior
+        // intersection.
+        const double gridSpan = line.axis==0U
+            ? gridBounds_.max.x-gridBounds_.min.x
+            : gridBounds_.max.y-gridBounds_.min.y;
+        const double endpointTolerance = arithmeticFractionOfLocalH*gridSpan;
+        if (t<0.0 && std::abs(target-origin)<=endpointTolerance) t=0.0;
+        else if (t>1.0 && std::abs(target-(origin+delta))<=endpointTolerance) t=1.0;
+        else throw std::invalid_argument("grid line lies outside construction support");
+    }
     const Point2D raw=s.segment.a+d*t;
     Point2D p=raw;
     if (line.axis==0U) p.x=target; else p.y=target;
@@ -312,12 +328,25 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     const double gridH=std::ldexp(std::min(gridBounds_.max.x-gridBounds_.min.x,
                                          gridBounds_.max.y-gridBounds_.min.y),
                                   -static_cast<int>(gridLevel_));
-    const double eps=policy_.gridCornerWeldFractionOfLocalH*
+    const double constructionScale=
         std::min({h,gridH,vertices_[s.a].localH,vertices_[s.b].localH,
                   std::sqrt(squaredNorm(d))});
+    const double eps=policy_.gridCornerWeldFractionOfLocalH*constructionScale;
+    // Input/support endpoints remain immutable *and* retain their geometric
+    // cell incidence. A geometric f*h endpoint capture can pull a vertex from
+    // just across a leaf side into this leaf (the symmetric superellipse
+    // tangency regression). Endpoint identity therefore absorbs roundoff only;
+    // the opt-in geometric allowance applies solely to an actual grid corner.
+    const double gridSpan=std::max(gridBounds_.max.x-gridBounds_.min.x,
+                                   gridBounds_.max.y-gridBounds_.min.y);
+    const double endpointEps=std::max(
+        policy_.snapFractionOfLocalH*constructionScale,
+        arithmeticFractionOfLocalH*gridSpan);
     std::size_t id;
-    if (std::sqrt(squaredNorm(p-s.segment.a))<=eps) id=s.a;
-    else if (std::sqrt(squaredNorm(p-s.segment.b))<=eps) id=s.b;
+    if (t<=arithmeticFractionOfLocalH &&
+        std::sqrt(squaredNorm(p-s.segment.a))<=endpointEps) id=s.a;
+    else if (1.0-t<=arithmeticFractionOfLocalH &&
+            std::sqrt(squaredNorm(p-s.segment.b))<=endpointEps) id=s.b;
     else {
         auto feature=IntersectionFeature2D::CartesianGridLine;
         const unsigned other=1U-line.axis;
