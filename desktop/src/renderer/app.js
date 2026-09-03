@@ -1,29 +1,18 @@
-const state = { dxfPath: '', outputDirectory: '', mesh: null, output: '', smokeMode: false };
-const $ = id => document.getElementById(id);
-const presets = {
-  quick: { maxLevel: 5, minimumLevel: 0 },
-  standard: { maxLevel: 6, minimumLevel: 0 },
-  dense: { maxLevel: 8, minimumLevel: 0 }
+const state = {
+  dxfPath: '', outputDirectory: '', mesh: null, output: '', smokeMode: false,
+  capabilities: null, methodId: 'cutcell'
 };
+const $ = id => document.getElementById(id);
 
-function updateReady() { $('generate').disabled = !(state.dxfPath && state.outputDirectory); }
+function updateReady() { $('generate').disabled = !(state.dxfPath && state.outputDirectory && state.methodId); }
 function compactPath(value) { return value || '尚未选择'; }
 function logLine(line) { $('log').textContent += `${line}\n`; $('log').scrollTop = $('log').scrollHeight; }
-function updateRefinementCostHint() {
-  const minimumLevel = Number($('minimumLevel').value);
-  const globalLeaves = Number.isInteger(minimumLevel) && minimumLevel >= 0
-    ? Math.pow(4, minimumLevel)
-    : null;
-  $('refinementCostHint').textContent = minimumLevel > 0 && Number.isFinite(globalLeaves)
-    ? `当前全域最低层级会先铺约 ${globalLeaves.toLocaleString()} 个叶格，再叠加物面局部加密；每提高一级约再乘 4。`
-    : '建议保持全域最低层级为 0；物面精度由最高层级控制。全域最低层级每提高一级，远场叶格约增至 4 倍。';
-}
+function activeMethod() { return state.capabilities?.methods.find(method => method.id === state.methodId); }
+function numberValue(id) { return Number($(id).value); }
 
 function parseCm2d(text) {
   const lines = text.trim().split(/\r?\n/);
-  const vertices = [];
-  const cells = [];
-  const edges = [];
+  const vertices = [], cells = [], edges = [];
   let i = 1;
   while (i < lines.length) {
     const header = lines[i].trim().split(/\s+/);
@@ -85,7 +74,7 @@ function drawMesh(mesh) {
     ctx.lineWidth = .65;
     ctx.stroke();
   }
-  for (const edge of mesh.edges.filter(e => e.kind !== 0)) {
+  for (const edge of mesh.edges.filter(edge => edge.kind !== 0)) {
     const [ax, ay] = point(mesh.vertices[edge.a]);
     const [bx, by] = point(mesh.vertices[edge.b]);
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
@@ -93,6 +82,113 @@ function drawMesh(mesh) {
     ctx.lineWidth = edge.kind === 1 ? 2.1 : 1.4;
     ctx.stroke();
   }
+}
+
+function renderMethods() {
+  $('methodCards').replaceChildren(...state.capabilities.methods.map(method => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `method-card${method.id === state.methodId ? ' active' : ''}`;
+    button.dataset.method = method.id;
+    button.innerHTML = `<span class="method-card-title">${method.label}<i class="status-${method.status}">${method.statusLabel}</i></span><small>${method.description}</small>`;
+    button.addEventListener('click', () => selectMethod(method.id));
+    return button;
+  }));
+}
+
+function setValue(id, value) { if (value !== undefined && $(id)) $(id).value = value; }
+function applyMethodDefaults(method) {
+  for (const [key, value] of Object.entries(method.defaults)) setValue(key, value);
+}
+
+function selectMethod(methodId) {
+  state.methodId = methodId;
+  const method = activeMethod();
+  renderMethods();
+  applyMethodDefaults(method);
+  $('cutcellParameters').hidden = method.id !== 'cutcell';
+  $('hybridParameters').hidden = method.id !== 'hybrid';
+  $('localRefinementSection').hidden = !method.supports.distanceBands && !method.supports.refinementBoxes;
+  $('methodBoundary').textContent = method.status === 'beta'
+    ? 'Beta 边界：高层级和狭窄间隙可能失败或明确退化；当前只生成检查网格，不输出 OpenFOAM case。'
+    : '稳定默认路径；质量失败会停止输出，不删除坏单元或隐藏告警。';
+  document.querySelectorAll('.preset').forEach(button => {
+    button.classList.toggle('active', button.dataset.preset === 'standard');
+  });
+  updateEstimate();
+  updateReady();
+}
+
+function applyPreset(name) {
+  const preset = activeMethod().presets[name];
+  for (const [key, value] of Object.entries(preset)) setValue(key, value);
+  document.querySelectorAll('.preset').forEach(button => {
+    button.classList.toggle('active', button.dataset.preset === name);
+  });
+  updateEstimate();
+}
+
+function readRows(containerId, keys) {
+  return [...$(containerId).querySelectorAll('.parameter-row')].map(row => {
+    const value = {};
+    for (const key of keys) value[key] = Number(row.querySelector(`[data-key="${key}"]`).value);
+    return value;
+  });
+}
+
+function collectRequest() {
+  return {
+    method: state.methodId,
+    dxfPath: state.dxfPath,
+    outputDirectory: state.outputDirectory,
+    sourceUnits: $('sourceUnits').value,
+    chordError: numberValue('chordError'),
+    maxLevel: numberValue('maxLevel'),
+    minimumLevel: numberValue('minimumLevel'),
+    cellBudget: numberValue('cellBudget'),
+    paddingFraction: numberValue('paddingFraction'),
+    smallAlpha: numberValue('smallAlpha'),
+    boundaryLevel: numberValue('boundaryLevel'),
+    nLayers: numberValue('nLayers'),
+    firstThickness: numberValue('firstThickness'),
+    growthRatio: numberValue('growthRatio'),
+    domainPadding: numberValue('domainPadding'),
+    extrusionThickness: numberValue('extrusionThickness'),
+    distanceBands: readRows('distanceBandRows', ['distance', 'targetLevel']),
+    refinementBoxes: readRows('refinementBoxRows', ['xmin', 'ymin', 'xmax', 'ymax', 'targetLevel'])
+  };
+}
+
+async function updateEstimate() {
+  const estimate = await window.cartmesh.estimate({
+    maxLevel: numberValue('maxLevel'), minimumLevel: numberValue('minimumLevel')
+  });
+  if (!Number.isFinite(estimate.globalLeafFloor)) {
+    $('globalLeafEstimate').textContent = '参数无效';
+    $('refinementCostHint').textContent = estimate.note;
+    return;
+  }
+  $('globalLeafEstimate').textContent = `≥ ${estimate.globalLeafFloor.toLocaleString()} leaves`;
+  const budget = numberValue('cellBudget');
+  const overBudget = Number.isFinite(budget) && estimate.globalLeafFloor > budget;
+  $('globalLeafEstimate').classList.toggle('over-budget', overBudget);
+  $('refinementCostHint').textContent = `${estimate.note} 全域最低层级每 +1，底格约 ×4。`;
+}
+
+function addDistanceBand(values = {}) {
+  const row = document.createElement('div');
+  row.className = 'parameter-row distance-row';
+  row.innerHTML = `<label>距离（米）<input data-key="distance" type="number" min="0.000000001" step="0.01" value="${values.distance ?? 0.1}"></label><label>目标层级<input data-key="targetLevel" type="number" min="0" max="28" value="${values.targetLevel ?? numberValue('maxLevel')}"></label><button type="button" class="remove-row" title="删除">×</button>`;
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  $('distanceBandRows').append(row);
+}
+
+function addRefinementBox(values = {}) {
+  const row = document.createElement('div');
+  row.className = 'parameter-row box-row';
+  row.innerHTML = `<label>xmin<input data-key="xmin" type="number" step="0.1" value="${values.xmin ?? 0}"></label><label>ymin<input data-key="ymin" type="number" step="0.1" value="${values.ymin ?? -0.5}"></label><label>xmax<input data-key="xmax" type="number" step="0.1" value="${values.xmax ?? 2}"></label><label>ymax<input data-key="ymax" type="number" step="0.1" value="${values.ymax ?? 0.5}"></label><label>层级<input data-key="targetLevel" type="number" min="0" max="28" value="${values.targetLevel ?? numberValue('maxLevel')}"></label><button type="button" class="remove-row" title="删除">×</button>`;
+  row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+  $('refinementBoxRows').append(row);
 }
 
 $('chooseDxf').addEventListener('click', async () => {
@@ -108,15 +204,12 @@ $('chooseOutput').addEventListener('click', async () => {
   const value = await window.cartmesh.selectOutput();
   if (value) { state.outputDirectory = value; $('outputPath').textContent = compactPath(value); updateReady(); }
 });
-document.querySelectorAll('.preset').forEach(button => button.addEventListener('click', () => {
-  document.querySelectorAll('.preset').forEach(item => item.classList.remove('active'));
-  button.classList.add('active');
-  const preset = presets[button.dataset.preset];
-  $('maxLevel').value = preset.maxLevel;
-  $('minimumLevel').value = preset.minimumLevel;
-  updateRefinementCostHint();
-}));
-$('minimumLevel').addEventListener('input', updateRefinementCostHint);
+document.querySelectorAll('.preset').forEach(button => {
+  button.addEventListener('click', () => applyPreset(button.dataset.preset));
+});
+['maxLevel', 'minimumLevel', 'cellBudget'].forEach(id => $(id).addEventListener('input', updateEstimate));
+$('addDistanceBand').addEventListener('click', () => addDistanceBand());
+$('addRefinementBox').addEventListener('click', () => addRefinementBox());
 
 window.cartmesh.onGenerationLine(logLine);
 $('generate').addEventListener('click', async () => {
@@ -126,29 +219,31 @@ $('generate').addEventListener('click', async () => {
   $('statusTitle').textContent = '生成中';
   $('statusText').textContent = '质量门通过后才会输出 OpenFOAM case';
   try {
-    const result = await window.cartmesh.generate({
-      dxfPath: state.dxfPath,
-      outputDirectory: state.outputDirectory,
-      sourceUnits: $('sourceUnits').value,
-      chordError: Number($('chordError').value),
-      maxLevel: Number($('maxLevel').value),
-      minimumLevel: Number($('minimumLevel').value),
-      paddingFraction: Number($('padding').value),
-      smallAlpha: Number($('smallAlpha').value)
-    });
+    const result = await window.cartmesh.generate(collectRequest());
     state.mesh = parseCm2d(result.cm2d);
     state.output = result.outputDirectory;
     drawMesh(state.mesh);
     $('emptyState').hidden = true;
     $('legend').hidden = false;
     $('openOutput').hidden = false;
-    $('cellCount').textContent = Number(result.summary.stabilized_cells).toLocaleString();
-    $('foamCells').textContent = Number(result.summary.openfoam_cells).toLocaleString();
-    $('vertexCount').textContent = Number(result.summary.vertices).toLocaleString();
-    $('quality').textContent = result.summary.solver_quality || 'PASS';
-    $('quality').style.color = '#087d65';
-    $('statusTitle').textContent = '生成完成';
-    $('statusText').textContent = result.cm2dPath;
+    const isFallback = result.summary.actual_method === 'cutcell-fallback';
+    $('actualMethod').textContent = isFallback ? 'Cut-cell fallback' : result.method.label;
+    $('actualMethod').classList.toggle('method-warning', isFallback);
+    $('cellCount').textContent = Number(result.summary.stabilized_cells || state.mesh.cells.length).toLocaleString();
+    $('foamCells').textContent = result.summary.openfoam_cells
+      ? Number(result.summary.openfoam_cells).toLocaleString() : '未输出';
+    $('vertexCount').textContent = state.mesh.vertices.length.toLocaleString();
+    const qualityStatus = result.summary.quality_status || result.summary.solver_quality || 'PASS';
+    const qualityPass = result.summary.quality_pass === undefined
+      ? String(qualityStatus).toLowerCase() === 'pass' : result.summary.quality_pass;
+    $('quality').textContent = String(qualityStatus).toUpperCase();
+    $('quality').style.color = qualityPass ? '#087d65' : '#c23c3c';
+    $('statusTitle').textContent = isFallback
+      ? '生成完成（发生降级）'
+      : qualityPass ? '生成完成' : '已生成检查网格（质量未通过）';
+    $('statusText').textContent = isFallback
+      ? `请求 Hybrid，实际输出 Pure Cut-cell：${result.cm2dPath}`
+      : qualityPass ? result.cm2dPath : `未输出 OpenFOAM case：${result.cm2dPath}`;
     if (state.smokeMode) {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       await window.cartmesh.smokeCapture();
@@ -168,7 +263,9 @@ $('openOutput').addEventListener('click', () => window.cartmesh.openPath(state.o
 window.addEventListener('resize', () => { if (state.mesh) drawMesh(state.mesh); });
 
 (async () => {
+  state.capabilities = await window.cartmesh.capabilities();
   const smoke = await window.cartmesh.smokeConfig();
+  selectMethod(smoke.enabled ? smoke.method : 'cutcell');
   if (!smoke.enabled) return;
   state.smokeMode = true;
   state.dxfPath = await window.cartmesh.examplePath();
@@ -178,5 +275,3 @@ window.addEventListener('resize', () => { if (state.mesh) drawMesh(state.mesh); 
   updateReady();
   $('generate').click();
 })();
-
-updateRefinementCostHint();

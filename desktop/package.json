@@ -6,7 +6,8 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "pack:mac": "electron-builder --mac dir"
+    "pack:mac": "electron-builder --mac dir",
+    "test": "node --test tests/*.test.js"
   },
   "devDependencies": {
     "electron": "^37.2.6",

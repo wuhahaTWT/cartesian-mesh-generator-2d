@@ -173,6 +173,8 @@ knot / control point 的 `SPLINE`。DXF 单位会转换到米；边界图层语�
 Apple Silicon 本地打包命令与产品边界见
 [docs/PRODUCT1_MAC_DESKTOP_CN.md](docs/PRODUCT1_MAC_DESKTOP_CN.md)。同一套 Electron
 界面保留 Windows 打包能力，但 Windows 可执行文件需要在 Windows 环境单独构建和验收。
+分层方法工具箱、能力边界和当前双路径实测见
+[docs/DESKTOP_TOOLBOX_CN.md](docs/DESKTOP_TOOLBOX_CN.md)。
 
 ## 开发路线
 
