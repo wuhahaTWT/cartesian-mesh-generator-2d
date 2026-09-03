@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -23,6 +24,10 @@
 using namespace cartmesh2d;
 
 namespace {
+
+// W1's geometric grid-corner weld budget. Q1 rejects faces shorter than 0.01h;
+// this remains two orders of magnitude below that accepted-face scale.
+constexpr double gridCornerWeldFraction = 1.0e-4;
 
 bool readBoundaryFile(const std::filesystem::path& path,
                       std::vector<std::vector<Point2D>>& loops,
@@ -613,10 +618,34 @@ int main(int argc, char** argv) {
     std::size_t splitFluidLeaves = 0;
     std::size_t nextSourceId = 0;
     double sourceFluidArea = 0.0;
+
+    // One registry owns every wall/grid intersection across all leaves. Input
+    // wall samples are immutable anchors; only constructed intersections may
+    // consume the explicitly bounded grid-corner weld allowance.
+    IntersectionRegistryPolicy2D registryPolicy;
+    registryPolicy.gridCornerWeldFractionOfLocalH = gridCornerWeldFraction;
+    auto constructionRegistry =
+        std::make_shared<IntersectionRegistry2D>(registryPolicy);
+    constructionRegistry->configureGrid(domain.bounds, maxLevel);
+    const double finestCellH = std::ldexp(
+        std::min(domain.width(), domain.height()), -static_cast<int>(maxLevel));
+    for (const auto& loop : boundary.loops()) {
+        for (const auto& vertex : loop.vertices()) {
+            (void)constructionRegistry->internVertex(
+                vertex, finestCellH, IntersectionFeature2D::Smooth);
+        }
+    }
+
+    std::vector<ConstructionRecoveryRequest2D> recoveryRequests;
     for (const auto& leaf : tree.leaves()) {
-        auto components = buildCutCells(leaf, boundary, fluidRegion);
+        auto components = buildCutCellsShared(
+            leaf, boundary, *constructionRegistry,
+            IntersectionSource2D::WallCartesian, fluidRegion);
         if (components.size() > 1) ++splitFluidLeaves;
         for (auto& cut : components) {
+            recoveryRequests.insert(recoveryRequests.end(),
+                                    cut.constructionRecoveryRequests.begin(),
+                                    cut.constructionRecoveryRequests.end());
             // A physical leaf can legally contribute multiple disconnected
             // solver cells. Give every emitted component a unique deterministic
             // source id while preserving the Quadtree key/level in sourceKey.
@@ -628,6 +657,22 @@ int main(int argc, char** argv) {
             }
             cutCells.push_back(std::move(cut));
         }
+    }
+    if (!recoveryRequests.empty()) {
+        // The plain CLI has no local-refinement recovery loop. Never commit
+        // geometry that the shared construction layer has flagged as unsafe.
+        std::cerr << "shared construction requested " << recoveryRequests.size()
+                  << " local recovery pass(es); the plain CLI has no recovery loop\n";
+        const std::size_t reportCount =
+            std::min<std::size_t>(recoveryRequests.size(), 5);
+        for (std::size_t i = 0; i < reportCount; ++i) {
+            const auto& request = recoveryRequests[i];
+            std::cerr << "construction_recovery[" << i << "] support="
+                      << request.supportId << " local_h=" << request.localH
+                      << " at=(" << request.originalPoint.x << ','
+                      << request.originalPoint.y << ") reason=" << request.reason << '\n';
+        }
+        return EXIT_FAILURE;
     }
     if (unsupported != 0) {
         std::cerr << "Cut-cell construction produced " << unsupported
@@ -663,17 +708,36 @@ int main(int argc, char** argv) {
         ? domainArea - solidArea
         : solidArea;
     const TolerancePolicy tol{};
-    const double areaEps = std::max(tol.absolute * tol.absolute,
-                                    tol.relative * std::max(1.0, std::abs(expectedFluidArea)));
+    const double roundoffAreaEps =
+        std::max(tol.absolute * tol.absolute,
+                 tol.relative * std::max(1.0, std::abs(expectedFluidArea)));
+    double wallLength = 0.0;
+    for (const auto& loop : boundary.loops()) {
+        const auto& vertices = loop.vertices();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            const auto& a = vertices[i];
+            const auto& b = vertices[(i + 1) % vertices.size()];
+            wallLength += std::hypot(b.x - a.x, b.y - a.y);
+        }
+    }
+    // Each weld moves a point by at most f*h. Its incident area perturbation is
+    // bounded by 1.5*f*h^2, while a wall of length L has at most L/h relevant
+    // grid crossings. Thus the global geometric allowance is 1.5*f*h*L.
+    const double weldAreaEps =
+        1.5 * gridCornerWeldFraction * finestCellH * wallLength;
+    const double areaEps = roundoffAreaEps + weldAreaEps;
     if (std::abs(sourceFluidArea - expectedFluidArea) > areaEps) {
         std::cerr << "fluid-side physics gate failed: region=" << fluidRegionName(fluidRegion)
                   << " generated_area=" << std::setprecision(17) << sourceFluidArea
-                  << " expected_area=" << expectedFluidArea << '\n';
+                  << " expected_area=" << expectedFluidArea
+                  << " allowed_error=" << areaEps << '\n';
         return EXIT_FAILURE;
     }
 
     const auto sourceTopologyStart = std::chrono::steady_clock::now();
-    const TopologyMesh2D sourceTopology = buildGlobalTopology(cutCells, domain, boundary);
+    const TopologyMesh2D sourceTopology =
+        buildGlobalTopology(cutCells, domain, boundary, TolerancePolicy{},
+                            constructionRegistry);
     const double sourceTopologySeconds = elapsedSeconds(sourceTopologyStart);
     if (!sourceTopology.valid()) {
         std::cerr << "source global topology audit failed\n";

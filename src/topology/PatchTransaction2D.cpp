@@ -520,7 +520,8 @@ TopologyPatchCommitResult2D evaluateTopologyPatchTransactionOracle2D(
     ++result.globalOracleBuildCount;
     ++result.profile.globalOracleBuildCount;
     auto candidate=buildGlobalTopology(candidateSources,domain,boundary,tol,
-                                       baseTopology.constructionRegistry);
+                                       baseTopology.constructionRegistry,
+                                       baseTopology.embeddedBoundaryFragments);
     if (!candidate.valid()) {
         result.issues.push_back("replacement patch failed the global topology oracle");
         return result;

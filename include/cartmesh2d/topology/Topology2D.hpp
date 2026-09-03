@@ -87,6 +87,10 @@ struct TopologyMesh2D {
     std::vector<std::size_t> canonicalVertexIds;
     std::size_t sharedPartitionCount = 0;
     std::size_t sharedPartitionCacheHits = 0;
+    // Physical wall fragments already classified in this construction
+    // transaction. They must survive agglomeration/partition rebuilds because
+    // a bounded canonical weld need not remain collinear with the input loop.
+    std::vector<Segment2D> embeddedBoundaryFragments;
 
     [[nodiscard]] bool valid() const noexcept {
         return issues.empty() && audit.pass();
@@ -104,7 +108,8 @@ struct TopologyMesh2D {
     const Domain2D& domain,
     const BoundaryRegion2D& boundary,
     const TolerancePolicy& tol = {},
-    std::shared_ptr<IntersectionRegistry2D> registry = {});
+    std::shared_ptr<IntersectionRegistry2D> registry = {},
+    const std::vector<Segment2D>& knownEmbeddedBoundary = {});
 
 // Monotonic count of buildGlobalTopology calls in this process. Instrumentation
 // only: it lets a caller prove by measurement, rather than by assertion, that a

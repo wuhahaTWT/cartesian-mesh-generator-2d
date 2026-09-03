@@ -257,7 +257,8 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
                                    const Domain2D& domain,
                                    const BoundaryRegion2D& boundary,
                                    const TolerancePolicy& tol,
-                                   std::shared_ptr<IntersectionRegistry2D> registry) {
+                                   std::shared_ptr<IntersectionRegistry2D> registry,
+                                   const std::vector<Segment2D>& knownEmbeddedBoundary) {
     ++globalTopologyBuilds;
     globalTopologyBuildCells+=inputCells.size();
     const GlobalTopologyBuildTimer buildTimer;
@@ -470,6 +471,7 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             const auto& b = mesh.vertices[key.b].point;
             const auto& ownerSource = cells[edge.owner];
             if (segmentOnEmbeddedFragments(a, b, ownerSource.embeddedBoundary, tol) ||
+                segmentOnEmbeddedFragments(a, b, knownEmbeddedBoundary, tol) ||
                 segmentOnInputBoundary(a, b, boundary, tol)) {
                 edge.patch = BoundaryPatch2D::EmbeddedBoundary;
             } else if (segmentOnDomainBoundary(a, b, domain, tol) &&
@@ -478,8 +480,16 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
             } else {
                 edge.patch = BoundaryPatch2D::Unclassified;
                 ++mesh.audit.unclassifiedBoundaryEdges;
+                std::ostringstream detail;
+                detail << std::setprecision(17)
+                       << "single-owner edge is neither an owner embedded fragment nor domain boundary"
+                       << " owner=" << edge.owner
+                       << " source=" << ownerSource.sourceId
+                       << " a=(" << a.x << ',' << a.y << ')'
+                       << " b=(" << b.x << ',' << b.y << ')'
+                       << " embedded_fragments=" << ownerSource.embeddedBoundary.size();
                 mesh.issues.push_back({TopologyIssueCode2D::UnclassifiedBoundaryEdge, edge.id,
-                                       "single-owner edge is neither an owner embedded fragment nor domain boundary"});
+                                       detail.str()});
             }
         } else {
             ++mesh.audit.nonManifoldEdges;
@@ -488,6 +498,10 @@ TopologyMesh2D buildGlobalTopology(const std::vector<CutCell2D>& inputCells,
         }
         edgeIds[key] = edge.id;
         mesh.edges.push_back(edge);
+        if (edge.patch == BoundaryPatch2D::EmbeddedBoundary) {
+            mesh.embeddedBoundaryFragments.push_back({
+                mesh.vertices[edge.v0].point, mesh.vertices[edge.v1].point});
+        }
     }
 
     for (auto& cell : mesh.cells) {

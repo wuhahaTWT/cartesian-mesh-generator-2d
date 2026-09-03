@@ -557,7 +557,8 @@ struct LocalQualityRank2D {
     const std::vector<bool>& immutableSources={},
     const std::vector<bool>& preserveSources={},
     const std::vector<std::vector<std::size_t>>& sourceLineages={},
-    std::shared_ptr<IntersectionRegistry2D> registry={}) {
+    std::shared_ptr<IntersectionRegistry2D> registry={},
+    const std::vector<Segment2D>& knownEmbeddedBoundary={}) {
     PartitionAttempt2D result;
     std::vector<CutCell2D> cells;
     cells.reserve(sourcePolygons.size());
@@ -593,7 +594,8 @@ struct LocalQualityRank2D {
         }
     }
     const auto topologyStart=ProfileClock::now();
-    result.topology=buildGlobalTopology(cells,domain,boundary,tol,registry);
+    result.topology=buildGlobalTopology(
+        cells,domain,boundary,tol,registry,knownEmbeddedBoundary);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
         profile->buildGlobalTopologySeconds+=elapsed;
@@ -781,7 +783,9 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     }
     const auto topologyStart=ProfileClock::now();
     RepartitionBatch2D rebuilt;
-    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol,topology.constructionRegistry);
+    rebuilt.topology=buildGlobalTopology(
+        cells,domain,boundary,tol,topology.constructionRegistry,
+        topology.embeddedBoundaryFragments);
     rebuilt.immutableCells=std::move(rebuiltImmutable);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
@@ -816,7 +820,9 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
     }
     const auto topologyStart=ProfileClock::now();
     RepartitionBatch2D rebuilt;
-    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol,topology.constructionRegistry);
+    rebuilt.topology=buildGlobalTopology(
+        cells,domain,boundary,tol,topology.constructionRegistry,
+        topology.embeddedBoundaryFragments);
     rebuilt.immutableCells=std::move(rebuiltImmutable);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
@@ -1156,7 +1162,9 @@ template<class Proposal>
     }
     const auto topologyStart=ProfileClock::now();
     RepartitionBatch2D rebuilt;
-    rebuilt.topology=buildGlobalTopology(cells,domain,boundary,tol,topology.constructionRegistry);
+    rebuilt.topology=buildGlobalTopology(
+        cells,domain,boundary,tol,topology.constructionRegistry,
+        topology.embeddedBoundaryFragments);
     rebuilt.immutableCells=std::move(rebuiltImmutable);
     if (profile) {
         const double elapsed=profileSeconds(topologyStart);
@@ -2645,7 +2653,8 @@ SolverTopologyResult2D buildSolverTopology2D(
     PartitionAttempt2D partition=partitionSourcePolygons(
         sourcePolygons,domain,boundary,tol,&result.profile,false,
         constraints.immutableInputCells,constraints.preserveInputCells,
-        sourceLineages,topology.constructionRegistry);
+        sourceLineages,topology.constructionRegistry,
+        topology.embeddedBoundaryFragments);
     std::vector<bool> immutableSources=constraints.immutableInputCells;
     std::vector<bool> preserveSources=constraints.preserveInputCells;
     result.profile.initialPartitionSeconds=profileSeconds(initialPartitionStart);
@@ -2699,7 +2708,8 @@ SolverTopologyResult2D buildSolverTopology2D(
             auto candidate=partitionSourcePolygons(
                 candidatePolygons,domain,boundary,tol,&result.profile,true,
                 candidateImmutable,candidatePreserve,candidateLineages,
-                topology.constructionRegistry);
+                topology.constructionRegistry,
+                topology.embeddedBoundaryFragments);
             if (candidate.error.empty()) {
                 const auto candidateQuality=timedFullQuality(
                     candidate.topology,tol,&result.profile,true);
@@ -2762,7 +2772,8 @@ SolverTopologyResult2D buildSolverTopology2D(
             auto candidate=partitionSourcePolygons(
                 candidatePolygons,domain,boundary,tol,&result.profile,true,
                 candidateImmutable,candidatePreserve,candidateLineages,
-                topology.constructionRegistry);
+                topology.constructionRegistry,
+                topology.embeddedBoundaryFragments);
             if (!candidate.error.empty()) continue;
             const auto candidateQuality=timedFullQuality(
                 candidate.topology,tol,&result.profile,true);
