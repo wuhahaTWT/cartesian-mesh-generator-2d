@@ -260,6 +260,12 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stageR2_refinement_ladder_gate_tests
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/refinement_ladder_gate_test.py)
+    add_test(NAME cartmesh2d_product_cutcell_help
+        COMMAND cartmesh2d_cli --help)
+    add_test(NAME cartmesh2d_product_hybrid_help
+        COMMAND cartmesh2d_hybrid_cli --help)
+    add_test(NAME cartmesh2d_product_dxf_help
+        COMMAND cartmesh2d_dxf_cli --help)
 
     set(CARTMESH2D_H4_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boundary_layer)
     add_test(NAME cartmesh2d_stageH4_1_circle_e2e

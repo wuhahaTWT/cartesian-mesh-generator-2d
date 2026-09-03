@@ -102,8 +102,8 @@ bool writeText(const std::filesystem::path& path, const std::string& text,
     return true;
 }
 
-void usage() {
-    std::cerr
+void usage(std::ostream& out = std::cerr) {
+    out
         << "usage: cartmesh2d_hybrid_cli <boundary.xy> <output-prefix> "
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
@@ -127,6 +127,11 @@ int main(int argc, char** argv) {
         return std::chrono::duration<double>(
             std::chrono::steady_clock::now() - start).count();
     };
+    if (argc == 2 && (std::string(argv[1]) == "--help" ||
+                      std::string(argv[1]) == "-h")) {
+        usage(std::cout);
+        return EXIT_SUCCESS;
+    }
     bool legacyConstruction=false;
     bool verifySourceLineage=false;
     bool q3TerminationQuality=false;
