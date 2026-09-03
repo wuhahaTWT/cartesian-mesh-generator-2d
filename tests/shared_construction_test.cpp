@@ -122,6 +122,30 @@ int main(int argc,char** argv) {
                 "collinear support is not an isolated intersection");
     }
     {
+        // W1 minimal regression: the shifted-circle domain reconstructs its
+        // centre grid line a few ulps below the incident wall endpoint. The
+        // grid-line identity accepts 0.07 as dyadic, so the intersection solve
+        // must resolve the same event to that immutable endpoint instead of
+        // rejecting t=-8.54e-16 as geometrically outside the support.
+        IntersectionRegistry2D registry;
+        registry.configureGrid({{-1.43,-1.47},{1.57,1.53}},6);
+        const Segment2D segment{{0.070000000000000007,-0.96999999999999997},
+                                {0.26509032201600002,-0.95078528040300003}};
+        const auto support=registry.registerSegment(
+            segment,0.046875,IntersectionSource2D::WallCartesian);
+        const auto endpoint=registry.internVertex(
+            segment.a,0.046875,IntersectionFeature2D::Smooth);
+        const auto event=registry.intersectGridLine(
+            support,registry.gridLine(0,segment.a.x),0.046875);
+        check(event==endpoint && registry.vertices()[event].point.x==segment.a.x &&
+              registry.vertices()[event].point.y==segment.a.y,
+              "roundoff-only grid reconstruction resolves to incident endpoint");
+        rejects([&]{
+            (void)registry.intersectGridLine(
+                support,registry.gridLine(0,-0.02375),0.046875);
+        },"nonincident grid line remains outside construction support");
+    }
+    {
         IntersectionRegistry2D r;
         rejects([&]{r.configureGrid({{0,0},{std::numeric_limits<double>::infinity(),1}},4);},"nonfinite grid rejected");
         rejects([&]{(void)r.internVertex({0,0},-1);},"invalid vertex scale rejected");

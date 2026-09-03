@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <optional>
 #include <queue>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -165,6 +167,30 @@ void removeCollinearVertices(std::vector<Point2D>& vertices,
         }
     }
     return true;
+}
+
+// A tangential embedded fragment can enter and leave a box through the same
+// canonical point after a bounded grid-corner weld. The planar walk then
+// contains A-B-A: a zero-area graph spur, not a physical polygon boundary.
+// Remove only this exact local backtrack before ordinary collinear cleanup.
+void removeBacktrackingSpurs(std::vector<Point2D>& loop,
+                             const TolerancePolicy& tol) {
+    bool changed=true;
+    while (changed && loop.size()>=3) {
+        changed=false;
+        for (std::size_t i=0;i<loop.size();++i) {
+            if (!pointNear(loop[i],loop[(i+2)%loop.size()],tol)) continue;
+            std::vector<Point2D> reduced;
+            reduced.reserve(loop.size()-2);
+            reduced.push_back(loop[i]);
+            for (std::size_t offset=3;offset<loop.size();++offset) {
+                reduced.push_back(loop[(i+offset)%loop.size()]);
+            }
+            loop=std::move(reduced);
+            changed=true;
+            break;
+        }
+    }
 }
 
 [[nodiscard]] std::optional<Segment2D> clipSegmentToAABB(
@@ -545,13 +571,22 @@ struct LocalIntersectionResult {
             result.graphFailure = "half-edge face traversal did not close";
             return result;
         }
+        removeBacktrackingSpurs(loop, tol);
         removeCollinearVertices(loop, tol);
         if (loop.size() < 3) continue;
         Polygon2D polygon{loop};
         if (polygon.area() <= areaEps) continue;
         if (!simplePolygonLoop(polygon, tol)) {
             result.graphInvalid = true;
-            result.graphFailure = "half-edge traversal produced a non-simple polygon";
+            std::ostringstream detail;
+            detail << std::setprecision(17)
+                   << "half-edge traversal produced a non-simple polygon vertices=";
+            for (std::size_t i=0;i<polygon.vertices.size();++i) {
+                if (i!=0) detail << ';';
+                detail << '(' << polygon.vertices[i].x << ','
+                       << polygon.vertices[i].y << ')';
+            }
+            result.graphFailure = detail.str();
             return result;
         }
 

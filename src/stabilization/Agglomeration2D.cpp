@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <set>
 #include <tuple>
 #include <utility>
 
@@ -321,6 +322,13 @@ AgglomerationResult2D agglomerateSmallCells(
     std::vector<CutCell2D> synthetic;
     synthetic.reserve(groups.size());
     result.cells.reserve(groups.size());
+    std::map<std::pair<double, double>, std::size_t> topologyVertexByPoint;
+    if (topology.constructionRegistry) {
+        for (const auto& vertex : topology.vertices) {
+            topologyVertexByPoint.emplace(
+                std::pair{vertex.point.x, vertex.point.y}, vertex.id);
+        }
+    }
 
     for (std::size_t groupId = 0; groupId < groups.size(); ++groupId) {
         AgglomerationIssue2D issue{AgglomerationIssueCode2D::InvalidInput, groupId, {}};
@@ -362,6 +370,39 @@ AgglomerationResult2D agglomerateSmallCells(
         adapter.area = merged.area;
         adapter.areaFraction = 1.0;
         adapter.centroid = merged.centroid;
+        // Agglomeration rebuilds polygons from the already classified source
+        // topology. Preserve that semantic boundary information: a W1
+        // grid-corner weld can move a wall intersection slightly off the input
+        // polyline, so re-inferring "wall" from coordinates alone is invalid.
+        std::set<std::size_t> embeddedEdges;
+        for (const std::size_t member : groups[groupId]) {
+            for (const std::size_t edgeId : topology.cells[member].edges) {
+                if (topology.edges[edgeId].patch == BoundaryPatch2D::EmbeddedBoundary) {
+                    embeddedEdges.insert(edgeId);
+                }
+            }
+        }
+        for (const std::size_t edgeId : embeddedEdges) {
+            const auto& edge = topology.edges[edgeId];
+            adapter.embeddedBoundary.push_back({
+                topology.vertices[edge.v0].point,
+                topology.vertices[edge.v1].point});
+        }
+        if (topology.constructionRegistry) {
+            adapter.canonicalRegistry = topology.constructionRegistry.get();
+            for (const auto& point : adapter.fluidPolygon.vertices) {
+                const auto vertex = topologyVertexByPoint.find({point.x, point.y});
+                if (vertex == topologyVertexByPoint.end() ||
+                    vertex->second >= topology.canonicalVertexIds.size()) {
+                    result.issues.push_back({
+                        AgglomerationIssueCode2D::InvalidTopologyReference, groupId,
+                        "agglomerated polygon lost its canonical construction handle"});
+                    return result;
+                }
+                adapter.canonicalVertexIds.push_back(
+                    topology.canonicalVertexIds[vertex->second]);
+            }
+        }
         synthetic.push_back(std::move(adapter));
     }
 
@@ -373,7 +414,9 @@ AgglomerationResult2D agglomerateSmallCells(
         return result;
     }
 
-    result.topology = buildGlobalTopology(synthetic, domain, boundary, tol);
+    result.topology = buildGlobalTopology(
+        synthetic, domain, boundary, tol, topology.constructionRegistry,
+        topology.embeddedBoundaryFragments);
     if (!result.topology.valid()) {
         result.issues.push_back({AgglomerationIssueCode2D::RebuiltTopologyInvalid, 0,
                                  "rebuilt topology after agglomeration failed the Stage 2D-4 audit"});
