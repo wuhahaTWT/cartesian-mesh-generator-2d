@@ -3,12 +3,21 @@ const $ = id => document.getElementById(id);
 const presets = {
   quick: { maxLevel: 5, minimumLevel: 0 },
   standard: { maxLevel: 6, minimumLevel: 0 },
-  dense: { maxLevel: 8, minimumLevel: 6 }
+  dense: { maxLevel: 8, minimumLevel: 0 }
 };
 
 function updateReady() { $('generate').disabled = !(state.dxfPath && state.outputDirectory); }
 function compactPath(value) { return value || '尚未选择'; }
 function logLine(line) { $('log').textContent += `${line}\n`; $('log').scrollTop = $('log').scrollHeight; }
+function updateRefinementCostHint() {
+  const minimumLevel = Number($('minimumLevel').value);
+  const globalLeaves = Number.isInteger(minimumLevel) && minimumLevel >= 0
+    ? Math.pow(4, minimumLevel)
+    : null;
+  $('refinementCostHint').textContent = minimumLevel > 0 && Number.isFinite(globalLeaves)
+    ? `当前全域最低层级会先铺约 ${globalLeaves.toLocaleString()} 个叶格，再叠加物面局部加密；每提高一级约再乘 4。`
+    : '建议保持全域最低层级为 0；物面精度由最高层级控制。全域最低层级每提高一级，远场叶格约增至 4 倍。';
+}
 
 function parseCm2d(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -105,7 +114,9 @@ document.querySelectorAll('.preset').forEach(button => button.addEventListener('
   const preset = presets[button.dataset.preset];
   $('maxLevel').value = preset.maxLevel;
   $('minimumLevel').value = preset.minimumLevel;
+  updateRefinementCostHint();
 }));
+$('minimumLevel').addEventListener('input', updateRefinementCostHint);
 
 window.cartmesh.onGenerationLine(logLine);
 $('generate').addEventListener('click', async () => {
@@ -167,3 +178,5 @@ window.addEventListener('resize', () => { if (state.mesh) drawMesh(state.mesh); 
   updateReady();
   $('generate').click();
 })();
+
+updateRefinementCostHint();

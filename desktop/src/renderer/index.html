@@ -36,16 +36,17 @@
         <div class="preset-row">
           <button class="preset" data-preset="quick">快速</button>
           <button class="preset active" data-preset="standard">标准</button>
-          <button class="preset" data-preset="dense">较密</button>
+          <button class="preset" data-preset="dense">物面较密</button>
         </div>
         <div class="field-grid">
-          <label>边界最高层级<input id="maxLevel" type="number" min="1" max="28" value="6"></label>
-          <label>全域最低层级<input id="minimumLevel" type="number" min="0" max="28" value="0"></label>
+          <label>物面最高层级<input id="maxLevel" type="number" min="1" max="28" value="6"></label>
+          <label>全域最低层级（高级）<input id="minimumLevel" type="number" min="0" max="28" value="0"></label>
           <label>计算域留白<input id="padding" type="number" min="0.01" step="0.05" value="0.25"></label>
           <label>小单元阈值<input id="smallAlpha" type="number" min="0.001" max="0.999" step="0.01" value="0.05"></label>
         </div>
         <label>曲线最大弦高误差（米）<input id="chordError" type="number" min="0.000000001" step="0.0001" value="0.001"></label>
-        <p class="hint">层级每提高一级，二维全域规模最多约增至 4 倍；质量门可能拒绝不合格网格。</p>
+        <p class="hint" id="refinementCostHint"></p>
+        <p class="hint">质量门可能拒绝不合格网格；实际生成前还应增加单元预算预估。</p>
       </section>
 
       <section>
