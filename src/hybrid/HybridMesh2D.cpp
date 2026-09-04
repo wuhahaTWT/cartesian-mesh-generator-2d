@@ -410,6 +410,9 @@ void writeJsonString(std::ostream& out, const std::string& value) {
         const auto& source=sources[*sourceForCell[cell.id]];
         metadata[cell.id].type=qualityType(source.kind);
         metadata[cell.id].localBackgroundH=source.localBackgroundH;
+        // Hybrid sources are single polygons rather than merged Quadtree boxes, so
+        // their own area is the background the fraction should be taken against.
+        metadata[cell.id].backgroundArea=source.polygon.area();
         metadata[cell.id].sourceId=source.id;
         metadata[cell.id].layerIndex=source.layerIndex;
         metadata[cell.id].wallSegment=source.wallSegment;

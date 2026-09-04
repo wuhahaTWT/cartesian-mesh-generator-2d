@@ -4,6 +4,7 @@
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/sizing/SizeField2D.hpp"
 
 #include <algorithm>
@@ -14,11 +15,13 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -514,8 +517,54 @@ bool writeVisualizationMetadata(const std::filesystem::path& path,
     return true;
 }
 
-void usage(std::ostream& out = std::cerr) {
-    out << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
+// Q1 metadata for the pure Cut-cell path.
+//
+// The hybrid path has to locate each solver cell by point-in-polygon search because
+// its sources are layer quads, transition fans and remainder cuts with unrelated
+// geometry.  Here every solver cell descends from Quadtree leaves whose background
+// box is recorded on the cut cell itself, so the type and the local background size
+// come straight off the construction lineage.
+[[nodiscard]] std::vector<QualityCellMetadata2D> pureCutCellQualityMetadata(
+    const TopologyMesh2D& topology, const std::vector<CutCell2D>& cutCells) {
+    std::vector<QualityCellMetadata2D> metadata(topology.cells.size());
+    std::unordered_map<std::size_t,std::size_t> bySourceId;
+    bySourceId.reserve(cutCells.size());
+    for (std::size_t index=0;index<cutCells.size();++index) {
+        bySourceId.emplace(cutCells[index].sourceId,index);
+    }
+    for (const auto& cell:topology.cells) {
+        auto lineage=cell.sourceLineage;
+        if (lineage.empty()) lineage.push_back(cell.sourceId);
+        double localH=std::numeric_limits<double>::infinity();
+        double backgroundArea=0.0;
+        bool anyCut=false;
+        bool resolved=false;
+        for (const auto sourceId:lineage) {
+            const auto found=bySourceId.find(sourceId);
+            if (found==bySourceId.end()) continue;
+            const auto& cut=cutCells[found->second];
+            const double width=cut.backgroundBounds.max.x-cut.backgroundBounds.min.x;
+            const double height=cut.backgroundBounds.max.y-cut.backgroundBounds.min.y;
+            // Finest contributor for face-length ratios; summed box area for the area
+            // fraction, so an agglomerated cell cannot report a fraction above one.
+            localH=std::min(localH,std::min(width,height));
+            backgroundArea+=width*height;
+            anyCut=anyCut||cut.kind==CutCellKind::Cut;
+            resolved=true;
+        }
+        // An unresolved cell keeps type Unknown, which the contract reports as
+        // unrated instead of silently scoring it as an ordinary Cartesian cell.
+        if (!resolved||!std::isfinite(localH)) continue;
+        metadata[cell.id].type=anyCut?QualityCellType2D::RemainderCut
+                                     :QualityCellType2D::Cartesian;
+        metadata[cell.id].localBackgroundH=localH;
+        metadata[cell.id].backgroundArea=backgroundArea;
+        metadata[cell.id].sourceId=cell.sourceId;
+    }
+    return metadata;
+}
+
+void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <boundary.xy> <output-prefix> "
                  "[max-level=5] [padding-fraction=0.25] [small-alpha=0.10] "
                  "[fluid-region=exterior|interior] [openfoam-case-dir|-] [minimum-level=0] "
                  "[boundary-simplify-cell-fraction=0] "
@@ -945,6 +994,9 @@ int main(int argc, char** argv) {
     const auto solverTopologyStart = std::chrono::steady_clock::now();
     std::optional<SolverQualityReport2D> solverQuality;
     std::optional<SolverTopologyResult2D> solverTopology;
+    std::optional<QualityContractReport2D> qualityContract;
+    const std::filesystem::path qualityContractPath =
+        outputPrefix.string() + ".quality-contract.json";
     if (openFoamCase) {
         solverTopology=buildSolverTopology2D(stabilized.topology,domain,boundary);
         if (!solverTopology->valid()) {
@@ -955,6 +1007,25 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
         solverQuality=evaluateSolverQuality2D(solverTopology->topology);
+        // Q1 is a diagnostic, so it is produced before the gate decides.  The five
+        // acceptance cases have only ever been rated through the hybrid path; a
+        // report that only exists when the mesh already passes cannot explain a
+        // failure.
+        qualityContract=evaluateQualityContract2D(
+            solverTopology->topology,
+            pureCutCellQualityMetadata(solverTopology->topology,cutCells),
+            {},{},&*solverQuality);
+        {
+            std::ofstream out(qualityContractPath);
+            out<<qualityContractReportToJson(*qualityContract);
+            if (!out.good()) {
+                std::cerr<<"failed while writing quality-contract JSON output\n";
+                return EXIT_FAILURE;
+            }
+        }
+        std::cout<<"quality_contract="
+                 <<qualityContractStatusName(qualityContract->status())<<'\n'
+                 <<"quality_contract_json="<<qualityContractPath.string()<<'\n';
         if (!solverQuality->valid()) {
             std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
                      <<" issue(s) after "

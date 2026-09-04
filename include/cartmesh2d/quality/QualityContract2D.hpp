@@ -32,7 +32,18 @@ struct OrdinaryCellQualityLimits2D {
     QualityLimit2D nonOrthogonalityDeg{55.0,65.0,false};
     QualityLimit2D skewness{2.0,3.0,false};
     QualityLimit2D faceWeight{0.15,0.10,true};
+    // Gated, and kept at OpenFOAM's checkMesh form for parity with it.  Be aware of
+    // what it cannot mean on a 2:1-graded cut-cell mesh: a cut cell of area fraction
+    // alpha against a coarser full neighbour scores alpha/4, and agglomeration only
+    // guarantees alpha >= small-alpha, so this limit is not reachable by improving
+    // the mesh.  tests/quality_reachability_test.cpp records that bound explicitly.
     QualityLimit2D volumeRatio{0.10,0.05,true};
+    // The grading-aware form: each area divided by the total background box area of
+    // its sources, so a level difference cancels and two full cells score 1.0 at any
+    // level gap.  Reported but *not* gated yet - see the comment at its check site in
+    // QualityContract2D.cpp.  The limit is already certified reachable so the switch
+    // needs no new threshold work, only a change of evaluation target.
+    QualityLimit2D backgroundVolumeRatio{0.20,0.10,true};
     QualityLimit2D minimumInteriorAngleDeg{20.0,10.0,true};
     QualityLimit2D hydraulicAspect{20.0,50.0,false};
     QualityLimit2D faceOverLocalBackgroundH{0.03,0.01,true};
@@ -49,7 +60,16 @@ struct QualityContract2D {
 
 struct QualityCellMetadata2D {
     QualityCellType2D type = QualityCellType2D::Unknown;
+    // Size of the *finest* background cell this solver cell descends from.  Correct
+    // for face-length ratios, where the finest contributor sets the scale a face
+    // should be compared against.
     double localBackgroundH = 0.0;
+    // Total background box area of every source this solver cell descends from.
+    // Distinct from localBackgroundH^2 on purpose: an agglomerated cell spanning a
+    // level-7 and a level-8 leaf has one finest size but two boxes of area, and an
+    // area *fraction* is only bounded by 1 when divided by the total.  Zero means
+    // "not known", and background_volume_ratio then skips the face.
+    double backgroundArea = 0.0;
     std::size_t sourceId = 0;
     std::optional<std::size_t> layerIndex;
     std::optional<std::size_t> wallSegment;

@@ -119,6 +119,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_size_field_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_size_field_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_quality_reachability_tests tests/quality_reachability_test.cpp)
+    target_link_libraries(cartmesh2d_quality_reachability_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_quality_reachability_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_multiloop_tests tests/multiloop_test.cpp)
     target_link_libraries(cartmesh2d_multiloop_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_multiloop_tests PRIVATE cxx_std_20)
@@ -202,6 +206,7 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_quadtree_tests
             cartmesh2d_spatial_index_tests
             cartmesh2d_size_field_tests
+            cartmesh2d_quality_reachability_tests
             cartmesh2d_multiloop_tests
             cartmesh2d_solver_export_tests
             cartmesh2d_cutcell_tests
@@ -240,6 +245,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
     add_test(NAME cartmesh2d_stageWB_size_field_tests COMMAND cartmesh2d_size_field_tests)
+    add_test(NAME cartmesh2d_stageWC_quality_reachability_tests COMMAND cartmesh2d_quality_reachability_tests)
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
