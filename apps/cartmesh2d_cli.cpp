@@ -692,6 +692,12 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    // Create the output directory once, before anything downstream can write.  The
+    // quality-contract report is emitted while the solver gate is still undecided,
+    // which is earlier than the serialization block, so this cannot live there.
+    const auto outputParent = outputPrefix.parent_path();
+    if (!outputParent.empty()) std::filesystem::create_directories(outputParent);
+
     const AABB2D bounds = boundary.bounds();
     const double width = bounds.max.x - bounds.min.x;
     const double height = bounds.max.y - bounds.min.y;
@@ -1074,8 +1080,6 @@ int main(int argc, char** argv) {
     const double solverTopologySeconds = elapsedSeconds(solverTopologyStart);
 
     const auto serializationStart = std::chrono::steady_clock::now();
-    const auto parent = outputPrefix.parent_path();
-    if (!parent.empty()) std::filesystem::create_directories(parent);
     const std::filesystem::path vtkPath = outputPrefix.string() + ".vtk";
     const std::filesystem::path cm2dPath = outputPrefix.string() + ".cm2d";
     const std::filesystem::path qualityPath =
