@@ -1,0 +1,207 @@
+{
+  "cases": {
+    "airfoil_like": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 1305,
+          "hard": 20,
+          "status": "FAIL"
+        },
+        "remainder_cut": {
+          "cell_count": 408,
+          "hard": 8,
+          "status": "FAIL"
+        }
+      },
+      "hard_issue_counts": {
+        "face_length_over_local_background_h": 11,
+        "face_length_over_sqrt_neighbour_area": 1,
+        "face_length_over_sqrt_owner_area": 1,
+        "face_weight": 6,
+        "minimum_interior_angle_deg": 1,
+        "skewness": 2,
+        "volume_ratio": 6
+      },
+      "observed": {
+        "background_volume_ratio": 0.00013950892857142873,
+        "face_length_over_local_background_h": 0.0005868544600937539,
+        "face_weight": 0.03767820773930535,
+        "volume_ratio": 0.018575574905112576
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 17,
+        "face_length_over_sqrt_neighbour_area": 5,
+        "face_length_over_sqrt_owner_area": 4,
+        "face_weight": 9,
+        "hydraulic_aspect": 2,
+        "minimum_interior_angle_deg": 27,
+        "non_orthogonality_deg": 3,
+        "skewness": 16,
+        "volume_ratio": 6
+      },
+      "quality_contract": "FAIL",
+      "solver_failure": "solver-quality gate failed with 4 issue(s) after 0 quality-driven source agglomeration(s) and 3 local repartition(s); OpenFOAM mesh was not ",
+      "solver_gate": "FAIL"
+    },
+    "circle": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 1794,
+          "hard": 29,
+          "status": "FAIL"
+        },
+        "remainder_cut": {
+          "cell_count": 570,
+          "hard": 8,
+          "status": "FAIL"
+        }
+      },
+      "hard_issue_counts": {
+        "face_length_over_local_background_h": 21,
+        "face_length_over_sqrt_owner_area": 8,
+        "face_weight": 8
+      },
+      "observed": {
+        "background_volume_ratio": 0.00020021782425318677,
+        "face_length_over_local_background_h": 0.0016671784447336673,
+        "face_weight": 0.08269286938983766,
+        "volume_ratio": 0.055223833920573874
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 39,
+        "face_weight": 12,
+        "minimum_interior_angle_deg": 8,
+        "non_orthogonality_deg": 8,
+        "volume_ratio": 28
+      },
+      "quality_contract": "FAIL",
+      "solver_gate": "PASS"
+    },
+    "concave_l": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 2486,
+          "hard": 0,
+          "status": "WARN"
+        },
+        "remainder_cut": {
+          "cell_count": 654,
+          "hard": 0,
+          "status": "WARN"
+        }
+      },
+      "hard_issue_counts": {},
+      "observed": {
+        "background_volume_ratio": 0.0005787037037037037,
+        "face_length_over_local_background_h": 0.027777777777777776,
+        "face_weight": 0.14285714285714007,
+        "volume_ratio": 0.09876543209876543
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 8,
+        "face_weight": 2,
+        "volume_ratio": 2
+      },
+      "quality_contract": "WARN",
+      "solver_gate": "PASS"
+    },
+    "narrow_gap": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 2474,
+          "hard": 0,
+          "status": "WARN"
+        },
+        "remainder_cut": {
+          "cell_count": 714,
+          "hard": 0,
+          "status": "WARN"
+        }
+      },
+      "hard_issue_counts": {},
+      "observed": {
+        "background_volume_ratio": 0.00021701388888888752,
+        "face_length_over_local_background_h": 0.015931372549019045,
+        "face_weight": 0.17520215633421668,
+        "volume_ratio": 0.1699346405228666
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 17,
+        "minimum_interior_angle_deg": 384
+      },
+      "quality_contract": "WARN",
+      "solver_failure": "OpenFOAM embedded boundary edge has no unique input-loop identity within the construction budget edge=856 a=(0,0.245) b=(0,0.252968750000000",
+      "solver_gate": "FAIL"
+    },
+    "sharp_trailing_edge": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 1444,
+          "hard": 1,
+          "status": "FAIL"
+        },
+        "remainder_cut": {
+          "cell_count": 444,
+          "hard": 0,
+          "status": "WARN"
+        }
+      },
+      "hard_issue_counts": {
+        "face_length_over_local_background_h": 1
+      },
+      "observed": {
+        "background_volume_ratio": 0.0011160714285714285,
+        "face_length_over_local_background_h": 0.00520833333333363,
+        "face_weight": 0.16566985645932933,
+        "volume_ratio": 0.12222222222222227
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 21,
+        "minimum_interior_angle_deg": 58
+      },
+      "quality_contract": "FAIL",
+      "solver_gate": "PASS"
+    },
+    "superellipse": {
+      "by_cell_type": {
+        "cartesian": {
+          "cell_count": 1718,
+          "hard": 31,
+          "status": "FAIL"
+        },
+        "remainder_cut": {
+          "cell_count": 469,
+          "hard": 4,
+          "status": "FAIL"
+        }
+      },
+      "hard_issue_counts": {
+        "face_length_over_local_background_h": 16,
+        "face_length_over_sqrt_owner_area": 3,
+        "face_weight": 12,
+        "volume_ratio": 4
+      },
+      "observed": {
+        "background_volume_ratio": 0.0007324218749999965,
+        "face_length_over_local_background_h": 1.1483646843194784e-07,
+        "face_weight": 0.0708952524108334,
+        "volume_ratio": 0.015250156355346562
+      },
+      "preferred_issue_counts": {
+        "face_length_over_local_background_h": 19,
+        "face_length_over_sqrt_neighbour_area": 2,
+        "face_length_over_sqrt_owner_area": 10,
+        "face_weight": 32,
+        "minimum_interior_angle_deg": 172,
+        "skewness": 6,
+        "volume_ratio": 28
+      },
+      "quality_contract": "FAIL",
+      "solver_gate": "PASS"
+    }
+  },
+  "format": "cartmesh2d-pure-path-q1-v1",
+  "level": 8,
+  "note": "First Q1 rating of the pure Cut-cell path. Every artifacts/q1/* baseline is generated by cartmesh2d_hybrid_cli, so the five cases had never been rated here.",
+  "small_alpha": 0.15
+}
