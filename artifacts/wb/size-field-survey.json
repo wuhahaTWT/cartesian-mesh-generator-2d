@@ -1,0 +1,989 @@
+{
+  "configurations": {
+    "boundary-only": [
+      "--size-field",
+      "--cells-per-level",
+      "0"
+    ],
+    "graded-1": [
+      "--size-field",
+      "--cells-per-level",
+      "1"
+    ],
+    "graded-3": [
+      "--size-field",
+      "--cells-per-level",
+      "3"
+    ],
+    "graded-3-curv-gap": [
+      "--size-field",
+      "--cells-per-level",
+      "3",
+      "--curvature-cells-per-radius",
+      "8",
+      "--gap-cells",
+      "4"
+    ],
+    "graded-3-wake": [
+      "--size-field",
+      "--cells-per-level",
+      "3",
+      "--wake",
+      "0",
+      "6",
+      "0.6",
+      "4"
+    ],
+    "legacy-default": []
+  },
+  "format": "cartmesh2d-size-field-survey-v1",
+  "legacy_level": 8,
+  "results": {
+    "airfoil_like": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/airfoil_like.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/airfoil_like-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 1,
+        "failure": "solver-quality gate failed with 4 issue(s) after 0 quality-driven source agglomeration(s) and 3 local repartition(s); OpenFOAM mesh was not written"
+      }
+    },
+    "circle": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/circle-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 0,
+        "leaf_count": "2896",
+        "solver_max_boundary_skewness": "1.20579933",
+        "solver_max_internal_skewness": "0.826877153",
+        "solver_max_nonorthogonality_deg": "59.9574303",
+        "solver_min_face_weight": "0.0826928694",
+        "solver_min_volume_ratio": "0.0552238339",
+        "stabilized_cells": "1716",
+        "timing_total_seconds": "0.371996"
+      }
+    },
+    "concave_l": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/concave_l.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/concave_l-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 0,
+        "leaf_count": "4450",
+        "solver_max_boundary_skewness": "1.16666667",
+        "solver_max_internal_skewness": "0.536157025",
+        "solver_max_nonorthogonality_deg": "21.8014095",
+        "solver_min_face_weight": "0.142857143",
+        "solver_min_volume_ratio": "0.0987654321",
+        "stabilized_cells": "2280",
+        "timing_total_seconds": "0.084445"
+      }
+    },
+    "naca2412_dense": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 17 exceeds maxSafeWallLevel 11 (wall 12, curvature 17, proximity 15); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/naca2412_dense-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 1,
+        "failure": "solver-quality gate failed with 23 issue(s) after 39 quality-driven source agglomeration(s) and 30 local repartition(s); OpenFOAM mesh was not written"
+      }
+    },
+    "narrow_gap": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/narrow_gap.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/narrow_gap-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 1,
+        "failure": "OpenFOAM embedded boundary edge has no unique input-loop identity within the construction budget edge=856 a=(0,0.245) b=(0,0.25296875000000002) nearest_a=0 nearest_b=0"
+      }
+    },
+    "sharp_trailing_edge": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 13 exceeds maxSafeWallLevel 11 (wall 12, curvature 13, proximity 13); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/h4_3/sharp_trailing_edge.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/sharp_trailing_edge-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 0,
+        "leaf_count": "2200",
+        "solver_max_boundary_skewness": "1.8420044",
+        "solver_max_internal_skewness": "0.9",
+        "solver_max_nonorthogonality_deg": "50.8669444",
+        "solver_min_face_weight": "0.165669856",
+        "solver_min_volume_ratio": "0.122222222",
+        "stabilized_cells": "1348",
+        "timing_total_seconds": "0.053676"
+      }
+    },
+    "superellipse": {
+      "boundary-only": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-boundary-only",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-boundary-only-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "0",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-1": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-1",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-1-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "1",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-curv-gap": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3-curv-gap",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3-curv-gap-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--curvature-cells-per-radius",
+          "8",
+          "--gap-cells",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "graded-3-wake": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3-wake",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-graded-3-wake-case",
+          "0",
+          "0",
+          "--size-field",
+          "--cells-per-level",
+          "3",
+          "--wake",
+          "0",
+          "6",
+          "0.6",
+          "4",
+          "--wall-cells-per-span",
+          "128.0"
+        ],
+        "exit_code": 1,
+        "failure": "size_field_issue=resolved level 12 exceeds maxSafeWallLevel 11 (wall 12, curvature 12, proximity 12); lower wallCellsPerSpan or farFieldSpans, or set allowUnsafeWallLevel"
+      },
+      "legacy-default": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/examples/complex/superellipse_24.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-legacy-default",
+          "8",
+          "0.25",
+          "0.15",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/.claude/worktrees/wonderful-thompson-f70ba0/build/size-field-survey/superellipse-legacy-default-case",
+          "0"
+        ],
+        "exit_code": 0,
+        "leaf_count": "2716",
+        "solver_max_boundary_skewness": "2.67539417",
+        "solver_max_internal_skewness": "0.890684797",
+        "solver_max_nonorthogonality_deg": "39.0186445",
+        "solver_min_face_weight": "0.0708952524",
+        "solver_min_volume_ratio": "0.0152501564",
+        "stabilized_cells": "1616",
+        "timing_total_seconds": "0.070595"
+      }
+    }
+  },
+  "wall_cells_per_span": 128.0
+}

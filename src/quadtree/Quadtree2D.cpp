@@ -217,6 +217,25 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
             throw std::invalid_argument("box refinement region does not overlap domain");
         }
     }
+    for (const auto& band : policy.segmentBands) {
+        if (!std::isfinite(band.radius) || band.radius < 0.0) {
+            throw std::invalid_argument("invalid segment refinement radius");
+        }
+        if (band.targetLevel > maxLevel_) {
+            throw std::invalid_argument("segment level exceeds maxLevel");
+        }
+        // Ids address the indexed boundary, so a stale or unsorted list would
+        // silently select the wrong stretch of wall instead of failing.
+        if (!std::is_sorted(band.segmentIds.begin(), band.segmentIds.end()) ||
+            std::adjacent_find(band.segmentIds.begin(), band.segmentIds.end()) !=
+                band.segmentIds.end()) {
+            throw std::invalid_argument("segment refinement ids must be sorted and unique");
+        }
+        if (!band.segmentIds.empty() &&
+            band.segmentIds.back() >= boundaryIndex_.segmentCount()) {
+            throw std::invalid_argument("segment refinement id outside indexed boundary");
+        }
+    }
 
     // Refine every eligible leaf once per level pass, then sort only after the
     // complete batch.  The former implementation split one leaf, sorted the
@@ -242,6 +261,21 @@ void Quadtree2D::refine(const BoundaryRegion2D& boundary,
             for (const auto& region : policy.boxRegions) {
                 if (boxesOverlapPositive(leaf.bounds, region.bounds)) {
                     requested = std::max(requested, region.targetLevel);
+                }
+            }
+            for (const auto& band : policy.segmentBands) {
+                // Nothing this band can add, so skip the index query entirely.
+                // This is also what keeps an empty segmentBands list free.
+                if (requested >= band.targetLevel || band.segmentIds.empty()) continue;
+                const AABB2D grown{
+                    {leaf.bounds.min.x - band.radius, leaf.bounds.min.y - band.radius},
+                    {leaf.bounds.max.x + band.radius, leaf.bounds.max.y + band.radius}};
+                for (const auto id : boundaryIndex_.querySegmentIds(grown, tol)) {
+                    if (std::binary_search(band.segmentIds.begin(),
+                                           band.segmentIds.end(), id)) {
+                        requested = band.targetLevel;
+                        break;
+                    }
                 }
             }
 
