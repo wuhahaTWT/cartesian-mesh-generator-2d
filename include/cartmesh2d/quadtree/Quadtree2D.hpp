@@ -11,6 +11,21 @@ struct BoxRefinementRegion2D {
     AABB2D bounds;
     std::size_t targetLevel = 0;
 };
+// A sizing source attached to a subset of wall segments.  Curvature and gap
+// proximity vary *along* the boundary, so unlike DistanceRefinementBand2D they
+// cannot be written as one radial band around the whole region.
+//
+// A leaf requests targetLevel when any listed segment's stored AABB overlaps the
+// leaf bounds grown by `radius`.  That test is deliberately the same conservative
+// box query the rest of the refinement path uses, so the field stays cheap and
+// order-independent; it may select a leaf slightly farther than `radius` from the
+// true segment, which for a sizing field is the safe direction.
+struct SegmentRefinementBand2D {
+    // Sorted, unique, global segment ids in BoundarySegmentIndex2D enumeration order.
+    std::vector<std::size_t> segmentIds;
+    double radius = 0.0;
+    std::size_t targetLevel = 0;
+};
 struct QuadtreeRefinementPolicy2D {
     // A global floor is required for controlled PDE grid-convergence studies;
     // zero preserves the original boundary-only adaptive behaviour.
@@ -21,6 +36,9 @@ struct QuadtreeRefinementPolicy2D {
     // downstream box is also the first wake-refinement primitive; overlapping
     // fields combine by taking the greatest requested target level.
     std::vector<BoxRefinementRegion2D> boxRegions;
+    // Empty is exactly the pre-existing behaviour: no leaf is ever selected by a
+    // segment band, so no traversal happens and no product changes.
+    std::vector<SegmentRefinementBand2D> segmentBands;
 };
 struct QuadtreeLeaf2D {
     std::size_t id = 0; std::uint64_t key = 0; std::size_t level = 0; std::uint64_t ix = 0; std::uint64_t iy = 0;

@@ -1,0 +1,252 @@
+{
+  "format": "cartmesh2d-alignment-sensitivity-v1",
+  "request": {
+    "allow_unsafe_wall_level": false,
+    "boundary": "generated-32-gon",
+    "cells_per_level": 1,
+    "far_field_spans": 10.0,
+    "max_safe_wall_level": "default",
+    "small_alpha": 0.15,
+    "wall_cells_per_span": "unset"
+  },
+  "samples": [
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.0,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.001,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.002,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.003,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.004,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.005,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.006,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.007,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.008,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.009,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.01,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.011,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.012,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.013,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.014,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644279,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.015,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644278,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.016,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644278,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.017,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644278,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.018,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644278,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    },
+    {
+      "exit_code": 0,
+      "leaf_count": 2404.0,
+      "scale": 1.019,
+      "solver_max_boundary_skewness": 1.57905548,
+      "solver_max_internal_skewness": 0.694737578,
+      "solver_max_nonorthogonality_deg": 57.3642718,
+      "solver_min_face_weight": 0.0712644278,
+      "solver_min_volume_ratio": 0.0250099546,
+      "stabilized_cells": 1436.0
+    }
+  ],
+  "summary": {
+    "alignment_pass_rate": 1.0,
+    "passed": 20,
+    "refused_by_guard": 0,
+    "samples": 20,
+    "solver_min_face_weight": {
+      "distinct": 2,
+      "max": 0.0712644279,
+      "median": 0.0712644279,
+      "min": 0.0712644278
+    },
+    "solver_min_volume_ratio": {
+      "distinct": 1,
+      "max": 0.0250099546,
+      "median": 0.0250099546,
+      "min": 0.0250099546
+    }
+  }
+}

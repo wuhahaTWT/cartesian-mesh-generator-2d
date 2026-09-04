@@ -4,6 +4,7 @@
 #include "cartmesh2d/quality/Quality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "cartmesh2d/sizing/SizeField2D.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -202,7 +203,15 @@ bool parseExactLevel(const std::string& value, std::size_t& parsed) {
 bool parseSizingOptions(int argc, char** argv, int first,
                         std::vector<DistanceRefinementBand2D>& distanceBands,
                         std::vector<BoxRefinementRegion2D>& boxRegions,
+                        std::optional<SizeFieldPolicy2D>& sizeField,
                         std::string& error) {
+    // The size-field options describe intent (wall resolution, growth, far field)
+    // and are compiled onto the primitives above.  They stay opt-in so every
+    // existing command line keeps producing byte-identical output.
+    const auto requireSizeField = [&]() -> SizeFieldPolicy2D& {
+        if (!sizeField) sizeField.emplace();
+        return *sizeField;
+    };
     int index=first;
     while (index<argc) {
         const std::string option=argv[index++];
@@ -237,6 +246,76 @@ bool parseSizingOptions(int argc, char** argv, int first,
             }
             index+=5;
             boxRegions.push_back(region);
+            continue;
+        }
+        if (option=="--size-field") {
+            (void)requireSizeField();
+            continue;
+        }
+        if (option=="--far-field-spans" || option=="--wall-cells-per-span") {
+            if (index+1>argc) { error=option+" requires <value>"; return false; }
+            double value=0.0;
+            if (!parseExactDouble(argv[index],value)) { error="invalid "+option+" value"; return false; }
+            ++index;
+            if (option=="--far-field-spans") requireSizeField().farFieldSpans=value;
+            else requireSizeField().wallCellsPerSpan=value;
+            continue;
+        }
+        if (option=="--cells-per-level" || option=="--far-level") {
+            if (index+1>argc) { error=option+" requires <value>"; return false; }
+            std::size_t value=0;
+            if (!parseExactLevel(argv[index],value)) { error="invalid "+option+" value"; return false; }
+            ++index;
+            auto& field=requireSizeField();
+            if (!field.wallDistance) field.wallDistance.emplace();
+            if (option=="--cells-per-level") field.wallDistance->cellsPerLevel=value;
+            else field.wallDistance->farLevel=value;
+            continue;
+        }
+        if (option=="--max-safe-wall-level") {
+            if (index+1>argc) { error=option+" requires <value>"; return false; }
+            std::size_t value=0;
+            if (!parseExactLevel(argv[index],value)) { error="invalid "+option+" value"; return false; }
+            ++index;
+            requireSizeField().maxSafeWallLevel=value;
+            continue;
+        }
+        if (option=="--allow-unsafe-wall-level") {
+            requireSizeField().allowUnsafeWallLevel=true;
+            continue;
+        }
+        if (option=="--curvature-cells-per-radius") {            if (index+1>argc) { error=option+" requires <value>"; return false; }
+            double value=0.0;
+            if (!parseExactDouble(argv[index],value)) { error="invalid "+option+" value"; return false; }
+            ++index;
+            requireSizeField().curvature=CurvatureSizing2D{value};
+            continue;
+        }
+        if (option=="--gap-cells") {
+            if (index+1>argc) { error=option+" requires <value>"; return false; }
+            double value=0.0;
+            if (!parseExactDouble(argv[index],value)) { error="invalid "+option+" value"; return false; }
+            ++index;
+            ProximitySizing2D proximity;
+            proximity.cellsAcrossGap=value;
+            requireSizeField().proximity=proximity;
+            continue;
+        }
+        if (option=="--wake") {
+            if (index+4>argc) {
+                error="--wake requires <angle-deg> <downstream-spans> <half-width-spans> <levels-below-wall>";
+                return false;
+            }
+            WakeSizing2D wake;
+            if (!parseExactDouble(argv[index],wake.angleOfAttackDeg) ||
+                !parseExactDouble(argv[index+1],wake.downstreamSpans) ||
+                !parseExactDouble(argv[index+2],wake.halfWidthSpans) ||
+                !parseExactLevel(argv[index+3],wake.levelsBelowWall)) {
+                error="invalid --wake value";
+                return false;
+            }
+            index+=4;
+            requireSizeField().wake=wake;
             continue;
         }
         error="unknown sizing option: "+option;
@@ -444,7 +523,21 @@ void usage(std::ostream& out = std::cerr) {
                  "[--refine-box <xmin> <ymin> <xmax> <ymax> <target-level>]...\n"
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
-                 "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n";
+                 "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n"
+                 "\n"
+                 "size field (opt-in; takes over the domain and the tree depth):\n"
+                 "  --size-field                          enable with defaults\n"
+                 "  --far-field-spans <v>                 domain half-extent in body spans (10)\n"
+                 "  --wall-cells-per-span <v>             body span / wall cell size (128)\n"
+                 "  --cells-per-level <n>                 cells per level band, 0 = boundary-only (3)\n"
+                 "  --far-level <n>                       global level floor (0)\n"
+                 "  --curvature-cells-per-radius <v>      raise the level where the wall turns\n"
+                 "  --gap-cells <v>                       cells guaranteed across a facing gap\n"
+                 "  --wake <angle-deg> <downstream-spans> <half-width-spans> <levels-below-wall>\n"
+                 "  --max-safe-wall-level <n>             refuse to resolve deeper than this (11)\n"
+                 "  --allow-unsafe-wall-level             opt in past that measured ceiling\n"
+                 "max-level and padding-fraction are ignored while --size-field is active; the\n"
+                 "wall cell size is requested physically so it no longer moves with the domain\n";
 }
 
 } // namespace
@@ -506,7 +599,9 @@ int main(int argc, char** argv) {
         openFoamCase=std::filesystem::path(argv[7]);
     }
     std::string sizingError;
-    if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,sizingError)) {
+    std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
+    if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,
+                            sizeFieldPolicy,sizingError)) {
         std::cerr<<sizingError<<'\n';
         usage();
         return EXIT_FAILURE;
@@ -557,10 +652,34 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     const double padding = paddingFraction * span;
-    const Domain2D domain{{
+    Domain2D domain{{
         {bounds.min.x - padding, bounds.min.y - padding},
         {bounds.max.x + padding, bounds.max.y + padding}
     }};
+
+    // The size field owns the domain and the tree depth when it is requested: wall
+    // resolution is asked for physically, so the level that delivers it depends on
+    // how large the domain ended up being.  Without --size-field nothing here runs
+    // and the positional max-level/padding-fraction remain authoritative.
+    std::optional<ResolvedSizeField2D> resolvedSizeField;
+    if (sizeFieldPolicy) {
+        auto resolved = resolveSizeField2D(*sizeFieldPolicy, boundary);
+        if (!resolved.valid()) {
+            for (const auto& issue : resolved.issues) {
+                std::cerr << "size_field_issue=" << issue << '\n';
+            }
+            return EXIT_FAILURE;
+        }
+        if (!distanceBands.empty() || !boxRegions.empty()) {
+            std::cerr << "--size-field and explicit --distance-band/--refine-box are "
+                         "two spellings of the same field; pass only one\n";
+            return EXIT_FAILURE;
+        }
+        domain = resolved.domain;
+        maxLevel = resolved.maxLevel;
+        minimumLevel = resolved.refinement.minimumLevel;
+        resolvedSizeField = std::move(resolved);
+    }
 
     std::optional<BoundarySimplificationReport2D> simplificationReport;
     if (boundarySimplifyCellFraction>0.0) {
@@ -592,10 +711,14 @@ int main(int argc, char** argv) {
     const auto refinementStart = std::chrono::steady_clock::now();
     Quadtree2D tree(domain, maxLevel, boundary);
     QuadtreeRefinementPolicy2D refinement;
-    refinement.minimumLevel = minimumLevel;
-    refinement.boundaryLevel = maxLevel;
-    refinement.distanceBands=distanceBands;
-    refinement.boxRegions=boxRegions;
+    if (resolvedSizeField) {
+        refinement = resolvedSizeField->refinement;
+    } else {
+        refinement.minimumLevel = minimumLevel;
+        refinement.boundaryLevel = maxLevel;
+        refinement.distanceBands=distanceBands;
+        refinement.boxRegions=boxRegions;
+    }
     try {
         tree.refine(boundary, refinement);
     } catch (const std::invalid_argument& exception) {
@@ -894,6 +1017,16 @@ int main(int argc, char** argv) {
         std::cerr<<error<<'\n';
         return EXIT_FAILURE;
     }
+    // Only written when the field was requested, so no existing output set changes.
+    const std::filesystem::path sizeFieldPath = outputPrefix.string() + ".size-field.json";
+    if (resolvedSizeField) {
+        std::ofstream out(sizeFieldPath);
+        out << resolvedSizeFieldToJson(*resolvedSizeField);
+        if (!out.good()) {
+            std::cerr << "failed while writing size-field JSON output\n";
+            return EXIT_FAILURE;
+        }
+    }
 
     error.clear();
     if (!writeLegacyVtk2D(stabilized.topology, vtkPath, &error)) {
@@ -1004,6 +1137,20 @@ int main(int argc, char** argv) {
     std::cout << "sizing_distance_bands=" << refinement.distanceBands.size() << '\n'
               << "sizing_box_regions=" << refinement.boxRegions.size() << '\n'
               << "sizing_json=" << sizingPath.string() << '\n';
+    if (resolvedSizeField) {
+        std::cout << "size_field=RESOLVED\n"
+                  << "size_field_body_span=" << resolvedSizeField->bodySpan << '\n'
+                  << "size_field_domain_span=" << resolvedSizeField->domainSpan << '\n'
+                  << "size_field_wall_cell_size=" << resolvedSizeField->wallCellSize << '\n'
+                  << "size_field_wall_level=" << resolvedSizeField->wallLevel << '\n'
+                  << "size_field_curvature_level=" << resolvedSizeField->curvatureLevel << '\n'
+                  << "size_field_proximity_level=" << resolvedSizeField->proximityLevel << '\n'
+                  << "size_field_max_level=" << resolvedSizeField->maxLevel << '\n'
+                  << "size_field_level_cap_reached="
+                  << (resolvedSizeField->levelCapReached ? "true" : "false") << '\n'
+                  << "sizing_segment_bands=" << refinement.segmentBands.size() << '\n'
+                  << "size_field_json=" << sizeFieldPath.string() << '\n';
+    }
     if (openFoamReport) {
         std::cout<<"solver_quality=PASS\n"
                  <<"solver_max_nonorthogonality_deg="<<solverQuality->maxNonOrthogonalityDeg<<'\n'
