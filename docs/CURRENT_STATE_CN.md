@@ -56,6 +56,17 @@ L11 的独立 reader 与真实 OpenFOAM v2606 `checkMesh -writeAllFields` 均通
 `artifacts/r2/w0-baseline-manifest.json`。测量入口
 `tools/verification/refinement_ladder.py`，详情 `docs/R2_REFINEMENT_ROBUSTNESS_CN.md`。
 
+**这张表的规模数字不是产品设置。** `refinement_ladder.py` 固定
+`minimum_level = level - CUTCELL_MINIMUM_LEVEL_OFFSET`（纯路径偏移 2，hybrid 偏移 1），
+所以每一级都是**全域近均匀**的压力网格，不是边界自适应网格。同一个 level 11 在 CLI 默认设置
+（`padding-fraction 0.25`、`minimum-level 0`）下只有 23896 leaves / 14048 cells，
+与表中 277336 / 180468 差 11.6 倍。
+
+这是**刻意的**：ladder 要最大化 grid-corner 擦碰与 cut cell 数量，才能暴露构造核的失败模式。
+但因此 ladder 的 cell 数与耗时**不得**当作产品代表值引用，任何面向产品的 sizing 结论都要在
+真实设置下另行测量。
+
+
 ## 3. 各轮范围的准确状态
 
 | 轮次 | 状态 | 边界 |
