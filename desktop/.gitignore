@@ -1,4 +1,4 @@
 node_modules/
 dist/
 runtime/bin/
-runtime/examples/
+runtime/samples/

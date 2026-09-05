@@ -167,8 +167,13 @@ knot / control point 的 `SPLINE`。DXF 单位会转换到米；边界图层语�
 
 ## macOS 桌面应用
 
-`desktop/` 提供可双击运行的 CartMesh2D 图形界面，可选择 DXF、设置网格规模、生成并预览
-真实 CM2D 单元，以及导出 VTK / CM2D / JSON / OpenFOAM case。
+`desktop/` 提供可双击运行的 CartMesh2D 图形界面：读入 .xy / .dxf / .svg / .csv /
+.txt 或 11 个内置样例，在纯 Cut-cell 与贴体边界层两条路径间选择，用物理量（远场倍
+体长、壁面单元尺寸、每级带宽、曲率、间隙、尾迹）描述尺寸场，预览按层级着色的真实
+CM2D 单元，并分开报告拓扑 / solver 质量 / Q1 三个门。
+
+分层结构、格式边界、层级预算算式与已知缺陷见
+[docs/DESKTOP_APP_CN.md](docs/DESKTOP_APP_CN.md)。
 
 Apple Silicon 本地打包命令与产品边界见
 [docs/PRODUCT1_MAC_DESKTOP_CN.md](docs/PRODUCT1_MAC_DESKTOP_CN.md)。同一套 Electron
