@@ -150,8 +150,7 @@ select { font-family: inherit; font-size: 12px; }
   border-left: 2px solid var(--line);
   padding: 6px 0 6px 9px; color: var(--ink-dim);
 }
-.budget.over { border-left-color: var(--fail); color: #ffb3c1; }
-.budget b { color: var(--ink); font-weight: 600; }
+.budget.over { border-left-color: var(--fail); color: #ffb3c1; }.budget b { color: var(--ink); font-weight: 600; }
 .budget em { font-style: normal; color: var(--accent); }
 
 .probe {
@@ -243,3 +242,46 @@ select { font-family: inherit; font-size: 12px; }
   margin: 0; padding: 0 18px 12px; max-height: 168px; overflow-y: auto;
   font: 10.5px/1.6 var(--mono); color: var(--ink-dim); white-space: pre-wrap;
 }
+
+.regions { display: grid; gap: 7px; }
+.regionsHead {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--ink-dim);
+}
+.mini { padding: 3px 8px; font-size: 10.5px; }
+#regionList { display: grid; gap: 6px; }
+.region {
+  border: 1px solid var(--line-soft); background: #0d1318;
+  padding: 7px 8px; display: grid; gap: 5px;
+}
+.region.active { border-color: var(--accent); }
+.regionTop {
+  display: flex; align-items: center; gap: 6px;
+  font: 10px/1 var(--mono); color: var(--ink-faint);
+}
+.regionTop b { color: var(--ink-dim); font-weight: 600; }
+.regionTop .grow { flex: 1; }
+.region .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.region .grid4 label {
+  display: grid; gap: 2px; font-size: 9px; color: var(--ink-faint);
+}
+.region input { padding: 4px 5px; font-size: 11px; }
+.region .depth { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink-faint); }
+.region .depth input { width: 48px; }
+.region .drop {
+  background: none; border: none; color: var(--ink-faint);
+  padding: 0 3px; font-size: 13px; line-height: 1;
+}
+.region .drop:hover { color: var(--fail); background: none; }
+
+.chip.select { padding: 4px 6px; font-size: 11px; width: auto; }
+
+/* Light display mode: the canvas turns into a publication figure, so the panels around
+   it keep their own colours and only the drawing surface changes. */
+.canvasWrap.light { background: #ffffff; }
+.canvasWrap.light .empty b { color: #55636d; }
+.canvasWrap.light .empty i { color: #8895a0; }
+.canvasWrap.light .legend {
+  background: rgba(255, 255, 255, .9); border-color: #d3dae0; color: #3d4a54;
+}
+.canvasWrap.light .legend .ends, .canvasWrap.light .legend .keys span { color: #6b7a86; }

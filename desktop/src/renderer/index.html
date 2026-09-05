@@ -88,6 +88,17 @@
         <label class="field">低于壁面<span class="unit"><input id="wakeLevels" type="number" min="0" max="20" step="1" value="4"><i>级</i></span></label>
       </div>
       <label class="toggle"><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
+
+      <div class="regions">
+        <div class="regionsHead">
+          <span>手动加密区</span>
+          <button id="addRegion" class="mini">+ 添加</button>
+        </div>
+        <div id="regionList"></div>
+        <p class="note">坐标以体长为单位、相对物体中心。这是尾流这类"非必要加密"区域的手动出口：
+          物面附近的加密由尺寸场保证，这里只管你想额外加密的地方。</p>
+      </div>
+
       <button id="probe" class="ghost wide">预检尺寸场</button>
       <div id="probeResult" class="probe" hidden></div>
     </section>
@@ -127,13 +138,19 @@
     <div class="statusbar">
       <div><b id="statusTitle">等待输入</b><i id="statusText">选择一个几何文件或内置样例</i></div>
       <div class="viewtools">
+        <select id="displayMode" class="chip select" title="显示样式">
+          <option value="level">层级配色</option>
+          <option value="light">白底线框</option>
+          <option value="dark">暗底线框</option>
+        </select>
         <button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
         <button id="toggleGrid" class="chip active">网格线</button>
+        <button id="toggleRegions" class="chip active">加密区</button>
         <button id="openOutput" class="chip" hidden>打开输出目录</button>
       </div>
     </div>
-    <div class="canvasWrap">
+    <div class="canvasWrap" id="canvasWrap">
       <canvas id="canvas"></canvas>
       <div id="empty" class="empty"><b>网格预览</b><i>读取真实 CM2D 单元，不是示意图。滚轮缩放，拖动平移。</i></div>
       <div id="legend" class="legend" hidden></div>

@@ -8,9 +8,14 @@
 //   CELLS    n   then  id sourceId sourceKey area nv v... ne e...
 //   AUDIT ...
 //
-// sourceKey is the Quadtree key, whose low six bits are the level (Quadtree2D::makeKey
-// packs `(morton << 6) | level`).  That is what makes it possible to colour the
-// preview by refinement level and therefore to see the size field's gradation.
+// On the pure Cut-cell path sourceKey is the Quadtree key, whose low six bits are the
+// level (Quadtree2D::makeKey packs `(morton << 6) | level`).
+//
+// On the hybrid path it is NOT: HybridMesh2D.cpp assigns `source.sourceKey =
+// source.sourceId`, a running index.  Colouring by `sourceKey % 64` there paints
+// id-mod-64 noise, which is what made a circle — a symmetric geometry — come out
+// speckled.  So the level is only read from the key when the caller says the key
+// carries one, and cell size is used otherwise.
 
 const PATCH = Object.freeze({ NONE: 0, EMBEDDED: 1, DOMAIN: 2, UNCLASSIFIED: 3 });
 
@@ -42,8 +47,6 @@ function parseCm2d(text) {
 
   expect('CELLS');
   const cells = new Array(value());
-  let minLevel = Infinity;
-  let maxLevel = -Infinity;
   for (let i = 0; i < cells.length; i++) {
     value();
     value();
@@ -51,15 +54,42 @@ function parseCm2d(text) {
     const area = value();
     const cellVertices = new Array(value());
     for (let v = 0; v < cellVertices.length; v++) cellVertices[v] = value();
-    const edgeTotal = value();
-    cursor += edgeTotal;
-    const level = sourceKey % 64;
-    minLevel = Math.min(minLevel, level);
-    maxLevel = Math.max(maxLevel, level);
-    cells[i] = { level, area, vertices: cellVertices };
+    // Read the count first: `cursor += value()` would read the left-hand cursor before
+    // value() advanced it, losing one token per cell.
+    const edgeCount = value();
+    cursor += edgeCount;
+    cells[i] = { keyLevel: sourceKey % 64, area, vertices: cellVertices };
   }
   if (!vertices.length || !cells.length) throw new Error('CM2D 文件没有可显示的单元。');
-  return { vertices, edges, cells, minLevel, maxLevel, bounds: boundsOf(vertices) };
+  return { vertices, edges, cells, bounds: boundsOf(vertices) };
+}
+
+// Bucket cells by size instead of by tree level.  sqrt(area) is a length, so one
+// bucket per factor of two reproduces exactly the level bands on a Cartesian mesh and
+// still says something true about a boundary-layer quad, which has no tree level.
+function assignSizeBands(mesh) {
+  let coarsest = 0;
+  for (const cell of mesh.cells) coarsest = Math.max(coarsest, Math.sqrt(cell.area));
+  for (const cell of mesh.cells) {
+    const size = Math.sqrt(cell.area);
+    cell.level = size > 0 ? Math.max(0, Math.round(Math.log2(coarsest / size))) : 0;
+  }
+  return finishLevels(mesh);
+}
+
+function assignKeyLevels(mesh) {
+  for (const cell of mesh.cells) cell.level = cell.keyLevel;
+  return finishLevels(mesh);
+}
+
+function finishLevels(mesh) {
+  mesh.minLevel = Infinity;
+  mesh.maxLevel = -Infinity;
+  for (const cell of mesh.cells) {
+    if (cell.level < mesh.minLevel) mesh.minLevel = cell.level;
+    if (cell.level > mesh.maxLevel) mesh.maxLevel = cell.level;
+  }
+  return mesh;
 }
 
 function boundsOf(vertices) {
@@ -91,4 +121,7 @@ function levelHistogram(mesh) {
   return [...counts.entries()].sort((a, b) => a[0] - b[0]).map(([level, count]) => ({ level, count }));
 }
 
-module.exports = { parseCm2d, boundsOf, embeddedBounds, levelHistogram, PATCH };
+module.exports = {
+  parseCm2d, boundsOf, embeddedBounds, levelHistogram,
+  assignKeyLevels, assignSizeBands, PATCH
+};

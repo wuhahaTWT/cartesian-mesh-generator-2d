@@ -758,15 +758,34 @@ int main(int argc, char** argv) {
             }
             return EXIT_FAILURE;
         }
-        if (!distanceBands.empty() || !boxRegions.empty()) {
-            std::cerr << "--size-field and explicit --distance-band/--refine-box are "
-                         "two spellings of the same field; pass only one\n";
+        // A distance band would fight the wall ladder the field just built, so that
+        // combination stays refused.  Boxes are additive: the field already emits box
+        // regions for the wake, and a user-placed region is the same primitive, which
+        // is what makes a hand-tuned wake or a downstream refinement patch expressible
+        // without giving up the field.
+        if (!distanceBands.empty()) {
+            std::cerr << "--size-field and --distance-band are two spellings of the same "
+                         "wall ladder; pass only one\n";
             return EXIT_FAILURE;
         }
+        for (const auto& region : boxRegions) {
+            if (region.targetLevel > resolved.maxLevel) {
+                std::cerr << "--refine-box level " << region.targetLevel
+                          << " exceeds the level the size field resolved to ("
+                          << resolved.maxLevel << ")\n";
+                return EXIT_FAILURE;
+            }
+            resolved.refinement.boxRegions.push_back(region);
+        }
+        const std::size_t userBoxRegions = boxRegions.size();
+        boxRegions.clear();
         domain = resolved.domain;
         maxLevel = resolved.maxLevel;
         minimumLevel = resolved.refinement.minimumLevel;
         resolvedSizeField = std::move(resolved);
+        if (userBoxRegions != 0) {
+            std::cout << "size_field_user_box_regions=" << userBoxRegions << '\n';
+        }
         if (sizeFieldOnly) {
             const std::filesystem::path onlyPath =
                 outputPrefix.string() + ".size-field.json";

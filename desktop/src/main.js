@@ -10,7 +10,8 @@ const { SAMPLES, sampleById } = require('./core/samples');
 const geometry = require('./core/geometry');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
-const { parseCm2d, levelHistogram, embeddedBounds } = require('./core/cm2d');
+const { parseCm2d, levelHistogram, embeddedBounds,
+        assignKeyLevels, assignSizeBands } = require('./core/cm2d');
 
 let mainWindow;
 
@@ -109,6 +110,20 @@ async function collectReports(method, prefix) {
   };
 }
 
+// Body bbox centre and span, the frame every sizing number is expressed in.
+function bodyFrame(loops) {
+  const points = loops.flat();
+  const xs = points.map(point => point[0]);
+  const ys = points.map(point => point[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  return {
+    centreX: (minX + maxX) / 2,
+    centreY: (minY + maxY) / 2,
+    bodySpan: Math.max(maxX - minX, maxY - minY)
+  };
+}
+
 async function firstReadable(candidates) {
   for (const candidate of candidates) {
     try { return { path: candidate, text: await fs.readFile(candidate, 'utf8') }; } catch { /* next */ }
@@ -180,7 +195,7 @@ app.whenReady().then(async () => {
       path.join(scratch, 'dxf.json'), () => {});
     const loops = info.loops
       || geometry.convertToLoops(xyPath, await fs.readFile(xyPath, 'utf8')).loops;
-    return { loops, kind: info.kind, warnings: info.warnings };
+    return { loops, kind: info.kind, warnings: info.warnings, frame: bodyFrame(loops) };
   });
 
   // Resolve the size field and stop.  This is the only way to learn the curvature and
@@ -218,7 +233,13 @@ app.whenReady().then(async () => {
     const prefix = await uniquePrefix(job.outputDirectory, safeBaseName(job.geometryPath));
     const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam` };
 
-    await prepareGeometry(job.geometryPath, job, paths.xyPath, `${prefix}.dxf.json`, log);
+    const prepared = await prepareGeometry(job.geometryPath, job, paths.xyPath,
+      `${prefix}.dxf.json`, log);
+    // A hand-placed region is stated in body spans about the body centre, so the frame
+    // has to come from the same loops the mesher is about to read.
+    const loops = prepared.loops
+      || geometry.convertToLoops(paths.xyPath, await fs.readFile(paths.xyPath, 'utf8')).loops;
+    paths.frame = bodyFrame(loops);
     const invocation = buildInvocation(job, paths);
     log(`正在生成${method.label}网格…`);
 
@@ -243,13 +264,18 @@ app.whenReady().then(async () => {
     // Parsed here rather than in the renderer: contextIsolation means the renderer
     // cannot require() the reader, and duplicating a format parser is how the two
     // copies drift apart.
-    const parsed = parseCm2d(mesh.text);
+    // Only the pure path's sourceKey carries a Quadtree level; the hybrid writes a
+    // running index there, so it is banded by cell size instead.
+    const parsed = job.method === 'hybrid'
+      ? assignSizeBands(parseCm2d(mesh.text))
+      : assignKeyLevels(parseCm2d(mesh.text));
     return {
       job,
       prefix,
       outputDirectory: job.outputDirectory,
       cm2dPath: mesh.path,
       mesh: parsed,
+      levelBasis: job.method === 'hybrid' ? 'size' : 'level',
       levelHistogram: levelHistogram(parsed),
       wallBounds: embeddedBounds(parsed),
       incomplete: failure ? failure.message.split('\n')[0] : null,
@@ -289,11 +315,25 @@ async function runSmoke() {
     const smoke = window.__smoke;
     smoke.setOutput(${JSON.stringify(outputDirectory)});
     smoke.selectMethod(${JSON.stringify(method)});
+    if (${JSON.stringify(Boolean(argument('regions')))}) {
+      smoke.addRegion();
+      smoke.addRegion();
+      smoke.state.regions[1].xmin = 6; smoke.state.regions[1].xmax = 14;
+      smoke.state.regions[1].ymin = -1.6; smoke.state.regions[1].ymax = 1.6;
+      smoke.state.regions[1].levelsBelowWall = 6;
+      smoke.renderRegions();
+    }
     const sample = smoke.state.catalog.samples.find(item => item.id === ${JSON.stringify(sampleId)});
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
     await smoke.generate();
+    const mode = ${JSON.stringify(argument('mode') || 'level')};
+    if (mode !== 'level') {
+      const select = document.getElementById('displayMode');
+      select.value = mode;
+      select.dispatchEvent(new Event('change'));
+    }
     return {
       status: document.getElementById('statusTitle').textContent,
       detail: document.getElementById('statusText').textContent,

@@ -23,17 +23,34 @@ function levelColour(level, minLevel, maxLevel) {
   return RAMP[index];
 }
 
+// Three display styles.  The level colouring reads the size field at a glance, but a
+// mesh figure for a paper wants plain lines, so `fill: null` means draw edges only.
+const THEMES = {
+  level: { fill: 'level', cellEdge: 'rgba(12,20,26,0.55)', domain: 'rgba(150,178,196,0.55)',
+           wall: '#ff5a1f', unclassified: '#ff3b6b', region: '#7fd7ff', vertex: '#ffd8c4' },
+  light: { fill: null, cellEdge: 'rgba(40,54,64,0.55)', domain: '#5a6b76',
+           wall: '#c62828', unclassified: '#ff3b6b', region: '#1d78a8', vertex: '#c62828' },
+  dark: { fill: null, cellEdge: 'rgba(198,214,226,0.42)', domain: 'rgba(198,214,226,0.75)',
+          wall: '#ff5a1f', unclassified: '#ff3b6b', region: '#7fd7ff', vertex: '#ffd8c4' }
+};
+
 class Viewport {
   constructor(canvas) {
     this.canvas = canvas;
     this.mesh = null;
     this.outline = null;
+    this.regions = [];
+    this.frame = null;
+    this.mode = 'level';
+    this.showGrid = true;
+    this.showRegions = true;
     this.scale = 1;
     this.offset = { x: 0, y: 0 };
-    this.showGrid = true;
     this.dragging = null;
     this.attachInput();
   }
+
+  theme() { return THEMES[this.mode] || THEMES.level; }
 
   attachInput() {
     this.canvas.addEventListener('wheel', event => {
@@ -134,11 +151,16 @@ class Viewport {
 
   draw() {
     const { ctx, width, height } = this.context();
+    const theme = this.theme();
     const project = ([x, y]) => [
       (x - this.offset.x) * this.scale,
       height - (y - this.offset.y) * this.scale
     ];
-    if (this.outline) return this.drawOutline(ctx, project);
+    if (this.outline) {
+      this.drawOutline(ctx, project, theme);
+      this.drawRegions(ctx, project, theme);
+      return;
+    }
     if (!this.mesh) return;
     const mesh = this.mesh;
 
@@ -153,7 +175,6 @@ class Viewport {
                                 mesh.bounds.maxY - mesh.bounds.minY);
     for (const level of [...byLevel.keys()].sort((a, b) => a - b)) {
       const cells = byLevel.get(level);
-      ctx.fillStyle = levelColour(level, mesh.minLevel, mesh.maxLevel);
       ctx.beginPath();
       for (const cell of cells) {
         const first = project(mesh.vertices[cell.vertices[0]]);
@@ -164,20 +185,61 @@ class Viewport {
         }
         ctx.closePath();
       }
-      ctx.fill();
+      if (theme.fill === 'level') {
+        ctx.fillStyle = levelColour(level, mesh.minLevel, mesh.maxLevel);
+        ctx.fill();
+      }
       // Outlining cells narrower than ~3 px turns the mesh into a solid block and
-      // costs the most time on the largest meshes, so it is skipped there.
+      // costs the most time on the largest meshes, so it is skipped there.  Without a
+      // fill there would be nothing left to see, so the floor drops to 1 px.
       const onScreen = (domainSpan / Math.pow(2, level)) * this.scale;
-      if (this.showGrid && onScreen >= 3) {
-        ctx.strokeStyle = 'rgba(12,20,26,0.55)';
-        ctx.lineWidth = Math.min(1, onScreen / 12);
+      if (this.showGrid && onScreen >= (theme.fill ? 3 : 1)) {
+        ctx.strokeStyle = theme.cellEdge;
+        ctx.lineWidth = Math.min(theme.fill ? 1 : 0.7, Math.max(0.35, onScreen / 12));
         ctx.stroke();
       }
     }
-    this.drawBoundaries(ctx, project, mesh);
+    this.drawBoundaries(ctx, project, mesh, theme);
+    this.drawRegions(ctx, project, theme);
   }
 
-  drawBoundaries(ctx, project, mesh) {
+  // Hand-placed regions are stated in body spans about the body centre, which is the
+  // frame the panel edits in; drawing them in the same frame is what makes the numbers
+  // checkable by eye.
+  drawRegions(ctx, project, theme) {
+    if (!this.showRegions || !this.frame || !this.regions.length) return;
+    // refine() clips a region to the domain, so the overlay clips too: a rectangle
+    // drawn outside the computational domain would promise refinement that never
+    // happens.  The editor still shows the numbers as typed.
+    const limit = this.mesh ? this.mesh.bounds : null;
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = theme.region;
+    ctx.lineWidth = 1.4;
+    ctx.font = '11px ui-monospace, Menlo, monospace';
+    this.regions.forEach((box, index) => {
+      let x0 = this.frame.centreX + box.xmin * this.frame.bodySpan;
+      let x1 = this.frame.centreX + box.xmax * this.frame.bodySpan;
+      let y0 = this.frame.centreY + box.ymin * this.frame.bodySpan;
+      let y1 = this.frame.centreY + box.ymax * this.frame.bodySpan;
+      if (limit) {
+        x0 = Math.max(x0, limit.minX); x1 = Math.min(x1, limit.maxX);
+        y0 = Math.max(y0, limit.minY); y1 = Math.min(y1, limit.maxY);
+        if (!(x1 > x0) || !(y1 > y0)) return;
+      }
+      const a = project([x0, y0]);
+      const b = project([x1, y1]);
+      ctx.globalAlpha = box.active ? 1 : 0.6;
+      ctx.strokeRect(Math.min(a[0], b[0]), Math.min(a[1], b[1]),
+                     Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
+      ctx.fillStyle = theme.region;
+      ctx.fillText(`R${index + 1}  -${box.levelsBelowWall}`,
+                   Math.min(a[0], b[0]) + 4, Math.min(a[1], b[1]) + 13);
+    });
+    ctx.restore();
+  }
+
+  drawBoundaries(ctx, project, mesh, theme) {
     const stroke = (patch, colour, lineWidth) => {
       ctx.beginPath();
       for (const edge of mesh.edges) {
@@ -191,12 +253,12 @@ class Viewport {
       ctx.lineWidth = lineWidth;
       ctx.stroke();
     };
-    stroke(2, 'rgba(150,178,196,0.55)', 1);
-    stroke(3, '#ff3b6b', 2.4);
-    stroke(1, '#ff5a1f', 1.8);
+    stroke(2, theme.domain, 1);
+    stroke(3, theme.unclassified, 2.4);
+    stroke(1, theme.wall, 1.8);
   }
 
-  drawOutline(ctx, project) {
+  drawOutline(ctx, project, theme) {
     ctx.lineJoin = 'round';
     for (const loop of this.outline) {
       ctx.beginPath();
@@ -205,14 +267,14 @@ class Viewport {
         if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
       ctx.closePath();
-      ctx.fillStyle = 'rgba(255,90,31,0.10)';
+      ctx.fillStyle = this.mode === 'light' ? 'rgba(198,40,40,0.08)' : 'rgba(255,90,31,0.10)';
       ctx.fill();
-      ctx.strokeStyle = '#ff5a1f';
+      ctx.strokeStyle = theme.wall;
       ctx.lineWidth = 1.6;
       ctx.stroke();
       // Vertices are the wall's tangential resolution, and it being too coarse is the
       // known cause of the hybrid path's ceiling, so they are worth showing.
-      ctx.fillStyle = '#ffd8c4';
+      ctx.fillStyle = theme.vertex;
       for (const point of loop) {
         const [x, y] = project(point);
         ctx.fillRect(x - 1.4, y - 1.4, 2.8, 2.8);

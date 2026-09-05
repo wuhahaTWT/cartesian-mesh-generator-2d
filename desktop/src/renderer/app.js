@@ -9,7 +9,10 @@ const state = {
   outputDirectory: '',
   mesh: null,
   wallBounds: null,
-  result: null
+  result: null,
+  // Hand-placed refinement regions, in body spans about the body centre.
+  regions: [],
+  frame: null
 };
 
 const view = new window.MeshView.Viewport($('canvas'));
@@ -64,7 +67,9 @@ function buildRequest() {
       downstreamSpans: Number($('wakeLength').value),
       halfWidthSpans: Number($('wakeHalfWidth').value),
       levelsBelowWall: Number($('wakeLevels').value)
-    } : null
+    } : null,
+    refineBoxes: state.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
+      ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
   };
 }
 
@@ -198,7 +203,9 @@ async function drawGeometryOutline() {
       geometryPath: state.geometryPath, ...importSettings()
     });
     state.mesh = null;
+    state.frame = preview.frame;
     view.setOutline(preview.loops);
+    syncRegions();
     $('empty').hidden = true;
     $('legend').hidden = true;
     const spanX = Math.max(...preview.loops.flat().map(p => p[0])) - Math.min(...preview.loops.flat().map(p => p[0]));
@@ -311,13 +318,14 @@ const gateRow = (label, verdict, detail) =>
 // Built with DOM calls rather than an HTML string because the strict CSP has no
 // style-src 'unsafe-inline': a `style="..."` attribute would be dropped, while
 // assigning element.style here is allowed.
-function renderHistogram(histogram, mesh) {
+function renderHistogram(histogram, mesh, basis) {
   const container = $('histogram');
   container.replaceChildren();
   if (!histogram.length) return;
   const title = document.createElement('div');
   title.className = 'title';
-  title.textContent = '每层级单元数';
+  // The hybrid mesh has no Quadtree level to report, so its bands are cell sizes.
+  title.textContent = basis === 'size' ? '每尺寸档单元数（粗→细）' : '每层级单元数';
   container.appendChild(title);
   const peak = Math.max(...histogram.map(row => row.count));
   for (const row of histogram) {
@@ -335,9 +343,10 @@ function renderHistogram(histogram, mesh) {
   }
 }
 
-function renderLegend(mesh) {
+function renderLegend(mesh, basis) {
   const container = $('legend');
   container.replaceChildren();
+  const coloured = view.mode === 'level';
   const ramp = document.createElement('div');
   ramp.className = 'ramp';
   for (const colour of RAMP) {
@@ -347,23 +356,26 @@ function renderLegend(mesh) {
   }
   const ends = document.createElement('div');
   ends.className = 'ends';
+  const prefix = basis === 'size' ? '档' : 'L';
   const coarse = document.createElement('span');
-  coarse.textContent = `L${mesh.minLevel} 粗`;
+  coarse.textContent = `${prefix}${mesh.minLevel} 粗`;
   const fine = document.createElement('span');
-  fine.textContent = `细 L${mesh.maxLevel}`;
+  fine.textContent = `细 ${prefix}${mesh.maxLevel}`;
   ends.append(coarse, fine);
 
   const keys = document.createElement('div');
   keys.className = 'keys';
-  for (const [colour, text] of [['#ff5a1f', '物面（嵌入边界）'],
-                                ['rgba(150,178,196,.55)', '计算域边界']]) {
+  const theme = view.theme();
+  for (const [colour, text] of [[theme.wall, '物面（嵌入边界）'],
+                                [theme.domain, '计算域边界']]) {
     const key = document.createElement('span');
     const dash = document.createElement('i');
     dash.style.background = colour;
     key.append(dash, document.createTextNode(text));
     keys.appendChild(key);
   }
-  container.append(ramp, ends, keys);
+  if (coloured) container.append(ramp, ends);
+  container.appendChild(keys);
   container.hidden = false;
 }
 
@@ -392,12 +404,14 @@ async function generate() {  $('generate').disabled = true;
     state.mesh = payload.mesh;
     state.wallBounds = payload.wallBounds;
     state.result = payload.result;
+    state.levelBasis = payload.levelBasis;
     view.setMesh(payload.mesh);
+    syncRegions();
     $('empty').hidden = true;
-    renderLegend(payload.mesh);
+    renderLegend(payload.mesh, payload.levelBasis);
     renderCounters(payload.result);
     renderGates(payload.result);
-    renderHistogram(payload.levelHistogram, payload.mesh);
+    renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
     $('openOutput').hidden = false;
     const seconds = payload.result.timings.total_seconds;
     if (payload.incomplete) {
@@ -452,6 +466,19 @@ $('useWake').addEventListener('change', event => {
 });
 $('probe').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
+$('addRegion').addEventListener('click', addRegion);
+
+$('displayMode').addEventListener('change', event => {
+  view.mode = event.target.value;
+  $('canvasWrap').classList.toggle('light', view.mode === 'light');
+  if (state.mesh) renderLegend(state.mesh, state.levelBasis);
+  view.draw();
+});
+$('toggleRegions').addEventListener('click', () => {
+  view.showRegions = !view.showRegions;
+  $('toggleRegions').classList.toggle('active', view.showRegions);
+  view.draw();
+});
 
 $('fitDomain').addEventListener('click', () => {
   if (state.mesh) view.fitTo(state.mesh.bounds);
@@ -475,14 +502,104 @@ window.addEventListener('resize', () => view.draw());
   renderPresets();
   renderSamples();
   selectMethod('cutcell');
+  renderRegions();
   // Test hook for `electron . --smoke=<sample>`.  The output directory normally comes
   // from a native dialog, which a headless run cannot answer, so the smoke path sets
   // it here and then goes through the same handlers a click would.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view };
 })();
 
 function setOutput(directory) {
   state.outputDirectory = directory;
   $('outputPath').textContent = directory;
   updateReady();
+}
+
+// ---------------------------------------------------------------------------
+// Hand-placed refinement regions.
+//
+// The size field guarantees the refinement that is not negotiable — the band along
+// the wall.  Everything else (a wake, a downstream patch, a region you just want to
+// look at) is a judgement call, so it is edited by hand here and drawn on the canvas
+// in the same body-span frame the numbers are written in.
+
+const REGION_FIELDS = [
+  ['xmin', '起点 x'], ['xmax', '终点 x'], ['ymin', '下边界 y'], ['ymax', '上边界 y']
+];
+
+function syncRegions() {
+  view.regions = state.regions;
+  view.frame = state.frame;
+  view.draw();
+}
+
+function addRegion() {
+  // A downstream patch is the common case, so the default is one: from just behind the
+  // body out to six body lengths, four levels coarser than the wall.
+  state.regions.push({ xmin: 0.6, xmax: 6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4, active: true });
+  renderRegions();
+}
+
+function renderRegions() {
+  const list = $('regionList');
+  list.replaceChildren();
+  state.regions.forEach((box, index) => {
+    const card = document.createElement('div');
+    card.className = `region${box.active ? ' active' : ''}`;
+
+    const top = document.createElement('div');
+    top.className = 'regionTop';
+    const name = document.createElement('b');
+    name.textContent = `R${index + 1}`;
+    const depth = document.createElement('span');
+    depth.className = 'depth';
+    const depthInput = document.createElement('input');
+    depthInput.type = 'number';
+    depthInput.min = '0';
+    depthInput.max = '20';
+    depthInput.step = '1';
+    depthInput.value = String(box.levelsBelowWall);
+    depthInput.addEventListener('input', () => {
+      box.levelsBelowWall = Number(depthInput.value);
+      syncRegions();
+    });
+    depth.append(document.createTextNode('低于壁面'), depthInput, document.createTextNode('级'));
+    const grow = document.createElement('span');
+    grow.className = 'grow';
+    const drop = document.createElement('button');
+    drop.className = 'drop';
+    drop.textContent = '×';
+    drop.title = '删除这个加密区';
+    drop.addEventListener('click', () => {
+      state.regions.splice(index, 1);
+      renderRegions();
+    });
+    top.append(name, grow, depth, drop);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid4';
+    for (const [key, label] of REGION_FIELDS) {
+      const field = document.createElement('label');
+      const caption = document.createElement('span');
+      caption.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.2';
+      input.value = String(box[key]);
+      input.addEventListener('input', () => {
+        box[key] = Number(input.value);
+        syncRegions();
+      });
+      input.addEventListener('focus', () => {
+        state.regions.forEach(other => { other.active = false; });
+        box.active = true;
+        renderRegions();
+      });
+      field.append(caption, input);
+      grid.appendChild(field);
+    }
+    card.append(top, grid);
+    list.appendChild(card);
+  });
+  syncRegions();
 }
