@@ -207,6 +207,7 @@ bool parseSizingOptions(int argc, char** argv, int first,
                         std::vector<DistanceRefinementBand2D>& distanceBands,
                         std::vector<BoxRefinementRegion2D>& boxRegions,
                         std::optional<SizeFieldPolicy2D>& sizeField,
+                        bool& sizeFieldOnly,
                         std::string& error) {
     // The size-field options describe intent (wall resolution, growth, far field)
     // and are compiled onto the primitives above.  They stay opt-in so every
@@ -253,6 +254,15 @@ bool parseSizingOptions(int argc, char** argv, int first,
         }
         if (option=="--size-field") {
             (void)requireSizeField();
+            continue;
+        }
+        // Resolve the field, report it and stop.  A GUI needs the level a request
+        // actually lands on — including the curvature and proximity depths, which
+        // depend on the geometry and so cannot be predicted from the flags alone —
+        // before it commits the user to a full solve.
+        if (option=="--size-field-only") {
+            (void)requireSizeField();
+            sizeFieldOnly=true;
             continue;
         }
         if (option=="--far-field-spans" || option=="--wall-cells-per-span") {
@@ -576,6 +586,7 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "\n"
                  "size field (opt-in; takes over the domain and the tree depth):\n"
                  "  --size-field                          enable with defaults\n"
+                 "  --size-field-only                     resolve, write the JSON and exit\n"
                  "  --far-field-spans <v>                 domain half-extent in body spans (10)\n"
                  "  --wall-cells-per-span <v>             body span / wall cell size (128)\n"
                  "  --cells-per-level <n>                 cells per level band, 0 = boundary-only (3)\n"
@@ -649,8 +660,9 @@ int main(int argc, char** argv) {
     }
     std::string sizingError;
     std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
+    bool sizeFieldOnly=false;
     if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,
-                            sizeFieldPolicy,sizingError)) {
+                            sizeFieldPolicy,sizeFieldOnly,sizingError)) {
         std::cerr<<sizingError<<'\n';
         usage();
         return EXIT_FAILURE;
@@ -719,6 +731,27 @@ int main(int argc, char** argv) {
     std::optional<ResolvedSizeField2D> resolvedSizeField;
     if (sizeFieldPolicy) {
         auto resolved = resolveSizeField2D(*sizeFieldPolicy, boundary);
+        // A refused request still carries the depths each source asked for, and those
+        // are the numbers a caller needs in order to fix it.  Report them on the dry
+        // run before deciding the exit code.
+        if (sizeFieldOnly) {
+            std::cout << "size_field_only=true\n"
+                      << "size_field_body_span=" << resolved.bodySpan << '\n'
+                      << "size_field_domain_span=" << resolved.domainSpan << '\n'
+                      << "size_field_wall_cell_size=" << resolved.wallCellSize << '\n'
+                      << "size_field_wall_level=" << resolved.wallLevel << '\n'
+                      << "size_field_curvature_level=" << resolved.curvatureLevel << '\n'
+                      << "size_field_proximity_level=" << resolved.proximityLevel << '\n'
+                      << "size_field_max_level=" << resolved.maxLevel << '\n'
+                      << "size_field_level_cap_reached="
+                      << (resolved.levelCapReached ? "true" : "false") << '\n'
+                      << "sizing_distance_bands="
+                      << resolved.refinement.distanceBands.size() << '\n'
+                      << "sizing_segment_bands="
+                      << resolved.refinement.segmentBands.size() << '\n'
+                      << "sizing_box_regions="
+                      << resolved.refinement.boxRegions.size() << '\n';
+        }
         if (!resolved.valid()) {
             for (const auto& issue : resolved.issues) {
                 std::cerr << "size_field_issue=" << issue << '\n';
@@ -734,6 +767,19 @@ int main(int argc, char** argv) {
         maxLevel = resolved.maxLevel;
         minimumLevel = resolved.refinement.minimumLevel;
         resolvedSizeField = std::move(resolved);
+        if (sizeFieldOnly) {
+            const std::filesystem::path onlyPath =
+                outputPrefix.string() + ".size-field.json";
+            std::ofstream out(onlyPath);
+            out << resolvedSizeFieldToJson(*resolvedSizeField);
+            if (!out.good()) {
+                std::cerr << "failed while writing size-field JSON output\n";
+                return EXIT_FAILURE;
+            }
+            std::cout << "size_field=RESOLVED\n"
+                      << "size_field_json=" << onlyPath.string() << '\n';
+            return EXIT_SUCCESS;
+        }
     }
 
     std::optional<BoundarySimplificationReport2D> simplificationReport;
