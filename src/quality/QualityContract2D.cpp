@@ -139,6 +139,7 @@ void writeOrdinaryLimits(std::ostream& out,const OrdinaryCellQualityLimits2D& li
     item("skewness",limits.skewness,true);
     item("face_weight",limits.faceWeight,true);
     item("volume_ratio",limits.volumeRatio,true);
+    item("background_volume_ratio",limits.backgroundVolumeRatio,true);
     item("minimum_interior_angle_deg",limits.minimumInteriorAngleDeg,true);
     item("hydraulic_aspect",limits.hydraulicAspect,true);
     item("face_length_over_local_background_h",limits.faceOverLocalBackgroundH,true);
@@ -346,6 +347,18 @@ QualityContractReport2D evaluateQualityContract2D(
             {std::min(areas[edge.owner],areas[*edge.neighbour])/
              (std::max(areas[edge.owner],areas[*edge.neighbour])+
               std::numeric_limits<double>::min()),edgeEntity});
+        // Divide each area by its own total background box area before comparing, so
+        // the 2:1 level difference cancels instead of being scored as a defect.
+        const double ownerBackground=metadata[edge.owner].backgroundArea;
+        const double neighbourBackground=metadata[*edge.neighbour].backgroundArea;
+        if (ownerBackground>0.0 && neighbourBackground>0.0) {
+            const double ownerFraction=areas[edge.owner]/ownerBackground;
+            const double neighbourFraction=areas[*edge.neighbour]/neighbourBackground;
+            samples["background_volume_ratio"].push_back(
+                {std::min(ownerFraction,neighbourFraction)/
+                 (std::max(ownerFraction,neighbourFraction)+
+                  std::numeric_limits<double>::min()),edgeEntity});
+        }
     }
 
     const std::map<std::string,bool> lowerIsWorse{
@@ -354,7 +367,8 @@ QualityContractReport2D evaluateQualityContract2D(
         {"face_length_over_sqrt_owner_area",true},
         {"face_length_over_sqrt_neighbour_area",true},
         {"non_orthogonality_deg",false},{"skewness",false},
-        {"face_weight",true},{"volume_ratio",true}};
+        {"face_weight",true},{"volume_ratio",true},
+        {"background_volume_ratio",true}};
     for (const auto& [metric,metricSamples]:samples) {
         report.ordinaryMetrics[metric]=summarize(metricSamples,lowerIsWorse.at(metric));
         for (const auto& sample:metricSamples) {
@@ -368,6 +382,17 @@ QualityContractReport2D evaluateQualityContract2D(
             else if (metric=="skewness") checkSample(report,metric,sample,limits.skewness);
             else if (metric=="face_weight") checkSample(report,metric,sample,limits.faceWeight);
             else if (metric=="volume_ratio") checkSample(report,metric,sample,limits.volumeRatio);
+            // "background_volume_ratio" is computed and reported but not gated yet.
+            // It is the grading-aware form and its limit is already certified
+            // reachable by tests/quality_reachability_test.cpp, but on this topology
+            // it cannot replace the raw gate: the contract is evaluated on the solver
+            // convex-partitioned mesh, where one background box becomes several
+            // triangles.  A piece inherits the whole parent lineage and therefore the
+            // whole background area, so its area fraction is a partition artefact
+            // rather than a sizing property.  Measured on circle at level 8 the gated
+            // form reports 689 hard issues with a p50 of 1/3, against 0 hard and a p50
+            // of 1/2 for the raw form.  Switching the gate requires evaluating the
+            // contract on the stabilized topology instead, which is a separate change.
         }
     }
 

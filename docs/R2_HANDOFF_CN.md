@@ -1,12 +1,11 @@
 # R2 交接指导：加密鲁棒性与 CFD 可解性
 
-给接手本项目的下一个 agent。日期：2026-09-01。
-被交接的 head：`a9d21adc2ae94e6204a541d7b5141b44ff9f381c`。
+给接手本项目的下一个 agent。原始日期：2026-09-01；W1 状态更新：2026-09-04。
 
 ## 0. 一句话现状
 
-千级网格稳定；**纯 Cut-cell 路径已实测稳到 level 9**（13024 solver cells、0.54 s、
-全部 solver-quality 硬限满足），**level 10 栽在一个格点 spur**；
+W1 已关闭：**纯 Cut-cell 路径已实测稳到 level 11**（180468 stabilized cells、
+277336 leaves、全部 solver-quality 硬限满足），原 level 10 格点 spur 已消除；
 **hybrid 边界层路径在 level 9 就失败**，根因是壁面切向分辨率被输入折线顶点数锁死。
 两条线原因完全不同、代码不重叠，用户要求**并行推进**。
 
@@ -27,7 +26,7 @@
 export DYLD_LIBRARY_PATH=/Applications/mesasdk/lib   # ctest 也需要，不只是直接跑 CLI
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_TESTS=ON
 cmake --build build -j8
-ctest --test-dir build --output-on-failure           # 当前基线 78/78
+ctest --test-dir build --output-on-failure           # 当前基线 83/83
 ```
 
 macOS SIP 会把 `DYLD_*` 从 Apple 签名的二进制里剥掉，所以**不要用 `/usr/bin/time`
@@ -54,7 +53,7 @@ python3 tools/verification/refinement_ladder.py \
 
 **改动前后各跑一次，把两份 manifest 一起放进证据。** 不要只跑一个 level。
 
-## 4. 主线 A：纯 Cut-cell → level 10/11
+## 4. 主线 A：纯 Cut-cell → level 10/11（W1 已完成，以下保留历史）
 
 ### A1（当前阻塞点，先做这个）把 `cartmesh2d_cli` 迁到共享构造 registry
 
@@ -127,7 +126,8 @@ spur 两点间距是 `4e-5 · h`，这是预算下界。而
 
 ### A3 level 11 及以后
 
-`level 11` 目前未知（level 10 一失败就停）。A1+A2 落地后先把阶梯跑到 11，再决定。
+`level 11` 已通过；关键数字与改前/改后 manifest 见
+`docs/R2_REFINEMENT_ROBUSTNESS_CN.md` 第 7.6 节。
 
 ## 5. 主线 B：hybrid 混合笛卡尔 → level 10
 
@@ -260,7 +260,7 @@ magnitude 是差值本身，不是任何局部长度）。这是一个已知的�
 ## 9. 每条改动的验收清单
 
 ```text
-[ ] ctest --test-dir build --output-on-failure        # 不得低于 78/78
+[ ] ctest --test-dir build --output-on-failure        # 不得低于 83/83
 [ ] refinement_ladder.py 改动前/后两份 manifest 一起留档
 [ ] 旧命令行（不带新开关）产物逐字节不变，或明确说明哪些变了、为什么
 [ ] 真实 checkMesh + check_openfoam2d.py
@@ -288,6 +288,5 @@ cd /tmp/base && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
 
 三者都不改变 level 6–9 的既有行为；W0 的逐字节证据见
 `docs/R2_REFINEMENT_ROBUSTNESS_CN.md` 第 8 节。
-
 
 

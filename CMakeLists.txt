@@ -15,6 +15,7 @@ add_library(cartmesh2d
     src/hybrid/TransitionCanonicalization2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
+    src/sizing/SizeField2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
     src/topology/EdgeIncidence2D.cpp
@@ -114,6 +115,14 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_spatial_index_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_spatial_index_tests PRIVATE cxx_std_20)
 
+    add_executable(cartmesh2d_size_field_tests tests/size_field_test.cpp)
+    target_link_libraries(cartmesh2d_size_field_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_size_field_tests PRIVATE cxx_std_20)
+
+    add_executable(cartmesh2d_quality_reachability_tests tests/quality_reachability_test.cpp)
+    target_link_libraries(cartmesh2d_quality_reachability_tests PRIVATE cartmesh2d::cartmesh2d)
+    target_compile_features(cartmesh2d_quality_reachability_tests PRIVATE cxx_std_20)
+
     add_executable(cartmesh2d_multiloop_tests tests/multiloop_test.cpp)
     target_link_libraries(cartmesh2d_multiloop_tests PRIVATE cartmesh2d::cartmesh2d)
     target_compile_features(cartmesh2d_multiloop_tests PRIVATE cxx_std_20)
@@ -196,6 +205,8 @@ if(CARTMESH2D_BUILD_TESTS)
             cartmesh2d_grid_tests
             cartmesh2d_quadtree_tests
             cartmesh2d_spatial_index_tests
+            cartmesh2d_size_field_tests
+            cartmesh2d_quality_reachability_tests
             cartmesh2d_multiloop_tests
             cartmesh2d_solver_export_tests
             cartmesh2d_cutcell_tests
@@ -233,6 +244,8 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage1_grid_tests COMMAND cartmesh2d_grid_tests)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
+    add_test(NAME cartmesh2d_stageWB_size_field_tests COMMAND cartmesh2d_size_field_tests)
+    add_test(NAME cartmesh2d_stageWC_quality_reachability_tests COMMAND cartmesh2d_quality_reachability_tests)
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
@@ -447,6 +460,23 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage6c_airfoil_like_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy ${CARTMESH2D_ACCEPTANCE_OUTPUT}/airfoil_like 6 0.30 0.02)
 
+    # R2/W1 regression: the shared construction path must remove the level-10
+    # grid-corner spur, preserve wall patch identity through stabilization and
+    # solver partitioning, and emit independently readable OpenFOAM topology.
+    set(CARTMESH2D_W1_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/r2_w1)
+    add_test(NAME cartmesh2d_stageR2_w1_circle_l10_e2e
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10 10 0.25 0.10 exterior
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10-case 8)
+    add_test(NAME cartmesh2d_stageR2_w1_circle_l10_independent_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CARTMESH2D_W1_OUTPUT}/circle_l10-case
+                --report ${CARTMESH2D_W1_OUTPUT}/circle_l10-case/independent_check.json)
+    set_tests_properties(cartmesh2d_stageR2_w1_circle_l10_independent_reader PROPERTIES
+        DEPENDS cartmesh2d_stageR2_w1_circle_l10_e2e)
+
     set(CARTMESH2D_SIZING_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sizing_field)
     add_test(NAME cartmesh2d_stageH1_sizing_field_e2e
         COMMAND cartmesh2d_cli
@@ -460,6 +490,39 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_SIZING_OUTPUT}/invalid 6 0.30 0.02 exterior - 2 0
                 --refine-box 10 10 11 11 5)
     set_tests_properties(cartmesh2d_stageH1_rejects_outside_box PROPERTIES WILL_FAIL TRUE)
+
+    # The size field owns the domain and the tree depth, so it needs its own e2e
+    # coverage: the positional max-level/padding-fraction above cannot exercise it.
+    add_test(NAME cartmesh2d_stageWB_size_field_defaults_e2e
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_circle 8 0.25 0.15 exterior
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_circle-case 0 0
+                --size-field --cells-per-level 3)
+    add_test(NAME cartmesh2d_stageWB_size_field_wake_e2e
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_airfoil 8 0.25 0.15 exterior
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_airfoil-case 0 0
+                --size-field --cells-per-level 3 --wake 4 6 0.6 4)
+    # A wall request past the measured construction ceiling must fail closed rather
+    # than silently emit a mesh whose gate outcome depends on grid alignment.
+    add_test(NAME cartmesh2d_stageWB_rejects_unsafe_wall_level
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_unsafe 8 0.25 0.15 exterior - 0 0
+                --size-field --wall-cells-per-span 4096)
+    set_tests_properties(cartmesh2d_stageWB_rejects_unsafe_wall_level
+        PROPERTIES WILL_FAIL TRUE)
+    # The two spellings of one field must not be combinable, or the reported sizing
+    # would not describe the mesh that was built.
+    add_test(NAME cartmesh2d_stageWB_rejects_mixed_sizing_spellings
+        COMMAND cartmesh2d_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
+                ${CARTMESH2D_SIZING_OUTPUT}/sf_mixed 8 0.25 0.15 exterior - 0 0
+                --size-field --distance-band 0.05 6)
+    set_tests_properties(cartmesh2d_stageWB_rejects_mixed_sizing_spellings
+        PROPERTIES WILL_FAIL TRUE)
 
     set(CARTMESH2D_ROBUSTNESS_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/robustness)
     add_test(NAME cartmesh2d_stageR_gear_star_e2e
