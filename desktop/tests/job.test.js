@@ -83,3 +83,45 @@ test('unknown methods and missing paths are refused', () => {
   assert.throws(() => validateJob(cutcell({ outputDirectory: '' })), /输出目录/);
   assert.throws(() => validateJob(cutcell({ cellsPerLevel: 2.5 })), /每级带宽/);
 });
+
+test('hand-placed regions convert from body spans to absolute --refine-box', () => {
+  const { job } = validateJob(cutcell({
+    refineBoxes: [{ xmin: 0.6, xmax: 6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4 }]
+  }));
+  // far 10 / wall 64 resolves to wall level 11, so 4 levels below is 7.
+  const frame = { centreX: 10, centreY: -5, bodySpan: 2 };
+  const args = buildInvocation(job, { ...paths, frame }).args;
+  const at = args.indexOf('--refine-box');
+  assert.deepEqual(args.slice(at, at + 6),
+    ['--refine-box', '11.2', '-6.6', '22', '-3.4', '7']);
+});
+
+test('a region is clamped into the levels the primitive accepts', () => {
+  const frame = { centreX: 0, centreY: 0, bodySpan: 1 };
+  const deep = validateJob(cutcell({
+    refineBoxes: [{ xmin: 0, xmax: 1, ymin: 0, ymax: 1, levelsBelowWall: 0 }]
+  })).job;
+  const shallow = validateJob(cutcell({
+    refineBoxes: [{ xmin: 0, xmax: 1, ymin: 0, ymax: 1, levelsBelowWall: 20 }]
+  })).job;
+  const level = job => {
+    const args = buildInvocation(job, { ...paths, frame }).args;
+    return Number(args[args.indexOf('--refine-box') + 5]);
+  };
+  assert.equal(level(deep), 11, 'never deeper than the wall');
+  assert.equal(level(shallow), 1, 'refine() rejects level 0, so it saturates at 1');
+});
+
+test('an inverted region is refused with the region named', () => {
+  assert.throws(() => validateJob(cutcell({
+    refineBoxes: [{ xmin: 6, xmax: 0.6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4 }]
+  })), /加密区 1/);
+});
+
+test('the dry run leaves regions out, since it only resolves the field', () => {
+  const { job } = validateJob(cutcell({
+    refineBoxes: [{ xmin: 0.6, xmax: 6, ymin: -0.8, ymax: 0.8, levelsBelowWall: 4 }]
+  }));
+  const frame = { centreX: 0, centreY: 0, bodySpan: 1 };
+  assert.ok(!buildInvocation(job, { ...paths, frame }, { dryRun: true }).args.includes('--refine-box'));
+});

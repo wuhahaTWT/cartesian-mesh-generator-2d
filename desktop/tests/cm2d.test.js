@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { parseCm2d, embeddedBounds, levelHistogram, PATCH } = require('../src/core/cm2d');
+const { parseCm2d, embeddedBounds, levelHistogram, assignKeyLevels,
+        assignSizeBands, PATCH } = require('../src/core/cm2d');
 const { parseKeyValues, summarizeContract, summarizeSolverQuality } = require('../src/core/report');
 
 // Hand-built to the exact layout MeshIO2D.cpp writes:
@@ -34,11 +35,33 @@ test('the reader follows the writer field for field', () => {
 });
 
 test('the level is the low six bits of the quadtree key', () => {
-  const mesh = parseCm2d(MESH);
+  const mesh = assignKeyLevels(parseCm2d(MESH));
   assert.equal(mesh.cells[0].level, 6);
   assert.equal(mesh.cells[1].level, 7);
   assert.equal(mesh.minLevel, 6);
   assert.equal(mesh.maxLevel, 7);
+});
+
+// HybridMesh2D.cpp writes `sourceKey = sourceId`, a running index, so reading a level
+// out of it paints id-mod-64 noise over a symmetric mesh.  Size banding is the fallback.
+test('size bands come from cell area, one band per factor of two', () => {
+  const mesh = assignSizeBands(parseCm2d(MESH));
+  // Areas 1 and 0.25: sqrt gives 1 and 0.5, exactly one octave apart.
+  assert.equal(mesh.cells[0].level, 0);
+  assert.equal(mesh.cells[1].level, 1);
+});
+
+test('size banding is blind to a sourceKey that is only an index', () => {
+  // Same two cells, keys replaced by running ids as the hybrid path writes them.
+  const asIndex = MESH.replace('0 0 6 1 4', '0 0 0 1 4').replace('1 1 519 0.25 3', '1 1 1 0.25 3');
+  const byKey = assignKeyLevels(parseCm2d(asIndex));
+  const bySize = assignSizeBands(parseCm2d(asIndex));
+  assert.deepEqual(byKey.cells.map(cell => cell.level), [0, 1], 'the key now says nothing');
+  assert.deepEqual(bySize.cells.map(cell => cell.level), [0, 1]);
+  // The key-derived levels only agreed here by coincidence; a level-8 cell proves it.
+  const shifted = MESH.replace('1 1 519 0.25 3', '1 1 8 0.25 3');
+  assert.equal(assignKeyLevels(parseCm2d(shifted)).cells[1].level, 8);
+  assert.equal(assignSizeBands(parseCm2d(shifted)).cells[1].level, 1);
 });
 
 test('the wall bounds come from embedded edges only', () => {
@@ -53,7 +76,7 @@ test('a mesh with no wall reports no wall bounds', () => {
 });
 
 test('the histogram is ordered coarse to fine', () => {
-  assert.deepEqual(levelHistogram(parseCm2d(MESH)),
+  assert.deepEqual(levelHistogram(assignKeyLevels(parseCm2d(MESH))),
     [{ level: 6, count: 1 }, { level: 7, count: 1 }]);
 });
 

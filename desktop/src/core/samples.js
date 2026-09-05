@@ -10,7 +10,8 @@ const SAMPLES = Object.freeze([
     label: '圆柱',
     file: 'circle.xy',
     fluidRegion: 'exterior',
-    note: '32 段折线圆。最经典的外流验收几何，也是加密阶梯的基准。',
+    note: '32 段折线圆。最经典的外流验收几何。圆看不出来流方向，所以不带尾迹加密——'
+      + '尾迹只在形状本身指明来流方向时才有意义。',
     sizeField: { farFieldSpans: 10, wallCellsPerSpan: 64, cellsPerLevel: 3 },
     smallAlpha: 0.15
   },

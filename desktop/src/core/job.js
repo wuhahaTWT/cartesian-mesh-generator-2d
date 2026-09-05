@@ -38,9 +38,28 @@ function validateSizeField(request, safeWallLevel) {
       levelsBelowWall: number(request.wake.levelsBelowWall, '尾迹低于壁面的级数', { min: 0, max: 20, integer: true })
     };
   }
+  // Hand-placed regions.  Stated in body spans about the body's own centre, because
+  // that is the frame every other sizing number already uses and it keeps a region
+  // meaningful when the geometry is rescaled.  Depth is given relative to the wall so a
+  // region does not silently become the finest thing in the mesh.
+  field.refineBoxes = (request.refineBoxes || []).map((box, index) => {
+    const name = `加密区 ${index + 1}`;
+    const normalized = {
+      xmin: number(box.xmin, `${name} 起点 x`, { min: -1000, max: 1000 }),
+      xmax: number(box.xmax, `${name} 终点 x`, { min: -1000, max: 1000 }),
+      ymin: number(box.ymin, `${name} 下边界 y`, { min: -1000, max: 1000 }),
+      ymax: number(box.ymax, `${name} 上边界 y`, { min: -1000, max: 1000 }),
+      levelsBelowWall: number(box.levelsBelowWall, `${name} 低于壁面级数`,
+        { min: 0, max: 20, integer: true })
+    };
+    if (!(normalized.xmax > normalized.xmin) || !(normalized.ymax > normalized.ymin)) {
+      throw new Error(`${name} 需要满足 x 终点 > 起点、y 上边界 > 下边界。`);
+    }
+    return normalized;
+  });
+
   const budget = describeBudget(field);
-  if (!budget.feasible && !field.allowUnsafeWallLevel) {
-    throw new Error(
+  if (!budget.feasible && !field.allowUnsafeWallLevel) {    throw new Error(
       `远场 ${field.farFieldSpans} 倍体长配壁面 1/${field.wallCellsPerSpan} 需要 level ` +
       `${budget.wallLevel}，超过实测安全上限 ${field.safeWallLevel}。` +
       `把远场降到 ${budget.maxFarFieldSpans.toFixed(1)} 倍，或把壁面降到 ` +
@@ -110,6 +129,25 @@ function sizeFieldArgs(field, { dryRun = false } = {}) {
   return args;
 }
 
+// --refine-box takes absolute coordinates, so the body frame converts.  A box coarser
+// than level 1 is not expressible (refine() rejects level 0), and one deeper than the
+// wall is refused by the CLI, so both ends are clamped here.
+function refineBoxArgs(field, frame) {
+  if (!field.refineBoxes || !field.refineBoxes.length || !frame) return [];
+  const wallLevel = wallLevelFor(field.farFieldSpans, field.wallCellsPerSpan);
+  const args = [];
+  for (const box of field.refineBoxes) {
+    const level = Math.min(wallLevel, Math.max(1, wallLevel - box.levelsBelowWall));
+    args.push('--refine-box',
+      String(frame.centreX + box.xmin * frame.bodySpan),
+      String(frame.centreY + box.ymin * frame.bodySpan),
+      String(frame.centreX + box.xmax * frame.bodySpan),
+      String(frame.centreY + box.ymax * frame.bodySpan),
+      String(level));
+  }
+  return args;
+}
+
 // An OpenFOAM case directory is always requested.  The CLI only builds the solver
 // partition, evaluates solver quality and rates the Q1 contract inside
 // `if (openFoamCase)`, so asking for no case means asking for no quality report.
@@ -122,7 +160,8 @@ function buildInvocation(job, paths, options = {}) {
         String(job.smallAlpha), job.fluidRegion,
         options.dryRun ? '-' : paths.casePath,
         '0', '0',
-        ...sizeFieldArgs(job.sizeField, options)],
+        ...sizeFieldArgs(job.sizeField, options),
+        ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame))],
       cm2dCandidates: [`${paths.prefix}.cm2d`]
     };
   }
@@ -137,4 +176,5 @@ function buildInvocation(job, paths, options = {}) {
   };
 }
 
-module.exports = { validateJob, validateSizeField, buildInvocation, sizeFieldArgs, SAFE_WALL_LEVEL, wallLevelFor };
+module.exports = { validateJob, validateSizeField, buildInvocation, sizeFieldArgs,
+                   refineBoxArgs, SAFE_WALL_LEVEL, wallLevelFor };
