@@ -56,7 +56,7 @@ def main() -> int:
     parser.add_argument("--work-dir", type=pathlib.Path,
                         default=pathlib.Path("build/alignment-sensitivity"))
     parser.add_argument("--manifest", type=pathlib.Path,
-                        default=pathlib.Path("artifacts/wb/alignment-sensitivity.json"))
+                        default=pathlib.Path("outputs/sizing/alignment-sensitivity.json"))
     parser.add_argument("--boundary", default="", help="source .xy; default is a generated 32-gon")
     parser.add_argument("--polygon-vertices", type=int, default=32)
     parser.add_argument("--samples", type=int, default=20)

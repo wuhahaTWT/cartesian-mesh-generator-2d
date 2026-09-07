@@ -7,3 +7,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 *.DS_Store
+
+# One active checkout; local agent state and generated outputs are not source.
+/.claude/
+/outputs/
+/desktop/runtime/

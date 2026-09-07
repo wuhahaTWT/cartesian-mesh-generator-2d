@@ -366,7 +366,7 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=pathlib.Path,
                         default=pathlib.Path("build/r2_ladder"))
     parser.add_argument("--output-dir", type=pathlib.Path,
-                        default=pathlib.Path("artifacts/r2"))
+                        default=pathlib.Path("outputs/refinement"))
     parser.add_argument("--manifest-name", default="refinement-ladder-manifest.json")
     parser.add_argument("--ladder", action="append", required=True,
                         metavar="CASE:MODE:LEVELS",

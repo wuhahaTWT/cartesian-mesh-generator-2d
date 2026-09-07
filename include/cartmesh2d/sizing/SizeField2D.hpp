@@ -90,7 +90,7 @@ struct SizeFieldPolicy2D {
     // level 8 for both a 1.5x and a 21x domain, but 11/20 at level 12 with the 21x
     // domain and 0/20 at level 12 with the 1.5x one.  The failures are discrete
     // events where a wall vertex grazes a grid line, and they get more likely with
-    // depth exactly as docs/CURRENT_STATE_CN.md section 4A predicts.  Level 11 is
+    // depth exactly as docs/CURRENT_STATE_CN.md predicts.  Level 11 is
     // the deepest the W1 evidence actually covers, so that is the default ceiling.
     std::size_t maxSafeWallLevel = 11;
     // Crossing the ceiling has to be asked for, so a coarse `wallCellsPerSpan`

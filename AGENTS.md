@@ -1,87 +1,37 @@
-# cartmesh2d 开发规则
+# CartMesh2D 开发规则
 
-## 0. 项目身份
+## 接手与唯一入口
 
-本仓库是独立的原生二维 Cartesian / Quadtree / Cut-cell 网格生成器。
-它与 `cartesian-mesh-generator` 原生三维仓库并行开发，但不依赖、不链接、
-也不复制三维核心。
+- 用户已明确以桌面 0.2.0 / `9bddfbf` 为整理基线。当前根目录是唯一工作区，前端只看 `desktop/src/`。
+- 先核对 `git status`、`git branch --show-current` 和 `git worktree list`，再读 `docs/CURRENT_STATE_CN.md`。
+- 当前状态只维护该文件；代码导航在 `docs/DEVELOPMENT_CN.md`。不要新增带日期的审计、阶段计划或交接文档。
+- 用户优先关心密度、速度、桌面完整性、OpenFOAM 可用性。新问题归入现有目标，不自动无限追加子阶段。
+- 重要突破完成验证后 commit 并 push；报告分支、提交和真实验证范围，不提交缓存、依赖或大批生成网格。
 
-严禁把三维项目压成 `z=0` 来冒充二维实现。二维核心对象必须保持为
-`Point2D`、`Segment2D`、`AABB2D`、`Polygon2D`、二维 Cartesian cell、
-Quadtree leaf、CutPolygon 和 Edge2D。
+## 原生二维与物理硬约束
 
-## 1. CFD 物理侧定义（硬约束）
+- 本仓库不依赖、链接或复制三维 `cartmesh` 核心，不得把三维算法压到 z=0 冒充二维。
+- 核心保持 Point2D、Segment2D、AABB2D、Polygon2D、Quadtree、CutPolygon、Edge2D。
+- 闭合 BoundaryLoop 默认是固体；Domain2D 是外域；流体是 `domain - solid interior`。
+- Inside 是固体，不进入流体网格；Outside 是流体；Intersected 必须保留真实外侧 polygon。
+- 外流须同时具有 EmbeddedBoundary 与 DomainBoundary，并满足 `fluid_area = domain_area - solid_area`（容差内）。
+- 内流只允许显式 `FluidRegion2D::Interior`。不得以单元中心采样或删除相交格子代替 Cut-cell。
+- 自交、零面积、重复边、孤立边、非流形、分类冲突必须显式失败；现有漏检属于待修缺陷，不能作为放宽规则的依据。
 
-- 输入闭合 `BoundaryLoop` 默认表示固体壁面/障碍物轮廓；
-- `Domain2D` 表示外部计算域；
-- 默认流体区域是 `Domain2D - solid interior`；
-- `Inside` 单元属于固体，不进入最终流体网格；
-- `Outside` 单元属于流体；
-- `Intersected` 单元必须保留边界外侧的真实流体 polygon；
-- 外流网格必须同时具有 `EmbeddedBoundary` 与 `DomainBoundary`；
-- 内部流只有调用者显式选择 `FluidRegion2D::Interior` 时才允许。
+## 验证与修改
 
-任何默认路径、CLI、验收案例或可视化若把闭合固体轮廓内部当成默认 CFD
-流体域，均属于阻断级错误，不得以测试全绿或图片可见通过验收。
+- 几何与拓扑正确性高于图片；不得降低 solver-quality / Q1 阈值、删除坏单元或隐藏告警来通过验收。
+- 边界层、终止区和余域必须进入统一共形 owner/neighbour 拓扑；pure fallback 必须明确告知。
+- tolerance 集中管理；相同输入参数与工具链产生确定性拓扑和输出。跨编译器一致性必须另证。
+- 算法修复保留最小失败案例。日常跑直接相关测试；重要交付完整跑 CTest 与前端测试。
+- 重要里程碑生成真实网格和预览，使用独立读取器；OpenFOAM 可用时真实运行 checkMesh。
+- 拓扑、solver quality、外部 checkMesh、Q1 分开报告；未运行写未运行，不能互相替代。
+- macOS 固定系统 clang++，避免 PATH 中 mesasdk 生成的动态库依赖导致 App 无法运行。
 
-## 2. 仓库边界
+## 防止目录再次膨胀
 
-二维代码全部位于本仓库根目录的 `include/`、`src/`、`apps/`、`tests/`、
-`tools/`、`examples/`、`desktop/`、`docs/` 与 `artifacts/`。
-
-- 不得引入 `cartmesh/*` 三维头文件或链接三维 library；
-- 不得把本仓库重新作为长期分支塞回三维仓库；
-- 二维和三维若共享算法思想，应通过文档和独立实现协调，除非用户明确批准
-  创建稳定、独立、带版本的公共库；
-- 历史验证文档中出现的 `cartmesh2d/` 子目录命令仅代表拆仓前环境，当前构建
-  一律从本仓库根目录执行。
-
-## 3. 当前阶段边界
-
-已完成并形成回归门：
-
-`2D-0 -> 2D-1 -> 2D-2 -> 2D-3 -> 2D-4 -> 2D-5 -> 2D-6 -> 2D-V`
-
-后续精细化已完成：H1 sizing、H2 scalability、H3 solver topology、
-H4-1 boundary-layer core、H4-2 conformal hybrid、H4-3 local dropping and
-termination。未经用户明确批准，不得把后续阶段冒充当前已完成范围。
-
-`docs/STAGE2D3/4/5/6/V_VERIFICATION.md` 顶部的 `REOPENED` 横幅是
-2026-08-22 物理域纠正之前留下的，已由 `docs/R1F_PATCH_LOCAL_CLOSEOUT_CN.md`
-第 3 节的独立 CI 运行结清；那些横幅是历史记录，不是当前状态。
-
-## 4. 核心真实性规则
-
-1. 几何与拓扑正确性高于可视化。
-2. 不得把删除相交格子或单元中心采样称为 Cut-cell。
-3. Cut-cell 必须输出真实二维流体 polygon，并能计算正面积、质心及边界边。
-4. 默认外流必须满足 `fluid_area = domain_area - solid_area`（tolerance 内）。
-5. 默认外流拓扑必须同时出现固体壁面与外部计算域边界。
-6. 自交、零面积、重复边、孤立边、非流形或分类冲突必须显式失败。
-7. 相同输入和参数必须产生确定性的 ID、拓扑、报告和输出。
-8. tolerance 必须集中管理，不得散落未命名魔法常数。
-9. 几何修复必须保留最小失败案例和回归测试。
-10. 不得降低 solver-quality 阈值、删除坏单元或隐藏告警来通过验收。
-11. Boundary-layer、termination 与 remainder 必须进入统一共形 owner/neighbour
-    拓扑；pure Cut-cell 只能作为明确的最后一级 fallback。
-12. 每个重要里程碑除项目测试外，还必须通过独立读取器；OpenFOAM 能运行时
-    必须真实执行 `checkMesh`，不得以内部读取器冒充。
-
-## 5. 当前验证基线
-
-单一事实来源是 `docs/CURRENT_STATE_CN.md`：逐案例 × 逐门的状态表、各条路径的
-最高稳定 level、以及每一轮的证据指针都在那里。本节只保留不会随轮次漂移的部分。
-
-- 原生二维 CTest 项数：以 `grep -c add_test CMakeLists.txt` 为准，不在本文写死；
-  任何一轮新增测试后不得低于当轮记录的数字；
-- OpenFOAM 验证镜像：`opencfd/openfoam-run:2606`；
-- 当前 H4 算法事实来源：`docs/STAGE2DH4_3_LOCAL_TERMINATION_CN.md`；
-- 质量合同事实来源：`docs/Q0_QUALITY_BASELINE_PROVENANCE_CN.md` 与
-  `docs/Q1_DIMENSIONLESS_TYPED_QUALITY_CONTRACT_CN.md`；
-- 加密鲁棒性事实来源：`docs/R2_REFINEMENT_ROBUSTNESS_CN.md`，
-  基线 `artifacts/r2/w0-baseline-manifest.json`。
-
-历史说明：本节曾把 CTest 项数写成固定值，并把"当前质量事实来源"只列到 Q0/Q1，
-结果落后了五轮（Q2、Q2-A、Q3、Q4、R1、R2 均在其后）。现在改为指针式，不再重复登记。
-
-任何新修改都必须保持工作区确定性、原有回归和真实输出证据。
+- 常规构建只用 `build/`；实验输出用忽略提交的 `outputs/` 或临时目录。
+- 不在仓库内创建长期隐藏工作区、baseline-source、整份代码副本或日期命名的试改应用。
+- 文档固定为 README、本规则及 docs 内三份；更新原文件，历史交给 Git。
+- 保留仍参与构建/测试的功能；删除过时入口时同步修正引用，不以减少行数为由删掉验收门。
+- 少量证据可进 artifacts；大网格和安装包保留本地或使用发布附件，不塞入日常源码历史。

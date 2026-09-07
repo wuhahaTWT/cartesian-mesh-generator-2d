@@ -459,7 +459,7 @@ jobs:
           set -euo pipefail
           # Not gated yet, and deliberately so: Q1 hard issue counts still grow
           # with refinement and level 9 still fails, both documented in
-          # docs/R2_REFINEMENT_ROBUSTNESS_CN.md. R2/W2 flips this to --gate.
+          # docs/CURRENT_STATE_CN.md. Gate only after the measured limits actually pass.
           # Level 9 is left to the local long ladder because it costs ~150 s.
           python3 tools/verification/refinement_ladder.py \
             --repo . --build-dir build --evidence-dir build/r2_ladder \

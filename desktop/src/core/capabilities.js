@@ -36,7 +36,7 @@ const METHODS = Object.freeze({
     status: 'beta',
     statusLabel: 'Beta',
     summary: '壁面共形四边形层，外围接 Cartesian / Cut-cell 余域。',
-    // docs/CURRENT_STATE_CN.md section 2: level 9 fails on faceWeight/volRatio/
+    // docs/CURRENT_STATE_CN.md: level 9 fails on faceWeight/volRatio/
     // nonOrtho because wall tangential resolution is pinned to the input polyline.
     safeWallLevel: 8,
     supports: { sizeField: false, boundaryLayer: true, openFoam: true },
