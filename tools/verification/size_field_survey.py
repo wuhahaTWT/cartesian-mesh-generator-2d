@@ -79,7 +79,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=pathlib.Path,
                         default=pathlib.Path("build/size-field-survey"))
     parser.add_argument("--manifest", type=pathlib.Path,
-                        default=pathlib.Path("artifacts/wb/size-field-survey.json"))
+                        default=pathlib.Path("outputs/sizing/size-field-survey.json"))
     parser.add_argument("--wall-cells-per-span", type=float, default=128.0)
     parser.add_argument("--legacy-level", type=int, default=8)
     parser.add_argument("--dyld-library-path", default="/Applications/mesasdk/lib")

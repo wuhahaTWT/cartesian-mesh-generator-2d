@@ -70,7 +70,7 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=pathlib.Path,
                         default=pathlib.Path("build/q1_evidence"))
     parser.add_argument("--output-dir", type=pathlib.Path,
-                        default=pathlib.Path("artifacts/q1"))
+                        default=pathlib.Path("outputs/quality/q1"))
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--collect-only", action="store_true")
     parser.add_argument("--expect-superellipse-short-faces", choices=("present", "absent"),

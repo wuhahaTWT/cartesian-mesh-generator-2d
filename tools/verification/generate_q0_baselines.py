@@ -465,7 +465,7 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=pathlib.Path,
                         default=pathlib.Path("build/q0_evidence"))
     parser.add_argument("--output-dir", type=pathlib.Path,
-                        default=pathlib.Path("artifacts/q0"))
+                        default=pathlib.Path("outputs/quality/q0"))
     parser.add_argument("--source-commit")
     parser.add_argument("--openfoam-image", default="opencfd/openfoam-run:2606")
     parser.add_argument("--skip-openfoam", action="store_true")

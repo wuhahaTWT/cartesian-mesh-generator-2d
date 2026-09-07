@@ -79,7 +79,7 @@ struct IntersectionRegistryPolicy2D {
     // be consistent, because its canonical vertices are shared across leaves: a
     // per-leaf or per-face weld makes neighbouring leaves disagree about a shared
     // cell-side vertex, which was measured to produce 24 unclassified boundary
-    // edges (docs/R2_REFINEMENT_ROBUSTNESS_CN.md).
+    // edges (docs/CURRENT_STATE_CN.md).
     //
     // Cost, and why it is bounded rather than free. Welding moves a point by at
     // most this fraction of h, so each incident cell's area changes by at most

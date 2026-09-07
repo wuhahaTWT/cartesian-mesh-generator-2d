@@ -1,0 +1,55 @@
+{
+  "cell_count": 728,
+  "face_count": 3212,
+  "global_constant_flux_balance": 2.6020852139652103e-18,
+  "internal_face_count": 1676,
+  "issues": [],
+  "max_closure_residual": 6.944185841882926e-18,
+  "max_constant_flux_divergence_residual": 7.805386664546716e-15,
+  "min_volume": 4.145672737959947e-06,
+  "patches": [
+    {
+      "nFaces": 32,
+      "name": "wall_0",
+      "startFace": 1676,
+      "type": "wall"
+    },
+    {
+      "nFaces": 12,
+      "name": "left",
+      "startFace": 1708,
+      "type": "patch"
+    },
+    {
+      "nFaces": 12,
+      "name": "right",
+      "startFace": 1720,
+      "type": "patch"
+    },
+    {
+      "nFaces": 12,
+      "name": "bottom",
+      "startFace": 1732,
+      "type": "patch"
+    },
+    {
+      "nFaces": 12,
+      "name": "top",
+      "startFace": 1744,
+      "type": "patch"
+    },
+    {
+      "nFaces": 1456,
+      "name": "frontAndBack",
+      "startFace": 1756,
+      "type": "empty"
+    }
+  ],
+  "physical_boundary_area_vector": [
+    2.6020852139652106e-18,
+    -2.6020852139652106e-18,
+    0.0
+  ],
+  "point_count": 2056,
+  "valid": true
+}

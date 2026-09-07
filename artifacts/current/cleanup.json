@@ -1,0 +1,46 @@
+{
+  "baseline_commit": "9bddfbf",
+  "inventory_scope": "all file entries including ignored dependency/build copies and Git objects; not a line-by-line numerical proof",
+  "before_file_entries": 35734,
+  "before_logical_bytes": 3852870211,
+  "historical_docs_in_initial_root": 61,
+  "current_docs": [
+    "docs/CURRENT_STATE_CN.md",
+    "docs/DESKTOP_APP_CN.md",
+    "docs/DEVELOPMENT_CN.md"
+  ],
+  "removed_or_relocated_tracked_paths_by_directory": {
+    "apps": 1,
+    "artifacts": 63,
+    "docs": 57,
+    "examples": 1,
+    "include": 8,
+    "src": 1,
+    "tests": 1,
+    "tools": 9
+  },
+  "active_worktrees": 1,
+  "retained_cpp_implementation_files": 29,
+  "history_recovery": "git show 9bddfbf:<old path>; existing archive tags and remote branches retained",
+  "removed_generated_directories": [
+    "build (old contents)",
+    "build-desktop",
+    "build-q2",
+    "build-q2a",
+    "build-q2b",
+    "build-q3",
+    "build-w1-debug",
+    ".claude/worktrees/wonderful-thompson-f70ba0",
+    "artifacts/audit-20260907",
+    "artifacts/product-pilot-20260907",
+    "desktop/dist (old app)"
+  ],
+  "retained_local_generated_directories": [
+    "build",
+    "desktop/node_modules",
+    "desktop/runtime",
+    "desktop/dist",
+    "outputs"
+  ],
+  "note": "Six reference files are copied unchanged from baseline. Local agent preferences retained and ignored."
+}

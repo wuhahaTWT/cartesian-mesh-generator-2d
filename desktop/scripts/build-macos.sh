@@ -4,7 +4,7 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DESKTOP_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$DESKTOP_DIR/.." && pwd)
-BUILD_DIR=${CARTMESH2D_BUILD_DIR:-"$PROJECT_DIR/build-desktop"}
+BUILD_DIR=${CARTMESH2D_BUILD_DIR:-"$PROJECT_DIR/build"}
 
 # Pin the system toolchain.  mesasdk puts its own c++ on PATH, and cmake picks that up
 # by default; the resulting binary loads @rpath/lib/libstdc++.6.dylib, which only
@@ -12,7 +12,7 @@ BUILD_DIR=${CARTMESH2D_BUILD_DIR:-"$PROJECT_DIR/build-desktop"}
 CXX_COMPILER=${CARTMESH2D_CXX:-/usr/bin/clang++}
 cmake -S "$PROJECT_DIR" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_COMPILER="$CXX_COMPILER"
-cmake --build "$BUILD_DIR" --target cartmesh2d_cli cartmesh2d_hybrid_cli cartmesh2d_dxf_cli -j 8
+cmake --build "$BUILD_DIR" --target cartmesh2d_cli cartmesh2d_hybrid_cli cartmesh2d_dxf_cli -j "${CARTMESH2D_BUILD_JOBS:-2}"
 
 rm -rf "$DESKTOP_DIR/runtime"
 mkdir -p "$DESKTOP_DIR/runtime/bin" "$DESKTOP_DIR/runtime/samples"
@@ -44,6 +44,7 @@ do
 done
 
 # Fail loudly here rather than shipping a sample the picker cannot open.
+cd "$DESKTOP_DIR"
 node -e '
 const { SAMPLES } = require("./src/core/samples");
 const fs = require("node:fs");

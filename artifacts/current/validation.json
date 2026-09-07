@@ -1,0 +1,59 @@
+{
+  "scope": "repository consolidation; no meshing algorithm or quality-limit change",
+  "baseline_commit": "9bddfbf9d03b4fb23968e5a0291f0941d1d240d7",
+  "toolchain": "Apple system clang++; Electron 37.10.3 arm64",
+  "ctest": {
+    "passed": 89,
+    "total": 89,
+    "seconds": 93.25
+  },
+  "frontend_tests": {
+    "passed": 42,
+    "total": 42
+  },
+  "packaged_frontend_files_verified": 14,
+  "packaged_cli_binaries_verified": 3,
+  "cases": {
+    "naca": {
+      "app_status": "生成完成",
+      "display_mesh_cells": 2215,
+      "openfoam_cells": 2615,
+      "independent_reader": "PASS",
+      "checkMesh_allGeometry_allTopology": "PASS",
+      "Q1": "FAIL",
+      "output_directory": "outputs/cleanup-naca",
+      "screenshot": "desktop-naca.png",
+      "openfoam_mesh_sha256": {
+        "points": "e5d537fcb6e66839f2a3a50e6629420838830b596da240815c351ca8b9447dbc",
+        "faces": "f4ff71ad412fa819b3df3a53553800895780217c406207c01ed2c8fa2e979d86",
+        "owner": "4f22824e2fd06ecb03195f40376cf6ebc8d42c48180c93069226b35cd0bdf22b",
+        "neighbour": "b41f5b3cb294a9388032697393881a8a1b19cca929c008c47a5d2ec93a074119",
+        "boundary": "cd3e18eff582b45250f869ab1f1e1c83edbd92389790755a7b934e5f9d0fd943"
+      }
+    },
+    "hybrid": {
+      "app_status": "生成完成",
+      "display_mesh_cells": 728,
+      "openfoam_cells": 728,
+      "independent_reader": "PASS",
+      "checkMesh_allGeometry_allTopology": "FAIL",
+      "Q1": "FAIL",
+      "output_directory": "outputs/cleanup-hybrid",
+      "screenshot": "desktop-hybrid.png",
+      "openfoam_mesh_sha256": {
+        "points": "8413ff9c9ceeb6f774eb1add7af8bbeb843e5ea7d2624413d894fc389200086d",
+        "faces": "4bee1eb09e4064eff980a8e18ffa3cfa36d617beb1389534ff338ca781bd7c9b",
+        "owner": "fea8b4817f34a5b9d5404d905a8bcdf33355e07cb394175f356dd6d19862c63a",
+        "neighbour": "90e0c6ff51ccb9c1843365b914204f59848620c89ff0aed55add9ed945831b23",
+        "boundary": "1f6d4ed63bf7fb8caa118cbc41f1983753887da33a2d66768820b942668c7b92"
+      },
+      "checkMesh_writeAllFields": "PASS",
+      "extended_check_failure": "312 concave cells; not fixed in directory consolidation"
+    }
+  },
+  "native_binaries_sha256": {
+    "cartmesh2d_cli": "70e4f6ad955cc1100ca0fe491af98952c5759d724ba99ddbab39d794b6296e8d",
+    "cartmesh2d_hybrid_cli": "985104e68331e142fccdb79f3e667010428284be409a5c08689f228108c894eb",
+    "cartmesh2d_dxf_cli": "4fec980106b351549b8d37bd4edb0962cd9a9fe64c19b28ba4c340bcdb3864a3"
+  }
+}
