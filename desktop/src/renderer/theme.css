@@ -1,0 +1,17 @@
+/* Visual identity only. Future restyling starts here; layout and interaction stay in style.css. */
+:root {
+  --bg: #0e1419;
+  --panel: #141c23;
+  --panel-2: #1a242c;
+  --line: #263440;
+  --line-soft: #1f2b34;
+  --ink: #dce6ed;
+  --ink-dim: #8ba0b0;
+  --ink-faint: #62788a;
+  --accent: #ff5a1f;
+  --accent-soft: rgba(255, 90, 31, 0.14);
+  --pass: #35c58a;
+  --warn: #e0a93a;
+  --fail: #ff4d6d;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}

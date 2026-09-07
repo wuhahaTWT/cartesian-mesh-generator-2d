@@ -1,7 +1,6 @@
 'use strict';
 
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
-const { spawn } = require('node:child_process');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
@@ -11,9 +10,26 @@ const geometry = require('./core/geometry');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { parseCm2d, levelHistogram, embeddedBounds,
-        assignKeyLevels, assignSizeBands } = require('./core/cm2d');
+        assignSizeBands } = require('./core/cm2d');
 
 let mainWindow;
+let sessionDirectory;
+let currentResult;
+let operation = null;
+async function exclusive(work) {
+  if (operation) throw new Error('已有操作正在进行，请等待或取消。');
+  operation = new AbortController();
+  try { return await work(); } finally { operation = null; }
+}
+async function exportPackage(destination) {
+  if (!currentResult) throw new Error('请先成功生成网格。');
+  const temporary = path.join(sessionDirectory, 'export.zip');
+  await fs.rm(temporary, { force: true });
+  await run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--noextattr', '--noqtn', '--keepParent', currentResult.outputDirectory, temporary], () => {});
+  await fs.copyFile(temporary, destination);
+  await fs.rm(temporary, { force: true });
+  return destination;
+}
 
 const resourceRoot = () =>
   app.isPackaged ? process.resourcesPath : path.join(__dirname, '..', 'runtime');
@@ -21,29 +37,8 @@ const resourcePath = (...parts) => path.join(resourceRoot(), ...parts);
 const executable = name =>
   resourcePath('bin', process.platform === 'win32' ? `${name}.exe` : name);
 
-function run(command, args, onLine) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { windowsHide: true });
-    let stdout = '';
-    let stderr = '';
-    const consume = (chunk, isError) => {
-      const text = chunk.toString();
-      if (isError) stderr += text; else stdout += text;
-      text.split(/\r?\n/).filter(Boolean).forEach(onLine);
-    };
-    child.stdout.on('data', chunk => consume(chunk, false));
-    child.stderr.on('data', chunk => consume(chunk, true));
-    child.on('error', reject);
-    child.on('close', code => {
-      // Both CLIs are fail-closed: a non-zero exit means no mesh was committed, and
-      // the reason is on stderr.  Surfacing stdout as the fallback keeps the size
-      // field's refusal readable even when it printed its diagnosis first.
-      if (code === 0) resolve({ stdout, stderr, code });
-      else reject(Object.assign(new Error(stderr.trim() || stdout.trim() || `退出码 ${code}`),
-                                { stdout, stderr, code }));
-    });
-  });
-}
+const { run: runProcess } = require('./core/process');
+const run = (command, args, onLine) => runProcess(command, args, onLine, operation?.signal);
 
 const readJson = async file => {
   try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch { return null; }
@@ -51,16 +46,6 @@ const readJson = async file => {
 
 const safeBaseName = filePath =>
   path.basename(filePath, path.extname(filePath)).replace(/[^\w-]+/g, '_') || 'mesh';
-
-async function uniquePrefix(directory, base) {
-  const first = path.join(directory, base);
-  try {
-    await fs.access(`${first}.cm2d`);
-  } catch {
-    return first;
-  }
-  return path.join(directory, `${base}-${new Date().toISOString().replace(/[:.]/g, '-')}`);
-}
 
 // Every input becomes a native .xy before the mesher sees it.  DXF goes through the
 // C++ converter because that is where unit handling and entity diagnostics live;
@@ -82,7 +67,7 @@ async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath
   // carries no units; .xy and the coordinate formats are taken as given.
   const converted = geometry.convertToLoops(geometryPath, text, { chordToleranceFraction: chordError });
   if (converted.issues.length) throw new Error(converted.issues.join('\n'));
-  await fs.writeFile(xyPath, geometry.loopsToXyText(converted.loops,
+  await fs.writeFile(xyPath, kind === 'xy' ? text : geometry.loopsToXyText(converted.loops,
     `converted from ${path.basename(geometryPath)} by CartMesh2D`));
   const loopSizes = converted.loops.map(loop => loop.length);
   log(`已读入 ${converted.loops.length} 个闭合环（顶点 ${loopSizes.join(' / ')}）`);
@@ -151,6 +136,7 @@ async function createWindow() {
   await mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 app.whenReady().then(async () => {
+  sessionDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'cartmesh2d-session-'));
   const log = line => mainWindow?.webContents.send('run-line', line);
 
   ipcMain.handle('catalog', () => ({
@@ -175,37 +161,40 @@ app.whenReady().then(async () => {
     return result.canceled ? null : result.filePaths[0];
   });
 
-  ipcMain.handle('pick-output', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      title: '选择输出目录',
-      properties: ['openDirectory', 'createDirectory']
+  ipcMain.handle('cancel', () => { operation?.abort(); });
+  ipcMain.handle('export-result', () => exclusive(async () => {
+    if (!currentResult) throw new Error('请先成功生成网格。');
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: '保存网格结果包', defaultPath: `${safeBaseName(currentResult.job.geometryPath)}.zip`,
+      filters: [{ name: '网格结果包', extensions: ['zip'] }]
     });
-    return result.canceled ? null : result.filePaths[0];
-  });
+    return result.canceled ? null : exportPackage(result.filePath);
+  }));
 
   ipcMain.handle('open-path', (_event, target) => shell.openPath(target));
 
   // Read a geometry without meshing it, so the outline can be drawn the moment a
   // file is chosen.  DXF needs the converter, so it writes into a scratch directory.
   ipcMain.handle('preview-geometry', async (_event, { geometryPath, chordError, sourceUnits }) => {
-    const scratch = path.join(app.getPath('temp'), 'cartmesh2d-preview');
-    await fs.mkdir(scratch, { recursive: true });
+    const scratch = await fs.mkdtemp(path.join(sessionDirectory, 'preview-'));
+    try {
     const xyPath = path.join(scratch, `${safeBaseName(geometryPath)}.xy`);
     const info = await prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath,
       path.join(scratch, 'dxf.json'), () => {});
     const loops = info.loops
       || geometry.convertToLoops(xyPath, await fs.readFile(xyPath, 'utf8')).loops;
     return { loops, kind: info.kind, warnings: info.warnings, frame: bodyFrame(loops) };
+    } finally { await fs.rm(scratch, { recursive: true, force: true }); }
   });
 
   // Resolve the size field and stop.  This is the only way to learn the curvature and
   // proximity depths a geometry asks for, because those depend on the wall polyline
   // and cannot be predicted from the flags.
-  ipcMain.handle('probe-sizing', async (_event, request) => {
+  ipcMain.handle('probe-sizing', (_event, request) => exclusive(async () => {
     const { job } = validateJob(request);
     if (job.method !== 'cutcell') throw new Error('贴体边界层路径没有 size field 预检。');
-    const scratch = path.join(app.getPath('temp'), 'cartmesh2d-probe');
-    await fs.mkdir(scratch, { recursive: true });
+    const scratch = await fs.mkdtemp(path.join(sessionDirectory, 'probe-'));
+    try {
     const prefix = path.join(scratch, safeBaseName(job.geometryPath));
     const xyPath = `${prefix}.xy`;
     await prepareGeometry(job.geometryPath, job, xyPath, `${prefix}.dxf.json`, () => {});
@@ -225,12 +214,19 @@ app.whenReady().then(async () => {
         message: error.message
       };
     }
-  });
+      } finally { await fs.rm(scratch, { recursive: true, force: true }); }
+  }));
 
-  ipcMain.handle('generate', async (_event, request) => {
+  ipcMain.handle('generate', (_event, request) => exclusive(async () => {
     const { job, method } = validateJob(request);
-    await fs.mkdir(job.outputDirectory, { recursive: true });
-    const prefix = await uniquePrefix(job.outputDirectory, safeBaseName(job.geometryPath));
+    if (currentResult) await fs.rm(currentResult.outputDirectory, { recursive: true, force: true });
+    currentResult = null;
+    // Only smoke runs may override the temporary root. Every run owns a new folder.
+    const root = process.argv.some(arg => arg.startsWith('--smoke=')) && job.outputDirectory
+      ? job.outputDirectory : sessionDirectory;
+    await fs.mkdir(root, { recursive: true });
+    job.outputDirectory = await fs.mkdtemp(path.join(root, 'mesh-'));
+    const prefix = path.join(job.outputDirectory, safeBaseName(job.geometryPath));
     const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam` };
 
     const prepared = await prepareGeometry(job.geometryPath, job, paths.xyPath,
@@ -256,6 +252,7 @@ app.whenReady().then(async () => {
       failure = error;
     }
 
+    if (operation.signal.aborted) throw new Error('操作已取消');
     const reports = await collectReports(job.method, prefix);
     const mesh = await firstReadable(invocation.cm2dCandidates);
     if (!mesh) throw failure || new Error('生成结束但没有找到可预览的 CM2D 网格文件。');
@@ -264,24 +261,29 @@ app.whenReady().then(async () => {
     // Parsed here rather than in the renderer: contextIsolation means the renderer
     // cannot require() the reader, and duplicating a format parser is how the two
     // copies drift apart.
-    // Only the pure path's sourceKey carries a Quadtree level; the hybrid writes a
-    // running index there, so it is banded by cell size instead.
-    const parsed = job.method === 'hybrid'
-      ? assignSizeBands(parseCm2d(mesh.text))
-      : assignKeyLevels(parseCm2d(mesh.text));
-    return {
+    // Final solver partitions use size bands; their keys need not encode tree levels.
+    const parsed = assignSizeBands(parseCm2d(mesh.text));
+    const payload = {
       job,
       prefix,
       outputDirectory: job.outputDirectory,
       cm2dPath: mesh.path,
       mesh: parsed,
-      levelBasis: job.method === 'hybrid' ? 'size' : 'level',
+      levelBasis: 'size',
       levelHistogram: levelHistogram(parsed),
       wallBounds: embeddedBounds(parsed),
       incomplete: failure ? failure.message.split('\n')[0] : null,
-      result: normalizeResult({ method: job.method, stdout, reports, paths, mesh: parsed })
+      result: normalizeResult({ method: job.method, stdout, reports, paths, mesh: parsed, incomplete: Boolean(failure) })
     };
-  });
+    if (!failure) {
+      await fs.writeFile(path.join(job.outputDirectory, 'result.json'), JSON.stringify({
+        parameters: { ...job, geometryPath: path.basename(job.geometryPath), outputDirectory: undefined },
+        result: { ...payload.result, openFoam: { ...payload.result.openFoam, path: path.basename(paths.casePath) } }
+      }, null, 2));
+      currentResult = payload;
+    }
+    return payload;
+  }));
 
   await createWindow();
   app.on('activate', () => {
@@ -299,10 +301,10 @@ async function runSmoke() {
     return found ? found.slice(name.length + 3) : null;
   };
   const sampleId = argument('smoke');
-  const outputDirectory = argument('out') || path.join(app.getPath('temp'), 'cartmesh2d-smoke');
+  const outputDirectory = argument('out') || '';
   const method = argument('method') || 'cutcell';
   const shot = argument('shot');
-  await fs.mkdir(outputDirectory, { recursive: true });
+  if (outputDirectory) await fs.mkdir(outputDirectory, { recursive: true });
 
   // The renderer's init awaits the catalog over IPC, so the hook appears a moment
   // after the page finishes loading.
@@ -327,7 +329,16 @@ async function runSmoke() {
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
-    await smoke.generate();
+    const regionInput = document.querySelector('#regionList input');
+    if (regionInput) {
+      regionInput.focus();
+      if (!regionInput.isConnected || document.activeElement !== regionInput) throw new Error('Region input lost focus');
+    }
+    const pending = smoke.generate();
+    if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
+      throw new Error('Parameters are not locked during generation');
+    await pending;
+    if (${JSON.stringify(Boolean(argument('repeat')))}) await smoke.generate();
     const mode = ${JSON.stringify(argument('mode') || 'level')};
     if (mode !== 'level') {
       const select = document.getElementById('displayMode');
@@ -343,12 +354,26 @@ async function runSmoke() {
       log: document.getElementById('log').textContent
     };
   })()`).then(async report => {
+    if (argument('export')) report.exported = await exportPackage(argument('export'));
+    mainWindow.setSize(1120, 720);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    report.layout = await mainWindow.webContents.executeJavaScript(`(() => {
+      const panel = document.querySelector('.panel');
+      panel.scrollTop = panel.scrollHeight;
+      const button = document.getElementById('generate').getBoundingClientRect();
+      return { bottomReachable: button.bottom <= innerHeight && button.top >= 0,
+        pageHeight: document.documentElement.scrollHeight, windowHeight: innerHeight,
+        previewCells: window.__smoke.state.mesh?.cells.length,
+        exportedCells: window.__smoke.state.result?.openFoam.cells };
+    })()`);
     console.log(JSON.stringify(report, null, 2));
+    if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (shot) {
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());
       console.log(`screenshot=${shot}`);
     }
+    await fs.rm(sessionDirectory, { recursive: true, force: true });
     app.exit(/失败/.test(report.status) ? 1 : 0);
   }).catch(error => {
     console.error(error);
@@ -358,4 +383,9 @@ async function runSmoke() {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('will-quit', () => {
+  operation?.abort();
+  if (sessionDirectory) require('node:fs').rmSync(sessionDirectory, { recursive: true, force: true });
 });

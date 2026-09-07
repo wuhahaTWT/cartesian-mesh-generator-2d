@@ -30,8 +30,8 @@
 表中的模块分别位于 `include/cartmesh2d/` 和 `src/`。全部 29 个 C++ 实现文件仍由 CMake 构建，未把现用模块当旧版本删除。
 
 桌面入口是 `desktop/src/main.js`（编排/IPC）、`preload.js`（受限桥接）。
-`core/` 八个文件分别管能力、样例、几何/SVG 输入、参数、尺寸预算、CM2D、结果摘要。
-`renderer/app.js` 管表单和状态，`viewport.js` 管真实网格画布；HTML/CSS 管布局。没有第二套前端。
+`core/` 管能力、样例、几何/SVG 输入、参数、尺寸预算、CM2D、结果摘要；`process.js` 负责可取消的原生子进程。
+`renderer/app.js` 管表单和状态，`viewport.js` 管真实网格画布；HTML/`style.css` 管布局；`theme.css` 集中外观变量，画布配色仍在 `viewport.js`。没有第二套前端。
 
 ## 构建与有限验证
 
@@ -55,7 +55,7 @@ cd desktop
 node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../outputs/smoke/circle.png
 ```
 
-可加 `--method=hybrid`、`--mode=light`、`--regions=1`。smoke 会走真实表单/IPC/CLI 后退出；它不等于所有界面操作都已验收。
+可加 `--method=hybrid`、`--mode=light`、`--regions=1`、`--repeat=1`。省略 `--out` 即验证默认临时预览；`--export=/绝对路径/result.zip` 验证结果包。每轮会缩到最小窗口并检查底部可达、预览/导出单元数。smoke 会走真实表单/IPC/CLI 后退出；它不等于所有界面操作都已验收。
 
 ## CFD 验证
 

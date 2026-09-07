@@ -48,6 +48,8 @@ class Viewport {
     this.offset = { x: 0, y: 0 };
     this.dragging = null;
     this.attachInput();
+    this.resizeObserver = new ResizeObserver(() => this.draw());
+    this.resizeObserver.observe(canvas);
   }
 
   theme() { return THEMES[this.mode] || THEMES.level; }
@@ -105,6 +107,7 @@ class Viewport {
   fitTo(bounds, margin = 0.06) {
     if (!bounds) return;
     const { width, height } = this.size();
+    this.lastSize = { width, height };
     const spanX = Math.max(1e-300, bounds.maxX - bounds.minX);
     const spanY = Math.max(1e-300, bounds.maxY - bounds.minY);
     this.scale = (1 - 2 * margin) * Math.min(width / spanX, height / spanY);
@@ -141,6 +144,14 @@ class Viewport {
   context() {
     const dpr = window.devicePixelRatio || 1;
     const { width, height } = this.size();
+    if (this.lastSize && (width !== this.lastSize.width || height !== this.lastSize.height)) {
+      const centreX = this.offset.x + this.lastSize.width / (2 * this.scale);
+      const centreY = this.offset.y + this.lastSize.height / (2 * this.scale);
+      this.scale *= Math.min(width / this.lastSize.width, height / this.lastSize.height);
+      this.offset.x = centreX - width / (2 * this.scale);
+      this.offset.y = centreY - height / (2 * this.scale);
+    }
+    this.lastSize = { width, height };
     this.canvas.width = Math.floor(width * dpr);
     this.canvas.height = Math.floor(height * dpr);
     const ctx = this.canvas.getContext('2d');

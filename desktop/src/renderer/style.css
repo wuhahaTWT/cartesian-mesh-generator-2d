@@ -1,19 +1,4 @@
-:root {
-  --bg: #0e1419;
-  --panel: #141c23;
-  --panel-2: #1a242c;
-  --line: #263440;
-  --line-soft: #1f2b34;
-  --ink: #dce6ed;
-  --ink-dim: #8ba0b0;
-  --ink-faint: #62788a;
-  --accent: #ff5a1f;
-  --accent-soft: rgba(255, 90, 31, 0.14);
-  --pass: #35c58a;
-  --warn: #e0a93a;
-  --fail: #ff4d6d;
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
-}
+
 
 * { box-sizing: border-box; }
 
@@ -285,3 +270,15 @@ select { font-family: inherit; font-size: 12px; }
   background: rgba(255, 255, 255, .9); border-color: #d3dae0; color: #3d4a54;
 }
 .canvasWrap.light .legend .ends, .canvasWrap.light .legend .keys span { color: #6b7a86; }
+
+/* Grid children must shrink inside the window rather than enlarge the body. */
+html, body { height: 100%; }
+.shell { grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+.panel { min-height: 0; overscroll-behavior: contain; }
+.panel > * { flex-shrink: 0; }
+.workspace { min-height: 0; overflow: hidden; grid-template-rows: auto minmax(0, 1fr) auto auto; }
+.results { min-height: 0; max-height: 30vh; overflow: auto; overscroll-behavior: contain; }
+.logpanel { min-height: 0; max-height: 24vh; overflow: auto; }
+.statusbar > div:first-child { min-width: 0; flex: 1; }
+.statusbar i { display: block; margin-left: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewtools { flex-wrap: wrap; justify-content: flex-end; }

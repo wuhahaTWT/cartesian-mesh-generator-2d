@@ -1178,6 +1178,15 @@ int main(int argc, char** argv) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
+    // The desktop preview must use the same final partition as the CFD writer.
+    if (solverTopology) {
+        error.clear();
+        if (!writeCm2dTopology(solverTopology->topology,
+                              outputPrefix.string() + ".solver.cm2d", &error)) {
+            std::cerr << error << '\n';
+            return EXIT_FAILURE;
+        }
+    }
     {
         std::ofstream out(qualityPath);
         if (!out) {

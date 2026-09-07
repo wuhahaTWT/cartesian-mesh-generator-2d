@@ -81,7 +81,6 @@ function validateJob(request) {
     sourceUnits: request.sourceUnits || 'auto'
   };
   if (!job.geometryPath) throw new Error('请先选择几何文件或内置样例。');
-  if (!job.outputDirectory) throw new Error('请选择输出目录。');
 
   if (method.id === 'cutcell') {
     job.smallAlpha = number(request.smallAlpha ?? method.defaults.smallAlpha,
@@ -162,7 +161,7 @@ function buildInvocation(job, paths, options = {}) {
         '0', '0',
         ...sizeFieldArgs(job.sizeField, options),
         ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame))],
-      cm2dCandidates: [`${paths.prefix}.cm2d`]
+      cm2dCandidates: [`${paths.prefix}.solver.cm2d`]
     };
   }
   return {
