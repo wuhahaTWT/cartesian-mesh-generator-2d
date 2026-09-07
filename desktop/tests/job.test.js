@@ -80,7 +80,8 @@ test('the hybrid path is capped at its own measured ceiling', () => {
 test('unknown methods and missing paths are refused', () => {
   assert.throws(() => validateJob({ method: 'magic' }), /未知网格方法/);
   assert.throws(() => validateJob(cutcell({ geometryPath: '' })), /几何文件/);
-  assert.throws(() => validateJob(cutcell({ outputDirectory: '' })), /输出目录/);
+  assert.equal(validateJob(cutcell({ outputDirectory: '' })).job.outputDirectory, '');
+  assert.deepEqual(buildInvocation(validateJob(cutcell()).job, paths).cm2dCandidates, ['/out/body.solver.cm2d']);
   assert.throws(() => validateJob(cutcell({ cellsPerLevel: 2.5 })), /每级带宽/);
 });
 

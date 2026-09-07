@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
   <title>CartMesh2D</title>
+  <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -28,7 +29,7 @@
       <details class="advanced">
         <summary>导入设置</summary>
         <label class="field">曲线弦高误差
-          <input id="chordError" type="number" min="0.000000001" step="0.0005" value="0.001">
+          <input id="chordError" type="number" min="0.000000001" step="any" value="0.001">
         </label>
         <label class="field">DXF 源单位
           <select id="sourceUnits">
@@ -58,10 +59,10 @@
       <div id="presets" class="presets"></div>
       <div class="pair">
         <label class="field">远场距离
-          <span class="unit"><input id="farFieldSpans" type="number" min="0.25" step="1" value="10"><i>倍体长</i></span>
+          <span class="unit"><input id="farFieldSpans" type="number" min="0.25" step="any" value="10"><i>倍体长</i></span>
         </label>
         <label class="field">壁面单元
-          <span class="unit"><i>体长 /</i><input id="wallCellsPerSpan" type="number" min="1" step="8" value="64"></span>
+          <span class="unit"><i>体长 /</i><input id="wallCellsPerSpan" type="number" min="1" step="any" value="64"></span>
         </label>
       </div>
       <div class="pair">
@@ -82,9 +83,9 @@
       </label>
       <label class="toggle"><input id="useWake" type="checkbox">尾迹加密</label>
       <div id="wakeFields" class="pair" hidden>
-        <label class="field">来流角<span class="unit"><input id="wakeAngle" type="number" step="1" value="0"><i>°</i></span></label>
-        <label class="field">下游长度<span class="unit"><input id="wakeLength" type="number" min="0.1" step="1" value="8"><i>倍体长</i></span></label>
-        <label class="field">半宽<span class="unit"><input id="wakeHalfWidth" type="number" min="0.05" step="0.1" value="0.7"><i>倍体长</i></span></label>
+        <label class="field">来流角<span class="unit"><input id="wakeAngle" type="number" step="any" value="0"><i>°</i></span></label>
+        <label class="field">下游长度<span class="unit"><input id="wakeLength" type="number" min="0.1" step="any" value="8"><i>倍体长</i></span></label>
+        <label class="field">半宽<span class="unit"><input id="wakeHalfWidth" type="number" min="0.05" step="any" value="0.7"><i>倍体长</i></span></label>
         <label class="field">低于壁面<span class="unit"><input id="wakeLevels" type="number" min="0" max="20" step="1" value="4"><i>级</i></span></label>
       </div>
       <label class="toggle"><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
@@ -107,31 +108,31 @@
       <h2><span>3</span>边界层与余域</h2>
       <div class="pair">
         <label class="field">壁面层数<input id="nLayers" type="number" min="1" max="64" step="1" value="4"></label>
-        <label class="field">首层厚度<input id="firstThickness" type="number" min="0.000001" step="0.005" value="0.02"></label>
-        <label class="field">增长率<input id="growthRatio" type="number" min="1" max="5" step="0.05" value="1.2"></label>
-        <label class="field">计算域留白<input id="domainPadding" type="number" min="0.01" step="0.1" value="1.0"></label>
+        <label class="field">首层厚度<input id="firstThickness" type="number" min="0.000000000001" step="any" value="0.02"></label>
+        <label class="field">增长率<input id="growthRatio" type="number" min="1" max="5" step="any" value="1.2"></label>
+        <label class="field">计算域留白<input id="domainPadding" type="number" min="0.01" step="any" value="1.0"></label>
       </div>
       <div class="pair">
         <label class="field">余域最高层级<input id="maxLevel" type="number" min="1" max="8" step="1" value="6"></label>
         <label class="field">全域最低层级<input id="minimumLevel" type="number" min="0" max="8" step="1" value="3"></label>
         <label class="field">壁面连接层级<input id="boundaryLevel" type="number" min="0" max="8" step="1" value="6"></label>
-        <label class="field">挤出厚度<input id="extrusionThickness" type="number" min="0.000001" step="0.005" value="0.01"></label>
+        <label class="field">挤出厚度<input id="extrusionThickness" type="number" min="0.000000000001" step="any" value="0.01"></label>
       </div>
       <p class="note">这条路径的实测上限是 level 8：level 9 上 faceWeight / volRatio / 非正交角同时越限，
         根因是壁面切向分辨率被输入折线顶点数锁死，不是层参数没调好。</p>
     </section>
 
     <section class="block">
-      <h2><span>4</span>输出</h2>
-      <button id="pickOutput" class="wide">选择输出目录…</button>
-      <div id="outputPath" class="path">尚未选择</div>
-      <label class="field">小单元阈值 α
-        <input id="smallAlpha" type="number" min="0.001" max="0.999" step="0.01" value="0.15">
+      <h2><span>4</span>预览与保存</h2>
+      <p class="note">直接生成右侧预览，无需选择目录。临时结果仅供本次使用；需要保存时点击“导出结果包”，得到一个 ZIP。</p>
+      <label class="field" id="smallAlphaField">小单元阈值 α
+        <input id="smallAlpha" type="number" min="0.001" max="0.999" step="any" value="0.15">
       </label>
-      <p class="note">面积分数低于 α 的 cut cell 会被合并进邻居。</p>
+      <p class="note" id="smallAlphaNote">小单元处理参数，并非密度或质量评分。通常保留样例值；提高它可能改变合并结果。</p>
     </section>
 
-    <button id="generate" class="primary" disabled>生成网格</button>
+    <button id="generate" class="primary" disabled>生成预览</button>
+    <button id="cancel" hidden>取消当前操作</button>
   </aside>
 
   <section class="workspace">
@@ -147,7 +148,7 @@
         <button id="fitWall" class="chip">物面</button>
         <button id="toggleGrid" class="chip active">网格线</button>
         <button id="toggleRegions" class="chip active">加密区</button>
-        <button id="openOutput" class="chip" hidden>打开输出目录</button>
+        <button id="exportResult" class="chip" hidden>导出结果包…</button>
       </div>
     </div>
     <div class="canvasWrap" id="canvasWrap">

@@ -1,5 +1,5 @@
 {
-  "scope": "repository consolidation; no meshing algorithm or quality-limit change",
+  "scope": "repository consolidation and desktop preview/export/scroll workflow; meshing algorithms and quality limits unchanged",
   "baseline_commit": "9bddfbf9d03b4fb23968e5a0291f0941d1d240d7",
   "toolchain": "Apple system clang++; Electron 37.10.3 arm64",
   "ctest": {
@@ -8,20 +8,20 @@
     "seconds": 93.25
   },
   "frontend_tests": {
-    "passed": 42,
-    "total": 42
+    "passed": 44,
+    "total": 44
   },
-  "packaged_frontend_files_verified": 14,
+  "packaged_frontend_files_verified": 16,
   "packaged_cli_binaries_verified": 3,
   "cases": {
     "naca": {
       "app_status": "生成完成",
-      "display_mesh_cells": 2215,
+      "display_mesh_cells": 2615,
       "openfoam_cells": 2615,
       "independent_reader": "PASS",
       "checkMesh_allGeometry_allTopology": "PASS",
       "Q1": "FAIL",
-      "output_directory": "outputs/cleanup-naca",
+      "output_directory": "outputs/ui-naca/mesh-n3jpss",
       "screenshot": "desktop-naca.png",
       "openfoam_mesh_sha256": {
         "points": "e5d537fcb6e66839f2a3a50e6629420838830b596da240815c351ca8b9447dbc",
@@ -29,6 +29,15 @@
         "owner": "4f22824e2fd06ecb03195f40376cf6ebc8d42c48180c93069226b35cd0bdf22b",
         "neighbour": "b41f5b3cb294a9388032697393881a8a1b19cca929c008c47a5d2ec93a074119",
         "boundary": "cd3e18eff582b45250f869ab1f1e1c83edbd92389790755a7b934e5f9d0fd943"
+      },
+      "cleanup_display_mesh_cells": 2215,
+      "result_package": "outputs/ui-naca.zip",
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 720,
+        "windowHeight": 720,
+        "previewCells": 2615,
+        "exportedCells": 2615
       }
     },
     "hybrid": {
@@ -38,22 +47,49 @@
       "independent_reader": "PASS",
       "checkMesh_allGeometry_allTopology": "FAIL",
       "Q1": "FAIL",
-      "output_directory": "outputs/cleanup-hybrid",
+      "output_directory": "outputs/ui-hybrid/mesh-54duIR",
       "screenshot": "desktop-hybrid.png",
       "openfoam_mesh_sha256": {
-        "points": "8413ff9c9ceeb6f774eb1add7af8bbeb843e5ea7d2624413d894fc389200086d",
-        "faces": "4bee1eb09e4064eff980a8e18ffa3cfa36d617beb1389534ff338ca781bd7c9b",
+        "points": "6bc6fc9409ac8edb955b78edaa0de9d986c6a321574cfe711a424027fc9fa683",
+        "faces": "86a7ca97bdb10a35c7cd19082abd7a9a37f80b7d42c8e50b25be6aa652cac381",
         "owner": "fea8b4817f34a5b9d5404d905a8bcdf33355e07cb394175f356dd6d19862c63a",
         "neighbour": "90e0c6ff51ccb9c1843365b914204f59848620c89ff0aed55add9ed945831b23",
         "boundary": "1f6d4ed63bf7fb8caa118cbc41f1983753887da33a2d66768820b942668c7b92"
       },
       "checkMesh_writeAllFields": "PASS",
-      "extended_check_failure": "312 concave cells; not fixed in directory consolidation"
+      "extended_check_failure": "312 concave cells; not fixed in directory consolidation",
+      "cleanup_display_mesh_cells": 728,
+      "result_package": "outputs/ui-hybrid.zip",
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 720,
+        "windowHeight": 720,
+        "previewCells": 728,
+        "exportedCells": 728
+      }
     }
   },
   "native_binaries_sha256": {
     "cartmesh2d_cli": "70e4f6ad955cc1100ca0fe491af98952c5759d724ba99ddbab39d794b6296e8d",
     "cartmesh2d_hybrid_cli": "985104e68331e142fccdb79f3e667010428284be409a5c08689f228108c894eb",
     "cartmesh2d_dxf_cli": "4fec980106b351549b8d37bd4edb0962cd9a9fe64c19b28ba4c340bcdb3864a3"
+  },
+  "cleanup_commit": "0ef933d",
+  "desktop_update": {
+    "date": "2026-09-08",
+    "native_related_tests": {
+      "passed": 6,
+      "total": 6
+    },
+    "default_preview_without_output_directory": true,
+    "consecutive_generations_per_case": 2,
+    "parameters_locked_during_generation": true,
+    "cancellation_worker_tests": "PASS; running and pre-cancelled workers, then fresh operation",
+    "window_size": [
+      1120,
+      720
+    ],
+    "zip_export": "macOS ditto, one top-level folder, no resource fork metadata",
+    "cleanup_ctest_is_prior_full_baseline": true
   }
 }

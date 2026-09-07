@@ -15,6 +15,43 @@ const state = {
   frame: null
 };
 
+const disabledControls = new Map();
+function setBusy(busy) {
+  state.busy = busy;
+  if (busy) {
+    for (const control of document.querySelectorAll('.panel input, .panel select, .panel button')) {
+      disabledControls.set(control, control.disabled);
+      control.disabled = true;
+    }
+  } else {
+    for (const [control, disabled] of disabledControls) control.disabled = disabled;
+    disabledControls.clear();
+  }
+  $('cancel').hidden = !busy;
+  $('cancel').disabled = false;
+  $('exportResult').disabled = busy;
+  updateReady();
+}
+function validInputs() {
+  for (const input of document.querySelectorAll('.panel input[type=number]')) {
+    if (!input.disabled && input.getClientRects().length &&
+        (!input.value.trim() || !input.checkValidity())) {
+      input.reportValidity();
+      input.focus();
+      status('参数需要调整', '请填写有效数值，并检查范围。');
+      return false;
+    }
+  }
+  return true;
+}
+function clearResult() {
+  state.mesh = null; state.result = null; state.wallBounds = null;
+  view.clear();
+  $('exportResult').hidden = true;
+  for (const id of ['counters', 'gates', 'histogram']) $(id).replaceChildren();
+  $('legend').hidden = true;
+}
+let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
 const { levelColour, RAMP } = window.MeshView;
 
@@ -91,12 +128,12 @@ function updateBudget() {
       `远场降到 <em>${maxFar.toFixed(1)}</em> 倍，或壁面降到 <em>体长/${maxCells}</em>。`
     : `树深 <b>level ${level}</b> / 上限 ${ceiling}　计算域 <b>${(1 + 2 * far).toFixed(0)}</b> 倍体长<br>` +
       `壁面单元 <b>体长/${cells}</b>　每级带宽 ${$('cellsPerLevel').value} 格`;
-  $('generate').disabled = !(state.geometryPath && state.outputDirectory) || over;
+  $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading) || over;
 }
 
 function updateReady() {
   if (state.method === 'hybrid') {
-    $('generate').disabled = !(state.geometryPath && state.outputDirectory);
+    $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading);
     return;
   }
   updateBudget();
@@ -124,6 +161,8 @@ function selectMethod(id) {
   $('methodNote').textContent = method.supports.sizeField
     ? `实测安全壁面层级上限 ${method.safeWallLevel}；越过要显式勾选。支持 OpenFOAM 导出。`
     : `实测上限 level ${method.safeWallLevel}。这条路径没有尺寸场，层级要直接给。`;
+  $('smallAlphaField').hidden = !method.supports.sizeField;
+  $('smallAlphaNote').hidden = !method.supports.sizeField;
   renderMethods();
   updateReady();
 }
@@ -197,12 +236,16 @@ async function chooseGeometry(path, label, sample) {
 // Draw the imported boundary before meshing.  This is how the user notices that an
 // SVG came in mirrored or that a CSV lost half its loops, while it is still cheap.
 async function drawGeometryOutline() {
+  const sequence = ++previewSequence;
+  clearResult();
+  state.geometryLoading = true;
+  updateReady();
   try {
     status('正在读取几何', state.geometryLabel);
     const preview = await window.cartmesh.previewGeometry({
       geometryPath: state.geometryPath, ...importSettings()
     });
-    state.mesh = null;
+    if (sequence !== previewSequence) return;
     state.frame = preview.frame;
     view.setOutline(preview.loops);
     syncRegions();
@@ -218,14 +261,19 @@ async function drawGeometryOutline() {
     preview.warnings.forEach(warning => log(`注意：${warning}`));
     status('几何就绪', state.geometryLabel);
   } catch (error) {
+    if (sequence !== previewSequence) return;
+    state.geometryPath = '';
     $('geometryFacts').hidden = true;
     status('几何读取失败', error.message.split('\n')[0]);
     log(error.message);
+  } finally {
+    if (sequence === previewSequence) { state.geometryLoading = false; updateReady(); }
   }
 }
 
 async function probeSizing() {
-  $('probe').disabled = true;
+  if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
+  setBusy(true);
   try {
     const probe = await window.cartmesh.probeSizing({ ...buildRequest(), outputDirectory: '.' });
     const v = probe.values;
@@ -251,7 +299,7 @@ async function probeSizing() {
     $('probeResult').innerHTML = `<span class="bad">${error.message}</span>`;
     $('probeResult').hidden = false;
   } finally {
-    $('probe').disabled = false;
+    setBusy(false);
   }
 }
 
@@ -276,8 +324,8 @@ function renderCounters(result) {
 // "checkMesh OK but Q1 FAIL" unreportable before.
 function renderGates(result) {
   const parts = [];
-  parts.push(gateRow('拓扑不变量', result.gates.topology.pass ? 'PASS' : 'FAIL',
-    '无重复 / 孤立 / 非流形边，面积守恒。生成器 fail-closed，走到这里即已通过'));
+  parts.push(gateRow('内部拓扑检查', result.gates.topology.pass === null ? '未确认' : result.gates.topology.pass ? 'PASS' : 'FAIL',
+    result.gates.topology.pass ? '生成器内部检查通过；外部 checkMesh 需另外执行。' : '本次未完整成功，不能据此确认通过。'));
 
   const solver = result.gates.solver;
   if (solver) {
@@ -395,7 +443,10 @@ function advice(message) {
   return '';
 }
 
-async function generate() {  $('generate').disabled = true;
+async function generate() {
+  if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
+  clearResult();
+  setBusy(true);
   $('generate').textContent = '正在生成…';
   $('log').textContent = '';
   status('生成中', '几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
@@ -412,12 +463,12 @@ async function generate() {  $('generate').disabled = true;
     renderCounters(payload.result);
     renderGates(payload.result);
     renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
-    $('openOutput').hidden = false;
+    $('exportResult').hidden = Boolean(payload.incomplete);
     const seconds = payload.result.timings.total_seconds;
     if (payload.incomplete) {
       status('网格已生成，后续步骤失败', payload.incomplete);
     } else {
-      status('生成完成', `${payload.cm2dPath}${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
+      status('生成完成', `预览已就绪；需要保存时点击“导出结果包”${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
     }
   } catch (error) {
     status('生成失败', error.message.split('\n')[0]);
@@ -425,8 +476,8 @@ async function generate() {  $('generate').disabled = true;
     const hint = advice(error.message);
     if (hint) log(hint);
   } finally {
-    $('generate').textContent = '生成网格';
-    updateReady();
+    $('generate').textContent = '生成预览';
+    setBusy(false);
   }
 }
 
@@ -441,14 +492,6 @@ $('sample').addEventListener('change', async event => {
   const sample = state.catalog.samples.find(item => item.id === event.target.value);
   if (!sample) return;
   await chooseGeometry(sample.path, sample.label, sample);
-});
-
-$('pickOutput').addEventListener('click', async () => {
-  const picked = await window.cartmesh.pickOutput();
-  if (!picked) return;
-  state.outputDirectory = picked;
-  $('outputPath').textContent = picked;
-  updateReady();
 });
 
 for (const id of ['farFieldSpans', 'wallCellsPerSpan', 'cellsPerLevel', 'farLevel']) {
@@ -491,7 +534,16 @@ $('toggleGrid').addEventListener('click', () => {
   $('toggleGrid').classList.toggle('active', view.showGrid);
   view.draw();
 });
-$('openOutput').addEventListener('click', () => window.cartmesh.openPath(state.outputDirectory));
+$('cancel').addEventListener('click', () => window.cartmesh.cancel());
+$('exportResult').addEventListener('click', async () => {
+  if (state.busy) return;
+  setBusy(true);
+  try {
+    const destination = await window.cartmesh.exportResult();
+    if (destination) status('结果包已保存', destination);
+  } catch (error) { status('保存失败', error.message); }
+  finally { setBusy(false); }
+});
 
 window.cartmesh.onRunLine(log);
 window.addEventListener('resize', () => view.draw());
@@ -503,15 +555,12 @@ window.addEventListener('resize', () => view.draw());
   renderSamples();
   selectMethod('cutcell');
   renderRegions();
-  // Test hook for `electron . --smoke=<sample>`.  The output directory normally comes
-  // from a native dialog, which a headless run cannot answer, so the smoke path sets
-  // it here and then goes through the same handlers a click would.
+  // Smoke tests drive these same handlers; an optional output override retains fixtures.
   window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view };
 })();
 
 function setOutput(directory) {
   state.outputDirectory = directory;
-  $('outputPath').textContent = directory;
   updateReady();
 }
 
@@ -584,7 +633,7 @@ function renderRegions() {
       caption.textContent = label;
       const input = document.createElement('input');
       input.type = 'number';
-      input.step = '0.2';
+      input.step = 'any';
       input.value = String(box[key]);
       input.addEventListener('input', () => {
         box[key] = Number(input.value);
@@ -593,7 +642,8 @@ function renderRegions() {
       input.addEventListener('focus', () => {
         state.regions.forEach(other => { other.active = false; });
         box.active = true;
-        renderRegions();
+        [...list.children].forEach((item, i) => item.classList.toggle('active', i === index));
+        syncRegions();
       });
       field.append(caption, input);
       grid.appendChild(field);

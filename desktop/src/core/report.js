@@ -73,7 +73,7 @@ function summarizeSolverQuality(metrics, valid) {
 
 // The four gates are independent; passing one says nothing about another, so they are
 // reported side by side rather than collapsed into a single verdict.
-function normalizeResult({ method, stdout, reports, paths, mesh }) {
+function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = false }) {
   const values = parseKeyValues(stdout);
   const contract = summarizeContract(reports.contract);
   const hybrid = reports.hybrid || null;
@@ -107,8 +107,8 @@ function normalizeResult({ method, stdout, reports, paths, mesh }) {
     counts,
     gates: {
       // Both CLIs return EXIT_FAILURE when the topology audit fails, so reaching a
-      // zero exit *is* the audit passing.  normalizeResult is only called on success.
-      topology: { pass: true, label: '拓扑不变量' },
+      // zero exit *is* the internal audit passing. Partial runs remain unconfirmed.
+      topology: { pass: incomplete ? null : true, label: '拓扑不变量' },
       solver: summarizeSolverQuality(solverMetrics, solverValid),
       contract
     },
