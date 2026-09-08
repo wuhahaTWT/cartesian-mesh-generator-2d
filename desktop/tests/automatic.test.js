@@ -26,3 +26,20 @@ test('manual requests stay unchanged and hybrid cannot silently mesh the wrong s
   assert.deepEqual(candidates(request, null, {}), [request]);
   assert.throws(() => validateJob({method:'hybrid',geometryPath:'/in.xy',fluidRegion:'interior'}), /只支持外流/);
 });
+
+test('nozzle density covers the interior and denser retries retain a consistent floor', () => {
+  const request = { automatic: true, method: 'cutcell', geometryPath: '/nozzle.xy', fluidRegion: 'interior' };
+  const sample = sampleById('nozzle');
+  const normal = candidates(request, sample, { bodySpan: 6 });
+  const dense = candidates({ ...request, density: 'dense' }, sample, { bodySpan: 6 });
+  assert.equal(normal[0].wallCellsPerSpan, 128);
+  assert.equal(dense[0].wallCellsPerSpan, 256);
+  for (const choice of [...normal, ...dense]) {
+    const { job } = validateJob(choice);
+    assert.equal(job.budget.wallLevel - job.sizeField.farLevel, 1);
+    assert.ok(job.sizeField.wallCellsPerSpan >= 128);
+  }
+  const exterior = candidates({ ...request, fluidRegion: 'exterior' }, sample, { bodySpan: 6 })[0];
+  assert.equal(exterior.farFieldSpans, 6);
+  assert.equal(exterior.farLevel, 0);
+});

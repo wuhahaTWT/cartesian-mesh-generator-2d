@@ -106,6 +106,8 @@ const SAMPLES = Object.freeze([
     fluidRegion: 'interior',
     note: '收缩扩张喷管，默认在轮廓内部生成流体网格；可显式切换为外流。',
     sizeField: { farFieldSpans: 6, wallCellsPerSpan: 16, cellsPerLevel: 3 },
+    interiorSizeField: { farFieldSpans: 0.5, wallCellsPerSpan: 128, cellsPerLevel: 3, farLevel: 7 },
+    interiorSmallAlpha: 0.45,
     smallAlpha: 0.35
   }
 ]);

@@ -194,6 +194,7 @@ function applySizeField(field) {
   if (field.farFieldSpans !== undefined) $('farFieldSpans').value = field.farFieldSpans;
   if (field.wallCellsPerSpan !== undefined) $('wallCellsPerSpan').value = field.wallCellsPerSpan;
   if (field.cellsPerLevel !== undefined) $('cellsPerLevel').value = field.cellsPerLevel;
+  $('farLevel').value = field.farLevel ?? 0;
   updateBudget();
 }
 
@@ -229,11 +230,12 @@ async function chooseGeometry(path, label, sample) {
   state.geometryLabel = label;
   if (sample) {
     $('fluidRegion').value = sample.fluidRegion;
-    applySizeField(sample.sizeField);
+    applySizeField(sample.fluidRegion === 'interior' && sample.interiorSizeField || sample.sizeField);
     // Each sample ships the small-cell threshold it was verified at.  The passing
     // combinations are not monotone in alpha: near the level ceiling, whether a wall
     // vertex grazes a grid line is what decides the solver gate.
-    if (sample.smallAlpha !== undefined) $('smallAlpha').value = sample.smallAlpha;
+    if (sample.smallAlpha !== undefined) $('smallAlpha').value = sample.fluidRegion === 'interior'
+      ? sample.interiorSmallAlpha ?? sample.smallAlpha : sample.smallAlpha;
     $('useGap').checked = Boolean(sample.gapCells);
     $('gapCells').disabled = !sample.gapCells;
     if (sample.gapCells) $('gapCells').value = sample.gapCells;
