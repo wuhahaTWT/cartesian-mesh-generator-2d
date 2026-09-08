@@ -497,26 +497,21 @@ struct LocalQualityRank2D {
 
 [[nodiscard]] bool betterLocalQualityRank(const LocalQualityRank2D& candidate,
                                           const LocalQualityRank2D& current) noexcept {
-    return std::tie(candidate.issues.issueCount,
-                    candidate.issues.maximumSeverity,
-                    candidate.issues.totalSeverity,
-                    candidate.maxNonOrthogonality,
-                    candidate.maxInternalSkewness,
-                    candidate.maxBoundarySkewness,
-                    candidate.maxCellAspect,
-                    candidate.negativeMinInteriorAngle,
-                    candidate.negativeMinFaceWeight,
-                    candidate.negativeMinVolumeRatio)<
-           std::tie(current.issues.issueCount,
-                    current.issues.maximumSeverity,
-                    current.issues.totalSeverity,
-                    current.maxNonOrthogonality,
-                    current.maxInternalSkewness,
-                    current.maxBoundarySkewness,
-                    current.maxCellAspect,
-                    current.negativeMinInteriorAngle,
-                    current.negativeMinFaceWeight,
-                    current.negativeMinVolumeRatio);
+    // Rank equal-quality patches independently of platform roundoff. Binning
+    // each key preserves strict weak ordering, unlike pairwise epsilon tests.
+    // This affects proposal order only; full quality acceptance uses raw values.
+    const auto key=[](const LocalQualityRank2D& rank) {
+        const auto bin=[](double value) {
+            return std::round(value/TolerancePolicy{}.relative);
+        };
+        return std::tuple(rank.issues.issueCount,
+            bin(rank.issues.maximumSeverity),bin(rank.issues.totalSeverity),
+            bin(rank.maxNonOrthogonality),bin(rank.maxInternalSkewness),
+            bin(rank.maxBoundarySkewness),bin(rank.maxCellAspect),
+            bin(rank.negativeMinInteriorAngle),bin(rank.negativeMinFaceWeight),
+            bin(rank.negativeMinVolumeRatio));
+    };
+    return key(candidate)<key(current);
 }
 
 [[nodiscard]] std::optional<std::vector<Polygon2D>> partitionOnePolygon(
