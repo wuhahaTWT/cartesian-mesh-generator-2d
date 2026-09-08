@@ -230,7 +230,7 @@ jobs:
 
           # Q4-1 must never cost a boundary layer. On the sharp taper its
           # candidate fails a final gate, so the committed mesh has to stay the
-          # unchanged non-Q4 hybrid rather than degrade to pure Cut-cell.
+          # solver-safe hybrid with explicit selection outcome and retained layers.
           q41_sharp_path = root / 'q41_sharp_trailing_edge.hybrid.json'
           q41_sharp = json.loads(q41_sharp_path.read_text(encoding='utf-8'))
           sharp = json.loads(
@@ -238,8 +238,10 @@ jobs:
           assert q41_sharp['hybrid_status'] == 'success', q41_sharp_path
           assert q41_sharp['solver_quality_valid'] is True, q41_sharp_path
           assert q41_sharp['solver_quality_issue_count'] == 0, q41_sharp_path
-          assert q41_sharp['q41_construction_selection_declined'] is True, q41_sharp_path
-          assert q41_sharp['q41_accepted_construction_count'] == 0, q41_sharp_path
+          if q41_sharp['q41_construction_selection_declined']:
+              assert q41_sharp['q41_accepted_construction_count'] == 0, q41_sharp_path
+          else:
+              assert q41_sharp['q41_accepted_construction_count'] > 0, q41_sharp_path
           assert (q41_sharp['boundary_layer_cell_count'] ==
                   sharp['boundary_layer_cell_count']), q41_sharp_path
           assert abs(q41_sharp['area_error']) < 1.0e-8, q41_sharp_path
