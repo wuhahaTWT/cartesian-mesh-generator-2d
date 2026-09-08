@@ -51,6 +51,25 @@ using ProfileClock = std::chrono::steady_clock;
     return true;
 }
 
+// Cartesian transition cells may have extra collinear vertices where a finer
+// neighbour attaches. Keep those vertices and their shared faces, without adding
+// diagonals inside a geometrically rectangular cell. Exact axis alignment is
+// deliberate: this exception must not admit nearly-flat physical cut corners.
+[[nodiscard]] bool cartesianRectangle(const Polygon2D& polygon) noexcept {
+    if (polygon.vertices.size()<4 || !(polygon.signedArea()>0.0)) return false;
+    unsigned corners=0;
+    for (std::size_t i=0;i<polygon.vertices.size();++i) {
+        const auto& a=polygon.vertices[i];
+        const auto& b=polygon.vertices[(i+1)%polygon.vertices.size()];
+        const auto& c=polygon.vertices[(i+2)%polygon.vertices.size()];
+        if ((a.x!=b.x && a.y!=b.y) || (a.x==b.x && a.y==b.y)) return false;
+        const int turn=orientationSign(a,b,c);
+        if (turn<0) return false;
+        if (turn>0) ++corners;
+    }
+    return corners==4;
+}
+
 [[nodiscard]] bool boundaryEdge(const Point2D& a,const Point2D& b,
                                 const Domain2D& domain,
                                 const BoundaryRegion2D& boundary,
@@ -570,7 +589,7 @@ struct LocalQualityRank2D {
         const auto& polygon=sourcePolygons[source];
         const bool immutable=!immutableSources.empty() && immutableSources[source];
         const bool preserve=!preserveSources.empty() && preserveSources[source];
-        if (immutable || preserve || strictlyConvex(polygon)) {
+        if (immutable || preserve || cartesianRectangle(polygon) || strictlyConvex(polygon)) {
             cells.push_back(makeCell(
                 cells.size(),polygon,tol,
                 sourceLineages.empty()?std::vector<std::size_t>{source}:sourceLineages[source]));

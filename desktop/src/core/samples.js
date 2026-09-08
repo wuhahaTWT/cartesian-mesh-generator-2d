@@ -103,8 +103,8 @@ const SAMPLES = Object.freeze([
     id: 'nozzle',
     label: '喷管型线',
     file: 'nozzle_profile.xy',
-    fluidRegion: 'exterior',
-    note: '收缩扩张型线，长宽比大，能看出方形计算域怎么处理非方几何。',
+    fluidRegion: 'interior',
+    note: '收缩扩张喷管，默认在轮廓内部生成流体网格；可显式切换为外流。',
     sizeField: { farFieldSpans: 6, wallCellsPerSpan: 16, cellsPerLevel: 3 },
     smallAlpha: 0.35
   }

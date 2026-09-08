@@ -71,6 +71,8 @@ function importSettings() {
 // can never describe a different job from the one that runs.
 function buildRequest() {
   const base = {
+    automatic: $('controlMode').value === 'auto',
+    density: $('density').value,
     method: state.method,
     geometryPath: state.geometryPath,
     outputDirectory: state.outputDirectory,
@@ -128,7 +130,7 @@ function updateBudget() {
       `远场降到 <em>${maxFar.toFixed(1)}</em> 倍，或壁面降到 <em>体长/${maxCells}</em>。`
     : `树深 <b>level ${level}</b> / 上限 ${ceiling}　计算域 <b>${(1 + 2 * far).toFixed(0)}</b> 倍体长<br>` +
       `壁面单元 <b>体长/${cells}</b>　每级带宽 ${$('cellsPerLevel').value} 格`;
-  $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading) || over;
+  $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading) || ($('controlMode').value === 'manual' && over);
 }
 
 function updateReady() {
@@ -154,6 +156,10 @@ function renderMethods() {
 }
 
 function selectMethod(id) {
+  if (id === 'hybrid' && $('fluidRegion').value === 'interior') {
+    status('内部网格使用纯 Cut-cell', '贴体边界层当前仅支持外流。');
+    id = 'cutcell';
+  }
   state.method = id;
   const method = state.catalog.methods[id];
   $('sizingBlock').hidden = !method.supports.sizeField;
@@ -164,7 +170,23 @@ function selectMethod(id) {
   $('smallAlphaField').hidden = !method.supports.sizeField;
   $('smallAlphaNote').hidden = !method.supports.sizeField;
   renderMethods();
+  updateControlMode();
   updateReady();
+}
+
+function updateControlMode() {
+  const automatic = $('controlMode').value === 'auto';
+  $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
+  $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
+  $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
+  $('smallAlphaNote').hidden = automatic || state.method !== 'cutcell';
+  $('densityField').hidden = !automatic;
+  $('autoNote').hidden = !automatic;
+  updateReady();
+}
+function fitOverview() {
+  if (state.wallBounds) view.fitTo(state.wallBounds, 0.25);
+  else if (state.mesh) view.fitTo(state.mesh.bounds, 0.1);
 }
 
 function applySizeField(field) {
@@ -228,6 +250,7 @@ async function chooseGeometry(path, label, sample) {
   } else {
     $('sampleNote').hidden = true;
   }
+  if ($('fluidRegion').value === 'interior' && state.method === 'hybrid') selectMethod('cutcell');
   $('probeResult').hidden = true;
   await drawGeometryOutline();
   updateReady();
@@ -463,19 +486,27 @@ async function generate() {
     renderCounters(payload.result);
     renderGates(payload.result);
     renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
+    fitOverview();
+    if (payload.automatic) {
+      const job = payload.job;
+      $('autoNote').textContent = `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
+        ? `壁面体长/${job.sizeField.wallCellsPerSpan}，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
+        : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
+    }
     $('exportResult').hidden = Boolean(payload.incomplete);
     const seconds = payload.result.timings.total_seconds;
     if (payload.incomplete) {
       status('网格已生成，后续步骤失败', payload.incomplete);
     } else {
-      status('生成完成', `预览已就绪；需要保存时点击“导出结果包”${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
+      status('生成完成', `${payload.automatic ? `自动选参成功（第 ${payload.attempts.length} 组）` : '手动生成成功'}；可导出结果包${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
     }
   } catch (error) {
-    status('生成失败', error.message.split('\n')[0]);
+    status('生成失败', error.message.replace(/^Error invoking remote method '[^']+': Error: /, '').split('\n')[0]);
     log(error.message);
     const hint = advice(error.message);
     if (hint) log(hint);
   } finally {
+    clearInterval(progressTimer);
     $('generate').textContent = '生成预览';
     setBusy(false);
   }
@@ -523,6 +554,14 @@ $('toggleRegions').addEventListener('click', () => {
   view.draw();
 });
 
+$('fitOverview').addEventListener('click', fitOverview);
+$('controlMode').addEventListener('change', updateControlMode);
+$('fluidRegion').addEventListener('change', () => {
+  clearResult();
+  selectMethod(state.method);
+  if (state.geometryPath) drawGeometryOutline();
+});
+
 $('fitDomain').addEventListener('click', () => {
   if (state.mesh) view.fitTo(state.mesh.bounds);
 });
@@ -545,6 +584,20 @@ $('exportResult').addEventListener('click', async () => {
   finally { setBusy(false); }
 });
 
+let progressTimer;
+window.cartmesh.onProgress(progress => {
+  clearInterval(progressTimer);
+  const started = Date.now();
+  const update = () => {
+    const elapsed = Math.floor((Date.now() - started) / 1000);
+    const remaining = Math.ceil(progress.estimatedSeconds - elapsed);
+    status('生成中', `第 ${progress.attempt}/${progress.maximum} 组 · 本组已用 ${elapsed} 秒 · ` +
+      (remaining > 0 ? `预计还需约 ${remaining} 秒` : '已超出粗估，仍在计算，可取消') +
+      `（${progress.estimateSource}）`);
+  };
+  update();
+  progressTimer = setInterval(update, 1000);
+});
 window.cartmesh.onRunLine(log);
 window.addEventListener('resize', () => view.draw());
 

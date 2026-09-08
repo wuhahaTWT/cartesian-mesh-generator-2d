@@ -1,0 +1,31 @@
+{
+  "cell_count": 160,
+  "face_count": 694,
+  "global_constant_flux_balance": 9.714451465470119e-18,
+  "internal_face_count": 246,
+  "issues": [],
+  "max_closure_residual": 2.7755575615628914e-17,
+  "max_constant_flux_divergence_residual": 3.2750943020603565e-16,
+  "min_volume": 0.00019908205290527353,
+  "patches": [
+    {
+      "nFaces": 128,
+      "name": "wall_0",
+      "startFace": 246,
+      "type": "wall"
+    },
+    {
+      "nFaces": 320,
+      "name": "frontAndBack",
+      "startFace": 374,
+      "type": "empty"
+    }
+  ],
+  "physical_boundary_area_vector": [
+    1.3877787807814457e-17,
+    0.0,
+    0.0
+  ],
+  "point_count": 430,
+  "valid": true
+}

@@ -89,6 +89,7 @@ function validateJob(request) {
     job.sizeField = field;
     job.budget = budget;
   } else {
+    if (fluidRegion === 'interior') throw new Error('贴体边界层当前只支持外流，内部网格请使用纯 Cut-cell。');
     job.maxLevel = number(request.maxLevel, '余域最高层级', { min: 1, max: method.safeWallLevel, integer: true });
     job.minimumLevel = number(request.minimumLevel, '全域最低层级', { min: 0, max: job.maxLevel, integer: true });
     job.boundaryLevel = number(request.boundaryLevel, '壁面连接层级',

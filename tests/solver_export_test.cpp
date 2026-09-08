@@ -490,8 +490,8 @@ int main() {
     transition.centroid=transition.fluidPolygon.centroid();
     const auto transitionTopology=buildGlobalTopology({transition},domain,boundaryRegion);
     const auto repaired=buildSolverTopology2D(transitionTopology,domain,boundaryRegion);
-    check(repaired.valid() && repaired.partitionedCellCount==1,
-          "solver topology partitions a collinear transition cell deterministically");
+    check(repaired.valid() && repaired.partitionedCellCount==0 && repaired.topology.cells.size()==1 && repaired.topology.cells.front().vertices.size()==5,
+          "Cartesian rectangle retains its conformal collinear connection without diagonals");
     for (const auto& cell:repaired.topology.cells) {
         check(cell.sourceLineage==std::vector<std::size_t>{42U},
               "every solver partition child retains its original stable lineage");
@@ -501,9 +501,9 @@ int main() {
             const auto& a=repaired.topology.vertices[cell.vertices[(i+n-1)%n]].point;
             const auto& b=repaired.topology.vertices[cell.vertices[i]].point;
             const auto& c=repaired.topology.vertices[cell.vertices[(i+1)%n]].point;
-            strictConvex=strictConvex && orientationSign(a,b,c)>0;
+            strictConvex=strictConvex && orientationSign(a,b,c)>=0;
         }
-        check(strictConvex,"solver partition emits strictly convex cells");
+        check(strictConvex,"Cartesian transition remains convex with collinear shared vertices");
     }
 
     const Domain2D cornerDomain{{{0.75,-0.0659375},{0.775,-0.053125}}};

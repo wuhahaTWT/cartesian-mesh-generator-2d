@@ -7,6 +7,7 @@ const path = require('node:path');
 const { METHODS, PRESETS, GEOMETRY_FORMATS } = require('./core/capabilities');
 const { SAMPLES, sampleById } = require('./core/samples');
 const geometry = require('./core/geometry');
+const { candidates, estimateSeconds } = require('./core/automatic');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { parseCm2d, levelHistogram, embeddedBounds,
@@ -16,6 +17,7 @@ let mainWindow;
 let sessionDirectory;
 let currentResult;
 let operation = null;
+const timingHistory = new Map();
 async function exclusive(work) {
   if (operation) throw new Error('已有操作正在进行，请等待或取消。');
   operation = new AbortController();
@@ -38,7 +40,7 @@ const executable = name =>
   resourcePath('bin', process.platform === 'win32' ? `${name}.exe` : name);
 
 const { run: runProcess } = require('./core/process');
-const run = (command, args, onLine) => runProcess(command, args, onLine, operation?.signal);
+const run = (command, args, onLine) => runProcess(command, args, onLine, operation?.signal, operation?.automatic ? 180000 : 0);
 
 const readJson = async file => {
   try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch { return null; }
@@ -217,7 +219,7 @@ app.whenReady().then(async () => {
       } finally { await fs.rm(scratch, { recursive: true, force: true }); }
   }));
 
-  ipcMain.handle('generate', (_event, request) => exclusive(async () => {
+  async function generateOnce(request) {
     const { job, method } = validateJob(request);
     if (currentResult) await fs.rm(currentResult.outputDirectory, { recursive: true, force: true });
     currentResult = null;
@@ -283,6 +285,58 @@ app.whenReady().then(async () => {
       currentResult = payload;
     }
     return payload;
+  }
+
+  ipcMain.handle('generate', (_event, request) => exclusive(async () => {
+    operation.automatic = Boolean(request.automatic);
+    const sample = SAMPLES.find(item => resourcePath('samples', item.file) === request.geometryPath);
+    // Get scale using the same import settings, without trusting renderer geometry.
+    const scratch = await fs.mkdtemp(path.join(sessionDirectory, 'auto-'));
+    let frame;
+    try {
+      const xy = path.join(scratch, 'input.xy');
+      const imported = await prepareGeometry(request.geometryPath, request, xy, path.join(scratch, 'dxf.json'), () => {});
+      frame = bodyFrame(imported.loops || geometry.convertToLoops(xy, await fs.readFile(xy, 'utf8')).loops);
+    } finally { await fs.rm(scratch, { recursive: true, force: true }); }
+    const choices = candidates(request, sample, frame);
+    const attempts = [];
+    let lastError;
+    for (let index = 0; index < choices.length; index++) {
+      if (operation.signal.aborted) throw new Error('操作已取消');
+      const choice = choices[index];
+      const started = Date.now();
+      const historyKey = JSON.stringify({ ...choice, outputDirectory: undefined });
+      const estimate = estimateSeconds(choice, timingHistory.get(historyKey));
+      mainWindow.webContents.send('run-progress', { attempt: index + 1, maximum: choices.length,
+        estimatedSeconds: estimate.seconds, estimateSource: estimate.source });
+      log(`${request.automatic ? '自动选参' : '手动生成'}：第 ${index + 1}/${choices.length} 次，` +
+        (choice.method === 'hybrid' ? `层级 ${choice.maxLevel}，首层 ${choice.firstThickness}` :
+         `壁面体长/${choice.wallCellsPerSpan}，远场 ${choice.farFieldSpans}，α ${choice.smallAlpha}`));
+      try {
+        const payload = await generateOnce(choice);
+        if (payload.incomplete) throw new Error(payload.incomplete);
+        if (request.automatic && choice.method === 'hybrid' && payload.result.actualMethod !== 'hybrid')
+          throw new Error('此参数只生成了纯 Cut-cell 回退网格，继续寻找贴体边界层参数。');
+        timingHistory.set(historyKey, (Date.now() - started) / 1000);
+        attempts.push({ parameters: choice, seconds: (Date.now() - started) / 1000, success: true });
+        payload.automatic = Boolean(request.automatic);
+        payload.densityReduced = Boolean(request.automatic && (choice.method === 'cutcell'
+          ? choice.wallCellsPerSpan < choices[0].wallCellsPerSpan : choice.maxLevel < choices[0].maxLevel));
+        payload.attempts = attempts;
+        await fs.writeFile(path.join(payload.outputDirectory, 'selection.json'), JSON.stringify({
+          automatic: payload.automatic, attempts
+        }, null, 2));
+        return payload;
+      } catch (error) {
+        lastError = error;
+        attempts.push({ parameters: choice, seconds: (Date.now() - started) / 1000,
+          success: false, reason: error.message.split('\n')[0] });
+        if (operation.signal.aborted) throw new Error('操作已取消');
+        log(`本组参数未通过：${error.message.split('\n')[0]}`);
+      }
+    }
+    currentResult = null;
+    throw new Error(`${request.automatic ? `自动尝试 ${choices.length} 组参数后仍未通过；未降低质量标准。` : ''} ${lastError.message}`);
   }));
 
   await createWindow();
@@ -317,6 +371,9 @@ async function runSmoke() {
     const smoke = window.__smoke;
     smoke.setOutput(${JSON.stringify(outputDirectory)});
     smoke.selectMethod(${JSON.stringify(method)});
+    document.getElementById('controlMode').value = ${JSON.stringify(argument('control') || 'auto')};
+    document.getElementById('controlMode').dispatchEvent(new Event('change'));
+    document.getElementById('density').value = ${JSON.stringify(argument('density') || 'normal')};
     if (${JSON.stringify(Boolean(argument('regions')))}) {
       smoke.addRegion();
       smoke.addRegion();
