@@ -522,7 +522,9 @@ struct LocalQualityRank2D {
 [[nodiscard]] std::optional<std::vector<Polygon2D>> partitionOnePolygon(
     const Polygon2D& polygon,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
-    if (strictlyConvex(polygon)) return std::vector<Polygon2D>{polygon};
+    // Candidate scoring and committed topology must use the same partition.
+    if (cartesianRectangle(polygon) || strictlyConvex(polygon))
+        return std::vector<Polygon2D>{polygon};
     return triangulate(polygon,domain,boundary,tol);
 }
 
