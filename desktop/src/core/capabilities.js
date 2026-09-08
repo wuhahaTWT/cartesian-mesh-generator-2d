@@ -35,7 +35,7 @@ const METHODS = Object.freeze({
     executable: 'cartmesh2d_hybrid_cli',
     status: 'beta',
     statusLabel: 'Beta',
-    summary: '壁面共形四边形层，外围接 Cartesian / Cut-cell 余域。',
+    summary: '壁面共形四边形层，连接 Cartesian / Cut-cell 余域；支持外流与单环内流。',
     // docs/CURRENT_STATE_CN.md: level 9 fails on faceWeight/volRatio/
     // nonOrtho because wall tangential resolution is pinned to the input polyline.
     safeWallLevel: 8,

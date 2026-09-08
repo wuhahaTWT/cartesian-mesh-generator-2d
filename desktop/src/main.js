@@ -321,7 +321,9 @@ app.whenReady().then(async () => {
         attempts.push({ parameters: choice, seconds: (Date.now() - started) / 1000, success: true });
         payload.automatic = Boolean(request.automatic);
         payload.densityReduced = Boolean(request.automatic && (choice.method === 'cutcell'
-          ? choice.wallCellsPerSpan < choices[0].wallCellsPerSpan : choice.maxLevel < choices[0].maxLevel));
+          ? (choice.wallCellsPerSpan < choices[0].wallCellsPerSpan ||
+             choice.cellsPerLevel < choices[0].cellsPerLevel || choice.farLevel < choices[0].farLevel)
+          : choice.maxLevel < choices[0].maxLevel));
         payload.attempts = attempts;
         await fs.writeFile(path.join(payload.outputDirectory, 'selection.json'), JSON.stringify({
           automatic: payload.automatic, attempts
@@ -333,10 +335,11 @@ app.whenReady().then(async () => {
           success: false, reason: error.message.split('\n')[0] });
         if (operation.signal.aborted) throw new Error('操作已取消');
         log(`本组参数未通过：${error.message.split('\n')[0]}`);
+        if (/nested wall loops|invalid original wall region|invalid original wall/.test(error.message)) break;
       }
     }
     currentResult = null;
-    throw new Error(`${request.automatic ? `自动尝试 ${choices.length} 组参数后仍未通过；未降低质量标准。` : ''} ${lastError.message}`);
+    throw new Error(`${request.automatic ? `自动尝试 ${attempts.length} 组参数后仍未通过；未降低质量标准。` : ''} ${lastError.message}`);
   }));
 
   await createWindow();

@@ -107,7 +107,7 @@ void usage(std::ostream& out = std::cerr) {
         << "usage: cartmesh2d_hybrid_cli <boundary.xy> <output-prefix> "
            "<max-level> <minimum-level> <boundary-level> "
            "<n-layers> <first-thickness> <growth-ratio> <domain-padding> "
-           "[openfoam-case extrusion-thickness] [--legacy-construction] "
+           "[openfoam-case extrusion-thickness] [--small-alpha=value] [--fluid-region=exterior|interior] [--legacy-construction] "
            "[--verify-source-lineage] [--q3-termination-quality] "
            "[--q3-termination-repartition] [--q3-termination-grouped] "
            "[--q4-termination-construction] "
@@ -132,6 +132,8 @@ int main(int argc, char** argv) {
         usage(std::cout);
         return EXIT_SUCCESS;
     }
+    FluidRegion2D fluidRegion=FluidRegion2D::Exterior;
+    double smallAlpha=0.10;
     bool legacyConstruction=false;
     bool verifySourceLineage=false;
     bool q3TerminationQuality=false;
@@ -142,7 +144,15 @@ int main(int argc, char** argv) {
     bool q5TerminationBufferRadial=false;
     while (argc>1) {
         const std::string option=argv[argc-1];
-        if (option=="--legacy-construction") legacyConstruction=true;
+        if (option.rfind("--small-alpha=",0)==0) {
+            if (!parseDouble(option.substr(14).c_str(),smallAlpha) || smallAlpha<=0 || smallAlpha>=1) {
+                std::cerr<<"invalid small-cell area fraction\n";
+                return EXIT_FAILURE;
+            }
+        }
+        else if (option=="--fluid-region=interior") fluidRegion=FluidRegion2D::Interior;
+        else if (option=="--fluid-region=exterior") fluidRegion=FluidRegion2D::Exterior;
+        else if (option=="--legacy-construction") legacyConstruction=true;
         else if (option=="--verify-source-lineage") verifySourceLineage=true;
         else if (option=="--q5-termination-buffer-radial") {
             q5TerminationBufferRadial=true;
@@ -205,7 +215,7 @@ int main(int argc, char** argv) {
     const auto depths = originalWalls.nestingDepths();
     if (std::any_of(depths.begin(), depths.end(),
                     [](std::size_t depth) { return depth != 0U; })) {
-        std::cerr << "H4-2 fixed exterior strips reject nested wall loops\n";
+        std::cerr << "hybrid wall strips require non-nested loops\n";
         return EXIT_FAILURE;
     }
 
@@ -213,7 +223,9 @@ int main(int argc, char** argv) {
     chains.reserve(loops.size());
     for (std::size_t loopId = 0; loopId < loops.size(); ++loopId) {
         auto chain = makeClosedWallChain2D(
-            loops[loopId], loopId, "wall_" + std::to_string(loopId));
+            loops[loopId], loopId, "wall_" + std::to_string(loopId),
+            fluidRegion == FluidRegion2D::Interior
+                ? WallFluidRegion2D::Interior : WallFluidRegion2D::Exterior);
         if (!chain.success()) {
             std::cerr << "wall-chain failure: " << chain.message << '\n';
             return EXIT_FAILURE;
@@ -224,6 +236,8 @@ int main(int argc, char** argv) {
     const Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
     HybridMeshPolicy2D hybridPolicy;
+    hybridPolicy.fluidRegion=fluidRegion;
+    hybridPolicy.remainderSmallCellAreaFraction=smallAlpha;
     hybridPolicy.sharedIntersectionConstruction=!legacyConstruction;
     hybridPolicy.verifySourceLineageOracle=verifySourceLineage;
     hybridPolicy.enableTerminationQualityOptimization=q3TerminationQuality;

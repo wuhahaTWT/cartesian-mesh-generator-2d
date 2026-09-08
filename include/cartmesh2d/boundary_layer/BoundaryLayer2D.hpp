@@ -103,8 +103,8 @@ struct BoundaryLayerPolicy2D {
     double maxConvexTurnRadians = 2.3561944901923448;    // 135 degrees
     double cornerLengthFraction = 0.45;
     double collisionClearanceFraction = 0.45;
-    // Internal H4-3 termination fronts may march through their artificial
-    // concave staircase corners. Physical wall builders leave this false.
+    // H4-3 transition fronts and explicitly selected interior channels may
+    // march through converging corners under the same collision/length bounds.
     bool permitConcaveTerminationMarching = false;
 };
 

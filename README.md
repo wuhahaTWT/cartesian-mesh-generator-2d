@@ -1,15 +1,20 @@
-# CartMesh2D — 原生二维笛卡尔网格生成器
+# CartMesh2D
 
-独立的二维 Cartesian / Quadtree / Cut-cell 项目。目标：**网格够密、生成够快、桌面好用、可导入 OpenFOAM**。
-默认生成障碍物外部的流体网格；贴体边界层功能仍为 Beta。
+原生二维笛卡尔网格生成器，提供 macOS 桌面应用和命令行工具，可用于外流绕流、管道内流的网格准备与 OpenFOAM 导出。
 
-## 打开 App
+## 功能
 
-本仓库根目录是唯一开发入口。直接双击根目录的 **`打开CartMesh2D.command`**。
-它打开 `desktop/dist/mac-arm64/CartMesh2D.app`；尚未打包时会说明如何构建。
-不要再使用 `.claude/worktrees/…` 的旧路径。
+- **笛卡尔自适应网格**：通过四叉树控制疏密，在物面处生成真实 Cut-cell 多边形。
+- **贴体边界层**：沿壁面生成四边形层，与笛卡尔余域共形连接；提供外流和内流模式，当前为 Beta。
+- **自动选参**：选择“常规”或“更密”后生成网格，显示进度、采用的参数和检查结果；手动模式可设置壁面尺寸、曲率、间隙、尾迹及局部加密区。
+- **几何输入**：支持 XY、CSV、TXT 坐标文件、SVG 和 DXF，附带翼型、圆柱、喷管等 11 个样例。
+- **预览与导出**：缩放、拖动、线框和密度着色；结果先保存在临时工作目录，点击保存可导出一个 ZIP，包含网格、报告和 OpenFOAM case。
 
-首次构建（需要 Node.js/npm、CMake 和 macOS Command Line Tools）：
+闭合轮廓默认表示固体，流体网格位于轮廓外部。喷管、管道等内流问题选择“内部为流体域”。几何、拓扑、Solver 质量和 Q1 合同分别显示检查结果，具体验证范围见[当前状态](docs/CURRENT_STATE_CN.md)。
+
+## macOS 安装与启动
+
+当前桌面构建目标为 Apple Silicon Mac。准备 Node.js/npm、CMake 和 Xcode Command Line Tools，在仓库根目录执行：
 
 ```sh
 cd desktop
@@ -17,36 +22,30 @@ npm ci
 sh scripts/build-macos.sh
 ```
 
-已有依赖时无需重复 `npm ci`。打包脚本从当前源码编译三个 CLI、准备样例、执行前端测试并生成 App。
-开发时在 `desktop/` 执行 `npm start`；改过 C++ 后先重新运行打包脚本，避免前后端版本不一致。
+构建完成后，双击仓库根目录的 **`打开CartMesh2D.command`**，或打开 **`desktop/dist/mac-arm64/CartMesh2D.app`**。
 
-## 接手只读这几份
+1. 选择内置样例或导入几何文件，确认内部表示固体还是流体。
+2. 选择纯 Cut-cell 或贴体边界层，选择自动密度档位并生成。
+3. 在右侧查看网格和检查结果，点击保存导出 ZIP。
 
-| 文件 | 用途 |
-|---|---|
-| [AGENTS.md](AGENTS.md) | 开发边界、物理语义、目录维护规则 |
-| [当前状态](docs/CURRENT_STATE_CN.md) | 已验证能力、已知限制、下一步；唯一状态入口 |
-| [开发导航](docs/DEVELOPMENT_CN.md) | 各代码模块、构建测试、CFD 验证及历史查找 |
-| [桌面使用](docs/DESKTOP_APP_CN.md) | 输入、密度设置、显示和导出 |
+完整操作说明见[桌面使用指南](docs/DESKTOP_APP_CN.md)。
 
-正常接手先读 AGENTS 和当前状态，再按任务进入代码；无需遍历历史记录。
+## 命令行与开发
 
-## 命令行构建
+核心采用 C++20，桌面界面采用 Electron。macOS 构建和测试：
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 cmake --build build -j2
 ctest --test-dir build --output-on-failure
+build/cartmesh2d_cli --help
+build/cartmesh2d_hybrid_cli --help
 ```
 
-以上为本机 macOS 命令，Linux 使用本机 C++20 编译器。参数以 `build/cartmesh2d_cli --help` 为准。
-输出支持 CM2D、VTK、JSON、OpenFOAM case；OpenFOAM 使用二维网格挤出的一层体单元，不是二维核心依赖三维代码。
-Windows 安装包仍需在 Windows 单独构建验证。
+Linux 构建时指定本机 C++20 编译器。输出格式包括 CM2D、VTK、JSON 和 OpenFOAM case；OpenFOAM 导出将二维网格挤出为单层体单元，前后边界设为 `empty`。
 
-## 文件放哪里
+界面开发在 `desktop/` 中执行 `npm start`。C++ 修改后重新执行打包脚本，更新应用中的生成器。
 
-`src/`、`include/` 是唯一核心实现；`apps/` 是 CLI；`desktop/src/` 是唯一前端。
-`tests/` 与 `examples/` 保留测试和输入；`tools/` 保留仍有用途的验证和绘图工具。
-`build/`、`desktop/runtime/`、`desktop/dist/`、`outputs/` 都是可重建、忽略提交的目录。
-`artifacts/reference/` 只保留少量历史基准；`artifacts/current/` 保存当前验证摘要和预览。
-历史阶段说明和旧实验从 Git 找回，不再在工作目录放第二套源码或几十份交接报告。
+- [开发导航](docs/DEVELOPMENT_CN.md)：模块、构建、验证工具与目录说明。
+- [当前状态](docs/CURRENT_STATE_CN.md)：已验证案例、性能数据与能力边界。
+- [开发规则](AGENTS.md)：物理定义、代码维护和交付验证要求。

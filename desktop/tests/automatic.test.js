@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { candidates, estimateSeconds } = require('../src/core/automatic');
-const { validateJob } = require('../src/core/job');
+const { validateJob, buildInvocation } = require('../src/core/job');
 const { sampleById } = require('../src/core/samples');
 test('automatic nozzle keeps interior semantics and bounded validated choices', () => {
   const sample = sampleById('nozzle');
@@ -24,7 +24,11 @@ test('sharp hybrid starts with the documented successful layer recipe', () => {
 test('manual requests stay unchanged and hybrid cannot silently mesh the wrong side', () => {
   const request = { method: 'cutcell', automatic: false };
   assert.deepEqual(candidates(request, null, {}), [request]);
-  assert.throws(() => validateJob({method:'hybrid',geometryPath:'/in.xy',fluidRegion:'interior'}), /只支持外流/);
+  const inner = candidates({automatic:true,method:'hybrid',geometryPath:'/in.xy',fluidRegion:'interior'}, null, {bodySpan:6});
+  for (const option of inner) {
+    const job = validateJob(option).job;
+    assert.ok(buildInvocation(job, {}).args.includes('--fluid-region=interior'));
+  }
 });
 
 test('nozzle density covers the interior and denser retries retain a consistent floor', () => {
@@ -42,4 +46,21 @@ test('nozzle density covers the interior and denser retries retain a consistent 
   const exterior = candidates({ ...request, fluidRegion: 'exterior' }, sample, { bodySpan: 6 })[0];
   assert.equal(exterior.farFieldSpans, 6);
   assert.equal(exterior.farLevel, 0);
+});
+
+
+test('all built-in automatic candidates fit the safe wall budget', () => {
+  const { SAMPLES } = require('../src/core/samples');
+  for (const sample of SAMPLES) {
+    for (const density of ['normal', 'dense']) {
+      const options = candidates({ automatic: true, method: 'cutcell', density,
+        geometryPath: '/input.xy', fluidRegion: sample.fluidRegion }, sample, { bodySpan: 6 });
+      assert.ok(options.length <= 4);
+      for (const option of options) assert.ok(validateJob(option).job.budget.feasible);
+    }
+  }
+  const sample = sampleById('circle');
+  const option = candidates({ automatic: true, method: 'cutcell', density: 'dense' }, sample, { bodySpan: 2 })[0];
+  assert.equal(option.farFieldSpans, sample.sizeField.farFieldSpans);
+  assert.ok(option.cellsPerLevel > sample.sizeField.cellsPerLevel);
 });

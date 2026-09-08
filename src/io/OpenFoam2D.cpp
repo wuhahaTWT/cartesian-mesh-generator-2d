@@ -102,15 +102,34 @@ void writeCaseHeader(std::ofstream& out,const char* className,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
     const Segment2D face{topology.vertices[edge.v0].point,
                          topology.vertices[edge.v1].point};
+    const Vector2D direction=face.b-face.a;
+    const double lengthSquared=squaredNorm(direction);
+    if (!(lengthSquared>0.0)) return std::nullopt;
+    const double parameterTolerance=tol.scale(std::sqrt(lengthSquared))/std::sqrt(lengthSquared);
+    std::optional<std::size_t> exactLoop;
     for (std::size_t loopId=0;loopId<boundary.loops().size();++loopId) {
         const auto& vertices=boundary.loops()[loopId].vertices();
+        std::vector<std::pair<double,double>> intervals;
         for (std::size_t i=0;i<vertices.size();++i) {
-            const Segment2D segment{vertices[i],vertices[(i+1)%vertices.size()]};
-            if (pointOnSegment(face.a,segment,tol) && pointOnSegment(face.b,segment,tol)) {
-                return loopId;
-            }
+            const auto intersection=intersectSegments(face,
+                {vertices[i],vertices[(i+1)%vertices.size()]},tol);
+            if (!intersection.overlap) continue;
+            double a=dot(intersection.overlap->a-face.a,direction)/lengthSquared;
+            double b=dot(intersection.overlap->b-face.a,direction)/lengthSquared;
+            if (a>b) std::swap(a,b);
+            intervals.emplace_back(a,b);
         }
+        std::sort(intervals.begin(),intervals.end());
+        double covered=0.0;
+        for (const auto& [a,b]:intervals) {
+            if (a>covered+parameterTolerance) break;
+            covered=std::max(covered,b);
+        }
+        if (covered<1.0-parameterTolerance) continue;
+        if (exactLoop) return std::nullopt;
+        exactLoop=loopId;
     }
+    if (exactLoop) return exactLoop;
     // A shared-construction grid-corner weld is deliberately allowed to move
     // an embedded fragment off the piecewise-linear input by a bounded f*h.
     // The topology has already classified the edge as physical wall; here we
