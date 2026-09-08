@@ -15,3 +15,7 @@ test('pre-cancelled work does not spawn and process errors retain diagnostics', 
   await assert.rejects(run('/does-not-exist', [], () => {}, controller.signal), /已取消/);
   await assert.rejects(run(process.execPath, ['-e', 'console.error("bad input");process.exit(2)']), /bad input/);
 });
+test('an automatic attempt has a time limit and leaves later work usable', async () => {
+  await assert.rejects(run(process.execPath, ['-e', 'setInterval(()=>{},1000)'], () => {}, undefined, 80), /超时/);
+  assert.match((await run(process.execPath, ['-e','console.log("alive")'])).stdout, /alive/);
+});

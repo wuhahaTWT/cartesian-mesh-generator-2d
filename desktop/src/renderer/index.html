@@ -26,6 +26,10 @@
       </label>
       <p id="sampleNote" class="note" hidden></p>
       <div id="geometryFacts" class="facts" hidden></div>
+      <label class="field">轮廓内部是什么？
+        <select id="fluidRegion"><option value="exterior">实体：在外部生成网格</option>
+        <option value="interior">流体域：在内部生成网格（喷管 / 管道）</option></select>
+      </label>
       <details class="advanced">
         <summary>导入设置</summary>
         <label class="field">曲线弦高误差
@@ -38,18 +42,15 @@
             <option value="m">米</option><option value="in">英寸</option><option value="ft">英尺</option>
           </select>
         </label>
-        <label class="field">流体区域
-          <select id="fluidRegion">
-            <option value="exterior">外部（默认外流）</option>
-            <option value="interior">内部（管道 / 内流）</option>
-          </select>
-        </label>
         <p class="note">支持 .xy / .dxf / .svg / .csv / .txt。无单位格式会把最大跨度归一到 1 m。</p>
       </details>
     </section>
 
     <section class="block">
       <h2><span>2</span>方法</h2>
+      <label class="field">参数设置<select id="controlMode"><option value="auto">自动选参（推荐）</option><option value="manual">手动设置</option></select></label>
+      <label class="field" id="densityField">自动密度<select id="density"><option value="normal">常规</option><option value="dense">更密</option></select></label>
+      <p class="note" id="autoNote">自动选择尺寸和层厚，失败时最多尝试 4 组。保持所选内外域与网格方法，不降低质量标准。</p>
       <div id="methods" class="methods"></div>
       <p id="methodNote" class="note"></p>
     </section>
@@ -140,11 +141,11 @@
       <div><b id="statusTitle">等待输入</b><i id="statusText">选择一个几何文件或内置样例</i></div>
       <div class="viewtools">
         <select id="displayMode" class="chip select" title="显示样式">
-          <option value="level">层级配色</option>
+          <option value="level">尺寸配色</option>
           <option value="light">白底线框</option>
           <option value="dark">暗底线框</option>
         </select>
-        <button id="fitDomain" class="chip">全域</button>
+        <button id="fitOverview">物体周边</button><button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
         <button id="toggleGrid" class="chip active">网格线</button>
         <button id="toggleRegions" class="chip active">加密区</button>

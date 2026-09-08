@@ -1,55 +1,55 @@
 {
-  "cell_count": 2615,
-  "face_count": 10443,
-  "global_constant_flux_balance": 2.2985086056692693e-18,
-  "internal_face_count": 4921,
+  "cell_count": 4445,
+  "face_count": 18273,
+  "global_constant_flux_balance": -9.757819552369538e-19,
+  "internal_face_count": 8921,
   "issues": [],
-  "max_closure_residual": 2.220446049250313e-16,
-  "max_constant_flux_divergence_residual": 1.2285622954706631e-13,
-  "min_volume": 2.054711353998808e-09,
+  "max_closure_residual": 4.440892098500626e-16,
+  "max_constant_flux_divergence_residual": 1.62328347367362e-13,
+  "min_volume": 3.9462760632110307e-10,
   "patches": [
     {
-      "nFaces": 240,
+      "nFaces": 399,
       "name": "wall_0",
-      "startFace": 4921,
+      "startFace": 8921,
       "type": "wall"
     },
     {
       "nFaces": 12,
       "name": "left",
-      "startFace": 5161,
+      "startFace": 9320,
       "type": "patch"
     },
     {
-      "nFaces": 20,
+      "nFaces": 31,
       "name": "right",
-      "startFace": 5173,
+      "startFace": 9332,
       "type": "patch"
     },
     {
       "nFaces": 10,
       "name": "bottom",
-      "startFace": 5193,
+      "startFace": 9363,
       "type": "patch"
     },
     {
       "nFaces": 10,
       "name": "top",
-      "startFace": 5203,
+      "startFace": 9373,
       "type": "patch"
     },
     {
-      "nFaces": 5230,
+      "nFaces": 8890,
       "name": "frontAndBack",
-      "startFace": 5213,
+      "startFace": 9383,
       "type": "empty"
     }
   ],
   "physical_boundary_area_vector": [
-    3.469446951953614e-18,
-    4.336808689942018e-19,
+    -1.3010426069826053e-18,
+    2.168404344971009e-19,
     0.0
   ],
-  "point_count": 5196,
+  "point_count": 9876,
   "valid": true
 }
