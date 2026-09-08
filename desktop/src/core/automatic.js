@@ -28,7 +28,7 @@ function candidates(request, sample, frame) {
       growthRatio: sharp || superellipse ? 1.15 : 1.2,
       domainPadding: sharp || superellipse ? 1 : 0.5 * scale, extrusionThickness: 0.01 * scale };
     const preferred = dense && !sharp ? { ...seed, maxLevel: 7, boundaryLevel: 7 } : seed;
-    return [preferred, { ...seed, firstThickness: seed.firstThickness * 0.65 },
+    return [preferred, { ...preferred, firstThickness: seed.firstThickness * 0.65 },
       { ...seed, maxLevel: 8, boundaryLevel: 8, firstThickness: seed.firstThickness * 0.5 }, seed]
       .filter((v,i,a) => a.findIndex(x => JSON.stringify(x) === JSON.stringify(v)) === i);
   }

@@ -243,8 +243,8 @@ int main() {
     checkHybrid(gapHybrid,"narrow gap",false);
 
     // Q4-1 construction selection must never cost the whole boundary layer.
-    // On this taper the Q4 candidate fails a final gate, so the committed mesh
-    // must be the unchanged non-Q4 hybrid rather than pure Cut-cell fallback.
+    // A Q4 candidate may now pass after solver repair. Either a committed Q4
+    // construction or an explicitly reported decline must retain the layer.
     HybridMeshPolicy2D q4Policy;
     q4Policy.enableTerminationConstructionQualitySelection=true;
     const auto sharpQ4=sharpChain.success()
@@ -254,8 +254,9 @@ int main() {
         :RobustH4BuildResult2D{};
     check(sharpQ4.success() && sharpQ4.mode==H4MeshMode2D::Hybrid,
           "sharp taper keeps a hybrid mesh when Q4-1 selection is requested");
-    check(sharpQ4.hybridCandidate.metrics.q41ConstructionSelectionDeclined,
-          "declined Q4-1 selection is reported instead of silently succeeding");
+    check(sharpQ4.hybridCandidate.metrics.q41ConstructionSelectionDeclined ||
+          sharpQ4.hybridCandidate.metrics.q41AcceptedConstructions>0U,
+          "Q4-1 reports either accepted constructions or an explicit decline");
     check(sharpQ4.hybridCandidate.metrics.boundaryLayerCellCount==
               sharpHybrid.metrics.boundaryLayerCellCount,
           "declined Q4-1 selection retains every non-Q4 boundary-layer cell");

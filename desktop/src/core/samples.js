@@ -86,7 +86,7 @@ const SAMPLES = Object.freeze([
     label: '蛇形体',
     file: 'serpentine_body.xy',
     fluidRegion: 'exterior',
-    note: '细长弯曲物体，自身前后段互相靠近。间隙细化默认关闭：开了会在弯段外侧把边界歪斜推到 4.3–5.7，越过硬限 4。',
+    note: '细长弯曲物体，用于检验曲线壁面切分与贴体层连接。支持自动常规和更密档。',
     sizeField: { farFieldSpans: 8, wallCellsPerSpan: 24, cellsPerLevel: 3 },
     smallAlpha: 0.45
   },

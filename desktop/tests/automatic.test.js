@@ -4,6 +4,13 @@ const assert = require('node:assert/strict');
 const { candidates, estimateSeconds } = require('../src/core/automatic');
 const { validateJob, buildInvocation } = require('../src/core/job');
 const { sampleById } = require('../src/core/samples');
+test('dense hybrid retries layer thickness before reducing spatial resolution', () => {
+  const options = candidates({ automatic: true, method: 'hybrid', density: 'dense',
+    geometryPath: '/curve.xy', fluidRegion: 'exterior' }, sampleById('serpentine'), { bodySpan: 6 });
+  assert.equal(options[1].maxLevel, options[0].maxLevel);
+  assert.equal(options[1].boundaryLevel, options[0].boundaryLevel);
+  assert.ok(options[1].firstThickness < options[0].firstThickness);
+});
 test('automatic nozzle keeps interior semantics and bounded validated choices', () => {
   const sample = sampleById('nozzle');
   assert.equal(sample.fluidRegion, 'interior');

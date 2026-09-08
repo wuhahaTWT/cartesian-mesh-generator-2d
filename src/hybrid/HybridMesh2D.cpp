@@ -624,7 +624,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     double terminationBufferRowCap=0.0;
     bool terminationBufferRowCapReachable=true;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
-    if (policy.fluidRegion == FluidRegion2D::Interior) {
+    if (policy.fluidRegion == FluidRegion2D::Interior || policy.directLayerConnection) {
         // The inward layer front bounds the Cartesian remainder directly.
         // A common edge partition connects both without extending offsets
         // across the throat or adding thin subdivided transition columns.

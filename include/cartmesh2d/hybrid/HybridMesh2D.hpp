@@ -337,6 +337,7 @@ struct HybridMeshPolicy2D {
     // Resolved Q5-1 value. 1 reproduces the historical single-row outer fan.
     std::size_t transitionOuterRingRadialSubdivision = 1U;
     double terminationGrowthRatio = 1.45;
+    bool directLayerConnection = false;
 };
 
 enum class HybridMeshStatus2D { Success, Failed };
@@ -708,6 +709,23 @@ resolveAutomaticHybridTransitionPlan2D(
             appliedPolicy=historicalApplied;
         }
     }
+    if (!result.success() && boundaryLayers.localReductionApplied) {
+        auto directPolicy=resolvedPolicy;
+        directPolicy.directLayerConnection=true;
+        directPolicy.enableTerminationConstructionQualitySelection=false;
+        directPolicy.enableTerminationBufferRadialMatching=false;
+        directPolicy.enableOuterTransitionRadialMatching=false;
+        directPolicy.transitionOuterRingRadialSubdivision=1U;
+        auto direct=buildConformalHybridMesh2D(boundaryLayers,domain,originalWalls,
+            remainderMaxLevel,remainderRefinement,directPolicy);
+        if (direct.success()) {
+            result=std::move(direct);
+            appliedPolicy=directPolicy;
+            q52Committed=false;
+        } else {
+            result.failure.message+="; direct connection: "+direct.failure.message;
+        }
+    }
     resolvedPolicy=appliedPolicy;
     result.metrics.q52TerminationBufferRadialCommitted=q52Committed;
     result.metrics.q52TerminationBufferRowCap=q52AttemptRowCap;
@@ -727,14 +745,15 @@ resolveAutomaticHybridTransitionPlan2D(
         plan->outerRingRadialSubdivision>1U &&
         result.success() &&
         resolvedPolicy.transitionOuterRingRadialSubdivision<=1U;
-    result.metrics.transitionRingCount = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0U : plan->ringCount;
+    const bool direct=basePolicy.fluidRegion == FluidRegion2D::Interior || resolvedPolicy.directLayerConnection;
+    result.metrics.transitionRingCount = direct ? 0U : plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
-        basePolicy.fluidRegion == FluidRegion2D::Interior ? 1U : plan->finalTangentialSubdivision;
+        direct ? 1U : plan->finalTangentialSubdivision;
     result.metrics.transitionTargetCellSize = plan->targetCellSize;
     result.metrics.transitionMaxOuterEdgeLength = plan->maxOuterEdgeLength;
     result.metrics.transitionMaxLastLayerSpacing = plan->maxLastLayerSpacing;
-    result.metrics.transitionRingThickness = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0.0 : plan->ringThickness;
-    result.metrics.transitionTotalThickness = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0.0 : plan->totalThickness;
+    result.metrics.transitionRingThickness = direct ? 0.0 : plan->ringThickness;
+    result.metrics.transitionTotalThickness = direct ? 0.0 : plan->totalThickness;
     return result;
 }
 
