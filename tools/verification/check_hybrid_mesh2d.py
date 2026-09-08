@@ -111,7 +111,17 @@ def check(vtk_path: Path, report_path: Path) -> dict[str, object]:
     for first, second in interface:
         degrees[first] += 1; degrees[second] += 1
         interface_length += math.dist(points[first], points[second])
-    if not interface or any(value != 2 for value in degrees.values()):
+    physical_incidence: dict[int, list[bool]] = defaultdict(list)
+    for edge, own in owners.items():
+        if len(own) == 1:
+            for vertex in edge:
+                physical_incidence[vertex].append(kinds[own[0]] == 0)
+    # Locally stopped layers end on the physical wall: exactly two boundary
+    # edges meet there, one layered and one remainder. Interior ends still fail.
+    def valid_interface_vertex(vertex, degree):
+        return degree == 2 or (degree == 1 and
+            sorted(physical_incidence[vertex]) == [False, True])
+    if not interface or any(not valid_interface_vertex(v, d) for v, d in degrees.items()):
         raise CheckError("outer-envelope interface is empty or not two-valent")
 
     # Broad-phase pair scan plus strict containment/proper crossing rejects overlap.

@@ -617,4 +617,28 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
     set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)
+    set(CARTMESH2D_CURVE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/curve_acceptance)
+    file(MAKE_DIRECTORY ${CARTMESH2D_CURVE_OUTPUT})
+    add_test(NAME cartmesh2d_curve_dense_cutcell
+        COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/serpentine_body.xy
+            ${CARTMESH2D_CURVE_OUTPUT}/pure 8 0.25 0.45 exterior
+            ${CARTMESH2D_CURVE_OUTPUT}/pure-case 0 0 --size-field
+            --far-field-spans 8 --wall-cells-per-span 48 --cells-per-level 3
+            --far-level 0 --max-safe-wall-level 11)
+    add_test(NAME cartmesh2d_curve_dense_cutcell_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+            ${CARTMESH2D_CURVE_OUTPUT}/pure-case)
+    set_tests_properties(cartmesh2d_curve_dense_cutcell_reader PROPERTIES DEPENDS cartmesh2d_curve_dense_cutcell)
+    add_test(NAME cartmesh2d_curve_dense_hybrid
+        COMMAND cartmesh2d_hybrid_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/serpentine_body.xy
+            ${CARTMESH2D_CURVE_OUTPUT}/hybrid 7 3 7 4 0.039 1.2 3
+            ${CARTMESH2D_CURVE_OUTPUT}/hybrid-case 0.06)
+    set_tests_properties(cartmesh2d_curve_dense_hybrid PROPERTIES
+        PASS_REGULAR_EXPRESSION "hybrid_status=success"
+        FAIL_REGULAR_EXPRESSION "mesh_mode=pure_cutcell_fallback")
+    add_test(NAME cartmesh2d_curve_dense_hybrid_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
+            ${CARTMESH2D_CURVE_OUTPUT}/hybrid.hybrid.vtk
+            ${CARTMESH2D_CURVE_OUTPUT}/hybrid.hybrid.json)
+    set_tests_properties(cartmesh2d_curve_dense_hybrid_reader PROPERTIES DEPENDS cartmesh2d_curve_dense_hybrid)
 endif()

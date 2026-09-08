@@ -644,7 +644,8 @@ struct LocalQualityRank2D {
         if (first!=second) pairs.emplace_back(std::min(first,second),std::max(first,second));
     };
     for (const auto& issue:quality.issues) {
-        if (!internalInterfaceIssue(issue.code)) continue;
+        if (!internalInterfaceIssue(issue.code) &&
+            issue.code!=SolverQualityIssueCode2D::ExcessiveBoundarySkewness) continue;
         if (issue.edgeId<partition.topology.edges.size()) {
             addEdge(partition.topology.edges[issue.edgeId]);
         }
@@ -679,8 +680,12 @@ struct RepartitionBatch2D {
 
 [[nodiscard]] std::vector<std::pair<Polygon2D,Polygon2D>> convexTwoPieceSplits(
     const Polygon2D& polygon,const Domain2D& domain,
-    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
+    bool wallNormalCuts=false,bool allowCollinear=false) {
     std::vector<std::pair<Polygon2D,Polygon2D>> splits;
+    const auto convex=[&](const Polygon2D& piece) {
+        return strictlyConvex(allowCollinear?removeArtificialCollinearVertices(piece,tol):piece);
+    };
     const std::size_t n=polygon.vertices.size();
     for (std::size_t i=0;i<n;++i) {
         for (std::size_t j=i+1;j<n;++j) {
@@ -694,12 +699,57 @@ struct RepartitionBatch2D {
                 second.vertices.push_back(polygon.vertices[k]);
                 if (k==i) break;
             }
-            if (!strictlyConvex(first) || !strictlyConvex(second) ||
+            if (!convex(first) || !convex(second) ||
                 underDeterminedBoundaryCell(first,domain,boundary,tol) ||
                 underDeterminedBoundaryCell(second,domain,boundary,tol)) continue;
             const double areaError=std::abs(first.area()+second.area()-polygon.area());
             if (areaError>tol.absolute*tol.absolute+tol.relative*polygon.area()) continue;
             splits.emplace_back(std::move(first),std::move(second));
+        }
+    }
+    if (wallNormalCuts) {
+        // Short physical wall facets need a nearby cell centre. Existing-vertex
+        // diagonals cannot always provide one: also cut inward from a wall
+        // endpoint to the opposite edge, without moving the physical boundary.
+        for (std::size_t wall=0;wall<n;++wall) {
+            const auto a=polygon.vertices[wall];
+            const auto b=polygon.vertices[(wall+1)%n];
+            if (!boundaryEdge(a,b,domain,boundary,tol)) continue;
+            const Vector2D normal{-(b.y-a.y),b.x-a.x};
+            for (const auto start:{wall,(wall+1)%n}) {
+                const auto p=polygon.vertices[start];
+                for (std::size_t edge=0;edge<n;++edge) {
+                    if (edge==start || (edge+1)%n==start) continue;
+                    const auto c=polygon.vertices[edge];
+                    const auto d=polygon.vertices[(edge+1)%n];
+                    const auto tangent=d-c;
+                    const double det=cross(normal,tangent);
+                    if (std::abs(det)<=tol.relative*
+                        std::sqrt(squaredNorm(normal)*squaredNorm(tangent))) continue;
+                    const double distance=cross(c-p,tangent)/det;
+                    const double fraction=cross(c-p,normal)/det;
+                    if (distance<=tol.relative || fraction<=tol.relative ||
+                        fraction>=1.0-tol.relative) continue;
+                    const Point2D q{c.x+fraction*tangent.x,c.y+fraction*tangent.y};
+                    Polygon2D first,second;
+                    for (std::size_t k=start;;k=(k+1)%n) {
+                        first.vertices.push_back(polygon.vertices[k]);
+                        if (k==edge) break;
+                    }
+                    first.vertices.push_back(q);
+                    second.vertices.push_back(q);
+                    for (std::size_t k=(edge+1)%n;;k=(k+1)%n) {
+                        second.vertices.push_back(polygon.vertices[k]);
+                        if (k==start) break;
+                    }
+                    if (!convex(first) || !convex(second) ||
+                        underDeterminedBoundaryCell(first,domain,boundary,tol) ||
+                        underDeterminedBoundaryCell(second,domain,boundary,tol)) continue;
+                    if (std::abs(first.area()+second.area()-polygon.area())>
+                        tol.absolute*tol.absolute+tol.relative*polygon.area()) continue;
+                    splits.emplace_back(std::move(first),std::move(second));
+                }
+            }
         }
     }
     return splits;
@@ -750,7 +800,8 @@ solverRepartitionPairs(const TopologyMesh2D& topology,
                        const std::vector<bool>& immutableCells={}) {
     std::vector<std::size_t> affected;
     for (const auto& issue:quality.issues) {
-        if (!internalInterfaceIssue(issue.code)) continue;
+        if (!internalInterfaceIssue(issue.code) &&
+            issue.code!=SolverQualityIssueCode2D::ExcessiveBoundarySkewness) continue;
         if (issue.cellId<topology.cells.size()) affected.push_back(issue.cellId);
         if (issue.edgeId<topology.edges.size() && topology.edges[issue.edgeId].neighbour)
             affected.push_back(*topology.edges[issue.edgeId].neighbour);
@@ -1216,7 +1267,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
     SolverTopologyProfile2D* profile,bool useBatch,
-    const std::vector<bool>& initialImmutableCells={}) {
+    const std::vector<bool>& initialImmutableCells={},bool allowCollinear=false) {
     SolverLocalRepartitionResult2D result;
     result.topology=topology;
     result.immutableCells=initialImmutableCells;
@@ -1231,6 +1282,12 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         const auto generationStart=ProfileClock::now();
         const auto pairs=solverRepartitionPairs(
             result.topology,quality,result.immutableCells);
+        const auto needsWallCuts=[&](std::size_t first,std::size_t second) {
+            return std::any_of(quality.issues.begin(),quality.issues.end(),[&](const auto& issue) {
+                return issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness &&
+                    (issue.cellId==first || issue.cellId==second);
+            });
+        };
         if (profile) {
             profile->candidateGenerationSeconds+=profileSeconds(generationStart);
             profile->repartitionCandidatePairs+=pairs.size();
@@ -1249,7 +1306,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     }
                     continue;
                 }
-                const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol);
+                const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol,
+                                                      needsWallCuts(first,second),allowCollinear);
                 if (profile) profile->candidateSplits+=splits.size();
                 std::optional<RepartitionProposal2D> best;
                 const auto halo=cellPairHalo(result.topology,first,second);
@@ -1321,7 +1379,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
             // retaining two cells cannot improve interpolation weight or
             // volume ratio. Allow a true solver-cell agglomeration, subject to
             // the same full-topology validity and strict quality-score gate.
-            if (strictlyConvex(*merged) &&
+            if (strictlyConvex(allowCollinear?removeArtificialCollinearVertices(*merged,tol):*merged) &&
                 !underDeterminedBoundaryCell(*merged,domain,boundary,tol)) {
                 auto candidate=agglomerateCellPair(
                     result.topology,first,second,*merged,domain,boundary,tol,
@@ -1336,7 +1394,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     }
                 }
             }
-            const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol);
+            const auto splits=convexTwoPieceSplits(*merged,domain,boundary,tol,
+                                                  needsWallCuts(first,second),allowCollinear);
             if (profile) {
                 profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
             }
@@ -1355,12 +1414,41 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 }
             }
         }
+        if (!bestTopology) {
+            std::set<std::size_t> wallCells;
+            for (const auto& issue:quality.issues)
+                if (issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness &&
+                    issue.cellId<result.topology.cells.size() &&
+                    (result.immutableCells.empty() || !result.immutableCells[issue.cellId]))
+                    wallCells.insert(issue.cellId);
+            for (const auto cell:wallCells) {
+                const auto splits=convexTwoPieceSplits(
+                    topologyCellPolygon(result.topology,cell),domain,boundary,tol,true,allowCollinear);
+                for (const auto& [firstPiece,secondPiece]:splits) {
+                    auto candidate=repartitionPair(result.topology,cell,cell,
+                        firstPiece,secondPiece,domain,boundary,tol,profile,result.immutableCells);
+                    if (!candidate.topology.valid()) continue;
+                    const auto candidateScore=qualityScore(timedFullQuality(
+                        candidate.topology,tol,profile,true));
+                    if (betterQualityScore(candidateScore,bestScore)) {
+                        bestScore=candidateScore;
+                        bestTopology=std::move(candidate);
+                    }
+                }
+            }
+        }
         if (!bestTopology) break;
         result.topology=std::move(bestTopology->topology);
         result.immutableCells=std::move(bestTopology->immutableCells);
         ++result.repartitionCount;
         if (profile) ++profile->acceptedRepartitions;
         if (profile) ++profile->acceptedTopologyCommitCount;
+    }
+    if (!allowCollinear && !evaluateSolverQuality2D(result.topology,{},tol).valid()) {
+        auto alternate=repartitionSolverTopologyByQualityImpl(
+            topology,domain,boundary,tol,profile,useBatch,initialImmutableCells,true);
+        if (alternate.valid() && evaluateSolverQuality2D(alternate.topology,{},tol).valid())
+            return alternate;
     }
     return result;
 }
