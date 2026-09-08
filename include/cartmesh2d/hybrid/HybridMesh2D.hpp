@@ -297,6 +297,8 @@ struct HybridMeshFailure2D {
 };
 
 struct HybridMeshPolicy2D {
+    FluidRegion2D fluidRegion = FluidRegion2D::Exterior;
+    double remainderSmallCellAreaFraction = 0.10;
     bool sharedIntersectionConstruction = true;
     // Debug/acceptance oracle. Production uses propagated lineage directly;
     // the opt-in oracle rescans all source polygons and fails on disagreement.
@@ -725,14 +727,14 @@ resolveAutomaticHybridTransitionPlan2D(
         plan->outerRingRadialSubdivision>1U &&
         result.success() &&
         resolvedPolicy.transitionOuterRingRadialSubdivision<=1U;
-    result.metrics.transitionRingCount = plan->ringCount;
+    result.metrics.transitionRingCount = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0U : plan->ringCount;
     result.metrics.transitionFinalTangentialSubdivision =
-        plan->finalTangentialSubdivision;
+        basePolicy.fluidRegion == FluidRegion2D::Interior ? 1U : plan->finalTangentialSubdivision;
     result.metrics.transitionTargetCellSize = plan->targetCellSize;
     result.metrics.transitionMaxOuterEdgeLength = plan->maxOuterEdgeLength;
     result.metrics.transitionMaxLastLayerSpacing = plan->maxLastLayerSpacing;
-    result.metrics.transitionRingThickness = plan->ringThickness;
-    result.metrics.transitionTotalThickness = plan->totalThickness;
+    result.metrics.transitionRingThickness = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0.0 : plan->ringThickness;
+    result.metrics.transitionTotalThickness = basePolicy.fluidRegion == FluidRegion2D::Interior ? 0.0 : plan->totalThickness;
     return result;
 }
 

@@ -58,6 +58,17 @@ std::string readText(const std::filesystem::path& path) {
 } // namespace
 
 int main() {
+    {
+        // One solver face spans two collinear pieces of the same physical wall.
+        const Domain2D box{{{-1,-1},{2,2}}};
+        const BoundaryLoop wall({{0,0},{0.5,0},{1,0},{1,1},{0,1}});
+        auto cell=fullCell(0,{{0,0},{1,1}});
+        const auto mesh=buildGlobalTopology({cell},box,wall);
+        std::string error;
+        const auto output=std::filesystem::temp_directory_path()/"cartmesh2d-collinear-wall-export";
+        const auto exported=writeExtrudedOpenFoam2D(mesh,box,BoundaryRegion2D(wall),output,0.1,&error);
+        check(exported.valid(),"collinear wall pieces retain a unique export patch: "+error);
+    }
     const Domain2D domain{{{0.0,0.0},{2.0,1.0}}};
     const BoundaryLoop embeddedReference({{0.4,0.4},{0.6,0.4},{0.6,0.6},{0.4,0.6}});
     std::vector<CutCell2D> cells{

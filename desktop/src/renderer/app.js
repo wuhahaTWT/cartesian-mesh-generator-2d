@@ -156,10 +156,6 @@ function renderMethods() {
 }
 
 function selectMethod(id) {
-  if (id === 'hybrid' && $('fluidRegion').value === 'interior') {
-    status('内部网格使用纯 Cut-cell', '贴体边界层当前仅支持外流。');
-    id = 'cutcell';
-  }
   state.method = id;
   const method = state.catalog.methods[id];
   $('sizingBlock').hidden = !method.supports.sizeField;
@@ -252,7 +248,6 @@ async function chooseGeometry(path, label, sample) {
   } else {
     $('sampleNote').hidden = true;
   }
-  if ($('fluidRegion').value === 'interior' && state.method === 'hybrid') selectMethod('cutcell');
   $('probeResult').hidden = true;
   await drawGeometryOutline();
   updateReady();
@@ -492,7 +487,7 @@ async function generate() {
     if (payload.automatic) {
       const job = payload.job;
       $('autoNote').textContent = `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
-        ? `壁面体长/${job.sizeField.wallCellsPerSpan}，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
+        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
     $('exportResult').hidden = Boolean(payload.incomplete);

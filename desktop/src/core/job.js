@@ -89,7 +89,7 @@ function validateJob(request) {
     job.sizeField = field;
     job.budget = budget;
   } else {
-    if (fluidRegion === 'interior') throw new Error('贴体边界层当前只支持外流，内部网格请使用纯 Cut-cell。');
+    job.remainderSmallAlpha = number(request.remainderSmallAlpha ?? 0.10, '余域小单元阈值', { min: 0.001, max: 0.999 });
     job.maxLevel = number(request.maxLevel, '余域最高层级', { min: 1, max: method.safeWallLevel, integer: true });
     job.minimumLevel = number(request.minimumLevel, '全域最低层级', { min: 0, max: job.maxLevel, integer: true });
     job.boundaryLevel = number(request.boundaryLevel, '壁面连接层级',
@@ -170,7 +170,7 @@ function buildInvocation(job, paths, options = {}) {
     args: [paths.xyPath, paths.prefix, String(job.maxLevel), String(job.minimumLevel),
       String(job.boundaryLevel), String(job.nLayers), String(job.firstThickness),
       String(job.growthRatio), String(job.domainPadding),
-      paths.casePath, String(job.extrusionThickness)],
+      paths.casePath, String(job.extrusionThickness), `--fluid-region=${job.fluidRegion}`, `--small-alpha=${job.remainderSmallAlpha}`],
     cm2dCandidates: [`${paths.prefix}.hybrid.solver.cm2d`,
       `${paths.prefix}.fallback.solver.cm2d`]
   };

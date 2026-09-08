@@ -137,7 +137,7 @@ void checkAutomaticPlan(const BoundaryLayerBuildResult2D& layers,
 }
 
 void checkSolverReady(const HybridMeshBuildResult2D& result,
-                      const std::string& label) {
+                      const std::string& label, bool interior=false) {
     check(result.success(), label + " hybrid build succeeds");
     if (!result.success()) {
         std::cerr << label << " failure: "
@@ -163,8 +163,9 @@ void checkSolverReady(const HybridMeshBuildResult2D& result,
           label + " face weight stays within production gate");
     check(result.solverQuality.minVolumeRatio >= 0.01,
           label + " neighbouring volume ratio stays within production gate");
-    check(result.metrics.transitionRingCount >= 3U &&
-          result.metrics.transitionRingThickness > 0.0,
+    check(interior
+          ? result.metrics.transitionRingCount == 0U && result.metrics.transitionRingThickness == 0.0
+          : result.metrics.transitionRingCount >= 3U && result.metrics.transitionRingThickness > 0.0,
           label + " records the automatic transition plan");
 }
 
@@ -334,6 +335,32 @@ int main() {
     check(circleLayers.success() &&
           samePoints(savedLayerVertices, circleLayers.strips.front().vertices),
           "failed hybrid candidate also leaves H4-1 input unchanged");
+
+    // Interior flow keeps the original contour as the fluid-area boundary.
+    // Every solver vertex must stay in the channel, including pure fallback.
+    const auto inwardChain=makeClosedWallChain2D(circleWall,0U,"wall_0",WallFluidRegion2D::Interior);
+    HybridMeshPolicy2D inwardPolicy;
+    inwardPolicy.fluidRegion=FluidRegion2D::Interior;
+    inwardPolicy.remainderSmallCellAreaFraction=0.45;
+    const auto inward=buildRobustH4Mesh2D({*inwardChain.chain},
+        {3U,LayerThicknessMode2D::FirstLayerThickness,0.02,1.15},domain,
+        BoundaryRegion2D(circleWall),6U,refinement,{},inwardPolicy);
+    check(inward.mode==H4MeshMode2D::Hybrid,
+          "interior circle retains a hybrid layer: "+inward.hybridCandidate.failure.message);
+    if (inward.mode==H4MeshMode2D::Hybrid) {
+        checkSolverReady(inward.hybridCandidate,"interior circle",true);
+        check(std::abs(inward.hybridCandidate.metrics.actualFluidArea-BoundaryRegion2D(circleWall).area())<1.e-9,
+              "interior hybrid area equals channel area");
+        for (const auto& vertex:inward.hybridCandidate.solverTopology.vertices)
+            check(BoundaryRegion2D(circleWall).classifyPoint(vertex.point)!=PointInPolygon::Outside,
+                  "interior hybrid vertices remain inside the channel");
+    }
+    const auto forcedFallback=buildRobustH4Mesh2D({*inwardChain.chain},
+        {0U,LayerThicknessMode2D::FirstLayerThickness,0.02,1.15},domain,
+        BoundaryRegion2D(circleWall),6U,refinement,{},inwardPolicy);
+    const auto& inwardFallback=forcedFallback.fallback;
+    check(std::abs(inwardFallback.actualFluidArea-BoundaryRegion2D(circleWall).area())<1.e-9,
+          "interior fallback preserves the selected fluid area even when quality rejects it");
 
     if (failures == 0) {
         std::cout << "cartmesh2d H4 solver-ready hybrid tests: PASS\n";

@@ -199,7 +199,10 @@ std::size_t conformalHybridBuilds=0U;
 }
 
 [[nodiscard]] bool policyValid(const HybridMeshPolicy2D& policy) noexcept {
-    return std::isfinite(policy.tolerance.absolute) &&
+    return std::isfinite(policy.remainderSmallCellAreaFraction) &&
+           policy.remainderSmallCellAreaFraction>0.0 &&
+           policy.remainderSmallCellAreaFraction<1.0 &&
+           std::isfinite(policy.tolerance.absolute) &&
            std::isfinite(policy.tolerance.relative) &&
            policy.tolerance.absolute >= 0.0 &&
            policy.tolerance.relative >= 0.0 &&
@@ -562,18 +565,20 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             strip.actualLayerCounts.begin(),strip.actualLayerCounts.end(),
             [&](std::size_t count) { return count<strip.parameters.nLayers; });
         if (!strip.wallChain.closed || strip.wallChain.fluidSide != FluidSide2D::Right ||
-            strip.wallChain.orientation != WallChainOrientation2D::CounterClockwise) {
+            strip.wallChain.orientation != (policy.fluidRegion == FluidRegion2D::Interior
+                ? WallChainOrientation2D::Clockwise : WallChainOrientation2D::CounterClockwise)) {
             return failed(HybridMeshFailureReason2D::UnsupportedWallSemantics,
-                          "H4-2 currently supports closed exterior wall strips only",
+                          "closed wall strips must march toward the selected fluid region",
                           stripId);
         }
         const auto outer = strip.outerEnvelope();
         BoundaryLoop outerLoop(outer);
         const auto diagnostics = outerLoop.diagnose(policy.tolerance);
         if (!diagnostics.valid() ||
-            diagnostics.orientation != LoopOrientation::CounterClockwise) {
+            diagnostics.orientation != (policy.fluidRegion == FluidRegion2D::Interior
+                ? LoopOrientation::Clockwise : LoopOrientation::CounterClockwise)) {
             return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,
-                          "H4-1 outer envelope is not a valid counter-clockwise loop",
+                          "H4-1 envelope orientation disagrees with the selected fluid region",
                           stripId);
         }
         const double domainScale = std::max(domain.width(), domain.height());
@@ -619,7 +624,12 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     double terminationBufferRowCap=0.0;
     bool terminationBufferRowCapReachable=true;
     remainderBoundaryLoops.reserve(boundaryLayers.strips.size());
-    if (localTermination) {
+    if (policy.fluidRegion == FluidRegion2D::Interior) {
+        // The inward layer front bounds the Cartesian remainder directly.
+        // A common edge partition connects both without extending offsets
+        // across the throat or adding thin subdivided transition columns.
+        remainderBoundaryLoops=outerLoops;
+    } else if (localTermination) {
         double lastLayerSpacing=0.0;
         for (const auto& strip:boundaryLayers.strips) {
             const auto& cumulative=strip.parameters.cumulativeNormalDistances;
@@ -637,7 +647,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         terminationChains.reserve(outerLoops.size());
         for (std::size_t loopId=0;loopId<outerLoops.size();++loopId) {
             const auto chain=makeClosedWallChain2D(
-                outerLoops[loopId],loopId,"termination_"+std::to_string(loopId));
+                outerLoops[loopId],loopId,"termination_"+std::to_string(loopId),
+                policy.fluidRegion == FluidRegion2D::Interior
+                    ? WallFluidRegion2D::Interior : WallFluidRegion2D::Exterior);
             if (!chain.success()) {
                 return failed(HybridMeshFailureReason2D::InvalidOuterEnvelope,
                               "local termination front could not form a wall chain",loopId);
@@ -944,9 +956,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             auto components = constructionRegistry
                 ?buildCutCellsShared(leaf,remainderBoundaryRegion,*constructionRegistry,
                                     IntersectionSource2D::TransitionEnvelopeCartesian,
-                                    FluidRegion2D::Exterior,policy.tolerance)
+                                    policy.fluidRegion,policy.tolerance)
                 :buildCutCells(leaf,remainderBoundaryRegion,
-                               FluidRegion2D::Exterior,policy.tolerance);
+                               policy.fluidRegion,policy.tolerance);
             bool requestedRecovery=false;
             for (auto& component : components) {
                 if (!component.constructionRecoveryRequests.empty()) {
@@ -979,10 +991,11 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                 }
                 const auto centroidState = remainderBoundaryRegion.classifyPoint(
                     *component.centroid,policy.tolerance);
-                if (centroidState == PointInPolygon::Inside &&
+                if (centroidState == (policy.fluidRegion == FluidRegion2D::Interior
+                        ? PointInPolygon::Outside : PointInPolygon::Inside) &&
                     convexPolygon(component.fluidPolygon,policy.tolerance)) {
                     std::ostringstream detail;
-                    detail<<"remainder cell centroid lies inside the outer envelope at ("
+                    detail<<"remainder cell centroid lies outside the selected remainder region at ("
                           <<component.centroid->x<<','<<component.centroid->y
                           <<") polygon=";
                     for (const auto& point:component.fluidPolygon.vertices)
@@ -1029,7 +1042,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                       "remainder topology failed before H4 stabilization");
     }
     SmallCellPolicy2D smallPolicy;
-    smallPolicy.areaFractionThreshold=0.10;
+    smallPolicy.areaFractionThreshold=policy.remainderSmallCellAreaFraction;
     auto remainderSmallCells=analyzeSmallCells(
         remainderSourceCells,remainderTopology,smallPolicy,policy.tolerance);
     if (!remainderSmallCells.valid()) {
@@ -1391,8 +1404,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                                                                     policy.tolerance);
             const auto outerState = outerRegion.classifyPoint(*centroid,
                                                                policy.tolerance);
-            if (originalState == PointInPolygon::Inside ||
-                outerState == PointInPolygon::Outside) {
+            if (policy.fluidRegion == FluidRegion2D::Interior
+                ? (originalState == PointInPolygon::Outside || outerState == PointInPolygon::Inside)
+                : (originalState == PointInPolygon::Inside || outerState == PointInPolygon::Outside)) {
                 return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
                               "layer cell is not between original wall and outer envelope",
                               stripId, std::nullopt, layerCell.id);
@@ -1470,7 +1484,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     const double domainArea = domain.width() * domain.height();
     const double solidArea = originalWalls.area(policy.tolerance);
     const double outerArea = outerRegion.area(policy.tolerance);
-    const double expectedFluidArea = domainArea - solidArea;
+    const bool interior = policy.fluidRegion == FluidRegion2D::Interior;
+    const double expectedFluidArea = interior ? solidArea : domainArea - solidArea;
+    const double remainderBoundaryArea = remainderBoundaryRegion.area(policy.tolerance);
     const double actualFluidArea = std::accumulate(
         hybridSources.begin(), hybridSources.end(), 0.0,
         [](double sum, const HybridSourceCell2D& cell) { return sum + cell.area; });
@@ -1479,15 +1495,15 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         (policy.tolerance.absolute * policy.tolerance.absolute +
          policy.tolerance.relative * std::max(1.0, expectedFluidArea));
     if (std::abs(areaError) > areaTolerance ||
-        std::abs(layerArea - (outerArea - solidArea)) > areaTolerance ||
+        std::abs(layerArea - (interior ? solidArea - outerArea : outerArea - solidArea)) > areaTolerance ||
         std::abs(remainderArea -
-                 (domainArea-remainderBoundaryRegion.area(policy.tolerance)))>
+                 (interior ? remainderBoundaryArea : domainArea-remainderBoundaryArea))>
             areaTolerance ||
         std::abs(transitionArea-
-                 (remainderBoundaryRegion.area(policy.tolerance)-outerArea))>
+                 (interior ? outerArea-remainderBoundaryArea : remainderBoundaryArea-outerArea))>
             areaTolerance) {
         return failed(HybridMeshFailureReason2D::AreaConservationFailed,
-                      "hybrid layer/remainder areas do not close to domain minus solid");
+                      "hybrid layer/remainder areas do not close to the selected fluid region");
     }
 
     auto meshQuality = evaluateMeshQuality(
@@ -1509,6 +1525,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         // not change which legacy source cells are protected from repair.
         const bool transition=source.kind==HybridCellKind2D::Transition ||
             (source.kind==HybridCellKind2D::RemainderCut &&
+             policy.fluidRegion != FluidRegion2D::Interior &&
              !source.quadtreeSourceKey.has_value());
         solverConstraints.immutableInputCells.push_back(source.solverImmutable);
         solverConstraints.preserveInputCells.push_back(transition);
@@ -1925,7 +1942,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         }
         const auto centroid=polygon.centroid(policy.tolerance);
         solverLayerCells.push_back(centroid &&
-            outerRegion.classifyPoint(*centroid,policy.tolerance)==PointInPolygon::Inside);
+            outerRegion.classifyPoint(*centroid,policy.tolerance)==
+                (interior ? PointInPolygon::Outside : PointInPolygon::Inside));
     }
     const auto solverInterfaceAudit=auditInterface(
         solverTopologyReport.topology,outerRegion,originalWalls,solverLayerCells,
@@ -1949,6 +1967,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             detail<<" issue["<<i<<"]=(code="<<static_cast<int>(issue.code)
                   <<",cell="<<issue.cellId<<",edge="<<issue.edgeId
                   <<",measured="<<issue.measured<<')';
+            if (issue.cellId<solverTopologyReport.topology.cells.size()) {
+                detail<<" vertices=";
+                for (const auto vertex:solverTopologyReport.topology.cells[issue.cellId].vertices) {
+                    const auto& point=solverTopologyReport.topology.vertices[vertex].point;
+                    detail<<'('<<point.x<<','<<point.y<<')';
+                }
+            }
         }
         auto failure=failed(HybridMeshFailureReason2D::SolverQualityFailed,detail.str());
         failure.solverTopology=solverTopologyReport.topology;
@@ -2240,7 +2265,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     std::size_t sourceId=0U;
     for (const auto& leaf:tree->leaves()) {
         auto components=buildCutCells(
-            leaf,originalWalls,FluidRegion2D::Exterior,policy.tolerance);
+            leaf,originalWalls,policy.fluidRegion,policy.tolerance);
         for (auto& component:components) {
             if (!component.valid() || component.kind==CutCellKind::Unsupported) {
                 result.failureMessage=component.issues.empty()
@@ -2254,8 +2279,9 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             result.sourceCells.push_back(std::move(component));
         }
     }
-    result.expectedFluidArea=domain.width()*domain.height()-
-                             originalWalls.area(policy.tolerance);
+    result.expectedFluidArea=policy.fluidRegion == FluidRegion2D::Interior
+        ? originalWalls.area(policy.tolerance)
+        : domain.width()*domain.height()-originalWalls.area(policy.tolerance);
     result.areaError=result.actualFluidArea-result.expectedFluidArea;
     const double areaTolerance=policy.areaToleranceMultiplier*
         (policy.tolerance.absolute*policy.tolerance.absolute+
@@ -2273,7 +2299,7 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
         return result;
     }
     SmallCellPolicy2D smallPolicy;
-    smallPolicy.areaFractionThreshold=0.10;
+    smallPolicy.areaFractionThreshold=policy.remainderSmallCellAreaFraction;
     result.smallCells=analyzeSmallCells(
         result.sourceCells,sourceTopology,smallPolicy,policy.tolerance);
     if (!result.smallCells.valid()) {
@@ -2338,8 +2364,12 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
     };
 
     auto stageStart=H4ProfileClock::now();
-    result.requestedLayerCandidate=buildBoundaryLayerStrips2D(
-        wallChains,layerParameters,layerPolicy);
+    auto inwardPolicy=layerPolicy;
+    if (hybridPolicy.fluidRegion == FluidRegion2D::Interior)
+        inwardPolicy.permitConcaveTerminationMarching=true;
+    result.requestedLayerCandidate=hybridPolicy.fluidRegion == FluidRegion2D::Interior
+        ?buildLocallyReducedBoundaryLayerStrips2D(wallChains,layerParameters,inwardPolicy)
+        :buildBoundaryLayerStrips2D(wallChains,layerParameters,inwardPolicy);
     result.profile.requestedLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.requestedLayerCandidate.success()) {
         stageStart=H4ProfileClock::now();
@@ -2357,9 +2387,10 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
         result.fallbackStage=H4FallbackStage2D::RequestedLayers;
     }
 
+    if (hybridPolicy.fluidRegion != FluidRegion2D::Interior) {
     stageStart=H4ProfileClock::now();
     result.localLayerCandidate=buildLocallyReducedBoundaryLayerStrips2D(
-        wallChains,layerParameters,layerPolicy);
+        wallChains,layerParameters,inwardPolicy);
     result.profile.localLayerSeconds=h4ProfileSeconds(stageStart);
     if (result.localLayerCandidate.success()) {
         stageStart=H4ProfileClock::now();
@@ -2376,6 +2407,8 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
         result.fallbackStage=H4FallbackStage2D::HybridCandidate;
     } else {
         result.fallbackStage=H4FallbackStage2D::LocalReduction;
+    }
+
     }
 
     stageStart=H4ProfileClock::now();

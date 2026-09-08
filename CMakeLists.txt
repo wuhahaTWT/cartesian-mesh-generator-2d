@@ -408,6 +408,23 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.xy 0.001
                 ${CARTMESH2D_DXF_OUTPUT}/airfoil_like.dxf.json)
 
+    add_test(NAME cartmesh2d_interior_hybrid_nozzle_e2e
+        COMMAND cartmesh2d_hybrid_cli
+                ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nozzle_profile.xy
+                ${CMAKE_CURRENT_BINARY_DIR}/interior-hybrid/nozzle
+                7 6 7 3 0.015 1.15 0.5
+                ${CMAKE_CURRENT_BINARY_DIR}/interior-hybrid/nozzle-foam 0.06
+                --fluid-region=interior --small-alpha=0.65)
+    set_tests_properties(cartmesh2d_interior_hybrid_nozzle_e2e PROPERTIES
+        PASS_REGULAR_EXPRESSION "hybrid_status=success" TIMEOUT 60)
+    add_test(NAME cartmesh2d_interior_hybrid_nozzle_reader
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
+                ${CMAKE_CURRENT_BINARY_DIR}/interior-hybrid/nozzle-foam
+                --require-patch wall_0:wall)
+    set_tests_properties(cartmesh2d_interior_hybrid_nozzle_reader PROPERTIES
+        DEPENDS cartmesh2d_interior_hybrid_nozzle_e2e)
+
     add_test(NAME cartmesh2d_stageDXF2_convert_spline_mm_e2e
         COMMAND cartmesh2d_dxf_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/spline_circle_mm.dxf

@@ -1,0 +1,468 @@
+{
+  "pure_dense_survey": {
+    "before": [
+      {
+        "sample": "circle",
+        "success": true,
+        "attempts": 4,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 10,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "naca2412",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 6,
+          "wallCellsPerSpan": 96,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.45,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": {
+            "angleOfAttackDeg": 4,
+            "downstreamSpans": 8,
+            "halfWidthSpans": 0.7,
+            "levelsBelowWall": 4
+          },
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "thick_airfoil",
+        "success": false,
+        "attempts": 4,
+        "selected": null
+      },
+      {
+        "sample": "two_obstacles",
+        "success": true,
+        "attempts": 4,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "narrow_gap",
+        "success": false,
+        "attempts": 4,
+        "selected": null
+      },
+      {
+        "sample": "sharp_trailing_edge",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "gear_star",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "superellipse",
+        "success": true,
+        "attempts": 2,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 10,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.45,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "serpentine",
+        "success": false,
+        "attempts": 3,
+        "selected": null
+      },
+      {
+        "sample": "annulus",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "interior",
+          "density": "dense",
+          "farFieldSpans": 1,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "nozzle",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "interior",
+          "density": "dense",
+          "farFieldSpans": 0.5,
+          "wallCellsPerSpan": 256,
+          "cellsPerLevel": 3,
+          "farLevel": 8,
+          "smallAlpha": 0.45,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      }
+    ],
+    "after": [
+      {
+        "sample": "circle",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 10,
+          "wallCellsPerSpan": 97,
+          "cellsPerLevel": 5,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "naca2412",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 6,
+          "wallCellsPerSpan": 96,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.45,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": {
+            "angleOfAttackDeg": 4,
+            "downstreamSpans": 8,
+            "halfWidthSpans": 0.7,
+            "levelsBelowWall": 4
+          },
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "thick_airfoil",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 10,
+          "wallCellsPerSpan": 97,
+          "cellsPerLevel": 5,
+          "smallAlpha": 0.35,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": {
+            "angleOfAttackDeg": 0,
+            "downstreamSpans": 8,
+            "halfWidthSpans": 0.7,
+            "levelsBelowWall": 4
+          },
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "two_obstacles",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 120,
+          "cellsPerLevel": 5,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "narrow_gap",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 4,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "sharp_trailing_edge",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "gear_star",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 8,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "superellipse",
+        "success": true,
+        "attempts": 2,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "exterior",
+          "density": "dense",
+          "farFieldSpans": 10,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.45,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "serpentine",
+        "success": false,
+        "attempts": 3,
+        "selected": null
+      },
+      {
+        "sample": "annulus",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "interior",
+          "density": "dense",
+          "farFieldSpans": 1,
+          "wallCellsPerSpan": 64,
+          "cellsPerLevel": 3,
+          "smallAlpha": 0.15,
+          "farLevel": 0,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      },
+      {
+        "sample": "nozzle",
+        "success": true,
+        "attempts": 1,
+        "selected": {
+          "automatic": true,
+          "method": "cutcell",
+          "fluidRegion": "interior",
+          "density": "dense",
+          "farFieldSpans": 0.5,
+          "wallCellsPerSpan": 256,
+          "cellsPerLevel": 3,
+          "farLevel": 8,
+          "smallAlpha": 0.45,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "wake": null,
+          "refineBoxes": [],
+          "allowUnsafeWallLevel": false
+        }
+      }
+    ]
+  },
+  "hybrid_nozzle": {
+    "normal_cells": 1702,
+    "dense_cells": 3106,
+    "layer_cells": 1110,
+    "layers": 3,
+    "first_thickness": 0.015,
+    "growth": 1.15,
+    "padding": 0.5,
+    "small_alpha": 0.65,
+    "standard_checkMesh": "PASS",
+    "full_checkMesh": "FAIL: 690 concave-or-planar flags",
+    "Q1": "FAIL"
+  },
+  "desktop": {
+    "automatic_attempts": 1,
+    "preview_cells": 3106,
+    "exported_cells": 3106,
+    "sidebar_bottom_reachable": true,
+    "selected": {
+      "automatic": true,
+      "density": "dense",
+      "method": "hybrid",
+      "chordError": 0.001,
+      "sourceUnits": "auto",
+      "fluidRegion": "interior",
+      "maxLevel": 7,
+      "minimumLevel": 6,
+      "boundaryLevel": 7,
+      "nLayers": 3,
+      "firstThickness": 0.015,
+      "growthRatio": 1.15,
+      "domainPadding": 0.5,
+      "extrusionThickness": 0.06,
+      "remainderSmallAlpha": 0.65
+    }
+  },
+  "tests": {
+    "native_passed": 91,
+    "native_total": 91,
+    "seconds": 150.92,
+    "desktop_passed": 50,
+    "desktop_total": 50
+  }
+}

@@ -249,7 +249,7 @@ struct ChainGeometryResult2D {
         bool marchingConcave=false;
         if (solidTurn < -policy.smoothTurnRadians) {
             geometry.kinds[vertexId] = WallVertexKind2D::Concave;
-            if (!allowLocalReduction) {
+            if (!allowLocalReduction && !policy.permitConcaveTerminationMarching) {
                 result.failure = failedResult(
                     BoundaryLayerFailureReason2D::ConcaveCorner,
                     "solid-side concave corner is outside H4-1 capability", chain.id,
@@ -483,10 +483,11 @@ struct ChainGeometryResult2D {
         BoundaryLoop envelope(strip.outerEnvelope());
         const auto diagnostics=envelope.diagnose(policy.tolerance);
         if (!diagnostics.valid() ||
-            diagnostics.orientation!=LoopOrientation::CounterClockwise) {
+            diagnostics.orientation!=(strip.wallChain.orientation==WallChainOrientation2D::Clockwise
+                ?LoopOrientation::Clockwise:LoopOrientation::CounterClockwise)) {
             return failedResult(
                 BoundaryLayerFailureReason2D::EnvelopeSelfIntersection,
-                "retained local-layer envelope is not a simple counter-clockwise loop",
+                "retained local-layer envelope must be simple and keep the wall orientation",
                 strip.wallChain.id,&strip.parameters);
         }
     }
@@ -1279,10 +1280,43 @@ BoundaryLayerBuildResult2D buildLocallyReducedBoundaryLayerStrips2D(
                 1U,static_cast<std::size_t>(std::ceil(length/maximumColumnLength)));
             std::size_t pieces=1U;
             while (pieces<minimumPieces) pieces*=2U;
-            for (std::size_t piece=0;piece<pieces;++piece) {
-                const double t=static_cast<double>(piece)/static_cast<double>(pieces);
-                points.push_back({a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t});
+            std::vector<double> parameters;
+            if (policy.permitConcaveTerminationMarching && chain.closed &&
+                chain.orientation==WallChainOrientation2D::Clockwise) {
+                // Reserve the distance consumed by the two corner miters, then
+                // subdivide the straight middle independently. A long inlet
+                // edge must not inherit the coarse corner spacing throughout.
+                double guards[2]{};
+                for (std::size_t end=0;end<2U;++end) {
+                    const auto vertex=(segment+end)%chain.vertices.size();
+                    const auto previous=(vertex+chain.vertices.size()-1U)%chain.vertices.size();
+                    const auto next=(vertex+1U)%chain.vertices.size();
+                    const auto incoming=chain.vertices[vertex]-chain.vertices[previous];
+                    const auto outgoing=chain.vertices[next]-chain.vertices[vertex];
+                    const double turn=std::atan2(cross(incoming,outgoing),dot(incoming,outgoing));
+                    const double solidTurn=chain.fluidSide==FluidSide2D::Right?turn:-turn;
+                    if (solidTurn < -policy.smoothTurnRadians)
+                        guards[end]=resolved.totalThickness*
+                            std::abs(std::tan(0.5*solidTurn))/policy.cornerLengthFraction;
+                }
+                if (std::max(guards[0],guards[1])>maximumColumnLength) {
+                    const double middle=length-guards[0]-guards[1];
+                    parameters.push_back(0.0);
+                    if (middle>=maximumColumnLength) {
+                        const auto count=static_cast<std::size_t>(std::ceil(middle/maximumColumnLength));
+                        for (std::size_t i=0;i<=count;++i) {
+                            const double t=(guards[0]+middle*static_cast<double>(i)/count)/length;
+                            if (t>0.0 && t<1.0) parameters.push_back(t);
+                        }
+                    }
+                }
             }
+            if (parameters.empty()) {
+                for (std::size_t piece=0;piece<pieces;++piece)
+                    parameters.push_back(static_cast<double>(piece)/pieces);
+            }
+            for (const double t:parameters)
+                points.push_back({a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t});
         }
         if (chain.closed) {
             const auto refined=makeClosedWallChain2D(

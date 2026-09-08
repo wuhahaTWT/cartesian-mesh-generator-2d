@@ -69,7 +69,7 @@ test('the hybrid path is capped at its own measured ceiling', () => {
   const { job } = validateJob(hybrid());
   assert.deepEqual(buildInvocation(job, paths).args,
     ['/out/body.xy', '/out/body', '6', '3', '6', '4', '0.02', '1.2', '1',
-     '/out/body-openfoam', '0.01']);
+     '/out/body-openfoam', '0.01', '--fluid-region=exterior', '--small-alpha=0.1']);
   // docs/CURRENT_STATE_CN.md section 2: level 9 fails on this path.
   assert.throws(() => validateJob(hybrid({ maxLevel: 9 })), /余域最高层级/);
   // The layer has to attach at or above the far-field floor and at or below the cap.
