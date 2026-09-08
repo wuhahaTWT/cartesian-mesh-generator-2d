@@ -1,31 +1,31 @@
 {
-  "cell_count": 160,
-  "face_count": 694,
-  "global_constant_flux_balance": 9.714451465470119e-18,
-  "internal_face_count": 246,
+  "cell_count": 2068,
+  "face_count": 8544,
+  "global_constant_flux_balance": 1.214306433183765e-17,
+  "internal_face_count": 4004,
   "issues": [],
-  "max_closure_residual": 2.7755575615628914e-17,
-  "max_constant_flux_divergence_residual": 3.2750943020603565e-16,
-  "min_volume": 0.00019908205290527353,
+  "max_closure_residual": 4.336808689942018e-19,
+  "max_constant_flux_divergence_residual": 0.0,
+  "min_volume": 2.1028036576080236e-06,
   "patches": [
     {
-      "nFaces": 128,
+      "nFaces": 404,
       "name": "wall_0",
-      "startFace": 246,
+      "startFace": 4004,
       "type": "wall"
     },
     {
-      "nFaces": 320,
+      "nFaces": 4136,
       "name": "frontAndBack",
-      "startFace": 374,
+      "startFace": 4408,
       "type": "empty"
     }
   ],
   "physical_boundary_area_vector": [
-    1.3877787807814457e-17,
+    1.734723475976807e-17,
     0.0,
     0.0
   ],
-  "point_count": 430,
+  "point_count": 4682,
   "valid": true
 }

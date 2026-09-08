@@ -20,16 +20,19 @@ function candidates(request, sample, frame) {
       { ...seed, maxLevel: 8, boundaryLevel: 8, firstThickness: seed.firstThickness * 0.5 }, seed]
       .filter((v,i,a) => a.findIndex(x => JSON.stringify(x) === JSON.stringify(v)) === i);
   }
-  const field = sample?.sizeField || { farFieldSpans: 6, wallCellsPerSpan: 32, cellsPerLevel: 3 };
-  const seed = { ...request, ...field, smallAlpha: sample?.smallAlpha ?? 0.25,
-    farFieldSpans: request.fluidRegion === 'interior' ? 1 : field.farFieldSpans,
+  const interiorProfile = request.fluidRegion === 'interior' && sample?.interiorSizeField;
+  const field = interiorProfile || sample?.sizeField || { farFieldSpans: 6, wallCellsPerSpan: 32, cellsPerLevel: 3 };
+  const seed = { ...request, ...field, smallAlpha: (interiorProfile ? sample.interiorSmallAlpha : sample?.smallAlpha) ?? 0.25,
+    farFieldSpans: request.fluidRegion === 'interior' && !interiorProfile ? 1 : field.farFieldSpans,
     wallCellsPerSpan: field.wallCellsPerSpan * (dense ? 2 : 1),
-    farLevel: 0, curvatureCellsPerRadius: 0, gapCells: sample?.gapCells || 0,
+    farLevel: interiorProfile ? field.farLevel + (dense ? 1 : 0) : 0, curvatureCellsPerRadius: 0, gapCells: sample?.gapCells || 0,
     wake: request.fluidRegion === 'interior' ? null : sample?.wake || null,
     refineBoxes: [], allowUnsafeWallLevel: false };
   return [seed, { ...seed, smallAlpha: 0.45 },
     { ...seed, cellsPerLevel: 4, smallAlpha: 0.35 },
-    { ...seed, wallCellsPerSpan: field.wallCellsPerSpan, smallAlpha: 0.15 }]
+    { ...seed, wallCellsPerSpan: field.wallCellsPerSpan,
+      farLevel: interiorProfile ? field.farLevel : 0,
+      smallAlpha: interiorProfile ? sample.interiorSmallAlpha : 0.15 }]
     .filter((v,i,a) => a.findIndex(x => JSON.stringify(x) === JSON.stringify(v)) === i);
 }
 

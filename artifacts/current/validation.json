@@ -8,8 +8,8 @@
     "seconds": 160.37
   },
   "frontend_tests": {
-    "passed": 48,
-    "total": 48
+    "passed": 49,
+    "total": 49
   },
   "cases": {
     "naca": {
@@ -100,8 +100,8 @@
         "bottomReachable": true,
         "pageHeight": 720,
         "windowHeight": 720,
-        "previewCells": 160,
-        "exportedCells": 160
+        "previewCells": 2068,
+        "exportedCells": 2068
       },
       "parameters": {
         "method": "cutcell",
@@ -109,12 +109,12 @@
         "geometryPath": "nozzle_profile.xy",
         "chordError": 0.001,
         "sourceUnits": "auto",
-        "smallAlpha": 0.35,
+        "smallAlpha": 0.45,
         "sizeField": {
-          "farFieldSpans": 1,
-          "wallCellsPerSpan": 16,
+          "farFieldSpans": 0.5,
+          "wallCellsPerSpan": 128,
           "cellsPerLevel": 3,
-          "farLevel": 0,
+          "farLevel": 7,
           "curvatureCellsPerRadius": 0,
           "gapCells": 0,
           "allowUnsafeWallLevel": false,
@@ -122,48 +122,23 @@
           "refineBoxes": []
         },
         "budget": {
-          "wallLevel": 6,
+          "wallLevel": 8,
           "feasible": true,
-          "domainSpansPerBody": 3,
-          "maxWallCellsPerSpan": 512,
-          "maxFarFieldSpans": 63.5
+          "domainSpansPerBody": 2,
+          "maxWallCellsPerSpan": 1024,
+          "maxFarFieldSpans": 7.5
         }
       },
       "automatic_attempts": 1,
-      "result_package": "outputs/cartesian-fix/nozzle.zip",
+      "result_package": "outputs/nozzle-density/normal.zip",
       "independent_reader": "PASS",
       "internal_solver": "PASS",
       "Q1": "FAIL",
       "checkMesh_standard": "PASS",
       "checkMesh_full": "FAIL",
-      "full_check_diagnostic": "4 low-determinant cells",
+      "full_check_diagnostic": "148 concave-or-planar flags; no low-determinant flags",
       "screenshot": "desktop-nozzle.png",
-      "seconds": 0.096683,
-      "attempted_parameters": [
-        {
-          "parameters": {
-            "automatic": true,
-            "density": "normal",
-            "method": "cutcell",
-            "outputDirectory": "",
-            "chordError": 0.001,
-            "sourceUnits": "auto",
-            "fluidRegion": "interior",
-            "smallAlpha": 0.35,
-            "farFieldSpans": 1,
-            "wallCellsPerSpan": 16,
-            "cellsPerLevel": 3,
-            "farLevel": 0,
-            "curvatureCellsPerRadius": 0,
-            "gapCells": 0,
-            "allowUnsafeWallLevel": false,
-            "wake": null,
-            "refineBoxes": []
-          },
-          "seconds": 0.163,
-          "success": true
-        }
-      ]
+      "seconds": 0.767347709
     },
     "sharp": {
       "status": "生成完成",
@@ -247,6 +222,85 @@
       "windowHeight": 720,
       "previewCells": 3568,
       "exportedCells": 3568
+    }
+  },
+  "nozzle_density_update": {
+    "baseline_commit": "4176838",
+    "previous_cells": 160,
+    "native_core_unchanged": true,
+    "normal": {
+      "parameters": {
+        "method": "cutcell",
+        "fluidRegion": "interior",
+        "geometryPath": "nozzle_profile.xy",
+        "chordError": 0.001,
+        "sourceUnits": "auto",
+        "smallAlpha": 0.45,
+        "sizeField": {
+          "farFieldSpans": 0.5,
+          "wallCellsPerSpan": 128,
+          "cellsPerLevel": 3,
+          "farLevel": 7,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "allowUnsafeWallLevel": false,
+          "safeWallLevel": 11,
+          "refineBoxes": []
+        },
+        "budget": {
+          "wallLevel": 8,
+          "feasible": true,
+          "domainSpansPerBody": 2,
+          "maxWallCellsPerSpan": 1024,
+          "maxFarFieldSpans": 7.5
+        }
+      },
+      "cells": 2068,
+      "exported_cells": 2068,
+      "seconds": 0.767347709,
+      "independent_reader": "PASS",
+      "checkMesh_standard": "PASS",
+      "checkMesh_full": "FAIL",
+      "full_diagnostic": "148 concave-or-planar flags; no low-determinant flags",
+      "Q1": "FAIL",
+      "result_package": "outputs/nozzle-density/normal.zip"
+    },
+    "dense": {
+      "parameters": {
+        "method": "cutcell",
+        "fluidRegion": "interior",
+        "geometryPath": "nozzle_profile.xy",
+        "chordError": 0.001,
+        "sourceUnits": "auto",
+        "smallAlpha": 0.45,
+        "sizeField": {
+          "farFieldSpans": 0.5,
+          "wallCellsPerSpan": 256,
+          "cellsPerLevel": 3,
+          "farLevel": 8,
+          "curvatureCellsPerRadius": 0,
+          "gapCells": 0,
+          "allowUnsafeWallLevel": false,
+          "safeWallLevel": 11,
+          "refineBoxes": []
+        },
+        "budget": {
+          "wallLevel": 9,
+          "feasible": true,
+          "domainSpansPerBody": 2,
+          "maxWallCellsPerSpan": 1024,
+          "maxFarFieldSpans": 3.5
+        }
+      },
+      "cells": 6024,
+      "exported_cells": 6024,
+      "seconds": 2.79706008,
+      "independent_reader": "PASS",
+      "checkMesh_standard": "PASS",
+      "checkMesh_full": "FAIL",
+      "full_diagnostic": "316 concave-or-planar flags; no low-determinant flags",
+      "Q1": "FAIL",
+      "result_package": "outputs/nozzle-density/dense.zip"
     }
   }
 }
