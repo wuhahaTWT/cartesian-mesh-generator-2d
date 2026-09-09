@@ -68,7 +68,7 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
         }
         const double length = distance(topology.vertices[edge.v0].point,
                                        topology.vertices[edge.v1].point);
-        const double edgeEps = tol.scale(std::max(1.0, length));
+        const double edgeEps = tol.scale(length);
         if (!(length > edgeEps)) {
             std::ostringstream detail;
             detail << std::setprecision(17) << "edge length=" << length
@@ -96,7 +96,10 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
         }
 
         const double area = polygon.area();
-        const double areaEps = tol.scale(std::max(1.0, area));
+        const auto bounds = polygon.bounds();
+        const double localLength = std::max(bounds.max.x-bounds.min.x,
+                                             bounds.max.y-bounds.min.y);
+        const double areaEps = tol.areaScale(localLength);
         if (!(area > areaEps)) {
             std::ostringstream detail;
             detail << std::setprecision(17) << "cell area=" << area
@@ -115,7 +118,7 @@ MeshQualityReport2D evaluateMeshQuality(const TopologyMesh2D& topology,
             cellMinEdge = std::min(cellMinEdge, length);
             cellMaxEdge = std::max(cellMaxEdge, length);
         }
-        const double cellEdgeEps = tol.scale(std::max(1.0, cellMaxEdge));
+        const double cellEdgeEps = tol.scale(cellMaxEdge);
         if (!(cellMinEdge > cellEdgeEps)) {
             std::ostringstream detail;
             detail << std::setprecision(17) << "cell minimum edge=" << cellMinEdge

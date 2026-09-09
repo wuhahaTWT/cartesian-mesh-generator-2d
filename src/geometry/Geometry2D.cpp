@@ -183,6 +183,10 @@ double TolerancePolicy::scale(double magnitude) const noexcept {
     return absolute + relative * std::abs(magnitude);
 }
 
+double TolerancePolicy::areaScale(double localLength) const noexcept {
+    return std::max(absolute * absolute, relative * localLength * localLength);
+}
+
 bool TolerancePolicy::nearlyEqual(double a, double b, double magnitude) const noexcept {
     return std::abs(a - b) <= scale(std::max(std::abs(magnitude), std::abs(a - b)));
 }
@@ -492,8 +496,7 @@ BoundaryDiagnostics BoundaryLoop::diagnose(const TolerancePolicy& tol) const {
     const double signedArea = polygon().signedArea();
     const auto box = polygon().bounds();
     const double scale = std::max(box.max.x - box.min.x, box.max.y - box.min.y);
-    const double areaEps = std::max(tol.absolute * tol.absolute,
-                                    tol.relative * scale * scale);
+    const double areaEps = tol.areaScale(scale);
     if (std::abs(signedArea) <= areaEps) {
         result.orientation = LoopOrientation::Degenerate;
         result.issues.push_back({BoundaryIssueCode::ZeroArea, 0, 0,

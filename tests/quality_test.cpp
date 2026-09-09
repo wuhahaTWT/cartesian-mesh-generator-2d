@@ -1,6 +1,7 @@
 #include "cartmesh2d/quality/Quality2D.hpp"
 
 #include <cmath>
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -38,6 +39,27 @@ CutCell2D polygonCell(std::size_t id, std::uint64_t key,
 } // namespace
 
 int main() {
+    // Minimal regression for the scaled-circle failure: a healthy 10-micron
+    // square has area 1e-10, below the former fixed 1.01e-10 area cutoff.
+    // Conversely, a large nearly-flat cell must not evade degeneracy checks
+    // merely because its dimensional area exceeds that old fixed cutoff.
+    for (const double scale : {1e-5, 1.0, 1e5}) {
+        const AABB2D box{{0,0},{scale,scale}};
+        const std::vector<Point2D> points{{0,0},{scale,0},{scale,scale},{0,scale}};
+        const auto source=polygonCell(0,0,points,box,CutCellKind::Full);
+        const auto mesh=buildGlobalTopology({source},Domain2D{box},BoundaryLoop(points));
+        const auto healthy=evaluateMeshQuality(mesh,{source});
+        check(mesh.valid() && healthy.valid(),"healthy square retains quality validity under scaling");
+        check(std::abs(healthy.minCellArea/(scale*scale)-1.0)<1e-12,
+              "area is reported in squared physical units");
+        auto flat=mesh;
+        for (auto& vertex:flat.vertices) vertex.point.y*=1e-12;
+        const auto rejected=evaluateMeshQuality(flat,{});
+        check(!rejected.valid() && std::any_of(rejected.issues.begin(),rejected.issues.end(),
+            [](const auto& issue) { return issue.code==QualityIssueCode2D::InvalidCellGeometry &&
+                                          issue.message.starts_with("cell area="); }),
+              "same relative area degeneracy is rejected at every scale");
+    }
     const Domain2D domain{{{0.0, 0.0}, {2.0, 1.0}}};
     BoundaryLoop boundary({{0.5, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.5, 1.0}});
 
