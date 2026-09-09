@@ -1,0 +1,170 @@
+{
+  "format": "cartmesh2d-initial-fixed-scale-survey-v1",
+  "source_commit": "ed963d7",
+  "path": "pure Cut-cell",
+  "timeout_seconds": 120,
+  "results": [
+    {
+      "case": "circle",
+      "request": {
+        "background_h_over_lref": 0.025,
+        "cells_per_level": 3,
+        "name": "r01",
+        "wall_h_over_lref": 0.01
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 0.642315291,
+      "peak_rss_bytes": null,
+      "final_cells": 14800,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "circle",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 3,
+        "name": "r02",
+        "wall_h_over_lref": 0.005
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 11.7575528,
+      "peak_rss_bytes": null,
+      "final_cells": 55904,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "circle",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 40,
+        "name": "r03",
+        "wall_h_over_lref": 0.0025
+      },
+      "original_wrapper_status": "timeout",
+      "native_completion_marker_captured": false,
+      "native_seconds_captured": null,
+      "peak_rss_bytes": null,
+      "final_cells": null,
+      "independent_final_dimensions": null,
+      "independent_openfoam": null,
+      "original_timeout": true
+    },
+    {
+      "case": "nozzle",
+      "request": {
+        "background_h_over_lref": 0.025,
+        "cells_per_level": 3,
+        "name": "r01",
+        "wall_h_over_lref": 0.01
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 0.997363667,
+      "peak_rss_bytes": null,
+      "final_cells": 2152,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "nozzle",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 3,
+        "name": "r02",
+        "wall_h_over_lref": 0.005
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 6.157614,
+      "peak_rss_bytes": null,
+      "final_cells": 6204,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "nozzle",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 40,
+        "name": "r03",
+        "wall_h_over_lref": 0.0025
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 34.8821306,
+      "peak_rss_bytes": null,
+      "final_cells": 52824,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "naca",
+      "request": {
+        "background_h_over_lref": 0.025,
+        "cells_per_level": 3,
+        "name": "r01",
+        "wall_h_over_lref": 0.01
+      },
+      "original_wrapper_status": "failed",
+      "native_completion_marker_captured": true,
+      "native_seconds_captured": 7.64438317,
+      "peak_rss_bytes": null,
+      "final_cells": 17112,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": false
+    },
+    {
+      "case": "naca",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 3,
+        "name": "r02",
+        "wall_h_over_lref": 0.005
+      },
+      "original_wrapper_status": "timeout",
+      "native_completion_marker_captured": false,
+      "native_seconds_captured": null,
+      "peak_rss_bytes": null,
+      "final_cells": 66208,
+      "independent_final_dimensions": true,
+      "independent_openfoam": true,
+      "original_timeout": true
+    },
+    {
+      "case": "naca",
+      "request": {
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 40,
+        "name": "r03",
+        "wall_h_over_lref": 0.0025
+      },
+      "original_wrapper_status": "timeout",
+      "native_completion_marker_captured": false,
+      "native_seconds_captured": null,
+      "peak_rss_bytes": null,
+      "final_cells": null,
+      "independent_final_dimensions": null,
+      "independent_openfoam": null,
+      "original_timeout": true
+    }
+  ],
+  "acceptance": "incomplete",
+  "limitations": [
+    "The first wrapper failed to measure RSS in the sandbox; missing memory is not zero.",
+    "Original timeout handling did not kill child process groups; a late valid NACA r02 artifact is not completion within 120 seconds.",
+    "New harness rejects nonempty output roots and kills its process group on timeout.",
+    "No external OpenFOAM checkMesh was run for this initial scale survey.",
+    "These fixed requests do not yet meet all three target cell-count tiers across geometries."
+  ],
+  "raw_evidence_directory": "outputs/engineering-scale"
+}

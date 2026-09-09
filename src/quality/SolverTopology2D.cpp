@@ -984,8 +984,21 @@ struct RepartitionProposal2D {
     const auto inside=[&](std::size_t cell) {
         return std::binary_search(cells.begin(),cells.end(),cell);
     };
+    // Every boundary of this patch belongs to at least one selected cell.
+    // Visit only that incidence, in the same edge-ID order as the full scan;
+    // unrelated far-field edges cannot affect the patch boundary or ranking.
+    std::vector<std::size_t> patchEdges;
+    for (const auto cell:cells) {
+        if (cell>=topology.cells.size()) return std::nullopt;
+        const auto& edges=topology.cells[cell].edges;
+        patchEdges.insert(patchEdges.end(),edges.begin(),edges.end());
+    }
+    std::sort(patchEdges.begin(),patchEdges.end());
+    patchEdges.erase(std::unique(patchEdges.begin(),patchEdges.end()),patchEdges.end());
     std::map<std::size_t,std::vector<std::size_t>> adjacency;
-    for (const auto& edge:topology.edges) {
+    for (const auto edgeId:patchEdges) {
+        if (edgeId>=topology.edges.size()) return std::nullopt;
+        const auto& edge=topology.edges[edgeId];
         const bool ownerInside=inside(edge.owner);
         const bool neighbourInside=edge.neighbour && inside(*edge.neighbour);
         if (ownerInside==neighbourInside) continue;

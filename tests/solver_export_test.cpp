@@ -448,6 +448,24 @@ int main() {
               std::abs(m11PatchQuality.minVolumeRatio-
                        m11InitialQuality.minVolumeRatio)<1.0e-12,
           "local closed-patch quality matches full quality on shared metrics");
+    // A proper subset has interfaces to cells outside the patch. Its local
+    // boundary must still contain those faces, once each, regardless of the
+    // unrelated cells and non-contiguous global edge IDs.
+    const BoundaryRegion2D m11PairBoundary(BoundaryLoop({m11A,m11B,m11E,m11C,m11D}));
+    const Domain2D m11PairDomain{m11PairBoundary.bounds()};
+    const auto m11PairOracle=buildGlobalTopology(
+        {m11Owner,m11Sliver},m11PairDomain,m11PairBoundary);
+    const auto m11PairQuality=evaluateSolverQuality2D(m11PairOracle);
+    const auto m11SubsetQuality=evaluateSolverQualityPatch2D(m11Topology,{0,1});
+    check(m11PairOracle.valid() &&
+              m11SubsetQuality.issues.size()==m11PairQuality.issues.size() &&
+              std::abs(m11SubsetQuality.maxNonOrthogonalityDeg-
+                       m11PairQuality.maxNonOrthogonalityDeg)<1.0e-12 &&
+              std::abs(m11SubsetQuality.maxInternalSkewness-
+                       m11PairQuality.maxInternalSkewness)<1.0e-12 &&
+              std::abs(m11SubsetQuality.minFaceWeight-
+                       m11PairQuality.minFaceWeight)<1.0e-12,
+          "proper patch subset agrees with an independently constructed two-cell domain");
     const auto m11Repartitioned=repartitionSolverTopologyByQuality2D(
         m11Topology,m11Domain,m11Region);
     const auto m11Sequential=
