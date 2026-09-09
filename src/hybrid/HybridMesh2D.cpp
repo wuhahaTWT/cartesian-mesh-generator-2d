@@ -945,10 +945,14 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                         kind==WallVertexKind2D::Concave
                         ?IntersectionFeature2D::WallConcaveCorner:
                         IntersectionFeature2D::Smooth;
-                    (void)constructionRegistry->internVertex(
+                    constructionRegistry->registerGridCornerAnchor(
                         strip.wallChain.vertices[i],h,feature);
                 }
             }
+            for (const auto& loop:remainderBoundaryRegion.loops())
+                for (const auto& vertex:loop.vertices())
+                    constructionRegistry->registerGridCornerAnchor(
+                        vertex,h,IntersectionFeature2D::TransitionVertex);
         } else constructionRegistry.reset();
 
         std::optional<std::uint64_t> recoveryLeafKey;

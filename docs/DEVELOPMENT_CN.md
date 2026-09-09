@@ -95,6 +95,7 @@ docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam
 | `check_boundary_layer2d.py`、`check_boundary_layer_failure.py`、`check_hybrid_mesh2d.py` | CTest 使用的边界层/共形拼接检查；专用 hybrid reader 不能冒充全部终止路径验收 |
 | `check_openfoam_v1_logs.py` | 真正的 checkMesh/simpleFoam 日志验收 |
 | `openfoam_harmonic_mms.py`、`check_openfoam_v1c.py` | 制造解、常数场、线性场验证；`render_openfoam_mms.py` 绘图 |
+| `run_engineering_mms.py` | 固定相对尺寸三档，真实 OpenFOAM 单元中心/体积、检查、求解和误差；MMS 与扩展 checkMesh 分开判定 |
 | `generate_q0_baselines.py`、`generate_q1_baselines.py`、`verify_q1_scale_invariance.py` | CI 仍使用的质量统计、可重复性和尺度检查 |
 | `refinement_ladder.py` | 加密压力阶梯；默认最低层级接近最大层级，不能作产品自适应性能代表 |
 | `size_field_survey.py`、`alignment_sensitivity.py` | 新版真实尺寸场与几何/网格对齐敏感性测量 |

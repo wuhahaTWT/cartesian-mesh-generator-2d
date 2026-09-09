@@ -139,6 +139,42 @@ double IntersectionRegistry2D::gridCoordinate(GridLineIdentity2D line) const {
     return lo+static_cast<double>(line.coordinate)*std::ldexp(hi-lo,-static_cast<int>(gridLevel_));
 }
 
+void IntersectionRegistry2D::registerGridCornerAnchor(
+    const Point2D& p,double h,IntersectionFeature2D feature) {
+    const auto id=internVertex(p,h,feature);
+    GridLineIdentity2D x,y;
+    try { x=gridLine(0U,p.x); y=gridLine(1U,p.y); }
+    catch (const std::invalid_argument&) { return; } // sample is not a grid corner
+    const StableVertexKey2D key{StableVertexKeyKind2D::GridVertex,0U,0U,x.coordinate,y.coordinate};
+    if (const auto bound=shadowVertexStore_.resolveExactKey(key);bound && *bound!=id)
+        throw std::invalid_argument("grid corner anchor must be registered before corner construction");
+    auto& anchors=gridCornerAnchors_[{x.coordinate,y.coordinate}];
+    if (std::find(anchors.begin(),anchors.end(),id)==anchors.end()) anchors.push_back(id);
+}
+
+std::size_t IntersectionRegistry2D::internGridCorner(const Point2D& p,double h) {
+    if (!(h>0) || !std::isfinite(h)) throw std::invalid_argument("invalid grid corner local_h");
+    const auto x=gridLine(0U,p.x),y=gridLine(1U,p.y);
+    const StableVertexKey2D key{StableVertexKeyKind2D::GridVertex,0U,0U,x.coordinate,y.coordinate};
+    std::size_t id;
+    const auto anchors=gridCornerAnchors_.find({x.coordinate,y.coordinate});
+    if (anchors!=gridCornerAnchors_.end()) {
+        if (anchors->second.size()!=1U)
+            throw std::invalid_argument("distinct input samples have ambiguous arithmetic grid-corner incidence");
+        id=anchors->second.front();
+    } else if (const auto bound=shadowVertexStore_.resolveExactKey(key)) {
+        id=static_cast<std::size_t>(*bound);
+    } else {
+        id=internVertex({gridCoordinate(x),gridCoordinate(y)},h,
+                        IntersectionFeature2D::CartesianGridVertex);
+    }
+    shadowVertexStore_.bindExactKey(key,static_cast<StableVertexId2D>(id));
+    vertices_.at(id).localH=std::min(vertices_[id].localH,h);
+    shadowVertexStore_.updateMetadata(static_cast<StableVertexId2D>(id),vertices_[id].localH,
+        shadowFeature(vertices_[id].feature),std::nullopt);
+    return id;
+}
+
 std::size_t IntersectionRegistry2D::internVertex(const Point2D& p,double h,IntersectionFeature2D feature) {
     if (!std::isfinite(p.x) || !std::isfinite(p.y) || !(h>0) || !std::isfinite(h))
         throw std::invalid_argument("invalid canonical vertex");
@@ -371,29 +407,12 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
                 x.coordinate, y.coordinate};
         }
         if (gridVertexKey) {
-            const auto stableId = shadowVertexStore_.resolveExactKey(*gridVertexKey);
-            if (stableId) {
-                if (*stableId >= vertices_.size() ||
-                    vertices_[static_cast<std::size_t>(*stableId)].point.x != p.x ||
-                    vertices_[static_cast<std::size_t>(*stableId)].point.y != p.y) {
-                    throw std::runtime_error(
-                        "typed grid vertex key disagrees with committed geometry");
-                }
-                id = static_cast<std::size_t>(*stableId);
-                vertices_[id].localH = std::min(vertices_[id].localH, h);
-                shadowVertexStore_.updateMetadata(
-                    *stableId, vertices_[id].localH,
-                    shadowFeature(vertices_[id].feature), std::nullopt);
-            } else {
-                id=internVertex(p,h,feature);
-                shadowVertexStore_.bindExactKey(
-                    *gridVertexKey, static_cast<StableVertexId2D>(id));
-            }
+            id=internGridCorner(p,h);
         } else {
             id=internVertex(p,h,feature);
         }
         const auto anchorFeature=vertices_[id].feature;
-        if (squaredNorm(p-raw)>0 &&
+        if (squaredNorm(vertices_[id].point-raw)>0 &&
             (anchorFeature==IntersectionFeature2D::Smooth ||
              anchorFeature==IntersectionFeature2D::TransitionVertex ||
              anchorFeature==IntersectionFeature2D::WallSharpCorner ||

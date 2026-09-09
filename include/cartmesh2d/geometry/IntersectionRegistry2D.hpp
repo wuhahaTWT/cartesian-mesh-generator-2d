@@ -172,6 +172,12 @@ public:
     [[nodiscard]] double gridCoordinate(GridLineIdentity2D line) const;
     [[nodiscard]] std::size_t internVertex(const Point2D& point, double localH,
         IntersectionFeature2D feature = IntersectionFeature2D::None);
+    // Before constructing cells, register immutable input samples which are
+    // incident to a dyadic corner within the arithmetic grid-identity budget.
+    // Distinct samples are never merged; ambiguous corner incidence fails.
+    void registerGridCornerAnchor(const Point2D& point, double localH,
+        IntersectionFeature2D feature = IntersectionFeature2D::Smooth);
+    [[nodiscard]] std::size_t internGridCorner(const Point2D& point, double localH);
     [[nodiscard]] std::size_t registerSegment(const Segment2D& segment,
         double localH, IntersectionSource2D source);
     [[nodiscard]] std::size_t intersectGridLine(std::size_t support,
@@ -206,6 +212,7 @@ private:
     std::size_t gridLevel_ = 0;
     bool gridConfigured_ = false;
     std::map<std::pair<double,double>, std::size_t> exactVertices_;
+    std::map<std::pair<std::uint64_t,std::uint64_t>, std::vector<std::size_t>> gridCornerAnchors_;
     std::map<std::tuple<std::size_t,std::size_t,IntersectionSource2D>,std::size_t> supportKeys_;
     std::vector<Support> supports_;
     std::map<std::pair<std::size_t,GridLineIdentity2D>,std::size_t> eventKeys_;

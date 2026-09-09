@@ -88,7 +88,7 @@ def main():
     for axis in axes[:2]:
         axis.set_xlabel("x")
         axis.set_ylabel("y")
-    fig.suptitle("cartmesh2d V1c: harmonic manufactured solution on final polyMesh")
+    fig.suptitle("CartMesh2D: harmonic manufactured solution on final polyMesh")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.output, dpi=190)
 

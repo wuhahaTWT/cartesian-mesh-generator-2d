@@ -1,0 +1,268 @@
+{
+  "scope": "fixed polygonal exterior harmonic scalar PDE; not an engineering-flow or universal accuracy claim",
+  "exact_solution": "T = x*x - y*y + 0.15*x - 0.05*y",
+  "equation": "laplacian(T)=0; exact Dirichlet values at exported boundary-face centres",
+  "solver": "OpenCFD OpenFOAM 2606 laplacianFoam",
+  "reproduce": "python3 tools/verification/run_engineering_mms.py",
+  "overall_valid": false,
+  "reason": "extended checkMesh failed for each grid; MMS pipeline passed",
+  "grids": [
+    {
+      "grid": "h04",
+      "parameters": {
+        "background_relative_size": 0.1,
+        "cells_per_level": 3,
+        "far_field_spans": 0.5,
+        "fluid_region": "exterior",
+        "input": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "reference_length": 2.0,
+        "small_cell_alpha": 0.1,
+        "wall_relative_size": 0.04
+      },
+      "mms": {
+        "cell_count": 1292,
+        "field": "quadratic",
+        "l1": 0.002799354079289223,
+        "l2": 0.0031785694803420847,
+        "linear_system_final_residual": 8.925818280028113e-14,
+        "linear_system_initial_residual": 8.925818280028113e-14,
+        "linear_system_iterations": 0,
+        "linf": 0.01852794173905703,
+        "max_numerical": 4.327829776346008,
+        "min_numerical": -3.969348417420036,
+        "time": "30",
+        "total_volume": 0.402454838991808,
+        "valid": true,
+        "volume_weighted_mean_error": 1.6199115372636543e-12
+      },
+      "mms_pipeline_valid": true,
+      "all_mesh_checks_passed": false,
+      "checks": [
+        {
+          "returncode": 0,
+          "stage": "generate",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "independent",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 0,
+          "mesh_ok": true,
+          "returncode": 0,
+          "stage": "check_standard",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 1,
+          "mesh_ok": false,
+          "returncode": 0,
+          "stage": "check_all",
+          "status": "diagnostic_failed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_volumes",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_centres",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "configure",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "solve",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "evaluate",
+          "status": "passed"
+        }
+      ],
+      "q1": "FAIL",
+      "solver_quality": "PASS"
+    },
+    {
+      "grid": "h02",
+      "parameters": {
+        "background_relative_size": 0.05,
+        "cells_per_level": 3,
+        "far_field_spans": 0.5,
+        "fluid_region": "exterior",
+        "input": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "reference_length": 2.0,
+        "small_cell_alpha": 0.1,
+        "wall_relative_size": 0.02
+      },
+      "mms": {
+        "cell_count": 4144,
+        "field": "quadratic",
+        "l1": 0.000822851044342284,
+        "l2": 0.0010365928977955458,
+        "linear_system_final_residual": 5.961903622653052e-14,
+        "linear_system_initial_residual": 5.961903622653052e-14,
+        "linear_system_iterations": 0,
+        "linf": 0.013281170305446899,
+        "max_numerical": 4.4613962566913425,
+        "min_numerical": -4.099460857595313,
+        "time": "30",
+        "total_volume": 0.2012274194939008,
+        "valid": true,
+        "volume_weighted_mean_error": 3.5451029946150498e-12
+      },
+      "mms_pipeline_valid": true,
+      "all_mesh_checks_passed": false,
+      "checks": [
+        {
+          "returncode": 0,
+          "stage": "generate",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "independent",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 0,
+          "mesh_ok": true,
+          "returncode": 0,
+          "stage": "check_standard",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 1,
+          "mesh_ok": false,
+          "returncode": 0,
+          "stage": "check_all",
+          "status": "diagnostic_failed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_volumes",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_centres",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "configure",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "solve",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "evaluate",
+          "status": "passed"
+        }
+      ],
+      "q1": "FAIL",
+      "solver_quality": "PASS"
+    },
+    {
+      "grid": "h01",
+      "parameters": {
+        "background_relative_size": 0.025,
+        "cells_per_level": 3,
+        "far_field_spans": 0.5,
+        "fluid_region": "exterior",
+        "input": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "reference_length": 2.0,
+        "small_cell_alpha": 0.1,
+        "wall_relative_size": 0.01
+      },
+      "mms": {
+        "cell_count": 14800,
+        "field": "quadratic",
+        "l1": 0.0002501431380972864,
+        "l2": 0.00031997237794433394,
+        "linear_system_final_residual": 7.348551221907979e-14,
+        "linear_system_initial_residual": 7.348551221907979e-14,
+        "linear_system_iterations": 0,
+        "linf": 0.00572154374806582,
+        "max_numerical": 4.528924947032973,
+        "min_numerical": -4.163784783848773,
+        "time": "30",
+        "total_volume": 0.10061370974511567,
+        "valid": true,
+        "volume_weighted_mean_error": 2.7088730842530807e-12
+      },
+      "mms_pipeline_valid": true,
+      "all_mesh_checks_passed": false,
+      "checks": [
+        {
+          "returncode": 0,
+          "stage": "generate",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "independent",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 0,
+          "mesh_ok": true,
+          "returncode": 0,
+          "stage": "check_standard",
+          "status": "passed"
+        },
+        {
+          "failed_mesh_checks": 1,
+          "mesh_ok": false,
+          "returncode": 0,
+          "stage": "check_all",
+          "status": "diagnostic_failed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_volumes",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "write_centres",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "configure",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "solve",
+          "status": "passed"
+        },
+        {
+          "returncode": 0,
+          "stage": "evaluate",
+          "status": "passed"
+        }
+      ],
+      "q1": "FAIL",
+      "solver_quality": "PASS"
+    }
+  ],
+  "l2_observed_orders_for_requested_h_halving": [
+    1.6165282103826573,
+    1.6958301412937313
+  ],
+  "two_dimensional_note": "The extrusion thickness decreases with refinement; volume-normalized norms compare the same 2D polygonal domain."
+}

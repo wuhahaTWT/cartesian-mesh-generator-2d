@@ -883,7 +883,7 @@ int main(int argc, char** argv) {
         std::min(domain.width(), domain.height()), -static_cast<int>(maxLevel));
     for (const auto& loop : boundary.loops()) {
         for (const auto& vertex : loop.vertices()) {
-            (void)constructionRegistry->internVertex(
+            constructionRegistry->registerGridCornerAnchor(
                 vertex, finestCellH, IntersectionFeature2D::Smooth);
         }
     }
