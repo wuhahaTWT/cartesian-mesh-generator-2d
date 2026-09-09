@@ -331,6 +331,44 @@ int main(){
               "an unset wall request follows the ceiling it is given");
     }
 
+    // An explicit engineering reference is independent of the axis-aligned bbox.
+    // The SAME physical geometry/refinement must be recovered after unit changes.
+    {
+        SizeFieldPolicy2D policy;
+        policy.referenceLength=1.5;
+        policy.wallRelativeSize=0.02;
+        policy.backgroundRelativeSize=0.2;
+        policy.farFieldSpans=0.5;
+        policy.wallDistance=WallDistanceSizing2D{3,0};
+        const auto reference=resolveSizeField2D(policy,circle);
+        check(reference.valid(),"explicit relative sizes resolve");
+        near(reference.domainSpan,3.5,1e-12,"padding uses reference length, body stays enclosed");
+        near(reference.requestedWallSize,0.03,1e-12,"wall request uses engineering reference");
+        check(reference.refinement.minimumLevel==4,"background level is derived from its size");
+        for (const double scale : {0.001, 1000.0}) {
+            policy.referenceLength=1.5*scale;
+            const auto scaled=resolveSizeField2D(policy,BoundaryRegion2D(circleLoop(64,scale)));
+            check(scaled.valid(),"scaled engineering reference resolves");
+            check(scaled.wallLevel==reference.wallLevel,"wall level invariant under unit changes");
+            near(scaled.wallCellSize / *policy.referenceLength,
+                 reference.wallCellSize / reference.referenceLength,1e-12,
+                 "realised relative wall size invariant under unit changes");
+        }
+        policy.referenceLength=1.5;
+        policy.wallCellsPerSpan=50;
+        check(!resolveSizeField2D(policy,circle).valid(),"ambiguous wall controls refused");
+        policy.wallCellsPerSpan.reset();
+        policy.backgroundRelativeSize=0.001;
+        check(!resolveSizeField2D(policy,circle).valid(),"background finer than wall refused");
+        policy.backgroundRelativeSize=0.2;
+        policy.referenceLength=-1;
+        check(!resolveSizeField2D(policy,circle).valid(),"negative reference refused");
+        policy.referenceLength=1.5;
+        policy.wallRelativeSize=1e-30;
+        policy.allowUnsafeWallLevel=true;
+        check(!resolveSizeField2D(policy,circle).valid(),"unreachable size never silently capped");
+    }
+
     if (failures!=0) {
         std::cerr<<failures<<" size-field check(s) failed\n";
         return EXIT_FAILURE;

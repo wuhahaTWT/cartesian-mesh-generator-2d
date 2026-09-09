@@ -50,15 +50,31 @@ test('degenerate input is refused rather than passed on', () => {
   assert.ok(convertToLoops('a.stl', '').issues.length);
 });
 
-test('a unitless format is normalised to a unit body span, .xy is left alone', () => {
+test('coordinate formats preserve physical dimensions and convert explicit units', () => {
   const csv = convertToLoops('a.csv', '0,0\n200,0\n200,80\n0,80\n');
-  assert.equal(csv.normalized, true);
+  assert.equal(csv.normalized, false);
   const xs = csv.loops[0].map(p => p[0]);
-  assert.ok(Math.abs(Math.max(...xs) - Math.min(...xs) - 1) < 1e-12);
+  assert.equal(Math.max(...xs) - Math.min(...xs), 200);
 
   const xy = convertToLoops('a.xy', '0 0\n200 0\n200 80\n0 80\n');
   assert.equal(xy.normalized, false);
   assert.equal(xy.loops[0][1][0], 200);
+  const millimetres = convertToLoops('a.csv', '0,0\n200,0\n200,80\n0,80\n', { sourceUnits: 'mm' });
+  const metres = convertToLoops('a.xy', '0 0\n0.2 0\n0.2 0.08\n0 0.08\n', { sourceUnits: 'm' });
+  assert.deepEqual(millimetres.loops, metres.loops);
+  assert.equal(millimetres.outputUnits, 'm');
+  assert.equal(millimetres.scale, 0.001);
+});
+
+test('negative scientific exponents and distant small polygons retain their geometry', () => {
+  const tiny = convertToLoops('a.xy', '0 0\n1e-3 0\n1e-3 2e-3\n0 2e-3\n');
+  assert.equal(tiny.issues.length, 0);
+  assert.equal(tiny.loops[0][2][1], 0.002);
+  const distant = convertToLoops('a.xy', '1e9 1e9\n1000000001 1e9\n1000000001 1000000001\n1e9 1000000001\n');
+  assert.equal(distant.issues.length, 0, 'translated area avoids large-coordinate cancellation');
+  assert.equal(convertToLoops('a.xy', '0 0\n1 0\njunk\n1 1\n').issues.length>0,true);
+  assert.equal(convertToLoops('a.xy', '0 0\n1 0\n1 1\n\n2 0\n2 1\n').issues.length>0,true,
+    'a malformed second loop cannot disappear');
 });
 
 test('the .xy writer round-trips through the reader', () => {

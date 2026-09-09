@@ -6,6 +6,7 @@
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 #include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/sizing/SizeField2D.hpp"
+#include "cartmesh2d/sizing/MeshResolution2D.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -265,12 +266,17 @@ bool parseSizingOptions(int argc, char** argv, int first,
             sizeFieldOnly=true;
             continue;
         }
-        if (option=="--far-field-spans" || option=="--wall-cells-per-span") {
+        if (option=="--far-field-spans" || option=="--wall-cells-per-span" ||
+            option=="--reference-length" || option=="--wall-relative-size" ||
+            option=="--background-relative-size") {
             if (index+1>argc) { error=option+" requires <value>"; return false; }
             double value=0.0;
             if (!parseExactDouble(argv[index],value)) { error="invalid "+option+" value"; return false; }
             ++index;
             if (option=="--far-field-spans") requireSizeField().farFieldSpans=value;
+            else if (option=="--reference-length") requireSizeField().referenceLength=value;
+            else if (option=="--wall-relative-size") requireSizeField().wallRelativeSize=value;
+            else if (option=="--background-relative-size") requireSizeField().backgroundRelativeSize=value;
             else requireSizeField().wallCellsPerSpan=value;
             continue;
         }
@@ -587,6 +593,9 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "size field (opt-in; takes over the domain and the tree depth):\n"
                  "  --size-field                          enable with defaults\n"
                  "  --size-field-only                     resolve, write the JSON and exit\n"
+                 "  --reference-length <v>               physical reference length (default: bbox span)\n"
+                 "  --wall-relative-size <h/Lref>         target wall size, alternative to cells-per-span\n"
+                 "  --background-relative-size <h/Lref>   background size, alternative to far-level\n"
                  "  --far-field-spans <v>                 domain half-extent in body spans (10)\n"
                  "  --wall-cells-per-span <v>             body span / wall cell size (128)\n"
                  "  --cells-per-level <n>                 cells per level band, 0 = boundary-only (3)\n"
@@ -1078,6 +1087,18 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
         }
         solverQuality=evaluateSolverQuality2D(solverTopology->topology);
+        MeshResolutionTargets2D resolutionTargets;
+        resolutionTargets.referenceLength=resolvedSizeField ? resolvedSizeField->referenceLength : span;
+        if (resolvedSizeField) {
+            resolutionTargets.explicitReferenceLength=resolvedSizeField->explicitReferenceLength;
+            resolutionTargets.wallSize=resolvedSizeField->requestedWallSize;
+            resolutionTargets.backgroundSize=resolvedSizeField->requestedBackgroundSize;
+        }
+        {
+            std::ofstream out(outputPrefix.string()+".resolution.json");
+            out<<meshResolutionReportToJson2D(solverTopology->topology,resolutionTargets);
+            if (!out.good()) { std::cerr<<"failed while writing resolution JSON output\n"; return EXIT_FAILURE; }
+        }
         // Q1 is a diagnostic, so it is produced before the gate decides.  The five
         // acceptance cases have only ever been rated through the hybrid path; a
         // report that only exists when the mesh already passes cannot explain a

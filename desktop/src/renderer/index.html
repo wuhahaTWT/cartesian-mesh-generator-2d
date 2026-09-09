@@ -35,15 +35,22 @@
         <label class="field">曲线弦高误差
           <input id="chordError" type="number" min="0.000000001" step="any" value="0.001">
         </label>
-        <label class="field">DXF 源单位
+        <label class="field">几何源单位
           <select id="sourceUnits">
-            <option value="auto">自动读取 $INSUNITS</option>
+            <option value="auto">DXF 读文件单位；其他格式按米</option>
             <option value="mm">毫米</option><option value="cm">厘米</option>
             <option value="m">米</option><option value="in">英寸</option><option value="ft">英尺</option>
           </select>
         </label>
-        <p class="note">支持 .xy / .dxf / .svg / .csv / .txt。无单位格式会把最大跨度归一到 1 m。</p>
+        <p class="note">支持 .xy / .dxf / .svg / .csv / .txt。统一换算为米，保留真实尺寸；不会自动归一到 1 m。</p>
       </details>
+      <label class="field">参考长度 Lref
+        <select id="referenceMode"><option value="bbox">包围盒最长边（自动）</option><option value="explicit">指定工程参考长度</option></select>
+      </label>
+      <label class="field" id="referenceLengthField" hidden>参考长度（m）
+        <input id="referenceLength" type="number" min="0.000000000001" step="any" value="1">
+      </label>
+      <p class="note">可指定翼型弦长、圆柱直径或管道特征长度。指定值不会随模型旋转改变。</p>
     </section>
 
     <section class="block">
@@ -55,9 +62,25 @@
       <p id="methodNote" class="note"></p>
     </section>
 
+    <section class="block" id="resolutionBlock">
+      <h2><span>3</span>相对尺寸</h2>
+      <div class="pair">
+        <label class="field">壁面目标 h / Lref<input id="wallRelativeSize" type="number" min="0.000000000001" max="1" step="any" value="0.015625"></label>
+        <label class="field">背景目标 h / Lref<input id="backgroundRelativeSize" type="number" min="0.000000000001" step="any" value="1"></label>
+        <label class="field">计算域留白 / Lref<input id="relativePadding" type="number" min="0.25" step="any" value="10"></label>
+        <label class="field">每级过渡带单元数<input id="relativeBandCells" type="number" min="0" max="64" step="1" value="3"></label>
+      </div>
+      <p class="note">例如 0.005 表示参考长度的 0.5%。实际尺寸由四叉树取整、边界裁切和质量修复共同决定，生成后提供实测报告。</p>
+      <div id="resolutionBudget" class="budget"></div>
+      <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许尝试超过已验证的构造深度（质量门不变）</label>
+      <button id="probeRelative" class="ghost wide">预检相对尺寸</button>
+      <div id="relativeProbeResult" class="probe" hidden></div>
+    </section>
+
     <section class="block" id="sizingBlock">
       <h2><span>3</span>尺寸场</h2>
       <div id="presets" class="presets"></div>
+      <div hidden>
       <div class="pair">
         <label class="field">远场距离
           <span class="unit"><input id="farFieldSpans" type="number" min="0.25" step="any" value="10"><i>倍体长</i></span>
@@ -75,6 +98,7 @@
         </label>
       </div>
       <div id="budget" class="budget"></div>
+      </div>
 
       <label class="toggle"><input id="useCurvature" type="checkbox">曲率细化
         <span class="unit"><i>每半径</i><input id="curvatureCellsPerRadius" type="number" min="1" step="1" value="8" disabled><i>个单元</i></span>
@@ -89,7 +113,7 @@
         <label class="field">半宽<span class="unit"><input id="wakeHalfWidth" type="number" min="0.05" step="any" value="0.7"><i>倍体长</i></span></label>
         <label class="field">低于壁面<span class="unit"><input id="wakeLevels" type="number" min="0" max="20" step="1" value="4"><i>级</i></span></label>
       </div>
-      <label class="toggle"><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
+      <label class="toggle" hidden><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
 
       <div class="regions">
         <div class="regionsHead">
@@ -97,11 +121,11 @@
           <button id="addRegion" class="mini">+ 添加</button>
         </div>
         <div id="regionList"></div>
-        <p class="note">坐标以体长为单位、相对物体中心。这是尾流这类"非必要加密"区域的手动出口：
+        <p class="note">坐标以 Lref 为单位、相对物体中心。这是尾流这类"非必要加密"区域的手动出口：
           物面附近的加密由尺寸场保证，这里只管你想额外加密的地方。</p>
       </div>
 
-      <button id="probe" class="ghost wide">预检尺寸场</button>
+      <button id="probe" class="ghost wide" hidden>预检尺寸场</button>
       <div id="probeResult" class="probe" hidden></div>
     </section>
 
@@ -109,18 +133,19 @@
       <h2><span>3</span>边界层与余域</h2>
       <div class="pair">
         <label class="field">壁面层数<input id="nLayers" type="number" min="1" max="64" step="1" value="4"></label>
-        <label class="field">首层厚度<input id="firstThickness" type="number" min="0.000000000001" step="any" value="0.02"></label>
+        <label class="field">首层高度 / Lref<input id="firstLayerRelativeSize" type="number" min="0.000000000001" max="1" step="any" value="0.01"></label>
         <label class="field">增长率<input id="growthRatio" type="number" min="1" max="5" step="any" value="1.2"></label>
-        <label class="field">计算域留白<input id="domainPadding" type="number" min="0.01" step="any" value="1.0"></label>
+        <label class="field">挤出厚度 / Lref<input id="extrusionRelativeSize" type="number" min="0.000000000001" max="1" step="any" value="0.01"></label>
       </div>
-      <div class="pair">
+      <div class="pair" hidden>
+        <input id="firstThickness" type="number" value="0.02">
+        <input id="domainPadding" type="number" value="1">
         <label class="field">余域最高层级<input id="maxLevel" type="number" min="1" max="8" step="1" value="6"></label>
         <label class="field">全域最低层级<input id="minimumLevel" type="number" min="0" max="8" step="1" value="3"></label>
         <label class="field">壁面连接层级<input id="boundaryLevel" type="number" min="0" max="8" step="1" value="6"></label>
         <label class="field">挤出厚度<input id="extrusionThickness" type="number" min="0.000000000001" step="any" value="0.01"></label>
       </div>
-      <p class="note">这条路径的实测上限是 level 8：level 9 上 faceWeight / volRatio / 非正交角同时越限，
-        根因是壁面切向分辨率被输入折线顶点数锁死，不是层参数没调好。</p>
+      <p class="note">贴体层与余域使用同一参考长度。急弯可能局部停层或回退；实际保留情况与质量结果分别报告。</p>
     </section>
 
     <section class="block">
@@ -161,6 +186,7 @@
       <div class="counters" id="counters"></div>
       <div class="gates" id="gates"></div>
       <div class="histogram" id="histogram"></div>
+      <div id="resolutionResult" class="note" hidden></div>
     </div>
     <details class="logpanel"><summary>运行日志</summary><pre id="log"></pre></details>
   </section>

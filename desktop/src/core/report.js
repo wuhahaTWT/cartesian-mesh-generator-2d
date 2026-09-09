@@ -113,6 +113,7 @@ function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = fa
       contract
     },
     sizeField: reports.sizeField || null,
+    resolution: reports.resolution || null,
     sizing: reports.sizing || null,
     openFoam: {
       written,
