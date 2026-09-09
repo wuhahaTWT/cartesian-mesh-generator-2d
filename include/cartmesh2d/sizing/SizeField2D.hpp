@@ -70,6 +70,11 @@ struct WakeSizing2D {
 };
 
 struct SizeFieldPolicy2D {
+    // Physical reference length in the same units as the input coordinates.
+    // Unset retains the explicitly reported bounding-box-span convention.
+    std::optional<double> referenceLength;
+    std::optional<double> wallRelativeSize;
+    std::optional<double> backgroundRelativeSize;
     // Domain half-extent in body spans.  External-aero practice is 5-10 body
     // lengths upstream and 10-20 downstream; octree gradation makes this close to
     // free, so the default is generous rather than minimal.
@@ -108,6 +113,10 @@ struct ResolvedSizeField2D {
     // (a 1 x 0.12 airfoil at padding 0.3 gives every cell an aspect of ~2.2).
     Domain2D domain;
     double bodySpan = 0.0;
+    double referenceLength = 0.0;
+    bool explicitReferenceLength = false;
+    double requestedWallSize = 0.0;
+    std::optional<double> requestedBackgroundSize;
     double domainSpan = 0.0;
     double wallCellSize = 0.0;
     // Derived, not requested: the maximum of the wall, curvature and proximity

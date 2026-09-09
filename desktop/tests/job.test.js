@@ -11,6 +11,27 @@ const cutcell = extra => ({
 });
 const paths = { xyPath: '/out/body.xy', prefix: '/out/body', casePath: '/out/body-openfoam' };
 
+test('both methods carry the same explicit reference and relative sizes to native code', () => {
+  const request = { sizingMode: 'relative', geometryPath: '/in/body.xy', referenceLength: 0.2,
+    wallRelativeSize: 0.01, backgroundRelativeSize: 0.1, farFieldSpans: 0.5, cellsPerLevel: 3,
+    nLayers: 3, firstLayerRelativeSize: 0.001, growthRatio: 1.2, extrusionRelativeSize: 0.01 };
+  for (const method of ['cutcell', 'hybrid']) {
+    const { job } = validateJob({ ...request, method });
+    const { args } = buildInvocation(job, paths);
+    const value = key => args[args.indexOf(key)+1];
+    assert.equal(value('--reference-length'), '0.2');
+    assert.equal(value('--wall-relative-size'), '0.01');
+    assert.equal(value('--background-relative-size'), '0.1');
+    assert.ok(!args.includes('--wall-cells-per-span'));
+    if (method === 'hybrid') {
+      assert.equal(value('--first-layer-relative-size'), '0.001');
+      assert.equal(args[10], '0.002', 'extrusion ratio is converted using the same reference');
+    }
+    assert.throws(() => validateJob({ ...request, method, referenceLength: 0 }), /参考长度/);
+    assert.throws(() => validateJob({ ...request, method, backgroundRelativeSize: 0.001 }), /背景尺寸/);
+  }
+});
+
 test('the pure path argv is the one that was verified against the CLI', () => {
   const { job } = validateJob(cutcell());
   const { executable, args } = buildInvocation(job, paths);

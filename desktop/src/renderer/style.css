@@ -210,6 +210,7 @@ select { font-family: inherit; font-size: 12px; }
 .gate .detail { font: 10.5px/1.5 var(--mono); color: var(--ink-faint); }
 
 .histogram { display: grid; gap: 3px; font: 10px/1 var(--mono); }
+#resolutionResult { grid-column: 1 / -1; grid-row: 1; margin: 0; }
 .histogram .title { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
 .histogram .bar { display: flex; align-items: center; gap: 6px; }
 .histogram .bar em { font-style: normal; width: 18px; color: var(--ink-faint); text-align: right; }

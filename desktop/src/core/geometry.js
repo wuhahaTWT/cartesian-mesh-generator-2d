@@ -7,7 +7,9 @@ const { parseSvgLoops } = require('./svg');
 // and written out as the native .xy; DXF keeps going through the fail-closed C++
 // converter because that is where unit handling and entity diagnostics live.
 
-const NUMBER_PAIR = /^\s*(-?[\d.eE+]+)[\s,;]+(-?[\d.eE+]+)\s*$/;
+const NUMBER = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?';
+const NUMBER_PAIR = new RegExp(`^\\s*(${NUMBER})[\\s,;]+(${NUMBER})\\s*$`);
+const UNIT_TO_METRES = Object.freeze({ m: 1, mm: 0.001, cm: 0.01, in: 0.0254, ft: 0.3048 });
 
 // Shared by .xy, .csv and .txt: a blank line ends a loop, `#` is a comment.  The
 // separator is whatever sits between the two numbers, so a comma-delimited export
@@ -25,7 +27,7 @@ function parseCoordinateText(text) {
     if (!match) {
       // A header row is the normal first line of a CSV export, so skip one silently
       // and complain about anything after that.
-      if (index === 0) return;
+      if (index === 0 && /^\s*[a-z_][a-z_\s]*[,;\s]+[a-z_][a-z_\s]*\s*$/i.test(trimmed)) return;
       warnings.push(`第 ${index + 1} 行不是坐标对，已跳过：${trimmed.slice(0, 40)}`);
       return;
     }
@@ -47,32 +49,29 @@ function dropClosingDuplicate(loop) {
   if (loop.length < 2) return loop;
   const [ax, ay] = loop[0];
   const [bx, by] = loop[loop.length - 1];
-  const span = Math.max(1e-300, Math.hypot(bx - ax, by - ay));
-  const scale = loop.reduce((acc, [x, y]) => Math.max(acc, Math.abs(x), Math.abs(y)), 1);
-  return span <= 1e-12 * scale ? loop.slice(0, -1) : loop;
+  return ax === bx && ay === by ? loop.slice(0, -1) : loop;
 }
 
 function validateLoops(loops) {
   const issues = [];
-  const cleaned = loops.map(dropClosingDuplicate).filter(loop => loop.length >= 3);
+  const cleaned = loops.map(dropClosingDuplicate);
   if (!cleaned.length) issues.push('文件里没有找到至少 3 个顶点的闭合环。');
   cleaned.forEach((loop, index) => {
+    if (loop.length < 3) { issues.push(`第 ${index + 1} 个环不足三个顶点。`); return; }
+    const [ox, oy] = loop[0];
     const area = loop.reduce((sum, [x, y], i) => {
       const [nx, ny] = loop[(i + 1) % loop.length];
-      return sum + (x * ny - nx * y);
+      return sum + ((x-ox) * (ny-oy) - (nx-ox) * (y-oy));
     }, 0) / 2;
     if (!(Math.abs(area) > 0)) issues.push(`第 ${index + 1} 个环的面积为零。`);
   });
   return { loops: cleaned, issues };
 }
 
-// The size field asks for everything in body spans, so absolute scale only matters
-// for the hybrid path's first-layer thickness.  Normalising an unitless format to a
-// 1 m body span therefore keeps every sizing default meaningful.
+// Explicit utility for callers that deliberately want a unit-span geometry.
+// The physical import path does not call it.
 function normalizeToUnitSpan(loops) {
-  const xs = loops.flat().map(p => p[0]);
-  const ys = loops.flat().map(p => p[1]);
-  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  const span = boundsOfLoops(loops).bodySpan;
   if (!(span > 0)) return { loops, scale: 1 };
   const scale = 1 / span;
   return { loops: loops.map(loop => loop.map(([x, y]) => [x * scale, y * scale])), scale };
@@ -82,7 +81,7 @@ function loopsToXyText(loops, header) {
   const lines = header ? [`# ${header}`] : [];
   loops.forEach((loop, index) => {
     if (index > 0) lines.push('');
-    for (const [x, y] of loop) lines.push(`${x.toPrecision(12)} ${y.toPrecision(12)}`);
+    for (const [x, y] of loop) lines.push(`${x.toPrecision(17)} ${y.toPrecision(17)}`);
   });
   return `${lines.join('\n')}\n`;
 }
@@ -109,18 +108,37 @@ function convertToLoops(filePath, text, options = {}) {
     ? parseSvgLoops(text, options)
     : parseCoordinateText(text);
   const { loops, issues } = validateLoops(parsed.loops);
+  if (kind !== 'svg' && parsed.warnings.length) issues.push(...parsed.warnings);
   if (issues.length) return { kind, issues, warnings: parsed.warnings || [] };
 
-  // .xy is already in metres by contract; the unitless formats get normalised.
-  const scaled = kind === 'xy' ? { loops, scale: 1 } : normalizeToUnitSpan(loops);
+  // Unit conversion is physical. Never normalise a drawing silently: the same
+  // body exported as XY and CSV must reach the solver at the same size.
+  const units = options.sourceUnits && options.sourceUnits !== 'auto' ? options.sourceUnits : 'm';
+  const scale = UNIT_TO_METRES[units];
+  if (!scale) return { kind, issues: [`未知源单位：${units}`], warnings: [] };
+  const scaled = { loops: loops.map(loop => loop.map(([x,y]) => [x*scale,y*scale])), scale };
   return {
     kind,
     loops: scaled.loops,
     scale: scaled.scale,
-    normalized: kind !== 'xy',
+    normalized: false,
+    sourceUnits: units,
+    outputUnits: 'm',
     issues: [],
-    warnings: parsed.warnings || []
+    warnings: [...(parsed.warnings || []), ...((!options.sourceUnits || options.sourceUnits === 'auto') && kind !== 'xy'
+      ? ['该格式未提供物理单位，当前按米读取；请在导入设置中确认源单位。'] : [])]
   };
+}
+
+function boundsOfLoops(loops) {
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  for (const loop of loops) for (const [x,y] of loop) {
+    minX=Math.min(minX,x); minY=Math.min(minY,y);
+    maxX=Math.max(maxX,x); maxY=Math.max(maxY,y);
+  }
+  const width=maxX-minX, height=maxY-minY;
+  return { minX,minY,maxX,maxY,width,height,centreX:minX+width/2,centreY:minY+height/2,
+    bodySpan: Math.max(width,height) };
 }
 
 module.exports = {
@@ -130,5 +148,6 @@ module.exports = {
   validateLoops,
   normalizeToUnitSpan,
   loopsToXyText,
-  dropClosingDuplicate
+  dropClosingDuplicate,
+  boundsOfLoops
 };

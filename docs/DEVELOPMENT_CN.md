@@ -15,6 +15,7 @@
 | `geometry/IntersectionRegistry2D`、`IntersectionConstruction2D` | 全局共享交点与格线构造；不要回到每格独立修补交点 |
 | `grid/CartesianGrid2D`、`spatial/BoundarySegmentIndex2D` | 背景格、分类、边界空间索引 |
 | `quadtree/Quadtree2D`、`sizing/SizeField2D` | 四叉树、2:1 平衡、距离/曲率/间隙/尾迹尺寸场 |
+| `sizing/MeshResolution2D` | 最终求解拓扑的无量纲尺寸、壁面切向/法向测量与请求偏差 |
 | `cutcell/CutCell2D` | 真正的二维流体多边形与多连通分量 |
 | `boundary_layer/BoundaryLayer2D` | 壁面链、法向推进、层厚与局部停止 |
 | `hybrid/HybridMesh2D`、`TransitionCanonicalization2D` | 边界层、过渡和余域统一拓扑，局部降层、终止、fallback |
@@ -27,7 +28,7 @@
 | `io/Dxf2D`、`BoundaryMetadata2D` | CAD 曲线、单位、边界名称/角色 |
 | `io/MeshIO2D`、`OpenFoam2D` | CM2D/VTK/JSON、二维挤出和 OpenFOAM case |
 
-表中的模块分别位于 `include/cartmesh2d/` 和 `src/`。全部 29 个 C++ 实现文件仍由 CMake 构建，未把现用模块当旧版本删除。
+表中的模块分别位于 `include/cartmesh2d/` 和 `src/`，仍参与 CMake 构建，未把现用模块当旧版本删除。
 
 桌面入口是 `desktop/src/main.js`（编排/IPC）、`preload.js`（受限桥接）。
 `core/` 管能力、样例、几何/SVG 输入、参数、尺寸预算、CM2D、结果摘要；`process.js` 负责可取消/限时的原生子进程，`automatic.js` 管最多 4 组候选参数与粗略估时。
@@ -58,6 +59,17 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 可加 `--control=manual`、`--density=dense`、`--method=hybrid`、`--mode=light`、`--regions=1`、`--repeat=1`。省略 `--out` 即验证默认临时预览；`--export=/绝对路径/result.zip` 验证结果包。每轮会缩到最小窗口并检查底部可达、预览/导出单元数。smoke 会走真实表单/IPC/CLI 后退出；它不等于所有界面操作都已验收。
 
 ## CFD 验证
+
+两路径的相对尺寸旗标：`--reference-length <m>`、`--wall-relative-size <h/Lref>`、
+`--background-relative-size <h/Lref>`、`--far-field-spans <padding/Lref>`、`--cells-per-level <n>`。
+Hybrid 另加 `--first-layer-relative-size <height/Lref>`；挤出厚度的旧位置参数仍为米。
+相对尺寸启用后，旧位置参数的树层级和留白仅为兼容占位，几何、内外流和质量门仍正常执行。
+`--size-field-only` 两路径均可预检；它不验证构造或 Solver 质量。
+
+`tools/verification/check_mesh_resolution.py FINAL.solver.cm2d --report PREFIX.resolution.json`
+独立测量序列化后的最终网格。`tests/mesh_resolution_cli_test.py --cli build/cartmesh2d_cli
+--hybrid-cli build/cartmesh2d_hybrid_cli` 检查两路径的参考长度、缩放、实际输出、非法参数及伪造统计。
+默认证据目录为忽略的 `outputs/engineering-resolution/`。
 
 以下小例既保留原生输入，又有独立读取验证。OpenFOAM 使用薄层挤出，frontAndBack 为 empty。
 

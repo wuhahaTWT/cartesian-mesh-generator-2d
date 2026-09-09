@@ -1,6 +1,8 @@
 #include "cartmesh2d/hybrid/HybridMesh2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include "cartmesh2d/io/OpenFoam2D.hpp"
+#include "cartmesh2d/sizing/SizeField2D.hpp"
+#include "cartmesh2d/sizing/MeshResolution2D.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -112,7 +114,12 @@ void usage(std::ostream& out = std::cerr) {
            "[--q3-termination-repartition] [--q3-termination-grouped] "
            "[--q4-termination-construction] "
            "[--q5-outer-transition-radial] "
-           "[--q5-termination-buffer-radial]\n";
+           "[--q5-termination-buffer-radial]\n"
+           "Shared dimensionless sizing (overrides positional levels and padding):\n"
+           "  --reference-length <value> --wall-relative-size <h/Lref>\n"
+           "  --background-relative-size <h/Lref> --far-field-spans <padding/Lref>\n"
+           "  --first-layer-relative-size <height/Lref> --cells-per-level <n>\n"
+           "  --max-safe-wall-level <n> --allow-unsafe-wall-level --size-field-only\n";
 }
 
 } // namespace
@@ -142,8 +149,56 @@ int main(int argc, char** argv) {
     bool q4TerminationConstruction=false;
     bool q5OuterTransitionRadial=false;
     bool q5TerminationBufferRadial=false;
-    while (argc>1) {
-        const std::string option=argv[argc-1];
+    std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
+    std::optional<ResolvedSizeField2D> resolvedSizeField;
+    std::optional<double> firstLayerRelativeSize;
+    bool sizeFieldOnly=false;
+    const auto requireSizeField = [&]() -> SizeFieldPolicy2D& {
+        if (!sizeFieldPolicy) sizeFieldPolicy.emplace();
+        return *sizeFieldPolicy;
+    };
+    int optionStart=argc;
+    for (int i=3; i<argc; ++i) {
+        if (std::string(argv[i]).starts_with("--")) { optionStart=i; break; }
+    }
+    for (int i=optionStart; i<argc; ++i) {
+        const std::string option=argv[i];
+        if (option=="--size-field" || option=="--size-field-only") {
+            (void)requireSizeField();
+            if (option=="--size-field-only") sizeFieldOnly=true;
+            continue;
+        }
+        if (option=="--reference-length" || option=="--wall-relative-size" ||
+            option=="--background-relative-size" || option=="--far-field-spans" ||
+            option=="--first-layer-relative-size") {
+            double value=0.0;
+            if (++i>=argc || !parseDouble(argv[i],value) || !(value>0.0)) {
+                std::cerr<<option<<" requires a finite positive value\n";
+                return EXIT_FAILURE;
+            }
+            auto& field=requireSizeField();
+            if (option=="--reference-length") field.referenceLength=value;
+            else if (option=="--wall-relative-size") field.wallRelativeSize=value;
+            else if (option=="--background-relative-size") field.backgroundRelativeSize=value;
+            else if (option=="--far-field-spans") field.farFieldSpans=value;
+            else firstLayerRelativeSize=value;
+            continue;
+        }
+        if (option=="--cells-per-level" || option=="--max-safe-wall-level") {
+            std::size_t value=0;
+            if (++i>=argc || !parseSize(argv[i],value) || value>64U) {
+                std::cerr<<option<<" requires an integer in [0,64]\n";
+                return EXIT_FAILURE;
+            }
+            auto& field=requireSizeField();
+            if (option=="--max-safe-wall-level") field.maxSafeWallLevel=value;
+            else { if (!field.wallDistance) field.wallDistance.emplace(); field.wallDistance->cellsPerLevel=value; }
+            continue;
+        }
+        if (option=="--allow-unsafe-wall-level") {
+            requireSizeField().allowUnsafeWallLevel=true;
+            continue;
+        }
         if (option.rfind("--small-alpha=",0)==0) {
             if (!parseDouble(option.substr(14).c_str(),smallAlpha) || smallAlpha<=0 || smallAlpha>=1) {
                 std::cerr<<"invalid small-cell area fraction\n";
@@ -173,9 +228,9 @@ int main(int argc, char** argv) {
         else if (option=="--q4-termination-construction") {
             q4TerminationConstruction=true;
         }
-        else break;
-        --argc;
+        else { std::cerr<<"unknown option: "<<option<<'\n'; return EXIT_FAILURE; }
     }
+    argc=optionStart;
     if (argc != 10 && argc != 12) {
         usage();
         return EXIT_FAILURE;
@@ -233,8 +288,37 @@ int main(int argc, char** argv) {
         chains.push_back(std::move(*chain.chain));
     }
     const auto wallBounds = originalWalls.bounds();
-    const Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
+    Domain2D domain{{{wallBounds.min.x - padding, wallBounds.min.y - padding},
                            {wallBounds.max.x + padding, wallBounds.max.y + padding}}};
+    MeshResolutionTargets2D resolutionTargets;
+    resolutionTargets.referenceLength=std::max(wallBounds.max.x-wallBounds.min.x,
+                                              wallBounds.max.y-wallBounds.min.y);
+    if (sizeFieldPolicy) {
+        resolvedSizeField=resolveSizeField2D(*sizeFieldPolicy,originalWalls);
+        if (!writeText(outputPrefix.string()+".size-field.json",
+                       resolvedSizeFieldToJson(*resolvedSizeField),error)) {
+            std::cerr<<error<<'\n'; return EXIT_FAILURE;
+        }
+        if (!resolvedSizeField->valid()) {
+            for (const auto& issue:resolvedSizeField->issues) std::cerr<<"size_field_issue="<<issue<<'\n';
+            return EXIT_FAILURE;
+        }
+        domain=resolvedSizeField->domain;
+        maxLevel=resolvedSizeField->maxLevel;
+        refinement=resolvedSizeField->refinement;
+        resolutionTargets.referenceLength=resolvedSizeField->referenceLength;
+        resolutionTargets.explicitReferenceLength=resolvedSizeField->explicitReferenceLength;
+        resolutionTargets.wallSize=resolvedSizeField->requestedWallSize;
+        resolutionTargets.backgroundSize=resolvedSizeField->requestedBackgroundSize;
+        if (firstLayerRelativeSize) {
+            layerParameters.thickness=*firstLayerRelativeSize*resolutionTargets.referenceLength;
+            if (!std::isfinite(layerParameters.thickness) || !(layerParameters.thickness>0)) {
+                std::cerr<<"resolved first layer height is not finite and positive\n"; return EXIT_FAILURE;
+            }
+        }
+        if (sizeFieldOnly) return EXIT_SUCCESS;
+    }
+    resolutionTargets.firstLayerHeight=layerParameters.thickness;
     HybridMeshPolicy2D hybridPolicy;
     hybridPolicy.fluidRegion=fluidRegion;
     hybridPolicy.remainderSmallCellAreaFraction=smallAlpha;
@@ -311,6 +395,10 @@ int main(int argc, char** argv) {
         const auto solverQualityPath=outputPrefix.string()+
                                      ".fallback.solver-quality.json";
         const auto& fallback=robust.fallback;
+        if (!writeText(outputPrefix.string()+".resolution.json",
+                       meshResolutionReportToJson2D(fallback.solverTopology,resolutionTargets),error)) {
+            std::cerr<<error<<'\n'; return EXIT_FAILURE;
+        }
         if (!writeLegacyVtk2D(fallback.topology,vtkPath,&error) ||
             !writeCm2dTopology(fallback.topology,cm2dPath,&error) ||
             !writeLegacyVtk2D(fallback.solverTopology,solverVtkPath,&error) ||
@@ -389,6 +477,10 @@ int main(int argc, char** argv) {
                                    ".hybrid.solver-quality.json";
     const auto qualityContractPath = outputPrefix.string() +
                                      ".hybrid.quality-contract.json";
+    if (!writeText(outputPrefix.string()+".resolution.json",
+                   meshResolutionReportToJson2D(hybrid.solverTopology,resolutionTargets),error)) {
+        std::cerr<<error<<'\n'; return EXIT_FAILURE;
+    }
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||
         !writeCm2dTopology(hybrid.topology, cm2dPath, &error) ||
         !writeLegacyVtk2D(hybrid.solverTopology, solverVtkPath, &error) ||

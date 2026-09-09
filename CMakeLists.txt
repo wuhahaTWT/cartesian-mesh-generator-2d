@@ -16,6 +16,7 @@ add_library(cartmesh2d
     src/spatial/BoundarySegmentIndex2D.cpp
     src/quadtree/Quadtree2D.cpp
     src/sizing/SizeField2D.cpp
+    src/sizing/MeshResolution2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
     src/topology/EdgeIncidence2D.cpp
@@ -245,6 +246,13 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
     add_test(NAME cartmesh2d_stageWB_size_field_tests COMMAND cartmesh2d_size_field_tests)
+    add_test(NAME cartmesh2d_relative_resolution_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/mesh_resolution_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_cli>
+            --hybrid-cli $<TARGET_FILE:cartmesh2d_hybrid_cli>
+            --log ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution/cli.log
+            --output-dir ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution)
+    set_tests_properties(cartmesh2d_relative_resolution_cli PROPERTIES TIMEOUT 150)
     add_test(NAME cartmesh2d_stageWC_quality_reachability_tests COMMAND cartmesh2d_quality_reachability_tests)
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)

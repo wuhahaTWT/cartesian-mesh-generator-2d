@@ -143,6 +143,15 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
         return resolved;
     };
     if (maxLevelCap == 0U || maxLevelCap > 28U) return reject("maxLevelCap outside [1,28]");
+    for (const auto value : {policy.referenceLength, policy.wallRelativeSize,
+                             policy.backgroundRelativeSize}) {
+        if (value && (!std::isfinite(*value) || !(*value > 0.0))) {
+            return reject("reference length and relative sizes must be finite and positive");
+        }
+    }
+    if (policy.wallRelativeSize && policy.wallCellsPerSpan) {
+        return reject("use wallRelativeSize or wallCellsPerSpan, not both");
+    }
     if (!boundary.diagnose(tol).valid()) return reject("invalid boundary region");
     if (!(policy.farFieldSpans > 0.0) || !std::isfinite(policy.farFieldSpans)) {
         return reject("farFieldSpans must be finite and positive");
@@ -160,11 +169,14 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
     const double bodyHeight = bodyBounds.max.y - bodyBounds.min.y;
     resolved.bodySpan = std::max(bodyWidth, bodyHeight);
     if (!(resolved.bodySpan > 0.0)) return reject("boundary has zero extent");
+    resolved.referenceLength = policy.referenceLength.value_or(resolved.bodySpan);
+    resolved.explicitReferenceLength = policy.referenceLength.has_value();
 
     // A square domain is not cosmetic: Quadtree2D divides width and height by the
     // same power of two, so any other aspect ratio makes every cell in the mesh
     // non-square and leaves "level" without a single cell size to reason about.
-    resolved.domainSpan = resolved.bodySpan * (1.0 + 2.0 * policy.farFieldSpans);
+    resolved.domainSpan = resolved.bodySpan + 2.0 * policy.farFieldSpans * resolved.referenceLength;
+    if (!std::isfinite(resolved.domainSpan)) return reject("resolved domain span overflow");
     const Point2D centre{0.5 * (bodyBounds.min.x + bodyBounds.max.x),
                          0.5 * (bodyBounds.min.y + bodyBounds.max.y)};
     const double half = 0.5 * resolved.domainSpan;
@@ -172,9 +184,15 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
                                 {centre.x + half, centre.y + half}}};
     if (!resolved.domain.valid(tol)) return reject("resolved domain is degenerate");
 
-    if (policy.wallCellsPerSpan) {
+    if (policy.wallRelativeSize || policy.wallCellsPerSpan) {
+        resolved.requestedWallSize = policy.wallRelativeSize
+            ? resolved.referenceLength * *policy.wallRelativeSize
+            : resolved.referenceLength / *policy.wallCellsPerSpan;
+        if (!std::isfinite(resolved.requestedWallSize) || !(resolved.requestedWallSize > 0.0)) {
+            return reject("resolved wall size is not finite and positive");
+        }
         resolved.wallLevel = sizeFieldLevelForSize2D(
-            resolved.domainSpan, resolved.bodySpan / *policy.wallCellsPerSpan, maxLevelCap);
+            resolved.domainSpan, resolved.requestedWallSize, maxLevelCap);
         if (resolved.wallLevel == 0U) return reject("wallCellsPerSpan is too coarse to refine");
     } else {
         resolved.wallLevel = std::min(policy.maxSafeWallLevel, maxLevelCap);
@@ -265,6 +283,12 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
                                   resolved.proximityLevel});
     resolved.levelCapReached = resolved.maxLevel >= maxLevelCap;
     resolved.wallCellSize = cellSizeAt(resolved.wallLevel);
+    if (resolved.requestedWallSize == 0.0) resolved.requestedWallSize = resolved.wallCellSize;
+    if (resolved.wallCellSize > resolved.requestedWallSize &&
+        !tol.nearlyEqual(resolved.wallCellSize / resolved.referenceLength,
+                         resolved.requestedWallSize / resolved.referenceLength)) {
+        return reject("requested wall size cannot be reached within maxLevelCap");
+    }
     if (!policy.allowUnsafeWallLevel && resolved.maxLevel > policy.maxSafeWallLevel) {
         // Fail closed with the arithmetic in the message: the caller needs to know
         // which request produced the depth, not just that a limit exists.
@@ -280,19 +304,31 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
     auto& refinement = resolved.refinement;
     refinement.boundaryLevel = resolved.wallLevel;
 
+    std::size_t farLevel = policy.wallDistance ? policy.wallDistance->farLevel : 0U;
+    if (policy.backgroundRelativeSize) {
+        if (farLevel != 0U) return reject("use backgroundRelativeSize or farLevel, not both");
+        resolved.requestedBackgroundSize = resolved.referenceLength * *policy.backgroundRelativeSize;
+        if (!std::isfinite(*resolved.requestedBackgroundSize) || !(*resolved.requestedBackgroundSize > 0.0)) {
+            return reject("resolved background size is not finite and positive");
+        }
+        farLevel = sizeFieldLevelForSize2D(resolved.domainSpan, *resolved.requestedBackgroundSize, maxLevelCap);
+    }
+    if (farLevel > resolved.wallLevel) return reject("background size is finer than the wall size");
+    refinement.minimumLevel = farLevel;
+
     if (policy.wallDistance) {
         const auto& wallDistance = *policy.wallDistance;
-        if (wallDistance.farLevel > resolved.wallLevel) {
+        if (farLevel > resolved.wallLevel) {
             return reject("farLevel exceeds the resolved wall level");
         }
-        refinement.minimumLevel = wallDistance.farLevel;
+        refinement.minimumLevel = farLevel;
         // Cumulative thickness: level L reaches out to cellsPerLevel cells of every
         // level from the wall down to L, which is the discrete form of a bounded
         // growth rate.  cellsPerLevel == 0 emits nothing and leaves the pre-existing
         // one-ring-per-level gradation that 2:1 balance produces on its own.
         double distance = 0.0;
         for (std::size_t level = resolved.wallLevel;
-             level > wallDistance.farLevel && wallDistance.cellsPerLevel > 0U; --level) {
+             level > farLevel && wallDistance.cellsPerLevel > 0U; --level) {
             distance += static_cast<double>(wallDistance.cellsPerLevel) * cellSizeAt(level);
             refinement.distanceBands.push_back({distance, level});
         }
@@ -324,8 +360,8 @@ ResolvedSizeField2D resolveSizeField2D(const SizeFieldPolicy2D& policy,
         const double angle = wake.angleOfAttackDeg * std::acos(-1.0) / 180.0;
         const Vector2D direction{std::cos(angle), std::sin(angle)};
         const Vector2D normal{-direction.y, direction.x};
-        const double length = wake.downstreamSpans * resolved.bodySpan;
-        const double halfWidth = wake.halfWidthSpans * resolved.bodySpan;
+        const double length = wake.downstreamSpans * resolved.referenceLength;
+        const double halfWidth = wake.halfWidthSpans * resolved.referenceLength;
         for (std::size_t slice = 0; slice < wake.slices; ++slice) {
             const double from = length * static_cast<double>(slice) /
                                 static_cast<double>(wake.slices);
@@ -369,6 +405,14 @@ std::string resolvedSizeFieldToJson(const ResolvedSizeField2D& resolved, int ind
     out << "{\n";
     out << i1 << "\"format\": \"cartmesh2d-size-field-v1\",\n";
     out << i1 << "\"body_span\": " << resolved.bodySpan << ",\n";
+    out << i1 << "\"reference_length\": " << resolved.referenceLength << ",\n";
+    out << i1 << "\"reference_source\": \""
+        << (resolved.explicitReferenceLength ? "explicit" : "bounding_box_span") << "\",\n";
+    out << i1 << "\"requested_wall_size\": " << resolved.requestedWallSize << ",\n";
+    out << i1 << "\"requested_background_size\": ";
+    if (resolved.requestedBackgroundSize) out << *resolved.requestedBackgroundSize;
+    else out << "null";
+    out << ",\n";
     out << i1 << "\"domain_span\": " << resolved.domainSpan << ",\n";
     out << i1 << "\"domain\": [" << resolved.domain.bounds.min.x << ", "
         << resolved.domain.bounds.min.y << ", " << resolved.domain.bounds.max.x << ", "
@@ -410,4 +454,3 @@ std::string resolvedSizeFieldToJson(const ResolvedSizeField2D& resolved, int ind
 }
 
 } // namespace cartmesh2d
-

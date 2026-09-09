@@ -1,0 +1,146 @@
+{
+  "scope": "relative sizing and final solver resolution reporting; engineering goal incomplete",
+  "toolchain": "system Apple clang++",
+  "ctest": {
+    "passed": 96,
+    "failed": 0,
+    "seconds": 74.16
+  },
+  "desktop_tests": {
+    "passed": 54,
+    "failed": 0
+  },
+  "scale_regression": {
+    "forged_report_rejected": true,
+    "invalid_parameter_rejection": {
+      "hybrid_returncode": 1,
+      "pure_returncode": 1
+    },
+    "issues": [],
+    "legacy_no_wall_request": true,
+    "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/relative-resolution/cli.log",
+    "output_dir": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/relative-resolution",
+    "scales": [
+      {
+        "hybrid_independent": true,
+        "hybrid_status": "success",
+        "pure_independent": true,
+        "pure_status": "success",
+        "scale": 0.001
+      },
+      {
+        "hybrid_independent": true,
+        "hybrid_status": "success",
+        "pure_independent": true,
+        "pure_status": "success",
+        "scale": 1.0
+      },
+      {
+        "hybrid_independent": true,
+        "hybrid_status": "success",
+        "pure_independent": true,
+        "pure_status": "success",
+        "scale": 1000.0
+      }
+    ],
+    "valid": true
+  },
+  "desktop_circle": {
+    "input": "examples/acceptance/circle.xy",
+    "input_sha256": "babcc2f63b07bfb3e44a4a6b8747cbbdb7600de6dd404fdac786ce3185ac719f",
+    "control": "manual",
+    "sizing_mode": "relative",
+    "wall_h_over_reference": 0.015625,
+    "background_h_over_reference": 21,
+    "far_field_spans": 10,
+    "reference_length_m": 2,
+    "reference_source": "bounding_box_span",
+    "solver_cells": 3568,
+    "preview_and_export_cells": 3568,
+    "sidebar_bottom_reachable": true,
+    "solver_quality": "PASS",
+    "q1": "FAIL",
+    "openfoam_version": "OpenCFD 2606",
+    "checkMesh_standard": "PASS",
+    "checkMesh_all": "FAIL",
+    "checkMesh_all_concave_cells": 428,
+    "resolution": {
+      "format": "cartmesh2d-mesh-resolution-v1",
+      "basis": "final_solver_topology",
+      "reference_length": 2,
+      "reference_source": "bounding_box_span",
+      "cell_count": 3568,
+      "requested": {
+        "wall_h_over_reference": 0.015625,
+        "background_h_over_reference": 21,
+        "first_layer_h_over_reference": null
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.001393642743357054,
+          "p50": 0.0205078125,
+          "p95": 0.65625,
+          "max": 2.625
+        },
+        "wall_edge_length_over_reference": {
+          "min": 0.0010541165040215763,
+          "p50": 0.010715303626693545,
+          "p95": 0.013264899854060479,
+          "max": 0.013264899854060479
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.0030238209078325322,
+          "p50": 0.012152711881504834,
+          "p95": 0.015780534081511883,
+          "max": 0.017585969905752966
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0011883460403854871,
+          "p50": 0.006548033198311631,
+          "p95": 0.010583022602355437,
+          "max": 0.01319161581135437
+        }
+      },
+      "wall_length_over_reference": 3.136548490546227,
+      "wall_owner_tangential_exceedance_length_fraction": 0.09843193391579581,
+      "wall_owner_tangential_exceedance_edge_ids": [
+        2129,
+        2130,
+        2315,
+        2316,
+        2345,
+        2346,
+        2517,
+        2519,
+        2587,
+        2589,
+        2775,
+        2777,
+        4811,
+        4812,
+        4964,
+        4966,
+        5034,
+        5036,
+        5210,
+        5212,
+        5278,
+        5280,
+        5406,
+        5408
+      ],
+      "boundary_layer_coverage_status": "not_evaluated",
+      "notes": [
+        "Wall statistics sample final embedded edges; split edges do not replace owner extents.",
+        "Normal owner extent is not a certified first-layer height or y-plus.",
+        "Sizing exceedance is a diagnostic independent of topology, Solver and Q1 gates."
+      ]
+    }
+  },
+  "remaining": [
+    "final layer retention/coverage measurement",
+    "representative 10k/50k/100k solver meshes and perturbations",
+    "fixed MMS generation fails at shared source topology; no CFD solve yet",
+    "engineering CFD multi-grid validation"
+  ]
+}

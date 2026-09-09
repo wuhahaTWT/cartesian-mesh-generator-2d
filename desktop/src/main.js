@@ -67,17 +67,16 @@ async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath
   const text = await fs.readFile(geometryPath, 'utf8');
   // The SVG chord tolerance is a fraction of the drawing's own extent because SVG
   // carries no units; .xy and the coordinate formats are taken as given.
-  const converted = geometry.convertToLoops(geometryPath, text, { chordToleranceFraction: chordError });
+  const converted = geometry.convertToLoops(geometryPath, text, { chordToleranceFraction: chordError, sourceUnits });
   if (converted.issues.length) throw new Error(converted.issues.join('\n'));
-  await fs.writeFile(xyPath, kind === 'xy' ? text : geometry.loopsToXyText(converted.loops,
+  await fs.writeFile(xyPath, geometry.loopsToXyText(converted.loops,
     `converted from ${path.basename(geometryPath)} by CartMesh2D`));
   const loopSizes = converted.loops.map(loop => loop.length);
   log(`已读入 ${converted.loops.length} 个闭合环（顶点 ${loopSizes.join(' / ')}）`);
-  if (converted.normalized) {
-    log(`该格式无物理单位，已把最大跨度归一到 1 m（缩放 ${converted.scale.toPrecision(4)}）`);
-  }
+  log(`源单位 ${converted.sourceUnits}，输出单位 m（换算 ${converted.scale}）；保留物理尺寸。`);
   converted.warnings.forEach(warning => log(`注意：${warning}`));
-  return { kind, converter: 'in-process', warnings: converted.warnings, loops: converted.loops };
+  return { kind, converter: 'in-process', warnings: converted.warnings, loops: converted.loops,
+    sourceUnits: converted.sourceUnits, outputUnits: 'm', scale: converted.scale };
 }
 
 // Which report files a run produces depends on the method, so collect them by name
@@ -85,12 +84,15 @@ async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath
 async function collectReports(method, prefix) {
   if (method === 'hybrid') {
     return {
+      resolution: await readJson(`${prefix}.resolution.json`),
+      sizeField: await readJson(`${prefix}.size-field.json`),
       hybrid: await readJson(`${prefix}.hybrid.json`),
       contract: await readJson(`${prefix}.hybrid.quality-contract.json`),
       solverQuality: await readJson(`${prefix}.hybrid.solver-quality.json`)
     };
   }
   return {
+    resolution: await readJson(`${prefix}.resolution.json`),
     contract: await readJson(`${prefix}.quality-contract.json`),
     sizeField: await readJson(`${prefix}.size-field.json`),
     sizing: await readJson(`${prefix}.sizing.json`)
@@ -99,16 +101,7 @@ async function collectReports(method, prefix) {
 
 // Body bbox centre and span, the frame every sizing number is expressed in.
 function bodyFrame(loops) {
-  const points = loops.flat();
-  const xs = points.map(point => point[0]);
-  const ys = points.map(point => point[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  return {
-    centreX: (minX + maxX) / 2,
-    centreY: (minY + maxY) / 2,
-    bodySpan: Math.max(maxX - minX, maxY - minY)
-  };
+  return geometry.boundsOfLoops(loops);
 }
 
 async function firstReadable(candidates) {
@@ -194,13 +187,14 @@ app.whenReady().then(async () => {
   // and cannot be predicted from the flags.
   ipcMain.handle('probe-sizing', (_event, request) => exclusive(async () => {
     const { job } = validateJob(request);
-    if (job.method !== 'cutcell') throw new Error('贴体边界层路径没有 size field 预检。');
+    if (job.method !== 'cutcell' && !job.relativeSizing) throw new Error('请使用相对尺寸进行预检。');
     const scratch = await fs.mkdtemp(path.join(sessionDirectory, 'probe-'));
     try {
     const prefix = path.join(scratch, safeBaseName(job.geometryPath));
     const xyPath = `${prefix}.xy`;
-    await prepareGeometry(job.geometryPath, job, xyPath, `${prefix}.dxf.json`, () => {});
-    const invocation = buildInvocation(job, { xyPath, prefix, casePath: '-' }, { dryRun: true });
+    const prepared = await prepareGeometry(job.geometryPath, job, xyPath, `${prefix}.dxf.json`, () => {});
+    const loops = prepared.loops || geometry.convertToLoops(xyPath, await fs.readFile(xyPath, 'utf8')).loops;
+    const invocation = buildInvocation(job, { xyPath, prefix, casePath: '-', frame: bodyFrame(loops) }, { dryRun: true });
     try {
       const { stdout } = await run(executable(invocation.executable), invocation.args, () => {});
       return { ok: true, values: parseKeyValues(stdout),
@@ -209,6 +203,7 @@ app.whenReady().then(async () => {
       // A refused request still printed every resolved depth before the diagnosis.
       return {
         ok: false,
+        field: await readJson(`${prefix}.size-field.json`),
         values: parseKeyValues(error.stdout || ''),
         issues: (error.stderr || error.message).split(/\r?\n/)
           .filter(line => line.startsWith('size_field_issue='))
@@ -280,6 +275,8 @@ app.whenReady().then(async () => {
     if (!failure) {
       await fs.writeFile(path.join(job.outputDirectory, 'result.json'), JSON.stringify({
         parameters: { ...job, geometryPath: path.basename(job.geometryPath), outputDirectory: undefined },
+        geometry: { sourceUnits: prepared.sourceUnits || 'DXF report', outputUnits: 'm', scale: prepared.scale,
+          frame: paths.frame },
         result: { ...payload.result, openFoam: { ...payload.result.openFoam, path: path.basename(paths.casePath) } }
       }, null, 2));
       currentResult = payload;
@@ -310,7 +307,10 @@ app.whenReady().then(async () => {
       mainWindow.webContents.send('run-progress', { attempt: index + 1, maximum: choices.length,
         estimatedSeconds: estimate.seconds, estimateSource: estimate.source });
       log(`${request.automatic ? '自动选参' : '手动生成'}：第 ${index + 1}/${choices.length} 次，` +
-        (choice.method === 'hybrid' ? `层级 ${choice.maxLevel}，首层 ${choice.firstThickness}` :
+        (choice.sizingMode === 'relative'
+          ? `壁面 h/Lref=${choice.wallRelativeSize}，背景 h/Lref=${choice.backgroundRelativeSize}` +
+            (choice.method === 'hybrid' ? `，首层 h/Lref=${choice.firstLayerRelativeSize}` : '')
+          : choice.method === 'hybrid' ? `层级 ${choice.maxLevel}，首层 ${choice.firstThickness}` :
          `壁面体长/${choice.wallCellsPerSpan}，远场 ${choice.farFieldSpans}，α ${choice.smallAlpha}`));
       try {
         const payload = await generateOnce(choice);

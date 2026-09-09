@@ -1,7 +1,7 @@
 'use strict';
 
 const { methodById, SAFE_WALL_LEVEL } = require('./capabilities');
-const { describeBudget, wallLevelFor } = require('./sizing');
+const { describeBudget, wallLevelFor, levelForSize } = require('./sizing');
 
 // A job is validated once, here, and then turned into an argv.  The CLI takes up to
 // nine positional arguments whose meaning depends on position, so building that
@@ -18,11 +18,13 @@ const number = (value, name, { min = -Infinity, max = Infinity, integer = false 
 };
 
 function validateSizeField(request, safeWallLevel) {
+  const relative = request.sizingMode === 'relative';
   const field = {
-    farFieldSpans: number(request.farFieldSpans, '远场距离（体长倍数）', { min: 0.25, max: 1000 }),
-    wallCellsPerSpan: number(request.wallCellsPerSpan, '壁面单元数（体长 / n）', { min: 1, max: 1 << 20 }),
+    relative,
+    farFieldSpans: number(request.farFieldSpans, '计算域留白 / 参考长度', { min: relative ? 1e-12 : 0.25, max: 1000 }),
+    wallCellsPerSpan: relative ? undefined : number(request.wallCellsPerSpan, '壁面单元数（体长 / n）', { min: 1, max: 1 << 20 }),
     cellsPerLevel: number(request.cellsPerLevel, '每级带宽（单元数）', { min: 0, max: 64, integer: true }),
-    farLevel: number(request.farLevel ?? 0, '远场最低层级', { min: 0, max: 28, integer: true }),
+    farLevel: relative ? 0 : number(request.farLevel ?? 0, '远场最低层级', { min: 0, max: 28, integer: true }),
     curvatureCellsPerRadius: number(request.curvatureCellsPerRadius ?? 0,
       '曲率细化（每半径单元数）', { min: 0, max: 1024 }),
     gapCells: number(request.gapCells ?? 0, '间隙细化（间隙内单元数）', { min: 0, max: 1024 }),
@@ -30,6 +32,13 @@ function validateSizeField(request, safeWallLevel) {
     safeWallLevel: number(request.safeWallLevel ?? safeWallLevel, '安全壁面层级上限',
       { min: 1, max: 28, integer: true })
   };
+  if (relative) {
+    field.wallRelativeSize = number(request.wallRelativeSize, '壁面尺寸 h/Lref', { min: 1e-12, max: 1 });
+    field.backgroundRelativeSize = number(request.backgroundRelativeSize, '背景尺寸 h/Lref',
+      { min: field.wallRelativeSize, max: 1e6 });
+    if (request.referenceLength !== undefined && request.referenceLength !== null && request.referenceLength !== '')
+      field.referenceLength = number(request.referenceLength, '参考长度（m）', { min: 1e-12, max: 1e12 });
+  }
   if (request.wake) {
     field.wake = {
       angleOfAttackDeg: number(request.wake.angleOfAttackDeg, '来流角（度）', { min: -180, max: 180 }),
@@ -58,7 +67,9 @@ function validateSizeField(request, safeWallLevel) {
     return normalized;
   });
 
-  const budget = describeBudget(field);
+  // An explicit reference need not equal the bbox span. Only the native resolver,
+  // with the imported geometry, can certify the required depth in that case.
+  const budget = relative ? { feasible: true, deferredToGeometry: true } : describeBudget(field);
   if (!budget.feasible && !field.allowUnsafeWallLevel) {    throw new Error(
       `远场 ${field.farFieldSpans} 倍体长配壁面 1/${field.wallCellsPerSpan} 需要 level ` +
       `${budget.wallLevel}，超过实测安全上限 ${field.safeWallLevel}。` +
@@ -81,6 +92,23 @@ function validateJob(request) {
     sourceUnits: request.sourceUnits || 'auto'
   };
   if (!job.geometryPath) throw new Error('请先选择几何文件或内置样例。');
+
+  if (request.sizingMode === 'relative') {
+    job.relativeSizing = true;
+    const { field, budget } = validateSizeField(request, method.safeWallLevel);
+    job.sizeField = field;
+    job.budget = budget;
+    if (method.id === 'cutcell') {
+      job.smallAlpha = number(request.smallAlpha ?? method.defaults.smallAlpha, '小单元阈值', { min: 0.001, max: 0.999 });
+    } else {
+      job.remainderSmallAlpha = number(request.remainderSmallAlpha ?? 0.10, '余域小单元阈值', { min: 0.001, max: 0.999 });
+      job.nLayers = number(request.nLayers, '壁面层数', { min: 1, max: 64, integer: true });
+      job.firstLayerRelativeSize = number(request.firstLayerRelativeSize, '首层高度 / Lref', { min: 1e-12, max: 1 });
+      job.growthRatio = number(request.growthRatio, '增长率', { min: 1, max: 5 });
+      job.extrusionRelativeSize = number(request.extrusionRelativeSize ?? 0.01, '挤出厚度 / Lref', { min: 1e-12, max: 1 });
+    }
+    return { job, method };
+  }
 
   if (method.id === 'cutcell') {
     job.smallAlpha = number(request.smallAlpha ?? method.defaults.smallAlpha,
@@ -113,10 +141,13 @@ const SIZE_FIELD_PLACEHOLDER_PADDING = 0.25;
 function sizeFieldArgs(field, { dryRun = false } = {}) {
   const args = [dryRun ? '--size-field-only' : '--size-field',
     '--far-field-spans', String(field.farFieldSpans),
-    '--wall-cells-per-span', String(field.wallCellsPerSpan),
+    ...(field.relative ? ['--wall-relative-size', String(field.wallRelativeSize)]
+      : ['--wall-cells-per-span', String(field.wallCellsPerSpan)]),
     '--cells-per-level', String(field.cellsPerLevel),
-    '--far-level', String(field.farLevel),
+    ...(field.relative ? ['--background-relative-size', String(field.backgroundRelativeSize)]
+      : ['--far-level', String(field.farLevel)]),
     '--max-safe-wall-level', String(field.safeWallLevel)];
+  if (field.referenceLength !== undefined) args.push('--reference-length', String(field.referenceLength));
   if (field.curvatureCellsPerRadius > 0) {
     args.push('--curvature-cells-per-radius', String(field.curvatureCellsPerRadius));
   }
@@ -134,15 +165,18 @@ function sizeFieldArgs(field, { dryRun = false } = {}) {
 // wall is refused by the CLI, so both ends are clamped here.
 function refineBoxArgs(field, frame) {
   if (!field.refineBoxes || !field.refineBoxes.length || !frame) return [];
-  const wallLevel = wallLevelFor(field.farFieldSpans, field.wallCellsPerSpan);
+  const reference = field.referenceLength ?? frame.bodySpan;
+  const wallLevel = field.relative
+    ? levelForSize(frame.bodySpan + 2*field.farFieldSpans*reference, field.wallRelativeSize*reference)
+    : wallLevelFor(field.farFieldSpans, field.wallCellsPerSpan);
   const args = [];
   for (const box of field.refineBoxes) {
     const level = Math.min(wallLevel, Math.max(1, wallLevel - box.levelsBelowWall));
     args.push('--refine-box',
-      String(frame.centreX + box.xmin * frame.bodySpan),
-      String(frame.centreY + box.ymin * frame.bodySpan),
-      String(frame.centreX + box.xmax * frame.bodySpan),
-      String(frame.centreY + box.ymax * frame.bodySpan),
+      String(frame.centreX + box.xmin * reference),
+      String(frame.centreY + box.ymin * reference),
+      String(frame.centreX + box.xmax * reference),
+      String(frame.centreY + box.ymax * reference),
       String(level));
   }
   return args;
@@ -163,6 +197,18 @@ function buildInvocation(job, paths, options = {}) {
         ...sizeFieldArgs(job.sizeField, options),
         ...(options.dryRun ? [] : refineBoxArgs(job.sizeField, paths.frame))],
       cm2dCandidates: [`${paths.prefix}.solver.cm2d`]
+    };
+  }
+  if (job.relativeSizing) {
+    const reference = job.sizeField.referenceLength ?? paths.frame?.bodySpan;
+    if (!(reference > 0)) throw new Error('缺少导入几何的参考长度。');
+    return {
+      executable: 'cartmesh2d_hybrid_cli',
+      args: [paths.xyPath, paths.prefix, '6', '0', '6', String(job.nLayers), '0.01',
+        String(job.growthRatio), '1', paths.casePath, String(job.extrusionRelativeSize*reference),
+        `--fluid-region=${job.fluidRegion}`, `--small-alpha=${job.remainderSmallAlpha}`,
+        ...sizeFieldArgs(job.sizeField, options), '--first-layer-relative-size', String(job.firstLayerRelativeSize)],
+      cm2dCandidates: [`${paths.prefix}.hybrid.solver.cm2d`, `${paths.prefix}.fallback.solver.cm2d`]
     };
   }
   return {

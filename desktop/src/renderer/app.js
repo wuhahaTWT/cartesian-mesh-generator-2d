@@ -50,6 +50,7 @@ function clearResult() {
   $('exportResult').hidden = true;
   for (const id of ['counters', 'gates', 'histogram']) $(id).replaceChildren();
   $('legend').hidden = true;
+  $('resolutionResult').hidden = true;
 }
 let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
@@ -76,6 +77,13 @@ function buildRequest() {
     method: state.method,
     geometryPath: state.geometryPath,
     outputDirectory: state.outputDirectory,
+    sizingMode: 'relative',
+    referenceLength: $('referenceMode').value === 'explicit' ? Number($('referenceLength').value) : undefined,
+    wallRelativeSize: Number($('wallRelativeSize').value),
+    backgroundRelativeSize: Number($('backgroundRelativeSize').value),
+    farFieldSpans: Number($('relativePadding').value),
+    cellsPerLevel: Number($('relativeBandCells').value),
+    allowUnsafeWallLevel: $('relativeAllowUnsafe').checked,
     ...importSettings()
   };
   if (state.method === 'hybrid') {
@@ -85,6 +93,8 @@ function buildRequest() {
       minimumLevel: Number($('minimumLevel').value),
       boundaryLevel: Number($('boundaryLevel').value),
       nLayers: Number($('nLayers').value),
+      firstLayerRelativeSize: Number($('firstLayerRelativeSize').value),
+      extrusionRelativeSize: Number($('extrusionRelativeSize').value),
       firstThickness: Number($('firstThickness').value),
       growthRatio: Number($('growthRatio').value),
       domainPadding: Number($('domainPadding').value),
@@ -94,13 +104,10 @@ function buildRequest() {
   return {
     ...base,
     smallAlpha: Number($('smallAlpha').value),
-    farFieldSpans: Number($('farFieldSpans').value),
     wallCellsPerSpan: Number($('wallCellsPerSpan').value),
-    cellsPerLevel: Number($('cellsPerLevel').value),
     farLevel: Number($('farLevel').value),
     curvatureCellsPerRadius: $('useCurvature').checked ? Number($('curvatureCellsPerRadius').value) : 0,
     gapCells: $('useGap').checked ? Number($('gapCells').value) : 0,
-    allowUnsafeWallLevel: $('allowUnsafe').checked,
     wake: $('useWake').checked ? {
       angleOfAttackDeg: Number($('wakeAngle').value),
       downstreamSpans: Number($('wakeLength').value),
@@ -116,28 +123,27 @@ function buildRequest() {
 // far-field-versus-wall-resolution trade is arithmetic and can be shown live.
 function updateBudget() {
   const method = state.catalog.methods[state.method];
-  if (!method || !method.supports.sizeField) return;
-  const far = Number($('farFieldSpans').value);
-  const cells = Number($('wallCellsPerSpan').value);
+  if (!method) return;
+  const far = Number($('relativePadding').value);
+  const wall = Number($('wallRelativeSize').value);
+  const background = Number($('backgroundRelativeSize').value);
+  const reference = $('referenceMode').value === 'explicit' ? Number($('referenceLength').value) : state.frame?.bodySpan;
+  const span = state.frame?.bodySpan;
   const ceiling = method.safeWallLevel;
-  const level = Math.max(0, Math.ceil(Math.log2((1 + 2 * far) * cells)));
-  const over = level > ceiling && !$('allowUnsafe').checked;
-  const maxCells = Math.pow(2, Math.floor(Math.log2(Math.pow(2, ceiling) / (1 + 2 * far))));
-  const maxFar = (Math.pow(2, ceiling) / cells - 1) / 2;
-  $('budget').className = `budget${over ? ' over' : ''}`;
-  $('budget').innerHTML = over
-    ? `需要树深 <b>level ${level}</b>，超过实测安全上限 ${ceiling}。<br>` +
-      `远场降到 <em>${maxFar.toFixed(1)}</em> 倍，或壁面降到 <em>体长/${maxCells}</em>。`
-    : `树深 <b>level ${level}</b> / 上限 ${ceiling}　计算域 <b>${(1 + 2 * far).toFixed(0)}</b> 倍体长<br>` +
-      `壁面单元 <b>体长/${cells}</b>　每级带宽 ${$('cellsPerLevel').value} 格`;
-  $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading) || ($('controlMode').value === 'manual' && over);
+  const domain = span + 2*far*reference;
+  const level = Math.max(0, Math.ceil(Math.log2(domain/(wall*reference))));
+  const over = level > ceiling && !$('relativeAllowUnsafe').checked;
+  const invalid = !(wall>0) || !(background>=wall) || !(reference>0);
+  $('resolutionBudget').className = `budget${over || invalid ? ' over' : ''}`;
+  $('resolutionBudget').textContent = !span ? '选择几何后显示物理尺寸和构造深度。'
+    : `参考长度 ${reference.toPrecision(5)} m；壁面目标 ${(wall*reference).toPrecision(5)} m（${(100*wall).toPrecision(4)}% Lref）。` +
+      `派生树深 ${level}，当前已验证上限 ${ceiling}。` +
+      (over ? ' 此请求超过已验证深度，需要明确选择是否尝试。' : '') +
+      (background<wall ? ' 背景尺寸不能小于壁面尺寸。' : '');
+  $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading) || ($('controlMode').value === 'manual' && (over || invalid));
 }
 
 function updateReady() {
-  if (state.method === 'hybrid') {
-    $('generate').disabled = (!state.geometryPath || state.busy || state.geometryLoading);
-    return;
-  }
   updateBudget();
 }
 
@@ -162,7 +168,7 @@ function selectMethod(id) {
   $('hybridBlock').hidden = method.supports.sizeField;
   $('methodNote').textContent = method.supports.sizeField
     ? `实测安全壁面层级上限 ${method.safeWallLevel}；越过要显式勾选。支持 OpenFOAM 导出。`
-    : `实测上限 level ${method.safeWallLevel}。这条路径没有尺寸场，层级要直接给。`;
+    : `贴体层和余域共用相对尺寸；构造深度由程序推导，当前验证上限 ${method.safeWallLevel}。`;
   $('smallAlphaField').hidden = !method.supports.sizeField;
   $('smallAlphaNote').hidden = !method.supports.sizeField;
   renderMethods();
@@ -172,6 +178,7 @@ function selectMethod(id) {
 
 function updateControlMode() {
   const automatic = $('controlMode').value === 'auto';
+  $('resolutionBlock').hidden = automatic;
   $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
   $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
@@ -190,6 +197,12 @@ function applySizeField(field) {
   if (field.farFieldSpans !== undefined) $('farFieldSpans').value = field.farFieldSpans;
   if (field.wallCellsPerSpan !== undefined) $('wallCellsPerSpan').value = field.wallCellsPerSpan;
   if (field.cellsPerLevel !== undefined) $('cellsPerLevel').value = field.cellsPerLevel;
+  if (field.wallCellsPerSpan !== undefined) $('wallRelativeSize').value = 1/field.wallCellsPerSpan;
+  if (field.farFieldSpans !== undefined) {
+    $('relativePadding').value = field.farFieldSpans;
+    $('backgroundRelativeSize').value = (1+2*field.farFieldSpans)/Math.pow(2,field.farLevel ?? 0);
+  }
+  if (field.cellsPerLevel !== undefined) $('relativeBandCells').value = field.cellsPerLevel;
   $('farLevel').value = field.farLevel ?? 0;
   updateBudget();
 }
@@ -225,6 +238,7 @@ async function chooseGeometry(path, label, sample) {
   state.geometryPath = path;
   state.geometryLabel = label;
   if (sample) {
+    $('sourceUnits').value = 'm';
     $('fluidRegion').value = sample.fluidRegion;
     applySizeField(sample.fluidRegion === 'interior' && sample.interiorSizeField || sample.sizeField);
     // Each sample ships the small-cell threshold it was verified at.  The passing
@@ -271,8 +285,8 @@ async function drawGeometryOutline() {
     syncRegions();
     $('empty').hidden = true;
     $('legend').hidden = true;
-    const spanX = Math.max(...preview.loops.flat().map(p => p[0])) - Math.min(...preview.loops.flat().map(p => p[0]));
-    const spanY = Math.max(...preview.loops.flat().map(p => p[1])) - Math.min(...preview.loops.flat().map(p => p[1]));
+    const spanX = preview.frame.width;
+    const spanY = preview.frame.height;
     $('geometryFacts').hidden = false;
     $('geometryFacts').innerHTML =
       `<span>格式 <b>${preview.kind}</b>　环 <b>${preview.loops.length}</b>　` +
@@ -296,28 +310,24 @@ async function probeSizing() {
   setBusy(true);
   try {
     const probe = await window.cartmesh.probeSizing({ ...buildRequest(), outputDirectory: '.' });
-    const v = probe.values;
+    const field = probe.field;
     const rows = [
-      ['体长', Number(v.size_field_body_span).toPrecision(5)],
-      ['计算域跨度', Number(v.size_field_domain_span).toPrecision(5)],
-      ['壁面单元尺寸', Number(v.size_field_wall_cell_size).toPrecision(4)],
-      ['壁面要求层级', v.size_field_wall_level],
-      ['曲率要求层级', v.size_field_curvature_level],
-      ['间隙要求层级', v.size_field_proximity_level],
-      ['最终树深', v.size_field_max_level],
-      ['距离带 / 分段带 / 尾迹箱',
-        `${v.sizing_distance_bands} / ${v.sizing_segment_bands} / ${v.sizing_box_regions}`]
+      ['参考长度（m）', field?.reference_length?.toPrecision(5) ?? '—'],
+      ['计算域跨度（m）', field?.domain_span?.toPrecision(5) ?? '—'],
+      ['请求壁面尺寸（m）', field?.requested_wall_size?.toPrecision(5) ?? '—'],
+      ['取整后背景壁面尺寸（m）', field?.wall_cell_size?.toPrecision(5) ?? '—'],
+      ['派生壁面 / 背景层级', `${field?.wall_level ?? '—'} / ${field?.minimum_level ?? '—'}`]
     ];
-    $('probeResult').innerHTML = rows
+    $('relativeProbeResult').innerHTML = rows
       .map(([key, value]) => `<span><i class="k">${key}</i> ${value}</span>`).join('') +
       (probe.ok ? '<span class="ok">可行</span>'
                 : (probe.issues || []).map(issue => `<span class="bad">${issue}</span>`).join(''));
-    $('probeResult').hidden = false;
+    $('relativeProbeResult').hidden = false;
     status(probe.ok ? '尺寸场可行' : '尺寸场被拒绝',
-      `壁面 ${v.size_field_wall_level} / 曲率 ${v.size_field_curvature_level} / 间隙 ${v.size_field_proximity_level}`);
+      probe.ok ? '尺寸解析通过；不代表最终网格或质量验收通过。' : probe.message);
   } catch (error) {
-    $('probeResult').innerHTML = `<span class="bad">${error.message}</span>`;
-    $('probeResult').hidden = false;
+    $('relativeProbeResult').textContent = error.message;
+    $('relativeProbeResult').hidden = false;
   } finally {
     setBusy(false);
   }
@@ -400,7 +410,7 @@ function renderHistogram(histogram, mesh, basis) {
     const bar = document.createElement('div');
     bar.className = 'bar';
     const label = document.createElement('em');
-    label.textContent = `L${row.level}`;
+    label.textContent = `${basis === 'size' ? '档' : 'L'}${row.level}`;
     const fill = document.createElement('i');
     fill.style.width = `${Math.max(1, Math.round((row.count / peak) * 108))}px`;
     fill.style.background = levelColour(row.level, mesh.minLevel, mesh.maxLevel);
@@ -483,10 +493,23 @@ async function generate() {
     renderCounters(payload.result);
     renderGates(payload.result);
     renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
+    const resolution = payload.result.resolution;
+    $('resolutionResult').hidden = !resolution;
+    if (resolution) {
+      const actual = resolution.actual;
+      const percent = resolution.wall_owner_tangential_exceedance_length_fraction;
+      $('resolutionResult').textContent = `最终求解网格实测：Lref=${resolution.reference_length.toPrecision(5)} m；` +
+        `单元等效尺寸 h/Lref 中位 ${actual.sqrt_area_over_reference?.p50.toPrecision(4) ?? '—'}；` +
+        `壁面单元切向跨度 P95 ${actual.wall_owner_tangential_extent_over_reference?.p95.toPrecision(4) ?? '—'}；` +
+        `切向跨度超过壁面目标的壁长占比 ${percent == null ? '未设置目标' : (100*percent).toFixed(2)+'%'}。` +
+        '切向跨度与法向高度分开测量；完整尺寸报告随结果包保存。';
+    }
     fitOverview();
     if (payload.automatic) {
       const job = payload.job;
-      $('autoNote').textContent = `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
+      $('autoNote').textContent = job.relativeSizing
+        ? `${payload.densityReduced ? '更密请求未满足，已降密。' : ''}本次壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
+        : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
         ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
@@ -525,6 +548,14 @@ $('sample').addEventListener('change', async event => {
 for (const id of ['farFieldSpans', 'wallCellsPerSpan', 'cellsPerLevel', 'farLevel']) {
   $(id).addEventListener('input', updateBudget);
 }
+for (const id of ['wallRelativeSize','backgroundRelativeSize','relativePadding','relativeBandCells','referenceLength'])
+  $(id).addEventListener('input', () => { updateBudget(); syncRegions(); });
+$('relativeAllowUnsafe').addEventListener('change', updateBudget);
+$('referenceMode').addEventListener('change', () => {
+  $('referenceLengthField').hidden = $('referenceMode').value !== 'explicit';
+  updateBudget();
+  syncRegions();
+});
 $('allowUnsafe').addEventListener('change', updateBudget);
 $('useCurvature').addEventListener('change', event => {
   $('curvatureCellsPerRadius').disabled = !event.target.checked;
@@ -536,6 +567,7 @@ $('useWake').addEventListener('change', event => {
   $('wakeFields').hidden = !event.target.checked;
 });
 $('probe').addEventListener('click', probeSizing);
+$('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('addRegion').addEventListener('click', addRegion);
 
@@ -628,7 +660,8 @@ const REGION_FIELDS = [
 
 function syncRegions() {
   view.regions = state.regions;
-  view.frame = state.frame;
+  view.frame = state.frame && { ...state.frame, bodySpan: $('referenceMode').value === 'explicit'
+    ? Number($('referenceLength').value) : state.frame.bodySpan };
   view.draw();
 }
 

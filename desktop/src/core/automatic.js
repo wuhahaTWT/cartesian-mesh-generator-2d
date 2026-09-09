@@ -4,7 +4,7 @@ const { SAFE_WALL_LEVEL } = require('./capabilities');
 
 // A bounded search over generation parameters, never over acceptance thresholds.
 // Historical hybrid seeds: tools/verification/generate_q0_baselines.py.
-function candidates(request, sample, frame) {
+function legacyCandidates(request, sample, frame) {
   if (!request.automatic) return [request];
   const dense = request.density === 'dense';
   if (request.method === 'hybrid') {
@@ -52,6 +52,29 @@ function candidates(request, sample, frame) {
       farLevel: interiorProfile ? field.farLevel : 0,
       smallAlpha: interiorProfile ? sample.interiorSmallAlpha : 0.15 }]
     .filter((v,i,a) => a.findIndex(x => JSON.stringify(x) === JSON.stringify(v)) === i);
+}
+
+function candidates(request, sample, frame) {
+  const choices = legacyCandidates(request, sample, frame);
+  if (!request.automatic || request.sizingMode !== 'relative') return choices;
+  const reference = request.referenceLength ?? frame.bodySpan;
+  return choices.map(choice => {
+    if (request.method === 'cutcell') {
+      const domain = frame.bodySpan * (1+2*choice.farFieldSpans);
+      return { ...choice, sizingMode: 'relative',
+        wallRelativeSize: frame.bodySpan / choice.wallCellsPerSpan / reference,
+        backgroundRelativeSize: domain / Math.pow(2,choice.farLevel) / reference,
+        farFieldSpans: choice.farFieldSpans * frame.bodySpan / reference };
+    }
+    const domain = frame.bodySpan + 2*choice.domainPadding;
+    return { ...choice, sizingMode: 'relative',
+      wallRelativeSize: domain / Math.pow(2,choice.boundaryLevel) / reference,
+      backgroundRelativeSize: domain / Math.pow(2,choice.minimumLevel) / reference,
+      farFieldSpans: choice.domainPadding/reference, cellsPerLevel: 0,
+      firstLayerRelativeSize: choice.firstThickness/reference,
+      extrusionRelativeSize: choice.extrusionThickness/reference,
+      curvatureCellsPerRadius: 0, gapCells: 0, wake: null, refineBoxes: [] };
+  });
 }
 
 function estimateSeconds(request, historySeconds) {
