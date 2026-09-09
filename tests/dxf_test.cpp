@@ -1,5 +1,6 @@
 #include "cartmesh2d/io/Dxf2D.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -197,6 +198,57 @@ int main() {
               "SPLINE loop layer reaches patch metadata");
         near(splineResult.boundary->bounds().max.x,1.0,1e-12,
              "SPLINE control points are converted from millimetres to metres");
+    }
+
+    // All three old sampling probes and both endpoints lie at y=0.
+    // Dense independent evaluations must still follow both lobes of this quintic.
+    std::ostringstream quintic;
+    quintic<<prefix<<"0\nSPLINE\n8\nwall\n70\n8\n71\n5\n72\n12\n73\n6\n74\n0\n";
+    for (int i=0;i<12;++i) quintic<<"40\n"<<(i<6?0:1)<<'\n';
+    const double heights[]={0,18.75,-40.625,40.625,-18.75,0};
+    for (int i=0;i<6;++i) quintic<<"10\n"<<i*0.2<<"\n20\n"<<heights[i]<<"\n30\n0\n";
+    quintic<<"0\nLINE\n8\nwall\n10\n1\n20\n0\n11\n1\n21\n-50\n"
+             "0\nLINE\n8\nwall\n10\n1\n20\n-50\n11\n0\n21\n-50\n"
+             "0\nLINE\n8\nwall\n10\n0\n20\n-50\n11\n0\n21\n0\n"<<suffix;
+    const auto quinticResult=readAsciiDxfBoundary2D(
+        writeText(directory,"quintic_probe_alias.dxf",quintic.str()),curveOptions);
+    check(quinticResult.valid(),"quintic with hidden lobes imports");
+    if (quinticResult.valid()) {
+        const auto& vertices=quinticResult.boundary->loops()[0].vertices();
+        double maximumDistance=0.0;
+        for (int i=0;i<=2000;++i) {
+            const double t=i/2000.0;
+            const Point2D p{t,1000*t*(t-.25)*(t-.5)*(t-.75)*(t-1)};
+            double nearest=1e30;
+            for (std::size_t j=0;j<vertices.size();++j) {
+                const auto a=vertices[j],b=vertices[(j+1)%vertices.size()];
+                const auto edge=b-a;
+                const double u=std::clamp(dot(p-a,edge)/squaredNorm(edge),0.0,1.0);
+                const auto q=a+edge*u;
+                nearest=std::min(nearest,std::hypot(p.x-q.x,p.y-q.y));
+            }
+            maximumDistance=std::max(maximumDistance,nearest);
+        }
+        check(maximumDistance<=curveOptions.maximumChordError,
+              "independent quintic samples respect the chord tolerance");
+    }
+
+    std::ostringstream unclamped;
+    unclamped<<prefix<<"0\nSPLINE\n8\nwall\n70\n8\n71\n2\n72\n7\n73\n4\n74\n0\n";
+    for (int i=0;i<7;++i) unclamped<<"40\n"<<i<<'\n';
+    for (int i=0;i<4;++i) unclamped<<"10\n"<<i<<"\n20\n"<<2*(i%2)<<"\n30\n0\n";
+    unclamped<<"0\nLINE\n8\nwall\n10\n2.5\n20\n1\n11\n2.5\n21\n-1\n"
+               "0\nLINE\n8\nwall\n10\n2.5\n20\n-1\n11\n0.5\n21\n-1\n"
+               "0\nLINE\n8\nwall\n10\n0.5\n20\n-1\n11\n0.5\n21\n1\n"<<suffix;
+    const auto unclampedResult=readAsciiDxfBoundary2D(
+        writeText(directory,"unclamped_two_spans.dxf",unclamped.str()),curveOptions);
+    check(unclampedResult.valid(),"unclamped quadratic imports both active knot spans");
+    if (unclampedResult.valid()) {
+        near(unclampedResult.boundary->bounds().min.x,0.5,1e-12,"unclamped start");
+        near(unclampedResult.boundary->bounds().max.x,2.5,1e-12,"unclamped end");
+        near(unclampedResult.boundary->bounds().max.y,1.5,curveOptions.maximumChordError,
+             "unclamped quadratic preserves its analytic extremum");
+        near(unclampedResult.boundary->area(),4.0,0.003,"both quadratic spans preserve analytic area");
     }
 
     const auto mixedLayers=writeText(directory,"mixed_layers.dxf",prefix+

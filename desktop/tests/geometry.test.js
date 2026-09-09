@@ -91,6 +91,12 @@ test('a cubic path is flattened and closed subpaths are kept', () => {
   assert.ok(loops[0].length > 4, 'the curve must be subdivided');
 });
 
+test('cubic sampling retains control-point overshoot along the chord', () => {
+  const { loops } = parseSvgLoops('<svg><path d="M0,0 C 10,0 10,0 1,0 L1,2 L0,2 Z"/></svg>');
+  assert.ok(Math.max(...loops[0].map(p => p[0])) > 7,
+    'a reversing cubic extends beyond its endpoint even when its controls are collinear');
+});
+
 test('an open subpath is skipped with a warning rather than silently closed', () => {
   const { loops, warnings } = parseSvgLoops('<svg><path d="M0,0 L10,0 L10,10"/></svg>');
   assert.equal(loops.length, 0);
