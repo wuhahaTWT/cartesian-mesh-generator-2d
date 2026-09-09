@@ -71,6 +71,21 @@ bool hasHardShortFace(const QualityContractReport2D& report) {
 int main() {
     const auto base = makeReport(1.0);
     const auto scaled = makeReport(1.0e6);
+    check(qualityContractMetricsNoWorse2D(base,base),
+          "unchanged failing contract can remain a repair baseline");
+    auto worse=base;
+    worse.issues.push_back(base.issues.front());
+    check(!qualityContractMetricsNoWorse2D(worse,base),
+          "repair cannot increase defects in an already-failing contract");
+    worse=base;
+    worse.ordinaryMetrics.begin()->second.worst+=
+        worse.ordinaryMetrics.begin()->second.lowerIsWorse?-1.0:1.0;
+    check(!qualityContractMetricsNoWorse2D(worse,base),
+          "unchanged issue count does not permit a worse quality extremum");
+    worse=base;
+    worse.ordinaryMetrics.erase(worse.ordinaryMetrics.begin());
+    check(!qualityContractMetricsNoWorse2D(worse,base),
+          "repair cannot hide a previously measured contract metric");
 
     check(base.status() == QualityContractStatus2D::Fail,
           "dimensionless micro-face violates the hard contract");

@@ -235,13 +235,18 @@ struct EdgeUse {
 [[nodiscard]] double polygonAreaFromVertexLoop(const std::vector<std::size_t>& loop,
                                                const std::vector<Vertex2D>& vertices) noexcept {
     if (loop.size() < 3) return 0.0;
-    double twiceArea = 0.0;
+    const auto& origin = vertices[loop.front()].point;
+    long double twiceArea = 0.0L;
     for (std::size_t i = 0; i < loop.size(); ++i) {
         const auto& a = vertices[loop[i]].point;
         const auto& b = vertices[loop[(i + 1) % loop.size()]].point;
-        twiceArea += a.x * b.y - b.x * a.y;
+        const long double ax = static_cast<long double>(a.x) - origin.x;
+        const long double ay = static_cast<long double>(a.y) - origin.y;
+        const long double bx = static_cast<long double>(b.x) - origin.x;
+        const long double by = static_cast<long double>(b.y) - origin.y;
+        twiceArea += ax * by - bx * ay;
     }
-    return 0.5 * std::abs(twiceArea);
+    return static_cast<double>(0.5L * std::abs(twiceArea));
 }
 
 } // namespace

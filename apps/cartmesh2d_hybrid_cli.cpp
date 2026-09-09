@@ -466,6 +466,12 @@ int main(int argc, char** argv) {
         }
         std::cout<<"h4_status=success mesh_mode=pure_cutcell_fallback"
                  <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)
+                 <<" requested_layer_failure="<<boundaryLayerFailureReasonName(
+                       robust.requestedLayerCandidate.failure.reason)
+                 <<" requested_layer_detail="<<robust.requestedLayerCandidate.failure.message
+                 <<" local_layer_failure="<<boundaryLayerFailureReasonName(
+                       robust.localLayerCandidate.failure.reason)
+                 <<" local_layer_detail="<<robust.localLayerCandidate.failure.message
                  <<" hybrid_detail="<<robust.hybridCandidate.failure.message
                  <<" solver_cells="<<fallback.solverTopology.cells.size()
                  <<" area_error="<<fallback.areaError

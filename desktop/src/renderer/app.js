@@ -366,6 +366,14 @@ function renderGates(result) {
         : solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')));
   }
 
+  const directional = result.resolution?.directional_connectivity;
+  if (directional) {
+    const minimum = Number.isFinite(directional.minimum) ? directional.minimum.toPrecision(5) : '未测得';
+    parts.push(gateRow('方向连通质量', directional.valid ? 'PASS' : 'FAIL',
+      `最小 determinant ${minimum}，下限 ${directional.threshold}；` +
+      `不合格单元 ${directional.failed_cell_ids.length}。适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。`));
+  }
+
   const contract = result.gates.contract;
   if (contract) {
     const detail = contract.byType

@@ -1,0 +1,105 @@
+{
+  "binary_sha256": "920ef8c0b024a8930b117f7cde53dc81ad60263bc993e7096dfae05f87b382eb",
+  "scope": "fixed NACA r03 product rerun; 42+ uncommitted scale fixes and directional product integration in snapshot",
+  "native": {
+    "hybrid_status": "success",
+    "cells": 140336,
+    "solver_cells": 140305,
+    "layer_cells": 3380,
+    "directional_repair": {
+      "candidate_count": 1,
+      "accepted_count": 1,
+      "rejected_by_contract": false,
+      "seconds": 1.701719167,
+      "minimum_before": 0.0003310395830711503,
+      "minimum_after": 0.00187126687063963,
+      "failed_cell_count": 0
+    },
+    "quality_contract": "FAIL",
+    "report_layout": "directional_repair in mesh.hybrid.json for this snapshot",
+    "quality_contract_by_cell_type": {
+      "cartesian": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 133192,
+        "preferred_issue_count": 49,
+        "hard_issue_count": 26
+      },
+      "termination": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 3733,
+        "preferred_issue_count": 629,
+        "hard_issue_count": 238
+      },
+      "boundary_layer": {
+        "status": "OBSERVED",
+        "rated": false,
+        "cell_count": 3380,
+        "preferred_issue_count": 0,
+        "hard_issue_count": 0
+      }
+    }
+  },
+  "readers": {
+    "reader-resolution.json": true,
+    "reader-layer.json": true,
+    "reader-directional.json": true,
+    "reader-openfoam.json": true
+  },
+  "checkMesh": {
+    "standard": {
+      "returncode": 0,
+      "mesh_ok": true,
+      "failed_checks": 0,
+      "concave_count": null
+    },
+    "expanded": {
+      "returncode": 0,
+      "mesh_ok": false,
+      "failed_checks": 1,
+      "concave_count": 2724
+    }
+  },
+  "format": "cartmesh2d-directional-product-repair-v1",
+  "source_directory": "outputs/engineering-naca-directional-product/run-r03",
+  "layer_resolution": {
+    "status": "evaluated",
+    "requested_cells": 3400,
+    "constructed_cells": 3380,
+    "retained_cells": 3380,
+    "source_mismatches": 0,
+    "first_layer_wall_length_fraction": 0.9984672118405592,
+    "full_requested_layers_wall_length_fraction": 0.9921778141806321,
+    "first_layer_height_exceedance_wall_length_fraction": 0,
+    "continuity_mismatches": 0
+  },
+  "independent_directional": {
+    "format": "cartmesh2d-directional-connectivity-v1",
+    "scope": "uncoupled planar mesh; uniform extrusion; empty front/back",
+    "external_checkMesh": "not_run_by_this_reader",
+    "cell_count": 140305,
+    "minimum_required": 0.001,
+    "minimum_measured": 0.0018712668706396293,
+    "failed_cell_count": 0,
+    "failed_cells": [],
+    "valid": true,
+    "native_report_verified": true
+  },
+  "native_seconds": 229.476,
+  "wrapper_seconds": 230.28295016288757,
+  "peak_rss_bytes": null,
+  "timing_scope": "concurrent verification, not a controlled performance comparison",
+  "final_validation": {
+    "ctest": "100/100",
+    "ctest_seconds": 67.25,
+    "frontend_tests": "54/54",
+    "macos_package": "PASS",
+    "actual_new_desktop_run": "not_run_mac_locked"
+  },
+  "limitations": [
+    "Expanded checkMesh remains FAIL; its 2724 concave cells and 4 short-edge warnings are retained.",
+    "Q1 remains FAIL. The directional repair was accepted only after the original Solver metrics and per-type/per-metric Q1 counts and worst metrics did not worsen.",
+    "Snapshot report includes repair seconds in hybrid.json; final code places seconds in the existing non-deterministic profile report."
+  ]
+}

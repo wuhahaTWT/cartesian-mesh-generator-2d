@@ -49,6 +49,20 @@ bool hasPoint(const TopologyMesh2D& mesh, double x, double y, double eps = 1.0e-
 } // namespace
 
 int main() {
+    {
+        // Large-coordinate area-audit reduction of scaled nozzle remainder
+        // failures. Unshifted x*y subtraction loses the small enclosed area.
+        const AABB2D box{{3000.0,1000.0},{3000.03,1000.0002}};
+        const BoundaryLoop wall({box.min,{box.max.x,box.min.y},box.max,{box.min.x,box.max.y}});
+        auto source=fullCell(0,0,box);
+        const auto farMesh=buildGlobalTopology({source},Domain2D{box},wall);
+        check(farMesh.valid() && farMesh.audit.areaMismatches==0U,
+              "translated thin rectangle retains its accurately reconstructed area");
+        source.area+=1e-7;
+        const auto forged=buildGlobalTopology({source},Domain2D{box},wall);
+        check(!forged.valid() && forged.audit.areaMismatches>0U,
+              "stable area arithmetic still rejects a genuinely inconsistent source area");
+    }
     const Domain2D domain{{{0.0, 0.0}, {2.0, 1.0}}};
     BoundaryLoop boundary({{0.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.0, 1.0}});
 

@@ -146,9 +146,131 @@ void nozzleShortFaceRegression() {
     }
 }
 
+void directionalRepairRegression() {
+    // Eight actual cells around NACA140306 cell108446. Two disconnected
+    // unchanged rectangles provide volume ratio .04, representing the full
+    // case's still lower .0101983 baseline; no Solver threshold is changed.
+    // Without that outside baseline, the eight-cell reduction must reject
+    // the local volume-ratio decrease .0718852 -> .0660852.
+    for (const double scale:{0.001,1.0,1000.0}) for (const double angle:{0.0,0.29670597283903605}) {
+        std::vector<Polygon2D> polygons={{{{0.99974490727337728,-0.00039923769549937834},{1.0000628604999999,0.00084716315351562183},{0.99981489970451842,0.00084716315351562183}}},
+            {{{0.99981489970451842,0.00084716315351562183},{1.0000628604999999,0.00084716315351562183},{1.0020160673496092,0.00084716315351562183},{1.0020160673496092,0.0028003700031249967}}},
+            {{{1.0000628604999999,0.0012615753090807237},{1.0000838139999999,0.0012572092999999999},{1.0020160673496092,0.0028003700031249967},{1.0000628604999999,0.0028003700031249967}}},
+            {{{1.0000838139999999,0.0012572092999999999},{0.99981489970451842,0.00084716315351562183},{1.0020160673496092,0.0028003700031249967}}},
+            {{{0.9981096536503905,0.0028003700031249967},{0.99868382814578727,0.0021873431047687948},{1.0000628604999999,0.0012615753090807237},{1.0000628604999999,0.0028003700031249967}}},
+            {{{1.0000628604999999,-0.0011060436960937531},{1.0020160673496092,-0.0011060436960937531},{1.0020160673496092,0.00084716315351562183},{1.0000628604999999,0.00084716315351562183}}},
+            {{{1.0020160673496092,0.00084716315351562183},{1.0039692741992188,0.00084716315351562183},{1.0039692741992188,0.0028003700031249967},{1.0020160673496092,0.0028003700031249967}}},
+            {{{1.0000628604999999,0.0028003700031249967},{1.0020160673496092,0.0028003700031249967},{1.0020160673496092,0.0047535768527343716},{1.0000628604999999,0.0047535768527343716}}}};
+        const Polygon2D outline={{{0.9981096536503905,0.0028003700031249967},{0.99868382814578727,0.0021873431047687948},{1.0000628604999999,0.0012615753090807237},{1.0000838139999999,0.0012572092999999999},{0.99981489970451842,0.00084716315351562183},{0.99974490727337728,-0.00039923769549937834},{1.0000628604999999,0.00084716315351562183},{1.0000628604999999,-0.0011060436960937531},{1.0020160673496092,-0.0011060436960937531},{1.0020160673496092,0.00084716315351562183},{1.0039692741992188,0.00084716315351562183},{1.0039692741992188,0.0028003700031249967},{1.0020160673496092,0.0028003700031249967},{1.0020160673496092,0.0047535768527343716},{1.0000628604999999,0.0047535768527343716},{1.0000628604999999,0.0028003700031249967}}};
+        polygons.push_back(Polygon2D{{{2,.1},{2.01,.1},{2.01,.11},{2,.11}}});
+        polygons.push_back(Polygon2D{{{2.01,.1},{2.02,.1},{2.02,.1004},{2.01,.1004}}});
+        const auto transform=[&](Point2D p) {
+            return Point2D{scale*(std::cos(angle)*p.x-std::sin(angle)*p.y),
+                           scale*(std::sin(angle)*p.x+std::cos(angle)*p.y)};
+        };
+        std::vector<CutCell2D> cells;
+        for (auto polygon:polygons) {
+            for (auto& point:polygon.vertices) point=transform(point);
+            cells.push_back(polygonCell(cells.size(),polygon.vertices));
+        }
+        std::vector<Point2D> localLoop;
+        for (auto p:outline.vertices) localLoop.push_back(transform(p));
+        std::vector<Point2D> outsideLoop;
+        for (auto p:std::vector<Point2D>{{2,.1},{2.02,.1},{2.02,.1004},{2.01,.1004},{2.01,.11},{2,.11}})
+            outsideLoop.push_back(transform(p));
+        const BoundaryRegion2D boundary(std::vector<BoundaryLoop>{BoundaryLoop(localLoop),BoundaryLoop(outsideLoop)});
+        const Domain2D domain{boundary.bounds()};
+        auto mesh=buildGlobalTopology(cells,domain,boundary);
+        std::vector<bool> immutable(cells.size(),true);
+        immutable[1]=false;immutable[2]=false;immutable[3]=false;
+        const auto repaired=improveSolverDirectionalConnectivity2D(mesh,domain,boundary,immutable);
+        check(mesh.valid() && evaluateSolverQuality2D(mesh).valid() && repaired.valid() &&
+              repaired.acceptedCount==1U && repaired.topology.cells.size()==9U &&
+              repaired.after.failedCells.size()+1U==repaired.before.failedCells.size(),
+              "NACA exact union repairs one directional defect under the existing global Solver envelope");
+        if (repaired.acceptedCount!=1U) continue;
+        check(!repaired.after.valid(),"artificial patch outer cells remain underdetermined and are not reported as a CFD pass");
+        const auto merged=std::find_if(repaired.topology.cells.begin(),repaired.topology.cells.end(),
+            [](const auto& c){return c.sourceLineage==std::vector<std::size_t>{1,3};});
+        check(merged!=repaired.topology.cells.end() &&
+              repaired.after.cellDeterminants[merged->id]>=minimumDirectionalDeterminant2D,
+              "the repaired cell retains both source identities and passes the actual directional threshold");
+        double beforeArea=0,afterArea=0;
+        for (const auto& c:mesh.cells) beforeArea+=c.geometryArea;
+        for (const auto& c:repaired.topology.cells) afterArea+=c.geometryArea;
+        check(std::abs(beforeArea-afterArea)<=1e-10*beforeArea,"directional repair preserves total fluid area");
+        for (std::size_t i=0;i<cells.size();++i) if (immutable[i]) {
+            const auto found=std::find_if(repaired.topology.cells.begin(),repaired.topology.cells.end(),
+                [&](const auto& c){return c.sourceLineage==std::vector<std::size_t>{i};});
+            bool unchanged=found!=repaired.topology.cells.end();
+            if (unchanged) {
+                unchanged=repaired.immutableCells[found->id] && found->vertices.size()==mesh.cells[i].vertices.size();
+                for (const auto v:mesh.cells[i].vertices) {
+                    const auto p=mesh.vertices[v].point;
+                    unchanged=unchanged && std::any_of(found->vertices.begin(),found->vertices.end(),[&](auto w){
+                        const auto q=repaired.topology.vertices[w].point;return p.x==q.x && p.y==q.y;});
+                }
+            }
+            check(unchanged,"directional union preserves every immutable polygon and its source lineage");
+        }
+        const auto frozen=improveSolverDirectionalConnectivity2D(mesh,domain,boundary,std::vector<bool>(cells.size(),true));
+        check(frozen.valid() && frozen.acceptedCount==0U && frozen.after.failedCells==frozen.before.failedCells,
+              "directional repair does not merge immutable cells or conceal unresolved defects");
+        const BoundaryRegion2D localBoundary{BoundaryLoop(localLoop)};
+        const auto localMesh=buildGlobalTopology(std::vector<CutCell2D>(cells.begin(),cells.begin()+8),
+            Domain2D{localBoundary.bounds()},localBoundary);
+        const auto localRepair=improveSolverDirectionalConnectivity2D(localMesh,
+            Domain2D{localBoundary.bounds()},localBoundary,std::vector<bool>(immutable.begin(),immutable.begin()+8));
+        check(localRepair.valid() && localRepair.acceptedCount==0U,
+              "without an outside envelope the local volume-ratio decrease is rejected");
+    }
+}
+
 } // namespace
 
 int main() {
+    directionalRepairRegression();
+    {
+        check(directionalDeterminant2D({})==0.0 &&
+              directionalDeterminant2D({{1,0}})==0.0 &&
+              directionalDeterminant2D({{1,0},{-1,0}})==0.0,
+              "absent, single and parallel internal directions are underdetermined");
+        check(directionalDeterminant2D({{1,0},{0,1}})==0.125 &&
+              directionalDeterminant2D({{1,0},{0,1},{-1,0},{0,-1}})==0.5,
+              "directional metric matches analytic orthogonal face tensors");
+        check(!std::isfinite(directionalDeterminant2D({{0,0}})),
+              "degenerate internal direction is not a connectivity pass");
+        for (const double scale:{0.001,1.0,1000.0}) {
+            for (const double angle:{0.0,0.29670597283903605}) {
+                const auto transform=[&](const Vector2D& v) {
+                    return Vector2D{scale*(std::cos(angle)*v.x-std::sin(angle)*v.y),
+                                    scale*(std::sin(angle)*v.x+std::cos(angle)*v.y)};
+                };
+                const Point2D a{1.000083814,.0012572093};
+                const Point2D b{.9998148997045184,.0008471631535156218};
+                const Point2D c{1.0020160673496092,.0028003700031249967};
+                const double measured=directionalDeterminant2D({transform(c-b),transform(c-a)});
+                check(std::abs(measured-.0003310395831)<1e-12 &&
+                      measured<minimumDirectionalDeterminant2D,
+                      "NACA cell 108446 reproduces actual OpenFOAM determinant under finite transforms");
+            }
+        }
+        const Domain2D domain{{{0,0},{2,2}}};
+        const BoundaryRegion2D boundary(BoundaryLoop({{0,0},{2,0},{2,2},{0,2}}));
+        const auto squareMesh=buildGlobalTopology({
+            polygonCell(0,{{0,0},{1,0},{1,1},{0,1}}),
+            polygonCell(1,{{1,0},{2,0},{2,1},{1,1}}),
+            polygonCell(2,{{0,1},{1,1},{1,2},{0,2}}),
+            polygonCell(3,{{1,1},{2,1},{2,2},{1,2}})},domain,boundary);
+        const auto connected=evaluateDirectionalConnectivity2D(squareMesh);
+        check(connected.valid() && connected.cellDeterminants==std::vector<double>(4,0.125),
+              "actual internal face incidence excludes physical boundary directions");
+        const auto isolated=buildGlobalTopology({polygonCell(0,{{0,0},{2,0},{2,2},{0,2}})},domain,boundary);
+        const auto rankZero=evaluateDirectionalConnectivity2D(isolated);
+        check(evaluateSolverQuality2D(isolated).valid() && !rankZero.valid() &&
+              rankZero.minimumMeasured==0.0 && rankZero.failedCells==std::vector<std::size_t>{0},
+              "directional gate stays separate from legacy Solver policy and reports zero internal faces");
+    }
     nozzleShortFaceRegression();
     {
         // Two-cell reduction of the 17-degree rotated NACA failure. The exact

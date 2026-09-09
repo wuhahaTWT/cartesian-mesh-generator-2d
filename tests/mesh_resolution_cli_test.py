@@ -14,6 +14,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.verification.check_mesh_resolution import measure
 from tools.verification.check_layer_resolution import measure as measure_layers
+from tools.verification.check_directional_connectivity import (
+    measure as measure_directional, verify_native_report)
 
 
 def run(command: list[str], log, allow_failure: bool = False,
@@ -178,6 +180,9 @@ def main() -> int:
                                  else Path(product["prefix"] + ".hybrid.solver.cm2d"))
                     independent = measure(cm2d_path, report_path)
                     product["independent_resolution"] = independent
+                    directional = measure_directional(cm2d_path)
+                    verify_native_report(directional, report)
+                    product["independent_directional"] = directional
                     if not independent["valid"]:
                         raise AssertionError(f"independent {product['mode']} resolution check failed: "
                                              f"{independent['issues']}")

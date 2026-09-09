@@ -1,0 +1,56 @@
+{
+  "format": "cartmesh2d-pure-naca-r03-compact-evidence-v1",
+  "binary_label": "42b43e6",
+  "pure_cli": {
+    "path": "build/cartmesh2d_cli",
+    "sha256": "8df8c8fc814bb6f8053cd5d80a1a32b7015b79d81bc351df4959a559333e72a8",
+    "mtime": 1788994563.489125
+  },
+  "hybrid_cli": {
+    "path": "build/cartmesh2d_hybrid_cli",
+    "sha256": "6302eb355ee164700298814ba2f01a6f0125e3ace9cf23714f8e4c6a4a3d33c8"
+  },
+  "pure_naca": {
+    "cell_count": 133814,
+    "native_seconds": 60.4263949,
+    "rss_bytes": 1015021568,
+    "solver": "PASS",
+    "Q1": "FAIL",
+    "independent_determinant": {
+      "valid": true,
+      "minimum_measured": 0.0016968535874275928,
+      "failed_cell_count": 0
+    },
+    "external_standard": {
+      "exit_code": 0,
+      "mesh_ok_text": true,
+      "failed_checks": [],
+      "concave_cells": null
+    },
+    "external_expanded": {
+      "exit_code": 0,
+      "mesh_ok_text": false,
+      "failed_checks": [
+        "1"
+      ],
+      "concave_cells": 1075,
+      "short_edges": 4
+    }
+  },
+  "hybrid_circle_r03": {
+    "status": "timeout",
+    "timeout_seconds": 300.0,
+    "measurement_complete": false,
+    "note": "hybrid circle r03 timed out; retained as failure evidence."
+  },
+  "visualization": {
+    "path": "outputs/engineering-pure-naca-r03-current/pure-naca-r03-full-trailing-edge.png",
+    "source_cm2d": "outputs/engineering-pure-naca-r03-current/mesh.solver.cm2d",
+    "scope": "all CM2D cell polygons/edges plus trailing-edge window x=.82..1.06,y=-.12.. .12",
+    "view_image_checked": true
+  },
+  "notes": [
+    "The hybrid circle profile samples are diagnostic only and are not a benchmark or speed claim.",
+    "Standard checkMesh PASS and expanded concavity failure are separate gates."
+  ]
+}

@@ -101,7 +101,7 @@ std::size_t conformalHybridBuilds=0U;
         const auto& b=polygon.vertices[i];
         const auto& c=polygon.vertices[(i+1U)%polygon.vertices.size()];
         const double scale=std::sqrt(squaredNorm(b-a)*squaredNorm(c-b));
-        if (!(scale>0.0) || cross(b-a,c-b)<=tol.scale(scale)) return false;
+        if (!(scale>0.0) || cross(b-a,c-b)<=tol.areaScale(std::sqrt(scale))) return false;
     }
     return true;
 }
@@ -111,8 +111,8 @@ std::size_t conformalHybridBuilds=0U;
                                        const Point2D& c,
                                        const TolerancePolicy& tol) noexcept {
     const double scale=std::max({segmentLength(a,b),segmentLength(b,c),
-                                 segmentLength(c,a),1.0});
-    const double epsilon=tol.scale(scale)*scale;
+                                 segmentLength(c,a)});
+    const double epsilon=tol.areaScale(scale);
     return cross(b-a,point-a)>=-epsilon &&
            cross(c-b,point-b)>=-epsilon &&
            cross(a-c,point-c)>=-epsilon;
@@ -138,7 +138,8 @@ std::size_t conformalHybridBuilds=0U;
             const auto& b=polygon.vertices[current];
             const auto& c=polygon.vertices[next];
             const double turn=cross(b-a,c-b);
-            if (!(turn>tol.scale(std::max(1.0,std::abs(turn))))) continue;
+            const double edgeProduct=segmentLength(a,b)*segmentLength(b,c);
+            if (!(turn>tol.areaScale(std::sqrt(edgeProduct)))) continue;
             bool contains=false;
             for (const auto vertex:remaining) {
                 if (vertex==previous || vertex==current || vertex==next) continue;
@@ -166,11 +167,14 @@ std::size_t conformalHybridBuilds=0U;
     pieces.push_back(Polygon2D{{polygon.vertices[remaining[0]],
                                 polygon.vertices[remaining[1]],
                                 polygon.vertices[remaining[2]]}});
+    for (const auto& piece:pieces) {
+        if (!convexPolygon(piece,tol)) return std::nullopt;
+    }
     const double area=std::accumulate(
         pieces.begin(),pieces.end(),0.0,
         [](double sum,const Polygon2D& piece) { return sum+piece.area(); });
     const double tolerance=tol.absolute*tol.absolute+
-                           tol.relative*std::max(1.0,polygon.area());
+                           tol.relative*polygon.area();
     if (std::abs(area-polygon.area())>tolerance) return std::nullopt;
     return pieces;
 }
@@ -527,6 +531,12 @@ void writeJsonString(std::ostream& out, const std::string& value) {
 }
 
 } // namespace
+
+std::optional<std::vector<Polygon2D>> detail::partitionTerminationPolygon2D(
+    const Polygon2D& polygon,const TolerancePolicy& tol) {
+    if (!BoundaryLoop(polygon.vertices).diagnose(tol).valid()) return std::nullopt;
+    return triangulateTermination(polygon,tol);
+}
 
 HybridMeshBuildResult2D buildConformalHybridMesh2D(
     const BoundaryLayerBuildResult2D& boundaryLayers,
@@ -1042,8 +1052,15 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     const auto remainderTopology=buildGlobalTopology(
         remainderSourceCells,domain,remainderBoundaryRegion,policy.tolerance,constructionRegistry);
     if (!remainderTopology.valid()) {
+        std::ostringstream detail;
+        detail<<"remainder topology failed before H4 stabilization";
+        for (std::size_t i=0;i<std::min<std::size_t>(remainderTopology.issues.size(),4U);++i) {
+            const auto& issue=remainderTopology.issues[i];
+            detail<<" [code="<<static_cast<unsigned>(issue.code)<<" object="<<issue.objectId
+                  <<" "<<issue.message<<']';
+        }
         return failed(HybridMeshFailureReason2D::UnifiedTopologyFailed,
-                      "remainder topology failed before H4 stabilization");
+                      detail.str());
     }
     SmallCellPolicy2D smallPolicy;
     smallPolicy.areaFractionThreshold=policy.remainderSmallCellAreaFraction;
@@ -1312,12 +1329,18 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             }
         }
         const auto pieces=termination
-            ?triangulateTermination(polygon,policy.tolerance)
+            ?detail::partitionTerminationPolygon2D(polygon,policy.tolerance)
             :std::optional<std::vector<Polygon2D>>(
                 std::vector<Polygon2D>{polygon});
         if (!pieces) {
+            std::ostringstream detail;
+            detail<<std::setprecision(17)
+                  <<"termination Cut-cell could not be partitioned before topology area="
+                  <<polygon.area()<<" polygon=[";
+            for (const auto& point:polygon.vertices) detail<<'('<<point.x<<','<<point.y<<')';
+            detail<<']';
             return failed(HybridMeshFailureReason2D::LayerConversionFailed,
-                          "termination Cut-cell could not be partitioned before topology");
+                          detail.str());
         }
         for (const auto& piece:*pieces) {
             HybridSourceCell2D source;
@@ -1933,6 +1956,50 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             q33AcceptedTransactions==maximumQ33Transactions;
         solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
     }
+    const auto directionalStart=H4ProfileClock::now();
+    auto directionalQuality=evaluateDirectionalConnectivity2D(solverTopologyReport.topology);
+    const auto directionalMinimumBefore=directionalQuality.minimumMeasured;
+    std::size_t directionalCandidates=0U,directionalAccepted=0U;
+    bool directionalRejectedByContract=false;
+    if (directionalQuality.issues.empty() && !directionalQuality.failedCells.empty() &&
+        evaluateSolverQuality2D(solverTopologyReport.topology,{},policy.tolerance).valid()) {
+        auto repair=improveSolverDirectionalConnectivity2D(
+            solverTopologyReport.topology,domain,originalWalls,
+            solverTopologyReport.immutableOutputCells,policy.tolerance);
+        directionalCandidates=repair.candidateCount;
+        if (!repair.valid()) {
+            return failed(HybridMeshFailureReason2D::SolverTopologyFailed,
+                          repair.issues.empty()?"directional repair failed":repair.issues.front());
+        }
+        if (repair.acceptedCount>0U) {
+            const auto contractFor=[&](const TopologyMesh2D& mesh) {
+                std::vector<std::optional<std::size_t>> sources;
+                SourceLineageAudit2D audit;
+                const auto metadata=qualityMetadataForSolver(
+                    mesh,hybridSources,sources,audit,policy.verifySourceLineageOracle,
+                    policy.tolerance);
+                const auto samples=boundaryLayerQualitySamples(
+                    hybridSources,sources,boundaryLayers.strips,policy.tolerance);
+                auto report=evaluateQualityContract2D(mesh,metadata,samples,{},nullptr,
+                                                     policy.tolerance);
+                if (!audit.pass()) report.inputIssues.push_back("directional repair lineage audit failed");
+                return report;
+            };
+            if (qualityContractMetricsNoWorse2D(
+                    contractFor(repair.topology),contractFor(solverTopologyReport.topology))) {
+                directionalAccepted=repair.acceptedCount;
+                solverTopologyReport.topology=std::move(repair.topology);
+                solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+                solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+                solverTopologyReport.qualityRepartitionCount+=directionalAccepted;
+                solverTopologyReport.profile.acceptedTopologyCommitCount+=directionalAccepted;
+                directionalQuality=std::move(repair.after);
+            } else {
+                directionalRejectedByContract=true;
+            }
+        }
+    }
+    const double directionalSeconds=h4ProfileSeconds(directionalStart);
     if (std::count(solverTopologyReport.immutableOutputCells.begin(),
         solverTopologyReport.immutableOutputCells.end(),true)!=
         static_cast<std::ptrdiff_t>(layerCellCount)) {
@@ -2028,6 +2095,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.meshQuality = std::move(meshQuality);
     result.solverQuality = std::move(solverQuality);
     result.qualityContract=std::move(qualityContract);
+    result.metrics.directionalRepairCandidateCount=directionalCandidates;
+    result.metrics.directionalRepairAcceptedCount=directionalAccepted;
+    result.metrics.directionalRepairRejectedByContract=directionalRejectedByContract;
+    result.metrics.directionalRepairSeconds=directionalSeconds;
+    result.metrics.directionalMinimumBefore=directionalMinimumBefore;
+    result.metrics.directionalMinimumAfter=directionalQuality.minimumMeasured;
+    result.metrics.directionalFailedCellCount=directionalQuality.failedCells.size();
     result.remainderSmallCells=std::move(remainderSmallCells);
     result.remainderStabilization=std::move(remainderStabilization);
     result.solverTopologyReport=std::move(solverTopologyReport);
@@ -2576,6 +2650,15 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             recoveryLineageSplits+=refinement.lineage.size();
         }
         out << "  \"failure_reason\": \"none\",\n";
+        out << "  \"directional_repair\": {\"candidate_count\": "
+            <<metrics.directionalRepairCandidateCount<<", \"accepted_count\": "
+            <<metrics.directionalRepairAcceptedCount<<", \"rejected_by_contract\": "
+            <<(metrics.directionalRepairRejectedByContract?"true":"false")
+            <<", \"minimum_before\": ";
+        if (metrics.directionalMinimumBefore) out<<*metrics.directionalMinimumBefore;else out<<"null";
+        out<<", \"minimum_after\": ";
+        if (metrics.directionalMinimumAfter) out<<*metrics.directionalMinimumAfter;else out<<"null";
+        out<<", \"failed_cell_count\": "<<metrics.directionalFailedCellCount<<"},\n";
         out << "  \"quadtree_leaf_count\": " << metrics.quadtreeLeafCount << ",\n";
         out << "  \"boundary_layer_cell_count\": " << metrics.boundaryLayerCellCount << ",\n";
         out << "  \"requested_boundary_layer_cell_count\": "
@@ -2908,6 +2991,7 @@ bool writeHybridProfileJson2D(const HybridMeshBuildResult2D& result,
     out << "  \"measurement_class\": \"wall_time\",\n";
     out << "  \"reproducible\": false,\n";
     out << "  \"r1_repair_seconds\": " << metrics.r1RepairSeconds << ",\n";
+    out << "  \"directional_repair_seconds\": " << metrics.directionalRepairSeconds << ",\n";
     // The optional termination-repair variants report their wall time here, not
     // in the byte-compared report: two runs of the same input legitimately
     // differ in seconds, which would otherwise make the determinism comparison

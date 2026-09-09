@@ -1,5 +1,6 @@
 #include "cartmesh2d/sizing/MeshResolution2D.hpp"
 #include "cartmesh2d/sizing/BoundaryLayerResolution2D.hpp"
+#include "cartmesh2d/quality/SolverQuality2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -112,9 +113,19 @@ std::string meshResolutionReportToJson2D(const TopologyMesh2D& mesh,
     out << ",\n  \"wall_owner_tangential_exceedance_edge_ids\":[";
     for (std::size_t i = 0; i < exceeded.size(); ++i) { if (i) out << ','; out << exceeded[i]; }
     const auto layers=measureBoundaryLayerResolution2D(mesh,reference,targets.requestedLayerCount,hybrid,tol,targets.firstLayerHeight);
+    const auto directional=evaluateDirectionalConnectivity2D(mesh);
     out << "],\n  \"boundary_layer_coverage_status\":\""<<layers.status<<"\",\n"
         << "  \"boundary_layers\":"<<boundaryLayerResolutionToJson2D(layers)<<",\n"
-        << "  \"notes\":[\"Wall statistics sample final embedded edges; split edges do not replace owner extents.\","
+        << "  \"directional_connectivity\":{\"scope\":\"uncoupled_planar_uniform_extrusion_empty_front_back\","
+        << "\"valid\":"<<(directional.valid()?"true":"false")
+        << ",\"threshold\":"<<minimumDirectionalDeterminant2D<<",\"minimum\":";
+    optionalNumber(out,directional.minimumMeasured);
+    out<<",\"input_issue_count\":"<<directional.issues.size()<<",\"failed_cell_ids\":[";
+    for (std::size_t i=0;i<directional.failedCells.size();++i) {
+        if (i) out<<',';
+        out<<directional.failedCells[i];
+    }
+    out<<"]},\n  \"notes\":[\"Wall statistics sample final embedded edges; split edges do not replace owner extents.\","
         << "\"Normal owner extent is not a certified first-layer height or y-plus.\","
         << "\"Sizing exceedance is a diagnostic independent of topology, Solver and Q1 gates.\"]\n}\n";
     return out.str();

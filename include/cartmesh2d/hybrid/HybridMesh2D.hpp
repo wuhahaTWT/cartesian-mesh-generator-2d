@@ -20,6 +20,13 @@
 
 namespace cartmesh2d {
 
+namespace detail {
+// Exact boundary-preserving partition used for local layer termination.
+// Invalid loops fail explicitly; exposed here for small geometric regressions.
+[[nodiscard]] std::optional<std::vector<Polygon2D>> partitionTerminationPolygon2D(
+    const Polygon2D& polygon,const TolerancePolicy& tol = {});
+}
+
 enum class HybridCellKind2D {
     BoundaryLayer,
     RemainderCut,
@@ -92,6 +99,13 @@ struct HybridTransitionPlan2D {
 };
 
 struct HybridMeshMetrics2D {
+    std::size_t directionalRepairCandidateCount = 0;
+    std::size_t directionalRepairAcceptedCount = 0;
+    bool directionalRepairRejectedByContract = false;
+    double directionalRepairSeconds = 0.0;
+    std::optional<double> directionalMinimumBefore;
+    std::optional<double> directionalMinimumAfter;
+    std::size_t directionalFailedCellCount = 0;
     std::size_t quadtreeLeafCount = 0;
     std::size_t remainderCartesianCellCount = 0;
     std::size_t remainderCutCellCount = 0;
