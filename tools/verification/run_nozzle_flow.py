@@ -80,7 +80,7 @@ def docker_stage(directory, case, program, extra=()):
         result["mesh_ok"] = (result["status"] == "passed"
                              and "Mesh OK." in log and "Failed " not in log)
         match = re.search(r"Writing (\d+) concave cells", log)
-        result["concave_cells"] = int(match.group(1)) if match else 0
+        result["concave_cells"] = int(match.group(1)) if match else None
     else:
         result.update(nozzle.solver_convergence(log))
     write_json(directory / "stage.json", result)

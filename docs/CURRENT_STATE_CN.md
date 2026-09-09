@@ -157,10 +157,37 @@ concave cells），进程退出 0 不改变该失败判定。
 真实同视域归一化网格图：`artifacts/current/three-scale-mesh.png`。
 
 同批有限扰动：圆平移后 14,800 单元、旋转 17° 后 14,820 单元；喷管平移后 2,152 单元，
-三者独立读取通过，外部 checkMesh 未运行。翼型旋转 17° 仍有 9 项 Solver 违规，
-没有通过导出，属于待修鲁棒性缺陷，不能将这些结果推广为任意旋转/尺度保证。
+三者独立读取通过，外部 checkMesh 未运行。翼型旋转 17° 原有 9 项 Solver 违规，
+现已修复：旧凸候选失败后，尝试保留所有外边界的真实单元并集；仅当单元指标满足原 Solver
+门槛且全域质量分数严格改善时接受，不触碰不可变层单元。两单元最小反例在三个比例下均
+保留精确边界、面积及两个来源身份，真实 0.683° 凹角如实报告。固定原输入与尺寸参数现生成
+17,148 单元，native 24.3147 s（wrapper 25.53 s），峰值 RSS 176,734,208 B；独立尺寸/OpenFOAM 读取和标准
+OpenFOAM 2606 checkMesh PASS，Solver PASS、Q1 FAIL，扩展检查 FAIL（152 concave cells）。
+最终壁面 owner 切向尺寸超标壁长占比 14.2382%，没有用质量通过冒充尺寸完全达到。
+完整 CTest 98/98（77.75 s）、桌面测试 54/54 通过；尚未重跑本修复的打包桌面流程。
+不能将这些有限结果推广为任意旋转/尺度保证。CLI Solver 质量失败时现保存明确标为
+`.failed.solver.cm2d` / `.failed.solver-quality.json` 的诊断产物，仍返回失败且不导出正常 OpenFOAM。
+证据 `artifacts/current/rotated-naca-exact-union.json` / `rotated-naca-exact-union.png`；失败与成功原始产物均保留。
 精简证据 `artifacts/current/dimensional-area-perturbations.json`，原始输入、参数及失败记录在
 `outputs/engineering-perturbations/`。
+
+### 贴体固定 r01 调查与停层认证
+
+固定请求三例（参数及真实命令在 `artifacts/current/hybrid-r01-survey.json`）中，圆、喷管各在
+180 s 超时；无最终产物，未报告的 native/RSS/质量/层指标记为空，不能计为规模成功。
+翼型成功生成 18,574 个最终单元，native 20.4102 s、峰值 RSS 217,710,592 B，Solver PASS、
+Q1 FAIL。请求 952 个层单元，实际构造并保留 932 个；首层壁长覆盖 99.7698%，完整四层
+覆盖 98.0263%，首层高度超标壁长占比 0。两个列完全停层，绝非所有壁面都有四层。
+独立尺寸/OpenFOAM 读取和真实标准 checkMesh PASS，扩展检查 FAIL（554 concave cells）。
+
+独立层读取器原先误把源层单元的单 owner 边集合当作物理壁面，并要求完全停层的列也有源层边，
+在翼型后缘拒绝。实际声明壁长与最终 embedded 总壁长同为 2.042693194095104 Lref；
+失败列由两条最终壁面子边完整覆盖。读取器现独立核对所有声明线段完整分割最终物理壁面，
+逐边拒绝缺口、重叠和伪造壁面；保留层仍须匹配真实源 polygon、wall owner 及层间连接。
+完全停层列必须报告空高度，不能填零冒充测量。修正后上述同字节产物的层读取通过；原拒绝记录
+保留。四单元停层最小案例以及重复、缺列、域边冒充壁面、缺口、伪造高度/覆盖率/来源回归通过。
+原始产物在 `outputs/engineering-hybrid-survey-r01/`；两例超时仍是待解决的贴体速度/鲁棒性问题。
+合并本轮核心与读取器修复后，完整 CTest 99/99（62.69 s）及桌面测试 54/54 通过。
 
 ### 固定喷管 CFD 多网格验证
 
