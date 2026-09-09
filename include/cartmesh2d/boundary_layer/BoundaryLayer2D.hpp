@@ -65,6 +65,11 @@ struct WallChainBuildResult2D {
     std::string patchIdentity, FluidSide2D fluidSide,
     const TolerancePolicy& tol = {});
 
+// Split existing straight segments without moving or discarding input corners.
+// This controls layer tangential spacing independently of remainder tree depth.
+[[nodiscard]] WallChainBuildResult2D refineWallChainToSize2D(
+    const WallChain2D& chain,double maximumSegmentLength,const TolerancePolicy& tol = {});
+
 enum class LayerThicknessMode2D { FirstLayerThickness, TotalThickness };
 
 struct LayerParameters2D {

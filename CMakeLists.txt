@@ -17,6 +17,7 @@ add_library(cartmesh2d
     src/quadtree/Quadtree2D.cpp
     src/sizing/SizeField2D.cpp
     src/sizing/MeshResolution2D.cpp
+    src/sizing/BoundaryLayerResolution2D.cpp
     src/cutcell/CutCell2D.cpp
     src/topology/Topology2D.cpp
     src/topology/EdgeIncidence2D.cpp
@@ -246,6 +247,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_stage2_quadtree_tests COMMAND cartmesh2d_quadtree_tests)
     add_test(NAME cartmesh2d_stageP1_spatial_index_tests COMMAND cartmesh2d_spatial_index_tests)
     add_test(NAME cartmesh2d_stageWB_size_field_tests COMMAND cartmesh2d_size_field_tests)
+    add_executable(cartmesh2d_boundary_layer_resolution_tests tests/boundary_layer_resolution_test.cpp)
+    target_link_libraries(cartmesh2d_boundary_layer_resolution_tests PRIVATE cartmesh2d::cartmesh2d)
+    add_test(NAME cartmesh2d_boundary_layer_resolution_tests COMMAND cartmesh2d_boundary_layer_resolution_tests)
     add_test(NAME cartmesh2d_relative_resolution_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/mesh_resolution_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_cli>

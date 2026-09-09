@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.verification.check_mesh_resolution import measure
+from tools.verification.check_layer_resolution import measure as measure_layers
 
 
 def run(command: list[str], log, allow_failure: bool = False,
@@ -180,6 +181,9 @@ def main() -> int:
                     if not independent["valid"]:
                         raise AssertionError(f"independent {product['mode']} resolution check failed: "
                                              f"{independent['issues']}")
+                    if product["mode"] == "hybrid":
+                        product["independent_layers"] = measure_layers(
+                            Path(product["prefix"]+".hybrid.vtk"),cm2d_path,report_path)
                     if product["mode"] == "pure" and scale == 1.0:
                         forged_path = root / "forged-resolution.json"
                         forged = json.loads(json.dumps(report))
@@ -211,6 +215,23 @@ def main() -> int:
                 if not product.get("independent_resolution", {}).get("valid", False):
                     results["issues"].append(
                         f"{mode} scale {row['scale']} lacks an independent resolution pass")
+        # A sparse input polyline must not fix the layer spacing when an
+        # explicit wall size was requested. The original 32 corners are kept.
+        circle = Path(__file__).resolve().parents[1] / "examples/acceptance/circle.xy"
+        prefix = root / "tangential-circle"
+        with args.log.open("a", encoding="utf-8") as log:
+            completed = run([str(args.hybrid_cli),str(circle),str(prefix),"6","3","6","4",
+                "0.02","1.2","1","-","0.02","--size-field","--wall-relative-size","0.03125",
+                "--background-relative-size","0.25","--far-field-spans","0.5",
+                "--cells-per-level","0","--first-layer-relative-size","0.01"],log)
+        if "hybrid_status=success" not in completed.stdout:
+            raise AssertionError("tangential circle fell back instead of producing layers")
+        report_path=Path(str(prefix)+".resolution.json")
+        report=json.loads(report_path.read_text())
+        if report["wall_owner_tangential_exceedance_length_fraction"]>1.e-9:
+            raise AssertionError("hybrid wall size failed to refine the sparse circle polyline")
+        results["tangential_circle"]=measure_layers(Path(str(prefix)+".hybrid.vtk"),
+            Path(str(prefix)+".hybrid.solver.cm2d"),report_path)
         results["valid"] = not results["issues"]
     except (AssertionError, KeyError, ValueError, OSError, json.JSONDecodeError) as exc:
         results["issues"].append(str(exc))

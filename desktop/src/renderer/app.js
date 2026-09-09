@@ -503,6 +503,17 @@ async function generate() {
         `壁面单元切向跨度 P95 ${actual.wall_owner_tangential_extent_over_reference?.p95.toPrecision(4) ?? '—'}；` +
         `切向跨度超过壁面目标的壁长占比 ${percent == null ? '未设置目标' : (100*percent).toFixed(2)+'%'}。` +
         '切向跨度与法向高度分开测量；完整尺寸报告随结果包保存。';
+      const layers = resolution.boundary_layers;
+      if (layers && layers.status !== 'not_requested') {
+        const percent = value => value == null ? '未测得' : (100*value).toFixed(2)+'%';
+        $('resolutionResult').textContent += layers.status === 'no_layers_retained'
+          ? ' 本次为纯网格回退，未保留边界层。'
+          : ` 边界层最终保留 ${layers.retained_cells}/${layers.requested_cells} 个请求单元；` +
+            `首层覆盖壁长 ${percent(layers.first_layer_wall_length_fraction)}，` +
+            `完整请求层数覆盖壁长 ${percent(layers.full_requested_layers_wall_length_fraction)}。` +
+            `首层法向高度超过目标的壁长占比 ${percent(layers.first_layer_height_exceedance_wall_length_fraction)}。` +
+            (layers.status === 'incomplete' ? ' 层身份或连通性核对不完整，详见报告。' : '');
+      }
     }
     fitOverview();
     if (payload.automatic) {
