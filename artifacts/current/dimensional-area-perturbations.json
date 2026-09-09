@@ -1,0 +1,534 @@
+{
+  "format": "cartmesh2d-dimensional-area-perturbations-v1",
+  "fix": "Construction area epsilon now max(absolute_length_tolerance squared, relative_tolerance times local_bbox_length squared). Solver and Q1 policies unchanged.",
+  "scope": "Finite pure-path transformations; not arbitrary scale or rotation invariance.",
+  "corrected_scale_before_fix": {
+    "format": "cartmesh2d-perturbations-corrected-scale-v1",
+    "original_scale_results": {
+      "circle-scale-0p001": {
+        "status": "invalid_test_configuration",
+        "reason": "argv used --reference-length 2; required .002"
+      },
+      "circle-scale-1000p0": {
+        "status": "invalid_test_configuration",
+        "reason": "argv used --reference-length 2; required 2000"
+      }
+    },
+    "corrected_results": [
+      {
+        "name": "circle-scale-0p001-correct-reference",
+        "source_input": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/circle-scale-0p001.xy",
+        "status": "failed",
+        "failure": "wrapper_returncode=1",
+        "wrapper_returncode": 1,
+        "elapsed_seconds": 0.2834899160079658,
+        "native_seconds": 0.26815,
+        "peak_rss_bytes": 73613312,
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/circle-scale-0p001.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-correct-reference/mesh",
+          "11",
+          "0.25",
+          "0.1",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-correct-reference/openfoam",
+          "0",
+          "--size-field",
+          "--reference-length",
+          "0.002",
+          "--wall-relative-size",
+          "0.01",
+          "--background-relative-size",
+          "0.025",
+          "--far-field-spans",
+          "0.5",
+          "--cells-per-level",
+          "3",
+          "--max-safe-wall-level",
+          "11"
+        ],
+        "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-correct-reference/command.log",
+        "reference_length": 0.002,
+        "wall_relative_size": 0.01,
+        "background_relative_size": 0.025,
+        "cells_per_level": 3,
+        "timeout_seconds": 120,
+        "missing_metrics": []
+      },
+      {
+        "name": "circle-scale-1000p0-correct-reference",
+        "source_input": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/circle-scale-1000p0.xy",
+        "status": "success",
+        "failure": null,
+        "wrapper_returncode": 0,
+        "elapsed_seconds": 0.5580090410076082,
+        "native_seconds": 0.544548542,
+        "peak_rss_bytes": 122257408,
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/circle-scale-1000p0.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-1000p0-correct-reference/mesh",
+          "11",
+          "0.25",
+          "0.1",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-1000p0-correct-reference/openfoam",
+          "0",
+          "--size-field",
+          "--reference-length",
+          "2000",
+          "--wall-relative-size",
+          "0.01",
+          "--background-relative-size",
+          "0.025",
+          "--far-field-spans",
+          "0.5",
+          "--cells-per-level",
+          "3",
+          "--max-safe-wall-level",
+          "11"
+        ],
+        "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-1000p0-correct-reference/command.log",
+        "reference_length": 2000.0,
+        "wall_relative_size": 0.01,
+        "background_relative_size": 0.025,
+        "cells_per_level": 3,
+        "timeout_seconds": 120,
+        "missing_metrics": [],
+        "resolution_independent": {
+          "valid": true,
+          "cell_count": 14800,
+          "actual": {
+            "sqrt_area_over_reference": {
+              "min": 0.001424472819011356,
+              "p50": 0.015625,
+              "p95": 0.015625,
+              "max": 0.015625
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00020394397162409717,
+              "p50": 0.00785030134669089,
+              "p95": 0.010106590364998459,
+              "max": 0.010106590364998459
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.004198108118126684,
+              "p50": 0.009076764416181271,
+              "p95": 0.011361009617877088,
+              "max": 0.012250815847061912
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.0009053886801324988,
+              "p50": 0.005255953546888081,
+              "p95": 0.010184390543930782,
+              "max": 0.01081778374518753
+            }
+          }
+        },
+        "openfoam_independent": {
+          "valid": true,
+          "cell_count": 14800,
+          "face_count": 59788,
+          "issues": []
+        },
+        "final_cell_count": 14800
+      }
+    ]
+  },
+  "small_scale_after_fix": {
+    "status": "success",
+    "failure": null,
+    "wrapper_returncode": 0,
+    "elapsed_seconds": 1.5670775000471622,
+    "native_seconds": 0.631033333,
+    "peak_rss_bytes": 120406016,
+    "reference_length": 0.002,
+    "command": [
+      "/usr/bin/time",
+      "-l",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/circle-scale-0p001.xy",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-area-policy/mesh",
+      "11",
+      "0.25",
+      "0.1",
+      "exterior",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-area-policy/openfoam",
+      "0",
+      "--size-field",
+      "--reference-length",
+      "0.002",
+      "--wall-relative-size",
+      "0.01",
+      "--background-relative-size",
+      "0.025",
+      "--far-field-spans",
+      "0.5",
+      "--cells-per-level",
+      "3",
+      "--max-safe-wall-level",
+      "11"
+    ],
+    "resolution_independent": {
+      "valid": true,
+      "cell_count": 14800,
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.0014244728190113303,
+          "p50": 0.015625000000000007,
+          "p95": 0.015625000000000014,
+          "max": 0.015625000000000014
+        },
+        "wall_edge_length_over_reference": {
+          "min": 0.00020394397162398368,
+          "p50": 0.007850301346690892,
+          "p95": 0.010106590364998426,
+          "max": 0.010106590364998462
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.0041981081181266516,
+          "p50": 0.009076764416181264,
+          "p95": 0.011361009617877083,
+          "max": 0.012250815847061941
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0009053886801324684,
+          "p50": 0.005255953546888074,
+          "p95": 0.010184390543930687,
+          "max": 0.010817783745187576
+        }
+      }
+    },
+    "openfoam_independent": {
+      "valid": true,
+      "cell_count": 14800,
+      "face_count": 59788,
+      "issues": []
+    },
+    "final_cell_count": 14800,
+    "valid": true,
+    "solver": "PASS",
+    "Q1": "FAIL",
+    "standard_checkMesh": {
+      "case": "../circle-scale-0p001-area-policy/openfoam",
+      "image": "opencfd/openfoam-run:2606",
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "cartmesh-perturb-min-standard",
+        "--rm",
+        "--network",
+        "none",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-scale-0p001-area-policy/openfoam:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "exit_code": 0,
+      "mesh_ok_text": true,
+      "failed_checks": [],
+      "concave_cells": null,
+      "expanded_checkMesh": "not_run",
+      "log": "outputs/engineering-perturbations/circle-scale-0p001-area-policy/checkMesh-standard/stdout.log",
+      "concave_cells_status": "not_reported",
+      "notes": [
+        "Standard checkMesh output contains no concavity check/count; missing is recorded as null, not zero."
+      ]
+    },
+    "expanded_checkMesh": "not_run"
+  },
+  "other_transformations": [
+    {
+      "name": "circle-translate-relative",
+      "status": "success",
+      "failure": null,
+      "wrapper_returncode": 0,
+      "elapsed_seconds": 0.5963940829969943,
+      "native_completed_marker": true,
+      "native_seconds": 0.584135,
+      "peak_rss_bytes": 119783424,
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_cli",
+        "outputs/engineering-perturbations/inputs/circle-translate-relative.xy",
+        "outputs/engineering-perturbations/circle-translate-relative/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "exterior",
+        "outputs/engineering-perturbations/circle-translate-relative/openfoam",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-translate-relative/command.log",
+      "missing_metrics": [],
+      "resolution_independent": {
+        "valid": true,
+        "cell_count": 14800,
+        "actual": {
+          "sqrt_area_over_reference": {
+            "min": 0.0014244728190112737,
+            "p50": 0.015625,
+            "p95": 0.015625,
+            "max": 0.015625
+          },
+          "wall_edge_length_over_reference": {
+            "min": 0.00020394397162369263,
+            "p50": 0.007850301346690887,
+            "p95": 0.010106590364998452,
+            "max": 0.010106590364998464
+          },
+          "wall_owner_tangential_extent_over_reference": {
+            "min": 0.0041981081181265345,
+            "p50": 0.00907676441618126,
+            "p95": 0.011361009617877024,
+            "max": 0.01225081584706197
+          },
+          "wall_owner_normal_extent_over_reference": {
+            "min": 0.0009053886801324254,
+            "p50": 0.005255953546888062,
+            "p95": 0.010184390543930718,
+            "max": 0.010817783745187609
+          }
+        }
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "cell_count": 14800,
+        "face_count": 59788,
+        "issues": []
+      },
+      "final_cell_count": 14800,
+      "external_checkMesh": "not_run"
+    },
+    {
+      "name": "circle-rotate-17deg",
+      "status": "success",
+      "failure": null,
+      "wrapper_returncode": 0,
+      "elapsed_seconds": 0.6218663750914857,
+      "native_completed_marker": true,
+      "native_seconds": 0.609045084,
+      "peak_rss_bytes": 123502592,
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_cli",
+        "outputs/engineering-perturbations/inputs/circle-rotate-17deg.xy",
+        "outputs/engineering-perturbations/circle-rotate-17deg/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "exterior",
+        "outputs/engineering-perturbations/circle-rotate-17deg/openfoam",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/circle-rotate-17deg/command.log",
+      "missing_metrics": [],
+      "resolution_independent": {
+        "valid": true,
+        "cell_count": 14820,
+        "actual": {
+          "sqrt_area_over_reference": {
+            "min": 0.002047098934364831,
+            "p50": 0.01558903279974122,
+            "p95": 0.015589032799741283,
+            "max": 0.015589032799741331
+          },
+          "wall_edge_length_over_reference": {
+            "min": 0.0005167286004745484,
+            "p50": 0.007943791627782162,
+            "p95": 0.009378527045448976,
+            "max": 0.009388092892803282
+          },
+          "wall_owner_tangential_extent_over_reference": {
+            "min": 0.0038666001543104134,
+            "p50": 0.008713504979034756,
+            "p95": 0.011633067966369185,
+            "max": 0.012083313606023412
+          },
+          "wall_owner_normal_extent_over_reference": {
+            "min": 0.0011534691833587967,
+            "p50": 0.004251727137469956,
+            "p95": 0.01039040383116864,
+            "max": 0.010576844132341195
+          }
+        }
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "cell_count": 14820,
+        "face_count": 59856,
+        "issues": []
+      },
+      "final_cell_count": 14820,
+      "external_checkMesh": "not_run"
+    },
+    {
+      "name": "nozzle-translate-relative",
+      "status": "success",
+      "failure": null,
+      "wrapper_returncode": 0,
+      "elapsed_seconds": 0.7463304169941694,
+      "native_completed_marker": true,
+      "native_seconds": 0.739583458,
+      "peak_rss_bytes": 32718848,
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_cli",
+        "outputs/engineering-perturbations/inputs/nozzle-translate-relative.xy",
+        "outputs/engineering-perturbations/nozzle-translate-relative/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "interior",
+        "outputs/engineering-perturbations/nozzle-translate-relative/openfoam",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "6",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/nozzle-translate-relative/command.log",
+      "missing_metrics": [],
+      "resolution_independent": {
+        "valid": true,
+        "cell_count": 2152,
+        "actual": {
+          "sqrt_area_over_reference": {
+            "min": 0.0011756792972131781,
+            "p50": 0.0078125,
+            "p95": 0.015625,
+            "max": 0.015625
+          },
+          "wall_edge_length_over_reference": {
+            "min": 9.311466064341799e-05,
+            "p50": 0.0078125,
+            "p95": 0.007990953466345645,
+            "max": 0.007994840092738655
+          },
+          "wall_owner_tangential_extent_over_reference": {
+            "min": 0.0031395840660132708,
+            "p50": 0.008111445815578697,
+            "p95": 0.00922369346793228,
+            "max": 0.00960477693952902
+          },
+          "wall_owner_normal_extent_over_reference": {
+            "min": 0.0008805126926579512,
+            "p50": 0.006141835492813401,
+            "p95": 0.0078125,
+            "max": 0.009205354827750195
+          }
+        }
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "cell_count": 2152,
+        "face_count": 8880,
+        "issues": []
+      },
+      "final_cell_count": 2152,
+      "external_checkMesh": "not_run"
+    },
+    {
+      "name": "naca-rotate-17deg",
+      "status": "failed",
+      "failure": "wrapper_returncode=1",
+      "wrapper_returncode": 1,
+      "elapsed_seconds": 20.047395832953043,
+      "native_completed_marker": false,
+      "native_seconds": 20.0306,
+      "peak_rss_bytes": 175177728,
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_cli",
+        "outputs/engineering-perturbations/inputs/naca-rotate-17deg.xy",
+        "outputs/engineering-perturbations/naca-rotate-17deg/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "exterior",
+        "outputs/engineering-perturbations/naca-rotate-17deg/openfoam",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "1",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/naca-rotate-17deg/command.log",
+      "missing_metrics": [],
+      "external_checkMesh": "not_run"
+    }
+  ],
+  "tests": {
+    "ctest": "98/98",
+    "ctest_seconds": 75.85,
+    "desktop": "54/54",
+    "regression": "Healthy square and relative near-degeneracy at lengths 1e-5, 1, 1e5"
+  },
+  "remaining_failure": "NACA rotated 17 degrees: 9 Solver violations. No successful solver export.",
+  "limitations": [
+    "Initial two scale runs incorrectly kept Lref=2 and are invalid test configurations, preserved separately.",
+    "Same cell count is not a proof of identical topology.",
+    "Packaged desktop scaled-input workflow not rerun after this area correction.",
+    "No Q1 threshold relaxation; scaled-circle Q1 remains FAIL."
+  ],
+  "mesh_sha256": {
+    "circle-scale-0p001-area-policy": "eeae2da99c0d2e68eef396a2776dc2db057d69e10430d596ab4178f89393cfc0",
+    "circle-scale-1000p0-correct-reference": "12548c77d3302ef7e8d24f4c50e71c60f6858de964e4467f67eb8d139d7ac331"
+  }
+}

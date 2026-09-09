@@ -12,6 +12,9 @@ struct TolerancePolicy {
     double relative = 1.0e-10;
 
     [[nodiscard]] double scale(double magnitude = 1.0) const noexcept;
+    // Area comparisons require squared length units and a local geometric
+    // extent, not a unit-length floor or the area itself as a length scale.
+    [[nodiscard]] double areaScale(double localLength) const noexcept;
     [[nodiscard]] bool nearlyEqual(double a, double b, double magnitude = 1.0) const noexcept;
 };
 

@@ -170,11 +170,12 @@
         "mesh_ok_text": true,
         "unqualified_mesh_ok": true,
         "failed_checks": [],
-        "concave_cells": 0,
+        "concave_cells": null,
         "gate_lines": [
           "    Non-orthogonality check OK.",
           "Mesh OK."
-        ]
+        ],
+        "concavity_note": "No concavity count is reported by the standard check log; absence is not zero. The expanded check reports 1388."
       },
       "expanded": {
         "command": "docker run --name cartmesh-r03-check-expanded --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/circle-r03-partition-index/openfoam:/home/openfoam/workingDir/case opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case -allGeometry -allTopology",
