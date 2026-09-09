@@ -963,6 +963,40 @@ bool isConvexBoundaryLayerQuad2D(
     return true;
 }
 
+WallChainBuildResult2D refineWallChainToSize2D(
+    const WallChain2D& chain,double maximumSegmentLength,const TolerancePolicy& tol) {
+    WallChainBuildResult2D result;
+    const auto fail=[&](const char* message) {
+        result.failureReason=WallChainFailureReason2D::InvalidBoundary;
+        result.message=message;return result;
+    };
+    if (!(maximumSegmentLength>0) || !std::isfinite(maximumSegmentLength) ||
+        chain.vertices.size()<2 || chain.segmentCount()!=(chain.closed?chain.vertices.size():chain.vertices.size()-1))
+        return fail("invalid wall chain or tangential size");
+    constexpr std::size_t maximumPoints=1000000;
+    WallChain2D refined=chain;refined.vertices.clear();refined.segments.clear();
+    for (const auto& segment:chain.segments) {
+        const double length=std::hypot(segment.b.x-segment.a.x,segment.b.y-segment.a.y);
+        double ratio=length/maximumSegmentLength;
+        if (!(length>0) || !std::isfinite(ratio) || ratio>static_cast<double>(maximumPoints))
+            return fail("wall tangential sizing exceeds the explicit point budget");
+        const double nearest=std::round(ratio);
+        if (nearest>=1 && tol.nearlyEqual(ratio,nearest,ratio)) ratio=nearest;
+        const auto count=static_cast<std::size_t>(std::max(1.,std::ceil(ratio)));
+        if (count>maximumPoints-refined.vertices.size())
+            return fail("wall tangential sizing exceeds the explicit point budget");
+        refined.vertices.push_back(segment.a);
+        for (std::size_t i=1;i<count;++i) {
+            const double t=static_cast<double>(i)/static_cast<double>(count);
+            refined.vertices.push_back({segment.a.x+t*(segment.b.x-segment.a.x),
+                                        segment.a.y+t*(segment.b.y-segment.a.y)});
+        }
+    }
+    if (!chain.closed) refined.vertices.push_back(chain.segments.back().b);
+    refined.segments=makeSegments(refined.vertices,refined.closed);
+    result.chain=std::move(refined);return result;
+}
+
 WallChainBuildResult2D makeClosedWallChain2D(
     const BoundaryLoop& boundary, std::size_t chainId,
     std::string patchIdentity, WallFluidRegion2D fluidRegion,

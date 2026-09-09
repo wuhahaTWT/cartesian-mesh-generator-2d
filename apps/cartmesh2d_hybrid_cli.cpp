@@ -319,6 +319,17 @@ int main(int argc, char** argv) {
         if (sizeFieldOnly) return EXIT_SUCCESS;
     }
     resolutionTargets.firstLayerHeight=layerParameters.thickness;
+    resolutionTargets.requestedLayerCount=layerParameters.nLayers;
+    if (resolvedSizeField) {
+        for (auto& chain:chains) {
+            auto refined=refineWallChainToSize2D(chain,resolvedSizeField->requestedWallSize);
+            if (!refined.success()) {
+                std::cerr<<"wall tangential sizing failed: "<<refined.message<<'\n';
+                return EXIT_FAILURE;
+            }
+            chain=std::move(*refined.chain);
+        }
+    }
     HybridMeshPolicy2D hybridPolicy;
     hybridPolicy.fluidRegion=fluidRegion;
     hybridPolicy.remainderSmallCellAreaFraction=smallAlpha;
@@ -478,7 +489,7 @@ int main(int argc, char** argv) {
     const auto qualityContractPath = outputPrefix.string() +
                                      ".hybrid.quality-contract.json";
     if (!writeText(outputPrefix.string()+".resolution.json",
-                   meshResolutionReportToJson2D(hybrid.solverTopology,resolutionTargets),error)) {
+                   meshResolutionReportToJson2D(hybrid.solverTopology,resolutionTargets,{},&hybrid),error)) {
         std::cerr<<error<<'\n'; return EXIT_FAILURE;
     }
     if (!writeHybridLegacyVtk2D(hybrid, vtkPath, &error) ||

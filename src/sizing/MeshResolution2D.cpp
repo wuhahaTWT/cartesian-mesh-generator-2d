@@ -1,4 +1,5 @@
 #include "cartmesh2d/sizing/MeshResolution2D.hpp"
+#include "cartmesh2d/sizing/BoundaryLayerResolution2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -31,7 +32,7 @@ void distribution(std::ostream& out, std::vector<double> values) {
 
 std::string meshResolutionReportToJson2D(const TopologyMesh2D& mesh,
                                          const MeshResolutionTargets2D& targets,
-                                         const TolerancePolicy& tol) {
+                                         const TolerancePolicy& tol,const HybridMeshBuildResult2D* hybrid) {
     const double reference = targets.referenceLength;
     if (!(reference > 0.0) || !std::isfinite(reference)) {
         throw std::invalid_argument("resolution reference length must be finite and positive");
@@ -95,6 +96,8 @@ std::string meshResolutionReportToJson2D(const TopologyMesh2D& mesh,
     optionalNumber(out, targets.backgroundSize ? std::optional<double>(*targets.backgroundSize/reference) : std::nullopt);
     out << ",\"first_layer_h_over_reference\":";
     optionalNumber(out, targets.firstLayerHeight ? std::optional<double>(*targets.firstLayerHeight/reference) : std::nullopt);
+    out << ",\"layer_count\":";
+    if (targets.requestedLayerCount) out<<*targets.requestedLayerCount;else out<<"null";
     out << "},\n  \"actual\":{\"sqrt_area_over_reference\":";
     distribution(out, std::move(areaSize));
     out << ",\"wall_edge_length_over_reference\":";
@@ -108,7 +111,9 @@ std::string meshResolutionReportToJson2D(const TopologyMesh2D& mesh,
     optionalNumber(out, targets.wallSize && wallLength > 0 ? std::optional<double>(exceededLength/wallLength) : std::nullopt);
     out << ",\n  \"wall_owner_tangential_exceedance_edge_ids\":[";
     for (std::size_t i = 0; i < exceeded.size(); ++i) { if (i) out << ','; out << exceeded[i]; }
-    out << "],\n  \"boundary_layer_coverage_status\":\"not_evaluated\",\n"
+    const auto layers=measureBoundaryLayerResolution2D(mesh,reference,targets.requestedLayerCount,hybrid,tol,targets.firstLayerHeight);
+    out << "],\n  \"boundary_layer_coverage_status\":\""<<layers.status<<"\",\n"
+        << "  \"boundary_layers\":"<<boundaryLayerResolutionToJson2D(layers)<<",\n"
         << "  \"notes\":[\"Wall statistics sample final embedded edges; split edges do not replace owner extents.\","
         << "\"Normal owner extent is not a certified first-layer height or y-plus.\","
         << "\"Sizing exceedance is a diagnostic independent of topology, Solver and Q1 gates.\"]\n}\n";

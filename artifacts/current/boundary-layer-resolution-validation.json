@@ -1,0 +1,106 @@
+{
+  "format": "cartmesh2d-final-layer-resolution-validation-v1",
+  "source": "examples/acceptance/circle.xy",
+  "native_source_parent_commit": "ed963d7",
+  "native_tests": {
+    "passed": 97,
+    "total": 97,
+    "seconds": 89.22
+  },
+  "desktop_tests": {
+    "passed": 54,
+    "total": 54
+  },
+  "desktop_real_preview_and_export_cells": 1512,
+  "desktop_relative_wall_size_before": {
+    "final_cells": 728,
+    "retained_layers": 128,
+    "tangential_exceedance_wall_length_fraction": 1.0
+  },
+  "desktop_after": {
+    "format": "cartmesh2d-mesh-resolution-v1",
+    "basis": "final_solver_topology",
+    "reference_length": 2,
+    "reference_source": "bounding_box_span",
+    "cell_count": 1512,
+    "requested": {
+      "wall_h_over_reference": 0.03125,
+      "background_h_over_reference": 0.25,
+      "first_layer_h_over_reference": 0.01,
+      "layer_count": 4
+    },
+    "actual": {
+      "sqrt_area_over_reference": {
+        "min": 0.009660837686804296,
+        "p50": 0.02625229547949122,
+        "p95": 0.0625,
+        "max": 0.25000000000000006
+      },
+      "wall_edge_length_over_reference": {
+        "min": 0.02450428508237701,
+        "p50": 0.02450428508239621,
+        "p95": 0.024504285082400223,
+        "max": 0.024504285082400223
+      },
+      "wall_owner_tangential_extent_over_reference": {
+        "min": 0.024504285082377012,
+        "p50": 0.02499674209917189,
+        "p95": 0.025489199115993753,
+        "max": 0.025489199115993802
+      },
+      "wall_owner_normal_extent_over_reference": {
+        "min": 0.009999999999999957,
+        "p50": 0.010000000000000021,
+        "p95": 0.010000000000000024,
+        "max": 0.010000000000000026
+      }
+    },
+    "wall_length_over_reference": 3.1365484905462337,
+    "wall_owner_tangential_exceedance_length_fraction": 0,
+    "boundary_layer_coverage_status": "evaluated",
+    "notes": [
+      "Wall statistics sample final embedded edges; split edges do not replace owner extents.",
+      "Normal owner extent is not a certified first-layer height or y-plus.",
+      "Sizing exceedance is a diagnostic independent of topology, Solver and Q1 gates."
+    ]
+  },
+  "boundary_layers": {
+    "status": "evaluated",
+    "requested_cells": 512,
+    "constructed_cells": 512,
+    "retained_cells": 512,
+    "source_mismatches": 0,
+    "first_layer_wall_length_fraction": 1,
+    "full_requested_layers_wall_length_fraction": 1,
+    "first_layer_height_exceedance_wall_length_fraction": 0,
+    "continuity_mismatches": 0,
+    "issues": []
+  },
+  "independent_readers": {
+    "layer": true,
+    "size": true,
+    "openfoam": true
+  },
+  "gates": {
+    "topology": "PASS",
+    "solver": "PASS",
+    "Q1": "FAIL",
+    "OpenFOAM_2606_standard_checkMesh": "PASS",
+    "OpenFOAM_2606_expanded_checkMesh": "FAIL",
+    "expanded_concave_cells": 648
+  },
+  "regression_scope": [
+    "relative scales 0.001/1/1000",
+    "exact source corner preservation",
+    "stale area with changed final vertex rejected",
+    "misassigned lineage rejected",
+    "disconnected higher layer rejected",
+    "forged wall endpoints rejected"
+  ],
+  "raw_evidence_directory": "outputs/engineering-resolution",
+  "limitations": [
+    "Small mesh verifies sizing and layer claims; this is not the 100k scale acceptance.",
+    "Subdividing straight source segments preserves the input polygon; it does not restore missing curvature.",
+    "Q1 and expanded checkMesh failures remain visible."
+  ]
+}
