@@ -1,0 +1,123 @@
+{
+  "format": "cartmesh2d-oracle-vertex-index-v1",
+  "source_base_revision": "683ac0d",
+  "source_change": "Indexed broad phase in revisionedTopologyMatchesOracle2D; unchanged samePoint and full topology oracle",
+  "cli_sha256": "6302eb355ee164700298814ba2f01a6f0125e3ace9cf23714f8e4c6a4a3d33c8",
+  "cases": [
+    {
+      "case": "nozzle",
+      "request": "r01",
+      "parameters": {
+        "wall": 0.005,
+        "background": 0.0125,
+        "first": 0.00125,
+        "layers": 4,
+        "band": 3
+      },
+      "status": "success",
+      "cell_count": 8420,
+      "native_elapsed_seconds": 26.0517,
+      "wrapper_elapsed_seconds": 27.51,
+      "peak_rss_bytes": 113131520,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "boundary_layer_summary": {
+        "status": "evaluated",
+        "requested_cells": 2448,
+        "constructed_cells": 2400,
+        "retained_cells": 2400,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 0.958995897906509,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "measurement_complete": true,
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "cm2d_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+      "external_checkMesh": {
+        "evidence": "same CM2D bytes as validated 683ac0d r01",
+        "standard": "PASS",
+        "expanded": "FAIL",
+        "concave_cells": 1452,
+        "rerun": false
+      }
+    },
+    {
+      "case": "nozzle",
+      "request": "r02",
+      "parameters": {
+        "wall": 0.0025,
+        "background": 0.0125,
+        "first": 0.000625,
+        "layers": 4,
+        "band": 40
+      },
+      "status": "success",
+      "cell_count": 56362,
+      "native_elapsed_seconds": 69.4354,
+      "wrapper_elapsed_seconds": 69.52,
+      "peak_rss_bytes": 671678464,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "boundary_layer_summary": {
+        "status": "evaluated",
+        "requested_cells": 4568,
+        "constructed_cells": 4520,
+        "retained_cells": 4520,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 0.9785561445710194,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "measurement_complete": true,
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "cm2d_sha256": "daa9251009b059ae0bb7373164b23010c6c2db8a04d06256b6cb399207ac2d00",
+      "external_checkMesh": {
+        "standard": "PASS",
+        "expanded": "FAIL",
+        "concave_cells": 2642,
+        "minimum_determinant": 0.002971607703,
+        "evidence_directory": "outputs/engineering-hybrid-oracle-index/nozzle/request-r02/checkMesh-verification"
+      },
+      "directional_connectivity": {
+        "format": "cartmesh2d-directional-connectivity-v1",
+        "scope": "uncoupled planar mesh; uniform extrusion; empty front/back",
+        "external_checkMesh": "not_run_by_this_reader",
+        "cell_count": 56362,
+        "minimum_required": 0.001,
+        "minimum_measured": 0.002971607702544341,
+        "failed_cell_count": 0,
+        "failed_cells": [],
+        "valid": true
+      }
+    }
+  ],
+  "baseline": {
+    "r01_native_seconds": 70.7222,
+    "r01_cm2d_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+    "r02_timeout_seconds": 300,
+    "source_revision": "683ac0d"
+  },
+  "notes": [
+    "Fixed parameters; no padding or quality policy changes.",
+    "Single observations, not runtime guarantees.",
+    "Old r02 timeout is retained; successful new r02 has no old accepted output for byte comparison."
+  ],
+  "profile": "outputs/engineering-hybrid-nozzle-profile-r02/hotspot-summary.json",
+  "evidence_directory": "outputs/engineering-hybrid-oracle-index",
+  "validation": {
+    "system_clang_build": true,
+    "ctest_passed": 100,
+    "ctest_total": 100,
+    "ctest_seconds": 30.67,
+    "frontend_passed": 54,
+    "frontend_total": 54,
+    "macos_packaged": true
+  }
+}

@@ -228,6 +228,75 @@ int main() {
     check(fourPieceOracle.valid() &&
           revisionedTopologyMatchesOracle2D(revisionedPatch,fourPieceOracle),
           "revisioned patch-local result is geometrically equal to global oracle");
+    {
+        // Independent exhaustive correspondence oracle for the indexed broad
+        // phase. Keep the original dense/stable traversal and same-point math;
+        // every accepted mapping must retain the known stable identity.
+        const auto bruteMatches=[](const RevisionedTopology2D& stable,
+                                    const TopologyMesh2D& dense,
+                                    const std::vector<StableVertexId2D>& expected) {
+            const TolerancePolicy tol;
+            std::set<StableVertexId2D> used;
+            for (std::size_t i=0;i<dense.vertices.size();++i) {
+                std::vector<StableVertexId2D> matches;
+                const auto& a=dense.vertices[i].point;
+                for (const auto& [id,vertex]:stable.vertices) {
+                    if (vertex.state!=RevisionedVertexState2D::Active || used.contains(id)) continue;
+                    const auto& b=vertex.point;
+                    const double magnitude=std::max({1.0,std::abs(a.x),std::abs(a.y),
+                                                     std::abs(b.x),std::abs(b.y)});
+                    const double tolerance=tol.scale(magnitude);
+                    const double dx=a.x-b.x,dy=a.y-b.y;
+                    if (dx*dx+dy*dy<=tolerance*tolerance) matches.push_back(id);
+                }
+                if (matches.size()!=1U || matches.front()!=expected[i]) return false;
+                used.insert(matches.front());
+            }
+            return true;
+        };
+        std::vector<StableVertexId2D> expected;
+        for (const auto& vertex:fourPieceOracle.vertices) {
+            const auto found=std::find_if(revisionedPatch.vertices.begin(),revisionedPatch.vertices.end(),
+                [&](const auto& entry) { return entry.second.state==RevisionedVertexState2D::Active &&
+                    entry.second.point.x==vertex.point.x && entry.second.point.y==vertex.point.y; });
+            check(found!=revisionedPatch.vertices.end(),"test oracle has exact known vertex identities");
+            if (found!=revisionedPatch.vertices.end()) expected.push_back(found->first);
+        }
+        for (const double scale:{0.001,1.0,1000.0}) {
+            for (const double angle:{0.0,0.29670597283903605}) {
+                auto stable=revisionedPatch;
+                auto dense=fourPieceOracle;
+                const auto transform=[&](const Point2D& p) {
+                    return Point2D{1e6+scale*(std::cos(angle)*p.x-std::sin(angle)*p.y),
+                                   -1e6+scale*(std::sin(angle)*p.x+std::cos(angle)*p.y)};
+                };
+                for (auto& [id,vertex]:stable.vertices) { (void)id;vertex.point=transform(vertex.point); }
+                for (auto& vertex:dense.vertices) vertex.point=transform(vertex.point);
+                for (auto& [id,cell]:stable.cells) { (void)id;cell.area*=scale*scale; }
+                for (auto& cell:dense.cells) cell.geometryArea*=scale*scale;
+                for (std::size_t i=0;i<dense.vertices.size();++i) {
+                    const auto original=dense.vertices[i].point;
+                    const double tolerance=TolerancePolicy{}.scale(
+                        std::max({1.0,std::abs(original.x),std::abs(original.y)}));
+                    for (const double offset:{-1.01,-0.99,0.0,0.70,0.99,1.01}) {
+                        for (const bool diagonal:{false,true}) {
+                            dense.vertices[i].point={original.x+offset*tolerance,
+                                original.y+(diagonal?offset*tolerance:0.0)};
+                            check(revisionedTopologyMatchesOracle2D(stable,dense)==
+                                      bruteMatches(stable,dense,expected),
+                                  "indexed oracle matches exhaustive search near tolerance boundary");
+                        }
+                    }
+                    dense.vertices[i].point=original;
+                }
+                auto ambiguous=stable;
+                ambiguous.vertices.at(expected[1]).point=dense.vertices[0].point;
+                check(!bruteMatches(ambiguous,dense,expected) &&
+                      !revisionedTopologyMatchesOracle2D(ambiguous,dense),
+                      "indexed oracle rejects ambiguous active coordinates");
+            }
+        }
+    }
     auto badActiveVertex=revisionedPatch;
     badActiveVertex.vertices.at(generatedId).state=RevisionedVertexState2D::Tombstone;
     check(!revisionedTopologyMatchesOracle2D(badActiveVertex,fourPieceOracle),
