@@ -371,6 +371,8 @@ async function runSmoke() {
     ['relativeBandCells', 'band-cells'],
     ['firstLayerRelativeSize', 'first-layer-relative-size'],
     ['nLayers', 'layers'],
+    ['growthRatio', 'growth-ratio'],
+    ['extrusionRelativeSize', 'extrusion-relative-size'],
     ['smallAlpha', 'small-alpha'],
   ].map(([id, flag]) => [id, argument(flag)]).filter(([, value]) => value !== null));
   if (outputDirectory) await fs.mkdir(outputDirectory, { recursive: true });

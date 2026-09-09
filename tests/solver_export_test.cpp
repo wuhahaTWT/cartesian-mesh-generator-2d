@@ -55,9 +55,101 @@ std::string readText(const std::filesystem::path& path) {
     text<<in.rdbuf();
     return text.str();
 }
+
+// Ten-cell one-ring reduction of nozzle r01 at original cell pair 2906/8437.
+// The separate rectangle represents the unchanged global compactness minimum.
+// It is explicitly part of the measured baseline, not an acceptance override.
+void nozzleShortFaceRegression() {
+    for (const double scale:{0.001,1.0,1000.0}) {
+        for (const double angle:{0.0,0.29670597283903605}) {
+            std::vector<CutCell2D> cells;std::vector<bool>immutable,rated;std::vector<double> localH;
+            cells.push_back(polygonCell(2885,{{-2.953125,-0.94517625672405037},{-2.9291465205232003,-0.941491481273103},{-2.9297598918682133,-0.9375},{-2.953125,-0.9375}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2894,{{-2.953125,-0.9375},{-2.9297598918682133,-0.9375},{-2.9311149786177308,-0.92868184534033438}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2896,{{-2.9296875,-0.9284624845517383},{-2.90625,-0.92486084147361325},{-2.90625,-0.9140625}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2897,{{-2.90625,-0.9140625},{-2.9296875,-0.9140625},{-2.9311149786177308,-0.92868184534033438},{-2.9296875,-0.9284624845517383}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2906,{{-2.90625,-0.92486084147361325},{-2.9061149786177309,-0.92484009272366774},{-2.8828125,-0.92125919839548831},{-2.8828125,-0.9140625},{-2.90625,-0.9140625}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2907,{{-2.8828125,-0.92125919839548831},{-2.881114978617731,-0.9209983401070011},{-2.859375,-0.91765755531736337},{-2.859375,-0.9140625},{-2.8828125,-0.9140625}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(2908,{{-2.90625,-0.9140625},{-2.8828125,-0.9140625},{-2.8828125,-0.890625},{-2.90625,-0.890625}}));
+            immutable.push_back(false);rated.push_back(true);localH.push_back(0.0234375);
+            cells.push_back(polygonCell(7848,{{-2.9025061387777584,-0.94832442526707694},{-2.9041465205232004,-0.93764972865643637},{-2.9291465205232003,-0.941491481273103},{-2.9275061387777583,-0.95216617788374358}}));
+            immutable.push_back(true);rated.push_back(false);localH.push_back(0.025293458900823757);
+            cells.push_back(polygonCell(8436,{{-2.8791465205232005,-0.93380797603976973},{-2.881114978617731,-0.9209983401070011},{-2.8828125,-0.92125919839548831},{-2.9061149786177309,-0.92484009272366774},{-2.9041465205232004,-0.93764972865643637}}));
+            immutable.push_back(true);rated.push_back(false);localH.push_back(0.025293458900823757);
+            cells.push_back(polygonCell(8437,{{-2.9041465205232004,-0.93764972865643637},{-2.9061149786177309,-0.92484009272366774},{-2.90625,-0.92486084147361325},{-2.9296875,-0.9284624845517383},{-2.9311149786177308,-0.92868184534033438},{-2.9297598918682133,-0.9375},{-2.9291465205232003,-0.941491481273103}}));
+            immutable.push_back(true);rated.push_back(false);localH.push_back(0.025293458900823757);
+            BoundaryLoop outline({{-2.953125,-0.94517625672405037},{-2.9291465205232003,-0.941491481273103},{-2.9275061387777583,-0.95216617788374358},{-2.9025061387777584,-0.94832442526707694},{-2.9041465205232004,-0.93764972865643637},{-2.8791465205232005,-0.93380797603976973},{-2.881114978617731,-0.9209983401070011},{-2.859375,-0.91765755531736337},{-2.859375,-0.9140625},{-2.8828125,-0.9140625},{-2.8828125,-0.890625},{-2.90625,-0.890625},{-2.90625,-0.9140625},{-2.9296875,-0.9140625},{-2.9311149786177308,-0.92868184534033438},{-2.953125,-0.9375}});
+
+            cells.push_back(polygonCell(9000,{{0,0},{1,0},{1,.1},{0,.1}}));
+            immutable.push_back(false); rated.push_back(true); localH.push_back(.1);
+            BoundaryLoop companion({{0,0},{1,0},{1,.1},{0,.1}});
+            const auto transform=[&](Point2D p) {
+                return Point2D{scale*(std::cos(angle)*p.x-std::sin(angle)*p.y),
+                               scale*(std::sin(angle)*p.x+std::cos(angle)*p.y)};
+            };
+            for (auto& cell:cells) {
+                auto points=cell.fluidPolygon.vertices;
+                for (auto& point:points) point=transform(point);
+                cell=polygonCell(cell.sourceId,std::move(points));
+            }
+            const auto transformedLoop=[&](const BoundaryLoop& loop) {
+                auto points=loop.vertices();
+                for (auto& point:points) point=transform(point);
+                return BoundaryLoop(std::move(points));
+            };
+            BoundaryRegion2D boundary(std::vector<BoundaryLoop>{
+                transformedLoop(outline),transformedLoop(companion)});
+            for (auto& h:localH) h*=scale;
+            const Domain2D domain{{{-6*scale,-6*scale},{6*scale,6*scale}}};
+            const auto mesh=buildGlobalTopology(cells,domain,boundary);
+            const auto before=evaluateSolverQuality2D(mesh);
+            check(mesh.valid() && before.valid(),"nozzle R1 reduced fixture is initially solver-valid");
+            const auto repair=repairSolverShortFaces2D(mesh,domain,boundary,immutable,localH,rated,.01);
+            check(repair.valid() && repair.accepted && repair.hardFaceCountBefore==1U &&
+                  repair.hardFaceCountAfter==0U && repair.localWinnerMatchesGlobalAuthority &&
+                  repair.localDeltaMatchesGlobalOracle && repair.patchOutsideStableIdsUnchanged &&
+                  repair.candidateGlobalTopologyBuildCount==0U && repair.globalOracleBuildCount==1U,
+                  "nozzle R1 rounded support repairs at finite scales and rotation"
+                  " scale="+std::to_string(scale)+" angle="+std::to_string(angle)+
+                  " detail="+(repair.issues.empty()?std::string("none"):repair.issues.front()));
+            if (!repair.accepted) continue;
+            double areaBefore=0.0,areaAfter=0.0;
+            for (const auto& cell:mesh.cells) areaBefore+=cell.geometryArea;
+            for (const auto& cell:repair.topology.cells) areaAfter+=cell.geometryArea;
+            check(std::abs(areaBefore-areaAfter)<=1e-10*areaBefore,
+                  "nozzle R1 transaction conserves the original fluid area");
+            check(std::count(repair.immutableCells.begin(),repair.immutableCells.end(),true)==3,
+                  "nozzle R1 keeps every immutable layer cell");
+            for (std::size_t i=0;i<cells.size();++i) if (immutable[i]) {
+                const auto found=std::find_if(repair.topology.cells.begin(),repair.topology.cells.end(),
+                    [&](const auto& cell){return cell.sourceKey==cells[i].sourceKey;});
+                check(found!=repair.topology.cells.end(),"immutable source identity survives R1");
+                if (found==repair.topology.cells.end()) continue;
+                Polygon2D actual;
+                for (const auto id:found->vertices) actual.vertices.push_back(repair.topology.vertices[id].point);
+                const auto onBoundary=[](Point2D point,const Polygon2D& polygon) {
+                    for (std::size_t j=0;j<polygon.vertices.size();++j)
+                        if (pointOnSegment(point,{polygon.vertices[j],polygon.vertices[(j+1)%polygon.vertices.size()]})) return true;
+                    return false;
+                };
+                bool same=std::abs(actual.area()-cells[i].area)<=1e-10*cells[i].area;
+                for (const auto& point:actual.vertices) same=same && onBoundary(point,cells[i].fluidPolygon);
+                for (const auto& point:cells[i].fluidPolygon.vertices) same=same && onBoundary(point,actual);
+                check(same,"R1 changes only collinear layer incidences, not layer geometry");
+            }
+        }
+    }
+}
+
 } // namespace
 
 int main() {
+    nozzleShortFaceRegression();
     {
         // Two-cell reduction of the 17-degree rotated NACA failure. The exact
         // physical union is only 0.683 degrees concave; convex-only repair kept
@@ -208,6 +300,15 @@ int main() {
     const auto r1Repair=repairSolverShortFaces2D(
         r1Topology,domain,BoundaryRegion2D(embeddedReference),
         {true,false,false,false},r1LocalH,r1Rated,0.01);
+    const auto immovableRepair=repairSolverShortFaces2D(
+        r1Topology,domain,BoundaryRegion2D(embeddedReference),
+        {true,true,true,true},r1LocalH,r1Rated,0.01);
+    check(!immovableRepair.valid() && !immovableRepair.accepted &&
+          immovableRepair.applicable && immovableRepair.affectedCells.size()==2U &&
+          immovableRepair.candidateCount==0U &&
+          immovableRepair.topology.cells.size()==r1Topology.cells.size() &&
+          immovableRepair.immutableCells==std::vector<bool>({true,true,true,true}),
+          "R1 immutable failure retains rejected topology and affected cell identities");
     check(r1Repair.valid() && r1Repair.accepted &&
           r1Repair.candidateGlobalTopologyBuildCount==0U &&
           r1Repair.candidateFullGlobalQualityEvaluationCount==0U &&
@@ -239,6 +340,32 @@ int main() {
     const auto repeatedRepair=repairSolverShortFaces2D(
         r1Topology,domain,BoundaryRegion2D(embeddedReference),
         {true,false,false,false},r1LocalH,r1Rated,0.01);
+    std::vector<std::size_t> repairedIds(r1Repair.topology.cells.size());
+    std::iota(repairedIds.begin(),repairedIds.end(),0U);
+    auto repairedRated=r1Repair.immutableCells;
+    for (std::size_t i=0;i<repairedRated.size();++i) repairedRated[i]=!repairedRated[i];
+    const auto repairedScope=buildPatchLocalScope2D(r1Repair.topology,
+        buildEdgeIncidenceStore2D(r1Repair.topology,0U),repairedIds,
+        std::vector<double>(repairedIds.size(),1.0),repairedRated);
+    const auto repairedLocal=evaluatePatchLocalQuality2D(repairedScope.cells,0.01);
+    check(patchLocalQualityWithinGlobalBaseline2D(repairedLocal,wholeMeshLocal,wholeMeshGlobal),
+          "actual R1 winner remains inside the measured global quality baseline");
+    auto globalRegression=repairedLocal;
+    globalRegression.minCompactness=wholeMeshGlobal.minCompactness-0.01;
+    check(!patchLocalQualityWithinGlobalBaseline2D(globalRegression,wholeMeshLocal,wholeMeshGlobal),
+          "a worse global compactness cannot be hidden by eliminating a short face");
+    globalRegression=repairedLocal;
+    globalRegression.maxNonOrthogonalityDeg=wholeMeshGlobal.maxNonOrthogonalityDeg+1.0;
+    check(!patchLocalQualityWithinGlobalBaseline2D(globalRegression,wholeMeshLocal,wholeMeshGlobal),
+          "a worse global nonorthogonality cannot be hidden by eliminating a short face");
+    globalRegression=repairedLocal;
+    globalRegression.hardShortFaceCount=wholeMeshLocal.hardShortFaceCount+1U;
+    check(!patchLocalQualityWithinGlobalBaseline2D(globalRegression,wholeMeshLocal,wholeMeshGlobal),
+          "global quality bounds cannot admit a short-face regression");
+    globalRegression=repairedLocal;
+    globalRegression.issueCount=1U;
+    check(!patchLocalQualityWithinGlobalBaseline2D(globalRegression,wholeMeshLocal,wholeMeshGlobal),
+          "a candidate with a solver violation cannot use the global quality envelope");
     check(repeatedRepair.accepted &&
           repeatedRepair.candidateCount==r1Repair.candidateCount &&
           repeatedRepair.localCandidateCount==r1Repair.localCandidateCount &&

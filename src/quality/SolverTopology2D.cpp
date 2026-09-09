@@ -399,7 +399,7 @@ using ProfileClock = std::chrono::steady_clock;
 }
 
 [[nodiscard]] Polygon2D removeArtificialCollinearVertices(
-    Polygon2D polygon,const TolerancePolicy& tol) {
+    Polygon2D polygon,const TolerancePolicy& tol,bool constructionRoundoff=false) {
     bool changed=true;
     while (changed && polygon.vertices.size()>3U) {
         changed=false;
@@ -411,9 +411,19 @@ using ProfileClock = std::chrono::steady_clock;
             const Vector2D incoming=current-previous;
             const Vector2D outgoing=next-current;
             const double scale=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
+            double crossBudget=64.0*std::numeric_limits<double>::epsilon()*scale;
+            if (constructionRoundoff) {
+                // Atomic intersection points are rounded in world coordinates.
+                // An edge-angle-only epsilon loses those points' construction
+                // error when a short fragment lies far from the origin.
+                const double magnitude=std::max({std::abs(previous.x),std::abs(previous.y),
+                    std::abs(current.x),std::abs(current.y),std::abs(next.x),std::abs(next.y)});
+                const double roundoff=tol.constructionRoundoffScale(magnitude)*
+                    (std::sqrt(squaredNorm(incoming))+std::sqrt(squaredNorm(outgoing)));
+                crossBudget=std::max(crossBudget,std::min(tol.relative*scale,roundoff));
+            }
             if (!(scale>0.0) || dot(incoming,outgoing)<0.0 ||
-                std::abs(cross(incoming,outgoing))>
-                    64.0*std::numeric_limits<double>::epsilon()*scale) continue;
+                std::abs(cross(incoming,outgoing))>crossBudget) continue;
             auto candidate=polygon;
             candidate.vertices.erase(candidate.vertices.begin()+
                 static_cast<std::ptrdiff_t>(i));
@@ -659,6 +669,7 @@ struct LocalQualityRank2D {
     }
     std::sort(pairs.begin(),pairs.end());
     pairs.erase(std::unique(pairs.begin(),pairs.end()),pairs.end());
+
     return pairs;
 }
 
@@ -1668,6 +1679,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     }
     const std::vector<std::size_t> affected{std::get<1>(shortEdges.front()),
                                             std::get<2>(shortEdges.front())};
+    result.affectedCells=affected;
     // This R1 checkpoint migrates the narrow-gap Q2-B mode only: the failing
     // atomic face is a common-partition fragment on an immutable layer
     // support. Mutable/mutable sharp-tail patches still belong to the later
@@ -1692,6 +1704,24 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     }
     std::sort(pairs.begin(),pairs.end());
     pairs.erase(std::unique(pairs.begin(),pairs.end()),pairs.end());
+
+    std::vector<std::vector<std::size_t>> mutablePatches;
+    for (const auto& [first,second]:pairs) mutablePatches.push_back({first,second});
+    std::set<std::vector<std::size_t>> seenTriples;
+    for (const auto& [first,second]:pairs) {
+        for (const auto cell:{first,second}) {
+            for (const auto edgeId:topology.cells[cell].edges) {
+                const auto& edge=topology.edges[edgeId];
+                if (!edge.neighbour) continue;
+                const auto third=edge.owner==cell?*edge.neighbour:edge.owner;
+                if (third==first || third==second || immutableCells[third]) continue;
+                std::vector<std::size_t> key{first,second,third};
+                std::sort(key.begin(),key.end());
+                if (seenTriples.insert(key).second)
+                    mutablePatches.push_back({first,second,third});
+            }
+        }
+    }
 
     const auto incidence=buildEdgeIncidenceStore2D(topology,0U);
     if (!incidence.valid()) {
@@ -1735,6 +1765,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     struct ShortFaceCandidate2D {
         std::size_t first = 0;
         std::size_t second = 0;
+        std::vector<std::size_t> mutableCells;
         std::vector<std::size_t> selected;
         TopologyPatchTransaction2D transaction;
         std::vector<TopologyReplacementCell2D> replacements;
@@ -1746,18 +1777,33 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     // evaluation inside the selection loop shows up in these deltas.
     const auto selectionStartGlobalBuilds=globalTopologyBuildCount2D();
     const auto selectionStartFullQuality=solverQualityEvaluationCount2D();
-    for (const auto& [first,second]:pairs) {
+    for (std::size_t patchIndex=0;patchIndex<mutablePatches.size();++patchIndex) {
+        // Preserve two-cell winners. A neighbouring third mutable cell is
+        // considered only if every pair failed; no layer cell may be merged.
+        if (patchIndex==pairs.size() && winner) break;
+        const auto& mutablePatch=mutablePatches[patchIndex];
+        const auto first=mutablePatch[0],second=mutablePatch[1];
         ++result.candidateCount;
-        const auto merged=mergeAdjacentPolygonsSimple(
-            topologyCellPolygon(topology,first),topologyCellPolygon(topology,second),tol);
-        if (!merged) continue;
-        const auto repairUnion=removeArtificialCollinearVertices(*merged,tol);
-        if (!strictlyConvex(repairUnion) ||
-            underDeterminedBoundaryCell(repairUnion,domain,boundary,tol)) continue;
-        std::vector<std::size_t> selected{first,second};
+        std::optional<Polygon2D> merged=topologyCellPolygon(topology,first);
+        for (std::size_t i=1;i<mutablePatch.size() && merged;++i)
+            merged=mergeAdjacentPolygonsSimple(*merged,
+                topologyCellPolygon(topology,mutablePatch[i]),tol);
+        if (!merged) { ++result.rejectedUnionCount; continue; }
+        const auto repairUnion=removeArtificialCollinearVertices(*merged,tol,true);
+        if (!strictlyConvex(repairUnion)) {
+            ++result.rejectedConvexityCount;
+            continue;
+        }
+        if (underDeterminedBoundaryCell(repairUnion,domain,boundary,tol)) {
+            ++result.rejectedBoundaryCount;
+            continue;
+        }
+        std::vector<std::size_t> selected=mutablePatch;
         std::map<std::size_t,Polygon2D> simplifiedImmutable;
         std::set<std::size_t> localImmutable;
-        for (const auto cell:{first,second,affected[0],affected[1]}) {
+        auto incidentCells=mutablePatch;
+        incidentCells.insert(incidentCells.end(),affected.begin(),affected.end());
+        for (const auto cell:incidentCells) {
             if (immutableCells[cell]) localImmutable.insert(cell);
             for (const auto edgeId:topology.cells[cell].edges) {
                 const auto& edge=topology.edges[edgeId];
@@ -1768,7 +1814,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
         }
         for (const auto cell:localImmutable) {
             const auto original=topologyCellPolygon(topology,cell);
-            const auto simplified=removeArtificialCollinearVertices(original,tol);
+            const auto simplified=removeArtificialCollinearVertices(original,tol,true);
             if (simplified.vertices.size()!=original.vertices.size()) {
                 selected.push_back(cell);
                 simplifiedImmutable.emplace(cell,simplified);
@@ -1778,6 +1824,20 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
         selected.erase(std::unique(selected.begin(),selected.end()),selected.end());
         const auto transaction=prepareTopologyPatchTransaction2D(topology,incidence,selected);
         if (!transaction.valid()) continue;
+        // Simplifying several replacement polygons can remove a fragment on
+        // one side while retaining an immutable layer corner on the other.
+        // Build one atomic partition for both sides, using existing identities
+        // only. Points removed from every replacement are not reintroduced.
+        std::set<StableVertexId2D> replacementEndpoints;
+        const auto collectEndpoints=[&](const Polygon2D& polygon) {
+            for (const auto& point:polygon.vertices)
+                replacementEndpoints.insert(identityByPoint.at({point.x,point.y}).stableId);
+        };
+        collectEndpoints(repairUnion);
+        for (const auto& [cell,polygon]:simplifiedImmutable) {
+            (void)cell;
+            collectEndpoints(polygon);
+        }
         const auto identified=[&](std::size_t sourceId,Polygon2D polygon) {
             // Insert locked stable endpoints on any simplified outer patch
             // edge. Identity comes from the lock key; geometry is only used to
@@ -1797,6 +1857,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
                     points.emplace_back(t,found->second);
                 };
                 add(identityByPoint.at({a.x,a.y}).stableId);
+                for (const auto id:replacementEndpoints) add(id);
                 for (const auto& lock:transaction.boundaryLocks) {
                     add(lock.stableEdge.v0);
                     add(lock.stableEdge.v1);
@@ -1829,11 +1890,16 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
         std::vector<TopologyReplacementCell2D> replacements;
         std::vector<std::pair<double,bool>> replacementMetadata;
         replacements.push_back(identified(first,repairUnion));
-        replacements.back().cell.sourceLineage=mergedLineage(
-            topology.cells[first].sourceLineage,topology.cells[second].sourceLineage);
-        replacementMetadata.emplace_back(
-            std::max(localBackgroundH[first],localBackgroundH[second]),
-            ratedCells[first] || ratedCells[second]);
+        std::vector<std::size_t> lineage;
+        double mergedH=0.0;
+        bool mergedRated=false;
+        for (const auto cell:mutablePatch) {
+            lineage=mergedLineage(lineage,topology.cells[cell].sourceLineage);
+            mergedH=std::max(mergedH,localBackgroundH[cell]);
+            mergedRated=mergedRated || ratedCells[cell];
+        }
+        replacements.back().cell.sourceLineage=std::move(lineage);
+        replacementMetadata.emplace_back(mergedH,mergedRated);
         for (const auto& [cell,polygon]:simplifiedImmutable) {
             replacements.push_back(identified(cell,polygon));
             replacementMetadata.emplace_back(localBackgroundH[cell],ratedCells[cell]);
@@ -1886,10 +1952,12 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
                                                :baseLocal.issues.front();
             continue;
         }
-        // Every excluded cell and face is identical in both scopes, so a local
-        // improvement on a monotone aggregate is also a global improvement.
-        if (!patchLocalQualityNoWorse2D(candidateLocal,baseLocal)) {
-            localRejectReason="patch-local candidate quality is worse than the patch it replaces";
+        // Outside cells and faces are unchanged by the boundary-locked delta.
+        // The touched metrics must stay within the measured global baseline,
+        // and the local short-face improvement must survive restoring outside
+        // faces. The winner still passes the original full-mesh no-worse gate.
+        if (!patchLocalQualityWithinGlobalBaseline2D(candidateLocal,baseLocal,currentQuality)) {
+            localRejectReason="patch-local candidate exceeds the global quality baseline";
             continue;
         }
         if (!(std::tie(candidateLocal.hardShortFaceCount,
@@ -1901,7 +1969,7 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
             localRejectReason="patch-local candidate does not reduce the local short-face score";
             continue;
         }
-        ShortFaceCandidate2D accepted{first,second,selected,transaction,replacements,
+        ShortFaceCandidate2D accepted{first,second,mutablePatch,selected,transaction,replacements,
             patchLocalRank2D(baseLocal,candidateLocal,first,second)};
         if (!winner || patchLocalRankBetter2D(accepted.rank,winner->rank))
             winner=std::move(accepted);
@@ -1926,7 +1994,6 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
     // full-quality evaluation, for the selected winner only. A disagreement
     // fails the transaction closed rather than retrying other candidates.
     const auto& first=winner->first;
-    const auto& second=winner->second;
     const auto& selected=winner->selected;
     const auto committed=evaluateTopologyPatchTransactionOracle2D(
         topology,incidence,winner->transaction,baseSources,winner->replacements,
@@ -1946,9 +2013,14 @@ SolverShortFaceRepairResult2D repairSolverShortFaces2D(
         metadata[identity]={localBackgroundH[cell.id],ratedCells[cell.id]};
         if (immutableCells[cell.id]) immutableIdentities.insert(identity);
     }
+    double mergedH=0.0;
+    bool mergedRated=false;
+    for (const auto cell:winner->mutableCells) {
+        mergedH=std::max(mergedH,localBackgroundH[cell]);
+        mergedRated=mergedRated || ratedCells[cell];
+    }
     metadata[{topology.cells[first].sourceKey,topology.cells[first].sourceId}]=
-        {std::max(localBackgroundH[first],localBackgroundH[second]),
-         ratedCells[first] || ratedCells[second]};
+        {mergedH,mergedRated};
     std::vector<double> candidateH;
     std::vector<bool> candidateRated,candidateImmutable;
     for (const auto& cell:committed.topology.cells) {
@@ -2622,7 +2694,9 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
                                                  piece.vertices.front().y}).stableId;
                 const auto b=identityByPoint.at({piece.vertices.back().x,
                                                  piece.vertices.back().y}).stableId;
-                return std::minmax(a,b);
+                // minmax returns references; the key must outlive these locals.
+                return std::pair<StableVertexId2D,StableVertexId2D>{
+                    std::min(a,b),std::max(a,b)};
             };
             const auto firstDiagonal=diagonalKey(pieces[0]);
             const auto secondDiagonal=diagonalKey(pieces[2]);

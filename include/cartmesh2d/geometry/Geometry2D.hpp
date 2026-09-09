@@ -15,6 +15,9 @@ struct TolerancePolicy {
     // Area comparisons require squared length units and a local geometric
     // extent, not a unit-length floor or the area itself as a length scale.
     [[nodiscard]] double areaScale(double localLength) const noexcept;
+    // Coordinate-construction roundoff estimate, capped by the existing
+    // geometric length budget; this is not a larger weld tolerance.
+    [[nodiscard]] double constructionRoundoffScale(double coordinateMagnitude) const noexcept;
     [[nodiscard]] bool nearlyEqual(double a, double b, double magnitude = 1.0) const noexcept;
 };
 

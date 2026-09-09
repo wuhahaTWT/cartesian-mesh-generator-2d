@@ -1,0 +1,351 @@
+{
+  "format": "cartmesh2d-hybrid-engineering-scale-v1",
+  "source_revision": "9a4f46f",
+  "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe",
+  "cases": [
+    {
+      "case": "circle",
+      "request": "r02",
+      "parameters": {
+        "wall": 0.005,
+        "background": 0.0125,
+        "first": 0.00125,
+        "layers": 4,
+        "band": 3
+      },
+      "status": "success",
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 10.6865,
+      "wrapper_elapsed_seconds": 11.78,
+      "peak_rss_bytes": 585121792,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "measurement_complete": true,
+      "timeout_seconds": 300.0,
+      "evidence_directory": "outputs/engineering-hybrid-scale-cache/circle/request-r02",
+      "solver_cells": 59476,
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 2560,
+        "constructed_cells": 2560,
+        "retained_cells": 2560,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 1,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0,
+        "issues": []
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.0012234510845842402,
+          "p50": 0.0078125,
+          "p95": 0.0078125,
+          "max": 0.007812500000000111
+        },
+        "wall_edge_length_over_reference": {
+          "min": 0.004900857016475384,
+          "p50": 0.004900857016479244,
+          "p95": 0.00490085701648005,
+          "max": 0.004900857016480074
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.004900857016475385,
+          "p50": 0.004900857016479356,
+          "p95": 0.005023971270673619,
+          "max": 0.005023971270679288
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0012499999999999764,
+          "p50": 0.0012500000000000085,
+          "p95": 0.0012500000000000295,
+          "max": 0.00125000000000003
+        }
+      },
+      "cm2d_sha256": "a2ce3653a8a64487355ea6607745cb570cb47592ee86116bb14c88df5fd47ca9",
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "external_checkMesh": {
+        "case": "circle",
+        "request": "r02",
+        "cell_count": 59476,
+        "standard": {
+          "returncode": 0,
+          "mesh_ok": true,
+          "failed": [],
+          "concave_cells": null
+        },
+        "expanded": {
+          "returncode": 0,
+          "mesh_ok": false,
+          "failed": [
+            "Failed 1 mesh checks."
+          ],
+          "concave_cells": 3060
+        },
+        "logs": {
+          "standard": "outputs/engineering-hybrid-scale-cache/circle/request-r02/checkMesh-verification/standard.log",
+          "expanded": "outputs/engineering-hybrid-scale-cache/circle/request-r02/checkMesh-verification/expanded.log"
+        },
+        "scope": "existing mesh; no regeneration"
+      },
+      "reference_length": 2,
+      "wall_owner_tangential_exceedance_length_fraction": 0.09999999999999963
+    },
+    {
+      "case": "circle",
+      "request": "r03",
+      "parameters": {
+        "wall": 0.0025,
+        "background": 0.0125,
+        "first": 0.000625,
+        "layers": 4,
+        "band": 40
+      },
+      "status": "timeout",
+      "native_mode": "unknown",
+      "native_elapsed_seconds": null,
+      "wrapper_elapsed_seconds": null,
+      "peak_rss_bytes": null,
+      "solver": "not_reported",
+      "Q1": "not_reported",
+      "measurement_complete": false,
+      "timeout_seconds": 300.0,
+      "evidence_directory": "outputs/engineering-hybrid-scale-cache/circle/request-r03"
+    },
+    {
+      "case": "naca2412_dense",
+      "request": "r02",
+      "parameters": {
+        "wall": 0.005,
+        "background": 0.0125,
+        "first": 0.00125,
+        "layers": 4,
+        "band": 3
+      },
+      "status": "success",
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 14.8759,
+      "wrapper_elapsed_seconds": 14.95,
+      "peak_rss_bytes": 753500160,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "measurement_complete": true,
+      "timeout_seconds": 300.0,
+      "evidence_directory": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r02",
+      "solver_cells": 68802,
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 1768,
+        "constructed_cells": 1748,
+        "retained_cells": 1748,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 0.9976981278274514,
+        "full_requested_layers_wall_length_fraction": 0.985539676313988,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0,
+        "issues": []
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.00039557310070803005,
+          "p50": 0.007812827398437486,
+          "p95": 0.007812827398437555,
+          "max": 0.007812827398437694
+        },
+        "wall_edge_length_over_reference": {
+          "min": 2.1403532361317388e-05,
+          "p50": 0.004709162408076129,
+          "p95": 0.004943256428886559,
+          "max": 0.004990394786255275
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.0015391500046300643,
+          "p50": 0.004713976344039648,
+          "p95": 0.00495066011064515,
+          "max": 0.005408886153672706
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0012499999999999914,
+          "p50": 0.001250000000000001,
+          "p95": 0.0012500000000000083,
+          "max": 0.0045450921212743505
+        }
+      },
+      "cm2d_sha256": "8b4baeca5b59ecafc0b72f0a1a472d058c03abd9b6fe3dde92c0717c65f7fbb3",
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "external_checkMesh": {
+        "case": "naca2412_dense",
+        "request": "r02",
+        "cell_count": 68802,
+        "standard": {
+          "returncode": 0,
+          "mesh_ok": true,
+          "failed": [],
+          "concave_cells": null
+        },
+        "expanded": {
+          "returncode": 0,
+          "mesh_ok": false,
+          "failed": [
+            "Failed 1 mesh checks."
+          ],
+          "concave_cells": 1101
+        },
+        "logs": {
+          "standard": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r02/checkMesh-verification/standard.log",
+          "expanded": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r02/checkMesh-verification/expanded.log"
+        },
+        "scope": "existing mesh; no regeneration"
+      },
+      "reference_length": 1,
+      "wall_owner_tangential_exceedance_length_fraction": 0.016916751509749937
+    },
+    {
+      "case": "naca2412_dense",
+      "request": "r03",
+      "parameters": {
+        "wall": 0.0025,
+        "background": 0.0125,
+        "first": 0.000625,
+        "layers": 4,
+        "band": 40
+      },
+      "status": "success",
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 190.665,
+      "wrapper_elapsed_seconds": 190.84,
+      "peak_rss_bytes": 1423425536,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "measurement_complete": true,
+      "timeout_seconds": 300.0,
+      "evidence_directory": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03",
+      "solver_cells": 140306,
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 3400,
+        "constructed_cells": 3380,
+        "retained_cells": 3380,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 0.9984672118405592,
+        "full_requested_layers_wall_length_fraction": 0.9921778141806321,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0,
+        "issues": []
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.00017634100646550134,
+          "p50": 0.00390641369921875,
+          "p95": 0.007812827398437527,
+          "max": 0.007812827398437694
+        },
+        "wall_edge_length_over_reference": {
+          "min": 2.1403532361317388e-05,
+          "p50": 0.0024271616675247435,
+          "p95": 0.002485220440674693,
+          "max": 0.0024951973931276374
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.0010806428720175694,
+          "p50": 0.0024273908858563975,
+          "p95": 0.002491565885516273,
+          "max": 0.002840425271214358
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.000624999999999984,
+          "p50": 0.0006250000000000007,
+          "p95": 0.0006250000000000066,
+          "max": 0.0019048656443845344
+        }
+      },
+      "cm2d_sha256": "0f5647d611000331cda968e1535d12fcb17d0028ace5e21b156ab661d47bcc9f",
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "external_checkMesh": {
+        "case": "naca2412_dense",
+        "request": "r03",
+        "cell_count": 140306,
+        "standard": {
+          "returncode": 0,
+          "mesh_ok": true,
+          "failed": [],
+          "concave_cells": null
+        },
+        "expanded": {
+          "returncode": 0,
+          "mesh_ok": false,
+          "failed": [
+            "Failed 2 mesh checks."
+          ],
+          "concave_cells": 2724,
+          "determinant_failure": {
+            "count": 1,
+            "minimum": 0.0003310395831,
+            "threshold": 0.001,
+            "cell_ids": [
+              108446
+            ],
+            "cell_set": "openfoam/constant/polyMesh/sets/cellDeterminant"
+          },
+          "short_edge_failure": {
+            "count": 4,
+            "minimum_edge_length": 1.3000825e-06,
+            "point_set": "openfoam/constant/polyMesh/sets/shortEdges"
+          }
+        },
+        "logs": {
+          "standard": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/checkMesh-verification/standard.log",
+          "expanded": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/checkMesh-verification/expanded.log"
+        },
+        "scope": "existing mesh; no regeneration",
+        "determinant_cell_108446": {
+          "polygon": [
+            [
+              1.000083814,
+              0.0012572093
+            ],
+            [
+              0.9998148997045184,
+              0.0008471631535156218
+            ],
+            [
+              1.0020160673496092,
+              0.0028003700031249967
+            ]
+          ],
+          "absolute_area": 1.886675333716563e-07,
+          "declared_area": 1.8866753337163693e-07,
+          "neighbour_cell_ids": [
+            108444,
+            108445
+          ],
+          "embedded_boundary": true,
+          "retained_layer": false,
+          "q1_category": "FAIL",
+          "solver_quality": true
+        },
+        "determinant_preview": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/previews/naca-r03-cellDeterminant-108446.png"
+      },
+      "reference_length": 1,
+      "wall_owner_tangential_exceedance_length_fraction": 0.017187321829856966
+    }
+  ],
+  "notes": [
+    "Fixed requests; circle r03 timed out at 300 seconds.",
+    "r03 also widens the near-wall distance band; this is a scale survey, not a one-variable convergence sequence.",
+    "Solver, Q1, standard checkMesh and expanded checkMesh are separate.",
+    "NACA r03 additionally fails cell determinant at cell 108446; shortEdges is a warning."
+  ]
+}

@@ -351,6 +351,24 @@ bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
         base.maximumShortFaceSeverity,base.totalShortFaceSeverity);
 }
 
+bool patchLocalQualityWithinGlobalBaseline2D(
+    const PatchLocalQuality2D& candidate,const PatchLocalQuality2D& base,
+    const SolverQualityReport2D& globalBaseline) noexcept {
+    if (!globalBaseline.valid() || candidate.issueCount!=0U) return false;
+    auto envelope=base;
+    envelope.maxNonOrthogonalityDeg=globalBaseline.maxNonOrthogonalityDeg;
+    envelope.maxInternalSkewness=globalBaseline.maxInternalSkewness;
+    envelope.maxBoundarySkewness=globalBaseline.maxBoundarySkewness;
+    envelope.maxConcavityDeg=globalBaseline.maxConcavityDeg;
+    envelope.maxCellAspect=globalBaseline.maxCellAspect;
+    envelope.minInteriorAngleDeg=globalBaseline.minInteriorAngleDeg;
+    envelope.minFaceLength=globalBaseline.minFaceLength;
+    envelope.minFaceWeight=globalBaseline.minFaceWeight;
+    envelope.minVolumeRatio=globalBaseline.minVolumeRatio;
+    envelope.minCompactness=globalBaseline.minCompactness;
+    return patchLocalQualityNoWorse2D(candidate,envelope);
+}
+
 PatchLocalRank2D patchLocalRank2D(const PatchLocalQuality2D& base,
                                  const PatchLocalQuality2D& candidate,
                                  std::size_t firstCellId,

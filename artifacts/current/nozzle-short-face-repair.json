@@ -1,0 +1,165 @@
+{
+  "format": "cartmesh2d-nozzle-short-face-repair-v1",
+  "evidence_directory": "outputs/engineering-hybrid-nozzle-r1-three-cell/nozzle/request-r01",
+  "parameters": {
+    "wall": 0.005,
+    "background": 0.0125,
+    "first": 0.00125,
+    "layers": 4,
+    "band": 3
+  },
+  "solver_cells": 8420,
+  "cm2d_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+  "measurements": {
+    "status": "success",
+    "native_mode": "hybrid",
+    "native_elapsed_seconds": 70.7222,
+    "wrapper_elapsed_seconds": 71.67,
+    "peak_rss_bytes": 118931456,
+    "solver": "pass",
+    "Q1": "FAIL",
+    "measurement_complete": true
+  },
+  "independent_readers": {
+    "resolution_independent": true,
+    "layer_independent": true,
+    "openfoam_independent": true
+  },
+  "layers": {
+    "status": "evaluated",
+    "requested_cells": 2448,
+    "constructed_cells": 2400,
+    "retained_cells": 2400,
+    "source_mismatches": 0,
+    "first_layer_wall_length_fraction": 1,
+    "full_requested_layers_wall_length_fraction": 0.958995897906509,
+    "first_layer_height_exceedance_wall_length_fraction": 0,
+    "continuity_mismatches": 0,
+    "issues": []
+  },
+  "actual": {
+    "sqrt_area_over_reference": {
+      "min": 0.00037039311010875556,
+      "p50": 0.00390625,
+      "p95": 0.0078125,
+      "max": 0.0078125
+    },
+    "wall_edge_length_over_reference": {
+      "min": 0.0041670948592736805,
+      "p50": 0.004244804991738905,
+      "p95": 0.004949494949494949,
+      "max": 0.004949494949494984
+    },
+    "wall_owner_tangential_extent_over_reference": {
+      "min": 0.0041670948592736805,
+      "p50": 0.00425081588586678,
+      "p95": 0.004949494949494949,
+      "max": 0.004949494949494984
+    },
+    "wall_owner_normal_extent_over_reference": {
+      "min": 0.0012499999999999734,
+      "p50": 0.0012500000000000018,
+      "p95": 0.0012500000000000096,
+      "max": 0.0012500000000000109
+    }
+  },
+  "r1_metrics": {
+    "r1_short_face_candidate_count": 66,
+    "r1_local_candidate_count": 52,
+    "r1_local_quality_evaluation_count": 104,
+    "r1_accepted_transaction_count": 16,
+    "r1_candidate_global_topology_build_count": 0,
+    "r1_candidate_full_global_quality_evaluation_count": 0,
+    "r1_global_oracle_build_count": 16,
+    "r1_maximum_winner_global_oracle_builds_per_transaction": 1,
+    "r1_authoritative_full_quality_evaluation_count": 33,
+    "r1_minimum_face_over_local_h_before": 0.005828535949917704,
+    "r1_minimum_face_over_local_h_after": 0.010850814654199068,
+    "r1_patch_outside_stable_ids_unchanged": true,
+    "r1_local_winner_matches_global_authority": true,
+    "r1_local_delta_matches_global_oracle": true
+  },
+  "external_checkMesh": {
+    "case": "nozzle",
+    "request": "r01",
+    "cell_count": 8420,
+    "boundary_layer_report": {
+      "requested_cells": 2448,
+      "constructed_cells": 2400,
+      "retained_cells": 2400,
+      "first_layer_wall_length_fraction": 1,
+      "full_requested_layers_wall_length_fraction": 0.958995897906509,
+      "first_layer_height_exceedance_wall_length_fraction": 0
+    },
+    "standard": {
+      "returncode": 0,
+      "mesh_ok": true,
+      "failed": [],
+      "concave_cells": null,
+      "determinant_min": null,
+      "warnings": []
+    },
+    "expanded": {
+      "returncode": 0,
+      "mesh_ok": false,
+      "failed": [
+        "Failed 1 mesh checks."
+      ],
+      "concave_cells": 1452,
+      "determinant_min": 0.004184240393,
+      "warnings": [
+        "***Concave cells (using face planes) found, number of cells: 1452"
+      ]
+    },
+    "logs": {
+      "standard": "outputs/engineering-hybrid-nozzle-r1-three-cell/nozzle/request-r01/checkMesh-verification/standard.log",
+      "expanded": "outputs/engineering-hybrid-nozzle-r1-three-cell/nozzle/request-r01/checkMesh-verification/expanded.log"
+    },
+    "scope": "existing mesh; checkMesh only"
+  },
+  "prior_failures": [
+    "outputs/engineering-hybrid-nozzle-diagnostic/nozzle/request-r01",
+    "outputs/engineering-hybrid-nozzle-r1-repair/nozzle/request-r01"
+  ],
+  "notes": [
+    "The original coordinate-rounding and common-partition failures are retained.",
+    "Candidates preserve immutable layer geometry and use the measured global baseline; the final global no-worse gate and all Solver/Q1 thresholds are unchanged.",
+    "A local compactness may worsen inside the unchanged global worst-value envelope; this tradeoff is explicit.",
+    "A third adjacent mutable cell is considered only after all two-cell candidates fail.",
+    "This is an 8420-cell interior hybrid case, not a 100k interior acceptance."
+  ],
+  "reference_length": 6,
+  "wall_owner_tangential_exceedance_length_fraction": 0,
+  "desktop": {
+    "allow_unsafe": true,
+    "app_solver_cm2d": "outputs/engineering-hybrid-nozzle-r1-three-cell/desktop-nozzle-advanced/mesh-U5yGDO/nozzle_profile.hybrid.solver.cm2d",
+    "cli_solver_cm2d": "outputs/engineering-hybrid-nozzle-r1-three-cell/nozzle/request-r01/mesh.hybrid.solver.cm2d",
+    "zip_member": "mesh-U5yGDO/nozzle_profile.hybrid.solver.cm2d",
+    "app_bytes": 1437345,
+    "cli_bytes": 1437345,
+    "zip_member_bytes": 1437345,
+    "app_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+    "cli_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+    "zip_member_sha256": "d007628741425bd68cf2a9fcdb8dac21f56d337fbfa96622745e5efe5f2e6143",
+    "app_cli_byte_equal": true,
+    "app_zip_member_byte_equal": true,
+    "cli_zip_member_byte_equal": true,
+    "screenshot": "outputs/engineering-hybrid-nozzle-r1-three-cell/desktop-nozzle-advanced.png",
+    "zip": "outputs/engineering-hybrid-nozzle-r1-three-cell/desktop-nozzle-advanced.zip",
+    "independent_readers": {
+      "resolution": true,
+      "openfoam": true,
+      "layer": true
+    },
+    "app_reported_seconds": 70.69,
+    "default_depth_refusal_preserved": "outputs/engineering-hybrid-nozzle-r1-three-cell/desktop-nozzle-smoke.log"
+  },
+  "validation": {
+    "ctest_passed": 99,
+    "ctest_total": 99,
+    "ctest_wall_seconds": 34.65,
+    "frontend_passed": 54,
+    "frontend_total": 54,
+    "macos_package": "built with desktop/scripts/build-macos.sh"
+  }
+}
