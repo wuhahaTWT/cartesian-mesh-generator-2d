@@ -140,6 +140,10 @@ def fixed_commands(grid: Grid, case_dir: Path) -> dict[str, list[str]]:
         "check_standard": docker(case, "checkMesh", "-case", "/home/openfoam/workingDir/case"),
         "check_all": docker(case, "checkMesh", "-case", "/home/openfoam/workingDir/case",
                              "-allGeometry", "-allTopology"),
+        "write_volumes": docker(case, "postProcess", "-case", "/home/openfoam/workingDir/case",
+                                 "-time", "0", "-func", "writeCellVolumes"),
+        "write_centres": docker(case, "postProcess", "-case", "/home/openfoam/workingDir/case",
+                                 "-time", "0", "-func", "writeCellCentres"),
         "configure": [
             sys.executable, str(mms), "configure", str(case), "--field", "quadratic",
         ],
@@ -176,6 +180,22 @@ def checkmesh_gate(stage: dict[str, Any], strict: bool) -> dict[str, Any]:
         stage["status"] = "failed"
         stage["gate"] = "mesh_check_failed"
     write_json(stage_dir / "stage.json", stage)
+    return stage
+
+
+def mms_evaluate_gate(stage: dict[str, Any], report: Path) -> dict[str, Any]:
+    """Require the MMS evaluator's report to be explicitly valid."""
+    stage["mms_report"] = str(report)
+    try:
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        stage["mms_report_valid"] = payload.get("valid") is True
+    except (OSError, ValueError) as exc:
+        stage["mms_report_valid"] = False
+        stage["mms_report_error"] = str(exc)
+    if stage.get("status") == "passed" and not stage["mms_report_valid"]:
+        stage["status"] = "failed"
+        stage["reason"] = "MMS report valid is not true"
+    write_json(Path(stage["stdout"]).parent / "stage.json", stage)
     return stage
 
 
@@ -217,6 +237,7 @@ def run_grid(grid: Grid, dry_run: bool) -> dict[str, Any]:
     stages: list[dict[str, Any]] = []
     failed = False
     for name in ("generate", "independent", "check_standard", "check_all",
+                 "write_volumes", "write_centres",
                  "configure", "solve", "evaluate"):
         command = commands[name]
         if failed:
@@ -227,13 +248,16 @@ def run_grid(grid: Grid, dry_run: bool) -> dict[str, Any]:
             stage = checkmesh_gate(stage, strict=True)
         elif name == "check_all":
             stage = checkmesh_gate(stage, strict=False)
+        elif name == "evaluate":
+            stage = mms_evaluate_gate(stage, case_dir / "mms.json")
         stages.append(stage)
         if not stage_allowed_to_continue(name, stage["status"]):
             failed = True
     stage_status = {stage["stage"]: stage["status"] for stage in stages}
     mms_pipeline_valid = all(
         stage_status.get(name) == "passed"
-        for name in ("generate", "independent", "configure", "solve", "evaluate")
+        for name in ("generate", "independent", "configure", "write_volumes",
+                     "write_centres", "solve", "evaluate")
     ) and stage_status.get("check_standard") == "passed"
     all_mesh_checks_passed = all(
         stage_status.get(name) == "passed" for name in ("check_standard", "check_all")

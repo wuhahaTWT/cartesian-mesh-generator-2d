@@ -1,0 +1,136 @@
+{
+  "scope": "arithmetic grid-corner identity repair; not whole engineering-goal completion",
+  "baseline_commit": "b8a0f24",
+  "regression": "tests/shared_construction_test.cpp translated four-vertex diamond at scales 0.001, 1, 1000; ambiguous independent anchors rejected",
+  "comparison": [
+    {
+      "version": "before",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/runtime/bin/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/translated-diamond.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/diamond-before",
+        "8",
+        ".25",
+        ".1",
+        "exterior",
+        "-",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        ".04",
+        "--background-relative-size",
+        ".1",
+        "--far-field-spans",
+        ".5",
+        "--cells-per-level",
+        "3"
+      ],
+      "returncode": 1,
+      "first_lines": [
+        "source global topology audit failed",
+        "topology_audit duplicateVertices=0 duplicateEdges=0 orphanInternalEdges=0 nonManifoldEdges=0 unclassifiedBoundaryEdges=16 openCellLoops=0 areaMismatches=0",
+        "topology_counts vertices=1420 edges=2736 cells=1312 issues=16",
+        "topology_issue[0] code=UnclassifiedBoundaryEdge object=582 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=818 source=362 a=(-0.93000000000000005,0.029999999999999999) b=(-0.92999999999999994,-0.032499999999999973) embedded_fragments=1",
+        "topology_issue[1] code=UnclassifiedBoundaryEdge object=583 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=1060 source=915 a=(-0.93000000000000005,0.029999999999999999) b=(-0.92999999999999994,0.092500000000000027) embedded_fragments=1"
+      ]
+    },
+    {
+      "version": "after",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/translated-diamond.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/diamond-after",
+        "8",
+        ".25",
+        ".1",
+        "exterior",
+        "-",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        ".04",
+        "--background-relative-size",
+        ".1",
+        "--far-field-spans",
+        ".5",
+        "--cells-per-level",
+        "3"
+      ],
+      "returncode": 0,
+      "first_lines": [
+        "cartmesh2d end-to-end PASS",
+        "fluid_region=exterior",
+        "boundary_role=solid_wall",
+        "boundary_loops=1",
+        "minimum_level=5"
+      ]
+    }
+  ],
+  "tests": {
+    "ctest_passed": 96,
+    "ctest_failed": 0,
+    "ctest_seconds": 91.38,
+    "desktop_passed": 54,
+    "desktop_failed": 0
+  },
+  "circle_fixed_parameters": {
+    "reference_length": 2,
+    "wall_relative_size": 0.04,
+    "background_relative_size": 0.1,
+    "far_field_spans": 0.5,
+    "cells_per_level": 3,
+    "small_alpha": 0.1
+  },
+  "circle_final_solver_cells": 1292,
+  "independent_resolution": {
+    "cm2d": "outputs/engineering-cfd/corner-fixed-circle.solver.cm2d",
+    "issues": [],
+    "measured": {
+      "actual": {
+        "sqrt_area_over_reference": {
+          "max": 0.06250000000000006,
+          "min": 0.0065294123939707745,
+          "p50": 0.0625,
+          "p95": 0.0625
+        },
+        "wall_edge_length_over_reference": {
+          "max": 0.03543400217593698,
+          "min": 0.0038135241692174053,
+          "p50": 0.029957698054575706,
+          "p95": 0.03543400217593695
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "max": 0.03884761131093409,
+          "min": 0.0061260712706742715,
+          "p50": 0.018926265507933082,
+          "p95": 0.03884761131093402
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "max": 0.045550301851778885,
+          "min": 0.015611625884823219,
+          "p50": 0.031702888065024734,
+          "p95": 0.04555030185177881
+        }
+      },
+      "cell_count": 1292,
+      "wall_edge_count": 136,
+      "wall_length_over_reference": 3.136548490546229,
+      "wall_owner_tangential_exceedance_length_fraction": 0.24960122943084573
+    },
+    "reference_length": 2.0,
+    "report": "outputs/engineering-cfd/corner-fixed-circle.resolution.json",
+    "tolerance": {
+      "absolute": 2e-12,
+      "relative": 2e-10
+    },
+    "valid": true
+  },
+  "solver_quality": "PASS",
+  "q1": "FAIL"
+}

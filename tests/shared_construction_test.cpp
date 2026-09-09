@@ -303,5 +303,44 @@ int main(int argc,char** argv) {
         auto foreign=std::make_shared<IntersectionRegistry2D>();
         check(!buildGlobalTopology(cells,domain,wall,{},foreign).valid(),"Cut-cell handles cannot cross contexts");
     }
+    // Minimal translated diamond: the four immutable extrema and the same
+    // dyadic grid corners differ by arithmetic roundoff. Full and cut leaves
+    // must share one handle without moving the wall or merging distinct walls.
+    for (double scale:{.001,1.,1000.}) {
+        const Domain2D domain{{{-1.93*scale,-1.97*scale},{2.07*scale,2.03*scale}}};
+        const BoundaryRegion2D wall(BoundaryLoop({{1.07*scale,.03*scale},
+            {.07*scale,1.03*scale},{-.93*scale,.03*scale},{.07*scale,-.97*scale}}));
+        Quadtree2D tree(domain,6,wall);
+        QuadtreeRefinementPolicy2D policy;policy.minimumLevel=4;policy.boundaryLevel=6;
+        tree.refine(wall,policy);(void)tree.enforceTwoToOneBalance(wall);
+        auto registry=std::make_shared<IntersectionRegistry2D>();
+        registry->configureGrid(domain.bounds,6);
+        for (const auto& p:wall.loops()[0].vertices()) registry->registerGridCornerAnchor(p,scale/16);
+        std::vector<CutCell2D> cells;
+        for (const auto& leaf:tree.leaves()) {
+            auto cut=buildCutCellsShared(leaf,wall,*registry);
+            for (const auto& cell:cut) check(cell.valid(),"translated diamond cut remains valid");
+            cells.insert(cells.end(),cut.begin(),cut.end());
+        }
+        const auto mesh=buildGlobalTopology(cells,domain,wall,{},registry);
+        check(mesh.valid(),"translated diamond has shared full/cut corner identity at three scales");
+        double area=0;for (const auto& cell:mesh.cells) area+=cell.geometryArea;
+        check(std::abs(area/(scale*scale)-14.)<1.e-10,"translated diamond fluid area conserved");
+        for (const auto& p:wall.loops()[0].vertices()) {
+            const auto id=registry->internGridCorner(p,scale/16);
+            check(registry->vertices()[id].point.x==p.x && registry->vertices()[id].point.y==p.y,
+                  "input corner coordinates remain immutable");
+        }
+    }
+    {
+        IntersectionRegistry2D registry;registry.configureGrid({{0,0},{1,1}},4);
+        const Point2D a{.5,.5},b{std::nextafter(.5,1.),.5};
+        registry.registerGridCornerAnchor(a,.0625);
+        registry.registerGridCornerAnchor(b,.0625);
+        check(registry.internVertex(a,.0625)!=registry.internVertex(b,.0625),
+              "nearby distinct inputs keep separate identities");
+        rejects([&]{(void)registry.internGridCorner(a,.0625);},
+                "ambiguous input corner incidence fails instead of merging");
+    }
     return failures?1:0;
 }

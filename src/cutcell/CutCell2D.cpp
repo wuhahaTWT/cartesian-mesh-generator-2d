@@ -896,8 +896,24 @@ std::vector<CutCell2D> buildCutCellsShared(
         for (auto& cell:cells) {
             cell.sourceId=leaf.id;cell.sourceKey=leaf.key;
             cell.canonicalRegistry=&registry;
-            for (const auto& p:cell.fluidPolygon.vertices)
-                cell.canonicalVertexIds.push_back(registry.internVertex(p,h));
+            bool changed=false;
+            for (auto& p:cell.fluidPolygon.vertices) {
+                const bool corner=(p.x==leaf.bounds.min.x || p.x==leaf.bounds.max.x) &&
+                                  (p.y==leaf.bounds.min.y || p.y==leaf.bounds.max.y);
+                const auto id=corner?registry.internGridCorner(p,h):registry.internVertex(p,h);
+                const auto canonical=registry.vertices()[id].point;
+                changed=changed || p.x!=canonical.x || p.y!=canonical.y;
+                p=canonical;
+                cell.canonicalVertexIds.push_back(id);
+            }
+            if (changed) {
+                // Only arithmetic grid corners changed, never wall samples.
+                // Keep all geometric measurements tied to committed coordinates.
+                cell.area=cell.fluidPolygon.area();
+                cell.areaFraction=cell.area/backgroundArea(leaf.bounds);
+                cell.centroid=cutPolygonCentroid(cell.fluidPolygon,
+                    areaTolerance(backgroundArea(leaf.bounds),tol));
+            }
         }
         return cells;
     } catch (const ConstructionConflict2D& conflict) {
