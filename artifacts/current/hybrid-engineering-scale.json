@@ -1,7 +1,7 @@
 {
   "format": "cartmesh2d-hybrid-engineering-scale-v1",
-  "source_revision": "9a4f46f",
-  "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe",
+  "source_revision": "per_case",
+  "cli_sha256": "per_case",
   "cases": [
     {
       "case": "circle",
@@ -93,7 +93,9 @@
         "scope": "existing mesh; no regeneration"
       },
       "reference_length": 2,
-      "wall_owner_tangential_exceedance_length_fraction": 0.09999999999999963
+      "wall_owner_tangential_exceedance_length_fraction": 0.09999999999999963,
+      "source_revision": "9a4f46f",
+      "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe"
     },
     {
       "case": "circle",
@@ -114,7 +116,9 @@
       "Q1": "not_reported",
       "measurement_complete": false,
       "timeout_seconds": 300.0,
-      "evidence_directory": "outputs/engineering-hybrid-scale-cache/circle/request-r03"
+      "evidence_directory": "outputs/engineering-hybrid-scale-cache/circle/request-r03",
+      "source_revision": "9a4f46f",
+      "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe"
     },
     {
       "case": "naca2412_dense",
@@ -206,7 +210,9 @@
         "scope": "existing mesh; no regeneration"
       },
       "reference_length": 1,
-      "wall_owner_tangential_exceedance_length_fraction": 0.016916751509749937
+      "wall_owner_tangential_exceedance_length_fraction": 0.016916751509749937,
+      "source_revision": "9a4f46f",
+      "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe"
     },
     {
       "case": "naca2412_dense",
@@ -339,7 +345,129 @@
         "determinant_preview": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/previews/naca-r03-cellDeterminant-108446.png"
       },
       "reference_length": 1,
-      "wall_owner_tangential_exceedance_length_fraction": 0.017187321829856966
+      "wall_owner_tangential_exceedance_length_fraction": 0.017187321829856966,
+      "source_revision": "9a4f46f",
+      "cli_sha256": "7147026db4396915685fb7e833bcb545c19cba483962c9aed72bdde31d26e3fe"
+    },
+    {
+      "case": "nozzle",
+      "request": "r02",
+      "parameters": {
+        "wall": 0.0025,
+        "background": 0.0125,
+        "first": 0.000625,
+        "layers": 4,
+        "band": 40
+      },
+      "status": "timeout",
+      "native_mode": "unknown",
+      "native_elapsed_seconds": null,
+      "wrapper_elapsed_seconds": null,
+      "peak_rss_bytes": null,
+      "solver": "not_reported",
+      "Q1": "not_reported",
+      "measurement_complete": false,
+      "timeout_seconds": 300.0,
+      "reference_length": 6.0,
+      "source_revision": "683ac0d",
+      "cli_sha256": "1eddac7086325c1bc91d4c636aca8ed2847d7ce639b78f2c9027a9f3b527afe9",
+      "evidence_directory": "outputs/engineering-hybrid-nozzle-scale-r1/nozzle/request-r02"
+    },
+    {
+      "case": "nozzle",
+      "request": "r03",
+      "parameters": {
+        "wall": 0.00125,
+        "background": 0.0125,
+        "first": 0.0003125,
+        "layers": 4,
+        "band": 40
+      },
+      "status": "success",
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 83.2808,
+      "wrapper_elapsed_seconds": 83.43,
+      "peak_rss_bytes": 1385594880,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "measurement_complete": true,
+      "timeout_seconds": 300.0,
+      "reference_length": 6.0,
+      "source_revision": "683ac0d",
+      "cli_sha256": "1eddac7086325c1bc91d4c636aca8ed2847d7ce639b78f2c9027a9f3b527afe9",
+      "evidence_directory": "outputs/engineering-hybrid-nozzle-scale-r1/nozzle/request-r03",
+      "solver_cells": 148394,
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 8816,
+        "constructed_cells": 8768,
+        "retained_cells": 8768,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 0.9890331334211624,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.00011018178336512408,
+          "p50": 0.0009765625,
+          "p95": 0.001953125,
+          "max": 0.00390625
+        },
+        "wall_edge_length_over_reference": {
+          "min": 0.00119059853122105,
+          "p50": 0.0012145188245333658,
+          "p95": 0.0012468193384224113,
+          "max": 0.0012468193384224298
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.00119059853122105,
+          "p50": 0.0012145188245333935,
+          "p95": 0.0012468193384224113,
+          "max": 0.0012468193384224298
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.00031249999999998873,
+          "p50": 0.0003124999999999999,
+          "p95": 0.0003125000000000118,
+          "max": 0.0003125000000000118
+        }
+      },
+      "wall_owner_tangential_exceedance_length_fraction": 0.0,
+      "independent_readers": {
+        "resolution_independent": true,
+        "layer_independent": true,
+        "openfoam_independent": true
+      },
+      "cm2d_sha256": "46ed4f542384d9d5d69a5129e4222e92ded84218f7dfdd84102bec7f284d52b4",
+      "external_checkMesh": {
+        "standard": {
+          "returncode": 0,
+          "mesh_ok": true,
+          "failed": [],
+          "concave_cells": null,
+          "determinant_min": null
+        },
+        "expanded": {
+          "returncode": 0,
+          "mesh_ok": false,
+          "failed": [
+            "Failed 1 mesh checks."
+          ],
+          "concave_cells": 5636,
+          "determinant_min": 0.003827964389
+        }
+      },
+      "directional_connectivity": {
+        "format": "cartmesh2d-directional-connectivity-v1",
+        "scope": "uncoupled planar mesh; uniform extrusion; empty front/back",
+        "external_checkMesh": "not_run_by_this_reader",
+        "cell_count": 148394,
+        "minimum_required": 0.001,
+        "minimum_measured": 0.0038279643885809475,
+        "failed_cell_count": 0,
+        "failed_cells": [],
+        "valid": true
+      }
     }
   ],
   "notes": [
@@ -347,5 +475,45 @@
     "r03 also widens the near-wall distance band; this is a scale survey, not a one-variable convergence sequence.",
     "Solver, Q1, standard checkMesh and expanded checkMesh are separate.",
     "NACA r03 additionally fails cell determinant at cell 108446; shortEdges is a warning."
-  ]
+  ],
+  "desktop_nozzle_r03": {
+    "format": "cartmesh2d-desktop-nozzle-r03-independent-v1",
+    "scope": "existing packaged App output; no CFD",
+    "native_generation": {
+      "requested_method": "hybrid",
+      "actual_method": "hybrid",
+      "cells": 148394,
+      "layer_cells": 8768,
+      "cut_cells": 3048,
+      "timing_total_seconds": 83.3398,
+      "solver_gate": true,
+      "q1_contract": "FAIL"
+    },
+    "readers": {
+      "dimensions_valid": true,
+      "dimensions_cells": 148394,
+      "layers_valid": true,
+      "layers_claimed": 8768,
+      "layers_full_coverage": 0.9890331334211618,
+      "openfoam_valid": true,
+      "openfoam_cells": 148394
+    },
+    "sha256": {
+      "desktop_cm2d": "46ed4f542384d9d5d69a5129e4222e92ded84218f7dfdd84102bec7f284d52b4",
+      "cli_cm2d": "46ed4f542384d9d5d69a5129e4222e92ded84218f7dfdd84102bec7f284d52b4",
+      "desktop_equals_cli": true,
+      "zip_member": "mesh-DFOJUl/nozzle_profile.hybrid.solver.cm2d",
+      "zip_cm2d": "46ed4f542384d9d5d69a5129e4222e92ded84218f7dfdd84102bec7f284d52b4",
+      "zip_equals_desktop": true
+    },
+    "ui": {
+      "screenshot": "outputs/engineering-hybrid-nozzle-scale-r1/desktop-nozzle-r03/desktop-nozzle-r03.png",
+      "bottom_reachable": true,
+      "preview_cells": 148394,
+      "exported_cells": 148394,
+      "q1_dom_status": "FAIL",
+      "q1_visible_in_screenshot": false
+    },
+    "zip": "outputs/engineering-hybrid-nozzle-scale-r1/desktop-nozzle-r03/desktop-nozzle-r03.zip"
+  }
 }

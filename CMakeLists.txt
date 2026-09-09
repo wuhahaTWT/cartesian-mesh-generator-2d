@@ -260,6 +260,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_layer_reader_stopped_columns
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/layer_reader_test.py)
     set_tests_properties(cartmesh2d_layer_reader_stopped_columns PROPERTIES TIMEOUT 15)
+    add_test(NAME cartmesh2d_directional_connectivity_reader
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/directional_connectivity_test.py)
+    set_tests_properties(cartmesh2d_directional_connectivity_reader PROPERTIES TIMEOUT 15)
     add_test(NAME cartmesh2d_nozzle_flow_verification
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/nozzle_flow_verification_test.py)
     set_tests_properties(cartmesh2d_nozzle_flow_verification PROPERTIES TIMEOUT 15)

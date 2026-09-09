@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <set>
 #include <tuple>
@@ -383,19 +384,71 @@ bool revisionedTopologyMatchesOracle2D(
             active.push_back(id);
         } else if (vertex.referenceCount!=0U) return false;
     if (active.size()!=oracle.vertices.size()) return false;
+    // This is only a broad phase for the existing samePoint predicate. The
+    // exhaustive vertex-by-vertex scan made every accepted patch oracle O(V²).
+    // Group exact x coordinates and sort each column by y, so Cartesian meshes
+    // with many vertices on one x coordinate still query a small neighbourhood.
+    double magnitude=1.0;
+    bool finiteCoordinates=true;
+    const auto includePoint=[&](const Point2D& point) {
+        finiteCoordinates=finiteCoordinates && std::isfinite(point.x) && std::isfinite(point.y);
+        magnitude=std::max({magnitude,std::abs(point.x),std::abs(point.y)});
+    };
+    for (const auto id:active) includePoint(revisioned.vertices.at(id).point);
+    for (const auto& vertex:oracle.vertices) includePoint(vertex.point);
+    // Outward padding covers arithmetic rounding and squared-distance
+    // underflow. It does not change which candidates pass samePoint. If its
+    // squared radius overflows, retain the original exhaustive comparison.
+    const double radius=2.0*(std::abs(tol.absolute)+std::abs(tol.relative)*magnitude+
+                            std::sqrt(std::numeric_limits<double>::min()));
+    const bool indexed=finiteCoordinates && std::isfinite(radius*radius);
+    using ColumnEntry=std::pair<double,StableVertexId2D>;
+    std::map<double,std::vector<ColumnEntry>> columns;
+    if (indexed) {
+        for (const auto id:active) {
+            const auto& point=revisioned.vertices.at(id).point;
+            columns[point.x].emplace_back(point.y,id);
+        }
+        for (auto& [x,column]:columns) {
+            (void)x;
+            std::sort(column.begin(),column.end());
+        }
+    }
     std::vector<StableVertexId2D> oracleStable(oracle.vertices.size());
     std::set<StableVertexId2D> matched;
     for (std::size_t dense=0;dense<oracle.vertices.size();++dense) {
         std::optional<StableVertexId2D> id;
-        for (const auto candidate:active) {
-            if (matched.contains(candidate)) continue;
+        bool ambiguous=false;
+        const auto consider=[&](StableVertexId2D candidate) {
+            if (matched.contains(candidate)) return;
             if (samePoint(revisioned.vertices.at(candidate).point,
                           oracle.vertices[dense].point,tol)) {
-                if (id) return false;
+                if (id) ambiguous=true;
                 id=candidate;
             }
+        };
+        if (indexed) {
+            const auto& point=oracle.vertices[dense].point;
+            const double infinity=std::numeric_limits<double>::infinity();
+            const double xmin=std::nextafter(point.x-radius,-infinity);
+            const double xmax=std::nextafter(point.x+radius,infinity);
+            const double ymin=std::nextafter(point.y-radius,-infinity);
+            const double ymax=std::nextafter(point.y+radius,infinity);
+            for (auto column=columns.lower_bound(xmin);
+                 column!=columns.end() && column->first<=xmax && !ambiguous;++column) {
+                const auto& entries=column->second;
+                auto entry=std::lower_bound(entries.begin(),entries.end(),ymin,
+                    [](const ColumnEntry& item,double y) { return item.first<y; });
+                for (;entry!=entries.end() && entry->first<=ymax && !ambiguous;++entry)
+                    consider(entry->second);
+            }
+        } else {
+            for (const auto candidate:active) {
+                consider(candidate);
+                if (ambiguous) break;
+            }
         }
-        if (!id) return false;
+        if (ambiguous || !id) return false;
         oracleStable[dense]=*id;
         matched.insert(*id);
     }

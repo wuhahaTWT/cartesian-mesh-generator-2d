@@ -271,6 +271,41 @@ PASS，扩展 FAIL（1,452 concave cells）。determinant 最小 0.00418424，�
 一致，三种独立读取通过，侧栏底部可达；默认深度保护没有改动。该高级选项不改变质量门。
 截图 `artifacts/current/desktop-nozzle-r1-repair.png`，首次拒绝与成功日志均保留。
 
+同一修复版本继续固定喷管 r02/r03：r02 在 300 s 超时，r03 实际生成 148,394 个
+hybrid 单元，native 83.2808 s、wrapper 83.43 s、峰值 RSS 1,385,594,880 B。
+r03 请求 8,816 层单元、构造和保留 8,768，首层覆盖 100%、完整四层覆盖 98.9033%，
+保留首层高度及最终 wall owner 切向尺寸超标占比均为 0。三种独立读取通过，Solver PASS、
+Q1 FAIL；实际标准 checkMesh PASS，扩展 FAIL（5,636 concave cells），determinant
+最小 0.003827964389，通过 0.001 门。中档超时与高档成功同时保留，不能选择性报告
+或声称规模越大耗时必然越长。原始输出在 `outputs/engineering-hybrid-nozzle-scale-r1/`，
+精简记录已加入 `artifacts/current/hybrid-engineering-scale.json`，真实图为 `hybrid-nozzle-148k.png`。
+同版本真实打包 App 以相同参数在 83.3398 s 生成、预览和导出 148,394 单元，三种独立读取
+通过；桌面、CLI 与 ZIP 内 CM2D 字节完全一致。侧栏底部按钮可达，Q1 FAIL 已记录在结果
+中，但本张截图的结果滚动位置未露出 Q1 行，不声称截图已显示该行。
+真实截图为 `artifacts/current/desktop-hybrid-nozzle-148k.png`。
+
+喷管中档采样定位到 `revisionedTopologyMatchesOracle2D` 的活跃顶点两两扫描。
+现以精确 x 分列、列内 y 排序进行宽相位查找，最终仍用原 samePoint 容差判据，拒绝
+多重匹配，继续核对全部单元环、面积、patch 和 owner/neighbour；没有跳过全局 oracle。
+三尺度、两旋转、远离原点及容差边缘扰动与独立穷举匹配相同，重复候选和错误关联仍失败。
+固定 r01 现为 26.0517 s、RSS 113,131,520 B，仍是 8,420 单元且与修复前 CM2D
+字节一致；r02 从旧 300 s 超时变为 69.4354 s 完成 56,362 个 hybrid 单元，RSS
+671,678,464 B。r02 请求 4,568 层单元、构造和保留 4,520，首层覆盖 100%、完整四层
+覆盖 97.8556%，保留首层高度超标 0。两例三种独立读取通过，Solver PASS、Q1 FAIL。
+新 r02 已实际通过标准 checkMesh；扩展 FAIL（2,642 concave cells），determinant 最小
+0.002971607703 通过且与独立重算一致。r01 沿用同字节产物的外部检查证据，未重复实跑。
+真实中档图为 `artifacts/current/hybrid-nozzle-56k.png`。
+单次计时不作稳定速度承诺；精简证据为 `artifacts/current/oracle-vertex-index.json`。
+本轮系统 clang++ 全构建、完整 CTest 100/100（30.67 s）、桌面测试 54/54 和 macOS
+打包通过。上述十万格 App 证据来自索引修改前的同一喷管修复版本，索引版本的打包 App
+尚未重新执行同一大档，不把新包构建成功等同于桌面运行验证。
+
+新增独立 `check_directional_connectivity.py`，从最终 CM2D 内部边重算 OpenFOAM 2606
+均匀挤出、前后 empty、无周期耦合条件下的方向连接 determinant；不替代外部 checkMesh。
+喷管 8,420 / 148,394 和翼型 140,306 的重算分别与真实 OpenFOAM 最小值一致，
+翼型仍明确报告 cell 108446 失败。解析正交/退化方向、实际坏单元三尺度旋转及序列化
+网格/错误关联检查通过；未修改内部 Solver/Q1 门槛。
+
 ### 固定喷管 CFD 多网格验证
 
 实际运行 OpenFOAM 2606 simpleFoam：同一 `nozzle_profile.xy`、均匀入口 U=(0.1,0,0) m/s、
