@@ -85,6 +85,10 @@ struct SolverShortFaceRepairResult2D {
     bool applicable = false;
     bool accepted = false;
     std::size_t candidateCount = 0;
+    std::vector<std::size_t> affectedCells;
+    std::size_t rejectedUnionCount = 0;
+    std::size_t rejectedConvexityCount = 0;
+    std::size_t rejectedBoundaryCount = 0;
     // Candidates whose patch-local topology delta was valid and therefore
     // reached patch-local quality evaluation.
     std::size_t localCandidateCount = 0;

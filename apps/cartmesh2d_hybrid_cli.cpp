@@ -380,6 +380,35 @@ int main(int argc, char** argv) {
     const auto parent = outputPrefix.parent_path().empty()
         ? std::filesystem::path(".") : outputPrefix.parent_path();
     std::filesystem::create_directories(parent);
+    if (robust.hybridCandidate.shortFaceFailure) {
+        const auto& diagnostic=*robust.hybridCandidate.shortFaceFailure;
+        const auto& repair=diagnostic.repair;
+        const auto failedPrefix=outputPrefix.string()+".failed.hybrid";
+        std::ostringstream metadata;
+        metadata.precision(17);
+        metadata<<"{\"accepted\":false,\"stage\":\"short_face_repair\","
+                <<"\"minimum_face_over_local_h\":"<<diagnostic.minimumFaceOverLocalH
+                <<",\"candidate_count\":"<<repair.candidateCount
+                <<",\"local_candidate_count\":"<<repair.localCandidateCount
+                <<",\"rejected_union_count\":"<<repair.rejectedUnionCount
+                <<",\"rejected_convexity_count\":"<<repair.rejectedConvexityCount
+                <<",\"rejected_boundary_count\":"<<repair.rejectedBoundaryCount
+                <<",\"affected_cells\":[";
+        for (std::size_t i=0;i<repair.affectedCells.size();++i)
+            metadata<<(i?",":"")<<repair.affectedCells[i];
+        metadata<<"],\"cells\":[";
+        for (std::size_t i=0;i<repair.topology.cells.size();++i) {
+            metadata<<(i?",":"")<<"{\"id\":"<<i
+                    <<",\"immutable\":"<<(repair.immutableCells.at(i)?"true":"false")
+                    <<",\"rated\":"<<(diagnostic.ratedCells.at(i)?"true":"false")
+                    <<",\"local_h\":"<<diagnostic.localBackgroundH.at(i)<<'}';
+        }
+        metadata<<"]}\n";
+        if (!writeCm2dTopology(repair.topology,failedPrefix+".solver.cm2d",&error) ||
+            !writeText(failedPrefix+".repair.json",metadata.str(),error)) {
+            std::cerr<<error<<'\n'; return EXIT_FAILURE;
+        }
+    }
     if (!robust.success()) {
         std::cerr<<"h4_status=failed mesh_mode="<<h4MeshModeName(robust.mode)
                  <<" fallback_stage="<<h4FallbackStageName(robust.fallbackStage)

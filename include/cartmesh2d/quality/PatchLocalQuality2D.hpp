@@ -132,7 +132,15 @@ static_assert(!patchLocalShortFaceImprovementImpliesGlobal(
 // implies that restoring the unchanged remainder cannot reverse the global
 // short-face lexicographic improvement.
 [[nodiscard]] bool patchLocalQualityNoWorse2D(const PatchLocalQuality2D& candidate,
-                                              const PatchLocalQuality2D& base) noexcept;
+                                             const PatchLocalQuality2D& base) noexcept;
+
+// A boundary-locked transaction leaves all outside metrics unchanged. Bound
+// the candidate's touched metrics by the measured full-mesh baseline, while
+// retaining the local short-face improvement proof. The final global oracle
+// and its unchanged no-worse gate remain mandatory.
+[[nodiscard]] bool patchLocalQualityWithinGlobalBaseline2D(
+    const PatchLocalQuality2D& candidate,const PatchLocalQuality2D& base,
+    const SolverQualityReport2D& globalBaseline) noexcept;
 
 // Q3 gate: targeted Q1 face-weight/volume-ratio hard counts may improve, while
 // the dimensionless short-face score and every non-target solver metric remain

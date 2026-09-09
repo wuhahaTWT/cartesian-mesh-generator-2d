@@ -342,6 +342,15 @@ struct HybridMeshPolicy2D {
 
 enum class HybridMeshStatus2D { Success, Failed };
 
+// Rejected construction evidence only. It must never be exported as an
+// accepted hybrid mesh, including when the caller subsequently uses fallback.
+struct HybridShortFaceFailure2D {
+    SolverShortFaceRepairResult2D repair;
+    std::vector<double> localBackgroundH;
+    std::vector<bool> ratedCells;
+    double minimumFaceOverLocalH = 0.0;
+};
+
 struct HybridMeshBuildResult2D {
     HybridMeshStatus2D status = HybridMeshStatus2D::Failed;
     std::vector<BoundaryLayerStrip2D> strips;
@@ -368,6 +377,7 @@ struct HybridMeshBuildResult2D {
     std::vector<QuadtreeLocalRefinementReport2D> constructionRecoveryRefinements;
     QuadtreeBalanceReport2D balance;
     HybridMeshFailure2D failure;
+    std::optional<HybridShortFaceFailure2D> shortFaceFailure;
 
     [[nodiscard]] bool success() const noexcept {
         return status == HybridMeshStatus2D::Success;

@@ -187,6 +187,11 @@ double TolerancePolicy::areaScale(double localLength) const noexcept {
     return std::max(absolute * absolute, relative * localLength * localLength);
 }
 
+double TolerancePolicy::constructionRoundoffScale(double coordinateMagnitude) const noexcept {
+    return std::min(scale(coordinateMagnitude),
+        8.0*std::numeric_limits<double>::epsilon()*std::abs(coordinateMagnitude));
+}
+
 bool TolerancePolicy::nearlyEqual(double a, double b, double magnitude) const noexcept {
     return std::abs(a - b) <= scale(std::max(std::abs(magnitude), std::abs(a - b)));
 }

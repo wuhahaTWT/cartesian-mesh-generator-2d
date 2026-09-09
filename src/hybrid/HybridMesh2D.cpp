@@ -1655,7 +1655,10 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             if (!repair.valid()) {
                 const std::string detail=repair.issues.empty()
                     ?"R1 patch-local short-face repair failed":repair.issues.front();
-                return failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+                auto rejected=failed(HybridMeshFailureReason2D::SolverTopologyFailed,detail);
+                rejected.shortFaceFailure=HybridShortFaceFailure2D{
+                    std::move(repair),std::move(localH),std::move(rated),minimumFaceFraction};
+                return rejected;
             }
             if (!repair.accepted) {
                 converged=!repair.applicable || repair.hardFaceCountBefore==0U;
