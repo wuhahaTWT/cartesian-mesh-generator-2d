@@ -59,6 +59,61 @@ std::string readText(const std::filesystem::path& path) {
 
 int main() {
     {
+        // Two-cell reduction of the 17-degree rotated NACA failure. The exact
+        // physical union is only 0.683 degrees concave; convex-only repair kept
+        // a sliver with face weight 0.023898 and volume ratio 0.00855925.
+        for (const double scale:{0.001,1.0,1000.0}) {
+            const auto point=[&](double x,double y) { return Point2D{x*scale,y*scale}; };
+            const auto a=point(.51992455682865402,.078181151383417219);
+            const auto b=point(.52341074102393725,.078684924676462265);
+            const auto c=point(.5275700288911308,.07954861139755956);
+            const auto d=point(.5275700288911308,.085826623445894021);
+            const auto e=point(.51992455682865402,.085826623445894021);
+            const auto f=point(.51992455682865402,.077917544160927429);
+            const BoundaryRegion2D region(BoundaryLoop({a,f,b,c,d,e}));
+            const Domain2D localDomain{region.bounds()};
+            const auto source=buildGlobalTopology(
+                {polygonCell(0,{a,b,c,d,e}),polygonCell(1,{a,f,b})},localDomain,region);
+            const auto before=evaluateSolverQuality2D(source);
+            check(source.valid() && before.issues.size()==2U &&
+                      before.minFaceWeight<before.policy.minFaceWeight &&
+                      before.minVolumeRatio<before.policy.minVolumeRatio,
+                  "rotated NACA two-cell reduction reproduces weight and volume defects");
+            const auto repaired=repartitionSolverTopologyByQuality2D(source,localDomain,region);
+            const auto after=evaluateSolverQuality2D(repaired.topology);
+            check(repaired.valid() && repaired.topology.cells.size()==1U && after.valid(),
+                  "exact concave union repairs sliver within unchanged Solver policy");
+            check(after.maxConcavityDeg>.68 && after.maxConcavityDeg<.69,
+                  "repair reports real concavity instead of moving physical wall points");
+            const auto& output=repaired.topology;
+            check(output.cells.size()==1U && output.cells[0].sourceLineage==
+                      std::vector<std::size_t>({0U,1U}),
+                  "solver agglomeration retains both source identities");
+            const double area=source.cells[0].geometryArea+source.cells[1].geometryArea;
+            check(output.cells.size()==1U &&
+                      std::abs(output.cells[0].geometryArea-area)<=1e-10*area,
+                  "sliver area is retained in the exact union");
+            const auto same=[](const Point2D& lhs,const Point2D& rhs) {
+                return lhs.x==rhs.x && lhs.y==rhs.y;
+            };
+            std::size_t physicalEdges=0;
+            for (const auto& edge:source.edges) {
+                if (edge.neighbour) continue;
+                ++physicalEdges;
+                const auto& x=source.vertices[edge.v0].point;
+                const auto& y=source.vertices[edge.v1].point;
+                check(std::any_of(output.edges.begin(),output.edges.end(),[&](const auto& target) {
+                    const auto& u=output.vertices[target.v0].point;
+                    const auto& v=output.vertices[target.v1].point;
+                    return !target.neighbour && target.patch==edge.patch &&
+                        ((same(x,u) && same(y,v)) || (same(x,v) && same(y,u)));
+                }),"every original boundary edge and patch survives agglomeration exactly");
+            }
+            check(output.edges.size()==physicalEdges,
+                  "only the internal sliver interface is removed");
+        }
+    }
+    {
         // One solver face spans two collinear pieces of the same physical wall.
         const Domain2D box{{{-1,-1},{2,2}}};
         const BoundaryLoop wall({{0,0},{0.5,0},{1,0},{1,1},{0,1}});

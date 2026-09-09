@@ -1458,6 +1458,38 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 }
             }
         }
+        if (!bestTopology && allowCollinear) {
+            // A curved physical wall can make the exact union slightly concave.
+            // Convex-only splitting then leaves a sliver with a poor face weight
+            // even though its unsplit polygon satisfies the existing Solver
+            // policy. Try that exact union only after the convex repairs fail.
+            // No boundary point is removed, no immutable layer cell is touched,
+            // and both the cell metrics and authoritative global score gate it.
+            for (const auto& [first,second]:pairs) {
+                if (useBatch && bestScore.issueCount==0U) break;
+                const auto merged=mergeAdjacentPolygonsSimple(
+                    topologyCellPolygon(result.topology,first),
+                    topologyCellPolygon(result.topology,second),tol);
+                if (!merged ||
+                    strictlyConvex(removeArtificialCollinearVertices(*merged,tol)) ||
+                    underDeterminedBoundaryCell(*merged,domain,boundary,tol)) continue;
+                const auto metrics=evaluateSolverCellMetrics2D(*merged,tol);
+                if (!metrics.valid ||
+                    metrics.maxConcavityDeg>quality.policy.maxConcavityDeg ||
+                    metrics.minInteriorAngleDeg<quality.policy.minInteriorAngleDeg ||
+                    metrics.hydraulicAspect>quality.policy.maxCellAspect) continue;
+                auto candidate=agglomerateCellPair(
+                    result.topology,first,second,*merged,domain,boundary,tol,
+                    profile,result.immutableCells);
+                if (!candidate.topology.valid()) continue;
+                const auto candidateScore=qualityScore(timedFullQuality(
+                    candidate.topology,tol,profile,true));
+                if (betterQualityScore(candidateScore,bestScore)) {
+                    bestScore=candidateScore;
+                    bestTopology=std::move(candidate);
+                }
+            }
+        }
         if (!bestTopology) break;
         result.topology=std::move(bestTopology->topology);
         result.immutableCells=std::move(bestTopology->immutableCells);

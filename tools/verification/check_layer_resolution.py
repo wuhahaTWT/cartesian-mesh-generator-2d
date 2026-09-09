@@ -171,6 +171,19 @@ def normal_extent(cell_points, wall_a, wall_b) -> float:
     return max(projections) - min(projections)
 
 
+def require_partition(intervals, length, eps, description):
+    """Require one complete covering, rejecting both gaps and double claims."""
+    covered_to = 0.0
+    for lo, hi in sorted(intervals):
+        if lo > covered_to + eps:
+            raise CheckError(description + " has an uncovered gap")
+        if lo < covered_to - eps:
+            raise CheckError(description + " is covered more than once")
+        covered_to = max(covered_to, hi)
+    if covered_to < length - eps:
+        raise CheckError(description + " is not fully covered")
+
+
 def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
     report = json.loads(report_path.read_text(encoding="utf-8"))
     boundary = report.get("boundary_layers")
@@ -231,23 +244,18 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
             cell_edges[neighbour].append(eid)
             pair_edges[tuple(sorted((owner, neighbour)))].append(eid)
 
-    # Source physical wall edges are the boundary edges of kind=0 polygons
-    # after all source cells are included; source coordinates remain canonical.
-    source_edge_owners: dict[tuple[int, int], list[int]] = defaultdict(list)
-    for cid, cell in enumerate(source_cells):
-        ids = [mapper(source_points[index]) for index in cell]
-        for index, first in enumerate(ids):
-            edge = tuple(sorted((first, ids[(index + 1) % len(ids)])))
-            source_edge_owners[edge].append(cid)
+    # A stopped column has no source layer polygon. Also, the exposed sides
+    # and front of source layer polygons are not necessarily physical walls.
+    # Use final embedded topology as the independent boundary, then require
+    # the declared wall segments to partition it exactly (gaps/overlaps fail).
+    physical_edges = {eid: (solver_points[edge["v0"]], solver_points[edge["v1"]])
+                      for eid, edge in enumerate(solver_edges)
+                      if edge["neighbour"] < 0 and edge["patch"] == 1}
+    if not physical_edges:
+        raise CheckError("no final embedded wall edges found")
+    wall_total = math.fsum(math.dist(a, b) for a, b in physical_edges.values())
+    physical_claims = defaultdict(list)
     wall_edges = {}
-    for edge, owners in source_edge_owners.items():
-        if len(owners) != 1 or kinds[owners[0]] != 0:
-            continue
-        a, b = source_points[edge[0]], source_points[edge[1]]
-        wall_edges[edge] = math.dist(a, b)
-    if not wall_edges:
-        raise CheckError("no source boundary-layer physical wall edges found")
-    wall_total = math.fsum(wall_edges.values())
 
     claimed_solver_ids: set[int] = set()
     claimed_source_ids: set[int] = set()
@@ -276,10 +284,34 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
                 raise CheckError("column wall endpoint is not finite 2D data")
             endpoint_points.append(((raw[0] - origin[0]) / reference,
                                     (raw[1] - origin[1]) / reference))
-        endpoint_ids = tuple(sorted((mapper(endpoint_points[0]),
-                                     mapper(endpoint_points[1]))))
-        if endpoint_ids not in wall_edges:
-            raise CheckError("column wall endpoints do not identify a source wall edge")
+        endpoint_ids = tuple(sorted(endpoint_points))
+        wall_a, wall_b = endpoint_ids
+        wall_length = math.dist(wall_a, wall_b)
+        if wall_length <= eps:
+            raise CheckError("declared wall segment has zero length")
+        intervals = []
+        vx, vy = vector(wall_a, wall_b)
+        for edge_id, (actual_a, actual_b) in physical_edges.items():
+            if (abs(cross(wall_a, wall_b, actual_a)) / wall_length > eps or
+                    abs(cross(wall_a, wall_b, actual_b)) / wall_length > eps):
+                continue
+            def projection(point):
+                return ((point[0]-wall_a[0])*vx + (point[1]-wall_a[1])*vy) / wall_length
+            u, v = projection(actual_a), projection(actual_b)
+            lo, hi = max(0.0, min(u, v)), min(wall_length, max(u, v))
+            if hi-lo <= eps:
+                continue
+            intervals.append((lo, hi))
+            # Reverse the overlap into the actual edge's own coordinate so
+            # all declarations together can be checked against every edge.
+            edge_length = math.dist(actual_a, actual_b)
+            t0, t1 = (lo-u)/(v-u), (hi-u)/(v-u)
+            physical_claims[edge_id].append((max(0.0, min(t0,t1)*edge_length),
+                                            min(edge_length, max(t0,t1)*edge_length)))
+        require_partition(intervals, wall_length, eps, "declared wall segment")
+        if not close(wall_length, float(column["wall_length_over_reference"])):
+            raise CheckError("column wall length differs from endpoints")
+        wall_edges[endpoint_ids] = wall_length
         if endpoint_ids in declared_wall_edges:
             raise CheckError("multiple columns declare the same wall segment")
         declared_wall_edges.add(endpoint_ids)
@@ -301,7 +333,7 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
             if layer == 0:
                 solver_cell = solver_cells[solver_id]
                 wall_intervals = []
-                wall_a, wall_b = source_points[endpoint_ids[0]], source_points[endpoint_ids[1]]
+                wall_a, wall_b = endpoint_ids
                 wall_vector = vector(wall_a, wall_b)
                 wall_norm = math.hypot(*wall_vector)
                 for edge_id in cell_edges[solver_id]:
@@ -340,10 +372,14 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
         for first, second in zip(ids, ids[1:]):
             if len(pair_edges.get(tuple(sorted((first, second))), [])) != 1:
                 raise CheckError("column layers are not connected by one internal owner/neighbour edge")
-        claimed_min = float(column["first_layer_normal_height_min_over_reference"])
-        claimed_max = float(column["first_layer_normal_height_max_over_reference"])
-        if heights and (not close(min(heights), claimed_min) or not close(max(heights), claimed_max)):
-            raise CheckError("column first-layer normal height differs from independent measurement")
+        claimed_min = column["first_layer_normal_height_min_over_reference"]
+        claimed_max = column["first_layer_normal_height_max_over_reference"]
+        if heights:
+            if (not close(min(heights), float(claimed_min)) or
+                    not close(max(heights), float(claimed_max))):
+                raise CheckError("column first-layer normal height differs from independent measurement")
+        elif claimed_min is not None or claimed_max is not None:
+            raise CheckError("stopped column must not claim a first-layer height")
         column_results.append({"strip_id": int(column["strip_id"]),
                                "wall_segment": int(column["wall_segment"]),
                                "requested_layers": required,
@@ -354,6 +390,9 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
                                "first_layer_height_min": min(heights) if heights else None,
                                "first_layer_height_max": max(heights) if heights else None})
 
+    for edge_id, (a, b) in physical_edges.items():
+        require_partition(physical_claims[edge_id], math.dist(a,b), eps,
+                          f"final embedded edge {edge_id}")
     if len(layer_source) != int(boundary["constructed_cells"]):
         raise CheckError("source layer polygon count differs from constructed_cells")
     if len(claimed_source_ids) != int(boundary["retained_cells"]):
@@ -382,6 +421,7 @@ def measure(source_vtk: Path, final_cm2d: Path, report_path: Path) -> dict:
             "source_layer_polygon_count": len(layer_source),
             "claimed_layer_polygon_count": len(claimed_source_ids),
             "source_wall_length": wall_total,
+            "wall_length_basis": "final_embedded_edges_partitioned_by_declared_columns",
             "first_layer_wall_length_fraction": first_fraction,
             "full_requested_layers_wall_length_fraction": full_fraction,
             "first_layer_height_exceedance_wall_length_fraction": exceeded_fraction,

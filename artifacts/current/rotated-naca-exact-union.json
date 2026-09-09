@@ -1,0 +1,189 @@
+{
+  "checkMesh": {
+    "expanded": {
+      "concave_cells": 152,
+      "failed": [
+        "Failed 1 mesh checks."
+      ],
+      "mesh_ok": false,
+      "returncode": 0
+    },
+    "standard": {
+      "concave_cells": null,
+      "failed": [],
+      "mesh_ok": true,
+      "returncode": 0
+    }
+  },
+  "cm2d_sha256": "6795e587105dd9c096857ff1e3bc4660096d5a3834a8a506bbd5a7625ca82756",
+  "independent_cm2d_reader": {
+    "cm2d": "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/mesh.solver.cm2d",
+    "issues": [],
+    "measured": {
+      "actual": {
+        "sqrt_area_over_reference": {
+          "max": 0.015290944124953743,
+          "min": 0.000716401021351152,
+          "p50": 0.01529094412495359,
+          "p95": 0.01529094412495366
+        },
+        "wall_edge_length_over_reference": {
+          "max": 0.009933955625551782,
+          "min": 6.010632012726287e-05,
+          "p50": 0.007655648676340867,
+          "p95": 0.008187677653608883
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "max": 0.01557445889302818,
+          "min": 0.0005410555497474051,
+          "p50": 0.005047006529098393,
+          "p95": 0.00890649279537738
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "max": 0.017014836720257456,
+          "min": 0.0007095294581865468,
+          "p50": 0.008304606454081688,
+          "p95": 0.010672619502304267
+        }
+      },
+      "cell_count": 17148,
+      "wall_edge_count": 350,
+      "wall_length_over_reference": 2.0426931940951047,
+      "wall_owner_tangential_exceedance_length_fraction": 0.14238230626422754
+    },
+    "reference_length": 1.0,
+    "report": "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/mesh.resolution.json",
+    "tolerance": {
+      "absolute": 2e-12,
+      "relative": 2e-10
+    },
+    "valid": true
+  },
+  "independent_openfoam_reader": {
+    "cell_count": 17148,
+    "face_count": 69065,
+    "global_constant_flux_balance": 4.6688456052657035e-18,
+    "internal_face_count": 33907,
+    "issues": [],
+    "max_closure_residual": 2.752531277394369e-20,
+    "max_constant_flux_divergence_residual": 1.3625979835316852e-13,
+    "min_volume": 1.9190825222849384e-09,
+    "patches": [
+      {
+        "nFaces": 350,
+        "name": "wall_0",
+        "startFace": 33907,
+        "type": "wall"
+      },
+      {
+        "nFaces": 128,
+        "name": "left",
+        "startFace": 34257,
+        "type": "patch"
+      },
+      {
+        "nFaces": 128,
+        "name": "right",
+        "startFace": 34385,
+        "type": "patch"
+      },
+      {
+        "nFaces": 128,
+        "name": "bottom",
+        "startFace": 34513,
+        "type": "patch"
+      },
+      {
+        "nFaces": 128,
+        "name": "top",
+        "startFace": 34641,
+        "type": "patch"
+      },
+      {
+        "nFaces": 34296,
+        "name": "frontAndBack",
+        "startFace": 34769,
+        "type": "empty"
+      }
+    ],
+    "physical_boundary_area_vector": [
+      4.607859233063394e-19,
+      -1.4487651529837553e-17,
+      0.0
+    ],
+    "point_count": 35242,
+    "valid": true
+  },
+  "notes": [
+    "all solver mesh edges are plotted in the full-domain and zoom previews; prior CLI checkMesh evidence may be reused only for same-byte artifacts"
+  ],
+  "previews": [
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/cluster-1-zoom.png",
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/cluster-2-zoom.png",
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/cluster-3-zoom.png",
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/cluster-4-zoom.png",
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/cluster-5-zoom.png",
+    "outputs/engineering-perturbations/naca-rotate-17deg-exact-union/previews/full-domain.png"
+  ],
+  "scope": "exact-union rotated NACA mechanical validation; no threshold changes or performance claim",
+  "format": "cartmesh2d-rotated-naca-exact-union-v1",
+  "solver": "PASS",
+  "Q1": "FAIL",
+  "native_seconds": 24.3147362,
+  "peak_rss_bytes": 176734208,
+  "execution": {
+    "command": [
+      "/usr/bin/time",
+      "-l",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/inputs/naca-rotate-17deg.xy",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/naca-rotate-17deg-exact-union/mesh",
+      "11",
+      "0.25",
+      "0.1",
+      "exterior",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-perturbations/naca-rotate-17deg-exact-union/openfoam",
+      "0",
+      "--size-field",
+      "--reference-length",
+      "1",
+      "--wall-relative-size",
+      "0.01",
+      "--background-relative-size",
+      "0.025",
+      "--far-field-spans",
+      "0.5",
+      "--cells-per-level",
+      "3",
+      "--max-safe-wall-level",
+      "11"
+    ],
+    "timeout_seconds": 120,
+    "status": "passed",
+    "returncode": 0,
+    "elapsed_seconds": 25.55298041703645
+  },
+  "tests": {
+    "ctest": "98/98",
+    "ctest_seconds": 77.75,
+    "desktop": "54/54",
+    "minimal_regression": "Two original cells at scales .001/1/1000; original wall edges, area and both source identities retained."
+  },
+  "before": {
+    "solver": "FAIL",
+    "issue_count": 9,
+    "diagnostic": "outputs/engineering-perturbations/naca-rotate-17deg-diagnostic/mesh.failed.solver.cm2d"
+  },
+  "limitations": [
+    "Fixed 17 degree rotation only, not universal rotation robustness.",
+    "Final wall owner tangential request exceedance fraction 0.14238230626422754.",
+    "Q1 and expanded checkMesh remain FAIL.",
+    "No new packaged desktop run for this algorithm fix yet."
+  ],
+  "combined_final_tests": {
+    "ctest": "99/99",
+    "ctest_seconds": 62.69,
+    "desktop": "54/54",
+    "log": "outputs/engineering-perturbations/reader-partition-full-ctest.log"
+  }
+}

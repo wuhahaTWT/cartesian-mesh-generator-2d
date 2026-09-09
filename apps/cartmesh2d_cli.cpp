@@ -1119,6 +1119,22 @@ int main(int argc, char** argv) {
                  <<qualityContractStatusName(qualityContract->status())<<'\n'
                  <<"quality_contract_json="<<qualityContractPath.string()<<'\n';
         if (!solverQuality->valid()) {
+            // Keep the rejected topology inspectable under an explicit failed
+            // name. Normal solver files and OpenFOAM export remain behind the
+            // quality gate, and the process still returns failure.
+            const auto failedMeshPath=outputPrefix.string()+".failed.solver.cm2d";
+            std::string diagnosticError;
+            if (writeCm2dTopology(solverTopology->topology,failedMeshPath,&diagnosticError))
+                std::cerr<<"failed_solver_cm2d="<<failedMeshPath<<'\n';
+            else std::cerr<<"failed topology diagnostic could not be written: "
+                          <<diagnosticError<<'\n';
+            const auto failedQualityPath=outputPrefix.string()+".failed.solver-quality.json";
+            {
+                std::ofstream out(failedQualityPath);
+                out<<solverQualityReportToJson(*solverQuality);
+                if (out.good()) std::cerr<<"failed_solver_quality_json="<<failedQualityPath<<'\n';
+                else std::cerr<<"failed quality diagnostic could not be written\n";
+            }
             std::cerr<<"solver-quality gate failed with "<<solverQuality->issues.size()
                      <<" issue(s) after "
                      <<solverTopology->qualityAgglomeratedSourceCellCount

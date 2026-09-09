@@ -1,0 +1,541 @@
+{
+  "format": "cartmesh2d-hybrid-r01-survey-v1",
+  "scope": {
+    "cases": [
+      "circle",
+      "nozzle",
+      "naca2412_dense"
+    ],
+    "requests": {
+      "circle": {
+        "r01": {
+          "wall": 0.01,
+          "background": 0.025,
+          "first": 0.0025,
+          "layers": 4,
+          "band": 3
+        },
+        "r02": {
+          "wall": 0.005,
+          "background": 0.0125,
+          "first": 0.00125,
+          "layers": 4,
+          "band": 3
+        },
+        "r03": {
+          "wall": 0.0025,
+          "background": 0.0125,
+          "first": 0.000625,
+          "layers": 4,
+          "band": 40
+        }
+      },
+      "naca2412_dense": {
+        "r01": {
+          "wall": 0.01,
+          "background": 0.025,
+          "first": 0.0025,
+          "layers": 4,
+          "band": 3
+        },
+        "r02": {
+          "wall": 0.005,
+          "background": 0.0125,
+          "first": 0.00125,
+          "layers": 4,
+          "band": 3
+        },
+        "r03": {
+          "wall": 0.0025,
+          "background": 0.0125,
+          "first": 0.000625,
+          "layers": 4,
+          "band": 40
+        }
+      },
+      "nozzle": {
+        "r01": {
+          "wall": 0.005,
+          "background": 0.0125,
+          "first": 0.00125,
+          "layers": 4,
+          "band": 3
+        },
+        "r02": {
+          "wall": 0.0025,
+          "background": 0.0125,
+          "first": 0.000625,
+          "layers": 4,
+          "band": 40
+        },
+        "r03": {
+          "wall": 0.00125,
+          "background": 0.0125,
+          "first": 0.0003125,
+          "layers": 4,
+          "band": 40
+        }
+      }
+    },
+    "selected_cases": [
+      "circle",
+      "nozzle",
+      "naca2412_dense"
+    ],
+    "selected_requests": [
+      "r01"
+    ]
+  },
+  "cli_sha256_at_generation": "9f2dbd943e07a85ba1558028437b1b6a5587a4edd4bf0e88cd0cd2db5de1c5ae",
+  "original_measurement_summary": {
+    "format": "cartmesh2d-engineering-hybrid-survey-v1",
+    "scope": {
+      "cases": [
+        "circle",
+        "nozzle",
+        "naca2412_dense"
+      ],
+      "requests": {
+        "circle": {
+          "r01": {
+            "wall": 0.01,
+            "background": 0.025,
+            "first": 0.0025,
+            "layers": 4,
+            "band": 3
+          },
+          "r02": {
+            "wall": 0.005,
+            "background": 0.0125,
+            "first": 0.00125,
+            "layers": 4,
+            "band": 3
+          },
+          "r03": {
+            "wall": 0.0025,
+            "background": 0.0125,
+            "first": 0.000625,
+            "layers": 4,
+            "band": 40
+          }
+        },
+        "naca2412_dense": {
+          "r01": {
+            "wall": 0.01,
+            "background": 0.025,
+            "first": 0.0025,
+            "layers": 4,
+            "band": 3
+          },
+          "r02": {
+            "wall": 0.005,
+            "background": 0.0125,
+            "first": 0.00125,
+            "layers": 4,
+            "band": 3
+          },
+          "r03": {
+            "wall": 0.0025,
+            "background": 0.0125,
+            "first": 0.000625,
+            "layers": 4,
+            "band": 40
+          }
+        },
+        "nozzle": {
+          "r01": {
+            "wall": 0.005,
+            "background": 0.0125,
+            "first": 0.00125,
+            "layers": 4,
+            "band": 3
+          },
+          "r02": {
+            "wall": 0.0025,
+            "background": 0.0125,
+            "first": 0.000625,
+            "layers": 4,
+            "band": 40
+          },
+          "r03": {
+            "wall": 0.00125,
+            "background": 0.0125,
+            "first": 0.0003125,
+            "layers": 4,
+            "band": 40
+          }
+        }
+      },
+      "selected_cases": [
+        "circle",
+        "nozzle",
+        "naca2412_dense"
+      ],
+      "selected_requests": [
+        "r01"
+      ]
+    },
+    "cli": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+    "cli_sha256": "9f2dbd943e07a85ba1558028437b1b6a5587a4edd4bf0e88cd0cd2db5de1c5ae",
+    "size_field_auto_enabled": true,
+    "external_checkMesh": "not_run",
+    "cases": [
+      {
+        "case": "circle",
+        "request": "r01",
+        "reference_length": 2.0,
+        "fluid_region": "exterior",
+        "parameters": {
+          "wall": 0.01,
+          "background": 0.025,
+          "first": 0.0025,
+          "layers": 4,
+          "band": 3
+        },
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/circle/request-r01/mesh",
+          "11",
+          "0",
+          "11",
+          "4",
+          "0.01",
+          "1.2",
+          "0.5",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/circle/request-r01/openfoam",
+          "0.02",
+          "--small-alpha=0.1",
+          "--fluid-region=exterior",
+          "--reference-length",
+          "2.0",
+          "--wall-relative-size",
+          "0.01",
+          "--background-relative-size",
+          "0.025",
+          "--far-field-spans",
+          "0.5",
+          "--first-layer-relative-size",
+          "0.0025",
+          "--cells-per-level",
+          "3",
+          "--max-safe-wall-level",
+          "11"
+        ],
+        "wrapper_returncode": 124,
+        "timeout_seconds": 180.0,
+        "timed_out": true,
+        "native_completed_marker": false,
+        "native_mode": "unknown",
+        "native_elapsed_seconds": null,
+        "wrapper_elapsed_seconds": null,
+        "peak_rss_bytes": null,
+        "solver": "not_reported",
+        "Q1": "not_reported",
+        "external_checkMesh": "not_run",
+        "issues": [],
+        "status": "timeout",
+        "measurement_complete": false
+      },
+      {
+        "case": "nozzle",
+        "request": "r01",
+        "reference_length": 6.0,
+        "fluid_region": "interior",
+        "parameters": {
+          "wall": 0.005,
+          "background": 0.0125,
+          "first": 0.00125,
+          "layers": 4,
+          "band": 3
+        },
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/nozzle/request-r01/mesh",
+          "11",
+          "0",
+          "11",
+          "4",
+          "0.01",
+          "1.2",
+          "0.5",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/nozzle/request-r01/openfoam",
+          "0.02",
+          "--small-alpha=0.1",
+          "--fluid-region=interior",
+          "--reference-length",
+          "6.0",
+          "--wall-relative-size",
+          "0.005",
+          "--background-relative-size",
+          "0.0125",
+          "--far-field-spans",
+          "0.5",
+          "--first-layer-relative-size",
+          "0.00125",
+          "--cells-per-level",
+          "3",
+          "--max-safe-wall-level",
+          "11"
+        ],
+        "wrapper_returncode": 124,
+        "timeout_seconds": 180.0,
+        "timed_out": true,
+        "native_completed_marker": false,
+        "native_mode": "unknown",
+        "native_elapsed_seconds": null,
+        "wrapper_elapsed_seconds": null,
+        "peak_rss_bytes": null,
+        "solver": "not_reported",
+        "Q1": "not_reported",
+        "external_checkMesh": "not_run",
+        "issues": [],
+        "status": "timeout",
+        "measurement_complete": false
+      },
+      {
+        "case": "naca2412_dense",
+        "request": "r01",
+        "reference_length": 1.0,
+        "fluid_region": "exterior",
+        "parameters": {
+          "wall": 0.01,
+          "background": 0.025,
+          "first": 0.0025,
+          "layers": 4,
+          "band": 3
+        },
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/naca2412_dense.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh",
+          "11",
+          "0",
+          "11",
+          "4",
+          "0.01",
+          "1.2",
+          "0.5",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/openfoam",
+          "0.02",
+          "--small-alpha=0.1",
+          "--fluid-region=exterior",
+          "--reference-length",
+          "1.0",
+          "--wall-relative-size",
+          "0.01",
+          "--background-relative-size",
+          "0.025",
+          "--far-field-spans",
+          "0.5",
+          "--first-layer-relative-size",
+          "0.0025",
+          "--cells-per-level",
+          "3",
+          "--max-safe-wall-level",
+          "11"
+        ],
+        "wrapper_returncode": 0,
+        "timeout_seconds": 180.0,
+        "timed_out": false,
+        "native_completed_marker": true,
+        "native_mode": "hybrid",
+        "native_elapsed_seconds": 20.4102,
+        "wrapper_elapsed_seconds": 20.42,
+        "peak_rss_bytes": 217710592,
+        "solver": "pass",
+        "Q1": "FAIL",
+        "external_checkMesh": "not_run",
+        "issues": [
+          "column wall endpoints do not identify a source wall edge"
+        ],
+        "status": "success",
+        "resolution_independent": {
+          "valid": true,
+          "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+          "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.resolution.json",
+          "reference_length": 1.0,
+          "measured": {
+            "cell_count": 18574,
+            "wall_edge_count": 239,
+            "wall_length_over_reference": 2.042693194095103,
+            "wall_owner_tangential_exceedance_length_fraction": 0.004872539387798151,
+            "actual": {
+              "sqrt_area_over_reference": {
+                "min": 0.000874733754666202,
+                "p50": 0.015625654796875,
+                "p95": 0.015625654796875055,
+                "max": 0.015625654796875166
+              },
+              "wall_edge_length_over_reference": {
+                "min": 3.820828566473808e-05,
+                "p50": 0.008926634389645121,
+                "p95": 0.009828454212388323,
+                "max": 0.009953103045415601
+              },
+              "wall_owner_tangential_extent_over_reference": {
+                "min": 0.001560554028381262,
+                "p50": 0.008926634389645157,
+                "p95": 0.009842398340350953,
+                "max": 0.01050759010123284
+              },
+              "wall_owner_normal_extent_over_reference": {
+                "min": 0.0012511368978550808,
+                "p50": 0.0025000000000000014,
+                "p95": 0.0025000000000000074,
+                "max": 0.009953978274946899
+              }
+            }
+          },
+          "tolerance": {
+            "absolute": 2e-12,
+            "relative": 2e-10
+          },
+          "issues": []
+        },
+        "openfoam_independent": {
+          "valid": true,
+          "point_count": 38326,
+          "face_count": 74885,
+          "internal_face_count": 36986,
+          "cell_count": 18574,
+          "min_volume": 1.5303182831048873e-08,
+          "max_closure_residual": 7.61387923135979e-20,
+          "max_constant_flux_divergence_residual": 2.821849478874527e-13,
+          "physical_boundary_area_vector": [
+            1.214306433183765e-17,
+            5.561957144850638e-17,
+            0.0
+          ],
+          "global_constant_flux_balance": -8.18572640226556e-18,
+          "patches": [
+            {
+              "name": "wall_0",
+              "type": "wall",
+              "nFaces": 239,
+              "startFace": 36986
+            },
+            {
+              "name": "left",
+              "type": "patch",
+              "nFaces": 128,
+              "startFace": 37225
+            },
+            {
+              "name": "right",
+              "type": "patch",
+              "nFaces": 128,
+              "startFace": 37353
+            },
+            {
+              "name": "bottom",
+              "type": "patch",
+              "nFaces": 128,
+              "startFace": 37481
+            },
+            {
+              "name": "top",
+              "type": "patch",
+              "nFaces": 128,
+              "startFace": 37609
+            },
+            {
+              "name": "frontAndBack",
+              "type": "empty",
+              "nFaces": 37148,
+              "startFace": 37737
+            }
+          ],
+          "issues": []
+        },
+        "cell_count": 18574,
+        "boundary_layer_coverage_status": "evaluated",
+        "boundary_layer_summary": {
+          "status": "evaluated",
+          "requested_cells": 952,
+          "constructed_cells": 932,
+          "retained_cells": 932,
+          "first_layer_wall_length_fraction": 0.9976981278274514,
+          "full_requested_layers_wall_length_fraction": 0.9802631690827522,
+          "first_layer_height_exceedance_wall_length_fraction": 0
+        },
+        "pure_fallback": false,
+        "measurement_complete": false
+      }
+    ],
+    "process_success_count": 1,
+    "hybrid_certified_count": 0,
+    "fallback_count": 0,
+    "measurement_complete_count": 0,
+    "notes": [
+      "Requested quantities are measurements, not claims of 1e4/5e4/1e5 cells.",
+      "Solver, Q1, external checkMesh and layer authentication are separate reports.",
+      "Relative options implicitly create the size-field policy in cartmesh2d_hybrid_cli; --size-field is not required."
+    ]
+  },
+  "naca_post_reader_fix": {
+    "independent_layer_reader": {
+      "claimed_layer_polygon_count": 932,
+      "final_cm2d": "outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+      "first_layer_height_exceedance_wall_length_fraction": 0.0,
+      "first_layer_normal_height_max_over_reference": 0.002500000000000209,
+      "first_layer_wall_length_fraction": 0.9976981278274514,
+      "full_requested_layers_wall_length_fraction": 0.9802631690827518,
+      "issues": [],
+      "report": "outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.resolution.json",
+      "source_layer_polygon_count": 932,
+      "source_vtk": "outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.hybrid.vtk",
+      "source_wall_length": 2.0426931940951043,
+      "valid": true,
+      "wall_length_basis": "final_embedded_edges_partitioned_by_declared_columns"
+    },
+    "external": {
+      "scope": "existing NACA hybrid survey r01; checkMesh only, no solver",
+      "case": "outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/openfoam",
+      "independent_cm2d": {
+        "valid": true,
+        "cell_count": 18574,
+        "issues": []
+      },
+      "checkMesh": {
+        "standard": {
+          "returncode": 0,
+          "mesh_ok": true,
+          "failed": [],
+          "concave_cells": null
+        },
+        "expanded": {
+          "returncode": 0,
+          "mesh_ok": false,
+          "failed": [
+            "Failed 1 mesh checks."
+          ],
+          "concave_cells": 554
+        }
+      },
+      "notes": [
+        "missing values are null when diagnostics are absent; original survey command/measurement records were not overwritten"
+      ]
+    }
+  },
+  "reader_fix": "Declared column wall segments must partition the complete final embedded boundary with no gaps or overlaps. Source layer polygons independently authenticate retained cells; stopped columns require null height.",
+  "limitations": [
+    "Circle and nozzle hit 180-second deadlines and lack final certified outputs.",
+    "NACA has partial stopped columns: 932 of 952 requested layer cells retained.",
+    "NACA Solver PASS, Q1 FAIL and expanded checkMesh FAIL (554 concave cells).",
+    "Post-fix reader revalidated existing bytes; no mesh regeneration is claimed."
+  ],
+  "combined_final_tests": {
+    "ctest": "99/99",
+    "ctest_seconds": 62.69,
+    "desktop": "54/54",
+    "log": "outputs/engineering-perturbations/reader-partition-full-ctest.log"
+  }
+}
