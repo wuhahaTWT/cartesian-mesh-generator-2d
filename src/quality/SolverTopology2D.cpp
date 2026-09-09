@@ -1378,6 +1378,11 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         std::optional<RepartitionBatch2D> bestTopology;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
+            // Zero issues has score (0,0,0), the absolute minimum. The first
+            // such candidate already wins the exhaustive strict ordering;
+            // later candidates cannot replace it. Keep the sequential oracle
+            // exhaustive so equivalence remains independently testable.
+            if (useBatch && bestScore.issueCount==0U) break;
             const auto polygonStart=ProfileClock::now();
             const auto merged=mergeAdjacentPolygonsSimple(
                 topologyCellPolygon(result.topology,first),
@@ -1413,6 +1418,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
             }
             for (const auto& [firstPiece,secondPiece]:splits) {
+                if (useBatch && bestScore.issueCount==0U) break;
                 auto candidate=repartitionPair(result.topology,first,second,
                                                firstPiece,secondPiece,
                                                domain,boundary,tol,profile,
@@ -1435,9 +1441,11 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     (result.immutableCells.empty() || !result.immutableCells[issue.cellId]))
                     wallCells.insert(issue.cellId);
             for (const auto cell:wallCells) {
+                if (useBatch && bestScore.issueCount==0U) break;
                 const auto splits=convexTwoPieceSplits(
                     topologyCellPolygon(result.topology,cell),domain,boundary,tol,true,allowCollinear);
                 for (const auto& [firstPiece,secondPiece]:splits) {
+                    if (useBatch && bestScore.issueCount==0U) break;
                     auto candidate=repartitionPair(result.topology,cell,cell,
                         firstPiece,secondPiece,domain,boundary,tol,profile,result.immutableCells);
                     if (!candidate.topology.valid()) continue;
@@ -2857,6 +2865,8 @@ SolverTopologyResult2D buildSolverTopology2D(
         std::optional<std::vector<std::vector<std::size_t>>> bestLineages;
         QualityScore2D bestScore=qualityScore(quality);
         for (const auto& [first,second]:pairs) {
+            // No candidate can improve on a zero-issue authoritative score.
+            if (bestScore.issueCount==0U) break;
             if (second>=sourcePolygons.size()) continue;
             const auto polygonStart=ProfileClock::now();
             const auto merged=mergeAdjacentPolygonsSimple(

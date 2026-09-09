@@ -361,6 +361,18 @@ async function runSmoke() {
   const outputDirectory = argument('out') || '';
   const method = argument('method') || 'cutcell';
   const shot = argument('shot');
+  // Optional physical sizing for repeatable large-mesh smoke runs. These
+  // populate the real form after loading the geometry, through its events.
+  const sizingInputs = Object.fromEntries([
+    ['wallRelativeSize', 'wall-relative-size'],
+    ['backgroundRelativeSize', 'background-relative-size'],
+    ['referenceLength', 'reference-length'],
+    ['relativePadding', 'padding-relative-size'],
+    ['relativeBandCells', 'band-cells'],
+    ['firstLayerRelativeSize', 'first-layer-relative-size'],
+    ['nLayers', 'layers'],
+    ['smallAlpha', 'small-alpha'],
+  ].map(([id, flag]) => [id, argument(flag)]).filter(([, value]) => value !== null));
   if (outputDirectory) await fs.mkdir(outputDirectory, { recursive: true });
 
   // The renderer's init awaits the catalog over IPC, so the hook appears a moment
@@ -389,6 +401,25 @@ async function runSmoke() {
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
+    const sizingInputs = ${JSON.stringify(sizingInputs)};
+    if ('referenceLength' in sizingInputs) {
+      const referenceMode = document.getElementById('referenceMode');
+      referenceMode.value = 'explicit';
+      referenceMode.dispatchEvent(new Event('change'));
+    }
+    for (const [id, value] of Object.entries(sizingInputs)) {
+      const input = document.getElementById(id);
+      input.value = value;
+      if (!input.checkValidity() || !Number.isFinite(Number(input.value)))
+        throw new Error('Invalid smoke sizing input: ' + id);
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+    }
+    if (${JSON.stringify(argument('allow-unsafe') === 'true')}) {
+      const input = document.getElementById('relativeAllowUnsafe');
+      input.checked = true;
+      input.dispatchEvent(new Event('change'));
+    }
     const regionInput = document.querySelector('#regionList input');
     if (regionInput) {
       regionInput.focus();

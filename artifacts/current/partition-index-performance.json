@@ -1,0 +1,332 @@
+{
+  "format": "cartmesh2d-partition-index-performance-v1",
+  "baseline_commit": "9ebacef",
+  "changes": [
+    "Stop exhaustive repair after an authoritative zero-issue optimum; no quality threshold changes.",
+    "Deduplicate integer handles before coordinate sorting; direct dense-ID lookup and sorted column arrays preserve coordinate order."
+  ],
+  "cases": [
+    {
+      "name": "circle-r02",
+      "stages": {
+        "optimal-score": {
+          "cell_count": 55904,
+          "native_seconds": 11.1885438,
+          "wrapper_elapsed_seconds": 11.23,
+          "peak_rss_bytes": 461012992,
+          "cm2d_sha256": "9bb6c0d67d224a67feea5b43cdccdbbc03eebcf76b031645f8f03e58255cf534",
+          "solver": "PASS",
+          "Q1": "FAIL",
+          "measurement_complete": true
+        },
+        "partition-index": {
+          "cell_count": 55904,
+          "native_seconds": 9.6819115,
+          "wrapper_elapsed_seconds": 10.67,
+          "peak_rss_bytes": 456097792,
+          "cm2d_sha256": "9bb6c0d67d224a67feea5b43cdccdbbc03eebcf76b031645f8f03e58255cf534",
+          "solver": "PASS",
+          "Q1": "FAIL",
+          "measurement_complete": true
+        }
+      },
+      "byte_identical": true,
+      "independent_readers": {
+        "optimal-score": {
+          "resolution": true,
+          "openfoam": true
+        },
+        "partition-index": {
+          "resolution": true,
+          "openfoam": true
+        }
+      }
+    },
+    {
+      "name": "naca-r02",
+      "stages": {
+        "optimal-score": {
+          "cell_count": 66208,
+          "native_seconds": 83.7535632,
+          "wrapper_elapsed_seconds": 83.8,
+          "peak_rss_bytes": 598786048,
+          "cm2d_sha256": "096d5d3d74f4555f0e6bf5bc80ae9e4e120f7406382b79f6abeee57b3ba68cc7",
+          "solver": "PASS",
+          "Q1": "FAIL",
+          "measurement_complete": true
+        },
+        "partition-index": {
+          "cell_count": 66208,
+          "native_seconds": 71.4368481,
+          "wrapper_elapsed_seconds": 71.5,
+          "peak_rss_bytes": 574849024,
+          "cm2d_sha256": "096d5d3d74f4555f0e6bf5bc80ae9e4e120f7406382b79f6abeee57b3ba68cc7",
+          "solver": "PASS",
+          "Q1": "FAIL",
+          "measurement_complete": true
+        }
+      },
+      "byte_identical": true,
+      "independent_readers": {
+        "optimal-score": {
+          "resolution": true,
+          "openfoam": true
+        },
+        "partition-index": {
+          "resolution": true,
+          "openfoam": true
+        }
+      }
+    }
+  ],
+  "external_checkMesh": "not_run",
+  "validation": {
+    "targeted_native": "shared_construction and solver_export passed; exhaustive point-scan partition oracle at 1e-6/1/1e6",
+    "full_ctest": "98/98 passed, 76.46 seconds",
+    "desktop_tests": "54/54 passed"
+  },
+  "limitations": [
+    "Each timing is a single observation on this machine.",
+    "Whole-topology candidate rebuilding remains; this is not a complexity-bound improvement."
+  ],
+  "high_resolution_circle": {
+    "status": "success",
+    "timeout_seconds": 300,
+    "native_returncode": 0,
+    "native_seconds": 252.989479,
+    "wrapper_elapsed_seconds": 253.11,
+    "rss_bytes": 1066795008,
+    "solver_cm2d_sha256": "ae2b531dc0075efc5bb3a908e8bc14e60cc37a5e763ba561b3e313cffc44cf4e",
+    "independent_resolution": {
+      "valid": true,
+      "cell_count": 153208,
+      "actual": {
+        "sqrt_area_over_reference": {
+          "max": 0.007812500000000111,
+          "min": 0.0004482108527848799,
+          "p50": 0.00390625,
+          "p95": 0.0078125
+        },
+        "wall_edge_length_over_reference": {
+          "max": 0.0025266475912496334,
+          "min": 4.3751075599827934e-05,
+          "p50": 0.0020410102146082897,
+          "p95": 0.0025266475912495982
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "max": 0.0027273802193809966,
+          "min": 0.0002907502920490924,
+          "p50": 0.0012242315900795493,
+          "p95": 0.0024981123997204185
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "max": 0.0032436684531662527,
+          "min": 0.00046449208916366197,
+          "p50": 0.002300778451402643,
+          "p95": 0.002933311551230177
+        }
+      },
+      "wall_owner_tangential_exceedance_length_fraction": 0.3392264996057073
+    },
+    "independent_openfoam": {
+      "valid": true,
+      "cell_count": 153208,
+      "face_count": 614972,
+      "issues": []
+    },
+    "native_quality": "PASS",
+    "q1_quality_contract": "FAIL",
+    "profile": {
+      "solver_profile_initial_partition_seconds": "0.613402083",
+      "solver_profile_build_global_topology_seconds": "223.463431",
+      "solver_profile_full_quality_seconds": "9.71893846",
+      "solver_profile_candidate_generation_seconds": "0.000684381",
+      "solver_profile_candidate_polygon_work_seconds": "0.143607458",
+      "solver_profile_candidate_global_rebuild_seconds": "222.890062",
+      "solver_profile_candidate_quality_seconds": "9.1767565",
+      "solver_profile_source_repair_seconds": "15.335072",
+      "solver_profile_final_repartition_seconds": "230.611417",
+      "solver_profile_global_topology_rebuild_calls": "420",
+      "solver_profile_full_quality_calls": "437",
+      "solver_profile_candidate_topology_count": "419",
+      "solver_profile_candidate_quality_evaluation_count": "419",
+      "solver_profile_source_candidate_pairs": "22",
+      "solver_profile_repartition_candidate_pairs": "416",
+      "solver_profile_candidate_splits": "760",
+      "solver_profile_repair_patch_count": "80",
+      "solver_profile_accepted_topology_commit_count": "16",
+      "solver_profile_rejected_candidate_count": "403",
+      "solver_profile_maximum_quality_issue_count": "16",
+      "solver_profile_accepted_source_repairs": "0",
+      "solver_profile_accepted_repartitions": "44",
+      "solver_profile_source_repair_iterations": "1",
+      "solver_profile_repartition_iterations": "16"
+    },
+    "interpretation": "Original fixed r03 sizing; successful with a 300 second budget after earlier 180 second timeouts. This is not an equal-deadline comparison. Wall tangential target is not fully achieved: 33.9226 percent of wall length exceeds the request.",
+    "external_checkMesh": {
+      "standard": {
+        "command": "docker run --name cartmesh-r03-check-standard --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/circle-r03-partition-index/openfoam:/home/openfoam/workingDir/case opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case",
+        "exit_code": 0,
+        "mesh_ok_text": true,
+        "unqualified_mesh_ok": true,
+        "failed_checks": [],
+        "concave_cells": 0,
+        "gate_lines": [
+          "    Non-orthogonality check OK.",
+          "Mesh OK."
+        ]
+      },
+      "expanded": {
+        "command": "docker run --name cartmesh-r03-check-expanded --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/circle-r03-partition-index/openfoam:/home/openfoam/workingDir/case opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case -allGeometry -allTopology",
+        "exit_code": 0,
+        "mesh_ok_text": false,
+        "unqualified_mesh_ok": false,
+        "failed_checks": [
+          "1"
+        ],
+        "concave_cells": 1388,
+        "gate_lines": [
+          "    Topological cell zip-up check OK.",
+          "    Non-orthogonality check OK.",
+          "    Cell determinant check OK.",
+          "    Face interpolation weight check OK.",
+          "    Face volume ratio check OK.",
+          "Failed 1 mesh checks."
+        ]
+      }
+    }
+  },
+  "desktop": {
+    "status": "\u751f\u6210\u5b8c\u6210",
+    "detail": "\u624b\u52a8\u751f\u6210\u6210\u529f\uff1b\u53ef\u5bfc\u51fa\u7ed3\u679c\u5305\u3000255.19 s",
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 720,
+      "windowHeight": 720,
+      "previewCells": 153208,
+      "exportedCells": 153208
+    },
+    "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/desktop-circle-r03.zip",
+    "screenshot": "artifacts/current/desktop-circle-153k.png",
+    "parameters": {
+      "reference_length": 2,
+      "wall_relative_size": 0.0025,
+      "background_relative_size": 0.0125,
+      "padding_relative_size": 0.5,
+      "band_cells": 40,
+      "small_alpha": 0.1,
+      "control": "manual",
+      "allow_unsafe_checkbox": true
+    },
+    "independent": {
+      "cells": 153208,
+      "cm2d": "outputs/engineering-scale/desktop-circle-r03/mesh-6CSkgC/circle.solver.cm2d",
+      "cm2d_sha256": "ae2b531dc0075efc5bb3a908e8bc14e60cc37a5e763ba561b3e313cffc44cf4e",
+      "expected_cli_sha256": "ae2b531dc0075efc5bb3a908e8bc14e60cc37a5e763ba561b3e313cffc44cf4e",
+      "independent_cm2d_reader": {
+        "cm2d": "outputs/engineering-scale/desktop-circle-r03/mesh-6CSkgC/circle.solver.cm2d",
+        "issues": [],
+        "measured": {
+          "actual": {
+            "sqrt_area_over_reference": {
+              "max": 0.007812500000000111,
+              "min": 0.0004482108527848799,
+              "p50": 0.00390625,
+              "p95": 0.0078125
+            },
+            "wall_edge_length_over_reference": {
+              "max": 0.0025266475912496334,
+              "min": 4.3751075599827934e-05,
+              "p50": 0.0020410102146082897,
+              "p95": 0.0025266475912495982
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "max": 0.0027273802193809966,
+              "min": 0.0002907502920490924,
+              "p50": 0.0012242315900795493,
+              "p95": 0.0024981123997204185
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "max": 0.0032436684531662527,
+              "min": 0.00046449208916366197,
+              "p50": 0.002300778451402643,
+              "p95": 0.002933311551230177
+            }
+          },
+          "cell_count": 153208,
+          "wall_edge_count": 1696,
+          "wall_length_over_reference": 3.1365484905462506,
+          "wall_owner_tangential_exceedance_length_fraction": 0.3392264996057073
+        },
+        "reference_length": 2.0,
+        "report": "outputs/engineering-scale/desktop-circle-r03/mesh-6CSkgC/circle.resolution.json",
+        "tolerance": {
+          "absolute": 2e-12,
+          "relative": 2e-10
+        },
+        "valid": true
+      },
+      "independent_openfoam_reader": {
+        "cell_count": 153208,
+        "face_count": 614972,
+        "global_constant_flux_balance": 1.734723475976807e-19,
+        "internal_face_count": 305836,
+        "issues": [],
+        "max_closure_residual": 1.6940658945086007e-21,
+        "max_constant_flux_divergence_residual": 0.0,
+        "min_volume": 1.5694763168292604e-09,
+        "patches": [
+          {
+            "nFaces": 1696,
+            "name": "wall_0",
+            "startFace": 305836,
+            "type": "wall"
+          },
+          {
+            "nFaces": 256,
+            "name": "left",
+            "startFace": 307532,
+            "type": "patch"
+          },
+          {
+            "nFaces": 256,
+            "name": "right",
+            "startFace": 307788,
+            "type": "patch"
+          },
+          {
+            "nFaces": 256,
+            "name": "bottom",
+            "startFace": 308044,
+            "type": "patch"
+          },
+          {
+            "nFaces": 256,
+            "name": "top",
+            "startFace": 308300,
+            "type": "patch"
+          },
+          {
+            "nFaces": 306416,
+            "name": "frontAndBack",
+            "startFace": 308556,
+            "type": "empty"
+          }
+        ],
+        "physical_boundary_area_vector": [
+          4.336808689942018e-19,
+          4.336808689942018e-19,
+          0.0
+        ],
+        "point_count": 310696,
+        "valid": true
+      },
+      "prior_checkMesh": "not rerun; same CM2D SHA as prior CLI check evidence",
+      "scope": "read-only desktop circle r03 final artifact; no regeneration/checkMesh rerun",
+      "sha_matches_expected": true,
+      "zip_bytes_match": true,
+      "zip_cm2d_sha256": "ae2b531dc0075efc5bb3a908e8bc14e60cc37a5e763ba561b3e313cffc44cf4e",
+      "zip_member": "mesh-6CSkgC/circle.solver.cm2d"
+    }
+  }
+}

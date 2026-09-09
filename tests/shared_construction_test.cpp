@@ -70,6 +70,45 @@ int main(int argc,char** argv) {
             <<shared.sharedPartitionCacheHits<<",\"identical\":"<<(failures?"false":"true")<<"}\n";
         return failures?1:0;
     }
+    // Exhaustive point-scan oracle for the indexed edge partition. Duplicated
+    // input handles, inactive points and both edge directions must not alter
+    // incidence. This covers horizontal, vertical and oblique supports.
+    for (const double scale:{1.e-6,1.,1.e6}) {
+        IntersectionRegistry2D registry;
+        std::vector<std::size_t> active;
+        for (int y=-3;y<=3;++y) for (int x=-3;x<=3;++x) {
+            const auto id=registry.internVertex({scale*x,scale*y},scale);
+            active.push_back(id); active.push_back(id);
+        }
+        const auto inactive=registry.internVertex({0.5*scale,0.5*scale},scale);
+        std::reverse(active.begin(),active.end());
+        SharedEdgePartition2D indexed(registry,active);
+        check(indexed.points().size()==49U,"active handles are unique despite duplicate cell uses");
+        rejects([&] { (void)indexed.denseId(inactive); },"inactive handle has no dense identity");
+        const auto addedLater=registry.internVertex({0.25*scale,0.25*scale},scale);
+        rejects([&] { (void)indexed.denseId(addedLater); },"snapshot excludes subsequent registry insertions");
+        const TolerancePolicy tol;
+        const double eps=tol.scale(scale);
+        for (std::size_t a=0;a<indexed.points().size();++a)
+            for (std::size_t b=a+1;b<indexed.points().size();++b) {
+                const auto p=indexed.points()[a],q=indexed.points()[b];
+                const auto direction=q-p;
+                const double tEps=eps/std::max(std::sqrt(squaredNorm(direction)),eps);
+                std::vector<std::pair<double,std::size_t>> oracle{{0,a},{1,b}};
+                for (std::size_t id=0;id<indexed.points().size();++id) {
+                    if (id==a || id==b || !pointOnSegment(indexed.points()[id],{p,q},tol)) continue;
+                    const double t=dot(indexed.points()[id]-p,direction)/squaredNorm(direction);
+                    if (t>tEps && t<1-tEps) oracle.emplace_back(t,id);
+                }
+                std::sort(oracle.begin(),oracle.end());
+                check(indexed.partition(a,b,eps,tol)==oracle,
+                      "indexed support partition matches exhaustive active-point oracle");
+                check(indexed.partition(b,a,eps,tol)==oracle,
+                      "reversed support consumes the same canonical partition");
+            }
+        check(indexed.partitionCount()==1176U && indexed.cacheHits()==1176U,
+              "each support is computed once per immutable snapshot");
+    }
     for (double scale:{1.e-6,1.,1.e6}) {
         IntersectionRegistry2D registry;
         registry.configureGrid({{0,0},{scale,scale}},4);
