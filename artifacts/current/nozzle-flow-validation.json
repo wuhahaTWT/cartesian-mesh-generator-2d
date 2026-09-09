@@ -1,0 +1,587 @@
+{
+  "format": "cartmesh2d-nozzle-flow-validation-v1",
+  "input": "examples/complex/nozzle_profile.xy",
+  "input_sha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e",
+  "physical_case": {
+    "inlet_velocity_m_per_s": [
+      0.1,
+      0,
+      0
+    ],
+    "nu_m2_per_s": 0.01,
+    "outlet_kinematic_pressure": 0,
+    "extrusion_m": 0.02,
+    "reference_length_m": 6,
+    "inlet_source_segment": 81,
+    "outlet_source_segment": 40,
+    "flow_regime": "fixed laminar case",
+    "pressure_units": "m2/s2",
+    "flux_units": "m3/s"
+  },
+  "cases": [
+    {
+      "name": "r01",
+      "final_cells": 2152,
+      "request": {
+        "wall_h_over_lref": 0.01,
+        "background_h_over_lref": 0.025,
+        "cells_per_level": 3
+      },
+      "solved_time": "279",
+      "pressure_drop_kinematic": 0.08624959288890768,
+      "relative_flux_imbalance": 1.0919464737175437e-12,
+      "inlet_flux": -0.00392,
+      "outlet_flux": 0.00392000000000428,
+      "last_initial_residuals": {
+        "Ux": [
+          1.83735383173e-09
+        ],
+        "Uy": [
+          9.99429162698e-09
+        ],
+        "p": [
+          5.28158718883e-09,
+          1.39621168251e-10
+        ]
+      },
+      "iterative_convergence_passed": true,
+      "topology": "PASS",
+      "solver": "PASS",
+      "Q1": "FAIL",
+      "standard_checkMesh": "PASS",
+      "expanded_checkMesh": "FAIL",
+      "expanded_concave_cells": 148
+    },
+    {
+      "name": "r02",
+      "final_cells": 6204,
+      "request": {
+        "wall_h_over_lref": 0.005,
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 3
+      },
+      "solved_time": "575",
+      "pressure_drop_kinematic": 0.08761272563863465,
+      "relative_flux_imbalance": 5.743395059429845e-12,
+      "inlet_flux": -0.00392,
+      "outlet_flux": 0.003919999999977486,
+      "last_initial_residuals": {
+        "Ux": [
+          1.14636020909e-09
+        ],
+        "Uy": [
+          9.7707485301e-09
+        ],
+        "p": [
+          9.14789650842e-09,
+          2.54431909321e-10
+        ]
+      },
+      "iterative_convergence_passed": true,
+      "topology": "PASS",
+      "solver": "PASS",
+      "Q1": "FAIL",
+      "standard_checkMesh": "PASS",
+      "expanded_checkMesh": "FAIL",
+      "expanded_concave_cells": 320
+    },
+    {
+      "name": "r03",
+      "final_cells": 52824,
+      "request": {
+        "wall_h_over_lref": 0.0025,
+        "background_h_over_lref": 0.0125,
+        "cells_per_level": 40
+      },
+      "solved_time": "3952",
+      "pressure_drop_kinematic": 0.08874177587784872,
+      "relative_flux_imbalance": 1.1384122811097797e-12,
+      "inlet_flux": -0.00392,
+      "outlet_flux": 0.003919999999995537,
+      "last_initial_residuals": {
+        "Ux": [
+          1.03520459934e-09
+        ],
+        "Uy": [
+          9.57970453922e-09
+        ],
+        "p": [
+          9.98485982771e-09,
+          1.19706038987e-10
+        ]
+      },
+      "iterative_convergence_passed": true,
+      "topology": "PASS",
+      "solver": "PASS",
+      "Q1": "FAIL",
+      "standard_checkMesh": "PASS",
+      "expanded_checkMesh": "FAIL",
+      "expanded_concave_cells": 496
+    }
+  ],
+  "comparison": {
+    "adjacent_pressure_relative_change": [
+      0.015558615940671778,
+      0.012722871815954943
+    ],
+    "outlet_profile": {
+      "adjacent_l2": [
+        0.002266419244390426,
+        0.0014925618632216863
+      ],
+      "common_y_interval": [
+        -0.95875,
+        0.95875
+      ],
+      "normalization": "sqrt(integral((Ua/meanUa-Ub/meanUb)^2)dy / interval_length)",
+      "normalized_profiles": [
+        [
+          0.03344813970559735,
+          0.08870433433155406,
+          0.14824525639918296,
+          0.21155878709075465,
+          0.2791661025440635,
+          0.3479986020759603,
+          0.4182752181696573,
+          0.4895283010161808,
+          0.5605736911043251,
+          0.63110713821336,
+          0.7025357168425074,
+          0.7737279484478925,
+          0.8439029704789728,
+          0.9137791899308817,
+          0.9827556294151253,
+          1.0487385582702577,
+          1.1141062266116388,
+          1.1785350720029435,
+          1.2387327449007568,
+          1.2975286240935284,
+          1.3550756175082668,
+          1.4074179869110646,
+          1.457263856102408,
+          1.504716814302689,
+          1.5461004754820193,
+          1.5843994283558918,
+          1.6188603203269663,
+          1.645958695858354,
+          1.6695010350819528,
+          1.6881286772402178,
+          1.6987533760666393,
+          1.7051398776693116,
+          1.7051399979171318,
+          1.698753724710172,
+          1.688129251098737,
+          1.669501839683832,
+          1.6459597152013834,
+          1.6188615454205983,
+          1.5844008562346164,
+          1.5461020985569962,
+          1.5047186265900356,
+          1.4572658493977855,
+          1.4074201477634753,
+          1.3550779318844195,
+          1.2975310374871567,
+          1.2387352538304783,
+          1.1785376756440555,
+          1.1141088732558542,
+          1.0487412234142537,
+          0.982758278969757,
+          0.9137817766442387,
+          0.8439054638652145,
+          0.7737302946428819,
+          0.7025379230123734,
+          0.6311092021177893,
+          0.5605755871896765,
+          0.48953002361309417,
+          0.41827676140039105,
+          0.3479999399030295,
+          0.2791672215115667,
+          0.21155967585973975,
+          0.14824588414793916,
+          0.0887047118041078,
+          0.03344827910444005
+        ],
+        [
+          0.033699681153776785,
+          0.08944187868604504,
+          0.15089101258057916,
+          0.21546781446913976,
+          0.28179775659152595,
+          0.34854826458743027,
+          0.4177985350719305,
+          0.4880791401391773,
+          0.5586436365661969,
+          0.6304881781730702,
+          0.7019600039993317,
+          0.7732329806011305,
+          0.844517084105525,
+          0.9144443248910861,
+          0.9831990889166186,
+          1.0508620470196888,
+          1.1161179476917593,
+          1.1798870339421141,
+          1.2417363222139064,
+          1.300678046603667,
+          1.3570831532888268,
+          1.4106825047981248,
+          1.4602057140833036,
+          1.5060753409506522,
+          1.5478367894776852,
+          1.5847309909876506,
+          1.617008818059483,
+          1.6443348129726778,
+          1.6667048483309606,
+          1.6835856469142112,
+          1.6949498022365355,
+          1.7010104738917113,
+          1.7010106349333811,
+          1.6949502836870367,
+          1.6835864474572182,
+          1.6667059649701004,
+          1.6443362296176245,
+          1.6170105248635835,
+          1.5847329751553316,
+          1.547839024647865,
+          1.5060777995851242,
+          1.4602083754645185,
+          1.4106853596103266,
+          1.3570861754043488,
+          1.3006812206902145,
+          1.241739651748111,
+          1.1798904345523218,
+          1.1161214258906815,
+          1.0508655325249148,
+          0.983202499696524,
+          0.9144476003537345,
+          0.8445202338031004,
+          0.7732359781331402,
+          0.7019628370157779,
+          0.6304908276570563,
+          0.5586460822875458,
+          0.48808135726605245,
+          0.41780051133308255,
+          0.3485499879873201,
+          0.2817992125610477,
+          0.2154689837786815,
+          0.1508918840429534,
+          0.08944244254256674,
+          0.03369992153404673
+        ],
+        [
+          0.032515041730536993,
+          0.08923635976650066,
+          0.14997880317112744,
+          0.2135997069500132,
+          0.2794436838935484,
+          0.34716329602594104,
+          0.4163084623811008,
+          0.4865604023343609,
+          0.5576101559759725,
+          0.6291245481051597,
+          0.7008247798375399,
+          0.7724088213005185,
+          0.8435810332203837,
+          0.9140150676397015,
+          0.9834308877590443,
+          1.0514162654542183,
+          1.1176079975886508,
+          1.1818941632144007,
+          1.2441087917127431,
+          1.303618864464872,
+          1.359957921680961,
+          1.413005941178878,
+          1.4623944470229837,
+          1.5077873223734566,
+          1.5490480281908612,
+          1.5856640664022408,
+          1.6176463163859849,
+          1.6446756192455407,
+          1.6665239112452657,
+          1.683195507488491,
+          1.6942414075912144,
+          1.6998784189949225,
+          1.6998789398850394,
+          1.694242972633846,
+          1.6831981102524665,
+          1.6665275344637553,
+          1.6446802377824874,
+          1.6176518974495941,
+          1.5856705634413013,
+          1.5490553842334907,
+          1.507795470965814,
+          1.462403317906523,
+          1.4130154538354722,
+          1.3599679880519289,
+          1.3036293887270323,
+          1.2441196338500808,
+          1.1819053087105027,
+          1.1176193998716917,
+          1.0514276328293293,
+          0.9834421733181693,
+          0.9140261619009417,
+          0.8435918298154955,
+          0.7724192117454519,
+          0.7008346613843497,
+          0.6291338236680978,
+          0.5576187284170001,
+          0.48656819393237205,
+          0.41631540446263055,
+          0.34716932859627153,
+          0.2794487557533038,
+          0.21360377295886548,
+          0.1499818254052347,
+          0.08923829847467571,
+          0.03251583126137768
+        ]
+      ],
+      "sample_y": [
+        -0.95875,
+        -0.928313492063492,
+        -0.8978769841269841,
+        -0.8674404761904762,
+        -0.8370039682539683,
+        -0.8065674603174603,
+        -0.7761309523809524,
+        -0.7456944444444444,
+        -0.7152579365079366,
+        -0.6848214285714286,
+        -0.6543849206349206,
+        -0.6239484126984127,
+        -0.5935119047619049,
+        -0.5630753968253969,
+        -0.5326388888888889,
+        -0.502202380952381,
+        -0.471765873015873,
+        -0.44132936507936515,
+        -0.41089285714285717,
+        -0.3804563492063492,
+        -0.3500198412698412,
+        -0.31958333333333333,
+        -0.28914682539682535,
+        -0.2587103174603175,
+        -0.2282738095238096,
+        -0.19783730158730162,
+        -0.16740079365079374,
+        -0.13696428571428565,
+        -0.10652777777777778,
+        -0.07609126984126979,
+        -0.04565476190476192,
+        -0.015218253968253936,
+        0.015218253968253936,
+        0.04565476190476181,
+        0.07609126984126968,
+        0.10652777777777778,
+        0.13696428571428565,
+        0.16740079365079374,
+        0.19783730158730162,
+        0.2282738095238095,
+        0.2587103174603176,
+        0.28914682539682524,
+        0.31958333333333333,
+        0.3500198412698412,
+        0.3804563492063493,
+        0.41089285714285717,
+        0.44132936507936504,
+        0.47176587301587314,
+        0.5022023809523808,
+        0.5326388888888889,
+        0.5630753968253968,
+        0.5935119047619049,
+        0.6239484126984125,
+        0.6543849206349206,
+        0.6848214285714287,
+        0.7152579365079366,
+        0.7456944444444444,
+        0.7761309523809523,
+        0.8065674603174604,
+        0.8370039682539681,
+        0.8674404761904762,
+        0.8978769841269842,
+        0.9283134920634921,
+        0.95875
+      ]
+    },
+    "pressure_drop": [
+      0.08624959288890768,
+      0.08761272563863465,
+      0.08874177587784872
+    ],
+    "relative_flux_imbalance": [
+      1.0919464737175437e-12,
+      5.743395059429845e-12,
+      1.1384122811097797e-12
+    ]
+  },
+  "independent_postprocess": {
+    "mode": "postprocess-final",
+    "comparison": [
+      {
+        "case": "r01",
+        "requested_time": 279,
+        "postprocess_returncode": 0,
+        "postprocess_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.00392,
+          "inlet_areaAverage_p": 0.0862495928889,
+          "outlet_areaAverage_p": 0.0
+        },
+        "evaluate_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.00392000000000428,
+          "inlet_areaAverage_p": 0.08624959288890768,
+          "outlet_areaAverage_p": 0.0
+        },
+        "absolute_errors": [
+          0.0,
+          4.2804301769727715e-15,
+          7.688294445529209e-15,
+          0.0
+        ],
+        "time_match": true
+      },
+      {
+        "case": "r02",
+        "requested_time": 575,
+        "postprocess_returncode": 0,
+        "postprocess_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.00391999999998,
+          "inlet_areaAverage_p": 0.0876127256386,
+          "outlet_areaAverage_p": 0.0
+        },
+        "evaluate_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.003919999999977486,
+          "inlet_areaAverage_p": 0.08761272563863465,
+          "outlet_areaAverage_p": 0.0
+        },
+        "absolute_errors": [
+          0.0,
+          2.514481678428382e-15,
+          3.46528361561127e-14,
+          0.0
+        ],
+        "time_match": true
+      },
+      {
+        "case": "r03",
+        "requested_time": 3952,
+        "postprocess_returncode": 0,
+        "postprocess_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.00392,
+          "inlet_areaAverage_p": 0.0887417758778,
+          "outlet_areaAverage_p": 0.0
+        },
+        "evaluate_values": {
+          "inlet_phi": -0.00392,
+          "outlet_phi": 0.003919999999995537,
+          "inlet_areaAverage_p": 0.08874177587784872,
+          "outlet_areaAverage_p": 0.0
+        },
+        "absolute_errors": [
+          0.0,
+          4.462576141950336e-15,
+          4.872491299323656e-14,
+          0.0
+        ],
+        "time_match": true
+      }
+    ],
+    "expanded_checkMesh": {
+      "r01": {
+        "failed_mesh_checks": [
+          "Failed 1 mesh checks."
+        ],
+        "concave_cells": 148
+      },
+      "r02": {
+        "failed_mesh_checks": [
+          "Failed 1 mesh checks."
+        ],
+        "concave_cells": 320
+      },
+      "r03": {
+        "failed_mesh_checks": [
+          "Failed 1 mesh checks."
+        ],
+        "concave_cells": 496
+      }
+    },
+    "units": {
+      "phi": "m3/s",
+      "pressure": "m2/s2 (kinematic)",
+      "profile": "Ux/area_average_Ux"
+    }
+  },
+  "validation": {
+    "ctest": "98/98",
+    "ctest_seconds": 69.56,
+    "frontend_tests": "54/54",
+    "driver_end_to_end_from_source_scope": [
+      "r01"
+    ],
+    "driver_end_to_end_valid": true
+  },
+  "limitations": [
+    "This fixes one piecewise-linear nozzle geometry and one laminar flow condition.",
+    "The inlet has uniform velocity adjoining no-slip walls; observed inlet-corner pressure peaks remain visible.",
+    "Grid differences are not an error estimate against an exact engineering-flow solution.",
+    "The fine grid initially failed the residual criterion at iteration 2000; that evidence is retained, and continuation reached the same criterion at 3952.",
+    "Q1 and expanded checkMesh failures remain; successful CFD iteration does not waive them.",
+    "The full three-grid run used preserved staged commands and a fine-grid restart; the new fresh-run driver has separately been executed only on r01."
+  ],
+  "raw_evidence_directory": "outputs/engineering-cfd/nozzle-flow",
+  "interior_pressure_crosscheck": {
+    "mode": "interior-pressure-postprocess",
+    "sections": [
+      {
+        "case": "r01",
+        "time": 279,
+        "areas": [
+          0.03580711874,
+          0.03580711874
+        ],
+        "p_xm25": 0.0735007222261,
+        "p_xp25": 3.1933157092e-05,
+        "section_delta_p": 0.073468789069008,
+        "area_equal": true
+      },
+      {
+        "case": "r02",
+        "time": 575,
+        "areas": [
+          0.03580711874,
+          0.03580711874
+        ],
+        "p_xm25": 0.0727428649159,
+        "p_xp25": 4.1196783428e-05,
+        "section_delta_p": 0.072701668132472,
+        "area_equal": true
+      },
+      {
+        "case": "r03",
+        "time": 3952,
+        "areas": [
+          0.03580711874,
+          0.03580711874
+        ],
+        "p_xm25": 0.0715749628686,
+        "p_xp25": 1.17293286153e-05,
+        "section_delta_p": 0.0715632335399847,
+        "area_equal": true
+      }
+    ],
+    "units": {
+      "p": "m2/s2 kinematic",
+      "area": "m2 cross-sectional sampled surface"
+    },
+    "source": "OpenFOAM surfaceFieldValue sampledSurface cuttingPlane",
+    "relative_changes": {
+      "r01_to_r02": -0.010441453387988386,
+      "r02_to_r03": -0.01565898859999918
+    },
+    "configuration": "FoamFile\n{\n    version 2.0;\n    format ascii;\n    class dictionary;\n    object interiorPressureSampling;\n}\n\nfunctions\n{\npXm25\n{\n    type surfaceFieldValue;\n    libs (\"libfieldFunctionObjects.so\");\n    regionType sampledSurface;\n    name pXm25;\n    sampledSurfaceDict\n    {\n        type cuttingPlane;\n        point (-2.5 0 0.01);\n        normal (1 0 0);\n        interpolate true;\n    }\n    operation areaAverage;\n    fields (p);\n    writeFields false;\n    executeControl timeStep;\n    executeInterval 1;\n    writeControl timeStep;\n    writeInterval 1;\n}\n\npXp25\n{\n    type surfaceFieldValue;\n    libs (\"libfieldFunctionObjects.so\");\n    regionType sampledSurface;\n    name pXp25;\n    sampledSurfaceDict\n    {\n        type cuttingPlane;\n        point (2.5 0 0.01);\n        normal (1 0 0);\n        interpolate true;\n    }\n    operation areaAverage;\n    fields (p);\n    writeFields false;\n    executeControl timeStep;\n    executeInterval 1;\n    writeControl timeStep;\n    writeInterval 1;\n}\n}\n",
+    "interpretation": "Fixed interior-plane pressure differences are not yet contracting: absolute adjacent relative changes are 1.0441% then 1.5659%. This does not establish grid independence."
+  }
+}

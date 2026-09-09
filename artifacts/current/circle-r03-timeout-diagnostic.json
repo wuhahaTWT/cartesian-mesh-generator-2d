@@ -1,0 +1,30 @@
+{
+  "format": "cartmesh2d-circle-r03-timeout-v1",
+  "source_commit": "4381bc3",
+  "request": {
+    "reference_length": 2,
+    "wall_h_over_lref": 0.0025,
+    "background_h_over_lref": 0.0125,
+    "cells_per_level": 40,
+    "padding_fraction": 0.5,
+    "alpha": 0.1,
+    "max_safe_level": 11
+  },
+  "timeout_seconds": 180,
+  "returncode": 124,
+  "final_solver_cells": null,
+  "solver_quality": "not_evaluated",
+  "Q1": "not_evaluated",
+  "peak_rss_bytes": null,
+  "sampled_physical_footprint": "about 1.0 GiB; sampled peak about 1.1 GiB (not RSS measurement)",
+  "hot_stack": [
+    "repartitionSolverTopologyByQualityImpl",
+    "repartitionPair",
+    "buildGlobalTopology",
+    "SharedEdgePartition2D::partition",
+    "IntersectionRegistry2D::internVertex"
+  ],
+  "raw_directory": "outputs/engineering-scale/circle-r03-current",
+  "process_group_terminated": true,
+  "limitation": "No solver mesh was exported; this is failure evidence for the fixed high-resolution request, not a successful 100k result."
+}
