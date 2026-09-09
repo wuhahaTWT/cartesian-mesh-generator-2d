@@ -106,6 +106,29 @@ int main() {
     check(validLoop.diagnose(tol).orientation == LoopOrientation::CounterClockwise,
           "normalized CCW");
 
+    // Repeated cutting copies an already validated region. Validation must
+    // remain equivalent to a fresh loop after copying, reversing, or changing
+    // tolerance; a cached success must never authorize a different policy.
+    {
+        BoundaryLoop closeEdge({{0,0},{1,0},{1,1},{0,1},{0,1e-5}});
+        const TolerancePolicy strict{1e-12,1e-10}, loose{1e-4,1e-10};
+        check(closeEdge.diagnose(strict).valid(),"short positive edge is valid under strict tolerance");
+        auto copy=closeEdge;
+        check(!copy.diagnose(loose).valid() && !copy.normalizeClockwise(loose),
+              "copied validation cannot bypass changed-tolerance boundary rejection");
+        check(copy.diagnose(strict).valid() && copy.normalizeClockwise(strict),
+              "restoring strict tolerance revalidates and permits reversal");
+        const auto clockwise=copy.diagnose(strict);
+        check(clockwise.orientation==LoopOrientation::Clockwise &&
+                  clockwise.orientation==BoundaryLoop(copy.vertices()).diagnose(strict).orientation,
+              "normalization invalidates cached orientation and agrees with fresh diagnosis");
+        check(closeEdge.diagnose(strict).orientation==LoopOrientation::CounterClockwise,
+              "normalizing a copy does not change original geometry or cached orientation");
+        check(copy.normalizeCounterClockwise(strict) &&
+                  copy.diagnose(strict).orientation==LoopOrientation::CounterClockwise,
+              "repeated opposite normalization refreshes orientation");
+    }
+
     BoundaryLoop bowTie({{0, 0}, {2, 2}, {0, 2}, {2, 0}});
     auto bowTieDiagnostics = bowTie.diagnose(tol);
     check(!bowTieDiagnostics.valid(), "bow tie invalid");

@@ -123,6 +123,10 @@ public:
 
 private:
     std::vector<Point2D> vertices_;
+    // Coordinates are read-only outside the class. Copies retain validation;
+    // normalization invalidates it when the vertex order actually changes.
+    mutable std::optional<BoundaryDiagnostics> diagnosticsCache_;
+    mutable std::optional<TolerancePolicy> cacheTolerance_;
 };
 
 enum class BoundaryRegionIssueCode {
