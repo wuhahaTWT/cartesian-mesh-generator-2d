@@ -113,6 +113,37 @@ CM2D 尺寸与 OpenFOAM 读取均通过；本矩阵未运行外部 checkMesh。
 `outputs/engineering-performance/`，精简证据为 `artifacts/current/patch-incidence-performance.json`。
 
 
+进一步减少重复工作：质量修复遇到零违规的全局最优分数后结束剩余搜索；
+共享顶点先按整数身份去重，再按坐标排序，并用直接身份表和有序连续列替代逐点树索引。
+三尺度所有 49 个端点组合均与独立全点扫描逐项一致，正反方向共享同一分区，未活动/后加入
+顶点不进入快照。固定两例最终 CM2D 与此前版本字节一致，独立尺寸/OpenFOAM 读取通过。
+圆例 55,904 单元本次 native 9.6819 s、峰值 RSS 456,097,792 B；翼型 66,208 单元
+71.4368 s、574,849,024 B。与仅提前结束搜索的对照分别为 11.1885 / 83.7536 s。
+这些是各一次观测，不能据此保证稳定速度；候选全域重建仍有 39 / 288 次。
+内部 Solver PASS、Q1 FAIL；本性能对照未运行外部 checkMesh。
+证据：`artifacts/current/partition-index-performance.json`，原始日志在
+`outputs/engineering-performance/optimal-score/` 与 `partition-index/`。
+本次完整 CTest 98/98（76.46 s）与桌面测试 54/54 通过。
+
+原固定 circle r03（wall=.0025、background=.0125、band=40、Lref=2、留白=.5、α=.1）
+在新核心与明确的 300 s 预算下完成：153,208 个最终求解单元，native 252.9895 s，
+wrapper 253.11 s，峰值 RSS 1,066,795,008 B。之前 180 s 超时仍保留，不能计成同期限加速。
+独立尺寸与 OpenFOAM 读取通过，Solver PASS、Q1 FAIL；最终壁面 owner 切向尺寸超标壁长
+占比 33.9226%，不能用十五万总格数掩盖局部请求未完全达到。仍有 420 次全域拓扑重建，
+候选重建占 222.8901 s；下一步性能问题仍在修复候选的全域工作。
+此十五万格产物已实际通过 OpenFOAM 2606 标准 checkMesh；扩展检查 FAIL（1,388 个
+concave cells），进程退出 0 不改变该失败判定。
+真实打包 App 以相同显式手动尺寸完成生成、预览和 ZIP 导出，三者均为 153,208 单元，
+原生约 255.19 s，侧栏底部可达；尺寸超标比例与 Q1 FAIL 均实际显示。
+截图 `artifacts/current/desktop-circle-153k.png`，完整包与原始日志保留在
+`outputs/engineering-scale/desktop-circle-r03*`。smoke 入口现支持显式相对尺寸参数，
+通过真实表单输入事件，可重复该大网格端到端操作；常规用户流程保持原入口。
+桌面最终 CM2D、ZIP 中的最终 CM2D 与上述 CLI 产物 SHA256 完全相同，桌面产物的
+独立尺寸/OpenFOAM 读取均通过；外部 checkMesh 引用同字节 CLI 网格，未重复运行。
+
+
+
+
 ### 固定喷管 CFD 多网格验证
 
 实际运行 OpenFOAM 2606 simpleFoam：同一 `nozzle_profile.xy`、均匀入口 U=(0.1,0,0) m/s、

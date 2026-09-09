@@ -1,6 +1,8 @@
 #pragma once
 #include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 #include <map>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
 namespace cartmesh2d {
@@ -14,7 +16,12 @@ public:
                          std::vector<std::size_t> activeHandles);
     [[nodiscard]] const std::vector<std::size_t>& handles() const { return handles_; }
     [[nodiscard]] const std::vector<Point2D>& points() const { return points_; }
-    [[nodiscard]] std::size_t denseId(std::size_t handle) const { return denseIds_.at(handle); }
+    [[nodiscard]] std::size_t denseId(std::size_t handle) const {
+        const auto id=denseIds_.at(handle);
+        if (id==std::numeric_limits<std::size_t>::max())
+            throw std::out_of_range("inactive canonical vertex handle");
+        return id;
+    }
     [[nodiscard]] const std::vector<std::pair<double,std::size_t>>& partition(
         std::size_t a, std::size_t b, double epsilon,const TolerancePolicy& tol);
     [[nodiscard]] std::size_t partitionCount() const { return partitions_.size(); }
@@ -22,8 +29,12 @@ public:
 private:
     std::vector<std::size_t> handles_;
     std::vector<Point2D> points_;
-    std::map<std::size_t,std::size_t> denseIds_;
-    std::map<double,std::map<double,std::size_t>> columns_;
+    std::vector<std::size_t> denseIds_;
+    struct Column {
+        double x;
+        std::vector<std::pair<double,std::size_t>> byY;
+    };
+    std::vector<Column> columns_;
     std::map<std::pair<std::size_t,std::size_t>,std::vector<std::pair<double,std::size_t>>> partitions_;
     std::size_t cacheHits_=0;
 };
