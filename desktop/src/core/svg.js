@@ -23,16 +23,18 @@ const numbers = text => (text.match(NUMBER) || []).map(Number);
 function flattenCubic(p0, p1, p2, p3, tolerance, out, depth = 0) {
   const dx = p3[0] - p0[0];
   const dy = p3[1] - p0[1];
-  const chord = Math.hypot(dx, dy);
-  const deviation = chord > 0
-    ? Math.max(Math.abs((p1[0] - p0[0]) * dy - (p1[1] - p0[1]) * dx) / chord,
-               Math.abs((p2[0] - p0[0]) * dy - (p2[1] - p0[1]) * dx) / chord)
-    : Math.max(Math.hypot(p1[0] - p0[0], p1[1] - p0[1]),
-               Math.hypot(p2[0] - p0[0], p2[1] - p0[1]));
-  if (deviation <= tolerance || depth >= 20) {
+  const length2 = dx * dx + dy * dy;
+  const distance = p => {
+    const t = length2 > 0
+      ? Math.max(0, Math.min(1, ((p[0] - p0[0]) * dx + (p[1] - p0[1]) * dy) / length2)) : 0;
+    return Math.hypot(p[0] - p0[0] - t * dx, p[1] - p0[1] - t * dy);
+  };
+  const deviation = Math.max(distance(p1), distance(p2));
+  if (deviation <= tolerance) {
     out.push(p3);
     return;
   }
+  if (depth >= 20) throw new Error('SVG curve sampling cannot meet the requested chord tolerance');
   const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   const a = mid(p0, p1), b = mid(p1, p2), c = mid(p2, p3);
   const d = mid(a, b), e = mid(b, c), f = mid(d, e);

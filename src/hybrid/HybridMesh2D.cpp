@@ -2389,6 +2389,7 @@ RobustH4BuildResult2D buildRobustH4Mesh2D(
 
     if (hybridPolicy.fluidRegion != FluidRegion2D::Interior) {
     stageStart=H4ProfileClock::now();
+    inwardPolicy.permitConcaveTerminationMarching=true;
     result.localLayerCandidate=buildLocallyReducedBoundaryLayerStrips2D(
         wallChains,layerParameters,inwardPolicy);
     result.profile.localLayerSeconds=h4ProfileSeconds(stageStart);

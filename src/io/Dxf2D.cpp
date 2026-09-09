@@ -442,18 +442,12 @@ struct HomogeneousPoint2D {
     double w = 1.0;
 };
 
-[[nodiscard]] std::optional<Point2D> evaluateNurbs(
+// Evaluate the blossom with repeated span endpoints to extract an exact
+// rational Bezier control polygon, including unclamped knot spans.
+[[nodiscard]] HomogeneousPoint2D nurbsBlossom(
     const std::vector<Point2D>& control,const std::vector<double>& weights,
-    const std::vector<double>& knots,std::size_t degree,double u) {
-    const std::size_t n=control.size()-1;
-    std::size_t span=n;
-    if (u<knots[n+1]) {
-        const auto first=knots.begin()+static_cast<std::ptrdiff_t>(degree);
-        const auto last=knots.begin()+static_cast<std::ptrdiff_t>(n+2);
-        const auto upper=std::upper_bound(first,last,u);
-        span=static_cast<std::size_t>(std::distance(knots.begin(),upper)-1);
-        span=std::clamp(span,degree,n);
-    }
+    const std::vector<double>& knots,std::size_t degree,std::size_t span,
+    std::size_t endArguments) {
     std::vector<HomogeneousPoint2D> work(degree+1);
     for (std::size_t j=0;j<=degree;++j) {
         const std::size_t index=span-degree+j;
@@ -461,6 +455,7 @@ struct HomogeneousPoint2D {
         work[j]={control[index].x*weight,control[index].y*weight,weight};
     }
     for (std::size_t r=1;r<=degree;++r) {
+        const double u=knots[span+(r>degree-endArguments?1:0)];
         for (std::size_t j=degree;j>=r;--j) {
             const std::size_t knotIndex=span-degree+j;
             const double denominator=knots[j+1+span-r]-knots[knotIndex];
@@ -470,12 +465,47 @@ struct HomogeneousPoint2D {
             work[j].w=(1.0-alpha)*work[j-1].w+alpha*work[j].w;
         }
     }
-    if (!(std::abs(work[degree].w)>1.0e-300) || !std::isfinite(work[degree].w))
-        return std::nullopt;
-    const Point2D point{work[degree].x/work[degree].w,
-                        work[degree].y/work[degree].w};
-    if (!std::isfinite(point.x) || !std::isfinite(point.y)) return std::nullopt;
-    return point;
+    return work[degree];
+}
+
+[[nodiscard]] bool appendBezierSpan(std::vector<Point2D>& points,
+    const std::vector<HomogeneousPoint2D>& control,double error,std::size_t depth,
+    std::size_t& sampled,DxfImportResult2D& result,const EntityRecord& entity) {
+    const auto fail=[&](const char* message) {
+        result.issues.push_back({DxfIssueCode2D::InvalidSplineDefinition,entity.line,
+                                 entity.type,entity.layer,message});
+        return false;
+    };
+    std::vector<Point2D> projected;
+    for (const auto& p:control) {
+        if (!(p.w>0.0) || !std::isfinite(p.w) ||
+            !std::isfinite(p.x/p.w) || !std::isfinite(p.y/p.w))
+            return fail("NURBS control polygon has invalid homogeneous coordinates");
+        projected.push_back({p.x/p.w,p.y/p.w});
+    }
+    double deviation=0.0;
+    for (const auto& p:projected)
+        deviation=std::max(deviation,pointChordDistance(p,projected.front(),projected.back()));
+    // Positive weights keep the whole curve inside this convex hull.
+    if (deviation<=error) {
+        if (++sampled>1000000) return fail("curve sampling exceeds one million segments");
+        if (points.empty()) points.push_back(projected.front());
+        points.push_back(projected.back());
+        return true;
+    }
+    if (depth>=40) return fail("curve chord-error refinement exceeded depth 40");
+    auto work=control;
+    auto left=control,right=control;
+    const auto degree=control.size()-1;
+    for (std::size_t r=1;r<=degree;++r) {
+        for (std::size_t j=0;j<=degree-r;++j)
+            work[j]={(work[j].x+work[j+1].x)*0.5,
+                     (work[j].y+work[j+1].y)*0.5,(work[j].w+work[j+1].w)*0.5};
+        left[r]=work[0];
+        right[degree-r]=work[degree-r];
+    }
+    return appendBezierSpan(points,left,error,depth+1,sampled,result,entity) &&
+           appendBezierSpan(points,right,error,depth+1,sampled,result,entity);
 }
 
 [[nodiscard]] bool appendNurbs(
@@ -485,24 +515,13 @@ struct HomogeneousPoint2D {
     DxfImportResult2D& result,const EntityRecord& entity) {
     const std::size_t n=control.size()-1;
     std::size_t sampled=0;
-    const auto evaluate=[&](double u) {
-        return evaluateNurbs(control,weights,knots,degree,u).value_or(
-            Point2D{std::numeric_limits<double>::quiet_NaN(),
-                    std::numeric_limits<double>::quiet_NaN()});
-    };
     for (std::size_t span=degree;span<=n;++span) {
         const double u0=knots[span],u1=knots[span+1];
         if (!(u1>u0)) continue;
-        const auto p0=evaluateNurbs(control,weights,knots,degree,u0);
-        const auto p1=evaluateNurbs(control,weights,knots,degree,u1);
-        if (!p0 || !p1) {
-            result.issues.push_back({DxfIssueCode2D::InvalidSplineDefinition,entity.line,
-                                     entity.type,entity.layer,
-                                     "NURBS evaluation failed at its parameter domain"});
-            return false;
-        }
-        if (points.empty()) points.push_back(*p0);
-        if (!appendAdaptiveParametricSpan(points,evaluate,u0,u1,*p0,*p1,
+        std::vector<HomogeneousPoint2D> bezier;
+        for (std::size_t j=0;j<=degree;++j)
+            bezier.push_back(nurbsBlossom(control,weights,knots,degree,span,j));
+        if (!appendBezierSpan(points,bezier,
                 options.maximumChordError,0,sampled,result,entity)) return false;
     }
     result.report.sampledSplineSegmentCount+=sampled;
