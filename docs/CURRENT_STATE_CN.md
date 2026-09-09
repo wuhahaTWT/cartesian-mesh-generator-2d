@@ -87,7 +87,7 @@ checkMesh，扩展检查仍 FAIL。
 L2 误差随加密下降；它是指定解析标量方程在实际多边形域的证据，不代表湍流/传热/任意几何精度。
 脚本先执行真实 writeCellCentres/writeCellVolumes，再配置边界、运行 laplacianFoam 和重算误差；
 扩展检查 FAIL 与 MMS 流程通过分开保存，overall valid 仍为 false。
-代表工程流动工况及十万级规模矩阵尚未完成。
+代表工程流动已完成下述固定三档实算；十万级规模矩阵尚未完成。
 
 首轮固定纯路径规模调查：圆例 14,800 / 55,904 单元，喷管 2,152 / 6,204 / 52,824，
 翼型 17,112；六次捕获到 native 完成标记。圆例 r03、翼型 r02/r03 原包装器 120 s 超时。
@@ -112,6 +112,45 @@ CM2D 尺寸与 OpenFOAM 读取均通过；本矩阵未运行外部 checkMesh。
 及桌面测试 54/54 通过；性能原始命令/日志、两路径计时及 RSS 位于
 `outputs/engineering-performance/`，精简证据为 `artifacts/current/patch-incidence-performance.json`。
 
+
+### 固定喷管 CFD 多网格验证
+
+实际运行 OpenFOAM 2606 simpleFoam：同一 `nozzle_profile.xy`、均匀入口 U=(0.1,0,0) m/s、
+nu=0.01 m²/s、出口运动学 p=0，固定挤出厚度 0.02 m、Lref=6 m。入口/出口明确绑定源段
+81/40，经验证后同步重排 faces/owner；这是验证工况配置，不是已完成的产品分段 patch UI。
+
+| 最终单元 | 收敛迭代 | 运动学压降 m²/s² | 相对流量不平衡 | 扩展检查 concave cells |
+|---:|---:|---:|---:|---:|
+| 2,152 | 279 | 0.08624959 | 1.09e-12 | 148 |
+| 6,204 | 575 | 0.08761273 | 5.74e-12 | 320 |
+| 52,824 | 3,952 | 0.08874178 | 1.14e-12 | 496 |
+
+三档均达到 U/p 末次初始残差 ≤1e-8；最细档在 2000 步未收敛的日志与结果保留，
+从保存场续算到 3952，物理参数和残差门槛不变。求解返回 0、字段可读、迭代收敛分别核对。
+三档内部拓扑/Solver、独立读取和标准 checkMesh PASS；Q1 与扩展 checkMesh 仍 FAIL。
+精确最终时刻的 OpenFOAM surfaceFieldValue 后处理与独立字段读取吻合到约 5e-14。
+
+相邻网格入口/出口面积平均压降差为 1.556% → 1.272%；出口 Ux/平均 Ux 在统一
+[-0.95875,0.95875] m 区间、相同 64 点上的归一化积分 L2 差为 0.002266 → 0.001493。
+上述两个指标的网格差异减小，但不能据此宣称网格无关。追加同一最终场的 OpenFOAM
+cuttingPlane 后处理：x=-2.5/+2.5 m 内侧截面面积三档相同，均为 0.03580711874 m²；
+两截面压降依次为 0.07346879 / 0.07270167 / 0.07156323 m²/s²，相邻变化绝对值
+1.0441% → 1.5659%，尚未收缩。入口角点压力峰值如实保留，尚不能给出主体压降误差保证。
+该后处理没有修改物理工况、已有场或重跑求解器。真实压力图逐单元核对了 CFD owner
+与 CM2D polygon 对应，覆盖全部 52,824 单元。
+
+证据：`artifacts/current/nozzle-flow-validation.json` / `nozzle-flow-convergence.png`；
+原始场、日志及失败阶段在 `outputs/engineering-cfd/nozzle-flow/`。
+新驱动从原轮廓实跑了 r01 完整链路；完整三档新驱动尚未另行重复执行。
+复现命令：`python3 tools/verification/run_nozzle_flow.py --output-root outputs/nozzle-flow-new`，
+要求新目录；不覆盖旧记录。仅验证小链路可加 `--cases r01`。
+最终完整 CTest 98/98（69.56 s）、桌面测试 54/54 通过，另有五项无求解器的解析/超时保护测试。
+
+固定 circle r03 高分辨率请求再次在 180 s 超时，无最终求解产物；进程组已终止。
+一次运行时栈采样确认热点在 repartitionPair 的反复全域拓扑构建/共享边分区。
+采样物理 footprint 约 1.0 GiB、采样峰值约 1.1 GiB，不冒充完整峰值 RSS。
+证据：`artifacts/current/circle-r03-timeout-diagnostic.json`。
+后续性能改动应减少候选修复的全域重建次数，维持几何、拓扑和质量判定。
 
 ### 曲线加密（2026-09-09）
 

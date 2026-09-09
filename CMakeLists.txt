@@ -257,6 +257,9 @@ if(CARTMESH2D_BUILD_TESTS)
             --log ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution/cli.log
             --output-dir ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution)
     set_tests_properties(cartmesh2d_relative_resolution_cli PROPERTIES TIMEOUT 150)
+    add_test(NAME cartmesh2d_nozzle_flow_verification
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/nozzle_flow_verification_test.py)
+    set_tests_properties(cartmesh2d_nozzle_flow_verification PROPERTIES TIMEOUT 15)
     add_test(NAME cartmesh2d_stageWC_quality_reachability_tests COMMAND cartmesh2d_quality_reachability_tests)
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)
