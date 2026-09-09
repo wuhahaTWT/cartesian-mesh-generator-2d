@@ -440,6 +440,11 @@ BoundaryLoop::BoundaryLoop(std::vector<Point2D> vertices) : vertices_(std::move(
 }
 
 BoundaryDiagnostics BoundaryLoop::diagnose(const TolerancePolicy& tol) const {
+    if (diagnosticsCache_ && cacheTolerance_ &&
+        cacheTolerance_->absolute==tol.absolute && cacheTolerance_->relative==tol.relative)
+        return *diagnosticsCache_;
+    cacheTolerance_=tol;
+    diagnosticsCache_.reset();
     BoundaryDiagnostics result;
     const std::size_t n = vertices_.size();
 
@@ -449,7 +454,7 @@ BoundaryDiagnostics BoundaryLoop::diagnose(const TolerancePolicy& tol) const {
                                      "boundary loop contains a non-finite coordinate"});
         }
     }
-    if (!result.issues.empty()) return result;
+    if (!result.issues.empty()) { diagnosticsCache_=result; return result; }
 
     std::vector<Point2D> unique;
     for (const auto& p : vertices_) {
@@ -505,6 +510,7 @@ BoundaryDiagnostics BoundaryLoop::diagnose(const TolerancePolicy& tol) const {
         result.orientation = signedArea > 0.0 ? LoopOrientation::CounterClockwise
                                                : LoopOrientation::Clockwise;
     }
+    diagnosticsCache_=result;
     return result;
 }
 
@@ -513,6 +519,7 @@ bool BoundaryLoop::normalizeCounterClockwise(const TolerancePolicy& tol) {
     if (!diagnostics.valid()) return false;
     if (diagnostics.orientation == LoopOrientation::Clockwise) {
         std::reverse(vertices_.begin(), vertices_.end());
+        diagnosticsCache_.reset();
     }
     return true;
 }
@@ -522,6 +529,7 @@ bool BoundaryLoop::normalizeClockwise(const TolerancePolicy& tol) {
     if (!diagnostics.valid()) return false;
     if (diagnostics.orientation == LoopOrientation::CounterClockwise) {
         std::reverse(vertices_.begin(), vertices_.end());
+        diagnosticsCache_.reset();
     }
     return true;
 }

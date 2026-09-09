@@ -1,0 +1,699 @@
+{
+  "format": "cartmesh2d-boundary-diagnostic-cache-v1",
+  "base_commit": "e597ce1",
+  "change": "Cache full immutable BoundaryLoop diagnostics by exact tolerance values; invalidate on vertex-order reversal. No geometry or quality threshold change.",
+  "hotspot_evidence": "outputs/engineering-hybrid-profile-circle/native.sample.txt",
+  "previous_circle": "Fixed request timed out at180s; follow-up on e597ce1 at60s retained a3s sample dominated by repeated BoundaryLoop diagnose. Sample footprint is not peak RSS.",
+  "records": [
+    {
+      "case": "circle",
+      "request": "r01",
+      "reference_length": 2.0,
+      "fluid_region": "exterior",
+      "parameters": {
+        "wall": 0.01,
+        "background": 0.025,
+        "first": 0.0025,
+        "layers": 4,
+        "band": 3
+      },
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/openfoam",
+        "0.02",
+        "--small-alpha=0.1",
+        "--fluid-region=exterior",
+        "--reference-length",
+        "2.0",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.0025",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "wrapper_returncode": 0,
+      "timeout_seconds": 180.0,
+      "timed_out": false,
+      "native_completed_marker": true,
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 12.8628,
+      "wrapper_elapsed_seconds": 14.57,
+      "peak_rss_bytes": 199032832,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "external_checkMesh": "not_run",
+      "issues": [],
+      "status": "success",
+      "resolution_independent": {
+        "valid": true,
+        "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh.hybrid.solver.cm2d",
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh.resolution.json",
+        "reference_length": 2.0,
+        "measured": {
+          "cell_count": 16680,
+          "wall_edge_count": 320,
+          "wall_length_over_reference": 3.1365484905462324,
+          "wall_owner_tangential_exceedance_length_fraction": 0.19999999999999965,
+          "actual": {
+            "sqrt_area_over_reference": {
+              "min": 0.0009543854083891483,
+              "p50": 0.015625,
+              "p95": 0.015625,
+              "max": 0.01562500000000011
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.00980171403295079,
+              "p50": 0.009801714032958497,
+              "p95": 0.0098017140329601,
+              "max": 0.009801714032960124
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.009801714032950794,
+              "p50": 0.009801714032958726,
+              "p95": 0.010047942541351867,
+              "max": 0.010047942541358481
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.002499999999999953,
+              "p50": 0.0025000000000000152,
+              "p95": 0.002500000000000017,
+              "max": 0.0025000000000000512
+            }
+          }
+        },
+        "tolerance": {
+          "absolute": 2e-12,
+          "relative": 2e-10
+        },
+        "issues": []
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "point_count": 37104,
+        "face_count": 68592,
+        "internal_face_count": 34400,
+        "cell_count": 16680,
+        "min_volume": 7.286812061968954e-08,
+        "max_closure_residual": 2.2849174944802276e-19,
+        "max_constant_flux_divergence_residual": 1.0313176006919994e-13,
+        "physical_boundary_area_vector": [
+          9.86623976961809e-18,
+          1.474514954580286e-17,
+          0.0
+        ],
+        "global_constant_flux_balance": 2.482822974991805e-18,
+        "patches": [
+          {
+            "name": "wall_0",
+            "type": "wall",
+            "nFaces": 320,
+            "startFace": 34400
+          },
+          {
+            "name": "left",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 34720
+          },
+          {
+            "name": "right",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 34848
+          },
+          {
+            "name": "bottom",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 34976
+          },
+          {
+            "name": "top",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 35104
+          },
+          {
+            "name": "frontAndBack",
+            "type": "empty",
+            "nFaces": 33360,
+            "startFace": 35232
+          }
+        ],
+        "issues": []
+      },
+      "cell_count": 16680,
+      "boundary_layer_coverage_status": "evaluated",
+      "boundary_layer_summary": {
+        "status": "evaluated",
+        "requested_cells": 1280,
+        "constructed_cells": 1280,
+        "retained_cells": 1280,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 1,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "pure_fallback": false,
+      "measurement_complete": true,
+      "layer_independent": {
+        "valid": true,
+        "source_vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh.hybrid.vtk",
+        "final_cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh.hybrid.solver.cm2d",
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/circle/request-r01/mesh.resolution.json",
+        "source_layer_polygon_count": 1280,
+        "claimed_layer_polygon_count": 1280,
+        "source_wall_length": 3.1365484905462284,
+        "wall_length_basis": "final_embedded_edges_partitioned_by_declared_columns",
+        "first_layer_wall_length_fraction": 1.0,
+        "full_requested_layers_wall_length_fraction": 1.0,
+        "first_layer_height_exceedance_wall_length_fraction": 0.0,
+        "first_layer_normal_height_max_over_reference": 0.002500000000000256,
+        "issues": []
+      }
+    },
+    {
+      "case": "nozzle",
+      "request": "r01",
+      "reference_length": 6.0,
+      "fluid_region": "interior",
+      "parameters": {
+        "wall": 0.005,
+        "background": 0.0125,
+        "first": 0.00125,
+        "layers": 4,
+        "band": 3
+      },
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/nozzle/request-r01/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/nozzle/request-r01/openfoam",
+        "0.02",
+        "--small-alpha=0.1",
+        "--fluid-region=interior",
+        "--reference-length",
+        "6.0",
+        "--wall-relative-size",
+        "0.005",
+        "--background-relative-size",
+        "0.0125",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.00125",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "wrapper_returncode": 0,
+      "timeout_seconds": 180.0,
+      "timed_out": false,
+      "native_completed_marker": true,
+      "native_mode": "pure_cutcell_fallback",
+      "native_elapsed_seconds": 94.7309,
+      "wrapper_elapsed_seconds": 94.74,
+      "peak_rss_bytes": 188760064,
+      "solver": "pass",
+      "Q1": "not_reported",
+      "external_checkMesh": "not_run",
+      "issues": [],
+      "status": "success",
+      "resolution_independent": {
+        "valid": true,
+        "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/nozzle/request-r01/mesh.fallback.solver.cm2d",
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/nozzle/request-r01/mesh.resolution.json",
+        "reference_length": 6.0,
+        "measured": {
+          "cell_count": 6204,
+          "wall_edge_count": 744,
+          "wall_length_over_reference": 2.682191575487352,
+          "wall_owner_tangential_exceedance_length_fraction": 0.0,
+          "actual": {
+            "sqrt_area_over_reference": {
+              "min": 0.0011590624805161468,
+              "p50": 0.0078125,
+              "p95": 0.0078125,
+              "max": 0.0078125
+            },
+            "wall_edge_length_over_reference": {
+              "min": 0.0007831823268251431,
+              "p50": 0.0039244800825166265,
+              "p95": 0.003996808162528633,
+              "max": 0.0039974200463693274
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.0008433414631624684,
+              "p50": 0.0040950641494032665,
+              "p95": 0.004628671872146397,
+              "max": 0.004788381923271149
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.0007003896678264903,
+              "p50": 0.0030883993357161124,
+              "p95": 0.00390625,
+              "max": 0.004148457351707727
+            }
+          }
+        },
+        "tolerance": {
+          "absolute": 2e-12,
+          "relative": 2e-10
+        },
+        "issues": []
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "point_count": 13422,
+        "face_count": 25322,
+        "internal_face_count": 12170,
+        "cell_count": 6204,
+        "min_volume": 9.6726660029296e-07,
+        "max_closure_residual": 9.486769009248164e-20,
+        "max_constant_flux_divergence_residual": 1.2084625550565928e-14,
+        "physical_boundary_area_vector": [
+          -3.469446951953614e-18,
+          0.0,
+          0.0
+        ],
+        "global_constant_flux_balance": -2.4286128663675298e-18,
+        "patches": [
+          {
+            "name": "wall_0",
+            "type": "wall",
+            "nFaces": 744,
+            "startFace": 12170
+          },
+          {
+            "name": "frontAndBack",
+            "type": "empty",
+            "nFaces": 12408,
+            "startFace": 12914
+          }
+        ],
+        "issues": []
+      },
+      "cell_count": 6204,
+      "boundary_layer_coverage_status": "no_layers_retained",
+      "boundary_layer_summary": {
+        "status": "no_layers_retained",
+        "requested_cells": null,
+        "constructed_cells": 0,
+        "retained_cells": 0,
+        "first_layer_wall_length_fraction": 0,
+        "full_requested_layers_wall_length_fraction": 0,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "pure_fallback": true,
+      "measurement_complete": true,
+      "layer_independent": {
+        "valid": true,
+        "status": "not_applicable_fallback"
+      }
+    },
+    {
+      "case": "naca2412_dense",
+      "request": "r01",
+      "reference_length": 1.0,
+      "fluid_region": "exterior",
+      "parameters": {
+        "wall": 0.01,
+        "background": 0.025,
+        "first": 0.0025,
+        "layers": 4,
+        "band": 3
+      },
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_hybrid_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/naca2412_dense.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/openfoam",
+        "0.02",
+        "--small-alpha=0.1",
+        "--fluid-region=exterior",
+        "--reference-length",
+        "1.0",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.0025",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "wrapper_returncode": 0,
+      "timeout_seconds": 180.0,
+      "timed_out": false,
+      "native_completed_marker": true,
+      "native_mode": "hybrid",
+      "native_elapsed_seconds": 14.7201,
+      "wrapper_elapsed_seconds": 14.73,
+      "peak_rss_bytes": 203440128,
+      "solver": "pass",
+      "Q1": "FAIL",
+      "external_checkMesh": "not_run",
+      "issues": [],
+      "status": "success",
+      "resolution_independent": {
+        "valid": true,
+        "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.resolution.json",
+        "reference_length": 1.0,
+        "measured": {
+          "cell_count": 18574,
+          "wall_edge_count": 239,
+          "wall_length_over_reference": 2.042693194095103,
+          "wall_owner_tangential_exceedance_length_fraction": 0.004872539387798151,
+          "actual": {
+            "sqrt_area_over_reference": {
+              "min": 0.000874733754666202,
+              "p50": 0.015625654796875,
+              "p95": 0.015625654796875055,
+              "max": 0.015625654796875166
+            },
+            "wall_edge_length_over_reference": {
+              "min": 3.820828566473808e-05,
+              "p50": 0.008926634389645121,
+              "p95": 0.009828454212388323,
+              "max": 0.009953103045415601
+            },
+            "wall_owner_tangential_extent_over_reference": {
+              "min": 0.001560554028381262,
+              "p50": 0.008926634389645157,
+              "p95": 0.009842398340350953,
+              "max": 0.01050759010123284
+            },
+            "wall_owner_normal_extent_over_reference": {
+              "min": 0.0012511368978550808,
+              "p50": 0.0025000000000000014,
+              "p95": 0.0025000000000000074,
+              "max": 0.009953978274946899
+            }
+          }
+        },
+        "tolerance": {
+          "absolute": 2e-12,
+          "relative": 2e-10
+        },
+        "issues": []
+      },
+      "openfoam_independent": {
+        "valid": true,
+        "point_count": 38326,
+        "face_count": 74885,
+        "internal_face_count": 36986,
+        "cell_count": 18574,
+        "min_volume": 1.5303182831048873e-08,
+        "max_closure_residual": 7.61387923135979e-20,
+        "max_constant_flux_divergence_residual": 2.821849478874527e-13,
+        "physical_boundary_area_vector": [
+          1.214306433183765e-17,
+          5.561957144850638e-17,
+          0.0
+        ],
+        "global_constant_flux_balance": -8.18572640226556e-18,
+        "patches": [
+          {
+            "name": "wall_0",
+            "type": "wall",
+            "nFaces": 239,
+            "startFace": 36986
+          },
+          {
+            "name": "left",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 37225
+          },
+          {
+            "name": "right",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 37353
+          },
+          {
+            "name": "bottom",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 37481
+          },
+          {
+            "name": "top",
+            "type": "patch",
+            "nFaces": 128,
+            "startFace": 37609
+          },
+          {
+            "name": "frontAndBack",
+            "type": "empty",
+            "nFaces": 37148,
+            "startFace": 37737
+          }
+        ],
+        "issues": []
+      },
+      "cell_count": 18574,
+      "boundary_layer_coverage_status": "evaluated",
+      "boundary_layer_summary": {
+        "status": "evaluated",
+        "requested_cells": 952,
+        "constructed_cells": 932,
+        "retained_cells": 932,
+        "first_layer_wall_length_fraction": 0.9976981278274514,
+        "full_requested_layers_wall_length_fraction": 0.9802631690827522,
+        "first_layer_height_exceedance_wall_length_fraction": 0
+      },
+      "pure_fallback": false,
+      "measurement_complete": true,
+      "layer_independent": {
+        "valid": true,
+        "source_vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.hybrid.vtk",
+        "final_cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+        "report": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.resolution.json",
+        "source_layer_polygon_count": 932,
+        "claimed_layer_polygon_count": 932,
+        "source_wall_length": 2.0426931940951043,
+        "wall_length_basis": "final_embedded_edges_partitioned_by_declared_columns",
+        "first_layer_wall_length_fraction": 0.9976981278274514,
+        "full_requested_layers_wall_length_fraction": 0.9802631690827518,
+        "first_layer_height_exceedance_wall_length_fraction": 0.0,
+        "first_layer_normal_height_max_over_reference": 0.002500000000000209,
+        "issues": []
+      }
+    }
+  ],
+  "naca_byte_comparison": {
+    "new_path": "outputs/engineering-hybrid-boundary-cache/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+    "old_path": "outputs/engineering-hybrid-survey-r01/naca2412_dense/request-r01/mesh.hybrid.solver.cm2d",
+    "new_bytes": 3608192,
+    "old_bytes": 3608192,
+    "new_sha256": "2d88d08e1ef7ed53933861d09ace375d6ec634c2b00439a2bead6124bf85eccc",
+    "old_sha256": "2d88d08e1ef7ed53933861d09ace375d6ec634c2b00439a2bead6124bf85eccc",
+    "byte_equal": true
+  },
+  "circle_checkMesh": {
+    "scope": "existing boundary-cache circle hybrid r01; no regeneration/performance run",
+    "independent_measurements": "existing layer-independent.json and measurement.json retained PASS",
+    "solver_cell_count": 16680,
+    "checkMesh": {
+      "standard": {
+        "returncode": 0,
+        "mesh_ok": true,
+        "failed": [],
+        "concave_cells": null
+      },
+      "expanded": {
+        "returncode": 0,
+        "mesh_ok": false,
+        "failed": [
+          "Failed 1 mesh checks."
+        ],
+        "concave_cells": 1575
+      }
+    },
+    "preview": "outputs/engineering-hybrid-boundary-cache/circle/request-r01/previews/full-and-wall-layer-2panel.png",
+    "layer_colored_cell_count": 1280
+  },
+  "desktop_circle": {
+    "cm2d": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.hybrid.solver.cm2d",
+    "resolution": {
+      "valid": true,
+      "cm2d": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.hybrid.solver.cm2d",
+      "report": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.resolution.json",
+      "reference_length": 2.0,
+      "measured": {
+        "cell_count": 16680,
+        "wall_edge_count": 320,
+        "wall_length_over_reference": 3.1365484905462324,
+        "wall_owner_tangential_exceedance_length_fraction": 0.19999999999999965,
+        "actual": {
+          "sqrt_area_over_reference": {
+            "min": 0.0009543854083891483,
+            "p50": 0.015625,
+            "p95": 0.015625,
+            "max": 0.01562500000000011
+          },
+          "wall_edge_length_over_reference": {
+            "min": 0.00980171403295079,
+            "p50": 0.009801714032958497,
+            "p95": 0.0098017140329601,
+            "max": 0.009801714032960124
+          },
+          "wall_owner_tangential_extent_over_reference": {
+            "min": 0.009801714032950794,
+            "p50": 0.009801714032958726,
+            "p95": 0.010047942541351867,
+            "max": 0.010047942541358481
+          },
+          "wall_owner_normal_extent_over_reference": {
+            "min": 0.002499999999999953,
+            "p50": 0.0025000000000000152,
+            "p95": 0.002500000000000017,
+            "max": 0.0025000000000000512
+          }
+        }
+      },
+      "tolerance": {
+        "absolute": 2e-12,
+        "relative": 2e-10
+      },
+      "issues": []
+    },
+    "layers": {
+      "valid": true,
+      "source_vtk": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.hybrid.vtk",
+      "final_cm2d": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.hybrid.solver.cm2d",
+      "report": "outputs/engineering-hybrid-boundary-cache/desktop-circle/mesh-bnEBnZ/circle.resolution.json",
+      "source_layer_polygon_count": 1280,
+      "claimed_layer_polygon_count": 1280,
+      "source_wall_length": 3.1365484905462284,
+      "wall_length_basis": "final_embedded_edges_partitioned_by_declared_columns",
+      "first_layer_wall_length_fraction": 1.0,
+      "full_requested_layers_wall_length_fraction": 1.0,
+      "first_layer_height_exceedance_wall_length_fraction": 0.0,
+      "first_layer_normal_height_max_over_reference": 0.002500000000000256,
+      "issues": []
+    },
+    "openfoam": {
+      "valid": true,
+      "point_count": 37104,
+      "face_count": 68592,
+      "internal_face_count": 34400,
+      "cell_count": 16680,
+      "min_volume": 7.286812061968954e-08,
+      "max_closure_residual": 2.2849174944802276e-19,
+      "max_constant_flux_divergence_residual": 1.0313176006919994e-13,
+      "physical_boundary_area_vector": [
+        9.86623976961809e-18,
+        1.474514954580286e-17,
+        0.0
+      ],
+      "global_constant_flux_balance": 2.482822974991805e-18,
+      "patches": [
+        {
+          "name": "wall_0",
+          "type": "wall",
+          "nFaces": 320,
+          "startFace": 34400
+        },
+        {
+          "name": "left",
+          "type": "patch",
+          "nFaces": 128,
+          "startFace": 34720
+        },
+        {
+          "name": "right",
+          "type": "patch",
+          "nFaces": 128,
+          "startFace": 34848
+        },
+        {
+          "name": "bottom",
+          "type": "patch",
+          "nFaces": 128,
+          "startFace": 34976
+        },
+        {
+          "name": "top",
+          "type": "patch",
+          "nFaces": 128,
+          "startFace": 35104
+        },
+        {
+          "name": "frontAndBack",
+          "type": "empty",
+          "nFaces": 33360,
+          "startFace": 35232
+        }
+      ],
+      "issues": []
+    },
+    "cm2d_sha256": "fac547e9f20f74a77d84f91075a44bc5293aca557db72c6bd5bce150dfa3429e",
+    "cli_byte_equal": true,
+    "zip_byte_equal": true,
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 720,
+      "windowHeight": 720,
+      "previewCells": 16680,
+      "exportedCells": 16680
+    },
+    "ui_counters": "SOLVER CELLS\n16,680\nVERTICES\n18,552\nFACES\n35,232\nQUADTREE LEAVES\n\u2014\nLAYER CELLS\n1,280\nCUT CELLS\n572\nOPENFOAM CELLS\n16,680",
+    "ui_gates": "\u5185\u90e8\u62d3\u6251\u68c0\u67e5\nPASS\n\u751f\u6210\u5668\u5185\u90e8\u68c0\u67e5\u901a\u8fc7\uff1b\u5916\u90e8 checkMesh \u9700\u53e6\u5916\u6267\u884c\u3002\nSolver \u8d28\u91cf\nPASS\n\u6700\u5927\u975e\u6b63\u4ea4\u89d2 48.97\u3000\u6700\u5927\u5185\u90e8\u6b6a\u659c 3.220\u3000\u6700\u5927\u8fb9\u754c\u6b6a\u659c 0.01261\u3000\u6700\u5c0f\u9762\u6743\u91cd 0.06142\u3000\u6700\u5c0f\u4f53\u79ef\u6bd4 0.01636\u3000\u6700\u5927\u5355\u5143\u957f\u5bbd\u6bd4 29.30\nQ1 \u5408\u540c\nFAIL\nCartesian WARN\u3000Cut-cell \u4f59\u57df FAIL(115 hard)\u3000\u8fc7\u6e21\u73af FAIL(4 hard)\u3000\u8fb9\u754c\u5c42 OBSERVED\nQ1 \u6bd4 solver \u95e8\u548c checkMesh \u90fd\u4e25\uff0c\u662f\u8bca\u65ad\u800c\u4e0d\u662f\u653e\u884c\u6761\u4ef6\u3002\u5206\u7c7b\u578b\u8ba1\u6570\u5728 solver \u51f8\u5212\u5206\u4e4b\u540e\u7edf\u8ba1\uff0c\u6240\u4ee5\u5f52\u5230 cartesian \u7684\u9879\u53ef\u80fd\u542b\u5212\u5206\u788e\u7247\u3002"
+  },
+  "tests": {
+    "ctest": "99/99",
+    "ctest_seconds": 58.92,
+    "desktop": "54/54",
+    "package": "desktop/scripts/build-macos.sh passed"
+  },
+  "limitations": [
+    "Single measured runs, not guaranteed timings.",
+    "Nozzle still falls back to pure Cut-cell; no retained layer cells.",
+    "Circle/NACA Q1 FAIL; expanded checkMesh circle FAIL1575 concave cells, prior same-byte NACA FAIL554.",
+    "Circle wall owner tangent exceedance fraction0.2; full layer coverage is not proof of exact tangential request satisfaction.",
+    "Failed npm run pack invocation is retained in package.log; corrected repository packaging script success is in package-verified.log."
+  ]
+}
