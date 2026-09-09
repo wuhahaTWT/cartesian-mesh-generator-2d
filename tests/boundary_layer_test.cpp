@@ -80,6 +80,21 @@ bool samePoints(const std::vector<Point2D>& lhs,
 
 int main() {
     const TolerancePolicy tolerance{};
+    // A healthy thin strip must not acquire a one-square-metre area scale
+    // when its geometry and first-layer height are changed together.
+    for (const double scale:{0.00001,0.001,1.0,1000.0}) {
+        const auto chain=makeOpenWallChain2D({{0,0},{.02*scale,0}},0,"scaled_wall",FluidSide2D::Right);
+        check(chain.success(),"scaled short wall is valid");
+        if (!chain.success()) continue;
+        const auto layers=buildBoundaryLayerStrips2D({*chain.chain},firstThickness(1,.002*scale,1));
+        check(layers.success() && layers.strips.size()==1U && layers.strips[0].cells.size()==1U,
+              "healthy layer quad remains constructible under finite physical scaling");
+        if (layers.success()) near(layers.strips[0].cells[0].area/(scale*scale),.00004,1e-14,
+                                   "layer area scales quadratically");
+        const std::array<Point2D,4> flat{{{0,0},{scale,0},{2*scale,1e-12*scale},{0,scale}}};
+        check(!isConvexBoundaryLayerQuad2D(flat,tolerance),
+              "relatively flat layer corner is rejected at every scale");
+    }
 
     const std::array<Point2D, 4> convexQuad{{
         {0.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {0.0, 1.0}}};

@@ -153,6 +153,10 @@ struct QualityContractReport2D {
     const TolerancePolicy& tol = {});
 
 [[nodiscard]] const char* qualityCellTypeName(QualityCellType2D type) noexcept;
+// A repair may not trade one contract defect for more defects of another
+// type/metric, or worsen a reported extremum. Legacy Solver checks are separate.
+[[nodiscard]] bool qualityContractMetricsNoWorse2D(
+    const QualityContractReport2D& after,const QualityContractReport2D& before);
 [[nodiscard]] const char* qualityContractStatusName(QualityContractStatus2D status) noexcept;
 [[nodiscard]] std::string qualityContractReportToJson(
     const QualityContractReport2D& report, int indentSpaces = 2);

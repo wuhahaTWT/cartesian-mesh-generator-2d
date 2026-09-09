@@ -159,6 +159,63 @@ double evaluateSolverBoundaryFaceSkewness2D(const Point2D& a,const Point2D& b,
     return skewMagnitude/normalization;
 }
 
+double directionalDeterminant2D(const std::vector<Vector2D>& internalEdgeVectors) {
+    if (internalEdgeVectors.empty()) return 0.0;
+    double meanLength=0.0;
+    for (const auto& edge:internalEdgeVectors) {
+        const double length=std::hypot(edge.x,edge.y);
+        if (!(length>0.0) || !std::isfinite(length))
+            return std::numeric_limits<double>::quiet_NaN();
+        meanLength+=length/static_cast<double>(internalEdgeVectors.size());
+    }
+    double determinant=0.0;
+    for (std::size_t i=0;i<internalEdgeVectors.size();++i) {
+        const Vector2D a{internalEdgeVectors[i].x/meanLength,internalEdgeVectors[i].y/meanLength};
+        for (std::size_t j=i+1;j<internalEdgeVectors.size();++j) {
+            const Vector2D b{internalEdgeVectors[j].x/meanLength,internalEdgeVectors[j].y/meanLength};
+            const double minor=cross(a,b);
+            determinant+=minor*minor;
+        }
+    }
+    // det(sum(n*n^T))/8; the pairwise-minor identity avoids cancellation
+    // between almost equal tensor products. Uniform extrusion cancels out.
+    return determinant/8.0;
+}
+
+DirectionalConnectivityReport2D evaluateDirectionalConnectivity2D(
+    const TopologyMesh2D& topology) {
+    DirectionalConnectivityReport2D report;
+    if (!topology.valid() || topology.cells.empty()) {
+        report.issues.push_back("directional connectivity requires a nonempty valid topology");
+        return report;
+    }
+    std::vector<std::vector<Vector2D>> directions(topology.cells.size());
+    for (const auto& edge:topology.edges) {
+        if (!edge.neighbour) continue;
+        if (edge.v0>=topology.vertices.size() || edge.v1>=topology.vertices.size() ||
+            edge.owner>=directions.size() || *edge.neighbour>=directions.size() ||
+            edge.owner==*edge.neighbour) {
+            report.issues.push_back("invalid internal face in directional connectivity");
+            return report;
+        }
+        const Vector2D vector=topology.vertices[edge.v1].point-topology.vertices[edge.v0].point;
+        directions[edge.owner].push_back(vector);
+        directions[*edge.neighbour].push_back(vector);
+    }
+    for (std::size_t cell=0;cell<directions.size();++cell) {
+        const double value=directionalDeterminant2D(directions[cell]);
+        report.cellDeterminants.push_back(value);
+        if (!std::isfinite(value)) {
+            report.issues.push_back("non-finite directional determinant in cell "+std::to_string(cell));
+            report.failedCells.push_back(cell);
+            continue;
+        }
+        report.minimumMeasured=report.minimumMeasured?std::min(*report.minimumMeasured,value):value;
+        if (value<minimumDirectionalDeterminant2D) report.failedCells.push_back(cell);
+    }
+    return report;
+}
+
 SolverQualityReport2D evaluateSolverQuality2D(
     const TopologyMesh2D& topology, const SolverQualityPolicy2D& policy,
     const TolerancePolicy& tol) {

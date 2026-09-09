@@ -184,6 +184,59 @@ void checkHybrid(const HybridMeshBuildResult2D& hybrid,
 } // namespace
 
 int main() {
+    // Actual eight-vertex termination fragment from the nozzle scaled by 0.001.
+    // The input is small but well resolved relative to the tolerance policy.
+    const Polygon2D tinyTermination{{
+        {-0.0029924999999999999,-0.00096093749999999999},
+        {-0.0029773389738435019,-0.00096093749999999999},
+        {-0.0029775061387777588,-0.00095984968311707693},
+        {-0.0029765625,-0.00095970467404733121},
+        {-0.0029765625,-0.00093749999999999997},
+        {-0.0029835,-0.00093749999999999997},
+        {-0.0029835,-0.00095030303030303027},
+        {-0.0029924999999999999,-0.00095030303030303027}}};
+    for (const double scale:{1.0,1000.0,1000000.0}) {
+        auto polygon=tinyTermination;
+        for (auto& point:polygon.vertices) { point.x*=scale; point.y*=scale; }
+        const auto pieces=detail::partitionTerminationPolygon2D(polygon);
+        check(pieces.has_value(),"nozzle termination partitions at each physical scale");
+        if (!pieces) continue;
+        double totalArea=0.0;
+        std::vector<CutCell2D> cells;
+        for (const auto& piece:*pieces) {
+            check(piece.signedArea()>0.0,"termination pieces have positive orientation");
+            totalArea+=piece.area();
+            CutCell2D cell;
+            cell.sourceId=cells.size();
+            cell.kind=CutCellKind::Cut;
+            cell.backgroundBounds=piece.bounds();
+            cell.areaFraction=1.0;
+            cell.fluidPolygon=piece;
+            cell.area=piece.area();
+            cell.centroid=piece.centroid().value();
+            cells.push_back(cell);
+        }
+        check(std::abs(totalArea-polygon.area())<=polygon.area()*1e-10,
+              "termination partition conserves actual area without a unit floor");
+        auto bounds=polygon.bounds();
+        const double padding=std::max(bounds.max.x-bounds.min.x,bounds.max.y-bounds.min.y);
+        bounds.min.x-=padding; bounds.min.y-=padding;
+        bounds.max.x+=padding; bounds.max.y+=padding;
+        const auto topology=buildGlobalTopology(cells,Domain2D{bounds},
+            BoundaryRegion2D(BoundaryLoop(polygon.vertices)));
+        check(topology.valid(),"termination pieces have a conformal owner/neighbour partition");
+        std::size_t outside=0U;
+        for (const auto& edge:topology.edges) {
+            if (edge.neighbour) continue;
+            ++outside;
+            check(edge.patch==BoundaryPatch2D::EmbeddedBoundary,
+                  "termination partition retains the true polygon boundary");
+        }
+        check(outside==polygon.vertices.size(),"termination partition preserves all eight boundary edges");
+    }
+    check(!detail::partitionTerminationPolygon2D(
+              Polygon2D{{{0,0},{1,1},{0,1},{1,0}}}),
+          "termination partition explicitly rejects a self-intersecting polygon");
     const BoundaryLoop concaveWall({
         {0.0,0.0},{3.0,0.0},{3.0,3.0},{2.0,3.0},
         {2.0,1.0},{1.0,1.0},{1.0,3.0},{0.0,3.0}});

@@ -1,0 +1,322 @@
+{
+  "format": "cartmesh2d-hybrid-scaled-repaired-v2",
+  "binary_sha256": "9be0487269ca572446155da5f9ffb44c3c6afaac0adce276fafbeb5f851249fc",
+  "provenance": "42b43e6 plus uncommitted BL area/convexity, topology-area stable evaluation, termination units and diagnostic messaging; directional API not wired into product",
+  "source_manifest": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/run-summary.json",
+  "timeout_seconds": 180,
+  "invalid_prior_run": "outputs/engineering-hybrid-scaled-repaired/* used wrong argv index for OpenFOAM path and is not valid evidence",
+  "timing_scope": "concurrent robustness checks; not benchmark timings",
+  "cases": [
+    {
+      "case": "circle",
+      "variant": "scale-001",
+      "native_mode": "hybrid",
+      "returncode": 0,
+      "timeout": false,
+      "elapsed_seconds": 25.434449915890582,
+      "cell_count": 16678,
+      "solver_quality": "pass",
+      "q1": "FAIL",
+      "readers": {
+        "dimensions": {
+          "valid": true,
+          "issues": []
+        },
+        "directional": {
+          "cell_count": 16678,
+          "minimum_measured": 0.011491318407736857,
+          "failed_cell_count": 0,
+          "valid": true
+        },
+        "openfoam": {
+          "valid": true,
+          "cell_count": 16678,
+          "issues": []
+        },
+        "layers": {
+          "valid": true,
+          "full_requested_layers_wall_length_fraction": 1.0,
+          "issues": []
+        }
+      },
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/cartmesh2d_hybrid_cli-42b43e6-repaired",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/circle/scale-001/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/circle-scale-001/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/circle-scale-001/openfoam",
+        "2.0000000000000002e-05",
+        "--small-alpha=0.1",
+        "--fluid-region=exterior",
+        "--reference-length",
+        "0.002",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025000000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.0025000000000000001",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/circle-scale-001/command.log",
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 1280,
+        "constructed_cells": 1280,
+        "retained_cells": 1280,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 1,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0
+      },
+      "external_checkMesh": "not_run"
+    },
+    {
+      "case": "nozzle",
+      "variant": "scale-001",
+      "native_mode": "hybrid",
+      "returncode": 0,
+      "timeout": false,
+      "elapsed_seconds": 26.502334416960366,
+      "cell_count": 8420,
+      "solver_quality": "pass",
+      "q1": "FAIL",
+      "readers": {
+        "dimensions": {
+          "valid": true,
+          "issues": []
+        },
+        "directional": {
+          "cell_count": 8420,
+          "minimum_measured": 0.004184240393427938,
+          "failed_cell_count": 0,
+          "valid": true
+        },
+        "openfoam": {
+          "valid": true,
+          "cell_count": 8420,
+          "issues": []
+        },
+        "layers": {
+          "valid": true,
+          "full_requested_layers_wall_length_fraction": 0.9589958979065082,
+          "issues": []
+        }
+      },
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/cartmesh2d_hybrid_cli-42b43e6-repaired",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/nozzle/scale-001/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-001/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-001/openfoam",
+        "2.0000000000000002e-05",
+        "--small-alpha=0.1",
+        "--fluid-region=interior",
+        "--reference-length",
+        "0.0060000000000000001",
+        "--wall-relative-size",
+        "0.0050000000000000001",
+        "--background-relative-size",
+        "0.012500000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.00125",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-001/command.log",
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 2448,
+        "constructed_cells": 2400,
+        "retained_cells": 2400,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 1,
+        "full_requested_layers_wall_length_fraction": 0.9589958979065085,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0
+      },
+      "external_checkMesh": "not_run"
+    },
+    {
+      "case": "nozzle",
+      "variant": "scale-1000",
+      "native_mode": null,
+      "returncode": -15,
+      "timeout": true,
+      "elapsed_seconds": 180.02826116594952,
+      "cell_count": null,
+      "solver_quality": null,
+      "q1": null,
+      "readers": {
+        "dimensions": {
+          "valid": false,
+          "status": "missing_artifacts"
+        },
+        "directional": {
+          "valid": false,
+          "status": "missing_artifacts"
+        },
+        "openfoam": {
+          "valid": false,
+          "status": "missing_artifacts"
+        },
+        "layers": {
+          "valid": false,
+          "status": "missing_artifacts"
+        }
+      },
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/cartmesh2d_hybrid_cli-42b43e6-repaired",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/nozzle/scale-1000/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-1000/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-1000/openfoam",
+        "20",
+        "--small-alpha=0.1",
+        "--fluid-region=interior",
+        "--reference-length",
+        "6000",
+        "--wall-relative-size",
+        "0.0050000000000000001",
+        "--background-relative-size",
+        "0.012500000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.00125",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/nozzle-scale-1000/command.log",
+      "layers": null,
+      "external_checkMesh": "not_run"
+    },
+    {
+      "case": "naca2412_dense",
+      "variant": "scale-001",
+      "native_mode": "hybrid",
+      "returncode": 0,
+      "timeout": false,
+      "elapsed_seconds": 17.49488754104823,
+      "cell_count": 18574,
+      "solver_quality": "pass",
+      "q1": "FAIL",
+      "readers": {
+        "dimensions": {
+          "valid": true,
+          "issues": []
+        },
+        "directional": {
+          "cell_count": 18574,
+          "minimum_measured": 0.0013793788459603032,
+          "failed_cell_count": 0,
+          "valid": true
+        },
+        "openfoam": {
+          "valid": true,
+          "cell_count": 18574,
+          "issues": []
+        },
+        "layers": {
+          "valid": true,
+          "full_requested_layers_wall_length_fraction": 0.9802631690827522,
+          "issues": []
+        }
+      },
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/cartmesh2d_hybrid_cli-42b43e6-repaired",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/naca2412_dense/scale-001/naca2412_dense.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/naca2412_dense-scale-001/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/naca2412_dense-scale-001/openfoam",
+        "2.0000000000000002e-05",
+        "--small-alpha=0.1",
+        "--fluid-region=exterior",
+        "--reference-length",
+        "0.001",
+        "--wall-relative-size",
+        "0.01",
+        "--background-relative-size",
+        "0.025000000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.0025000000000000001",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-scaled-repaired/rerun-correct-output-path/naca2412_dense-scale-001/command.log",
+      "layers": {
+        "status": "evaluated",
+        "requested_cells": 952,
+        "constructed_cells": 932,
+        "retained_cells": 932,
+        "source_mismatches": 0,
+        "first_layer_wall_length_fraction": 0.9976981278274514,
+        "full_requested_layers_wall_length_fraction": 0.980263169082752,
+        "first_layer_height_exceedance_wall_length_fraction": 0,
+        "continuity_mismatches": 0
+      },
+      "external_checkMesh": "not_run"
+    }
+  ],
+  "minimal_regressions": {
+    "boundary_layer": {
+      "before": "2 failures",
+      "after": "PASS",
+      "scales": [
+        1e-05,
+        0.001,
+        1,
+        1000
+      ]
+    },
+    "translated_area": {
+      "before": "healthy rectangle incorrectly rejected",
+      "after": "PASS; deliberately altered source area still rejected"
+    },
+    "termination_fragment": {
+      "vertices": 8,
+      "before": "small-scale partition rejected",
+      "after": "PASS; positive pieces, exact boundary, area and conformal topology at three scales"
+    }
+  }
+}

@@ -79,6 +79,28 @@ struct SolverLocalRepartitionResult2D {
     }
 };
 
+struct SolverDirectionalRepairResult2D {
+    TopologyMesh2D topology;
+    std::vector<bool> immutableCells;
+    DirectionalConnectivityReport2D before;
+    DirectionalConnectivityReport2D after;
+    std::size_t candidateCount = 0;
+    std::size_t acceptedCount = 0;
+    std::vector<std::string> issues;
+
+    // Structural/transaction success is separate from after.valid(): bounded
+    // exact unions may leave unresolved directional defects, reported in after.
+    [[nodiscard]] bool valid() const noexcept { return issues.empty() && topology.valid(); }
+};
+
+// Deterministic exact-union improvement; never changes an immutable cell or
+// relaxes a legacy Solver metric. Unresolved connectivity is explicitly kept
+// in the result, and is not redefined as a passing directional check.
+[[nodiscard]] SolverDirectionalRepairResult2D improveSolverDirectionalConnectivity2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells = {},
+    const TolerancePolicy& tol = {});
+
 struct SolverShortFaceRepairResult2D {
     TopologyMesh2D topology;
     std::vector<bool> immutableCells;

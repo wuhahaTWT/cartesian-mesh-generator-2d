@@ -2820,6 +2820,106 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
     return result;
 }
 
+SolverDirectionalRepairResult2D improveSolverDirectionalConnectivity2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    const TolerancePolicy& tol) {
+    SolverDirectionalRepairResult2D result;
+    result.topology=topology;
+    result.immutableCells=immutableCells;
+    result.before=evaluateDirectionalConnectivity2D(topology);
+    result.after=result.before;
+    if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid() ||
+        (!immutableCells.empty() && immutableCells.size()!=topology.cells.size()) ||
+        !result.before.issues.empty()) {
+        result.issues.push_back("directional repair requires valid inputs");
+        return result;
+    }
+    auto currentQuality=evaluateSolverQuality2D(topology,{},tol);
+    if (!currentQuality.valid()) {
+        result.issues.push_back("directional repair requires the original Solver policy to pass");
+        return result;
+    }
+    const auto noWorse=[](const SolverQualityReport2D& after,const SolverQualityReport2D& before) {
+        const auto upper=[](double a,double b) { return a-b<=1e-8*std::max(1.0,std::abs(b)); };
+        const auto lower=[](double a,double b) { return b-a<=1e-8*std::max(1.0,std::abs(b)); };
+        return after.valid() &&
+            upper(after.maxNonOrthogonalityDeg,before.maxNonOrthogonalityDeg) &&
+            upper(after.maxInternalSkewness,before.maxInternalSkewness) &&
+            upper(after.maxBoundarySkewness,before.maxBoundarySkewness) &&
+            upper(after.maxConcavityDeg,before.maxConcavityDeg) &&
+            upper(after.maxCellAspect,before.maxCellAspect) &&
+            lower(after.minInteriorAngleDeg,before.minInteriorAngleDeg) &&
+            lower(after.minFaceLength,before.minFaceLength) &&
+            lower(after.minFaceWeight,before.minFaceWeight) &&
+            lower(after.minVolumeRatio,before.minVolumeRatio) &&
+            lower(after.minCompactness,before.minCompactness);
+    };
+    for (std::size_t iteration=0;iteration<32U && !result.after.failedCells.empty();++iteration) {
+        const auto immutable=[&](std::size_t cell) {
+            return !result.immutableCells.empty() && result.immutableCells[cell];
+        };
+        std::set<std::pair<std::size_t,std::size_t>> pairs;
+        for (const auto cell:result.after.failedCells) {
+            if (immutable(cell)) continue;
+            for (const auto edgeId:result.topology.cells[cell].edges) {
+                const auto& edge=result.topology.edges[edgeId];
+                if (!edge.neighbour || immutable(edge.owner) || immutable(*edge.neighbour)) continue;
+                pairs.emplace(std::min(edge.owner,*edge.neighbour),std::max(edge.owner,*edge.neighbour));
+            }
+        }
+        bool accepted=false;
+        for (const auto& [first,second]:pairs) {
+            ++result.candidateCount;
+            const auto inPair=[&](std::size_t cell) { return cell==first || cell==second; };
+            // All outer atomic faces are retained by an exact union. Removing
+            // their common internal face is the only change to this tensor.
+            std::set<std::size_t> outerInternalEdges;
+            for (const auto cell:{first,second}) {
+                for (const auto edgeId:result.topology.cells[cell].edges) {
+                    const auto& edge=result.topology.edges[edgeId];
+                    if (edge.neighbour && inPair(edge.owner)!=inPair(*edge.neighbour))
+                        outerInternalEdges.insert(edgeId);
+                }
+            }
+            std::vector<Vector2D> directions;
+            for (const auto id:outerInternalEdges) {
+                const auto& edge=result.topology.edges[id];
+                directions.push_back(result.topology.vertices[edge.v1].point-
+                                     result.topology.vertices[edge.v0].point);
+            }
+            const double mergedDeterminant=directionalDeterminant2D(directions);
+            if (!std::isfinite(mergedDeterminant) ||
+                mergedDeterminant<minimumDirectionalDeterminant2D) continue;
+            const auto merged=mergeAdjacentPolygonsSimple(
+                topologyCellPolygon(result.topology,first),topologyCellPolygon(result.topology,second),tol);
+            if (!merged) continue;
+            const auto metrics=evaluateSolverCellMetrics2D(*merged,tol);
+            if (!metrics.valid || metrics.maxConcavityDeg>currentQuality.policy.maxConcavityDeg ||
+                metrics.minInteriorAngleDeg<currentQuality.policy.minInteriorAngleDeg ||
+                metrics.hydraulicAspect>currentQuality.policy.maxCellAspect) continue;
+            auto candidate=agglomerateCellPair(result.topology,first,second,*merged,
+                domain,boundary,tol,nullptr,result.immutableCells);
+            if (!candidate.topology.valid()) continue;
+            auto candidateQuality=evaluateSolverQuality2D(candidate.topology,{},tol);
+            if (!noWorse(candidateQuality,currentQuality)) continue;
+            auto connectivity=evaluateDirectionalConnectivity2D(candidate.topology);
+            if (!connectivity.issues.empty() || !connectivity.minimumMeasured ||
+                connectivity.failedCells.size()>=result.after.failedCells.size() ||
+                *connectivity.minimumMeasured<*result.after.minimumMeasured) continue;
+            result.topology=std::move(candidate.topology);
+            result.immutableCells=std::move(candidate.immutableCells);
+            result.after=std::move(connectivity);
+            currentQuality=std::move(candidateQuality);
+            ++result.acceptedCount;
+            accepted=true;
+            break;
+        }
+        if (!accepted) break;
+    }
+    return result;
+}
+
 SolverTopologyResult2D buildSolverTopology2D(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {

@@ -3,6 +3,7 @@
 #include "cartmesh2d/topology/Topology2D.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -100,6 +101,29 @@ struct SolverQualityReport2D {
     const TopologyMesh2D& topology,
     const SolverQualityPolicy2D& policy = {},
     const TolerancePolicy& tol = {});
+
+// Separate from the legacy Solver policy. This is OpenFOAM's directional
+// wellposedness metric for uncoupled planar cells uniformly extruded with
+// empty front/back patches. Only actual internal side faces contribute.
+// Zero or one internal direction has determinant zero, not a skipped check.
+inline constexpr double minimumDirectionalDeterminant2D = 0.001;
+
+[[nodiscard]] double directionalDeterminant2D(
+    const std::vector<Vector2D>& internalEdgeVectors);
+
+struct DirectionalConnectivityReport2D {
+    std::vector<double> cellDeterminants;
+    std::optional<double> minimumMeasured;
+    std::vector<std::size_t> failedCells;
+    std::vector<std::string> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        return issues.empty() && minimumMeasured.has_value() && failedCells.empty();
+    }
+};
+
+[[nodiscard]] DirectionalConnectivityReport2D evaluateDirectionalConnectivity2D(
+    const TopologyMesh2D& topology);
 
 // Monotonic count of full-mesh solver-quality evaluations in this process.
 // Instrumentation only, mirroring globalTopologyBuildCount2D().

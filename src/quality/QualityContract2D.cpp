@@ -6,6 +6,7 @@
 #include <limits>
 #include <numbers>
 #include <sstream>
+#include <tuple>
 
 namespace cartmesh2d {
 namespace {
@@ -517,6 +518,35 @@ std::string qualityContractReportToJson(const QualityContractReport2D& report,
     }
     out<<"]\n}\n";
     return out.str();
+}
+
+bool qualityContractMetricsNoWorse2D(
+    const QualityContractReport2D& after,const QualityContractReport2D& before) {
+    if (!after.validInput() || !before.validInput()) return false;
+    using Key=std::tuple<QualityCellType2D,std::string,QualityContractLevel2D>;
+    std::map<Key,std::size_t> beforeCounts,afterCounts;
+    for (const auto& issue:before.issues)
+        ++beforeCounts[{issue.entity.cellType,issue.metric,issue.level}];
+    for (const auto& issue:after.issues)
+        ++afterCounts[{issue.entity.cellType,issue.metric,issue.level}];
+    for (const auto& [key,count]:afterCounts) {
+        if (count>beforeCounts[key]) return false;
+    }
+    const auto noWorse=[](const auto& candidate,const auto& baseline) {
+        for (const auto& [name,previous]:baseline) {
+            if (previous.count==0U) continue;
+            const auto found=candidate.find(name);
+            if (found==candidate.end() || found->second.count==0U ||
+                found->second.lowerIsWorse!=previous.lowerIsWorse) return false;
+            const double a=found->second.worst,b=previous.worst;
+            if (!std::isfinite(a) || !std::isfinite(b)) return false;
+            const double deterioration=previous.lowerIsWorse?b-a:a-b;
+            if (deterioration>1e-8*std::max(1.0,std::abs(b))) return false;
+        }
+        return true;
+    };
+    return noWorse(after.ordinaryMetrics,before.ordinaryMetrics) &&
+           noWorse(after.boundaryLayerMetrics,before.boundaryLayerMetrics);
 }
 
 } // namespace cartmesh2d

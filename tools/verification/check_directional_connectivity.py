@@ -14,7 +14,10 @@ import json
 import math
 from pathlib import Path
 
-from check_mesh_resolution import read_cm2d
+if __package__:
+    from .check_mesh_resolution import read_cm2d
+else:
+    from check_mesh_resolution import read_cm2d
 
 MINIMUM_DETERMINANT = 0.001
 
@@ -76,12 +79,38 @@ def measure(cm2d: Path) -> dict:
     }
 
 
+def verify_native_report(measured: dict, report: dict) -> None:
+    native = report.get("directional_connectivity")
+    if not isinstance(native, dict):
+        raise ValueError("missing native directional report")
+    if native.get("scope") != "uncoupled_planar_uniform_extrusion_empty_front_back":
+        raise ValueError("native directional scope mismatch")
+    if native.get("threshold") != MINIMUM_DETERMINANT:
+        raise ValueError("native directional threshold mismatch")
+    if native.get("input_issue_count") != 0 or native.get("valid") is not measured["valid"]:
+        raise ValueError("native directional verdict mismatch")
+    expected = [item["cell_id"] for item in measured["failed_cells"]]
+    if native.get("failed_cell_ids") != expected:
+        raise ValueError("native directional failed-cell IDs mismatch")
+    a, b = native.get("minimum"), measured["minimum_measured"]
+    if b is None:
+        if a is not None:
+            raise ValueError("native directional minimum fabricated for empty mesh")
+    elif not isinstance(a, (float, int)) or not math.isfinite(a) or not math.isclose(
+            a, b, rel_tol=1e-10, abs_tol=1e-13):
+        raise ValueError("native directional minimum mismatch")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("cm2d", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--report", type=Path, help="Independently verify a native .resolution.json report")
     args = parser.parse_args()
     result = measure(args.cm2d)
+    if args.report:
+        verify_native_report(result, json.loads(args.report.read_text()))
+        result["native_report_verified"] = True
     text = json.dumps(result, indent=2, allow_nan=False) + "\n"
     if args.output:
         args.output.write_text(text)

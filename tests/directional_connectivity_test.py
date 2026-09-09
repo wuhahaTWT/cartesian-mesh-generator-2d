@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "verification"))
-from check_directional_connectivity import determinant, measure
+from check_directional_connectivity import determinant, measure, verify_native_report
 
 
 class DirectionalConnectivityTest(unittest.TestCase):
@@ -84,6 +84,19 @@ END
         for vectors in [[(0, 0)], [(math.inf, 1)], [(1, math.nan)]]:
             with self.assertRaises(ValueError):
                 determinant(vectors)
+
+    def test_native_failure_report_cannot_hide_bad_cells(self):
+        measured = {"valid": False, "minimum_measured": 0.000331,
+                    "failed_cells": [{"cell_id": 108446}]}
+        native = {"scope": "uncoupled_planar_uniform_extrusion_empty_front_back",
+                  "valid": False, "threshold": 0.001, "minimum": 0.000331,
+                  "failed_cell_ids": [108446], "input_issue_count": 0}
+        verify_native_report(measured, {"directional_connectivity": native})
+        for key, wrong in (("valid", True), ("threshold", 0.0001),
+                           ("minimum", None), ("minimum", 0.001),
+                           ("failed_cell_ids", []), ("input_issue_count", 1)):
+            with self.assertRaises(ValueError):
+                verify_native_report(measured, {"directional_connectivity": {**native, key: wrong}})
 
 
 if __name__ == "__main__":

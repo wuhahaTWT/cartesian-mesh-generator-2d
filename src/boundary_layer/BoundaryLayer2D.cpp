@@ -70,7 +70,7 @@ void canonicalRotate(std::vector<Point2D>& vertices) {
         minY = std::min(minY, point.y);
         maxY = std::max(maxY, point.y);
     }
-    return std::max({maxX - minX, maxY - minY, 1.0});
+    return std::max(maxX - minX, maxY - minY);
 }
 
 [[nodiscard]] bool adjacentSegments(std::size_t lhs, std::size_t rhs,
@@ -425,9 +425,7 @@ struct ChainGeometryResult2D {
     BoundaryLayerStrip2D strip, const BoundaryLayerPolicy2D& policy) {
     const double scale = geometryScale(strip.wallChain);
     const double lengthEpsilon = policy.tolerance.scale(scale);
-    const double areaEpsilon = std::max(policy.tolerance.absolute *
-                                        policy.tolerance.absolute,
-                                        policy.tolerance.relative * scale * scale);
+    const double areaEpsilon = policy.tolerance.areaScale(scale);
     const std::size_t ringSize = strip.wallChain.vertices.size();
     const std::size_t ringCount = strip.ringVertexIds.size();
     const bool variableColumns=strip.actualLayerCounts.size()==
@@ -956,7 +954,8 @@ bool isConvexBoundaryLayerQuad2D(
         const Vector2D incoming = current - previous;
         const Vector2D outgoing = next - current;
         const double product = std::sqrt(squaredNorm(incoming) * squaredNorm(outgoing));
-        if (!(product > 0.0) || cross(incoming, outgoing) <= tol.scale(product)) {
+        if (!(product > 0.0) ||
+            cross(incoming, outgoing) <= tol.areaScale(std::sqrt(product))) {
             return false;
         }
     }
