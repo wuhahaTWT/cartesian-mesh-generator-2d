@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 import tempfile
+import subprocess
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools' / 'verification'))
 from check_face_planes import classify, face_geometry, run_case
@@ -69,6 +70,12 @@ class FacePlaneAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d); (root/'points').write_text(vecs()); (root/'faces').write_text(flist()); (root/'owner').write_text('6\n(0 0 0 0 0 0)\n'); (root/'neighbour').write_text('0\n(\n)\n')
             self.assertEqual(run_case(root)['safe'],1)
+            wrong=root/'wrong-set'; wrong.write_text('1\n(0)\n')
+            self.assertFalse(run_case(root,wrong)['expected_set_matches'])
+            proc=subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/
+                'tools/verification/check_face_planes.py'),str(root),'--expected-set',str(wrong)],
+                capture_output=True,text=True)
+            self.assertEqual(proc.returncode,1)
             exp=root/'set'; exp.write_text('1\n(2)\n')
             with self.assertRaises(ValueError): run_case(root,exp)
             (root/'points').write_text(vecs().replace('8\n','7\n',1))

@@ -24,7 +24,7 @@
 | `stabilization/SmallCell2D`、`Agglomeration2D` | 小单元识别与聚合 |
 | `quality/Quality2D`、`SolverQuality2D` | 基础质量与硬求解门 |
 | `quality/QualityContract2D` | 无量纲分类型 Q1 合同与纯路径可达性诊断 |
-| `quality/SolverTopology2D`、`PatchLocalQuality2D` | 凸划分、有限局部修复、patch-local 候选选择 |
+| `quality/SolverTopology2D`、`PatchLocalQuality2D` | 凸划分、源邻域相对评分、精确合并/切分批量与完整质量验收 |
 | `io/Dxf2D`、`BoundaryMetadata2D` | CAD 曲线、单位、边界名称/角色 |
 | `io/MeshIO2D`、`OpenFoam2D` | CM2D/VTK/JSON、二维挤出和 OpenFOAM case |
 
@@ -104,7 +104,7 @@ docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam
 | `render_cm2d.py`、`render_boundary_layer2d.py`、`render_hybrid2d.py` | 读取真实产物绘图；hybrid sourceKey 不是树层级，应按面积画 |
 
 除绘图工具外，上述工具位于 `tools/verification/`，参数用 `--help` 查看。
-几何 fixtures 都在 `examples/`；`tests/repro/` 的两个小文件是尚未修复的审计反例，不是已通过的回归。
+几何 fixtures 都在 `examples/`；`tests/repro/` 同时含审计反例与已接入测试的失败小案例；`source_halo_circle_patch.hpp` 保留源修复和最终重划分的真实邻域回归，不能把目录整体标成通过或失败。
 DXF 反例可用 `build/cartmesh2d_dxf_cli tests/repro/hidden-spline-bulge.dxf outputs/hidden.xy 0.001 outputs/hidden.json` 复现。
 
 ## 不能丢失的设计边界
