@@ -201,8 +201,9 @@ enum class TerminationQualityCandidateMode2D {
     const std::vector<std::size_t>& sortedCellIds,
     const TolerancePolicy& tol = {});
 
-// Replaces two adjacent solver cells by an area-identical alternative convex
-// two-piece partition only when the complete solver-quality score improves.
+// Replaces adjacent solver cells by an exact union or an area-identical
+// alternative two-piece partition, using independent batches where possible.
+// Every commit must improve the complete, unchanged solver-quality score.
 [[nodiscard]] SolverLocalRepartitionResult2D repartitionSolverTopologyByQuality2D(
     const TopologyMesh2D& topology,
     const Domain2D& domain,

@@ -136,12 +136,13 @@ def run_case(case: Path, expected_set: Path|None=None):
     if actual is not None and any(x<0 or x>=n for x in actual): raise ValueError('expected set cell index out of range')
     files={name:sha256(case/name) for name in ('points','faces','owner','neighbour')}
     out={'format':'openfoam-face-plane-audit-v1','scope':'face-plane classification only; not overall mesh PASS','case':str(case),'input_files_sha256':files,'threshold':PLANAR_COS_ANGLE,'cell_count':n,'face_count':len(faces),'point_count':len(points),'original_flagged':len(result['original_flagged']),'positive_side':len(result['positive_side']),'near_coplanar_only':len(result['near_coplanar_only']),'safe':len(result['safe']),'cells_with_safe_pair':len(result['cells_with_safe_pair']),'pair_counts':result['pair_counts'],'maximum_dot':max((x['maximum_dot'] for x in result['maxima']),default=None)}
-    if actual is None: out.update({'expected_set':None,'actual_set_count':None,'actual_set_only':None,'missing_set':None})
-    else: out.update({'expected_set':str(expected_set),'actual_set_count':len(actual),'actual_set_only':sorted(actual-result['original_flagged']),'missing_set':sorted(result['original_flagged']-actual)})
+    if actual is None: out.update({'expected_set':None,'expected_set_matches':None,'actual_set_count':None,'actual_set_only':None,'missing_set':None})
+    else: out.update({'expected_set':str(expected_set),'expected_set_matches':actual==result['original_flagged'],'actual_set_count':len(actual),'actual_set_only':sorted(actual-result['original_flagged']),'missing_set':sorted(result['original_flagged']-actual)})
     return out
 
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('case',type=Path,help='OpenFOAM constant/polyMesh directory'); p.add_argument('--output',type=Path); p.add_argument('--expected-set',type=Path); a=p.parse_args()
     out=run_case(a.case,a.expected_set); text=json.dumps(out,indent=2,sort_keys=True,allow_nan=False)+'\n'; print(text,end='')
     if a.output: a.output.write_text(text)
+    if out['expected_set_matches'] is False: raise SystemExit(1)
 if __name__=='__main__': main()

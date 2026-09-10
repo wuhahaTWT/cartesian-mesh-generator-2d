@@ -1,0 +1,63 @@
+{
+  "format": "actual-packaged-desktop-circle-r03-v1",
+  "native_seconds": 24.2598,
+  "wrapper_seconds": 111.6808272919152,
+  "wrapper_scope": "entire App launch, input, generation, rendering, ZIP, screenshot and cleanup; not native generation time",
+  "argv": [
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D",
+    "--smoke=circle",
+    "--control=manual",
+    "--method=hybrid",
+    "--allow-unsafe=true",
+    "--reference-length=2",
+    "--wall-relative-size=.0025",
+    "--background-relative-size=.0125",
+    "--first-layer-relative-size=.000625",
+    "--padding-relative-size=.5",
+    "--band-cells=40",
+    "--layers=4",
+    "--growth-ratio=1.2",
+    "--extrusion-relative-size=.01",
+    "--small-alpha=.1",
+    "--out=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-desktop-final-circle/explicit-high-depth",
+    "--shot=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-desktop-final-circle/explicit-high-depth/circle.png",
+    "--export=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-desktop-final-circle/explicit-high-depth/circle.zip"
+  ],
+  "preview_cells": 164970,
+  "exported_cells": 164970,
+  "bottom_reachable": true,
+  "renderer_gate_text": "内部拓扑检查\nPASS\n生成器内部检查通过；外部 checkMesh 需另外执行。\nSolver 质量\nPASS\n最大非正交角 64.16　最大内部歪斜 2.190　最大边界歪斜 0.01261　最小面权重 0.06429　最小体积比 0.04029　最大单元长宽比 17.75\n方向连通质量\nPASS\n最小 determinant 0.055622，下限 0.001；不合格单元 0。适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。\nQ1 合同\nFAIL\nCartesian FAIL(8 hard)　Cut-cell 余域 FAIL(314 hard)　过渡环 WARN　边界层 OBSERVED\nQ1 比 solver 门和 checkMesh 都严，是诊断而不是放行条件。分类型计数在 solver 凸划分之后统计，所以归到 cartesian 的项可能含划分碎片。",
+  "Q1_text_read_from_renderer": true,
+  "Q1_row_visible_in_screenshot": false,
+  "default_depth_refusal": "outputs/engineering-desktop-final-circle/app.log",
+  "high_depth_explicitly_enabled": true,
+  "solver_Q1_thresholds_unchanged": true,
+  "CLI_App_ZIP_cm2d_sha256": "cc0cdeda3ac26982f9037799039a7be7af2cad29b37effba96eeac17ba87ffad",
+  "byte_equality": true,
+  "screenshot": "artifacts/current/desktop-hybrid-circle-164k.png",
+  "evidence_directory": "outputs/engineering-desktop-final-circle/explicit-high-depth",
+  "independent_readers": {
+    "dimensions": {
+      "valid": true,
+      "issues": []
+    },
+    "layer": {
+      "valid": true,
+      "first_layer_wall_length_fraction": 1.0,
+      "full_requested_layers_wall_length_fraction": 1.0,
+      "issues": []
+    },
+    "openfoam": {
+      "valid": true,
+      "cell_count": 164970,
+      "issues": []
+    },
+    "directional": {
+      "cell_count": 164970,
+      "minimum_measured": 0.05562172824330902,
+      "failed_cell_count": 0,
+      "valid": true,
+      "native_report_verified": true
+    }
+  }
+}

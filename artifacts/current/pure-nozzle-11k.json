@@ -1,0 +1,74 @@
+{
+  "format": "fixed-pure-nozzle-low-v1",
+  "argv": [
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-nozzle-low/cartmesh2d_cli",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-nozzle-low/mesh",
+    "11",
+    "0.25",
+    "0.1",
+    "interior",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-nozzle-low/openfoam",
+    "0",
+    "0",
+    "--size-field",
+    "--reference-length",
+    "6",
+    "--wall-relative-size",
+    "0.0025",
+    "--background-relative-size",
+    "0.0125",
+    "--far-field-spans",
+    "0.5",
+    "--cells-per-level",
+    "3",
+    "--max-safe-wall-level",
+    "11"
+  ],
+  "binary_sha256": "052a1d5184e38b9197c4d068203c5b33660d4a5e706f38f41d983009cfb60bd6",
+  "solver_cells": 11472,
+  "native_seconds": 2.73959408,
+  "requested": {
+    "wall_h_over_reference": 0.0025,
+    "background_h_over_reference": 0.012500000000000002,
+    "first_layer_h_over_reference": null,
+    "layer_count": null
+  },
+  "actual": {
+    "sqrt_area_over_reference": {
+      "min": 0.0002702420266545781,
+      "p50": 0.001953125,
+      "p95": 0.0078125,
+      "max": 0.0078125
+    },
+    "wall_edge_length_over_reference": {
+      "min": 0.0003909817425125992,
+      "p50": 0.001973200263936187,
+      "p95": 0.0019984040812643183,
+      "max": 0.001998710023184664
+    },
+    "wall_owner_tangential_extent_over_reference": {
+      "min": 0.0003996808162528805,
+      "p50": 0.0020618230840777118,
+      "p95": 0.002330246122643893,
+      "max": 0.0024089624401492852
+    },
+    "wall_owner_normal_extent_over_reference": {
+      "min": 0.0001839809779315587,
+      "p50": 0.0015761983943668512,
+      "p95": 0.001953125,
+      "max": 0.002098875429954583
+    }
+  },
+  "mesh_sha256": "eaeac14d74ba00f1d326ed084f6924266fdb3d6c534621843a2ba0e02d563c5f",
+  "three_readers": "PASS",
+  "native_directional_report_verified": true,
+  "minimum_directional_determinant": 0.04828556849505676,
+  "solver": "PASS",
+  "Q1": "FAIL",
+  "standard_checkMesh": "PASS",
+  "expanded_checkMesh": "FAIL",
+  "concave_or_planar_cells": 968,
+  "evidence_directory": "outputs/engineering-pure-nozzle-low",
+  "scope": "fixed near-wall refinement band 3, wall/Lref .0025, background/Lref .0125, Lref 6; no far-field padding change or parameter search"
+}

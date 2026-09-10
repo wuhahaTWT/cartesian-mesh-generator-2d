@@ -2,6 +2,7 @@
 #include "cartmesh2d/quality/PatchLocalQuality2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
+#include "repro/source_halo_circle_patch.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -369,6 +370,110 @@ int main() {
               cleanSolverTopology.topology.cells[1].sourceLineage==
                   std::vector<std::size_t>{1U},
           "clean solver topology preserves one-source lineage without geometry lookup");
+    // The thin third rectangle is bad, but the first is healthy. Isolated
+    // polygon ranking prefers merging 1+2 (near-square), then discovers that
+    // its changed centre makes the 0/1 interface fail. Real-neighbour ranking
+    // instead merges 2+3 and leaves both healthy sources untouched.
+    for (const double scale : {0.001,1.0,1000.0}) {
+        std::vector<CutCell2D> strips;
+        double x=0.0;
+        for (const double width : {0.0529,1.0,0.01,0.3}) {
+            strips.push_back(fullCell(strips.size(),{{x,0.0},{x+width*scale,scale}}));
+            x+=width*scale;
+        }
+        const Domain2D stripDomain{{{0.0,0.0},{x,scale}}};
+        const BoundaryRegion2D stripBoundary(
+            BoundaryLoop({{0.0,0.0},{x,0.0},{x,scale},{0.0,scale}}));
+        const auto input=buildGlobalTopology(strips,stripDomain,stripBoundary);
+        check(input.valid() && !evaluateSolverQuality2D(input).valid(),
+              "source neighbour ranking fixture starts with genuine face-quality failures");
+        for (const bool protectFirst : {false,true}) {
+            SolverTopologyConstraints2D constraints;
+            constraints.immutableInputCells={protectFirst,false,false,false};
+            const auto repaired=buildSolverTopology2D(input,stripDomain,stripBoundary,constraints);
+            check(repaired.valid() && evaluateSolverQuality2D(repaired.topology).valid(),
+                  "source merge with real neighbours passes unchanged full quality gate");
+            check(repaired.topology.cells.size()==3 &&
+                  repaired.profile.acceptedSourceRepairs==1 &&
+                  repaired.profile.candidateTopologyCount==1,
+                  "source neighbour ranking avoids a self-induced defect and second global rebuild");
+            std::vector<std::vector<std::size_t>> lineage;
+            for (const auto& cell:repaired.topology.cells) lineage.push_back(cell.sourceLineage);
+            std::sort(lineage.begin(),lineage.end());
+            check(lineage==std::vector<std::vector<std::size_t>>{{0},{1},{2,3}},
+                  "source neighbour ranking preserves healthy and immutable source polygons");
+        }
+    }
+
+    for (const auto& fixture:{repro::sourceHaloCirclePatch(),
+                              repro::finalRepartitionCirclePatch()}) {
+        std::vector<CutCell2D> source;
+        for (std::size_t i=0;i<fixture.polygons.size();++i)
+            source.push_back(polygonCell(fixture.originalSourceIds[i],fixture.polygons[i].vertices));
+        const BoundaryRegion2D patchBoundary(fixture.boundaryLoops);
+        const Domain2D patchDomain{patchBoundary.bounds()};
+        const auto patch=buildGlobalTopology(source,patchDomain,patchBoundary);
+        SolverTopologyConstraints2D constraints;
+        constraints.immutableInputCells=fixture.immutable;
+        constraints.preserveInputCells=fixture.preserve;
+        const auto repaired=buildSolverTopology2D(patch,patchDomain,patchBoundary,constraints);
+        check(patch.valid() && repaired.valid() &&
+              evaluateSolverQuality2D(repaired.topology).valid(),
+              "real circle source-repair patch retains full topology and solver acceptance");
+        if (fixture.polygons.size()==21U)
+            check(repaired.profile.candidateTopologyCount<30U,
+                  "real final-repartition patch avoids exhaustive rebuilding of unchanged convex splits");
+        double expectedArea=0.0,actualArea=0.0;
+        for (const auto& polygon:fixture.polygons) expectedArea+=polygon.area();
+        std::vector<std::size_t> survivingSources;
+        for (const auto& cell:repaired.topology.cells) {
+            actualArea+=cell.geometryArea;
+            survivingSources.insert(survivingSources.end(),cell.sourceLineage.begin(),cell.sourceLineage.end());
+        }
+        std::sort(survivingSources.begin(),survivingSources.end());
+        survivingSources.erase(std::unique(survivingSources.begin(),survivingSources.end()),survivingSources.end());
+        auto expectedSources=fixture.originalSourceIds;
+        std::sort(expectedSources.begin(),expectedSources.end());
+        check(survivingSources==expectedSources &&
+              std::abs(actualArea-expectedArea)<=TolerancePolicy{}.relative*expectedArea,
+              "real circle patch repair preserves total area and every original source");
+    }
+
+    {
+        // Independent low-weight pairs require true 2-to-1 unions. A batch
+        // may therefore emit fewer cells than it removes; every metadata and
+        // source-lineage array must follow the actual replacement count.
+        std::vector<CutCell2D> inputCells;
+        std::vector<BoundaryLoop> loops;
+        for (std::size_t copy=0;copy<3;++copy) {
+            const double x=2.0*static_cast<double>(copy);
+            inputCells.push_back(fullCell(2*copy,{{x,0},{x+.01,1}}));
+            inputCells.push_back(fullCell(2*copy+1,{{x+.01,0},{x+1.01,1}}));
+            loops.emplace_back(std::vector<Point2D>{{x,0},{x+1.01,0},{x+1.01,1},{x,1}});
+        }
+        const BoundaryRegion2D boundary(loops);
+        const Domain2D domain{boundary.bounds()};
+        const auto input=buildGlobalTopology(inputCells,domain,boundary);
+        const auto batch=repartitionSolverTopologyByQuality2D(input,domain,boundary);
+        const auto reference=repartitionSolverTopologyByQualitySequentialReference2D(input,domain,boundary);
+        check(input.valid() && !evaluateSolverQuality2D(input).valid() &&
+              batch.valid() && reference.valid() &&
+              evaluateSolverQuality2D(batch.topology).valid() &&
+              evaluateSolverQuality2D(reference.topology).valid(),
+              "independent union batch and exhaustive reference satisfy the same full solver gate");
+        check(batch.topology.cells.size()==3 && batch.immutableCells.size()==3,
+              "union batch emits one cell and one protection flag per replacement");
+        std::vector<std::vector<std::size_t>> lineage;
+        double area=0.0;
+        for (const auto& cell:batch.topology.cells) {
+            lineage.push_back(cell.sourceLineage);area+=cell.geometryArea;
+        }
+        std::sort(lineage.begin(),lineage.end());
+        check(lineage==std::vector<std::vector<std::size_t>>{{0,1},{2,3},{4,5}} &&
+              std::abs(area-3.03)<1e-12,
+              "independent union batch preserves all three disjoint regions and their source identities");
+    }
+
     const auto independentPatches=selectIndependentSolverRepairPatches2D(
         {{0,1,2},{2,3},{4,5}});
     check(independentPatches==std::vector<std::size_t>({0,2}),

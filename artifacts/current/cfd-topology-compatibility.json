@@ -1,0 +1,67 @@
+{
+  "format": "final-core-cfd-topology-compatibility-v1",
+  "binary_sha256": "052a1d5184e38b9197c4d068203c5b33660d4a5e706f38f41d983009cfb60bd6",
+  "results": [
+    {
+      "name": "mms-h04",
+      "returncode": 0,
+      "elapsed_seconds": 0.05554819107055664,
+      "original_sha256": "1a7417853d4b4cf48ae1077feb8e41f7a1b32f70ee56065b8eba5b34ee4cc851",
+      "output_sha256": "1a7417853d4b4cf48ae1077feb8e41f7a1b32f70ee56065b8eba5b34ee4cc851",
+      "byte_equal": true,
+      "source_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/mms/h04/circle.solver.cm2d",
+      "current_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd-final-topology/mms-h04/mesh.solver.cm2d"
+    },
+    {
+      "name": "mms-h02",
+      "returncode": 0,
+      "elapsed_seconds": 0.15293288230895996,
+      "original_sha256": "a381c1d27565b889241897ca4ddfdf4dfc905766c30d9a303e3a766ca3162649",
+      "output_sha256": "a381c1d27565b889241897ca4ddfdf4dfc905766c30d9a303e3a766ca3162649",
+      "byte_equal": true,
+      "source_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/mms/h02/circle.solver.cm2d",
+      "current_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd-final-topology/mms-h02/mesh.solver.cm2d"
+    },
+    {
+      "name": "mms-h01",
+      "returncode": 0,
+      "elapsed_seconds": 0.5391972064971924,
+      "original_sha256": "093f0013e7d9a772f9d12c3529315404de4b85d2c211d9bb17e81cecf8589302",
+      "output_sha256": "093f0013e7d9a772f9d12c3529315404de4b85d2c211d9bb17e81cecf8589302",
+      "byte_equal": true,
+      "source_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd/mms/h01/circle.solver.cm2d",
+      "current_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd-final-topology/mms-h01/mesh.solver.cm2d"
+    },
+    {
+      "name": "nozzle-r01",
+      "returncode": 0,
+      "elapsed_seconds": 0.1267409324645996,
+      "original_sha256": "e55df375691b62ad249969d27760a4bc8c26f343033e29eece82281ecdbbd483",
+      "output_sha256": "e55df375691b62ad249969d27760a4bc8c26f343033e29eece82281ecdbbd483",
+      "byte_equal": true,
+      "source_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/nozzle/r01/mesh.solver.cm2d",
+      "current_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd-final-topology/nozzle-r01/mesh.solver.cm2d"
+    },
+    {
+      "name": "nozzle-r02",
+      "returncode": 0,
+      "elapsed_seconds": 1.288651943206787,
+      "original_sha256": "b70aa0e14897a0f9ccbdd0893267095c8c07b9d0283e67652fc9a0a1c2a035e6",
+      "output_sha256": "d9bf6bc05e753a796ca6f28527d568cf2e164a002b277bb76640bfc4b3cb1ca9",
+      "byte_equal": false,
+      "source_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-scale/nozzle/r02/mesh.solver.cm2d",
+      "current_mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-cfd-final-topology/nozzle-r02/mesh.solver.cm2d"
+    },
+    {
+      "name": "nozzle-r03",
+      "byte_equal": true,
+      "original_sha256": "fe19cb4189eff5e8d6ea71ac6d6f76deb12f4927556159c188d83c63423cca04",
+      "output_sha256": "fe19cb4189eff5e8d6ea71ac6d6f76deb12f4927556159c188d83c63423cca04",
+      "source_mesh": "outputs/engineering-scale/nozzle/r03/mesh.solver.cm2d",
+      "current_mesh": "outputs/engineering-final-middle/pure-nozzle/mesh.solver.cm2d"
+    }
+  ],
+  "scope": "CM2D final 2D topology compatibility only; fixed engineering CFD uses its original configured extrusion and inlet/outlet patch mapping",
+  "changed_grid": "nozzle-r02",
+  "changed_grid_followup": "outputs/engineering-cfd-final-r02: actual simpleFoam recomputation completed, 574 iterations; see current-three-grid-comparison.json"
+}

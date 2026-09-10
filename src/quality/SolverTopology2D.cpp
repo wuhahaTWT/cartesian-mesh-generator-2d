@@ -471,6 +471,11 @@ struct QualityScore2D {
 };
 
 struct LocalQualityRank2D {
+    // Source proposals span different neighbourhoods; compare improvement
+    // relative to each unchanged base scope before absolute tie-breaks.
+    std::ptrdiff_t issueDelta = 0;
+    double maximumSeverityDelta = 0.0;
+    double totalSeverityDelta = 0.0;
     QualityScore2D issues;
     double maxNonOrthogonality = 0.0;
     double maxInternalSkewness = 0.0;
@@ -514,7 +519,8 @@ struct LocalQualityRank2D {
         const auto bin=[](double value) {
             return std::round(value/TolerancePolicy{}.relative);
         };
-        return std::tuple(rank.issues.issueCount,
+        return std::tuple(rank.issueDelta,bin(rank.maximumSeverityDelta),
+            bin(rank.totalSeverityDelta),rank.issues.issueCount,
             bin(rank.issues.maximumSeverity),bin(rank.issues.totalSeverity),
             bin(rank.maxNonOrthogonality),bin(rank.maxInternalSkewness),
             bin(rank.maxBoundarySkewness),bin(rank.maxCellAspect),
@@ -522,6 +528,17 @@ struct LocalQualityRank2D {
             bin(rank.negativeMinVolumeRatio));
     };
     return key(candidate)<key(current);
+}
+
+void rankRelativeToBase(LocalQualityRank2D& rank,const LocalQualityRank2D& base) {
+    rank.issueDelta=static_cast<std::ptrdiff_t>(rank.issues.issueCount)-
+        static_cast<std::ptrdiff_t>(base.issues.issueCount);
+    const auto finiteDelta=[](double candidate,double before) {
+        const double delta=candidate-before;
+        return std::isfinite(delta)?delta:0.0;
+    };
+    rank.maximumSeverityDelta=finiteDelta(rank.issues.maximumSeverity,base.issues.maximumSeverity);
+    rank.totalSeverityDelta=finiteDelta(rank.issues.totalSeverity,base.issues.totalSeverity);
 }
 
 [[nodiscard]] std::optional<std::vector<Polygon2D>> partitionOnePolygon(
@@ -923,8 +940,7 @@ struct SourceMergeProposal2D {
 struct RepartitionProposal2D {
     std::size_t first = 0;
     std::size_t second = 0;
-    Polygon2D firstPiece;
-    Polygon2D secondPiece;
+    std::vector<Polygon2D> pieces;
     LocalQualityRank2D rank;
     std::vector<std::size_t> halo;
 };
@@ -1064,23 +1080,29 @@ struct RepartitionProposal2D {
     return boundary;
 }
 
-[[nodiscard]] std::optional<LocalQualityRank2D> localRepartitionQualityRank(
+[[nodiscard]] std::optional<LocalQualityRank2D> localReplacementQualityRank(
     const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
-    std::size_t first,std::size_t second,
-    const Polygon2D& firstPiece,const Polygon2D& secondPiece,
+    const std::vector<std::size_t>& removedCells,
+    const std::vector<Polygon2D>& replacementPieces,
     const TolerancePolicy& tol) {
+    if (removedCells.empty() || replacementPieces.empty() ||
+        !std::is_sorted(removedCells.begin(),removedCells.end()) ||
+        !std::is_sorted(halo.begin(),halo.end())) return std::nullopt;
+    for (const auto cell:removedCells) {
+        if (!std::binary_search(halo.begin(),halo.end(),cell)) return std::nullopt;
+    }
     const auto boundary=patchBoundaryRegion(topology,halo,tol);
     if (!boundary) return std::nullopt;
     const Domain2D domain{boundary->bounds()};
     if (!domain.valid(tol)) return std::nullopt;
     std::vector<CutCell2D> cells;
-    cells.reserve(halo.size());
+    cells.reserve(halo.size()+replacementPieces.size());
     for (const auto cell:halo) {
-        if (cell==first) {
-            cells.push_back(makeCell(cells.size(),firstPiece,tol));
-            cells.push_back(makeCell(cells.size(),secondPiece,tol));
+        if (cell==removedCells.front()) {
+            for (const auto& piece:replacementPieces)
+                cells.push_back(makeCell(cells.size(),piece,tol));
         }
-        if (cell==first || cell==second) continue;
+        if (std::binary_search(removedCells.begin(),removedCells.end(),cell)) continue;
         if (cell>=topology.cells.size()) return std::nullopt;
         cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol));
     }
@@ -1127,6 +1149,7 @@ struct RepartitionProposal2D {
     rank.negativeMinVolumeRatio=-quality.minVolumeRatio;
     return rank;
 }
+
 
 template<class Proposal>
 [[nodiscard]] std::vector<Proposal> selectIndependentProposals(
@@ -1241,10 +1264,10 @@ template<class Proposal>
             const auto lineage=mergedLineage(
                 topology.cells[replacements[cell]->first].sourceLineage,
                 topology.cells[replacements[cell]->second].sourceLineage);
-            cells.push_back(makeCell(cells.size(),replacements[cell]->firstPiece,tol,lineage));
-            cells.push_back(makeCell(cells.size(),replacements[cell]->secondPiece,tol,lineage));
-            rebuiltImmutable.push_back(false);
-            rebuiltImmutable.push_back(false);
+            for (const auto& piece:replacements[cell]->pieces) {
+                cells.push_back(makeCell(cells.size(),piece,tol,lineage));
+                rebuiltImmutable.push_back(false);
+            }
         } else {
             cells.push_back(makeCell(cells.size(),topologyCellPolygon(topology,cell),tol,
                                      topology.cells[cell].sourceLineage));
@@ -1335,21 +1358,47 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 if (profile) profile->candidateSplits+=splits.size();
                 std::optional<RepartitionProposal2D> best;
                 const auto halo=cellPairHalo(result.topology,first,second);
-                for (const auto& [firstPiece,secondPiece]:splits) {
-                    const auto rank=localRepartitionQualityRank(
-                        result.topology,halo,first,second,firstPiece,secondPiece,tol);
-                    if (!rank) continue;
+                const std::vector<std::size_t> removed{first,second};
+                const auto baseRank=localReplacementQualityRank(result.topology,halo,removed,
+                    {topologyCellPolygon(result.topology,first),
+                     topologyCellPolygon(result.topology,second)},tol);
+                const auto consider=[&](std::vector<Polygon2D> pieces) {
+                    auto rank=localReplacementQualityRank(
+                        result.topology,halo,removed,pieces,tol);
+                    if (!rank) return;
+                    if (baseRank) rankRelativeToBase(*rank,*baseRank);
                     RepartitionProposal2D proposal;
                     proposal.first=first;
                     proposal.second=second;
-                    proposal.firstPiece=firstPiece;
-                    proposal.secondPiece=secondPiece;
+                    proposal.pieces=std::move(pieces);
                     proposal.rank=*rank;
                     proposal.halo=halo;
-                    if (!best || betterLocalQualityRank(proposal.rank,best->rank)) {
+                    if (!best || betterLocalQualityRank(proposal.rank,best->rank))
                         best=std::move(proposal);
-                    }
+                };
+                // Exact-union agglomeration already exists in the exhaustive
+                // repair path below. Include it in the same independent batch
+                // machinery so many small bad interfaces need one global gate,
+                // instead of one full rebuild for every union/split candidate.
+                const bool convexUnion=strictlyConvex(allowCollinear?
+                    removeArtificialCollinearVertices(*merged,tol):*merged);
+                bool admissibleUnion=convexUnion;
+                if (!convexUnion && allowCollinear) {
+                    // The exhaustive alternate below already permits exact
+                    // concave unions under these same cell-policy bounds.
+                    // Score them with their neighbours before rebuilding the
+                    // whole mesh; the authoritative gate is still unchanged.
+                    const auto metrics=evaluateSolverCellMetrics2D(*merged,tol);
+                    admissibleUnion=metrics.valid &&
+                        metrics.maxConcavityDeg<=quality.policy.maxConcavityDeg &&
+                        metrics.minInteriorAngleDeg>=quality.policy.minInteriorAngleDeg &&
+                        metrics.hydraulicAspect<=quality.policy.maxCellAspect;
                 }
+                if (admissibleUnion &&
+                    !underDeterminedBoundaryCell(*merged,domain,boundary,tol))
+                    consider({*merged});
+                for (const auto& [firstPiece,secondPiece]:splits)
+                    consider({firstPiece,secondPiece});
                 if (best) proposals.push_back(std::move(*best));
                 if (profile) {
                     profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
@@ -3003,6 +3052,9 @@ SolverTopologyResult2D buildSolverTopology2D(
         result.profile.candidateGenerationSeconds+=profileSeconds(generationStart);
         result.profile.sourceCandidatePairs+=pairs.size();
         const auto adjacency=sourceAdjacency(partition,sourcePolygons.size());
+        std::vector<std::vector<std::size_t>> cellsForSource(sourcePolygons.size());
+        for (std::size_t cell=0;cell<partition.sourceForCell.size();++cell)
+            cellsForSource[partition.sourceForCell[cell]].push_back(cell);
         std::vector<SourceMergeProposal2D> proposals;
         for (const auto& [first,second]:pairs) {
             if (second>=sourcePolygons.size()) continue;
@@ -3012,14 +3064,42 @@ SolverTopologyResult2D buildSolverTopology2D(
             if (merged) {
                 const auto pieces=partitionOnePolygon(*merged,domain,boundary,tol);
                 if (pieces) {
-                    const auto rank=localPartitionQualityRank(*merged,*pieces,tol);
+                    const auto sourceHalo=sourcePairHalo(first,second,adjacency);
+                    std::vector<std::size_t> cellHalo;
+                    for (const auto source:sourceHalo)
+                        cellHalo.insert(cellHalo.end(),cellsForSource[source].begin(),
+                                        cellsForSource[source].end());
+                    std::sort(cellHalo.begin(),cellHalo.end());
+                    auto removed=cellsForSource[first];
+                    removed.insert(removed.end(),cellsForSource[second].begin(),
+                                   cellsForSource[second].end());
+                    std::sort(removed.begin(),removed.end());
+                    // A merge changes centres on interfaces with its neighbours.
+                    // Rank those real interfaces as well as the merged interior;
+                    // isolated-polygon scoring misses their face weight and skew.
+                    // This is proposal ordering only. Every accepted batch still
+                    // requires the unchanged complete topology and quality gate,
+                    // and the exhaustive fallback remains authoritative.
+                    auto rank=localReplacementQualityRank(
+                        partition.topology,cellHalo,removed,*pieces,tol);
+                    if (rank) {
+                        std::vector<Polygon2D> originalPieces;
+                        for (const auto cell:removed)
+                            originalPieces.push_back(topologyCellPolygon(partition.topology,cell));
+                        const auto baseRank=localReplacementQualityRank(
+                            partition.topology,cellHalo,removed,originalPieces,tol);
+                        if (baseRank) {
+                            rankRelativeToBase(*rank,*baseRank);
+                        }
+                    }
+                    if (!rank) rank=localPartitionQualityRank(*merged,*pieces,tol);
                     if (rank) {
                         SourceMergeProposal2D proposal;
                         proposal.first=first;
                         proposal.second=second;
                         proposal.merged=*merged;
                         proposal.rank=*rank;
-                        proposal.halo=sourcePairHalo(first,second,adjacency);
+                        proposal.halo=sourceHalo;
                         proposals.push_back(std::move(proposal));
                     }
                 }

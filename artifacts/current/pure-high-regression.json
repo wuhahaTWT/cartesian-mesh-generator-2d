@@ -1,0 +1,257 @@
+{
+  "format": "final-pure-high-regression-v1",
+  "base_commit": "bf11105",
+  "binary_sha256": "052a1d5184e38b9197c4d068203c5b33660d4a5e706f38f41d983009cfb60bd6",
+  "scope": "same fixed exact arguments as earlier high-resolution snapshots; native timings are diagnostic and not isolated benchmarks",
+  "results": [
+    {
+      "geometry": "circle",
+      "argv": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/circle/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/circle/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.0025",
+        "--background-relative-size",
+        "0.0125",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "40",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "solver_cells": 153208,
+      "native_seconds": 23.3229767,
+      "wrapper": {
+        "returncode": 0,
+        "wrapper_elapsed_seconds": 24.447458028793335,
+        "timeout_seconds": 180,
+        "rss_bytes": null
+      },
+      "peak_rss_bytes": null,
+      "requested": {
+        "wall_h_over_reference": 0.0025,
+        "background_h_over_reference": 0.0125,
+        "first_layer_h_over_reference": null,
+        "layer_count": null
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.0004482108527848799,
+          "p50": 0.00390625,
+          "p95": 0.0078125,
+          "max": 0.007812500000000111
+        },
+        "wall_edge_length_over_reference": {
+          "min": 4.3751075599827934e-05,
+          "p50": 0.0020410102146082897,
+          "p95": 0.0025266475912495982,
+          "max": 0.0025266475912496334
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.00046449208916366197,
+          "p50": 0.002300778451402643,
+          "p95": 0.002933311551230177,
+          "max": 0.0032436684531662527
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0002907502920490923,
+          "p50": 0.0012242315900795493,
+          "p95": 0.0024981123997204185,
+          "max": 0.002727380219380996
+        }
+      },
+      "wall_tangential_exceedance_fraction": 0.3392264996057073,
+      "boundary_layers": "not_requested",
+      "quality": {
+        "solver": "PASS",
+        "Q1": "FAIL",
+        "standard_checkMesh": "PASS",
+        "expanded_checkMesh": "FAIL",
+        "concave_or_planar_cells": 1388,
+        "minimum_directional_determinant": 0.020287814310313575
+      },
+      "readers": "PASS",
+      "native_directional_report_verified": true,
+      "mesh_sha256": "5bf6d64d721959560b91121d1e5ff7052086d344f3e33eb85a45d2066d8772cd",
+      "evidence_directory": "outputs/engineering-pure-final-high/circle"
+    },
+    {
+      "geometry": "naca",
+      "argv": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/naca2412_dense.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/naca/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/naca/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "1",
+        "--wall-relative-size",
+        "0.0025",
+        "--background-relative-size",
+        "0.0125",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "40",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "solver_cells": 133810,
+      "native_seconds": 36.4165593,
+      "wrapper": {
+        "returncode": 0,
+        "wrapper_elapsed_seconds": 36.52286720275879,
+        "timeout_seconds": 180,
+        "rss_bytes": null
+      },
+      "peak_rss_bytes": null,
+      "requested": {
+        "wall_h_over_reference": 0.0025,
+        "background_h_over_reference": 0.0125,
+        "first_layer_h_over_reference": null,
+        "layer_count": null
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.00012183521832611993,
+          "p50": 0.00390641369921875,
+          "p95": 0.007812827398437527,
+          "max": 0.007812827398437694
+        },
+        "wall_edge_length_over_reference": {
+          "min": 1.3838183041159646e-06,
+          "p50": 0.001957242441139927,
+          "p95": 0.002025044743394598,
+          "max": 0.0025713687712325796
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.00015968017539561921,
+          "p50": 0.002021779636940534,
+          "p95": 0.0023542844764261437,
+          "max": 0.004357463156539719
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 0.0001716903799579716,
+          "p50": 0.0012875318803351513,
+          "p95": 0.0020474667152032004,
+          "max": 0.002697001875833622
+        }
+      },
+      "wall_tangential_exceedance_fraction": 0.029086924953836392,
+      "boundary_layers": "not_requested",
+      "quality": {
+        "solver": "PASS",
+        "Q1": "FAIL",
+        "standard_checkMesh": "PASS",
+        "expanded_checkMesh": "FAIL",
+        "concave_or_planar_cells": 1073,
+        "minimum_directional_determinant": 0.0023067168064060846
+      },
+      "readers": "PASS",
+      "native_directional_report_verified": true,
+      "mesh_sha256": "227e115ee953475315df65d2dbd9cd2909a05e23c80719a71d8b39275a4c82cd",
+      "evidence_directory": "outputs/engineering-pure-final-high/naca"
+    },
+    {
+      "geometry": "nozzle",
+      "argv": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/nozzle/mesh",
+        "11",
+        "0.25",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-pure-final-high/nozzle/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "6",
+        "--wall-relative-size",
+        "0.00125",
+        "--background-relative-size",
+        "0.0125",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "40",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "solver_cells": 141488,
+      "native_seconds": 38.196224,
+      "wrapper": {
+        "returncode": 0,
+        "wrapper_elapsed_seconds": 38.377087116241455,
+        "timeout_seconds": 180,
+        "rss_bytes": null
+      },
+      "peak_rss_bytes": null,
+      "requested": {
+        "wall_h_over_reference": 0.00125,
+        "background_h_over_reference": 0.012500000000000002,
+        "first_layer_h_over_reference": null,
+        "layer_count": null
+      },
+      "actual": {
+        "sqrt_area_over_reference": {
+          "min": 0.00018156019906857365,
+          "p50": 0.0009765625,
+          "p95": 0.001953125,
+          "max": 0.00390625
+        },
+        "wall_edge_length_over_reference": {
+          "min": 0.00019549087125629726,
+          "p50": 0.0009866001319680964,
+          "p95": 0.0009992020406321591,
+          "max": 0.000999355011592334
+        },
+        "wall_owner_tangential_extent_over_reference": {
+          "min": 0.00024739583333333037,
+          "p50": 0.0010295242163934001,
+          "p95": 0.0011681908246803266,
+          "max": 0.002095458293290404
+        },
+        "wall_owner_normal_extent_over_reference": {
+          "min": 6.458626971917223e-05,
+          "p50": 0.0007707391059560656,
+          "p95": 0.0009765625,
+          "max": 0.0011351285322821853
+        }
+      },
+      "wall_tangential_exceedance_fraction": 0.004589359897365385,
+      "boundary_layers": "not_requested",
+      "quality": {
+        "solver": "PASS",
+        "Q1": "FAIL",
+        "standard_checkMesh": "PASS",
+        "expanded_checkMesh": "FAIL",
+        "concave_or_planar_cells": 1277,
+        "minimum_directional_determinant": 0.006780217383390529
+      },
+      "readers": "PASS",
+      "native_directional_report_verified": true,
+      "mesh_sha256": "12242e04541fc5336332cfb098ef3e6583e55bf82936c4899b56c4bb792fb0a9",
+      "evidence_directory": "outputs/engineering-pure-final-high/nozzle"
+    }
+  ]
+}

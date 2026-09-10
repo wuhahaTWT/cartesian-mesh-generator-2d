@@ -1,0 +1,214 @@
+{
+  "evidence_class": "fixed-circle-r03-hybrid-final-solver",
+  "base_commit": "bf11105",
+  "binary_sha256": "0467983d4064e2300a2ddd9b89be93cf0831579a5601e87331b624baea889058",
+  "argv": [
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-concave-union-batch/cartmesh2d_hybrid_cli",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-concave-union-batch/mesh",
+    "11",
+    "0",
+    "11",
+    "4",
+    "0.01",
+    "1.2",
+    "0.5",
+    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-concave-union-batch/openfoam",
+    "0.02",
+    "--small-alpha=0.1",
+    "--fluid-region=exterior",
+    "--reference-length",
+    "2.0",
+    "--wall-relative-size",
+    "0.0025",
+    "--background-relative-size",
+    "0.0125",
+    "--far-field-spans",
+    "0.5",
+    "--first-layer-relative-size",
+    "0.000625",
+    "--cells-per-level",
+    "40",
+    "--max-safe-wall-level",
+    "11"
+  ],
+  "mesh_sha256": "cc0cdeda3ac26982f9037799039a7be7af2cad29b37effba96eeac17ba87ffad",
+  "mode": "success",
+  "solver_cells": 164970,
+  "construction_cells": 164792,
+  "timing": {
+    "native_seconds": 21.8387,
+    "wrapper_seconds": 22.586506332969293,
+    "scope": "one run; other diagnostic work may have overlapped, not an isolated benchmark"
+  },
+  "rss": {
+    "reported_wait4_bytes": 1286127616,
+    "verified_peak_rss_bytes": null,
+    "note": "Agent reported macOS native child wait4 ru_maxrss from inline harness; actual harness source not retained for root audit. No independent peak-RSS claim."
+  },
+  "requested": {
+    "wall_h_over_reference": 0.0025,
+    "background_h_over_reference": 0.0125,
+    "first_layer_h_over_reference": 0.000625,
+    "layer_count": 4
+  },
+  "actual": {
+    "sqrt_area_over_reference": {
+      "min": 0.0004158031438987686,
+      "p50": 0.002935095862876209,
+      "p95": 0.0078125,
+      "max": 0.007812500000000111
+    },
+    "wall_edge_length_over_reference": {
+      "min": 0.0024504285082376813,
+      "p50": 0.0024504285082396155,
+      "p95": 0.002450428508240026,
+      "max": 0.0024504285082400505
+    },
+    "wall_owner_tangential_extent_over_reference": {
+      "min": 0.002450428508237687,
+      "p50": 0.002450428508239665,
+      "p95": 0.0024535063645948377,
+      "max": 0.0025119856353396242
+    },
+    "wall_owner_normal_extent_over_reference": {
+      "min": 0.0006249999999999474,
+      "p50": 0.000625000000000004,
+      "p95": 0.0006250000000000189,
+      "max": 0.0006250000000000542
+    }
+  },
+  "wall_tangential_exceedance_length_fraction": 0.050000000000000024,
+  "boundary_layers": {
+    "status": "evaluated",
+    "requested_cells": 5120,
+    "constructed_cells": 5120,
+    "retained_cells": 5120,
+    "source_mismatches": 0,
+    "first_layer_wall_length_fraction": 1,
+    "full_requested_layers_wall_length_fraction": 1,
+    "first_layer_height_exceedance_wall_length_fraction": 0,
+    "continuity_mismatches": 0,
+    "issues": []
+  },
+  "quality": {
+    "topology": true,
+    "solver": true,
+    "Q1": "FAIL",
+    "Q1_by_cell_type": {
+      "cartesian": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 152852,
+        "preferred_issue_count": 24,
+        "hard_issue_count": 8
+      },
+      "remainder_cut": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 1878,
+        "preferred_issue_count": 1940,
+        "hard_issue_count": 314
+      },
+      "transition": {
+        "status": "WARN",
+        "rated": true,
+        "cell_count": 5120,
+        "preferred_issue_count": 240,
+        "hard_issue_count": 0
+      },
+      "boundary_layer": {
+        "status": "OBSERVED",
+        "rated": false,
+        "cell_count": 5120,
+        "preferred_issue_count": 0,
+        "hard_issue_count": 0
+      }
+    },
+    "standard_checkMesh": "PASS",
+    "expanded_checkMesh": "FAIL",
+    "expanded_failed_checks": 1,
+    "concave_or_planar_cells": 6706,
+    "concave_faces_warning": 32,
+    "minimum_directional_determinant": 0.05562172824330902
+  },
+  "independent_readers": {
+    "dimensions": {
+      "valid": true,
+      "issues": []
+    },
+    "directional": {
+      "valid": true,
+      "issues": [],
+      "native_report_verified": true
+    },
+    "openfoam": {
+      "valid": true,
+      "issues": []
+    },
+    "layer": {
+      "valid": true,
+      "issues": []
+    }
+  },
+  "profile": {
+    "solver_profile_global_topology_rebuild_calls": 4,
+    "solver_profile_candidate_topology_count": 3,
+    "solver_profile_full_quality_calls": 9,
+    "solver_profile_candidate_quality_evaluation_count": 3
+  },
+  "profile_wall_times": {
+    "measurement_class": "wall_time",
+    "reproducible": false,
+    "r1_repair_seconds": 0,
+    "directional_repair_seconds": 0.02050775,
+    "q3_repair_seconds": 0,
+    "q32_repair_seconds": 0,
+    "q33_repair_seconds": 0,
+    "q41_construction_selection_seconds": 0,
+    "build_global_topology_seconds": 5.052470990000001,
+    "solver_repair_seconds": 3.026448875,
+    "solver_profile_initial_partition_seconds": 0.672034625,
+    "solver_profile_source_repair_seconds": 0.798746833,
+    "solver_profile_final_repartition_seconds": 1.555667417,
+    "solver_profile_candidate_polygon_work_seconds": 0.03912415399999998,
+    "solver_profile_candidate_global_rebuild_seconds": 1.8512028329999999,
+    "solver_profile_candidate_quality_seconds": 0.074821792,
+    "solver_profile_full_quality_seconds": 0.227435999,
+    "h4_total_seconds": 18.43709725,
+    "h4_requested_layer_seconds": 0.278913791,
+    "h4_requested_hybrid_seconds": 18.158182209,
+    "h4_local_layer_seconds": 0,
+    "h4_local_hybrid_seconds": 0,
+    "h4_pure_cutcell_fallback_seconds": 0,
+    "h4_unattributed_seconds": 1.250000000396767e-06,
+    "h4_requested_hybrid_attempts": 1,
+    "h4_local_hybrid_attempts": 0,
+    "h4_pure_cutcell_fallback_attempts": 0,
+    "h4_conformal_hybrid_build_calls": 1
+  },
+  "comparison": {
+    "unchanged_fixed_parameters": true,
+    "previous_union_batch_run": "outputs/engineering-solver-union-batch/summary.json",
+    "previous_timeout_seconds": 300,
+    "previous_final_mesh_available": false,
+    "full_mesh_speedup_ratio": null,
+    "local_21_cell_fixture": {
+      "before_candidate_rebuilds": 71,
+      "after_candidate_rebuilds": 15,
+      "final_cells_both": 19,
+      "solver_both": "PASS"
+    },
+    "note": "local fixture is a diagnostic patch; its counts are not full-mesh counts"
+  },
+  "validation": {
+    "ctest": "101/101",
+    "ctest_seconds": 26.63,
+    "frontend": "54/54",
+    "macos_package": "PASS",
+    "latest_actual_app": "PASS: real renderer preview and ZIP, 164970 cells; byte equal to CLI",
+    "latest_actual_app_evidence": "artifacts/current/desktop-hybrid-circle-164k.json"
+  },
+  "evidence_directory": "outputs/engineering-concave-union-batch",
+  "preview": "artifacts/current/hybrid-circle-164k.png"
+}
