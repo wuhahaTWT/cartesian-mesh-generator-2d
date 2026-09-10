@@ -89,6 +89,31 @@ int main() {
     check(endpoint.kind == SegmentIntersectionKind::Point, "endpoint touch");
     check(nearlyEqual(*endpoint.point, {1, 0}, tol), "endpoint point");
 
+    // Actual large-nozzle layer hair edges share B exactly. Reconstructing B
+    // through the nearly parallel line equation used to move it by >1e-12,
+    // triggering a false layer overlap and removal of healthy columns.
+    for (double scale : {1e-6, 1e-3, 1.0}) {
+        const Point2D a{-1828.5038430699983 * scale, 738.68128774610432 * scale};
+        const Point2D b{-1803.49815434215 * scale, 733.24729224320993 * scale};
+        const Point2D c{-1778.4924647433963 * scale, 727.83177190479591 * scale};
+        for (bool reverseLeft : {false, true}) {
+            for (bool reverseRight : {false, true}) {
+                const Segment2D left = reverseLeft ? Segment2D{b,a} : Segment2D{a,b};
+                const Segment2D right = reverseRight ? Segment2D{b,c} : Segment2D{c,b};
+                for (bool swapped : {false, true}) {
+                    const auto hit = intersectSegments(swapped ? right : left,
+                                                       swapped ? left : right, tol);
+                    check(hit.kind == SegmentIntersectionKind::Point && hit.point &&
+                          hit.point->x == b.x && hit.point->y == b.y,
+                          "shared segment endpoint retains exact input coordinates at every scale");
+                }
+            }
+        }
+    }
+    const auto sharedOverlap = intersectSegments({{0,0},{2,0}}, {{0,0},{1,0}}, tol);
+    check(sharedOverlap.kind == SegmentIntersectionKind::Overlap,
+          "shared endpoint cannot hide a collinear overlap");
+
     auto parallel = intersectSegments({{0, 0}, {1, 0}}, {{0, 1}, {1, 1}}, tol);
     check(parallel.kind == SegmentIntersectionKind::None, "parallel non-intersection");
 

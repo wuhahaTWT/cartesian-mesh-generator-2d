@@ -1,0 +1,33 @@
+{
+  "actual_set_count": 2724,
+  "actual_set_only": [],
+  "case": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/openfoam/constant/polyMesh",
+  "cell_count": 140306,
+  "cells_with_safe_pair": 140306,
+  "expected_set": "outputs/engineering-hybrid-scale-cache/naca2412_dense/request-r03/openfoam/constant/polyMesh/sets/concaveCells",
+  "face_count": 563668,
+  "format": "openfoam-face-plane-audit-v1",
+  "input_files_sha256": {
+    "faces": "e57e207133bdbdfa3fec4a1b79ef6ccb2970c748558380d2d988e17533bd5d27",
+    "neighbour": "4075525ced6f4946dabbb3dd327367ba27040e03af74fc1cbccaf806f07ce26d",
+    "owner": "add37874c2962733a3610824b0b7a17f0860ccc58e107a0d3aa811540490baaf",
+    "points": "b0c399a89292b453793a8e62ae44dfd7258475c07e4c396883e38b373c9140a3"
+  },
+  "maximum_dot": 4.5363712786183896e-13,
+  "missing_set": [],
+  "near_coplanar_only": 2724,
+  "original_flagged": 2724,
+  "pair_counts": {
+    "near_coplanar": 6910,
+    "positive": 0,
+    "safe": 4239892
+  },
+  "point_count": 285500,
+  "positive_side": 0,
+  "safe": 137582,
+  "scope": "face-plane classification only; not overall mesh PASS",
+  "threshold": 1e-06,
+  "source": "OpenFOAM-v2606-source/src/OpenFOAM/meshes/primitiveMesh/primitiveMeshCheck/primitiveMeshCheck.C:44,809-900 and meshShapes/face/face.C:513-575",
+  "conclusion": "Original expanded check remains FAIL. All 2724 flagged cells match exactly; no pair exceeds +1e-6 in this fixed mesh. This is not a general convexity or solver acceptance claim.",
+  "validation": "5 Python unittest methods, including closed convex/coplanar/concave prisms, two adjacent cubes with shared owner/neighbour face reversed, malformed input rejection"
+}
