@@ -120,8 +120,12 @@ void canonicalRotate(std::vector<Point2D>& vertices) {
     const Vector2D offset = segment.a - origin;
     const double rayParameter = cross(offset, edge) / denominator;
     const double edgeParameter = cross(offset, direction) / denominator;
-    if (rayParameter <= epsilon || edgeParameter < -epsilon ||
-        edgeParameter > 1.0 + epsilon) return std::nullopt;
+    // direction is unit length: rayParameter and epsilon are lengths,
+    // whereas edgeParameter is dimensionless. Compare endpoint excess in
+    // physical length so a change of model units cannot create a collision.
+    const double edgeLength = norm(edge);
+    if (rayParameter <= epsilon || edgeParameter * edgeLength < -epsilon ||
+        (edgeParameter - 1.0) * edgeLength > epsilon) return std::nullopt;
     return rayParameter;
 }
 
@@ -943,6 +947,12 @@ void writeJsonString(std::ostream& out, const std::string& value) {
 }
 
 } // namespace
+
+std::optional<double> detail::boundaryLayerRaySegmentDistance2D(
+    const Point2D& origin,const Vector2D& direction,const Segment2D& segment,
+    double lengthEpsilon) noexcept {
+    return raySegmentDistance(origin,direction,segment,lengthEpsilon);
+}
 
 bool isConvexBoundaryLayerQuad2D(
     const std::array<Point2D, 4>& points,

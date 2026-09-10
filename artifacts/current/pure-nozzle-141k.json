@@ -1,0 +1,70 @@
+{
+  "artifact": "pure-nozzle-141k",
+  "scope": "fixed pure Cut-cell nozzle evidence; no new run",
+  "fixed_parameters": {
+    "input": "examples/complex/nozzle_profile.xy",
+    "fluid_region": "interior",
+    "reference_length": 6.0,
+    "wall_relative_size": 0.00125,
+    "background_relative_size": 0.0125,
+    "far_field_spans": 0.5,
+    "cells_per_level": 40,
+    "small_alpha": 0.1,
+    "max_safe_wall_level": 11,
+    "cli_sha256": "c242da4d8c1bb5bad479f3615eb910e6512087be1d0f259933b885a3535db1f2",
+    "minimum_level": 0,
+    "boundary_simplify_cell_fraction": 0,
+    "actual_extrusion_thickness": 0.0029296875,
+    "extrusion_basis": "pure CLI derives from domain span / 2^maxLevel; measured from exported points"
+  },
+  "mesh": {
+    "solver_cells": 141488,
+    "solver_cm2d_sha256": "5948d8c846fd727d81811f2e67b6b1efddb4e4d78891bfe6f4808c90524017bd"
+  },
+  "timing": {
+    "rss_rerun_native_seconds": 142.405926,
+    "rss_rerun_wrapper_elapsed_seconds": 143.497318983078,
+    "rss_bytes": 1185071104,
+    "first_run_native_seconds": 155.5834,
+    "first_run_wrapper_returncode": 1,
+    "first_run_wrapper_error": "time: sysctl kern.clockrate: Operation not permitted",
+    "first_run_solver_quality": "PASS",
+    "scope": "diagnostic runs, not isolated controlled performance comparison"
+  },
+  "gates": {
+    "solver": "PASS",
+    "q1": "FAIL",
+    "quality_contract": "FAIL",
+    "directional_minimum": 0.006780217383390529,
+    "directional_threshold": 0.001,
+    "readers": {
+      "resolution": true,
+      "openfoam": true,
+      "directional": true
+    },
+    "checkMesh": {
+      "standard": {
+        "returncode": 0,
+        "mesh_ok": true
+      },
+      "expanded": {
+        "returncode": 0,
+        "mesh_ok": false,
+        "failed_checks": 1,
+        "concave_count": 1277
+      }
+    },
+    "openfoam_reused_due_byte_equal": true,
+    "byte_identical_rerun": true
+  },
+  "desktop": {
+    "status": "NOT_RUN",
+    "reason": "Mac locked; no UI run or screenshot"
+  },
+  "evidence": {
+    "with-rss/command.json": "outputs/engineering-pure-nozzle-fine/with-rss/command.json",
+    "with-rss/measurement.json": "outputs/engineering-pure-nozzle-fine/with-rss/measurement.json",
+    "verification.json": "outputs/engineering-pure-nozzle-fine/verification.json",
+    "desktop-status.json": "outputs/engineering-pure-nozzle-fine/desktop-status.json"
+  }
+}

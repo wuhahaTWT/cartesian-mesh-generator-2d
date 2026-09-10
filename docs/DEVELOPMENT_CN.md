@@ -91,6 +91,7 @@ docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam
 
 | 工具 | 用途 |
 |---|---|
+| `check_face_planes.py` | 输入 `constant/polyMesh`；独立重算 OpenFOAM face-plane 标记，区分共面与正侧，不能替代整体 checkMesh；`--expected-set` 核对原标记集合 |
 | `check_openfoam2d.py` | 独立读取 owner/neighbour、闭合与体积 |
 | `check_boundary_layer2d.py`、`check_boundary_layer_failure.py`、`check_hybrid_mesh2d.py` | CTest 使用的边界层/共形拼接检查；专用 hybrid reader 不能冒充全部终止路径验收 |
 | `check_openfoam_v1_logs.py` | 真正的 checkMesh/simpleFoam 日志验收 |

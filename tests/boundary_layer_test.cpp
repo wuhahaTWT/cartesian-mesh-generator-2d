@@ -79,6 +79,26 @@ bool samePoints(const std::vector<Point2D>& lhs,
 } // namespace
 
 int main() {
+    for (const double scale:{0.001,1.0,1000.0}) {
+        const double epsilon=TolerancePolicy{}.scale(6.0*scale);
+        const Point2D origin{0.0,0.0};
+        const Vector2D direction{0.0,-1.0};
+        const Segment2D missed{{1e-8*scale,-0.1*scale},
+                               {(0.05+1e-8)*scale,-0.1*scale}};
+        check(!detail::boundaryLayerRaySegmentDistance2D(origin,direction,missed,epsilon),
+              "hair ray does not reach a segment beyond its physical endpoint tolerance");
+        const Segment2D reached{{-0.025*scale,-0.1*scale},{0.025*scale,-0.1*scale}};
+        const auto hit=detail::boundaryLayerRaySegmentDistance2D(origin,direction,reached,epsilon);
+        check(hit && std::abs(*hit/scale-0.1)<1e-12,
+              "hair ray retains the true collision distance at every scale");
+        const Segment2D nearEndpoint{{0.25*epsilon,-0.1*scale},
+                                    {0.05*scale+0.25*epsilon,-0.1*scale}};
+        check(detail::boundaryLayerRaySegmentDistance2D(origin,direction,nearEndpoint,epsilon).has_value(),
+              "hair ray applies length tolerance consistently at an endpoint");
+        const Segment2D behind{{-0.025*scale,0.1*scale},{0.025*scale,0.1*scale}};
+        check(!detail::boundaryLayerRaySegmentDistance2D(origin,direction,behind,epsilon),
+              "a segment behind the ray does not limit layer thickness");
+    }
     const TolerancePolicy tolerance{};
     // A healthy thin strip must not acquire a one-square-metre area scale
     // when its geometry and first-layer height are changed together.

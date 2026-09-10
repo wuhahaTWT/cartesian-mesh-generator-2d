@@ -403,6 +403,17 @@ SegmentIntersection intersectSegments(const Segment2D& lhs, const Segment2D& rhs
                 Segment2D{lhs.a + r * lo, lhs.a + r * hi}};
     }
 
+    // Nonparallel segments have at most one intersection. If it is already
+    // an exact input endpoint, retain that coordinate instead of reconstructing
+    // it through an ill-conditioned line equation. Collinear overlaps have
+    // already been classified above and must not collapse to a point here.
+    for (const Point2D& a : {lhs.a, lhs.b}) {
+        for (const Point2D& b : {rhs.a, rhs.b}) {
+            if (a.x == b.x && a.y == b.y)
+                return {SegmentIntersectionKind::Point, a, std::nullopt};
+        }
+    }
+
     const double t = cross(qp, s) / rxs;
     const double u = cross(qp, r) / rxs;
     const double tEps = eps / lenR;

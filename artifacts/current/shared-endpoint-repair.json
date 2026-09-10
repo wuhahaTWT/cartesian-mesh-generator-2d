@@ -1,0 +1,218 @@
+{
+  "format": "endpoint-repair-fixed-r01-v1",
+  "binary_sha256": "717b6383c00ca021b4ad05d58b930e42084910ec749c21ab6de6ebcfd1065d78",
+  "timeout_seconds": 180,
+  "results": [
+    {
+      "name": "large1000",
+      "returncode": 0,
+      "timeout": false,
+      "elapsed_seconds": 23.11949870805256,
+      "rss_units": "bytes (macOS ru_maxrss)",
+      "solver_quality": true,
+      "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/large1000/mesh.hybrid.solver.cm2d",
+      "readers": {
+        "dimensions": {
+          "valid": true,
+          "issues": []
+        },
+        "directional": {
+          "cell_count": 8420,
+          "minimum_measured": 0.004184240393428058,
+          "failed_cell_count": 0,
+          "valid": true
+        },
+        "layer": {
+          "valid": true,
+          "first_layer_wall_length_fraction": 1.0,
+          "full_requested_layers_wall_length_fraction": 0.9589958979065083,
+          "issues": []
+        },
+        "openfoam": {
+          "valid": true,
+          "cell_count": 8420,
+          "issues": []
+        }
+      },
+      "argv": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/cartmesh2d_hybrid_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-perturbations-current/nozzle/scale-1000/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/large1000/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/large1000/openfoam",
+        "20",
+        "--small-alpha=0.1",
+        "--fluid-region=interior",
+        "--reference-length",
+        "6000",
+        "--wall-relative-size",
+        "0.0050000000000000001",
+        "--background-relative-size",
+        "0.012500000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.00125",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/large1000/command.log",
+      "native_seconds": 21.4651,
+      "wrapper_elapsed_seconds": 23.11949870805256,
+      "native_mode": "success",
+      "layer_cells": 2400,
+      "q1": "FAIL",
+      "requested_layer_cells": 2448,
+      "retained_layer_cells": 2400,
+      "native_metrics": {
+        "solver_cells": 8420,
+        "layer_cells": 2400,
+        "r1_global_oracle_builds": 16,
+        "r1_accepted": 16
+      },
+      "layer_coverage": {
+        "first_layer_wall_length_fraction": 1.0,
+        "full_requested_layers_wall_length_fraction": 0.9589958979065083
+      },
+      "external_checkMesh": {
+        "standard": "PASS",
+        "expanded": "FAIL",
+        "expanded_failed_checks": 1,
+        "concave_or_planar_cells": 1452,
+        "minimum_determinant": 0.004184240393,
+        "log_directory": "outputs/engineering-hybrid-endpoint-repair/large1000/checkMesh-verification"
+      },
+      "directional_native_report_verified": true,
+      "rss_measurement_scope": "reported ru_maxrss retained; per-child measurement method not yet independently verified",
+      "reported_ru_maxrss": 104513536,
+      "peak_rss_bytes": null
+    },
+    {
+      "name": "unit-r01",
+      "returncode": 0,
+      "timeout": false,
+      "elapsed_seconds": 26.225275249918923,
+      "rss_units": "bytes (macOS ru_maxrss)",
+      "solver_quality": true,
+      "cm2d": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/unit-r01/mesh.hybrid.solver.cm2d",
+      "readers": {
+        "dimensions": {
+          "valid": true,
+          "issues": []
+        },
+        "directional": {
+          "cell_count": 8420,
+          "minimum_measured": 0.004184240393427952,
+          "failed_cell_count": 0,
+          "valid": true
+        },
+        "layer": {
+          "valid": true,
+          "first_layer_wall_length_fraction": 1.0,
+          "full_requested_layers_wall_length_fraction": 0.9589958979065082,
+          "issues": []
+        },
+        "openfoam": {
+          "valid": true,
+          "cell_count": 8420,
+          "issues": []
+        }
+      },
+      "argv": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/cartmesh2d_hybrid_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/unit-r01/mesh",
+        "11",
+        "0",
+        "11",
+        "4",
+        "0.01",
+        "1.2",
+        "0.5",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/unit-r01/openfoam",
+        "0.02",
+        "--small-alpha=0.1",
+        "--fluid-region=interior",
+        "--reference-length",
+        "6",
+        "--wall-relative-size",
+        "0.005",
+        "--background-relative-size",
+        "0.0125",
+        "--far-field-spans",
+        "0.5",
+        "--first-layer-relative-size",
+        "0.00125",
+        "--cells-per-level",
+        "3",
+        "--max-safe-wall-level",
+        "11"
+      ],
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-endpoint-repair/unit-r01/command.log",
+      "native_seconds": 26.1703,
+      "wrapper_elapsed_seconds": 26.225275249918923,
+      "native_mode": "success",
+      "layer_cells": 2400,
+      "q1": "FAIL",
+      "requested_layer_cells": 2448,
+      "retained_layer_cells": 2400,
+      "native_metrics": {
+        "solver_cells": 8420,
+        "layer_cells": 2400,
+        "r1_global_oracle_builds": 16,
+        "r1_accepted": 16
+      },
+      "layer_coverage": {
+        "first_layer_wall_length_fraction": 1.0,
+        "full_requested_layers_wall_length_fraction": 0.9589958979065082
+      },
+      "external_checkMesh": {
+        "standard": "PASS",
+        "expanded": "FAIL",
+        "expanded_failed_checks": 1,
+        "concave_or_planar_cells": 1452,
+        "minimum_determinant": 0.004184240393,
+        "log_directory": "outputs/engineering-hybrid-endpoint-repair/unit-r01/checkMesh-verification"
+      },
+      "directional_native_report_verified": true,
+      "rss_measurement_scope": "reported ru_maxrss retained; per-child measurement method not yet independently verified",
+      "reported_ru_maxrss": 115589120,
+      "peak_rss_bytes": null
+    }
+  ],
+  "scope": "fixed unit and scale1000 nozzle r01; concurrent diagnostic timings, not controlled benchmark",
+  "local_layer_probe": {
+    "scales": [
+      0.001,
+      1,
+      1000
+    ],
+    "before_cells": [
+      2368,
+      2368,
+      2360
+    ],
+    "after_cells": [
+      2368,
+      2368,
+      2368
+    ],
+    "scope": "local reduced builder, not full robust CLI",
+    "failure_minimum": "tests/geometry_test.cpp exact shared endpoint case"
+  },
+  "full_verification": {
+    "ctest": "101/101",
+    "ctest_seconds": 52.37,
+    "frontend": "54/54",
+    "macos_package": "PASS",
+    "latest_desktop": "NOT_RUN: Mac locked"
+  }
+}

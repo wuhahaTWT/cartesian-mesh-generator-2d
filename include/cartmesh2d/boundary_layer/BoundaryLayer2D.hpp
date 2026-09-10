@@ -11,6 +11,14 @@
 
 namespace cartmesh2d {
 
+namespace detail {
+// Hair-ray predicate: direction is unit length, epsilon and result are lengths.
+// The segment's interpolation parameter is dimensionless.
+[[nodiscard]] std::optional<double> boundaryLayerRaySegmentDistance2D(
+    const Point2D& origin,const Vector2D& direction,const Segment2D& segment,
+    double lengthEpsilon) noexcept;
+}
+
 enum class FluidSide2D { Left, Right };
 enum class WallFluidRegion2D { Exterior, Interior };
 enum class WallChainOrientation2D { Open, Clockwise, CounterClockwise };
