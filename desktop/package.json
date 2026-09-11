@@ -1,6 +1,6 @@
 {
   "name": "cartmesh2d-desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Desktop shell for the native cartmesh2d mesher",
   "main": "src/main.js",

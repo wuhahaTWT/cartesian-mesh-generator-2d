@@ -8,6 +8,8 @@ const { METHODS, PRESETS, GEOMETRY_FORMATS } = require('./core/capabilities');
 const { SAMPLES, sampleById } = require('./core/samples');
 const geometry = require('./core/geometry');
 const { candidates, estimateSeconds } = require('./core/automatic');
+const { planBudget, BUDGET_PRESETS } = require('./core/cell-budget');
+const { runBudget } = require('./core/budget-runner');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { parseCm2d, levelHistogram, embeddedBounds,
@@ -101,7 +103,23 @@ async function collectReports(method, prefix) {
 
 // Body bbox centre and span, the frame every sizing number is expressed in.
 function bodyFrame(loops) {
-  return geometry.boundsOfLoops(loops);
+  const frame = geometry.boundsOfLoops(loops);
+  if (loops.length === 1) {
+    const loop = loops[0]; const [ox, oy] = loop[0];
+    frame.bodyArea = Math.abs(loop.reduce((sum, p, i) => {
+      const q = loop[(i+1)%loop.length];
+      return sum + (p[0]-ox)*(q[1]-oy) - (q[0]-ox)*(p[1]-oy);
+    }, 0)) / 2;
+  }
+  return frame;
+}
+
+function budgetFrame(request, frame) {
+  const reference = request.referenceLength ?? frame.bodySpan;
+  const domainSpan = frame.bodySpan + 2 * Number(request.farFieldSpans) * reference;
+  return { ...frame, fluidArea: frame.bodyArea > 0
+    ? (request.fluidRegion === 'interior' ? frame.bodyArea : domainSpan*domainSpan-frame.bodyArea)
+    : undefined };
 }
 
 async function firstReadable(candidates) {
@@ -137,9 +155,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('catalog', () => ({
     methods: METHODS,
     presets: PRESETS,
+    budgetPresets: BUDGET_PRESETS,
     formats: GEOMETRY_FORMATS,
     samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) }))
   }));
+
+  ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
 
   ipcMain.handle('pick-geometry', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -214,9 +235,9 @@ app.whenReady().then(async () => {
       } finally { await fs.rm(scratch, { recursive: true, force: true }); }
   }));
 
-  async function generateOnce(request) {
+  async function generateOnce(request, retainPrevious = false) {
     const { job, method } = validateJob(request);
-    if (currentResult) await fs.rm(currentResult.outputDirectory, { recursive: true, force: true });
+    if (currentResult && !retainPrevious) await fs.rm(currentResult.outputDirectory, { recursive: true, force: true });
     currentResult = null;
     // Only smoke runs may override the temporary root. Every run owns a new folder.
     const root = process.argv.some(arg => arg.startsWith('--smoke=')) && job.outputDirectory
@@ -295,6 +316,24 @@ app.whenReady().then(async () => {
       const imported = await prepareGeometry(request.geometryPath, request, xy, path.join(scratch, 'dxf.json'), () => {});
       frame = bodyFrame(imported.loops || geometry.convertToLoops(xy, await fs.readFile(xy, 'utf8')).loops);
     } finally { await fs.rm(scratch, { recursive: true, force: true }); }
+    if (request.automatic && request.targetCells != null) {
+      let payload;
+      try { payload = await runBudget(request, budgetFrame(request, frame), {
+        signal: operation.signal,
+        generate: choice => generateOnce(choice, true),
+        progress: ({ attempt, maximum, parameters }) => {
+          mainWindow.webContents.send('run-progress', { attempt, maximum,
+            estimatedSeconds: request.targetCells >= 100000 ? 90 : 30, estimateSource: '数量档位粗估' });
+          log(`数量目标 ${request.targetCells}：第 ${attempt}/${maximum} 组，壁面 h/Lref=${parameters.wallRelativeSize}，背景=${parameters.backgroundRelativeSize}。`);
+        }
+      }); } catch (error) { currentResult = null; throw error; }
+      currentResult = payload;
+      await fs.writeFile(path.join(payload.outputDirectory, 'selection.json'), JSON.stringify({
+        automatic: true, cellBudget: payload.cellBudget,
+        selectedRequest: payload.selectedRequest, attempts: payload.attempts
+      }, null, 2));
+      return payload;
+    }
     const choices = candidates(request, sample, frame);
     const attempts = [];
     let lastError;
@@ -374,6 +413,8 @@ async function runSmoke() {
     ['growthRatio', 'growth-ratio'],
     ['extrusionRelativeSize', 'extrusion-relative-size'],
     ['smallAlpha', 'small-alpha'],
+    ['autoPadding', 'auto-padding'],
+    ['customTargetCells', 'target-cells'],
   ].map(([id, flag]) => [id, argument(flag)]).filter(([, value]) => value !== null));
   if (outputDirectory) await fs.mkdir(outputDirectory, { recursive: true });
 
@@ -390,7 +431,7 @@ async function runSmoke() {
     smoke.selectMethod(${JSON.stringify(method)});
     document.getElementById('controlMode').value = ${JSON.stringify(argument('control') || 'auto')};
     document.getElementById('controlMode').dispatchEvent(new Event('change'));
-    document.getElementById('density').value = ${JSON.stringify(argument('density') || 'normal')};
+    document.getElementById('density').value = ${JSON.stringify(argument('target-cells') ? 'custom' : argument('density') || '5000')};
     if (${JSON.stringify(Boolean(argument('regions')))}) {
       smoke.addRegion();
       smoke.addRegion();
@@ -403,6 +444,7 @@ async function runSmoke() {
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
+    if (${JSON.stringify(argument('verified-preset') === 'true')}) await smoke.loadVerifiedPreset();
     const sizingInputs = ${JSON.stringify(sizingInputs)};
     if ('referenceLength' in sizingInputs) {
       const referenceMode = document.getElementById('referenceMode');
@@ -422,15 +464,41 @@ async function runSmoke() {
       input.checked = true;
       input.dispatchEvent(new Event('change'));
     }
+    document.getElementById('density').dispatchEvent(new Event('change'));
+    const theme = document.getElementById('appTheme');
+    theme.value = ${JSON.stringify(argument('theme') || 'modern')};
+    theme.dispatchEvent(new Event('change'));
     const regionInput = document.querySelector('#regionList input');
     if (regionInput) {
       regionInput.focus();
       if (!regionInput.isConnected || document.activeElement !== regionInput) throw new Error('Region input lost focus');
     }
+    if (${JSON.stringify(Boolean(argument('welcome-shot')))}) return { welcomeOnly: true };
     const pending = smoke.generate();
     if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
       throw new Error('Parameters are not locked during generation');
     await pending;
+    if (${JSON.stringify(Boolean(argument('interaction-check')))}) {
+      const mesh = smoke.state.mesh;
+      const display = document.getElementById('displayMode').value;
+      for (const value of ['duet','modern']) {
+        window.CartMeshTheme.set(value);
+        if (smoke.state.mesh !== mesh || document.getElementById('displayMode').value !== display ||
+            localStorage.getItem(window.CartMeshTheme.storageKey) !== value)
+          throw new Error('Theme switch changed mesh/display state or failed persistence');
+      }
+      window.CartMeshTheme.set(${JSON.stringify(argument('theme') || 'modern')});
+      const actual = smoke.state.selectedRequest;
+      if (!actual) throw new Error('Missing selected automatic parameters');
+      document.getElementById('actualToManual').click();
+      if (document.getElementById('controlMode').value !== 'manual' ||
+          Number(document.getElementById('wallRelativeSize').value) !== actual.wallRelativeSize ||
+          Number(document.getElementById('relativeBandCells').value) !== actual.cellsPerLevel ||
+          Number(document.getElementById('relativePadding').value) !== actual.farFieldSpans)
+        throw new Error('Actual-to-manual transfer lost parameters');
+      document.getElementById('controlMode').value = 'auto';
+      document.getElementById('controlMode').dispatchEvent(new Event('change'));
+    }
     if (${JSON.stringify(Boolean(argument('repeat')))}) await smoke.generate();
     const mode = ${JSON.stringify(argument('mode') || 'level')};
     if (mode !== 'level') {
@@ -444,9 +512,19 @@ async function runSmoke() {
       counters: document.getElementById('counters').innerText,
       gates: document.getElementById('gates').innerText,
       histogram: document.getElementById('histogram').innerText,
-      log: document.getElementById('log').textContent
+      log: document.getElementById('log').textContent,
+      cellBudget: smoke.state.cellBudget,
+      theme: document.documentElement.dataset.theme,
+      interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))}
     };
   })()`).then(async report => {
+    if (report.welcomeOnly) {
+      await mainWindow.webContents.executeJavaScript(`window.__smoke.state.mesh = null; document.getElementById('empty').hidden = false; window.__smoke.view.clear();`);
+      await new Promise(resolve => setTimeout(resolve, 250));
+      await fs.writeFile(argument('welcome-shot'), (await mainWindow.webContents.capturePage()).toPNG());
+      await fs.rm(sessionDirectory, { recursive: true, force: true });
+      app.exit(0); return;
+    }
     if (argument('export')) report.exported = await exportPackage(argument('export'));
     mainWindow.setSize(1120, 720);
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -462,9 +540,11 @@ async function runSmoke() {
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (shot) {
+      await mainWindow.webContents.executeJavaScript("document.querySelector('.panel').scrollTop=0");
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());
       console.log(`screenshot=${shot}`);
+      await fs.writeFile(shot + '.json', JSON.stringify(report, null, 2));
     }
     await fs.rm(sessionDirectory, { recursive: true, force: true });
     app.exit(/失败/.test(report.status) ? 1 : 0);
