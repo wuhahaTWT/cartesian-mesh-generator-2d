@@ -160,6 +160,20 @@ macOS `peak memory footprint` 与 maximum RSS 是不同口径；该批前者最�
 
 上一轮核心交付完整 **CTest 101/101（26.63 s）**、前端 **54/54**、macOS 打包通过。本轮新增桌面功能仍未改变原生算法。日志：`outputs/concave-union-final-{ctest,npm,package}.log`。
 
+## 质量审核依据复核
+
+用户指出 Q1 未经本人审核后，重新核对源码、成熟工具资料和真实外部结果。本次是审核依据复核，未改变 Q1 / Solver 阈值、评级或网格算法。
+
+- Q1 是项目内部诊断；未找到完整的逐项阈值来源及工况误差校准记录，不能把既有测试通过当成标准已经成立。原始面积比硬阈值 0.05 与允许的分级裁切配置并不总兼容：细格保留面积分数 0.1、邻格宽度为其 2 倍时，面积比可为 0.025。它仍可能提示数值风险，但不能把此项失败自动解释成拓扑非法或 CFD 必然失败。边界层仍只 OBSERVED。
+- 推荐以目标求解器的独立工具为主：OpenFOAM 2606 `checkMesh` 标准检查、完整拓扑/几何检查、显式 `meshQualityDict` 分开记录；保留版本、原始日志、参数和问题位置。不将 Fluent 的 skewness 数值直接搬到 OpenFOAM；公式和适用单元类型不同。
+- 固定 148,375 格喷管，在输入网格未变的副本上新跑：标准 PASS；完整检查 FAIL（face-plane 检查标记 5,641 个 concave 单元，并报告 16 个短边关联点）；再启用原厂配置后 FAIL，质量配置额外标记 448 个非正交角 >65° 的面、20 个 determinant 条件面，共 468 个质量问题面。各条目的数量与定义保持分开，不能写成 468 个坏单元。
+- 原厂配置用于本次有出处的对照，不等于普适工业标准。例如 `minVol=1e-13` 是有量纲、依赖尺度的条件；几何合法性、数值风险和工况适用性仍需区分。当前失败没有通过修改阈值消除。
+- 后续验收应分别回答：几何拓扑是否正确；目标求解器检查发现哪些风险；指定工况是否收敛、守恒且物理量合理；在一致的加密序列中关键结果是否稳定、误差是否满足任务要求。GCI 只在条件适合时使用，不能将不一致的加密带宽序列直接包装成正式 GCI。
+
+证据：`artifacts/current/quality-review.json`；原始日志、原厂配置、质量场和可视化问题集合在 `outputs/quality-review/`。本次未新增 CFD 求解，不借用其他案例的求解结果证明这个高密喷管满足任意工况。
+
+资料：[OpenFOAM 自定义质量检查](https://openfoam.org/release/2-2-0/meshing-tools/)、[Fluent 的质量定义](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/flu_ug/tgd_user_report.html)、[Ansys 流体网格建议](https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/discovery/UDA/user_manual/meshing/topics/r_meshquality_bestpractices.html)、[Gmsh 质量测量 API](https://gmsh.info/doc/texinfo/gmsh.html#index-gmsh_002fmodel_002fmesh_002fgetElementQualities)、[NASA 网格收敛方法](https://www.grc.nasa.gov/www/wind/valid/tutorial/spatconv.html)。
+
 ## 保留边界与下一步
 
 1. **质量优先于继续堆数量**：当前 Q1 普通单元仍有 hard issues，边界层是 OBSERVED；扩展 checkMesh 仍失败。不能把标准 Mesh OK、Solver PASS 或残差收敛当成工业质量全部合格。
@@ -169,4 +183,4 @@ macOS `peak memory footprint` 与 maximum RSS 是不同口径；该批前者最�
 5. **桌面产品完整性**：保持最终求解网格预览和 ZIP；高档完整流程约 112 s，仍需定位预览/导出开销。数量自动配置已接入；分段边界条件 UI、物理精度预设、大 CAD 输入和跨机器安装还未全面验收。仅支持所列 OpenFOAM 路径，未验收所有 CFD 软件。
 6. **工程纪律**：构建只用 `build/`，实验在忽略的 `outputs/`，不新增长期隐藏工作区/日期计划/代码副本。Q3/Q4 开关保留默认关闭及累积关系；不因局部失败无限追加阶段。确定性同工具链与跨编译器逐字节一致分别验收。
 
-下一轮应集中修复有实际 CFD 影响的 Q1/几何缺陷、建立更明确的误差验收，并改善桌面端到端体验。新增问题归入这些既有目标，不能靠换参数、删坏格或隐藏告警“通过”。
+下一轮应先按外部测量及实际 CFD 影响复核 Q1 条目，再集中修复确认的几何/数值缺陷、建立更明确的误差验收，并改善桌面端到端体验。新增问题归入这些既有目标，不能靠换参数、删坏格或隐藏告警“通过”。
