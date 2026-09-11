@@ -1,0 +1,126 @@
+{
+  "source_case": "outputs/desktop-ui-refresh/packaged-nozzle-preset/mesh-1KIW5T/nozzle_profile-openfoam",
+  "case_copy": "outputs/quality-review/nozzle-148375",
+  "source_revision": "26e2a64",
+  "input_polyMesh_sha256": {
+    "owner": "85403329382e7012ef246de4b93bfa6983e06b94ba8972220e89e5b6ef29f1e4",
+    "boundary": "5f768bbf27fd9b7fe0d7485cfc432f5b437ec8da63a22cbee5a5d759ff27da1c",
+    "neighbour": "f5e05ae8e64fae7bea3b4eca5346448c941cb3dd9ca210f4435f62657a39c0fb",
+    "points": "de5d6aa10dc0eb5164cba3170e21106e24777a287244a4b761afcde45698036e",
+    "faces": "1bd4c9f3b873afde724b9546ba86cafc02504e095f043387d07acfb4bb3d8697"
+  },
+  "image": "opencfd/openfoam-run:2606",
+  "profile": "OpenFOAM packaged etc/caseDicts/meshQualityDict unchanged; fixed-scale diagnostic, not universal acceptance",
+  "source_mesh_unchanged": true,
+  "standard": {
+    "status": "PASS",
+    "log": "outputs/quality-review/standard.log"
+  },
+  "expanded": {
+    "status": "FAIL",
+    "failed_check_groups": 1,
+    "concave_cells_face_plane_check": 5641,
+    "log": "outputs/quality-review/expanded.log",
+    "short_edge_points": 16
+  },
+  "official_profile_full_check": {
+    "status": "FAIL",
+    "failed_check_groups": 2,
+    "nonorthogonality_over_65_faces": 448,
+    "determinant_condition_faces": 20,
+    "unique_quality_faces": 468,
+    "log": "outputs/quality-review/official-profile.log"
+  },
+  "external_report": {
+    "geometry": {
+      "boundsMin": [
+        -3,
+        -0.98,
+        0
+      ],
+      "boundsMax": [
+        3,
+        0.98,
+        0.02
+      ],
+      "geometricDimensions": 2,
+      "solutionDimensions": 2,
+      "cellCount": 148375,
+      "faceCount": 597834,
+      "pointCount": 305420,
+      "patchCount": 2
+    },
+    "edgeAlignment": {
+      "errorCount": 0
+    },
+    "nonOrthogonality": {
+      "max": 69.93490532,
+      "average": 6.094687895,
+      "threshold": 70
+    },
+    "skewness": {
+      "max": 3.416869476,
+      "warningCount": 0
+    },
+    "shortEdgePoints": {
+      "errorCount": 16
+    },
+    "cellDeterminant": {
+      "min": 0.003827964389,
+      "average": 0.5049740639,
+      "threshold": 0.001
+    },
+    "concaveCells": {
+      "errorCount": 5641
+    },
+    "faceWeight": {
+      "min": 0.07391808175,
+      "average": 0.4934432733,
+      "threshold": 0.05
+    },
+    "faceVolumeRatio": {
+      "min": 0.01842790033,
+      "average": 0.9755261469,
+      "threshold": 0.01
+    },
+    "faceQuality": {
+      "nError": 468
+    },
+    "summary": {
+      "state": "fail",
+      "errorCounts": [
+        [
+          "shortEdgePoints",
+          16
+        ],
+        [
+          "concaveCells",
+          5641
+        ]
+      ]
+    }
+  },
+  "profile_sha256": "0906201051209470c120eec374846a33441355cc605183c24939c363d3655470",
+  "profile_note": "Unmodified OpenFOAM 2606 etc/caseDicts/meshQualityDict; minVol is dimensional and case dependent. This comparison does not adopt all defaults as universal acceptance rules.",
+  "visualization": "outputs/quality-review/nozzle-148375/postProcessing/constant/meshQualityFaces/meshQualityFaces.vtp",
+  "q1_review": {
+    "provenance": "0ed88b3 introduced Q1; current rules lack a complete per-threshold source and application calibration record",
+    "raw_volume_ratio_example": "An allowed 0.1-area-fraction fine cut-cell adjacent to a full cell at twice the width gives raw area ratio 0.025, below Q1 hard 0.05. Existing constraints do not guarantee Q1, not a proof the metric is irrelevant.",
+    "boundary_layer": "OBSERVED, not rated",
+    "native_vs_external": "No per-entity equivalence demonstrated; keep raw OpenFOAM results separate."
+  },
+  "recommendation": "Use versioned external checkMesh + explicit quality profile for target solver, retain local diagnostics, and separately verify conservation, iterative convergence and solution/grid convergence for defined physics. No thresholds or UI gates changed.",
+  "sources": [
+    "https://openfoam.org/release/2-2-0/meshing-tools/",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/flu_ug/tgd_user_report.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/discovery/UDA/user_manual/meshing/topics/r_meshquality_bestpractices.html",
+    "https://gmsh.info/doc/texinfo/gmsh.html",
+    "https://www.grc.nasa.gov/www/wind/valid/tutorial/spatconv.html"
+  ],
+  "image_digest": "opencfd/openfoam-run@sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+  "commands": [
+    "checkMesh -case <case-copy>",
+    "checkMesh -case <case-copy> -allGeometry -allTopology",
+    "checkMesh -case <case-copy> -allGeometry -allTopology -meshQuality -writeAllFields -writeSets vtk -writeChecks json"
+  ]
+}

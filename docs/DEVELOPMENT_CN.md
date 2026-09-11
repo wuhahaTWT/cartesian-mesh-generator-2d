@@ -107,6 +107,19 @@ docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam
 几何 fixtures 都在 `examples/`；`tests/repro/` 同时含审计反例与已接入测试的失败小案例；`source_halo_circle_patch.hpp` 保留源修复和最终重划分的真实邻域回归，不能把目录整体标成通过或失败。
 DXF 反例可用 `build/cartmesh2d_dxf_cli tests/repro/hidden-spline-bulge.dxf outputs/hidden.xy 0.001 outputs/hidden.json` 复现。
 
+## 独立质量审核
+
+在 OpenFOAM 2606 环境内、案例副本目录中执行（先保留已有配置）：
+
+```sh
+cp "$WM_PROJECT_DIR/etc/caseDicts/meshQualityDict" system/meshQualityDict
+checkMesh
+checkMesh -allGeometry -allTopology
+checkMesh -allGeometry -allTopology -meshQuality -writeAllFields -writeSets vtk -writeChecks json
+```
+
+三份日志分别保存，不只看进程退出码。原厂配置是可追溯对照，`minVol` 等有量纲参数仍依赖案例尺度；不要为获得 PASS 静默修改。`postProcessing/constant/` 的问题集合可用 ParaView 打开，质量场与 `checkMesh.json` 保留用于复核。当前实例、镜像 digest、输入哈希和结论见 `artifacts/current/quality-review.json`。本轮未改 Q1、Solver 或桌面评级规则；验收依据复核见 CURRENT_STATE 的“质量审核依据复核”。
+
 ## 不能丢失的设计边界
 
 - 共享格点构造不能由每 leaf 独立焦合替代；重建拓扑必须携带 EmbeddedBoundary 身份，不能只复制坐标后重新猜测。
