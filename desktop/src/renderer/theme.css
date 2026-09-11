@@ -133,16 +133,35 @@ body[data-theme="duet"] .workspace::after {
   pointer-events: none;
 }
 
-/* The optional welcome illustration supplied by the host is deliberately
-   limited to the empty state, so it disappears when a real preview appears. */
-.duet-art {
-  display: none;
-  max-width: min(34vw, 360px);
-  max-height: 26vh;
-  width: auto;
-  margin: 0 auto 4px;
-  opacity: .86;
-  object-fit: contain;
-  filter: saturate(.82) contrast(.98);
+/* The original artwork stays intact; transparency is a presentation property.
+   Chrome uses a continuous wallpaper, with a portrait crop in the narrow rail
+   so the characters remain visible while the opaque mesh canvas is in use. */
+body[data-theme="duet"] {
+  background: linear-gradient(rgba(17, 16, 22, .52), rgba(17, 16, 22, .52)),
+    url("assets/duet-workshop.png") center 42% / cover no-repeat fixed;
 }
-body[data-theme="duet"] .empty .duet-art { display: block; }
+body[data-theme="duet"] .panel {
+  background: linear-gradient(rgba(20, 17, 25, .66), rgba(20, 17, 25, .83)),
+    url("assets/duet-workshop.png") 53% center / auto 100vh no-repeat;
+}
+body[data-theme="duet"] .titlebar { background: rgba(12, 11, 16, .8); }
+body[data-theme="duet"] .statusbar,
+body[data-theme="duet"] .results { background: rgba(25, 23, 31, .73); }
+body[data-theme="duet"] .logpanel { background: rgba(20, 18, 25, .86); }
+body[data-theme="duet"] .panel .note,
+body[data-theme="duet"] .panel .field,
+body[data-theme="duet"] .panel summary { text-shadow: 0 1px 3px #111016; }
+body[data-theme="duet"] { --ink-faint: #aea19d; }
+
+/* Only the empty welcome stage reveals the wallpaper. Importing a geometry
+   hides #empty and restores the same solid canvas used for every mesh mode. */
+body[data-theme="duet"] .canvasWrap:has(#empty:not([hidden])) {
+  background: transparent;
+}
+body[data-theme="duet"] .empty {
+  place-content: end center;
+  padding: 28px 20px;
+  background: linear-gradient(transparent 58%, rgba(17, 16, 22, .85));
+}
+body[data-theme="duet"] .empty b,
+body[data-theme="duet"] .empty i { color: #f2eadb; text-shadow: 0 1px 4px #111016; }

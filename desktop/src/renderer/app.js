@@ -468,9 +468,9 @@ function renderGates(result) {
   if (contract) {
     const detail = contract.byType
       .map(row => `${row.label} ${row.status}${row.hard ? `(${row.hard} hard)` : ''}`).join('　');
-    parts.push(gateRow('Q1 合同', contract.status, detail));
+    parts.push(gateRow('Q1 工程质量', contract.status, detail));
     parts.push(`<details class="gate-explanation"><summary>Q1 判定说明</summary><span class="detail">` +
-      `Q1 比 solver 门和 checkMesh 都严，是诊断而不是放行条件。分类型计数在 solver ` +
+      `Q1 是本项目按单元类型制定的质量目标，并非 OpenFOAM 检查。任一硬指标越界即 FAIL，只有优选指标越界为 WARN。当前导出由 Solver 门控制，Q1 FAIL 仍表示工程质量未达标。分类型计数在 solver ` +
       `凸划分之后统计，所以归到 cartesian 的项可能含划分碎片。</span></details>`);
   }
 

@@ -439,9 +439,6 @@ body[data-theme="duet"] .canvasWrap.light .legend {
   color: #352b2c;
 }
 
-/* A host supplied illustration can sit in the empty state at a useful size
-   while leaving the actual mesh viewport fully available. */
-.empty .duet-art + b { margin-top: 0; }
 
 @media (max-width: 900px) {
   .shell { grid-template-columns: 292px 1fr; }
