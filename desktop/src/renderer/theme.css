@@ -1,17 +1,148 @@
-/* Visual identity only. Future restyling starts here; layout and interaction stay in style.css. */
-:root {
-  --bg: #0e1419;
-  --panel: #141c23;
-  --panel-2: #1a242c;
-  --line: #263440;
-  --line-soft: #1f2b34;
-  --ink: #dce6ed;
-  --ink-dim: #8ba0b0;
-  --ink-faint: #62788a;
-  --accent: #ff5a1f;
-  --accent-soft: rgba(255, 90, 31, 0.14);
-  --pass: #35c58a;
-  --warn: #e0a93a;
-  --fail: #ff4d6d;
+/*
+ * CartMesh2D visual tokens.
+ *
+ * Layout and product state stay in style.css and app.js. These tokens form
+ * the boundary between the renderer and its two visual identities. themes.js
+ * sets data-theme on <html> and <body>.
+ */
+:root,
+:root[data-theme="modern"],
+body[data-theme="modern"] {
+  color-scheme: light;
+  --bg: #e8ebe8;
+  --panel: #f4f5f1;
+  --panel-2: #e9eeeb;
+  --surface: #fbfcf8;
+  --line: #c8d1cd;
+  --line-soft: #dce3df;
+  --ink: #202c2c;
+  --ink-dim: #526360;
+  --ink-faint: #82908b;
+  --accent: #157b76;
+  --accent-hover: #0d6864;
+  --accent-soft: rgba(21, 123, 118, .12);
+  --accent-ink: #f8fffc;
+  --pass: #177a58;
+  --warn: #a36a18;
+  --fail: #b33f51;
+  --canvas: #fbfcf8;
+  --canvas-grid: #bdc8c3;
+  --log-bg: #e5eae7;
+  --titlebar: #dfe4e1;
+  --inset: rgba(23, 54, 51, .08);
+  --shadow: 0 8px 22px rgba(25, 45, 43, .07);
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
+
+:root[data-theme="duet"],
+body[data-theme="duet"] {
+  color-scheme: dark;
+  --bg: #111016;
+  --panel: #19171f;
+  --panel-2: #231f2a;
+  --surface: #211e27;
+  --line: #453b48;
+  --line-soft: #332d39;
+  --ink: #f2eadb;
+  --ink-dim: #c6baab;
+  --ink-faint: #8e8180;
+  --accent: #b98a48;
+  --accent-hover: #d2ab68;
+  --accent-soft: rgba(185, 138, 72, .14);
+  --accent-ink: #1a1417;
+  --pass: #72b494;
+  --warn: #d7a254;
+  --fail: #d57782;
+  --canvas: #121219;
+  --canvas-grid: #514653;
+  --log-bg: #141219;
+  --titlebar: #0c0b10;
+  --inset: rgba(0, 0, 0, .24);
+  --shadow: 0 10px 26px rgba(0, 0, 0, .28);
+  --burgundy: #8c4057;
+  --rose: #bd858c;
+  --brass-soft: rgba(185, 138, 72, .22);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* A small, original line emblem: a feather crossing a mechanical ring. It
+   supplies the pair motif without fan art or an external dependency. */
+body[data-theme="duet"] .brand .mark {
+  background-color: var(--panel-2);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+body[data-theme="duet"] .brand .mark::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='21' cy='20' r='7' fill='none' stroke='%23b98a48' stroke-width='1.7'/%3E%3Cpath d='M8 24C11 18 11 10 22 5c-1 7-5 13-14 19Z' fill='none' stroke='%23bd858c' stroke-width='1.7'/%3E%3Cpath d='M9 23 21 9M14 19l-4-1M17 15l-4-2M19 12l-3-2' fill='none' stroke='%23bd858c' stroke-width='1.2' stroke-linecap='round'/%3E%3Cpath d='m25 10 2 2m-1 3 2 1m-4-9 1-2' stroke='%23b98a48' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+body[data-theme="duet"] .brand .mark::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: 3px;
+  height: 1px;
+  background: var(--burgundy);
+  transform: rotate(-12deg);
+}
+
+body[data-theme="duet"] .brand {
+  position: relative;
+  padding-bottom: 14px;
+}
+
+body[data-theme="duet"] .brand::after {
+  content: "少女 哥伦比娅  ×  木偶 桑多涅";
+  display: block;
+  position: absolute;
+  left: 43px;
+  top: 39px;
+  color: var(--rose);
+  font: 9px/1.2 "PingFang SC", "Helvetica Neue", sans-serif;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+body[data-theme="duet"] .brand b { letter-spacing: .08em; }
+body[data-theme="duet"] .brand i { color: var(--accent); }
+
+/* Section markers become quiet brass register marks in terminal mode. */
+body[data-theme="duet"] .block h2 span {
+  border-color: var(--brass-soft);
+  color: var(--accent);
+}
+body[data-theme="duet"] .block h2 { color: var(--accent); }
+
+/* The signature stays in the chrome and never overlays an actual mesh. */
+body[data-theme="duet"] .workspace::after {
+  content: "COLUMBINA / SANDRONE";
+  position: fixed;
+  right: 16px;
+  bottom: 5px;
+  color: rgba(185, 138, 72, .45);
+  font: 8px/1 var(--mono);
+  letter-spacing: .22em;
+  pointer-events: none;
+}
+
+/* The optional welcome illustration supplied by the host is deliberately
+   limited to the empty state, so it disappears when a real preview appears. */
+.duet-art {
+  display: none;
+  max-width: min(34vw, 360px);
+  max-height: 26vh;
+  width: auto;
+  margin: 0 auto 4px;
+  opacity: .86;
+  object-fit: contain;
+  filter: saturate(.82) contrast(.98);
+}
+body[data-theme="duet"] .empty .duet-art { display: block; }

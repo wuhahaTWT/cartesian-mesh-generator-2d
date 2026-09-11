@@ -30,6 +30,7 @@ function setBusy(busy) {
   $('cancel').hidden = !busy;
   $('cancel').disabled = false;
   $('exportResult').disabled = busy;
+  $('actualToManual').disabled = busy;
   updateReady();
 }
 function validInputs() {
@@ -46,6 +47,8 @@ function validInputs() {
 }
 function clearResult() {
   state.mesh = null; state.result = null; state.wallBounds = null;
+  state.selectedRequest = null; state.cellBudget = null;
+  $('cellBudgetResult').hidden = true; $('actualToManual').hidden = true;
   view.clear();
   $('exportResult').hidden = true;
   for (const id of ['counters', 'gates', 'histogram']) $(id).replaceChildren();
@@ -74,6 +77,9 @@ function buildRequest() {
   const base = {
     automatic: $('controlMode').value === 'auto',
     density: $('density').value,
+    targetCells: $('controlMode').value === 'auto' && !['normal','dense'].includes($('density').value)
+      ? Number($('density').value === 'custom' ? $('customTargetCells').value : $('density').value) : undefined,
+    wallToBackgroundRatio: Number($('autoWallRatio').value),
     method: state.method,
     geometryPath: state.geometryPath,
     outputDirectory: state.outputDirectory,
@@ -81,8 +87,8 @@ function buildRequest() {
     referenceLength: $('referenceMode').value === 'explicit' ? Number($('referenceLength').value) : undefined,
     wallRelativeSize: Number($('wallRelativeSize').value),
     backgroundRelativeSize: Number($('backgroundRelativeSize').value),
-    farFieldSpans: Number($('relativePadding').value),
-    cellsPerLevel: Number($('relativeBandCells').value),
+    farFieldSpans: Number($('controlMode').value === 'auto' ? $('autoPadding').value : $('relativePadding').value),
+    cellsPerLevel: Number($('controlMode').value === 'auto' ? $('autoBandCells').value : $('relativeBandCells').value),
     allowUnsafeWallLevel: $('relativeAllowUnsafe').checked,
     ...importSettings()
   };
@@ -92,11 +98,11 @@ function buildRequest() {
       maxLevel: Number($('maxLevel').value),
       minimumLevel: Number($('minimumLevel').value),
       boundaryLevel: Number($('boundaryLevel').value),
-      nLayers: Number($('nLayers').value),
+      nLayers: Number($('controlMode').value === 'auto' ? $('autoLayers').value : $('nLayers').value),
       firstLayerRelativeSize: Number($('firstLayerRelativeSize').value),
       extrusionRelativeSize: Number($('extrusionRelativeSize').value),
       firstThickness: Number($('firstThickness').value),
-      growthRatio: Number($('growthRatio').value),
+      growthRatio: Number($('controlMode').value === 'auto' ? $('autoGrowth').value : $('growthRatio').value),
       domainPadding: Number($('domainPadding').value),
       extrusionThickness: Number($('extrusionThickness').value)
     };
@@ -106,15 +112,15 @@ function buildRequest() {
     smallAlpha: Number($('smallAlpha').value),
     wallCellsPerSpan: Number($('wallCellsPerSpan').value),
     farLevel: Number($('farLevel').value),
-    curvatureCellsPerRadius: $('useCurvature').checked ? Number($('curvatureCellsPerRadius').value) : 0,
-    gapCells: $('useGap').checked ? Number($('gapCells').value) : 0,
-    wake: $('useWake').checked ? {
+    curvatureCellsPerRadius: !base.targetCells && $('useCurvature').checked ? Number($('curvatureCellsPerRadius').value) : 0,
+    gapCells: !base.targetCells && $('useGap').checked ? Number($('gapCells').value) : 0,
+    wake: !base.targetCells && $('useWake').checked ? {
       angleOfAttackDeg: Number($('wakeAngle').value),
       downstreamSpans: Number($('wakeLength').value),
       halfWidthSpans: Number($('wakeHalfWidth').value),
       levelsBelowWall: Number($('wakeLevels').value)
     } : null,
-    refineBoxes: state.regions.map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
+    refineBoxes: (base.targetCells ? [] : state.regions).map(({ xmin, xmax, ymin, ymax, levelsBelowWall }) =>
       ({ xmin, xmax, ymin, ymax, levelsBelowWall }))
   };
 }
@@ -145,7 +151,86 @@ function updateBudget() {
 
 function updateReady() {
   updateBudget();
+  schedulePlan();
 }
+
+let planTimer;
+let planSequence = 0;
+function schedulePlan() {
+  clearTimeout(planTimer);
+  const sequence = ++planSequence;
+  state.budgetSuggestion = null;
+  $('planToManual').disabled = true;
+  if (!state.frame || $('controlMode').value !== 'auto') return;
+  const request = buildRequest();
+  if (request.targetCells == null) {
+    $('autoBudgetPreview').textContent = '旧版预设保留兼容行为，不按目标数量调整。';
+    return;
+  }
+  planTimer = setTimeout(async () => {
+    try {
+      const plan = await window.cartmesh.planBudget({ request, frame: state.frame });
+      if (sequence !== planSequence) return;
+      state.budgetSuggestion = plan;
+      const ref = plan.referenceLength ?? state.frame.bodySpan;
+      const depth = Math.ceil(Math.log2((state.frame.bodySpan+2*plan.farFieldSpans*ref)/(plan.wallRelativeSize*ref)));
+      $('autoBudgetPreview').textContent = `目标 ${fmt(request.targetCells)} 格，接受范围 ${fmt(Math.round(request.targetCells*.7))}–${fmt(Math.round(request.targetCells*1.3))}。` +
+        `初始壁面 ${(100*plan.wallRelativeSize).toPrecision(3)}% Lref，背景 ${(100*plan.backgroundRelativeSize).toPrecision(3)}% Lref。` +
+        (plan.budgetPlan.areaEstimated ? '多环面积采用包围盒初估，生成后按实际数量校正。' : '') +
+        `预计构造深度 ${depth}。` + (plan.budgetPlan.limitedBySafeWallLevel ? '当前受到默认深度限制，可能达不到数量目标；可勾选下方允许更高构造深度。' : depth > state.catalog.methods[state.method].safeWallLevel && !request.allowUnsafeWallLevel ? '需勾选下方“允许更高构造深度”才可尝试。' : '生成后按实测数量调整。');
+      $('planToManual').disabled = Boolean(state.busy);
+    } catch (error) {
+      if (sequence === planSequence) $('autoBudgetPreview').textContent = error.message.replace(/^Error invoking remote method.*?Error: /, '');
+    }
+  }, 160);
+}
+function useManualParameters(request) {
+  if (!request || state.busy) return;
+  const fields = { wallRelativeSize:'wallRelativeSize', backgroundRelativeSize:'backgroundRelativeSize',
+    farFieldSpans:'relativePadding', cellsPerLevel:'relativeBandCells', firstLayerRelativeSize:'firstLayerRelativeSize',
+    nLayers:'nLayers', growthRatio:'growthRatio', extrusionRelativeSize:'extrusionRelativeSize', smallAlpha:'smallAlpha' };
+  for (const [key,id] of Object.entries(fields)) if (request[key] != null) $(id).value = request[key];
+  if (request.referenceLength != null) {
+    $('referenceMode').value = 'explicit'; $('referenceLength').value = request.referenceLength;
+    $('referenceLengthField').hidden = false;
+    $('referenceMode').closest('details').open = true;
+  }
+  $('relativeAllowUnsafe').checked = Boolean(request.allowUnsafeWallLevel);
+  $('controlMode').value = 'manual'; updateControlMode(); syncRegions();
+  status('已转为手动设置', '参数已填入，可微调后重新生成。');
+}
+$('planToManual').addEventListener('click', () => useManualParameters(state.budgetSuggestion));
+$('actualToManual').addEventListener('click', () => useManualParameters(state.selectedRequest));
+for (const id of ['density','customTargetCells','autoPadding','autoWallRatio','autoBandCells','autoLayers','autoGrowth']) {
+  $(id).addEventListener('input', () => { $('customTargetField').hidden = $('density').value !== 'custom'; schedulePlan(); });
+  $(id).addEventListener('change', schedulePlan);
+}
+for (const [id, factor] of [['manualCoarser',Math.SQRT2],['manualFiner',1/Math.SQRT2]]) {
+  $(id).addEventListener('click', () => {
+    for (const field of ['wallRelativeSize','backgroundRelativeSize','firstLayerRelativeSize'])
+      $(field).value = Math.min(field === 'backgroundRelativeSize' ? 1e6 : 1,Number($(field).value)*factor).toPrecision(6);
+    updateBudget();
+  });
+}
+
+async function loadVerifiedPreset() {
+  if (state.busy || state.geometryLoading) return;
+  const reference = { circle:2, naca2412:1, nozzle:6 }[state.sampleId];
+  if (!reference) return;
+  $('sourceUnits').value = 'm';
+  $('fluidRegion').value = state.sampleId === 'nozzle' ? 'interior' : 'exterior';
+  const wall = state.sampleId === 'nozzle' ? .00125 : .0025;
+  useManualParameters({ referenceLength:reference, wallRelativeSize:wall,
+    backgroundRelativeSize:.0125, farFieldSpans:.5, cellsPerLevel:40,
+    firstLayerRelativeSize:wall/4, nLayers:4, growthRatio:1.2,
+    extrusionRelativeSize:.02/reference, smallAlpha:.1, allowUnsafeWallLevel:true });
+  $('useCurvature').checked = false; $('useGap').checked = false; $('useWake').checked = false;
+  $('curvatureCellsPerRadius').disabled = true; $('gapCells').disabled = true;
+  $('wakeFields').hidden = true; state.regions = []; renderRegions();
+  await drawGeometryOutline();
+  status('已载入高密样例参数', '参考长度、计算域与高深度选项已按已验证案例替换；检查后点击生成。');
+}
+$('verifiedPreset').addEventListener('click', loadVerifiedPreset);
 
 function renderMethods() {
   const container = $('methods');
@@ -154,8 +239,8 @@ function renderMethods() {
     const button = document.createElement('button');
     button.className = `method${method.id === state.method ? ' active' : ''}`;
     button.innerHTML =
-      `<b>${method.label}<span class="tag ${method.status}">${method.statusLabel}</span></b>` +
-      `<i>${method.summary}</i>`;
+      `<b>${method.label}<span class="tag ${method.status}">${method.statusLabel}</span></b>`;
+    button.title = method.summary;
     button.addEventListener('click', () => selectMethod(method.id));
     container.appendChild(button);
   }
@@ -183,7 +268,9 @@ function updateControlMode() {
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
   $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
   $('smallAlphaNote').hidden = automatic || state.method !== 'cutcell';
-  $('densityField').hidden = !automatic;
+  $('automaticControls').hidden = !automatic;
+  $('autoLayerFields').hidden = state.method !== 'hybrid';
+  $('customTargetField').hidden = $('density').value !== 'custom';
   $('autoNote').hidden = !automatic;
   updateReady();
 }
@@ -237,6 +324,9 @@ function renderSamples() {
 async function chooseGeometry(path, label, sample) {
   state.geometryPath = path;
   state.geometryLabel = label;
+  state.sampleId = sample?.id;
+  $('verifiedPreset').hidden = !['circle','naca2412','nozzle'].includes(state.sampleId);
+  $('verifiedPresetNote').hidden = $('verifiedPreset').hidden;
   if (sample) {
     $('sourceUnits').value = 'm';
     $('fluidRegion').value = sample.fluidRegion;
@@ -379,9 +469,9 @@ function renderGates(result) {
     const detail = contract.byType
       .map(row => `${row.label} ${row.status}${row.hard ? `(${row.hard} hard)` : ''}`).join('　');
     parts.push(gateRow('Q1 合同', contract.status, detail));
-    parts.push(`<div class="gate"><b></b><span class="detail">` +
+    parts.push(`<details class="gate-explanation"><summary>Q1 判定说明</summary><span class="detail">` +
       `Q1 比 solver 门和 checkMesh 都严，是诊断而不是放行条件。分类型计数在 solver ` +
-      `凸划分之后统计，所以归到 cartesian 的项可能含划分碎片。</span></div>`);
+      `凸划分之后统计，所以归到 cartesian 的项可能含划分碎片。</span></details>`);
   }
 
   if (result.actualMethod === 'cutcell-fallback') {
@@ -396,7 +486,7 @@ function renderGates(result) {
 
 const gateRow = (label, verdict, detail) =>
   `<div class="gate"><b>${label}</b><span class="verdict ${verdict}">${verdict}</span>` +
-  `<span class="detail">${detail}</span></div>`;
+  `<details class="gate-detail"><summary>详情</summary><span class="detail">${detail}</span></details></div>`;
 
 // Cells per level is the readout that answers the far-field question directly: it
 // shows how few cells the coarse levels actually cost.
@@ -494,6 +584,14 @@ async function generate() {
     state.wallBounds = payload.wallBounds;
     state.result = payload.result;
     state.levelBasis = payload.levelBasis;
+    state.selectedRequest = payload.selectedRequest || null;
+    state.cellBudget = payload.cellBudget || null;
+    $('actualToManual').hidden = !state.selectedRequest;
+    $('cellBudgetResult').hidden = !payload.cellBudget;
+    if (payload.cellBudget) {
+      const b = payload.cellBudget;
+      $('cellBudgetResult').textContent = `目标约 ${fmt(b.targetCells)}；实际 ${fmt(b.actualCells)} 个单元。${b.reached ? '已达到目标范围（±30%）。' : '未达到目标范围，保留本次最接近目标的可导出结果。'} 共尝试 ${b.attempts} 次。` + (b.stoppedReason ? ` 后续调整停止：${b.stoppedReason}` : '');
+    }
     view.setMesh(payload.mesh);
     syncRegions();
     $('empty').hidden = true;
@@ -527,7 +625,7 @@ async function generate() {
     if (payload.automatic) {
       const job = payload.job;
       $('autoNote').textContent = job.relativeSizing
-        ? `${payload.densityReduced ? '更密请求未满足，已降密。' : ''}本次壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
+        ? `${payload.cellBudget ? '参数已按最终选中的结果记录。' : payload.densityReduced ? '更密请求未满足，已降密。' : ''}上次生成的壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
         : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
         ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
@@ -537,7 +635,7 @@ async function generate() {
     if (payload.incomplete) {
       status('网格已生成，后续步骤失败', payload.incomplete);
     } else {
-      status('生成完成', `${payload.automatic ? `自动选参成功（第 ${payload.attempts.length} 组）` : '手动生成成功'}；可导出结果包${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
+      status(payload.cellBudget && !payload.cellBudget.reached ? '网格已生成，数量未达目标' : '生成完成', `${payload.cellBudget ? `已检查 ${payload.attempts.length} 组参数` : payload.automatic ? `自动选参成功（第 ${payload.attempts.length} 组）` : '手动生成成功'}；可导出结果包${seconds ? `　${seconds.toFixed(2)} s` : ''}`);
     }
   } catch (error) {
     status('生成失败', error.message.replace(/^Error invoking remote method '[^']+': Error: /, '').split('\n')[0]);
@@ -569,10 +667,11 @@ for (const id of ['farFieldSpans', 'wallCellsPerSpan', 'cellsPerLevel', 'farLeve
 }
 for (const id of ['wallRelativeSize','backgroundRelativeSize','relativePadding','relativeBandCells','referenceLength'])
   $(id).addEventListener('input', () => { updateBudget(); syncRegions(); });
-$('relativeAllowUnsafe').addEventListener('change', updateBudget);
+$('relativeAllowUnsafe').addEventListener('change', () => { updateBudget(); schedulePlan(); });
 $('referenceMode').addEventListener('change', () => {
   $('referenceLengthField').hidden = $('referenceMode').value !== 'explicit';
   updateBudget();
+  schedulePlan();
   syncRegions();
 });
 $('allowUnsafe').addEventListener('change', updateBudget);
@@ -657,7 +756,7 @@ window.addEventListener('resize', () => view.draw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset };
 })();
 
 function setOutput(directory) {

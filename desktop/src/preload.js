@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('cartmesh', {
+  planBudget: payload => ipcRenderer.invoke('plan-budget', payload),
   catalog: () => ipcRenderer.invoke('catalog'),
   pickGeometry: () => ipcRenderer.invoke('pick-geometry'),
   exportResult: () => ipcRenderer.invoke('export-result'),

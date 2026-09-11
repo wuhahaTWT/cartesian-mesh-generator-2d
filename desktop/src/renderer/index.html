@@ -10,12 +10,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="titlebar"></div>
+<div class="titlebar"><span>CartMesh2D</span><label class="theme-control">外观 <select id="appTheme" aria-label="界面主题"><option value="modern">现代简约</option><option value="duet">少女与木偶 · 科研终端</option></select></label></div>
 <main class="shell">
   <aside class="panel">
     <header class="brand">
       <span class="mark">C2</span>
-      <span><b>CartMesh2D</b><i>二维 Cartesian / Cut-cell 网格生成器</i></span>
+      <span><b>CartMesh2D</b><i>二维网格工作台 · 0.3</i></span>
     </header>
 
     <section class="block">
@@ -24,8 +24,8 @@
       <label class="field">内置样例
         <select id="sample"><option value="">—</option></select>
       </label>
-      <p id="sampleNote" class="note" hidden></p>
-      <div id="geometryFacts" class="facts" hidden></div>
+      <details class="advanced"><summary>几何信息</summary><p id="sampleNote" class="note" hidden></p>
+      <div id="geometryFacts" class="facts" hidden></div></details>
       <label class="field">轮廓内部是什么？
         <select id="fluidRegion"><option value="exterior">实体：在外部生成网格</option>
         <option value="interior">流体域：在内部生成网格（喷管 / 管道）</option></select>
@@ -44,35 +44,55 @@
         </label>
         <p class="note">支持 .xy / .dxf / .svg / .csv / .txt。统一换算为米，保留真实尺寸；不会自动归一到 1 m。</p>
       </details>
-      <label class="field">参考长度 Lref
+      <details class="advanced"><summary>参考长度 Lref</summary><label class="field">参考长度 Lref
         <select id="referenceMode"><option value="bbox">包围盒最长边（自动）</option><option value="explicit">指定工程参考长度</option></select>
       </label>
       <label class="field" id="referenceLengthField" hidden>参考长度（m）
         <input id="referenceLength" type="number" min="0.000000000001" step="any" value="1">
       </label>
-      <p class="note">可指定翼型弦长、圆柱直径或管道特征长度。指定值不会随模型旋转改变。</p>
+      <p class="note">可指定翼型弦长、圆柱直径或管道特征长度。指定值不会随模型旋转改变。</p></details>
     </section>
 
     <section class="block">
-      <h2><span>2</span>方法</h2>
-      <label class="field">参数设置<select id="controlMode"><option value="auto">自动选参（推荐）</option><option value="manual">手动设置</option></select></label>
-      <label class="field" id="densityField">自动密度<select id="density"><option value="normal">常规</option><option value="dense">更密</option></select></label>
-      <p class="note" id="autoNote">自动选择尺寸和层厚，失败时最多尝试 4 组。保持所选内外域与网格方法，不降低质量标准。</p>
+      <h2><span>2</span>生成设置</h2>
       <div id="methods" class="methods"></div>
-      <p id="methodNote" class="note"></p>
+      <details class="advanced"><summary>方法说明</summary><p id="methodNote" class="note"></p></details>
+      <button id="verifiedPreset" class="ghost" hidden>载入已验证高密样例参数</button>
+      <p id="verifiedPresetNote" class="note" hidden>替换参考长度、域留白和高深度选项，转入手动供你检查；不会立即生成。</p>
+      <label class="field">参数设置<select id="controlMode"><option value="auto">按数量自动配置</option><option value="manual">手动设置</option></select></label>
+      <div id="automaticControls" class="block">
+        <label class="field" id="densityField">目标单元数<select id="density">
+          <option value="5000">快速预览 · 约 5 千</option><option value="15000">基础检查 · 约 1.5 万</option>
+          <option value="50000">细化检查 · 约 5 万</option><option value="150000">高密网格 · 约 15 万</option>
+          <option value="300000">规模试验 · 约 30 万</option><option value="custom">自定义数量</option>
+          <optgroup label="旧版兼容"><option value="normal">原常规预设</option><option value="dense">原更密预设</option></optgroup>
+        </select></label>
+        <label class="field" id="customTargetField" hidden>目标数量（1 千—50 万）<input id="customTargetCells" type="number" min="1000" max="500000" step="1000" value="100000"></label>
+        <label class="field">计算域留白 / Lref<input id="autoPadding" type="number" min="0.25" max="1000" step="any" value="0.5"></label>
+        <p class="note">留白决定外边界位置，按工况设置。改变数量档位不会改变留白；内流只划分轮廓内部。</p>
+        <details class="advanced"><summary>加密分布与边界层</summary>
+          <label class="field">壁面相对背景的尺寸<select id="autoWallRatio"><option value="2">1/2 · 较均匀</option><option value="4" selected>1/4 · 兼顾近壁</option><option value="8">1/8 · 更重视近壁</option></select></label>
+          <label class="field">初始加密带宽（每级格数）<input id="autoBandCells" type="number" min="0" max="64" step="1" value="6"></label>
+          <div id="autoLayerFields" class="pair"><label class="field">层数<input id="autoLayers" type="number" min="1" max="64" step="1" value="4"></label><label class="field">每层增长倍数<input id="autoGrowth" type="number" min="1" max="5" step="any" value="1.2"></label></div>
+          <p class="note">混合网格首层采用壁面尺寸的 1/4，属于几何初值，尚未按 y+ 配置。增加网格不代表精度已达标。</p>
+        </details>
+        <div id="autoBudgetPreview" class="budget" aria-live="polite">选择模型后显示建议参数。</div>
+        <button id="planToManual" class="ghost wide" disabled>用建议参数转为手动</button>
+        <p class="note" id="autoNote">目标范围为数量的 ±30%，最多调整 3 次尺寸与带宽；实际数量未达到会明确显示。</p>
+      </div>
+
     </section>
 
     <section class="block" id="resolutionBlock">
-      <h2><span>3</span>相对尺寸</h2>
+      <h2><span>3</span>网格疏密</h2><p class="note">数值越小，格子越细。0.01 表示参考长度的 1%。</p><div class="pair"><button id="manualCoarser" class="ghost">整体粗一些</button><button id="manualFiner" class="ghost">整体细一些</button></div>
       <div class="pair">
-        <label class="field">壁面目标 h / Lref<input id="wallRelativeSize" type="number" min="0.000000000001" max="1" step="any" value="0.015625"></label>
-        <label class="field">背景目标 h / Lref<input id="backgroundRelativeSize" type="number" min="0.000000000001" step="any" value="1"></label>
+        <label class="field">物体附近格子 / Lref<input id="wallRelativeSize" type="number" min="0.000000000001" max="1" step="any" value="0.015625"></label>
+        <label class="field">远处格子 / Lref<input id="backgroundRelativeSize" type="number" min="0.000000000001" step="any" value="1"></label>
         <label class="field">计算域留白 / Lref<input id="relativePadding" type="number" min="0.25" step="any" value="10"></label>
-        <label class="field">每级过渡带单元数<input id="relativeBandCells" type="number" min="0" max="64" step="1" value="3"></label>
+        <label class="field">加密带宽（每级格数）<input id="relativeBandCells" type="number" min="0" max="64" step="1" value="3"></label>
       </div>
       <p class="note">例如 0.005 表示参考长度的 0.5%。实际尺寸由四叉树取整、边界裁切和质量修复共同决定，生成后提供实测报告。</p>
       <div id="resolutionBudget" class="budget"></div>
-      <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许尝试超过已验证的构造深度（质量门不变）</label>
       <button id="probeRelative" class="ghost wide">预检相对尺寸</button>
       <div id="relativeProbeResult" class="probe" hidden></div>
     </section>
@@ -157,6 +177,7 @@
       <p class="note" id="smallAlphaNote">小单元处理参数，并非密度或质量评分。通常保留样例值；提高它可能改变合并结果。</p>
     </section>
 
+    <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许更高构造深度（高密度可能需要，质量标准不变）</label>
     <button id="generate" class="primary" disabled>生成预览</button>
     <button id="cancel" hidden>取消当前操作</button>
   </aside>
@@ -179,10 +200,11 @@
     </div>
     <div class="canvasWrap" id="canvasWrap">
       <canvas id="canvas"></canvas>
-      <div id="empty" class="empty"><b>网格预览</b><i>读取真实 CM2D 单元，不是示意图。滚轮缩放，拖动平移。</i></div>
+      <div id="empty" class="empty"><img class="duet-art" src="assets/duet-workshop.png" alt="少女与木偶在研究室协作的同人插画"><b>从一个轮廓开始</b><i>选择样例或导入几何，设置数量，再生成网格。</i><span class="duet-signature">哥伦比娅 × 桑多涅</span></div>
       <div id="legend" class="legend" hidden></div>
     </div>
     <div class="results">
+      <div id="cellBudgetResult" class="budget" hidden></div><button id="actualToManual" class="ghost" hidden>用本次实际参数继续微调</button>
       <div class="counters" id="counters"></div>
       <div class="gates" id="gates"></div>
       <div class="histogram" id="histogram"></div>
@@ -191,6 +213,7 @@
     <details class="logpanel"><summary>运行日志</summary><pre id="log"></pre></details>
   </section>
 </main>
+<script src="themes.js"></script>
 <script src="viewport.js"></script>
 <script src="app.js"></script>
 </body>
