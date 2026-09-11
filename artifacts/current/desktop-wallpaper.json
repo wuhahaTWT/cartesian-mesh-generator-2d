@@ -1,0 +1,73 @@
+{
+  "scope": "Persistent CSS wallpaper and clearer Q1 explanation; no mesh algorithm or threshold changes",
+  "frontend_tests": "74/74",
+  "packaging": "PASS",
+  "packaged_app": {
+    "status": "已转为手动设置",
+    "detail": "参数已填入，可微调后重新生成。",
+    "counters": "SOLVER CELLS\n5,204\nVERTICES\n5,496\nFACES\n10,700\nQUADTREE LEAVES\n7,348\nCUT CELLS\n252\nOPENFOAM CELLS\n5,204",
+    "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情\nQ1 工程质量\nFAIL\n详情\nQ1 判定说明",
+    "histogram": "每尺寸档单元数（粗→细）\n档0\n152\n档1\n1,952\n档2\n2,892\n档3\n200\n档4\n8",
+    "cellBudget": {
+      "actualCells": 5204,
+      "targetCells": 5000,
+      "minimumCells": 3500,
+      "maximumCells": 6500,
+      "ratio": 1.0408,
+      "withinRange": true,
+      "withinTarget": true,
+      "isEstimate": true,
+      "attempts": 2,
+      "reached": true,
+      "stoppedReason": null
+    },
+    "theme": "duet",
+    "interactionChecks": true,
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 720,
+      "windowHeight": 720,
+      "wallpaper": {
+        "image": "linear-gradient(rgba(17, 16, 22, 0.52), rgba(17, 16, 22, 0.52)), url(\"file:///Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/Resources/app.asar/src/renderer/assets/duet-workshop.png\")",
+        "canvasBackground": "rgb(247, 241, 229)",
+        "welcomeHidden": true
+      },
+      "previewCells": 5204,
+      "exportedCells": 5204
+    }
+  },
+  "welcome_capture": "Forced empty state after image decode and compositor wake",
+  "q1_example": {
+    "source": "outputs/desktop-ui-refresh/packaged-nozzle-preset/mesh-1KIW5T/nozzle_profile.hybrid.quality-contract.json",
+    "solver_cells": 148375,
+    "hard_issue_count": 662,
+    "hard_issues_are_not_unique_cell_count": true,
+    "by_cell_type": {
+      "cartesian": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 136800,
+        "preferred_issue_count": 105,
+        "hard_issue_count": 26
+      },
+      "termination": {
+        "status": "FAIL",
+        "rated": true,
+        "cell_count": 2807,
+        "preferred_issue_count": 1382,
+        "hard_issue_count": 636
+      },
+      "boundary_layer": {
+        "status": "OBSERVED",
+        "rated": false,
+        "cell_count": 8768,
+        "preferred_issue_count": 0,
+        "hard_issue_count": 0
+      }
+    },
+    "solver_gate_valid": true,
+    "minimum_angle": 4.1103522561180545,
+    "maximum_nonorthogonality": 69.93490532168866
+  },
+  "native_tests_and_external_checkMesh": "not rerun for this presentation-only change"
+}

@@ -520,8 +520,13 @@ async function runSmoke() {
   })()`).then(async report => {
     if (report.welcomeOnly) {
       await mainWindow.webContents.executeJavaScript(`window.__smoke.state.mesh = null; document.getElementById('empty').hidden = false; window.__smoke.view.clear();`);
-      await new Promise(resolve => setTimeout(resolve, 250));
-      await fs.writeFile(argument('welcome-shot'), (await mainWindow.webContents.capturePage()).toPNG());
+      await mainWindow.webContents.executeJavaScript(`(async () => {
+        const artwork = new Image(); artwork.src = 'assets/duet-workshop.png'; await artwork.decode();
+      })()`);
+      // Wake the compositor before capturing a newly loaded CSS wallpaper.
+      await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await fs.writeFile(argument('welcome-shot'), (await mainWindow.webContents.capturePage(undefined, { stayAwake: true })).toPNG());
       await fs.rm(sessionDirectory, { recursive: true, force: true });
       app.exit(0); return;
     }
@@ -534,6 +539,11 @@ async function runSmoke() {
       const button = document.getElementById('generate').getBoundingClientRect();
       return { bottomReachable: button.bottom <= innerHeight && button.top >= 0,
         pageHeight: document.documentElement.scrollHeight, windowHeight: innerHeight,
+        wallpaper: {
+          image: getComputedStyle(document.body).backgroundImage,
+          canvasBackground: getComputedStyle(document.getElementById('canvasWrap')).backgroundColor,
+          welcomeHidden: document.getElementById('empty').hidden
+        },
         previewCells: window.__smoke.state.mesh?.cells.length,
         exportedCells: window.__smoke.state.result?.openFoam.cells };
     })()`);
