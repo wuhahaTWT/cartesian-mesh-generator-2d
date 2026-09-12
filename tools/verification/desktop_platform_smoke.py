@@ -43,6 +43,7 @@ def main():
             completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=240)
         if completed.returncode: raise RuntimeError(f'{name}: App failed; see {target / "app.log"}')
         ui = json.loads(Path(str(screenshot) + '.json').read_text(encoding='utf-8'))
+        assert ui['bundledChineseFontLoaded'], 'Chinese interface font did not load'
         unpacked = target / 'unpacked'
         with zipfile.ZipFile(archive) as z:
             assert z.testzip() is None

@@ -16,7 +16,7 @@ body {
   grid-template-rows: auto minmax(0, 1fr);
   background: var(--bg);
   color: var(--ink);
-  font: 13px/1.5 -apple-system, "Helvetica Neue", "PingFang SC", sans-serif;
+  font: 13px/1.5 "CartMesh UI", -apple-system, "Helvetica Neue", "PingFang SC", sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -162,8 +162,8 @@ select { font-family: inherit; font-size: 12px; }
   font-size: 11px; color: var(--ink-faint); cursor: pointer;
   padding: 3px 0; list-style: none;
 }
-.advanced summary::before { content: '▸ '; }
-.advanced[open] summary::before { content: '▾ '; }
+.advanced summary::before { content: '▶ '; }
+.advanced[open] summary::before { content: '▼ '; }
 .advanced[open] { display: flex; flex-direction: column; gap: 8px; }
 
 .methods { display: grid; gap: 7px; }
@@ -297,7 +297,7 @@ select { font-family: inherit; font-size: 12px; }
 .gate-detail > summary::before,
 .gate-explanation > summary::before { content: '› '; color: var(--accent); }
 .gate-detail[open] > summary::before,
-.gate-explanation[open] > summary::before { content: '⌄ '; }
+.gate-explanation[open] > summary::before { content: '▼ '; }
 .gate-detail[open] > .detail,
 .gate-explanation[open] > .detail {
   display: block;
@@ -371,8 +371,8 @@ select { font-family: inherit; font-size: 12px; }
   padding: 7px 18px; font-size: 11px; color: var(--ink-faint);
   cursor: pointer; list-style: none;
 }
-.logpanel summary::before { content: '▸ '; }
-.logpanel[open] summary::before { content: '▾ '; }
+.logpanel summary::before { content: '▶ '; }
+.logpanel[open] summary::before { content: '▼ '; }
 #log {
   margin: 0; padding: 0 18px 12px; max-height: 168px; overflow-y: auto;
   font: 10.5px/1.6 var(--mono); color: var(--ink-dim); white-space: pre-wrap;
@@ -446,7 +446,7 @@ body[data-theme="duet"] .panel > .block {
 }
 
 body[data-theme="duet"] .statusbar b::before {
-  content: "◈ ";
+  content: "◆ ";
   color: var(--burgundy);
   font-size: 10px;
 }
