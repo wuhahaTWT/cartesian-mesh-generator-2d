@@ -53,7 +53,7 @@ class NozzleEvidenceTests(unittest.TestCase):
             process.wait.side_effect=[subprocess.TimeoutExpired(['fixture'],1),0]
             with patch.object(driver.subprocess,'Popen',return_value=process), \
                  patch.object(driver.subprocess,'run',return_value=SimpleNamespace(returncode=0,stdout='',stderr='')) as cleanup, \
-                 patch.object(driver.os,'killpg') as kill:
+                 patch.object(driver.os,'killpg',create=True) as kill:
                 result=driver.run_stage(Path(folder)/'stage',['fixture'],1,'owned-fixture')
                 self.assertEqual(result['status'],'timeout')
                 self.assertEqual(cleanup.call_args.args[0],['docker','rm','-f','owned-fixture'])

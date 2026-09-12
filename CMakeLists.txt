@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 project(cartmesh2d LANGUAGES CXX)
 
+if(MSVC)
+    # Ship self-contained command-line tools and make narrow source/argv text
+    # consistently UTF-8 on supported Windows 10 and newer systems.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_compile_options(/utf-8)
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
 add_library(cartmesh2d
     src/boundary_layer/BoundaryLayer2D.cpp
     src/geometry/Geometry2D.cpp
@@ -93,6 +101,16 @@ elseif(MSVC)
     target_compile_options(cartmesh2d_hybrid_cli PRIVATE /W4 /permissive-)
 else()
     target_compile_options(cartmesh2d_hybrid_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
+if(MSVC)
+    foreach(target
+            cartmesh2d_cli
+            cartmesh2d_dxf_cli
+            cartmesh2d_boundary_layer_cli
+            cartmesh2d_hybrid_cli)
+        target_sources(${target} PRIVATE apps/cartmesh2d.exe.manifest)
+    endforeach()
 endif()
 
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)

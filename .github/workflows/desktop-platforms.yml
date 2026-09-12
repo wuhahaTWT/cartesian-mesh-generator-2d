@@ -1,0 +1,92 @@
+name: desktop-platforms
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['desktop/**', 'src/**', 'include/**', 'apps/**', 'tests/**', 'tools/verification/**', 'CMakeLists.txt', '.github/workflows/desktop-platforms.yml']
+  pull_request:
+    paths: ['desktop/**', 'src/**', 'include/**', 'apps/**', 'tests/**', 'tools/verification/**', 'CMakeLists.txt', '.github/workflows/desktop-platforms.yml']
+
+permissions:
+  contents: read
+concurrency:
+  group: desktop-platforms-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            arch: x64
+          - os: windows-2022
+            platform: win
+            arch: x64
+          - os: macos-14
+            platform: mac
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    env:
+      PYTHONUTF8: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux desktop libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 libgbm1
+      - name: Install locked desktop dependencies
+        run: npm ci --prefix desktop
+      - name: Build host native tools and stage runtime
+        run: npm --prefix desktop run build:native
+      - name: Build all native tests
+        run: cmake --build build --config Release --parallel 2
+      - name: Native tests
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Desktop tests
+        run: npm --prefix desktop test
+      - name: Package host desktop
+        run: npm --prefix desktop run pack:${{ matrix.platform }}
+      - name: Windows packaged application smoke
+        if: runner.os == 'Windows'
+        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/win-unpacked/CartMesh2D.exe --out outputs/platform-smoke
+      - name: Linux packaged application smoke
+        if: runner.os == 'Linux'
+        # Only the isolated CI smoke disables Chromium sandboxing; shipped launchers do not.
+        run: xvfb-run -a python tools/verification/desktop_platform_smoke.py --app desktop/dist/linux-unpacked/cartmesh2d-desktop --out outputs/platform-smoke --electron-arg=--no-sandbox --electron-arg=--disable-gpu
+      - name: macOS packaged application smoke
+        if: runner.os == 'macOS'
+        run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D --out outputs/platform-smoke
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-evidence-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            outputs/platform-smoke/summary.json
+            outputs/platform-smoke/**/*.log
+            outputs/platform-smoke/**/*.png
+            outputs/platform-smoke/**/reader.json
+            build/Testing/Temporary/LastTest.log
+            desktop/runtime/manifest.json
+          if-no-files-found: warn
+      - name: Upload verified application
+        uses: actions/upload-artifact@v4
+        with:
+          name: CartMesh2D-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            desktop/dist/*.zip
+            desktop/dist/*.tar.gz
+          if-no-files-found: error

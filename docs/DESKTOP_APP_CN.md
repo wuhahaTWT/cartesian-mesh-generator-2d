@@ -3,9 +3,21 @@
 ## 打开与版本
 
 唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.3.0。
-直接双击根目录 `打开CartMesh2D.command`；真正的 App 在 `desktop/dist/mac-arm64/CartMesh2D.app`。
+macOS 直接双击根目录 `打开CartMesh2D.command`；Apple Silicon App 在 `desktop/dist/mac-arm64/CartMesh2D.app`，Intel 本机构建在 `desktop/dist/mac/CartMesh2D.app`。
 开发模式：在 `desktop/` 执行 `npm start`。从其他目录调用 `sh desktop/scripts/build-macos.sh` 也可打包。
 不要再打开旧隐藏工作区路径；新旧代码关系见开发导航的历史表。
+
+## Windows 与 Linux
+
+GitHub 的 `desktop-platforms` 工作流在三个系统分别编译、打包并启动 App。只有原生测试、桌面测试和真实导入/生成/ZIP 读回全部通过，才上传对应运行包；在 Actions 中选择成功的一次运行，下载 `CartMesh2D-win-x64` 或 `CartMesh2D-linux-x64`。
+
+- Windows：解压运行包，打开 `CartMesh2D.exe`，同目录的 resources 等文件必须一起保留。目标为 Windows 10 1903+ / Windows 11 x64；原生工具含 UTF-8 路径配置，不要求安装 Visual C++ 运行库。CI 实际系统是 Windows Server 2022，不代表所有桌面版本已逐一验证。
+- Linux：解压 `.tar.gz` 后运行 `./cartmesh2d-desktop`。当前构建基线为 Ubuntu 22.04 x64，面向兼容 glibc 的图形桌面环境，并非 Alpine/musl 通用包。需要系统 GTK/NSS/音频库。正常启动不关闭 Chromium 沙箱。
+- 运行包自带 Electron 和二维生成器；Python、Node.js、CMake、编译器只在开发构建时需要。OpenFOAM/Fluent 仍需另行安装或在目标计算环境中运行，网格生成不依赖它们。
+
+当前包未签名/公证。详细的平台实测范围以 CURRENT_STATE 为准；尚未验收的平台不写成已支持。
+
+已有源码时：Windows 双击 `start-windows.cmd`，Linux 执行 `./start-linux.sh`。缺少运行包时会提示构建命令，详见开发导航。
 
 ## 使用顺序
 

@@ -2,6 +2,7 @@
 set -eu
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 APP_PATH="$PROJECT_DIR/desktop/dist/mac-arm64/CartMesh2D.app"
+if [ "$(uname -m)" = x86_64 ]; then APP_PATH="$PROJECT_DIR/desktop/dist/mac/CartMesh2D.app"; fi
 if [ -d "$APP_PATH" ]; then
   exec /usr/bin/open "$APP_PATH"
 fi

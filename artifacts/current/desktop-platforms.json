@@ -1,0 +1,134 @@
+{
+  "platform": "darwin",
+  "cases": [
+    {
+      "case": "png",
+      "cells": 5128,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 231.75,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 5128,
+        "exportedCells": 5128,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "658efa20bfd78e28b03c0e1b582aacf818600c6cc5744f90d4b617639cb4c18c"
+    },
+    {
+      "case": "jpg",
+      "cells": 5128,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 231.75,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 5128,
+        "exportedCells": 5128,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "02f6f7aeae0ec802e4995d02071addd5279af1675aa94b939df306c7b5d537b0"
+    },
+    {
+      "case": "hybrid",
+      "cells": 5348,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 231.75,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 5348,
+        "exportedCells": 5348,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "0ca5cdd7ecd0b44ae2b25abf1037bf01b6b95115c2c7f6c11561b243c0ba45f9"
+    }
+  ],
+  "externalCheckMesh": "not_run",
+  "cfd": "not_run",
+  "localNativeTests": 99,
+  "localFrontendTests": 97,
+  "standard32BitLimbLocalSuite": 99,
+  "remoteWindowsLinux": "pending workflow",
+  "localLogs": "outputs/platform-validation/",
+  "nativeRuntime": {
+    "schemaVersion": 1,
+    "platform": "darwin",
+    "arch": "arm64",
+    "executables": [
+      {
+        "name": "cartmesh2d_cli",
+        "file": "cartmesh2d_cli",
+        "format": "mach-o",
+        "architectures": [
+          "arm64"
+        ]
+      },
+      {
+        "name": "cartmesh2d_hybrid_cli",
+        "file": "cartmesh2d_hybrid_cli",
+        "format": "mach-o",
+        "architectures": [
+          "arm64"
+        ]
+      },
+      {
+        "name": "cartmesh2d_dxf_cli",
+        "file": "cartmesh2d_dxf_cli",
+        "format": "mach-o",
+        "architectures": [
+          "arm64"
+        ]
+      }
+    ],
+    "samples": [
+      "circle.xy",
+      "naca2412_dense.xy",
+      "thick_cambered_airfoil.xy",
+      "two_obstacles.xy",
+      "superellipse_24.xy",
+      "serpentine_body.xy",
+      "gear_star.xy",
+      "annulus.xy",
+      "nozzle_profile.xy",
+      "narrow_gap.xy",
+      "sharp_trailing_edge.xy"
+    ]
+  }
+}

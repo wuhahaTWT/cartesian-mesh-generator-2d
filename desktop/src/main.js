@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell, Menu } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
@@ -15,6 +15,7 @@ const { runBudget } = require('./core/budget-runner');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
+const { zipDirectory } = require('./core/archive');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -39,7 +40,7 @@ async function exportPackage(destination) {
   await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
   const temporary = path.join(sessionDirectory, 'export.zip');
   await fs.rm(temporary, { force: true });
-  await run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--noextattr', '--noqtn', '--keepParent', currentResult.outputDirectory, temporary], () => {});
+  await zipDirectory(currentResult.outputDirectory, temporary, operation?.signal);
   await fs.copyFile(temporary, destination);
   await fs.rm(temporary, { force: true });
   return destination;
@@ -152,7 +153,7 @@ async function createWindow() {
     minWidth: 800,
     minHeight: 560,
     backgroundColor: '#10161c',
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -166,6 +167,7 @@ async function createWindow() {
   await mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 app.whenReady().then(async () => {
+  if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
   sessionDirectory = await fs.mkdtemp(path.join(app.getPath('temp'), 'cartmesh2d-session-'));
   const log = line => mainWindow?.webContents.send('run-line', line);
 

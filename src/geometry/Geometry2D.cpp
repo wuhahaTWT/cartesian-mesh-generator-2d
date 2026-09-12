@@ -12,11 +12,23 @@ namespace cartmesh2d {
 
 namespace {
 
-constexpr std::size_t kCoordinateWords = 36;
-constexpr std::size_t kProductWords = 72;
+// Binary64 coordinates can span 2,098 exponent positions including subnormals.
+// GCC and Clang retain their wider fast path; MSVC uses standard 32-bit limbs
+// whose products and carries fit exactly in uint64_t.
+#if defined(__SIZEOF_INT128__)
+using MagnitudeWord = std::uint64_t;
+using WideWord = unsigned __int128;
+constexpr unsigned kWordBits = 64U;
+#else
+using MagnitudeWord = std::uint32_t;
+using WideWord = std::uint64_t;
+constexpr unsigned kWordBits = 32U;
+#endif
+constexpr std::size_t kCoordinateWords = 2304U / kWordBits;
+constexpr std::size_t kProductWords = 2U * kCoordinateWords;
 
 template <std::size_t N>
-using BigMagnitude = std::array<std::uint64_t, N>;
+using BigMagnitude = std::array<MagnitudeWord, N>;
 
 template <std::size_t N>
 struct SignedBig {
@@ -38,12 +50,11 @@ template <std::size_t N>
 [[nodiscard]] BigMagnitude<N> addMagnitude(const BigMagnitude<N>& lhs,
                                            const BigMagnitude<N>& rhs) noexcept {
     BigMagnitude<N> result{};
-    std::uint64_t carry = 0;
+    WideWord carry = 0;
     for (std::size_t i = 0; i < N; ++i) {
-        const unsigned __int128 sum = static_cast<unsigned __int128>(lhs[i]) +
-                                      rhs[i] + carry;
-        result[i] = static_cast<std::uint64_t>(sum);
-        carry = static_cast<std::uint64_t>(sum >> 64U);
+        const WideWord sum = static_cast<WideWord>(lhs[i]) + rhs[i] + carry;
+        result[i] = static_cast<MagnitudeWord>(sum);
+        carry = sum >> kWordBits;
     }
     return result;
 }
@@ -52,13 +63,12 @@ template <std::size_t N>
 [[nodiscard]] BigMagnitude<N> subtractMagnitude(const BigMagnitude<N>& lhs,
                                                 const BigMagnitude<N>& rhs) noexcept {
     BigMagnitude<N> result{};
-    std::uint64_t borrow = 0;
+    WideWord borrow = 0;
     for (std::size_t i = 0; i < N; ++i) {
-        const unsigned __int128 subtrahend =
-            static_cast<unsigned __int128>(rhs[i]) + borrow;
-        result[i] = static_cast<std::uint64_t>(
-            static_cast<unsigned __int128>(lhs[i]) - subtrahend);
-        borrow = static_cast<unsigned __int128>(lhs[i]) < subtrahend ? 1U : 0U;
+        const WideWord minuend = lhs[i];
+        const WideWord subtrahend = static_cast<WideWord>(rhs[i]) + borrow;
+        result[i] = static_cast<MagnitudeWord>(minuend - subtrahend);
+        borrow = minuend < subtrahend ? 1U : 0U;
     }
     return result;
 }
@@ -104,11 +114,16 @@ struct Binary64Dyadic {
     if (value.sign == 0) return result;
     result.sign = value.sign;
     const unsigned shift = static_cast<unsigned>(value.exponent - commonExponent);
-    const std::size_t word = shift / 64U;
-    const unsigned bit = shift % 64U;
-    result.magnitude[word] |= value.mantissa << bit;
-    if (bit != 0U && word + 1U < result.magnitude.size()) {
-        result.magnitude[word + 1U] |= value.mantissa >> (64U - bit);
+    std::size_t word = shift / kWordBits;
+    const unsigned bit = shift % kWordBits;
+    WideWord remaining = value.mantissa;
+    if (bit != 0U) {
+        result.magnitude[word++] = static_cast<MagnitudeWord>(remaining << bit);
+        remaining >>= kWordBits - bit;
+    }
+    while (remaining != 0U && word < result.magnitude.size()) {
+        result.magnitude[word++] = static_cast<MagnitudeWord>(remaining);
+        remaining >>= kWordBits;
     }
     return result;
 }
@@ -121,17 +136,18 @@ struct Binary64Dyadic {
     result.sign = lhs.sign * rhs.sign;
     for (std::size_t i = 0; i < lhs.magnitude.size(); ++i) {
         if (lhs.magnitude[i] == 0U) continue;
-        std::uint64_t carry = 0;
+        WideWord carry = 0;
         for (std::size_t j = 0; j < rhs.magnitude.size(); ++j) {
             const std::size_t out = i + j;
-            const unsigned __int128 product =
-                static_cast<unsigned __int128>(lhs.magnitude[i]) * rhs.magnitude[j] +
+            const WideWord product =
+                static_cast<WideWord>(lhs.magnitude[i]) * rhs.magnitude[j] +
                 result.magnitude[out] + carry;
-            result.magnitude[out] = static_cast<std::uint64_t>(product);
-            carry = static_cast<std::uint64_t>(product >> 64U);
+            result.magnitude[out] = static_cast<MagnitudeWord>(product);
+            carry = product >> kWordBits;
         }
         if (i + rhs.magnitude.size() < result.magnitude.size()) {
-            result.magnitude[i + rhs.magnitude.size()] = carry;
+            result.magnitude[i + rhs.magnitude.size()] =
+                static_cast<MagnitudeWord>(carry);
         }
     }
     return result;

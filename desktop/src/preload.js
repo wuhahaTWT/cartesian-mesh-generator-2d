@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('cartmesh', {
+  platform: process.platform,
   planBudget: payload => ipcRenderer.invoke('plan-budget', payload),
   catalog: () => ipcRenderer.invoke('catalog'),
   readRaster: sourcePath => ipcRenderer.invoke('read-raster', sourcePath),

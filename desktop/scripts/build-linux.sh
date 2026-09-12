@@ -7,4 +7,4 @@ DESKTOP_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 cd "$DESKTOP_DIR"
 npm run build:native
 npm test
-npm run pack:mac
+npm run pack:linux

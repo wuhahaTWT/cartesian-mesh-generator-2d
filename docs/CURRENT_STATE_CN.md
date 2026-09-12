@@ -10,6 +10,16 @@
 
 用户已授权连续推进，无需逐项审批普通实现。Astra 负责设计、核心算法和小验证；已授权的 Luna 负责固定批量执行。主代理核对原始日志、实际网格和摘要；摘要自报 PASS 不能替代证据。不使用 usage reset，不放宽质量门。
 
+## 跨平台桌面构建
+
+新增 macOS / Linux / Windows 本机构建、打包和 GitHub `desktop-platforms` 验证矩阵。Linux/Windows 的运行包只有在对应系统完成 CTest、前端测试、实际 App 导入/生成/导出和独立读回后才上传；当前远端验收状态需查看该工作流，不因脚本存在而宣称已跑通。
+
+- 用流式 ZIP 库替代 macOS 专用 ditto，保留 UTF-8 文件名和空目录；原生工具、11 个样例与平台 manifest 随包分发，打包时读取 PE/ELF/Mach-O 头并检查系统/架构，拒绝错误二进制混装。
+- Windows 使用系统标准窗口控件、静态 CRT、UTF-8 源码与进程路径 manifest。精确方向谓词在 MSVC 上使用标准 32 位 limb + 64 位乘积；支持 128 位整数的编译器保持 64 位 limb 路径。二者保持相同的整数容量、精确符号与容差，新增消去/溢出/极端指数回归。
+- 本机 macOS arm64 已完成前端 **97/97**、原生 **99/99**（先验证标准 32 位 limb 路径），实际 App 在含中文与空格的路径下完成 PNG/JPG/hybrid 三例，ZIP 独立读回通过。Windows/Linux 原生验收由本轮工作流继续执行；未在本轮运行外部 checkMesh 或 CFD。
+
+平台要求和下载/构建方法见 DESKTOP_APP_CN 与 DEVELOPMENT_CN。完整本机输出位于忽略的 `outputs/platform-validation/`。仅 Windows x64、Linux Ubuntu 22.04 x64、macOS arm64 进入当前自动验收矩阵；未宣称所有发行版、CPU 架构或跨编译器逐字节一致。
+
 ## PNG / JPG 图片输入
 
 桌面“打开文件”现接受 PNG、JPG、JPEG。图片在本地解码，Worker 自动选择阈值并提取二维闭合轮廓；支持明暗、透明度、背景色模式、点选主体/保留多个区域和显式线稿填孔。默认保留孔洞；小噪点移除、未选主体与简化回退会显示提示。红线叠加预览后必须输入轮廓整体的实际宽度，换算为米再接入原生 XY 生成链；不会猜测照片尺度或恢复三维形状。

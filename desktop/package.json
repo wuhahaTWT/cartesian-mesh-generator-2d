@@ -7,15 +7,26 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test \"tests/**/*.test.js\"",
-    "pack:mac": "electron-builder --mac dir"
+    "build:native": "node scripts/build-native.js",
+    "verify:runtime": "node scripts/verify-runtime.js",
+    "prepack:mac": "node scripts/verify-runtime.js --platform darwin",
+    "pack:mac": "electron-builder --mac dir zip",
+    "prepack:linux": "node scripts/verify-runtime.js --platform linux",
+    "pack:linux": "electron-builder --linux dir tar.gz",
+    "prepack:win": "node scripts/verify-runtime.js --platform win32",
+    "pack:win": "electron-builder --win dir zip"
   },
   "devDependencies": {
     "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
   },
+  "dependencies": {
+    "yazl": "^3.3.1"
+  },
   "build": {
     "appId": "com.zhuanz.cartmesh2d",
     "productName": "CartMesh2D",
+    "beforePack": "scripts/before-pack.js",
     "asar": true,
     "files": [
       "src/**/*",
@@ -29,6 +40,10 @@
       {
         "from": "runtime/samples",
         "to": "samples"
+      },
+      {
+        "from": "runtime/manifest.json",
+        "to": "runtime-manifest.json"
       }
     ],
     "mac": {
@@ -37,6 +52,21 @@
         "dir"
       ],
       "identity": null
+    },
+    "linux": {
+      "category": "Science",
+      "executableName": "cartmesh2d-desktop",
+      "target": [
+        "dir",
+        "tar.gz"
+      ]
+    },
+    "win": {
+      "executableName": "CartMesh2D",
+      "target": [
+        "dir",
+        "zip"
+      ]
     },
     "electronDist": "node_modules/electron/dist"
   }
