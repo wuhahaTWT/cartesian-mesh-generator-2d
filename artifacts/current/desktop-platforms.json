@@ -1,134 +1,405 @@
 {
-  "platform": "darwin",
-  "cases": [
-    {
-      "case": "png",
-      "cells": 5128,
-      "independentReader": true,
-      "layout": {
-        "bottomReachable": true,
-        "pageHeight": 560,
-        "windowHeight": 560,
-        "geometry": {
-          "bodyHeight": 560,
-          "innerHeight": 560,
-          "canvasHeight": 231.75,
-          "shellBottom": 560
+  "validatedSource": "132adaddd51214b7f254ee47d6fec889111a482e",
+  "workflow": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/34689931686",
+  "conclusion": "success",
+  "nativeTestsPerPlatform": 99,
+  "frontendTestsPerPlatform": 97,
+  "standard32BitLimbLocalSuite": 99,
+  "platforms": {
+    "mac": {
+      "platform": "darwin",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5128,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 231.5,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5128,
+            "exportedCells": 5128,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "93da15ec434695492fd55aba7560b443be7ed3a06167c54474da24c929ff64ac"
         },
-        "wallpaper": {
-          "image": "none",
-          "canvasBackground": "rgb(251, 252, 248)",
-          "welcomeHidden": true
+        {
+          "case": "jpg",
+          "cells": 5128,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 231.5,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5128,
+            "exportedCells": 5128,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "675767f1bd3035004876ba4af1ecac266b4896c405d780f936daac17ccc3bf55"
         },
-        "previewCells": 5128,
-        "exportedCells": 5128,
-        "sidebarCollapsed": false,
-        "sidebarExpanded": true
+        {
+          "case": "hybrid",
+          "cells": 5348,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 231.5,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5348,
+            "exportedCells": 5348,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "7aefaaffd10cb624fde6e08610d2579a261558329544b6e240226d085fc23698"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run",
+      "runtime": {
+        "schemaVersion": 1,
+        "platform": "darwin",
+        "arch": "arm64",
+        "executables": [
+          {
+            "name": "cartmesh2d_cli",
+            "file": "cartmesh2d_cli",
+            "format": "mach-o",
+            "architectures": [
+              "arm64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_hybrid_cli",
+            "file": "cartmesh2d_hybrid_cli",
+            "format": "mach-o",
+            "architectures": [
+              "arm64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_dxf_cli",
+            "file": "cartmesh2d_dxf_cli",
+            "format": "mach-o",
+            "architectures": [
+              "arm64"
+            ]
+          }
+        ],
+        "samples": [
+          "circle.xy",
+          "naca2412_dense.xy",
+          "thick_cambered_airfoil.xy",
+          "two_obstacles.xy",
+          "superellipse_24.xy",
+          "serpentine_body.xy",
+          "gear_star.xy",
+          "annulus.xy",
+          "nozzle_profile.xy",
+          "narrow_gap.xy",
+          "sharp_trailing_edge.xy"
+        ]
       },
-      "sha256": "658efa20bfd78e28b03c0e1b582aacf818600c6cc5744f90d4b617639cb4c18c"
+      "bundledChineseFontLoadedAllThreeCases": true
     },
-    {
-      "case": "jpg",
-      "cells": 5128,
-      "independentReader": true,
-      "layout": {
-        "bottomReachable": true,
-        "pageHeight": 560,
-        "windowHeight": 560,
-        "geometry": {
-          "bodyHeight": 560,
-          "innerHeight": 560,
-          "canvasHeight": 231.75,
-          "shellBottom": 560
+    "linux": {
+      "platform": "linux",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5130,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5130,
+            "exportedCells": 5130,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "c5548225d69c3b9e6deaef4796af84e560ddb62d24545117c3e0c23a14019fd4"
         },
-        "wallpaper": {
-          "image": "none",
-          "canvasBackground": "rgb(251, 252, 248)",
-          "welcomeHidden": true
+        {
+          "case": "jpg",
+          "cells": 5130,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5130,
+            "exportedCells": 5130,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "219cbcf2896ca2e4f851f5de5c0d32e4f6df30d00305556229dc1507b98d4a8b"
         },
-        "previewCells": 5128,
-        "exportedCells": 5128,
-        "sidebarCollapsed": false,
-        "sidebarExpanded": true
+        {
+          "case": "hybrid",
+          "cells": 5348,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5348,
+            "exportedCells": 5348,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "4ed99636502172ce47f296d51f66ca7bb5912b5d5c749ee40727af22de3057f1"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run",
+      "runtime": {
+        "schemaVersion": 1,
+        "platform": "linux",
+        "arch": "x64",
+        "executables": [
+          {
+            "name": "cartmesh2d_cli",
+            "file": "cartmesh2d_cli",
+            "format": "elf",
+            "architectures": [
+              "x64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_hybrid_cli",
+            "file": "cartmesh2d_hybrid_cli",
+            "format": "elf",
+            "architectures": [
+              "x64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_dxf_cli",
+            "file": "cartmesh2d_dxf_cli",
+            "format": "elf",
+            "architectures": [
+              "x64"
+            ]
+          }
+        ],
+        "samples": [
+          "circle.xy",
+          "naca2412_dense.xy",
+          "thick_cambered_airfoil.xy",
+          "two_obstacles.xy",
+          "superellipse_24.xy",
+          "serpentine_body.xy",
+          "gear_star.xy",
+          "annulus.xy",
+          "nozzle_profile.xy",
+          "narrow_gap.xy",
+          "sharp_trailing_edge.xy"
+        ]
       },
-      "sha256": "02f6f7aeae0ec802e4995d02071addd5279af1675aa94b939df306c7b5d537b0"
+      "bundledChineseFontLoadedAllThreeCases": true
     },
-    {
-      "case": "hybrid",
-      "cells": 5348,
-      "independentReader": true,
-      "layout": {
-        "bottomReachable": true,
-        "pageHeight": 560,
-        "windowHeight": 560,
-        "geometry": {
-          "bodyHeight": 560,
-          "innerHeight": 560,
-          "canvasHeight": 231.75,
-          "shellBottom": 560
+    "win": {
+      "platform": "win32",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5130,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5130,
+            "exportedCells": 5130,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "a760a29394e57e2a3e821b97693155dd4ecb7615256f0ad15444d328b5ddef6f"
         },
-        "wallpaper": {
-          "image": "none",
-          "canvasBackground": "rgb(251, 252, 248)",
-          "welcomeHidden": true
+        {
+          "case": "jpg",
+          "cells": 5130,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5130,
+            "exportedCells": 5130,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "429c48c0a7a28c3af442ca0ca0a6698e395fb594f901a19ccd8130d775e2c0b4"
         },
-        "previewCells": 5348,
-        "exportedCells": 5348,
-        "sidebarCollapsed": false,
-        "sidebarExpanded": true
+        {
+          "case": "hybrid",
+          "cells": 5348,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5348,
+            "exportedCells": 5348,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "d49f99bf2967abdf391443cb0bdfd9fb23d199cb57c2702d53084e311ebcf75a"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run",
+      "runtime": {
+        "schemaVersion": 1,
+        "platform": "win32",
+        "arch": "x64",
+        "executables": [
+          {
+            "name": "cartmesh2d_cli",
+            "file": "cartmesh2d_cli.exe",
+            "format": "pe",
+            "architectures": [
+              "x64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_hybrid_cli",
+            "file": "cartmesh2d_hybrid_cli.exe",
+            "format": "pe",
+            "architectures": [
+              "x64"
+            ]
+          },
+          {
+            "name": "cartmesh2d_dxf_cli",
+            "file": "cartmesh2d_dxf_cli.exe",
+            "format": "pe",
+            "architectures": [
+              "x64"
+            ]
+          }
+        ],
+        "samples": [
+          "circle.xy",
+          "naca2412_dense.xy",
+          "thick_cambered_airfoil.xy",
+          "two_obstacles.xy",
+          "superellipse_24.xy",
+          "serpentine_body.xy",
+          "gear_star.xy",
+          "annulus.xy",
+          "nozzle_profile.xy",
+          "narrow_gap.xy",
+          "sharp_trailing_edge.xy"
+        ]
       },
-      "sha256": "0ca5cdd7ecd0b44ae2b25abf1037bf01b6b95115c2c7f6c11561b243c0ba45f9"
+      "bundledChineseFontLoadedAllThreeCases": true
     }
-  ],
+  },
   "externalCheckMesh": "not_run",
   "cfd": "not_run",
-  "localNativeTests": 99,
-  "localFrontendTests": 97,
-  "standard32BitLimbLocalSuite": 99,
-  "remoteWindowsLinux": "pending workflow",
-  "localLogs": "outputs/platform-validation/",
-  "nativeRuntime": {
-    "schemaVersion": 1,
-    "platform": "darwin",
-    "arch": "arm64",
-    "executables": [
-      {
-        "name": "cartmesh2d_cli",
-        "file": "cartmesh2d_cli",
-        "format": "mach-o",
-        "architectures": [
-          "arm64"
-        ]
-      },
-      {
-        "name": "cartmesh2d_hybrid_cli",
-        "file": "cartmesh2d_hybrid_cli",
-        "format": "mach-o",
-        "architectures": [
-          "arm64"
-        ]
-      },
-      {
-        "name": "cartmesh2d_dxf_cli",
-        "file": "cartmesh2d_dxf_cli",
-        "format": "mach-o",
-        "architectures": [
-          "arm64"
-        ]
-      }
-    ],
-    "samples": [
-      "circle.xy",
-      "naca2412_dense.xy",
-      "thick_cambered_airfoil.xy",
-      "two_obstacles.xy",
-      "superellipse_24.xy",
-      "serpentine_body.xy",
-      "gear_star.xy",
-      "annulus.xy",
-      "nozzle_profile.xy",
-      "narrow_gap.xy",
-      "sharp_trailing_edge.xy"
-    ]
-  }
+  "crossCompilerByteIdentity": "not_claimed",
+  "fullLocalEvidence": "outputs/platform-validation/",
+  "runtimePackages": "desktop/dist/platforms/"
 }
