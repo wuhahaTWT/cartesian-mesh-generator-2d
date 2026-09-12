@@ -57,7 +57,12 @@ class NozzleEvidenceTests(unittest.TestCase):
                 result=driver.run_stage(Path(folder)/'stage',['fixture'],1,'owned-fixture')
                 self.assertEqual(result['status'],'timeout')
                 self.assertEqual(cleanup.call_args.args[0],['docker','rm','-f','owned-fixture'])
-                kill.assert_called_once()
+                if driver.os.name == 'posix':
+                    kill.assert_called_once()
+                    process.kill.assert_not_called()
+                else:
+                    kill.assert_not_called()
+                    process.kill.assert_called_once()
                 self.assertEqual(json.loads((Path(folder)/'stage/stage.json').read_text())['returncode'],124)
 
     def test_existing_run_is_preserved(self):
