@@ -1,0 +1,517 @@
+{
+  "scope": "Local 2D image contour import; synthetic format fixtures, not arbitrary-photo robustness",
+  "tests": {
+    "desktop": 95,
+    "nativeCTest": 99
+  },
+  "finalPackVerified": true,
+  "finalExportMatchesEarlierPngMesh": true,
+  "blankRejection": {
+    "rasterPreview": true,
+    "rejected": true,
+    "reason": "阈值结果为空；请调整模式、阈值或裁剪图片。",
+    "previousGeometryPreserved": true,
+    "dialogLayout": null
+  },
+  "smallWindow": {
+    "rasterPreview": true,
+    "loopCount": 1,
+    "vertices": 6,
+    "stats": {
+      "mode": "alpha",
+      "threshold": 0,
+      "input_pixels": 83200,
+      "foreground_pixels": 29321,
+      "initial_foreground_pixels": 29321,
+      "components": 1,
+      "eligible_components": 1,
+      "selected_components": 1,
+      "removed_components": 0,
+      "removed_area_px": 0,
+      "filled_holes": 0,
+      "filled_area_px": 0,
+      "loops": 1,
+      "points": 6,
+      "raw_points": 844,
+      "simplify_tolerance_px": 1,
+      "background_rgb": null
+    },
+    "warnings": [],
+    "calibrationRequired": true,
+    "dialogLayout": {
+      "width": 800,
+      "height": 560,
+      "visible": true,
+      "confirmReachable": true
+    }
+  },
+  "successfulExports": [
+    {
+      "name": "png",
+      "cellCount": 5128,
+      "readerValid": true,
+      "image": {
+        "source": "transparent-L.png",
+        "sourceSha256": "874a893acd6d88166aafb1c5a62b8151b3206699f8796cb85552036625f3ff32",
+        "sourceEncodedPixels": {
+          "width": 320,
+          "height": 260
+        },
+        "processedPixels": {
+          "width": 320,
+          "height": 260
+        },
+        "calibration": {
+          "width": 200,
+          "unit": "mm"
+        },
+        "metresPerProcessedPixel": 0.0008298755186721993,
+        "physicalWidth": 0.2,
+        "physicalHeight": 0.15020746887966807,
+        "outputUnits": "m",
+        "pointCount": 6,
+        "loopCount": 1,
+        "settings": {
+          "mode": "auto",
+          "selection": "largest",
+          "fillHoles": false,
+          "sourcePixelWidth": 320,
+          "sourcePixelHeight": 260,
+          "processingScale": 1
+        },
+        "stats": {
+          "input_pixels": 83200,
+          "foreground_pixels": 29321,
+          "initial_foreground_pixels": 29321,
+          "components": 1,
+          "eligible_components": 1,
+          "selected_components": 1,
+          "removed_components": 0,
+          "removed_area_px": 0,
+          "filled_holes": 0,
+          "filled_area_px": 0,
+          "loops": 1,
+          "points": 6,
+          "raw_points": 844,
+          "simplify_tolerance_px": 1,
+          "background_rgb": null
+        },
+        "warnings": [],
+        "limits": "Local 2D silhouette extraction, confirmed by user; no perspective correction or 3D reconstruction."
+      },
+      "exportedCase": "outputs/raster-import/png-exported/mesh-v91xJX/transparent-L-contour-openfoam",
+      "home": null,
+      "externalCheck": {
+        "tool": "OpenFOAM 2606 checkMesh",
+        "image": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+        "standardMeshOK": true,
+        "maxNonOrthogonality": 33.29193523,
+        "extendedCheck": "not_run",
+        "cfdSolve": "not_run",
+        "rawLog": "outputs/raster-import/png-checkMesh.log"
+      },
+      "reader": {
+        "cell_count": 5128,
+        "face_count": 20833,
+        "global_constant_flux_balance": 2.710505431213761e-20,
+        "internal_face_count": 10191,
+        "issues": [],
+        "max_closure_residual": 2.710505431213761e-20,
+        "max_constant_flux_divergence_residual": 3.885780586188047e-14,
+        "min_volume": 2.722522529823649e-09,
+        "patches": [
+          {
+            "nFaces": 229,
+            "name": "wall_0",
+            "startFace": 10191,
+            "type": "wall"
+          },
+          {
+            "nFaces": 50,
+            "name": "left",
+            "startFace": 10420,
+            "type": "patch"
+          },
+          {
+            "nFaces": 43,
+            "name": "right",
+            "startFace": 10470,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "bottom",
+            "startFace": 10513,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "top",
+            "startFace": 10545,
+            "type": "patch"
+          },
+          {
+            "nFaces": 10256,
+            "name": "frontAndBack",
+            "startFace": 10577,
+            "type": "empty"
+          }
+        ],
+        "physical_boundary_area_vector": [
+          2.710505431213761e-20,
+          -2.710505431213761e-20,
+          0.0
+        ],
+        "point_count": 10898,
+        "valid": true
+      }
+    },
+    {
+      "name": "outline",
+      "cellCount": 5016,
+      "readerValid": true,
+      "image": {
+        "source": "outline.png",
+        "sourceSha256": "5c6fa327725a636cd25dfb77f08e77e5aa8ab64718ade11273e5befc018dfa11",
+        "sourceEncodedPixels": {
+          "width": 300,
+          "height": 240
+        },
+        "processedPixels": {
+          "width": 300,
+          "height": 240
+        },
+        "calibration": {
+          "width": 200,
+          "unit": "mm"
+        },
+        "metresPerProcessedPixel": 0.0009049773755656109,
+        "physicalWidth": 0.2,
+        "physicalHeight": 0.14570135746606336,
+        "outputUnits": "m",
+        "pointCount": 4,
+        "loopCount": 1,
+        "settings": {
+          "mode": "auto",
+          "selection": "largest",
+          "fillHoles": true,
+          "sourcePixelWidth": 300,
+          "sourcePixelHeight": 240,
+          "processingScale": 1
+        },
+        "stats": {
+          "input_pixels": 72000,
+          "foreground_pixels": 35581,
+          "initial_foreground_pixels": 2992,
+          "components": 1,
+          "eligible_components": 1,
+          "selected_components": 1,
+          "removed_components": 0,
+          "removed_area_px": 0,
+          "filled_holes": 1,
+          "filled_area_px": 32589,
+          "loops": 1,
+          "points": 4,
+          "raw_points": 764,
+          "simplify_tolerance_px": 1,
+          "background_rgb": null
+        },
+        "warnings": [
+          "已按显式设置填充 1 个内孔，共 32589 像素；输出轮廓将忽略这些孔。"
+        ],
+        "limits": "Local 2D silhouette extraction, confirmed by user; no perspective correction or 3D reconstruction."
+      },
+      "exportedCase": "outputs/raster-import/outline-exported/mesh-j5uBFN/outline-contour-openfoam",
+      "home": null,
+      "externalCheck": {
+        "tool": "OpenFOAM 2606 checkMesh",
+        "image": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+        "standardMeshOK": true,
+        "maxNonOrthogonality": 18.43494882,
+        "extendedCheck": "not_run",
+        "cfdSolve": "not_run",
+        "rawLog": "outputs/raster-import/outline-checkMesh.log"
+      },
+      "reader": {
+        "cell_count": 5016,
+        "face_count": 20380,
+        "global_constant_flux_balance": 2.710505431213761e-20,
+        "internal_face_count": 9960,
+        "issues": [],
+        "max_closure_residual": 2.710505431213761e-20,
+        "max_constant_flux_divergence_residual": 1.3877787807814454e-14,
+        "min_volume": 1.0494732748868752e-08,
+        "patches": [
+          {
+            "nFaces": 224,
+            "name": "wall_0",
+            "startFace": 9960,
+            "type": "wall"
+          },
+          {
+            "nFaces": 50,
+            "name": "left",
+            "startFace": 10184,
+            "type": "patch"
+          },
+          {
+            "nFaces": 50,
+            "name": "right",
+            "startFace": 10234,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "bottom",
+            "startFace": 10284,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "top",
+            "startFace": 10316,
+            "type": "patch"
+          },
+          {
+            "nFaces": 10032,
+            "name": "frontAndBack",
+            "startFace": 10348,
+            "type": "empty"
+          }
+        ],
+        "physical_boundary_area_vector": [
+          2.710505431213761e-20,
+          -2.710505431213761e-20,
+          0.0
+        ],
+        "point_count": 10664,
+        "valid": true
+      }
+    },
+    {
+      "name": "jpg-L",
+      "cellCount": 5128,
+      "readerValid": true,
+      "image": {
+        "source": "L-photo.jpg",
+        "sourceSha256": "6392da41c49630da28a5be8d31fb67239ee5bd2297eff8fdd7f18fc71cb073db",
+        "sourceEncodedPixels": {
+          "width": 320,
+          "height": 260
+        },
+        "processedPixels": {
+          "width": 320,
+          "height": 260
+        },
+        "calibration": {
+          "width": 200,
+          "unit": "mm"
+        },
+        "metresPerProcessedPixel": 0.0008298755186721993,
+        "physicalWidth": 0.2,
+        "physicalHeight": 0.15020746887966807,
+        "outputUnits": "m",
+        "pointCount": 6,
+        "loopCount": 1,
+        "settings": {
+          "mode": "auto",
+          "selection": "largest",
+          "fillHoles": false,
+          "sourcePixelWidth": 320,
+          "sourcePixelHeight": 260,
+          "processingScale": 1
+        },
+        "stats": {
+          "mode": "dark",
+          "threshold": 120,
+          "input_pixels": 83200,
+          "foreground_pixels": 29321,
+          "initial_foreground_pixels": 29321,
+          "components": 1,
+          "eligible_components": 1,
+          "selected_components": 1,
+          "removed_components": 0,
+          "removed_area_px": 0,
+          "filled_holes": 0,
+          "filled_area_px": 0,
+          "loops": 1,
+          "points": 6,
+          "raw_points": 844,
+          "simplify_tolerance_px": 1,
+          "background_rgb": null
+        },
+        "warnings": [],
+        "limits": "Local 2D silhouette extraction, confirmed by user; no perspective correction or 3D reconstruction."
+      },
+      "exportedCase": "outputs/raster-import/jpg-L-exported/mesh-mRZI94/L-photo-contour-openfoam",
+      "home": {
+        "emptyVisible": true,
+        "released": true,
+        "geometryCleared": true,
+        "exportAvailable": true,
+        "mainPreviewReleased": true,
+        "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/raster-import/jpg-L-home.zip"
+      },
+      "externalCheck": {
+        "tool": "OpenFOAM 2606 checkMesh",
+        "image": "sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+        "standardMeshOK": true,
+        "maxNonOrthogonality": 33.29193523,
+        "extendedCheck": "not_run",
+        "cfdSolve": "not_run",
+        "rawLog": "outputs/raster-import/jpg-L-checkMesh.log"
+      },
+      "reader": {
+        "cell_count": 5128,
+        "face_count": 20833,
+        "global_constant_flux_balance": 2.710505431213761e-20,
+        "internal_face_count": 10191,
+        "issues": [],
+        "max_closure_residual": 2.710505431213761e-20,
+        "max_constant_flux_divergence_residual": 3.885780586188047e-14,
+        "min_volume": 2.722522529823649e-09,
+        "patches": [
+          {
+            "nFaces": 229,
+            "name": "wall_0",
+            "startFace": 10191,
+            "type": "wall"
+          },
+          {
+            "nFaces": 50,
+            "name": "left",
+            "startFace": 10420,
+            "type": "patch"
+          },
+          {
+            "nFaces": 43,
+            "name": "right",
+            "startFace": 10470,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "bottom",
+            "startFace": 10513,
+            "type": "patch"
+          },
+          {
+            "nFaces": 32,
+            "name": "top",
+            "startFace": 10545,
+            "type": "patch"
+          },
+          {
+            "nFaces": 10256,
+            "name": "frontAndBack",
+            "startFace": 10577,
+            "type": "empty"
+          }
+        ],
+        "physical_boundary_area_vector": [
+          2.710505431213761e-20,
+          -2.710505431213761e-20,
+          0.0
+        ],
+        "point_count": 10898,
+        "valid": true
+      }
+    }
+  ],
+  "failedEllipse": {
+    "input": "artifacts/current/raster-input-ellipse.jpg",
+    "calibratedXy": "# Calibrated image outline; units=m\n-0.010344827586206896 0.069348659003831414\n0.010344827586206896 0.069348659003831414\n0.023371647509578545 0.067816091954022995\n0.050957854406130272 0.060153256704980847\n0.064750957854406127 0.053256704980842916\n0.065517241379310351 0.051724137931034482\n0.068582375478927204 0.050957854406130272\n0.072413793103448282 0.047126436781609195\n0.073946360153256702 0.047126436781609195\n0.075478927203065135 0.044827586206896551\n0.077011494252873569 0.044827586206896551\n0.091570881226053641 0.028735632183908046\n0.096934865900383138 0.018007662835249044\n0.10000000000000001 0.0057471264367816091\n0.10000000000000001 -0.0057471264367816091\n0.098467432950191572 -0.013409961685823755\n0.093869731800766285 -0.024904214559386975\n0.092337164750957851 -0.025670498084291189\n0.089272030651340997 -0.031800766283524906\n0.086973180076628354 -0.033333333333333333\n0.086973180076628354 -0.034865900383141767\n0.070881226053639848 -0.049425287356321838\n0.050957854406130272 -0.060153256704980847\n0.031034482758620689 -0.066283524904214561\n0.010344827586206896 -0.069348659003831414\n-0.018007662835249044 -0.068582375478927204\n-0.042528735632183907 -0.063218390804597707\n-0.059386973180076630 -0.056321839080459769\n-0.060153256704980847 -0.054789272030651343\n-0.064750957854406127 -0.053256704980842916\n-0.065517241379310351 -0.051724137931034482\n-0.068582375478927204 -0.050957854406130272\n-0.072413793103448282 -0.047126436781609195\n-0.073946360153256702 -0.047126436781609195\n-0.075478927203065135 -0.044827586206896551\n-0.077011494252873569 -0.044827586206896551\n-0.091570881226053641 -0.028735632183908046\n-0.092337164750957851 -0.025670498084291189\n-0.095402298850574718 -0.021839080459770115\n-0.099233716475095796 -0.010344827586206896\n-0.10000000000000001 0.0057471264367816091\n-0.095402298850574718 0.021839080459770115\n-0.092337164750957851 0.025670498084291189\n-0.091570881226053641 0.028735632183908046\n-0.086973180076628354 0.033333333333333333\n-0.086973180076628354 0.034865900383141767\n-0.077011494252873569 0.044827586206896551\n-0.075478927203065135 0.044827586206896551\n-0.070881226053639848 0.049425287356321838\n-0.060153256704980847 0.054789272030651343\n-0.057854406130268203 0.057088122605363986\n-0.055555555555555559 0.057088122605363986\n-0.050957854406130272 0.060153256704980847\n-0.037164750957854410 0.064750957854406127\n",
+    "calibrationWidthMm": 200,
+    "report": {
+      "quality_class": "solver_quality",
+      "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+      "valid": false,
+      "policy": {
+        "max_non_orthogonality_deg": 70,
+        "max_internal_skewness": 4,
+        "max_boundary_skewness": 4,
+        "max_concavity_deg": 80,
+        "max_cell_aspect": 1000,
+        "min_interior_angle_deg": 0.5,
+        "min_face_length": 1.01e-10,
+        "min_face_weight": 0.05,
+        "min_volume_ratio": 0.01
+      },
+      "metrics": {
+        "max_non_orthogonality_deg": 84.58154591608772,
+        "max_internal_skewness": 3.1292131759146065,
+        "max_boundary_skewness": 3.441977521892666,
+        "max_concavity_deg": 0,
+        "max_cell_aspect": 190.15117294939785,
+        "min_interior_angle_deg": 0.9391909457357887,
+        "min_face_length": 1.2936329157961498e-05,
+        "min_face_weight": 0.011737978038617052,
+        "min_volume_ratio": 0.00400413329888903,
+        "min_compactness": 0.016406899966558246
+      },
+      "issue_count": 7,
+      "issues": [
+        {
+          "code": 9,
+          "cell_id": 2240,
+          "edge_id": 1219,
+          "measured": 0.043956043956046895,
+          "limit": 0.05,
+          "message": "internal face interpolation weight is below limit"
+        },
+        {
+          "code": 3,
+          "cell_id": 2329,
+          "edge_id": 1553,
+          "measured": 84.58154591608772,
+          "limit": 70,
+          "message": "internal face non-orthogonality exceeds limit"
+        },
+        {
+          "code": 9,
+          "cell_id": 2334,
+          "edge_id": 1554,
+          "measured": 0.016475510012213954,
+          "limit": 0.05,
+          "message": "internal face interpolation weight is below limit"
+        },
+        {
+          "code": 9,
+          "cell_id": 2352,
+          "edge_id": 1632,
+          "measured": 0.016949152542385184,
+          "limit": 0.05,
+          "message": "internal face interpolation weight is below limit"
+        },
+        {
+          "code": 10,
+          "cell_id": 2354,
+          "edge_id": 1748,
+          "measured": 0.00400413329888903,
+          "limit": 0.01,
+          "message": "neighbouring cell volume ratio is below limit"
+        },
+        {
+          "code": 9,
+          "cell_id": 2358,
+          "edge_id": 1750,
+          "measured": 0.011737978038617052,
+          "limit": 0.05,
+          "message": "internal face interpolation weight is below limit"
+        },
+        {
+          "code": 9,
+          "cell_id": 2610,
+          "edge_id": 5106,
+          "measured": 0.03867403314916617,
+          "limit": 0.05,
+          "message": "internal face interpolation weight is below limit"
+        }
+      ]
+    },
+    "nativeLog": "outputs/raster-import/jpg.log",
+    "note": "Image recognition succeeded; existing native solver quality gate rejected this configuration. No successful OpenFOAM export."
+  },
+  "logs": "outputs/raster-import/",
+  "codeScope": "No native meshing algorithms or thresholds changed"
+}

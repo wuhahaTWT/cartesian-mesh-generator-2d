@@ -84,6 +84,8 @@ const PRESETS = Object.freeze([
 ]);
 
 const GEOMETRY_FORMATS = Object.freeze([
+  { extension: 'png', label: 'PNG 图片轮廓 (.png)', native: false },
+  { extension: 'jpg', label: 'JPEG 图片轮廓 (.jpg / .jpeg)', native: false },
   { extension: 'xy', label: '原生折线 (.xy)', native: true },
   { extension: 'dxf', label: 'AutoCAD DXF (.dxf)', native: false },
   { extension: 'svg', label: 'SVG 路径 (.svg)', native: false },

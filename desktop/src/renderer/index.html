@@ -8,6 +8,7 @@
   <title>CartMesh2D</title>
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="raster-import.css">
 </head>
 <body>
 <div class="titlebar">
@@ -49,7 +50,7 @@
             <option value="m">米</option><option value="in">英寸</option><option value="ft">英尺</option>
           </select>
         </label>
-        <p class="note">支持 .xy / .dxf / .svg / .csv / .txt。统一换算为米，保留真实尺寸；不会自动归一到 1 m。</p>
+        <p class="note">支持 PNG/JPG 图片和 XY/DXF/SVG/CSV/TXT 轮廓。图片先确认轮廓与实际宽度；其他格式按源单位换算为米。</p>
       </details>
       <details class="advanced"><summary>参考长度 Lref</summary><label class="field">参考长度 Lref
         <select id="referenceMode"><option value="bbox">包围盒最长边（自动）</option><option value="explicit">指定工程参考长度</option></select>
@@ -223,6 +224,7 @@
 <script src="themes.js"></script>
 <script src="viewport.js"></script>
 <script src="export-preview.js"></script>
+<script src="raster-import.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

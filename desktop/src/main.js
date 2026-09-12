@@ -3,6 +3,8 @@
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
+const { calibrateRasterLoops, inspectRaster } = require('./core/raster-geometry');
 
 const { METHODS, PRESETS, GEOMETRY_FORMATS } = require('./core/capabilities');
 const { SAMPLES, sampleById } = require('./core/samples');
@@ -20,6 +22,8 @@ let mainWindow;
 let sessionDirectory;
 let currentResult;
 let operation = null;
+const rasterSources = new Map();
+const rasterImports = new Map();
 const timingHistory = new Map();
 async function exclusive(work) {
   if (operation) throw new Error('已有操作正在进行，请等待或取消。');
@@ -61,6 +65,14 @@ const safeBaseName = filePath =>
 // C++ converter because that is where unit handling and entity diagnostics live;
 // everything else is converted in process.
 async function prepareGeometry(geometryPath, { chordError, sourceUnits }, xyPath, reportPath, log) {
+  const raster = rasterImports.get(geometryPath);
+  if (raster) {
+    await fs.copyFile(geometryPath, xyPath);
+    const converted = geometry.convertToLoops(xyPath, await fs.readFile(xyPath, 'utf8'), { sourceUnits: 'm' });
+    if (converted.issues.length) throw new Error(converted.issues.join('\n'));
+    log('使用已确认的图片轮廓与实际尺寸（m）。');
+    return { ...converted, kind: 'raster', converter: 'local-raster-contours', warnings: raster.warnings };
+  }
   const kind = geometry.classify(geometryPath);
   if (kind === null) throw new Error(`不支持的文件类型：${path.extname(geometryPath) || '(无扩展名)'}`);
 
@@ -171,7 +183,8 @@ app.whenReady().then(async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: '选择二维边界几何',
       filters: [
-        { name: '所有支持的格式', extensions: ['xy', 'dxf', 'svg', 'csv', 'txt', 'dat'] },
+        { name: '所有支持的格式', extensions: ['xy', 'dxf', 'svg', 'csv', 'txt', 'dat', 'png', 'jpg', 'jpeg'] },
+        { name: '图片轮廓', extensions: ['png', 'jpg', 'jpeg'] },
         { name: '原生折线', extensions: ['xy'] },
         { name: 'AutoCAD DXF', extensions: ['dxf'] },
         { name: 'SVG', extensions: ['svg'] },
@@ -202,6 +215,47 @@ app.whenReady().then(async () => {
     return result.canceled ? null : exportPackage(result.filePath);
   }));
 
+  ipcMain.handle('read-raster', async (_event, sourcePath) => {
+    if (operation) throw new Error('请等待当前操作完成。');
+    if (typeof sourcePath !== 'string' || !/\.(png|jpe?g)$/i.test(sourcePath)) throw new Error('请选择 PNG 或 JPG 图片。');
+    const stat = await fs.stat(sourcePath);
+    if (!stat.isFile() || stat.size > 20 * 1024 * 1024) throw new Error('图片最大支持 20 MB，请先缩小或裁剪。');
+    const bytes = await fs.readFile(sourcePath);
+    const { format, width, height } = inspectRaster(bytes);
+    const directory = await fs.mkdtemp(path.join(sessionDirectory, 'raster-source-'));
+    const sourceFile = path.join(directory, `source-image.${format === 'jpeg' ? 'jpg' : 'png'}`);
+    await fs.writeFile(sourceFile, bytes);
+    rasterSources.set(sourcePath, { directory, sourceFile, format, width, height, name: path.basename(sourcePath),
+      sha256: createHash('sha256').update(bytes).digest('hex') });
+    return { dataUrl: `data:image/${format};base64,${bytes.toString('base64')}`, name: path.basename(sourcePath), format };
+  });
+  ipcMain.handle('commit-raster', (_event, input) => exclusive(async () => {
+    const source = rasterSources.get(input.sourcePath);
+    if (!source) throw new Error('图片读取会话已失效，请重新打开。');
+    const calibrated = calibrateRasterLoops(input);
+    if (typeof input.overlayDataUrl !== 'string' || !input.overlayDataUrl.startsWith('data:image/png;base64,') || input.overlayDataUrl.length > 16 * 1024 * 1024)
+      throw new Error('请先完成轮廓预览。');
+    const directory = await fs.mkdtemp(path.join(sessionDirectory, 'raster-geometry-'));
+    const geometryPath = path.join(directory, `${safeBaseName(source.name)}-contour.xy`);
+    try {
+      await fs.writeFile(geometryPath, geometry.loopsToXyText(calibrated.loops, 'Calibrated image outline; units=m'));
+      const overlay = Buffer.from(input.overlayDataUrl.split(',')[1], 'base64');
+      if (!overlay.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('轮廓预览图片无效。');
+      await fs.writeFile(path.join(directory, 'image-outline.png'), overlay);
+      const sourceName = path.basename(source.sourceFile);
+      await fs.copyFile(source.sourceFile, path.join(directory, sourceName));
+      const warnings = (input.warnings || []).filter(v => typeof v === 'string').slice(0,100);
+      const report = { source: source.name, sourceSha256: source.sha256, sourceEncodedPixels: { width: source.width, height: source.height }, processedPixels: { width: input.pixelWidth, height: input.pixelHeight },
+        calibration: input.calibration, metresPerProcessedPixel: calibrated.metresPerPixel,
+        physicalWidth: calibrated.physicalWidth, physicalHeight: calibrated.physicalHeight,
+        outputUnits: 'm', pointCount: calibrated.pointCount, loopCount: calibrated.loops.length,
+        settings: input.settings, stats: input.stats, warnings,
+        limits: 'Local 2D silhouette extraction, confirmed by user; no perspective correction or 3D reconstruction.' };
+      await fs.writeFile(path.join(directory, 'image-import.json'), JSON.stringify(report, null, 2));
+      rasterImports.set(geometryPath, { directory, warnings, files: [sourceName, 'image-outline.png', 'image-import.json'] });
+      return { geometryPath, label: `${source.name} · 图片轮廓` };
+    } catch (error) { await fs.rm(directory, { recursive: true, force: true }); throw error; }
+  }));
   ipcMain.handle('open-path', (_event, target) => shell.openPath(target));
 
   // Read a geometry without meshing it, so the outline can be drawn the moment a
@@ -262,8 +316,12 @@ app.whenReady().then(async () => {
     const prefix = path.join(job.outputDirectory, safeBaseName(job.geometryPath));
     const paths = { prefix, xyPath: `${prefix}.xy`, casePath: `${prefix}-openfoam` };
 
+    const rasterImport = rasterImports.get(job.geometryPath);
+    if (rasterImport) job.sourceUnits = 'm';
     const prepared = await prepareGeometry(job.geometryPath, job, paths.xyPath,
       `${prefix}.dxf.json`, log);
+    if (rasterImport) for (const file of rasterImport.files)
+      await fs.copyFile(path.join(rasterImport.directory, file), path.join(job.outputDirectory, file));
     // A hand-placed region is stated in body spans about the body centre, so the frame
     // has to come from the same loops the mesher is about to read.
     const loops = prepared.loops
@@ -306,6 +364,7 @@ app.whenReady().then(async () => {
       levelHistogram: levelHistogram(parsed),
       wallBounds: embeddedBounds(parsed),
       incomplete: failure ? failure.message.split('\n')[0] : null,
+      rasterImport: Boolean(rasterImport),
       result: normalizeResult({ method: job.method, stdout, reports, paths, mesh: parsed, incomplete: Boolean(failure) })
     };
     if (!failure) {
@@ -432,6 +491,7 @@ async function runSmoke() {
     ['customTargetCells', 'target-cells'],
   ].map(([id, flag]) => [id, argument(flag)]).filter(([, value]) => value !== null));
   if (outputDirectory) await fs.mkdir(outputDirectory, { recursive: true });
+  if (argument('small-window')) mainWindow.setSize(800, 560);
 
   // The renderer's init awaits the catalog over IPC, so the hook appears a moment
   // after the page finishes loading.
@@ -460,6 +520,35 @@ async function runSmoke() {
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
+    if (${JSON.stringify(Boolean(argument('image')))}) {
+      const previousPath = smoke.state.geometryPath;
+      const pendingImport = smoke.importGeometryFile(${JSON.stringify(argument('image'))});
+      const firstResult = await window.__rasterSmoke.ready;
+      if (${JSON.stringify(Boolean(argument('image-reject')))}) {
+        if (firstResult || !window.__rasterSmoke.state().confirmDisabled) throw new Error('Invalid image was accepted');
+        const reason = window.__rasterSmoke.state().status;
+        window.__rasterSmoke.cancel(); await pendingImport;
+        if (smoke.state.geometryPath !== previousPath) throw new Error('Cancel discarded previous geometry');
+        return { rasterPreview: true, rejected: true, reason, previousGeometryPreserved: true };
+      }
+      if (!firstResult) throw new Error(window.__rasterSmoke.state().status);
+      if (!window.__rasterSmoke.state().confirmDisabled) throw new Error('Image accepted without physical calibration');
+      const options = ${JSON.stringify({ mode: argument('image-mode') || 'auto', fillHoles: argument('image-fill') === 'true' })};
+      await window.__rasterSmoke.setOptions(options);
+      const extracted = window.__rasterSmoke.getResult();
+      if (!extracted) throw new Error(window.__rasterSmoke.state().status);
+      smoke.state.rasterEvidence = { loopCount: extracted.loops.length,
+        vertices: extracted.loops.reduce((n,loop)=>n+loop.length,0), stats: extracted.stats, warnings: extracted.warnings };
+      if (${JSON.stringify(Boolean(argument('image-preview-only')))})
+        return { rasterPreview: true, ...smoke.state.rasterEvidence, calibrationRequired: window.__rasterSmoke.state().confirmDisabled };
+      window.__rasterSmoke.setCalibration(Number(${JSON.stringify(argument('image-width') || '200')}), 'mm');
+      const committed = await window.__rasterSmoke.confirm();
+      if (!committed) throw new Error(window.__rasterSmoke.state()?.status || 'Raster commit failed');
+      await pendingImport;
+      const expectedWidth = Number(${JSON.stringify(argument('image-width') || '200')}) / 1000;
+      if (Math.abs(smoke.state.frame.width - expectedWidth) > expectedWidth * 1e-10 ||
+          !document.getElementById('sourceUnits').disabled) throw new Error('Image calibration was not preserved');
+    }
     if (${JSON.stringify(argument('verified-preset') === 'true')}) await smoke.loadVerifiedPreset();
     const sizingInputs = ${JSON.stringify(sizingInputs)};
     if ('referenceLength' in sizingInputs) {
@@ -551,10 +640,31 @@ async function runSmoke() {
       histogram: document.getElementById('histogram').innerText,
       log: document.getElementById('log').textContent,
       cellBudget: smoke.state.cellBudget,
+      raster: smoke.state.rasterEvidence,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))}
     };
   })()`).then(async report => {
+    if (report.rasterPreview) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      report.dialogLayout = await mainWindow.webContents.executeJavaScript(`(() => {
+        const dialog = document.querySelector('.raster-import');
+        if (!dialog) return null;
+        const confirm = dialog.querySelector('[data-raster="confirm"]');
+        const box = dialog.getBoundingClientRect();
+        const button = confirm?.getBoundingClientRect();
+        return { width: innerWidth, height: innerHeight, visible: box.top >= 0 && box.bottom <= innerHeight,
+          confirmReachable: Boolean(button && button.top >= 0 && button.bottom <= innerHeight) };
+      })()`);
+      if (shot) {
+        await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());
+        await fs.writeFile(shot + '.json', JSON.stringify(report, null, 2));
+      }
+      console.log(JSON.stringify(report, null, 2));
+      await mainWindow.webContents.executeJavaScript('window.__rasterSmoke.cancel()');
+      await fs.rm(sessionDirectory, { recursive: true, force: true });
+      app.exit(0); return;
+    }
     if (report.welcomeOnly) {
       await mainWindow.webContents.executeJavaScript(`window.__smoke.state.mesh = null; document.getElementById('empty').hidden = false; window.__smoke.view.clear();`);
       await mainWindow.webContents.executeJavaScript(`(async () => {
