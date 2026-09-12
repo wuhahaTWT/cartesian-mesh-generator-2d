@@ -12,13 +12,15 @@
 
 ## 跨平台桌面构建
 
-新增 macOS / Linux / Windows 本机构建、打包和 GitHub `desktop-platforms` 验证矩阵。Linux/Windows 的运行包只有在对应系统完成 CTest、前端测试、实际 App 导入/生成/导出和独立读回后才上传；当前远端验收状态需查看该工作流，不因脚本存在而宣称已跑通。
+macOS / Linux / Windows 已分别完成本机构建、打包与实际 App 验收。最终源码 `132adad` 的 [desktop-platforms 运行 34689931686](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/34689931686) 三个平台全部通过；运行包在对应系统完成测试和实际导入/生成/导出、独立读回后才上传。
 
 - 用流式 ZIP 库替代 macOS 专用 ditto，保留 UTF-8 文件名和空目录；原生工具、11 个样例与平台 manifest 随包分发，打包时读取 PE/ELF/Mach-O 头并检查系统/架构，拒绝错误二进制混装。
 - Windows 使用系统标准窗口控件、静态 CRT、UTF-8 源码与进程路径 manifest。精确方向谓词在 MSVC 上使用标准 32 位 limb + 64 位乘积；支持 128 位整数的编译器保持 64 位 limb 路径。二者保持相同的整数容量、精确符号与容差，新增消去/溢出/极端指数回归。
-- 本机 macOS arm64 已完成前端 **97/97**、原生 **99/99**（先验证标准 32 位 limb 路径），实际 App 在含中文与空格的路径下完成 PNG/JPG/hybrid 三例，ZIP 独立读回通过。Windows/Linux 原生验收由本轮工作流继续执行；未在本轮运行外部 checkMesh 或 CFD。
+- 三个平台分别通过前端 **97/97**、原生 **99/99**，实际运行打包 App，在含中文与空格的路径下完成 PNG/JPG/hybrid 三例，ZIP 独立读回均通过。macOS 的 PNG/JPG 为 5,128 格，Windows/Linux 为 5,130 格；混合圆均为 5,348 格。本机还单独验证了标准 32 位 limb 路径的 99 项测试；不宣称不同编译器生成逐字节一致。
+- 修复了 Windows 超时验证对 POSIX 信号的依赖；App 和导出 PNG 随包加载获 OFL 授权的中文字体，解决无中文系统字体的 Linux 方框字。最终 App 验收检查字体实际加载，并人工复核 Windows/Linux 界面和导出图片。
+- 本轮未运行外部 OpenFOAM checkMesh 或 CFD；独立 OpenFOAM 文件读回不代替目标求解器原生检查。Windows CI 实际系统是 Server 2022，Windows 10/11 用户桌面与更多 Linux 发行版仍需实际使用反馈。
 
-平台要求和下载/构建方法见 DESKTOP_APP_CN 与 DEVELOPMENT_CN。完整本机输出位于忽略的 `outputs/platform-validation/`。仅 Windows x64、Linux Ubuntu 22.04 x64、macOS arm64 进入当前自动验收矩阵；未宣称所有发行版、CPU 架构或跨编译器逐字节一致。
+平台要求和下载/构建方法见 DESKTOP_APP_CN 与 DEVELOPMENT_CN。小型证据与截图在 `artifacts/current/desktop-platforms*`，完整日志位于忽略的 `outputs/platform-validation/`，Windows/Linux 运行包下载到 `desktop/dist/platforms/`。仅 Windows x64、Linux Ubuntu 22.04 x64、macOS arm64 进入当前自动验收矩阵；未宣称所有发行版或 CPU 架构已验证。
 
 ## PNG / JPG 图片输入
 
