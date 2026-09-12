@@ -20,7 +20,7 @@ macOS / Linux / Windows 已分别完成本机构建、打包与实际 App 验收
 - 修复了 Windows 超时验证对 POSIX 信号的依赖；App 和导出 PNG 随包加载获 OFL 授权的中文字体，解决无中文系统字体的 Linux 方框字。最终 App 验收检查字体实际加载，并人工复核 Windows/Linux 界面和导出图片。
 - 本轮未运行外部 OpenFOAM checkMesh 或 CFD；独立 OpenFOAM 文件读回不代替目标求解器原生检查。Windows CI 实际系统是 Server 2022，Windows 10/11 用户桌面与更多 Linux 发行版仍需实际使用反馈。
 
-平台要求和下载/构建方法见 DESKTOP_APP_CN 与 DEVELOPMENT_CN。小型证据与截图在 `artifacts/current/desktop-platforms*`，完整日志位于忽略的 `outputs/platform-validation/`，Windows/Linux 运行包下载到 `desktop/dist/platforms/`。仅 Windows x64、Linux Ubuntu 22.04 x64、macOS arm64 进入当前自动验收矩阵；未宣称所有发行版或 CPU 架构已验证。
+平台要求和下载/构建方法见 DESKTOP_APP_CN 与 DEVELOPMENT_CN。小型证据与截图在 `artifacts/current/desktop-platforms*`，完整日志位于忽略的 `outputs/platform-validation/`，Windows 运行包已下载到 `desktop/dist/platforms/windows-x64/`；Linux 包由上述工作流的 `CartMesh2D-linux-x64` 附件下载，本地慢速副本下载未完成。仅 Windows x64、Linux Ubuntu 22.04 x64、macOS arm64 进入当前自动验收矩阵；未宣称所有发行版或 CPU 架构已验证。
 
 ## PNG / JPG 图片输入
 

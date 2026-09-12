@@ -401,5 +401,11 @@
   "cfd": "not_run",
   "crossCompilerByteIdentity": "not_claimed",
   "fullLocalEvidence": "outputs/platform-validation/",
-  "runtimePackages": "desktop/dist/platforms/"
+  "runtimePackages": {
+    "windowsLocal": "desktop/dist/platforms/windows-x64/CartMesh2D-0.3.0-win.zip",
+    "linuxDownload": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/34689931686/artifacts/10297192094",
+    "linuxLocalDownload": "not_completed",
+    "windowsArchiveIntegrity": "Python zipfile testzip passed",
+    "windowsArchiveSha256": "4207578b730e673410bc32397622191680af3f9598bc1dbb65597220bc1f6807"
+  }
 }
