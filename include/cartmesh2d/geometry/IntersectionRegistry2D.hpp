@@ -88,9 +88,8 @@ struct IntersectionRegistryPolicy2D {
     // perturbation of the fluid-area invariant and callers must budget for it
     // explicitly; see cartmesh2d_cli's physics gate.
     //
-    // Anchoring: Q1 already declares any face with face_length / local_h < 0.01
-    // a hard failure, so a geometric budget must stay well under 0.01 to be
-    // unable to destroy a face the quality contract would have accepted.
+    // Anchoring must stay well under the local face-size floor of 0.01, so the
+    // geometric budget cannot consume a face the repair path can resolve.
     double gridCornerWeldFractionOfLocalH =
         64.0*std::numeric_limits<double>::epsilon();
 };

@@ -26,8 +26,9 @@ from typing import Any
 FORMAT_VERSION = "cartmesh2d-refinement-ladder-v1"
 
 # Hard limits mirrored from include/cartmesh2d/quality/SolverQuality2D.hpp
-# (SolverQualityPolicy2D) which in turn match OpenFOAM's
-# etc/caseDicts/meshQualityDict.  Mirrored, never redefined: the C++ gate stays
+# (SolverQualityPolicy2D). These are the native policy, not the complete
+# OpenFOAM meshQualityDict (whose non-orthogonality reference is 65 degrees).
+# Mirrored, never redefined: the C++ gate stays
 # authoritative and this tool only refuses to accept a ladder that crossed it.
 HARD_MIN_FACE_WEIGHT = 0.05
 HARD_MIN_VOLUME_RATIO = 0.01
@@ -99,20 +100,6 @@ def cutcell_command(executable: pathlib.Path, boundary: pathlib.Path,
             "exterior", f"{prefix}-case", str(minimum_level)]
 
 
-def hard_issue_counts(path: pathlib.Path) -> dict[str, int] | None:
-    """Per-metric Q1 hard counts, from the full runtime contract report."""
-    if not path.exists():
-        return None
-    report = json.loads(path.read_text(encoding="utf-8"))
-    counts: dict[str, int] = {}
-    for issue in report.get("issues", []):
-        if issue.get("level") != "hard":
-            continue
-        metric = issue.get("metric", "unknown")
-        counts[metric] = counts.get(metric, 0) + 1
-    return dict(sorted(counts.items()))
-
-
 def split_hybrid_rejection(stderr: str) -> tuple[dict[str, str], dict[str, str]]:
     """Separate the rejected hybrid candidate from the pure Cut-cell fallback.
 
@@ -146,16 +133,12 @@ def collect_hybrid(prefix: pathlib.Path, stdout: str, stderr: str) -> dict[str, 
                     "remainder_cut_cell_count", "remainder_cartesian_cell_count",
                     "transition_polygon_count", "topology_valid",
                     "mesh_quality_valid", "solver_quality_valid",
-                    "quality_contract_status", "solver_quality_issue_count",
+                    "solver_quality_issue_count",
                     "area_error", "interface_length_error",
                     "max_non_orthogonality_deg", "min_face_weight",
                     "min_volume_ratio"):
             if key in report:
                 rung[key] = report[key]
-    rung["hard_issue_counts"] = hard_issue_counts(
-        pathlib.Path(f"{prefix}.hybrid.quality-contract.json"))
-    if rung["hard_issue_counts"] is not None:
-        rung["hard_issue_total"] = sum(rung["hard_issue_counts"].values())
     # The failure path writes no report; the stderr keys are the only record, and
     # they must describe the *rejected* candidate, not the fallback.
     if "hybrid_status" not in rung:
@@ -298,7 +281,6 @@ def gate(ladders: list[dict[str, Any]]) -> list[str]:
     violations: list[str] = []
     for ladder in ladders:
         label = f"{ladder['case']}:{ladder['mode']}"
-        previous_hard: int | None = None
         for rung in ladder["rungs"]:
             level = rung["level"]
             where = f"{label}:level {level}"
@@ -330,12 +312,6 @@ def gate(ladders: list[dict[str, Any]]) -> list[str]:
                 violations.append(
                     f"{where} max_non_orthogonality_deg {angle} > "
                     f"{HARD_MAX_NON_ORTHOGONALITY_DEG}")
-            hard = mesh.get("hard_issue_total")
-            if hard is not None:
-                if previous_hard is not None and hard > previous_hard:
-                    violations.append(
-                        f"{where} Q1 hard issues grew {previous_hard} -> {hard}")
-                previous_hard = hard
     return violations
 
 

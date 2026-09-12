@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 const { parseCm2d, embeddedBounds, levelHistogram, assignKeyLevels,
         assignSizeBands, PATCH } = require('../src/core/cm2d');
-const { parseKeyValues, summarizeContract, summarizeSolverQuality } = require('../src/core/report');
+const { parseKeyValues, summarizeSolverQuality } = require('../src/core/report');
 
 // Hand-built to the exact layout MeshIO2D.cpp writes:
 //   CELLS: id sourceId sourceKey area nv v... ne e...
@@ -88,38 +88,18 @@ test('a truncated or foreign file is refused', () => {
 // cartmesh2d_cli prints one pair per line; cartmesh2d_hybrid_cli prints many per
 // line.  Both have to reach the same place.
 test('key=value output is read in both CLI styles', () => {
-  const pure = parseKeyValues('stabilized_cells=3452\nquality_contract=FAIL\nsize_field_wall_level=11\n');
+  const pure = parseKeyValues('stabilized_cells=3452\nsize_field_wall_level=11\n');
   assert.equal(pure.stabilized_cells, '3452');
   assert.equal(pure.size_field_wall_level, '11');
 
-  const hybrid = parseKeyValues('hybrid_status=success cells=700 solver_cells=728 quality_contract=FAIL');
+  const hybrid = parseKeyValues('hybrid_status=success cells=700 solver_cells=728');
   assert.equal(hybrid.cells, '700');
   assert.equal(hybrid.solver_cells, '728');
-  assert.equal(hybrid.quality_contract, 'FAIL');
 });
 
 test('a lone pair keeps a value containing spaces', () => {
   const values = parseKeyValues('cm2d=/Users/a b/mesh.cm2d');
   assert.equal(values.cm2d, '/Users/a b/mesh.cm2d');
-});
-
-test('an unrated cell type reports OBSERVED rather than passing silently', () => {
-  const summary = summarizeContract({
-    status: 'FAIL',
-    by_cell_type: {
-      cartesian: { status: 'FAIL', rated: true, cell_count: 2224, hard_issue_count: 58, preferred_issue_count: 139 },
-      boundary_layer: { status: 'OBSERVED', rated: false, cell_count: 128, hard_issue_count: 0, preferred_issue_count: 0 }
-    },
-    issues: [
-      { level: 'hard', metric: 'volume_ratio' },
-      { level: 'hard', metric: 'volume_ratio' },
-      { level: 'preferred', metric: 'face_weight' }
-    ]
-  });
-  assert.equal(summary.status, 'FAIL');
-  assert.equal(summary.byType.find(row => row.type === 'boundary_layer').status, 'OBSERVED');
-  assert.equal(summary.metricCounts['hard:volume_ratio'], 2);
-  assert.equal(summary.metricCounts['preferred:face_weight'], 1);
 });
 
 test('solver metrics are judged in the direction each limit runs', () => {

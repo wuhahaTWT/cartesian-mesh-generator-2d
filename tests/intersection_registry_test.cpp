@@ -1,6 +1,5 @@
 #include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 #include "cartmesh2d/hybrid/TransitionCanonicalization2D.hpp"
-#include "cartmesh2d/quality/QualityContract2D.hpp"
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -16,9 +15,8 @@ bool equal(Point2D a,Point2D b) {return a.x==b.x && a.y==b.y;}
 }
 
 int main() {
-    check(TransitionCanonicalizationPolicy2D{}.minimumFaceFraction==
-          QualityContract2D{}.transition.faceOverLocalBackgroundH.hard,
-          "sampling criterion equals the unchanged Q1 face/local_h hard limit");
+    check(TransitionCanonicalizationPolicy2D{}.minimumFaceFraction==0.01,
+          "transition sampling keeps its local geometric face-size floor");
     {
         const FeatureOwner2D ownerA{ConstructionSourceKind2D::WallSegment, 7U, 1U};
         const FeatureOwner2D ownerB{ConstructionSourceKind2D::WallSegment, 8U, 1U};
@@ -93,7 +91,7 @@ int main() {
     }
     for (const double scale:{1.e-6,1.0,1.e6}) {
         IntersectionRegistry2D registry({1.e-6});
-        // Exact Q1 failure coordinates, not a zeroed/truncated fixture.
+        // Exact historical failure coordinates, not a zeroed/truncated fixture.
         const Point2D intersection{-2.326100423965795*scale,9.769353911109006e-9*scale};
         const Point2D anchor{-2.3261004232233007*scale,0.0};
         const double h=.0875*scale;

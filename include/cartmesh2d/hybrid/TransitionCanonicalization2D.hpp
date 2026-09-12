@@ -5,7 +5,7 @@
 namespace cartmesh2d {
 
 struct TransitionCanonicalizationPolicy2D {
-    // Kept equal to the Q1 hard face/local_h limit by a regression test.
+    // Local geometric floor used to avoid creating negligible face fragments.
     double minimumFaceFraction = 0.01;
     double featureTurnRadians = 0.523598775598298873;
     double clearanceFraction = 0.2;

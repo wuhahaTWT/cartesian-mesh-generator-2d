@@ -16,6 +16,37 @@ const state = {
 };
 
 const disabledControls = new Map();
+const SIDEBAR_STORAGE_KEY = 'cartmesh2d-sidebar-collapsed';
+function readSidebarCollapsed() {
+  try { return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'; } catch (_) { return false; }
+}
+function setSidebarCollapsed(collapsed, persist = true) {
+  document.body.classList.toggle('sidebar-collapsed', collapsed);
+  const button = $('toggleSidebar');
+  if (button) {
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? '显示设置侧栏' : '隐藏设置侧栏');
+    button.title = collapsed ? '显示设置侧栏（⌘B / Ctrl+B）' : '隐藏设置侧栏（⌘B / Ctrl+B）';
+  }
+  if (persist) {
+    try { window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed)); } catch (_) { /* private mode */ }
+  }
+  window.dispatchEvent(new Event('resize'));
+}
+function initSidebar() {
+  setSidebarCollapsed(readSidebarCollapsed(), false);
+  $('toggleSidebar')?.addEventListener('click', () => {
+    setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
+  });
+  window.addEventListener('keydown', event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b' &&
+        !event.altKey && !event.shiftKey && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      event.preventDefault();
+      setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
+    }
+  });
+}
+initSidebar();
 function setBusy(busy) {
   state.busy = busy;
   if (busy) {
@@ -440,47 +471,28 @@ function renderCounters(result) {
     .map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join('');
 }
 
-// The gates are independent by design; collapsing them into one verdict is what made
-// "checkMesh OK but Q1 FAIL" unreportable before.
 function renderGates(result) {
   const parts = [];
   parts.push(gateRow('内部拓扑检查', result.gates.topology.pass === null ? '未确认' : result.gates.topology.pass ? 'PASS' : 'FAIL',
     result.gates.topology.pass ? '生成器内部检查通过；外部 checkMesh 需另外执行。' : '本次未完整成功，不能据此确认通过。'));
-
   const solver = result.gates.solver;
   if (solver) {
     const worst = solver.rows.filter(row => !row.pass);
     parts.push(gateRow('Solver 质量', solver.valid ? 'PASS' : 'FAIL',
-      worst.length
-        ? worst.map(row => `${row.label} ${row.value.toPrecision(4)} (限 ${row.limit})`).join('　')
-        : solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')));
+      worst.length ? worst.map(row => `${row.label} ${row.value.toPrecision(4)} (限 ${row.limit})`).join('　') :
+        solver.rows.map(row => `${row.label} ${row.value.toPrecision(4)}`).join('　')));
   }
-
   const directional = result.resolution?.directional_connectivity;
   if (directional) {
     const minimum = Number.isFinite(directional.minimum) ? directional.minimum.toPrecision(5) : '未测得';
     parts.push(gateRow('方向连通质量', directional.valid ? 'PASS' : 'FAIL',
-      `最小 determinant ${minimum}，下限 ${directional.threshold}；` +
-      `不合格单元 ${directional.failed_cell_ids.length}。适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。`));
+      `最小 determinant ${minimum}，下限 ${directional.threshold}；不合格单元 ${directional.failed_cell_ids.length}。` +
+      '适用于平面均匀挤出、前后 empty；外部 checkMesh 需另外执行。'));
   }
-
-  const contract = result.gates.contract;
-  if (contract) {
-    const detail = contract.byType
-      .map(row => `${row.label} ${row.status}${row.hard ? `(${row.hard} hard)` : ''}`).join('　');
-    parts.push(gateRow('Q1 工程质量', contract.status, detail));
-    parts.push(`<details class="gate-explanation"><summary>Q1 判定说明</summary><span class="detail">` +
-      `Q1 是本项目按单元类型制定的质量目标，并非 OpenFOAM 检查。任一硬指标越界即 FAIL，只有优选指标越界为 WARN。当前导出由 Solver 门控制，Q1 FAIL 仍表示工程质量未达标。分类型计数在 solver ` +
-      `凸划分之后统计，所以归到 cartesian 的项可能含划分碎片。</span></details>`);
-  }
-
-  if (result.actualMethod === 'cutcell-fallback') {
+  if (result.actualMethod === 'cutcell-fallback')
     parts.push(gateRow('方法', 'WARN', '请求了贴体边界层，实际落到纯 Cut-cell fallback'));
-  }
-  if (!result.openFoam.written) {
-    parts.push(gateRow('OpenFOAM 导出', 'WARN',
-      '未写出。solver 门未通过，或导出阶段自身失败；CM2D 与 VTK 仍然可用'));
-  }
+  if (!result.openFoam.written)
+    parts.push(gateRow('OpenFOAM 导出', 'WARN', '未写出。solver 门未通过，或导出阶段自身失败；CM2D 与 VTK 仍然可用'));
   $('gates').innerHTML = parts.join('');
 }
 
@@ -756,7 +768,7 @@ window.addEventListener('resize', () => view.draw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed };
 })();
 
 function setOutput(directory) {

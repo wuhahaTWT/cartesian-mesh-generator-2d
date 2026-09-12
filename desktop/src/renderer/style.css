@@ -9,6 +9,11 @@
 
 body {
   margin: 0;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   background: var(--bg);
   color: var(--ink);
   font: 13px/1.5 -apple-system, "Helvetica Neue", "PingFang SC", sans-serif;
@@ -17,12 +22,14 @@ body {
 }
 
 .titlebar {
-  height: 28px;
+  min-height: 32px;
+  height: auto;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   justify-content: space-between;
   /* macOS traffic lights occupy the native left edge of the titlebar. */
-  padding: 0 14px 0 80px;
+  padding: 3px 14px 3px 80px;
   color: var(--ink-faint);
   font: 10px/1 var(--mono);
   letter-spacing: .08em;
@@ -30,6 +37,19 @@ body {
   border-bottom: 1px solid var(--line);
   -webkit-app-region: drag;
 }
+.sidebar-toggle {
+  -webkit-app-region: no-drag;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-dim);
+  display: grid;
+  place-items: center;
+}
+.sidebar-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-toggle:hover:not(:disabled) { border-color: var(--line); }
 .theme-control {
   display: flex;
   align-items: center;
@@ -48,7 +68,9 @@ body {
 .shell {
   display: grid;
   grid-template-columns: 336px 1fr;
-  height: calc(100vh - 28px);
+  height: auto;
+  min-height: 0;
+  min-width: 0;
 }
 
 .panel {
@@ -60,6 +82,8 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+body.sidebar-collapsed .shell { grid-template-columns: 0 minmax(0, 1fr); }
+body.sidebar-collapsed .panel { display: none; }
 
 .brand { display: flex; gap: 11px; align-items: center; }
 .brand .mark {
@@ -384,13 +408,6 @@ select { font-family: inherit; font-size: 12px; }
 
 .chip.select { padding: 4px 6px; font-size: 11px; width: auto; }
 
-.duet-signature { display: none; }
-body[data-theme="duet"] .empty .duet-signature {
-  display: block;
-  color: var(--rose);
-  font: 10px/1 var(--mono);
-  letter-spacing: .16em;
-}
 
 /* Keep focus treatment visible in both themes and on keyboard-only runs. */
 :where(button, input, select, summary):focus-visible {
@@ -445,8 +462,36 @@ body[data-theme="duet"] .canvasWrap.light .legend {
   .panel { padding-left: 13px; padding-right: 13px; }
   .results {
     grid-template-columns: minmax(180px, 220px) minmax(250px, 1fr);
+    grid-template-rows: repeat(6, max-content);
+    align-content: start;
   }
-  .histogram { grid-column: 1 / -1; }
+  #cellBudgetResult {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding-right: 0;
+  }
+  #actualToManual {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: auto;
+    justify-self: start;
+    white-space: nowrap;
+  }
+  #gates { grid-column: 1 / -1; grid-row: 3; }
+  #counters {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #histogram { grid-column: 1 / -1; grid-row: 5; }
+  #resolutionResult { grid-column: 1 / -1; grid-row: 6; }
+}
+@media (max-width: 800px) {
+  .titlebar { padding-left: 76px; }
+  .theme-control { margin-left: auto; }
+  .theme-control select { min-width: 112px; }
+  .statusbar { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .viewtools { width: 100%; justify-content: flex-start; }
 }
 
 /* Light display mode: the canvas turns into a publication figure, so the panels around

@@ -251,6 +251,15 @@ int main(int argc, char** argv) {
         std::cerr << "invalid finite H4-2 numeric parameter\n";
         return EXIT_FAILURE;
     }
+    std::optional<double> extrusionThickness;
+    if (argc==12) {
+        double thickness=0.0;
+        if (!parseDouble(argv[11],thickness) || thickness<=0.0) {
+            std::cerr<<"extrusion thickness must be finite and positive\n";
+            return EXIT_FAILURE;
+        }
+        extrusionThickness=thickness;
+    }
     layerParameters.thicknessMode = LayerThicknessMode2D::FirstLayerThickness;
 
     std::vector<std::vector<Point2D>> loopPoints;
@@ -342,6 +351,7 @@ int main(int argc, char** argv) {
         q4TerminationConstruction;
     hybridPolicy.enableOuterTransitionRadialMatching=q5OuterTransitionRadial;
     hybridPolicy.enableTerminationBufferRadialMatching=q5TerminationBufferRadial;
+    hybridPolicy.targetExtrusionThickness=extrusionThickness;
     const double inputSeconds = elapsedSeconds(totalStart);
     const auto buildStart = std::chrono::steady_clock::now();
     auto robust=buildRobustH4Mesh2D(
@@ -451,13 +461,9 @@ int main(int argc, char** argv) {
         }
         std::string openFoamStatus="not_requested";
         if (argc==12) {
-            double thickness=0.0;
-            if (!parseDouble(argv[11],thickness) || thickness<=0.0) {
-                std::cerr<<"extrusion thickness must be finite and positive\n";
-                return EXIT_FAILURE;
-            }
             const auto foam=writeExtrudedOpenFoam2D(
-                fallback.solverTopology,domain,originalWalls,argv[10],thickness,&error);
+                fallback.solverTopology,domain,originalWalls,argv[10],
+                *extrusionThickness,&error);
             if (!foam.valid()) {
                 std::cerr<<"OpenFOAM output failed: "<<error<<'\n';
                 return EXIT_FAILURE;
@@ -521,8 +527,6 @@ int main(int argc, char** argv) {
         outputPrefix.string() + ".hybrid.construction-quality.json";
     const auto solverQualityPath = outputPrefix.string() +
                                    ".hybrid.solver-quality.json";
-    const auto qualityContractPath = outputPrefix.string() +
-                                     ".hybrid.quality-contract.json";
     if (!writeText(outputPrefix.string()+".resolution.json",
                    meshResolutionReportToJson2D(hybrid.solverTopology,resolutionTargets,{},&hybrid),error)) {
         std::cerr<<error<<'\n'; return EXIT_FAILURE;
@@ -533,9 +537,7 @@ int main(int argc, char** argv) {
         !writeCm2dTopology(hybrid.solverTopology, solverCm2dPath, &error) ||
         !writeText(qualityPath, qualityReportToJson(hybrid.meshQuality), error) ||
         !writeText(solverQualityPath,
-                   solverQualityReportToJson(hybrid.solverQuality), error) ||
-        !writeText(qualityContractPath,
-                   qualityContractReportToJson(hybrid.qualityContract),error)) {
+                   solverQualityReportToJson(hybrid.solverQuality), error)) {
         std::cerr << error << '\n';
         return EXIT_FAILURE;
     }
@@ -549,17 +551,13 @@ int main(int argc, char** argv) {
 
     std::string openFoamStatus = "not_requested";
     if (argc == 12) {
-        double thickness = 0.0;
-        if (!parseDouble(argv[11], thickness) || thickness <= 0.0) {
-            std::cerr << "extrusion thickness must be finite and positive\n";
-            return EXIT_FAILURE;
-        }
         if (!hybrid.solverQuality.valid() || !hybrid.solverTopology.valid()) {
             std::cerr << "hybrid solver-quality gate failed; refusing OpenFOAM output\n";
             return EXIT_FAILURE;
         }
         const auto foam = writeExtrudedOpenFoam2D(
-            hybrid.solverTopology, domain, originalWalls, argv[10], thickness, &error);
+            hybrid.solverTopology, domain, originalWalls, argv[10],
+            *extrusionThickness, &error);
         if (!foam.valid()) {
             std::cerr << "OpenFOAM output failed: " << error << '\n';
             return EXIT_FAILURE;
@@ -589,6 +587,13 @@ int main(int argc, char** argv) {
               << hybrid.sourceLineageAudit.mismatchedCells
               << " solver_quality="
               << (hybrid.solverQuality.valid() ? "pass" : "fail")
+              << " target_solver_issues="
+              << hybrid.metrics.targetPolicyRepairIssueCountBefore << "->"
+              << hybrid.metrics.targetPolicyRepairIssueCountAfter
+              << " target_solver_repartitions="
+              << hybrid.metrics.targetPolicyRepairRepartitionCount
+              << " determinant_repartitions="
+              << hybrid.metrics.extrudedDeterminantRepairRepartitionCount
               << " r1_candidates=" << hybrid.metrics.r1ShortFaceCandidates
               << " r1_local_quality_evals="
               << hybrid.metrics.r1LocalQualityEvaluations
@@ -680,8 +685,6 @@ int main(int argc, char** argv) {
               << hybrid.metrics.q51OuterTransitionRadialSubdivision
               << " q51_declined="
               << hybrid.metrics.q51OuterTransitionRadialDeclined
-              << " quality_contract="
-              << qualityContractStatusName(hybrid.qualityContract.status())
               << " openfoam=" << openFoamStatus
               << " vtk=" << vtkPath
               << " solver_vtk=" << solverVtkPath

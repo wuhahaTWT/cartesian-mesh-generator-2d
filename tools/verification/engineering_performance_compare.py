@@ -69,8 +69,7 @@ def main() -> int:
                   "peak_rss_bytes": parse_rss(output or ""),
                   "native_pass": "cartmesh2d end-to-end PASS" in (output or ""),
                   "timeout_seconds": args.timeout, "issues": []}
-        for label, pattern in (("solver", r"^solver_quality=(\w+)"),
-                               ("Q1", r"^quality_contract=(\w+)")):
+        for label, pattern in (("solver", r"^solver_quality=(\w+)"),):
             match = re.search(pattern, output or "", re.M)
             result[label] = match.group(1) if match else "not_reported"
         result["external_checkMesh"] = "not_run"
@@ -94,7 +93,7 @@ def main() -> int:
         print(f"{args.phase}/{name}: measurement_complete={result['measurement_complete']}")
     summary = {"cli": str(args.cli), "cli_sha256": hashlib.sha256(args.cli.read_bytes()).hexdigest(),
                "phase": args.phase, "cases": results,
-               "notes": ["Measurement completeness is separate from Q1 and external solver acceptance.",
+               "notes": ["Measurement completeness is separate from external solver acceptance.",
                          "Compare the two phase summaries by case and CM2D SHA256; do not mix native and wrapper times."]}
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return 0 if all(r["measurement_complete"] for r in results) else 1

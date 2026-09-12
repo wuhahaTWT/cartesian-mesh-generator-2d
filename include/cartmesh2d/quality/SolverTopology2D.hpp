@@ -101,6 +101,22 @@ struct SolverDirectionalRepairResult2D {
     const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells = {},
     const TolerancePolicy& tol = {});
 
+// Improve actual polygons against an explicit target-solver policy. Does not
+// change the default Solver gate or discard cells; exact unions/splits retain
+// physical boundaries and immutable layer cells. Remaining issues stay visible.
+[[nodiscard]] SolverLocalRepartitionResult2D improveSolverForTargetPolicy2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    const SolverQualityPolicy2D& policy,const TolerancePolicy& tol = {});
+
+// OpenFOAM meshQualityDict all-face tensor for uniform extrusion, distinct
+// from its internal-face directional-connectivity diagnostic.
+[[nodiscard]] double extrudedCellDeterminant2D(const Polygon2D& polygon,double thickness);
+[[nodiscard]] SolverLocalRepartitionResult2D improveSolverExtrudedDeterminant2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    double thickness,const SolverQualityPolicy2D& policy,const TolerancePolicy& tol = {});
+
 struct SolverShortFaceRepairResult2D {
     TopologyMesh2D topology;
     std::vector<bool> immutableCells;

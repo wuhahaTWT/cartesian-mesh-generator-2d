@@ -5,7 +5,7 @@ The resolution JSON is an untrusted claim.  This checker cross-references the
 final solver CM2D polygons with ``hybrid_kind=0`` source VTK polygons, checks
 column adjacency and wall ownership, and recomputes wall coverage and first
 layer normal heights.  It is a topology/geometry checker only; it does not
-claim Solver or Q1 acceptance.
+claim Solver acceptance.
 """
 
 from __future__ import annotations

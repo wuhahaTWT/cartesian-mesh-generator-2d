@@ -3,7 +3,6 @@
 #include "cartmesh2d/boundary_layer/BoundaryLayer2D.hpp"
 #include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
-#include "cartmesh2d/quality/QualityContract2D.hpp"
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 #include "cartmesh2d/topology/EdgeIncidence2D.hpp"
@@ -101,7 +100,6 @@ struct HybridTransitionPlan2D {
 struct HybridMeshMetrics2D {
     std::size_t directionalRepairCandidateCount = 0;
     std::size_t directionalRepairAcceptedCount = 0;
-    bool directionalRepairRejectedByContract = false;
     double directionalRepairSeconds = 0.0;
     std::optional<double> directionalMinimumBefore;
     std::optional<double> directionalMinimumAfter;
@@ -122,6 +120,13 @@ struct HybridMeshMetrics2D {
     std::size_t solverCellCount = 0;
     std::size_t solverQualityAgglomerations = 0;
     std::size_t solverQualityRepartitions = 0;
+    std::size_t targetPolicyRepairIssueCountBefore = 0;
+    std::size_t targetPolicyRepairIssueCountAfter = 0;
+    std::size_t targetPolicyRepairRepartitionCount = 0;
+    bool targetPolicyRepairAttempted = false;
+    bool targetPolicyRepairCommitted = false;
+    bool targetPolicyRepairStructuralFailure = false;
+    std::size_t extrudedDeterminantRepairRepartitionCount = 0;
     std::size_t r1ShortFaceCandidates = 0;
     std::size_t r1LocalCandidates = 0;
     std::size_t r1LocalQualityEvaluations = 0;
@@ -238,11 +243,11 @@ struct HybridMeshMetrics2D {
     bool q51OuterTransitionRadialDeclined = false;
     bool q51OuterTransitionRadialTargetReachable = true;
     // Q5-2: the graded termination buffer re-resolved with more, thinner rows is
-    // only committed when it strictly lowers the typed hard count. Both counts
-    // are reported so a decline is a measurement, not a silent no-op.
+    // only committed when it strictly lowers the target Solver-policy issue count.
+    // Both counts are reported so a decline is a measurement, not a silent no-op.
     bool q52TerminationBufferRadialCommitted = false;
-    std::size_t q52TerminationBufferHardWithMatching = 0;
-    std::size_t q52TerminationBufferHardWithHistoricalMarch = 0;
+    std::size_t q52TerminationBufferTargetIssuesWithMatching = 0;
+    std::size_t q52TerminationBufferTargetIssuesWithHistoricalMarch = 0;
     // Rows and growth ratio the buffer march actually used, so the committed
     // grading is evidence rather than something re-derived from the rule.
     std::size_t q52TerminationBufferRows = 0;
@@ -339,6 +344,9 @@ struct HybridMeshPolicy2D {
     // keeps the outer front where the ungated march put it.
     bool enableTerminationBufferRadialMatching = false;
     std::size_t maximumTerminationBufferRows = 12U;
+    // Present only when the caller will export a uniformly extruded OpenFOAM
+    // mesh; enables checks and bounded repair against that actual 3D geometry.
+    std::optional<double> targetExtrusionThickness;
     TolerancePolicy tolerance{};
     double areaToleranceMultiplier = 256.0;
     double interfaceToleranceMultiplier = 128.0;
@@ -381,7 +389,6 @@ struct HybridMeshBuildResult2D {
     HybridMeshMetrics2D metrics;
     MeshQualityReport2D meshQuality;
     SolverQualityReport2D solverQuality;
-    QualityContractReport2D qualityContract;
     SmallCellReport2D remainderSmallCells;
     AgglomerationResult2D remainderStabilization;
     SolverTopologyResult2D solverTopologyReport;
@@ -690,15 +697,12 @@ resolveAutomaticHybridTransitionPlan2D(
         }
         return candidate;
     };
-    const auto hardIssueCount=[](const HybridMeshBuildResult2D& candidate) {
-        return candidate.success()
-            ?static_cast<std::size_t>(std::count_if(
-                 candidate.qualityContract.issues.begin(),
-                 candidate.qualityContract.issues.end(),
-                 [](const QualityContractIssue2D& issue) {
-                     return issue.level==QualityContractLevel2D::Hard;
-                 }))
-            :std::numeric_limits<std::size_t>::max();
+    const auto targetIssueCount=[&](const HybridMeshBuildResult2D& candidate) {
+        if (!candidate.success()) return std::numeric_limits<std::size_t>::max();
+        SolverQualityPolicy2D targetPolicy;
+        targetPolicy.maxNonOrthogonalityDeg=65.0;
+        return evaluateSolverQuality2D(
+            candidate.solverTopology,targetPolicy,basePolicy.tolerance).issues.size();
     };
     HybridMeshPolicy2D appliedPolicy=resolvedPolicy;
     result=buildThroughLadder(resolvedPolicy,appliedPolicy);
@@ -708,9 +712,9 @@ resolveAutomaticHybridTransitionPlan2D(
     // because every reduced column now stops at a different distance. The
     // remainder therefore changes and the outcome is measured, not assumed:
     // build both fronts and commit the re-resolved one only when it strictly
-    // lowers the typed hard count. A tie keeps the historical march, so the flag
-    // can never change bytes without a measured reason.
-    std::size_t q52HardMatched=0U,q52HardHistorical=0U;
+    // lowers the target Solver-policy issue count. A tie keeps the historical
+    // march, so the flag can never change bytes without a measured reason.
+    std::size_t q52TargetMatched=0U,q52TargetHistorical=0U;
     bool q52Committed=false;
     // The cap and whether it was reachable describe the attempt, so they are
     // carried onto whichever front is committed. Rows, ratio and the outer row
@@ -724,9 +728,9 @@ resolveAutomaticHybridTransitionPlan2D(
         historicalPolicy.enableTerminationBufferRadialMatching=false;
         HybridMeshPolicy2D historicalApplied=historicalPolicy;
         auto historical=buildThroughLadder(historicalPolicy,historicalApplied);
-        q52HardMatched=hardIssueCount(result);
-        q52HardHistorical=hardIssueCount(historical);
-        if (q52HardMatched<q52HardHistorical) {
+        q52TargetMatched=targetIssueCount(result);
+        q52TargetHistorical=targetIssueCount(historical);
+        if (q52TargetMatched<q52TargetHistorical) {
             q52Committed=true;
         } else {
             result=std::move(historical);
@@ -754,8 +758,8 @@ resolveAutomaticHybridTransitionPlan2D(
     result.metrics.q52TerminationBufferRadialCommitted=q52Committed;
     result.metrics.q52TerminationBufferRowCap=q52AttemptRowCap;
     result.metrics.q52TerminationBufferRowCapReachable=q52AttemptCapReachable;
-    result.metrics.q52TerminationBufferHardWithMatching=q52HardMatched;
-    result.metrics.q52TerminationBufferHardWithHistoricalMarch=q52HardHistorical;
+    result.metrics.q52TerminationBufferTargetIssuesWithMatching=q52TargetMatched;
+    result.metrics.q52TerminationBufferTargetIssuesWithHistoricalMarch=q52TargetHistorical;
     result.metrics.q41ConstructionSelectionDeclined=
         resolvedPolicy.enableTerminationConstructionQualitySelection==false &&
         basePolicy.enableTerminationConstructionQualitySelection &&

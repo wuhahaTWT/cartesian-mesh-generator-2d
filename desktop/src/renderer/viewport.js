@@ -147,7 +147,9 @@ class Viewport {
     if (this.lastSize && (width !== this.lastSize.width || height !== this.lastSize.height)) {
       const centreX = this.offset.x + this.lastSize.width / (2 * this.scale);
       const centreY = this.offset.y + this.lastSize.height / (2 * this.scale);
-      this.scale *= Math.min(width / this.lastSize.width, height / this.lastSize.height);
+      // Use one reversible viewport measure. min(widthRatio,heightRatio)
+      // shrinks on a sidebar round trip and never restores the original zoom.
+      this.scale *= Math.min(width, height) / Math.min(this.lastSize.width, this.lastSize.height);
       this.offset.x = centreX - width / (2 * this.scale);
       this.offset.y = centreY - height / (2 * this.scale);
     }

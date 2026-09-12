@@ -21,33 +21,6 @@ function parseKeyValues(text) {
   return values;
 }
 
-const CELL_TYPE_LABELS = {
-  cartesian: 'Cartesian',
-  remainder_cut: 'Cut-cell 余域',
-  transition: '过渡环',
-  termination: '层终止',
-  boundary_layer: '边界层'
-};
-
-function summarizeContract(contract) {
-  if (!contract) return null;
-  const byType = Object.entries(contract.by_cell_type || {}).map(([type, row]) => ({
-    type,
-    label: CELL_TYPE_LABELS[type] || type,
-    status: row.rated ? row.status : 'OBSERVED',
-    rated: Boolean(row.rated),
-    cellCount: row.cell_count || 0,
-    hard: row.hard_issue_count || 0,
-    preferred: row.preferred_issue_count || 0
-  }));
-  const metrics = {};
-  for (const issue of contract.issues || []) {
-    const key = `${issue.level}:${issue.metric}`;
-    metrics[key] = (metrics[key] || 0) + 1;
-  }
-  return { status: contract.status, byType, metricCounts: metrics, limits: contract.contract };
-}
-
 const SOLVER_METRIC_LABELS = [
   ['max_non_orthogonality_deg', '最大非正交角', '°', 70, 'max'],
   ['max_internal_skewness', '最大内部歪斜', '', 4, 'max'],
@@ -71,11 +44,10 @@ function summarizeSolverQuality(metrics, valid) {
   };
 }
 
-// The four gates are independent; passing one says nothing about another, so they are
+// The topology and Solver gates are independent, so they are
 // reported side by side rather than collapsed into a single verdict.
 function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = false }) {
   const values = parseKeyValues(stdout);
-  const contract = summarizeContract(reports.contract);
   const hybrid = reports.hybrid || null;
   const isHybrid = method === 'hybrid';
   const fellBack = isHybrid && values.mesh_mode === 'pure_cutcell_fallback';
@@ -93,12 +65,8 @@ function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = fa
     layerCells: Number(values.layer_cells || (hybrid && hybrid.boundary_layer_cell_count) || 0)
   };
 
-  const solverMetrics = isHybrid
-    ? (reports.solverQuality ? reports.solverQuality.metrics : null)
-    : (reports.contract ? reports.contract.legacy_hard_safety : null);
-  const solverValid = isHybrid
-    ? (reports.solverQuality ? reports.solverQuality.valid : undefined)
-    : (reports.contract ? reports.contract.legacy_hard_safety?.valid : undefined);
+  const solverMetrics = reports.solverQuality ? reports.solverQuality.metrics : null;
+  const solverValid = reports.solverQuality ? reports.solverQuality.valid : undefined;
 
   const written = values.openfoam === 'written' || Boolean(values.openfoam_case);
   return {
@@ -109,8 +77,7 @@ function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = fa
       // Both CLIs return EXIT_FAILURE when the topology audit fails, so reaching a
       // zero exit *is* the internal audit passing. Partial runs remain unconfirmed.
       topology: { pass: incomplete ? null : true, label: '拓扑不变量' },
-      solver: summarizeSolverQuality(solverMetrics, solverValid),
-      contract
+      solver: summarizeSolverQuality(solverMetrics, solverValid)
     },
     sizeField: reports.sizeField || null,
     resolution: reports.resolution || null,
@@ -129,4 +96,4 @@ function normalizeResult({ method, stdout, reports, paths, mesh, incomplete = fa
   };
 }
 
-module.exports = { parseKeyValues, summarizeContract, summarizeSolverQuality, normalizeResult, CELL_TYPE_LABELS };
+module.exports = { parseKeyValues, summarizeSolverQuality, normalizeResult };

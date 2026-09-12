@@ -5,8 +5,8 @@
 // R2 needs a *geometric* weld to remove refinement-induced corner spurs, but
 // turning that on globally would silently change every existing construction, so
 // the budget became opt-in. These tests pin both halves of that contract: the
-// default is unchanged, and a budget that could destroy a face the Q1 contract
-// would accept is refused outright rather than merely discouraged.
+// default is unchanged, and a budget that could destroy a resolvable local face
+// is refused outright rather than merely discouraged.
 
 #include "cartmesh2d/geometry/IntersectionRegistry2D.hpp"
 
@@ -38,7 +38,7 @@ void defaultWeldBudgetStaysRoundoffSized() {
           "the default weld budget must stay at 64 * DBL_EPSILON");
 }
 
-void geometricWeldBudgetIsAcceptedBelowTheQ1ShortFaceLimit() {
+void geometricWeldBudgetIsAcceptedBelowTheLegacyShortFaceLimit() {
     IntersectionRegistryPolicy2D policy;
     policy.gridCornerWeldFractionOfLocalH = 1.0e-4;
     try {
@@ -50,9 +50,9 @@ void geometricWeldBudgetIsAcceptedBelowTheQ1ShortFaceLimit() {
     }
 }
 
-void weldBudgetAtOrAboveTheQ1ShortFaceLimitIsRefused() {
-    // Q1's hard limit is face_length / local_h >= 0.01. A weld budget that large
-    // could remove a face the contract considered legitimate.
+void weldBudgetAtOrAboveTheLocalFaceFloorIsRefused() {
+    // The local repair floor is face_length / local_h >= 0.01. A weld budget
+    // that large could consume a resolvable face.
     for (const double fraction : {0.01, 0.1, 0.5, 1.0}) {
         IntersectionRegistryPolicy2D policy;
         policy.gridCornerWeldFractionOfLocalH = fraction;
@@ -65,7 +65,7 @@ void weldBudgetAtOrAboveTheQ1ShortFaceLimitIsRefused() {
         }
         if (!refused) {
             std::cerr << "FAIL: weld fraction " << fraction
-                      << " must be refused as at or above the Q1 short-face limit\n";
+                      << " must be refused as at or above the local face-size floor\n";
             ++failures;
         }
     }
@@ -108,8 +108,8 @@ void proximityBudgetValidationIsUnchanged() {
 
 int main() {
     defaultWeldBudgetStaysRoundoffSized();
-    geometricWeldBudgetIsAcceptedBelowTheQ1ShortFaceLimit();
-    weldBudgetAtOrAboveTheQ1ShortFaceLimitIsRefused();
+    geometricWeldBudgetIsAcceptedBelowTheLegacyShortFaceLimit();
+    weldBudgetAtOrAboveTheLocalFaceFloorIsRefused();
     nonFiniteOrNonPositiveWeldBudgetsAreRefused();
     proximityBudgetValidationIsUnchanged();
     if (failures != 0) {

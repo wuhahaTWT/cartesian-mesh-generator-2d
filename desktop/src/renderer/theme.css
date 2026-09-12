@@ -99,18 +99,6 @@ body[data-theme="duet"] .brand {
   padding-bottom: 14px;
 }
 
-body[data-theme="duet"] .brand::after {
-  content: "少女 哥伦比娅  ×  木偶 桑多涅";
-  display: block;
-  position: absolute;
-  left: 43px;
-  top: 39px;
-  color: var(--rose);
-  font: 9px/1.2 "PingFang SC", "Helvetica Neue", sans-serif;
-  letter-spacing: .08em;
-  white-space: nowrap;
-}
-
 body[data-theme="duet"] .brand b { letter-spacing: .08em; }
 body[data-theme="duet"] .brand i { color: var(--accent); }
 
@@ -120,18 +108,6 @@ body[data-theme="duet"] .block h2 span {
   color: var(--accent);
 }
 body[data-theme="duet"] .block h2 { color: var(--accent); }
-
-/* The signature stays in the chrome and never overlays an actual mesh. */
-body[data-theme="duet"] .workspace::after {
-  content: "COLUMBINA / SANDRONE";
-  position: fixed;
-  right: 16px;
-  bottom: 5px;
-  color: rgba(185, 138, 72, .45);
-  font: 8px/1 var(--mono);
-  letter-spacing: .22em;
-  pointer-events: none;
-}
 
 /* The original artwork stays intact; transparency is a presentation property.
    Chrome uses a continuous wallpaper, with a portrait crop in the narrow rail

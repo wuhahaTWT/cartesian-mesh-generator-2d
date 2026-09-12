@@ -65,9 +65,9 @@ def run_one(output, cli, case_name, request_name, timeout):
               "native_mode": "hybrid" if hybrid_marker else ("pure_cutcell_fallback" if fallback_marker else "unknown"),
               "native_elapsed_seconds": parse_native_seconds(text),
               "wrapper_elapsed_seconds": float(elapsed.group(1)) if elapsed else None,
-              "peak_rss_bytes": parse_rss(text), "solver": "not_reported", "Q1": "not_reported",
+              "peak_rss_bytes": parse_rss(text), "solver": "not_reported",
               "external_checkMesh": "not_run", "issues": []}
-    for key, pattern in (("solver", r"solver_quality=(\w+)"), ("Q1", r"quality_contract=(\w+)")):
+    for key, pattern in (("solver", r"solver_quality=(\w+)"),):
         match = re.search(pattern, text, re.M)
         if match: result[key] = match.group(1)
     if timed: result["status"] = "timeout"
@@ -117,6 +117,6 @@ def main():
             try: results.append(run_one(args.output_dir / case_name / ("request-" + request_name), args.cli, case_name, request_name, args.timeout))
             except Exception as exc:
                 results.append({"case":case_name,"request":request_name,"status":"failed","measurement_complete":False,"issues":[str(exc)]})
-    summary={"format":"cartmesh2d-engineering-hybrid-survey-v1","scope":{"cases":list(CASES),"requests":REQUESTS,"selected_cases":args.cases,"selected_requests":args.grids},"cli":str(args.cli),"cli_sha256":hashlib.sha256(args.cli.read_bytes()).hexdigest(),"size_field_auto_enabled":True,"external_checkMesh":"not_run","cases":results,"process_success_count":sum(r["status"]=="success" for r in results),"hybrid_certified_count":sum(r.get("native_mode")=="hybrid" and r["measurement_complete"] for r in results),"fallback_count":sum(r.get("native_mode")=="pure_cutcell_fallback" for r in results),"measurement_complete_count":sum(r["measurement_complete"] for r in results),"notes":["Requested quantities are measurements, not claims of 1e4/5e4/1e5 cells.","Solver, Q1, external checkMesh and layer authentication are separate reports.","Relative options implicitly create the size-field policy in cartmesh2d_hybrid_cli; --size-field is not required."]}
+    summary={"format":"cartmesh2d-engineering-hybrid-survey-v1","scope":{"cases":list(CASES),"requests":REQUESTS,"selected_cases":args.cases,"selected_requests":args.grids},"cli":str(args.cli),"cli_sha256":hashlib.sha256(args.cli.read_bytes()).hexdigest(),"size_field_auto_enabled":True,"external_checkMesh":"not_run","cases":results,"process_success_count":sum(r["status"]=="success" for r in results),"hybrid_certified_count":sum(r.get("native_mode")=="hybrid" and r["measurement_complete"] for r in results),"fallback_count":sum(r.get("native_mode")=="pure_cutcell_fallback" for r in results),"measurement_complete_count":sum(r["measurement_complete"] for r in results),"notes":["Requested quantities are measurements, not claims of 1e4/5e4/1e5 cells.","Solver, external checkMesh and layer authentication are separate reports.","Relative options implicitly create the size-field policy in cartmesh2d_hybrid_cli; --size-field is not required."]}
     (args.output_dir/"summary.json").write_text(json.dumps(summary,indent=2, allow_nan=False)+"\n"); print(json.dumps({k:summary[k] for k in ('process_success_count','hybrid_certified_count','fallback_count','measurement_complete_count','external_checkMesh')},indent=2, allow_nan=False)); return 0 if all(r["measurement_complete"] for r in results) else 1
 if __name__ == "__main__": raise SystemExit(main())

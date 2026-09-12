@@ -127,7 +127,7 @@ std::string meshResolutionReportToJson2D(const TopologyMesh2D& mesh,
     }
     out<<"]},\n  \"notes\":[\"Wall statistics sample final embedded edges; split edges do not replace owner extents.\","
         << "\"Normal owner extent is not a certified first-layer height or y-plus.\","
-        << "\"Sizing exceedance is a diagnostic independent of topology, Solver and Q1 gates.\"]\n}\n";
+        << "\"Sizing exceedance is a diagnostic independent of topology and Solver gates.\"]\n}\n";
     return out.str();
 }
 } // namespace cartmesh2d

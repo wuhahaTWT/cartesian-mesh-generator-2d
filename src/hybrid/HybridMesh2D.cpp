@@ -10,7 +10,6 @@
 #include <limits>
 #include <map>
 #include <numeric>
-#include <numbers>
 #include <optional>
 #include <sstream>
 #include <tuple>
@@ -28,6 +27,13 @@ using H4ProfileClock = std::chrono::steady_clock;
 // Process-wide instrumentation counter, single-threaded by construction like
 // globalTopologyBuilds in Topology2D.cpp.
 std::size_t conformalHybridBuilds=0U;
+
+// Local candidate-search targets retained from the termination repair. They rank
+// bounded exact-union/repartition candidates only; they are not an acceptance
+// contract and are never reported as a product verdict.
+constexpr double minimumRepairFaceOverLocalH=0.01;
+constexpr double minimumRepairFaceWeight=0.10;
+constexpr double minimumRepairVolumeRatio=0.05;
 
 
 [[nodiscard]] double polygonBoundsArea(const Polygon2D& polygon) noexcept {
@@ -349,23 +355,18 @@ void writeJsonString(std::ostream& out, const std::string& value) {
     return audit;
 }
 
-[[nodiscard]] QualityCellType2D qualityType(HybridCellKind2D kind) noexcept {
-    switch (kind) {
-    case HybridCellKind2D::BoundaryLayer: return QualityCellType2D::BoundaryLayer;
-    case HybridCellKind2D::RemainderCut: return QualityCellType2D::RemainderCut;
-    case HybridCellKind2D::RemainderCartesian: return QualityCellType2D::Cartesian;
-    case HybridCellKind2D::Termination: return QualityCellType2D::Termination;
-    case HybridCellKind2D::Transition: return QualityCellType2D::Transition;
-    }
-    return QualityCellType2D::Unknown;
-}
+struct SolverSourceMetadata2D {
+    bool resolved=false;
+    HybridCellKind2D kind=HybridCellKind2D::RemainderCartesian;
+    double localBackgroundH=0.0;
+};
 
-[[nodiscard]] std::vector<QualityCellMetadata2D> qualityMetadataForSolver(
+[[nodiscard]] std::vector<SolverSourceMetadata2D> solverSourceMetadata(
     const TopologyMesh2D& topology,const std::vector<HybridSourceCell2D>& sources,
     std::vector<std::optional<std::size_t>>& sourceForCell,
     SourceLineageAudit2D& lineageAudit,bool verifyOracle,
     const TolerancePolicy& tol) {
-    std::vector<QualityCellMetadata2D> metadata(topology.cells.size());
+    std::vector<SolverSourceMetadata2D> metadata(topology.cells.size());
     sourceForCell.assign(topology.cells.size(),std::nullopt);
     lineageAudit={};
     lineageAudit.solverCellCount=topology.cells.size();
@@ -415,119 +416,11 @@ void writeJsonString(std::ostream& out, const std::string& value) {
         sourceForCell[cell.id]=indexed;
         if (!sourceForCell[cell.id]) continue;
         const auto& source=sources[*sourceForCell[cell.id]];
-        metadata[cell.id].type=qualityType(source.kind);
+        metadata[cell.id].resolved=true;
+        metadata[cell.id].kind=source.kind;
         metadata[cell.id].localBackgroundH=source.localBackgroundH;
-        // Hybrid sources are single polygons rather than merged Quadtree boxes, so
-        // their own area is the background the fraction should be taken against.
-        metadata[cell.id].backgroundArea=source.polygon.area();
-        metadata[cell.id].sourceId=source.id;
-        metadata[cell.id].layerIndex=source.layerIndex;
-        metadata[cell.id].wallSegment=source.wallSegment;
     }
     return metadata;
-}
-
-[[nodiscard]] double orthogonalityErrorDeg(const Vector2D& a,
-                                           const Vector2D& b) noexcept {
-    const double denominator=std::sqrt(squaredNorm(a)*squaredNorm(b));
-    if (!(denominator>0.0)) return 90.0;
-    return std::asin(std::clamp(std::abs(dot(a,b))/denominator,0.0,1.0))*
-           180.0/std::numbers::pi;
-}
-
-[[nodiscard]] double scaledJacobian(const Polygon2D& polygon) noexcept {
-    double result=1.0;
-    for (std::size_t i=0;i<polygon.vertices.size();++i) {
-        const auto& previous=polygon.vertices[(i+polygon.vertices.size()-1U)%
-                                               polygon.vertices.size()];
-        const auto& current=polygon.vertices[i];
-        const auto& next=polygon.vertices[(i+1U)%polygon.vertices.size()];
-        const Vector2D incoming=current-previous;
-        const Vector2D outgoing=next-current;
-        const double denominator=std::sqrt(squaredNorm(incoming)*squaredNorm(outgoing));
-        if (!(denominator>0.0)) return 0.0;
-        result=std::min(result,cross(incoming,outgoing)/denominator);
-    }
-    return result;
-}
-
-[[nodiscard]] BoundaryLayerQualitySamples2D boundaryLayerQualitySamples(
-    const std::vector<HybridSourceCell2D>& sources,
-    const std::vector<std::optional<std::size_t>>& sourceForSolverCell,
-    const std::vector<BoundaryLayerStrip2D>& strips,
-    const TolerancePolicy& tol) {
-    BoundaryLayerQualitySamples2D result;
-    std::vector<std::optional<std::size_t>> solverForSource(sources.size(),std::nullopt);
-    for (std::size_t cellId=0;cellId<sourceForSolverCell.size();++cellId) {
-        if (sourceForSolverCell[cellId] &&
-            *sourceForSolverCell[cellId]<solverForSource.size()) {
-            solverForSource[*sourceForSolverCell[cellId]]=cellId;
-        }
-    }
-    struct LayerCellInfo {
-        std::size_t sourceId=0;
-        double thickness=0.0;
-        QualityEntity2D entity;
-    };
-    std::map<std::tuple<std::size_t,std::size_t,std::size_t>,LayerCellInfo> cells;
-    for (const auto& source:sources) {
-        if (source.kind!=HybridCellKind2D::BoundaryLayer ||
-            !source.layerIndex || !source.wallSegment || !source.stripId ||
-            *source.stripId>=strips.size() ||
-            source.polygon.vertices.size()!=4U || source.id>=solverForSource.size() ||
-            !solverForSource[source.id]) continue;
-        const auto& p=source.polygon.vertices;
-        const bool fluidOnRight=strips[*source.stripId].wallChain.fluidSide==
-                                FluidSide2D::Right;
-        const double side01=segmentLength(p[0],p[1]);
-        const double side12=segmentLength(p[1],p[2]);
-        const double side23=segmentLength(p[2],p[3]);
-        const double side30=segmentLength(p[3],p[0]);
-        const double tangential0=fluidOnRight?side30:side01;
-        const double normal1=fluidOnRight?side23:side12;
-        const double tangential1=fluidOnRight?side12:side23;
-        const double normal0=fluidOnRight?side01:side30;
-        const double tangential=0.5*(tangential0+tangential1);
-        const double normal=0.5*(normal0+normal1);
-        const auto centroid=source.polygon.centroid(tol);
-        if (!centroid || !(normal>0.0)) continue;
-        QualityEntity2D entity{*solverForSource[source.id],std::nullopt,*centroid,
-            QualityCellType2D::BoundaryLayer,source.id,*solverForSource[source.id],
-            std::nullopt,source.localBackgroundH};
-        const double orthogonality=std::max({
-            orthogonalityErrorDeg(p[1]-p[0],p[3]-p[0]),
-            orthogonalityErrorDeg(p[1]-p[0],p[2]-p[1]),
-            orthogonalityErrorDeg(p[2]-p[3],p[3]-p[0]),
-            orthogonalityErrorDeg(p[2]-p[3],p[2]-p[1])});
-        result.wallNormalOrthogonalityDeg.push_back({orthogonality,entity});
-        result.tangentialNormalSpacingRatio.push_back({tangential/normal,entity});
-        result.scaledJacobian.push_back({scaledJacobian(source.polygon),entity});
-        cells[std::make_tuple(*source.stripId,*source.wallSegment,*source.layerIndex)]=
-            {source.id,normal,entity};
-    }
-    for (const auto& [key,info]:cells) {
-        const auto [stripId,segment,layer]=key;
-        if (layer>0U) {
-            const auto previous=cells.find({stripId,segment,layer-1U});
-            if (previous!=cells.end() && previous->second.thickness>0.0) {
-                result.growthRatio.push_back(
-                    {info.thickness/previous->second.thickness,info.entity});
-            }
-        }
-        if (stripId>=strips.size() || strips[stripId].wallChain.segmentCount()==0U) continue;
-        const auto nextSegment=(segment+1U)%strips[stripId].wallChain.segmentCount();
-        const auto adjacent=cells.find({stripId,nextSegment,layer});
-        if (adjacent==cells.end()) continue;
-        const double maximum=std::max(info.thickness,adjacent->second.thickness);
-        if (!(maximum>0.0)) continue;
-        result.adjacentColumnThicknessVariation.push_back(
-            {std::abs(info.thickness-adjacent->second.thickness)/maximum,info.entity});
-        if (layer==0U) {
-            result.firstLayerContinuity.push_back(
-                {std::min(info.thickness,adjacent->second.thickness)/maximum,info.entity});
-        }
-    }
-    return result;
 }
 
 } // namespace
@@ -1202,7 +1095,6 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                 localH.push_back(h);
             }
         };
-        const auto& limits=QualityContract2D{}.termination;
         constexpr std::size_t maximumQ41Constructions=8U;
         bool converged=false;
         for (std::size_t iteration=0;iteration<maximumQ41Constructions;++iteration) {
@@ -1213,8 +1105,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             auto selection=repairSolverTerminationQuality2D(
                 constructionTopology,domain,outerRegion,immutable,
                 termination,cartesian,localH,rated,
-                limits.faceOverLocalBackgroundH.hard,limits.faceWeight.hard,
-                limits.volumeRatio.hard,
+                minimumRepairFaceOverLocalH,minimumRepairFaceWeight,
+                minimumRepairVolumeRatio,
                 TerminationQualityCandidateMode2D::ConstructionAgglomeration,
                 policy.tolerance);
             if (iteration==0U) {
@@ -1547,9 +1439,8 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     solverConstraints.inputPolygonOverrides.reserve(topology.cells.size());
     for (const auto& cell:topology.cells) {
         const auto& source=hybridSources[cell.sourceId];
-        // Preserve the pre-Q1 solver-repair constraints exactly.  Q1 gives
-        // geometric transition sources an explicit reporting type, but does
-        // not change which legacy source cells are protected from repair.
+        // Preserve the established solver-repair constraints: fixed layer cells
+        // stay immutable and geometric transition sources retain their shape.
         const bool transition=source.kind==HybridCellKind2D::Transition ||
             (source.kind==HybridCellKind2D::RemainderCut &&
              policy.fluidRegion != FluidRegion2D::Interior &&
@@ -1636,20 +1527,19 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     bool q33TransactionBoundReached=false;
     if (localTermination) {
         bool converged=false;
-        const double minimumFaceFraction=
-            QualityContract2D{}.termination.faceOverLocalBackgroundH.hard;
+        const double minimumFaceFraction=minimumRepairFaceOverLocalH;
         for (std::size_t iteration=0;iteration<32U;++iteration) {
             std::vector<std::optional<std::size_t>> repairSources;
             SourceLineageAudit2D repairLineageAudit;
-            const auto repairMetadata=qualityMetadataForSolver(
+            const auto repairMetadata=solverSourceMetadata(
                 solverTopologyReport.topology,hybridSources,repairSources,
                 repairLineageAudit,false,policy.tolerance);
             std::vector<double> localH;
             std::vector<bool> rated;
             for (const auto& metadata:repairMetadata) {
                 localH.push_back(metadata.localBackgroundH);
-                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
-                                metadata.type!=QualityCellType2D::Unknown);
+                rated.push_back(metadata.resolved &&
+                                metadata.kind!=HybridCellKind2D::BoundaryLayer);
             }
             auto repair=repairSolverShortFaces2D(
                 solverTopologyReport.topology,domain,originalWalls,
@@ -1706,14 +1596,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                              policy.enableTerminationQualityRepartition ||
                              policy.enableTerminationGroupedRepartition)) {
         bool converged=false;
-        const auto& limits=QualityContract2D{}.termination;
         // Q3-1 is deliberately bounded: at most 32 winner-only transactions
         // in one build, even when additional eligible faces remain.
         constexpr std::size_t maximumQ3Transactions=32U;
         for (std::size_t iteration=0;iteration<maximumQ3Transactions;++iteration) {
             std::vector<std::optional<std::size_t>> repairSources;
             SourceLineageAudit2D repairLineageAudit;
-            const auto repairMetadata=qualityMetadataForSolver(
+            const auto repairMetadata=solverSourceMetadata(
                 solverTopologyReport.topology,hybridSources,repairSources,
                 repairLineageAudit,false,policy.tolerance);
             std::vector<double> localH;
@@ -1724,17 +1613,19 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             cartesian.reserve(repairMetadata.size());
             for (const auto& metadata:repairMetadata) {
                 localH.push_back(metadata.localBackgroundH);
-                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
-                                metadata.type!=QualityCellType2D::Unknown);
-                termination.push_back(metadata.type==QualityCellType2D::Termination);
-                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+                rated.push_back(metadata.resolved &&
+                                metadata.kind!=HybridCellKind2D::BoundaryLayer);
+                termination.push_back(metadata.resolved &&
+                                      metadata.kind==HybridCellKind2D::Termination);
+                cartesian.push_back(metadata.resolved &&
+                                    metadata.kind==HybridCellKind2D::RemainderCartesian);
             }
             auto repair=repairSolverTerminationQuality2D(
                 solverTopologyReport.topology,domain,originalWalls,
                 solverTopologyReport.immutableOutputCells,termination,cartesian,
                 localH,rated,
-                limits.faceOverLocalBackgroundH.hard,limits.faceWeight.hard,
-                limits.volumeRatio.hard,
+                minimumRepairFaceOverLocalH,minimumRepairFaceWeight,
+                minimumRepairVolumeRatio,
                 TerminationQualityCandidateMode2D::Agglomeration,policy.tolerance);
             if (iteration==0U) {
                 q3HardVolumeRatioBefore=repair.hardVolumeRatioCountBefore;
@@ -1798,14 +1689,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     if (localTermination && (policy.enableTerminationQualityRepartition ||
                              policy.enableTerminationGroupedRepartition)) {
         bool converged=false;
-        const auto& limits=QualityContract2D{}.termination;
         // Q3-2 keeps the search local and cell-count neutral: no more than 16
         // two-cell/two-cell winner-only repartition transactions per build.
         constexpr std::size_t maximumQ32Transactions=16U;
         for (std::size_t iteration=0;iteration<maximumQ32Transactions;++iteration) {
             std::vector<std::optional<std::size_t>> repairSources;
             SourceLineageAudit2D repairLineageAudit;
-            const auto repairMetadata=qualityMetadataForSolver(
+            const auto repairMetadata=solverSourceMetadata(
                 solverTopologyReport.topology,hybridSources,repairSources,
                 repairLineageAudit,false,policy.tolerance);
             std::vector<double> localH;
@@ -1816,16 +1706,18 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
             cartesian.reserve(repairMetadata.size());
             for (const auto& metadata:repairMetadata) {
                 localH.push_back(metadata.localBackgroundH);
-                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
-                                metadata.type!=QualityCellType2D::Unknown);
-                termination.push_back(metadata.type==QualityCellType2D::Termination);
-                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+                rated.push_back(metadata.resolved &&
+                                metadata.kind!=HybridCellKind2D::BoundaryLayer);
+                termination.push_back(metadata.resolved &&
+                                      metadata.kind==HybridCellKind2D::Termination);
+                cartesian.push_back(metadata.resolved &&
+                                    metadata.kind==HybridCellKind2D::RemainderCartesian);
             }
             auto repair=repairSolverTerminationQuality2D(
                 solverTopologyReport.topology,domain,originalWalls,
                 solverTopologyReport.immutableOutputCells,termination,cartesian,
-                localH,rated,limits.faceOverLocalBackgroundH.hard,
-                limits.faceWeight.hard,limits.volumeRatio.hard,
+                localH,rated,minimumRepairFaceOverLocalH,
+                minimumRepairFaceWeight,minimumRepairVolumeRatio,
                 TerminationQualityCandidateMode2D::Repartition,policy.tolerance);
             if (iteration==0U) {
                 q32HardVolumeRatioBefore=repair.hardVolumeRatioCountBefore;
@@ -1879,30 +1771,31 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     }
     if (localTermination && policy.enableTerminationGroupedRepartition) {
         bool converged=false;
-        const auto& limits=QualityContract2D{}.termination;
         // Q3-3 handles only a fixed Cartesian-plus-two-termination template.
         // Three cells are replaced by three cells, with at most 8 commits.
         constexpr std::size_t maximumQ33Transactions=8U;
         for (std::size_t iteration=0;iteration<maximumQ33Transactions;++iteration) {
             std::vector<std::optional<std::size_t>> repairSources;
             SourceLineageAudit2D repairLineageAudit;
-            const auto repairMetadata=qualityMetadataForSolver(
+            const auto repairMetadata=solverSourceMetadata(
                 solverTopologyReport.topology,hybridSources,repairSources,
                 repairLineageAudit,false,policy.tolerance);
             std::vector<double> localH;
             std::vector<bool> rated,termination,cartesian;
             for (const auto& metadata:repairMetadata) {
                 localH.push_back(metadata.localBackgroundH);
-                rated.push_back(metadata.type!=QualityCellType2D::BoundaryLayer &&
-                                metadata.type!=QualityCellType2D::Unknown);
-                termination.push_back(metadata.type==QualityCellType2D::Termination);
-                cartesian.push_back(metadata.type==QualityCellType2D::Cartesian);
+                rated.push_back(metadata.resolved &&
+                                metadata.kind!=HybridCellKind2D::BoundaryLayer);
+                termination.push_back(metadata.resolved &&
+                                      metadata.kind==HybridCellKind2D::Termination);
+                cartesian.push_back(metadata.resolved &&
+                                    metadata.kind==HybridCellKind2D::RemainderCartesian);
             }
             auto repair=repairSolverTerminationQuality2D(
                 solverTopologyReport.topology,domain,originalWalls,
                 solverTopologyReport.immutableOutputCells,termination,cartesian,
-                localH,rated,limits.faceOverLocalBackgroundH.hard,
-                limits.faceWeight.hard,limits.volumeRatio.hard,
+                localH,rated,minimumRepairFaceOverLocalH,
+                minimumRepairFaceWeight,minimumRepairVolumeRatio,
                 TerminationQualityCandidateMode2D::GroupedRepartition,
                 policy.tolerance);
             if (iteration==0U) {
@@ -1960,7 +1853,6 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     auto directionalQuality=evaluateDirectionalConnectivity2D(solverTopologyReport.topology);
     const auto directionalMinimumBefore=directionalQuality.minimumMeasured;
     std::size_t directionalCandidates=0U,directionalAccepted=0U;
-    bool directionalRejectedByContract=false;
     if (directionalQuality.issues.empty() && !directionalQuality.failedCells.empty() &&
         evaluateSolverQuality2D(solverTopologyReport.topology,{},policy.tolerance).valid()) {
         auto repair=improveSolverDirectionalConnectivity2D(
@@ -1972,34 +1864,87 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
                           repair.issues.empty()?"directional repair failed":repair.issues.front());
         }
         if (repair.acceptedCount>0U) {
-            const auto contractFor=[&](const TopologyMesh2D& mesh) {
-                std::vector<std::optional<std::size_t>> sources;
-                SourceLineageAudit2D audit;
-                const auto metadata=qualityMetadataForSolver(
-                    mesh,hybridSources,sources,audit,policy.verifySourceLineageOracle,
-                    policy.tolerance);
-                const auto samples=boundaryLayerQualitySamples(
-                    hybridSources,sources,boundaryLayers.strips,policy.tolerance);
-                auto report=evaluateQualityContract2D(mesh,metadata,samples,{},nullptr,
-                                                     policy.tolerance);
-                if (!audit.pass()) report.inputIssues.push_back("directional repair lineage audit failed");
-                return report;
-            };
-            if (qualityContractMetricsNoWorse2D(
-                    contractFor(repair.topology),contractFor(solverTopologyReport.topology))) {
-                directionalAccepted=repair.acceptedCount;
-                solverTopologyReport.topology=std::move(repair.topology);
-                solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
-                solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
-                solverTopologyReport.qualityRepartitionCount+=directionalAccepted;
-                solverTopologyReport.profile.acceptedTopologyCommitCount+=directionalAccepted;
-                directionalQuality=std::move(repair.after);
-            } else {
-                directionalRejectedByContract=true;
-            }
+            directionalAccepted=repair.acceptedCount;
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+            solverTopologyReport.qualityRepartitionCount+=directionalAccepted;
+            solverTopologyReport.profile.acceptedTopologyCommitCount+=directionalAccepted;
+            directionalQuality=std::move(repair.after);
         }
     }
     const double directionalSeconds=h4ProfileSeconds(directionalStart);
+
+    // OpenFOAM's packaged meshQualityDict uses 65 degrees for non-orthogonality.
+    // Try to repair that concrete target on the final solver topology while the
+    // fixed layer cells are still locked. Remaining target issues are reported,
+    // but do not redefine the existing native Solver acceptance gate.
+    SolverQualityPolicy2D targetPolicy;
+    targetPolicy.maxNonOrthogonalityDeg=65.0;
+    const auto targetBefore=evaluateSolverQuality2D(
+        solverTopologyReport.topology,targetPolicy,policy.tolerance);
+    std::size_t targetIssueCountBefore=targetBefore.issues.size();
+    std::size_t targetIssueCountAfter=targetIssueCountBefore;
+    std::size_t targetRepartitionCount=0U;
+    bool targetRepairAttempted=!targetBefore.valid();
+    bool targetRepairCommitted=false;
+    bool targetRepairStructuralFailure=false;
+    if (targetRepairAttempted) {
+        auto repair=improveSolverForTargetPolicy2D(
+            solverTopologyReport.topology,domain,originalWalls,
+            solverTopologyReport.immutableOutputCells,targetPolicy,policy.tolerance);
+        if (repair.valid()) {
+            const auto targetAfter=evaluateSolverQuality2D(
+                repair.topology,targetPolicy,policy.tolerance);
+            const auto defaultAfter=evaluateSolverQuality2D(
+                repair.topology,{},policy.tolerance);
+            const auto directionalAfter=evaluateDirectionalConnectivity2D(
+                repair.topology);
+            targetIssueCountAfter=targetAfter.issues.size();
+            if (repair.repartitionCount>0U &&
+                targetIssueCountAfter<=targetIssueCountBefore &&
+                defaultAfter.valid() && directionalAfter.valid()) {
+                targetRepartitionCount=repair.repartitionCount;
+                targetRepairCommitted=true;
+                solverTopologyReport.topology=std::move(repair.topology);
+                solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+                solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+                solverTopologyReport.qualityRepartitionCount+=targetRepartitionCount;
+                solverTopologyReport.profile.acceptedTopologyCommitCount+=
+                    targetRepartitionCount;
+            } else {
+                targetIssueCountAfter=targetIssueCountBefore;
+            }
+        } else {
+            targetRepairStructuralFailure=true;
+        }
+    }
+    std::size_t determinantRepartitionCount=0U;
+    if (policy.targetExtrusionThickness) {
+        auto repair=improveSolverExtrudedDeterminant2D(
+            solverTopologyReport.topology,domain,originalWalls,
+            solverTopologyReport.immutableOutputCells,
+            *policy.targetExtrusionThickness,targetPolicy,policy.tolerance);
+        const auto repairedTarget=repair.valid()
+            ?evaluateSolverQuality2D(repair.topology,targetPolicy,policy.tolerance)
+            :SolverQualityReport2D{};
+        if (repair.valid() && repair.repartitionCount>0U &&
+            repairedTarget.issues.size()<=targetIssueCountAfter &&
+            evaluateSolverQuality2D(repair.topology,{},policy.tolerance).valid() &&
+            evaluateDirectionalConnectivity2D(repair.topology).valid()) {
+            determinantRepartitionCount=repair.repartitionCount;
+            solverTopologyReport.topology=std::move(repair.topology);
+            solverTopologyReport.immutableOutputCells=std::move(repair.immutableCells);
+            solverTopologyReport.outputCellCount=solverTopologyReport.topology.cells.size();
+            solverTopologyReport.qualityRepartitionCount+=determinantRepartitionCount;
+            solverTopologyReport.profile.acceptedTopologyCommitCount+=
+                determinantRepartitionCount;
+        }
+    }
+    // Both target-solver repair passes may change the final polygon set.
+    directionalQuality=evaluateDirectionalConnectivity2D(solverTopologyReport.topology);
+    targetIssueCountAfter=evaluateSolverQuality2D(
+        solverTopologyReport.topology,targetPolicy,policy.tolerance).issues.size();
     if (std::count(solverTopologyReport.immutableOutputCells.begin(),
         solverTopologyReport.immutableOutputCells.end(),true)!=
         static_cast<std::ptrdiff_t>(layerCellCount)) {
@@ -2057,19 +2002,13 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     }
     std::vector<std::optional<std::size_t>> sourceForSolverCell;
     SourceLineageAudit2D sourceLineageAudit;
-    const auto contractMetadata=qualityMetadataForSolver(
+    (void)solverSourceMetadata(
         solverTopologyReport.topology,hybridSources,sourceForSolverCell,
         sourceLineageAudit,policy.verifySourceLineageOracle,policy.tolerance);
     if (!sourceLineageAudit.pass()) {
         return failed(HybridMeshFailureReason2D::RegionClassificationConflict,
                       "R1-A solver source lineage disagrees with full-scan oracle");
     }
-    const auto boundaryLayerSamples=boundaryLayerQualitySamples(
-        hybridSources,sourceForSolverCell,boundaryLayers.strips,policy.tolerance);
-    auto qualityContract=evaluateQualityContract2D(
-        solverTopologyReport.topology,contractMetadata,boundaryLayerSamples,{},
-        &solverQuality,policy.tolerance);
-
     auto constructionIncidence=buildEdgeIncidenceStore2D(topology,0U);
     auto solverIncidence=buildEdgeIncidenceStore2D(solverTopologyReport.topology,0U);
     if (!constructionIncidence.valid() || !solverIncidence.valid()) {
@@ -2094,14 +2033,20 @@ HybridMeshBuildResult2D buildConformalHybridMesh2D(
     result.solverInterfaceAudit=solverInterfaceAudit;
     result.meshQuality = std::move(meshQuality);
     result.solverQuality = std::move(solverQuality);
-    result.qualityContract=std::move(qualityContract);
     result.metrics.directionalRepairCandidateCount=directionalCandidates;
     result.metrics.directionalRepairAcceptedCount=directionalAccepted;
-    result.metrics.directionalRepairRejectedByContract=directionalRejectedByContract;
     result.metrics.directionalRepairSeconds=directionalSeconds;
     result.metrics.directionalMinimumBefore=directionalMinimumBefore;
     result.metrics.directionalMinimumAfter=directionalQuality.minimumMeasured;
     result.metrics.directionalFailedCellCount=directionalQuality.failedCells.size();
+    result.metrics.targetPolicyRepairIssueCountBefore=targetIssueCountBefore;
+    result.metrics.targetPolicyRepairIssueCountAfter=targetIssueCountAfter;
+    result.metrics.targetPolicyRepairRepartitionCount=targetRepartitionCount;
+    result.metrics.targetPolicyRepairAttempted=targetRepairAttempted;
+    result.metrics.targetPolicyRepairCommitted=targetRepairCommitted;
+    result.metrics.targetPolicyRepairStructuralFailure=targetRepairStructuralFailure;
+    result.metrics.extrudedDeterminantRepairRepartitionCount=
+        determinantRepartitionCount;
     result.remainderSmallCells=std::move(remainderSmallCells);
     result.remainderStabilization=std::move(remainderStabilization);
     result.solverTopologyReport=std::move(solverTopologyReport);
@@ -2652,13 +2597,26 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"failure_reason\": \"none\",\n";
         out << "  \"directional_repair\": {\"candidate_count\": "
             <<metrics.directionalRepairCandidateCount<<", \"accepted_count\": "
-            <<metrics.directionalRepairAcceptedCount<<", \"rejected_by_contract\": "
-            <<(metrics.directionalRepairRejectedByContract?"true":"false")
-            <<", \"minimum_before\": ";
+            <<metrics.directionalRepairAcceptedCount<<", \"minimum_before\": ";
         if (metrics.directionalMinimumBefore) out<<*metrics.directionalMinimumBefore;else out<<"null";
         out<<", \"minimum_after\": ";
         if (metrics.directionalMinimumAfter) out<<*metrics.directionalMinimumAfter;else out<<"null";
         out<<", \"failed_cell_count\": "<<metrics.directionalFailedCellCount<<"},\n";
+        out << "  \"target_solver_repair\": {\"max_non_orthogonality_deg\": 65, "
+            << "\"attempted\": "
+            << (metrics.targetPolicyRepairAttempted?"true":"false")
+            << ", \"committed\": "
+            << (metrics.targetPolicyRepairCommitted?"true":"false")
+            << ", \"structural_failure\": "
+            << (metrics.targetPolicyRepairStructuralFailure?"true":"false")
+            << ", \"issue_count_before\": "
+            << metrics.targetPolicyRepairIssueCountBefore
+            << ", \"issue_count_after\": "
+            << metrics.targetPolicyRepairIssueCountAfter
+            << ", \"repartition_count\": "
+            << metrics.targetPolicyRepairRepartitionCount << "},\n";
+        out << "  \"extruded_determinant_repair_repartition_count\": "
+            << metrics.extrudedDeterminantRepairRepartitionCount << ",\n";
         out << "  \"quadtree_leaf_count\": " << metrics.quadtreeLeafCount << ",\n";
         out << "  \"boundary_layer_cell_count\": " << metrics.boundaryLayerCellCount << ",\n";
         out << "  \"requested_boundary_layer_cell_count\": "
@@ -2867,10 +2825,10 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
             << ",\n";
         out << "  \"q52_termination_buffer_radial_committed\": "
             << (metrics.q52TerminationBufferRadialCommitted?"true":"false") << ",\n";
-        out << "  \"q52_termination_buffer_hard_with_matching\": "
-            << metrics.q52TerminationBufferHardWithMatching << ",\n";
-        out << "  \"q52_termination_buffer_hard_with_historical_march\": "
-            << metrics.q52TerminationBufferHardWithHistoricalMarch << ",\n";
+        out << "  \"q52_termination_buffer_target_issues_with_matching\": "
+            << metrics.q52TerminationBufferTargetIssuesWithMatching << ",\n";
+        out << "  \"q52_termination_buffer_target_issues_with_historical_march\": "
+            << metrics.q52TerminationBufferTargetIssuesWithHistoricalMarch << ",\n";
         out << "  \"q52_termination_buffer_rows\": "
             << metrics.q52TerminationBufferRows << ",\n";
         out << "  \"q52_termination_buffer_growth_ratio\": "
@@ -2957,8 +2915,6 @@ bool writeHybridReportJson2D(const HybridMeshBuildResult2D& result,
         out << "  \"topology_valid\": " << (result.topology.valid() ? "true" : "false") << ",\n";
         out << "  \"mesh_quality_valid\": " << (result.meshQuality.valid() ? "true" : "false") << ",\n";
         out << "  \"solver_quality_valid\": " << (result.solverQuality.valid() ? "true" : "false") << ",\n";
-        out << "  \"quality_contract_status\": \""
-            << qualityContractStatusName(result.qualityContract.status()) << "\",\n";
         out << "  \"solver_quality_issue_count\": " << result.solverQuality.issues.size() << ",\n";
         out << "  \"max_non_orthogonality_deg\": "
             << result.solverQuality.maxNonOrthogonalityDeg << ",\n";

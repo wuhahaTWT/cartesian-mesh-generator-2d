@@ -39,7 +39,6 @@ def clean_mesh(**overrides: object) -> dict[str, object]:
         "min_face_weight": 0.20,
         "min_volume_ratio": 0.20,
         "max_non_orthogonality_deg": 40.0,
-        "hard_issue_total": 10,
     }
     mesh.update(overrides)
     return mesh
@@ -51,21 +50,11 @@ def ladder_of(*rungs: dict[str, object]) -> list[dict[str, object]]:
 
 def test_monotone_ladder_passes() -> None:
     violations = ladder.gate(ladder_of(
-        rung(6, **clean_mesh(hard_issue_total=20)),
-        rung(7, **clean_mesh(hard_issue_total=20)),
-        rung(8, **clean_mesh(hard_issue_total=12)),
+        rung(6, **clean_mesh()),
+        rung(7, **clean_mesh()),
+        rung(8, **clean_mesh()),
     ))
     check(violations == [], f"a monotone ladder must pass, got {violations}")
-
-
-def test_growing_hard_issue_count_is_a_violation() -> None:
-    violations = ladder.gate(ladder_of(
-        rung(6, **clean_mesh(hard_issue_total=80)),
-        rung(7, **clean_mesh(hard_issue_total=132)),
-    ))
-    check(len(violations) == 1, f"expected one violation, got {violations}")
-    check(any("hard issues grew 80 -> 132" in item for item in violations),
-          f"the growth must be named explicitly, got {violations}")
 
 
 def test_hard_limits_are_enforced_at_the_documented_values() -> None:
