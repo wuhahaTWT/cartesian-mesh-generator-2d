@@ -10,6 +10,19 @@
 
 用户已授权连续推进，无需逐项审批普通实现。Astra 负责设计、核心算法和小验证；已授权的 Luna 负责固定批量执行。主代理核对原始日志、实际网格和摘要；摘要自报 PASS 不能替代证据。不使用 usage reset，不放宽质量门。
 
+## 现有高密翼型：Re=1e6 实际 OpenFOAM 求解
+
+按用户选择，直接复制既有 NACA2412 hybrid **140,305 格**（生成基线 `bf11105`）运行 OpenFOAM **2606 / simpleFoam / kOmegaSST**。源与计算副本的 points、faces、owner、neighbour、boundary 五文件 SHA-256 在求解前后完全一致；没有重新生成网格，也不将它当成当前核心新网格的验收。
+
+- 恒定入口 **15 m/s**、参考弦长 **1 m**、nu=**1.5e-5 m²/s**、参考 Re=**1,000,000**、攻角 **0°**；湍强 1%、入口湍粘比初估 10。稳态、全湍流 SST 配 Spalding/omega 壁函数。前 200 步 upwind，之后仅 U 切换 linearUpwind，k/omega 保持 upwind。最初湍粘比偏高的试跑已停止并隔离，未混入正式结果。
+- 标准 checkMesh **Mesh OK**，最大非正交 **69.8112°**、最大 skewness **3.8218**。扩展 `-allGeometry -allTopology` **仍失败 1 项，2720 个 concave cells**，另有 4 个短边关联点提示；未运行原厂质量配置组合，不声称扩展质量通过。
+- 正常运行到 **3500 次 SIMPLE 迭代**，没有发散或负 k/omega/nut；全部最终单元字段有限。首个初始残差 Ux=**1.84e-7**、Uy=**1.03e-7**、p=**2.22e-6**、k=**6.74e-8**、omega=**1.66e-8**。压力未达到原 `1e-6` 停止条件，日志没有 `SIMPLE solution converged`；明确记录为**到达迭代上限，未通过严格收敛条件**，不使用后续压力修正残差代替。
+- 最终最大速度 **19.1303 m/s**；进出口相对流量不平衡 **4.23e-12**，出口 **0/256** 面回流。Cd=**0.0137050**、Cl=**0.202453**；最后 35 个输出样本（3160–3500 步）的范围/均值分别约 **0.00203% / 0.02471%**，只是稳定性测量，不替代残差和精度判定。CmPitch 的正向以实际输出头 `pitchAxis=(0,0,-1)` 为准。
+- 最终重新计算壁面 yPlus：min **3.6023**、max **24.5516**、算术平均 **14.9366**，按真实壁面积独立加权平均 **14.9586**。上下游边界仅距翼型约 **0.5c**，上下是 slip；这个受限域不能冒充自由远场。四层及当前近壁尺度没有证明 SST 壁面解析精度，未做域无关性、网格无关性、转捩或实验对照。
+- 速度/压力图直接读最终场；流线只作局部流体内插值并遮挡实体。Cp 明确使用**出口表压零点**，不当作标准自由流 Cp。壁面 Cp 仍有可见尖峰，原输入为 80 点折线；本次没有确认尖峰来源，保留曲线供后续定位几何拐角、壁面网格和离散格式影响。
+
+复现工具为 `tools/verification/run_airfoil_rans.py` 和 `tools/visualization/render_airfoil_rans.py`，具体命令见 DEVELOPMENT_CN 的 CFD 验证节。正式算例、原始日志、最终场与 ParaView 入口 `case/airfoil.foam` 位于忽略提交的 `outputs/airfoil-rans-Re1e6-final/`。四张 PNG 和含原始终末日志、配置、哈希的证据位于 [airfoil-rans-Re1e6.json](../artifacts/current/airfoil-rans-Re1e6.json)。两名 Sol 子代理分别复核工况/口径和实现后处理，主代理核对原始日志与最终图片。实际求解四段 Docker 包装耗时合计约 **2157 s**，不是通用性能基准。本轮只新增试算/后处理工具与证据，脚本语法及实际运行验证通过，未改 C++/前端、未重复宣称其完整测试已重跑。
+
 ## 跨平台桌面构建
 
 macOS / Linux / Windows 已分别完成本机构建、打包与实际 App 验收。最终源码 `132adad` 的 [desktop-platforms 运行 34689931686](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/34689931686) 三个平台全部通过；运行包在对应系统完成测试和实际导入/生成/导出、独立读回后才上传。

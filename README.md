@@ -82,6 +82,8 @@
 
 这轮跨平台验证没有运行外部 OpenFOAM `checkMesh` 或 CFD 求解。内部拓扑、Solver 质量、独立文件读回、目标求解器原生检查和 CFD 精度是不同层面的证据；Q1 已从当前产品取消，其他质量门继续保留。已有固定案例的外部检查与 CFD 结果见[当前状态](docs/CURRENT_STATE_CN.md)。
 
+另已用既有 **140,305 格 NACA2412** 实际运行 OpenFOAM 2606：恒定来流 15 m/s、Re=1e6、0° 攻角、SST 稳态 RANS，完成 3500 步并输出真实[速度/压力场](artifacts/current/airfoil-rans-Re1e6-fields.png)、[流线](artifacts/current/airfoil-rans-Re1e6-streamlines.png)及[残差历史](artifacts/current/airfoil-rans-Re1e6-histories.png)。压力残差 2.22e-6，尚未达到设定 1e-6；标准 checkMesh 通过，扩展检查仍有 2720 个 concave 单元。域边界偏近、近壁 y+ 约 15，未证明气动力精度或网格无关性。[完整证据](artifacts/current/airfoil-rans-Re1e6.json)
+
 目前仍需注意：图片识别成功不代表网格一定生成成功；复杂背景和透视需要人工处理；SVG 的 transform/viewBox 等语义尚未完整覆盖；窄缝、尖角、多环与贴体层终止仍有支持边界。成功生成和单元数增加都不能代替网格无关性验证。
 
 ## 从源码构建
