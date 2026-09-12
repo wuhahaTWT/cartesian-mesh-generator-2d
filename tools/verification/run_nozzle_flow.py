@@ -58,7 +58,10 @@ def run_stage(directory, command, timeout, container=None):
                     except (OSError, subprocess.TimeoutExpired) as exc:
                         result["container_cleanup"] = {"error": str(exc)}
                 try:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    if hasattr(os, 'killpg'):
+                        os.killpg(process.pid, signal.SIGKILL)
+                    else:
+                        process.kill()
                 except ProcessLookupError:
                     pass
                 process.wait()

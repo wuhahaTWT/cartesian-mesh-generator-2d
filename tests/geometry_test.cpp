@@ -3,9 +3,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <random>
 #include <vector>
 
 using namespace cartmesh2d;
@@ -58,6 +60,36 @@ int main() {
                           {std::numeric_limits<double>::infinity(), 0.0},
                           {0.0, 1.0}) == 0,
           "orientation rejects non-finite input deterministically");
+
+    // Deterministic randomized cancellation cases exercise both underflow and
+    // overflow fallbacks.  The unscaled integer determinant is exactly -p^2,
+    // so its sign is independent of the binary power-of-two scale.
+    std::mt19937_64 orientationRng(0xc4a27e5dU);
+    std::uniform_int_distribution<std::uint64_t> magnitudeDistribution(
+        std::uint64_t{1} << 27U, std::uint64_t{1} << 31U);
+    std::uniform_int_distribution<std::uint64_t> offsetDistribution(1U, 8192U);
+    for (int sample = 0; sample < 256; ++sample) {
+        const double magnitude = static_cast<double>(magnitudeDistribution(orientationRng));
+        const double offset = static_cast<double>(offsetDistribution(orientationRng));
+        for (const int exponent : {-600, 0, 500}) {
+            const Point2D b{std::ldexp(magnitude + offset, exponent),
+                            std::ldexp(magnitude, exponent)};
+            const Point2D c{std::ldexp(magnitude, exponent),
+                            std::ldexp(magnitude - offset, exponent)};
+            check(orientationSign({0.0, 0.0}, b, c) == -1,
+                  "random exact orientation preserves negative cancellation sign");
+            check(orientationSign({0.0, 0.0}, c, b) == 1,
+                  "random exact orientation preserves positive cancellation sign");
+        }
+    }
+    const double largest = std::numeric_limits<double>::max();
+    const double nextLargest = std::nextafter(largest, 0.0);
+    check(orientationSign({0.0, subnormal}, {largest, largest},
+                          {nextLargest, nextLargest}) == -1,
+          "exact orientation spans the full binary64 exponent range");
+    check(orientationSign({0.0, subnormal}, {nextLargest, nextLargest},
+                          {largest, largest}) == 1,
+          "full-range exact orientation is antisymmetric");
 
     Polygon2D concaveL{{{0, 0}, {3, 0}, {3, 1}, {1, 1}, {1, 3}, {0, 3}}};
     near(concaveL.area(), 5.0, 1e-12, "concave L area");

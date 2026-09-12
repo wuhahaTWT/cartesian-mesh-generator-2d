@@ -1,6 +1,6 @@
 # CartMesh2D
 
-原生二维笛卡尔网格生成器，提供 macOS 桌面应用和命令行工具，可用于外流绕流、管道内流的网格准备与 OpenFOAM 导出。
+原生二维笛卡尔网格生成器，提供桌面应用和命令行工具，可用于外流绕流、管道内流的网格准备与 OpenFOAM 导出。已加入 macOS、Linux、Windows 本机构建和打包入口；具体平台实测状态见[当前状态](docs/CURRENT_STATE_CN.md)。
 
 ## 功能
 
@@ -49,7 +49,11 @@
 
 需要固定版本时，把 URL 中的 `main` 换成具体 commit SHA；完整文件名对应关系与展示限制见[展示说明](展示素材/展示说明.md)。
 
-## macOS 安装与启动
+## 安装与启动
+
+Windows / Linux 运行包由 GitHub Actions 的 `desktop-platforms` 工作流分别构建，通过实际 App 验证后上传。Windows 解压打开 `CartMesh2D.exe`，Linux 解压后运行 `cartmesh2d-desktop`。开发者构建和平台限制见[桌面使用](docs/DESKTOP_APP_CN.md)与[开发导航](docs/DEVELOPMENT_CN.md)。
+
+macOS 本地：
 
 当前桌面构建目标为 Apple Silicon Mac。准备 Node.js/npm、CMake 和 Xcode Command Line Tools，在仓库根目录执行：
 

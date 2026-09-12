@@ -21,6 +21,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+:root:not([data-platform="darwin"]) .titlebar { padding-left: 12px; }
 .titlebar {
   min-height: 32px;
   height: auto;

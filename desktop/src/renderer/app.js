@@ -1,4 +1,5 @@
 'use strict';
+document.documentElement.dataset.platform = window.cartmesh.platform;
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -706,7 +707,7 @@ async function importGeometryFile(picked) {
     } catch (error) { status('图片导入失败', error.message); log(error.message); }
   } else {
     $('sample').value = '';
-    await chooseGeometry(picked, picked.split('/').pop(), null);
+    await chooseGeometry(picked, picked.split(/[\\/]/).pop(), null);
   }
 }
 $('pickGeometry').addEventListener('click', async () => {
