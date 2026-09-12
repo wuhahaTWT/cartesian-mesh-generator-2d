@@ -1,0 +1,563 @@
+{
+  "parameters": {
+    "reference_length": 2,
+    "wall_relative_size": 0.02,
+    "background_relative_size": 0.08,
+    "far_field_spans": 0.5,
+    "cells_per_level": 3,
+    "hybrid_first_layer_relative_size": 0.005,
+    "hybrid_layers": 3,
+    "hybrid_growth": 1.2,
+    "timeout_seconds": 20,
+    "cli": "desktop/dist/mac-arm64/CartMesh2D.app/Contents/Resources/bin"
+  },
+  "runs": [
+    {
+      "shape": "concave_l",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2208,
+      "actual_exported_solver_cells": 2212
+    },
+    {
+      "shape": "concave_l",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 3804,
+      "actual_exported_solver_cells": 3804
+    },
+    {
+      "shape": "star5_concave",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2366,
+      "actual_exported_solver_cells": 2420
+    },
+    {
+      "shape": "star5_concave",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 3344,
+      "actual_exported_solver_cells": 3344
+    },
+    {
+      "shape": "narrow_u",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2434,
+      "actual_exported_solver_cells": 2440
+    },
+    {
+      "shape": "narrow_u",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 4561,
+      "actual_exported_solver_cells": 4561
+    },
+    {
+      "shape": "tapered_spike",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2034,
+      "actual_exported_solver_cells": 2056
+    },
+    {
+      "shape": "tapered_spike",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2778,
+      "actual_exported_solver_cells": 2778
+    },
+    {
+      "shape": "two_entities",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2240,
+      "actual_exported_solver_cells": 2244
+    },
+    {
+      "shape": "two_entities",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 3657,
+      "actual_exported_solver_cells": 3657
+    },
+    {
+      "shape": "inner_hole",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": null,
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": true,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2000,
+      "actual_exported_solver_cells": 2004
+    },
+    {
+      "shape": "inner_hole",
+      "mode": "hybrid",
+      "exit_code": 1,
+      "status": "rejected_or_failed",
+      "cells": null,
+      "solver_quality": null,
+      "fallback": null,
+      "reason": "hybrid wall strips require non-nested loops",
+      "independent_resolution": false,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": false,
+      "export_exit_code": null,
+      "openfoam_reader_exit_code": null,
+      "openfoam_reader_valid": false,
+      "export_openfoam": null
+    },
+    {
+      "shape": "self_intersecting_bowtie",
+      "mode": "pure",
+      "exit_code": 1,
+      "status": "rejected_or_failed",
+      "cells": null,
+      "solver_quality": null,
+      "fallback": null,
+      "reason": "boundary diagnostics failed with 1 issue(s)\nboundary_region_issue[0] code=1 loop_a=0 loop_b=0 message=boundary region contains an invalid loop",
+      "independent_resolution": false,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": false,
+      "export_exit_code": null,
+      "openfoam_reader_exit_code": null,
+      "openfoam_reader_valid": false,
+      "export_openfoam": null
+    },
+    {
+      "shape": "repeated_edge",
+      "mode": "pure",
+      "exit_code": 1,
+      "status": "rejected_or_failed",
+      "cells": null,
+      "solver_quality": null,
+      "fallback": null,
+      "reason": "boundary diagnostics failed with 1 issue(s)\nboundary_region_issue[0] code=1 loop_a=0 loop_b=0 message=boundary region contains an invalid loop",
+      "independent_resolution": false,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": false,
+      "export_exit_code": null,
+      "openfoam_reader_exit_code": null,
+      "openfoam_reader_valid": false,
+      "export_openfoam": null
+    },
+    {
+      "shape": "micro_gap",
+      "mode": "pure",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "PASS",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": false,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 2112,
+      "actual_exported_solver_cells": 2112
+    },
+    {
+      "shape": "micro_gap",
+      "mode": "hybrid",
+      "exit_code": 0,
+      "status": "success",
+      "solver_quality": "pass",
+      "fallback": null,
+      "reason": null,
+      "independent_resolution": false,
+      "openfoam_checkMesh": "not_run",
+      "export_attempted": true,
+      "export_exit_code": 0,
+      "openfoam_reader_exit_code": 0,
+      "openfoam_reader_valid": true,
+      "export_openfoam": "written",
+      "initial_reported_cells": 3352,
+      "actual_exported_solver_cells": 3352
+    }
+  ],
+  "counts": {
+    "attempted": 16,
+    "successful": 13,
+    "rejected_or_failed": 3,
+    "valid_shapes_success_pure": 7,
+    "valid_shapes_success_hybrid": 6
+  },
+  "scope_notes": [
+    "Original inputs, commands, stdout/stderr, exit codes retained under runs/.",
+    "11 original successful cases plus 2 micro-gap cases exported to new directories; all 13 independent OpenFOAM readers passed. This is not native checkMesh or CFD solution validation.",
+    "A successful native solver/topology result is not a CFD validation.",
+    "Hybrid inner-hole rejection is explicit: hybrid wall strips require non-nested loops.",
+    "Pure CLI derives positive extrusion thickness from resolved level; its CLI has no explicit thickness argument. Hybrid supplement explicitly used extrusion thickness .02 m.",
+    "micro_gap is two rectangles separated by 0.01 m, below the requested wall cell size 0.04 m; both pure and hybrid exported and passed the independent reader in this bounded run."
+  ],
+  "assessment_base_commit": "0ba746171f552201efe41abc3bc6e094b1661a9f",
+  "geometry_inputs": {
+    "concave_l.xy": "-0.8 -0.8\n0.8 -0.8\n0.8 -0.2\n0.0 -0.2\n0.0 0.8\n-0.8 0.8\n",
+    "inner_hole.xy": "-0.9 -0.9\n0.9 -0.9\n0.9 0.9\n-0.9 0.9\n\n-0.3 -0.3\n-0.3 0.3\n0.3 0.3\n0.3 -0.3\n",
+    "micro_gap.xy": "-1.0 -0.5\n-0.005 -0.5\n-0.005 0.5\n-1.0 0.5\n\n0.005 -0.5\n1.0 -0.5\n1.0 0.5\n0.005 0.5\n",
+    "narrow_u.xy": "-0.9 -0.8\n-0.45 -0.8\n-0.45 0.35\n0.45 0.35\n0.45 -0.8\n0.9 -0.8\n0.9 0.8\n-0.9 0.8\n",
+    "repeated_edge.xy": "-0.8 -0.8\n0.8 -0.8\n0.8 0.8\n0.0 0.8\n0.0 0.8\n-0.8 0.8\n",
+    "self_intersecting_bowtie.xy": "-0.9 -0.7\n0.9 0.7\n-0.9 0.7\n0.9 -0.7\n",
+    "star5_concave.xy": "0.0 0.95\n0.22 0.30\n0.90 0.29\n0.36 -0.11\n0.56 -0.78\n0.0 -0.38\n-0.56 -0.78\n-0.36 -0.11\n-0.90 0.29\n-0.22 0.30\n",
+    "tapered_spike.xy": "-1.0 -0.35\n0.35 -0.22\n1.0 0.0\n0.35 0.22\n-1.0 0.35\n-0.62 0.05\n",
+    "two_entities.xy": "-1.0 -0.45\n-0.2 -0.45\n-0.2 0.45\n-1.0 0.45\n\n0.2 -0.45\n1.0 -0.45\n1.0 0.45\n0.2 0.45\n"
+  },
+  "label_corrections": {
+    "narrow_u": "ordinary U-shaped recess; 0.9 m slot is not an extreme narrow gap",
+    "tapered_spike": "polygon with a notch and pointed end, not an extreme thin sliver",
+    "repeated_edge": "consecutive duplicate vertex creating a zero-length edge"
+  },
+  "verified_readers": {
+    "concave_l-pure": {
+      "cells": 2212,
+      "valid": true,
+      "min_volume": 7.934570312500049e-07,
+      "cm2d_sha256": "5d6acaedaa3b76b865e2ea665a2eba4fe477939d0affff1d916c8d3ae6c8adc4"
+    },
+    "concave_l-hybrid": {
+      "cells": 3804,
+      "valid": true,
+      "min_volume": 4.4010000000001655e-07,
+      "cm2d_sha256": "6d7598d1328c097fd8fffae47b97ba2df9271723e49d162db68c4708ca53e5cf"
+    },
+    "star5_concave-pure": {
+      "cells": 2420,
+      "valid": true,
+      "min_volume": 1.506828194233897e-07,
+      "cm2d_sha256": "39fcdffb874121e711510009f4d2f5675509b7b63ae02b0f0b2994e9e46a9d2b"
+    },
+    "star5_concave-hybrid": {
+      "cells": 3344,
+      "valid": true,
+      "min_volume": 2.1430445429105091e-07,
+      "cm2d_sha256": "7d4125fbd39c42e0d37a39dcb0e221e7d0e3e9d2cc1320041555ff29b1c765bc"
+    },
+    "narrow_u-pure": {
+      "cells": 2440,
+      "valid": true,
+      "min_volume": 1.5449523925781247e-06,
+      "cm2d_sha256": "e76ae0da83c9172ba04eddaa9cf3869856f3d60338a99de514d8647c48d244fd"
+    },
+    "narrow_u-hybrid": {
+      "cells": 4561,
+      "valid": true,
+      "min_volume": 1.4057404891304504e-07,
+      "cm2d_sha256": "92ae44c1ceb25ab160c006db469b72ad5096621538bfac776ad18f8b17b48c7f"
+    },
+    "tapered_spike-pure": {
+      "cells": 2056,
+      "valid": true,
+      "min_volume": 2.8991699218750095e-07,
+      "cm2d_sha256": "afefb9b12d9dedb7da0075fa5d4e6fc310b572c410e0cd0f9393c0a0e642300d"
+    },
+    "tapered_spike-hybrid": {
+      "cells": 2778,
+      "valid": true,
+      "min_volume": 1.0746746841121554e-07,
+      "cm2d_sha256": "0f82f79b351228f2f5acab6b6a89126e4c812a52e0b12683b063d3dc3d0f9f85"
+    },
+    "two_entities-pure": {
+      "cells": 2244,
+      "valid": true,
+      "min_volume": 4.272460937500005e-06,
+      "cm2d_sha256": "01edfc4771d9e17b14df1906cd9c60dc4680716892155c3fa7c289cc667f834c"
+    },
+    "two_entities-hybrid": {
+      "cells": 3657,
+      "valid": true,
+      "min_volume": 2.8988586956521456e-07,
+      "cm2d_sha256": "c662f7884511d0a41b720cee54ff9b73ea5387c98f14e8cc1c2ec0642579d5ab"
+    },
+    "inner_hole-pure": {
+      "cells": 2004,
+      "valid": true,
+      "min_volume": 3.913879394531243e-06,
+      "cm2d_sha256": "b04c488e7d2c13149b2436ef587c2420501f8e45442077b055e86d756ed3d644"
+    },
+    "micro_gap-pure": {
+      "cells": 2112,
+      "valid": true,
+      "min_volume": 2.4414062499999988e-06,
+      "cm2d_sha256": "c54d55a68f3c8cfa32447388d9ab6f5fae1a8ab234b4e5b190f9c7dbfc8789d9"
+    },
+    "micro_gap-hybrid": {
+      "cells": 3352,
+      "valid": true,
+      "min_volume": 6.524999999999885e-07,
+      "cm2d_sha256": "ce396384257b2960c06c203f734e3b36b8a3cb8fe046c28c198cfe9f0ba3a86b"
+    }
+  },
+  "import_checks": [
+    {
+      "name": "raster.png",
+      "issues": [
+        "不支持的文件类型：.png"
+      ],
+      "bounds": null
+    },
+    {
+      "name": "translated.svg",
+      "issues": [],
+      "warnings": [
+        "文件里有 transform 属性，本导入器不解析它；坐标可能与视觉位置不符",
+        "该格式未提供物理单位，当前按米读取；请在导入设置中确认源单位。"
+      ],
+      "loops": 1,
+      "bounds": {
+        "minX": 0,
+        "minY": -2,
+        "maxX": 2,
+        "maxY": 0,
+        "width": 2,
+        "height": 2,
+        "centreX": 1,
+        "centreY": -1,
+        "bodySpan": 2
+      }
+    },
+    {
+      "name": "rounded-with-circle.svg",
+      "issues": [],
+      "warnings": [
+        "rect 的圆角半径未被支持，已跳过该元素",
+        "该格式未提供物理单位，当前按米读取；请在导入设置中确认源单位。"
+      ],
+      "loops": 1,
+      "bounds": {
+        "minX": 3.007885298685522,
+        "minY": -0.9980267284282716,
+        "maxX": 5,
+        "maxY": 0.9980267284282716,
+        "width": 1.992114701314478,
+        "height": 1.9960534568565431,
+        "centreX": 4.003942649342761,
+        "centreY": 0,
+        "bodySpan": 1.9960534568565431
+      }
+    },
+    {
+      "name": "open-polyline.svg",
+      "issues": [],
+      "warnings": [
+        "polyline 首尾不重合，已按闭合处理",
+        "该格式未提供物理单位，当前按米读取；请在导入设置中确认源单位。"
+      ],
+      "loops": 1,
+      "bounds": {
+        "minX": 0,
+        "minY": -2,
+        "maxX": 2,
+        "maxY": 0,
+        "width": 2,
+        "height": 2,
+        "centreX": 1,
+        "centreY": -1,
+        "bodySpan": 2
+      }
+    },
+    {
+      "name": "physical-size.svg",
+      "issues": [],
+      "warnings": [
+        "该格式未提供物理单位，当前按米读取；请在导入设置中确认源单位。"
+      ],
+      "loops": 1,
+      "bounds": {
+        "minX": 0,
+        "minY": -2,
+        "maxX": 2,
+        "maxY": 0,
+        "width": 2,
+        "height": 2,
+        "centreX": 1,
+        "centreY": -1,
+        "bodySpan": 2
+      }
+    }
+  ],
+  "dxf_previous_counterexample": {
+    "sample_points": 10001,
+    "requested_chord_error": 0.001,
+    "sampled_max_distance_to_polyline": 0.0007694626784665916,
+    "interpretation": "finite dense sampling, not a formal maximum-error proof"
+  },
+  "micro_gap_section": [
+    {
+      "mode": "pure",
+      "y": 0.12345,
+      "gap": 0.01,
+      "intersected_cells": 2,
+      "covered_width": 0.01,
+      "intervals": [
+        {
+          "id": 1747,
+          "lo": -0.005,
+          "hi": 0
+        },
+        {
+          "id": 1891,
+          "lo": 0,
+          "hi": 0.005
+        }
+      ]
+    },
+    {
+      "mode": "hybrid",
+      "y": 0.12345,
+      "gap": 0.01,
+      "intersected_cells": 2,
+      "covered_width": 0.01,
+      "intervals": [
+        {
+          "id": 1972,
+          "lo": -0.005,
+          "hi": 0
+        },
+        {
+          "id": 2189,
+          "lo": 0,
+          "hi": 0.005
+        }
+      ]
+    }
+  ],
+  "micro_gap_boundary_layers": {
+    "status": "evaluated",
+    "requested_cells": 756,
+    "constructed_cells": 468,
+    "retained_cells": 468,
+    "source_mismatches": 0,
+    "first_layer_wall_length_fraction": 0.7144360902255648,
+    "full_requested_layers_wall_length_fraction": 0.604561403508773,
+    "first_layer_height_exceedance_wall_length_fraction": 0,
+    "continuity_mismatches": 0
+  },
+  "binaries": {
+    "cartmesh2d_dxf_cli": "aad2e551f16cf76196dee2c2ca756681259a5534841802b6bc7076261fb889ca",
+    "cartmesh2d_hybrid_cli": "e7a0670c2015a4545adb24859162e3219299e12f5410900eed1a05d35f79dc00",
+    "cartmesh2d_cli": "b4262ca2f4988e09b86032b8d9edac8217f678aa69c44be93e473dea0fe9fc71"
+  }
+}
