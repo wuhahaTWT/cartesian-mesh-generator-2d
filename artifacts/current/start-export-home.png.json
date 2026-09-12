@@ -1,0 +1,49 @@
+{
+  "status": "生成完成",
+  "detail": "手动生成成功；可导出结果包　59.58 s",
+  "counters": "SOLVER CELLS\n148,287\nVERTICES\n152,710\nFACES\n300,996\nQUADTREE LEAVES\n—\nLAYER CELLS\n8,768\nCUT CELLS\n3,048\nOPENFOAM CELLS\n148,287",
+  "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+  "histogram": "每尺寸档单元数（粗→细）\n档0\n192\n档1\n33,359\n档2\n108,896\n档3\n5,730\n档4\n80\n档5\n30",
+  "log": "手动生成：第 1/1 次，壁面 h/Lref=0.00125，背景 h/Lref=0.0125，首层 h/Lref=0.0003125\n已读入 1 个闭合环（顶点 82）\n源单位 m，输出单位 m（换算 1）；保留物理尺寸。\n正在生成贴体边界层 + Cut-cell网格…\nhybrid_status=success cells=148436 solver_cells=148287 layer_cells=8768 remainder_cut=3048 remainder_cartesian=136828 transition_rings=0 transition_final_subdivision=1 transition_target_h=0.00585938 transition_ring_thickness=0 interface_edges=4944 interface_vertices=4944 area_error=1.36957e-12 lineage_checks=148815 lineage_oracle_checks=0 lineage_mismatches=0 solver_quality=pass target_solver_issues=448->0 target_solver_repartitions=448 determinant_repartitions=4 r1_candidates=0 r1_local_quality_evals=0 r1_candidate_global_builds=0 r1_candidate_full_quality=0 r1_winner_oracle_builds=0 r1_accepted=0 r1_repair_seconds=0.0319659 q3_candidates=0 q3_local_quality_evals=0 q3_candidate_global_builds=0 q3_candidate_full_quality=0 q3_winner_oracle_builds=0 q3_accepted=0 q3_bound_reached=0 q3_volume_hard=0->0 q3_face_weight_hard=0->0 q3_short_face_hard=0->0 q3_repair_seconds=0 q32_candidates=0 q32_local_quality_evals=0 q32_winner_oracle_builds=0 q32_accepted=0 q32_bound_reached=0 q32_volume_hard=0->0 q32_face_weight_hard=0->0 q32_short_face_hard=0->0 q32_repair_seconds=0 q33_candidates=0 q33_local_quality_evals=0 q33_winner_oracle_builds=0 q33_accepted=0 q33_bound_reached=0 q33_volume_hard=0->0 q33_face_weight_hard=0->0 q33_short_face_hard=0->0 q33_repair_seconds=0 q41_candidates=0 q41_local_quality_evals=0 q41_candidate_global_builds=0 q41_candidate_full_quality=0 q41_winner_oracle_builds=0 q41_accepted=0 q41_bound_reached=0 q41_volume_hard=0->0 q41_face_weight_hard=0->0 q41_short_face_hard=0->0 q41_selection_seconds=0 q41_declined=0 q51_radial_rows=1 q51_declined=0 openfoam=written vtk=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final/mesh-TY4gk5/nozzle_profile.hybrid.vtk solver_vtk=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final/mesh-TY4gk5/nozzle_profile.hybrid.solver.vtk solver_cm2d=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final/mesh-TY4gk5/nozzle_profile.hybrid.solver.cm2d report=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final/mesh-TY4gk5/nozzle_profile.hybrid.json\ntiming_input_seconds=0.000560958 timing_build_seconds=56.9922 timing_export_seconds=2.58492 timing_total_seconds=59.5777 h4_total_seconds=56.7408 h4_requested_layer_seconds=0.465877 h4_requested_hybrid_seconds=56.2749 h4_local_layer_seconds=0 h4_local_hybrid_seconds=0 h4_pure_cutcell_fallback_seconds=0 h4_unattributed_seconds=1.208e-06 h4_requested_hybrid_attempts=1 h4_local_hybrid_attempts=0 h4_pure_cutcell_fallback_attempts=0 h4_conformal_hybrid_build_calls=1\n生成完成。\n",
+  "cellBudget": null,
+  "theme": "duet",
+  "interactionChecks": true,
+  "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final.zip",
+  "previewTiming": {
+    "drawSubmissionMs": [
+      0.7999999998137355,
+      0.40000000037252903,
+      0.40000000037252903,
+      0.39999999944120646,
+      0.2999999998137355,
+      0.30000000074505806
+    ],
+    "note": "Canvas command submission; excludes asynchronous GPU completion"
+  },
+  "home": {
+    "emptyVisible": true,
+    "released": true,
+    "geometryCleared": true,
+    "exportAvailable": true,
+    "mainPreviewReleased": true,
+    "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final-home.zip"
+  },
+  "layout": {
+    "bottomReachable": true,
+    "pageHeight": 560,
+    "windowHeight": 560,
+    "geometry": {
+      "bodyHeight": 560,
+      "innerHeight": 560,
+      "canvasHeight": 344.75,
+      "shellBottom": 560
+    },
+    "wallpaper": {
+      "image": "linear-gradient(rgba(17, 16, 22, 0.52), rgba(17, 16, 22, 0.52)), url(\"file:///Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/Resources/app.asar/src/renderer/assets/duet-workshop.png\")",
+      "canvasBackground": "rgba(0, 0, 0, 0)",
+      "welcomeHidden": false
+    },
+    "sidebarCollapsed": false,
+    "sidebarExpanded": true
+  }
+}

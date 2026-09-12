@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('cartmesh', {
   pickGeometry: () => ipcRenderer.invoke('pick-geometry'),
   exportResult: () => ipcRenderer.invoke('export-result'),
   cancel: () => ipcRenderer.invoke('cancel'),
+  releasePreview: () => ipcRenderer.invoke('release-preview'),
+  exportPreviewData: () => ipcRenderer.invoke('export-preview-data'),
   previewGeometry: request => ipcRenderer.invoke('preview-geometry', request),
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),

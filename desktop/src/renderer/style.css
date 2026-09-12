@@ -27,7 +27,8 @@ body {
   flex-wrap: wrap;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  column-gap: 8px;
   /* macOS traffic lights occupy the native left edge of the titlebar. */
   padding: 3px 14px 3px 80px;
   color: var(--ink-faint);
@@ -51,6 +52,7 @@ body {
 .sidebar-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar-toggle:hover:not(:disabled) { border-color: var(--line); }
 .theme-control {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -497,8 +499,6 @@ body[data-theme="duet"] .canvasWrap.light .legend {
 /* Light display mode: the canvas turns into a publication figure, so the panels around
    it keep their own colours and only the drawing surface changes. */
 .canvasWrap.light { background: #ffffff; }
-.canvasWrap.light .empty b { color: #55636d; }
-.canvasWrap.light .empty i { color: #8895a0; }
 .canvasWrap.light .legend {
   background: rgba(255, 255, 255, .9); border-color: #d3dae0; color: #3d4a54;
 }
@@ -520,3 +520,5 @@ html, body { height: 100%; }
 .panel { gap: 12px; }
 .block { gap: 6px; }
 .method { padding-top: 6px; padding-bottom: 6px; }
+
+.home-button { -webkit-app-region: no-drag; width: auto; padding: 3px 8px; font-size: 11px; margin-right: 8px; }

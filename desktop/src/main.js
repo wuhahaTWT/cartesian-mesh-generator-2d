@@ -12,6 +12,7 @@ const { planBudget, BUDGET_PRESETS } = require('./core/cell-budget');
 const { runBudget } = require('./core/budget-runner');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
+const { exportGuide } = require('./core/export-guide');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -27,6 +28,11 @@ async function exclusive(work) {
 }
 async function exportPackage(destination) {
   if (!currentResult) throw new Error('请先成功生成网格。');
+  const png = await mainWindow.webContents.executeJavaScript('window.__exportMeshPreview()');
+  if (typeof png !== 'string' || !png.startsWith('data:image/png;base64,'))
+    throw new Error('网格预览图片生成失败，未写出结果包。');
+  await fs.writeFile(path.join(currentResult.outputDirectory, 'mesh-preview.png'), Buffer.from(png.split(',')[1], 'base64'));
+  await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
   const temporary = path.join(sessionDirectory, 'export.zip');
   await fs.rm(temporary, { force: true });
   await run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--noextattr', '--noqtn', '--keepParent', currentResult.outputDirectory, temporary], () => {});
@@ -177,6 +183,16 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('cancel', () => { operation?.abort(); });
+  ipcMain.handle('release-preview', () => {
+    if (operation) throw new Error('请先等待当前操作完成。');
+    if (currentResult) { currentResult.mesh = null; currentResult.levelHistogram = null; }
+    return Boolean(currentResult);
+  });
+  ipcMain.handle('export-preview-data', async () => {
+    if (!currentResult) throw new Error('没有可导出的网格。');
+    return { mesh: currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')),
+      result: currentResult.result };
+  });
   ipcMain.handle('export-result', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成网格。');
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -552,6 +568,32 @@ async function runSmoke() {
       app.exit(0); return;
     }
     if (argument('export')) report.exported = await exportPackage(argument('export'));
+    if (argument('mesh-shot')) await fs.writeFile(argument('mesh-shot'), (await mainWindow.webContents.capturePage()).toPNG());
+    if (argument('home-check')) {
+      report.previewTiming = await mainWindow.webContents.executeJavaScript(`(() => {
+        const view = window.__smoke.view;
+        const original = view.scale;
+        const elapsed = [];
+        for (let i = 0; i < 6; i++) {
+          view.scale = original * (1 + i * .01);
+          const start = performance.now(); view.draw();
+          elapsed.push(performance.now() - start);
+        }
+        view.scale = original; view.draw();
+        return { drawSubmissionMs: elapsed, note: 'Canvas command submission; excludes asynchronous GPU completion' };
+      })()`);
+      report.home = await mainWindow.webContents.executeJavaScript(`(async () => {
+        await window.__smoke.returnToStart();
+        const { state, view } = window.__smoke;
+        return { emptyVisible: !document.getElementById('empty').hidden,
+          released: !state.mesh && !state.result && !view.mesh && !view.meshCache && !view.outline,
+          geometryCleared: !state.geometryPath,
+          exportAvailable: !document.getElementById('exportResult').hidden };
+      })()`);
+      report.home.mainPreviewReleased = currentResult?.mesh === null;
+      if (!Object.values(report.home).every(Boolean)) throw new Error('Return to start did not release preview or preserve export');
+      if (argument('export')) report.home.exported = await exportPackage(argument('export').replace(/\.zip$/, '') + '-home.zip');
+    }
     mainWindow.setSize(800, 560);
     await new Promise(resolve => setTimeout(resolve, 200));
     report.layout = await mainWindow.webContents.executeJavaScript(`(() => {
