@@ -503,6 +503,10 @@ async function runSmoke() {
   }
 
   await mainWindow.webContents.executeJavaScript(`(async () => {
+    const loadedFonts = await document.fonts.load('13px "CartMesh UI"', '生成网格');
+    await document.fonts.ready;
+    if (!loadedFonts.length || loadedFonts.some(font => font.status !== 'loaded'))
+      throw new Error('Bundled Chinese interface font did not load');
     const smoke = window.__smoke;
     smoke.setSidebarCollapsed(false);
     smoke.setOutput(${JSON.stringify(outputDirectory)});
@@ -643,6 +647,7 @@ async function runSmoke() {
       log: document.getElementById('log').textContent,
       cellBudget: smoke.state.cellBudget,
       raster: smoke.state.rasterEvidence,
+      bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))}
     };

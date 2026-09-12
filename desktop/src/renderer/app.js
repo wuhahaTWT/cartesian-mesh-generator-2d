@@ -112,6 +112,8 @@ async function returnToStart() {
 }
 $('returnHome').addEventListener('click', returnToStart);
 window.__exportMeshPreview = async () => {
+  await document.fonts.load('13px "CartMesh UI"', '生成网格');
+  await document.fonts.ready;
   const data = await window.cartmesh.exportPreviewData();
   return window.CartMeshExport.render(data.mesh, data.result);
 };

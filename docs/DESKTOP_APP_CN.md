@@ -13,7 +13,7 @@ GitHub 的 `desktop-platforms` 工作流在三个系统分别编译、打包并�
 
 - Windows：解压运行包，打开 `CartMesh2D.exe`，同目录的 resources 等文件必须一起保留。目标为 Windows 10 1903+ / Windows 11 x64；原生工具含 UTF-8 路径配置，不要求安装 Visual C++ 运行库。CI 实际系统是 Windows Server 2022，不代表所有桌面版本已逐一验证。
 - Linux：解压 `.tar.gz` 后运行 `./cartmesh2d-desktop`。当前构建基线为 Ubuntu 22.04 x64，面向兼容 glibc 的图形桌面环境，并非 Alpine/musl 通用包。需要系统 GTK/NSS/音频库。正常启动不关闭 Chromium 沙箱。
-- 运行包自带 Electron 和二维生成器；Python、Node.js、CMake、编译器只在开发构建时需要。OpenFOAM/Fluent 仍需另行安装或在目标计算环境中运行，网格生成不依赖它们。
+- 运行包自带 Electron、二维生成器和中文界面字体；Python、Node.js、CMake、编译器只在开发构建时需要。OpenFOAM/Fluent 仍需另行安装或在目标计算环境中运行，网格生成不依赖它们。
 
 当前包未签名/公证。详细的平台实测范围以 CURRENT_STATE 为准；尚未验收的平台不写成已支持。
 

@@ -9,7 +9,7 @@ window.CartMeshExport = {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     const text = (value, x, y, size = 24, align = 'left', color = '#252d36') => {
-      ctx.fillStyle = color; ctx.font = `${size}px -apple-system, sans-serif`;
+      ctx.fillStyle = color; ctx.font = `${size}px "CartMesh UI", -apple-system, sans-serif`;
       ctx.textAlign = align; ctx.fillText(value, x, y);
     };
     const n = mesh.cells.length.toLocaleString('en-US');
