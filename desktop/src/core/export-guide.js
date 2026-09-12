@@ -1,6 +1,6 @@
 'use strict';
 
-function exportGuide({ result }) {
+function exportGuide({ result, rasterImport }) {
   const cells = Number(result.counts.cells).toLocaleString('en-US');
   const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
   return `# 先看这里
@@ -15,7 +15,7 @@ function exportGuide({ result }) {
 | *.vtk | 用 ParaView 查看。混合模式以 *.hybrid.solver.vtk 为最终网格，其余可能是中间过程。 |
 | result.json / selection.json | 本次参数、检查结果和自动选参记录。 |
 | *.resolution.json / *.solver-quality.json | 实际尺寸、边界层和内部质量的详细数据。 |
-| *.xy 及其他 JSON | 输入轮廓或过程诊断，排查问题时保留。 |
+${rasterImport ? '| source-image.* / image-outline.png / image-import.json | 原图、确认的轮廓叠加图及尺寸标定记录。 |\n' : ''}| *.xy 及其他 JSON | 输入轮廓或过程诊断，排查问题时保留。 |
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
 **导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查，也不代表流场已经收敛。使用哪个 CFD 软件，就在该软件中检查导入后的网格。

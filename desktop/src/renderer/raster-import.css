@@ -1,0 +1,137 @@
+.raster-import {
+  width: min(1120px, calc(100vw - 32px));
+  height: min(760px, calc(100vh - 32px));
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.raster-import::backdrop { background: rgba(8, 14, 14, .62); }
+
+.raster-import__form {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.raster-import__head,
+.raster-import__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 15px;
+  background: var(--panel-2);
+}
+
+.raster-import__head { border-bottom: 1px solid var(--line); }
+.raster-import__foot { border-top: 1px solid var(--line); }
+.raster-import__head h1 { margin: 0; font-size: 15px; font-weight: 600; }
+.raster-import__head p { margin: 2px 0 0; color: var(--ink-faint); font-size: 10.5px; }
+.raster-import__close { flex: none; }
+
+.raster-import__body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+}
+
+.raster-import__preview {
+  min-width: 0;
+  min-height: 0;
+  padding: 14px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 9px;
+  background: var(--canvas);
+  border-right: 1px solid var(--line);
+}
+
+.raster-import__stage {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, var(--line-soft) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--line-soft) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--line-soft) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--line-soft) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  border: 1px solid var(--line);
+}
+
+.raster-import__canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: crosshair;
+  background: #fff;
+}
+
+.raster-import__caption {
+  min-height: 2.8em;
+  margin: 0;
+  color: var(--ink-faint);
+  font: 10.5px/1.45 var(--mono);
+}
+
+.raster-import__controls {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.raster-import__group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.raster-import__group:last-child { border-bottom: 0; }
+.raster-import__group h2 { margin: 0; color: var(--ink-dim); font-size: 11px; font-weight: 600; }
+.raster-import__field { display: flex; flex-direction: column; gap: 4px; color: var(--ink-dim); font-size: 11px; }
+.raster-import__row { display: grid; grid-template-columns: minmax(0, 1fr) 74px; gap: 7px; }
+.raster-import__check { display: flex; align-items: flex-start; gap: 7px; color: var(--ink-dim); font-size: 11px; line-height: 1.35; }
+.raster-import__check input { width: auto; margin: 2px 0 0; accent-color: var(--accent); }
+.raster-import__help { margin: 0; color: var(--ink-faint); font-size: 10.5px; line-height: 1.45; }
+.raster-import__seed { display: flex; align-items: center; justify-content: space-between; gap: 7px; color: var(--ink-faint); font: 10px/1.4 var(--mono); }
+.raster-import__seed button { padding: 4px 7px; font-size: 10px; }
+
+.raster-import__status {
+  min-height: 3em;
+  margin: 0;
+  padding: 8px;
+  color: var(--ink-dim);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  font: 10.5px/1.45 var(--mono);
+  white-space: pre-wrap;
+}
+
+.raster-import__status[data-kind="error"] { color: var(--fail); border-color: var(--fail); }
+.raster-import__status[data-kind="warning"] { color: var(--warn); border-color: var(--warn); }
+.raster-import__actions { margin-left: auto; display: flex; gap: 8px; }
+.raster-import__confirm { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+@media (max-width: 760px), (max-height: 580px) {
+  .raster-import { width: calc(100vw - 16px); height: calc(100vh - 16px); }
+  .raster-import__body { grid-template-columns: minmax(0, 1fr) 270px; }
+  .raster-import__head, .raster-import__foot { padding: 8px 10px; }
+  .raster-import__preview, .raster-import__controls { padding: 9px; }
+  .raster-import__controls { gap: 8px; }
+  .raster-import__group { gap: 5px; padding-bottom: 8px; }
+}

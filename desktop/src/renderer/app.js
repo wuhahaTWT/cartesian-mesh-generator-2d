@@ -98,6 +98,7 @@ async function returnToStart() {
   state.geometryLoading = false; state.frame = null; state.regions = [];
   view.regions = []; view.frame = null;
   $('sample').value = '';
+  $('sourceUnits').disabled = false;
   for (const id of ['sampleNote', 'geometryFacts', 'probeResult', 'verifiedPreset', 'verifiedPresetNote']) $(id).hidden = true;
   $('log').textContent = '';
   $('empty').hidden = false;
@@ -381,6 +382,7 @@ function renderSamples() {
 }
 
 async function chooseGeometry(path, label, sample) {
+  $('sourceUnits').disabled = false;
   state.geometryPath = path;
   state.geometryLabel = label;
   state.sampleId = sample?.id;
@@ -429,6 +431,7 @@ async function drawGeometryOutline() {
       geometryPath: state.geometryPath, ...importSettings()
     });
     if (sequence !== previewSequence) return;
+    $('sourceUnits').disabled = preview.kind === 'raster';
     state.frame = preview.frame;
     view.setOutline(preview.loops);
     syncRegions();
@@ -689,11 +692,26 @@ async function generate() {
   }
 }
 
+async function importGeometryFile(picked) {
+  if (!picked || state.busy) return;
+  if (/\.(png|jpe?g)$/i.test(picked)) {
+    try {
+      const imported = await window.CartMeshRasterImport.open(picked);
+      if (!imported) return;
+      $('sample').value = '';
+      $('sourceUnits').value = 'm';
+      $('referenceMode').value = 'bbox';
+      $('referenceLengthField').hidden = true;
+      await chooseGeometry(imported.geometryPath, imported.label, null);
+    } catch (error) { status('图片导入失败', error.message); log(error.message); }
+  } else {
+    $('sample').value = '';
+    await chooseGeometry(picked, picked.split('/').pop(), null);
+  }
+}
 $('pickGeometry').addEventListener('click', async () => {
-  const picked = await window.cartmesh.pickGeometry();
-  if (!picked) return;
-  $('sample').value = '';
-  await chooseGeometry(picked, picked.split('/').pop(), null);
+  try { await importGeometryFile(await window.cartmesh.pickGeometry()); }
+  catch (error) { status('导入失败', error.message); log(error.message); }
 });
 
 $('sample').addEventListener('change', async event => {
@@ -796,7 +814,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {
