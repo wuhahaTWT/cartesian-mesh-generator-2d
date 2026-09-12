@@ -1,0 +1,104 @@
+{
+  "date": "2026-09-12",
+  "branch": "main",
+  "baseline": "feb3cd8",
+  "scope": "Frontend preview, return to start and ZIP preview/guide; native mesh unchanged",
+  "tests": {
+    "frontend": "78/78",
+    "ctest_existing_build": "99/99",
+    "packaged_app_cells": 148287,
+    "native_cfd_rerun": false
+  },
+  "exports": [
+    {
+      "zip": "final",
+      "cm2d_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+      "png_sha256": "6103f69b6ab4d7c937fd2720640637c59240a8d712178173e2c91a787eb8bdbb",
+      "png_size": [
+        2000,
+        1080
+      ],
+      "chinese_guide": true
+    },
+    {
+      "zip": "final-home",
+      "cm2d_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+      "png_sha256": "6103f69b6ab4d7c937fd2720640637c59240a8d712178173e2c91a787eb8bdbb",
+      "png_size": [
+        2000,
+        1080
+      ],
+      "chinese_guide": true
+    }
+  ],
+  "home": {
+    "emptyVisible": true,
+    "released": true,
+    "geometryCleared": true,
+    "exportAvailable": true,
+    "mainPreviewReleased": true,
+    "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/start-export/final-home.zip"
+  },
+  "layout": {
+    "bottomReachable": true,
+    "pageHeight": 560,
+    "windowHeight": 560,
+    "geometry": {
+      "bodyHeight": 560,
+      "innerHeight": 560,
+      "canvasHeight": 344.75,
+      "shellBottom": 560
+    },
+    "wallpaper": {
+      "image": "linear-gradient(rgba(17, 16, 22, 0.52), rgba(17, 16, 22, 0.52)), url(\"file:///Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/Resources/app.asar/src/renderer/assets/duet-workshop.png\")",
+      "canvasBackground": "rgba(0, 0, 0, 0)",
+      "welcomeHidden": false
+    },
+    "sidebarCollapsed": false,
+    "sidebarExpanded": true
+  },
+  "performance": {
+    "canvas_css_pixels": [
+      900,
+      700
+    ],
+    "method": "6 scale changes; draw then getImageData(0,0,1,1) forced synchronous readback. Not normal interaction FPS. Same actual 148287-cell mesh.",
+    "initial": [
+      {
+        "name": "before",
+        "drawAndReadbackMs": [
+          17420.39999999944,
+          17922.900000000373,
+          17964.10000000056,
+          17948.5,
+          17921.800000000745,
+          17958.299999999814
+        ]
+      },
+      {
+        "name": "after",
+        "drawAndReadbackMs": [
+          650.2000000001863,
+          682.2999999998137,
+          676.8999999994412,
+          681.3999999994412,
+          673.7000000001863,
+          684.0999999996275
+        ]
+      }
+    ],
+    "final": [
+      {
+        "name": "after",
+        "drawAndReadbackMs": [
+          73.29999999981374,
+          187.20000000018626,
+          189.8999999994412,
+          190.30000000074506,
+          192.09999999962747,
+          192.09999999962747
+        ]
+      }
+    ]
+  }
+}

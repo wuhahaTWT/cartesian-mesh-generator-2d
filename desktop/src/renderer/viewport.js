@@ -33,6 +33,7 @@ const THEMES = {
   dark: { fill: null, cellEdge: 'rgba(198,214,226,0.42)', domain: 'rgba(198,214,226,0.75)',
           wall: '#ff5a1f', unclassified: '#ff3b6b', region: '#7fd7ff', vertex: '#ffd8c4' }
 };
+const CELLS_PER_PATH = 64;
 
 class Viewport {
   constructor(canvas) {
@@ -47,8 +48,10 @@ class Viewport {
     this.scale = 1;
     this.offset = { x: 0, y: 0 };
     this.dragging = null;
+    this.meshCache = null;
+    this.pendingDraw = null;
     this.attachInput();
-    this.resizeObserver = new ResizeObserver(() => this.draw());
+    this.resizeObserver = new ResizeObserver(() => this.requestDraw());
     this.resizeObserver.observe(canvas);
   }
 
@@ -69,7 +72,7 @@ class Viewport {
       const after = this.toWorld(px, py);
       this.offset.x += before.x - after.x;
       this.offset.y += before.y - after.y;
-      this.draw();
+      this.requestDraw();
     }, { passive: false });
 
     this.canvas.addEventListener('pointerdown', event => {
@@ -84,7 +87,7 @@ class Viewport {
       this.offset.x -= (event.clientX - this.dragging.x) / this.scale;
       this.offset.y += (event.clientY - this.dragging.y) / this.scale;
       this.dragging = { x: event.clientX, y: event.clientY };
-      this.draw();
+      this.requestDraw();
     });
     const release = () => {
       this.dragging = null;
@@ -119,6 +122,7 @@ class Viewport {
   setMesh(mesh) {
     this.mesh = mesh;
     this.outline = null;
+    this.meshCache = null;
     this.fitTo(mesh.bounds);
   }
 
@@ -126,6 +130,7 @@ class Viewport {
   // user confirms the importer read the file they meant.
   setOutline(loops) {
     this.mesh = null;
+    this.meshCache = null;
     this.outline = loops;
     const points = loops.flat();
     if (!points.length) return;
@@ -138,7 +143,25 @@ class Viewport {
   clear() {
     this.mesh = null;
     this.outline = null;
+    this.meshCache = null;
     this.draw();
+  }
+
+  // Wheel, pointer and resize events can arrive several times before Chromium paints
+  // one frame.  Keep only the newest view transform instead of redrawing the same
+  // large mesh for every event.  draw() itself remains synchronous for exports.
+  requestDraw() {
+    if (this.pendingDraw !== null) return;
+    this.pendingDraw = window.requestAnimationFrame(() => {
+      this.pendingDraw = null;
+      this.draw();
+    });
+  }
+
+  cancelPendingDraw() {
+    if (this.pendingDraw === null) return;
+    window.cancelAnimationFrame(this.pendingDraw);
+    this.pendingDraw = null;
   }
 
   context() {
@@ -154,8 +177,12 @@ class Viewport {
       this.offset.y = centreY - height / (2 * this.scale);
     }
     this.lastSize = { width, height };
-    this.canvas.width = Math.floor(width * dpr);
-    this.canvas.height = Math.floor(height * dpr);
+    const pixelWidth = Math.floor(width * dpr);
+    const pixelHeight = Math.floor(height * dpr);
+    // Assigning either dimension clears the canvas and reallocates its backing store.
+    // Do that on a real resize only, not for every pan or zoom frame.
+    if (this.canvas.width !== pixelWidth) this.canvas.width = pixelWidth;
+    if (this.canvas.height !== pixelHeight) this.canvas.height = pixelHeight;
     const ctx = this.canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
@@ -163,6 +190,7 @@ class Viewport {
   }
 
   draw() {
+    this.cancelPendingDraw();
     const { ctx, width, height } = this.context();
     const theme = this.theme();
     const project = ([x, y]) => [
@@ -176,44 +204,95 @@ class Viewport {
     }
     if (!this.mesh) return;
     const mesh = this.mesh;
-
-    // Group by level so each fill colour is set once instead of per cell, and so the
-    // stroke decision can be made from that level's on-screen cell size.
-    const byLevel = new Map();
-    for (const cell of mesh.cells) {
-      if (!byLevel.has(cell.level)) byLevel.set(cell.level, []);
-      byLevel.get(cell.level).push(cell);
-    }
-    const domainSpan = Math.max(mesh.bounds.maxX - mesh.bounds.minX,
-                                mesh.bounds.maxY - mesh.bounds.minY);
-    for (const level of [...byLevel.keys()].sort((a, b) => a - b)) {
-      const cells = byLevel.get(level);
-      ctx.beginPath();
-      for (const cell of cells) {
-        const first = project(mesh.vertices[cell.vertices[0]]);
-        ctx.moveTo(first[0], first[1]);
-        for (let i = 1; i < cell.vertices.length; i++) {
-          const point = project(mesh.vertices[cell.vertices[i]]);
-          ctx.lineTo(point[0], point[1]);
-        }
-        ctx.closePath();
-      }
+    const cache = this.cachedMeshPaths(mesh);
+    const overscan = 3 / this.scale;
+    const visible = {
+      minX: this.offset.x - overscan,
+      maxX: this.offset.x + width / this.scale + overscan,
+      minY: this.offset.y - overscan,
+      maxY: this.offset.y + height / this.scale + overscan
+    };
+    ctx.save();
+    // Paths stay in world coordinates.  Pan and zoom now change one canvas transform
+    // rather than projecting every vertex in JavaScript on every frame.
+    ctx.transform(this.scale, 0, 0, -this.scale,
+                  -this.offset.x * this.scale,
+                  height + this.offset.y * this.scale);
+    for (const { level, chunks } of cache.levels) {
+      const visibleChunks = chunks.filter(chunk => this.intersects(chunk.bounds, visible));
       if (theme.fill === 'level') {
         ctx.fillStyle = levelColour(level, mesh.minLevel, mesh.maxLevel);
-        ctx.fill();
+        for (const chunk of visibleChunks) ctx.fill(chunk.path);
       }
       // Outlining cells narrower than ~3 px turns the mesh into a solid block and
       // costs the most time on the largest meshes, so it is skipped there.  Without a
       // fill there would be nothing left to see, so the floor drops to 1 px.
-      const onScreen = (domainSpan / Math.pow(2, level)) * this.scale;
+      const onScreen = (cache.domainSpan / Math.pow(2, level)) * this.scale;
       if (this.showGrid && onScreen >= (theme.fill ? 3 : 1)) {
         ctx.strokeStyle = theme.cellEdge;
-        ctx.lineWidth = Math.min(theme.fill ? 1 : 0.7, Math.max(0.35, onScreen / 12));
-        ctx.stroke();
+        ctx.lineWidth = Math.min(theme.fill ? 1 : 0.7,
+                                 Math.max(0.35, onScreen / 12)) / this.scale;
+        for (const chunk of visibleChunks) ctx.stroke(chunk.path);
       }
     }
-    this.drawBoundaries(ctx, project, mesh, theme);
+    this.drawBoundaries(ctx, cache, theme);
+    ctx.restore();
     this.drawRegions(ctx, project, theme);
+  }
+
+  cachedMeshPaths(mesh) {
+    if (this.meshCache && this.meshCache.mesh === mesh) return this.meshCache;
+    const levels = new Map();
+    for (const cell of mesh.cells) {
+      if (!levels.has(cell.level)) levels.set(cell.level, []);
+      const chunks = levels.get(cell.level);
+      if (!chunks.length || chunks[chunks.length - 1].cells === CELLS_PER_PATH) {
+        chunks.push({ path: new Path2D(), cells: 0,
+          bounds: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity } });
+      }
+      const chunk = chunks[chunks.length - 1];
+      const path = chunk.path;
+      const first = mesh.vertices[cell.vertices[0]];
+      path.moveTo(first[0], first[1]);
+      this.extendBounds(chunk.bounds, first);
+      for (let i = 1; i < cell.vertices.length; i++) {
+        const point = mesh.vertices[cell.vertices[i]];
+        path.lineTo(point[0], point[1]);
+        this.extendBounds(chunk.bounds, point);
+      }
+      path.closePath();
+      chunk.cells++;
+    }
+    const boundaries = new Map([[1, new Path2D()], [2, new Path2D()], [3, new Path2D()]]);
+    for (const edge of mesh.edges) {
+      const path = boundaries.get(edge.patch);
+      if (!path) continue;
+      const a = mesh.vertices[edge.a];
+      const b = mesh.vertices[edge.b];
+      path.moveTo(a[0], a[1]);
+      path.lineTo(b[0], b[1]);
+    }
+    this.meshCache = {
+      mesh,
+      levels: [...levels].sort((a, b) => a[0] - b[0])
+        .map(([level, chunks]) => ({ level, chunks })),
+      boundaries,
+      domainSpan: Math.max(mesh.bounds.maxX - mesh.bounds.minX,
+                           mesh.bounds.maxY - mesh.bounds.minY)
+    };
+    return this.meshCache;
+  }
+
+  extendBounds(bounds, [x, y]) {
+    if (x < bounds.minX) bounds.minX = x;
+    if (x > bounds.maxX) bounds.maxX = x;
+    if (y < bounds.minY) bounds.minY = y;
+    if (y > bounds.maxY) bounds.maxY = y;
+  }
+
+  intersects(a, b) {
+    return a.maxX >= b.minX && a.minX <= b.maxX &&
+           a.maxY >= b.minY && a.minY <= b.maxY;
   }
 
   // Hand-placed regions are stated in body spans about the body centre, which is the
@@ -252,19 +331,11 @@ class Viewport {
     ctx.restore();
   }
 
-  drawBoundaries(ctx, project, mesh, theme) {
+  drawBoundaries(ctx, cache, theme) {
     const stroke = (patch, colour, lineWidth) => {
-      ctx.beginPath();
-      for (const edge of mesh.edges) {
-        if (edge.patch !== patch) continue;
-        const a = project(mesh.vertices[edge.a]);
-        const b = project(mesh.vertices[edge.b]);
-        ctx.moveTo(a[0], a[1]);
-        ctx.lineTo(b[0], b[1]);
-      }
       ctx.strokeStyle = colour;
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
+      ctx.lineWidth = lineWidth / this.scale;
+      ctx.stroke(cache.boundaries.get(patch));
     };
     stroke(2, theme.domain, 1);
     stroke(3, theme.unclassified, 2.4);
@@ -301,4 +372,3 @@ class Viewport {
 window.MeshView = { Viewport, levelColour, RAMP };
 
 })();
-

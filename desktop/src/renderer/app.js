@@ -61,6 +61,7 @@ function setBusy(busy) {
   $('cancel').hidden = !busy;
   $('cancel').disabled = false;
   $('exportResult').disabled = busy;
+  $('returnHome').disabled = busy;
   $('actualToManual').disabled = busy;
   updateReady();
 }
@@ -85,7 +86,34 @@ function clearResult() {
   for (const id of ['counters', 'gates', 'histogram']) $(id).replaceChildren();
   $('legend').hidden = true;
   $('resolutionResult').hidden = true;
+  $('resolutionResult').replaceChildren();
 }
+async function returnToStart() {
+  if (state.busy) return;
+  ++previewSequence;
+  clearInterval(progressTimer);
+  const exportable = !$('exportResult').hidden;
+  clearResult();
+  state.geometryPath = ''; state.geometryLabel = ''; state.sampleId = null;
+  state.geometryLoading = false; state.frame = null; state.regions = [];
+  view.regions = []; view.frame = null;
+  $('sample').value = '';
+  for (const id of ['sampleNote', 'geometryFacts', 'probeResult', 'verifiedPreset', 'verifiedPresetNote']) $(id).hidden = true;
+  $('log').textContent = '';
+  $('empty').hidden = false;
+  $('exportResult').hidden = !exportable;
+  renderRegions();
+  updateReady();
+  status('从一个轮廓开始', exportable ? '预览已释放；上一份结果仍可导出，生成新网格后替换。' : '选择样例或导入几何。');
+  try { await window.cartmesh.releasePreview(); }
+  catch (error) { log(error.message); }
+}
+$('returnHome').addEventListener('click', returnToStart);
+window.__exportMeshPreview = async () => {
+  const data = await window.cartmesh.exportPreviewData();
+  return window.CartMeshExport.render(data.mesh, data.result);
+};
+
 let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
 const { levelColour, RAMP } = window.MeshView;
@@ -758,7 +786,7 @@ window.cartmesh.onProgress(progress => {
   progressTimer = setInterval(update, 1000);
 });
 window.cartmesh.onRunLine(log);
-window.addEventListener('resize', () => view.draw());
+window.addEventListener('resize', () => view.requestDraw());
 
 (async () => {
   state.catalog = await window.cartmesh.catalog();
@@ -768,7 +796,7 @@ window.addEventListener('resize', () => view.draw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart };
 })();
 
 function setOutput(directory) {
