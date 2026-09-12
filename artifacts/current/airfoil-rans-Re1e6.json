@@ -1,0 +1,684 @@
+{
+  "measurementOnly": false,
+  "convergenceDecision": "iteration cap reached; strict residualControl 1e-6 not met for pressure; not certified converged",
+  "scope": "Existing close-domain mesh; steady fully turbulent RANS trial, not free-air validation or grid independence.",
+  "case": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case",
+  "finalFieldIteration": 3500.0,
+  "iterationUnit": "steady SIMPLE iteration count, not seconds",
+  "mesh": {
+    "cells": 140305,
+    "faces": 563665,
+    "internalFaces": 281179,
+    "points": 285500,
+    "wallFaces": 852,
+    "cellCentreSource": "final C field",
+    "ownerFieldAlignmentChecked": true
+  },
+  "reference": {
+    "U": 15.0,
+    "chord": 1.0,
+    "pKinematic": 0.0,
+    "CpDefinition": "(p - p_reference)/(0.5*U_reference^2); p is kinematic pressure"
+  },
+  "units": {
+    "U": "m/s",
+    "p": "m2/s2 (kinematic)",
+    "k": "m2/s2",
+    "omega": "1/s",
+    "nut": "m2/s",
+    "phi": "m3/s",
+    "Cp": "dimensionless",
+    "forceCoefficients": "dimensionless",
+    "yPlus": "dimensionless"
+  },
+  "fieldRanges": {
+    "U": {
+      "magnitude": {
+        "min": 0.2739866067676751,
+        "max": 19.130250457547273
+      },
+      "x": {
+        "min": -1.42736669066,
+        "max": 19.0531727685
+      },
+      "y": {
+        "min": -10.0522635757,
+        "max": 9.0796839131
+      },
+      "z": {
+        "min": -3.7238771215e-17,
+        "max": 5.34515570543e-17
+      }
+    },
+    "p": {
+      "min": -69.7746708385,
+      "max": 120.73248658
+    },
+    "Cp": {
+      "min": -0.6202192963422223,
+      "max": 1.0731776584888888
+    },
+    "k": {
+      "min": 0.00877230826968,
+      "max": 3.0755388495
+    },
+    "omega": {
+      "min": 65.0327515652,
+      "max": 30679.3067092
+    },
+    "nut": {
+      "min": 4.81225463104e-06,
+      "max": 0.0024783050298
+    }
+  },
+  "fieldSignDiagnostics": {
+    "k": {
+      "negativeCellCount": 0
+    },
+    "omega": {
+      "negativeCellCount": 0
+    },
+    "nut": {
+      "negativeCellCount": 0
+    }
+  },
+  "lastInitialResiduals": {
+    "iteration": 3500.0,
+    "stage": "continuation-3500",
+    "values": {
+      "Ux": 1.84013962361e-07,
+      "Uy": 1.02779406902e-07,
+      "p": 2.22032072281e-06,
+      "k": 6.73547345842e-08,
+      "omega": 1.65947400724e-08
+    },
+    "selection": "last complete Time block; first Initial residual for each of Ux, Uy, p, k, omega"
+  },
+  "lastContinuity": {
+    "sumLocal": 9.57157051359e-10,
+    "global": -3.57250380029e-11,
+    "cumulative": 1.00663575548e-06
+  },
+  "solverLogSources": [
+    {
+      "stage": "continuation-2500",
+      "path": "outputs/airfoil-rans-Re1e6-final/stages/continuation-2500/stdout.log",
+      "firstIteration": 1501.0,
+      "lastObservedIteration": 2500.0,
+      "lastObservedBlockFields": [
+        "Ux",
+        "Uy",
+        "k",
+        "omega",
+        "p"
+      ]
+    },
+    {
+      "stage": "continuation-3500",
+      "path": "outputs/airfoil-rans-Re1e6-final/stages/continuation-3500/stdout.log",
+      "firstIteration": 2501.0,
+      "lastObservedIteration": 3500.0,
+      "lastObservedBlockFields": [
+        "Ux",
+        "Uy",
+        "k",
+        "omega",
+        "p"
+      ]
+    },
+    {
+      "stage": "second-order",
+      "path": "outputs/airfoil-rans-Re1e6-final/stages/second-order/stdout.log",
+      "firstIteration": 201.0,
+      "lastObservedIteration": 1500.0,
+      "lastObservedBlockFields": [
+        "Ux",
+        "Uy",
+        "k",
+        "omega",
+        "p"
+      ]
+    },
+    {
+      "stage": "startup",
+      "path": "outputs/airfoil-rans-Re1e6-final/stages/startup/stdout.log",
+      "firstIteration": 1.0,
+      "lastObservedIteration": 200.0,
+      "lastObservedBlockFields": [
+        "Ux",
+        "Uy",
+        "k",
+        "omega",
+        "p"
+      ]
+    }
+  ],
+  "forceCoefficients": {
+    "coordinateHeaders": {
+      "outputs/airfoil-rans-Re1e6-final/case/postProcessing/forces/0/coefficient.dat": [
+        "# dragDir           : (1.000000000000e+00 0.000000000000e+00 0.000000000000e+00)",
+        "# liftDir           : (0.000000000000e+00 1.000000000000e+00 0.000000000000e+00)",
+        "# pitchAxis         : (0.000000000000e+00 0.000000000000e+00 -1.000000000000e+00)",
+        "# magUInf           : 1.500000000000e+01",
+        "# lRef              : 1.000000000000e+00",
+        "# Aref              : 2.000000000000e-02",
+        "# CofR              : (2.500000000000e-01 0.000000000000e+00 0.000000000000e+00)"
+      ],
+      "outputs/airfoil-rans-Re1e6-final/case/postProcessing/forces/200/coefficient.dat": [
+        "# dragDir           : (1.000000000000e+00 0.000000000000e+00 0.000000000000e+00)",
+        "# liftDir           : (0.000000000000e+00 1.000000000000e+00 0.000000000000e+00)",
+        "# pitchAxis         : (0.000000000000e+00 0.000000000000e+00 -1.000000000000e+00)",
+        "# magUInf           : 1.500000000000e+01",
+        "# lRef              : 1.000000000000e+00",
+        "# Aref              : 2.000000000000e-02",
+        "# CofR              : (2.500000000000e-01 0.000000000000e+00 0.000000000000e+00)"
+      ],
+      "outputs/airfoil-rans-Re1e6-final/case/postProcessing/forces/1500/coefficient.dat": [
+        "# dragDir           : (1.000000000000e+00 0.000000000000e+00 0.000000000000e+00)",
+        "# liftDir           : (0.000000000000e+00 1.000000000000e+00 0.000000000000e+00)",
+        "# pitchAxis         : (0.000000000000e+00 0.000000000000e+00 -1.000000000000e+00)",
+        "# magUInf           : 1.500000000000e+01",
+        "# lRef              : 1.000000000000e+00",
+        "# Aref              : 2.000000000000e-02",
+        "# CofR              : (2.500000000000e-01 0.000000000000e+00 0.000000000000e+00)"
+      ],
+      "outputs/airfoil-rans-Re1e6-final/case/postProcessing/forces/2500/coefficient.dat": [
+        "# dragDir           : (1.000000000000e+00 0.000000000000e+00 0.000000000000e+00)",
+        "# liftDir           : (0.000000000000e+00 1.000000000000e+00 0.000000000000e+00)",
+        "# pitchAxis         : (0.000000000000e+00 0.000000000000e+00 -1.000000000000e+00)",
+        "# magUInf           : 1.500000000000e+01",
+        "# lRef              : 1.000000000000e+00",
+        "# Aref              : 2.000000000000e-02",
+        "# CofR              : (2.500000000000e-01 0.000000000000e+00 0.000000000000e+00)"
+      ]
+    },
+    "lastSampleIteration": 3500.0,
+    "lastHeaderParsedRow": {
+      "Cd": 0.01370501147905,
+      "Cd(f)": 0.004827973553554,
+      "Cd(r)": 0.008877037925498,
+      "Cl": 0.2024532185972,
+      "Cl(f)": 0.04949438219006,
+      "Cl(r)": 0.1529588364072,
+      "CmPitch": -0.05173222710856,
+      "CmRoll": -0.002024532185972,
+      "CmYaw": 0.0001370501147905,
+      "Cs": 2.654251623426e-20,
+      "Cs(f)": 0.0001370501147905,
+      "Cs(r)": -0.0001370501147905
+    },
+    "tailChange": {
+      "Cd": {
+        "sampleCount": 35,
+        "firstIteration": 3160.0,
+        "lastIteration": 3500.0,
+        "last": 0.01370501147905,
+        "mean": 0.013705115229532284,
+        "min": 0.01370499476565,
+        "max": 0.01370527305107,
+        "range": 2.782854199995244e-07,
+        "lastMinusFirst": -2.6157201999874036e-07,
+        "rangeOverAbsMean": 2.0305222928725528e-05
+      },
+      "Cl": {
+        "sampleCount": 35,
+        "firstIteration": 3160.0,
+        "lastIteration": 3500.0,
+        "last": 0.2024532185972,
+        "mean": 0.20243124851877145,
+        "min": 0.2024031993569,
+        "max": 0.2024532185972,
+        "range": 5.001924030001437e-05,
+        "lastMinusFirst": 5.001924030001437e-05,
+        "rangeOverAbsMean": 0.00024709248530557814
+      },
+      "CmPitch": {
+        "sampleCount": 35,
+        "firstIteration": 3160.0,
+        "lastIteration": 3500.0,
+        "last": -0.05173222710856,
+        "mean": -0.051729595872692574,
+        "min": -0.05173222710856,
+        "max": -0.05172635004202,
+        "range": 5.877066539997089e-06,
+        "lastMinusFirst": -5.877066539997089e-06,
+        "rangeOverAbsMean": 0.00011361129815242807
+      }
+    }
+  },
+  "flow": {
+    "iteration": 3500.0,
+    "patchSignedFlux": {
+      "left": -0.60002514419968,
+      "right": 0.60002514419714,
+      "top": 0.0,
+      "bottom": 0.0
+    },
+    "signedNetFlux": -2.539968235737433e-12,
+    "totalIncomingMagnitude": 0.60002514419968,
+    "totalOutgoingMagnitude": 0.60002514419714,
+    "relativeImbalance": 4.233102996250716e-12,
+    "rightBackflowFaceCount": 0,
+    "rightFaceCount": 256,
+    "rightBackflowFluxMagnitude": 0.0,
+    "rightBackflowFractionOfGrossPositiveOutflow": 0.0,
+    "signConvention": "OpenFOAM outward-positive phi; negative right-patch faces are counted as backflow",
+    "note": "No reverse-flow velocity value is inferred from pressureInletOutletVelocity."
+  },
+  "yPlus": {
+    "functionObjectLatest": {
+      "iteration": 3500.0,
+      "min": 3.602287206631,
+      "max": 24.55164635986,
+      "arithmeticAverage": 14.93656318422,
+      "averageDefinition": "OpenFOAM yPlus.dat function-object average; no area weighting inferred"
+    },
+    "independentWallField": {
+      "iteration": 3500.0,
+      "faceCount": 852,
+      "min": 3.60228720663,
+      "max": 24.5516463599,
+      "arithmeticAverage": 14.936563184221033,
+      "areaWeightedAverage": 14.95864633520487,
+      "source": "outputs/airfoil-rans-Re1e6-final/case/3500/yPlus"
+    }
+  },
+  "discretization": {
+    "source": "outputs/airfoil-rans-Re1e6-final/stages/continuation-3500/fvSchemes",
+    "divPhiU": "bounded Gauss linearUpwind grad(U)",
+    "divPhiK": "bounded Gauss upwind",
+    "divPhiOmega": "bounded Gauss upwind",
+    "description": "mixed convection discretization; velocity and turbulence schemes are reported separately"
+  },
+  "meshChecksFromLogs": {
+    "standardMeshOK": true,
+    "expandedFailedChecks": 1,
+    "expandedConcaveCells": 2720,
+    "expandedLog": "outputs/airfoil-rans-Re1e6-final/stages/check-expanded/stdout.log"
+  },
+  "outputs": {
+    "fields": "artifacts/current/airfoil-rans-Re1e6-fields.png",
+    "streamlines": "artifacts/current/airfoil-rans-Re1e6-streamlines.png",
+    "surfaceCp": "artifacts/current/airfoil-rans-Re1e6-surfaceCp.png",
+    "histories": "artifacts/current/airfoil-rans-Re1e6-histories.png"
+  },
+  "notes": [
+    "Color limits use the full finite final-field minima and maxima; values were not percentile-clipped.",
+    "Streamlines use owner-indexed cell-polygon rasterization, local fluid-only interpolation, and a dilated solid mask.",
+    "Force tail statistics describe variation only and are not a convergence verdict.",
+    "This is a close-domain RANS trial with mixed convection discretization, not an all-second-order claim."
+  ],
+  "configuration": {
+    "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/engineering-hybrid-final-high/naca/openfoam",
+    "image": "opencfd/openfoam-run:2606",
+    "cells": 140305,
+    "meshSha256": {
+      "points": "b0c399a89292b453793a8e62ae44dfd7258475c07e4c396883e38b373c9140a3",
+      "faces": "1b92560c991340540a84c06db742adec4fef44515326c190756f5ee01c9d7209",
+      "owner": "719cf975d341cc84d65dd9de87ed49584014ac57e4d6914a2451847eaf9d1dc6",
+      "neighbour": "985cddbe142f39f0cf0db967cdcce1ad17aab3350a51e5c553d6e4a2e6513bdf",
+      "boundary": "160cb46aee1a5b9e63a132c9cbe39a41dcd29d15a7e2e35a6f5b0830ca8313cc"
+    },
+    "bounds": [
+      [
+        -0.5,
+        1.500083814
+      ],
+      [
+        -0.9816158822,
+        1.0184679318
+      ],
+      [
+        0.0,
+        0.02
+      ]
+    ],
+    "velocity": 15.0,
+    "referenceChord": 1.0,
+    "nu": 1.5e-05,
+    "Re": 1000000.0,
+    "inletIntensity": 0.01,
+    "inletLengthScale": 0.00149071198499986,
+    "inletNutOverNuEstimate": 10.0,
+    "k": 0.03375,
+    "omega": 225.0,
+    "angleOfAttackDegrees": 0,
+    "model": "kOmegaSST",
+    "wallTreatment": "nutUSpaldingWallFunction + omegaWallFunction + kqRWallFunction",
+    "outerBoundary": "left uniform inlet; right p=0 outlet; top/bottom impermeable slip",
+    "scope": "Existing close-domain mesh; steady fully turbulent RANS trial, not free-air validation or grid independence."
+  },
+  "meshIdentity": {
+    "meshUnchanged": true,
+    "wallBounds": [
+      [
+        0.0,
+        1.000083814
+      ],
+      [
+        -0.0423457394,
+        0.079197789
+      ],
+      [
+        0.0,
+        0.02
+      ]
+    ],
+    "measuredChord": 1.000083814,
+    "ReByMeasuredChord": 1000083.8139999999,
+    "note": "No geometry, connectivity or boundary labels modified; only separate CFD dictionaries/fields added."
+  },
+  "runStages": {
+    "check-standard": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-check-standard-a7123347",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 2.4052630419973866,
+      "mesh_ok": true,
+      "failed_mesh_checks": 0
+    },
+    "check-expanded": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-check-expanded-2d214129",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "checkMesh",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-allGeometry",
+        "-allTopology"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 2.8298437080011354,
+      "mesh_ok": false,
+      "failed_mesh_checks": 1
+    },
+    "startup": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-startup-c5be8906",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "timeout_seconds": 900,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 111.0800258340023
+    },
+    "second-order": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-second-order-48f5f725",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "timeout_seconds": 900,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 683.9716509999998
+    },
+    "write-centres": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-write-centres-fb273334",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "postProcess",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-func",
+        "writeCellCentres",
+        "-latestTime"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 1.5501480420025473
+    },
+    "continuation-2500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-continuation-2500-9528f9e5",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "timeout_seconds": 900,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 603.4614135410011
+    },
+    "write-centres-2500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-write-centres-2500-a9c2f78a",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "postProcess",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-func",
+        "writeCellCentres",
+        "-latestTime"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 2.3187452080019284
+    },
+    "final-yplus-2500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-final-yplus-2500-26c2d459",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-postProcess",
+        "-func",
+        "yPlus",
+        "-latestTime"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 3.098152582999319
+    },
+    "continuation-3500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-continuation-3500-211d4ba7",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case"
+      ],
+      "timeout_seconds": 900,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 758.9129979169993
+    },
+    "write-centres-3500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-write-centres-3500-f5d6b7bb",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "postProcess",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-func",
+        "writeCellCentres",
+        "-latestTime"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 2.558161332999589
+    },
+    "final-yplus-3500": {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        "cartmesh-airfoil-final-yplus-3500-3c7e01d3",
+        "--network",
+        "none",
+        "--cpus",
+        "2",
+        "-v",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/airfoil-rans-Re1e6-final/case:/home/openfoam/workingDir/case",
+        "opencfd/openfoam-run:2606",
+        "simpleFoam",
+        "-case",
+        "/home/openfoam/workingDir/case",
+        "-postProcess",
+        "-func",
+        "yPlus",
+        "-latestTime"
+      ],
+      "timeout_seconds": 120,
+      "status": "passed",
+      "returncode": 0,
+      "elapsed_seconds": 2.8417022500034363
+    }
+  },
+  "sourceGenerationBase": "bf11105 (existing historical high-density mesh, not regenerated by current core)",
+  "verificationSourceBase": "2105d2c plus the two verification/visualization scripts added in this commit",
+  "residualControl": {
+    "p": 1e-06,
+    "U": 1e-06,
+    "k": 1e-06,
+    "omega": 1e-06
+  },
+  "solverConvergedMessagePresent": false,
+  "finalSolverLogBlock": "Time = 3500\n\nsmoothSolver:  Solving for Ux, Initial residual = 1.84013962361e-07, Final residual = 4.36202718902e-09, No Iterations 1\nsmoothSolver:  Solving for Uy, Initial residual = 1.02779406902e-07, Final residual = 2.25426023445e-09, No Iterations 1\nGAMG:  Solving for p, Initial residual = 2.22032072281e-06, Final residual = 1.78251793832e-08, No Iterations 4\nGAMG:  Solving for p, Initial residual = 1.6363611105e-07, Final residual = 9.78762738447e-10, No Iterations 7\nGAMG:  Solving for p, Initial residual = 4.6116654893e-08, Final residual = 6.18014716049e-10, No Iterations 4\ntime step continuity errors : sum local = 9.57157051359e-10, global = -3.57250380029e-11, cumulative = 1.00663575548e-06\nsmoothSolver:  Solving for omega, Initial residual = 1.65947400724e-08, Final residual = 5.04973819137e-10, No Iterations 1\nsmoothSolver:  Solving for k, Initial residual = 6.73547345842e-08, Final residual = 2.63187265774e-09, No Iterations 1\nExecutionTime = 756.52 s  ClockTime = 758 s\n\nyPlus yPlus write:\n    writing field yPlus\n    patch wall_0 y+ : min = 3.60228720663, max = 24.5516463599, average = 14.9365631842\nforceCoeffs forces write:\n    Coefficient\tTotal\tPressure\tViscous\tInternal\n    Cd:\t0.0137050114791\t0.00427888927959\t0.00942612219946\t0\n    Cd(f):\t0.00482797355355\t0.000116402094894\t0.00471157145866\t0\n    Cd(r):\t0.0088770379255\t0.00416248718469\t0.0047145507408\t0\n    Cl:\t0.202453218597\t0.20230425449\t0.000148964107225\t0\n    Cl(f):\t0.0494943821901\t0.0491402427187\t0.000354139471382\t0\n    Cl(r):\t0.152958836407\t0.153164011771\t-0.000205175364157\t0\n    CmPitch:\t-0.0517322271086\t-0.0520118845263\t0.00027965741777\t0\n    CmRoll:\t-0.00202453218597\t-0.0020230425449\t-1.48964107225e-06\t0\n    CmYaw:\t0.000137050114791\t4.27888927959e-05\t9.42612219946e-05\t0\n    Cs:\t2.65425162343e-20\t2.69481686717e-20\t-4.05652437394e-22\t0\n    Cs(f):\t0.000137050114791\t4.27888927959e-05\t9.42612219946e-05\t0\n    Cs(r):\t-0.000137050114791\t-4.27888927959e-05\t-9.42612219946e-05\t0\n\n    writing force and moment coefficient files.\n\nfieldMinMax extrema write:\n    min(mag(U)) = 0 in cell 137772 at location (0.0001432808 0.00116611455 0.01)\n    max(mag(U)) = 19.1302504576 in cell 135995 at location (0.204006480854 0.078245443131 0.01)\n    min(k) = 0.00877230826968 in cell 61095 at location (1.4961774003 1.0145615181 0.01)\n    max(k) = 3.0755388495 in cell 137824 at location (0.112264906832 -0.0396249176382 0.01)\n    min(nut) = 1.1389552075e-07 in cell 137346 at location (0.9987915025 -0.000713334325 0.01)\n    max(nut) = 0.0024783050298 in cell 26226 at location (1.4961774003 -0.00110604369609 0.01)\n    min(omega) = 65.0327515652 in cell 61095 at location (1.4961774003 1.0145615181 0.01)\n    max(omega) = 30679.3067092 in cell 108435 at location (0.999594026659 0.000130479669339 0.01)\n    min(p) = -69.7746708385 in cell 137677 at location (0.204464501095 0.0733601684521 0.01)\n    max(p) = 120.73248658 in cell 137772 at location (-0.000174227582948 0.00116932287043 0.01)\n\nsurfaceFieldValue flux_left write:\n    sum(left) of phi = -0.6000251442\n\nsurfaceFieldValue flux_right write:\n    sum(right) of phi = 0.600025144197\n\nsurfaceFieldValue flux_top write:\n    sum(top) of phi = 0\n\nsurfaceFieldValue flux_bottom write:\n    sum(bottom) of phi = 0\n\nEnd\n\n",
+  "finalYPlusLog": "/*---------------------------------------------------------------------------*\\\n| =========                 |                                                 |\n| \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |\n|  \\\\    /   O peration     | Version:  2606                                  |\n|   \\\\  /    A nd           | Website:  www.openfoam.com                      |\n|    \\\\/     M anipulation  |                                                 |\n\\*---------------------------------------------------------------------------*/\nBuild  : _481094f-20260618 OPENFOAM=2606 version=2606\nArch   : \"LSB;label=32;scalar=64\"\nExec   : simpleFoam -case /home/openfoam/workingDir/case -postProcess -func yPlus -latestTime\nDate   : Sep 12 2026\nTime   : 14:07:40\nHost   : 3a74c4f2a241\nPID    : 1\nI/O    : uncollated\nCase   : /home/openfoam/workingDir/case\nnProcs : 1\ntrapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).\nmemory pool : not available\nfileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)\n\n--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.\n                   This can be a security risk if running untrusted cases\n                   through e.g. 'coded' on-the-fly-compilation functionality.\n\n// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //\nCreate time\n\nCreate mesh for time = 3500\n\n\nSIMPLE: convergence criteria\n    field p\t tolerance 1e-06\n    field U\t tolerance 1e-06\n    field k\t tolerance 1e-06\n    field omega\t tolerance 1e-06\n\nTime = 3500\nReading field p\n\nReading field U\n\nReading/calculating face flux field phi\n\nSelecting incompressible transport model Newtonian\nSelecting turbulence model type RAS\nSelecting RAS turbulence model kOmegaSST\nSelecting patchDistMethod meshWave\nRAS\n{\n    RASModel        kOmegaSST;\n    turbulence      on;\n    printCoeffs     on;\n    alphaK1         0.85;\n    alphaK2         1;\n    alphaOmega1     0.5;\n    alphaOmega2     0.856;\n    gamma1          0.555555555556;\n    gamma2          0.44;\n    beta1           0.075;\n    beta2           0.0828;\n    betaStar        0.09;\n    a1              0.31;\n    b1              1;\n    c1              10;\n    F3              false;\n    decayControl    false;\n    kInf            0;\n    omegaInf        0;\n}\n\nNo MRF models present\n\nNo finite volume options present\nyPlus yPlus write:\n    writing field yPlus\n    patch wall_0 y+ : min = 3.60228720663, max = 24.5516463599, average = 14.9365631842\n\nEnd\n\n",
+  "numericalBoundingMessages": [],
+  "limitations": [
+    "Existing outer boundaries only about 0.5 chord upstream and downstream; slip top/bottom: confined flow, not free-air aerodynamic validation.",
+    "Steady fully turbulent SST mean field; no transition or resolved unsteady eddies.",
+    "Wall yPlus area-weighted mean 14.9586 with only four requested layers; no wall-resolved SST accuracy claim.",
+    "Expanded checkMesh fails one check: 2720 concave cells; not hidden or repaired in this run.",
+    "Visible wall Cp spikes remain; geometry has 80 polyline vertices, but spike cause is not established by this run.",
+    "No grid/domain independence or experimental validation; Cl/Cd are trial values only.",
+    "Cp uses outlet gauge pressure zero, not independently measured upstream free-stream pressure.",
+    "CmPitch uses actual forceCoeffs header pitchAxis=(0,0,-1)."
+  ],
+  "excludedTrial": "outputs/airfoil-rans-Re1e6-run: initial high inlet eddy-viscosity setup deliberately stopped; none of its fields or histories enters this result.",
+  "rootVerification": [
+    "five source/copy polyMesh SHA256 unchanged before and after solve",
+    "3500 saved fields and first residuals match final raw SIMPLE block",
+    "all 140305 cell arrays finite; no negative k/omega/nut",
+    "final yPlus independently area weighted and cross checked against OpenFOAM postProcess",
+    "all four PNGs visually inspected; Cp spikes retained",
+    "two scripts py_compile and git diff --check; no production C++/frontend changes or claimed rerun of their suites"
+  ],
+  "scriptSha256": {
+    "tools/verification/run_airfoil_rans.py": "74775f4a12a91e8ebcdab17ce2ff0f46ed6c3c059b20984f0c420c1432bc74f8",
+    "tools/visualization/render_airfoil_rans.py": "6c2af2373b02dd0dad4b7991d46d367bc426f975d0155587f7ee2ee5ca701134"
+  }
+}

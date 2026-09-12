@@ -81,6 +81,21 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 ## CFD 验证
 
+既有高密翼型的高雷诺数试算使用 `tools/verification/run_airfoil_rans.py`：复制现有 `constant/polyMesh`，先跑标准与扩展 checkMesh，再运行 SST 稳态 RANS。它是固定约 1 m 弦长、六个命名 patch 的受限域试验工具；不重新生成网格，也不自动配置任意几何。
+
+```sh
+python3 tools/verification/run_airfoil_rans.py --source outputs/engineering-hybrid-final-high/naca/openfoam --output outputs/airfoil-rans-new
+# 如残差尚未达到原停止条件，从最后写出的场继续，保持网格与容差：
+python3 tools/verification/run_airfoil_rans.py --source outputs/engineering-hybrid-final-high/naca/openfoam --output outputs/airfoil-rans-new --resume --end-iteration 2500
+# 本次正式试算的最后上限为 3500，未达停止条件仍如实记录，不无限续算：
+python3 tools/verification/run_airfoil_rans.py --source outputs/engineering-hybrid-final-high/naca/openfoam --output outputs/airfoil-rans-new --resume --end-iteration 3500
+MPLCONFIGDIR=/tmp/cartmesh-airfoil-mpl python3 tools/visualization/render_airfoil_rans.py outputs/airfoil-rans-new
+```
+
+要求本地 Docker 中已有 `opencfd/openfoam-run:2606`；绘图另需 NumPy、Matplotlib、Pillow。新算例目录必须不存在，续算需显式 `--resume`。入口 15 m/s、nu=1.5e-5、参考 Re=1e6、攻角 0°、湍强 1%、入口湍粘比初估 10；SST 配 Spalding/omega 壁函数。前 200 步用 upwind 初始化，之后 U 用 linearUpwind，k/omega 仍用 upwind，不能称全二阶格式。标准 checkMesh 未通过则不启动求解；扩展检查、进程完成、残差与力系数收敛分别记录。
+
+这个已有翼型域上游和下游都只有约 0.5c，上下边界是 slip；所得升阻力不是自由远场验证。后处理直接按 OpenFOAM owner 对齐最终场与单元多边形，保留完整字段范围，记录首个压力方程的初始残差、力系数历史及输出坐标轴、通量平衡、出口回流及 yPlus，输出速度/Cp、流线和历史图，不自动授予质量 PASS。Cp 默认以出口表压零点为参考，图中明确标注；不是标准上游自由流静压参考。完整算例中的 `airfoil.foam` 可由 ParaView 打开；本轮实测数据见 CURRENT_STATE。
+
 两路径的相对尺寸旗标：`--reference-length <m>`、`--wall-relative-size <h/Lref>`、
 `--background-relative-size <h/Lref>`、`--far-field-spans <padding/Lref>`、`--cells-per-level <n>`。
 Hybrid 另加 `--first-layer-relative-size <height/Lref>`；挤出厚度的旧位置参数仍为米。
