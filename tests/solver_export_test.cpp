@@ -3,6 +3,8 @@
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 #include "repro/source_halo_circle_patch.hpp"
+#include "repro/nozzle_determinant_corner.hpp"
+#include "repro/nozzle_nonorth_patch.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -147,6 +149,88 @@ void nozzleShortFaceRegression() {
     }
 }
 
+void targetNonorthogonalityRegression() {
+    auto polygons=nozzleNonorthPolygons();
+    const auto outline=nozzleNonorthOutline();
+    std::vector<CutCell2D> cells;
+    for (const auto& polygon:polygons) cells.push_back(polygonCell(cells.size(),polygon.vertices));
+    const BoundaryRegion2D boundary{BoundaryLoop(outline.vertices)};
+    const Domain2D domain{boundary.bounds()};
+    const auto mesh=buildGlobalTopology(cells,domain,boundary);
+    SolverQualityPolicy2D policy;policy.maxNonOrthogonalityDeg=65.0;
+    const auto before=evaluateSolverQuality2D(mesh,policy);
+    check(!improveSolverForTargetPolicy2D(mesh,domain,boundary,{true},policy).valid(),
+          "target repair rejects a truncated immutable mask before indexing");
+    const auto repaired=improveSolverForTargetPolicy2D(mesh,domain,boundary,nozzleNonorthLocked(),policy);
+    const auto after=evaluateSolverQuality2D(repaired.topology,policy);
+    check(mesh.valid() && repaired.valid() && !before.valid() && after.valid(),
+          "real nozzle transition face is repaired against target 65 degrees");
+    check(repaired.repartitionCount>0U,"target repair changes actual topology");
+    double a=0.0,b=0.0;
+    for (const auto& cell:mesh.cells) a+=cell.geometryArea;
+    for (const auto& cell:repaired.topology.cells) b+=cell.geometryArea;
+    check(std::abs(a-b)<1e-9*a,"target repair preserves fluid area");
+    const auto frozen=improveSolverForTargetPolicy2D(mesh,domain,boundary,
+        std::vector<bool>(cells.size(),true),policy);
+    check(frozen.valid() && frozen.repartitionCount==0U &&
+          evaluateSolverQuality2D(frozen.topology,policy).issues.size()==before.issues.size(),
+          "target repair reports immutable unresolved defects without hiding them");
+}
+
+void extrudedDeterminantRegression() {
+    check(std::abs(extrudedCellDeterminant2D(Polygon2D{{{0,0},{1,0},{1,1},{0,1}}},1.0)-1.0)<1e-14,
+          "all-face determinant is one for a cube");
+    for (const double scale:{0.001,1.0,1000.0}) {
+        auto polygons=nozzleCornerPolygons();
+        auto outline=nozzleCornerOutline();
+        for (auto& polygon:polygons) for (auto& point:polygon.vertices) {
+            point.x*=scale;point.y*=scale;
+        }
+        for (auto& point:outline.vertices) {point.x*=scale;point.y*=scale;}
+        std::vector<CutCell2D> cells;
+        for (const auto& polygon:polygons) cells.push_back(polygonCell(cells.size(),polygon.vertices));
+        const BoundaryRegion2D boundary{BoundaryLoop(outline.vertices)};
+        const Domain2D domain{boundary.bounds()};
+        const auto mesh=buildGlobalTopology(cells,domain,boundary);
+        const auto locked=nozzleCornerLocked();
+        const double actual=extrudedCellDeterminant2D(polygons[4],.02*scale);
+        check(std::abs(actual-0.0009174216495895775)<1e-12,
+              "real nozzle corner matches independently measured OpenFOAM all-face determinant across scales");
+        SolverQualityPolicy2D policy;policy.maxNonOrthogonalityDeg=65.0;
+        const auto repaired=improveSolverExtrudedDeterminant2D(mesh,domain,boundary,locked,.02*scale,policy);
+        check(mesh.valid() && repaired.valid() && repaired.repartitionCount>0U &&
+              repaired.topology.cells.size()<mesh.cells.size(),
+              "actual nozzle corner is repaired through exact union");
+        double beforeArea=0.0,afterArea=0.0;
+        for (const auto& cell:mesh.cells) beforeArea+=cell.geometryArea;
+        for (const auto& cell:repaired.topology.cells) {
+            afterArea+=cell.geometryArea;
+            Polygon2D polygon;
+            for (const auto id:cell.vertices) polygon.vertices.push_back(repaired.topology.vertices[id].point);
+            check(extrudedCellDeterminant2D(polygon,.02*scale)>=0.001,
+                  "repaired corner keeps all-face determinant above unchanged target");
+        }
+        check(std::abs(beforeArea-afterArea)<1e-9*beforeArea,
+              "corner repair retains fluid area");
+        for (std::size_t i=0;i<locked.size();++i) if (locked[i]) {
+            const auto found=std::find_if(repaired.topology.cells.begin(),repaired.topology.cells.end(),
+                [&](const auto& cell){return cell.sourceLineage==std::vector<std::size_t>{i};});
+            bool same=found!=repaired.topology.cells.end();
+            if (same) for (const auto vertex:mesh.cells[i].vertices) {
+                const auto p=mesh.vertices[vertex].point;
+                same=same && std::any_of(found->vertices.begin(),found->vertices.end(),[&](auto id) {
+                    const auto q=repaired.topology.vertices[id].point;return p.x==q.x && p.y==q.y;
+                });
+            }
+            check(same,"corner repair retains locked wall geometry and provenance");
+        }
+        const auto frozen=improveSolverExtrudedDeterminant2D(mesh,domain,boundary,
+            std::vector<bool>(cells.size(),true),.02*scale,policy);
+        check(frozen.valid() && frozen.repartitionCount==0U,
+              "all-locked corner stays unresolved rather than losing wall cells");
+    }
+}
+
 void directionalRepairRegression() {
     // Eight actual cells around NACA140306 cell108446. Two disconnected
     // unchanged rectangles provide volume ratio .04, representing the full
@@ -230,6 +314,8 @@ void directionalRepairRegression() {
 } // namespace
 
 int main() {
+    targetNonorthogonalityRegression();
+    extrudedDeterminantRegression();
     directionalRepairRegression();
     {
         check(directionalDeterminant2D({})==0.0 &&

@@ -46,8 +46,8 @@ struct PatchLocalQuality2D {
     double maximumShortFaceSeverity = 0.0;
     double totalShortFaceSeverity = 0.0;
 
-    // Q1 hard-contract counts kept separate from the legacy solver-safety
-    // policy.  Q3 ranks these without changing SolverQualityPolicy2D.
+    // Repair-target counts kept separate from the Solver acceptance policy.
+    // Termination repair ranks these without changing SolverQualityPolicy2D.
     std::size_t hardVolumeRatioCount = 0;
     double maximumVolumeRatioSeverity = 0.0;
     double totalVolumeRatioSeverity = 0.0;
@@ -142,7 +142,7 @@ static_assert(!patchLocalShortFaceImprovementImpliesGlobal(
     const PatchLocalQuality2D& candidate,const PatchLocalQuality2D& base,
     const SolverQualityReport2D& globalBaseline) noexcept;
 
-// Q3 gate: targeted Q1 face-weight/volume-ratio hard counts may improve, while
+// Termination-repair gate: targeted face-weight/volume-ratio counts may improve, while
 // the dimensionless short-face score and every non-target solver metric remain
 // no worse.  Each targeted count is independently non-increasing.
 [[nodiscard]] bool patchLocalTerminationQualityNoWorse2D(

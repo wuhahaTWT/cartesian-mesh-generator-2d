@@ -42,8 +42,8 @@ test('the pure path argv is the one that was verified against the CLI', () => {
     '--cells-per-level', '3', '--far-level', '0', '--max-safe-wall-level', '11']);
 });
 
-// The CLI only builds the solver partition, evaluates solver quality and rates Q1
-// inside `if (openFoamCase)`.  Dropping the case directory silently drops every gate.
+// The pure CLI builds and evaluates its solver partition inside `if (openFoamCase)`.
+// Dropping the case directory would also drop the desktop Solver report.
 test('a case directory is always requested so the quality report exists', () => {
   const { job } = validateJob(cutcell());
   assert.equal(buildInvocation(job, paths).args.includes('/out/body-openfoam'), true);

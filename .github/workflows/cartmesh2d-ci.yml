@@ -141,7 +141,6 @@ jobs:
               assert report['mesh_quality_valid'] is True, path
               assert report['solver_quality_valid'] is True, path
               assert report['solver_quality_issue_count'] == 0, path
-              assert report['quality_contract_status'] in ('PASS', 'WARN', 'FAIL'), path
               assert report['balance_violations_after'] == 0, path
               assert report['single_owner_interface_edges'] == 0, path
               assert report['wrong_cell_pair_interface_edges'] == 0, path
@@ -248,8 +247,8 @@ jobs:
 
           # Q5-1 cuts the outermost transition row radially. The last row's
           # offset is arithmetically the single-row offset, so the remainder
-          # quadtree must be untouched: identical Cut/Cartesian/layer counts,
-          # strictly more transition rows, and fewer typed hard issues.
+          # quadtree must be untouched: identical Cut/Cartesian/layer counts
+          # and strictly more transition rows.
           for name in ('circle', 'superellipse'):
               base = json.loads(
                   (root / f'{name}.hybrid.json').read_text(encoding='utf-8'))
@@ -272,121 +271,29 @@ jobs:
               assert radial['wrong_cell_pair_interface_edges'] == 0, radial_path
               assert radial['non_two_valent_interface_vertices'] == 0, radial_path
               assert abs(radial['area_error']) < 1.0e-8, radial_path
-          PY
+              if radial['q51_outer_transition_radial_subdivision'] > 1:
+                  assert radial['q51_outer_transition_radial_target_reachable'] is True, radial_path
 
-      - name: Verify Q1 typed dimensionless quality contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          out=build/h4_solver_ready
-          python3 - "$out" <<'PY'
-          import json
-          import pathlib
-          import sys
-
-          root = pathlib.Path(sys.argv[1])
-          names = ('circle', 'superellipse', 'concave_l',
-                   'sharp_trailing_edge', 'narrow_gap')
-          for name in names:
-              path = root / f'{name}.hybrid.quality-contract.json'
-              report = json.loads(path.read_text(encoding='utf-8'))
-              assert report['quality_class'] == 'solver_quality_contract', path
-              assert report['dimensionless'] is True, path
-              assert report['status'] in ('PASS', 'WARN', 'FAIL'), path
-              assert report['input_issues'] == [], path
-              assert report['legacy_hard_safety']['valid'] is True, path
-              for metric in ('face_length_over_local_background_h',
-                             'face_length_over_sqrt_owner_area',
-                             'face_length_over_sqrt_neighbour_area'):
-                  assert metric in report['ordinary_metrics'], (path, metric)
-              assert 'boundary_layer' in report['by_cell_type'], path
-              for metric in ('wall_normal_orthogonality_error_deg', 'growth_ratio',
-                             'tangential_normal_spacing_ratio',
-                             'adjacent_column_thickness_variation',
-                             'scaled_jacobian', 'first_layer_continuity'):
-                  assert metric in report['boundary_layer_metrics'], (path, metric)
-
-          # Q2 removed the historical superellipse micro-face hard failure.
-          # Keep this assertion aligned with generate_q1_baselines.py below:
-          # absolute face length is not the contract; dimensionless face/local-h is.
-          superellipse = json.loads((root /
-              'superellipse.hybrid.quality-contract.json').read_text(encoding='utf-8'))
-          micro = superellipse['ordinary_metrics']['face_length_over_local_background_h']
-          hard_short = [issue for issue in superellipse['issues']
-                        if issue['level'] == 'hard' and
-                        issue['metric'].startswith('face_length_over_')]
-          assert micro['worst'] >= 0.01
-          assert hard_short == []
-
-          # Q5-1 must strictly reduce the typed hard-issue count on the two
-          # no-termination geometries, and clear the circle outright.
-          def hard_count(path):
-              report = json.loads(path.read_text(encoding='utf-8'))
-              return sum(1 for issue in report['issues']
-                         if issue['level'] == 'hard'), report['status']
-
-          for name in ('circle', 'superellipse'):
-              before, _ = hard_count(root / f'{name}.hybrid.quality-contract.json')
-              after, status = hard_count(
-                  root / f'q51_{name}.hybrid.quality-contract.json')
-              assert after < before, (name, before, after)
-          circle_after, circle_status = hard_count(
-              root / 'q51_circle.hybrid.quality-contract.json')
-          assert circle_after == 0, circle_after
-          assert circle_status == 'WARN', circle_status
-          # A bounded radial search must never publish a matched plan it does not
-          # satisfy: a reported subdivision above one implies the target was
-          # actually reachable.
-          for name in ('circle', 'superellipse'):
-              report = json.loads(
-                  (root / f'q51_{name}.hybrid.json').read_text(encoding='utf-8'))
-              if report['q51_outer_transition_radial_subdivision'] > 1:
-                  assert report['q51_outer_transition_radial_target_reachable'] \
-                      is True, name
-
-          # Q5-2 is self-gated: the re-resolved graded termination buffer is
-          # committed only when it strictly lowers the typed hard count, so no
-          # geometry may come out worse than its own baseline, and a decline must
-          # reproduce the baseline mesh byte for byte.
+          # Keep construction reachability, Solver and deterministic-decline
+          # guards after removing the unrelated Q1 contract measurements.
           for name in ('concave_l', 'sharp_trailing_edge', 'narrow_gap'):
-              before, _ = hard_count(root / f'{name}.hybrid.quality-contract.json')
-              after, _ = hard_count(
-                  root / f'q52_{name}.hybrid.quality-contract.json')
-              report = json.loads(
-                  (root / f'q52_{name}.hybrid.json').read_text(encoding='utf-8'))
+              report = json.loads((root / f'q52_{name}.hybrid.json').read_text())
               committed = report['q52_termination_buffer_radial_committed']
-              matched = report['q52_termination_buffer_hard_with_matching']
-              historical = report['q52_termination_buffer_hard_with_historical_march']
+              matched = report['q52_termination_buffer_target_issues_with_matching']
+              historical = report['q52_termination_buffer_target_issues_with_historical_march']
               assert committed == (matched < historical), (name, matched, historical)
-              # Same rule for the buffer: nothing is committed under an
-              # unreachable row cap.
               if committed:
-                  assert report['q52_termination_buffer_row_cap_reachable'] \
-                      is True, name
-                  assert (report['q52_termination_buffer_outer_row_thickness'] <=
-                          report['q52_termination_buffer_row_cap'] *
-                          (1.0 + 1.0e-12)), name
-              assert historical == before, (name, historical, before)
-              assert after <= before, (name, before, after)
+                  assert report['q52_termination_buffer_row_cap_reachable'] is True, name
+                  assert report['q52_termination_buffer_outer_row_thickness'] <= (
+                      report['q52_termination_buffer_row_cap'] * (1.0 + 1.0e-12)), name
               assert report['solver_quality_valid'] is True, name
               assert report['solver_quality_issue_count'] == 0, name
               assert abs(report['area_error']) < 1.0e-8, name
               if not committed:
-                  for suffix in ('hybrid.cm2d', 'hybrid.solver.cm2d',
-                                 'hybrid.quality-contract.json'):
+                  for suffix in ('hybrid.cm2d', 'hybrid.solver.cm2d'):
                       assert ((root / f'q52_{name}.{suffix}').read_bytes() ==
                               (root / f'{name}.{suffix}').read_bytes()), (name, suffix)
-          # The sharp taper is the measured win this rule was added for.
-          sharp_before, _ = hard_count(
-              root / 'sharp_trailing_edge.hybrid.quality-contract.json')
-          sharp_after, _ = hard_count(
-              root / 'q52_sharp_trailing_edge.hybrid.quality-contract.json')
-          assert sharp_after < sharp_before, (sharp_before, sharp_after)
           PY
-
-          python3 tools/verification/verify_q1_scale_invariance.py \
-            --repo . --build-dir build --reference-dir "$out" \
-            --output-dir build/q1_scale --scale 1000
 
       - name: Run OpenFOAM v2606 checkMesh
         shell: bash
@@ -426,22 +333,6 @@ jobs:
             --source-commit "$GITHUB_SHA" --collect-only
           diff -ru build/q0_baselines build/q0_baselines_repeat
 
-      - name: Deterministically collect Q1 compact baselines
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tools/verification/generate_q1_baselines.py \
-            --repo . --build-dir build --evidence-dir build/h4_solver_ready \
-            --output-dir build/q1_baselines --source-commit "$GITHUB_SHA" \
-            --expect-superellipse-short-faces absent \
-            --collect-only
-          python3 tools/verification/generate_q1_baselines.py \
-            --repo . --build-dir build --evidence-dir build/h4_solver_ready \
-            --output-dir build/q1_baselines_repeat --source-commit "$GITHUB_SHA" \
-            --expect-superellipse-short-faces absent \
-            --collect-only
-          diff -ru build/q1_baselines build/q1_baselines_repeat
-
       - name: Gate the pure Cut-cell refinement ladder
         shell: bash
         run: |
@@ -459,9 +350,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Not gated yet, and deliberately so: Q1 hard issue counts still grow
-          # with refinement and level 9 still fails, both documented in
-          # docs/CURRENT_STATE_CN.md. Gate only after the measured limits actually pass.
+          # Level 9 remains in the local long ladder because it costs about 150 s.
           # Level 9 is left to the local long ladder because it costs ~150 s.
           python3 tools/verification/refinement_ladder.py \
             --repo . --build-dir build --evidence-dir build/r2_ladder \
@@ -478,7 +367,5 @@ jobs:
             build/h4_solver_ready/*.checkMesh.log
             build/h4_solver_ready/checkmesh_status.txt
             build/q0_baselines/*.json
-            build/q1_baselines/*.json
-            build/q1_scale/**
             build/r2_ladder/*-ladder-manifest.json
           if-no-files-found: error

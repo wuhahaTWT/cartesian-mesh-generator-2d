@@ -355,7 +355,7 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
     Point2D p=raw;
     if (line.axis==0U) p.x=target; else p.y=target;
     // Only incident endpoints or this support's grid corner may absorb the
-    // offset. No nearest-feature search or Q1-sized movement occurs.
+    // offset. No nearest-feature search or local-face-sized movement occurs.
     //
     // R2/W1: the budget is policy_.gridCornerWeldFractionOfLocalH, which defaults
     // to the same roundoff value this used to hard-code. A caller that opts into a

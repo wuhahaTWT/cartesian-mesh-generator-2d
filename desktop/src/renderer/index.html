@@ -10,9 +10,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="titlebar"><span>CartMesh2D</span><label class="theme-control">外观 <select id="appTheme" aria-label="界面主题"><option value="modern">现代简约</option><option value="duet">少女与木偶 · 科研终端</option></select></label></div>
+<div class="titlebar">
+  <button id="toggleSidebar" class="sidebar-toggle" type="button" aria-controls="settingsPanel" aria-expanded="true" title="隐藏设置侧栏（⌘B / Ctrl+B）" aria-label="隐藏设置侧栏">
+    <svg aria-hidden="true" viewBox="0 0 20 20" focusable="false"><path d="M3 4.5h14M3 15.5h14M7 4.5v11M3 4.5v11"/></svg>
+  </button>
+  <span>CartMesh2D</span>
+  <label class="theme-control">外观 <select id="appTheme" aria-label="界面主题"><option value="modern">现代简约</option><option value="duet">科研终端</option></select></label>
+</div>
 <main class="shell">
-  <aside class="panel">
+  <aside class="panel" id="settingsPanel">
     <header class="brand">
       <span class="mark">C2</span>
       <span><b>CartMesh2D</b><i>二维网格工作台 · 0.3</i></span>
@@ -200,7 +206,7 @@
     </div>
     <div class="canvasWrap" id="canvasWrap">
       <canvas id="canvas"></canvas>
-      <div id="empty" class="empty"><b>从一个轮廓开始</b><i>选择样例或导入几何，设置数量，再生成网格。</i><span class="duet-signature">哥伦比娅 × 桑多涅</span></div>
+      <div id="empty" class="empty"><b>从一个轮廓开始</b><i>选择样例或导入几何，设置数量，再生成网格。</i></div>
       <div id="legend" class="legend" hidden></div>
     </div>
     <div class="results">

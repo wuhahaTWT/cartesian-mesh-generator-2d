@@ -1084,7 +1084,7 @@ struct RepartitionProposal2D {
     const TopologyMesh2D& topology,const std::vector<std::size_t>& halo,
     const std::vector<std::size_t>& removedCells,
     const std::vector<Polygon2D>& replacementPieces,
-    const TolerancePolicy& tol) {
+    const TolerancePolicy& tol,const SolverQualityPolicy2D& policy = {}) {
     if (removedCells.empty() || replacementPieces.empty() ||
         !std::is_sorted(removedCells.begin(),removedCells.end()) ||
         !std::is_sorted(halo.begin(),halo.end())) return std::nullopt;
@@ -1108,7 +1108,7 @@ struct RepartitionProposal2D {
     }
     const auto patch=buildGlobalTopology(cells,domain,*boundary,tol);
     if (!patch.valid()) return std::nullopt;
-    const auto quality=evaluateSolverQuality2D(patch,{},tol);
+    const auto quality=evaluateSolverQuality2D(patch,policy,tol);
     SolverQualityReport2D filtered;
     filtered.policy=quality.policy;
     double physicalBoundarySkewness=0.0;
@@ -1292,9 +1292,10 @@ template<class Proposal>
 
 [[nodiscard]] SolverQualityReport2D timedFullQuality(
     const TopologyMesh2D& topology,const TolerancePolicy& tol,
-    SolverTopologyProfile2D* profile,bool candidate) {
+    SolverTopologyProfile2D* profile,bool candidate,
+    const SolverQualityPolicy2D& policy = {}) {
     const auto start=ProfileClock::now();
-    auto quality=evaluateSolverQuality2D(topology,{},tol);
+    auto quality=evaluateSolverQuality2D(topology,policy,tol);
     if (profile) {
         const double elapsed=profileSeconds(start);
         profile->fullQualitySeconds+=elapsed;
@@ -1314,7 +1315,8 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
     const TopologyMesh2D& topology,const Domain2D& domain,
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol,
     SolverTopologyProfile2D* profile,bool useBatch,
-    const std::vector<bool>& initialImmutableCells={},bool allowCollinear=false) {
+    const std::vector<bool>& initialImmutableCells={},bool allowCollinear=false,
+    const SolverQualityPolicy2D& policy = {}) {
     SolverLocalRepartitionResult2D result;
     result.topology=topology;
     result.immutableCells=initialImmutableCells;
@@ -1323,7 +1325,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         return result;
     }
     for (std::size_t iteration=0;iteration<128;++iteration) {
-        const auto quality=timedFullQuality(result.topology,tol,profile,false);
+        const auto quality=timedFullQuality(result.topology,tol,profile,false,policy);
         if (quality.valid()) break;
         if (profile) ++profile->repartitionIterations;
         const auto generationStart=ProfileClock::now();
@@ -1361,10 +1363,10 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 const std::vector<std::size_t> removed{first,second};
                 const auto baseRank=localReplacementQualityRank(result.topology,halo,removed,
                     {topologyCellPolygon(result.topology,first),
-                     topologyCellPolygon(result.topology,second)},tol);
+                     topologyCellPolygon(result.topology,second)},tol,policy);
                 const auto consider=[&](std::vector<Polygon2D> pieces) {
                     auto rank=localReplacementQualityRank(
-                        result.topology,halo,removed,pieces,tol);
+                        result.topology,halo,removed,pieces,tol,policy);
                     if (!rank) return;
                     if (baseRank) rankRelativeToBase(*rank,*baseRank);
                     RepartitionProposal2D proposal;
@@ -1414,7 +1416,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     result.immutableCells);
                 if (candidate.topology.valid()) {
                     const auto candidateQuality=timedFullQuality(
-                        candidate.topology,tol,profile,true);
+                        candidate.topology,tol,profile,true,policy);
                     if (betterQualityScore(qualityScore(candidateQuality),qualityScore(quality))) {
                         result.topology=std::move(candidate.topology);
                         result.immutableCells=std::move(candidate.immutableCells);
@@ -1464,7 +1466,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     profile,result.immutableCells);
                 if (candidate.topology.valid()) {
                     const auto candidateQuality=timedFullQuality(
-                        candidate.topology,tol,profile,true);
+                        candidate.topology,tol,profile,true,policy);
                     const auto candidateScore=qualityScore(candidateQuality);
                     if (betterQualityScore(candidateScore,bestScore)) {
                         bestScore=candidateScore;
@@ -1485,7 +1487,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                                                result.immutableCells);
                 if (!candidate.topology.valid()) continue;
                 const auto candidateQuality=timedFullQuality(
-                    candidate.topology,tol,profile,true);
+                    candidate.topology,tol,profile,true,policy);
                 const auto candidateScore=qualityScore(candidateQuality);
                 if (betterQualityScore(candidateScore,bestScore)) {
                     bestScore=candidateScore;
@@ -1510,7 +1512,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                         firstPiece,secondPiece,domain,boundary,tol,profile,result.immutableCells);
                     if (!candidate.topology.valid()) continue;
                     const auto candidateScore=qualityScore(timedFullQuality(
-                        candidate.topology,tol,profile,true));
+                        candidate.topology,tol,profile,true,policy));
                     if (betterQualityScore(candidateScore,bestScore)) {
                         bestScore=candidateScore;
                         bestTopology=std::move(candidate);
@@ -1543,7 +1545,7 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                     profile,result.immutableCells);
                 if (!candidate.topology.valid()) continue;
                 const auto candidateScore=qualityScore(timedFullQuality(
-                    candidate.topology,tol,profile,true));
+                    candidate.topology,tol,profile,true,policy));
                 if (betterQualityScore(candidateScore,bestScore)) {
                     bestScore=candidateScore;
                     bestTopology=std::move(candidate);
@@ -1557,10 +1559,10 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         if (profile) ++profile->acceptedRepartitions;
         if (profile) ++profile->acceptedTopologyCommitCount;
     }
-    if (!allowCollinear && !evaluateSolverQuality2D(result.topology,{},tol).valid()) {
+    if (!allowCollinear && !evaluateSolverQuality2D(result.topology,policy,tol).valid()) {
         auto alternate=repartitionSolverTopologyByQualityImpl(
-            topology,domain,boundary,tol,profile,useBatch,initialImmutableCells,true);
-        if (alternate.valid() && evaluateSolverQuality2D(alternate.topology,{},tol).valid())
+            topology,domain,boundary,tol,profile,useBatch,initialImmutableCells,true,policy);
+        if (alternate.valid() && evaluateSolverQuality2D(alternate.topology,policy,tol).valid())
             return alternate;
     }
     return result;
@@ -1619,6 +1621,20 @@ repartitionSolverTopologyByQualitySequentialReference2D(
     const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
     return repartitionSolverTopologyByQualityImpl(
         topology,domain,boundary,tol,nullptr,false);
+}
+
+SolverLocalRepartitionResult2D improveSolverForTargetPolicy2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    const SolverQualityPolicy2D& policy,const TolerancePolicy& tol) {
+    if (!immutableCells.empty() && immutableCells.size()!=topology.cells.size()) {
+        SolverLocalRepartitionResult2D invalid;
+        invalid.topology=topology;
+        invalid.issues.push_back("target solver repair requires one immutable flag per cell");
+        return invalid;
+    }
+    return repartitionSolverTopologyByQualityImpl(
+        topology,domain,boundary,tol,nullptr,true,immutableCells,true,policy);
 }
 
 SolverShortFaceRepairResult2D repairSolverShortFaces2D(
@@ -2866,6 +2882,105 @@ SolverTerminationQualityRepairResult2D repairSolverTerminationQuality2D(
     result.patchOutsideStableIdsUnchanged=outsideStable;
     result.localDeltaMatchesGlobalOracle=committed.deltaMatchesGlobalOracle;
     result.repairSeconds=profileSeconds(repairStart);
+    return result;
+}
+
+double extrudedCellDeterminant2D(const Polygon2D& polygon,double thickness) {
+    if (!(thickness>0.0) || !std::isfinite(thickness) || polygon.vertices.size()<3U)
+        return std::numeric_limits<double>::quiet_NaN();
+    double scale=thickness;
+    std::vector<Vector2D> edges;
+    for (std::size_t i=0;i<polygon.vertices.size();++i) {
+        const auto edge=polygon.vertices[(i+1U)%polygon.vertices.size()]-polygon.vertices[i];
+        const double length=std::hypot(edge.x,edge.y);
+        if (!(length>0.0)) return std::numeric_limits<double>::quiet_NaN();
+        scale=std::max(scale,length);
+        edges.push_back(edge);
+    }
+    std::vector<double> lengths;
+    double perimeter=0.0;
+    for (auto& edge:edges) {
+        edge=edge*(1.0/scale);
+        lengths.push_back(std::hypot(edge.x,edge.y));
+        perimeter+=lengths.back();
+    }
+    double minorSum=0.0;
+    for (std::size_t i=0;i<edges.size();++i)
+        for (std::size_t j=i+1U;j<edges.size();++j) {
+            const double minor=cross(edges[i],edges[j]);
+            minorSum+=minor*minor/(lengths[i]*lengths[j]);
+        }
+    // Stable pairwise-minor form of the in-plane area tensor determinant.
+    // Empty front/back faces contribute 2*A to the third diagonal entry.
+    const double area=polygon.area()/scale/scale,t=thickness/scale;
+    const double areaSum=t*perimeter+2.0*area;
+    return 27.0*minorSum*t*t*(2.0*area)/(areaSum*areaSum*areaSum);
+}
+
+SolverLocalRepartitionResult2D improveSolverExtrudedDeterminant2D(
+    const TopologyMesh2D& topology,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const std::vector<bool>& immutableCells,
+    double thickness,const SolverQualityPolicy2D& policy,const TolerancePolicy& tol) {
+    SolverLocalRepartitionResult2D result;
+    result.topology=topology;
+    result.immutableCells=immutableCells;
+    if (!topology.valid() || !domain.valid(tol) || !boundary.diagnose(tol).valid() ||
+        !(thickness>0.0) || !std::isfinite(thickness) ||
+        (!immutableCells.empty() && immutableCells.size()!=topology.cells.size())) {
+        result.issues.push_back("extruded determinant repair requires valid inputs");
+        return result;
+    }
+    const auto failures=[&](const TopologyMesh2D& mesh) {
+        std::vector<std::size_t> ids;
+        for (const auto& cell:mesh.cells) {
+            const double value=extrudedCellDeterminant2D(topologyCellPolygon(mesh,cell.id),thickness);
+            if (!std::isfinite(value) || value<0.001) ids.push_back(cell.id);
+        }
+        return ids;
+    };
+    auto failed=failures(result.topology);
+    for (std::size_t iteration=0;iteration<32U && !failed.empty();++iteration) {
+        const auto locked=[&](std::size_t cell) {
+            return !result.immutableCells.empty() && result.immutableCells[cell];
+        };
+        const auto beforeQuality=evaluateSolverQuality2D(result.topology,policy,tol);
+        const auto beforeDirectional=evaluateDirectionalConnectivity2D(result.topology);
+        std::set<std::pair<std::size_t,std::size_t>> pairs;
+        for (const auto cell:failed) {
+            if (locked(cell)) continue;
+            for (const auto edgeId:result.topology.cells[cell].edges) {
+                const auto& edge=result.topology.edges[edgeId];
+                if (edge.neighbour && !locked(edge.owner) && !locked(*edge.neighbour))
+                    pairs.emplace(std::min(edge.owner,*edge.neighbour),std::max(edge.owner,*edge.neighbour));
+            }
+        }
+        bool accepted=false;
+        for (const auto& [first,second]:pairs) {
+            const auto merged=mergeAdjacentPolygonsSimple(topologyCellPolygon(result.topology,first),
+                topologyCellPolygon(result.topology,second),tol);
+            if (!merged || extrudedCellDeterminant2D(*merged,thickness)<0.001) continue;
+            const auto metrics=evaluateSolverCellMetrics2D(*merged,tol);
+            if (!metrics.valid || metrics.maxConcavityDeg>std::max(1e-5,beforeQuality.maxConcavityDeg)) continue;
+            auto candidate=agglomerateCellPair(result.topology,first,second,*merged,
+                domain,boundary,tol,nullptr,result.immutableCells);
+            if (!candidate.topology.valid()) continue;
+            const auto quality=evaluateSolverQuality2D(candidate.topology,policy,tol);
+            const auto directional=evaluateDirectionalConnectivity2D(candidate.topology);
+            if (!quality.valid() || !directional.issues.empty() ||
+                directional.failedCells.size()>beforeDirectional.failedCells.size() ||
+                (beforeDirectional.minimumMeasured && directional.minimumMeasured &&
+                 *directional.minimumMeasured<std::min(*beforeDirectional.minimumMeasured,minimumDirectionalDeterminant2D))) continue;
+            auto candidateFailed=failures(candidate.topology);
+            if (candidateFailed.size()>=failed.size()) continue;
+            result.topology=std::move(candidate.topology);
+            result.immutableCells=std::move(candidate.immutableCells);
+            failed=std::move(candidateFailed);
+            ++result.repartitionCount;
+            accepted=true;
+            break;
+        }
+        if (!accepted) break;
+    }
     return result;
 }
 

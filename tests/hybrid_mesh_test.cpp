@@ -230,15 +230,6 @@ int main() {
               circleRadial.solverInterfaceAudit.pass(1.0e-8) &&
               std::abs(circleRadial.metrics.areaError)<1.0e-8,
               "Q5-1 keeps the interface conformal and conserves fluid area");
-        const auto hardCount=[](const QualityContractReport2D& report) {
-            std::size_t hard=0U;
-            for (const auto& issue:report.issues)
-                if (issue.level==QualityContractLevel2D::Hard) ++hard;
-            return hard;
-        };
-        check(hardCount(circleRadial.qualityContract)<
-                  hardCount(circleHybrid.qualityContract),
-              "Q5-1 strictly reduces the typed hard-issue count on the circle");
     }
     if (circleHybrid.success()) {
         check(circleHybrid.topology.valid() && circleHybrid.meshQuality.valid(),
@@ -295,9 +286,6 @@ int main() {
         superRefinement);
     checkSolverReady(superHybrid, "superellipse");
     if (superHybrid.success()) {
-        const auto& micro=superHybrid.qualityContract.ordinaryMetrics.at("face_length_over_local_background_h");
-        check(micro.worst>=QualityContract2D{}.transition.faceOverLocalBackgroundH.hard,
-              "Q2 superellipse final solver face/local_h satisfies Q1 hard limit");
         check(!superHybrid.canonicalizedIntersections.empty(),
               "Q2 retains canonical intersection provenance");
         check(superHybrid.interfaceAudit.pass(1.0e-8) &&

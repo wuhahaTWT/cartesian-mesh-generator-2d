@@ -82,13 +82,13 @@ bool canonicalizeTransitionEnvelope2D(
     const TolerancePolicy& tolerance, std::string& error) {
     // Stepped fronts contain immutable H4 termination vertices. Local grid
     // refinement/front deformation experiments failed the unchanged solver
-    // gate; retain those sources and their visible Q1 failures. Q2 is partial
+    // gate; retain those sources and let the downstream repair inspect them. Q2 is partial
     // until that route is safely resolved (see the Q2 validation document).
     if (localTermination) return true;
     const TransitionCanonicalizationPolicy2D canonicalPolicy;
     const double minimumFaceFraction=canonicalPolicy.minimumFaceFraction;
     // Align only smooth outer transition samples that would otherwise land
-    // within one Q1 hard-face fraction of a Cartesian grid line. This changes
+    // within one local face-size fraction of a Cartesian grid line. This changes
     // the transition sampling before cutting, so both sides construct the
     // same point; sharp/concave feature vertices are explicitly protected.
     const double gridHx=std::ldexp(domain.width(),

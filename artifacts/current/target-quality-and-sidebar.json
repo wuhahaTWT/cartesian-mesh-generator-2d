@@ -1,0 +1,232 @@
+{
+  "format": "cartmesh2d-target-quality-and-sidebar-v1",
+  "date": "2026-09-12",
+  "baseline_commit": "bfd56ca",
+  "scope": "Fixed nozzle quality repair, Q1 runtime removal and desktop sidebar; not arbitrary-geometry or CFD accuracy certification",
+  "q1_runtime_removed": true,
+  "parameters": {
+    "geometry": "examples/complex/nozzle_profile.xy",
+    "fluid_region": "interior",
+    "reference_length": 6,
+    "wall_relative_size": 0.00125,
+    "background_relative_size": 0.0125,
+    "far_field_spans": 0.5,
+    "cells_per_level": 40,
+    "layers": 4,
+    "first_layer_relative_size": 0.0003125,
+    "growth_ratio": 1.2,
+    "extrusion_thickness": 0.02,
+    "small_alpha": 0.1
+  },
+  "baseline": {
+    "cells": 148375,
+    "cm2d_sha256": "463850cca4d728eeab418458f393c11d608687afe1a9e27a0d5e603e8d4d8791",
+    "native_solver_metrics": {
+      "max_non_orthogonality_deg": 69.93490532168866,
+      "max_internal_skewness": 3.416869475785433,
+      "max_boundary_skewness": 0.14220916416859047,
+      "max_concavity_deg": 1.207418250714909e-06,
+      "max_cell_aspect": 44.44296233197242,
+      "min_interior_angle_deg": 4.1103522561180545,
+      "min_face_length": 4.862688628870515e-06,
+      "min_face_weight": 0.07391808174659599,
+      "min_volume_ratio": 0.018427900332086793,
+      "min_compactness": 0.07053516222208407
+    },
+    "nonorthogonality_over_65_faces": 448,
+    "all_face_determinant_condition_faces": 20,
+    "low_all_face_determinant_cells": 4,
+    "near_coplanar_face_plane_cells": 5641
+  },
+  "final": {
+    "cells": 148287,
+    "cm2d_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+    "native_solver_metrics": {
+      "max_non_orthogonality_deg": 64.96443490606164,
+      "max_internal_skewness": 3.416869475785433,
+      "max_boundary_skewness": 0.14220916416859047,
+      "max_concavity_deg": 1.207418250714909e-06,
+      "max_cell_aspect": 25.763449624666162,
+      "min_interior_angle_deg": 6.511844928807302,
+      "min_face_length": 4.862688628870515e-06,
+      "min_face_weight": 0.05154717597932756,
+      "min_volume_ratio": 0.010370579339397267,
+      "min_compactness": 0.12112078616549299
+    },
+    "nonorthogonality_repartitions": 448,
+    "determinant_unions": 4,
+    "layers": {
+      "baseline": "outputs/desktop-ui-refresh/packaged-nozzle-preset/mesh-1KIW5T/nozzle_profile.hybrid.vtk",
+      "final": "outputs/quality-fix/final-nozzle/nozzle.hybrid.vtk",
+      "baseline_layer_cells": 8768,
+      "final_layer_cells": 8768,
+      "coordinates_and_layer_indices_exactly_equal": true
+    },
+    "independent_audit": {
+      "all_face_determinant": {
+        "low_cell_count": 0,
+        "low_cells": [],
+        "minimum": 0.005125560569971044
+      },
+      "face_plane": {
+        "expected_set_matches": true,
+        "maximum_dot": 7.680522884356833e-12,
+        "near_coplanar_only": 5677,
+        "original_flagged": 5677,
+        "positive_side": 0
+      },
+      "format": "cartmesh2d-external-quality-audit-v1",
+      "formula": {
+        "areaSum": "sum(Sf outer Sf / mag(Sf)) over all cell faces",
+        "magnitudeSum": "sum(mag(Sf)) over all cell faces",
+        "normalization": 0.037037037037037,
+        "scaledDeterminant": "det(areaSum/magnitudeSum)/0.037037037037037",
+        "threshold": 0.001
+      },
+      "input_files_sha256": {
+        "faces": "d392ea5ce5c93cbe6d42cd6555be2272007e1806a252e12835531513e8acd032",
+        "neighbour": "37c67f20e8f045f9b19e0608efac1c1a4f53bc8de5abf5b4418774d4df978477",
+        "owner": "1483bd037824ca9d2fc20b654ce3d5162306106801482e36c1041d13137f9c3e",
+        "points": "de5d6aa10dc0eb5164cba3170e21106e24777a287244a4b761afcde45698036e"
+      },
+      "mesh": {
+        "cells": 148287,
+        "faces": 597570,
+        "points": 305420
+      },
+      "scope": "independent extruded determinant and face-plane diagnostics; not overall mesh PASS"
+    }
+  },
+  "openfoam": {
+    "standard": {
+      "command": "checkMesh -case /home/openfoam/workingDir/final-nozzle/foam",
+      "exit_code": 0,
+      "result": "PASS",
+      "log": "outputs/quality-fix/final-nozzle/standard.log"
+    },
+    "expanded": {
+      "command": "checkMesh -case /home/openfoam/workingDir/final-nozzle/foam -allGeometry -allTopology",
+      "exit_code": 0,
+      "result": "FAIL",
+      "failed_checks": [
+        "concaveCells face-plane: 5677"
+      ],
+      "short_edge_points": 16,
+      "log": "outputs/quality-fix/final-nozzle/expanded.log"
+    },
+    "official_profile": {
+      "command": "checkMesh -case /home/openfoam/workingDir/final-nozzle/foam -allGeometry -allTopology -meshQuality -writeAllFields -writeSets vtk -writeChecks json",
+      "exit_code": 0,
+      "result": "FAIL",
+      "failed_checks": [
+        "concaveCells face-plane: 5677"
+      ],
+      "nonorthogonality_over_65_faces": 0,
+      "determinant_condition_faces": 0,
+      "unique_quality_faces": 0,
+      "log": "outputs/quality-fix/final-nozzle/official-profile.log",
+      "meshQualityDict": "copied unchanged from outputs/quality-review/nozzle-148375/system/meshQualityDict"
+    }
+  },
+  "independent_readers": {
+    "external_quality": {
+      "valid": true,
+      "low_all_face_determinant_cells": 0,
+      "minimum_all_face_determinant": 0.005125560569971044,
+      "positive_face_plane_cells": 0,
+      "near_coplanar_face_plane_cells": 5677,
+      "expected_set_matches": true,
+      "report": "outputs/quality-fix/final-nozzle/external-quality-audit.json"
+    },
+    "mesh_resolution": {
+      "valid": true,
+      "cell_count": 148287,
+      "report": "outputs/quality-fix/final-nozzle/mesh-resolution.json"
+    },
+    "layer_resolution": {
+      "valid": true,
+      "source_layer_polygon_count": 8768,
+      "report": "outputs/quality-fix/final-nozzle/layer-resolution.json",
+      "source_vtk": "outputs/quality-fix/final-nozzle/nozzle.hybrid.vtk"
+    },
+    "directional_connectivity": {
+      "valid": true,
+      "minimum_measured": 0.01128739990345341,
+      "failed_cell_count": 0,
+      "report": "outputs/quality-fix/final-nozzle/directional-connectivity.json"
+    }
+  },
+  "openfoam_image_digest": "opencfd/openfoam-run@sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb",
+  "profile_sha256": "0906201051209470c120eec374846a33441355cc605183c24939c363d3655470",
+  "profile_unchanged_from_baseline": true,
+  "validation": {
+    "ctest": {
+      "passed": 99,
+      "total": 99,
+      "log": "outputs/quality-fix/ctest-final.log"
+    },
+    "frontend": {
+      "passed": 74,
+      "total": 74,
+      "log": "outputs/quality-fix/frontend-tests.log"
+    },
+    "ci_yaml_parse": "PASS",
+    "new_cfd_solution": "NOT_RUN",
+    "viewport_roundtrip": "PASS: 5 sidebar/window resize round trips preserve zoom and centre"
+  },
+  "remaining": {
+    "expanded_checkMesh": "FAIL",
+    "near_coplanar_cells": 5677,
+    "positive_side_cells": 0,
+    "short_edge_points": 16,
+    "mesh_quality_profile_exceedance_faces": 0,
+    "minimum_face_weight": 0.05154717597932756,
+    "minimum_volume_ratio": 0.010370579339397267,
+    "note": "Face weight and volume ratio remain above unchanged .05/.01 limits but decreased; no claim all metrics improved or industrial generality."
+  },
+  "figure": "artifacts/current/nozzle-target-quality.png",
+  "desktop": {
+    "command": "desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D --smoke=nozzle --method=hybrid --verified-preset=true --theme=duet --mode=light --interaction-check=true --out=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/quality-fix/packaged-resize-final --export=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/quality-fix/packaged-resize-final-export --shot=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/desktop-quality-sidebar.png",
+    "app": {
+      "asar_sha256": "10d4a9130c98231ed9bf481a49796a1307dfb9759255717d19e751fabdf3411f",
+      "executable_sha256": "b901c246042d1eb71ab0d098ca0331726b41eec8339ccc3ba8a0a46f9040577b"
+    },
+    "native_mesh": {
+      "source": "outputs/quality-fix/final-nozzle/nozzle.hybrid.solver.cm2d",
+      "app_output": "outputs/quality-fix/packaged-resize-final/mesh-LLE0VK/nozzle_profile.hybrid.solver.cm2d",
+      "zip_member": "mesh-LLE0VK/nozzle_profile.hybrid.solver.cm2d",
+      "source_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+      "app_output_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+      "zip_member_sha256": "1f6d8db4a524c24b6aae4537bc8290f7a438027ed7f2b4ce1246cfb24d24468a",
+      "sha256_match": true,
+      "solver_cells": 148287,
+      "layer_cells": 8768
+    },
+    "artifacts": {
+      "screenshot": "artifacts/current/desktop-quality-sidebar.png",
+      "screenshot_json": "artifacts/current/desktop-quality-sidebar.png.json",
+      "output_directory": "outputs/quality-fix/packaged-resize-final",
+      "export_zip": "outputs/quality-fix/packaged-resize-final-export",
+      "log": "outputs/quality-fix/packaged-resize-final.log"
+    },
+    "assertions": {
+      "interaction_checks": true,
+      "theme": "duet",
+      "mode": "light",
+      "sidebar_collapsed": false,
+      "sidebar_expanded": true,
+      "bottom_reachable": true,
+      "body_height": 560,
+      "inner_height": 560,
+      "canvas_height": 231.75,
+      "shell_bottom": 560,
+      "preview_cells": 148287,
+      "exported_cells": 148287
+    }
+  },
+  "native_binary_sha256": {
+    "cartmesh2d_cli": "b4262ca2f4988e09b86032b8d9edac8217f678aa69c44be93e473dea0fe9fc71",
+    "cartmesh2d_hybrid_cli": "e7a0670c2015a4545adb24859162e3219299e12f5410900eed1a05d35f79dc00",
+    "cartmesh2d_dxf_cli": "aad2e551f16cf76196dee2c2ca756681259a5534841802b6bc7076261fb889ca"
+  }
+}

@@ -89,13 +89,12 @@ async function collectReports(method, prefix) {
       resolution: await readJson(`${prefix}.resolution.json`),
       sizeField: await readJson(`${prefix}.size-field.json`),
       hybrid: await readJson(`${prefix}.hybrid.json`),
-      contract: await readJson(`${prefix}.hybrid.quality-contract.json`),
       solverQuality: await readJson(`${prefix}.hybrid.solver-quality.json`)
     };
   }
   return {
     resolution: await readJson(`${prefix}.resolution.json`),
-    contract: await readJson(`${prefix}.quality-contract.json`),
+    solverQuality: await readJson(`${prefix}-openfoam/solver_quality.json`),
     sizeField: await readJson(`${prefix}.size-field.json`),
     sizing: await readJson(`${prefix}.sizing.json`)
   };
@@ -132,8 +131,8 @@ async function firstReadable(candidates) {
 async function createWindow() {
   mainWindow = new BrowserWindow({    width: 1440,
     height: 900,
-    minWidth: 1120,
-    minHeight: 720,
+    minWidth: 800,
+    minHeight: 560,
     backgroundColor: '#10161c',
     titleBarStyle: 'hiddenInset',
     webPreferences: {
@@ -427,6 +426,7 @@ async function runSmoke() {
 
   await mainWindow.webContents.executeJavaScript(`(async () => {
     const smoke = window.__smoke;
+    smoke.setSidebarCollapsed(false);
     smoke.setOutput(${JSON.stringify(outputDirectory)});
     smoke.selectMethod(${JSON.stringify(method)});
     document.getElementById('controlMode').value = ${JSON.stringify(argument('control') || 'auto')};
@@ -481,6 +481,17 @@ async function runSmoke() {
     if (${JSON.stringify(Boolean(argument('interaction-check')))}) {
       const mesh = smoke.state.mesh;
       const display = document.getElementById('displayMode').value;
+      const sidebar = document.getElementById('toggleSidebar');
+      const initiallyCollapsed = document.body.classList.contains('sidebar-collapsed');
+      sidebar.click();
+      if (document.body.classList.contains('sidebar-collapsed') === initiallyCollapsed ||
+          sidebar.getAttribute('aria-expanded') !== String(!document.body.classList.contains('sidebar-collapsed')) ||
+          localStorage.getItem('cartmesh2d-sidebar-collapsed') !== String(document.body.classList.contains('sidebar-collapsed'))) {
+        throw new Error('Sidebar toggle did not update state or persistence');
+      }
+      sidebar.click();
+      if (document.body.classList.contains('sidebar-collapsed') !== initiallyCollapsed)
+        throw new Error('Sidebar toggle did not restore state');
       for (const value of ['duet','modern']) {
         window.CartMeshTheme.set(value);
         if (smoke.state.mesh !== mesh || document.getElementById('displayMode').value !== display ||
@@ -488,8 +499,15 @@ async function runSmoke() {
           throw new Error('Theme switch changed mesh/display state or failed persistence');
       }
       window.CartMeshTheme.set(${JSON.stringify(argument('theme') || 'modern')});
+      sidebar.focus();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', metaKey: true }));
+      if (document.body.classList.contains('sidebar-collapsed') === initiallyCollapsed)
+        throw new Error('Sidebar Command+B shortcut did not toggle');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      if (document.body.classList.contains('sidebar-collapsed') !== initiallyCollapsed)
+        throw new Error('Sidebar Control+B shortcut did not restore state');
       const actual = smoke.state.selectedRequest;
-      if (!actual) throw new Error('Missing selected automatic parameters');
+      if (actual) {
       document.getElementById('actualToManual').click();
       if (document.getElementById('controlMode').value !== 'manual' ||
           Number(document.getElementById('wallRelativeSize').value) !== actual.wallRelativeSize ||
@@ -498,6 +516,9 @@ async function runSmoke() {
         throw new Error('Actual-to-manual transfer lost parameters');
       document.getElementById('controlMode').value = 'auto';
       document.getElementById('controlMode').dispatchEvent(new Event('change'));
+      } else if (document.getElementById('controlMode').value !== 'manual') {
+        throw new Error('Missing selected automatic parameters');
+      }
     }
     if (${JSON.stringify(Boolean(argument('repeat')))}) await smoke.generate();
     const mode = ${JSON.stringify(argument('mode') || 'level')};
@@ -531,24 +552,35 @@ async function runSmoke() {
       app.exit(0); return;
     }
     if (argument('export')) report.exported = await exportPackage(argument('export'));
-    mainWindow.setSize(1120, 720);
+    mainWindow.setSize(800, 560);
     await new Promise(resolve => setTimeout(resolve, 200));
     report.layout = await mainWindow.webContents.executeJavaScript(`(() => {
       const panel = document.querySelector('.panel');
       panel.scrollTop = panel.scrollHeight;
       const button = document.getElementById('generate').getBoundingClientRect();
+      const bodyRect = document.body.getBoundingClientRect();
+      const shellRect = document.querySelector('.shell').getBoundingClientRect();
+      const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+      const geometry = { bodyHeight: bodyRect.height, innerHeight,
+        canvasHeight: canvasRect.height, shellBottom: shellRect.bottom };
       return { bottomReachable: button.bottom <= innerHeight && button.top >= 0,
         pageHeight: document.documentElement.scrollHeight, windowHeight: innerHeight,
+        geometry,
         wallpaper: {
           image: getComputedStyle(document.body).backgroundImage,
           canvasBackground: getComputedStyle(document.getElementById('canvasWrap')).backgroundColor,
           welcomeHidden: document.getElementById('empty').hidden
         },
-        previewCells: window.__smoke.state.mesh?.cells.length,
-        exportedCells: window.__smoke.state.result?.openFoam.cells };
+      previewCells: window.__smoke.state.mesh?.cells.length,
+      exportedCells: window.__smoke.state.result?.openFoam.cells,
+      sidebarCollapsed: document.body.classList.contains('sidebar-collapsed'),
+      sidebarExpanded: document.getElementById('toggleSidebar')?.getAttribute('aria-expanded') === 'true' };
     })()`);
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
+    if (Math.abs(report.layout.geometry.bodyHeight - report.layout.geometry.innerHeight) > 1 ||
+        report.layout.geometry.canvasHeight <= 0 || report.layout.geometry.shellBottom > report.layout.geometry.innerHeight + 1)
+      throw new Error('Window geometry is not constrained to the viewport');
     if (shot) {
       await mainWindow.webContents.executeJavaScript("document.querySelector('.panel').scrollTop=0");
       await new Promise(resolve => setTimeout(resolve, 400));

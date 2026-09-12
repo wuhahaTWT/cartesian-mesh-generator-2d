@@ -532,7 +532,7 @@ def evaluate(args) -> int:
                               "relative_flux_imbalance": [item["flow"]["relative_flux_imbalance"] for item in results],
                               "outlet_profile": profiles},
               "notes": ["A nonconverged grid cannot establish spatial convergence.",
-                        "Iteration convergence is separate from Q1, expanded checkMesh and general physical accuracy."]}
+                        "Iteration convergence is separate from expanded checkMesh and general physical accuracy."]}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({k:v for k,v in report.items() if k not in ("cases", "comparison")}, indent=2))

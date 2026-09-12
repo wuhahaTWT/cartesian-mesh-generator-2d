@@ -182,9 +182,9 @@ function refineBoxArgs(field, frame) {
   return args;
 }
 
-// An OpenFOAM case directory is always requested.  The CLI only builds the solver
-// partition, evaluates solver quality and rates the Q1 contract inside
-// `if (openFoamCase)`, so asking for no case means asking for no quality report.
+// An OpenFOAM case directory is always requested. The pure CLI builds and checks
+// its solver partition inside `if (openFoamCase)`, so omitting the case would also
+// omit the Solver quality report consumed by the desktop app.
 function buildInvocation(job, paths, options = {}) {
   if (job.method === 'cutcell') {
     return {

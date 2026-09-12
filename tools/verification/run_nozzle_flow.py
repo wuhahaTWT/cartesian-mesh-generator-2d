@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate and solve the fixed three-grid nozzle fixture in a fresh directory.
 
-Flow-pipeline completion, expanded checkMesh and Q1 are separate results.
+Flow-pipeline completion and expanded checkMesh are separate results.
 The driver never overwrites an earlier run or leaves a timed-out container.
 """
 from __future__ import annotations
@@ -105,8 +105,7 @@ def run_case(root, cli, grid):
     if generated_stage["status"] != "passed":
         return item
     log = (stages_root / "generate/stdout.log").read_text()
-    for key, expression in (("solver_quality", r"^solver_quality=(\w+)"),
-                            ("Q1", r"^quality_contract=(\w+)")):
+    for key, expression in (("solver_quality", r"^solver_quality=(\w+)"),):
         match = re.search(expression, log, re.M)
         item[key] = match.group(1) if match else "not_reported"
     config_report = stages_root / "configuration.json"
@@ -157,7 +156,7 @@ def main():
     result = {"cases": cases, "grid_scope": [c["name"] for c in cases],
         "flow_pipeline_valid": all(c["flow_pipeline_valid"] for c in cases),
         "expanded_checks_passed": all(c.get("stages", {}).get("checkMesh_expanded", {}).get("mesh_ok", False) for c in cases),
-        "notes": ["Pipeline completion is not general CFD accuracy or Q1 acceptance.",
+        "notes": ["Pipeline completion is not general CFD accuracy acceptance.",
                   "Pressure is kinematic (m2/s2), phi is volumetric (m3/s)."]}
     if all(c.get("evaluation", {}).get("valid", False) for c in cases):
         nozzle.evaluate(SimpleNamespace(case=[Path(c["case"]) for c in cases], report=root / "comparison.json",

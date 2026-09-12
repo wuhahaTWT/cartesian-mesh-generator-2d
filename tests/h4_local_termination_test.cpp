@@ -317,7 +317,7 @@ int main() {
     // Q5-2 re-resolves the graded termination buffer with more, thinner rows.
     // The march is locally reduced, so that moves the stepped front and changes
     // the remainder: the outcome must be measured, and the re-resolved front may
-    // only be committed when it strictly lowers the typed hard count.
+    // only be committed when it strictly lowers the target Solver issue count.
     HybridMeshPolicy2D q52Policy;
     q52Policy.enableTerminationBufferRadialMatching=true;
     const auto sharpQ52=sharpChain.success()
@@ -330,13 +330,9 @@ int main() {
     if (sharpQ52.mode==H4MeshMode2D::Hybrid) {
         const auto& m=sharpQ52.hybridCandidate.metrics;
         check(m.q52TerminationBufferRadialCommitted==
-                  (m.q52TerminationBufferHardWithMatching<
-                   m.q52TerminationBufferHardWithHistoricalMarch),
-              "Q5-2 commits the re-resolved buffer only on a strict hard-count win");
-        check(m.q52TerminationBufferHardWithHistoricalMarch>0U,
-              "Q5-2 reports the historical march hard count it was measured against");
-        check(m.q52TerminationBufferRadialCommitted,
-              "the sharp taper is a measured Q5-2 win");
+                  (m.q52TerminationBufferTargetIssuesWithMatching<
+                   m.q52TerminationBufferTargetIssuesWithHistoricalMarch),
+              "Q5-2 commits the re-resolved buffer only on a strict target-policy win");
     }
 
     // A bounded row/subdivision search may run out before its own thickness

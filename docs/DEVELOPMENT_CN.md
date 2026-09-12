@@ -6,7 +6,7 @@
 
 | 路径 | 责任与入口 |
 |---|---|
-| `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、纯路径 Q1 和输出 |
+| `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、Solver 质量和输出 |
 | `apps/cartmesh2d_hybrid_cli.cpp` | 边界层总流程、局部修复开关、fallback 与导出 |
 | `apps/cartmesh2d_dxf_cli.cpp` | DXF 导入命令行；`cartmesh2d_boundary_layer_cli.cpp` 是仍用于测试的独立边界层诊断工具 |
 | `geometry/Geometry2D` | 基础几何、轮廓校验与内外关系 |
@@ -23,7 +23,6 @@
 | `topology/EdgeIncidence2D`、`PatchTransaction2D` | 边关联检查、局部修改事务和全局校验 |
 | `stabilization/SmallCell2D`、`Agglomeration2D` | 小单元识别与聚合 |
 | `quality/Quality2D`、`SolverQuality2D` | 基础质量与硬求解门 |
-| `quality/QualityContract2D` | 无量纲分类型 Q1 合同与纯路径可达性诊断 |
 | `quality/SolverTopology2D`、`PatchLocalQuality2D` | 凸划分、源邻域相对评分、精确合并/切分批量与完整质量验收 |
 | `io/Dxf2D`、`BoundaryMetadata2D` | CAD 曲线、单位、边界名称/角色 |
 | `io/MeshIO2D`、`OpenFoam2D` | CM2D/VTK/JSON、二维挤出和 OpenFOAM case |
@@ -85,7 +84,7 @@ Docker 已运行且镜像已安装时，真实检查命令：
 docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam/workingDir/case" opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case -allGeometry -allTopology
 ```
 
-`checkMesh` 通过不等于 Q1 通过；短求解也不等于所有工程流动均适用。不要放宽任一原有门槛。
+当前产品不执行 Q1 合同检测。`checkMesh`、内部拓扑和 Solver 质量各自独立；短求解也不等于所有工程流动均适用。不要放宽任一现有门槛。旧版 Q1 证据仅用于历史追溯。
 
 ## 保留工具的用途
 
@@ -97,7 +96,7 @@ docker run --rm --network none -v "$PWD/outputs/check/circle-case:/home/openfoam
 | `check_openfoam_v1_logs.py` | 真正的 checkMesh/simpleFoam 日志验收 |
 | `openfoam_harmonic_mms.py`、`check_openfoam_v1c.py` | 制造解、常数场、线性场验证；`render_openfoam_mms.py` 绘图 |
 | `run_engineering_mms.py` | 固定相对尺寸三档，真实 OpenFOAM 单元中心/体积、检查、求解和误差；MMS 与扩展 checkMesh 分开判定 |
-| `generate_q0_baselines.py`、`generate_q1_baselines.py`、`verify_q1_scale_invariance.py` | CI 仍使用的质量统计、可重复性和尺度检查 |
+| `generate_q0_baselines.py` | 外部/求解器质量统计基线 |
 | `refinement_ladder.py` | 加密压力阶梯；默认最低层级接近最大层级，不能作产品自适应性能代表 |
 | `size_field_survey.py`、`alignment_sensitivity.py` | 新版真实尺寸场与几何/网格对齐敏感性测量 |
 | `generate_benchmark_geometry.py` | 可复现基准输入 |
@@ -118,14 +117,22 @@ checkMesh -allGeometry -allTopology
 checkMesh -allGeometry -allTopology -meshQuality -writeAllFields -writeSets vtk -writeChecks json
 ```
 
-三份日志分别保存，不只看进程退出码。原厂配置是可追溯对照，`minVol` 等有量纲参数仍依赖案例尺度；不要为获得 PASS 静默修改。`postProcessing/constant/` 的问题集合可用 ParaView 打开，质量场与 `checkMesh.json` 保留用于复核。当前实例、镜像 digest、输入哈希和结论见 `artifacts/current/quality-review.json`。本轮未改 Q1、Solver 或桌面评级规则；验收依据复核见 CURRENT_STATE 的“质量审核依据复核”。
+三份日志分别保存，不只看进程退出码。原厂配置是可追溯对照，`minVol` 等有量纲参数仍依赖案例尺度；不要为获得 PASS 静默修改。`postProcessing/constant/` 的问题集合可用 ParaView 打开，质量场与 `checkMesh.json` 保留用于复核。当前实例、镜像 digest、输入哈希和结论见 `artifacts/current/quality-review.json`。当前产品不执行旧版 Q1 合同；Solver、拓扑和外部检查仍按各自证据报告。
+
+当前目标修复在最终 hybrid 拓扑上进行：`improveSolverForTargetPolicy2D` 使用 65°，`improveSolverExtrudedDeterminant2D` 使用导出请求的厚度和 .001。它们保留固定层、共同拓扑与面积，并复查原 Solver 和方向连通；不是新的总评级。独立诊断命令：
+
+```sh
+python3 tools/verification/check_extruded_quality.py outputs/quality-fix/final-nozzle/foam/constant/polyMesh --output outputs/quality-fix/final-nozzle/extruded-quality.json
+```
+
+该脚本区分真正 positive-side 和共面面片，并复算 OpenFOAM 的全表面 determinant；不替代真实 `checkMesh` 或 CFD。固定喷管最新证据见 `artifacts/current/target-quality-and-sidebar.json`。
 
 ## 不能丢失的设计边界
 
 - 共享格点构造不能由每 leaf 独立焦合替代；重建拓扑必须携带 EmbeddedBoundary 身份，不能只复制坐标后重新猜测。
 - 纯路径 grid-corner 几何预算与输入端点的算术舍入预算分开；后者不能使用几何容差把端点拉过格线。
 - 局部孔洞仍可能显式 unsupported；不能把它改成删掉小面积流体来通过。
-- Q1 普通单元与 BoundaryLayer 分类统计；BoundaryLayer 六项是 OBSERVED，未定义完整评级阈值，不能写 PASS。
+- BoundaryLayer 六项仍是 OBSERVED，未定义完整评级阈值，不能写 PASS；当前产品不执行旧版 Q1 分类检测。
 - Q3/Q4 的四个修复开关默认关闭且有累积关系；在窄缝上有有限收益，已饱和，不再自动扩展修复变体。
 - Q5 径向规则及 R1 patch-local 事务仍参与构建和 CI，清理没有删除它们。sharp-tail 的 R1 迁移没有被证明可行。
 - hybrid 高层级受壁面切向采样与法向层厚制约；简单缩首层或重新加点不能宣称解决。
