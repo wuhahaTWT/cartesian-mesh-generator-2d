@@ -165,6 +165,16 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_manufactu
 
 ### 独立方腔诊断
 
+方腔正式审核的点值取样使用距离加权仿射拟合（v2）：单元与两个真实中心线壁值共同参与最近8点选择，拟合 `a+b*dx+c*dy`，归一化坐标和权重后求解。它可重现仿射场，秩不足明确失败；不宣称任意非线性数据有界或守恒。原IDW8采样作为 `benchmark.legacyIdw` 继续输出。Ghia参考表及各项数值阈值不变，混合采样方法的细化序列拒绝比较。原文 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4) 提供的是数值基准，并非解析真解。
+
+可重审已有报告中的方腔场，不启动求解器：
+
+```sh
+python3 tools/verification/audit_cavity_sampling.py --summary outputs/native-flow/symmetric-stress/upwind-combined.json --summary outputs/native-flow/symmetric-stress/limited-linear-combined.json --max-iterations 4000 --output outputs/native-flow/cavity-sampling/reproducible-audit.json
+```
+
+该入口先核对源报告中网格及4份流场/日志文件的哈希，再独立读回守恒和中心线；`--max-iterations` 是原生产运行预算，非增加求解轮数。使用原验证器默认几何/连续性/物理阈值并记录它们；本例限制重构细化未通过，所以预期退出1、JSON `valid:false`。不要将该失败摘要覆盖为PASS。只给少于三档输入时不构成三档验证；源报告和大场文件仍在本地 `outputs/`。小型证据记录原运行与当前读回的哈希，未把旧场当成新求解。
+
 `verify_cavity_vorticity.py` 另用流函数/涡量有限差分求解单位方腔 Re100，不调用生产 FVM。依赖 NumPy/SciPy；空间中心差分、Thom 壁面涡量、DST-I 泊松与 Heun RK2 推进到稳态。先校验离散正弦本征模，再以接受的新状态涡量方程残差和中心线变化同时停止；每档180秒，输出数组、中心线、实际命令及哈希。它是独立诊断，**不是新增产品求解器或认证真值**，也不改变原 Ghia 回归门。
 
 ```sh
