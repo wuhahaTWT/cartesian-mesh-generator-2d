@@ -1,5 +1,6 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -58,7 +59,7 @@ struct System {
         rhs[id] = 0;
     }
 
-    void solvePressure(Vec& x) const {
+    std::size_t solvePressure(Vec& x) const {
         // Pressure correction is a symmetric positive graph Laplacian after
         // outlet Dirichlet terms or a symmetric gauge elimination. Preserve
         // conjugacy instead of restarting the nonsymmetric momentum method.
@@ -73,7 +74,7 @@ struct System {
         }
         const double stop = finite(1e-13 + 1e-11 * norm(rhs));
         if (norm(residual) <= stop) {
-            return;
+            return 0;
         }
         double rz = product(residual, z);
         for (std::size_t iteration = 0; iteration < 3000; ++iteration) {
@@ -90,7 +91,7 @@ struct System {
                 ax = apply(x);
                 for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
                 if (norm(residual) <= stop) {
-                    return;
+                    return iteration + 1;
                 }
                 for (std::size_t i = 0; i < x.size(); ++i) {
                     direction[i] = z[i] = residual[i] / diag[i];
@@ -116,7 +117,7 @@ struct System {
         throw std::runtime_error(message.str());
     }
 
-    void solve(Vec& x) const {
+    std::size_t solve(Vec& x) const {
         for (double d : diag) {
             ensure(d > 0 && std::isfinite(d), "Flow singular/nonpositive matrix diagonal");
         }
@@ -125,7 +126,7 @@ struct System {
         for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
         r0 = r;
         const double stop = finite(1e-13 + 1e-11 * norm(rhs));
-        if (norm(r) <= stop) return;
+        if (norm(r) <= stop) return 0;
         double rhoOld = 1, alpha = 1, omega = 1;
         for (std::size_t step = 0; step < 3000; ++step) {
             const double rho = product(r0, r);
@@ -153,7 +154,7 @@ struct System {
             }
             ax = apply(x);
             for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
-            if (norm(r) <= stop) return;
+            if (norm(r) <= stop) return step + 1;
             // Restart with the true residual periodically; never accept recurrence alone.
             if (step % 40 == 39) {
                 r0 = r;
@@ -404,6 +405,8 @@ FlowResult2D solveIncompressible2D(
     const FvMesh2D& m,
     const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
+    using Clock = std::chrono::steady_clock;
+    const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
     ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
@@ -439,6 +442,21 @@ FlowResult2D solveIncompressible2D(
            "Flow requires one connected fluid region with an unambiguous pressure reference");
 
     FlowResult2D r;
+    // Profiling observes the same solves and stopping rules, including zero-step
+    // solves. Timing includes each linear solver's setup, but not assembly.
+    auto linearSolve = [&](const System& system, Vec& field, bool pressure) {
+        const auto start = c.profile ? Clock::now() : Clock::time_point{};
+        const auto iterations = pressure ? system.solvePressure(field) : system.solve(field);
+        if (c.profile) {
+            auto& p = r.performance;
+            (pressure ? p.pressureSolves : p.momentumSolves) += 1;
+            (pressure ? p.pressureIterations : p.momentumIterations) += iterations;
+            auto& maximum = pressure ? p.maxPressureIterations : p.maxMomentumIterations;
+            maximum = std::max(maximum, iterations);
+            (pressure ? p.pressureLinearSolveSeconds : p.momentumLinearSolveSeconds) +=
+                std::chrono::duration<double>(Clock::now() - start).count();
+        }
+    };
     r.u.resize(n);
     r.v.resize(n);
     r.p.resize(n);
@@ -486,7 +504,7 @@ FlowResult2D solveIncompressible2D(
             av.rhs[i] += (common - av.diag[i]) * r.v[i];
             au.diag[i] = av.diag[i] = common;
         }
-        au.solve(r.u);av.solve(r.v);
+        linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
         const auto gup=gradient(m,r.u,b.u,b.fixedU),gvp=gradient(m,r.v,b.v,b.fixedV);
@@ -513,7 +531,7 @@ FlowResult2D solveIncompressible2D(
                 else if(b.fixedP[id])ap.diag[i]+=df[id];
             }
             if(b.closed){ap.pin(0);pc[0]=0;}
-            ap.solvePressure(pc);
+            linearSolve(ap, pc, true);
         }
         const auto gc=gradient(m,pc,zeros,b.fixedP);
         double du=0,dp=0;
@@ -546,6 +564,10 @@ FlowResult2D solveIncompressible2D(
         r.forceX+=wallP*f.areaVector.x-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
         r.forceY+=wallP*f.areaVector.y-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
     }
-    finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);return r;
+    finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);
+    if (c.profile) {
+        r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
+    }
+    return r;
 }
 }

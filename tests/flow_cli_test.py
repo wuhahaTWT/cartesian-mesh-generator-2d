@@ -91,6 +91,23 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         mesh = root / f'channel{ny}.solver.cm2d'
         rectangle(mesh, ny * 4, ny)
         data, field = run(f'channel{ny}', mesh)
+        if ny == 8:
+            # Profiling must observe, never alter the physical solve or exports.
+            run('profiled', mesh, extra=('--profile',))
+            for suffix in ('.json', '.fields.json', '.cells.csv', '.faces.csv',
+                           '.residuals.csv', '.vtk'):
+                assert (root / ('profiled' + suffix)).read_bytes() == (
+                    root / (f'channel{ny}' + suffix)).read_bytes(), suffix
+            profile = json.loads((root / 'profiled.performance.json').read_text())
+            assert profile['simpleIterations'] == data['iterations']
+            assert profile['converged'] is data['converged']
+            assert profile['momentumSolves'] == 2 * data['iterations']
+            assert profile['pressureSolves'] == 4 * data['iterations']
+            assert profile['momentumIterations'] >= profile['maxMomentumIterations'] > 0
+            assert profile['pressureIterations'] >= profile['maxPressureIterations'] > 0
+            for key in ('readAndMeshSeconds', 'solveSeconds', 'momentumLinearSolveSeconds', 'pressureLinearSolveSeconds'):
+                assert math.isfinite(profile[key]) and profile[key] >= 0, (key, profile[key])
+            assert profile['solveSeconds'] >= profile['momentumLinearSolveSeconds'] + profile['pressureLinearSolveSeconds']
         error = math.sqrt(sum((float(c['u']) - 4 * float(c['y']) * (1 - float(c['y']))) ** 2
                               for c in field) / len(field))
         errors.append(error)
@@ -104,7 +121,9 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         pressure_errors.append(abs(slope / -.08 - 1))
     assert errors[1] < errors[0] / 2.5, errors
     assert pressure_errors[1] < .02 and pressure_errors[1] < pressure_errors[0] / 2, pressure_errors
-    run('limited', mesh, extra=('--max-iterations', '1'), code=2)
+    run('limited', mesh, extra=('--max-iterations', '1', '--profile'), code=2)
+    limited = json.loads((root / 'limited.performance.json').read_text())
+    assert limited['converged'] is False and limited['simpleIterations'] == 1
     for label, options in [('negative', ('--nu', '-1')), ('nan', ('--speed', 'nan')),
                            ('overflow', ('--speed', '1e200')), ('count', ('--max-iterations', '1.5'))]:
         run(label, mesh, extra=options, code=1)

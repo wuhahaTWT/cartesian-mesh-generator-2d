@@ -1,6 +1,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <cmath>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -46,11 +47,16 @@ int main(int argc, char** argv) {
         fv::FlowControls2D controls;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
+            if (a == "--profile") {
+                controls.profile = true;
+                continue;
+            }
             if (a == "--help") {
                 std::cout
                     << "Native 2D steady incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
+            "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
@@ -89,11 +95,14 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
 
+        const auto readStart = std::chrono::steady_clock::now();
         const auto read = readCm2dTopology(path);
         if (!read.valid()) {
             throw std::runtime_error(read.error);
         }
         const auto mesh = fv::makeFvMesh2D(read.topology);
+        const double readSeconds = std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - readStart).count();
         const auto r = fv::solveIncompressible2D(mesh, controls, progress);
         const auto& last = r.history.back();
 
@@ -192,6 +201,27 @@ int main(int argc, char** argv) {
         history.close();
         summary.close();
         vtk.close();
+        if (controls.profile) {
+            const auto& p = r.performance;
+            auto performance = out(prefix, ".performance.json");
+            performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
+                        << "\"cells\":" << mesh.cells.size()
+                        << ",\n\"faces\":" << mesh.faces.size()
+                        << ",\n\"simpleIterations\":" << last.iteration
+                        << ",\n\"converged\":" << (r.converged ? "true" : "false")
+                        << ",\n\"readAndMeshSeconds\":" << readSeconds
+                        << ",\n\"solveSeconds\":" << p.solveSeconds
+                        << ",\n\"momentumLinearSolveSeconds\":" << p.momentumLinearSolveSeconds
+                        << ",\n\"pressureLinearSolveSeconds\":" << p.pressureLinearSolveSeconds
+                        << ",\n\"momentumSolves\":" << p.momentumSolves
+                        << ",\n\"momentumIterations\":" << p.momentumIterations
+                        << ",\n\"maxMomentumIterations\":" << p.maxMomentumIterations
+                        << ",\n\"pressureSolves\":" << p.pressureSolves
+                        << ",\n\"pressureIterations\":" << p.pressureIterations
+                        << ",\n\"maxPressureIterations\":" << p.maxPressureIterations
+                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement\"\n}\n";
+            performance.close();
+        }
         progress(last);
         return r.converged ? 0 : 2;
     } catch (const std::exception& e) {
