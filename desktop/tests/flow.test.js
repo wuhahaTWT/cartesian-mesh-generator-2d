@@ -29,11 +29,13 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.equal(invocation.request.convection, 'upwind');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
     '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500',
-    '--convection', 'upwind']);
+    '--convection', 'upwind', '--viscous-stress', 'symmetric']);
   const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
   assert.equal(limited.request.convection, 'limited-linear');
-  assert.equal(limited.args.at(-1), 'limited-linear');
+  assert.equal(limited.request.viscousStress, 'symmetric');
+  assert.deepEqual(limited.args.slice(-4), ['--convection', 'limited-linear', '--viscous-stress', 'symmetric']);
+  assert.equal(limited.args.at(-1), 'symmetric');
   assert.throws(() => buildFlowInvocation('/tmp/intermediate.cm2d', '/tmp/run', invocation.request), /solver\.cm2d/);
   assert.throws(() => validateFlowRequest({ case: 'rans', nu: 0.01, speed: 1, maxIterations: 10 }), /未知/);
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'central' }), /对流格式/);
@@ -60,20 +62,43 @@ test('flow outputs cover every final cell and are reordered by native cell id', 
   assert.equal(validated.summary.convectionInferred, true);
   assert.equal(validated.summary.pressureDiscretization, 'legacy-unspecified');
   assert.equal(validated.summary.pressureDiscretizationInferred, true);
+  assert.equal(validated.summary.viscousStress, 'laplacian');
+  assert.equal(validated.summary.viscousStressInferred, true);
   assert.throws(() => validateFlowOutput(summary, fields, 2,
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' }), /缺少压力离散格式/);
 });
 
 test('flow output accepts the limited-linear scheme and rejects unknown or mixed requests', () => {
-  const limited = validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss' }, fields, 2,
+  const limited = validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss',
+    viscousStress: 'symmetric', forceDefinition: 'shared-face-newtonian-traction',
+    forceX: 2, forceY: -3, pressureForceX: 1, pressureForceY: -1, discreteForceX: 2, discreteForceY: -3,
+    wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 }, fields, 2,
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'limited-linear' });
   assert.equal(limited.summary.convection, 'limited-linear');
   assert.equal(limited.summary.pressureDiscretization, 'shared-face-gauss');
   assert.equal(limited.summary.pressureDiscretizationInferred, false);
   assert.throws(() => validateFlowOutput({ ...summary, convection: 'central' }, fields, 2), /对流格式/);
-  assert.throws(() => validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss' }, fields, 2,
+  assert.throws(() => validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss',
+    viscousStress: 'symmetric', forceDefinition: 'shared-face-newtonian-traction',
+    forceX: 2, forceY: -3, pressureForceX: 1, pressureForceY: -1, discreteForceX: 2, discreteForceY: -3,
+    wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 }, fields, 2,
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' }), /不一致/);
   assert.throws(() => validateFlowOutput({ ...summary, pressureDiscretization: 'cell-centre' }, fields, 2), /压力离散/);
+});
+
+test('new symmetric stress output requires force metadata and consistent totals', () => {
+  const current = { ...summary, pressureDiscretization: 'shared-face-gauss', viscousStress: 'symmetric',
+    forceDefinition: 'shared-face-newtonian-traction', forceX: 2, forceY: -3,
+    pressureForceX: 1, pressureForceY: -1, discreteForceX: 2, discreteForceY: -3,
+    wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 };
+  const request = { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' };
+  const validated = validateFlowOutput(current, fields, 2, request);
+  assert.equal(validated.summary.forceX, 2);
+  assert.throws(() => validateFlowOutput({ ...current, forceDefinition: 'legacy' }, fields, 2, request), /受力定义/);
+  assert.throws(() => validateFlowOutput({ ...current, discreteForceX: 2.1 }, fields, 2, request), /离散力不一致/);
+  const withoutWall = { ...current };
+  delete withoutWall.wallForceX;
+  assert.throws(() => validateFlowOutput(withoutWall, fields, 2, request), /wallForceX/);
 });
 
 test('export guide distinguishes recorded shared-face pressure from legacy summaries', () => {
@@ -85,6 +110,9 @@ test('export guide distinguishes recorded shared-face pressure from legacy summa
     summary: { ...summary, pressureDiscretization: 'shared-face-gauss' }
   } });
   assert.match(current, /压力离散：共享面压力/);
+  assert.match(exportGuide({ result, flow: { summary: {
+    ...summary, pressureDiscretization: 'shared-face-gauss', viscousStress: 'symmetric'
+  } } }), /压力力和黏性力在同一组共享面上积分/);
 });
 
 test('iteration-limit output is valid but never reported as converged', () => {

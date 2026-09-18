@@ -176,8 +176,12 @@ def verify_flow(mesh: Path, prefix: Path, args: argparse.Namespace) -> dict[str,
     sys.path.insert(0, str(REPO / "tools" / "verification"))
     from verify_native_flow import verify_case  # pylint: disable=import-outside-toplevel
 
-    return verify_case(mesh, prefix, "manufactured", args.nu, args.speed,
-                       verifier_namespace(args))
+    result = verify_case(mesh, prefix, "manufactured", args.nu, args.speed,
+                         verifier_namespace(args))
+    if result.get("native", {}).get("viscousStress", "laplacian") != args.viscous_stress:
+        result["valid"] = False
+        result.setdefault("issues", []).append("viscousStress differs from the requested manufactured run")
+    return result
 
 
 def refinement_groups(cases: list[dict[str, Any]]) -> dict[str, Any]:
@@ -230,6 +234,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--nu", type=float, default=0.1)
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
+    parser.add_argument("--viscous-stress", choices=("symmetric", "laplacian"), default="symmetric")
     return parser.parse_args()
 
 
@@ -270,7 +275,8 @@ def main() -> int:
         "parameters": {"levels": args.levels, "kinds": args.kinds, "schemes": args.schemes,
                        "timeout": args.timeout, "maxIterations": args.max_iterations,
                        "tolerance": args.tolerance, "nu": args.nu, "speed": args.speed,
-                       "manufacturedPressureSlope": args.manufactured_pressure_slope},
+                       "manufacturedPressureSlope": args.manufactured_pressure_slope,
+                       "viscousStress": args.viscous_stress},
         "meshGeneration": [], "runs": [], "cases": [],
         "refinementGroups": None, "issues": [],
     }
@@ -355,7 +361,8 @@ def main() -> int:
                            "--case", "manufactured", "--nu", f"{args.nu:.17g}",
                            "--speed", f"{args.speed:.17g}", "--max-iterations", str(args.max_iterations),
                            "--tolerance", f"{args.tolerance:.17g}", "--convection", scheme, "--profile",
-                           "--manufactured-pressure-slope", f"{args.manufactured_pressure_slope:.17g}"]
+                           "--manufactured-pressure-slope", f"{args.manufactured_pressure_slope:.17g}",
+                           "--viscous-stress", args.viscous_stress]
                 stage: dict[str, Any] = {"label": label, "meshKind": kind, "scheme": scheme,
                                          "level": level, "mesh": str(mesh.resolve()),
                                          "meshSha256": sha256_file(mesh) if mesh.is_file() else None}

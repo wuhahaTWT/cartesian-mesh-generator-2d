@@ -134,9 +134,13 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 退出0代表满足上述停止条件；退出2代表到达上限，保存诊断场但 `converged:false`；退出1代表输入/数值失败。输出六种文件：`.json` 工况/状态/单位/压力基准、`.fields.json` 桌面字段、`.cells.csv` 单元 u/v/p、`.faces.csv` owner向外的积分体积通量，以及面压力、对流/扩散动量通量、`.residuals.csv` 全迭代历史、`.vtk` 原多边形上的速度/压力。p 为 p/ρ，单位 m²/s²；力为流体对静止 EmbeddedBoundary 的积分力除以密度和深度，单位 m³/s²，不是 Cd/Cl。`domainHeight` 只指外域高度，不是物体参考直径。桌面验证全字段有限、单元ID/数量/工况与本次最终网格一致后才绑定；失败或取消保留 `flow-incomplete-*` 诊断，部分复制文件不会充当完整结果。
 
-面动量的符号为 `q*U_face + p_face*S - nu*grad(U)·S`，CSV 的 advectionX/Y、diffusionX/Y 分别保存第一项和第三项；二维每单位深度的单位为 m³/s²，pressure 列仍为 m²/s²。独立验证器从 CM2D 多边形中心和边线法向、cell u/v/p、边界定义重建梯度/面值/通量，复算局部和全局动量失衡，不能仅对已导出通量求和就宣称离散正确。旧输出若完整缺少这些列，只能标为动量审核不可用；新列不完整应失败。
+面动量默认使用 `q*U_face + p_face*S - nu*(grad(U)+grad(U)^T)·S`，CSV 的 advectionX/Y、diffusionX/Y 分别保存对流项和完整黏性项；二维每单位深度的单位为 m³/s²，pressure 列仍为 m²/s²。`--viscous-stress symmetric` 是默认值，`laplacian` 保留旧单分量扩散用于CLI对照。两者的真实离散残差都包含实际使用的黏性项，不能只给受力报告补一个转置项。独立验证器从 CM2D 多边形中心和边线法向、cell u/v/p、边界定义重建梯度/面值/通量，复算局部和全局动量失衡；旧文件未记录viscousStress时按旧Laplacian审核，新应力标记未知或面通量列不完整时失败。
 
-力分开记录：`pressureForceX/Y` 是与动量共用的壁面压力积分；`discreteForceX/Y` 加上同一离散 Laplacian 黏性通量；原 `forceX/Y` 保留由速度梯度重构的完整 Newtonian 应力牵引，`forceDefinition` 明确标注。后者含转置梯度，与离散 Laplacian 面通量尚不完全相同，不能把二者混称同一受力或据此认定工程阻力精度。需要后续细化/应力离散验证；目前同时导出差别以供核查。
+内部面的速度梯度先按几何权重插值，再沿面法向修正，使其沿两单元中心连线的差等于真实速度差。由此得到的法向导数与原紧致两点/非正交通量一致；转置梯度作为显式共享面修正进入两侧反号的动量方程。固定常量壁面/顶盖的切向速度导数为零，法向导数由真实壁值和法向距离恢复；当前轴对齐滑移边界的切向剪切为零，不能推广为任意方向滑移边界实现。常黏度不可压物理采用 `nu*(gradU+gradU^T)`，不是新的本构模型；公开应力积分惯例可参考 [OpenFOAM Forces](https://doc.openfoam.com/2306/tools/post-processing/function-objects/forces/forces/)。本仓库独立实现，未链接或复制其求解代码。
+
+默认symmetric模式的 `forceX/Y = discreteForceX/Y`，两者均复用动量方程的共享面压力和完整黏性通量；范围仍为静止EmbeddedBoundary。`pressureForceX/Y` 单列压力贡献，`reconstructedForceX/Y` 保留旧单元梯度牵引作诊断，不作为默认力。`wallForceX/Y` 与 `wallViscousForceX/Y` 另统计所有无滑移壁和移动顶盖，faces.csv 的wall列标识这些面。符号是流体对边界的力；滑移、入口、出口不纳入wall总力。旧laplacian模式仍明确保留旧受力定义，不混用。
+
+独立 `audit_wall_tractions.py --summary <runner-summary.json> --summary <physical-summary.json> --output <diagnostic.json>` 对已有通道/制造解结果按真实边线进行16点Gauss积分，比较解析压力、完整黏性牵引和总力；记录每单位壁长的加权RMS、各面与积分总量，不新增无出处的验收阈值。输入哈希须与独立读回报告一致，源报告的失败系列仍保留。受力守恒、解析误差、空间收敛和工程阻力资格分开报告。
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
