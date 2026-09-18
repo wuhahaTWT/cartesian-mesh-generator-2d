@@ -1,3 +1,4 @@
+#include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include <algorithm>
@@ -214,6 +215,8 @@ void momentum(System& a,
     a.reset();
     const auto& bc = y ? b.v : b.u;
     const auto& fixed = y ? b.fixedV : b.fixedU;
+    const auto limiter = c.convection == ConvectionScheme2D::LimitedLinearUpwind
+        ? detail::faceReconstructionLimiter(m, field, gradField, bc, fixed) : Vec{};
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
         a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
     }
@@ -230,8 +233,10 @@ void momentum(System& a,
             a.add(j, i, -d - std::max(q, 0.));
             const double correction =
                 c.nu * dot(interpolateGradient(f, gradField), f.correction);
-            a.rhs[i] += correction;
-            a.rhs[j] -= correction;
+            const double upwind = q >= 0 ? field[i] : field[j];
+            const double deferred = q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-upwind);
+            a.rhs[i] += correction-deferred;
+            a.rhs[j] -= correction-deferred;
         } else {
             if (fixed[id]) {
                 a.diag[i] += d;
@@ -241,6 +246,7 @@ void momentum(System& a,
                 ensure(q >= -1e-12 * c.speed * std::hypot(f.areaVector.x, f.areaVector.y),
                        "Flow outlet backflow unsupported in this laminar prototype");
                 a.diag[i] += q;
+                a.rhs[i] -= q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-field[i]);
             }
         }
     }
@@ -272,6 +278,9 @@ FlowResult2D solveIncompressible2D(
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
                c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0,
            "Invalid pressure preconditioner");
+    ensure(c.convection == ConvectionScheme2D::Upwind ||
+               c.convection == ConvectionScheme2D::LimitedLinearUpwind,
+           "Invalid convection scheme");
     const auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
@@ -358,10 +367,12 @@ FlowResult2D solveIncompressible2D(
         const Vec oldV = r.v;
         const Vec oldP = r.p;
         const auto gp = gradient(m, r.p, zeros, b.fixedP);
+        const auto forceGradient = detail::conservativePressureGradient(m,
+            detail::pressureFaceValues(m, r.p, gp, zeros, b.fixedP));
         const auto gu = gradient(m, r.u, b.u, b.fixedU);
         const auto gv = gradient(m, r.v, b.v, b.fixedV);
-        momentum(au, m, c, b, r.u, r.flux, gu, gp, false, true);
-        momentum(av, m, c, b, r.v, r.flux, gv, gp, true, true);
+        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, false, true);
+        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, true, true);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -382,9 +393,9 @@ FlowResult2D solveIncompressible2D(
                 const Point2D point{m.cells[i].centre.x*(1-w)+m.cells[j].centre.x*w,m.cells[i].centre.y*(1-w)+m.cells[j].centre.y*w};
                 const auto skew=f.centre-point;
                 const double uf=interpolate(f,r.u)+dot(interpolateGradient(f,gup),skew),vf=interpolate(f,r.v)+dot(interpolateGradient(f,gvp),skew);
-                const Vector2D rag{(1-w)*ra[i]*gp[i].x+w*ra[j]*gp[j].x,(1-w)*ra[i]*gp[i].y+w*ra[j]*gp[j].y};
+                const Vector2D rag{(1-w)*ra[i]*forceGradient[i].x+w*ra[j]*forceGradient[j].x,(1-w)*ra[i]*forceGradient[i].y+w*ra[j]*forceGradient[j].y};
                 predicted[id]=uf*f.areaVector.x+vf*f.areaVector.y+dot(rag,f.areaVector)-rf*(f.transmissibility*(r.p[j]-r.p[i])+dot(interpolateGradient(f,gp),f.correction));
-            }else if(b.role[id]==Role::Outlet){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(gp[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));}
+            }else if(b.role[id]==Role::Outlet){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
             else predicted[id]=0;
         }
@@ -400,7 +411,9 @@ FlowResult2D solveIncompressible2D(
             if(b.closed){ap.pin(0);pc[0]=0;}
             linearSolve(ap, pc, true);
         }
-        const auto gc=gradient(m,pc,zeros,b.fixedP);
+        const auto correctionGradient=gradient(m,pc,zeros,b.fixedP);
+        const auto gc=detail::conservativePressureGradient(m,
+            detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
         double du=0,dp=0;
         for(std::size_t i=0;i<n;++i){r.u[i]-=ra[i]*gc[i].x;r.v[i]-=ra[i]*gc[i].y;r.p[i]+=c.pressureRelaxation*pc[i];
             finite(r.u[i]);finite(r.v[i]);finite(r.p[i]);du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);}
@@ -415,8 +428,10 @@ FlowResult2D solveIncompressible2D(
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
         const auto newGp=gradient(m,r.p,zeros,b.fixedP),newGu=gradient(m,r.u,b.u,b.fixedU),newGv=gradient(m,r.v,b.v,b.fixedV);
-        momentum(checkU,m,c,b,r.u,r.flux,newGu,newGp,false,false);
-        momentum(checkV,m,c,b,r.v,r.flux,newGv,newGp,true,false);
+        const auto newForceGradient=detail::conservativePressureGradient(m,
+            detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
+        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,false,false);
+        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,true,false);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
@@ -426,13 +441,40 @@ FlowResult2D solveIncompressible2D(
         if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8){r.converged=true;break;}
     }
     const auto gu=gradient(m,r.u,b.u,b.fixedU),gv=gradient(m,r.v,b.v,b.fixedV),gp=gradient(m,r.p,zeros,b.fixedP);
-    for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];if(f.neighbour||f.patch!=BoundaryPatch2D::EmbeddedBoundary||b.role[id]!=Role::Wall)continue;
-        const auto i=f.owner;const auto d=f.centre-m.cells[i].centre;
-        const double wallP=r.p[i]+dot(gp[i],d);
-        r.forceX+=wallP*f.areaVector.x-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
-        r.forceY+=wallP*f.areaVector.y-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
+    const auto pf=detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP);
+    const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
+        ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
+    const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
+        ? detail::faceReconstructionLimiter(m,r.v,gv,b.v,b.fixedV) : Vec{};
+    r.faceMomentum.resize(nf);
+    for(std::size_t id=0;id<nf;++id) {
+        const auto& f=m.faces[id]; const auto i=f.owner;
+        auto& fm=r.faceMomentum[id]; fm.pressure=finite(pf[id]);
+        auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
+                           const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter) {
+            const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
+                : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
+            double diffusion=0;
+            if(f.neighbour || fixed[id]) {
+                const double other=f.neighbour ? value[*f.neighbour] : bc[id];
+                diffusion=-c.nu*(f.transmissibility*(other-value[i])+dot(interpolateGradient(f,g),f.correction));
+            }
+            return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
+        };
+        const auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu);
+        const auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv);
+        fm.advection={ax,ay}; fm.diffusion={dx,dy};
+        if(f.neighbour || f.patch!=BoundaryPatch2D::EmbeddedBoundary || b.role[id]!=Role::Wall) continue;
+        const double px=pf[id]*f.areaVector.x,py=pf[id]*f.areaVector.y;
+        r.pressureForceX+=px; r.pressureForceY+=py;
+        r.discreteForceX+=px+dx; r.discreteForceY+=py+dy;
+        // Newtonian traction remains a separate reconstructed diagnostic. Its
+        // transpose-gradient contribution is not in the discrete Laplacian flux.
+        r.forceX+=px-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
+        r.forceY+=py-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
     }
     finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);
+    finite(r.pressureForceX);finite(r.pressureForceY);finite(r.discreteForceX);finite(r.discreteForceY);
     if (c.profile) {
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }

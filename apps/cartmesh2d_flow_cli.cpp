@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
+            "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
@@ -79,6 +80,11 @@ int main(int argc, char** argv) {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--convection") {
+                if (v != "upwind" && v != "limited-linear")
+                    throw std::invalid_argument("convection must be upwind or limited-linear");
+                controls.convection = v == "limited-linear"
+                    ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
             } else if (a == "--pressure-preconditioner") {
                 if (v != "ic0" && v != "jacobi") {
                     throw std::invalid_argument("pressure preconditioner must be ic0 or jacobi");
@@ -137,7 +143,7 @@ int main(int argc, char** argv) {
         fields << "\n]}\n";
 
         auto faces = out(prefix, ".faces.csv");
-        faces << "face,owner,neighbour,flux\n";
+        faces << "face,owner,neighbour,flux,pressure,advectionX,advectionY,diffusionX,diffusionY\n";
         for (std::size_t i = 0; i < mesh.faces.size(); ++i) {
             const auto& f = mesh.faces[i];
             faces << i << ',' << f.owner << ',';
@@ -146,7 +152,9 @@ int main(int argc, char** argv) {
             } else {
                 faces << -1;
             }
-            faces << ',' << r.flux[i] << '\n';
+            const auto& fm = r.faceMomentum[i];
+            faces << ',' << r.flux[i] << ',' << fm.pressure << ',' << fm.advection.x
+                  << ',' << fm.advection.y << ',' << fm.diffusion.x << ',' << fm.diffusion.y << '\n';
         }
 
         auto history = out(prefix, ".residuals.csv");
@@ -159,6 +167,8 @@ int main(int argc, char** argv) {
         auto summary = out(prefix, ".json");
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" : "jacobi";
+        const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
+            ? "limited-linear" : "upwind";
         summary << "{\n\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
                 << (r.converged ? "converged" : "iteration_limit")
@@ -174,6 +184,14 @@ int main(int argc, char** argv) {
                 << ",\n\"pressureChange\":" << last.pressureChange
                 << ",\n\"forceX\":" << r.forceX
                 << ",\n\"forceY\":" << r.forceY
+                << ",\n\"pressureForceX\":" << r.pressureForceX
+                << ",\n\"pressureForceY\":" << r.pressureForceY
+                << ",\n\"discreteForceX\":" << r.discreteForceX
+                << ",\n\"discreteForceY\":" << r.discreteForceY
+                << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
+                << ",\n\"convection\":\"" << convection << '"'
+                << ",\n\"forceDefinition\":\"reconstructed-newtonian-traction\""
+                << ",\n\"discreteForceDefinition\":\"pressure plus negative nu grad(U) dot S; embedded walls; Laplacian momentum flux\""
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight
                 << ",\n\"tolerance\":" << controls.tolerance
@@ -184,7 +202,8 @@ int main(int argc, char** argv) {
                         ? "cell 0, kinematic pressure zero"
                         : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
-                << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion\",\n"
+                << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; "
+                << convection << " momentum convection; corrected diffusion\",\n"
                 << "\"scope\":\"steady constant-property laminar flow; no turbulence or accuracy certification\"\n}\n";
 
         std::string error;

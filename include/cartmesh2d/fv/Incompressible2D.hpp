@@ -7,6 +7,8 @@
 
 namespace cartmesh2d::fv {
 
+enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
+
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0 };
 
 struct FlowControls2D {
@@ -18,6 +20,7 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     double pressureRelaxation = .25;
     bool profile = false;
+    ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
 };
 
@@ -41,17 +44,28 @@ struct FlowIteration2D {
     double pressureChange = 0;
 };
 
+struct FaceMomentum2D {
+    double pressure = 0;
+    Vector2D advection{};
+    Vector2D diffusion{}; // -nu grad(U) dot S; same Laplacian flux as momentum
+};
+
 struct FlowResult2D {
     bool converged = false;
     std::vector<double> u;
     std::vector<double> v;
     std::vector<double> p;
     std::vector<double> flux;
+    std::vector<FaceMomentum2D> faceMomentum;
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;
     double globalRelativeImbalance = 0;
     double forceX = 0;
     double forceY = 0;
+    double pressureForceX = 0;
+    double pressureForceY = 0;
+    double discreteForceX = 0;
+    double discreteForceY = 0;
     double domainHeight = 0;
     FlowPerformance2D performance;
 };

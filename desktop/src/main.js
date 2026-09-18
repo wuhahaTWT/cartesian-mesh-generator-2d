@@ -16,7 +16,7 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
-const { FLOW_CASES, FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles,
+const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput } = require('./core/flow');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
@@ -179,7 +179,8 @@ app.whenReady().then(async () => {
     budgetPresets: BUDGET_PRESETS,
     formats: GEOMETRY_FORMATS,
     samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) })),
-    flowCases: FLOW_CASES
+    flowCases: FLOW_CASES,
+    flowConvectionSchemes: FLOW_CONVECTION_SCHEMES
   }));
 
   ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
@@ -275,12 +276,13 @@ app.whenReady().then(async () => {
         fs.stat(outputFiles.vtk), fs.stat(outputFiles.residuals),
         fs.stat(outputFiles.cells), fs.stat(outputFiles.faces)
       ]);
-      const validated = validateFlowOutput(summary, fields, mesh.cells.length);
+      const validated = validateFlowOutput(summary, fields, mesh.cells.length, invocation.request);
       if ((processResult.code === 0) !== validated.summary.converged)
         throw new Error('原生求解器退出码与收敛状态不一致。');
       if (validated.summary.case !== invocation.request.case
           || validated.summary.nu !== invocation.request.nu
           || validated.summary.speed !== invocation.request.speed
+          || validated.summary.convection !== invocation.request.convection
           || validated.summary.iterations > invocation.request.maxIterations)
         throw new Error('原生求解结果与请求工况不一致。');
       const entries = Object.entries(outputFiles).map(([kind, source]) => {
@@ -551,7 +553,7 @@ app.whenReady().then(async () => {
   if (process.argv.some(item => item.startsWith('--smoke='))) await runSmoke();
 });
 
-// `--smoke=<sample-id> [--out=<dir>] [--method=<id>] [--shot=<png>]` drives the real
+// `--smoke=<sample-id> [--out=<dir>] [--method=<id>] [--flow-convection=<scheme>] [--shot=<png>]` drives the real
 // renderer through a full run and writes a screenshot.  Clicking the actual controls
 // is the only check that covers the renderer, the IPC surface and the CLI together.
 async function runSmoke() {
@@ -682,6 +684,8 @@ async function runSmoke() {
       document.getElementById('flowMaxIterations').value = ${JSON.stringify(argument('flow-max-iterations') || '20')};
       document.getElementById('flowNu').value = ${JSON.stringify(argument('flow-nu') || '0.01')};
       document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
+      document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'upwind')};
+      document.getElementById('flowConvection').dispatchEvent(new Event('change'));
       await smoke.runFlow();
       if (!smoke.state.flow || document.getElementById('flowSpeedOption').hidden ||
           document.getElementById('displayMode').value !== 'speed')

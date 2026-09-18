@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
         validateFlowOutput, validateFlowRequest } = require('../src/core/flow');
+const { exportGuide } = require('../src/core/export-guide');
 
 const summary = {
   format: 'cartmesh2d-flow-summary-v1', case: 'external', nu: 0.01, speed: 1,
@@ -25,10 +26,17 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   const invocation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: '0.01', speed: '1', maxIterations: '1500' });
   assert.equal(invocation.executable, 'cartmesh2d_flow_cli');
+  assert.equal(invocation.request.convection, 'upwind');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
-    '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500']);
+    '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500',
+    '--convection', 'upwind']);
+  const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
+    { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
+  assert.equal(limited.request.convection, 'limited-linear');
+  assert.equal(limited.args.at(-1), 'limited-linear');
   assert.throws(() => buildFlowInvocation('/tmp/intermediate.cm2d', '/tmp/run', invocation.request), /solver\.cm2d/);
   assert.throws(() => validateFlowRequest({ case: 'rans', nu: 0.01, speed: 1, maxIterations: 10 }), /未知/);
+  assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'central' }), /对流格式/);
   assert.throws(() => validateFlowRequest({ case: 'cavity', nu: 0, speed: 1, maxIterations: 10 }), /大于 0/);
 });
 
@@ -48,6 +56,35 @@ test('flow outputs cover every final cell and are reordered by native cell id', 
   const validated = validateFlowOutput(summary, fields, 2);
   assert.deepEqual(validated.fields.cells.map(cell => cell.id), [0, 1]);
   assert.equal(validated.summary.status, 'converged');
+  assert.equal(validated.summary.convection, 'upwind');
+  assert.equal(validated.summary.convectionInferred, true);
+  assert.equal(validated.summary.pressureDiscretization, 'legacy-unspecified');
+  assert.equal(validated.summary.pressureDiscretizationInferred, true);
+  assert.throws(() => validateFlowOutput(summary, fields, 2,
+    { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' }), /缺少压力离散格式/);
+});
+
+test('flow output accepts the limited-linear scheme and rejects unknown or mixed requests', () => {
+  const limited = validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss' }, fields, 2,
+    { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'limited-linear' });
+  assert.equal(limited.summary.convection, 'limited-linear');
+  assert.equal(limited.summary.pressureDiscretization, 'shared-face-gauss');
+  assert.equal(limited.summary.pressureDiscretizationInferred, false);
+  assert.throws(() => validateFlowOutput({ ...summary, convection: 'central' }, fields, 2), /对流格式/);
+  assert.throws(() => validateFlowOutput({ ...summary, convection: 'limited-linear', pressureDiscretization: 'shared-face-gauss' }, fields, 2,
+    { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' }), /不一致/);
+  assert.throws(() => validateFlowOutput({ ...summary, pressureDiscretization: 'cell-centre' }, fields, 2), /压力离散/);
+});
+
+test('export guide distinguishes recorded shared-face pressure from legacy summaries', () => {
+  const result = { counts: { cells: 2 }, gates: {} };
+  const legacy = exportGuide({ result, flow: { summary } });
+  assert.match(legacy, /压力离散：旧结果未记录/);
+  assert.doesNotMatch(legacy, /压力离散：共享面压力/);
+  const current = exportGuide({ result, flow: {
+    summary: { ...summary, pressureDiscretization: 'shared-face-gauss' }
+  } });
+  assert.match(current, /压力离散：共享面压力/);
 });
 
 test('iteration-limit output is valid but never reported as converged', () => {

@@ -14,6 +14,18 @@ const FLOW_CASES = Object.freeze({
     scope: '方形内流：顶盖移动，其余边界无滑移，并固定参考压力。'
   }
 });
+const FLOW_CONVECTION_SCHEMES = Object.freeze({
+  upwind: {
+    id: 'upwind', label: '一阶迎风',
+    description: '稳健的默认格式，数值扩散较大。'
+  },
+  'limited-linear': {
+    id: 'limited-linear', label: '线性迎风（限制重构）',
+    description: '减少数值扩散，但不保证所有工况都更准确。'
+  }
+});
+const PRESSURE_DISCRETIZATION = 'shared-face-gauss';
+const LEGACY_PRESSURE_DISCRETIZATION = 'legacy-unspecified';
 const FLOW_OUTPUT_SUFFIXES = Object.freeze([
   '.json', '.fields.json', '.vtk', '.residuals.csv', '.cells.csv', '.faces.csv'
 ]);
@@ -24,10 +36,14 @@ const finite = (value, name) => {
   if (!Number.isFinite(number)) throw new Error(`${name} 必须是有限数。`);
   return number;
 };
+const knownConvection = value => typeof value === 'string'
+  && Object.prototype.hasOwnProperty.call(FLOW_CONVECTION_SCHEMES, value);
 
 function validateFlowRequest(request = {}) {
   const flowCase = FLOW_CASES[request.case];
   if (!flowCase) throw new Error('未知流动工况。');
+  const convection = request.convection === undefined ? 'upwind' : request.convection;
+  if (!knownConvection(convection)) throw new Error('未知对流格式。请选择 upwind 或 limited-linear。');
   const nu = finite(request.nu, '运动黏度');
   const speed = finite(request.speed, '参考速度');
   const maxIterations = finite(request.maxIterations, '最大迭代数');
@@ -35,7 +51,7 @@ function validateFlowRequest(request = {}) {
   if (!(speed > 0)) throw new Error('参考速度必须大于 0。');
   if (!Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 100000)
     throw new Error('最大迭代数必须是 1 到 100000 的整数。');
-  return { case: flowCase.id, nu, speed, maxIterations };
+  return { case: flowCase.id, nu, speed, maxIterations, convection };
 }
 
 function buildFlowInvocation(meshPath, outputPrefix, request) {
@@ -47,7 +63,8 @@ function buildFlowInvocation(meshPath, outputPrefix, request) {
     request: validated,
     args: ['--mesh', meshPath, '--output', outputPrefix,
       '--case', validated.case, '--nu', String(validated.nu),
-      '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations)]
+      '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations),
+      '--convection', validated.convection]
   };
 }
 
@@ -66,7 +83,7 @@ function parseFlowProgress(line) {
   };
 }
 
-function validateFlowOutput(summary, fields, expectedCells) {
+function validateFlowOutput(summary, fields, expectedCells, expectedRequest = null) {
   if (!summary || summary.format !== 'cartmesh2d-flow-summary-v1')
     throw new Error('流动摘要格式无效。');
   if (!FLOW_CASES[summary.case]) throw new Error('流动摘要工况无效。');
@@ -74,12 +91,24 @@ function validateFlowOutput(summary, fields, expectedCells) {
     throw new Error('流动摘要状态无效。');
   if (typeof summary.converged !== 'boolean' || summary.converged !== (summary.status === 'converged'))
     throw new Error('流动摘要的收敛状态互相矛盾。');
+  const convectionInferred = summary.convection === undefined;
+  const convection = convectionInferred ? 'upwind' : summary.convection;
+  if (!knownConvection(convection)) throw new Error('流动摘要对流格式无效。');
+  const pressureDiscretizationInferred = summary.pressureDiscretization === undefined;
+  const pressureDiscretization = pressureDiscretizationInferred
+    ? LEGACY_PRESSURE_DISCRETIZATION : summary.pressureDiscretization;
+  if (!pressureDiscretizationInferred && pressureDiscretization !== PRESSURE_DISCRETIZATION)
+    throw new Error('流动摘要压力离散格式无效。');
   const iterations = finite(summary.iterations, 'iterations');
   const cells = finite(summary.cells, 'cells');
   if (!Number.isInteger(iterations) || iterations < 1) throw new Error('iterations 无效。');
   if (!Number.isInteger(cells) || cells !== expectedCells) throw new Error('流场单元数与最终网格不一致。');
   const normalizedSummary = {
     ...summary,
+    convection,
+    convectionInferred,
+    pressureDiscretization,
+    pressureDiscretizationInferred,
     nu: finite(summary.nu, 'nu'), speed: finite(summary.speed, 'speed'),
     iterations, cells,
     continuity: finite(summary.continuity, 'continuity'),
@@ -99,6 +128,16 @@ function validateFlowOutput(summary, fields, expectedCells) {
       || normalizedSummary.globalRelativeImbalance >= 1e-8
       || ['velocityChange', 'pressureChange', 'momentumResidual'].some(key => normalizedSummary[key] >= normalizedSummary.tolerance)))
     throw new Error('摘要声称收敛，但实际指标未达到停止条件。');
+
+  if (expectedRequest) {
+    const request = validateFlowRequest(expectedRequest);
+    if (pressureDiscretizationInferred)
+      throw new Error('本次新流动结果缺少压力离散格式，不能与请求绑定。');
+    if (normalizedSummary.case !== request.case || normalizedSummary.nu !== request.nu
+        || normalizedSummary.speed !== request.speed || normalizedSummary.convection !== request.convection
+        || normalizedSummary.iterations > request.maxIterations)
+      throw new Error('原生求解结果与请求工况不一致。');
+  }
 
   if (!fields || fields.format !== 'cartmesh2d-flow-v1' || !Array.isArray(fields.cells))
     throw new Error('流场文件格式无效。');
@@ -129,6 +168,7 @@ async function commitFlowFiles(fileSystem, entries) {
 }
 
 module.exports = {
-  FLOW_CASES, FLOW_OUTPUT_SUFFIXES,
+  FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_OUTPUT_SUFFIXES,
+  LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest
 };
