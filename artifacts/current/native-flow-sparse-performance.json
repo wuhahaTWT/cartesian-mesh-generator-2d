@@ -1,0 +1,2369 @@
+{
+  "format": "cartmesh2d-flow-sparse-performance-v1",
+  "binarySha256": "9f7597269603a55ba90a7a06449ae3f5a1ebd5fab496c56d6320cd9710476259",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "model": "MacBookAir10,1",
+    "memoryBytes": 8589934592,
+    "logicalCpus": 8,
+    "build": "Release /usr/bin/clang++",
+    "parallelism": "serial solver, runs sequential"
+  },
+  "baselineEvidence": "artifacts/current/native-flow-performance.json",
+  "baselineBinarySha256": "9ebffc820ccc8312e9ecb7915cc920376c393c163e5ada7a54f6061eb6f37145",
+  "sourceHashes": {
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "205ab6a9993980a2f8fb23cb36bdce406cd1f564e8e0784c47ff6465ae806896",
+    "src/fv/Incompressible2D.cpp": "eb7000b7c001d6b26b3ceee92221992bbca24908b2fdad02482095189abc31f0",
+    "apps/cartmesh2d_flow_cli.cpp": "3ab58aba882ff9b2bdc1d6483910de48a2b205b22fdb5146cda16f12eee94762",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "dab707ffd1c13b671def92dc62a965dd072d8cd21d4c00acfee116e7aaaadc76"
+  },
+  "summary": [
+    {
+      "label": "channel-l6",
+      "originalMapJacobiSolveSeconds": 1.654681541,
+      "methods": {
+        "jacobi": {
+          "solveSecondsMedian": 1.201055083,
+          "originalOverNewTimeRatio": 1.3776899697780138,
+          "maxPeakRssBytes": 8110080,
+          "simpleIterations": 44,
+          "pressureIterations": 15270,
+          "maxPressureIterations": 406
+        },
+        "ic0": {
+          "solveSecondsMedian": 0.528096458,
+          "originalOverNewTimeRatio": 3.1332941471839977,
+          "maxPeakRssBytes": 8372224,
+          "simpleIterations": 44,
+          "pressureIterations": 3518,
+          "maxPressureIterations": 105
+        }
+      },
+      "fieldDifferenceToOriginal": {
+        "u": 3.1963320878958257e-13,
+        "v": 3.877289459409672e-13,
+        "p": 5.515587986337778e-13,
+        "flux": 2.4618985814603115e-14
+      }
+    },
+    {
+      "label": "channel-l7",
+      "originalMapJacobiSolveSeconds": 6.249643917,
+      "methods": {
+        "jacobi": {
+          "solveSecondsMedian": 4.682693708,
+          "originalOverNewTimeRatio": 1.3346258172562073,
+          "maxPeakRssBytes": 27443200,
+          "simpleIterations": 21,
+          "pressureIterations": 15246,
+          "maxPressureIterations": 811
+        },
+        "ic0": {
+          "solveSecondsMedian": 1.687300417,
+          "originalOverNewTimeRatio": 3.703930760659558,
+          "maxPeakRssBytes": 27983872,
+          "simpleIterations": 21,
+          "pressureIterations": 3226,
+          "maxPressureIterations": 197
+        }
+      },
+      "fieldDifferenceToOriginal": {
+        "u": 4.3412495820405184e-13,
+        "v": 2.005422193905025e-13,
+        "p": 6.854156131552713e-12,
+        "flux": 6.612226345325439e-15
+      }
+    },
+    {
+      "label": "circle-re20",
+      "originalMapJacobiSolveSeconds": 41.817508708,
+      "methods": {
+        "jacobi": {
+          "solveSecondsMedian": 31.590840208,
+          "originalOverNewTimeRatio": 1.3237225864416933,
+          "maxPeakRssBytes": 10551296,
+          "simpleIterations": 336,
+          "pressureIterations": 324230,
+          "maxPressureIterations": 322
+        },
+        "ic0": {
+          "solveSecondsMedian": 18.368553,
+          "originalOverNewTimeRatio": 2.276581541725143,
+          "maxPeakRssBytes": 10862592,
+          "simpleIterations": 336,
+          "pressureIterations": 123687,
+          "maxPressureIterations": 131
+        }
+      },
+      "fieldDifferenceToOriginal": {
+        "u": 6.727951529228449e-14,
+        "v": 2.8602120671905595e-14,
+        "p": 6.895595205946847e-13,
+        "flux": 3.141931159689193e-14
+      }
+    }
+  ],
+  "runs": [
+    {
+      "label": "channel-l6",
+      "repeat": 1,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/runs/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.3051869579940103,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        1.25 real         1.23 user         0.01 sys\n             8110080  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 655  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   5  voluntary context switches\n                 445  involuntary context switches\n          8337601900  instructions retired\n          3959248251  cycles elapsed\n             7586688  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.019204792,
+        "solveSeconds": 1.201055083,
+        "momentumLinearSolveSeconds": 0.102521752,
+        "pressureLinearSolveSeconds": 1.0232480000000002,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 15270,
+        "maxPressureIterations": 406,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 2.413145291532636e-13,
+        "globalImbalance": -1.8914977548654954e-14,
+        "momentumResidual": 3.257365495770857e-07,
+        "velocityChange": 9.81110794564733e-07,
+        "pressureChange": 9.633198020903397e-07,
+        "forceX": 0.3178152216585902,
+        "forceY": -1.8236280541206185e-16,
+        "globalRelativeImbalance": 2.8368099233683785e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8110080,
+      "outputHashes": {
+        ".json": "b5ca5cd3f3798175e09e7e83c8d1797d226375bce8b477337c26ee9b7901b011",
+        ".fields.json": "179b37399ef2f5c7445aa2316f8f6613ea391871f026e1434cc6d737f133069c",
+        ".cells.csv": "c77455d1dbdc855ee668deb06926369419eda73ab87de2d9e51d42c34dd899a6",
+        ".faces.csv": "53b422d5b889059309e6f748e42bdc32b09c6a092a22db5cd0222fe706b1343a",
+        ".residuals.csv": "7e917302e2ab35e5ab78a34a3d45c3afa7429801fe6f3bfe69bfa184139e2a08",
+        ".vtk": "64b8d7f535b6c2023a28b072f0fdee2a3aef96e1c27cc3f4bacf9a9075867e14"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": true,
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".residuals.csv": true,
+        ".vtk": true
+      }
+    },
+    {
+      "label": "channel-l6",
+      "repeat": 2,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/repeat-2/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.2568177909997758,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        1.24 real         1.23 user         0.01 sys\n             8110080  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 655  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   2  voluntary context switches\n                 336  involuntary context switches\n          8335708022  instructions retired\n          3952636485  cycles elapsed\n             7586688  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.020476125,
+        "solveSeconds": 1.192706167,
+        "momentumLinearSolveSeconds": 0.10177678599999998,
+        "pressureLinearSolveSeconds": 1.0165384590000006,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 15270,
+        "maxPressureIterations": 406,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 2.413145291532636e-13,
+        "globalImbalance": -1.8914977548654954e-14,
+        "momentumResidual": 3.257365495770857e-07,
+        "velocityChange": 9.81110794564733e-07,
+        "pressureChange": 9.633198020903397e-07,
+        "forceX": 0.3178152216585902,
+        "forceY": -1.8236280541206185e-16,
+        "globalRelativeImbalance": 2.8368099233683785e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8110080,
+      "outputHashes": {
+        ".json": "b5ca5cd3f3798175e09e7e83c8d1797d226375bce8b477337c26ee9b7901b011",
+        ".fields.json": "179b37399ef2f5c7445aa2316f8f6613ea391871f026e1434cc6d737f133069c",
+        ".cells.csv": "c77455d1dbdc855ee668deb06926369419eda73ab87de2d9e51d42c34dd899a6",
+        ".faces.csv": "53b422d5b889059309e6f748e42bdc32b09c6a092a22db5cd0222fe706b1343a",
+        ".residuals.csv": "7e917302e2ab35e5ab78a34a3d45c3afa7429801fe6f3bfe69bfa184139e2a08",
+        ".vtk": "64b8d7f535b6c2023a28b072f0fdee2a3aef96e1c27cc3f4bacf9a9075867e14"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": true,
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".residuals.csv": true,
+        ".vtk": true
+      }
+    },
+    {
+      "label": "channel-l6",
+      "repeat": 3,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/repeat-3/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.336206415988272,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        1.30 real         1.23 user         0.01 sys\n             8093696  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 654  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   1  voluntary context switches\n                 413  involuntary context switches\n          8335674821  instructions retired\n          3948861756  cycles elapsed\n             7570304  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.018529666,
+        "solveSeconds": 1.24962525,
+        "momentumLinearSolveSeconds": 0.10139024600000002,
+        "pressureLinearSolveSeconds": 1.0724376709999996,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 15270,
+        "maxPressureIterations": 406,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 2.413145291532636e-13,
+        "globalImbalance": -1.8914977548654954e-14,
+        "momentumResidual": 3.257365495770857e-07,
+        "velocityChange": 9.81110794564733e-07,
+        "pressureChange": 9.633198020903397e-07,
+        "forceX": 0.3178152216585902,
+        "forceY": -1.8236280541206185e-16,
+        "globalRelativeImbalance": 2.8368099233683785e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8093696,
+      "outputHashes": {
+        ".json": "b5ca5cd3f3798175e09e7e83c8d1797d226375bce8b477337c26ee9b7901b011",
+        ".fields.json": "179b37399ef2f5c7445aa2316f8f6613ea391871f026e1434cc6d737f133069c",
+        ".cells.csv": "c77455d1dbdc855ee668deb06926369419eda73ab87de2d9e51d42c34dd899a6",
+        ".faces.csv": "53b422d5b889059309e6f748e42bdc32b09c6a092a22db5cd0222fe706b1343a",
+        ".residuals.csv": "7e917302e2ab35e5ab78a34a3d45c3afa7429801fe6f3bfe69bfa184139e2a08",
+        ".vtk": "64b8d7f535b6c2023a28b072f0fdee2a3aef96e1c27cc3f4bacf9a9075867e14"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": true,
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".residuals.csv": true,
+        ".vtk": true
+      }
+    },
+    {
+      "label": "channel-l6",
+      "repeat": 1,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 0.6063457920099609,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        0.59 real         0.58 user         0.00 sys\n             8339456  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 669  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   9  voluntary context switches\n                 188  involuntary context switches\n          4848191963  instructions retired\n          1854266957  cycles elapsed\n             7816064  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.019865125,
+        "solveSeconds": 0.536421459,
+        "momentumLinearSolveSeconds": 0.10226204099999998,
+        "pressureLinearSolveSeconds": 0.3596150429999999,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 3518,
+        "maxPressureIterations": 105,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 4.2182479009349965e-13,
+        "globalImbalance": 4.8762738096529146e-14,
+        "momentumResidual": 3.257365458071162e-07,
+        "velocityChange": 9.81110786194296e-07,
+        "pressureChange": 9.633198060475702e-07,
+        "forceX": 0.31781522165854204,
+        "forceY": 7.027376727405943e-13,
+        "globalRelativeImbalance": 7.313284880567244e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8339456,
+      "outputHashes": {
+        ".json": "293447d721a0b1a8ba1356a98bb1d35e6c9ed70c2e172d13c94eca3b0a3e2557",
+        ".fields.json": "b4b4b5b67b01ab2f983283c45048263ab75537d3deb8d2313e9991da6bd0d8c4",
+        ".cells.csv": "9d525198cdd6f7988f3a1bd00072e15eedfb8d2d3aef068fe0ea147c3c5fe553",
+        ".faces.csv": "d693085acbf9c3ebd9cfaafe01f221f632971c388871e1686712e68ab7fedda4",
+        ".residuals.csv": "f4227738af0935bf653a9cfceffedba3fb052d22e1f15f71cf3d55271ab96864",
+        ".vtk": "9461012e92ba2b27dbe37d4d107f7bb4167dc78ef861ac70070121d35250fe34"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": false,
+        ".cells.csv": false,
+        ".faces.csv": false,
+        ".residuals.csv": false,
+        ".vtk": false
+      }
+    },
+    {
+      "label": "channel-l6",
+      "repeat": 2,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/repeat-2/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 0.6132052500033751,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        0.58 real         0.57 user         0.00 sys\n             8306688  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 667  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   7  voluntary context switches\n                 157  involuntary context switches\n          4847304979  instructions retired\n          1835604696  cycles elapsed\n             7783296  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.0187095,
+        "solveSeconds": 0.528096458,
+        "momentumLinearSolveSeconds": 0.10199932900000006,
+        "pressureLinearSolveSeconds": 0.35280046299999995,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 3518,
+        "maxPressureIterations": 105,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 4.2182479009349965e-13,
+        "globalImbalance": 4.8762738096529146e-14,
+        "momentumResidual": 3.257365458071162e-07,
+        "velocityChange": 9.81110786194296e-07,
+        "pressureChange": 9.633198060475702e-07,
+        "forceX": 0.31781522165854204,
+        "forceY": 7.027376727405943e-13,
+        "globalRelativeImbalance": 7.313284880567244e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8306688,
+      "outputHashes": {
+        ".json": "293447d721a0b1a8ba1356a98bb1d35e6c9ed70c2e172d13c94eca3b0a3e2557",
+        ".fields.json": "b4b4b5b67b01ab2f983283c45048263ab75537d3deb8d2313e9991da6bd0d8c4",
+        ".cells.csv": "9d525198cdd6f7988f3a1bd00072e15eedfb8d2d3aef068fe0ea147c3c5fe553",
+        ".faces.csv": "d693085acbf9c3ebd9cfaafe01f221f632971c388871e1686712e68ab7fedda4",
+        ".residuals.csv": "f4227738af0935bf653a9cfceffedba3fb052d22e1f15f71cf3d55271ab96864",
+        ".vtk": "9461012e92ba2b27dbe37d4d107f7bb4167dc78ef861ac70070121d35250fe34"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": false,
+        ".cells.csv": false,
+        ".faces.csv": false,
+        ".residuals.csv": false,
+        ".vtk": false
+      }
+    },
+    {
+      "label": "channel-l6",
+      "repeat": 3,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/repeat-3/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 0.6334621249989141,
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "timeLog": "        0.58 real         0.57 user         0.00 sys\n             8372224  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 671  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   7  voluntary context switches\n                 171  involuntary context switches\n          4845689891  instructions retired\n          1836630400  cycles elapsed\n             7848832  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 3596,
+        "faces": 7312,
+        "simpleIterations": 44,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.019788,
+        "solveSeconds": 0.527964667,
+        "momentumLinearSolveSeconds": 0.10184716400000002,
+        "pressureLinearSolveSeconds": 0.352400122,
+        "momentumSolves": 88,
+        "momentumIterations": 651,
+        "maxMomentumIterations": 12,
+        "pressureSolves": 176,
+        "pressureIterations": 3518,
+        "maxPressureIterations": 105,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 3596,
+        "iterations": 44,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 4.2182479009349965e-13,
+        "globalImbalance": 4.8762738096529146e-14,
+        "momentumResidual": 3.257365458071162e-07,
+        "velocityChange": 9.81110786194296e-07,
+        "pressureChange": 9.633198060475702e-07,
+        "forceX": 0.31781522165854204,
+        "forceY": 7.027376727405943e-13,
+        "globalRelativeImbalance": 7.313284880567244e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 8372224,
+      "outputHashes": {
+        ".json": "293447d721a0b1a8ba1356a98bb1d35e6c9ed70c2e172d13c94eca3b0a3e2557",
+        ".fields.json": "b4b4b5b67b01ab2f983283c45048263ab75537d3deb8d2313e9991da6bd0d8c4",
+        ".cells.csv": "9d525198cdd6f7988f3a1bd00072e15eedfb8d2d3aef068fe0ea147c3c5fe553",
+        ".faces.csv": "d693085acbf9c3ebd9cfaafe01f221f632971c388871e1686712e68ab7fedda4",
+        ".residuals.csv": "f4227738af0935bf653a9cfceffedba3fb052d22e1f15f71cf3d55271ab96864",
+        ".vtk": "9461012e92ba2b27dbe37d4d107f7bb4167dc78ef861ac70070121d35250fe34"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": false,
+        ".cells.csv": false,
+        ".faces.csv": false,
+        ".residuals.csv": false,
+        ".vtk": false
+      }
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 1,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/runs/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 6.04806370800361,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        5.98 real         5.09 user         0.08 sys\n            27394048  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                3313  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                  15  voluntary context switches\n               14793  involuntary context switches\n         31452723685  instructions retired\n         15863755143  cycles elapsed\n            26887104  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.084909333,
+        "solveSeconds": 5.750455542,
+        "momentumLinearSolveSeconds": 0.23449529600000002,
+        "pressureLinearSolveSeconds": 5.320442461999998,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 15246,
+        "maxPressureIterations": 811,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 3.306657949406207e-13,
+        "globalImbalance": 1.8817316343902428e-14,
+        "momentumResidual": 2.2749310870994004e-07,
+        "velocityChange": 6.794106246258241e-07,
+        "pressureChange": 9.924404657815496e-07,
+        "forceX": 0.31942019779953107,
+        "forceY": 3.8843575708366607e-16,
+        "globalRelativeImbalance": 2.822500311230832e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27394048,
+      "outputHashes": {
+        ".json": "9f131517295ae72d02b2e10054d871e40575bb8eaf87e19c3e5633b0172cdbec",
+        ".fields.json": "fdf75f154d60df980cb0ba59e6c7ca363d79e15a943cdbab889b5261eb3ac180",
+        ".cells.csv": "e61c18e1ccead150fda4d7724e45876e11c34c1f3045495325d2374931e412fb",
+        ".faces.csv": "30c2751dfda12a070c96b3c4edf0c82263de715055efc7ab47c1a46a9f5255d0",
+        ".residuals.csv": "a5b97e33c61ceb917b49410e604ba99b7e5ea26df9162d7fbce8effac2e95d1d",
+        ".vtk": "369af0c7a640b815e405aec8d6accd68a5a57c4f60adf401a973c0563aba9c0c"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 2,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/repeat-2/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 4.916882291989168,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        4.90 real         4.87 user         0.01 sys\n            27443200  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                1826  page reclaims\n                  12  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   7  voluntary context switches\n                  83  involuntary context switches\n         31313909770  instructions retired\n         15503046700  cycles elapsed\n            26936256  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.082039041,
+        "solveSeconds": 4.677983,
+        "momentumLinearSolveSeconds": 0.207543673,
+        "pressureLinearSolveSeconds": 4.308980631,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 15246,
+        "maxPressureIterations": 811,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 3.306657949406207e-13,
+        "globalImbalance": 1.8817316343902428e-14,
+        "momentumResidual": 2.2749310870994004e-07,
+        "velocityChange": 6.794106246258241e-07,
+        "pressureChange": 9.924404657815496e-07,
+        "forceX": 0.31942019779953107,
+        "forceY": 3.8843575708366607e-16,
+        "globalRelativeImbalance": 2.822500311230832e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27443200,
+      "outputHashes": {
+        ".json": "9f131517295ae72d02b2e10054d871e40575bb8eaf87e19c3e5633b0172cdbec",
+        ".fields.json": "fdf75f154d60df980cb0ba59e6c7ca363d79e15a943cdbab889b5261eb3ac180",
+        ".cells.csv": "e61c18e1ccead150fda4d7724e45876e11c34c1f3045495325d2374931e412fb",
+        ".faces.csv": "30c2751dfda12a070c96b3c4edf0c82263de715055efc7ab47c1a46a9f5255d0",
+        ".residuals.csv": "a5b97e33c61ceb917b49410e604ba99b7e5ea26df9162d7fbce8effac2e95d1d",
+        ".vtk": "369af0c7a640b815e405aec8d6accd68a5a57c4f60adf401a973c0563aba9c0c"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 3,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/repeat-3/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 4.963199082994834,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        4.90 real         4.88 user         0.01 sys\n            27426816  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                1834  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   4  voluntary context switches\n                 159  involuntary context switches\n         31293421394  instructions retired\n         15483826752  cycles elapsed\n            26870720  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.082316417,
+        "solveSeconds": 4.682693708,
+        "momentumLinearSolveSeconds": 0.20783933699999999,
+        "pressureLinearSolveSeconds": 4.313834750999998,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 15246,
+        "maxPressureIterations": 811,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 3.306657949406207e-13,
+        "globalImbalance": 1.8817316343902428e-14,
+        "momentumResidual": 2.2749310870994004e-07,
+        "velocityChange": 6.794106246258241e-07,
+        "pressureChange": 9.924404657815496e-07,
+        "forceX": 0.31942019779953107,
+        "forceY": 3.8843575708366607e-16,
+        "globalRelativeImbalance": 2.822500311230832e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27426816,
+      "outputHashes": {
+        ".json": "9f131517295ae72d02b2e10054d871e40575bb8eaf87e19c3e5633b0172cdbec",
+        ".fields.json": "fdf75f154d60df980cb0ba59e6c7ca363d79e15a943cdbab889b5261eb3ac180",
+        ".cells.csv": "e61c18e1ccead150fda4d7724e45876e11c34c1f3045495325d2374931e412fb",
+        ".faces.csv": "30c2751dfda12a070c96b3c4edf0c82263de715055efc7ab47c1a46a9f5255d0",
+        ".residuals.csv": "a5b97e33c61ceb917b49410e604ba99b7e5ea26df9162d7fbce8effac2e95d1d",
+        ".vtk": "369af0c7a640b815e405aec8d6accd68a5a57c4f60adf401a973c0563aba9c0c"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 1,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.962847332993988,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        1.90 real         1.88 user         0.01 sys\n            27951104  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                1857  page reclaims\n                  10  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   5  voluntary context switches\n                  29  involuntary context switches\n         15626428343  instructions retired\n          5964065693  cycles elapsed\n            27395008  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.083586458,
+        "solveSeconds": 1.679217666,
+        "momentumLinearSolveSeconds": 0.20823320700000006,
+        "pressureLinearSolveSeconds": 1.3110953320000005,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 3226,
+        "maxPressureIterations": 197,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 5.588179835841381e-13,
+        "globalImbalance": 7.511358919023384e-14,
+        "momentumResidual": 2.2749310553205178e-07,
+        "velocityChange": 6.79410632877244e-07,
+        "pressureChange": 9.924410108351007e-07,
+        "forceX": 0.31942019779954134,
+        "forceY": -2.42060169922554e-11,
+        "globalRelativeImbalance": 1.1266650620761822e-13,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27951104,
+      "outputHashes": {
+        ".json": "9a6e62be0fcfac8ef6a0003a01218853f489e2292b72c10a9247dc80d2d3cb63",
+        ".fields.json": "f092b81bf29878a73888a2a2b21d72ab24b65ecaa1368fed6d7a0b96c8c6d9df",
+        ".cells.csv": "7ce872ab3d2d3f24e01702772a8250b4206831dbd76315fedd6c9de0b37ba0b2",
+        ".faces.csv": "b195fb887c6b76dfa791f27d3e52ac08d6db64c12a86c3d66679392a3c9b19ac",
+        ".residuals.csv": "21c71305d4e01ca3da8af5f3b5a124f19f10ce28554738c82a9d7c7f30c4b7e7",
+        ".vtk": "3ba5580643599464b0164b945a91b60a9b825003755fddcd1d3e2ba913182df6"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 2,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/repeat-2/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.970138875010889,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        1.91 real         1.89 user         0.01 sys\n            27983872  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                1868  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   4  voluntary context switches\n                 109  involuntary context switches\n         15621929351  instructions retired\n          5983461787  cycles elapsed\n            27427776  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.080401875,
+        "solveSeconds": 1.687300417,
+        "momentumLinearSolveSeconds": 0.208950586,
+        "pressureLinearSolveSeconds": 1.3166125410000002,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 3226,
+        "maxPressureIterations": 197,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 5.588179835841381e-13,
+        "globalImbalance": 7.511358919023384e-14,
+        "momentumResidual": 2.2749310553205178e-07,
+        "velocityChange": 6.79410632877244e-07,
+        "pressureChange": 9.924410108351007e-07,
+        "forceX": 0.31942019779954134,
+        "forceY": -2.42060169922554e-11,
+        "globalRelativeImbalance": 1.1266650620761822e-13,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27983872,
+      "outputHashes": {
+        ".json": "9a6e62be0fcfac8ef6a0003a01218853f489e2292b72c10a9247dc80d2d3cb63",
+        ".fields.json": "f092b81bf29878a73888a2a2b21d72ab24b65ecaa1368fed6d7a0b96c8c6d9df",
+        ".cells.csv": "7ce872ab3d2d3f24e01702772a8250b4206831dbd76315fedd6c9de0b37ba0b2",
+        ".faces.csv": "b195fb887c6b76dfa791f27d3e52ac08d6db64c12a86c3d66679392a3c9b19ac",
+        ".residuals.csv": "21c71305d4e01ca3da8af5f3b5a124f19f10ce28554738c82a9d7c7f30c4b7e7",
+        ".vtk": "3ba5580643599464b0164b945a91b60a9b825003755fddcd1d3e2ba913182df6"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "channel-l7",
+      "repeat": 3,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/performance-baseline/meshes/channel-l7/channel-l7.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/repeat-3/channel-l7/channel",
+        "--case",
+        "channel",
+        "--nu",
+        ".01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 1.9493793750007171,
+      "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+      "timeLog": "        1.93 real         1.91 user         0.01 sys\n            27967488  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                1867  page reclaims\n                   1  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   9  voluntary context switches\n                 201  involuntary context switches\n         15623738352  instructions retired\n          5990077702  cycles elapsed\n            27411392  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 15372,
+        "faces": 30992,
+        "simpleIterations": 21,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.0837295,
+        "solveSeconds": 1.70517175,
+        "momentumLinearSolveSeconds": 0.21069362600000002,
+        "pressureLinearSolveSeconds": 1.3290739160000005,
+        "momentumSolves": 42,
+        "momentumIterations": 311,
+        "maxMomentumIterations": 11,
+        "pressureSolves": 84,
+        "pressureIterations": 3226,
+        "maxPressureIterations": 197,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 15372,
+        "iterations": 21,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 5.588179835841381e-13,
+        "globalImbalance": 7.511358919023384e-14,
+        "momentumResidual": 2.2749310553205178e-07,
+        "velocityChange": 6.79410632877244e-07,
+        "pressureChange": 9.924410108351007e-07,
+        "forceX": 0.31942019779954134,
+        "forceY": -2.42060169922554e-11,
+        "globalRelativeImbalance": 1.1266650620761822e-13,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 27967488,
+      "outputHashes": {
+        ".json": "9a6e62be0fcfac8ef6a0003a01218853f489e2292b72c10a9247dc80d2d3cb63",
+        ".fields.json": "f092b81bf29878a73888a2a2b21d72ab24b65ecaa1368fed6d7a0b96c8c6d9df",
+        ".cells.csv": "7ce872ab3d2d3f24e01702772a8250b4206831dbd76315fedd6c9de0b37ba0b2",
+        ".faces.csv": "b195fb887c6b76dfa791f27d3e52ac08d6db64c12a86c3d66679392a3c9b19ac",
+        ".residuals.csv": "21c71305d4e01ca3da8af5f3b5a124f19f10ce28554738c82a9d7c7f30c4b7e7",
+        ".vtk": "3ba5580643599464b0164b945a91b60a9b825003755fddcd1d3e2ba913182df6"
+      },
+      "matchesOriginalPhysicalOutputs": null
+    },
+    {
+      "label": "circle-re20",
+      "repeat": 1,
+      "preconditioner": "jacobi",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/jacobi/runs/circle-re20/external",
+        "--case",
+        "external",
+        "--nu",
+        ".1",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "jacobi"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 31.68799904102343,
+      "meshSha256": "037251bb49046ed329a6063f75f254e4bfd510f388889719eb686a011be12788",
+      "timeLog": "       31.66 real        31.52 user         0.11 sys\n            10551296  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 938  page reclaims\n                   2  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                   6  voluntary context switches\n                1209  involuntary context switches\n        186466144100  instructions retired\n         99340444054  cycles elapsed\n            10011520  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 4880,
+        "faces": 10008,
+        "simpleIterations": 336,
+        "converged": true,
+        "pressurePreconditioner": "jacobi",
+        "readAndMeshSeconds": 0.025891042,
+        "solveSeconds": 31.590840208,
+        "momentumLinearSolveSeconds": 1.5498522169999986,
+        "pressureLinearSolveSeconds": 29.282711731999953,
+        "momentumSolves": 672,
+        "momentumIterations": 7438,
+        "maxMomentumIterations": 19,
+        "pressureSolves": 1344,
+        "pressureIterations": 324230,
+        "maxPressureIterations": 322,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "external",
+        "status": "converged",
+        "converged": true,
+        "cells": 4880,
+        "iterations": 336,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 1.650531563276066e-14,
+        "globalImbalance": 4.055644708955697e-13,
+        "momentumResidual": 3.171059940311344e-07,
+        "velocityChange": 9.821553365898948e-07,
+        "pressureChange": 3.6758164409359994e-07,
+        "forceX": 2.2872800540883635,
+        "forceY": 2.3028454143592114e-16,
+        "globalRelativeImbalance": 9.656296926084993e-15,
+        "domainHeight": 42,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "jacobi",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 10551296,
+      "outputHashes": {
+        ".json": "8d5825e13e4a70ef1e65ab85555d55f0f865706bb108b191ec62d86181ffcd66",
+        ".fields.json": "9d5db2444ce36dade945097456eabe806226a9374995f8f64577e32b7ecc7eed",
+        ".cells.csv": "52b2c3e730e67c76f9e645407ed8eecd9dcb7899ce6ff51353026ea24547d07e",
+        ".faces.csv": "86647716064c6fceb332556d99f040dc1d4b6a569248037650c59f3ec1aaa1a0",
+        ".residuals.csv": "85e147105ade37150fec2fc979a7d16f9cae4a3df48e7505990f7fe8c9750d2c",
+        ".vtk": "1b5b60a9abf2187f60a468e8922673dad5bfa9b98ee52a9afd9336772e3a53b2"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": true,
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".residuals.csv": true,
+        ".vtk": true
+      }
+    },
+    {
+      "label": "circle-re20",
+      "repeat": 1,
+      "preconditioner": "ic0",
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+        "--output",
+        "outputs/native-flow/sparse-performance/measured/ic0/runs/circle-re20/external",
+        "--case",
+        "external",
+        "--nu",
+        ".1",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500",
+        "--profile",
+        "--pressure-preconditioner",
+        "ic0"
+      ],
+      "returncode": 0,
+      "observedWallSeconds": 18.47249820799334,
+      "meshSha256": "037251bb49046ed329a6063f75f254e4bfd510f388889719eb686a011be12788",
+      "timeLog": "       18.44 real        18.34 user         0.07 sys\n            10862592  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n                 824  page reclaims\n                  10  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                  11  voluntary context switches\n                1108  involuntary context switches\n        126010149862  instructions retired\n         57598267730  cycles elapsed\n            10208128  peak memory footprint\n",
+      "performance": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 4880,
+        "faces": 10008,
+        "simpleIterations": 336,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.025596625,
+        "solveSeconds": 18.368553,
+        "momentumLinearSolveSeconds": 1.5545966240000026,
+        "pressureLinearSolveSeconds": 16.055105923999996,
+        "momentumSolves": 672,
+        "momentumIterations": 7435,
+        "maxMomentumIterations": 19,
+        "pressureSolves": 1344,
+        "pressureIterations": 123687,
+        "maxPressureIterations": 131,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "external",
+        "status": "converged",
+        "converged": true,
+        "cells": 4880,
+        "iterations": 336,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 7.820199514407293e-14,
+        "globalImbalance": 1.795230630818878e-13,
+        "momentumResidual": 3.171059939700696e-07,
+        "velocityChange": 9.821553336966634e-07,
+        "pressureChange": 3.675816536188388e-07,
+        "forceX": 2.287280054088406,
+        "forceY": 4.144731433064486e-14,
+        "globalRelativeImbalance": 4.274358644806853e-15,
+        "domainHeight": 42,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "peakRssBytes": 10862592,
+      "outputHashes": {
+        ".json": "281a34dca417dd22a005724c921a532d81cf351036d12701c0d1942b6b3ecf9a",
+        ".fields.json": "4d414608e5be468b6dd21cba2173f05bf0e804dd75be5b8ff42fdad6d7d7286a",
+        ".cells.csv": "c80b5ccd9d7d7f356dc49699426df58853473dc06233a5209e42f9f824fb3180",
+        ".faces.csv": "bb25dd0e94e5590df2b987f31ac78feb68d19b69bab7bcfc63905e121bb113c5",
+        ".residuals.csv": "6816294690e3f845e72415edaa20a0d53f7ec9722f7efe7e99634a24225fc935",
+        ".vtk": "c536f24b4cbbc04d7c0217e07c01cde876839da65d2ef82c34d95d4b710cb14c"
+      },
+      "matchesOriginalPhysicalOutputs": {
+        ".json": false,
+        ".fields.json": false,
+        ".cells.csv": false,
+        ".faces.csv": false,
+        ".residuals.csv": false,
+        ".vtk": false
+      }
+    }
+  ],
+  "limits": [
+    "Small channel cases measured three times; circle once, on the same host. Timings include normal OS scheduling variability.",
+    "Channel initialized with analytic parabolic velocity; timings do not transfer to arbitrary flows.",
+    "No change to the discretization, linear or SIMPLE tolerances, 3000-step linear limit or mesh quality gates. IC0 has no shifting or hidden fallback.",
+    "No OpenFOAM run or desktop repackaging in these measurements.",
+    "Large channel cases are single timing samples with different local refinement box widths; they demonstrate scale and analytic errors, not a controlled grid-independence study or complex external-flow performance.",
+    "Legacy six-file hash comparison changes the summary JSON because pressurePreconditioner metadata was added; IC0 also changes physical last digits, quantified in fieldDifferenceToOriginal rather than claimed byte-identical."
+  ],
+  "largeScale": [
+    {
+      "label": "channel-100k",
+      "generationCommand": [
+        "build/cartmesh2d_cli",
+        "outputs/native-flow/sparse-scale/meshes/channel-100k/channel.xy",
+        "outputs/native-flow/sparse-scale/meshes/channel-100k/channel-100k",
+        "9",
+        "0.003937007874015748",
+        ".1",
+        "interior",
+        "outputs/native-flow/sparse-scale/meshes/channel-100k/openfoam",
+        "8",
+        "0",
+        "--refine-box",
+        "0",
+        "0",
+        "1",
+        "1",
+        "9"
+      ],
+      "outline": "0 0\n4 0\n4 1\n0 1\n",
+      "execution": {
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/sparse-scale/meshes/channel-100k/channel-100k.solver.cm2d",
+          "--output",
+          "outputs/native-flow/sparse-scale/runs/channel-100k/channel",
+          "--case",
+          "channel",
+          "--nu",
+          ".01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500",
+          "--profile"
+        ],
+        "returncode": 0,
+        "wallSeconds": 41.76725512498524,
+        "timeoutSeconds": 180
+      },
+      "profile": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 112368,
+        "faces": 226179,
+        "simpleIterations": 18,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 0.6431955,
+        "solveSeconds": 40.023041792,
+        "momentumLinearSolveSeconds": 1.1835900419999996,
+        "pressureLinearSolveSeconds": 37.505303715000004,
+        "momentumSolves": 36,
+        "momentumIterations": 234,
+        "maxMomentumIterations": 9,
+        "pressureSolves": 72,
+        "pressureIterations": 12842,
+        "maxPressureIterations": 490,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "peakRssBytes": 185171968,
+      "systemTimeLog": "       41.70 real        41.37 user         0.29 sys\n           185171968  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               11992  page reclaims\n                  10  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                  34  voluntary context switches\n                1217  involuntary context switches\n        291249291534  instructions retired\n        130710307016  cycles elapsed\n           171803968  peak memory footprint\n",
+      "nativeSummary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 112368,
+        "iterations": 18,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 3.1923567997798642e-12,
+        "globalImbalance": -1.000419190121634e-12,
+        "momentumResidual": 6.17342241823459e-08,
+        "velocityChange": 1.829317789111812e-07,
+        "pressureChange": 8.399871631042888e-07,
+        "forceX": 0.31989680864134123,
+        "forceY": 1.4950127241522017e-13,
+        "globalRelativeImbalance": 1.5006257420021611e-12,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independentVerification": {
+        "valid": true,
+        "counts": {
+          "cells": 112368,
+          "faces": 226179
+        },
+        "benchmark": {
+          "boundaryFluxes": {
+            "bottom": 0.0,
+            "left": -0.6666680186272543,
+            "right": 0.6666680186262538,
+            "top": 0.0
+          },
+          "expectedFlowRatePerDepth": 0.6666666666666666,
+          "expectedPressureGradient": -0.08,
+          "fittedPressureGradient": -0.07998464614322229,
+          "flowRateRelativeError": 2.0279408815548905e-06,
+          "pressureGradientRelativeError": 0.00019192320972142435,
+          "pressureL2Relative": 0.0001180247022438089,
+          "transverseVelocityL2Relative": 1.8360487015573517e-07,
+          "valid": true,
+          "velocityL2Relative": 4.476895664712998e-06,
+          "wallFluxRelative": 0.0
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -1.000419190121634e-12,
+          "cellValid": true,
+          "globalLimit": 2.001e-07,
+          "globalRelativeImbalance": 1.5006257420021611e-12,
+          "globalValid": true,
+          "l2CellImbalance": 6.349545172743486e-14,
+          "maxCellImbalance": 2.0443228273409053e-14,
+          "maxScaledCellImbalance": 2.280145775770317e-05,
+          "nativeDefinitionContinuity": 3.1923567997798513e-12,
+          "referenceThroughput": 0.6666680186272543
+        },
+        "meshSha256": "f78975a63e557c656d552cf59e079a82391764e7fbd26d717367cfe06aaa81a9",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-100k/channel.cells.csv": "cfee5eb876066ae1a2fa0e4b356205c26b3d8e536b50a76d3ff8b4c3ce63ce3b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-100k/channel.faces.csv": "38dcce41f50758fb3fc1e7a957464d23b4aacc0159a79cc759cc503675025df2",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-100k/channel.json": "4fed465ca81ee08c10477e28f610bc9f58c1bdf3dc9e7a4aa8a5d5eb9b3f9f8f",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-100k/channel.residuals.csv": "d4a8f7f710849c54324fd1a726e1ceb65369d16957361c87bd9e89144a6c8194"
+        },
+        "issues": []
+      }
+    },
+    {
+      "label": "channel-500k",
+      "generationCommand": [
+        "build/cartmesh2d_cli",
+        "outputs/native-flow/sparse-scale/meshes/channel-500k/channel.xy",
+        "outputs/native-flow/sparse-scale/meshes/channel-500k/channel-500k",
+        "10",
+        "0.00196078431372549",
+        ".1",
+        "interior",
+        "outputs/native-flow/sparse-scale/meshes/channel-500k/openfoam",
+        "9",
+        "0",
+        "--refine-box",
+        "0",
+        "0",
+        "1.25",
+        "1",
+        "10"
+      ],
+      "outline": "0 0\n4 0\n4 1\n0 1\n",
+      "execution": {
+        "command": [
+          "/usr/bin/time",
+          "-l",
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/sparse-scale/meshes/channel-500k/channel-500k.solver.cm2d",
+          "--output",
+          "outputs/native-flow/sparse-scale/runs/channel-500k/channel",
+          "--case",
+          "channel",
+          "--nu",
+          ".01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500",
+          "--profile"
+        ],
+        "returncode": 0,
+        "wallSeconds": 172.11126520799007,
+        "timeoutSeconds": 300,
+        "groupRssLimitBytes": 1288490188,
+        "sampledPeakGroupRssBytes": 795426816,
+        "stopReason": null
+      },
+      "profile": {
+        "format": "cartmesh2d-flow-performance-v1",
+        "cells": 500472,
+        "faces": 1003127,
+        "simpleIterations": 15,
+        "converged": true,
+        "pressurePreconditioner": "ic0",
+        "readAndMeshSeconds": 2.893681958,
+        "solveSeconds": 164.240205208,
+        "momentumLinearSolveSeconds": 3.9881958740000005,
+        "pressureLinearSolveSeconds": 154.84424079200002,
+        "momentumSolves": 30,
+        "momentumIterations": 171,
+        "maxMomentumIterations": 8,
+        "pressureSolves": 60,
+        "pressureIterations": 11751,
+        "maxPressureIterations": 946,
+        "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement"
+      },
+      "peakRssBytes": 800161792,
+      "systemTimeLog": "      171.79 real       170.27 user         1.25 sys\n           800161792  maximum resident set size\n                   0  average shared memory size\n                   0  average unshared data size\n                   0  average unshared stack size\n               98353  page reclaims\n                   7  page faults\n                   0  swaps\n                   0  block input operations\n                   0  block output operations\n                   0  messages sent\n                   0  messages received\n                   0  signals received\n                 507  voluntary context switches\n                6448  involuntary context switches\n       1183279696512  instructions retired\n        537892287479  cycles elapsed\n           778160640  peak memory footprint\n",
+      "nativeSummary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "channel",
+        "status": "converged",
+        "converged": true,
+        "cells": 500472,
+        "iterations": 15,
+        "nu": 0.01,
+        "speed": 1,
+        "continuity": 3.773996301943165e-12,
+        "globalImbalance": -1.064782079967765e-12,
+        "momentumResidual": 2.045520313273348e-08,
+        "velocityChange": 6.201222974353375e-08,
+        "pressureChange": 7.276657453160074e-07,
+        "forceX": 0.31941475728046737,
+        "forceY": -7.840791636167066e-11,
+        "globalRelativeImbalance": 1.5971723339498403e-12,
+        "domainHeight": 1,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "ic0",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independentVerification": {
+        "valid": true,
+        "counts": {
+          "cells": 500472,
+          "faces": 1003127
+        },
+        "benchmark": {
+          "boundaryFluxes": {
+            "bottom": 0.0,
+            "left": -0.6666669947472337,
+            "right": 0.6666669947461688,
+            "top": 0.0
+          },
+          "expectedFlowRatePerDepth": 0.6666666666666666,
+          "expectedPressureGradient": -0.08,
+          "fittedPressureGradient": -0.07999257042552475,
+          "flowRateRelativeError": 4.921208505703767e-07,
+          "pressureGradientRelativeError": 9.286968094060488e-05,
+          "pressureL2Relative": 6.25417949750687e-05,
+          "transverseVelocityL2Relative": 2.688926056165554e-08,
+          "valid": true,
+          "velocityL2Relative": 9.56277454442983e-07,
+          "wallFluxRelative": 0.0
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -1.064782079967765e-12,
+          "cellValid": true,
+          "globalLimit": 2.001e-07,
+          "globalRelativeImbalance": 1.5971723339498405e-12,
+          "globalValid": true,
+          "l2CellImbalance": 9.745277884408106e-14,
+          "maxCellImbalance": 1.11566995469577e-14,
+          "maxScaledCellImbalance": 2.5042480550932765e-05,
+          "nativeDefinitionContinuity": 3.773996301943113e-12,
+          "referenceThroughput": 0.6666669947472336
+        },
+        "meshSha256": "99f79512decfcce209e02dc82247cab6402a748266ebaf6e3859e8ea426dd6ac",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-500k/channel.cells.csv": "8f56b39796f0863fb5d6f60ee8a79a4390f6acc6ae19a92876caca943d9bc7af",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-500k/channel.faces.csv": "3ff748efb2e607656800980b15d567600365aaa52e4f830bbb66af4020ac1a95",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-500k/channel.json": "44c5dcf5754c7f3dc27e44bc1dee2f7043fb7a342aea5d2507b336ce8faacec0",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-scale/runs/channel-500k/channel.residuals.csv": "a05f374af755fb9f8b0924e65ec954faaa1ced3ec3627ee974e4ae182de0b911"
+        },
+        "issues": []
+      }
+    }
+  ],
+  "independentVerification": {
+    "valid": true,
+    "source": "outputs/native-flow/sparse-performance/measured/ic0/summary.json",
+    "sha256": "edbc0c80beeca32140db85187d9f18a7feb2b2c55809e90cc88421cfe0fbc1b1",
+    "sequenceChecks": {
+      "issues": [],
+      "series": {
+        "cavity": [
+          {
+            "error": 0.02773114253695268,
+            "h": 0.07142857142857142,
+            "label": "cavity-l4"
+          },
+          {
+            "error": 0.012296700901999982,
+            "h": 0.03333333333333334,
+            "label": "cavity-l5"
+          }
+        ],
+        "channel": [
+          {
+            "error": 0.00016587512804595766,
+            "h": 0.033351867298253506,
+            "label": "channel-l6"
+          },
+          {
+            "error": 3.302868149155484e-05,
+            "h": 0.016131130616527576,
+            "label": "channel-l7"
+          }
+        ]
+      },
+      "valid": true
+    },
+    "cases": [
+      {
+        "label": "channel-l6",
+        "valid": true,
+        "counts": {
+          "cells": 3596,
+          "faces": 7312
+        },
+        "benchmark": {
+          "boundaryFluxes": {
+            "bottom": 0.0,
+            "left": -0.6667692957798047,
+            "right": 0.6667692957798534,
+            "top": 0.0
+          },
+          "expectedFlowRatePerDepth": 0.6666666666666666,
+          "expectedPressureGradient": -0.08,
+          "fittedPressureGradient": -0.07998678111946375,
+          "flowRateRelativeError": 0.000153943669780221,
+          "pressureGradientRelativeError": 0.00016523600670313027,
+          "pressureL2Relative": 0.0009181811466588396,
+          "transverseVelocityL2Relative": 1.4916423439289477e-05,
+          "valid": true,
+          "velocityL2Relative": 0.00016587512804595766,
+          "wallFluxRelative": 0.0
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 4.8762738096529146e-14,
+          "cellValid": true,
+          "globalLimit": 2.001e-07,
+          "globalRelativeImbalance": 7.313284880567241e-14,
+          "globalValid": true,
+          "l2CellImbalance": 9.21080824388141e-14,
+          "maxCellImbalance": 1.4230804035175737e-14,
+          "maxScaledCellImbalance": 4.096811566431959e-06,
+          "nativeDefinitionContinuity": 4.2182479009349965e-13,
+          "referenceThroughput": 0.666769295779805
+        },
+        "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l6/channel.cells.csv": "9d525198cdd6f7988f3a1bd00072e15eedfb8d2d3aef068fe0ea147c3c5fe553",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l6/channel.faces.csv": "d693085acbf9c3ebd9cfaafe01f221f632971c388871e1686712e68ab7fedda4",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l6/channel.json": "293447d721a0b1a8ba1356a98bb1d35e6c9ed70c2e172d13c94eca3b0a3e2557",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l6/channel.residuals.csv": "f4227738af0935bf653a9cfceffedba3fb052d22e1f15f71cf3d55271ab96864"
+        },
+        "issues": []
+      },
+      {
+        "label": "channel-l7",
+        "valid": true,
+        "counts": {
+          "cells": 15372,
+          "faces": 30992
+        },
+        "benchmark": {
+          "boundaryFluxes": {
+            "bottom": 0.0,
+            "left": -0.6666896109462819,
+            "right": 0.6666896109463567,
+            "top": 0.0
+          },
+          "expectedFlowRatePerDepth": 0.6666666666666666,
+          "expectedPressureGradient": -0.08,
+          "fittedPressureGradient": -0.07998543322869028,
+          "flowRateRelativeError": 3.441641953511043e-05,
+          "pressureGradientRelativeError": 0.00018208464137147579,
+          "pressureL2Relative": 0.00034801168827187397,
+          "transverseVelocityL2Relative": 2.0368851792738716e-06,
+          "valid": true,
+          "velocityL2Relative": 3.302868149155484e-05,
+          "wallFluxRelative": 0.0
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 7.511358919023384e-14,
+          "cellValid": true,
+          "globalLimit": 2.001e-07,
+          "globalRelativeImbalance": 1.1266650620761824e-13,
+          "globalValid": true,
+          "l2CellImbalance": 9.425192820405715e-14,
+          "maxCellImbalance": 9.07563954544166e-15,
+          "maxScaledCellImbalance": 5.264054125767951e-06,
+          "nativeDefinitionContinuity": 5.588179835841689e-13,
+          "referenceThroughput": 0.6666896109462818
+        },
+        "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l7/channel.cells.csv": "7ce872ab3d2d3f24e01702772a8250b4206831dbd76315fedd6c9de0b37ba0b2",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l7/channel.faces.csv": "b195fb887c6b76dfa791f27d3e52ac08d6db64c12a86c3d66679392a3c9b19ac",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l7/channel.json": "9a6e62be0fcfac8ef6a0003a01218853f489e2292b72c10a9247dc80d2d3cb63",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/channel-l7/channel.residuals.csv": "21c71305d4e01ca3da8af5f3b5a124f19f10ce28554738c82a9d7c7f30c4b7e7"
+        },
+        "issues": []
+      },
+      {
+        "label": "circle-re20",
+        "valid": true,
+        "counts": {
+          "cells": 4880,
+          "faces": 10008
+        },
+        "benchmark": {
+          "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain, coarse upwind result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+          "derivedBodyCoefficients": {
+            "definition": "2 F / (U^2 D), unit density and depth",
+            "drag": 2.287280054088406,
+            "lift": 4.144731433064486e-14
+          },
+          "diameter": 2.0,
+          "forces": {
+            "dragForce": 2.287280054088406,
+            "liftForce": 4.144731433064486e-14
+          },
+          "issues": [],
+          "maximumSpeedRatio": 1.1629476726007177,
+          "minimumWakeUOverSpeed": -0.02313092155659626,
+          "openCylinderReference": {
+            "acceptanceGate": false,
+            "dragCoefficient": 2.045,
+            "relativeDifference": 0.11847435407746028,
+            "reynolds": 20.0,
+            "source": "Dennis & Chang 1970"
+          },
+          "reynoldsByMaximumSpeedAndDiameter": 20.0,
+          "valid": true
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 1.795230630818878e-13,
+          "cellValid": true,
+          "globalLimit": 4.196382348517246e-06,
+          "globalRelativeImbalance": 4.274358644806853e-15,
+          "globalValid": true,
+          "l2CellImbalance": 7.073040985549903e-14,
+          "maxCellImbalance": 6.661338147750939e-15,
+          "maxScaledCellImbalance": 7.726015703921395e-07,
+          "nativeDefinitionContinuity": 7.820199514407293e-14,
+          "referenceThroughput": 42.0
+        },
+        "meshSha256": "037251bb49046ed329a6063f75f254e4bfd510f388889719eb686a011be12788",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/circle-re20/external.cells.csv": "c80b5ccd9d7d7f356dc49699426df58853473dc06233a5209e42f9f824fb3180",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/circle-re20/external.faces.csv": "bb25dd0e94e5590df2b987f31ac78feb68d19b69bab7bcfc63905e121bb113c5",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/circle-re20/external.json": "281a34dca417dd22a005724c921a532d81cf351036d12701c0d1942b6b3ecf9a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/circle-re20/external.residuals.csv": "6816294690e3f845e72415edaa20a0d53f7ec9722f7efe7e99634a24225fc935"
+        },
+        "issues": []
+      },
+      {
+        "label": "cavity-l4",
+        "valid": true,
+        "counts": {
+          "cells": 196,
+          "faces": 420
+        },
+        "benchmark": {
+          "centreU": -0.1582756812018779,
+          "centrelineMaxError": 0.057405858713744484,
+          "centrelineRmse": 0.02773114253695268,
+          "leftV": 0.14234629656063727,
+          "maximumSpeedRatio": 0.721247476501951,
+          "reference": "Ghia, Ghia & Shin 1982, Re=100 centreline tables",
+          "reynolds": 100.0,
+          "rightV": -0.18875202447555703,
+          "samples": [
+            {
+              "actual": 0.8066652246417132,
+              "coordinate": 0.9766,
+              "field": "u",
+              "reference": 0.84123
+            },
+            {
+              "actual": 0.7445103552633221,
+              "coordinate": 0.9688,
+              "field": "u",
+              "reference": 0.78871
+            },
+            {
+              "actual": 0.70137032566942,
+              "coordinate": 0.9609,
+              "field": "u",
+              "reference": 0.73722
+            },
+            {
+              "actual": 0.6673805552180814,
+              "coordinate": 0.9531,
+              "field": "u",
+              "reference": 0.68717
+            },
+            {
+              "actual": 0.19577608157501827,
+              "coordinate": 0.8516,
+              "field": "u",
+              "reference": 0.23151
+            },
+            {
+              "actual": 0.0007067023056456288,
+              "coordinate": 0.7344,
+              "field": "u",
+              "reference": 0.00332
+            },
+            {
+              "actual": -0.12061429868345483,
+              "coordinate": 0.6172,
+              "field": "u",
+              "reference": -0.13641
+            },
+            {
+              "actual": -0.15548873928315698,
+              "coordinate": 0.5,
+              "field": "u",
+              "reference": -0.20581
+            },
+            {
+              "actual": -0.1583625923649095,
+              "coordinate": 0.4531,
+              "field": "u",
+              "reference": -0.2109
+            },
+            {
+              "actual": -0.12279942105096721,
+              "coordinate": 0.2813,
+              "field": "u",
+              "reference": -0.15662
+            },
+            {
+              "actual": -0.09091478627749812,
+              "coordinate": 0.1719,
+              "field": "u",
+              "reference": -0.1015
+            },
+            {
+              "actual": -0.059665076771443545,
+              "coordinate": 0.1016,
+              "field": "u",
+              "reference": -0.06434
+            },
+            {
+              "actual": -0.04008722865828427,
+              "coordinate": 0.0703,
+              "field": "u",
+              "reference": -0.04775
+            },
+            {
+              "actual": -0.036130567747465134,
+              "coordinate": 0.0625,
+              "field": "u",
+              "reference": -0.04192
+            },
+            {
+              "actual": -0.03257361891167144,
+              "coordinate": 0.0547,
+              "field": "u",
+              "reference": -0.03717
+            },
+            {
+              "actual": -0.0771265309144644,
+              "coordinate": 0.9688,
+              "field": "v",
+              "reference": -0.05906
+            },
+            {
+              "actual": -0.08988030544750966,
+              "coordinate": 0.9609,
+              "field": "v",
+              "reference": -0.07391
+            },
+            {
+              "actual": -0.09962567050698258,
+              "coordinate": 0.9531,
+              "field": "v",
+              "reference": -0.08864
+            },
+            {
+              "actual": -0.10897057586271505,
+              "coordinate": 0.9453,
+              "field": "v",
+              "reference": -0.10313
+            },
+            {
+              "actual": -0.16632575419102855,
+              "coordinate": 0.9063,
+              "field": "v",
+              "reference": -0.16914
+            },
+            {
+              "actual": -0.18275958993817426,
+              "coordinate": 0.8594,
+              "field": "v",
+              "reference": -0.22445
+            },
+            {
+              "actual": -0.1879241412862555,
+              "coordinate": 0.8047,
+              "field": "v",
+              "reference": -0.24533
+            },
+            {
+              "actual": 0.035409898193024106,
+              "coordinate": 0.5,
+              "field": "v",
+              "reference": 0.05454
+            },
+            {
+              "actual": 0.1415915157985375,
+              "coordinate": 0.2344,
+              "field": "v",
+              "reference": 0.17527
+            },
+            {
+              "actual": 0.14160861157393373,
+              "coordinate": 0.2266,
+              "field": "v",
+              "reference": 0.17507
+            },
+            {
+              "actual": 0.13671057032792538,
+              "coordinate": 0.1563,
+              "field": "v",
+              "reference": 0.16077
+            },
+            {
+              "actual": 0.10783964098989199,
+              "coordinate": 0.0938,
+              "field": "v",
+              "reference": 0.12317
+            },
+            {
+              "actual": 0.09591146984506235,
+              "coordinate": 0.0781,
+              "field": "v",
+              "reference": 0.1089
+            },
+            {
+              "actual": 0.08209863209842083,
+              "coordinate": 0.0703,
+              "field": "v",
+              "reference": 0.10091
+            },
+            {
+              "actual": 0.07516659489178702,
+              "coordinate": 0.0625,
+              "field": "v",
+              "reference": 0.09233
+            }
+          ],
+          "samplingMethod": "inverse-distance cell-centre interpolation with exact Dirichlet wall anchors",
+          "valid": true
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 0.0,
+          "cellValid": true,
+          "globalLimit": 1.0009999999999999e-07,
+          "globalRelativeImbalance": 0.0,
+          "globalValid": true,
+          "l2CellImbalance": 3.2825365473138165e-14,
+          "maxCellImbalance": 6.596286017401809e-15,
+          "maxScaledCellImbalance": 9.107298248878233e-07,
+          "nativeDefinitionContinuity": 9.234800424362528e-14,
+          "referenceThroughput": 1.0
+        },
+        "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l4/cavity.cells.csv": "8b40c24005a2962a82f4fe3c127456c6870fb9d164c0192f296bac9cf411317c",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l4/cavity.faces.csv": "91b12c46c24769f11fafb8a3f7457587492a5383baa865e275b02969349e7700",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l4/cavity.json": "e5526ced8239da3e8ad497373965c085c6e7c001a86252763264eb47336a7adf",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l4/cavity.residuals.csv": "18d109011786aec3ed0c5fa31ee04aea9d85e76eefba2fab8ac44afc5dd4914d"
+        },
+        "issues": []
+      },
+      {
+        "label": "cavity-l5",
+        "valid": true,
+        "counts": {
+          "cells": 900,
+          "faces": 1860
+        },
+        "benchmark": {
+          "centreU": -0.18436055554512348,
+          "centrelineMaxError": 0.027395142657233862,
+          "centrelineRmse": 0.012296700901999982,
+          "leftV": 0.16129751595532582,
+          "maximumSpeedRatio": 0.8863422712555823,
+          "reference": "Ghia, Ghia & Shin 1982, Re=100 centreline tables",
+          "reynolds": 100.00000000000001,
+          "rightV": -0.22018936340536496,
+          "samples": [
+            {
+              "actual": 0.8419498953153445,
+              "coordinate": 0.9766,
+              "field": "u",
+              "reference": 0.84123
+            },
+            {
+              "actual": 0.796451134232774,
+              "coordinate": 0.9688,
+              "field": "u",
+              "reference": 0.78871
+            },
+            {
+              "actual": 0.7098248573427661,
+              "coordinate": 0.9609,
+              "field": "u",
+              "reference": 0.73722
+            },
+            {
+              "actual": 0.6717333159391878,
+              "coordinate": 0.9531,
+              "field": "u",
+              "reference": 0.68717
+            },
+            {
+              "actual": 0.2127782400158712,
+              "coordinate": 0.8516,
+              "field": "u",
+              "reference": 0.23151
+            },
+            {
+              "actual": -0.005871958494693666,
+              "coordinate": 0.7344,
+              "field": "u",
+              "reference": 0.00332
+            },
+            {
+              "actual": -0.13572291126625033,
+              "coordinate": 0.6172,
+              "field": "u",
+              "reference": -0.13641
+            },
+            {
+              "actual": -0.18372747455016963,
+              "coordinate": 0.5,
+              "field": "u",
+              "reference": -0.20581
+            },
+            {
+              "actual": -0.18506589860728864,
+              "coordinate": 0.4531,
+              "field": "u",
+              "reference": -0.2109
+            },
+            {
+              "actual": -0.14171487336127528,
+              "coordinate": 0.2813,
+              "field": "u",
+              "reference": -0.15662
+            },
+            {
+              "actual": -0.09814986628687355,
+              "coordinate": 0.1719,
+              "field": "u",
+              "reference": -0.1015
+            },
+            {
+              "actual": -0.06491842645333125,
+              "coordinate": 0.1016,
+              "field": "u",
+              "reference": -0.06434
+            },
+            {
+              "actual": -0.04781654092802231,
+              "coordinate": 0.0703,
+              "field": "u",
+              "reference": -0.04775
+            },
+            {
+              "actual": -0.03728652743677887,
+              "coordinate": 0.0625,
+              "field": "u",
+              "reference": -0.04192
+            },
+            {
+              "actual": -0.03425965251807088,
+              "coordinate": 0.0547,
+              "field": "u",
+              "reference": -0.03717
+            },
+            {
+              "actual": -0.05895528426495746,
+              "coordinate": 0.9688,
+              "field": "v",
+              "reference": -0.05906
+            },
+            {
+              "actual": -0.08457597438023799,
+              "coordinate": 0.9609,
+              "field": "v",
+              "reference": -0.07391
+            },
+            {
+              "actual": -0.09581352068571745,
+              "coordinate": 0.9531,
+              "field": "v",
+              "reference": -0.08864
+            },
+            {
+              "actual": -0.10309779169725297,
+              "coordinate": 0.9453,
+              "field": "v",
+              "reference": -0.10313
+            },
+            {
+              "actual": -0.16464689505205496,
+              "coordinate": 0.9063,
+              "field": "v",
+              "reference": -0.16914
+            },
+            {
+              "actual": -0.21625510588009764,
+              "coordinate": 0.8594,
+              "field": "v",
+              "reference": -0.22445
+            },
+            {
+              "actual": -0.22080022958465992,
+              "coordinate": 0.8047,
+              "field": "v",
+              "reference": -0.24533
+            },
+            {
+              "actual": 0.04333208975803023,
+              "coordinate": 0.5,
+              "field": "v",
+              "reference": 0.05454
+            },
+            {
+              "actual": 0.16158724911968889,
+              "coordinate": 0.2344,
+              "field": "v",
+              "reference": 0.17527
+            },
+            {
+              "actual": 0.16235408876360483,
+              "coordinate": 0.2266,
+              "field": "v",
+              "reference": 0.17507
+            },
+            {
+              "actual": 0.15134299986307687,
+              "coordinate": 0.1563,
+              "field": "v",
+              "reference": 0.16077
+            },
+            {
+              "actual": 0.11375595742613923,
+              "coordinate": 0.0938,
+              "field": "v",
+              "reference": 0.12317
+            },
+            {
+              "actual": 0.10669344929589746,
+              "coordinate": 0.0781,
+              "field": "v",
+              "reference": 0.1089
+            },
+            {
+              "actual": 0.10067973289471965,
+              "coordinate": 0.0703,
+              "field": "v",
+              "reference": 0.10091
+            },
+            {
+              "actual": 0.081318237314481,
+              "coordinate": 0.0625,
+              "field": "v",
+              "reference": 0.09233
+            }
+          ],
+          "samplingMethod": "inverse-distance cell-centre interpolation with exact Dirichlet wall anchors",
+          "valid": true
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 0.0,
+          "cellValid": true,
+          "globalLimit": 1.0010000000000002e-07,
+          "globalRelativeImbalance": 0.0,
+          "globalValid": true,
+          "l2CellImbalance": 7.262351557089487e-14,
+          "maxCellImbalance": 9.046582927219049e-15,
+          "maxScaledCellImbalance": 2.6349270661803012e-06,
+          "nativeDefinitionContinuity": 2.71397487816571e-13,
+          "referenceThroughput": 1.0000000000000002
+        },
+        "meshSha256": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l5/cavity.cells.csv": "8bfe34498d44e30e63f4d4a4493f957f4a8698c9776786e96f56db19ee441dac",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l5/cavity.faces.csv": "80721b0fe679e977df5a937b2c0d5246c23efca35b99a74f033e69f1471894be",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l5/cavity.json": "57bb54b6345e1c10f5a4d35e5a3e17a37fa929cc44affdb097ee5faab3812b2b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sparse-performance/measured/ic0/runs/cavity-l5/cavity.residuals.csv": "fedf2f05c8e6e7763a988c21e23d7d02f6a8bb62c0e5efb30eb0c5573119cef1"
+        },
+        "issues": []
+      }
+    ]
+  },
+  "largeScaleVerificationSummarySha256": "cb38659a3b6d0553bf38d1547cab536a2bc5180d1b8a53e693c72492503a363f",
+  "scope": "Fixed sorted CSR structure, reused matrices/workspace, natural-order unshifted IC(0) pressure PCG. Same physical discretization and stopping rules. Tiny true-residual-level field differences are reported.",
+  "regression": {
+    "nativePassed": 103,
+    "nativeFailed": 0,
+    "frontendPassed": 106,
+    "frontendFailed": 0,
+    "logs": {
+      "build": {
+        "path": "outputs/native-flow/sparse-performance/build-final.log",
+        "sha256": "7a35608bdc5286dd0cae72b68732d208f70e1a7c444c8b5e0b569f5633f3d0e7"
+      },
+      "ctest": {
+        "path": "outputs/native-flow/sparse-performance/ctest-final.log",
+        "sha256": "4447e1c29f662fcdb7cbd20837091df4478c100d747cea8e16af6e13e07efe2e"
+      },
+      "frontend": {
+        "path": "outputs/native-flow/sparse-performance/frontend-final.log",
+        "sha256": "4b94fc37e23145f42ecc37a0d0c418a1c11690d4bdc617f20cfd73db1b4056e3"
+      }
+    }
+  },
+  "figure": {
+    "path": "artifacts/current/native-flow-500k.png",
+    "sha256": "b9adc3a90ac329610e662c3719f0ffa63eb49c3973eda74f80b21f759cf4eda0",
+    "script": "tools/visualization/render_native_flow_scale.py",
+    "scriptSha256": "2ebbf0d0b809030b1b350feff57a2bdf37960ea21c542ba5e49c036e81ee92c5",
+    "sourceSummarySha256": "cb38659a3b6d0553bf38d1547cab536a2bc5180d1b8a53e693c72492503a363f",
+    "render": {
+      "image": "artifacts/current/native-flow-500k.png",
+      "cells": 500472,
+      "visibleZoomPolygons": 1194,
+      "label": "channel-500k"
+    },
+    "visuallyReviewed": true
+  }
+}

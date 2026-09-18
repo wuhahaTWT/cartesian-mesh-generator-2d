@@ -108,6 +108,12 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             for key in ('readAndMeshSeconds', 'solveSeconds', 'momentumLinearSolveSeconds', 'pressureLinearSolveSeconds'):
                 assert math.isfinite(profile[key]) and profile[key] >= 0, (key, profile[key])
             assert profile['solveSeconds'] >= profile['momentumLinearSolveSeconds'] + profile['pressureLinearSolveSeconds']
+            assert profile['pressurePreconditioner'] == 'ic0'
+            jacobi, jacobi_field = run('jacobi', mesh, extra=('--pressure-preconditioner', 'jacobi'))
+            assert jacobi['pressurePreconditioner'] == 'jacobi'
+            # Different Krylov paths must solve the same physical equations.
+            for first, second in zip(field, jacobi_field):
+                assert max(abs(float(first[k]) - float(second[k])) for k in ('u', 'v', 'p')) < 1e-8
         error = math.sqrt(sum((float(c['u']) - 4 * float(c['y']) * (1 - float(c['y']))) ** 2
                               for c in field) / len(field))
         errors.append(error)
@@ -125,7 +131,8 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     limited = json.loads((root / 'limited.performance.json').read_text())
     assert limited['converged'] is False and limited['simpleIterations'] == 1
     for label, options in [('negative', ('--nu', '-1')), ('nan', ('--speed', 'nan')),
-                           ('overflow', ('--speed', '1e200')), ('count', ('--max-iterations', '1.5'))]:
+                           ('overflow', ('--speed', '1e200')), ('count', ('--max-iterations', '1.5')),
+                           ('preconditioner', ('--pressure-preconditioner', 'unknown'))]:
         run(label, mesh, extra=options, code=1)
     run('no-solid', mesh, case='external', code=1)
     separated = root / 'separated.solver.cm2d'

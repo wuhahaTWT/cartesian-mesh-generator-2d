@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
+            "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
@@ -78,6 +79,13 @@ int main(int argc, char** argv) {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--pressure-preconditioner") {
+                if (v != "ic0" && v != "jacobi") {
+                    throw std::invalid_argument("pressure preconditioner must be ic0 or jacobi");
+                }
+                controls.pressurePreconditioner = v == "ic0"
+                    ? fv::PressurePreconditioner2D::IncompleteCholesky0
+                    : fv::PressurePreconditioner2D::Jacobi;
             } else if (a == "--max-iterations") {
                 double n = number(v);
                 if (n < 1 || n > 100000 || n != std::floor(n)) {
@@ -149,6 +157,8 @@ int main(int argc, char** argv) {
         }
 
         auto summary = out(prefix, ".json");
+        const char* preconditioner = controls.pressurePreconditioner ==
+            fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" : "jacobi";
         summary << "{\n\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
                 << (r.converged ? "converged" : "iteration_limit")
@@ -167,6 +177,7 @@ int main(int argc, char** argv) {
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight
                 << ",\n\"tolerance\":" << controls.tolerance
+                << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                 << ",\n\"units\":{\"velocity\":\"m/s\",\"p\":\"m2/s2 (kinematic)\",\"nu\":\"m2/s\",\"faceFlux\":\"m2/s per unit depth\",\"force\":\"m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes\"},\n"
                 << "\"pressureReference\":\""
                 << (controls.scenario == "cavity"
@@ -209,6 +220,7 @@ int main(int argc, char** argv) {
                         << ",\n\"faces\":" << mesh.faces.size()
                         << ",\n\"simpleIterations\":" << last.iteration
                         << ",\n\"converged\":" << (r.converged ? "true" : "false")
+                        << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                         << ",\n\"readAndMeshSeconds\":" << readSeconds
                         << ",\n\"solveSeconds\":" << p.solveSeconds
                         << ",\n\"momentumLinearSolveSeconds\":" << p.momentumLinearSolveSeconds

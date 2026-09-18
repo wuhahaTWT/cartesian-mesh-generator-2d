@@ -7,6 +7,8 @@
 
 namespace cartmesh2d::fv {
 
+enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0 };
+
 struct FlowControls2D {
     std::string scenario = "external";
     double nu = .01;
@@ -16,6 +18,7 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     double pressureRelaxation = .25;
     bool profile = false;
+    PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
 };
 
 struct FlowPerformance2D {
