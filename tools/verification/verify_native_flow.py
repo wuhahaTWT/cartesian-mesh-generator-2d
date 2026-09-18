@@ -334,6 +334,9 @@ def read_cells(path: Path, mesh: Mesh, measured: Measurement,
         if case == "manufactured":
             item.update({name: finite(row[name], f"{path}:{line} {name}")
                          for name in MANUFACTURED_CELL_COLUMNS})
+        if all(name in fields for name in ("previousU", "previousV", "temporalX", "temporalY")):
+            item.update({name: finite(row[name], f"{path}:{line} {name}")
+                         for name in ("previousU", "previousV", "temporalX", "temporalY")})
         if not close(item["x"], measured.centroids[cell][0], 1e-11, 1e-9) or not close(item["y"], measured.centroids[cell][1], 1e-11, 1e-9):
             raise VerificationError(f"{path}:{line}: cell centre differs from CM2D")
         if not close(item["area"], measured.areas[cell], 1e-11, 1e-9):
@@ -398,7 +401,7 @@ def continuity(mesh: Mesh, measured: Measurement, fluxes: list[float], speed: fl
     global_limit = absolute + relative * speed * math.sqrt(measured.total_area)
     inflow = math.fsum(max(0.0, -flux) for edge, flux in zip(mesh.edges, fluxes)
                        if edge.neighbour < 0)
-    if case in ("cavity", "manufactured"):
+    if case in ("cavity", "manufactured", "taylor-green"):
         # Both are closed domains, so inlet flux is identically zero.  Keep a
         # positive scale for the reported relative global balance while the
         # actual gate remains the closed-boundary flux sum.
@@ -549,6 +552,10 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
             # stationary no-slip walls.  In particular, there is no lid,
             # inlet, outlet, or pressure boundary.
             role = "wall"
+        elif case == "taylor-green":
+            # Free slip on all four axis-aligned sides: tangential velocity is
+            # unconstrained, normal velocity is fixed to zero.
+            role = "slip"
         elif case == "external" and edge.patch == 1:
             role = "wall"
         elif case == "cavity":
@@ -574,7 +581,15 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
         elif role == "outlet":
             fixed_p[edge.id] = True
         elif role == "slip":
-            fixed_v[edge.id] = True
+            if case == "taylor-green":
+                fixed_u[edge.id] = left or right
+                fixed_v[edge.id] = top or bottom
+                # The solver's constant-trace optimization applies only to
+                # the constrained normal component on each slip wall.
+                constant_u[edge.id] = fixed_u[edge.id]
+                constant_v[edge.id] = fixed_v[edge.id]
+            else:
+                fixed_v[edge.id] = True
     return {"roles": roles, "fixedU": fixed_u, "fixedV": fixed_v, "fixedP": fixed_p,
             "constantU": constant_u, "constantV": constant_v,
             "u": bc_u, "v": bc_v, "p": bc_p}
@@ -781,7 +796,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                                face_records: list[dict[str, float]], nu: float, speed: float,
                                case: str, payload: dict[str, Any],
                                manufactured_pressure_slope: float = 0.0,
-                               pressure_boundary_reconstruction: str = "zero-normal") -> dict[str, Any]:
+                               pressure_boundary_reconstruction: str = "zero-normal",
+                               time_step: float | None = None) -> dict[str, Any]:
     """Rebuild face momentum terms, equation residuals and embedded-wall forces.
 
     All expected values here come from CM2D geometry, exported cell fields and
@@ -911,6 +927,21 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
         # and cannot influence this audit.
         cell_residuals = [(rx - source[0], ry - source[1])
                           for (rx, ry), source in zip(cell_residuals, source_integrals)]
+    temporal = [(0.0, 0.0)] * len(mesh.cells)
+    if time_step is not None:
+        if not time_step > 0.0:
+            raise VerificationError("transient audit dt must be positive")
+        for i, row in enumerate(cells):
+            for name in ("previousU", "previousV", "temporalX", "temporalY"):
+                if name not in row:
+                    raise VerificationError(f"transient cell schema missing {name}")
+            tx = measured.areas[i] * (row["u"] - row["previousU"]) / time_step
+            ty = measured.areas[i] * (row["v"] - row["previousV"]) / time_step
+            if not close(row["temporalX"], tx, 1e-12, 1e-9) or not close(row["temporalY"], ty, 1e-12, 1e-9):
+                raise VerificationError(f"cell {i}: exported temporal integral differs from independent area/dt value")
+            temporal[i] = (tx, ty)
+            rx, ry = cell_residuals[i]
+            cell_residuals[i] = (rx + tx, ry + ty)
     diagonal_u = [0.0] * len(mesh.cells)
     diagonal_v = [0.0] * len(mesh.cells)
     for edge, flux in zip(mesh.edges, fluxes):
@@ -931,6 +962,10 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                 diagonal_v[edge.owner] += d
             else:
                 diagonal_v[edge.owner] += q
+    if time_step is not None:
+        for i, area in enumerate(measured.areas):
+            diagonal_u[i] += area / time_step
+            diagonal_v[i] += area / time_step
     denominators = [(du + dv) * speed for du, dv in zip(diagonal_u, diagonal_v)]
     if any(not math.isfinite(value) or value <= 0.0 for value in denominators):
         raise VerificationError("independent momentum diagonal has no positive finite scale")
@@ -968,8 +1003,9 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             summary_deviations[name] = _deviation(finite(actual, f"native {name}"), expected)
     cell_sum = (math.fsum(rx for rx, _ in cell_residuals),
                 math.fsum(ry for _, ry in cell_residuals))
-    expected_cell_sum = (boundary_vector[0] - source_sum[0],
-                         boundary_vector[1] - source_sum[1])
+    temporal_sum = (math.fsum(x for x, _ in temporal), math.fsum(y for _, y in temporal))
+    expected_cell_sum = (boundary_vector[0] - source_sum[0] + temporal_sum[0],
+                         boundary_vector[1] - source_sum[1] + temporal_sum[1])
     conservation_difference = (cell_sum[0] - expected_cell_sum[0],
                                cell_sum[1] - expected_cell_sum[1])
     source_adjusted_boundary = (boundary_vector[0] - source_sum[0],
@@ -989,13 +1025,18 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             "maxNormalized": momentum_residual,
             "l2": math.sqrt(math.fsum(x * x + y * y for x, y in cell_residuals)),
             "maxCellVector": max((math.hypot(x, y) for x, y in cell_residuals), default=0.0),
-            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T",
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; transient adds measuredArea/dt per component",
         },
         "summaryDeviation": summary_deviations,
         "sourceForcing": {
             "case": case, "integralX": source_sum[0], "integralY": source_sum[1],
             "definition": source_definition,
         },
+        "temporal": {"enabled": time_step is not None,
+                     "dt": time_step,
+                     "integralX": temporal_sum[0], "integralY": temporal_sum[1],
+                     "maxAbsX": max((abs(x) for x, _ in temporal), default=0.0),
+                     "maxAbsY": max((abs(y) for _, y in temporal), default=0.0)},
         "pressureForce": {"x": pressure_force[0], "y": pressure_force[1]},
         "discreteForce": {"x": discrete_force[0], "y": discrete_force[1]},
         "globalBoundaryMomentum": {"x": boundary_vector[0], "y": boundary_vector[1],
@@ -1360,6 +1401,16 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
             VerificationError(f"native JSON contains non-finite token {token}")))
     if not isinstance(payload, dict):
         raise VerificationError("native JSON root is not an object")
+    # The steady verifier must never silently reinterpret a transient field as
+    # a steady result.  Transient artifacts have both explicit metadata and
+    # previous-state columns; reject either marker here.
+    if any(name in payload for name in ("temporalDiscretization", "dt", "acceptedTime",
+                                        "requestedSteps", "completedSteps")):
+        issues.append("steady verification received transient summary metadata")
+    cell_fields = set(csv_fields(cells_path))
+    transient_cell_fields = {"previousU", "previousV", "temporalX", "temporalY"}
+    if cell_fields & transient_cell_fields:
+        issues.append("steady verification received transient cell fields")
     required_json = ("format", "case", "status", "converged", "cells", "iterations", "nu", "speed",
                      "continuity", "globalImbalance", "momentumResidual", "velocityChange",
                      "pressureChange", "forceX", "forceY", "globalRelativeImbalance", "domainHeight",

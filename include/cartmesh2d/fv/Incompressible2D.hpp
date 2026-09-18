@@ -27,6 +27,12 @@ struct FlowControls2D {
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
 };
 
+// Accepted state at a physical time, including the conservative face flux.
+struct FlowState2D {
+    double time = 0;
+    std::vector<double> u, v, p, flux;
+};
+
 struct FlowPerformance2D {
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
@@ -55,6 +61,11 @@ struct FaceMomentum2D {
 };
 
 struct FlowResult2D {
+    double time = 0;
+    double timeStep = 0; // zero for the steady solver
+    double maxCourant = 0;
+    std::vector<double> previousU, previousV;
+    std::vector<Vector2D> temporalIntegrals;
     bool converged = false;
     std::vector<double> u;
     std::vector<double> v;
@@ -87,5 +98,15 @@ struct FlowResult2D {
     const FvMesh2D&,
     const FlowControls2D&,
     const std::function<void(const FlowIteration2D&)>& progress = {});
+
+// Backward Euler on a fixed mesh; SIMPLE iterations converge each time step.
+// Temporal and inner-iteration face-flux defects retain momentum interpolation.
+// The caller must not accept a result unless converged is true.
+[[nodiscard]] FlowResult2D advanceIncompressible2D(
+    const FvMesh2D&, const FlowControls2D&, const FlowState2D&, double timeStep,
+    const std::function<void(const FlowIteration2D&)>& progress = {});
+// Physical cases start at rest, with prescribed boundary velocities switched on
+// for t>0. taylor-green is a verification-only exact initial vortex on [0,1]^2.
+[[nodiscard]] FlowState2D initialIncompressibleState2D(const FvMesh2D&, const FlowControls2D&);
 
 }
