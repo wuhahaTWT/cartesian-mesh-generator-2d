@@ -540,3 +540,12 @@ html, body { height: 100%; }
 .method { padding-top: 6px; padding-bottom: 6px; }
 
 .home-button { -webkit-app-region: no-drag; width: auto; padding: 3px 8px; font-size: 11px; margin-right: 8px; }
+
+#flowTimeline { grid-column:1 / -1; grid-row:7; min-width:0; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.flow-monitor-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.flow-monitor-heading select { max-width:240px; }
+#flowMonitor { display:block; width:100%; max-height:160px; color:var(--accent, #8d744d); }
+
+@media (max-width: 900px) {
+  #flowTimeline { grid-row: 8; }
+}

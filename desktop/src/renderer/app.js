@@ -12,6 +12,8 @@ const state = {
   wallBounds: null,
   result: null,
   flow: null,
+  flowRestart: null,
+  flowHistory: [],
   // Hand-placed refinement regions, in body spans about the body centre.
   regions: [],
   frame: null
@@ -66,6 +68,7 @@ function setBusy(busy) {
   $('returnHome').disabled = busy;
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
+  updateFlowMode();
   updateReady();
 }
 function validInputs() {
@@ -82,7 +85,7 @@ function validInputs() {
 }
 function validFlowInputs() {
   for (const input of document.querySelectorAll('#flowBlock input[type=number]')) {
-    if (!input.value.trim() || !input.checkValidity()) {
+    if (!input.disabled && input.getClientRects().length && (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity(); input.focus();
       status('工况参数需要调整', '请填写有效数值，并检查范围。');
       return false;
@@ -92,6 +95,9 @@ function validFlowInputs() {
 }
 function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
+  state.flowHistory=[];
+  $('flowTimeline').hidden=true;
+  if (hidePanel) {state.flowRestart=null;updateFlowMode();}
   view.setFlowFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
@@ -767,8 +773,10 @@ function renderFlowResult(summary) {
   stateLine.textContent = summary.converged
     ? `已收敛 · ${summary.iterations} 次迭代 · 对流：${convectionText}`
     : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛 · 对流：${convectionText}`;
+  if (summary.temporalDiscretization) stateLine.textContent=`已接受 t=${summary.acceptedTime.toPrecision(6)} s · 本次 ${summary.completedSteps} 步 · 最后一步内迭代 ${summary.iterations} 次`;
   container.appendChild(stateLine);
   const rows = [
+    ...(summary.temporalDiscretization ? [['时间步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
     ['对流格式', convectionText],
     ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
@@ -788,42 +796,94 @@ function renderFlowResult(summary) {
   container.hidden = false;
 }
 
+function updateFlowMode() {
+  const transient = $('flowMode').value === 'transient';
+  $('flowTimeSettings').hidden = !transient;
+  $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
+  const restart = state.flowRestart;
+  if (!restart) $('flowResume').checked = false;
+  $('flowResume').disabled = state.busy || !restart || !transient;
+  const resuming = transient && $('flowResume').checked && restart;
+  for (const id of ['flowCase','flowNu','flowSpeed','flowConvection']) $(id).disabled = state.busy || Boolean(resuming);
+  $('flowRestartInfo').textContent = restart
+    ? `可续算：t=${Number(restart.time).toPrecision(6)} s · ${restart.fileName}。启动时原生核对完整网格与状态。`
+    : '每个完成的时间步都会保存；取消后可继续。';
+  const dt = Number($('flowDt').value), steps = Number($('flowSteps').value);
+  const start = resuming ? restart.time : 0;
+  $('flowTimeHint').textContent = Number.isFinite(dt*steps) && dt > 0 && steps > 0
+    ? `本次 ${start.toPrecision(5)} → ${(start+dt*steps).toPrecision(5)} s。一阶时间格式；时间步越小通常越准确，也更慢。`
+    : '请填写正的时间步长和整数步数。';
+  if (!state.busy) $('runFlow').textContent = transient ? (resuming ? '继续计算' : '从静止开始计算') : '启动层流求解';
+}
+function applyRestartControls() {
+  const q = state.flowRestart;
+  if (q && $('flowResume').checked) {
+    $('flowCase').value=q.case; $('flowNu').value=q.nu; $('flowSpeed').value=q.speed; $('flowConvection').value=q.convection;
+    updateFlowScope();
+  }
+  updateFlowMode();
+}
+function renderFlowMonitor() {
+  const rows = state.flowHistory || [];
+  $('flowTimeline').hidden = rows.length === 0;
+  const svg = $('flowMonitor'); svg.replaceChildren();
+  if (!rows.length) return;
+  const metric=$('flowMonitorMetric').value;
+  const data=rows.filter(row => Number.isFinite(row[metric]));
+  if (!data.length) return;
+  const stride=Math.max(1,Math.ceil(data.length/700));
+  const sampled=data.filter((_r,i)=>i%stride===0);
+  if (sampled.at(-1)!==data.at(-1)) sampled.push(data.at(-1));
+  const t0=data[0].time,t1=data.at(-1).time;
+  let lo=Infinity,hi=-Infinity;
+  for (const r of data) {lo=Math.min(lo,r[metric]);hi=Math.max(hi,r[metric]);}
+  const margin=hi===lo?Math.max(1e-12,Math.abs(hi)*.02):.05*(hi-lo);lo-=margin;hi+=margin;
+  const x=t=>94+592*(t-t0)/(t1-t0||1),y=v=>100-82*(v-lo)/(hi-lo);
+  const add=(tag,attrs,text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));if(text!==undefined)el.textContent=text;svg.appendChild(el);};
+  add('path',{d:'M94 12 V100 H690',fill:'none',stroke:'currentColor',opacity:.3});
+  add('path',{d:sampled.map((r,i)=>`${i?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
+  const last=sampled.at(-1);add('circle',{cx:x(last.time),cy:y(last[metric]),r:2.5,fill:'currentColor'});
+  const digits=Math.min(12,Math.max(3,2+Math.ceil(Math.log10(Math.max(Math.abs(lo),Math.abs(hi))/(hi-lo)||1))));
+  for(const [tx,ty,label]of [[90,20,hi.toPrecision(digits)],[90,101,lo.toPrecision(digits)],[135,122,`${t0.toPrecision(4)} s`],[675,122,`${t1.toPrecision(4)} s`]])
+    add('text',{x:tx,y:ty,fill:'currentColor','text-anchor':'end','font-size':11},label);
+  $('flowMonitorCaption').textContent=`已接受时间步 · 最新 ${last[metric].toPrecision(Math.max(5,digits))} · 曲线按需抽样显示，导出 CSV 保留本次全部步数。`;
+}
+function bindFlow(payload) {
+  state.flow=payload; state.flowHistory=payload.history || [];
+  view.setFlowFields(payload.fields.cells);
+  $('flowSpeedOption').hidden=false; $('flowPressureOption').hidden=false;
+  $('displayMode').value='speed';view.mode='speed';view.draw();
+  renderLegend(state.mesh,state.levelBasis);renderFlowResult(payload.summary);renderFlowMonitor();
+}
+async function refreshFlowState(restoreResult=false) {
+  const saved=await window.cartmesh.flowState();
+  state.flowRestart=saved.restart;
+  if (restoreResult && saved.flow) bindFlow(saved.flow);
+  updateFlowMode();
+  return saved;
+}
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
-  clearFlowBinding();
-  setBusy(true);
-  $('runFlow').textContent = '正在求解…';
-  status('层流求解中', 'SIMPLE 速度—压力耦合；可随时取消，取消会真正终止原生进程。');
+  const transient=$('flowMode').value==='transient';
+  const request={ case:$('flowCase').value,nu:Number($('flowNu').value),speed:Number($('flowSpeed').value),
+    maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
+    mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),resume:transient && $('flowResume').checked };
+  clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
+  status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
   try {
-    const payload = await window.cartmesh.runFlow({
-      case: $('flowCase').value,
-      nu: Number($('flowNu').value),
-      speed: Number($('flowSpeed').value),
-      maxIterations: Number($('flowMaxIterations').value),
-      convection: $('flowConvection').value
-    });
-    state.flow = payload;
-    view.setFlowFields(payload.fields.cells);
-    $('flowSpeedOption').hidden = false;
-    $('flowPressureOption').hidden = false;
-    $('displayMode').value = 'speed';
-    view.mode = 'speed';
-    view.draw();
-    renderLegend(state.mesh, state.levelBasis);
-    renderFlowResult(payload.summary);
-    if (payload.summary.converged) {
-      status('层流求解已收敛', `${payload.summary.iterations} 次迭代；对流格式 ${flowConvectionLabel(payload.summary)}；可切换速度或压力色图，并导出全部求解文件。`);
-    } else {
-      status('到达迭代上限，未收敛', `${payload.summary.iterations} 次迭代；对流格式 ${flowConvectionLabel(payload.summary)}；保留有效结果，不能当作收敛解。`);
-    }
+    const payload=await window.cartmesh.runFlow(request);
+    bindFlow(payload);
+    if (transient) status('本次时间推进完成',`已接受到 t=${payload.summary.acceptedTime.toPrecision(6)} s；最大 CFL ${payload.summary.maxCourant.toPrecision(4)}。这不等于达到稳态或已验证物理精度。`);
+    else status(payload.summary.converged?'层流求解已收敛':'到达迭代上限，未收敛',`${payload.summary.iterations} 次迭代；可切换速度或压力色图并导出。`);
+    await refreshFlowState();
+    if (transient) $('flowResume').checked=Boolean(state.flowRestart);
   } catch (error) {
-    const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
-    status(/取消/.test(message) ? '层流求解已取消' : '层流求解失败', message.split('\n')[0]);
+    const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
+    const saved=await refreshFlowState(true).catch(()=>null);
+    if (transient && saved?.restart) $('flowResume').checked=true;
+    status(/取消/.test(message)?'层流求解已取消':'本次计算未完成',message.split('\n')[0]+(saved?.flow?' 当前显示上次完整结果。':''));
     log(message);
-  } finally {
-    $('runFlow').textContent = '启动层流求解';
-    setBusy(false);
-  }
+  } finally {setBusy(false);applyRestartControls();}
 }
 
 async function importGeometryFile(picked) {
@@ -880,6 +940,17 @@ $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
+$('flowMode').addEventListener('change',applyRestartControls);
+$('flowResume').addEventListener('change',applyRestartControls);
+for(const id of ['flowDt','flowSteps']) $(id).addEventListener('input',updateFlowMode);
+$('flowMonitorMetric').addEventListener('change',renderFlowMonitor);
+$('pickFlowCheckpoint').addEventListener('click',async()=>{
+  if(state.busy)return;
+  setBusy(true);
+  try {const picked=await window.cartmesh.pickFlowCheckpoint();if(picked){state.flowRestart=picked;$('flowResume').checked=true;applyRestartControls();}}
+  catch(error){status('无法读取重启状态',error.message);}
+  finally {setBusy(false);applyRestartControls();}
+});
 $('flowCase').addEventListener('change', () => { clearFlowBinding(); updateFlowScope(); });
 for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
   $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
@@ -944,8 +1015,15 @@ window.cartmesh.onProgress(progress => {
   progressTimer = setInterval(update, 1000);
 });
 window.cartmesh.onFlowProgress(progress => {
-  status('层流求解中', `第 ${fmt(progress.iteration)} 次迭代 · 连续性 ${Number(progress.continuity).toExponential(2)} · ` +
-    `速度变化 ${Number(progress.velocityChange).toExponential(2)} · 动量残差 ${Number(progress.momentumResidual).toExponential(2)}`);
+  if (progress.type==='flow-time-step') {
+    state.flowHistory.push(progress);
+    if (state.flowHistory.length>1400) state.flowHistory=state.flowHistory.filter((_r,i)=>i%2===0 || i===state.flowHistory.length-1);
+    renderFlowMonitor();
+    status('非定常计算中',`已接受第 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 最大 CFL ${progress.maxCourant.toPrecision(4)}`);
+    return;
+  }
+  status(progress.time===undefined?'层流求解中':`候选时间步 ${progress.timeStep} · t=${progress.time.toPrecision(6)} s`,
+    `内迭代 ${fmt(progress.iteration)} · 连续性 ${Number(progress.continuity).toExponential(2)} · 动量残差 ${Number(progress.momentumResidual).toExponential(2)}`);
 });
 window.cartmesh.onRunLine(log);
 window.addEventListener('resize', () => view.requestDraw());

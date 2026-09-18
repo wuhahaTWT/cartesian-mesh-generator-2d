@@ -186,8 +186,21 @@
     </section>
 
     <section class="block flow-block" id="flowBlock" hidden>
-      <h2><span>5</span>原生稳态层流</h2>
-      <p class="note">在本次最终 solver.cm2d 上求解 SIMPLE 层流。首期不支持湍流；工况边界必须与几何相符。</p>
+      <h2><span>5</span>原生层流</h2>
+      <p class="note">在最终网格上计算速度与压力。不含湍流模型；边界条件须与几何相符。</p>
+      <label class="field">时间模式
+        <select id="flowMode"><option value="steady">稳态</option><option value="transient">非定常 · 随时间变化</option></select>
+      </label>
+      <div id="flowTimeSettings" hidden>
+        <div class="pair">
+          <label class="field">时间步长<input id="flowDt" type="number" min="0.000000000001" step="any" value="0.01"><span class="note">秒</span></label>
+          <label class="field">本次步数<input id="flowSteps" type="number" min="1" max="1000000" step="1" value="20"></label>
+        </div>
+        <p class="note" id="flowTimeHint">一阶时间格式；从静止启动。减小时间步通常更准确，也更慢。</p>
+        <button id="pickFlowCheckpoint" class="wide">打开重启文件…</button>
+        <label class="toggle"><input id="flowResume" type="checkbox" disabled>从已保存状态继续</label>
+        <p class="note" id="flowRestartInfo">每个完成的时间步都会保存；取消后可继续。</p>
+      </div>
       <label class="field">工况
         <select id="flowCase">
           <option value="external">外流</option>
@@ -207,7 +220,7 @@
         </select>
       </label>
       <p class="note">线性迎风使用有界限制重构，可减少数值扩散，但不保证所有工况都更准确；这里不代表通用二阶格式或新的工程合格结论。</p>
-      <label class="field">最大 SIMPLE 迭代
+      <label class="field"><span id="flowIterationLabel">最大 SIMPLE 迭代</span>
         <input id="flowMaxIterations" type="number" min="1" max="100000" step="1" value="1500">
       </label>
       <button id="runFlow" class="wide" disabled>启动层流求解</button>
@@ -247,6 +260,11 @@
       <div class="gates" id="gates"></div>
       <div class="histogram" id="histogram"></div>
       <div id="resolutionResult" class="note" hidden></div>
+      <section id="flowTimeline" hidden aria-label="非定常监测">
+        <div class="flow-monitor-heading"><b>物理时间监测</b><select id="flowMonitorMetric" aria-label="监测量"><option value="kineticEnergy">动能 / 密度 / 深度</option><option value="forceX">水平力 / 密度 / 深度</option><option value="forceY">竖直力 / 密度 / 深度</option><option value="maxCourant">最大 CFL</option></select></div>
+        <svg id="flowMonitor" viewBox="0 0 720 130" role="img" aria-label="监测量随物理时间变化"></svg>
+        <p class="note" id="flowMonitorCaption"></p>
+      </section>
       <div id="flowResult" class="flow-result" hidden></div>
     </div>
     <details class="logpanel"><summary>运行日志</summary><pre id="log"></pre></details>
