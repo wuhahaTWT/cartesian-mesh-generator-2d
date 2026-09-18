@@ -8,6 +8,8 @@
 |---|---|
 | `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、Solver 质量和输出 |
 | `apps/cartmesh2d_hybrid_cli.cpp` | 边界层总流程、局部修复开关、fallback 与导出 |
+| `apps/cartmesh2d_fv_cli.cpp` | 自研二维标量扩散/泊松 CLI；读取最终 solver.cm2d，输出场、通量、残差和误差 |
+| `fv/FvMesh2D`、`fv/Diffusion2D` | 最终多边形几何缓存、共享边通量、加权最小二乘梯度、非正交扩散、Jacobi-PCG |
 | `apps/cartmesh2d_dxf_cli.cpp` | DXF 导入命令行；`cartmesh2d_boundary_layer_cli.cpp` 是仍用于测试的独立边界层诊断工具 |
 | `geometry/Geometry2D` | 基础几何、轮廓校验与内外关系 |
 | `geometry/BoundarySimplification2D` | 输入轮廓简化及保形约束 |
@@ -78,6 +80,29 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 ```
 
 可加 `--verified-preset=true`（真实界面载入已有高密案例参数）、`--density=150000`、`--target-cells=100000`、`--auto-padding=0.5`、`--theme=duet`、`--interaction-check=true`（主题状态与实际参数转手动）、`--allow-unsafe=true`、`--control=manual`、`--density=dense`、`--method=hybrid`、`--mode=light`、`--regions=1`、`--repeat=1`。省略 `--out` 即验证默认临时预览；`--export=/绝对路径/result.zip` 验证结果包。每轮会缩到最小窗口并检查底部可达、预览/导出单元数。smoke 会走真实表单/IPC/CLI 后退出；它不等于所有界面操作都已验收。
+
+## 自研求解器入口
+
+首期已经实现独立可执行的**二维稳态标量扩散/泊松**基础；尚未实现速度—压力耦合、对流、湍流或桌面求解按钮。拟定主线是最终多边形 cell-centred FVM → 对流扩散验证 → SIMPLE + Rhie–Chow 不可压稳态层流。原有网格生成核心、质量门及 OpenFOAM 导出继续保留。
+
+```sh
+cmake --build build --target cartmesh2d_fv_cli -j 4
+# 生成固定几何/域/加密带宽度的三档真实 Cut-cell，并独立读回验证：
+python3 tools/verification/verify_native_fv.py --output-root outputs/native-fv/validation --problems constant linear sine diffusion
+MPLCONFIGDIR=/tmp/cartmesh-fv-mpl python3 tools/visualization/render_native_fv.py outputs/native-fv/validation/summary.json
+# 可换成自己的最终网格；这里内壁为1、外域边界为0，无体积源：
+build/cartmesh2d_fv_cli --mesh outputs/native-fv/validation/meshes/h02/circle.solver.cm2d --output outputs/native-fv/heat --problem diffusion --wall-value 1 --outer-value 0 --source 0 --diffusivity 1
+```
+
+方程是 `-div(k grad(value)) = source`，k 为正的常数扩散系数；当前**所有边界都是 Dirichlet**，按 EmbeddedBoundary / DomainBoundary 指定两个常量，或在制造解模式下施加解析值。这里的 0/1 是标量边界设定，并非流动速度或真实热工工况。没有 Neumann、Robin、周期、逐 patch 配置或时间推进。CLI 拒绝普通 `.cm2d` 和 `.failed.solver.cm2d`，并重新核对索引、边关联、法向闭合、真实面积及原 Solver 质量门；文件名和 AUDIT 不是合格证明。C++ API 应使用 `makeFvMesh2D` 构造缓存；`validateFvMesh2D` 是缓存安全检查，不替代几何工厂。
+
+每条内部边只计算一份 owner 向外的积分扩散通量，两侧以相反符号累加。梯度由邻居质心和 Dirichlet 边中点的加权最小二乘得到；扩散采用 `S = (S·S)/(S·d) d + correction` 分解，非正交项显式迭代，边界也含修正。稀疏两点主部以面连接存储，用自行实现的 Jacobi 预条件 CG 求解。源项用 `source(centroid)*area` 积分近似；变量、制造解误差按质心值解释。当前不保证任意合格网格上的二阶精度或单调性。
+
+完整修正后的逐格通量失衡 L2 范数满足 `absoluteTolerance + relativeTolerance * ||baseRHS||₂` 才算收敛，默认分别 1e-12 / 1e-10；`baseRHS` 为积分源项加隐式 Dirichlet 贡献。它是本标量问题的离散方程停止条件，不与 OpenFOAM 残差直接比较。PCG 另检查真正矩阵残差；超出线性迭代数或数值范围返回错误，非正交修正达到上限则保留场并以退出码 2 / `converged:false` 报告。默认修正上限 400、松弛 0.7，支持显式 `--max-corrections`。
+
+输出 `.vtk`（含 value / 制造解 exact / error）、`.cells.csv`、`.faces.csv`、`.residuals.csv` 和 `.json`。cells 的 source 是积分源项；faces 的 flux 是积分 `-k grad(value)·S`，不是质量流量。没有解析解的 diffusion 模式在 CSV exact/error 写 NaN、JSON 误差写 null，不伪造精度。验证工具独立读取 CM2D、CSV，复算几何、方程残差及误差，绘图使用真实多边形。
+
+数值设计参考公开的 [MOOSE 有限体积设计说明](https://mooseframework.inl.gov/finite_volumes/fv_design.html)中的共享面守恒和非正交思想。新增 C++ 为本仓库实现，没有引入 MOOSE/OpenFOAM 求解核心；这是公开方法的自研实现，不声称提出新 FVM 算法。`tests/fv_test.cpp` 覆盖斜网格和粗细交界、制造解收敛、错误缓存与溢出；`tests/fv_cli_test.py` 覆盖实际 CLI 输出和明确失败。最新数值与验证范围只在 CURRENT_STATE 维护。
 
 ## CFD 验证
 

@@ -1,0 +1,1525 @@
+{
+  "cases": [
+    {
+      "artifact_sha256": {
+        "constant.cells.csv": "13cfe75e72e17f193bffc825ccb71dacd78612c49b56e4fa77854604b0f60846",
+        "constant.faces.csv": "492d6a4a1a2624c16aa20df6b85702db2ec765d3e2bdf87d511360bbb20dcf7d",
+        "constant.json": "35b4b60253e3674a9ef4bcdd7d3b38b7e2895c8bc4bc3ba4a8f06e89c8cb1177",
+        "constant.residuals.csv": "b459837ea718fa3b1b0f07fc4d5b088537efe0f357a9c36c862ff9d6fc42c371",
+        "constant.vtk": "d0e4b6020fb2124dfb33bd1c4e4e2abaef5fbcf139178ee15403fe4b4075f99b"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.vtk"
+      },
+      "counts": {
+        "cells": 480,
+        "faces": 1036
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h08",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -4.482001298810868e-09,
+        "cells": 480,
+        "equationResidual": {
+          "boundaryFlux": -4.482001298810867e-09,
+          "globalBalance": -4.482001298810867e-09,
+          "maxCellImbalance": 8.432449482983475e-10,
+          "relativeResidual": 6.855539252791244e-11,
+          "residualNorm": 2.714391091201086e-09,
+          "residualValid": true,
+          "rhsScale": 39.59412952228254,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 3.960412952228255e-09
+        },
+        "globalBalance": -4.482001298810868e-09,
+        "l2Error": 1.1326637375634403e-11,
+        "linfError": 1.9667290018787753e-10,
+        "maxCellImbalance": 8.432449482983475e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -4.482001298810867e-09,
+        "cells": 480,
+        "converged": true,
+        "globalBalance": -4.482001298810867e-09,
+        "iterations": 48,
+        "l2Error": 1.1326637375634402e-11,
+        "linfError": 1.9667290018787753e-10,
+        "maxCellImbalance": 8.432449482983475e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 6.855539252791495e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant",
+      "problem": "constant",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 48.0,
+          "linearIterations": 15.0,
+          "maxCellImbalance": 8.432449482983475e-10,
+          "relativeResidual": 6.855539252791495e-11,
+          "residualNorm": 2.7143910912010884e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant.residuals.csv",
+        "rows": 48,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant",
+          "--problem",
+          "constant"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/constant/constant --problem constant",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-constant.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-constant.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "linear.cells.csv": "0f36af76282d28d08fff84085e0b3f6fd40424bca5740bf9ef13c941ec1228c9",
+        "linear.faces.csv": "a6559b8e3cadacbbede5dc07c5f87f26d0d427c0816bfaeea61b82101a6d2278",
+        "linear.json": "bc26d0c00358226eaef568591530e67dd9864c21e7759b40ebced198f62fcaa8",
+        "linear.residuals.csv": "3ab09257b232d7361b5283a19250b5f347a6b6562b9c194ac80997b0b81aab8c",
+        "linear.vtk": "639dc159d1d470270b6c85bb710321d5d22dda7d8a790ef47259dfbea9fe3353"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.vtk"
+      },
+      "counts": {
+        "cells": 480,
+        "faces": 1036
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h08",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -8.07957150749522e-09,
+        "cells": 480,
+        "equationResidual": {
+          "boundaryFlux": -8.079569679964038e-09,
+          "globalBalance": -8.079569679964038e-09,
+          "maxCellImbalance": 4.57055547575802e-09,
+          "relativeResidual": 8.894330954564015e-11,
+          "residualNorm": 8.525612104084216e-09,
+          "residualValid": true,
+          "rhsScale": 95.85445097148543,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 9.586445097148543e-09
+        },
+        "globalBalance": -8.07957150749522e-09,
+        "l2Error": 3.536461840153873e-11,
+        "linfError": 1.0656391324914694e-09,
+        "maxCellImbalance": 4.57055547575802e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -8.079569679964038e-09,
+        "cells": 480,
+        "converged": true,
+        "globalBalance": -8.079569679964038e-09,
+        "iterations": 47,
+        "l2Error": 3.5364618401538735e-11,
+        "linfError": 1.0656391324914694e-09,
+        "maxCellImbalance": 4.57055547575802e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 8.894330954564858e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear",
+      "problem": "linear",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 47.0,
+          "linearIterations": 16.0,
+          "maxCellImbalance": 4.57055547575802e-09,
+          "relativeResidual": 8.894330954564858e-11,
+          "residualNorm": 8.525612104084221e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear.residuals.csv",
+        "rows": 47,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear",
+          "--problem",
+          "linear"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/linear/linear --problem linear",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-linear.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-linear.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "sine.cells.csv": "aca29c05456282cd759fa384e8445dec2390112fea6221195e8ed40741cc9fee",
+        "sine.faces.csv": "7fcb1f089d6a6f3b04ce2f7a1e99fee6ecf145d910d5cbe4dd25bda94fe4d46d",
+        "sine.json": "4d83538ef8501aa6f0cbf28a708e886d6d3936f4fbf80158e840fc0c0e36ceae",
+        "sine.residuals.csv": "78b2cccc1dd490d94bd6f2c758c906b5c90aadf1d65b42ccf292d279276a5ede",
+        "sine.vtk": "285ff99a189ead0e513c31dfd489abd2d07655986ac4d23af1132780e626294e"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.vtk"
+      },
+      "counts": {
+        "cells": 480,
+        "faces": 1036
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h08",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": 0.12522594235159284,
+        "cells": 480,
+        "equationResidual": {
+          "boundaryFlux": 0.1252259423515928,
+          "globalBalance": 9.914180587600185e-11,
+          "maxCellImbalance": 6.928601026245929e-10,
+          "relativeResidual": 9.32707239115609e-11,
+          "residualNorm": 1.3056941467858036e-09,
+          "residualValid": true,
+          "rhsScale": 13.99897086704141,
+          "sourceIntegral": 0.12522594225245098,
+          "stoppingLimit": 1.400897086704141e-09
+        },
+        "globalBalance": 9.914186138715309e-11,
+        "l2Error": 0.02294118517042002,
+        "linfError": 0.05713979373834044,
+        "maxCellImbalance": 6.928601165023807e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.12522594225245098
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": 0.1252259423515928,
+        "cells": 480,
+        "converged": true,
+        "globalBalance": 9.914266629884594e-11,
+        "iterations": 46,
+        "l2Error": 0.022941185170420014,
+        "linfError": 0.05713979373834044,
+        "maxCellImbalance": 6.928601026245929e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 9.327072391156002e-11,
+        "sourceIntegral": 0.12522594225245012
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine",
+      "problem": "sine",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 46.0,
+          "linearIterations": 15.0,
+          "maxCellImbalance": 6.928601026245929e-10,
+          "relativeResidual": 9.327072391156002e-11,
+          "residualNorm": 1.3056941467858023e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine.residuals.csv",
+        "rows": 46,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine",
+          "--problem",
+          "sine"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/sine/sine --problem sine",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-sine.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-sine.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "diffusion.cells.csv": "120e89b8b02d058bb9dcee5bc7d8faeaeecce66e7e1532e52cb5a8bc7dcaaacd",
+        "diffusion.faces.csv": "8d47d46d755e9cb2259b21a95fea277f65242bcc96c3bb498f9a53339bed6c92",
+        "diffusion.json": "e998f3397ed5899ac7320a4c266a990c725f7be41725e118aa9ebf5229a4a9bb",
+        "diffusion.residuals.csv": "de0607850a74652b440c0e614156a8f8eb0e8ec86d9060075577433b1fead051",
+        "diffusion.vtk": "492ebeb608a337dd3b60e84ca9f66ac0211ba8108154fbbbbe3bfb1fb3af5ac4"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.vtk"
+      },
+      "counts": {
+        "cells": 480,
+        "faces": 1036
+      },
+      "error_column_conventions": [],
+      "grid": "h08",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": -4.3079621415281766e-09,
+        "cells": 480,
+        "equationResidual": {
+          "boundaryFlux": -4.3079623965325275e-09,
+          "globalBalance": -4.3079623965325275e-09,
+          "maxCellImbalance": 8.105003612701722e-10,
+          "relativeResidual": 7.293217387205849e-11,
+          "residualNorm": 2.608989978572111e-09,
+          "residualValid": true,
+          "rhsScale": 35.77282617612551,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 3.5782826176125515e-09
+        },
+        "globalBalance": -4.3079621415281766e-09,
+        "maxCellImbalance": 8.105003612701722e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -4.3079623965325275e-09,
+        "cells": 480,
+        "converged": true,
+        "globalBalance": -4.3079623965325275e-09,
+        "iterations": 48,
+        "l2Error": null,
+        "linfError": null,
+        "maxCellImbalance": 8.105003612701722e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 7.293217387206176e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion",
+      "problem": "diffusion",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 48.0,
+          "linearIterations": 15.0,
+          "maxCellImbalance": 8.105003612701722e-10,
+          "relativeResidual": 7.293217387206176e-11,
+          "residualNorm": 2.60898997857211e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion.residuals.csv",
+        "rows": 48,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion",
+          "--problem",
+          "diffusion"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h08/diffusion/diffusion --problem diffusion",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-diffusion.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h08-diffusion.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "constant.cells.csv": "e81e756eb7b60984e5f040830e2062064bd03c661e5862d22d52a5aa468f3add",
+        "constant.faces.csv": "55f7ea24f53730770d214f54adcd858ae7fac31089caee20f51564a485ed2524",
+        "constant.json": "68e7fd67e22aeca5bd5ed606b7dc4d4d4df70d3827d54e73b7138aaad2e39f5b",
+        "constant.residuals.csv": "126d4cbd8448f148f848729ae2b09c12a2fcf51e162f25a7c7d34529793a1fd8",
+        "constant.vtk": "ddf6db0099b070aae917d2396b523bca3d20f7d8c439d48584a846531aa0cd62"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.vtk"
+      },
+      "counts": {
+        "cells": 1592,
+        "faces": 3340
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h04",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -6.043069192554983e-09,
+        "cells": 1592,
+        "equationResidual": {
+          "boundaryFlux": -6.043069192554984e-09,
+          "globalBalance": -6.043069192554984e-09,
+          "maxCellImbalance": 8.954251334748144e-10,
+          "relativeResidual": 5.393697759181449e-11,
+          "residualNorm": 3.451843046191383e-09,
+          "residualValid": true,
+          "rhsScale": 63.99770992572704,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 6.400770992572704e-09
+        },
+        "globalBalance": -6.043069192554983e-09,
+        "l2Error": 4.300085063772187e-12,
+        "linfError": 1.1583778380952481e-10,
+        "maxCellImbalance": 8.954251334748144e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -6.043069192554984e-09,
+        "cells": 1592,
+        "converged": true,
+        "globalBalance": -6.043069192554984e-09,
+        "iterations": 29,
+        "l2Error": 4.300085063772184e-12,
+        "linfError": 1.1583778380952481e-10,
+        "maxCellImbalance": 8.954251334748144e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 5.3936977591818076e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant",
+      "problem": "constant",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 29.0,
+          "linearIterations": 20.0,
+          "maxCellImbalance": 8.954251334748144e-10,
+          "relativeResidual": 5.3936977591818076e-11,
+          "residualNorm": 3.4518430461913867e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant.residuals.csv",
+        "rows": 29,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant",
+          "--problem",
+          "constant"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/constant/constant --problem constant",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-constant.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-constant.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "linear.cells.csv": "494a78a3c0639cd1f840cb3d1d4f4a0d48c0bc751b9b9633912b8d9bd5b422db",
+        "linear.faces.csv": "9d4df575a43e4500f56d999064abf3114438ace52604b42e36a722083166abab",
+        "linear.json": "66f07612708fe07b9e977fcc719d0007651a62dbf34f5f6043bf3247c67ba84e",
+        "linear.residuals.csv": "574e68a62009bb5f35339a842c19056a17e6aae4532959a8f0a58cd205bf4555",
+        "linear.vtk": "ae1ea74e6fda44e6e17314f628499c6af103735c68f00876b756cd253ee57ce4"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.vtk"
+      },
+      "counts": {
+        "cells": 1592,
+        "faces": 3340
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h04",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -6.847260878954653e-09,
+        "cells": 1592,
+        "equationResidual": {
+          "boundaryFlux": -6.847262534748211e-09,
+          "globalBalance": -6.847262534748211e-09,
+          "maxCellImbalance": 3.0318748969748732e-09,
+          "relativeResidual": 4.6120078145411706e-11,
+          "residualNorm": 6.7601295228934805e-09,
+          "residualValid": true,
+          "rhsScale": 146.5767144101428,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 1.4658671441014282e-08
+        },
+        "globalBalance": -6.847260878954653e-09,
+        "l2Error": 8.43911755055354e-12,
+        "linfError": 3.9224934411663526e-10,
+        "maxCellImbalance": 3.0318748969748732e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -6.847262534748211e-09,
+        "cells": 1592,
+        "converged": true,
+        "globalBalance": -6.847262534748211e-09,
+        "iterations": 29,
+        "l2Error": 8.439117550553534e-12,
+        "linfError": 3.9224934411663526e-10,
+        "maxCellImbalance": 3.0318748969748732e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 4.612007814539356e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear",
+      "problem": "linear",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 29.0,
+          "linearIterations": 19.0,
+          "maxCellImbalance": 3.0318748969748732e-09,
+          "relativeResidual": 4.612007814539356e-11,
+          "residualNorm": 6.760129522893474e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear.residuals.csv",
+        "rows": 29,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear",
+          "--problem",
+          "linear"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/linear/linear --problem linear",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-linear.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-linear.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "sine.cells.csv": "cfe93accc763b5bbbc4bd83cf1eabfa991943c0d617357f2649ffa4ed8d8ae55",
+        "sine.faces.csv": "f5b7a6cb9f5a6adccd8b2b98bf965751703d3e514281d4ba30c3db4f597509ef",
+        "sine.json": "7638017922badcba3a8878a546684433cc39a039900100250514ed0831cffb48",
+        "sine.residuals.csv": "08ffb29500cb75c895518d4ffb53bf171c9f9123ac72aa001802a28cc0957edf",
+        "sine.vtk": "c17f9de35c6176efe1fd7585496f5f3db3a96e6615b34bc59606db391e217ee5"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.vtk"
+      },
+      "counts": {
+        "cells": 1592,
+        "faces": 3340
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h04",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": 0.12217385697024845,
+        "cells": 1592,
+        "equationResidual": {
+          "boundaryFlux": 0.12217385697024896,
+          "globalBalance": 4.896397176601397e-11,
+          "maxCellImbalance": 4.1861028532430566e-10,
+          "relativeResidual": 4.684020142388793e-11,
+          "residualNorm": 8.843835360192504e-10,
+          "residualValid": true,
+          "rhsScale": 18.880865349315634,
+          "sourceIntegral": 0.12217385692128499,
+          "stoppingLimit": 1.8890865349315633e-09
+        },
+        "globalBalance": 4.896345828786508e-11,
+        "l2Error": 0.006484307257900241,
+        "linfError": 0.015763972102388002,
+        "maxCellImbalance": 4.186102887937526e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.12217385692128499
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": 0.12217385697024896,
+        "cells": 1592,
+        "converged": true,
+        "globalBalance": 4.895633898271967e-11,
+        "iterations": 29,
+        "l2Error": 0.00648430725790024,
+        "linfError": 0.015763972102388002,
+        "maxCellImbalance": 4.1861028532430566e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 4.684020142390698e-11,
+        "sourceIntegral": 0.12217385692129262
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine",
+      "problem": "sine",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 29.0,
+          "linearIterations": 16.0,
+          "maxCellImbalance": 4.1861028532430566e-10,
+          "relativeResidual": 4.684020142390698e-11,
+          "residualNorm": 8.843835360192516e-10
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine.residuals.csv",
+        "rows": 29,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine",
+          "--problem",
+          "sine"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/sine/sine --problem sine",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-sine.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-sine.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "diffusion.cells.csv": "dd4f31ab6979bc96ecf4128d9709c611960f1692ff67b2adbf8b53925e6c1180",
+        "diffusion.faces.csv": "bd639610077ba61441d98745c980c58d679c0a8caa3fa73bced4fee17522869a",
+        "diffusion.json": "f649df1622c7c4efde0f5f3417b2dcce8927ddcaa2cb96a8a175ea269756af45",
+        "diffusion.residuals.csv": "a29a908b1b1fc3c3588a8fefccfc260712448cd0654032e0ce5e7c0abd248b98",
+        "diffusion.vtk": "51bcab57c6bfde7ea915d12708e14664ad2c03d8b0685a9f00d16b797adecc65"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.vtk"
+      },
+      "counts": {
+        "cells": 1592,
+        "faces": 3340
+      },
+      "error_column_conventions": [],
+      "grid": "h04",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": -5.926766704147934e-09,
+        "cells": 1592,
+        "equationResidual": {
+          "boundaryFlux": -5.926766633891634e-09,
+          "globalBalance": -5.926766633891634e-09,
+          "maxCellImbalance": 8.816648938703153e-10,
+          "relativeResidual": 5.683207878982221e-11,
+          "residualNorm": 3.3869758487669394e-09,
+          "residualValid": true,
+          "rhsScale": 59.596198500722394,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 5.96061985007224e-09
+        },
+        "globalBalance": -5.926766704147934e-09,
+        "maxCellImbalance": 8.816648938703153e-10,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -5.926766633891634e-09,
+        "cells": 1592,
+        "converged": true,
+        "globalBalance": -5.926766633891634e-09,
+        "iterations": 29,
+        "l2Error": null,
+        "linfError": null,
+        "maxCellImbalance": 8.816648938703153e-10,
+        "maxClosureError": 0.0,
+        "relativeResidual": 5.683207878982639e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion",
+      "problem": "diffusion",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 29.0,
+          "linearIterations": 20.0,
+          "maxCellImbalance": 8.816648938703153e-10,
+          "relativeResidual": 5.683207878982639e-11,
+          "residualNorm": 3.386975848766932e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion.residuals.csv",
+        "rows": 29,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion",
+          "--problem",
+          "diffusion"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h04/diffusion/diffusion --problem diffusion",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-diffusion.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h04-diffusion.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "constant.cells.csv": "a3db64a5f6c12baa5a745ad2642d5ffe2562382890576add6854f5b8fdd95443",
+        "constant.faces.csv": "f35b2c12c65e15c66673db7ca496c40389285b72fa37225cbfe4aba0246fa7fa",
+        "constant.json": "1f7ceaf545a3e65008471858d51e85b3a0046e515e476d7f1179a9daf6fcc5cd",
+        "constant.residuals.csv": "5e6ddd928b7c1f1df0503263e88889b1a9c591ec352764330a692e080257f8a3",
+        "constant.vtk": "32c7126be2b8761106d55b74eff06173bda9a9aa38ab33babf19860ab4ed785e"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.vtk"
+      },
+      "counts": {
+        "cells": 5860,
+        "faces": 12024
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h02",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -2.135700500669661e-08,
+        "cells": 5860,
+        "equationResidual": {
+          "boundaryFlux": -2.1357005006696635e-08,
+          "globalBalance": -2.1357005006696635e-08,
+          "maxCellImbalance": 2.3187547577223505e-09,
+          "relativeResidual": 8.924237864567882e-11,
+          "residualNorm": 9.850916819713803e-09,
+          "residualValid": true,
+          "rhsScale": 110.38384419161594,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 1.1039384419161593e-08
+        },
+        "globalBalance": -2.135700500669661e-08,
+        "l2Error": 1.4663415005479078e-11,
+        "linfError": 1.464471210965712e-09,
+        "maxCellImbalance": 2.3187547577223505e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -2.1357005006696635e-08,
+        "cells": 5860,
+        "converged": true,
+        "globalBalance": -2.1357005006696635e-08,
+        "iterations": 56,
+        "l2Error": 1.4663415005479188e-11,
+        "linfError": 1.464471210965712e-09,
+        "maxCellImbalance": 2.3187547577223505e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 8.924237864575167e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant",
+      "problem": "constant",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 56.0,
+          "linearIterations": 17.0,
+          "maxCellImbalance": 2.3187547577223505e-09,
+          "relativeResidual": 8.924237864575167e-11,
+          "residualNorm": 9.850916819713779e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant.residuals.csv",
+        "rows": 56,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant",
+          "--problem",
+          "constant"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/constant/constant --problem constant",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-constant.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-constant.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "linear.cells.csv": "b672124c85048f8e7ab9d9eac96f7c92209e70b6f7812086af9dcdd4a7bd6c59",
+        "linear.faces.csv": "899af1ba4dd61a44d530eb6f357d75a7de91807b49326dd5a64dc59a33fce787",
+        "linear.json": "c9b0691d781217e91ed22709b72ba6efde4ff8c1b048fba33898a03694fdaae5",
+        "linear.residuals.csv": "675e627d8208c69b639e43ea32972e4e57e16a212c79e45bf1e3bd317146837c",
+        "linear.vtk": "cd09e42ae931c41c5651ebd7368697b4b23d0eaf4cbaa89f046f3110a36ada6e"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.vtk"
+      },
+      "counts": {
+        "cells": 5860,
+        "faces": 12024
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h02",
+      "independent": {
+        "analyticFieldValid": true,
+        "boundaryFlux": -2.4155500372125775e-08,
+        "cells": 5860,
+        "equationResidual": {
+          "boundaryFlux": -2.4155502709177767e-08,
+          "globalBalance": -2.4155502709177767e-08,
+          "maxCellImbalance": 7.7835865218423e-09,
+          "relativeResidual": 8.00938397420874e-11,
+          "residualNorm": 1.9196191914991552e-08,
+          "residualValid": true,
+          "rhsScale": 239.67126531585689,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 2.3968126531585692e-08
+        },
+        "globalBalance": -2.4155500372125775e-08,
+        "l2Error": 2.8619136103535036e-11,
+        "linfError": 4.916169249469249e-09,
+        "maxCellImbalance": 7.7835865218423e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -2.4155502709177767e-08,
+        "cells": 5860,
+        "converged": true,
+        "globalBalance": -2.4155502709177767e-08,
+        "iterations": 56,
+        "l2Error": 2.8619136103534713e-11,
+        "linfError": 4.916169249469249e-09,
+        "maxCellImbalance": 7.7835865218423e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 8.009383974282638e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear",
+      "problem": "linear",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 56.0,
+          "linearIterations": 16.0,
+          "maxCellImbalance": 7.7835865218423e-09,
+          "relativeResidual": 8.009383974282638e-11,
+          "residualNorm": 1.9196191914991522e-08
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear.residuals.csv",
+        "rows": 56,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear",
+          "--problem",
+          "linear"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/linear/linear --problem linear",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-linear.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-linear.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "sine.cells.csv": "a0cdb94447400ad64a6539f759f2603a921158b0e5df82676f82b938d281c7c8",
+        "sine.faces.csv": "0fabc0896a07e7c6adf3adfa217234ceafabd2ac619ac3d0b2355b181f6bbb85",
+        "sine.json": "98419d639c149316f2f2942617b6dff1d9c4dfeec41e2c73ff690c1ff02993cf",
+        "sine.residuals.csv": "4f53fca85eecd4cd224745b5951e90dd7f01a9d24f6cbf8e7bfe16ecb4079208",
+        "sine.vtk": "dc41d73dfdc9e58aa2353d7453db281b589d2e1a44c3e4e1f8516b7145cfa9e6"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.vtk"
+      },
+      "counts": {
+        "cells": 5860,
+        "faces": 12024
+      },
+      "error_column_conventions": [
+        "signed"
+      ],
+      "grid": "h02",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": 0.12111950651577667,
+        "cells": 5860,
+        "equationResidual": {
+          "boundaryFlux": 0.12111950651577631,
+          "globalBalance": -6.969215482488522e-11,
+          "maxCellImbalance": 1.5587172143283201e-09,
+          "relativeResidual": 9.986629066502982e-11,
+          "residualNorm": 4.890104411210354e-09,
+          "residualValid": true,
+          "rhsScale": 48.96651691623029,
+          "sourceIntegral": 0.12111950658546847,
+          "stoppingLimit": 4.8976516916230295e-09
+        },
+        "globalBalance": -6.969179400240222e-11,
+        "l2Error": 0.0016461148260349422,
+        "linfError": 0.003943779106420187,
+        "maxCellImbalance": 1.5587172143283201e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.12111950658546847
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": 0.12111950651577631,
+        "cells": 5860,
+        "converged": true,
+        "globalBalance": -6.969076704610444e-11,
+        "iterations": 56,
+        "l2Error": 0.0016461148260349507,
+        "linfError": 0.003943779106420187,
+        "maxCellImbalance": 1.5587172143283201e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 9.986629066472152e-11,
+        "sourceIntegral": 0.12111950658546708
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine",
+      "problem": "sine",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 56.0,
+          "linearIterations": 24.0,
+          "maxCellImbalance": 1.5587172143283201e-09,
+          "relativeResidual": 9.986629066472152e-11,
+          "residualNorm": 4.890104411210369e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine.residuals.csv",
+        "rows": 56,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine",
+          "--problem",
+          "sine"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/sine/sine --problem sine",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-sine.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-sine.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    },
+    {
+      "artifact_sha256": {
+        "diffusion.cells.csv": "14f6767173e054bfe610aa06362c38684df8673474db5e07bb67ce137624a832",
+        "diffusion.faces.csv": "7fe60d1f048638dc66017c38f1089a1fca4c14c88a88ee840bc9162ef57684ea",
+        "diffusion.json": "d587e63f245a3605ca582fc7686dec2ee6a9b82b3778d27480df0d3afced46b6",
+        "diffusion.residuals.csv": "ebe4ba31bb8be613a0d9128ce19783d57fac758173c724a10bdd5fe7041f1e18",
+        "diffusion.vtk": "df0a3837a4669a088af6312fc289f66aa8dfe00071b14df14d6fec539ad050cc"
+      },
+      "artifacts": {
+        "cells": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.cells.csv",
+        "faces": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.faces.csv",
+        "json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.json",
+        "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.residuals.csv",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.vtk"
+      },
+      "counts": {
+        "cells": 5860,
+        "faces": 12024
+      },
+      "error_column_conventions": [],
+      "grid": "h02",
+      "independent": {
+        "analyticFieldValid": null,
+        "boundaryFlux": -2.118246245248756e-08,
+        "cells": 5860,
+        "equationResidual": {
+          "boundaryFlux": -2.1182466251315132e-08,
+          "globalBalance": -2.1182466251315132e-08,
+          "maxCellImbalance": 2.301507185786117e-09,
+          "relativeResidual": 9.269394742011608e-11,
+          "residualNorm": 9.77848351840014e-09,
+          "residualValid": true,
+          "rhsScale": 105.49214690449197,
+          "sourceIntegral": 0.0,
+          "stoppingLimit": 1.0550214690449198e-08
+        },
+        "globalBalance": -2.118246245248756e-08,
+        "maxCellImbalance": 2.301507185786117e-09,
+        "maxClosureError": 0.0,
+        "sourceIntegral": 0.0
+      },
+      "issues": [],
+      "native": {
+        "boundaryFlux": -2.1182466251315132e-08,
+        "cells": 5860,
+        "converged": true,
+        "globalBalance": -2.1182466251315132e-08,
+        "iterations": 56,
+        "l2Error": null,
+        "linfError": null,
+        "maxCellImbalance": 2.301507185786117e-09,
+        "maxClosureError": 0.0,
+        "relativeResidual": 9.269394742019884e-11,
+        "sourceIntegral": 0.0
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion",
+      "problem": "diffusion",
+      "residual_csv": {
+        "columns": [
+          "iteration",
+          "linearIterations",
+          "relativeResidual",
+          "residualNorm",
+          "maxCellImbalance"
+        ],
+        "issues": [],
+        "last": {
+          "iteration": 56.0,
+          "linearIterations": 19.0,
+          "maxCellImbalance": 2.301507185786117e-09,
+          "relativeResidual": 9.269394742019884e-11,
+          "residualNorm": 9.778483518400109e-09
+        },
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion.residuals.csv",
+        "rows": 56,
+        "valid": true
+      },
+      "stage": {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion",
+          "--problem",
+          "diffusion"
+        ],
+        "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/runs/h02/diffusion/diffusion --problem diffusion",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-diffusion.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/logs/fv-h02-diffusion.stdout.log",
+        "timed_out": false
+      },
+      "valid": true
+    }
+  ],
+  "convergence": {
+    "interpretation": "Observed orders apply only to this fixed geometry/domain/refinement sequence; no general second-order claim is made.",
+    "issues": [],
+    "orders": [
+      {
+        "coarse": "h08",
+        "error_ratio": 3.53795467395061,
+        "fine": "h04",
+        "h_ratio": 2.0,
+        "observed_order": 1.822915565245569
+      },
+      {
+        "coarse": "h04",
+        "error_ratio": 3.9391585297358827,
+        "fine": "h02",
+        "h_ratio": 2.0,
+        "observed_order": 1.9778874787599177
+      }
+    ],
+    "valid": true
+  },
+  "diagnostics": {
+    "initial_experimental_absolute_conservation_gate": {
+      "disposition": "Rejected as an acceptance normalization after its first-run failure: zero-source and near-zero-flux fields do not provide a stable relative scale. Raw values remain reported; acceptance uses the independently reconstructed complete equation L2 residual with the solver's declared abs+relative criterion.",
+      "observed_max_abs_global_balance": 2.4155500372125775e-08,
+      "observed_max_cell_imbalance": 7.7835865218423e-09,
+      "passed": false,
+      "threshold": 1e-10
+    }
+  },
+  "executables": {
+    "fv_cli": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_fv_cli",
+      "sha256": "312e8acd2457e5fbbe0eea2b3889220840b07f51640c194c85e19310f004a89f"
+    },
+    "mesh_cli": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+      "sha256": "f1025f03a3fe5f50b9843e63ac05ea8e018c5bcef564364a8420bc2816c6ce69"
+    }
+  },
+  "fixed_sequence": {
+    "grids": [
+      {
+        "band_width": 0.375,
+        "boundary_level": 5,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "grid": "h08",
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.sizing.json",
+        "resolved_wall_cell_size": 0.125,
+        "valid": true
+      },
+      {
+        "band_width": 0.375,
+        "boundary_level": 6,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "grid": "h04",
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.sizing.json",
+        "resolved_wall_cell_size": 0.0625,
+        "valid": true
+      },
+      {
+        "band_width": 0.375,
+        "boundary_level": 7,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "grid": "h02",
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.sizing.json",
+        "resolved_wall_cell_size": 0.03125,
+        "valid": true
+      }
+    ],
+    "physical_band_width": 0.375,
+    "same_domain": [
+      -1.93,
+      -1.97,
+      2.07,
+      2.0300000000000002
+    ],
+    "same_geometry": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+    "valid": true
+  },
+  "format": "cartmesh2d-native-fv-verification-v1",
+  "geometry": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+  "issues": [],
+  "mesh_generation": [
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle",
+        "8",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.080000000000000002",
+        "--background-relative-size",
+        "0.20000000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "3"
+      ],
+      "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle 8 0.25 0.1 exterior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/openfoam 0 0 --size-field --reference-length 2 --wall-relative-size 0.080000000000000002 --background-relative-size 0.20000000000000001 --far-field-spans 0.5 --cells-per-level 3",
+      "grid": "h08",
+      "request": {
+        "background_relative_size": 0.2,
+        "cells_per_level": 3,
+        "far_field_spans": 0.5,
+        "nominal_band_width": 0.375,
+        "nominal_wall_size": 0.16,
+        "reference_length": 2.0,
+        "wall_relative_size": 0.08
+      },
+      "returncode": null,
+      "reused": true,
+      "sizing_validation": {
+        "band_width": 0.375,
+        "boundary_level": 5,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.sizing.json",
+        "resolved_wall_cell_size": 0.125,
+        "valid": true
+      },
+      "status": "passed",
+      "timed_out": false
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle",
+        "8",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.040000000000000001",
+        "--background-relative-size",
+        "0.10000000000000001",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "6"
+      ],
+      "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle 8 0.25 0.1 exterior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/openfoam 0 0 --size-field --reference-length 2 --wall-relative-size 0.040000000000000001 --background-relative-size 0.10000000000000001 --far-field-spans 0.5 --cells-per-level 6",
+      "grid": "h04",
+      "request": {
+        "background_relative_size": 0.1,
+        "cells_per_level": 6,
+        "far_field_spans": 0.5,
+        "nominal_band_width": 0.375,
+        "nominal_wall_size": 0.08,
+        "reference_length": 2.0,
+        "wall_relative_size": 0.04
+      },
+      "returncode": null,
+      "reused": true,
+      "sizing_validation": {
+        "band_width": 0.375,
+        "boundary_level": 6,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.sizing.json",
+        "resolved_wall_cell_size": 0.0625,
+        "valid": true
+      },
+      "status": "passed",
+      "timed_out": false
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle",
+        "8",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.02",
+        "--background-relative-size",
+        "0.050000000000000003",
+        "--far-field-spans",
+        "0.5",
+        "--cells-per-level",
+        "12"
+      ],
+      "command_text": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle 8 0.25 0.1 exterior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/openfoam 0 0 --size-field --reference-length 2 --wall-relative-size 0.02 --background-relative-size 0.050000000000000003 --far-field-spans 0.5 --cells-per-level 12",
+      "grid": "h02",
+      "request": {
+        "background_relative_size": 0.05,
+        "cells_per_level": 12,
+        "far_field_spans": 0.5,
+        "nominal_band_width": 0.375,
+        "nominal_wall_size": 0.04,
+        "reference_length": 2.0,
+        "wall_relative_size": 0.02
+      },
+      "returncode": null,
+      "reused": true,
+      "sizing_validation": {
+        "band_width": 0.375,
+        "boundary_level": 7,
+        "domain": [
+          -1.93,
+          -1.97,
+          2.07,
+          2.0300000000000002
+        ],
+        "issues": [],
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.sizing.json",
+        "resolved_wall_cell_size": 0.03125,
+        "valid": true
+      },
+      "status": "passed",
+      "timed_out": false
+    }
+  ],
+  "mesh_source": "reused",
+  "meshes": [
+    {
+      "cells": 480,
+      "characteristic_h": 0.1637996416341049,
+      "convergence_h": 0.16,
+      "faces": 1036,
+      "issues": [],
+      "max_closure_error": 0.0,
+      "name": "h08",
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h08/circle.solver.cm2d",
+      "sha256": "002d4f2ae8bcbace7b62a2de82ec2f76e4382384f18409e578a735e99e16d2d2",
+      "total_area": 12.878554847741372,
+      "valid": true
+    },
+    {
+      "cells": 1592,
+      "characteristic_h": 0.08994189514542213,
+      "convergence_h": 0.08,
+      "faces": 3340,
+      "issues": [],
+      "max_closure_error": 0.0,
+      "name": "h04",
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h04/circle.solver.cm2d",
+      "sha256": "f211d9d03784437c4d4c03fa05911ad0052319f73d1a7a633221b882d70a0f2b",
+      "total_area": 12.878554847741372,
+      "valid": true
+    },
+    {
+      "cells": 5860,
+      "characteristic_h": 0.046879692889529645,
+      "convergence_h": 0.04,
+      "faces": 12024,
+      "issues": [],
+      "max_closure_error": 0.0,
+      "name": "h02",
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-fv/verification-run/meshes/h02/circle.solver.cm2d",
+      "sha256": "6c195479fa23a4cf2de8a5ca66b91b0e40b6a8f9308bef36327a235b7334e228",
+      "total_area": 12.878554847741372,
+      "valid": true
+    }
+  ],
+  "tolerances": {
+    "absolute_tolerance": 1e-11,
+    "field_absolute_tolerance": 1e-09,
+    "field_relative_tolerance": 1e-09,
+    "relative_tolerance": 1e-09,
+    "residual_absolute_tolerance": 1e-12,
+    "residual_relative_tolerance": 1e-10
+  },
+  "valid": true,
+  "deliveryVerification": {
+    "nativeCTest": "101/101",
+    "frontendTests": "97/97",
+    "externalCheckMesh": "not run: Docker Desktop is manually paused",
+    "scope": "2D steady scalar diffusion/Poisson foundation; no flow solver or desktop integration yet",
+    "sourceBase": "664ac7c plus new native FV code",
+    "compiler": "/usr/bin/clang++ Release",
+    "review": "overflow false-convergence and cached-index safety failures repaired with regression tests",
+    "largeArtifacts": "outputs/native-fv/verification-run"
+  },
+  "sourceSha256": {
+    "src/fv/FvMesh2D.cpp": "478f1bf5a190c27a5ce4a530d7a415b9da7710828e5e01c060c7464059a00eec",
+    "src/fv/Diffusion2D.cpp": "32bad4be572172f3481e8531a732b57ffebd8689c7a61bf3ab5c0f6693cb1046",
+    "include/cartmesh2d/fv/FvMesh2D.hpp": "5aca21e36170d34a0d4967056dddb39b46639c5db882dc760dfbdff8e1686a0a",
+    "include/cartmesh2d/fv/Diffusion2D.hpp": "7527ac6cef08871412f2eff20f93299a8eb9c8e8b40d717846a98a1a7150fa9e",
+    "apps/cartmesh2d_fv_cli.cpp": "17614a41ebe00f5a226f9a3021c5a64cfd273a3c6eb7f3504184fc82151daeb8"
+  }
+}
