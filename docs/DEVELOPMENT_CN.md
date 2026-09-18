@@ -172,6 +172,19 @@ python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2
 
 最终矩阵图可用 `python3 tools/verification/plot_transient_flow.py --root outputs/native-flow/transient/final --output artifacts/current/native-flow-transient` 重建；先校验来源哈希。误差和时间步自收敛单独报告，离散守恒通过不等于物理精度验收。
 
+### 固定网格的时间步比较
+
+`tools/verification/compare_transient_steps.py` 从 `run_transient_flow.py` 的 `runs.json` 重新读取最终场与时间历史，不信任旧 PASS。至少三档严格减半的时间步，要求同一网格、二进制、工况、物性、格式、容差及终止时间；逐项核对命令与独立读回，并要求从 t=0 开始。本入口暂不比较重启序列。按相同 cell id、实际面积计算相邻时间步速度差和观测阶；负阶也照实报告，`valid` 仅表示比较输入一致且离散审核通过，不是工程精度合格。
+
+```sh
+python3 tools/verification/run_transient_flow.py --mesh PATH/unit-square.solver.cm2d --output outputs/my-time-study --dt .04 .02 .01 .005 --end-time 2
+python3 tools/verification/compare_transient_steps.py --runs outputs/my-time-study/runs.json --output outputs/my-time-study/comparison.json
+```
+
+默认案例 Taylor–Green 要求完整单位方域。其能量解析式为 `E=Uref²/4 exp(-4 nu π² t)`，长时间衰减应同时报告相对速度/能量误差与衰减率，不能只看绝对误差变小。中间步能量来自CSV监测，只有最终步从完整场独立复算；报告明确保留这个区别。步长较大可以收敛而仍有明显时间离散误差。
+
+本轮复现图入口：`MPLCONFIGDIR=/tmp/cartmesh-mpl python3 tools/verification/plot_transient_comparison.py --root outputs/native-flow/transient-long --circle-runs outputs/native-flow/transient-long/circle-re20-completed/runs.json --output artifacts/current/native-flow-transient-long`。它重新审核两组时间步序列，并绘制真实圆柱网格与最终流场、解析衰减相对误差、圆柱受力和相邻时间步差。实际命令与耗时保存在证据JSON，未包含新的空间/域无关性或涡脱落精度认证。
+
 ### 完整流动方程制造解
 
 `--case manufactured` 是命令行验证入口，不是用户物理工况，也不出现在桌面工况列表。仅接受无孔单位方形 `[0,1]²`；四边静止无滑移，压力从内部场外推，cell 0 固定压力为0。

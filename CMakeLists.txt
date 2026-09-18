@@ -166,6 +166,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_transient_verifier
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_verifier_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    add_test(NAME cartmesh2d_transient_step_comparison
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_step_comparison_test.py)
+    set_tests_properties(cartmesh2d_transient_step_comparison PROPERTIES TIMEOUT 30)
     set_tests_properties(cartmesh2d_transient_flow_cli cartmesh2d_transient_verifier PROPERTIES TIMEOUT 90)
     add_executable(cartmesh2d_taylor_green_tests tests/taylor_green_test.cpp)
     target_link_libraries(cartmesh2d_taylor_green_tests PRIVATE cartmesh2d_fv)
