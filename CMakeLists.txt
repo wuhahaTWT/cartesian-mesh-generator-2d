@@ -160,6 +160,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_flow_face_tests tests/flow_face_test.cpp)
     target_link_libraries(cartmesh2d_flow_face_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_face COMMAND cartmesh2d_flow_face_tests)
+    add_executable(cartmesh2d_manufactured_flow_tests tests/manufactured_flow_test.cpp)
+    target_link_libraries(cartmesh2d_manufactured_flow_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_manufactured_flow COMMAND cartmesh2d_manufactured_flow_tests)
     add_test(NAME cartmesh2d_fv_cli_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fv_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_fv_cli>)

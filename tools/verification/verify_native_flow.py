@@ -9,6 +9,8 @@ then applies case-specific checks:
 * channel: plane Poiseuille velocity, pressure gradient and flow rate;
 * cavity: Re=100 centreline values from Ghia, Ghia & Shin (1982);
 * external: finite conservative steady output and recorded force values.
+* manufactured: independent smooth unit-square vortex/source reconstruction,
+  closed-wall/source momentum balance, and refinement error reporting.
 
 The external case deliberately does not compare against the DFG cylinder drag:
 the bundled circle uses a symmetric slip far field, whereas the DFG 2D-1 case
@@ -131,6 +133,10 @@ GENERATED = (
     Request("channel-l6", "channel", 6, 1.0 / 62.0, 0.01, 1.0),
     Request("cavity-l4", "cavity", 4, 1.0 / 14.0, 0.01, 1.0),
     Request("cavity-l5", "cavity", 5, 1.0 / 30.0, 0.01, 1.0),
+    # Filtered out by default --cases; explicit --cases manufactured enables
+    # these two square MMS meshes without changing the default five-case suite.
+    Request("manufactured-l4", "manufactured", 4, 1.0 / 14.0, 0.1, 1.0),
+    Request("manufactured-l5", "manufactured", 5, 1.0 / 30.0, 0.1, 1.0),
     Request("circle-re20", "external", None, None, 0.1, 1.0),
 )
 
@@ -305,7 +311,19 @@ def csv_fields(path: Path) -> tuple[str, ...]:
     return tuple(fields)
 
 
-def read_cells(path: Path, mesh: Mesh, measured: Measurement) -> list[dict[str, float]]:
+MANUFACTURED_CELL_COLUMNS = ("sourceX", "sourceY", "exactU", "exactV", "exactP")
+
+
+def read_cells(path: Path, mesh: Mesh, measured: Measurement,
+               case: str | None = None) -> list[dict[str, float]]:
+    fields = csv_fields(path)
+    manufactured_fields = [name for name in MANUFACTURED_CELL_COLUMNS if name in fields]
+    if case == "manufactured":
+        if tuple(manufactured_fields) != MANUFACTURED_CELL_COLUMNS:
+            missing = [name for name in MANUFACTURED_CELL_COLUMNS if name not in fields]
+            raise VerificationError(f"{path}: manufactured CSV missing columns {missing}")
+    elif manufactured_fields:
+        raise VerificationError(f"{path}: manufactured source/exact columns are only valid for case manufactured")
     rows = load_csv(path, ("cell", "x", "y", "area", "u", "v", "p", "speed"))
     values: dict[int, dict[str, float]] = {}
     for line, row in enumerate(rows, 2):
@@ -313,6 +331,9 @@ def read_cells(path: Path, mesh: Mesh, measured: Measurement) -> list[dict[str, 
         if cell in values or not (0 <= cell < len(mesh.cells)):
             raise VerificationError(f"{path}:{line}: duplicate/out-of-range cell {cell}")
         item = {name: finite(row[name], f"{path}:{line} {name}") for name in ("x", "y", "area", "u", "v", "p", "speed")}
+        if case == "manufactured":
+            item.update({name: finite(row[name], f"{path}:{line} {name}")
+                         for name in MANUFACTURED_CELL_COLUMNS})
         if not close(item["x"], measured.centroids[cell][0], 1e-11, 1e-9) or not close(item["y"], measured.centroids[cell][1], 1e-11, 1e-9):
             raise VerificationError(f"{path}:{line}: cell centre differs from CM2D")
         if not close(item["area"], measured.areas[cell], 1e-11, 1e-9):
@@ -371,7 +392,13 @@ def continuity(mesh: Mesh, measured: Measurement, fluxes: list[float], speed: fl
     global_limit = absolute + relative * speed * math.sqrt(measured.total_area)
     inflow = math.fsum(max(0.0, -flux) for edge, flux in zip(mesh.edges, fluxes)
                        if edge.neighbour < 0)
-    flow_scale = speed * (measured.bounds[3] - measured.bounds[1]) if case == "cavity" else inflow
+    if case in ("cavity", "manufactured"):
+        # Both are closed domains, so inlet flux is identically zero.  Keep a
+        # positive scale for the reported relative global balance while the
+        # actual gate remains the closed-boundary flux sum.
+        flow_scale = speed * math.sqrt(measured.total_area)
+    else:
+        flow_scale = inflow
     if not (math.isfinite(flow_scale) and flow_scale > 0.0):
         raise VerificationError("independent continuity has no positive reference throughput")
     global_relative = abs(boundary) / flow_scale
@@ -413,6 +440,43 @@ def weighted_l2(errors: Iterable[float], areas: Iterable[float]) -> float:
     pairs = list(zip(errors, areas))
     total = math.fsum(a for _, a in pairs)
     return math.sqrt(math.fsum(a * e * e for e, a in pairs) / total)
+
+
+def manufactured_sample(x: float, y: float, speed: float, nu: float) -> dict[str, float]:
+    """Evaluate the smooth unit-square manufactured field independently.
+
+    The expressions below are an analytic differentiation of the stream
+    function and pressure definition.  They intentionally do not consume any
+    exported exact/source columns; those columns are checked against this
+    independent reconstruction later.
+    """
+    pi = math.pi
+    sx, sy = math.sin(pi * x), math.sin(pi * y)
+    cx, cy = math.cos(pi * x), math.cos(pi * y)
+    s2x, s2y = math.sin(2.0 * pi * x), math.sin(2.0 * pi * y)
+    u = speed * sx * sx * s2y
+    v = -speed * s2x * sy * sy
+    # Simplified convective products and Laplacians are written out here so
+    # this oracle has a visibly independent form from the native implementation.
+    convective_x = 2.0 * speed * speed * pi * sx * sx * s2x * sy * sy
+    convective_y = 2.0 * speed * speed * pi * sx * sx * sy * sy * s2y
+    lap_u = 2.0 * speed * pi * pi * s2y * (1.0 - 4.0 * sx * sx)
+    lap_v = -2.0 * speed * pi * pi * s2x * (1.0 - 4.0 * sy * sy)
+    pressure = speed * speed * cx * cy
+    pressure_x = -speed * speed * pi * sx * cy
+    pressure_y = -speed * speed * pi * cx * sy
+    source_x = convective_x + pressure_x - nu * lap_u
+    source_y = convective_y + pressure_y - nu * lap_v
+    return {"u": u, "v": v, "p": pressure, "sourceX": source_x, "sourceY": source_y}
+
+
+def manufactured_source_integral(mesh: Mesh, measured: Measurement, speed: float,
+                                 nu: float) -> list[tuple[float, float]]:
+    return [
+        (area * sample["sourceX"], area * sample["sourceY"])
+        for area, (x, y) in zip(measured.areas, measured.centroids)
+        for sample in (manufactured_sample(x, y, speed, nu),)
+    ]
 
 
 def face_centre(mesh: Mesh, edge: Edge) -> tuple[float, float]:
@@ -471,7 +535,12 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
         x, y = face_centre(mesh, edge)
         left, right = abs(x - xmin) <= eps, abs(x - xmax) <= eps
         top, bottom = abs(y - ymax) <= eps, abs(y - ymin) <= eps
-        if case == "external" and edge.patch == 1:
+        if case == "manufactured":
+            # The MMS is a closed unit-square problem: all four sides are
+            # stationary no-slip walls.  In particular, there is no lid,
+            # inlet, outlet, or pressure boundary.
+            role = "wall"
+        elif case == "external" and edge.patch == 1:
             role = "wall"
         elif case == "cavity":
             role = "lid" if top else "wall"
@@ -638,6 +707,10 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
           if convection == "limited-linear" else None)
     fluxes = face_fluxes(face_records)
     cell_residuals = [(0.0, 0.0) for _ in mesh.cells]
+    source_integrals = (manufactured_source_integral(mesh, measured, speed, nu)
+                        if case == "manufactured" else [(0.0, 0.0)] * len(mesh.cells))
+    source_sum = (math.fsum(x for x, _ in source_integrals),
+                  math.fsum(y for _, y in source_integrals))
     boundary_vector = [0.0, 0.0]
     boundary_scale = 0.0
     max_deviation = {name: 0.0 for name in FACE_MOMENTUM_COLUMNS}
@@ -691,6 +764,12 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             pressure_force[1] += py
             discrete_force[0] += px + dx
             discrete_force[1] += py + dy
+    if case == "manufactured":
+        # Subtract the independent cell-volume forcing before measuring the
+        # equation residual.  Exported source columns are checked separately
+        # and cannot influence this audit.
+        cell_residuals = [(rx - source[0], ry - source[1])
+                          for (rx, ry), source in zip(cell_residuals, source_integrals)]
     diagonal_u = [0.0] * len(mesh.cells)
     diagonal_v = [0.0] * len(mesh.cells)
     for edge, flux in zip(mesh.edges, fluxes):
@@ -727,9 +806,16 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     }
     cell_sum = (math.fsum(rx for rx, _ in cell_residuals),
                 math.fsum(ry for _, ry in cell_residuals))
-    conservation_difference = (cell_sum[0] - boundary_vector[0], cell_sum[1] - boundary_vector[1])
+    expected_cell_sum = (boundary_vector[0] - source_sum[0],
+                         boundary_vector[1] - source_sum[1])
+    conservation_difference = (cell_sum[0] - expected_cell_sum[0],
+                               cell_sum[1] - expected_cell_sum[1])
+    source_adjusted_boundary = (boundary_vector[0] - source_sum[0],
+                                boundary_vector[1] - source_sum[1])
     boundary_relative = (math.hypot(*boundary_vector) / boundary_scale
                          if boundary_scale > 0.0 else 0.0)
+    source_definition = ("independent analytic source integrated at CM2D cell centroids; subtracted from face balance"
+                         if case == "manufactured" else "zero/unforced non-manufactured case")
     return {
         "status": "available", "valid": True, "convection": convection,
         "pressureDiscretization": payload.get("pressureDiscretization"),
@@ -743,6 +829,10 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T",
         },
         "summaryDeviation": summary_deviations,
+        "sourceForcing": {
+            "case": case, "integralX": source_sum[0], "integralY": source_sum[1],
+            "definition": source_definition,
+        },
         "pressureForce": {"x": pressure_force[0], "y": pressure_force[1]},
         "discreteForce": {"x": discrete_force[0], "y": discrete_force[1]},
         "globalBoundaryMomentum": {"x": boundary_vector[0], "y": boundary_vector[1],
@@ -750,7 +840,13 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                                     "boundaryTermScale": boundary_scale,
                                     "relativeToBoundary": boundary_relative,
                                     "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"},
+        "globalSourceBalance": {"boundaryMinusSourceX": source_adjusted_boundary[0],
+                                 "boundaryMinusSourceY": source_adjusted_boundary[1],
+                                 "magnitude": math.hypot(*source_adjusted_boundary),
+                                 "sourceIntegralX": source_sum[0], "sourceIntegralY": source_sum[1],
+                                 "definition": "global boundary momentum minus independent volume source integral"},
         "cellResidualSum": {"x": cell_sum[0], "y": cell_sum[1]},
+        "expectedCellResidualSum": {"x": expected_cell_sum[0], "y": expected_cell_sum[1]},
         "cellBoundaryConservationDifference": {"x": conservation_difference[0],
                                                  "y": conservation_difference[1],
                                                  "magnitude": math.hypot(*conservation_difference)},
@@ -870,6 +966,79 @@ def cavity_checks(measured: Measurement, cells: list[dict[str, float]], nu: floa
     return checks
 
 
+def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
+                        nu: float, speed: float) -> dict[str, Any]:
+    """Audit the analytic fields and source columns of the closed MMS case."""
+    xmin, ymin, xmax, ymax = measured.bounds
+    geometry_ok = (close(xmin, 0.0, 1e-12, 0.0) and close(ymin, 0.0, 1e-12, 0.0)
+                   and close(xmax, 1.0, 1e-12, 0.0) and close(ymax, 1.0, 1e-12, 0.0))
+    boundaries = flow_boundaries(mesh, measured, "manufactured", speed)
+    boundary_edges = [edge for edge in mesh.edges if edge.neighbour < 0]
+    roles = {role: boundaries["roles"].count(role) for role in set(boundaries["roles"])}
+    boundary_ok = (bool(boundary_edges) and all(boundaries["roles"][edge.id] == "wall"
+                                                for edge in boundary_edges)
+                   and all(boundaries["fixedU"][edge.id] and boundaries["fixedV"][edge.id]
+                           and not boundaries["fixedP"][edge.id] for edge in boundary_edges))
+
+    first = manufactured_sample(*measured.centroids[0], speed, nu)
+    gauge = first["p"]
+    velocity_errors: list[float] = []
+    pressure_errors: list[float] = []
+    source_errors: list[float] = []
+    exact_errors = {name: [] for name in ("exactU", "exactV", "exactP")}
+    expected_sources: list[tuple[float, float]] = []
+    for row, area, (x, y) in zip(cells, measured.areas, measured.centroids):
+        sample = manufactured_sample(x, y, speed, nu)
+        expected_sources.append((area * sample["sourceX"], area * sample["sourceY"]))
+        exact_u, exact_v, exact_p = sample["u"], sample["v"], sample["p"] - gauge
+        velocity_errors.extend((row["u"] - exact_u, row["v"] - exact_v))
+        pressure_errors.append(row["p"] - exact_p)
+        exact_errors["exactU"].append(row["exactU"] - exact_u)
+        exact_errors["exactV"].append(row["exactV"] - exact_v)
+        exact_errors["exactP"].append(row["exactP"] - exact_p)
+        source_errors.extend((row["sourceX"] - area * sample["sourceX"],
+                              row["sourceY"] - area * sample["sourceY"]))
+    velocity_l2 = math.sqrt(
+        weighted_l2([row["u"] - manufactured_sample(x, y, speed, nu)["u"]
+                     for row, (x, y) in zip(cells, measured.centroids)], measured.areas) ** 2
+        + weighted_l2([row["v"] - manufactured_sample(x, y, speed, nu)["v"]
+                       for row, (x, y) in zip(cells, measured.centroids)], measured.areas) ** 2
+    ) / speed
+    pressure_l2 = weighted_l2(pressure_errors, measured.areas) / max(speed * speed, 1e-300)
+    velocity_linf = max((abs(value) for value in velocity_errors), default=0.0) / speed
+    pressure_linf = max((abs(value) for value in pressure_errors), default=0.0) / max(speed * speed, 1e-300)
+    exact_column_max = {name: max((abs(value) for value in values), default=0.0)
+                        for name, values in exact_errors.items()}
+    source_column_max = max((abs(value) for value in source_errors), default=0.0)
+    schema_tolerance = {"absolute": 2e-12, "relative": 0.0,
+                        "meaning": "CSV exact/source consistency only; not a physical accuracy gate"}
+    gauge_ok = close(cells[0]["p"], 0.0, schema_tolerance["absolute"], 0.0)
+    columns_ok = (all(close(value, 0.0, schema_tolerance["absolute"], schema_tolerance["relative"])
+                      for value in exact_column_max.values())
+                  and close(source_column_max, 0.0, schema_tolerance["absolute"], schema_tolerance["relative"]))
+    return {
+        "valid": geometry_ok and boundary_ok and columns_ok and gauge_ok,
+        "issues": (["manufactured domain is not exactly [0,1]^2"] if not geometry_ok else [])
+                   + ([] if boundary_ok else ["manufactured boundary is not closed stationary no-slip"])
+                   + ([] if columns_ok else ["manufactured CSV exact/source columns differ from independent analytic reconstruction"])
+                   + ([] if gauge_ok else ["manufactured cell 0 pressure is not the prescribed zero gauge"]),
+        "domain": {"bounds": measured.bounds, "expected": [0.0, 0.0, 1.0, 1.0]},
+        "boundaryAudit": {"roles": roles, "boundaryEdges": len(boundary_edges),
+                           "allStationaryNoSlipWalls": boundary_ok,
+                           "pressureBoundaryEdges": sum(boundaries["fixedP"])},
+        "pressureGauge": {"definition": "raw analytic p minus raw p at CM2D cell 0 centroid",
+                           "cell0RawPressure": gauge, "cell0ComputedPressure": cells[0]["p"],
+                           "valid": gauge_ok},
+        "velocityL2Relative": velocity_l2, "velocityLinfRelative": velocity_linf,
+        "pressureL2Relative": pressure_l2, "pressureLinfRelative": pressure_linf,
+        "exactColumnMaxAbsolute": exact_column_max,
+        "sourceColumnMaxAbsolute": source_column_max,
+        "sourceIntegralExpected": {"x": math.fsum(x for x, _ in expected_sources),
+                                    "y": math.fsum(y for _, y in expected_sources)},
+        "csvConsistencyTolerance": schema_tolerance,
+    }
+
+
 def flattened_numbers(value: Any, prefix: str = "") -> dict[str, float]:
     result: dict[str, float] = {}
     if isinstance(value, dict):
@@ -953,7 +1122,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     missing = [str(path) for path in (cells_path, faces_path, residual_path, json_path) if not path.is_file()]
     if missing:
         return {"valid": False, "case": case, "issues": issues + [f"missing artifact: {p}" for p in missing]}
-    cells = read_cells(cells_path, mesh, measured)
+    cells = read_cells(cells_path, mesh, measured, case)
     face_records, face_momentum_available = read_faces(faces_path, mesh)
     fluxes = face_fluxes(face_records)
     residuals = read_residuals(residual_path)
@@ -982,6 +1151,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         issues.append("native JSON format is not cartmesh2d-flow-summary-v1")
     if payload.get("case") != case:
         issues.append("native JSON case differs from requested case")
+    if case == "manufactured" and not isinstance(payload.get("manufacturedDefinition"), str):
+        issues.append("native JSON missing manufacturedDefinition")
     if payload.get("status") != "converged":
         issues.append("native JSON status is not converged")
     if payload.get("converged") is not True:
@@ -1023,7 +1194,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         domain_height = measured.bounds[3] - measured.bounds[1]
         if not close(finite(payload.get("domainHeight"), "native domainHeight"), domain_height, 1e-12, 1e-10):
             issues.append("native domain height differs from final CM2D bounds")
-        expected_pressure_reference = ("cell 0, kinematic pressure zero" if case == "cavity"
+        expected_pressure_reference = ("cell 0, kinematic pressure zero" if case in ("cavity", "manufactured")
                                        else "right outlet faces, kinematic pressure zero")
         if payload.get("pressureReference") != expected_pressure_reference:
             issues.append("native pressure reference differs from case boundary conditions")
@@ -1042,6 +1213,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         benchmark = cavity_checks(measured, cells, nu, speed, args)
     elif case == "external":
         benchmark = external_checks(mesh, measured, cells, payload, nu, speed, args)
+    elif case == "manufactured":
+        benchmark = manufactured_checks(mesh, measured, cells, nu, speed)
     else:
         raise VerificationError(f"unsupported case {case}")
     if not benchmark.get("valid"):
@@ -1148,14 +1321,28 @@ def write_json(path: Path, value: Any) -> None:
 
 def sequence_checks(cases: list[dict[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {"valid": True, "issues": [], "series": {}}
-    for case_name, metric in (("channel", "velocityL2Relative"), ("cavity", "centrelineRmse")):
+    for case_name, metric in (("channel", "velocityL2Relative"),
+                              ("cavity", "centrelineRmse"),
+                              ("manufactured", "velocityL2Relative")):
         selected = [item for item in cases if item.get("case") == case_name and item.get("benchmark", {}).get(metric) is not None]
         selected.sort(key=lambda item: item["meshMeasurement"]["characteristicH"], reverse=True)
         values = [{"label": item.get("label"), "h": item["meshMeasurement"]["characteristicH"],
                    "error": item["benchmark"][metric]} for item in selected]
         result["series"][case_name] = values
         for coarse, fine in zip(values, values[1:]):
-            if not (fine["h"] < coarse["h"] and fine["error"] <= 1.10 * coarse["error"]):
+            if not fine["h"] < coarse["h"]:
+                result["issues"].append(f"{case_name} sequence is not geometrically refined")
+                continue
+            if coarse["error"] > 0.0 and fine["error"] > 0.0:
+                observed_order = math.log(coarse["error"] / fine["error"]) / math.log(coarse["h"] / fine["h"])
+            else:
+                observed_order = None
+            coarse["observedOrderToNext"] = observed_order
+            fine["observedOrder"] = observed_order
+            if case_name == "manufactured":
+                if not fine["error"] < coarse["error"]:
+                    result["issues"].append(f"manufactured finer mesh did not reduce velocity error")
+            elif not fine["error"] <= 1.10 * coarse["error"]:
                 result["issues"].append(f"{case_name} finer mesh did not preserve/improve {metric}")
     result["valid"] = not result["issues"]
     return result
@@ -1168,7 +1355,7 @@ def main() -> int:
                         help="reuse existing output-root/runs artifacts without launching the flow CLI")
     parser.add_argument("--mesh", action="append", nargs=3, metavar=("CASE", "LABEL", "PATH"),
                         help="verify an existing mesh; repeat for multiple cases")
-    parser.add_argument("--cases", nargs="+", choices=("channel", "cavity", "external"),
+    parser.add_argument("--cases", nargs="+", choices=("channel", "cavity", "external", "manufactured"),
                         default=("channel", "cavity", "external"))
     parser.add_argument("--mesh-cli", type=Path, default=REPO / "build/cartmesh2d_cli")
     parser.add_argument("--flow-cli", type=Path, default=REPO / "build/cartmesh2d_flow_cli")
@@ -1177,6 +1364,7 @@ def main() -> int:
     parser.add_argument("--channel-nu", type=float, default=0.01)
     parser.add_argument("--cavity-nu", type=float, default=0.01)
     parser.add_argument("--external-nu", type=float, default=0.1)
+    parser.add_argument("--manufactured-nu", type=float, default=0.1)
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--max-iterations", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=180)
@@ -1216,7 +1404,8 @@ def main() -> int:
                 raise VerificationError(f"--{name.replace('_', '-')} must be finite non-negative")
         if args.timeout <= 0 or args.max_iterations <= 0 or not (math.isfinite(args.speed) and args.speed > 0.0):
             raise VerificationError("timeout, iteration limit and speed must be positive")
-        nu_by_case = {"channel": args.channel_nu, "cavity": args.cavity_nu, "external": args.external_nu}
+        nu_by_case = {"channel": args.channel_nu, "cavity": args.cavity_nu,
+                      "external": args.external_nu, "manufactured": args.manufactured_nu}
         if any(not math.isfinite(value) or value <= 0.0 for value in nu_by_case.values()):
             raise VerificationError("all viscosities must be positive finite")
         mesh_cli, flow_cli = args.mesh_cli.resolve(), args.flow_cli.resolve()
@@ -1238,6 +1427,9 @@ def main() -> int:
             "external": {"maximumSpeedRatio": args.max_speed_ratio,
                          "maximumLiftDragRatio": args.external_lift_drag_ratio,
                          "referenceDragIsGate": False},
+            "manufactured": {"nu": args.manufactured_nu,
+                             "definition": "analytic stream-function vortex on [0,1]^2; source forcing is verification-only",
+                             "velocityErrorGate": "reported with refinement decrease and observed order; no universal physical threshold"},
         }
 
         entries: list[tuple[str, str, Path, float, float]] = []

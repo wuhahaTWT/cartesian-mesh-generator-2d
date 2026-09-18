@@ -1,3 +1,4 @@
+#include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
@@ -88,7 +89,9 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             ensure((left || right) ? std::abs(f.areaVector.y) <= eps
                                    : std::abs(f.areaVector.x) <= eps,
                    "Flow outer edge is not axis aligned");
-            if (c.scenario == "cavity") {
+            if (c.scenario == "manufactured") {
+                b.role[id] = Role::Wall;
+            } else if (c.scenario == "cavity") {
                 b.role[id] = top ? Role::Lid : Role::Wall;
             } else if (left) {
                 b.role[id] = Role::Inlet;
@@ -124,7 +127,10 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             break;
         }
     }
-    b.closed = c.scenario == "cavity";
+    b.closed = c.scenario == "cavity" || c.scenario == "manufactured";
+    if (c.scenario == "manufactured")
+        ensure(equal(b.xmin,0) && equal(b.ymin,0) && equal(b.xmax,1) && equal(b.ymax,1),
+               "Manufactured flow requires the unit square [0,1]^2");
     if (!b.closed) {
         ensure(inlets && outlets, "Flow needs left inlet and right pressure outlet");
     }
@@ -210,6 +216,7 @@ void momentum(System& a,
                 const Vec& flux,
                 const std::vector<Vector2D>& gradField,
                 const std::vector<Vector2D>& gp,
+                const std::vector<Vector2D>& source,
                 bool y,
                 bool relaxed) {
     a.reset();
@@ -219,6 +226,7 @@ void momentum(System& a,
         ? detail::faceReconstructionLimiter(m, field, gradField, bc, fixed) : Vec{};
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
         a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
+        if (!source.empty()) a.rhs[i] += y ? source[i].y : source[i].x;
     }
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
         const auto& f = m.faces[id];
@@ -268,7 +276,7 @@ FlowResult2D solveIncompressible2D(
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
@@ -338,6 +346,13 @@ FlowResult2D solveIncompressible2D(
     r.p.resize(n);
     r.flux.resize(nf);
     r.domainHeight = b.ymax - b.ymin;
+    if (c.scenario == "manufactured") {
+        r.sourceIntegrals.reserve(n);
+        for (const auto& cell : m.cells) {
+            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu).acceleration;
+            r.sourceIntegrals.push_back({finite(cell.area*acceleration.x),finite(cell.area*acceleration.y)});
+        }
+    }
     Vec zeros(nf);
     Vec ra(n);
     Vec pc(n);
@@ -371,8 +386,8 @@ FlowResult2D solveIncompressible2D(
             detail::pressureFaceValues(m, r.p, gp, zeros, b.fixedP));
         const auto gu = gradient(m, r.u, b.u, b.fixedU);
         const auto gv = gradient(m, r.v, b.v, b.fixedV);
-        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, false, true);
-        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, true, true);
+        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, false, true);
+        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, true, true);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -430,8 +445,8 @@ FlowResult2D solveIncompressible2D(
         const auto newGp=gradient(m,r.p,zeros,b.fixedP),newGu=gradient(m,r.u,b.u,b.fixedU),newGv=gradient(m,r.v,b.v,b.fixedV);
         const auto newForceGradient=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
-        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,false,false);
-        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,true,false);
+        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,false,false);
+        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,true,false);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");

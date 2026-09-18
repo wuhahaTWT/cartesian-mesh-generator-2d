@@ -1,3 +1,4 @@
+#include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <cmath>
@@ -54,11 +55,12 @@ int main(int argc, char** argv) {
             if (a == "--help") {
                 std::cout
                     << "Native 2D steady incompressible laminar SIMPLE (experimental)\n"
-            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity\n"
+            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
             "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
+            "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
@@ -126,14 +128,23 @@ int main(int argc, char** argv) {
         }
 
         auto cells = out(prefix, ".cells.csv");
-        cells << "cell,x,y,area,u,v,p,speed\n";
+        cells << "cell,x,y,area,u,v,p,speed";
+        if (controls.scenario == "manufactured") cells << ",sourceX,sourceY,exactU,exactV,exactP";
+        cells << '\n';
         auto fields = out(prefix, ".fields.json");
         fields << "{\"format\":\"cartmesh2d-flow-v1\",\"cells\":[\n";
         for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
             const auto& c = mesh.cells[i];
             const double speed = std::hypot(r.u[i], r.v[i]);
             cells << i << ',' << c.centre.x << ',' << c.centre.y << ',' << c.area << ','
-                  << r.u[i] << ',' << r.v[i] << ',' << r.p[i] << ',' << speed << '\n';
+                  << r.u[i] << ',' << r.v[i] << ',' << r.p[i] << ',' << speed;
+            if (controls.scenario == "manufactured") {
+                const auto exact=fv::manufacturedFlow2D(c.centre,controls.speed,controls.nu);
+                const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu).pressure;
+                cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
+                      << ',' << exact.velocity.x << ',' << exact.velocity.y << ',' << exact.pressure-gauge;
+            }
+            cells << '\n';
             if (i) {
                 fields << ",\n";
             }
@@ -167,9 +178,12 @@ int main(int argc, char** argv) {
         auto summary = out(prefix, ".json");
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" : "jacobi";
+        const bool manufactured=controls.scenario == "manufactured";
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
-        summary << "{\n\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
+        summary << "{\n";
+        if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*cos(pi*x)*cos(pi*y); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n";
+        summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
                 << (r.converged ? "converged" : "iteration_limit")
                 << "\",\n\"converged\":" << (r.converged ? "true" : "false")
@@ -198,7 +212,7 @@ int main(int argc, char** argv) {
                 << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                 << ",\n\"units\":{\"velocity\":\"m/s\",\"p\":\"m2/s2 (kinematic)\",\"nu\":\"m2/s\",\"faceFlux\":\"m2/s per unit depth\",\"force\":\"m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes\"},\n"
                 << "\"pressureReference\":\""
-                << (controls.scenario == "cavity"
+                << ((controls.scenario == "cavity" || manufactured)
                         ? "cell 0, kinematic pressure zero"
                         : "right outlet faces, kinematic pressure zero")
                 << "\",\n"

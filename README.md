@@ -10,6 +10,8 @@
 
 0.4.1 加入共享面压力和独立动量审核，桌面可切换对流格式。通道、方腔和圆柱共14次试算的单例守恒检查通过，但**限制重构的方腔三档细化趋势尚未通过**，收紧迭代容差也未解决；保持迎风默认值，不宣称通用二阶精度。[实际流场与未通过项](artifacts/current/native-flow-convection.png) · [核查证据](artifacts/current/native-flow-convection.json)
 
+开发分支另有完整流动方程制造解验证：规则/扭曲网格、两种格式共12例，限制重构速度观测阶约1.83→1.92。它验证光滑解析强迫流动，**不消除上述方腔未通过项**；CLI验证入口不属于新增桌面物理工况。[真实网格与误差图](artifacts/current/native-flow-manufactured.png) · [复现方式](docs/DEVELOPMENT_CN.md#完整流动方程制造解)
+
 [原生层流的实际界面与数值证据](docs/CURRENT_STATE_CN.md#原生二维稳态层流与桌面-040本地交付)
 
 [下载与启动](#下载与启动) · [快速使用](#快速使用) · [网格展示](#网格展示) · [桌面使用指南](docs/DESKTOP_APP_CN.md) · [当前状态与已知问题](docs/CURRENT_STATE_CN.md)

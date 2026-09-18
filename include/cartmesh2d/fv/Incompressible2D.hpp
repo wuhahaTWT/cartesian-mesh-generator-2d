@@ -57,6 +57,7 @@ struct FlowResult2D {
     std::vector<double> p;
     std::vector<double> flux;
     std::vector<FaceMomentum2D> faceMomentum;
+    std::vector<Vector2D> sourceIntegrals; // populated only for manufactured verification
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;
     double globalRelativeImbalance = 0;
