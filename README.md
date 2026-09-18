@@ -10,6 +10,16 @@
 
 [下载与启动](#下载与启动) · [快速使用](#快速使用) · [网格展示](#网格展示) · [桌面使用指南](docs/DESKTOP_APP_CN.md) · [当前状态与已知问题](docs/CURRENT_STATE_CN.md)
 
+## 项目阶段与分支
+
+**网格生成器 0.3.0 阶段已完成，现进入自研 CFD 开发。** “阶段完成”指当前工程验证版的交付范围，不代表任意几何和工业精度问题已全部解决。
+
+- [网格里程碑 mesher-v0.3.0](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/releases/tag/mesher-v0.3.0)：固定在加入自研 CFD 前的 `664ac7c`，保留当时可复现的源码与证据。
+- [网格维护 codex/mesh-maintenance](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/codex/mesh-maintenance)：从该节点继续修复、完善网格生成器。
+- [CFD 开发 codex/cfd-development](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/codex/cfd-development)：包含原生求解器及桌面计算流程；`main` 保留已验收的集成版本。
+
+标签保存固定快照，分支可以继续发展。以后回头改网格不影响这次里程碑；维护分支的修复通过测试后再合并到 CFD 分支和 `main`，不会自动互相覆盖。
+
 ## 下载与启动
 
 打开[已通过三平台验收的构建](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/34689931686)，在页面底部 **Artifacts** 下载对应运行包。后续版本可在 [desktop-platforms 工作流](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/workflows/desktop-platforms.yml)中查看；选择成功运行及所需平台的附件。GitHub Actions 附件下载需要登录，附件也有保留期限，过期后可选择较新构建或从源码构建。
