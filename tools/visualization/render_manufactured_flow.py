@@ -21,6 +21,9 @@ def main():
     parser.add_argument('--summary', type=Path, action='append', required=True,
                         help='Repeat for each mesh kind and convection scheme')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--field', choices=('speed', 'pressure'), default='speed')
+    parser.add_argument('--baseline', type=Path,
+                        help='Optional independently audited Cartesian series for comparison')
     args = parser.parse_args()
     groups = []
     for path in args.summary:
@@ -52,15 +55,25 @@ def main():
         rows = sorted(csv.DictReader(stream), key=lambda row: int(row['cell']))
     polygons = [[mesh.vertices[i] for i in c.vertices] for c in mesh.cells]
     speed = np.array([float(row['speed']) for row in rows])
+    pressure = np.array([float(row['p']) for row in rows])
     errors = []
+    pressure_errors = []
+    slope = case.get('manufacturedPressureSlope', 0.0)
+    gauge = manufactured_sample(float(rows[0]['x']), float(rows[0]['y']),
+                                case['speed'], case['nu'], slope)['p']
     for row in rows:
-        exact = manufactured_sample(float(row['x']), float(row['y']), case['speed'], case['nu'])
+        exact = manufactured_sample(float(row['x']), float(row['y']), case['speed'], case['nu'], slope)
         errors.append(np.hypot(float(row['u']) - exact['u'], float(row['v']) - exact['v']))
+        pressure_errors.append(abs(float(row['p']) - (exact['p'] - gauge)))
     fig, axes = plt.subplots(2, 2, figsize=(12, 10), layout='constrained')
-    for ax, values, cmap, title, label in [
+    views = [
         (axes[0, 0], speed, 'viridis', 'Computed forced vortex', 'Speed (m/s)'),
         (axes[0, 1], np.array(errors), 'magma', 'Error against the analytic velocity', '|U - U exact| (m/s)'),
-    ]:
+    ] if args.field == 'speed' else [
+        (axes[0, 0], pressure, 'coolwarm', 'Computed kinematic pressure', 'p (m2/s2)'),
+        (axes[0, 1], np.array(pressure_errors), 'magma', 'Error against the analytic pressure', '|p - p exact| (m2/s2)'),
+    ]
+    for ax, values, cmap, title, label in views:
         collection = PolyCollection(polygons, array=values, cmap=cmap,
                                     edgecolors=(.1, .15, .2, .22), linewidths=.14)
         ax.add_collection(collection)
@@ -81,11 +94,19 @@ def main():
             color = '#b46027' if scheme == 'limited-linear' else '#416986'
             ax.loglog(h, error, 'o-' if kind == 'Cartesian' else 's--', color=color,
                       label=f'{kind}, {scheme}; last order {order:.2f}')
+        if args.baseline:
+            baseline = json.loads(args.baseline.read_text())
+            if not baseline['valid'] or not baseline['cases']:
+                raise ValueError('Baseline must have passed independent verification')
+            cases = sorted(baseline['cases'], key=lambda c: c['counts']['cells'])
+            ax.loglog([c['meshMeasurement']['characteristicH'] for c in cases],
+                      [c['benchmark'][metric] for c in cases], 'x:', color='#416986',
+                      label='Previous pressure boundary, Cartesian')
         ax.set_xlabel('h = sqrt(total area / cells) (m)'); ax.set_ylabel(label)
         ax.set_title('Area-weighted error, three mesh sizes')
         ax.grid(alpha=.2, which='both'); ax.legend(fontsize=8)
     fig.suptitle('Native 2D Navier-Stokes: manufactured-solution verification', fontsize=15)
-    fig.supxlabel('Stationary walls; analytic volume forcing; nu = 0.1. This smooth case does not qualify cavity or turbulent-flow accuracy.', fontsize=9)
+    fig.supxlabel(f'Stationary walls; analytic volume forcing; pressure slope = {slope:g}. This smooth case does not qualify cavity or turbulent-flow accuracy.', fontsize=9)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.output, dpi=170)
     plt.close(fig)

@@ -14,7 +14,8 @@ struct ManufacturedFlowSample2D {
     Vector2D acceleration; // div(U U) + grad(p) - nu laplacian(U)
 };
 
-inline ManufacturedFlowSample2D manufacturedFlow2D(Point2D point, double speed, double nu) {
+inline ManufacturedFlowSample2D manufacturedFlow2D(Point2D point, double speed, double nu,
+                                                  double pressureSlope = 0) {
     constexpr double pi = std::numbers::pi;
     const double sx=std::sin(pi*point.x), sy=std::sin(pi*point.y);
     const double cx=std::cos(pi*point.x), cy=std::cos(pi*point.y);
@@ -25,8 +26,9 @@ inline ManufacturedFlowSample2D manufacturedFlow2D(Point2D point, double speed, 
     const double vx=-2*speed*pi*c2x*sy*sy, vy=-ux;
     const double lapU=2*speed*pi*pi*s2y*(2*c2x-1);
     const double lapV=-2*speed*pi*pi*s2x*(2*c2y-1);
-    const double px=-speed*speed*pi*sx*cy, py=-speed*speed*pi*cx*sy;
-    return {{u,v},speed*speed*cx*cy,
+    const double px=speed*speed*(-pi*sx*cy+pressureSlope);
+    const double py=speed*speed*(-pi*cx*sy+pressureSlope);
+    return {{u,v},speed*speed*(cx*cy+pressureSlope*(point.x+point.y)),
             {u*ux+v*uy+px-nu*lapU,u*vx+v*vy+py-nu*lapV}};
 }
 

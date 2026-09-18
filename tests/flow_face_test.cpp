@@ -14,6 +14,7 @@ using namespace cartmesh2d;
 using cartmesh2d::fv::FvMesh2D;
 using cartmesh2d::fv::detail::conservativePressureGradient;
 using cartmesh2d::fv::detail::faceReconstructionLimiter;
+using cartmesh2d::fv::detail::flowGradient;
 using cartmesh2d::fv::detail::pressureFaceValues;
 using cartmesh2d::fv::detail::upwindFaceValue;
 
@@ -109,6 +110,18 @@ FvMesh2D splitFaceMesh() {
     }));
 }
 
+FvMesh2D triangularTipMesh() {
+    // Cell 0 has one face-neighbour (the diagonal triangle).  The two
+    // quadrilaterals are second-ring cells reached through that neighbour,
+    // and provide non-collinear centre offsets for a linear reconstruction.
+    return cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{0, 0}, {1, 0}, {0, 1}}},
+        {{{1, 0}, {1, 1}, {0, 1}}},
+        {{{1, 0}, {2, 0}, {2, 1}, {1, 1}}},
+        {{{0, 1}, {1, 1}, {1, 2}, {0, 2}}},
+    }));
+}
+
 double linear(Point2D point) {
     return 1.25 + 2.0 * point.x - 3.0 * point.y;
 }
@@ -165,6 +178,91 @@ void linearPressureIsExact(const FvMesh2D& mesh, const std::string& label) {
     for (const auto value : result) {
         near(value.x, 2.0, 1e-11, label + ": Gauss pressure gradient has exact x component");
         near(value.y, -3.0, 1e-11, label + ": Gauss pressure gradient has exact y component");
+    }
+}
+
+void reconstructedLinearPressureIsExact(const FvMesh2D& mesh, const std::string& label) {
+    const auto pressure = cellValues(mesh, linear);
+    std::vector<double> boundary(mesh.faces.size());
+    const std::vector<bool> fixed(mesh.faces.size(), true);
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        boundary[id] = linear(mesh.faces[id].centre);
+
+    const auto gradients = flowGradient(mesh, pressure, boundary, fixed, true);
+    for (const auto& gradient : gradients) {
+        near(gradient.x, linearGradient().x, 1e-11,
+             label + ": extrapolated linear gradient has exact x component");
+        near(gradient.y, linearGradient().y, 1e-11,
+             label + ": extrapolated linear gradient has exact y component");
+    }
+    const auto facePressure = pressureFaceValues(mesh, pressure, gradients, boundary, fixed);
+    const auto result = conservativePressureGradient(mesh, facePressure);
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id) {
+        near(facePressure[id], linear(mesh.faces[id].centre), 1e-11,
+             label + ": reconstructed pressure is exact at every fixed face");
+    }
+    for (const auto& gradient : result) {
+        near(gradient.x, linearGradient().x, 1e-11,
+             label + ": Gauss recovery has exact x component");
+        near(gradient.y, linearGradient().y, 1e-11,
+             label + ": Gauss recovery has exact y component");
+    }
+}
+
+void unknownBoundaryAndRankChecks(const FvMesh2D& mesh) {
+    const auto pressure = cellValues(mesh, linear);
+    const std::vector<double> unknownBoundary(mesh.faces.size(), 0.0);
+    const std::vector<bool> unknown(mesh.faces.size(), false);
+    const auto constrained = flowGradient(mesh, pressure, unknownBoundary, unknown, false);
+    bool changed = false;
+    for (const auto& gradient : constrained) {
+        changed = changed || std::abs(gradient.x - linearGradient().x) > 1e-8
+                          || std::abs(gradient.y - linearGradient().y) > 1e-8;
+    }
+    check(changed, "unknown wall rows with extrapolateUnknown=false do not preserve arbitrary pressure gradient");
+
+    bool threw = false;
+    try {
+        const auto rankDeficient = rectangularMesh(1, 3);
+        const auto values = cellValues(rankDeficient, linear);
+        (void)flowGradient(rankDeficient, values,
+                           std::vector<double>(rankDeficient.faces.size(), 0.0),
+                           std::vector<bool>(rankDeficient.faces.size(), false), true);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    check(threw, "1xN unknown-boundary gradient with extrapolation explicitly reports rank deficiency");
+}
+
+void triangularTipUsesSecondRing() {
+    const auto mesh = triangularTipMesh();
+    std::size_t directNeighbours = 0;
+    for (const auto id : mesh.cells[0].faces)
+        if (mesh.faces[id].neighbour) ++directNeighbours;
+    check(directNeighbours == 1, "triangular tip has exactly one face-neighbour");
+
+    const auto pressure = cellValues(mesh, linear);
+    const std::vector<double> unknownBoundary(mesh.faces.size(), 0.0);
+    const std::vector<bool> unknown(mesh.faces.size(), false);
+    const auto gradients = flowGradient(mesh, pressure, unknownBoundary, unknown, true);
+    for (const auto& gradient : gradients) {
+        near(gradient.x, linearGradient().x, 1e-11,
+             "second-ring tip reconstruction has exact x gradient");
+        near(gradient.y, linearGradient().y, 1e-11,
+             "second-ring tip reconstruction has exact y gradient");
+    }
+
+    const auto facePressure = pressureFaceValues(mesh, pressure, gradients,
+                                                  unknownBoundary, unknown);
+    const auto result = conservativePressureGradient(mesh, facePressure);
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        near(facePressure[id], linear(mesh.faces[id].centre), 1e-11,
+             "second-ring tip pressure is exact on internal and extrapolated faces");
+    for (const auto& gradient : result) {
+        near(gradient.x, linearGradient().x, 1e-11,
+             "second-ring tip Gauss recovery has exact x component");
+        near(gradient.y, linearGradient().y, 1e-11,
+             "second-ring tip Gauss recovery has exact y component");
     }
 }
 
@@ -359,11 +457,16 @@ int main() {
         const auto skew = rectangularMesh(2, 2, 0.3);
         constantPressureAndInternalCancellation(skew);
         linearPressureIsExact(skew, "skew mesh");
+        reconstructedLinearPressureIsExact(skew, "skew mesh");
+        unknownBoundaryAndRankChecks(skew);
 
         const auto split = splitFaceMesh();
         constantPressureAndInternalCancellation(split);
         linearPressureIsExact(split, "coarse/fine mesh");
+        reconstructedLinearPressureIsExact(split, "coarse/fine mesh");
         splitFacesAreBothUsed(split);
+
+        triangularTipUsesSecondRing();
 
         checkerboardPressureKeepsDirectDifference(rectangularMesh(2, 1));
         limiterAndUpwindSelection();

@@ -3,9 +3,97 @@
 #include "cartmesh2d/fv/FvMesh2D.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 
 namespace cartmesh2d::fv::detail {
+
+// Pressure at velocity boundaries is extrapolated from interior values.
+// It is not a prescribed zero physical pressure gradient. Velocity slip/outflow
+// retains the zero-normal row; pressure-correction face flux remains a separate BC.
+inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
+                               const std::vector<double>& u,
+                               const std::vector<double>& bc,
+                               const std::vector<bool>& fixed,
+                               bool extrapolateUnknown = false) {
+    std::vector<Vector2D> g(u.size());
+    for (std::size_t i = 0; i < u.size(); ++i) {
+        double xx = 0;
+        double xy = 0;
+        double yy = 0;
+        double bx = 0;
+        double by = 0;
+        for (auto id : m.cells[i].faces) {
+            const auto& f = m.faces[id];
+            const auto j =
+                f.owner == i ? f.neighbour : std::optional<std::size_t>(f.owner);
+            Vector2D d;
+            double value = 0;
+            if (j || fixed[id]) {
+                d = (j ? m.cells[*j].centre : f.centre) - m.cells[i].centre;
+                const double length = std::hypot(d.x, d.y);
+                if (!(length > 0)) throw std::runtime_error("Flow gradient degenerate stencil");
+                value = ((j ? u[*j] : bc[id]) - u[i]) / length;
+                d = d * (1 / length);
+            } else {
+                if (extrapolateUnknown) continue;
+                d = f.areaVector;
+                const double length = std::hypot(d.x, d.y);
+                d = d * (1 / length);
+            }
+            xx += d.x * d.x;
+            xy += d.x * d.y;
+            yy += d.y * d.y;
+            bx += d.x * value;
+            by += d.y * value;
+        }
+        const auto fullRank = [&] {
+            return xx * yy - xy * xy > 64 * std::numeric_limits<double>::epsilon() *
+                                               (xx + yy) * (xx + yy);
+        };
+        if (extrapolateUnknown && !fullRank()) {
+            // A boundary tip can have only one face-neighbour. Extend through
+            // that neighbour before rejecting a genuinely under-resolved mesh.
+            // Unknown wall values must not be replaced by invented zero slopes.
+            std::vector<std::size_t> adjacent, extended;
+            for (auto id : m.cells[i].faces) {
+                const auto& f = m.faces[id];
+                if (f.neighbour) adjacent.push_back(f.owner == i ? *f.neighbour : f.owner);
+            }
+            std::sort(adjacent.begin(), adjacent.end());
+            adjacent.erase(std::unique(adjacent.begin(), adjacent.end()), adjacent.end());
+            for (const auto j : adjacent) {
+                for (auto id : m.cells[j].faces) {
+                    const auto& f = m.faces[id];
+                    if (!f.neighbour) continue;
+                    const auto k = f.owner == j ? *f.neighbour : f.owner;
+                    if (k != i && !std::binary_search(adjacent.begin(), adjacent.end(), k))
+                        extended.push_back(k);
+                }
+            }
+            std::sort(extended.begin(), extended.end());
+            extended.erase(std::unique(extended.begin(), extended.end()), extended.end());
+            for (const auto k : extended) {
+                auto d = m.cells[k].centre - m.cells[i].centre;
+                const double length = std::hypot(d.x, d.y);
+                if (!(length > 0)) throw std::runtime_error("Flow gradient degenerate extended stencil");
+                const double value = (u[k] - u[i]) / length;
+                d = d * (1 / length);
+                xx += d.x*d.x; xy += d.x*d.y; yy += d.y*d.y;
+                bx += d.x*value; by += d.y*value;
+            }
+        }
+        const double det = xx * yy - xy * xy;
+        if (!fullRank())
+            throw std::runtime_error("Flow gradient rank deficient; cannot reconstruct from the available stencil");
+        g[i] = {(yy * bx - xy * by) / det, (xx * by - xy * bx) / det};
+        if (!std::isfinite(g[i].x) || !std::isfinite(g[i].y))
+            throw std::runtime_error("Flow gradient numerical range exceeded");
+    }
+    return g;
+}
+
 
 // Internal operators: the caller validates the mesh and field extents once.
 // A single reconstructed value is stored per shared face, never per incidence.
