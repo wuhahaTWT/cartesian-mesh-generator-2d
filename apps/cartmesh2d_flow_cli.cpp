@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
             "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
             "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
+            "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--manufactured-pressure-slope") {
+                controls.manufacturedPressureSlope = number(v);
             } else if (a == "--convection") {
                 if (v != "upwind" && v != "limited-linear")
                     throw std::invalid_argument("convection must be upwind or limited-linear");
@@ -139,8 +142,8 @@ int main(int argc, char** argv) {
             cells << i << ',' << c.centre.x << ',' << c.centre.y << ',' << c.area << ','
                   << r.u[i] << ',' << r.v[i] << ',' << r.p[i] << ',' << speed;
             if (controls.scenario == "manufactured") {
-                const auto exact=fv::manufacturedFlow2D(c.centre,controls.speed,controls.nu);
-                const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu).pressure;
+                const auto exact=fv::manufacturedFlow2D(c.centre,controls.speed,controls.nu,controls.manufacturedPressureSlope);
+                const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu,controls.manufacturedPressureSlope).pressure;
                 cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
                       << ',' << exact.velocity.x << ',' << exact.velocity.y << ',' << exact.pressure-gauge;
             }
@@ -182,7 +185,8 @@ int main(int argc, char** argv) {
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
         summary << "{\n";
-        if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*cos(pi*x)*cos(pi*y); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n";
+        if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
+                                  << "\"manufacturedPressureSlope\":" << controls.manufacturedPressureSlope << ",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
                 << (r.converged ? "converged" : "iteration_limit")
@@ -203,6 +207,7 @@ int main(int argc, char** argv) {
                 << ",\n\"discreteForceX\":" << r.discreteForceX
                 << ",\n\"discreteForceY\":" << r.discreteForceY
                 << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
+                << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear\""
                 << ",\n\"convection\":\"" << convection << '"'
                 << ",\n\"forceDefinition\":\"reconstructed-newtonian-traction\""
                 << ",\n\"discreteForceDefinition\":\"pressure plus negative nu grad(U) dot S; embedded walls; Laplacian momentum flux\""

@@ -148,48 +148,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     return b;
 }
 
-std::vector<Vector2D> gradient(const FvMesh2D& m,
-                               const Vec& u,
-                               const Vec& bc,
-                               const std::vector<bool>& fixed) {
-    std::vector<Vector2D> g(u.size());
-    for (std::size_t i = 0; i < u.size(); ++i) {
-        double xx = 0;
-        double xy = 0;
-        double yy = 0;
-        double bx = 0;
-        double by = 0;
-        for (auto id : m.cells[i].faces) {
-            const auto& f = m.faces[id];
-            const auto j =
-                f.owner == i ? f.neighbour : std::optional<std::size_t>(f.owner);
-            Vector2D d;
-            double value = 0;
-            if (j || fixed[id]) {
-                d = (j ? m.cells[*j].centre : f.centre) - m.cells[i].centre;
-                const double length = std::hypot(d.x, d.y);
-                ensure(length > 0, "Flow gradient degenerate stencil");
-                value = ((j ? u[*j] : bc[id]) - u[i]) / length;
-                d = d * (1 / length);
-            } else {
-                d = f.areaVector;
-                const double length = std::hypot(d.x, d.y);
-                d = d * (1 / length);
-            }
-            xx += d.x * d.x;
-            xy += d.x * d.y;
-            yy += d.y * d.y;
-            bx += d.x * value;
-            by += d.y * value;
-        }
-        const double det = xx * yy - xy * xy;
-        ensure(det > 64 * std::numeric_limits<double>::epsilon() * (xx + yy) * (xx + yy),
-               "Flow gradient rank deficient");
-        g[i] = {finite((yy * bx - xy * by) / det),
-                finite((xx * by - xy * bx) / det)};
-    }
-    return g;
-}
+using detail::flowGradient;
 
 Vector2D interpolateGradient(const Face& f, const std::vector<Vector2D>& g) {
     auto result = g[f.owner];
@@ -280,6 +239,9 @@ FlowResult2D solveIncompressible2D(
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
+    ensure(std::isfinite(c.manufacturedPressureSlope) &&
+               (c.scenario == "manufactured" || c.manufacturedPressureSlope == 0),
+           "Manufactured pressure slope is only valid for the verification case");
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
@@ -349,7 +311,7 @@ FlowResult2D solveIncompressible2D(
     if (c.scenario == "manufactured") {
         r.sourceIntegrals.reserve(n);
         for (const auto& cell : m.cells) {
-            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu).acceleration;
+            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu,c.manufacturedPressureSlope).acceleration;
             r.sourceIntegrals.push_back({finite(cell.area*acceleration.x),finite(cell.area*acceleration.y)});
         }
     }
@@ -381,11 +343,11 @@ FlowResult2D solveIncompressible2D(
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
-        const auto gp = gradient(m, r.p, zeros, b.fixedP);
+        const auto gp = flowGradient(m, r.p, zeros, b.fixedP, true);
         const auto forceGradient = detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m, r.p, gp, zeros, b.fixedP));
-        const auto gu = gradient(m, r.u, b.u, b.fixedU);
-        const auto gv = gradient(m, r.v, b.v, b.fixedV);
+        const auto gu = flowGradient(m, r.u, b.u, b.fixedU);
+        const auto gv = flowGradient(m, r.v, b.v, b.fixedV);
         momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, false, true);
         momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, true, true);
         // Use one pressure response for both components. Slip constraints can
@@ -400,7 +362,7 @@ FlowResult2D solveIncompressible2D(
         linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
-        const auto gup=gradient(m,r.u,b.u,b.fixedU),gvp=gradient(m,r.v,b.v,b.fixedV);
+        const auto gup=flowGradient(m,r.u,b.u,b.fixedU),gvp=flowGradient(m,r.v,b.v,b.fixedV);
         Vec predicted(nf);
         for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
             const double rf=interpolate(f,ra);df[id]=rf*f.transmissibility;
@@ -416,7 +378,7 @@ FlowResult2D solveIncompressible2D(
         }
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
         for(int pass=0;pass<4;++pass){
-            ap.reset();const auto gc=gradient(m,pc,zeros,b.fixedP);
+            ap.reset();const auto gc=flowGradient(m,pc,zeros,b.fixedP,true);
             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
                 correction[id]=(f.neighbour||b.fixedP[id])?-interpolate(f,ra)*dot(interpolateGradient(f,gc),f.correction):0;
                 ap.rhs[i]-=predicted[id]+correction[id];
@@ -426,7 +388,7 @@ FlowResult2D solveIncompressible2D(
             if(b.closed){ap.pin(0);pc[0]=0;}
             linearSolve(ap, pc, true);
         }
-        const auto correctionGradient=gradient(m,pc,zeros,b.fixedP);
+        const auto correctionGradient=flowGradient(m,pc,zeros,b.fixedP,true);
         const auto gc=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
         double du=0,dp=0;
@@ -442,7 +404,7 @@ FlowResult2D solveIncompressible2D(
         const double flowScale=b.closed?finite(c.speed*h):finite(inflow);
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
-        const auto newGp=gradient(m,r.p,zeros,b.fixedP),newGu=gradient(m,r.u,b.u,b.fixedU),newGv=gradient(m,r.v,b.v,b.fixedV);
+        const auto newGp=flowGradient(m,r.p,zeros,b.fixedP,true),newGu=flowGradient(m,r.u,b.u,b.fixedU),newGv=flowGradient(m,r.v,b.v,b.fixedV);
         const auto newForceGradient=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
         momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,false,false);
@@ -455,7 +417,7 @@ FlowResult2D solveIncompressible2D(
         if(progress&&(it==1||it%10==0))progress(step);
         if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8){r.converged=true;break;}
     }
-    const auto gu=gradient(m,r.u,b.u,b.fixedU),gv=gradient(m,r.v,b.v,b.fixedV),gp=gradient(m,r.p,zeros,b.fixedP);
+    const auto gu=flowGradient(m,r.u,b.u,b.fixedU),gv=flowGradient(m,r.v,b.v,b.fixedV),gp=flowGradient(m,r.p,zeros,b.fixedP,true);
     const auto pf=detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP);
     const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};

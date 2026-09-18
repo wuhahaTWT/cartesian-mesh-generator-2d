@@ -199,6 +199,7 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
         cls.root = Path(tempfile.mkdtemp(prefix="cartmesh-manufactured-verifier-"))
         cls.mesh = cls.root / "manufactured.solver.cm2d"
         cls.prefix = cls.root / "manufactured"
+        cls.slope_prefix = cls.root / "manufactured-slope1"
         nx = ny = 16
         vertices = [(i / nx, j / ny) for j in range(ny + 1) for i in range(nx + 1)]
         edges, cells, by_pair = [], [], {}
@@ -231,6 +232,14 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
             capture_output=True, text=True, timeout=90)
         if result.returncode != 0:
             raise RuntimeError(f"manufactured CLI fixture failed: {result.stdout[-1000:]} {result.stderr[-1000:]}")
+        slope_result = subprocess.run(
+            [str(FLOW_CLI), "--mesh", str(cls.mesh), "--output", str(cls.slope_prefix),
+             "--case", "manufactured", "--nu", ".1", "--speed", "1",
+             "--manufactured-pressure-slope", "1", "--convection", "limited-linear",
+             "--max-iterations", "1200"],
+            capture_output=True, text=True, timeout=90)
+        if slope_result.returncode != 0:
+            raise RuntimeError(f"manufactured slope fixture failed: {slope_result.stdout[-1000:]} {slope_result.stderr[-1000:]}")
 
     @classmethod
     def tearDownClass(cls):
@@ -256,13 +265,115 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
             shutil.copyfile(Path(str(self.prefix) + suffix), Path(str(prefix) + suffix))
         return mesh, prefix
 
+    def _copy_slope(self, folder):
+        mesh = Path(folder) / "manufactured.solver.cm2d"
+        prefix = Path(folder) / "manufactured-slope1"
+        shutil.copyfile(self.mesh, mesh)
+        for suffix in (".cells.csv", ".faces.csv", ".residuals.csv", ".json"):
+            shutil.copyfile(Path(str(self.slope_prefix) + suffix), Path(str(prefix) + suffix))
+        return mesh, prefix
+
     def test_independent_mms_and_fields(self):
         result = verifier.verify_case(self.mesh, self.prefix, "manufactured", .1, 1.0, self._args())
         self.assertTrue(result["valid"], result["issues"])
         self.assertTrue(result["benchmark"]["boundaryAudit"]["allStationaryNoSlipWalls"])
         self.assertLess(result["benchmark"]["exactColumnMaxAbsolute"]["exactU"], 1e-10)
         self.assertGreater(result["benchmark"]["velocityL2Relative"], 0.0)
+        self.assertEqual(result["benchmark"]["pressureSlope"], 0.0)
+        self.assertIn(result["pressureBoundaryReconstruction"], ("zero-normal", "one-sided-linear"))
         self.assertTrue(result["momentumAudit"]["valid"])
+
+    def test_nonzero_pressure_slope_fixture(self):
+        mesh, prefix = self.mesh, self.slope_prefix
+        args = self._args()
+        args.manufactured_pressure_slope = 1.0
+        result = verifier.verify_case(mesh, prefix, "manufactured", .1, 1.0, args)
+        self.assertTrue(result["valid"], result["issues"])
+        self.assertEqual(result["benchmark"]["pressureSlope"], 1.0)
+
+    def test_pressure_slope_payload_tampering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            mesh = Path(folder) / "manufactured.solver.cm2d"
+            prefix = Path(folder) / "manufactured-slope1"
+            shutil.copyfile(self.mesh, mesh)
+            for suffix in (".cells.csv", ".faces.csv", ".residuals.csv", ".json"):
+                shutil.copyfile(Path(str(self.slope_prefix) + suffix), Path(str(prefix) + suffix))
+            summary = Path(str(prefix) + ".json")
+            payload = json.loads(summary.read_text())
+            payload["manufacturedPressureSlope"] = 2.0
+            summary.write_text(json.dumps(payload), encoding="utf-8")
+            args = self._args()
+            args.manufactured_pressure_slope = 1.0
+            result = verifier.verify_case(mesh, prefix, "manufactured", .1, 1.0, args)
+            self.assertFalse(result["valid"])
+            self.assertTrue(any("manufacturedPressureSlope" in issue for issue in result["issues"]))
+
+    def test_pressure_boundary_reconstruction_metadata_is_checked(self):
+        with tempfile.TemporaryDirectory() as folder:
+            mesh = Path(folder) / "manufactured.solver.cm2d"
+            prefix = Path(folder) / "manufactured-slope1"
+            shutil.copyfile(self.mesh, mesh)
+            for suffix in (".cells.csv", ".faces.csv", ".residuals.csv", ".json"):
+                shutil.copyfile(Path(str(self.slope_prefix) + suffix), Path(str(prefix) + suffix))
+            summary = Path(str(prefix) + ".json")
+            payload = json.loads(summary.read_text())
+            self.assertIn(payload.get("pressureBoundaryReconstruction"), ("zero-normal", "one-sided-linear"))
+            payload["pressureBoundaryReconstruction"] = "unknown-mode"
+            summary.write_text(json.dumps(payload), encoding="utf-8")
+            args = self._args()
+            args.manufactured_pressure_slope = 1.0
+            result = verifier.verify_case(mesh, prefix, "manufactured", .1, 1.0, args)
+            self.assertFalse(result["valid"])
+            self.assertTrue(any("pressureBoundaryReconstruction" in issue for issue in result["issues"]))
+
+    def test_pressure_gradient_two_ring_recovers_linear_tip_field(self):
+        polygons = [
+            ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)),
+            ((1.0, 0.0), (1.0, 1.0), (0.0, 1.0)),
+            ((1.0, 0.0), (2.0, 0.0), (2.0, 1.0), (1.0, 1.0)),
+            ((0.0, 1.0), (1.0, 1.0), (1.0, 2.0), (0.0, 2.0)),
+        ]
+        vertex_ids = {}
+        vertices = []
+        edges = []
+        edge_ids = {}
+        cell_edges = []
+        for cell_id, polygon in enumerate(polygons):
+            ids = []
+            for point in polygon:
+                if point not in vertex_ids:
+                    vertex_ids[point] = len(vertices)
+                    vertices.append(point)
+                ids.append(vertex_ids[point])
+            incident = []
+            for a, b in zip(ids, ids[1:] + ids[:1]):
+                pair = tuple(sorted((a, b)))
+                if pair not in edge_ids:
+                    edge_ids[pair] = len(edges)
+                    edges.append(verifier.Edge(len(edges), a, b, cell_id, -1, 0))
+                else:
+                    edge_id = edge_ids[pair]
+                    old = edges[edge_id]
+                    edges[edge_id] = verifier.Edge(old.id, old.v0, old.v1, old.owner, cell_id, 0)
+                incident.append(edge_ids[pair])
+            area, _ = verifier.polygon(list(polygon))
+            cell_edges.append(verifier.Cell(cell_id, area, tuple(ids), tuple(incident)))
+        mesh = verifier.Mesh(Path("tip.solver.cm2d"), tuple(vertices), tuple(edges),
+                             tuple(cell_edges), (0, 0, 0, 0, 0, 0, 0))
+        measured = verifier.measure(mesh, 1e-11, 1e-9)
+        geometries = verifier.face_geometry(mesh, measured)
+        values = [2.0 * x - 3.0 * y for x, y in measured.centroids]
+        gradients = verifier.reconstruct_gradient(
+            mesh, measured, geometries, values, [0.0] * len(edges), [False] * len(edges),
+            skip_unknown_boundary=True)
+        self.assertAlmostEqual(gradients[0][0], 2.0, places=12)
+        self.assertAlmostEqual(gradients[0][1], -3.0, places=12)
+
+    def test_nonzero_pressure_slope_is_rejected_for_ordinary_case(self):
+        args = self._args()
+        args.manufactured_pressure_slope = 1.0
+        with self.assertRaises(verifier.VerificationError):
+            verifier.verify_case(self.mesh, self.prefix, "channel", .1, 1.0, args)
 
     def test_source_and_exact_tampering_are_rejected(self):
         for field in ("sourceX", "exactU"):

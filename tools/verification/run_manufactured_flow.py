@@ -150,6 +150,7 @@ def verifier_namespace(args: argparse.Namespace) -> SimpleNamespace:
         continuity_relative_tolerance=1e-7,
         max_reported_continuity=1e-8,
         max_iterations=args.max_iterations,
+        manufactured_pressure_slope=args.manufactured_pressure_slope,
     )
 
 
@@ -228,6 +229,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tolerance", type=float, default=1e-8)
     parser.add_argument("--nu", type=float, default=0.1)
     parser.add_argument("--speed", type=float, default=1.0)
+    parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
     return parser.parse_args()
 
 
@@ -243,6 +245,8 @@ def main() -> int:
         raise SystemExit("tolerance and nu must be positive finite values")
     if not math.isfinite(args.speed) or args.speed <= 0.0:
         raise SystemExit("speed must be positive and finite")
+    if not math.isfinite(args.manufactured_pressure_slope):
+        raise SystemExit("manufactured pressure slope must be finite")
     if args.reuse and args.dry_run:
         raise SystemExit("--reuse and --dry-run are mutually exclusive")
 
@@ -265,7 +269,8 @@ def main() -> int:
         "geometrySha256": sha256_file(geometry) if geometry.is_file() else None,
         "parameters": {"levels": args.levels, "kinds": args.kinds, "schemes": args.schemes,
                        "timeout": args.timeout, "maxIterations": args.max_iterations,
-                       "tolerance": args.tolerance, "nu": args.nu, "speed": args.speed},
+                       "tolerance": args.tolerance, "nu": args.nu, "speed": args.speed,
+                       "manufacturedPressureSlope": args.manufactured_pressure_slope},
         "meshGeneration": [], "runs": [], "cases": [],
         "refinementGroups": None, "issues": [],
     }
@@ -349,7 +354,8 @@ def main() -> int:
                 command = [str(flow_cli), "--mesh", str(mesh), "--output", str(prefix),
                            "--case", "manufactured", "--nu", f"{args.nu:.17g}",
                            "--speed", f"{args.speed:.17g}", "--max-iterations", str(args.max_iterations),
-                           "--tolerance", f"{args.tolerance:.17g}", "--convection", scheme, "--profile"]
+                           "--tolerance", f"{args.tolerance:.17g}", "--convection", scheme, "--profile",
+                           "--manufactured-pressure-slope", f"{args.manufactured_pressure_slope:.17g}"]
                 stage: dict[str, Any] = {"label": label, "meshKind": kind, "scheme": scheme,
                                          "level": level, "mesh": str(mesh.resolve()),
                                          "meshSha256": sha256_file(mesh) if mesh.is_file() else None}

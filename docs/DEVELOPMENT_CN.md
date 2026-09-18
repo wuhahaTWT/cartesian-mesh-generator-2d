@@ -124,7 +124,9 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 单元中心速度/运动学压力，共享边积分体积通量。动量默认一阶迎风，可用 `--convection limited-linear` 选择限制线性重构，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 IC(0)–PCG，保留 `--pressure-preconditioner jacobi` 对照，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
 
-压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按最小二乘梯度外推（梯度方程仍施加原零法向约束）。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。
+压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按内部压力的最小二乘梯度外推，重构时不对未知壁面压力强加零法向梯度。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。
+
+压力梯度先使用直接邻居和已知压力边界；若边界尖角只有一个直接邻居而无法恢复二维梯度，加入排序去重的第二圈真实单元，仍秩不足则明确失败。速度的滑移/出流零法向约束保持原定义。压力修正的固定速度边界仍不允许修正面体积通量，不能把“压力值线性外推”和“给压力泊松方程增加边界通量”混为一谈。该区别可参阅 [MOOSE 压力外推边界说明](https://mooseframework.inl.gov/source/linearfvbcs/LinearFVExtrapolatedPressureBC.html)；本仓库使用自行实现的最小二乘重构，没有复制其代码。摘要 `pressureBoundaryReconstruction=one-sided-linear` 标识本方案；旧文件缺字段时独立验证器按旧零法向重构审核，未知标记拒绝。
 
 `--convection upwind|limited-linear` 的默认值为 upwind。限制线性格式保留隐式迎风矩阵，将唯一上游面重构值与迎风单元值之差作为显式共享面修正，owner/neighbour 严格反号；原方程残差也包含该修正。每个速度分量的 cell limiter 使全部实际面中心重构值落在邻居/Dirichlet 边界的局部范围内，黏性梯度不受此 limiter 修改。固定速度边界直接用边界值；自由分量的出流使用单边受限重构，回流仍明确拒绝。这是 **Barth–Jespersen 风格的面值限制**，不是速度场全局最大值原理，也不是任意网格上的完整 Navier–Stokes 二阶证明。光滑指数函数面值细化单独检查重构阶数，实际流动另做基准比较。方法依据参考 [Barth–Jespersen（1989）](https://ntrs.nasa.gov/citations/19890037939)的多维单调线性重构、[OpenFOAM 梯度限制说明](https://doc.openfoam.com/2306/tools/processing/numerics/schemes/gradient/)及 [MOOSE 压力动量项](https://mooseframework.inl.gov/source/fvkernels/INSFVMomentumPressure.html)，实现位于本仓库 `FlowFaceOperators2D.hpp`，没有复制其代码。
 
@@ -140,22 +142,33 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 ### 完整流动方程制造解
 
-`--case manufactured` 是命令行验证入口，不是用户物理工况，也不出现在桌面工况列表。仅接受无孔单位方形 `[0,1]²`；四边静止无滑移、压力零法向约束，cell 0 固定压力为0。
+`--case manufactured` 是命令行验证入口，不是用户物理工况，也不出现在桌面工况列表。仅接受无孔单位方形 `[0,1]²`；四边静止无滑移，压力从内部场外推，cell 0 固定压力为0。
 
-令 `X=πx, Y=πy`，流函数 `ψ=(Uref/π)sin²X sin²Y`，则 `u=Uref sin²X sin(2Y)`、`v=−Uref sin(2X)sin²Y`，原始运动学压力 `p=Uref² cosX cosY`。解析体积加速度 `f=(U·∇)U+∇p−ν∇²U` 进入每个单元的动量右端，采用实际多边形质心的中点积分 `area*f`。除验证源项和静止壁面外，使用同一 SIMPLE、压力修正、对流/扩散及停止条件，不将解析速度预填为计算结果。
+令 `X=πx, Y=πy`，流函数 `ψ=(Uref/π)sin²X sin²Y`，则 `u=Uref sin²X sin(2Y)`、`v=−Uref sin(2X)sin²Y`，原始运动学压力 `p=Uref²[cosX cosY+slope*(x+y)]`。`--manufactured-pressure-slope` 默认0；设为1可检验非零壁面压力法向梯度，普通物理工况不允许此参数非零。解析体积加速度 `f=(U·∇)U+∇p−ν∇²U` 进入每个单元的动量右端，采用实际多边形质心的中点积分 `area*f`。除验证源项和静止壁面外，使用同一 SIMPLE、压力修正、对流/扩散及停止条件，不将解析速度预填为计算结果。
 
 MMS 的 `.cells.csv` 额外导出积分源 `sourceX/Y` 和解析 `exactU/V/P`，其中解析压力也减去 cell 0 的解析值。普通工况没有这些列。独立 Python 检查从 CM2D 几何重新计算解析场与源，不使用导出 exact 列作为真值；动量失衡为面通量和减去体积源。记录面积加权速度 L2/Uref 和压力 L2/Uref²、最大误差及细化观测阶；字段一致性容差不是物理精度等级。
 
 复现工具生成196/900/3,844格的规则方腔，再以 `δ=.06 sin(πx)sin(πy)`、`x'=x+δ, y'=y+.6δ` 连续扭曲内部点，边界保持单位方形。两种网格、两种对流格式、三档细化分别审核；扭曲网格仍须通过真实几何/拓扑检查。固定 ν=.1、Uref=1，停止容差1e-8，单例最长180秒、最多7,000轮；耗时仅是本机诊断，不是通用性能保证。
 
 ```sh
-python3 tools/verification/run_manufactured_flow.py --output-root outputs/native-flow/manufactured-new
+python3 tools/verification/run_manufactured_flow.py --output-root outputs/native-flow/manufactured-new --manufactured-pressure-slope 1 --scheme limited-linear
 MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_manufactured_flow.py --summary outputs/native-flow/manufactured-new/runner-summary.json --output outputs/native-flow/manufactured-new/verification.png
 ```
 
 普通运行要求新目录以保留旧证据；`--reuse` 只重新读回，写入独立的 `runner-reverification.json`，不覆盖原生成命令和返回码。`--levels 4` 可作快速冒烟检查，不能证明细化阶数；`--dry-run` 只标为计划，不能当成已运行。
 
-该光滑制造解避开移动顶盖角点和非零壁面压力法向梯度，只能验证其覆盖的离散链路。它不能替代 Ghia 方腔、真实 Cut-cell 绕流、一般边界、湍流或网格无关性验证；原方腔细化失败仍保留。
+该光滑制造解可验证非零壁面压力法向梯度，但避开移动顶盖角点，只能验证其覆盖的离散链路。它不能替代 Ghia 方腔、真实 Cut-cell 绕流、一般边界、湍流或网格无关性验证；原方腔细化失败仍保留。
+
+### 独立方腔诊断
+
+`verify_cavity_vorticity.py` 另用流函数/涡量有限差分求解单位方腔 Re100，不调用生产 FVM。依赖 NumPy/SciPy；空间中心差分、Thom 壁面涡量、DST-I 泊松与 Heun RK2 推进到稳态。先校验离散正弦本征模，再以接受的新状态涡量方程残差和中心线变化同时停止；每档180秒，输出数组、中心线、实际命令及哈希。它是独立诊断，**不是新增产品求解器或认证真值**，也不改变原 Ghia 回归门。
+
+```sh
+python3 tools/verification/verify_cavity_vorticity.py --output-root outputs/native-flow/cavity-vorticity-new
+python3 tools/verification/compare_cavity_centrelines.py --reference-root outputs/native-flow/cavity-vorticity-new --flow-summary outputs/native-flow/pressure-boundary/physical-final/upwind/summary.json --flow-summary outputs/native-flow/pressure-boundary/physical-final/limited-linear/summary.json --output outputs/native-flow/cavity-vorticity-new/comparison.json
+```
+
+比较器只读取已有结果，核对数组/CSV哈希、有限值和规则网格完整性；目前限定196/900/3,844格、单位方腔、速度1、ν=.01。FVM 在实际单元中心上做张量积线性插值，并加入真实壁面中心线值，与33/65/129节点参考在101个共同位置比较；原始 summary 的失败系列完整保留。坐标取12位仅用于识别行列，不改动求解网格或场值。FD 深处散度与壁面相邻散度分开报告，不能据此声称所有单元有限体积守恒。
 
 ### 稀疏结构与压力预条件
 

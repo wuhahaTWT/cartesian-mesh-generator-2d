@@ -20,6 +20,7 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     double pressureRelaxation = .25;
     bool profile = false;
+    double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
 };
