@@ -18,6 +18,8 @@
 - [网格维护 codex/mesh-maintenance](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/codex/mesh-maintenance)：从该节点继续修复、完善网格生成器。
 - [CFD 开发 codex/cfd-development](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/tree/codex/cfd-development)：包含原生求解器及桌面计算流程；`main` 保留已验收的集成版本。
 
+长期开发目标为可验证的二维工程 CFD：先完成精度与大规模求解基础，再扩展非定常、热输运、SST 湍流和可压缩流。这些是开发目标，不是当前支持功能；[路线与实测性能](docs/CURRENT_STATE_CN.md#当前连续目标可验证的二维工程-cfd-软件)持续更新。
+
 标签保存固定快照，分支可以继续发展。以后回头改网格不影响这次里程碑；维护分支的修复通过测试后再合并到 CFD 分支和 `main`，不会自动互相覆盖。
 
 ## 下载与启动

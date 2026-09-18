@@ -130,6 +130,22 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 扩展与性能测量
+
+长期目标和当前进度只维护在 CURRENT_STATE。先完成稳态守恒/精度与压力求解效率，再依次扩展非定常、标量/热输运、SST 湍流、理想气体可压缩流；每种模式有独立物理配置和验收，不能用原稳态 laminar 的选项伪装支持新模型。
+
+`cartmesh2d_flow_cli --profile` 在原六份结果之外增加 `.performance.json`。使用 monotonic `steady_clock` 测量读网格及构造时间、整个求解时间、动量/压力线性求解时间；统计线性求解调用、实际 Krylov 迭代总数和单次最大值。初始残差已满足条件的线性求解计0次迭代；每轮有两次动量和四次压力调用。线性耗时包括工作数组初始化与真残差检查，不含矩阵组装；总求解耗时还包含验证、组装、梯度、物理监测和进度回调，但不包含导出。此文件不测内存；需用系统工具另测峰值 RSS。到上限仍保存诊断且 `converged:false`，抛出数值错误的运行保留 stderr，不能当成完整性能样本。
+
+```sh
+build/cartmesh2d_flow_cli --mesh outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d --output outputs/flow-profile/channel --case channel --nu .01 --speed 1 --max-iterations 1500 --profile
+# macOS 可加 /usr/bin/time -l；maximum resident set size 为 bytes。
+# Linux /usr/bin/time -v 的 Maximum resident set size 单位为 KiB，不能直接混比。
+```
+
+相同几何/网格/工况/容差/线程数下比较，记录二进制哈希和系统版本。固定迭代吞吐不能冒充达到相同物理解精度的加速；完整求解须同时核对误差与守恒。初步小规模观测不外推50万格速度。前端继续使用原六份物理文件，本阶段未重新打包 App。
+
+理论与验证参考：[殷雅俊专著及简介](https://www.tup.tsinghua.edu.cn/booksCenter/book_07344201.html)、[NASA Turbulence Modeling Resource](https://www.nasa.gov/nasa-turbulence-modeling-resource/)。前者用于评估张量表述与推导，未作为已经证明的加速方法；后者用于后续具体湍流版本与验证设计，不表示已实现 SST。
+
 ## CFD 验证
 
 既有高密翼型的高雷诺数试算使用 `tools/verification/run_airfoil_rans.py`：复制现有 `constant/polyMesh`，先跑标准与扩展 checkMesh，再运行 SST 稳态 RANS。它是固定约 1 m 弦长、六个命名 patch 的受限域试验工具；不重新生成网格，也不自动配置任意几何。

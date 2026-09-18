@@ -15,6 +15,19 @@ struct FlowControls2D {
     std::size_t maxIterations = 1500;
     double velocityRelaxation = .6;
     double pressureRelaxation = .25;
+    bool profile = false;
+};
+
+struct FlowPerformance2D {
+    std::size_t momentumSolves = 0;
+    std::size_t momentumIterations = 0;
+    std::size_t maxMomentumIterations = 0;
+    std::size_t pressureSolves = 0;
+    std::size_t pressureIterations = 0;
+    std::size_t maxPressureIterations = 0;
+    double momentumLinearSolveSeconds = 0;
+    double pressureLinearSolveSeconds = 0;
+    double solveSeconds = 0;
 };
 
 struct FlowIteration2D {
@@ -37,6 +50,7 @@ struct FlowResult2D {
     double forceX = 0;
     double forceY = 0;
     double domainHeight = 0;
+    FlowPerformance2D performance;
 };
 
 // Fixed-grid, constant-property laminar SIMPLE, kinematic pressure.
