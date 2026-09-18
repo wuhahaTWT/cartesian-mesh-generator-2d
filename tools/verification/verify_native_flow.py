@@ -182,60 +182,62 @@ def require_final_solver_path(path: Path) -> None:
 
 
 def read_cm2d(path: Path) -> Mesh:
-    tokens = path.read_text(encoding="utf-8-sig").split()
-    position = 0
+    with path.open("r", encoding="utf-8-sig") as stream:
+        tokens = (token for line in stream for token in line.split())
 
-    def take() -> str:
-        nonlocal position
-        if position >= len(tokens):
-            raise VerificationError(f"{path}: truncated CM2D record")
-        token = tokens[position]
-        position += 1
-        return token
+        def take() -> str:
+            try:
+                return next(tokens)
+            except StopIteration as exc:
+                raise VerificationError(f"{path}: truncated CM2D record") from exc
 
-    if (take(), take(), take()) != ("CM2D", "1", "VERTICES"):
-        raise VerificationError(f"{path}: unsupported CM2D header")
-    vertex_count = integer(take(), "vertex count")
-    vertices: list[tuple[float, float]] = []
-    for expected in range(vertex_count):
-        vertex_id = integer(take(), f"vertex {expected} id")
-        if vertex_id != expected:
-            raise VerificationError(f"{path}: non-contiguous vertex ids")
-        vertices.append((finite(take(), f"vertex {expected} x"),
-                         finite(take(), f"vertex {expected} y")))
-    if take() != "EDGES":
-        raise VerificationError(f"{path}: missing EDGES")
-    edge_count = integer(take(), "edge count")
-    edges: list[Edge] = []
-    for expected in range(edge_count):
-        values = [integer(take(), f"edge {expected} field") for _ in range(6)]
-        edge = Edge(*values)
-        if edge.id != expected or not (0 <= edge.v0 < vertex_count and 0 <= edge.v1 < vertex_count):
-            raise VerificationError(f"{path}: invalid edge {expected}")
-        edges.append(edge)
-    if take() != "CELLS":
-        raise VerificationError(f"{path}: missing CELLS")
-    cell_count = integer(take(), "cell count")
-    cells: list[Cell] = []
-    for expected in range(cell_count):
-        cell_id = integer(take(), f"cell {expected} id")
-        _source_id, _source_key = integer(take(), "source id"), integer(take(), "source key")
-        area = finite(take(), f"cell {expected} area")
-        nv = integer(take(), f"cell {expected} vertex count")
-        vertex_ids = tuple(integer(take(), "cell vertex") for _ in range(nv))
-        ne = integer(take(), f"cell {expected} edge count")
-        edge_ids = tuple(integer(take(), "cell edge") for _ in range(ne))
-        if cell_id != expected or nv < 3 or ne != nv:
-            raise VerificationError(f"{path}: invalid cell {expected} loop")
-        if any(v < 0 or v >= vertex_count for v in vertex_ids) or any(e < 0 or e >= edge_count for e in edge_ids):
-            raise VerificationError(f"{path}: invalid reference in cell {expected}")
-        cells.append(Cell(cell_id, area, vertex_ids, edge_ids))
-    if take() != "AUDIT":
-        raise VerificationError(f"{path}: missing AUDIT")
-    audit = tuple(integer(take(), "audit value") for _ in range(7))
-    if take() != "END" or position != len(tokens):
+        if (take(), take(), take()) != ("CM2D", "1", "VERTICES"):
+            raise VerificationError(f"{path}: unsupported CM2D header")
+        vertex_count = integer(take(), "vertex count")
+        vertices: list[tuple[float, float]] = []
+        for expected in range(vertex_count):
+            vertex_id = integer(take(), f"vertex {expected} id")
+            if vertex_id != expected:
+                raise VerificationError(f"{path}: non-contiguous vertex ids")
+            vertices.append((finite(take(), f"vertex {expected} x"),
+                             finite(take(), f"vertex {expected} y")))
+        if take() != "EDGES":
+            raise VerificationError(f"{path}: missing EDGES")
+        edge_count = integer(take(), "edge count")
+        edges: list[Edge] = []
+        for expected in range(edge_count):
+            values = [integer(take(), f"edge {expected} field") for _ in range(6)]
+            edge = Edge(*values)
+            if edge.id != expected or not (0 <= edge.v0 < vertex_count and 0 <= edge.v1 < vertex_count):
+                raise VerificationError(f"{path}: invalid edge {expected}")
+            edges.append(edge)
+        if take() != "CELLS":
+            raise VerificationError(f"{path}: missing CELLS")
+        cell_count = integer(take(), "cell count")
+        cells: list[Cell] = []
+        for expected in range(cell_count):
+            cell_id = integer(take(), f"cell {expected} id")
+            _source_id, _source_key = integer(take(), "source id"), integer(take(), "source key")
+            area = finite(take(), f"cell {expected} area")
+            nv = integer(take(), f"cell {expected} vertex count")
+            vertex_ids = tuple(integer(take(), "cell vertex") for _ in range(nv))
+            ne = integer(take(), f"cell {expected} edge count")
+            edge_ids = tuple(integer(take(), "cell edge") for _ in range(ne))
+            if cell_id != expected or nv < 3 or ne != nv:
+                raise VerificationError(f"{path}: invalid cell {expected} loop")
+            if any(v < 0 or v >= vertex_count for v in vertex_ids) or any(e < 0 or e >= edge_count for e in edge_ids):
+                raise VerificationError(f"{path}: invalid reference in cell {expected}")
+            cells.append(Cell(cell_id, area, vertex_ids, edge_ids))
+        if take() != "AUDIT":
+            raise VerificationError(f"{path}: missing AUDIT")
+        audit = tuple(integer(take(), "audit value") for _ in range(7))
+        if take() != "END":
+            raise VerificationError(f"{path}: trailing or missing CM2D data")
+        try:
+            next(tokens)
+        except StopIteration:
+            return Mesh(path.resolve(), tuple(vertices), tuple(edges), tuple(cells), audit)
         raise VerificationError(f"{path}: trailing or missing CM2D data")
-    return Mesh(path.resolve(), tuple(vertices), tuple(edges), tuple(cells), audit)
 
 
 def polygon(points: list[tuple[float, float]]) -> tuple[float, tuple[float, float]]:

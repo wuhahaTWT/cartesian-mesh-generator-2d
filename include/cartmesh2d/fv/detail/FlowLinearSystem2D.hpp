@@ -30,10 +30,26 @@ inline double linearProduct(const LinearVector2D& a, const LinearVector2D& b) {
 }
 
 inline double linearNorm(const LinearVector2D& a) {
-    long double result = 0;
-    for (double value : a)
-        result = std::hypot(result, static_cast<long double>(linearFinite(value)));
-    return linearFinite(static_cast<double>(result));
+    // Scaled sum of squares avoids overflow/underflow without calling hypot
+    // for every component. This is the same Euclidean norm and stopping target,
+    // not a cheaper approximate residual. Standard scaled-norm principle:
+    // https://www.netlib.org/lapack/explore-html/d8/d76/group__lassq.html
+    // Independently implemented here; no LAPACK dependency. Accumulate in long double
+    // (which may equal double on a given platform).
+    long double scale = 0, sumSquares = 1;
+    for (double value : a) {
+        const long double magnitude = std::abs(static_cast<long double>(linearFinite(value)));
+        if (magnitude == 0) continue;
+        if (scale < magnitude) {
+            const long double ratio = scale / magnitude;
+            sumSquares = 1 + sumSquares * ratio * ratio;
+            scale = magnitude;
+        } else {
+            const long double ratio = magnitude / scale;
+            sumSquares += ratio * ratio;
+        }
+    }
+    return linearFinite(static_cast<double>(scale * std::sqrt(sumSquares)));
 }
 
 // Fixed, sorted off-diagonal CSR graph. Duplicate faces between a cell pair

@@ -117,6 +117,57 @@ class CavitySamplingTests(unittest.TestCase):
         self.assertTrue(any("sampling" in issue for issue in result["issues"]))
 
 
+class Cm2dReaderTests(unittest.TestCase):
+    @staticmethod
+    def _mesh_text(cell="0 0 0 0.5 3 0 1 2 3 0 1 2"):
+        return "\n".join((
+            "CM2D 1 VERTICES 3",
+            "0 0 0",
+            "1 1 0",
+            "2 0 1",
+            "EDGES 3",
+            "0 0 1 0 -1 1",
+            "1 1 2 0 -1 1",
+            "2 2 0 0 -1 1",
+            "CELLS 1",
+            cell,
+            "AUDIT 0 0 0 0 0 0 0 END",
+            ""))
+
+    def _write(self, folder, text):
+        path = Path(folder) / "mesh.solver.cm2d"
+        path.write_text(text, encoding="utf-8-sig")
+        return path
+
+    def test_stream_reader_accepts_wrapped_whitespace_and_bom(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write(folder, self._mesh_text().replace(" ", "\t", 4))
+            mesh = verifier.read_cm2d(path)
+            self.assertEqual(len(mesh.vertices), 3)
+            self.assertEqual(len(mesh.cells), 1)
+
+    def test_stream_reader_rejects_truncation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write(folder, self._mesh_text().rsplit(" END", 1)[0])
+            with self.assertRaisesRegex(verifier.VerificationError, "truncated CM2D record"):
+                verifier.read_cm2d(path)
+
+    def test_stream_reader_rejects_trailing_tokens(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write(folder, self._mesh_text() + "extra\n")
+            with self.assertRaisesRegex(verifier.VerificationError, "trailing or missing"):
+                verifier.read_cm2d(path)
+
+    def test_stream_reader_preserves_id_and_arity_checks(self):
+        with tempfile.TemporaryDirectory() as folder:
+            bad_id = self._mesh_text().replace("1 1 0\n", "7 1 0\n")
+            with self.assertRaisesRegex(verifier.VerificationError, "non-contiguous vertex ids"):
+                verifier.read_cm2d(self._write(folder, bad_id))
+            bad_arity = self._mesh_text(cell="0 0 0 0.5 3 0 1 2 2 0 1")
+            with self.assertRaisesRegex(verifier.VerificationError, "invalid cell 0 loop"):
+                verifier.read_cm2d(self._write(folder, bad_arity))
+
+
 class FlowVerifierSchemaTests(unittest.TestCase):
     def test_legacy_faces_are_explicitly_unavailable(self):
         with tempfile.TemporaryDirectory() as folder:
