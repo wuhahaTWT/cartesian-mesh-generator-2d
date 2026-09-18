@@ -11,6 +11,7 @@ const state = {
   mesh: null,
   wallBounds: null,
   result: null,
+  flow: null,
   // Hand-placed refinement regions, in body spans about the body centre.
   regions: [],
   frame: null
@@ -64,11 +65,12 @@ function setBusy(busy) {
   $('exportResult').disabled = busy;
   $('returnHome').disabled = busy;
   $('actualToManual').disabled = busy;
+  $('runFlow').disabled = busy || !state.result;
   updateReady();
 }
 function validInputs() {
   for (const input of document.querySelectorAll('.panel input[type=number]')) {
-    if (!input.disabled && input.getClientRects().length &&
+    if (!input.closest('#flowBlock') && !input.disabled && input.getClientRects().length &&
         (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity();
       input.focus();
@@ -78,8 +80,35 @@ function validInputs() {
   }
   return true;
 }
+function validFlowInputs() {
+  for (const input of document.querySelectorAll('#flowBlock input[type=number]')) {
+    if (!input.value.trim() || !input.checkValidity()) {
+      input.reportValidity(); input.focus();
+      status('工况参数需要调整', '请填写有效数值，并检查范围。');
+      return false;
+    }
+  }
+  return true;
+}
+function clearFlowBinding({ hidePanel = false } = {}) {
+  state.flow = null;
+  view.setFlowFields(null);
+  $('flowResult').hidden = true;
+  $('flowResult').replaceChildren();
+  $('flowSpeedOption').hidden = true;
+  $('flowPressureOption').hidden = true;
+  if (['speed', 'pressure'].includes($('displayMode').value)) {
+    $('displayMode').value = 'level'; view.mode = 'level';
+    $('canvasWrap').classList.remove('light');
+    view.draw();
+  }
+  if (hidePanel) $('flowBlock').hidden = true;
+  if (state.mesh) renderLegend(state.mesh, state.levelBasis);
+}
 function clearResult() {
+  clearFlowBinding({ hidePanel: true });
   state.mesh = null; state.result = null; state.wallBounds = null;
+  state.job = null;
   state.selectedRequest = null; state.cellBudget = null;
   $('cellBudgetResult').hidden = true; $('actualToManual').hidden = true;
   view.clear();
@@ -120,7 +149,7 @@ window.__exportMeshPreview = async () => {
 
 let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
-const { levelColour, RAMP } = window.MeshView;
+const { levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP } = window.MeshView;
 
 const fmt = value => Number(value || 0).toLocaleString('en-US');
 const log = line => { $('log').textContent += `${line}\n`; $('log').scrollTop = 1e9; };
@@ -310,6 +339,7 @@ function renderMethods() {
 }
 
 function selectMethod(id) {
+  if (id !== state.method && state.flow) clearFlowBinding();
   state.method = id;
   const method = state.catalog.methods[id];
   $('sizingBlock').hidden = !method.supports.sizeField;
@@ -568,21 +598,30 @@ function renderHistogram(histogram, mesh, basis) {
 function renderLegend(mesh, basis) {
   const container = $('legend');
   container.replaceChildren();
-  const coloured = view.mode === 'level';
+  const fieldMode = view.mode === 'speed' || view.mode === 'pressure';
+  const coloured = view.mode === 'level' || fieldMode;
   const ramp = document.createElement('div');
   ramp.className = 'ramp';
-  for (const colour of RAMP) {
+  const palette = view.mode === 'speed' ? SPEED_RAMP : view.mode === 'pressure' ? PRESSURE_RAMP : RAMP;
+  for (const colour of palette) {
     const swatch = document.createElement('span');
     swatch.style.background = colour;
     ramp.appendChild(swatch);
   }
   const ends = document.createElement('div');
   ends.className = 'ends';
-  const prefix = basis === 'size' ? '档' : 'L';
   const coarse = document.createElement('span');
-  coarse.textContent = `${prefix}${mesh.minLevel} 粗`;
   const fine = document.createElement('span');
-  fine.textContent = `细 ${prefix}${mesh.maxLevel}`;
+  if (fieldMode) {
+    const range = view.fieldRange;
+    const unit = view.mode === 'speed' ? 'm/s' : 'm²/s²';
+    coarse.textContent = range ? `${range.min.toPrecision(4)} ${unit}` : '最小';
+    fine.textContent = range ? `${range.max.toPrecision(4)} ${unit}` : '最大';
+  } else {
+    const prefix = basis === 'size' ? '档' : 'L';
+    coarse.textContent = `${prefix}${mesh.minLevel} 粗`;
+    fine.textContent = `细 ${prefix}${mesh.maxLevel}`;
+  }
   ends.append(coarse, fine);
 
   const keys = document.createElement('div');
@@ -629,6 +668,7 @@ async function generate() {
     state.mesh = payload.mesh;
     state.wallBounds = payload.wallBounds;
     state.result = payload.result;
+    state.job = payload.job;
     state.levelBasis = payload.levelBasis;
     state.selectedRequest = payload.selectedRequest || null;
     state.cellBudget = payload.cellBudget || null;
@@ -677,6 +717,11 @@ async function generate() {
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
     $('exportResult').hidden = Boolean(payload.incomplete);
+    $('flowBlock').hidden = Boolean(payload.incomplete);
+    if (!payload.incomplete) {
+      $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'channel' : 'external';
+      updateFlowScope();
+    }
     const seconds = payload.result.timings.total_seconds;
     if (payload.incomplete) {
       status('网格已生成，后续步骤失败', payload.incomplete);
@@ -691,6 +736,78 @@ async function generate() {
   } finally {
     clearInterval(progressTimer);
     $('generate').textContent = '生成预览';
+    setBusy(false);
+  }
+}
+
+function updateFlowScope() {
+  const selected = state.catalog?.flowCases?.[$('flowCase').value];
+  const expectedRegion = $('flowCase').value === 'external' ? 'exterior' : 'interior';
+  const mismatch = state.job && state.job.fluidRegion !== expectedRegion
+    ? ` 当前最终网格是${state.job.fluidRegion === 'interior' ? '内流' : '外流'}语义，与此工况不匹配。`
+    : '';
+  $('flowScope').textContent = (selected?.scope || '') + mismatch;
+}
+
+function renderFlowResult(summary) {
+  const container = $('flowResult');
+  container.replaceChildren();
+  const stateLine = document.createElement('div');
+  stateLine.className = 'flow-state';
+  stateLine.textContent = summary.converged
+    ? `已收敛 · ${summary.iterations} 次迭代 · 原生自研二维稳态层流`
+    : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛`;
+  container.appendChild(stateLine);
+  const rows = [
+    ['局部连续性（无量纲）', summary.continuity],
+    ['全局不平衡（m²/s）', summary.globalImbalance],
+    ['全局相对不平衡', summary.globalRelativeImbalance],
+    ['速度变化', summary.velocityChange],
+    ['压力变化', summary.pressureChange],
+    ['动量残差', summary.momentumResidual]
+  ];
+  for (const [label, value] of rows) {
+    const item = document.createElement('div');
+    const caption = document.createElement('span'); caption.textContent = label;
+    const number = document.createElement('b'); number.textContent = Number(value).toExponential(3);
+    item.append(caption, number); container.appendChild(item);
+  }
+  container.hidden = false;
+}
+
+async function runFlow() {
+  if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
+  clearFlowBinding();
+  setBusy(true);
+  $('runFlow').textContent = '正在求解…';
+  status('层流求解中', 'SIMPLE 速度—压力耦合；可随时取消，取消会真正终止原生进程。');
+  try {
+    const payload = await window.cartmesh.runFlow({
+      case: $('flowCase').value,
+      nu: Number($('flowNu').value),
+      speed: Number($('flowSpeed').value),
+      maxIterations: Number($('flowMaxIterations').value)
+    });
+    state.flow = payload;
+    view.setFlowFields(payload.fields.cells);
+    $('flowSpeedOption').hidden = false;
+    $('flowPressureOption').hidden = false;
+    $('displayMode').value = 'speed';
+    view.mode = 'speed';
+    view.draw();
+    renderLegend(state.mesh, state.levelBasis);
+    renderFlowResult(payload.summary);
+    if (payload.summary.converged) {
+      status('层流求解已收敛', `${payload.summary.iterations} 次迭代；可切换速度或压力色图，并导出全部求解文件。`);
+    } else {
+      status('到达迭代上限，未收敛', `${payload.summary.iterations} 次迭代；保留有效结果，不能当作收敛解。`);
+    }
+  } catch (error) {
+    const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
+    status(/取消/.test(message) ? '层流求解已取消' : '层流求解失败', message.split('\n')[0]);
+    log(message);
+  } finally {
+    $('runFlow').textContent = '启动层流求解';
     setBusy(false);
   }
 }
@@ -748,13 +865,18 @@ $('useWake').addEventListener('change', event => {
 $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
+$('runFlow').addEventListener('click', runFlow);
+$('flowCase').addEventListener('change', () => { clearFlowBinding(); updateFlowScope(); });
+for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
+  $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
+}
 $('addRegion').addEventListener('click', addRegion);
 
 $('displayMode').addEventListener('change', event => {
   view.mode = event.target.value;
   $('canvasWrap').classList.toggle('light', view.mode === 'light');
-  if (state.mesh) renderLegend(state.mesh, state.levelBasis);
   view.draw();
+  if (state.mesh) renderLegend(state.mesh, state.levelBasis);
 });
 $('toggleRegions').addEventListener('click', () => {
   view.showRegions = !view.showRegions;
@@ -806,6 +928,10 @@ window.cartmesh.onProgress(progress => {
   update();
   progressTimer = setInterval(update, 1000);
 });
+window.cartmesh.onFlowProgress(progress => {
+  status('层流求解中', `第 ${fmt(progress.iteration)} 次迭代 · 连续性 ${Number(progress.continuity).toExponential(2)} · ` +
+    `速度变化 ${Number(progress.velocityChange).toExponential(2)} · 动量残差 ${Number(progress.momentumResidual).toExponential(2)}`);
+});
 window.cartmesh.onRunLine(log);
 window.addEventListener('resize', () => view.requestDraw());
 
@@ -817,7 +943,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

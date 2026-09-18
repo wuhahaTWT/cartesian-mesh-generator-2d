@@ -48,7 +48,7 @@ function parseCm2d(text) {
   expect('CELLS');
   const cells = new Array(value());
   for (let i = 0; i < cells.length; i++) {
-    value();
+    const id = value();
     value();
     const sourceKey = value();
     const area = value();
@@ -58,8 +58,11 @@ function parseCm2d(text) {
     // value() advanced it, losing one token per cell.
     const edgeCount = value();
     cursor += edgeCount;
-    cells[i] = { keyLevel: sourceKey % 64, area, vertices: cellVertices };
+    if (!Number.isInteger(id) || id < 0 || id >= cells.length || cells[id])
+      throw new Error('CM2D 单元 ID 必须从 0 连续且不重复。');
+    cells[id] = { id, keyLevel: sourceKey % 64, area, vertices: cellVertices };
   }
+  if (cells.some(cell => !cell)) throw new Error('CM2D 单元 ID 不连续。');
   if (!vertices.length || !cells.length) throw new Error('CM2D 文件没有可显示的单元。');
   return { vertices, edges, cells, bounds: boundsOf(vertices) };
 }

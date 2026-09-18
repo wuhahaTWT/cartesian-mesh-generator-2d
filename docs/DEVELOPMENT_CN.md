@@ -8,6 +8,7 @@
 |---|---|
 | `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、Solver 质量和输出 |
 | `apps/cartmesh2d_hybrid_cli.cpp` | 边界层总流程、局部修复开关、fallback 与导出 |
+| `apps/cartmesh2d_flow_cli.cpp` | 原生稳态层流 CLI；SIMPLE / Rhie–Chow，桌面调用与诊断场导出 |
 | `apps/cartmesh2d_fv_cli.cpp` | 自研二维标量扩散/泊松 CLI；读取最终 solver.cm2d，输出场、通量、残差和误差 |
 | `fv/FvMesh2D`、`fv/Diffusion2D` | 最终多边形几何缓存、共享边通量、加权最小二乘梯度、非正交扩散、Jacobi-PCG |
 | `apps/cartmesh2d_dxf_cli.cpp` | DXF 导入命令行；`cartmesh2d_boundary_layer_cli.cpp` 是仍用于测试的独立边界层诊断工具 |
@@ -83,7 +84,7 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 ## 自研求解器入口
 
-首期已经实现独立可执行的**二维稳态标量扩散/泊松**基础；尚未实现速度—压力耦合、对流、湍流或桌面求解按钮。拟定主线是最终多边形 cell-centred FVM → 对流扩散验证 → SIMPLE + Rhie–Chow 不可压稳态层流。原有网格生成核心、质量门及 OpenFOAM 导出继续保留。
+已经实现独立可执行的**二维稳态标量扩散/泊松**基础，以及接入桌面的 **SIMPLE + Rhie–Chow 不可压稳态层流**。原有网格生成核心、质量门及 OpenFOAM 导出继续保留。
 
 ```sh
 cmake --build build --target cartmesh2d_fv_cli -j 4
@@ -103,6 +104,25 @@ build/cartmesh2d_fv_cli --mesh outputs/native-fv/validation/meshes/h02/circle.so
 输出 `.vtk`（含 value / 制造解 exact / error）、`.cells.csv`、`.faces.csv`、`.residuals.csv` 和 `.json`。cells 的 source 是积分源项；faces 的 flux 是积分 `-k grad(value)·S`，不是质量流量。没有解析解的 diffusion 模式在 CSV exact/error 写 NaN、JSON 误差写 null，不伪造精度。验证工具独立读取 CM2D、CSV，复算几何、方程残差及误差，绘图使用真实多边形。
 
 数值设计参考公开的 [MOOSE 有限体积设计说明](https://mooseframework.inl.gov/finite_volumes/fv_design.html)中的共享面守恒和非正交思想。新增 C++ 为本仓库实现，没有引入 MOOSE/OpenFOAM 求解核心；这是公开方法的自研实现，不声称提出新 FVM 算法。`tests/fv_test.cpp` 覆盖斜网格和粗细交界、制造解收敛、错误缓存与溢出；`tests/fv_cli_test.py` 覆盖实际 CLI 输出和明确失败。最新数值与验证范围只在 CURRENT_STATE 维护。
+
+### 原生层流求解
+
+```sh
+cmake --build build --target cartmesh2d_flow_cli -j 4
+build/cartmesh2d_flow_cli --mesh /path/case.solver.cm2d --output outputs/flow/result --case external --nu 0.1 --speed 1 --max-iterations 1500
+python3 tools/verification/verify_native_flow.py --generate --output-root outputs/native-flow/reproduce --max-iterations 1500
+MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_flow.py --summary outputs/native-flow/reproduce/summary.json --output outputs/native-flow/reproduce/figures
+```
+
+`external` 为左侧恒速入口、右侧运动学压力0、上下滑移及物面无滑移；`channel` 为无孔矩形内域、左侧抛物线入口、右侧压力0及上下无滑移，speed 是抛物线峰值；`cavity` 为无孔矩形腔、顶盖水平移动、其他壁面静止，speed 是顶盖速度，固定 cell 0 的压力为0。只接受一个连通流体区域；边界位置/方向或内域形状不符、出口回流、数值范围错误均明确失败。它不是任意喷管/多孔腔的自动边界配置器。
+
+单元中心速度/运动学压力，共享边积分体积通量。动量对流为**一阶迎风**，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 Jacobi–PCG，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
+
+本 CLI 的停止条件是：至少10次迭代，动量残差、相对速度变化、相对压力变化均小于 `--tolerance`（默认1e-6），逐格连续性及全局相对流量失衡均小于1e-8。动量残差是原离散方程失衡除以 `(aP_u+aP_v)*Uref`；逐格连续性为 `|sum(flux)|/(Uref*sqrt(area))`；速度变化以 Uref 归一化，压力变化以 `Uref²+nu*Uref/domainHeight` 归一化。全局失衡除以总入流，封闭腔使用 `Uref*domainHeight`。这些是本实现的数值停止条件，不是所有 CFD 软件的统一精度标准，不能与 OpenFOAM residual 数字直接等同。`converged` 也不等于网格无关或物理模型适用。
+
+退出0代表满足上述停止条件；退出2代表到达上限，保存诊断场但 `converged:false`；退出1代表输入/数值失败。输出六种文件：`.json` 工况/状态/单位/压力基准、`.fields.json` 桌面字段、`.cells.csv` 单元 u/v/p、`.faces.csv` owner向外的积分体积通量、`.residuals.csv` 全迭代历史、`.vtk` 原多边形上的速度/压力。p 为 p/ρ，单位 m²/s²；力为流体对静止 EmbeddedBoundary 的积分力除以密度和深度，单位 m³/s²，不是 Cd/Cl。`domainHeight` 只指外域高度，不是物体参考直径。桌面验证全字段有限、单元ID/数量/工况与本次最终网格一致后才绑定；失败或取消保留 `flow-incomplete-*` 诊断，部分复制文件不会充当完整结果。
+
+解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
 ## CFD 验证
 

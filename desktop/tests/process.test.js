@@ -19,3 +19,15 @@ test('an automatic attempt has a time limit and leaves later work usable', async
   await assert.rejects(run(process.execPath, ['-e', 'setInterval(()=>{},1000)'], () => {}, undefined, 80), /超时/);
   assert.match((await run(process.execPath, ['-e','console.log("alive")'])).stdout, /alive/);
 });
+test('selected nonzero result codes can carry a valid result', async () => {
+  const result = await run(process.execPath, ['-e', 'console.log("usable");process.exit(2)'],
+    () => {}, undefined, 0, [0, 2]);
+  assert.equal(result.code, 2);
+  assert.match(result.stdout, /usable/);
+});
+test('line callbacks wait for complete records across output chunks', async () => {
+  const lines = [];
+  await run(process.execPath, ['-e', 'process.stdout.write("{\\\"type\\\":");setTimeout(()=>process.stdout.end("\\\"flow-progress\\\"}\\n"),20)'],
+    line => lines.push(line));
+  assert.deepEqual(lines, ['{"type":"flow-progress"}']);
+});

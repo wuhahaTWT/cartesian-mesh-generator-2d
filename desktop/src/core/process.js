@@ -1,7 +1,7 @@
 'use strict';
 const { spawn } = require('node:child_process');
 
-function run(command, args, onLine = () => {}, signal, timeoutMs = 0) {
+function run(command, args, onLine = () => {}, signal, timeoutMs = 0, acceptedCodes = [0]) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new Error('操作已取消'));
     const child = spawn(command, args, { windowsHide: true });
@@ -17,22 +17,30 @@ function run(command, args, onLine = () => {}, signal, timeoutMs = 0) {
     const cleanup = () => { clearTimeout(killTimer); clearTimeout(timeoutTimer); signal?.removeEventListener('abort', cancel); };
     let stdout = '';
     let stderr = '';
+    let stdoutLine = '';
+    let stderrLine = '';
     const consume = (chunk, isError) => {
       const text = chunk.toString();
       if (isError) stderr += text; else stdout += text;
-      text.split(/\r?\n/).filter(Boolean).forEach(onLine);
+      const combined = (isError ? stderrLine : stdoutLine) + text;
+      const lines = combined.split(/\r?\n/);
+      const remainder = lines.pop();
+      lines.filter(Boolean).forEach(line => onLine(line, isError));
+      if (isError) stderrLine = remainder; else stdoutLine = remainder;
     };
     child.stdout.on('data', chunk => consume(chunk, false));
     child.stderr.on('data', chunk => consume(chunk, true));
     child.on('error', error => { cleanup(); reject(error); });
     child.on('close', code => {
       cleanup();
+      if (stdoutLine) onLine(stdoutLine, false);
+      if (stderrLine) onLine(stderrLine, true);
       if (timedOut) return reject(new Error('本组参数计算超时，自动尝试下一组'));
       if (signal?.aborted) return reject(new Error('操作已取消'));
       // Both CLIs are fail-closed: a non-zero exit means no mesh was committed, and
       // the reason is on stderr.  Surfacing stdout as the fallback keeps the size
       // field's refusal readable even when it printed its diagnosis first.
-      if (code === 0) resolve({ stdout, stderr, code });
+      if (acceptedCodes.includes(code)) resolve({ stdout, stderr, code });
       else reject(Object.assign(new Error(stderr.trim() || stdout.trim() || `退出码 ${code}`),
                                 { stdout, stderr, code }));
     });

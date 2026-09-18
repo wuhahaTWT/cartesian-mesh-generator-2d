@@ -7,7 +7,8 @@ const SCHEMA_VERSION = 1;
 const TOOL_NAMES = Object.freeze([
   'cartmesh2d_cli',
   'cartmesh2d_hybrid_cli',
-  'cartmesh2d_dxf_cli'
+  'cartmesh2d_dxf_cli',
+  'cartmesh2d_flow_cli'
 ]);
 
 const SAMPLE_SOURCES = Object.freeze([

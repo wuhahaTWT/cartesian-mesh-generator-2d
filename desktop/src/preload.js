@@ -14,8 +14,13 @@ contextBridge.exposeInMainWorld('cartmesh', {
   previewGeometry: request => ipcRenderer.invoke('preview-geometry', request),
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
+  runFlow: request => ipcRenderer.invoke('run-flow', request),
   openPath: target => ipcRenderer.invoke('open-path', target),
   onProgress: callback => ipcRenderer.on('run-progress', (_event, progress) => callback(progress)),
+  onFlowProgress: callback => {
+    ipcRenderer.removeAllListeners('flow-progress');
+    ipcRenderer.on('flow-progress', (_event, progress) => callback(progress));
+  },
   onRunLine: callback => {
     ipcRenderer.removeAllListeners('run-line');
     ipcRenderer.on('run-line', (_event, line) => callback(line));
