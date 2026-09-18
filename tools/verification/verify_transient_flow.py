@@ -67,6 +67,32 @@ def exact_tg(x: float, y: float, time: float, speed: float, nu: float) -> tuple[
             .25 * a*a * (math.cos(2*math.pi*x) + math.cos(2*math.pi*y)))
 
 
+def taylor_green_decay(history: list[dict[str, float]], nu: float, speed: float) -> dict:
+    """Analytic energy diagnostics; no universal accuracy pass/fail threshold.
+
+    Unit-square continuous energy is Uref^2/4 * exp(-4*nu*pi^2*t).
+    CSV energies at intermediate steps are monitor values, not independently
+    reconstructed fields; only the final field is reconstructed by verify().
+    """
+    rate = 4.0 * nu * math.pi**2
+    rows = []
+    for row in history:
+        exact = .25 * speed**2 * math.exp(-rate * row['time'])
+        observed = row['kineticEnergy']
+        relative = (observed - exact) / exact if exact > 0 else None
+        rows.append({'time': row['time'], 'energy': observed, 'exactEnergy': exact,
+                     'relativeEnergyError': relative})
+    first, last = rows[0], rows[-1]
+    observed_rate = None
+    if len(rows) > 1 and first['energy'] > 0 and last['energy'] > 0:
+        observed_rate = (math.log(first['energy']) - math.log(last['energy'])) / (last['time'] - first['time'])
+    return {'definition': 'continuous unit-square kinetic energy / density / depth',
+            'scope': 'intermediate CSV monitors; final energy independently rebuilt from cells; diagnostics only',
+            'exactEnergyDecayRate': rate, 'observedEnergyDecayRate': observed_rate,
+            'energyIncreaseCount': sum(b['energy'] > a['energy'] for a, b in zip(rows, rows[1:])),
+            'history': rows}
+
+
 def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     mesh = native.read_cm2d(mesh_path)
     measured = native.measure(mesh, 1e-11, 1e-9)
@@ -204,6 +230,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     if momentum["cellResidual"]["maxNormalized"] >= native.finite(summary.get("tolerance"), "summary tolerance"):
         fail("independent transient momentum residual is not below tolerance")
     errors = None
+    decay = None
     energy = math.fsum(.5*a*(cells[i]["u"]**2+cells[i]["v"]**2) for i, a in enumerate(measured.areas))
     for name, value in (("kineticEnergy", energy), ("forceX", summary["forceX"]), ("forceY", summary["forceY"])):
         if not native.close(history[-1][name], value, 1e-12, 1e-9):
@@ -230,13 +257,19 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
         energy = math.fsum(.5*a*(cells[i]["u"]**2+cells[i]["v"]**2) for i, a in enumerate(areas))
         exact_energy = .25*(speed*math.exp(-2*nu*math.pi*math.pi*final_time))**2
         errors["energy"] = abs(energy-exact_energy)
+        amplitude = speed * math.exp(-2*nu*math.pi**2*final_time)
+        exact_velocity_l2 = amplitude / math.sqrt(2)
+        errors['velocityVectorL2'] = math.hypot(errors['uL2'], errors['vL2'])
+        errors['relativeVelocityL2'] = errors['velocityVectorL2'] / exact_velocity_l2 if exact_velocity_l2 > 0 else None
+        errors['relativeEnergy'] = errors['energy'] / exact_energy if exact_energy > 0 else None
+        decay = taylor_green_decay(history, nu, speed)
     result = {"valid": True, "scope": "discrete transient balance and artifact consistency; analytic errors are diagnostics, not engineering qualification",
               "sha256": {str(path): native.sha256_file(path) for path in (mesh_path, cells_path, faces_path, summary_path, history_path, residual_path)},
               "controls": {k: summary[k] for k in ("nu", "speed", "tolerance", "convection", "viscousStress", "temporalFaceInterpolation", "velocityRelaxation")}, "case": case, "time": final_time,
               "dt": dt, "history": history, "independentContinuity": cont,
               "temporalIntegral": {"maxAbsX": max(abs(c["temporalX"]) for c in cells.values()),
                                     "maxAbsY": max(abs(c["temporalY"]) for c in cells.values())},
-              "analyticErrors": errors, "kineticEnergy": energy,
+              "analyticErrors": errors, "analyticDecay": decay, "kineticEnergy": energy,
               "computedMaxCourant": computed_cfl, "momentumAudit": momentum,
               "counts": {"cells": len(mesh.cells), "faces": len(mesh.edges)}}
     output.parent.mkdir(parents=True, exist_ok=True)

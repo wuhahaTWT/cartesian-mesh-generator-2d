@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Portable independent transient-verifier tests using a real CLI result."""
-import csv, importlib.util, json, os, shutil, subprocess, sys, tempfile, unittest
+import csv, importlib.util, json, math, os, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
@@ -40,6 +40,24 @@ class TransientVerifierTests(unittest.TestCase):
             "--mesh", str(self.mesh), "--prefix", str(prefix), "--output", str(output)], capture_output=True, text=True, timeout=20)
         self.assertEqual(completed.returncode, 1)
         self.assertIs(json.loads(output.read_text())["valid"], False)
+
+    def test_analytic_energy_decay_and_relative_error(self):
+        nu, speed = .1, 2.
+        rate = 4*nu*math.pi**2
+        rows = [{'time': t, 'kineticEnergy': .25*speed**2*math.exp(-rate*t)} for t in (.01, .5, 2.)]
+        result = VERIFIER.taylor_green_decay(rows, nu, speed)
+        self.assertAlmostEqual(result['observedEnergyDecayRate'], rate, places=12)
+        self.assertEqual(result['energyIncreaseCount'], 0)
+        self.assertTrue(all(abs(row['relativeEnergyError']) < 1e-14 for row in result['history']))
+        rows[-1]['kineticEnergy'] *= 2
+        altered = VERIFIER.taylor_green_decay(rows, nu, speed)
+        self.assertAlmostEqual(altered['history'][-1]['relativeEnergyError'], 1.)
+        report = VERIFIER.verify(self.mesh,self.source,self.root/'relative.audit.json')
+        errors = report['analyticErrors']
+        amplitude = math.exp(-2*.01*math.pi**2*report['time'])
+        self.assertAlmostEqual(errors['relativeVelocityL2'], math.hypot(errors['uL2'],errors['vL2'])/(amplitude/math.sqrt(2)))
+        zero = VERIFIER.taylor_green_decay([{'time': 1., 'kineticEnergy': 0.}, {'time': 2., 'kineticEnergy': 0.}], nu, speed)
+        self.assertIsNone(zero['observedEnergyDecayRate'])
 
     def test_real_result_passes(self): self.assertTrue(VERIFIER.verify(self.mesh,self.source,self.root/"pass.audit.json")["valid"])
     def test_temporal_csv_and_missing_schema_rejected(self):
