@@ -313,6 +313,18 @@ void zeroResetAndPivotRegression() {
             "IC(0) rejects a non-positive pivot explicitly");
 }
 
+void localResidualScaleRegression() {
+    SparsePattern2D pattern(2, {});
+    SparseSystem2D system(pattern);
+    LinearWorkspace2D workspace(2);
+    system.diag={1e6,1e-4}; system.rhs={1e6,1e-10};
+    std::vector<double> x{1.,0.};
+    check(system.solve(x,workspace)==0,"global RHS tolerance can mask a small-cell residual");
+    check(system.solve(x,workspace,1e-10)>0,"diagonal-scaled residual check triggers a real correction");
+    check(std::abs(x[1]-1e-6)<1e-15,"small-cell solution recovered without relaxing nonlinear tolerance");
+    rejects([&] {system.solve(x,workspace,0);},"nonpositive scaled residual target rejected");
+}
+
 } // namespace
 
 int main() {
@@ -322,6 +334,7 @@ int main() {
         nonsymmetricBiCGRegression();
         structureAndPinRegression();
         zeroResetAndPivotRegression();
+        localResidualScaleRegression();
     } catch (const std::exception& error) {
         std::cerr << "UNEXPECTED EXCEPTION: " << error.what() << '\n';
         return 1;

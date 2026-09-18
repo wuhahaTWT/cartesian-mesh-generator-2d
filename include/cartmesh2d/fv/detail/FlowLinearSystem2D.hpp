@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -214,7 +215,9 @@ struct SparseSystem2D {
         throw std::runtime_error(message.str());
     }
 
-    std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w) const {
+    std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
+                      double diagonalScaledStop = std::numeric_limits<double>::infinity()) const {
+        linearEnsure(diagonalScaledStop > 0 && !std::isnan(diagonalScaledStop), "Invalid momentum diagonal-scaled residual tolerance");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
         for (double d : diag)
             linearEnsure(d > 0 && std::isfinite(d), "Flow singular/nonpositive matrix diagonal");
@@ -227,7 +230,15 @@ struct SparseSystem2D {
         std::fill(p.begin(), p.end(), 0.);
         std::fill(v.begin(), v.end(), 0.);
         const double stop = linearFinite(1e-13 + 1e-11 * linearNorm(rhs));
-        if (linearNorm(r) <= stop) return 0;
+        const auto smallResidual = [&](const LinearVector2D& residual) {
+            if (linearNorm(residual)>stop) return false;
+            // In addition to the existing global norm, constrain every row in
+            // solution units. A large far-field RHS must not mask a tiny cell.
+            for (std::size_t i=0;i<diag.size();++i)
+                if (std::abs(residual[i])/diag[i]>diagonalScaledStop) return false;
+            return true;
+        };
+        if (smallResidual(r)) return 0;
         double rhoOld = 1, alpha = 1, omega = 1;
         for (std::size_t step = 0; step < 3000; ++step) {
             const double rho = linearProduct(r0, r);
@@ -242,7 +253,7 @@ struct SparseSystem2D {
             linearEnsure(rv != 0, "Flow BiCGStab singular projection");
             alpha = rho / rv;
             for (std::size_t i = 0; i < x.size(); ++i) s[i] = r[i] - alpha * v[i];
-            if (linearNorm(s) <= stop) {
+            if (smallResidual(s)) {
                 for (std::size_t i = 0; i < x.size(); ++i) x[i] += alpha * z[i];
             } else {
                 for (std::size_t i = 0; i < x.size(); ++i) zs[i] = s[i] / diag[i];
@@ -255,7 +266,7 @@ struct SparseSystem2D {
             }
             apply(x, ax);
             for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
-            if (linearNorm(r) <= stop) return step + 1;
+            if (smallResidual(r)) return step + 1;
             if (step % 40 == 39) {
                 r0 = r;
                 std::fill(p.begin(), p.end(), 0.);

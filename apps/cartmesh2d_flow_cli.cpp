@@ -1,6 +1,9 @@
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
+#include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include <algorithm>
 #include <cmath>
 #include <chrono>
 #include <filesystem>
@@ -42,10 +45,15 @@ void progress(const fv::FlowIteration2D& h) {
 }
 
 int main(int argc, char** argv) {
+    std::string prefix;
+    double acceptedTime=0;
+    bool transientOutputStarted=false;
     try {
         std::string path;
-        std::string prefix;
         fv::FlowControls2D controls;
+        double timeStep=0;
+        std::size_t requestedSteps=0,completedSteps=0;
+        std::string restart;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--profile") {
@@ -54,9 +62,14 @@ int main(int argc, char** argv) {
             }
             if (a == "--help") {
                 std::cout
-                    << "Native 2D steady incompressible laminar SIMPLE (experimental)\n"
+                    << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
+            "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
+            "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
+            "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
+            "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
+            "Transient retains inner relaxation flux correction; fixed DT; reports CFL without changing DT.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
@@ -84,6 +97,15 @@ int main(int argc, char** argv) {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--time-step") {
+                timeStep=number(v);
+                if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
+            } else if (a == "--steps") {
+                const double n=number(v);
+                if (n<1 || n>1000000 || n!=std::floor(n)) throw std::invalid_argument("bad physical step count");
+                requestedSteps=static_cast<std::size_t>(n);
+            } else if (a == "--restart") {
+                restart=v;
             } else if (a == "--manufactured-pressure-slope") {
                 controls.manufacturedPressureSlope = number(v);
             } else if (a == "--viscous-stress") {
@@ -118,6 +140,9 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
 
+        if ((timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
+            throw std::invalid_argument("--time-step and --steps must be provided together; restart requires them");
+
         const auto readStart = std::chrono::steady_clock::now();
         const auto read = readCm2dTopology(path);
         if (!read.valid()) {
@@ -126,17 +151,79 @@ int main(int argc, char** argv) {
         const auto mesh = fv::makeFvMesh2D(read.topology);
         const double readSeconds = std::chrono::duration<double>(
             std::chrono::steady_clock::now() - readStart).count();
-        const auto r = fv::solveIncompressible2D(mesh, controls, progress);
-        const auto& last = r.history.back();
-
         const auto parent = std::filesystem::path(prefix).parent_path();
-        if (!parent.empty()) {
-            std::filesystem::create_directories(parent);
+        if (!parent.empty()) std::filesystem::create_directories(parent);
+        fv::FlowResult2D r;
+        std::size_t totalInnerIterations=0;
+        fv::FlowPerformance2D totalPerformance;
+        if (timeStep==0) r=fv::solveIncompressible2D(mesh,controls,progress);
+        else {
+            fv::FlowState2D state;
+            if (restart.empty()) state=fv::initialIncompressibleState2D(mesh,controls);
+            else {
+                std::ifstream input(restart);
+                if (!input) throw std::runtime_error("cannot open restart checkpoint");
+                state=fv::readFlowCheckpoint2D(input,mesh,controls);
+            }
+            acceptedTime=state.time;
+            auto saveAccepted=[&]() {
+                auto checkpoint=out(prefix,".checkpoint.tmp");
+                fv::writeFlowCheckpoint2D(checkpoint,mesh,controls,state);
+                checkpoint.close();
+                std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");
+            };
+            // Invalidate any old summary before replacing this prefix's files.
+            // On interruption/exception, stale fields cannot look like a new pass.
+            { auto pending=out(prefix,".json");
+              pending << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"running\",\"converged\":false}\n"; }
+            transientOutputStarted=true;
+            saveAccepted(); // even a failed first step retains the valid initial/restart state
+            auto times=out(prefix,".time-history.csv");
+            times << "step,time,dt,accepted,innerIterations,momentumResidual,continuity,maxCourant,kineticEnergy,forceX,forceY\n";
+            for (std::size_t step=1;step<=requestedSteps;++step) {
+                const double target=state.time+timeStep;
+                auto innerProgress=[&](const fv::FlowIteration2D& h) {
+                    std::cout << std::setprecision(17) << "{\"type\":\"flow-progress\",\"time\":" << target
+                              << ",\"timeStep\":" << step << ",\"iteration\":" << h.iteration
+                              << ",\"momentumResidual\":" << h.momentumResidual << ",\"continuity\":" << h.continuity
+                              << ",\"velocityChange\":" << h.velocityChange << ",\"pressureChange\":" << h.pressureChange << "}" << std::endl;
+                };
+                r=fv::advanceIncompressible2D(mesh,controls,state,timeStep,innerProgress);
+                const auto& last=r.history.back();
+                totalInnerIterations+=last.iteration;
+                if (controls.profile) {
+                    const auto& p=r.performance;
+                    totalPerformance.momentumSolves+=p.momentumSolves;
+                    totalPerformance.momentumIterations+=p.momentumIterations;
+                    totalPerformance.maxMomentumIterations=std::max(totalPerformance.maxMomentumIterations,p.maxMomentumIterations);
+                    totalPerformance.pressureSolves+=p.pressureSolves;
+                    totalPerformance.pressureIterations+=p.pressureIterations;
+                    totalPerformance.maxPressureIterations=std::max(totalPerformance.maxPressureIterations,p.maxPressureIterations);
+                    totalPerformance.momentumLinearSolveSeconds+=p.momentumLinearSolveSeconds;
+                    totalPerformance.pressureLinearSolveSeconds+=p.pressureLinearSolveSeconds;
+                    totalPerformance.solveSeconds+=p.solveSeconds;
+                }
+                double energy=0;
+                for (std::size_t i=0;i<mesh.cells.size();++i)
+                    energy+=.5*mesh.cells[i].area*(r.u[i]*r.u[i]+r.v[i]*r.v[i]);
+                times << step << ',' << r.time << ',' << timeStep << ',' << (r.converged?1:0) << ',' << last.iteration
+                      << ',' << last.momentumResidual << ',' << last.continuity << ',' << r.maxCourant
+                      << ',' << energy << ',' << r.forceX << ',' << r.forceY << '\n';
+                times.flush();
+                if (!r.converged) break; // never advance the physical time with an unconverged candidate
+                state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
+                saveAccepted();
+                std::cout << "{\"type\":\"flow-time-step\",\"time\":" << state.time
+                          << ",\"step\":" << step << ",\"maxCourant\":" << r.maxCourant << "}" << std::endl;
+            }
         }
+        if (timeStep>0 && controls.profile) r.performance=totalPerformance;
+        const auto& last=r.history.back();
 
         auto cells = out(prefix, ".cells.csv");
         cells << "cell,x,y,area,u,v,p,speed";
         if (controls.scenario == "manufactured") cells << ",sourceX,sourceY,exactU,exactV,exactP";
+        if (timeStep>0) cells << ",previousU,previousV,temporalX,temporalY";
         cells << '\n';
         auto fields = out(prefix, ".fields.json");
         fields << "{\"format\":\"cartmesh2d-flow-v1\",\"cells\":[\n";
@@ -151,6 +238,8 @@ int main(int argc, char** argv) {
                 cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
                       << ',' << exact.velocity.x << ',' << exact.velocity.y << ',' << exact.pressure-gauge;
             }
+            if (timeStep>0) cells << ',' << r.previousU[i] << ',' << r.previousV[i]
+                << ',' << r.temporalIntegrals[i].x << ',' << r.temporalIntegrals[i].y;
             cells << '\n';
             if (i) {
                 fields << ",\n";
@@ -190,11 +279,17 @@ int main(int argc, char** argv) {
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
         summary << "{\n";
+        if (timeStep>0) summary << "\"temporalDiscretization\":\"backward-euler\",\n"
+            << "\"temporalFaceInterpolation\":\"old-and-iteration-flux-defect-skew-corrected-v2\",\n"
+            << "\"time\":" << r.time << ",\n\"dt\":" << timeStep
+            << ",\n\"acceptedTime\":" << acceptedTime << ",\n\"requestedSteps\":" << requestedSteps
+            << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
+            << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
                                   << "\"manufacturedPressureSlope\":" << controls.manufacturedPressureSlope << ",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
-                << (r.converged ? "converged" : "iteration_limit")
+                << (r.converged ? "converged" : (timeStep>0?"time_step_not_converged":"iteration_limit"))
                 << "\",\n\"converged\":" << (r.converged ? "true" : "false")
                 << ",\n\"cells\":" << mesh.cells.size()
                 << ",\n\"iterations\":" << last.iteration
@@ -230,13 +325,14 @@ int main(int argc, char** argv) {
                 << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                 << ",\n\"units\":{\"velocity\":\"m/s\",\"p\":\"m2/s2 (kinematic)\",\"nu\":\"m2/s\",\"faceFlux\":\"m2/s per unit depth\",\"force\":\"m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes\"},\n"
                 << "\"pressureReference\":\""
-                << ((controls.scenario == "cavity" || manufactured)
+                << ((controls.scenario == "cavity" || controls.scenario=="taylor-green" || manufactured)
                         ? "cell 0, kinematic pressure zero"
                         : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
                 << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; "
                 << convection << " momentum convection; corrected diffusion\",\n"
-                << "\"scope\":\"steady constant-property laminar flow; no turbulence or accuracy certification\"\n}\n";
+                << "\"scope\":\"" << (timeStep>0 ? "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
+                                                  : "steady constant-property laminar flow; no turbulence or accuracy certification") << "\"\n}\n";
 
         std::string error;
         if (!writeLegacyVtk2D(read.topology, prefix + ".vtk", &error)) {
@@ -269,7 +365,7 @@ int main(int argc, char** argv) {
             performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
                         << "\"cells\":" << mesh.cells.size()
                         << ",\n\"faces\":" << mesh.faces.size()
-                        << ",\n\"simpleIterations\":" << last.iteration
+                        << ",\n\"simpleIterations\":" << (timeStep>0?totalInnerIterations:last.iteration)
                         << ",\n\"converged\":" << (r.converged ? "true" : "false")
                         << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                         << ",\n\"readAndMeshSeconds\":" << readSeconds
@@ -282,12 +378,17 @@ int main(int argc, char** argv) {
                         << ",\n\"pressureSolves\":" << p.pressureSolves
                         << ",\n\"pressureIterations\":" << p.pressureIterations
                         << ",\n\"maxPressureIterations\":" << p.maxPressureIterations
-                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; linear times include linear setup, exclude assembly; export excluded; no memory measurement\"\n}\n";
+                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement\"\n}\n";
             performance.close();
         }
-        progress(last);
+        if (timeStep==0) progress(last);
         return r.converged ? 0 : 2;
     } catch (const std::exception& e) {
+        if (transientOutputStarted) {
+            try { auto failed=out(prefix,".json");
+                failed << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"failed\",\"converged\":false,\"acceptedTime\":" << acceptedTime << "}\n";
+            } catch (const std::exception&) { /* preserve the original failure */ }
+        }
         std::cerr << "cartmesh2d_flow_cli: " << e.what() << '\n';
         return 1;
     }

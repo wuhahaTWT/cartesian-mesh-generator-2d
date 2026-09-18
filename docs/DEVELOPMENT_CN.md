@@ -144,6 +144,30 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 非定常层流与断点续算
+
+开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.3仍是稳态入口，尚无非定常UI或新安装包；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
+
+```bash
+build/cartmesh2d_flow_cli --mesh PATH/FINAL.solver.cm2d --output outputs/startup/result --case external --nu .05 --speed 1 --convection limited-linear --time-step .01 --steps 5 --tolerance 1e-9 --max-iterations 1000 --profile
+build/cartmesh2d_flow_cli --mesh PATH/FINAL.solver.cm2d --output outputs/continued/result --case external --nu .05 --speed 1 --convection limited-linear --time-step .01 --steps 5 --restart outputs/startup/result.checkpoint --tolerance 1e-9 --max-iterations 1000
+python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2d --prefix outputs/continued/result --output outputs/continued/audit.json
+```
+
+`--time-step`和`--steps`必须一起提供；后者表示本次追加的步数，`--max-iterations`是每步内迭代上限。普通channel/cavity/external从静止开始，在t>0施加入流/顶盖速度；这是瞬时启动，会产生启动压力，不是预先求稳态再贴上时间标签。外流仍限定矩形外域、固定固体和无回流出口。
+
+动量添加 `V*(Unew-Uold)/dt`；上一接受时刻的速度和唯一面通量保留，Rhie–Chow包含旧时刻与内松弛的插值缺陷修正。时间步内部原动量残差、速度/压力变化和质量守恒都达到原停止条件才接受。动量线性求解除既有全局真残差条件外，还约束每行 `abs(b-Ax)/aP <= .01*tolerance*Uref*alphaU`，避免远场大格子的右端项掩盖小Cut-cell的局部残差；没有放宽非线性门。CFL为每个单元 `dt*sum(abs(phi))/(2V)` 的最大值，只作诊断，不会自动修改dt。
+
+除已有六份结果外，`.time-history.csv`逐步保存物理时间、是否接受、内迭代次数、残差、最大CFL、动能和力；`.residuals.csv`仅含最后尝试时间步的内迭代。`.cells.csv`新增previousU/V及temporalX/Y，后者是积分时间项。摘要区分候选time与acceptedTime、请求与完成步数。退出2代表该候选步未收敛，不能拿它继续时间推进；异常退出1会将已开始运行的摘要标成failed。
+
+`.checkpoint`只保存初始/已接受状态，包括面通量。采用临时写入后替换，重启逐项核对网格几何、owner/neighbour、编号、物性、工况和离散格式；可以更改步长、停止容差及迭代预算。它不是跨编译器逐位一致性承诺，也不具备密码学防篡改功能。取消/崩溃后须读取最后完整checkpoint，不能把候选CSV当成重启场。重启回归将连续5步与2+3步的最终场和checkpoint逐字节比较。
+
+`--case taylor-green`是只在CLI使用的无源解析验证工况：完整单位方域、四壁无穿透自由滑移，`A=Uref*exp(-2*nu*pi²*t)`，`u=A*sin(pi*x)*cos(pi*y)`、`v=-A*cos(pi*x)*sin(pi*y)`、`p=A²/4*(cos(2*pi*x)+cos(2*pi*y))`。运动学压力减去cell0解析值；初始面通量由解析流函数沿真实边端点之差积分。解析微分/能量/边界条件另有测试，避免把错误压力符号作为“真值”。
+
+`run_transient_flow.py --mesh FINAL.solver.cm2d --output NEW_DIR`串行计算默认四档时间步，固定终止t=.2、nu=.1、速度1、限制线性对流和容差1e-9，每档限180秒；输出目录必须新建，保留实际命令、哈希、返回码与耗时。可选`--case/--dt/--end-time`，用同一入口核查启动工况。`verify_transient_flow.py`独立读回几何、时间积分、逐面压力/对流/应力、局部及全局动量/质量、CFL和能量；元数据/历史不一致时失败。旧稳态验证器明确拒绝非定常结果，避免误套稳态基准。
+
+最终矩阵图可用 `python3 tools/verification/plot_transient_flow.py --root outputs/native-flow/transient/final --output artifacts/current/native-flow-transient` 重建；先校验来源哈希。误差和时间步自收敛单独报告，离散守恒通过不等于物理精度验收。
+
 ### 完整流动方程制造解
 
 `--case manufactured` 是命令行验证入口，不是用户物理工况，也不出现在桌面工况列表。仅接受无孔单位方形 `[0,1]²`；四边静止无滑移，压力从内部场外推，cell 0 固定压力为0。

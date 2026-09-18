@@ -160,6 +160,19 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_flow_face_tests tests/flow_face_test.cpp)
     target_link_libraries(cartmesh2d_flow_face_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_face COMMAND cartmesh2d_flow_face_tests)
+    add_test(NAME cartmesh2d_transient_flow_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    add_test(NAME cartmesh2d_transient_verifier
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_verifier_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    set_tests_properties(cartmesh2d_transient_flow_cli cartmesh2d_transient_verifier PROPERTIES TIMEOUT 90)
+    add_executable(cartmesh2d_taylor_green_tests tests/taylor_green_test.cpp)
+    target_link_libraries(cartmesh2d_taylor_green_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_taylor_green COMMAND cartmesh2d_taylor_green_tests)
+    add_executable(cartmesh2d_flow_checkpoint_tests tests/flow_checkpoint_test.cpp)
+    target_link_libraries(cartmesh2d_flow_checkpoint_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_flow_checkpoint COMMAND cartmesh2d_flow_checkpoint_tests)
     add_executable(cartmesh2d_manufactured_flow_tests tests/manufactured_flow_test.cpp)
     target_link_libraries(cartmesh2d_manufactured_flow_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_manufactured_flow COMMAND cartmesh2d_manufactured_flow_tests)

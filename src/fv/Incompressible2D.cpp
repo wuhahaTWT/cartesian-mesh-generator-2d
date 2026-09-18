@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
+#include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
@@ -93,7 +94,9 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             ensure((left || right) ? std::abs(f.areaVector.y) <= eps
                                    : std::abs(f.areaVector.x) <= eps,
                    "Flow outer edge is not axis aligned");
-            if (c.scenario == "manufactured") {
+            if (c.scenario == "taylor-green") {
+                b.role[id] = Role::Slip;
+            } else if (c.scenario == "manufactured") {
                 b.role[id] = Role::Wall;
             } else if (c.scenario == "cavity") {
                 b.role[id] = top ? Role::Lid : Role::Wall;
@@ -109,7 +112,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         }
 
         b.constantU[id]=b.role[id]==Role::Wall || b.role[id]==Role::Lid;
-        b.constantV[id]=b.constantU[id] || b.role[id]==Role::Slip;
+        b.constantV[id]=b.constantU[id];
         switch (b.role[id]) {
         case Role::Wall:
             b.fixedU[id] = b.fixedV[id] = true;
@@ -129,14 +132,16 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             b.fixedP[id] = true;
             break;
         case Role::Slip:
-            b.fixedV[id] = true;
+            // Outer boundaries were checked to be axis aligned above.
+            if (left || right) b.fixedU[id] = b.constantU[id] = true;
+            else b.fixedV[id] = b.constantV[id] = true;
             break;
         }
     }
-    b.closed = c.scenario == "cavity" || c.scenario == "manufactured";
-    if (c.scenario == "manufactured")
+    b.closed = c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green";
+    if (c.scenario == "manufactured" || c.scenario == "taylor-green")
         ensure(equal(b.xmin,0) && equal(b.ymin,0) && equal(b.xmax,1) && equal(b.ymax,1),
-               "Manufactured flow requires the unit square [0,1]^2");
+               "Verification flow requires the unit square [0,1]^2");
     if (!b.closed) {
         ensure(inlets && outlets, "Flow needs left inlet and right pressure outlet");
     }
@@ -184,7 +189,9 @@ void momentum(System& a,
                 const std::vector<Vector2D>& source,
                 const std::vector<Vector2D>& stressCorrection,
                 bool y,
-                bool relaxed) {
+                bool relaxed,
+                const Vec* previous = nullptr,
+                double timeStep = 0) {
     a.reset();
     const auto& bc = y ? b.v : b.u;
     const auto& fixed = y ? b.fixedV : b.fixedU;
@@ -193,6 +200,11 @@ void momentum(System& a,
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
         a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
         if (!source.empty()) a.rhs[i] += y ? source[i].y : source[i].x;
+        if (previous) {
+            const double mass=finite(m.cells[i].area/timeStep);
+            a.diag[i]+=mass;
+            a.rhs[i]+=finite(mass*(*previous)[i]);
+        }
     }
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
         const auto& f = m.faces[id];
@@ -240,14 +252,14 @@ void momentum(System& a,
 
 } // namespace
 
-FlowResult2D solveIncompressible2D(
-    const FvMesh2D& m,
-    const FlowControls2D& c,
-    const std::function<void(const FlowIteration2D&)>& progress) {
+static FlowResult2D solveFlow(
+    const FvMesh2D& m, const FlowControls2D& c,
+    const std::function<void(const FlowIteration2D&)>& progress,
+    const FlowState2D* previous, double timeStep) {
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
@@ -269,6 +281,16 @@ FlowResult2D solveIncompressible2D(
     const auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
+    if (previous) {
+        ensure(std::isfinite(timeStep) && timeStep>0 && std::isfinite(previous->time) && previous->time>=0 &&
+                   std::isfinite(previous->time+timeStep) && previous->time+timeStep>previous->time,
+               "Invalid physical time step");
+        ensure(c.scenario!="manufactured", "Transient forced manufactured case not implemented");
+        ensure(previous->u.size()==n && previous->v.size()==n && previous->p.size()==n && previous->flux.size()==nf,
+               "Transient state size differs from mesh");
+        for (const auto* field : {&previous->u,&previous->v,&previous->p,&previous->flux})
+            for (double value : *field) finite(value);
+    } else ensure(c.scenario!="taylor-green", "Taylor-Green requires physical time stepping");
 
     // A single pressure gauge is only valid for one connected fluid region.
     // Reject disconnected cavities instead of silently selecting arbitrary gauges.
@@ -301,13 +323,20 @@ FlowResult2D solveIncompressible2D(
     detail::LinearWorkspace2D workspace(n);
     Vec mu(n), mv(n);
     FlowResult2D r;
+    // Global RHS-relative stopping can mask a tiny cut-cell residual when
+    // large far-field cells carry the time term. Also require each row's
+    // residual/diagonal in velocity units to be <=1% of the nonlinear target.
+    // The existing global linear and nonlinear gates both remain in force.
+    const double momentumScaledStop=previous?finite(.01*c.tolerance*c.speed*c.velocityRelaxation)
+        :std::numeric_limits<double>::infinity();
+    ensure(momentumScaledStop>0,"Transient linear residual scale underflow");
     // Profiling observes the same solves and stopping rules, including zero-step
     // solves. Timing includes each linear solver's setup, but not assembly.
     auto linearSolve = [&](const System& system, Vec& field, bool pressure) {
         const auto start = c.profile ? Clock::now() : Clock::time_point{};
         const auto iterations = pressure ? system.solvePressure(field, workspace,
             c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0)
-            : system.solve(field, workspace);
+            : system.solve(field, workspace, momentumScaledStop);
         if (c.profile) {
             auto& p = r.performance;
             (pressure ? p.pressureSolves : p.momentumSolves) += 1;
@@ -354,6 +383,30 @@ FlowResult2D solveIncompressible2D(
                        : (b.role[id] == Role::Outlet ? r.u[f.owner] * f.areaVector.x : 0.));
     }
 
+    Vec oldFluxDefect(nf);
+    if (previous) {
+        r.u=previous->u; r.v=previous->v; r.p=previous->p; r.flux=previous->flux;
+        r.time=previous->time+timeStep; r.timeStep=timeStep;
+        r.previousU=previous->u; r.previousV=previous->v;
+        const auto oldGu=flowGradient(m,r.u,b.u,b.fixedU),oldGv=flowGradient(m,r.v,b.v,b.fixedV);
+        for (std::size_t id=0;id<nf;++id) {
+            const auto& f=m.faces[id];
+            if (!f.neighbour) {
+                if (b.role[id]==Role::Outlet)
+                    oldFluxDefect[id]=r.flux[id]-r.u[f.owner]*f.areaVector.x-r.v[f.owner]*f.areaVector.y;
+                continue; // fixed-velocity and impermeable boundaries impose their new-time flux
+            }
+            const auto i=f.owner,j=*f.neighbour;
+            const double w=f.neighbourWeight;
+            const Point2D point{m.cells[i].centre.x*(1-w)+m.cells[j].centre.x*w,
+                                m.cells[i].centre.y*(1-w)+m.cells[j].centre.y*w};
+            const auto skew=f.centre-point;
+            const double uf=interpolate(f,r.u)+dot(interpolateGradient(f,oldGu),skew);
+            const double vf=interpolate(f,r.v)+dot(interpolateGradient(f,oldGv),skew);
+            oldFluxDefect[id]=r.flux[id]-uf*f.areaVector.x-vf*f.areaVector.y;
+        }
+    }
+
     for (std::size_t it = 1; it <= c.maxIterations; ++it) {
         const Vec oldU = r.u;
         const Vec oldV = r.v;
@@ -366,8 +419,8 @@ FlowResult2D solveIncompressible2D(
         const auto stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
             ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
             : std::vector<Vector2D>{};
-        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, stressCorrection, false, true);
-        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, stressCorrection, true, true);
+        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, stressCorrection, false, true, previous?&previous->u:nullptr, timeStep);
+        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, stressCorrection, true, true, previous?&previous->v:nullptr, timeStep);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -390,7 +443,19 @@ FlowResult2D solveIncompressible2D(
                 const double uf=interpolate(f,r.u)+dot(interpolateGradient(f,gup),skew),vf=interpolate(f,r.v)+dot(interpolateGradient(f,gvp),skew);
                 const Vector2D rag{(1-w)*ra[i]*forceGradient[i].x+w*ra[j]*forceGradient[j].x,(1-w)*ra[i]*forceGradient[i].y+w*ra[j]*forceGradient[j].y};
                 predicted[id]=uf*f.areaVector.x+vf*f.areaVector.y+dot(rag,f.areaVector)-rf*(f.transmissibility*(r.p[j]-r.p[i])+dot(interpolateGradient(f,gp),f.correction));
-            }else if(b.role[id]==Role::Outlet){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));}
+                if (previous) {
+                    const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
+                    const double oldVf=interpolate(f,oldV)+dot(interpolateGradient(f,gv),skew);
+                    // Backward Euler transports the accepted old face flux.
+                    // Correct both its cell-interpolation defect and the inner
+                    // under-relaxation defect; otherwise the dt -> 0 response
+                    // depends on the arbitrary inner relaxation factor.
+                    predicted[id]+=rf/timeStep*oldFluxDefect[id]
+                        +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
+                }
+            }else if(b.role[id]==Role::Outlet){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));
+                if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
+                    +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
             else predicted[id]=0;
         }
@@ -428,8 +493,8 @@ FlowResult2D solveIncompressible2D(
         const auto newStressCorrection=c.viscousStress==ViscousStress2D::Symmetric
             ? detail::symmetricViscousCorrection(m,r.u,r.v,newGu,newGv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
             : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,newStressCorrection,false,false);
-        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,newStressCorrection,true,false);
+        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,newStressCorrection,false,false,previous?&previous->u:nullptr,timeStep);
+        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,newStressCorrection,true,false,previous?&previous->v:nullptr,timeStep);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
@@ -437,6 +502,20 @@ FlowResult2D solveIncompressible2D(
         FlowIteration2D step{it,finite(mr),finite(continuity),finite(du),finite(dp)};r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
         if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8){r.converged=true;break;}
+    }
+    if (previous) {
+        r.temporalIntegrals.resize(n);
+        Vec absoluteFlux(n);
+        for (std::size_t id=0;id<nf;++id) {
+            const auto& f=m.faces[id]; const double q=std::abs(r.flux[id]);
+            absoluteFlux[f.owner]+=q;
+            if (f.neighbour) absoluteFlux[*f.neighbour]+=q;
+        }
+        for (std::size_t i=0;i<n;++i) {
+            r.temporalIntegrals[i]={finite(m.cells[i].area*(r.u[i]-previous->u[i])/timeStep),
+                                    finite(m.cells[i].area*(r.v[i]-previous->v[i])/timeStep)};
+            r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*absoluteFlux[i]/m.cells[i].area));
+        }
     }
     const auto gu=flowGradient(m,r.u,b.u,b.fixedU),gv=flowGradient(m,r.v,b.v,b.fixedV),gp=flowGradient(m,r.p,zeros,b.fixedP,true);
     const auto pf=detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP);
@@ -492,5 +571,41 @@ FlowResult2D solveIncompressible2D(
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }
     return r;
+}
+
+FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
+    const std::function<void(const FlowIteration2D&)>& progress) {
+    return solveFlow(m,c,progress,nullptr,0);
+}
+FlowResult2D advanceIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
+    const FlowState2D& previous, double timeStep,
+    const std::function<void(const FlowIteration2D&)>& progress) {
+    return solveFlow(m,c,progress,&previous,timeStep);
+}
+FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D& c) {
+    validateFvMesh2D(m);
+    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
+           std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
+           "Invalid transient initial-state controls");
+    const auto b=boundaries(m,c); (void)b;
+    FlowState2D s;
+    s.u.resize(m.cells.size());s.v.resize(m.cells.size());s.p.resize(m.cells.size());s.flux.resize(m.faces.size());
+    if (c.scenario=="taylor-green") {
+        ensure(std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,"Invalid vortex controls");
+        const double gauge=taylorGreen2D(m.cells.front().centre,0,c.speed,c.nu).pressure;
+        for (std::size_t i=0;i<m.cells.size();++i) {
+            const auto q=taylorGreen2D(m.cells[i].centre,0,c.speed,c.nu);
+            s.u[i]=q.velocity.x;s.v[i]=q.velocity.y;s.p[i]=q.pressure-gauge;
+        }
+        // Streamfunction differences give an exactly conservative integral flux.
+        for (std::size_t id=0;id<m.faces.size();++id) {
+            const auto& f=m.faces[id];
+            if (!f.neighbour) continue;
+            const Point2D a{f.centre.x+.5*f.areaVector.y,f.centre.y-.5*f.areaVector.x};
+            const Point2D z{f.centre.x-.5*f.areaVector.y,f.centre.y+.5*f.areaVector.x};
+            s.flux[id]=taylorGreen2D(z,0,c.speed,c.nu).streamfunction-taylorGreen2D(a,0,c.speed,c.nu).streamfunction;
+        }
+    }
+    return s;
 }
 }
