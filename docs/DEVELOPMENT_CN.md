@@ -138,6 +138,25 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 完整流动方程制造解
+
+`--case manufactured` 是命令行验证入口，不是用户物理工况，也不出现在桌面工况列表。仅接受无孔单位方形 `[0,1]²`；四边静止无滑移、压力零法向约束，cell 0 固定压力为0。
+
+令 `X=πx, Y=πy`，流函数 `ψ=(Uref/π)sin²X sin²Y`，则 `u=Uref sin²X sin(2Y)`、`v=−Uref sin(2X)sin²Y`，原始运动学压力 `p=Uref² cosX cosY`。解析体积加速度 `f=(U·∇)U+∇p−ν∇²U` 进入每个单元的动量右端，采用实际多边形质心的中点积分 `area*f`。除验证源项和静止壁面外，使用同一 SIMPLE、压力修正、对流/扩散及停止条件，不将解析速度预填为计算结果。
+
+MMS 的 `.cells.csv` 额外导出积分源 `sourceX/Y` 和解析 `exactU/V/P`，其中解析压力也减去 cell 0 的解析值。普通工况没有这些列。独立 Python 检查从 CM2D 几何重新计算解析场与源，不使用导出 exact 列作为真值；动量失衡为面通量和减去体积源。记录面积加权速度 L2/Uref 和压力 L2/Uref²、最大误差及细化观测阶；字段一致性容差不是物理精度等级。
+
+复现工具生成196/900/3,844格的规则方腔，再以 `δ=.06 sin(πx)sin(πy)`、`x'=x+δ, y'=y+.6δ` 连续扭曲内部点，边界保持单位方形。两种网格、两种对流格式、三档细化分别审核；扭曲网格仍须通过真实几何/拓扑检查。固定 ν=.1、Uref=1，停止容差1e-8，单例最长180秒、最多7,000轮；耗时仅是本机诊断，不是通用性能保证。
+
+```sh
+python3 tools/verification/run_manufactured_flow.py --output-root outputs/native-flow/manufactured-new
+MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_manufactured_flow.py --summary outputs/native-flow/manufactured-new/runner-summary.json --output outputs/native-flow/manufactured-new/verification.png
+```
+
+普通运行要求新目录以保留旧证据；`--reuse` 只重新读回，写入独立的 `runner-reverification.json`，不覆盖原生成命令和返回码。`--levels 4` 可作快速冒烟检查，不能证明细化阶数；`--dry-run` 只标为计划，不能当成已运行。
+
+该光滑制造解避开移动顶盖角点和非零壁面压力法向梯度，只能验证其覆盖的离散链路。它不能替代 Ghia 方腔、真实 Cut-cell 绕流、一般边界、湍流或网格无关性验证；原方腔细化失败仍保留。
+
 ### 稀疏结构与压力预条件
 
 流动系统的非对角项采用固定、按列排序的 CSR 连接表，重复连接共享同一项并相加；动量、压力与残差检查矩阵复用该结构，数组清零后重新组装。U/V/压力按顺序共享线性工作区，矩阵乘向量不再每步分配结果。自然单元编号不重排，物理单元 ID 不变。
