@@ -9,6 +9,8 @@ function exportGuide({ result, rasterImport, flow }) {
     ? '（旧摘要缺少格式字段，按一阶迎风推断）' : '';
   const pressureDiscretization = flow?.summary?.pressureDiscretization === 'shared-face-gauss'
     ? '共享面压力' : '旧结果未记录';
+  const viscousStress = flow?.summary?.viscousStress === 'symmetric'
+    ? '共享面牛顿应力' : '旧结果未记录';
   const convectionQualification = convection === 'limited-linear'
     ? '有界限制重构可减少数值扩散，但不保证所有工况都更准确，也不代表通用二阶或新的工程合格结论。'
     : '一阶迎风为默认稳健格式。';
@@ -28,7 +30,7 @@ ${rasterImport ? '| source-image.* / image-outline.png / image-import.json | 原
 ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维稳态层流摘要与按最终 CM2D cell id 对齐的速度、运动学压力场。 |\n| *.flow.vtk / *.flow.cells.csv / *.flow.faces.csv | ParaView 流场、逐单元数值及面通量；faces.csv 还含压力与动量通量列。 |\n| *.flow.residuals.csv | SIMPLE 迭代连续性、速度变化与动量残差历史。 |\n' : ''}| flow-incomplete-* | 被取消或失败求解保留的诊断目录；不是有效求解结果。 |
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
-${flow ? `自研稳态层流：${flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力离散：${pressureDiscretization}；压力 p 的单位是 m²/s²。${convectionQualification}\n` : ''}
+${flow ? `自研稳态层流：${flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
 **导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }

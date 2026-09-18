@@ -10,6 +10,7 @@ namespace cartmesh2d::fv {
 enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
 
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0 };
+enum class ViscousStress2D { Laplacian, Symmetric };
 
 struct FlowControls2D {
     std::string scenario = "external";
@@ -21,6 +22,7 @@ struct FlowControls2D {
     double pressureRelaxation = .25;
     bool profile = false;
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
+    ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
 };
@@ -46,9 +48,10 @@ struct FlowIteration2D {
 };
 
 struct FaceMomentum2D {
+    bool wall = false; // impermeable no-slip wall or moving lid, excludes slip/inlet/outlet
     double pressure = 0;
     Vector2D advection{};
-    Vector2D diffusion{}; // -nu grad(U) dot S; same Laplacian flux as momentum
+    Vector2D diffusion{}; // same viscous flux as momentum, selected by viscousStress
 };
 
 struct FlowResult2D {
@@ -68,6 +71,12 @@ struct FlowResult2D {
     double pressureForceY = 0;
     double discreteForceX = 0;
     double discreteForceY = 0;
+    double reconstructedForceX = 0; // legacy cell-gradient Newtonian diagnostic
+    double reconstructedForceY = 0;
+    double wallForceX = 0; // all no-slip walls and lid, fluid on boundary
+    double wallForceY = 0;
+    double wallViscousForceX = 0;
+    double wallViscousForceY = 0;
     double domainHeight = 0;
     FlowPerformance2D performance;
 };

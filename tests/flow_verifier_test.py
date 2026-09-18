@@ -140,8 +140,11 @@ class FlowVerifierTamperTests(unittest.TestCase):
             summary = Path(str(copied_prefix) + ".json")
             data = json.loads(summary.read_text())
             for key in ("pressureForceX", "pressureForceY", "discreteForceX", "discreteForceY",
-                        "pressureDiscretization", "convection"):
-                del data[key]
+                        "pressureDiscretization", "convection", "viscousStress",
+                        "forceDefinition", "reconstructedForceX", "reconstructedForceY",
+                        "wallForceX", "wallForceY", "wallViscousForceX", "wallViscousForceY",
+                        "wallForceDefinition"):
+                data.pop(key, None)
             summary.write_text(json.dumps(data))
             legacy = verifier.verify_case(copied_mesh, copied_prefix, "channel", .01, 1.0, self._args())
             self.assertTrue(legacy["valid"], legacy["issues"])
@@ -175,6 +178,46 @@ class FlowVerifierTamperTests(unittest.TestCase):
             with cells.open("w", newline="") as stream:
                 writer = csv.DictWriter(stream, fieldnames=rows[0].keys())
                 writer.writeheader(); writer.writerows(rows)
+            result = verifier.verify_case(copied_mesh, copied_prefix, "channel", .01, 1.0, self._args())
+            self.assertFalse(result["valid"])
+            self.assertFalse(result["momentumAudit"]["valid"])
+
+    def test_selected_force_tamper_is_rejected(self):
+        mesh, prefix = self._fixture()
+        with tempfile.TemporaryDirectory() as folder:
+            copied_mesh, copied_prefix = self._copy_fixture(mesh, prefix, folder)
+            summary = Path(str(copied_prefix) + ".json")
+            payload = json.loads(summary.read_text())
+            if "viscousStress" not in payload:
+                self.skipTest("fixture is from legacy flow CLI without viscousStress metadata")
+            payload["forceX"] = float(payload["forceX"]) + .01
+            summary.write_text(json.dumps(payload), encoding="utf-8")
+            result = verifier.verify_case(copied_mesh, copied_prefix, "channel", .01, 1.0, self._args())
+            self.assertFalse(result["valid"])
+            self.assertFalse(result["momentumAudit"]["valid"])
+
+    def test_unknown_viscous_stress_is_rejected(self):
+        mesh, prefix = self._fixture()
+        with tempfile.TemporaryDirectory() as folder:
+            copied_mesh, copied_prefix = self._copy_fixture(mesh, prefix, folder)
+            summary = Path(str(copied_prefix) + ".json")
+            payload = json.loads(summary.read_text())
+            payload["viscousStress"] = "bogus"
+            summary.write_text(json.dumps(payload), encoding="utf-8")
+            result = verifier.verify_case(copied_mesh, copied_prefix, "channel", .01, 1.0, self._args())
+            self.assertFalse(result["valid"])
+            self.assertTrue(any("viscousStress" in issue for issue in result["issues"]))
+
+    def test_toggled_viscous_stress_metadata_is_rejected(self):
+        mesh, prefix = self._fixture()
+        with tempfile.TemporaryDirectory() as folder:
+            copied_mesh, copied_prefix = self._copy_fixture(mesh, prefix, folder)
+            summary = Path(str(copied_prefix) + ".json")
+            payload = json.loads(summary.read_text())
+            if "viscousStress" not in payload:
+                self.skipTest("fixture is from legacy flow CLI without viscousStress metadata")
+            payload["viscousStress"] = "laplacian" if payload["viscousStress"] == "symmetric" else "symmetric"
+            summary.write_text(json.dumps(payload), encoding="utf-8")
             result = verifier.verify_case(copied_mesh, copied_prefix, "channel", .01, 1.0, self._args())
             self.assertFalse(result["valid"])
             self.assertFalse(result["momentumAudit"]["valid"])

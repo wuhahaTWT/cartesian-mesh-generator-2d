@@ -26,6 +26,9 @@ const FLOW_CONVECTION_SCHEMES = Object.freeze({
 });
 const PRESSURE_DISCRETIZATION = 'shared-face-gauss';
 const LEGACY_PRESSURE_DISCRETIZATION = 'legacy-unspecified';
+const VISCOUS_STRESS = 'symmetric';
+const LEGACY_VISCOUS_STRESS = 'laplacian';
+const FORCE_DEFINITION = 'shared-face-newtonian-traction';
 const FLOW_OUTPUT_SUFFIXES = Object.freeze([
   '.json', '.fields.json', '.vtk', '.residuals.csv', '.cells.csv', '.faces.csv'
 ]);
@@ -51,7 +54,9 @@ function validateFlowRequest(request = {}) {
   if (!(speed > 0)) throw new Error('参考速度必须大于 0。');
   if (!Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 100000)
     throw new Error('最大迭代数必须是 1 到 100000 的整数。');
-  return { case: flowCase.id, nu, speed, maxIterations, convection };
+  const viscousStress = request.viscousStress === undefined ? VISCOUS_STRESS : request.viscousStress;
+  if (viscousStress !== VISCOUS_STRESS) throw new Error('未知黏性应力格式。当前仅支持 symmetric。');
+  return { case: flowCase.id, nu, speed, maxIterations, convection, viscousStress };
 }
 
 function buildFlowInvocation(meshPath, outputPrefix, request) {
@@ -64,7 +69,7 @@ function buildFlowInvocation(meshPath, outputPrefix, request) {
     args: ['--mesh', meshPath, '--output', outputPrefix,
       '--case', validated.case, '--nu', String(validated.nu),
       '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations),
-      '--convection', validated.convection]
+      '--convection', validated.convection, '--viscous-stress', validated.viscousStress]
   };
 }
 
@@ -99,6 +104,10 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     ? LEGACY_PRESSURE_DISCRETIZATION : summary.pressureDiscretization;
   if (!pressureDiscretizationInferred && pressureDiscretization !== PRESSURE_DISCRETIZATION)
     throw new Error('流动摘要压力离散格式无效。');
+  const viscousStressInferred = summary.viscousStress === undefined;
+  const viscousStress = viscousStressInferred ? LEGACY_VISCOUS_STRESS : summary.viscousStress;
+  if (!viscousStressInferred && viscousStress !== VISCOUS_STRESS)
+    throw new Error('流动摘要黏性应力格式无效。');
   const iterations = finite(summary.iterations, 'iterations');
   const cells = finite(summary.cells, 'cells');
   if (!Number.isInteger(iterations) || iterations < 1) throw new Error('iterations 无效。');
@@ -109,6 +118,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     convectionInferred,
     pressureDiscretization,
     pressureDiscretizationInferred,
+    viscousStress,
+    viscousStressInferred,
     nu: finite(summary.nu, 'nu'), speed: finite(summary.speed, 'speed'),
     iterations, cells,
     continuity: finite(summary.continuity, 'continuity'),
@@ -129,10 +140,30 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
       || ['velocityChange', 'pressureChange', 'momentumResidual'].some(key => normalizedSummary[key] >= normalizedSummary.tolerance)))
     throw new Error('摘要声称收敛，但实际指标未达到停止条件。');
 
+  const forceKeys = ['forceX', 'forceY', 'pressureForceX', 'pressureForceY',
+    'discreteForceX', 'discreteForceY', 'wallForceX', 'wallForceY',
+    'wallViscousForceX', 'wallViscousForceY'];
+  if (viscousStress === VISCOUS_STRESS) {
+    if (summary.forceDefinition !== FORCE_DEFINITION)
+      throw new Error('对称黏性应力结果的受力定义不匹配。');
+    for (const key of forceKeys) {
+      if (summary[key] !== undefined) normalizedSummary[key] = finite(summary[key], key);
+    }
+    for (const key of forceKeys)
+      if (normalizedSummary[key] === undefined) throw new Error(`对称黏性应力结果缺少 ${key}。`);
+    const forceTolerance = 1e-10 * Math.max(1, Math.abs(normalizedSummary.forceX), Math.abs(normalizedSummary.forceY),
+      Math.abs(normalizedSummary.discreteForceX), Math.abs(normalizedSummary.discreteForceY));
+    if (Math.abs(normalizedSummary.forceX - normalizedSummary.discreteForceX) > forceTolerance
+        || Math.abs(normalizedSummary.forceY - normalizedSummary.discreteForceY) > forceTolerance)
+      throw new Error('总力与共享面离散力不一致。');
+  }
+
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
     if (pressureDiscretizationInferred)
       throw new Error('本次新流动结果缺少压力离散格式，不能与请求绑定。');
+    if (viscousStressInferred || viscousStress !== request.viscousStress)
+      throw new Error('本次新流动结果缺少对称黏性应力格式，不能与请求绑定。');
     if (normalizedSummary.case !== request.case || normalizedSummary.nu !== request.nu
         || normalizedSummary.speed !== request.speed || normalizedSummary.convection !== request.convection
         || normalizedSummary.iterations > request.maxIterations)
@@ -170,5 +201,6 @@ async function commitFlowFiles(fileSystem, entries) {
 module.exports = {
   FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_OUTPUT_SUFFIXES,
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
+  VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest
 };

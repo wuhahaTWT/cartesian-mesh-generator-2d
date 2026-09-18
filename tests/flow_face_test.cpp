@@ -17,6 +17,7 @@ using cartmesh2d::fv::detail::faceReconstructionLimiter;
 using cartmesh2d::fv::detail::flowGradient;
 using cartmesh2d::fv::detail::pressureFaceValues;
 using cartmesh2d::fv::detail::upwindFaceValue;
+using cartmesh2d::fv::detail::symmetricViscousCorrection;
 
 namespace {
 
@@ -450,6 +451,97 @@ void splitFacesAreBothUsed(const FvMesh2D& mesh) {
     check(splitCount == 2, "coarse side is represented by two actual shared faces");
 }
 
+void affineSymmetricStress(const FvMesh2D& mesh, const std::string& label) {
+    constexpr double nu = 0.37;
+    const std::vector<double> boundary(mesh.faces.size(), 0.0);
+    const std::vector<bool> fixed(mesh.faces.size(), true);
+    const std::vector<bool> constant(mesh.faces.size(), false);
+    const auto cellField = [&](double ax, double ay, double bx, double by) {
+        std::vector<double> value;
+        for (const auto& c : mesh.cells) value.push_back(ax*c.centre.x + ay*c.centre.y + bx);
+        return value;
+    };
+    const auto faceValue = [&](const cartmesh2d::fv::Face& f, double ax, double ay, double b) {
+        return ax*f.centre.x + ay*f.centre.y + b;
+    };
+    const auto checkCase = [&](const std::string& name, Vector2D gu, Vector2D gv,
+                               double bu0, double bv0) {
+        const auto u = cellField(gu.x, gu.y, bu0, 0.0);
+        const auto v = cellField(gv.x, gv.y, bv0, 0.0);
+        std::vector<double> bu(mesh.faces.size()), bv(mesh.faces.size());
+        for (std::size_t id=0; id<mesh.faces.size(); ++id) {
+            bu[id]=faceValue(mesh.faces[id],gu.x,gu.y,bu0);
+            bv[id]=faceValue(mesh.faces[id],gv.x,gv.y,bv0);
+        }
+        const std::vector<Vector2D> guCell(mesh.cells.size(),gu), gvCell(mesh.cells.size(),gv);
+        const auto correction=symmetricViscousCorrection(mesh,u,v,guCell,gvCell,bu,bv,
+                                                         fixed,fixed,constant,constant,nu);
+        for (std::size_t id=0; id<mesh.faces.size(); ++id) {
+            const auto& f=mesh.faces[id];
+            if (!f.neighbour) continue;
+            const auto j=*f.neighbour;
+            const auto gfu=gu;
+            const auto gfv=gv;
+            const double baseU=-nu*(f.transmissibility*(u[j]-u[f.owner])+
+                                    dot(gfu,f.correction));
+            const double baseV=-nu*(f.transmissibility*(v[j]-v[f.owner])+
+                                    dot(gfv,f.correction));
+            const double expectedU=-nu*(2*gu.x*f.areaVector.x+(gu.y+gv.x)*f.areaVector.y);
+            const double expectedV=-nu*((gu.y+gv.x)*f.areaVector.x+2*gv.y*f.areaVector.y);
+            near(baseU+correction[id].x, expectedU, 1e-11,
+                 label+" "+name+": x shared-face symmetric stress");
+            near(baseV+correction[id].y, expectedV, 1e-11,
+                 label+" "+name+": y shared-face symmetric stress");
+        }
+    };
+    // Rigid rotation has an antisymmetric gradient and therefore zero stress.
+    checkCase("rotation", {0.0,-1.3}, {1.3,0.0}, 0.0, 0.0);
+    checkCase("extension", {1.2,0.0}, {0.0,-1.2}, 0.0, 0.0);
+    checkCase("shear", {0.0,1.7}, {0.0,0.0}, 0.0, 0.0);
+}
+
+void wallTraceAndSlipStress(const FvMesh2D& mesh) {
+    constexpr double nu=0.5;
+    const auto u=cellValues(mesh, [](Point2D p) { return p.x; });
+    const std::vector<double> v(mesh.cells.size(),0.0), bu(mesh.faces.size(),0.0), bv(mesh.faces.size(),0.0);
+    const std::vector<Vector2D> gu(mesh.cells.size(),{1.0,0.0}), gv(mesh.cells.size(),{0.0,0.0});
+    std::vector<bool> fu(mesh.faces.size(),true), fv(mesh.faces.size(),true);
+    std::vector<bool> constantU(mesh.faces.size(),false), constantV(mesh.faces.size(),false);
+    bool foundNormal=false;
+    for(std::size_t id=0;id<mesh.faces.size();++id) if(!mesh.faces[id].neighbour &&
+        std::abs(mesh.faces[id].areaVector.x)>0.9) {
+        // A prescribed constant wall trace still retains the normal stress from
+        // the prescribed owner-to-wall difference; its tangential trace is zero.
+        constantU[id]=true;
+        const auto& f=mesh.faces[id];
+        const auto d=f.centre-mesh.cells[f.owner].centre;
+        const double area=std::hypot(f.areaVector.x,f.areaVector.y);
+        const auto n=f.areaVector*(1/area);
+        const std::vector<Vector2D> misleadingGradient(mesh.cells.size(),{3.7,-2.4});
+        const auto faceG=cartmesh2d::fv::detail::viscousFaceGradient(mesh,id,u,misleadingGradient,bu,fu,constantU);
+        near(faceG.x*(-n.y)+faceG.y*n.x,0,1e-12,"constant wall removes cell tangential gradient");
+        near(faceG.x*n.x+faceG.y*n.y,(bu[id]-u[f.owner])/(d.x*n.x+d.y*n.y),
+             1e-12,"constant wall normal derivative matches prescribed value");
+        const auto one=symmetricViscousCorrection(mesh,u,v,gu,gv,bu,bv,fu,fv,constantU,constantV,nu);
+        near(one[id].y,0.0,1e-12,"constant wall trace has zero tangential shear");
+        check(std::abs(one[id].x)>1e-12,"constant wall trace retains prescribed normal stress");
+        foundNormal=true;
+    }
+    check(foundNormal,"wall trace test found an axis-aligned vertical wall");
+
+    // At a horizontal slip wall, v is fixed to zero while u varies tangentially.
+    const auto tangential=cellValues(mesh, [](Point2D p) { return p.x; });
+    std::fill(fu.begin(),fu.end(),false); std::fill(fv.begin(),fv.end(),true);
+    std::fill(constantU.begin(),constantU.end(),false); std::fill(constantV.begin(),constantV.end(),false);
+    for(std::size_t id=0;id<mesh.faces.size();++id) {
+        if(!mesh.faces[id].neighbour && std::abs(mesh.faces[id].areaVector.x)<1e-12) {
+            constantV[id]=true;
+            const auto slip=symmetricViscousCorrection(mesh,tangential,v,gu,gv,bu,bv,fu,fv,constantU,constantV,nu);
+            near(slip[id].x,0.0,1e-12,"axis-aligned slip has zero tangential shear");
+        }
+    }
+}
+
 } // namespace
 
 int main() {
@@ -471,6 +563,8 @@ int main() {
         checkerboardPressureKeepsDirectDifference(rectangularMesh(2, 1));
         limiterAndUpwindSelection();
         exponentialFaceRefinement();
+        affineSymmetricStress(skew, "skew mesh");
+        wallTraceAndSlipStress(rectangularMesh(3, 3));
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

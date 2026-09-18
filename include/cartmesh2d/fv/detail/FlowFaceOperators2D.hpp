@@ -9,6 +9,62 @@
 
 namespace cartmesh2d::fv::detail {
 
+// Correct the normal derivative to the compact two-point/non-orthogonal
+// derivative. Constant Dirichlet traces additionally have zero tangential
+// derivative (stationary/moving straight walls, fixed slip-normal velocity).
+inline Vector2D viscousFaceGradient(const FvMesh2D& m, std::size_t id,
+    const std::vector<double>& value, const std::vector<Vector2D>& gradient,
+    const std::vector<double>& boundary, const std::vector<bool>& fixed,
+    const std::vector<bool>& constantTrace) {
+    const auto& f=m.faces[id];
+    const auto i=f.owner;
+    const double area=std::hypot(f.areaVector.x,f.areaVector.y);
+    const auto normal=f.areaVector*(1/area);
+    auto g=gradient[i];
+    if (f.neighbour) {
+        const auto j=*f.neighbour;
+        g={g.x*(1-f.neighbourWeight)+gradient[j].x*f.neighbourWeight,
+           g.y*(1-f.neighbourWeight)+gradient[j].y*f.neighbourWeight};
+    } else if (constantTrace[id]) {
+        g={};
+    }
+    const double gn=g.x*normal.x+g.y*normal.y;
+    if (!f.neighbour && !fixed[id]) return {g.x-normal.x*gn,g.y-normal.y*gn};
+    const auto d=(f.neighbour?m.cells[*f.neighbour].centre:f.centre)-m.cells[i].centre;
+    const double dn=d.x*normal.x+d.y*normal.y;
+    if (!(dn>0)) throw std::runtime_error("Viscous face has non-positive normal distance");
+    const double other=f.neighbour?value[*f.neighbour]:boundary[id];
+    const double correction=(other-value[i]-g.x*d.x-g.y*d.y)/dn;
+    return {g.x+normal.x*correction,g.y+normal.y*correction};
+}
+
+// Explicit addition to the existing -nu grad(U).S compact flux. It includes
+// the transpose gradient and, at constant wall traces, removes the obsolete
+// cell-gradient tangential correction. One shared value per face conserves
+// both components across internal interfaces.
+inline std::vector<Vector2D> symmetricViscousCorrection(const FvMesh2D& m,
+    const std::vector<double>& u, const std::vector<double>& v,
+    const std::vector<Vector2D>& gu, const std::vector<Vector2D>& gv,
+    const std::vector<double>& bu, const std::vector<double>& bv,
+    const std::vector<bool>& fu, const std::vector<bool>& fv,
+    const std::vector<bool>& constantU, const std::vector<bool>& constantV, double nu) {
+    std::vector<Vector2D> result(m.faces.size());
+    for (std::size_t id=0;id<m.faces.size();++id) {
+        const auto& f=m.faces[id];
+        const auto a=viscousFaceGradient(m,id,u,gu,bu,fu,constantU);
+        const auto b=viscousFaceGradient(m,id,v,gv,bv,fv,constantV);
+        result[id]={-nu*(a.x*f.areaVector.x+b.x*f.areaVector.y),
+                    -nu*(a.y*f.areaVector.x+b.y*f.areaVector.y)};
+        if (!f.neighbour) {
+            if (constantU[id] && fu[id])
+                result[id].x+=nu*(gu[f.owner].x*f.correction.x+gu[f.owner].y*f.correction.y);
+            if (constantV[id] && fv[id])
+                result[id].y+=nu*(gv[f.owner].x*f.correction.x+gv[f.owner].y*f.correction.y);
+        }
+    }
+    return result;
+}
+
 // Pressure at velocity boundaries is extrapolated from interior values.
 // It is not a prescribed zero physical pressure gradient. Velocity slip/outflow
 // retains the zero-normal row; pressure-correction face flux remains a separate BC.

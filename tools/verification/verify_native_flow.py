@@ -357,6 +357,7 @@ def read_faces(path: Path, mesh: Mesh) -> tuple[list[dict[str, float]], bool]:
         missing = [name for name in FACE_MOMENTUM_COLUMNS if name not in fields]
         raise VerificationError(f"{path}: partial momentum face schema; missing {missing}")
     has_momentum = bool(present)
+    has_wall = "wall" in fields
     records: dict[int, dict[str, float]] = {}
     for line, row in enumerate(rows, 2):
         face = integer(row["face"], f"{path}:{line} face")
@@ -369,6 +370,11 @@ def read_faces(path: Path, mesh: Mesh) -> tuple[list[dict[str, float]], bool]:
         if has_momentum:
             item.update({name: finite(row[name], f"{path}:{line} {name}")
                          for name in FACE_MOMENTUM_COLUMNS})
+        if has_wall:
+            wall = integer(row["wall"], f"{path}:{line} wall")
+            if wall not in (0, 1):
+                raise VerificationError(f"{path}:{line}: wall must be 0 or 1")
+            item["wall"] = float(wall)
         records[face] = item
     if len(records) != len(mesh.edges):
         raise VerificationError(f"{path}: got {len(records)} faces, expected {len(mesh.edges)}")
@@ -526,6 +532,8 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
     fixed_u = [False] * len(mesh.edges)
     fixed_v = [False] * len(mesh.edges)
     fixed_p = [False] * len(mesh.edges)
+    constant_u = [False] * len(mesh.edges)
+    constant_v = [False] * len(mesh.edges)
     bc_u = [0.0] * len(mesh.edges)
     bc_v = [0.0] * len(mesh.edges)
     bc_p = [0.0] * len(mesh.edges)
@@ -552,6 +560,8 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
         else:
             role = "slip" if case == "external" else "wall"
         roles[edge.id] = role
+        constant_u[edge.id] = role in ("wall", "lid")
+        constant_v[edge.id] = constant_u[edge.id] or role == "slip"
         if role == "wall":
             fixed_u[edge.id] = fixed_v[edge.id] = True
         elif role == "lid":
@@ -566,6 +576,7 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
         elif role == "slip":
             fixed_v[edge.id] = True
     return {"roles": roles, "fixedU": fixed_u, "fixedV": fixed_v, "fixedP": fixed_p,
+            "constantU": constant_u, "constantV": constant_v,
             "u": bc_u, "v": bc_v, "p": bc_p}
 
 
@@ -690,6 +701,64 @@ def _interpolated_gradient(edge: Edge, gradients: list[tuple[float, float]], wei
             (1.0 - weight) * owner[1] + weight * neighbour[1])
 
 
+def _viscous_face_gradient(mesh: Mesh, measured: Measurement, edge: Edge, geometry: FaceGeometry,
+                           values: list[float], gradients: list[tuple[float, float]],
+                           boundary: list[float], fixed: list[bool],
+                           constant_trace: list[bool]) -> tuple[float, float]:
+    """Rebuild the core's normal-corrected gradient used by symmetric stress."""
+    i = edge.owner
+    sx, sy = geometry.area_vector
+    area = math.hypot(sx, sy)
+    normal = (sx / area, sy / area)
+    g = gradients[i]
+    if edge.neighbour >= 0:
+        other = gradients[edge.neighbour]
+        w = geometry.neighbour_weight
+        g = ((1.0 - w) * g[0] + w * other[0],
+             (1.0 - w) * g[1] + w * other[1])
+    elif constant_trace[edge.id]:
+        g = (0.0, 0.0)
+    gn = g[0] * normal[0] + g[1] * normal[1]
+    if edge.neighbour < 0 and not fixed[edge.id]:
+        return (g[0] - normal[0] * gn, g[1] - normal[1] * gn)
+    if edge.neighbour >= 0:
+        other_centre = measured.centroids[edge.neighbour]
+        d = (other_centre[0] - measured.centroids[i][0],
+             other_centre[1] - measured.centroids[i][1])
+    else:
+        d = (geometry.centre[0] - measured.centroids[i][0],
+             geometry.centre[1] - measured.centroids[i][1])
+    dn = d[0] * normal[0] + d[1] * normal[1]
+    if not dn > 0.0:
+        raise VerificationError(f"face {edge.id}: non-positive viscous normal distance")
+    other = values[edge.neighbour] if edge.neighbour >= 0 else boundary[edge.id]
+    correction = (other - values[i] - g[0] * d[0] - g[1] * d[1]) / dn
+    return (g[0] + normal[0] * correction, g[1] + normal[1] * correction)
+
+
+def _symmetric_viscous_correction(mesh: Mesh, measured: Measurement,
+                                  geometry: FaceGeometry, edge: Edge, u: list[float], v: list[float],
+                                  gu: list[tuple[float, float]], gv: list[tuple[float, float]],
+                                  boundaries: dict[str, Any], nu: float) -> tuple[float, float]:
+    """Return the core's added -nu*(gradU+gradU^T).S face flux."""
+    au = _viscous_face_gradient(mesh, measured, edge, geometry,
+                                u, gu, boundaries["u"], boundaries["fixedU"],
+                                boundaries["constantU"])
+    av = _viscous_face_gradient(mesh, measured, edge, geometry,
+                                v, gv, boundaries["v"], boundaries["fixedV"],
+                                boundaries["constantV"])
+    sx, sy = geometry.area_vector
+    result = (-nu * (au[0] * sx + av[0] * sy),
+              -nu * (au[1] * sx + av[1] * sy))
+    if edge.neighbour < 0:
+        correction = geometry.correction
+        if boundaries["constantU"][edge.id] and boundaries["fixedU"][edge.id]:
+            result = (result[0] + nu * (gu[edge.owner][0] * correction[0] + gu[edge.owner][1] * correction[1]), result[1])
+        if boundaries["constantV"][edge.id] and boundaries["fixedV"][edge.id]:
+            result = (result[0], result[1] + nu * (gv[edge.owner][0] * correction[0] + gv[edge.owner][1] * correction[1]))
+    return result
+
+
 def _advective_value(mesh: Mesh, measured: Measurement, edge: Edge, geometry: FaceGeometry,
                      flux: float, values: list[float], gradients: list[tuple[float, float]],
                      limiter: list[float] | None, fixed: list[bool], boundary: list[float]) -> float:
@@ -721,6 +790,18 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     """
     geometries = face_geometry(mesh, measured)
     boundaries = flow_boundaries(mesh, measured, case, speed)
+    viscous_stress = payload.get("viscousStress", "laplacian")
+    if viscous_stress not in ("symmetric", "laplacian"):
+        raise VerificationError(f"native viscousStress is unsupported: {viscous_stress!r}")
+    wall_schema = all("wall" in record for record in face_records)
+    expected_wall_flags = [float(edge.neighbour < 0 and boundaries["roles"][edge.id] in ("wall", "lid"))
+                           for edge in mesh.edges]
+    if viscous_stress == "symmetric" and not wall_schema:
+        raise VerificationError("symmetric viscousStress requires face wall flags")
+    if wall_schema:
+        for edge, record, expected in zip(mesh.edges, face_records, expected_wall_flags):
+            if record["wall"] != expected:
+                raise VerificationError(f"face {edge.id}: wall flag differs from boundary role")
     u = [row["u"] for row in cells]
     v = [row["v"] for row in cells]
     p = [row["p"] for row in cells]
@@ -766,6 +847,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                   for name in FACE_MOMENTUM_COLUMNS}
     pressure_force = [0.0, 0.0]
     discrete_force = [0.0, 0.0]
+    wall_force = [0.0, 0.0]
+    wall_viscous_force = [0.0, 0.0]
     for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
         i = edge.owner
         if edge.neighbour >= 0:
@@ -788,6 +871,11 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                         gi[0] * geom.correction[0] + gi[1] * geom.correction[1])
         else:
             dy = 0.0
+        if viscous_stress == "symmetric":
+            sx, sy = _symmetric_viscous_correction(
+                mesh, measured, geom, edge, u, v, gu, gv, boundaries, nu)
+            dx += sx
+            dy += sy
         expected = {"pressure": pf, "advectionX": av_u, "advectionY": av_v,
                     "diffusionX": dx, "diffusionY": dy}
         for name in FACE_MOMENTUM_COLUMNS:
@@ -812,6 +900,11 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             pressure_force[1] += py
             discrete_force[0] += px + dx
             discrete_force[1] += py + dy
+        if boundaries["roles"][edge.id] in ("wall", "lid") and edge.neighbour < 0:
+            wall_force[0] += pf * sx + dx
+            wall_force[1] += pf * sy + dy
+            wall_viscous_force[0] += dx
+            wall_viscous_force[1] += dy
     if case == "manufactured":
         # Subtract the independent cell-volume forcing before measuring the
         # equation residual.  Exported source columns are checked separately
@@ -852,6 +945,27 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
         "discreteForceX": _deviation(finite(payload.get("discreteForceX"), "native discreteForceX"), discrete_force[0]),
         "discreteForceY": _deviation(finite(payload.get("discreteForceY"), "native discreteForceY"), discrete_force[1]),
     }
+    reconstructed_force = [0.0, 0.0]
+    for edge, geom, pf in zip(mesh.edges, geometries, pressure_faces):
+        if edge.patch == 1 and boundaries["roles"][edge.id] == "wall":
+            i = edge.owner
+            sx, sy = geom.area_vector
+            reconstructed_force[0] += pf * sx - nu * (2 * gu[i][0] * sx + (gu[i][1] + gv[i][0]) * sy)
+            reconstructed_force[1] += pf * sy - nu * ((gu[i][1] + gv[i][0]) * sx + 2 * gv[i][1] * sy)
+    summary_deviations.update({
+        "reconstructedForceX": _deviation(finite(payload.get("reconstructedForceX", payload.get("forceX")), "native reconstructedForceX"), reconstructed_force[0]),
+        "reconstructedForceY": _deviation(finite(payload.get("reconstructedForceY", payload.get("forceY")), "native reconstructedForceY"), reconstructed_force[1]),
+        "forceX": _deviation(finite(payload.get("forceX"), "native forceX"), discrete_force[0] if viscous_stress == "symmetric" else reconstructed_force[0]),
+        "forceY": _deviation(finite(payload.get("forceY"), "native forceY"), discrete_force[1] if viscous_stress == "symmetric" else reconstructed_force[1]),
+    })
+    for name, actual, expected in (
+        ("wallForceX", payload.get("wallForceX"), wall_force[0]),
+        ("wallForceY", payload.get("wallForceY"), wall_force[1]),
+        ("wallViscousForceX", payload.get("wallViscousForceX"), wall_viscous_force[0]),
+        ("wallViscousForceY", payload.get("wallViscousForceY"), wall_viscous_force[1]),
+    ):
+        if actual is not None:
+            summary_deviations[name] = _deviation(finite(actual, f"native {name}"), expected)
     cell_sum = (math.fsum(rx for rx, _ in cell_residuals),
                 math.fsum(ry for _, ry in cell_residuals))
     expected_cell_sum = (boundary_vector[0] - source_sum[0],
@@ -899,7 +1013,13 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
         "cellBoundaryConservationDifference": {"x": conservation_difference[0],
                                                  "y": conservation_difference[1],
                                                  "magnitude": math.hypot(*conservation_difference)},
-        "fullNewtonianForceAudit": "excluded: forceX/forceY are a separate reconstructed-traction diagnostic",
+        "viscousStress": viscous_stress,
+        "forceDefinition": payload.get("forceDefinition", "reconstructed-newtonian-traction"),
+        "reconstructedForce": {"x": reconstructed_force[0], "y": reconstructed_force[1]},
+        "wallForce": {"x": wall_force[0], "y": wall_force[1]},
+        "wallViscousForce": {"x": wall_viscous_force[0], "y": wall_viscous_force[1]},
+        "wallFaceFlags": "checked" if wall_schema else "legacy-unavailable",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
     }
 
 
@@ -1206,6 +1326,19 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         issues.append("native JSON format is not cartmesh2d-flow-summary-v1")
     if payload.get("case") != case:
         issues.append("native JSON case differs from requested case")
+    viscous_stress = payload.get("viscousStress", "laplacian")
+    if viscous_stress not in ("symmetric", "laplacian"):
+        issues.append(f"native viscousStress is unsupported: {viscous_stress!r}")
+    if "viscousStress" in payload:
+        expected_definition = ("shared-face-newtonian-traction" if viscous_stress == "symmetric"
+                               else "reconstructed-newtonian-traction")
+        if payload.get("forceDefinition") != expected_definition:
+            issues.append("native forceDefinition does not match viscousStress")
+        if viscous_stress == "symmetric":
+            for field in ("reconstructedForceX", "reconstructedForceY", "wallForceX", "wallForceY",
+                          "wallViscousForceX", "wallViscousForceY", "wallForceDefinition"):
+                if field not in payload:
+                    issues.append(f"native JSON missing {field} for symmetric viscous stress")
     if case == "manufactured" and not isinstance(payload.get("manufacturedDefinition"), str):
         issues.append("native JSON missing manufacturedDefinition")
     if case == "manufactured":
@@ -1325,6 +1458,19 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
                    for name in ("pressureForceX", "pressureForceY", "discreteForceX", "discreteForceY")):
                 momentum_audit["valid"] = False
                 momentum_audit.setdefault("issues", []).append("independent force reconstruction differs from summary")
+            force_names = ("reconstructedForceX", "reconstructedForceY", "forceX", "forceY")
+            if any(momentum_audit["summaryDeviation"][name]["absolute"] > summary_tol
+                   for name in force_names):
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append("independent selected/reconstructed force differs from summary")
+            wall_names = ("wallForceX", "wallForceY", "wallViscousForceX", "wallViscousForceY")
+            if viscous_stress == "symmetric":
+                if any(name not in momentum_audit["summaryDeviation"] for name in wall_names):
+                    momentum_audit["valid"] = False
+                    momentum_audit.setdefault("issues", []).append("symmetric wall force summary is unavailable")
+                elif any(momentum_audit["summaryDeviation"][name]["absolute"] > summary_tol for name in wall_names):
+                    momentum_audit["valid"] = False
+                    momentum_audit.setdefault("issues", []).append("independent wall force reconstruction differs from summary")
             if not momentum_audit["valid"]:
                 issues.extend(momentum_audit.get("issues", ["momentum audit failed"]))
         except (VerificationError, ArithmeticError) as exc:
@@ -1450,6 +1596,10 @@ def main() -> int:
     parser.add_argument("--external-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
+    parser.add_argument("--viscous-stress", choices=("symmetric", "laplacian"), default="symmetric",
+                        help="native viscous stress mode for generated runs; legacy metadata remains laplacian")
+    parser.add_argument("--convection", choices=("upwind", "limited-linear"), default="upwind",
+                        help="native convection mode for generated runs")
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--max-iterations", type=int, default=1500)
     parser.add_argument("--timeout", type=int, default=180)
@@ -1506,6 +1656,8 @@ def main() -> int:
             "statement": "Project milestone regression gates for these cases and meshes; not universal CFD quality standards.",
             "maxIterations": args.max_iterations,
             "maxReportedContinuity": args.max_reported_continuity,
+            "viscousStress": args.viscous_stress,
+            "convection": args.convection,
             "channel": {"velocityL2": args.channel_velocity_l2,
                         "transverseL2": args.channel_transverse_l2,
                         "pressureL2": args.channel_pressure_l2,
@@ -1557,7 +1709,9 @@ def main() -> int:
                 continue
             command = [str(args.flow_cli.resolve()), "--mesh", str(mesh_path), "--output", str(prefix),
                        "--case", case, "--nu", f"{nu:.17g}", "--speed", f"{speed:.17g}",
-                       "--max-iterations", str(args.max_iterations)]
+                       "--max-iterations", str(args.max_iterations),
+                       "--viscous-stress", args.viscous_stress,
+                       "--convection", args.convection]
             if case == "manufactured":
                 command.extend(["--manufactured-pressure-slope",
                                 f"{args.manufactured_pressure_slope:.17g}"])

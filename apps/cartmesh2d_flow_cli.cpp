@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
+            "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
@@ -85,6 +86,9 @@ int main(int argc, char** argv) {
                 controls.tolerance = number(v);
             } else if (a == "--manufactured-pressure-slope") {
                 controls.manufacturedPressureSlope = number(v);
+            } else if (a == "--viscous-stress") {
+                if (v != "symmetric" && v != "laplacian") throw std::invalid_argument("viscous-stress must be symmetric or laplacian");
+                controls.viscousStress=v=="symmetric"?fv::ViscousStress2D::Symmetric:fv::ViscousStress2D::Laplacian;
             } else if (a == "--convection") {
                 if (v != "upwind" && v != "limited-linear")
                     throw std::invalid_argument("convection must be upwind or limited-linear");
@@ -157,7 +161,7 @@ int main(int argc, char** argv) {
         fields << "\n]}\n";
 
         auto faces = out(prefix, ".faces.csv");
-        faces << "face,owner,neighbour,flux,pressure,advectionX,advectionY,diffusionX,diffusionY\n";
+        faces << "face,owner,neighbour,flux,pressure,advectionX,advectionY,diffusionX,diffusionY,wall\n";
         for (std::size_t i = 0; i < mesh.faces.size(); ++i) {
             const auto& f = mesh.faces[i];
             faces << i << ',' << f.owner << ',';
@@ -168,7 +172,7 @@ int main(int argc, char** argv) {
             }
             const auto& fm = r.faceMomentum[i];
             faces << ',' << r.flux[i] << ',' << fm.pressure << ',' << fm.advection.x
-                  << ',' << fm.advection.y << ',' << fm.diffusion.x << ',' << fm.diffusion.y << '\n';
+                  << ',' << fm.advection.y << ',' << fm.diffusion.x << ',' << fm.diffusion.y << ',' << (fm.wall?1:0) << '\n';
         }
 
         auto history = out(prefix, ".residuals.csv");
@@ -181,6 +185,7 @@ int main(int argc, char** argv) {
         auto summary = out(prefix, ".json");
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" : "jacobi";
+        const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
@@ -209,8 +214,16 @@ int main(int argc, char** argv) {
                 << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
                 << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear\""
                 << ",\n\"convection\":\"" << convection << '"'
-                << ",\n\"forceDefinition\":\"reconstructed-newtonian-traction\""
-                << ",\n\"discreteForceDefinition\":\"pressure plus negative nu grad(U) dot S; embedded walls; Laplacian momentum flux\""
+                << ",\n\"viscousStress\":\"" << (symmetric?"symmetric":"laplacian") << '\"'
+                << ",\n\"forceDefinition\":\"" << (symmetric?"shared-face-newtonian-traction":"reconstructed-newtonian-traction") << '\"'
+                << ",\n\"reconstructedForceX\":" << r.reconstructedForceX
+                << ",\n\"reconstructedForceY\":" << r.reconstructedForceY
+                << ",\n\"wallForceX\":" << r.wallForceX
+                << ",\n\"wallForceY\":" << r.wallForceY
+                << ",\n\"wallViscousForceX\":" << r.wallViscousForceX
+                << ",\n\"wallViscousForceY\":" << r.wallViscousForceY
+                << ",\n\"wallForceDefinition\":\"all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum\""
+                << ",\n\"discreteForceDefinition\":\"pressure plus selected viscous momentum flux; embedded walls\""
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight
                 << ",\n\"tolerance\":" << controls.tolerance

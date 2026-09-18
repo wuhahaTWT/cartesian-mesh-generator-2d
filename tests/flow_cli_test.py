@@ -91,11 +91,16 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         assert prefix.with_suffix('.vtk').read_text().count('CELL_DATA ') == 1
         return data, field
 
-    errors, pressure_errors = [], []
+    errors, pressure_errors, wall_force_errors = [], [], []
     for ny in (8, 16):
         mesh = root / f'channel{ny}.solver.cm2d'
         rectangle(mesh, ny * 4, ny)
         data, field = run(f'channel{ny}', mesh)
+        assert data['viscousStress'] == 'symmetric'
+        assert data['forceDefinition'] == 'shared-face-newtonian-traction'
+        # Poiseuille: both walls receive +x shear, total 8*nu*Umax*L/H=.32.
+        wall_force_errors.append(abs(data['wallViscousForceX'] - .32))
+        assert abs(data['wallViscousForceY']) < 1e-8
         if ny == 8:
             # Profiling must observe, never alter the physical solve or exports.
             run('profiled', mesh, extra=('--profile',))
@@ -131,6 +136,7 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         slope /= sum((float(c['x']) - mean_x) ** 2 for c in interior)
         pressure_errors.append(abs(slope / -.08 - 1))
     assert errors[1] < errors[0] / 2.5, errors
+    assert wall_force_errors[1] < wall_force_errors[0], wall_force_errors
     assert pressure_errors[1] < .02 and pressure_errors[1] < pressure_errors[0] / 2, pressure_errors
     run('limited', mesh, extra=('--max-iterations', '1', '--profile'), code=2)
     limited = json.loads((root / 'limited.performance.json').read_text())
@@ -138,7 +144,8 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     for label, options in [('negative', ('--nu', '-1')), ('nan', ('--speed', 'nan')),
                            ('overflow', ('--speed', '1e200')), ('count', ('--max-iterations', '1.5')),
                            ('preconditioner', ('--pressure-preconditioner', 'unknown')),
-                           ('convection', ('--convection', 'unknown'))]:
+                           ('convection', ('--convection', 'unknown')),
+                           ('stress', ('--viscous-stress', 'unknown'))]:
         run(label, mesh, extra=options, code=1)
     run('no-solid', mesh, case='external', code=1)
     separated = root / 'separated.solver.cm2d'
@@ -154,6 +161,11 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     high, high_field = run('cavity-high', cavity, case='cavity',
                            extra=('--convection','limited-linear'))
     assert high['convection'] == 'limited-linear'
+    laplacian, laplacian_field = run('cavity-laplacian', cavity, case='cavity',
+        extra=('--convection','limited-linear','--viscous-stress','laplacian'))
+    assert laplacian['viscousStress']=='laplacian'
+    assert laplacian['forceDefinition']=='reconstructed-newtonian-traction'
+    assert max(abs(float(a['u'])-float(b['u'])) for a,b in zip(high_field,laplacian_field)) > 1e-5
     assert abs(float(high_field[0]['p'])) < 1e-12
     # The selection must actually change nonlinear transport, not only metadata.
     assert max(abs(float(a['u'])-float(b['u'])) for a,b in zip(field,high_field)) > 1e-3

@@ -34,6 +34,8 @@ struct Boundary {
     std::vector<bool> fixedU;
     std::vector<bool> fixedV;
     std::vector<bool> fixedP;
+    std::vector<bool> constantU;
+    std::vector<bool> constantV;
     double xmin = 0;
     double xmax = 0;
     double ymin = 0;
@@ -49,6 +51,8 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     b.fixedU.assign(nf, false);
     b.fixedV.assign(nf, false);
     b.fixedP.assign(nf, false);
+    b.constantU.assign(nf, false);
+    b.constantV.assign(nf, false);
     b.xmin = b.ymin = std::numeric_limits<double>::infinity();
     b.xmax = b.ymax = -b.xmin;
     for (const auto& f : m.faces) {
@@ -104,6 +108,8 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             }
         }
 
+        b.constantU[id]=b.role[id]==Role::Wall || b.role[id]==Role::Lid;
+        b.constantV[id]=b.constantU[id] || b.role[id]==Role::Slip;
         switch (b.role[id]) {
         case Role::Wall:
             b.fixedU[id] = b.fixedV[id] = true;
@@ -176,6 +182,7 @@ void momentum(System& a,
                 const std::vector<Vector2D>& gradField,
                 const std::vector<Vector2D>& gp,
                 const std::vector<Vector2D>& source,
+                const std::vector<Vector2D>& stressCorrection,
                 bool y,
                 bool relaxed) {
     a.reset();
@@ -192,6 +199,11 @@ void momentum(System& a,
         const auto i = f.owner;
         const double q = flux[id];
         const double d = c.nu * f.transmissibility;
+        if (!stressCorrection.empty()) {
+            const double extra=y?stressCorrection[id].y:stressCorrection[id].x;
+            a.rhs[i]-=extra;
+            if (f.neighbour) a.rhs[*f.neighbour]+=extra;
+        }
         if (f.neighbour) {
             const auto j = *f.neighbour;
             a.diag[i] += d + std::max(q, 0.);
@@ -251,6 +263,9 @@ FlowResult2D solveIncompressible2D(
     ensure(c.convection == ConvectionScheme2D::Upwind ||
                c.convection == ConvectionScheme2D::LimitedLinearUpwind,
            "Invalid convection scheme");
+    ensure(c.viscousStress == ViscousStress2D::Symmetric ||
+               c.viscousStress == ViscousStress2D::Laplacian,
+           "Invalid viscous stress form");
     const auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
@@ -348,8 +363,11 @@ FlowResult2D solveIncompressible2D(
             detail::pressureFaceValues(m, r.p, gp, zeros, b.fixedP));
         const auto gu = flowGradient(m, r.u, b.u, b.fixedU);
         const auto gv = flowGradient(m, r.v, b.v, b.fixedV);
-        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, false, true);
-        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, true, true);
+        const auto stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
+            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+            : std::vector<Vector2D>{};
+        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, stressCorrection, false, true);
+        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, stressCorrection, true, true);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -407,8 +425,11 @@ FlowResult2D solveIncompressible2D(
         const auto newGp=flowGradient(m,r.p,zeros,b.fixedP,true),newGu=flowGradient(m,r.u,b.u,b.fixedU),newGv=flowGradient(m,r.v,b.v,b.fixedV);
         const auto newForceGradient=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
-        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,false,false);
-        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,true,false);
+        const auto newStressCorrection=c.viscousStress==ViscousStress2D::Symmetric
+            ? detail::symmetricViscousCorrection(m,r.u,r.v,newGu,newGv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+            : std::vector<Vector2D>{};
+        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,newStressCorrection,false,false);
+        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,newStressCorrection,true,false);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
@@ -423,6 +444,9 @@ FlowResult2D solveIncompressible2D(
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
     const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.v,gv,b.v,b.fixedV) : Vec{};
+    const auto stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
+        ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+        : std::vector<Vector2D>{};
     r.faceMomentum.resize(nf);
     for(std::size_t id=0;id<nf;++id) {
         const auto& f=m.faces[id]; const auto i=f.owner;
@@ -438,18 +462,30 @@ FlowResult2D solveIncompressible2D(
             }
             return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
         };
-        const auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu);
-        const auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv);
+        auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu);
+        auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv);
+        if (!stressCorrection.empty()) {dx+=stressCorrection[id].x;dy+=stressCorrection[id].y;}
         fm.advection={ax,ay}; fm.diffusion={dx,dy};
+        fm.wall=!f.neighbour && (b.role[id]==Role::Wall || b.role[id]==Role::Lid);
+        if (fm.wall) {
+            r.wallForceX+=pf[id]*f.areaVector.x+dx;
+            r.wallForceY+=pf[id]*f.areaVector.y+dy;
+            r.wallViscousForceX+=dx; r.wallViscousForceY+=dy;
+        }
         if(f.neighbour || f.patch!=BoundaryPatch2D::EmbeddedBoundary || b.role[id]!=Role::Wall) continue;
         const double px=pf[id]*f.areaVector.x,py=pf[id]*f.areaVector.y;
         r.pressureForceX+=px; r.pressureForceY+=py;
         r.discreteForceX+=px+dx; r.discreteForceY+=py+dy;
-        // Newtonian traction remains a separate reconstructed diagnostic. Its
-        // transpose-gradient contribution is not in the discrete Laplacian flux.
-        r.forceX+=px-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
-        r.forceY+=py-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
+        // Preserve the old cell-gradient diagnostic for explicit comparison;
+        // symmetric mode reports the actual shared-face stress above as force.
+        r.reconstructedForceX+=px-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
+        r.reconstructedForceY+=py-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
     }
+    r.forceX=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceX:r.reconstructedForceX;
+    r.forceY=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceY:r.reconstructedForceY;
+    finite(r.reconstructedForceX);finite(r.reconstructedForceY);
+    finite(r.wallForceX);finite(r.wallForceY);
+    finite(r.wallViscousForceX);finite(r.wallViscousForceY);
     finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);
     finite(r.pressureForceX);finite(r.pressureForceY);finite(r.discreteForceX);finite(r.discreteForceY);
     if (c.profile) {
