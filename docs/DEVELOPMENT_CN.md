@@ -172,6 +172,16 @@ python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2
 
 最终矩阵图可用 `python3 tools/verification/plot_transient_flow.py --root outputs/native-flow/transient/final --output artifacts/current/native-flow-transient` 重建；先校验来源哈希。误差和时间步自收敛单独报告，离散守恒通过不等于物理精度验收。
 
+### 相同输入的核心性能对照
+
+`benchmark_flow_pair.py` 对保存的旧CLI和当前CLI串行执行完全相同的输入，每一对轮换前后顺序；记录二进制/网格哈希、完整命令、实际返回码、超时和原生迭代计数。macOS用`/usr/bin/time -l`、Linux用`-v`读取峰值RSS，不可用时记录null，不冒充零内存。比较最终单元字段和输出文件哈希；性能比较本身不替代独立几何/物理审核。
+
+```sh
+python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --candidate build/cartmesh2d_flow_cli --mesh PATH/channel.solver.cm2d --output outputs/new-performance-pair --case channel --nu .01 --convection upwind --tolerance 1e-6 --repeats 2 --timeout 180
+```
+
+残差范数仍为Euclidean L2，停止标准仍是`1e-13 + 1e-11*||rhs||`并回代原矩阵检查真实残差。改为带缩放的平方和，避免逐分量调用hypot；不直接累加double平方，以免极大/极小数溢出/下溢。这是[标准缩放范数思路](https://www.netlib.org/lapack/explore-html/d8/d76/group__lassq.html)的本仓库实现，没有引入LAPACK依赖，也不属于原创数值理论。累加仍使用long double，具体精度由平台决定；不同编译器逐位一致性需另证。
+
 ### 固定网格的时间步比较
 
 `tools/verification/compare_transient_steps.py` 从 `run_transient_flow.py` 的 `runs.json` 重新读取最终场与时间历史，不信任旧 PASS。至少三档严格减半的时间步，要求同一网格、二进制、工况、物性、格式、容差及终止时间；逐项核对命令与独立读回，并要求从 t=0 开始。本入口暂不比较重启序列。按相同 cell id、实际面积计算相邻时间步速度差和观测阶；负阶也照实报告，`valid` 仅表示比较输入一致且离散审核通过，不是工程精度合格。

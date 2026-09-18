@@ -14,6 +14,7 @@
 namespace {
 
 using cartmesh2d::fv::detail::LinearWorkspace2D;
+using cartmesh2d::fv::detail::linearNorm;
 using cartmesh2d::fv::detail::SparsePattern2D;
 using cartmesh2d::fv::detail::SparseSystem2D;
 
@@ -86,6 +87,45 @@ double solverTolerance(const std::vector<double>& rhs) {
 
 double solutionTolerance(const std::vector<double>& exact) {
     return 5e-11 * (1.0 + norm2(exact));
+}
+
+void linearNormRegression() {
+    check(linearNorm({}) == 0.0, "linear norm of an empty vector is zero");
+    check(linearNorm({0.0, -0.0, 0.0}) == 0.0,
+          "linear norm of a zero vector is zero");
+
+    const auto checkScaled345 = [](double scale, const std::string& label) {
+        const double actual = linearNorm({3.0 * scale, 4.0 * scale});
+        const double expected = 5.0 * scale;
+        check(std::abs(actual / expected - 1.) <= 8*std::numeric_limits<double>::epsilon(),
+              label + " preserves the analytic 3-4-5 norm within floating-point rounding");
+    };
+    checkScaled345(1e200, "large-scale");
+    checkScaled345(1e-200, "tiny-scale");
+
+    check(linearNorm({std::numeric_limits<double>::denorm_min(), 0.0}) ==
+              std::numeric_limits<double>::denorm_min(),
+          "representable subnormal norm remains representable");
+    check(linearNorm({1e200, 1e-200, std::numeric_limits<double>::denorm_min()}) ==
+              1e200,
+          "mixed dynamic range is dominated by the large finite component");
+
+    const double nearLimitComponent =
+        (std::numeric_limits<double>::max() * 0.999) / std::sqrt(2.0);
+    const double nearLimitExpected = std::sqrt(2.0) * nearLimitComponent;
+    check(std::isfinite(nearLimitExpected) &&
+              std::abs(linearNorm({nearLimitComponent, nearLimitComponent}) / nearLimitExpected - 1.)
+                  <= 8*std::numeric_limits<double>::epsilon(),
+          "finite norm near the double limit remains finite and accurate");
+
+    rejects([] {
+        (void)linearNorm({std::numeric_limits<double>::max(),
+                          std::numeric_limits<double>::max()});
+    }, "mathematically overflowing norm is rejected");
+    rejects([] { (void)linearNorm({std::numeric_limits<double>::quiet_NaN()}); },
+            "NaN norm input is rejected");
+    rejects([] { (void)linearNorm({std::numeric_limits<double>::infinity()}); },
+            "infinite norm input is rejected");
 }
 
 void checkKnownSolution(const Dense& dense, const std::vector<double>& exact,
@@ -329,6 +369,7 @@ void localResidualScaleRegression() {
 
 int main() {
     try {
+        linearNormRegression();
         tridiagonalPressureRegression();
         irregularGraphRegression();
         nonsymmetricBiCGRegression();
