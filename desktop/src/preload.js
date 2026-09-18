@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  flowState: () => ipcRenderer.invoke('flow-state'),
+  pickFlowCheckpoint: () => ipcRenderer.invoke('pick-flow-checkpoint'),
   openPath: target => ipcRenderer.invoke('open-path', target),
   onProgress: callback => ipcRenderer.on('run-progress', (_event, progress) => callback(progress)),
   onFlowProgress: callback => {

@@ -214,7 +214,8 @@ int main(int argc, char** argv) {
                 state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
                 saveAccepted();
                 std::cout << "{\"type\":\"flow-time-step\",\"time\":" << state.time
-                          << ",\"step\":" << step << ",\"maxCourant\":" << r.maxCourant << "}" << std::endl;
+                          << ",\"step\":" << step << ",\"maxCourant\":" << r.maxCourant
+                          << ",\"kineticEnergy\":" << energy << ",\"forceX\":" << r.forceX << ",\"forceY\":" << r.forceY << "}" << std::endl;
             }
         }
         if (timeStep>0 && controls.profile) r.performance=totalPerformance;

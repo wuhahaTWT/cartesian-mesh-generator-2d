@@ -16,8 +16,9 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
-const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles,
-        parseFlowProgress, validateFlowOutput } = require('./core/flow');
+const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, buildFlowInvocation, commitFlowFiles,
+        parseFlowProgress, validateFlowOutput, validateTimeHistory, flowOutputSuffixes } = require('./core/flow');
+const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -221,32 +222,63 @@ app.whenReady().then(async () => {
     return result.canceled ? null : exportPackage(result.filePath);
   }));
 
+  const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
+  ipcMain.handle('flow-state', () => flowState());
+  ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
+    if (!currentResult) throw new Error('请先生成与重启文件对应的最终网格。');
+    const picked = await dialog.showOpenDialog(mainWindow, { title: '选择非定常重启状态',
+      properties: ['openFile'], filters: [{ name: '已接受流动状态', extensions: ['checkpoint'] }] });
+    if (picked.canceled) return null;
+    const file = picked.filePaths[0];
+    const metadata = await readCheckpointMetadata(file);
+    currentResult.flowRestart = { path: file, metadata };
+    return metadata;
+  }));
   ipcMain.handle('run-flow', (_event, request) => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成最终网格。');
     const mesh = currentResult.mesh
       || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
-    const incompleteDirectory = path.join(currentResult.outputDirectory, `flow-incomplete-${Date.now()}`);
+    const selectedRestart = request?.resume ? currentResult.flowRestart : null;
+    // Validate before creating outputs; paths come only from this main process.
+    buildFlowInvocation(currentResult.cm2dPath, 'pending', request, selectedRestart?.path);
+    const incompleteDirectory = await fs.mkdtemp(path.join(currentResult.outputDirectory, 'flow-incomplete-'));
     const pendingPrefix = path.join(incompleteDirectory, 'flow');
-    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request);
-    await fs.mkdir(incompleteDirectory, { recursive: true });
+    let restartPath = null, startTime = 0;
+    if (selectedRestart) {
+      try {
+        restartPath = path.join(incompleteDirectory, 'input.checkpoint');
+        await fs.copyFile(selectedRestart.path, restartPath);
+        const metadata = await readCheckpointMetadata(restartPath);
+        startTime = metadata.time;
+        for (const key of ['case', 'nu', 'speed', 'convection'])
+          if (metadata[key] !== (['nu','speed'].includes(key) ? Number(request[key]) : request[key]))
+            throw new Error('续算必须保持原工况、物性和对流格式；可调整时间步与步数。');
+      } catch (error) {
+        // No solver has started and the selected source remains untouched.
+        await fs.rm(incompleteDirectory, { recursive: true, force: true });
+        throw error;
+      }
+    }
+    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request, restartPath);
+    const transient = invocation.request.mode === 'transient';
+    const previousFlow = currentResult.flow;
+    const previousRestart = currentResult.flowRestart;
     const preserveIncomplete = async error => {
-      const report = {
-        format: 'cartmesh2d-flow-incomplete-v1',
-        status: operation.signal.aborted ? 'cancelled' : 'failed',
-        request: invocation.request,
+      if (transient) {
+        // Ignore .tmp: only the native atomic accepted-state file is resumable.
+        try { currentResult.flowRestart = { path: `${pendingPrefix}.checkpoint`,
+          metadata: await readCheckpointMetadata(`${pendingPrefix}.checkpoint`) }; }
+        catch { currentResult.flowRestart = previousRestart; }
+      }
+      const report = { format: 'cartmesh2d-flow-incomplete-v1',
+        status: operation.signal.aborted ? 'cancelled' : 'failed', request: invocation.request,
         mesh: path.basename(currentResult.cm2dPath),
+        acceptedTime: currentResult.flowRestart?.metadata.time ?? null,
         exitCode: Number.isInteger(error.code) ? error.code : null,
-        message: String(error.message || error).split('\n')[0]
-      };
+        message: String(error.message || error).split('\n')[0] };
       await fs.writeFile(path.join(incompleteDirectory, 'desktop-flow-error.json'), JSON.stringify(report, null, 2));
     };
-    const outputSuffixes = FLOW_OUTPUT_SUFFIXES;
-    const clearCommittedFlow = () => Promise.all(
-      outputSuffixes.map(suffix => fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }))
-    );
-    currentResult.flow = null;
-    await clearCommittedFlow();
-    log(`正在运行原生二维稳态层流：${FLOW_CASES[invocation.request.case].label}…`);
+    log(`正在运行原生二维${transient ? '非定常' : '稳态'}层流：${FLOW_CASES[invocation.request.case].label}…`);
     const onLine = (line, isError) => {
       let progress = null;
       if (!isError) {
@@ -256,50 +288,65 @@ app.whenReady().then(async () => {
       if (progress) mainWindow.webContents.send('flow-progress', progress);
       else log(line);
     };
-    let processResult;
+    let backups = [];
+    let commitStarted = false;
     try {
-      processResult = await runProcess(executable(invocation.executable), invocation.args,
+      const processResult = await runProcess(executable(invocation.executable), invocation.args,
         onLine, operation.signal, 0, [0, 2]);
-    } catch (error) {
-      await preserveIncomplete(error).catch(() => {});
-      error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
-      throw error;
-    }
-    const outputFiles = {
-      summary: `${pendingPrefix}.json`, fields: `${pendingPrefix}.fields.json`,
-      vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
-      cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv`
-    };
-    try {
-      const [summary, fields] = await Promise.all([
-        readJson(outputFiles.summary), readJson(outputFiles.fields),
-        fs.stat(outputFiles.vtk), fs.stat(outputFiles.residuals),
-        fs.stat(outputFiles.cells), fs.stat(outputFiles.faces)
-      ]);
-      const validated = validateFlowOutput(summary, fields, mesh.cells.length, invocation.request);
+      operation.signal.throwIfAborted();
+      const outputFiles = { summary: `${pendingPrefix}.json`, fields: `${pendingPrefix}.fields.json`,
+        vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
+        cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv` };
+      if (transient) Object.assign(outputFiles, { checkpoint: `${pendingPrefix}.checkpoint`, timeHistory: `${pendingPrefix}.time-history.csv` });
+      const [summary, fields] = await Promise.all([readJson(outputFiles.summary), readJson(outputFiles.fields),
+        ...Object.values(outputFiles).map(file => fs.stat(file))]);
+      const validated = validateFlowOutput(summary, fields, mesh.cells.length, invocation.request, startTime);
       if ((processResult.code === 0) !== validated.summary.converged)
         throw new Error('原生求解器退出码与收敛状态不一致。');
-      if (validated.summary.case !== invocation.request.case
-          || validated.summary.nu !== invocation.request.nu
-          || validated.summary.speed !== invocation.request.speed
-          || validated.summary.convection !== invocation.request.convection
-          || validated.summary.iterations > invocation.request.maxIterations)
-        throw new Error('原生求解结果与请求工况不一致。');
-      const entries = Object.entries(outputFiles).map(([kind, source]) => {
-        const suffix = source.slice(pendingPrefix.length);
+      let history = null, checkpointMetadata = null;
+      if (transient) {
+        history = validateTimeHistory(await fs.readFile(outputFiles.timeHistory, 'utf8'), validated.summary, startTime);
+        checkpointMetadata = await readCheckpointMetadata(outputFiles.checkpoint);
+        if (Math.abs(checkpointMetadata.time-summary.acceptedTime) > 1e-12+1e-9*Math.abs(summary.acceptedTime))
+          throw new Error('重启状态时间与摘要不一致。');
+        if (!validated.summary.converged)
+          throw Object.assign(new Error(`时间步未收敛；已接受到 t=${summary.acceptedTime} s，可继续计算。候选场仅留作诊断。`), { code: 2 });
+      }
+      operation.signal.throwIfAborted();
+      // Preserve the earlier complete result even if copying the new set fails.
+      const allSuffixes = flowOutputSuffixes({ mode: 'transient' });
+      for (const suffix of allSuffixes) {
         const destination = `${currentResult.prefix}.flow${suffix}`;
-        return { kind, source, destination };
-      });
+        const backup = path.join(incompleteDirectory, `previous${suffix}`);
+        try { await fs.copyFile(destination, backup); backups.push({ backup, destination }); }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+      }
+      const entries = Object.entries(outputFiles).map(([kind, source]) => ({ kind, source,
+        destination: `${currentResult.prefix}.flow${source.slice(pendingPrefix.length)}` }));
+      commitStarted = true;
       await commitFlowFiles(fs, entries);
+      operation.signal.throwIfAborted();
+      for (const suffix of allSuffixes.filter(suffix => !flowOutputSuffixes(invocation.request).includes(suffix)))
+        await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true });
       const saved = Object.fromEntries(entries.map(entry => [entry.kind, path.basename(entry.destination)]));
-      const payload = { ...validated, request: invocation.request, files: saved };
+      const payload = { ...validated, request: invocation.request, files: saved, history };
       currentResult.flow = payload;
-      await fs.rm(incompleteDirectory, { recursive: true, force: true });
-      log(validated.summary.converged ? '层流求解已收敛。' : '层流求解到达迭代上限，保留有效结果但未收敛。');
+      currentResult.flowRestart = transient ? { path: `${currentResult.prefix}.flow.checkpoint`, metadata: { ...checkpointMetadata, fileName: path.basename(`${currentResult.prefix}.flow.checkpoint`) } } : null;
+      await fs.rm(incompleteDirectory, { recursive: true, force: true }).catch(error => log(`结果已保存，临时目录清理失败：${error.message}`));
+      log(transient ? `非定常计算完成，已接受到 t=${summary.acceptedTime} s。`
+        : validated.summary.converged ? '层流求解已收敛。' : '层流求解到达迭代上限，保留诊断结果但未收敛。');
       return payload;
     } catch (error) {
-      currentResult.flow = null;
-      await clearCommittedFlow().catch(() => {});
+      if (commitStarted) {
+        for (const suffix of flowOutputSuffixes({ mode: 'transient' }))
+          await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }).catch(() => {});
+      }
+      const restored = await Promise.allSettled(backups.map(entry => fs.copyFile(entry.backup, entry.destination)));
+      if (restored.some(entry => entry.status === 'rejected')) {
+        currentResult.flow = null;
+        error.message += '\n上次结果恢复失败，完整备份保留在诊断目录。';
+      }
+      if (restored.every(entry => entry.status === 'fulfilled')) currentResult.flow = previousFlow;
       await preserveIncomplete(error).catch(() => {});
       error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
       throw error;
@@ -686,7 +733,52 @@ async function runSmoke() {
       document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
       document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'upwind')};
       document.getElementById('flowConvection').dispatchEvent(new Event('change'));
+      if (${JSON.stringify(Boolean(argument('flow-dt')))}) {
+        document.getElementById('flowMode').value='transient';
+        document.getElementById('flowMode').dispatchEvent(new Event('change'));
+        document.getElementById('flowDt').value=${JSON.stringify(argument('flow-dt') || '.01')};
+        document.getElementById('flowSteps').value=${JSON.stringify(argument('flow-steps') || '2')};
+      }
       await smoke.runFlow();
+      if (${JSON.stringify(Boolean(argument('flow-resume-steps')))}) {
+        const before=smoke.state.flow?.summary.acceptedTime;
+        document.getElementById('flowSteps').value=${JSON.stringify(argument('flow-resume-steps') || '2')};
+        document.getElementById('flowResume').checked=true;
+        document.getElementById('flowResume').dispatchEvent(new Event('change'));
+        await smoke.runFlow();
+        const expected=before+Number(document.getElementById('flowDt').value)*Number(document.getElementById('flowSteps').value);
+        if (!smoke.state.flow || Math.abs(smoke.state.flow.summary.acceptedTime-expected)>1e-10)
+          throw new Error('Desktop resume did not advance accepted physical time');
+      }
+      if (${JSON.stringify(argument('flow-failure-check') === 'true')}) {
+        const accepted=smoke.state.flow.summary.acceptedTime;
+        const maxIterations=document.getElementById('flowMaxIterations').value;
+        document.getElementById('flowMaxIterations').value='1';
+        document.getElementById('flowSteps').value='2';
+        await smoke.runFlow();
+        if (smoke.state.flow?.summary.acceptedTime!==accepted || smoke.state.flowRestart?.time!==accepted)
+          throw new Error('Rejected time step replaced the complete result or accepted checkpoint');
+        document.getElementById('flowMaxIterations').value=maxIterations;
+      }
+      if (${JSON.stringify(argument('flow-cancel-check') === 'true')}) {
+        const completed=smoke.state.flow;
+        document.getElementById('flowSteps').value='10000';
+        const pendingFlow=smoke.runFlow();
+        const deadline=Date.now()+90000;
+        while (smoke.state.busy && !smoke.state.flowHistory.length && Date.now()<deadline)
+          await new Promise(resolve=>setTimeout(resolve,50));
+        if (!smoke.state.busy || !smoke.state.flowHistory.length) throw new Error('Could not observe live accepted step for cancellation');
+        document.getElementById('cancel').click();
+        await pendingFlow;
+        if (!smoke.state.flowRestart || smoke.state.flowRestart.time<=completed.summary.acceptedTime
+            || smoke.state.flow?.summary.acceptedTime!==completed.summary.acceptedTime)
+          throw new Error('Cancellation lost checkpoint or previous complete result');
+        const resumeTime=smoke.state.flowRestart.time;
+        document.getElementById('flowSteps').value='2';
+        await smoke.runFlow();
+        if (Math.abs(smoke.state.flow.summary.acceptedTime-resumeTime-2*Number(document.getElementById('flowDt').value))>1e-10)
+          throw new Error('Resume from cancelled calculation did not use the saved time');
+      }
       if (!smoke.state.flow || document.getElementById('flowSpeedOption').hidden ||
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
@@ -756,7 +848,12 @@ async function runSmoke() {
         summary: smoke.state.flow.summary,
         fieldCells: smoke.state.flow.fields.cells.length,
         displayMode: document.getElementById('displayMode').value,
-        resultText: document.getElementById('flowResult').innerText
+        resultText: document.getElementById('flowResult').innerText,
+        historyRows: smoke.state.flow.history?.length || 0,
+        monitorVisible: !document.getElementById('flowTimeline').hidden,
+        restart: smoke.state.flowRestart,
+        cancellationChecked: ${JSON.stringify(argument('flow-cancel-check') === 'true')},
+        failureChecked: ${JSON.stringify(argument('flow-failure-check') === 'true')}
       } : null
     };
   })()`).then(async report => {
@@ -793,6 +890,11 @@ async function runSmoke() {
       app.exit(0); return;
     }
     if (argument('export')) report.exported = await exportPackage(argument('export'));
+    if (argument('flow-dt')) {
+      await mainWindow.webContents.executeJavaScript("document.getElementById('flowTimeline').scrollIntoView({block:'nearest'}); document.getElementById('flowMode').scrollIntoView({block:'start'});");
+      await mainWindow.webContents.capturePage(undefined, { stayAwake: true });
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
     if (argument('mesh-shot')) await fs.writeFile(argument('mesh-shot'), (await mainWindow.webContents.capturePage()).toPNG());
     if (argument('home-check')) {
       report.previewTiming = await mainWindow.webContents.executeJavaScript(`(() => {
@@ -843,6 +945,15 @@ async function runSmoke() {
       sidebarCollapsed: document.body.classList.contains('sidebar-collapsed'),
       sidebarExpanded: document.getElementById('toggleSidebar')?.getAttribute('aria-expanded') === 'true' };
     })()`);
+    if (argument('flow-dt')) {
+      report.flow.smallWindowLayout = await mainWindow.webContents.executeJavaScript(`(() => {
+        const a=document.getElementById('flowResult').getBoundingClientRect();
+        const b=document.getElementById('flowTimeline').getBoundingClientRect();
+        document.querySelector('.results').scrollTop=document.querySelector('.results').scrollHeight;
+        return { resultBottom:a.bottom, monitorTop:b.top, separated:b.top>=a.bottom-1 };
+      })()`);
+      if (!report.flow.smallWindowLayout.separated) throw new Error('Transient monitor overlaps the result summary');
+    }
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (Math.abs(report.layout.geometry.bodyHeight - report.layout.geometry.innerHeight) > 1 ||

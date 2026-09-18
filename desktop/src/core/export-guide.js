@@ -1,6 +1,7 @@
 'use strict';
 
 function exportGuide({ result, rasterImport, flow }) {
+  const transient = flow?.summary?.temporalDiscretization === 'backward-euler';
   const cells = Number(result.counts.cells).toLocaleString('en-US');
   const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
   const convection = flow?.summary?.convection || 'upwind';
@@ -27,10 +28,10 @@ function exportGuide({ result, rasterImport, flow }) {
 | result.json / selection.json | 本次参数、检查结果和自动选参记录。 |
 | *.resolution.json / *.solver-quality.json | 实际尺寸、边界层和内部质量的详细数据。 |
 ${rasterImport ? '| source-image.* / image-outline.png / image-import.json | 原图、确认的轮廓叠加图及尺寸标定记录。 |\n' : ''}| *.xy 及其他 JSON | 输入轮廓或过程诊断，排查问题时保留。 |
-${flow ? '| *.flow.json / *.flow.fields.json | 自研二维稳态层流摘要与按最终 CM2D cell id 对齐的速度、运动学压力场。 |\n| *.flow.vtk / *.flow.cells.csv / *.flow.faces.csv | ParaView 流场、逐单元数值及面通量；faces.csv 还含压力与动量通量列。 |\n| *.flow.residuals.csv | SIMPLE 迭代连续性、速度变化与动量残差历史。 |\n' : ''}| flow-incomplete-* | 被取消或失败求解保留的诊断目录；不是有效求解结果。 |
+${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最终 CM2D cell id 对齐的速度、运动学压力场。 |\n| *.flow.vtk / *.flow.cells.csv / *.flow.faces.csv | ParaView 流场、逐单元数值及面通量；faces.csv 还含压力与动量通量列。 |\n| *.flow.residuals.csv | SIMPLE 内迭代历史；非定常时仅含最后一个时间步。 |\n' : ''}${transient ? '| *.flow.time-history.csv | 本次全部物理时间步、CFL、动能及受力监测。 |\n| *.flow.checkpoint | 最后接受状态，可配合同一最终网格继续计算；需要保持物性与离散格式。 |\n' : ''}| flow-incomplete-* | 取消/失败诊断；候选CSV不能当作完成的流场。目录内完整 .checkpoint 可用于续算，忽略 .tmp。 |
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
-${flow ? `自研稳态层流：${flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
+${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
 **导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }

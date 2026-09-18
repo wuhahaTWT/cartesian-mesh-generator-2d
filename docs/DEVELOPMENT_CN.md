@@ -146,7 +146,7 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 ### 非定常层流与断点续算
 
-开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.3仍是稳态入口，尚无非定常UI或新安装包；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
+开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.4已提供时间步、物理量监测、取消保留与checkpoint续算，本地macOS已打包实测；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
 
 ```bash
 build/cartmesh2d_flow_cli --mesh PATH/FINAL.solver.cm2d --output outputs/startup/result --case external --nu .05 --speed 1 --convection limited-linear --time-step .01 --steps 5 --tolerance 1e-9 --max-iterations 1000 --profile
@@ -157,6 +157,10 @@ python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2
 `--time-step`和`--steps`必须一起提供；后者表示本次追加的步数，`--max-iterations`是每步内迭代上限。普通channel/cavity/external从静止开始，在t>0施加入流/顶盖速度；这是瞬时启动，会产生启动压力，不是预先求稳态再贴上时间标签。外流仍限定矩形外域、固定固体和无回流出口。
 
 动量添加 `V*(Unew-Uold)/dt`；上一接受时刻的速度和唯一面通量保留，Rhie–Chow包含旧时刻与内松弛的插值缺陷修正。时间步内部原动量残差、速度/压力变化和质量守恒都达到原停止条件才接受。动量线性求解除既有全局真残差条件外，还约束每行 `abs(b-Ax)/aP <= .01*tolerance*Uref*alphaU`，避免远场大格子的右端项掩盖小Cut-cell的局部残差；没有放宽非线性门。CFL为每个单元 `dt*sum(abs(phi))/(2V)` 的最大值，只作诊断，不会自动修改dt。
+
+桌面实现：`core/flow-checkpoint.js` 流式读取配置与时间供界面使用，不替代原生完整状态和网格核验；`core/flow.js` 校验请求、物理进度、摘要和时间历史。main 先写独立待验目录，全部成功再替换完整结果；失败或取消保留诊断与最后接受状态。原完整流场和最新续算状态分别标注时间。稳态调用参数保持不变。桌面物理监测进度拒绝非数值JSON字段。
+
+实际打包验证入口在原有 `--smoke=circle --flow=external` 基础上增加 `--flow-dt=.01 --flow-steps=2 --flow-resume-steps=2 --flow-failure-check=true --flow-cancel-check=true`。完整参数、App/原生哈希、独立导出读回和连续CLI对照见 `artifacts/current/desktop-transient.json`；大文件保留在忽略提交的 `outputs/native-flow/transient/desktop-gui-delivery/`。
 
 除已有六份结果外，`.time-history.csv`逐步保存物理时间、是否接受、内迭代次数、残差、最大CFL、动能和力；`.residuals.csv`仅含最后尝试时间步的内迭代。`.cells.csv`新增previousU/V及temporalX/Y，后者是积分时间项。摘要区分候选time与acceptedTime、请求与完成步数。退出2代表该候选步未收敛，不能拿它继续时间推进；异常退出1会将已开始运行的摘要标成failed。
 
