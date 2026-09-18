@@ -16,6 +16,8 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
+const { FLOW_CASES, FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles,
+        parseFlowProgress, validateFlowOutput } = require('./core/flow');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -176,7 +178,8 @@ app.whenReady().then(async () => {
     presets: PRESETS,
     budgetPresets: BUDGET_PRESETS,
     formats: GEOMETRY_FORMATS,
-    samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) }))
+    samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) })),
+    flowCases: FLOW_CASES
   }));
 
   ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
@@ -215,6 +218,90 @@ app.whenReady().then(async () => {
       filters: [{ name: '网格结果包', extensions: ['zip'] }]
     });
     return result.canceled ? null : exportPackage(result.filePath);
+  }));
+
+  ipcMain.handle('run-flow', (_event, request) => exclusive(async () => {
+    if (!currentResult) throw new Error('请先成功生成最终网格。');
+    const mesh = currentResult.mesh
+      || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
+    const incompleteDirectory = path.join(currentResult.outputDirectory, `flow-incomplete-${Date.now()}`);
+    const pendingPrefix = path.join(incompleteDirectory, 'flow');
+    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request);
+    await fs.mkdir(incompleteDirectory, { recursive: true });
+    const preserveIncomplete = async error => {
+      const report = {
+        format: 'cartmesh2d-flow-incomplete-v1',
+        status: operation.signal.aborted ? 'cancelled' : 'failed',
+        request: invocation.request,
+        mesh: path.basename(currentResult.cm2dPath),
+        exitCode: Number.isInteger(error.code) ? error.code : null,
+        message: String(error.message || error).split('\n')[0]
+      };
+      await fs.writeFile(path.join(incompleteDirectory, 'desktop-flow-error.json'), JSON.stringify(report, null, 2));
+    };
+    const outputSuffixes = FLOW_OUTPUT_SUFFIXES;
+    const clearCommittedFlow = () => Promise.all(
+      outputSuffixes.map(suffix => fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }))
+    );
+    currentResult.flow = null;
+    await clearCommittedFlow();
+    log(`正在运行原生二维稳态层流：${FLOW_CASES[invocation.request.case].label}…`);
+    const onLine = (line, isError) => {
+      let progress = null;
+      if (!isError) {
+        try { progress = parseFlowProgress(line); }
+        catch (error) { log(`忽略无效进度：${error.message}`); }
+      }
+      if (progress) mainWindow.webContents.send('flow-progress', progress);
+      else log(line);
+    };
+    let processResult;
+    try {
+      processResult = await runProcess(executable(invocation.executable), invocation.args,
+        onLine, operation.signal, 0, [0, 2]);
+    } catch (error) {
+      await preserveIncomplete(error).catch(() => {});
+      error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
+      throw error;
+    }
+    const outputFiles = {
+      summary: `${pendingPrefix}.json`, fields: `${pendingPrefix}.fields.json`,
+      vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
+      cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv`
+    };
+    try {
+      const [summary, fields] = await Promise.all([
+        readJson(outputFiles.summary), readJson(outputFiles.fields),
+        fs.stat(outputFiles.vtk), fs.stat(outputFiles.residuals),
+        fs.stat(outputFiles.cells), fs.stat(outputFiles.faces)
+      ]);
+      const validated = validateFlowOutput(summary, fields, mesh.cells.length);
+      if ((processResult.code === 0) !== validated.summary.converged)
+        throw new Error('原生求解器退出码与收敛状态不一致。');
+      if (validated.summary.case !== invocation.request.case
+          || validated.summary.nu !== invocation.request.nu
+          || validated.summary.speed !== invocation.request.speed
+          || validated.summary.iterations > invocation.request.maxIterations)
+        throw new Error('原生求解结果与请求工况不一致。');
+      const entries = Object.entries(outputFiles).map(([kind, source]) => {
+        const suffix = source.slice(pendingPrefix.length);
+        const destination = `${currentResult.prefix}.flow${suffix}`;
+        return { kind, source, destination };
+      });
+      await commitFlowFiles(fs, entries);
+      const saved = Object.fromEntries(entries.map(entry => [entry.kind, path.basename(entry.destination)]));
+      const payload = { ...validated, request: invocation.request, files: saved };
+      currentResult.flow = payload;
+      await fs.rm(incompleteDirectory, { recursive: true, force: true });
+      log(validated.summary.converged ? '层流求解已收敛。' : '层流求解到达迭代上限，保留有效结果但未收敛。');
+      return payload;
+    } catch (error) {
+      currentResult.flow = null;
+      await clearCommittedFlow().catch(() => {});
+      await preserveIncomplete(error).catch(() => {});
+      error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
+      throw error;
+    }
   }));
 
   ipcMain.handle('read-raster', async (_event, sourcePath) => {
@@ -589,6 +676,17 @@ async function runSmoke() {
     if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
       throw new Error('Parameters are not locked during generation');
     await pending;
+    if (${JSON.stringify(Boolean(argument('flow')))}) {
+      document.getElementById('flowCase').value = ${JSON.stringify(argument('flow') || 'external')};
+      document.getElementById('flowCase').dispatchEvent(new Event('change'));
+      document.getElementById('flowMaxIterations').value = ${JSON.stringify(argument('flow-max-iterations') || '20')};
+      document.getElementById('flowNu').value = ${JSON.stringify(argument('flow-nu') || '0.01')};
+      document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
+      await smoke.runFlow();
+      if (!smoke.state.flow || document.getElementById('flowSpeedOption').hidden ||
+          document.getElementById('displayMode').value !== 'speed')
+        throw new Error('Native flow result did not reach the renderer');
+    }
     if (${JSON.stringify(Boolean(argument('interaction-check')))}) {
       const mesh = smoke.state.mesh;
       const display = document.getElementById('displayMode').value;
@@ -649,7 +747,13 @@ async function runSmoke() {
       raster: smoke.state.rasterEvidence,
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
-      interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))}
+      interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
+      flow: smoke.state.flow ? {
+        summary: smoke.state.flow.summary,
+        fieldCells: smoke.state.flow.fields.cells.length,
+        displayMode: document.getElementById('displayMode').value,
+        resultText: document.getElementById('flowResult').innerText
+      } : null
     };
   })()`).then(async report => {
     if (report.rasterPreview) {

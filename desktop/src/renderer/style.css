@@ -360,6 +360,22 @@ select { font-family: inherit; font-size: 12px; }
   font-size: 9.5px;
   line-height: 1.35;
 }
+.flow-block { border-left: 2px solid var(--accent); padding-left: 10px; }
+.flow-scope { min-height: 3em; }
+.flow-result {
+  grid-column: 1 / -1;
+  grid-row: 6;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 7px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px 12px;
+}
+.flow-result[hidden] { display: none; }
+.flow-result div { display: grid; gap: 1px; }
+.flow-result span { color: var(--ink-faint); font-size: 9.5px; }
+.flow-result b { font: 600 11px/1.2 var(--mono); }
+.flow-result .flow-state { grid-column: 1 / -1; display: block; color: var(--ink-dim); font-size: 10.5px; }
 .histogram .title { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
 .histogram .bar { display: flex; align-items: center; gap: 6px; }
 .histogram .bar em { font-style: normal; width: 18px; color: var(--ink-faint); text-align: right; }
@@ -488,6 +504,7 @@ body[data-theme="duet"] .canvasWrap.light .legend {
   }
   #histogram { grid-column: 1 / -1; grid-row: 5; }
   #resolutionResult { grid-column: 1 / -1; grid-row: 6; }
+  #flowResult { grid-column: 1 / -1; grid-row: 7; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 800px) {
   .titlebar { padding-left: 76px; }

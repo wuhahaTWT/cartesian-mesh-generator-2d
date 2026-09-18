@@ -15,6 +15,8 @@
 // Sequential ramp, coarse -> fine.  One ramp is used by both the mesh and the level
 // histogram so the two read as the same scale.
 const RAMP = ['#1b3a4b', '#1d4f5e', '#216b66', '#3d8560', '#7d9a4e', '#b8a344', '#dd9b3c', '#f07f3c'];
+const SPEED_RAMP = ['#172a52', '#185b83', '#188ca1', '#2bb6a8', '#73cf8d', '#cadd62', '#f4c84d', '#ef7538'];
+const PRESSURE_RAMP = ['#3156a3', '#5686c4', '#91b5d6', '#d5e2e8', '#f0ded1', '#d99578', '#b64143', '#741f36'];
 function levelColour(level, minLevel, maxLevel) {
   if (!(maxLevel > minLevel)) return RAMP[RAMP.length - 1];
   const t = (level - minLevel) / (maxLevel - minLevel);
@@ -31,7 +33,7 @@ const THEMES = {
   light: { fill: null, cellEdge: 'rgba(40,54,64,0.55)', domain: '#5a6b76',
            wall: '#c62828', unclassified: '#ff3b6b', region: '#1d78a8', vertex: '#c62828' },
   dark: { fill: null, cellEdge: 'rgba(198,214,226,0.42)', domain: 'rgba(198,214,226,0.75)',
-          wall: '#ff5a1f', unclassified: '#ff3b6b', region: '#7fd7ff', vertex: '#ffd8c4' }
+           wall: '#ff5a1f', unclassified: '#ff3b6b', region: '#7fd7ff', vertex: '#ffd8c4' }
 };
 const CELLS_PER_PATH = 64;
 
@@ -49,6 +51,8 @@ class Viewport {
     this.offset = { x: 0, y: 0 };
     this.dragging = null;
     this.meshCache = null;
+    this.flowFields = null;
+    this.fieldRange = null;
     this.pendingDraw = null;
     this.attachInput();
     this.resizeObserver = new ResizeObserver(() => this.requestDraw());
@@ -56,6 +60,8 @@ class Viewport {
   }
 
   theme() { return THEMES[this.mode] || THEMES.level; }
+
+  fieldPalette() { return this.mode === 'pressure' ? PRESSURE_RAMP : SPEED_RAMP; }
 
   attachInput() {
     this.canvas.addEventListener('wheel', event => {
@@ -123,7 +129,16 @@ class Viewport {
     this.mesh = mesh;
     this.outline = null;
     this.meshCache = null;
+    this.flowFields = null;
+    this.fieldRange = null;
     this.fitTo(mesh.bounds);
+  }
+
+  setFlowFields(cells) {
+    this.flowFields = cells || null;
+    this.fieldRange = null;
+    if (this.meshCache) this.meshCache.field = null;
+    this.draw();
   }
 
   // Before a mesh exists the chosen geometry is still worth drawing: it is how the
@@ -144,6 +159,8 @@ class Viewport {
     this.mesh = null;
     this.outline = null;
     this.meshCache = null;
+    this.flowFields = null;
+    this.fieldRange = null;
     this.draw();
   }
 
@@ -218,9 +235,17 @@ class Viewport {
     ctx.transform(this.scale, 0, 0, -this.scale,
                   -this.offset.x * this.scale,
                   height + this.offset.y * this.scale);
+    if ((this.mode === 'speed' || this.mode === 'pressure') && this.flowFields) {
+      const field = this.cachedFieldPaths(mesh, this.mode);
+      const palette = this.fieldPalette();
+      field.bins.forEach((chunks, index) => {
+        ctx.fillStyle = palette[index];
+        for (const chunk of chunks) if (this.intersects(chunk.bounds, visible)) ctx.fill(chunk.path);
+      });
+    }
     for (const { level, chunks } of cache.levels) {
       const visibleChunks = chunks.filter(chunk => this.intersects(chunk.bounds, visible));
-      if (theme.fill === 'level') {
+      if (theme.fill === 'level' && this.mode === 'level') {
         ctx.fillStyle = levelColour(level, mesh.minLevel, mesh.maxLevel);
         for (const chunk of visibleChunks) ctx.fill(chunk.path);
       }
@@ -277,10 +302,45 @@ class Viewport {
       levels: [...levels].sort((a, b) => a[0] - b[0])
         .map(([level, chunks]) => ({ level, chunks })),
       boundaries,
+      field: null,
       domainSpan: Math.max(mesh.bounds.maxX - mesh.bounds.minX,
                            mesh.bounds.maxY - mesh.bounds.minY)
     };
     return this.meshCache;
+  }
+
+  cachedFieldPaths(mesh, mode) {
+    const cache = this.cachedMeshPaths(mesh);
+    if (cache.field?.cells === this.flowFields && cache.field.mode === mode) return cache.field;
+    const key = mode === 'pressure' ? 'p' : 'speed';
+    const values = this.flowFields.map(cell => cell[key]);
+    let min = Infinity, max = -Infinity;
+    for (const value of values) { if (value < min) min = value; if (value > max) max = value; }
+    const palette = mode === 'pressure' ? PRESSURE_RAMP : SPEED_RAMP;
+    const bins = Array.from({ length: palette.length }, () => []);
+    mesh.cells.forEach((cell, id) => {
+      const t = max > min ? (values[id] - min) / (max - min) : 0.5;
+      const bin = Math.min(bins.length - 1, Math.max(0, Math.floor(t * bins.length)));
+      const chunks = bins[bin];
+      if (!chunks.length || chunks[chunks.length - 1].cells === CELLS_PER_PATH) {
+        chunks.push({ path: new Path2D(), cells: 0,
+          bounds: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity } });
+      }
+      const chunk = chunks[chunks.length - 1];
+      const first = mesh.vertices[cell.vertices[0]];
+      chunk.path.moveTo(first[0], first[1]);
+      this.extendBounds(chunk.bounds, first);
+      for (let i = 1; i < cell.vertices.length; i++) {
+        const point = mesh.vertices[cell.vertices[i]];
+        chunk.path.lineTo(point[0], point[1]);
+        this.extendBounds(chunk.bounds, point);
+      }
+      chunk.path.closePath();
+      chunk.cells++;
+    });
+    this.fieldRange = { min, max, key };
+    cache.field = { cells: this.flowFields, mode, bins, min, max };
+    return cache.field;
   }
 
   extendBounds(bounds, [x, y]) {
@@ -369,6 +429,6 @@ class Viewport {
 
 // The renderer runs with contextIsolation on and cannot require(), so the one export
 // is a namespace on window.
-window.MeshView = { Viewport, levelColour, RAMP };
+window.MeshView = { Viewport, levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP };
 
 })();

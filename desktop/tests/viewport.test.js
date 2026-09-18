@@ -194,3 +194,37 @@ test('zoomed view submits only intersecting cell path chunks', () => {
   view.draw();
   assert.equal(draws.fill.length - fillsAtFit, 1);
 });
+
+test('flow colour maps reuse final mesh polygons and expose physical ranges', () => {
+  const { sandbox } = viewportSandbox();
+  const { canvas, draws } = fakeCanvas();
+  const mesh = {
+    bounds: { minX: 0, minY: 0, maxX: 2, maxY: 1 }, minLevel: 0, maxLevel: 0,
+    vertices: [[0, 0], [1, 0], [1, 1], [0, 1], [2, 0], [2, 1]],
+    cells: [
+      { id: 0, level: 0, vertices: [0, 1, 2, 3] },
+      { id: 1, level: 0, vertices: [1, 4, 5, 2] }
+    ], edges: []
+  };
+  const view = new sandbox.window.MeshView.Viewport(canvas);
+  view.setMesh(mesh);
+  view.setFlowFields([
+    { id: 0, u: 1, v: 0, p: -2, speed: 1 },
+    { id: 1, u: 2, v: 0, p: 3, speed: 2 }
+  ]);
+  view.mode = 'speed';
+  view.draw();
+  assert.equal(view.fieldRange.min, 1);
+  assert.equal(view.fieldRange.max, 2);
+  assert.equal(view.fieldRange.key, 'speed');
+  const cache = view.meshCache.field;
+  assert.equal(cache.cells, view.flowFields);
+  assert.ok(draws.fill.length >= 2);
+  view.draw();
+  assert.equal(view.meshCache.field, cache, 'unchanged field polygons stay cached');
+  view.mode = 'pressure';
+  view.draw();
+  assert.equal(view.fieldRange.min, -2);
+  assert.equal(view.fieldRange.max, 3);
+  assert.equal(view.fieldRange.key, 'p');
+});

@@ -1,0 +1,1520 @@
+{
+  "acceptanceScope": {
+    "cavity": {
+      "centrelineMaxError": 0.3,
+      "centrelineRmse": 0.12
+    },
+    "channel": {
+      "fluxError": 0.08,
+      "gradientError": 0.12,
+      "pressureL2": 0.12,
+      "transverseL2": 0.05,
+      "velocityL2": 0.08
+    },
+    "external": {
+      "maximumLiftDragRatio": 0.3,
+      "maximumSpeedRatio": 4.0,
+      "referenceDragIsGate": false
+    },
+    "maxIterations": 1500,
+    "maxReportedContinuity": 1e-08,
+    "statement": "Project milestone regression gates for these cases and meshes; not universal CFD quality standards."
+  },
+  "cases": [
+    {
+      "artifactSha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel.cells.csv": "0e350e0884ef310d0c67dba5879154cfac0c05a4fe223b7aeeae50b75a090443",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel.faces.csv": "2899c99b005f29cc3f8cfc2478b4c12cc82932521e960911a45c057c095f7c8a",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel.json": "e24d4c4bf0d65f1a0aa1e26c3fa44d7b34ffa919c799f770cbe383b1ed0d38de",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel.residuals.csv": "84c48ad3dd9b0641d1fd30aa023dafb0d36d8e0492eab4c5108f1357053fba5b"
+      },
+      "benchmark": {
+        "boundaryFluxes": {
+          "bottom": 0.0,
+          "left": -0.6671732494212963,
+          "right": 0.6671732494213071,
+          "top": 0.0
+        },
+        "expectedFlowRatePerDepth": 0.6666666666666666,
+        "expectedPressureGradient": -0.08,
+        "fittedPressureGradient": -0.07997691114914529,
+        "flowRateRelativeError": 0.0007598741319606583,
+        "pressureGradientRelativeError": 0.0002886106356838822,
+        "pressureL2Relative": 0.002557554683295431,
+        "transverseVelocityL2Relative": 7.167278612521213e-05,
+        "valid": true,
+        "velocityL2Relative": 0.0007727249654335824,
+        "wallFluxRelative": 0.0
+      },
+      "case": "channel",
+      "counts": {
+        "cells": 780,
+        "faces": 1616
+      },
+      "independentContinuity": {
+        "boundaryFluxSum": 1.0910543302156128e-14,
+        "cellValid": true,
+        "globalLimit": 2.001e-07,
+        "globalRelativeImbalance": 1.6353388436391738e-14,
+        "globalValid": true,
+        "l2CellImbalance": 9.413422904375001e-14,
+        "maxCellImbalance": 1.3399004128444858e-14,
+        "maxScaledCellImbalance": 1.819322546133013e-06,
+        "nativeDefinitionContinuity": 1.8443654191571146e-13,
+        "referenceThroughput": 0.6671732494212963
+      },
+      "issues": [],
+      "label": "channel-l5",
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d",
+      "meshMeasurement": {
+        "area": 4.000000000000001,
+        "bounds": [
+          0.0,
+          0.0,
+          4.000000000000001,
+          1.0
+        ],
+        "characteristicH": 0.0716114874039433
+      },
+      "meshSha256": "1eab2ad63b6a187ffc8b057ea7378498043b74a9e58754aa3414fb9791f7151e",
+      "native": {
+        "case": "channel",
+        "cells": 780,
+        "continuity": 1.8443654191571186e-13,
+        "converged": true,
+        "domainHeight": 1,
+        "forceX": 0.31107334629983135,
+        "forceY": 2.1358782797964437e-17,
+        "format": "cartmesh2d-flow-summary-v1",
+        "globalImbalance": 1.0910543302156128e-14,
+        "globalRelativeImbalance": 1.6353388436391738e-14,
+        "iterations": 54,
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "momentumResidual": 3.1396487015545196e-07,
+        "nu": 0.01,
+        "pressureChange": 7.668307280415913e-08,
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "speed": 1,
+        "status": "converged",
+        "tolerance": 1e-06,
+        "units": {
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+          "nu": "m2/s",
+          "p": "m2/s2 (kinematic)",
+          "velocity": "m/s"
+        },
+        "velocityChange": 9.412042589594184e-07
+      },
+      "nu": 0.01,
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel",
+      "residualHistory": {
+        "first": {
+          "continuity": 2.8921483631319303e-13,
+          "iteration": 1.0,
+          "momentumResidual": 0.0014262589835965973,
+          "pressureChange": 0.18397561631538922,
+          "velocityChange": 0.0023263728359314484
+        },
+        "last": {
+          "continuity": 1.8443654191571186e-13,
+          "iteration": 54.0,
+          "momentumResidual": 3.1396487015545196e-07,
+          "pressureChange": 7.668307280415913e-08,
+          "velocityChange": 9.412042589594184e-07
+        },
+        "rows": 54
+      },
+      "speed": 1.0,
+      "stage": {
+        "case": "channel",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel",
+          "--case",
+          "channel",
+          "--nu",
+          "0.01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel --case channel --nu 0.01 --speed 1 --max-iterations 1500",
+        "label": "channel-l5",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l5.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l5.stdout.log",
+        "timedOut": false
+      },
+      "valid": true
+    },
+    {
+      "artifactSha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel.cells.csv": "c77455d1dbdc855ee668deb06926369419eda73ab87de2d9e51d42c34dd899a6",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel.faces.csv": "53b422d5b889059309e6f748e42bdc32b09c6a092a22db5cd0222fe706b1343a",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel.json": "e84748d7c23496c16ec97425302b63789e6db56e63a942e1691b0ac9b027dfa7",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel.residuals.csv": "7e917302e2ab35e5ab78a34a3d45c3afa7429801fe6f3bfe69bfa184139e2a08"
+      },
+      "benchmark": {
+        "boundaryFluxes": {
+          "bottom": 0.0,
+          "left": -0.6667692957798047,
+          "right": 0.6667692957797856,
+          "top": 0.0
+        },
+        "expectedFlowRatePerDepth": 0.6666666666666666,
+        "expectedPressureGradient": -0.08,
+        "fittedPressureGradient": -0.07998678111948045,
+        "flowRateRelativeError": 0.00015394366970711282,
+        "pressureGradientRelativeError": 0.00016523600649444303,
+        "pressureL2Relative": 0.0009181811467019761,
+        "transverseVelocityL2Relative": 1.4916423430394093e-05,
+        "valid": true,
+        "velocityL2Relative": 0.00016587512806182743,
+        "wallFluxRelative": 0.0
+      },
+      "case": "channel",
+      "counts": {
+        "cells": 3596,
+        "faces": 7312
+      },
+      "independentContinuity": {
+        "boundaryFluxSum": -1.8914977548654954e-14,
+        "cellValid": true,
+        "globalLimit": 2.001e-07,
+        "globalRelativeImbalance": 2.836809923368377e-14,
+        "globalValid": true,
+        "l2CellImbalance": 9.583259814583307e-14,
+        "maxCellImbalance": 8.141057272759156e-15,
+        "maxScaledCellImbalance": 2.3436748560083873e-06,
+        "nativeDefinitionContinuity": 2.413145291532582e-13,
+        "referenceThroughput": 0.666769295779805
+      },
+      "issues": [],
+      "label": "channel-l6",
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+      "meshMeasurement": {
+        "area": 4.0,
+        "bounds": [
+          0.0,
+          0.0,
+          4.0,
+          1.0
+        ],
+        "characteristicH": 0.033351867298253506
+      },
+      "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+      "native": {
+        "case": "channel",
+        "cells": 3596,
+        "continuity": 2.413145291532636e-13,
+        "converged": true,
+        "domainHeight": 1,
+        "forceX": 0.3178152216585902,
+        "forceY": -1.8236280541206185e-16,
+        "format": "cartmesh2d-flow-summary-v1",
+        "globalImbalance": -1.8914977548654954e-14,
+        "globalRelativeImbalance": 2.8368099233683785e-14,
+        "iterations": 44,
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "momentumResidual": 3.257365495770857e-07,
+        "nu": 0.01,
+        "pressureChange": 9.633198020903397e-07,
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "speed": 1,
+        "status": "converged",
+        "tolerance": 1e-06,
+        "units": {
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+          "nu": "m2/s",
+          "p": "m2/s2 (kinematic)",
+          "velocity": "m/s"
+        },
+        "velocityChange": 9.81110794564733e-07
+      },
+      "nu": 0.01,
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel",
+      "residualHistory": {
+        "first": {
+          "continuity": 3.252835524022034e-13,
+          "iteration": 1.0,
+          "momentumResidual": 0.00033248370125319707,
+          "pressureChange": 0.19195342311299307,
+          "velocityChange": 0.0006645876524408312
+        },
+        "last": {
+          "continuity": 2.413145291532636e-13,
+          "iteration": 44.0,
+          "momentumResidual": 3.257365495770857e-07,
+          "pressureChange": 9.633198020903397e-07,
+          "velocityChange": 9.81110794564733e-07
+        },
+        "rows": 44
+      },
+      "speed": 1.0,
+      "stage": {
+        "case": "channel",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel",
+          "--case",
+          "channel",
+          "--nu",
+          "0.01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel --case channel --nu 0.01 --speed 1 --max-iterations 1500",
+        "label": "channel-l6",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l6.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l6.stdout.log",
+        "timedOut": false
+      },
+      "valid": true
+    },
+    {
+      "artifactSha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity.cells.csv": "bc54656a8d5c70f84677eed40c631f0374d41ccb214e30cb0dd61c87165e8700",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity.faces.csv": "960d576c5e3428755c7bd6b39571deb6a5516d26c45cdfec5e8db8f4c7767e68",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity.json": "7b08c03f7f8c0bae3d98f3e0c641056f7eab7fdcf9763557607af7edadf5086f",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity.residuals.csv": "789db77f1b1d3d7261ccff68de71be8b756739040e598879b8d891bfec345de7"
+      },
+      "benchmark": {
+        "centreU": -0.15827568120188454,
+        "centrelineMaxError": 0.05740585871374035,
+        "centrelineRmse": 0.02773114253694152,
+        "leftV": 0.1423462965607193,
+        "maximumSpeedRatio": 0.7212474765019065,
+        "reference": "Ghia, Ghia & Shin 1982, Re=100 centreline tables",
+        "reynolds": 100.0,
+        "rightV": -0.18875202447555878,
+        "samples": [
+          {
+            "actual": 0.8066652246416999,
+            "coordinate": 0.9766,
+            "field": "u",
+            "reference": 0.84123
+          },
+          {
+            "actual": 0.7445103552633043,
+            "coordinate": 0.9688,
+            "field": "u",
+            "reference": 0.78871
+          },
+          {
+            "actual": 0.7013703256693992,
+            "coordinate": 0.9609,
+            "field": "u",
+            "reference": 0.73722
+          },
+          {
+            "actual": 0.667380555218058,
+            "coordinate": 0.9531,
+            "field": "u",
+            "reference": 0.68717
+          },
+          {
+            "actual": 0.19577608157496026,
+            "coordinate": 0.8516,
+            "field": "u",
+            "reference": 0.23151
+          },
+          {
+            "actual": 0.0007067023055591615,
+            "coordinate": 0.7344,
+            "field": "u",
+            "reference": 0.00332
+          },
+          {
+            "actual": -0.12061429868352383,
+            "coordinate": 0.6172,
+            "field": "u",
+            "reference": -0.13641
+          },
+          {
+            "actual": -0.15548873928316362,
+            "coordinate": 0.5,
+            "field": "u",
+            "reference": -0.20581
+          },
+          {
+            "actual": -0.15836259236490816,
+            "coordinate": 0.4531,
+            "field": "u",
+            "reference": -0.2109
+          },
+          {
+            "actual": -0.12279942105101557,
+            "coordinate": 0.2813,
+            "field": "u",
+            "reference": -0.15662
+          },
+          {
+            "actual": -0.09091478627752002,
+            "coordinate": 0.1719,
+            "field": "u",
+            "reference": -0.1015
+          },
+          {
+            "actual": -0.0596650767714377,
+            "coordinate": 0.1016,
+            "field": "u",
+            "reference": -0.06434
+          },
+          {
+            "actual": -0.04008722865827531,
+            "coordinate": 0.0703,
+            "field": "u",
+            "reference": -0.04775
+          },
+          {
+            "actual": -0.0361305677474566,
+            "coordinate": 0.0625,
+            "field": "u",
+            "reference": -0.04192
+          },
+          {
+            "actual": -0.032573618911663355,
+            "coordinate": 0.0547,
+            "field": "u",
+            "reference": -0.03717
+          },
+          {
+            "actual": -0.07712653091448639,
+            "coordinate": 0.9688,
+            "field": "v",
+            "reference": -0.05906
+          },
+          {
+            "actual": -0.08988030544753506,
+            "coordinate": 0.9609,
+            "field": "v",
+            "reference": -0.07391
+          },
+          {
+            "actual": -0.0996256705070103,
+            "coordinate": 0.9531,
+            "field": "v",
+            "reference": -0.08864
+          },
+          {
+            "actual": -0.10897057586274475,
+            "coordinate": 0.9453,
+            "field": "v",
+            "reference": -0.10313
+          },
+          {
+            "actual": -0.16632575419106482,
+            "coordinate": 0.9063,
+            "field": "v",
+            "reference": -0.16914
+          },
+          {
+            "actual": -0.18275958993820401,
+            "coordinate": 0.8594,
+            "field": "v",
+            "reference": -0.22445
+          },
+          {
+            "actual": -0.18792414128625964,
+            "coordinate": 0.8047,
+            "field": "v",
+            "reference": -0.24533
+          },
+          {
+            "actual": 0.0354098981930562,
+            "coordinate": 0.5,
+            "field": "v",
+            "reference": 0.05454
+          },
+          {
+            "actual": 0.14159151579861812,
+            "coordinate": 0.2344,
+            "field": "v",
+            "reference": 0.17527
+          },
+          {
+            "actual": 0.14160861157401353,
+            "coordinate": 0.2266,
+            "field": "v",
+            "reference": 0.17507
+          },
+          {
+            "actual": 0.1367105703279924,
+            "coordinate": 0.1563,
+            "field": "v",
+            "reference": 0.16077
+          },
+          {
+            "actual": 0.10783964098994547,
+            "coordinate": 0.0938,
+            "field": "v",
+            "reference": 0.12317
+          },
+          {
+            "actual": 0.09591146984511464,
+            "coordinate": 0.0781,
+            "field": "v",
+            "reference": 0.1089
+          },
+          {
+            "actual": 0.08209863209846509,
+            "coordinate": 0.0703,
+            "field": "v",
+            "reference": 0.10091
+          },
+          {
+            "actual": 0.07516659489183133,
+            "coordinate": 0.0625,
+            "field": "v",
+            "reference": 0.09233
+          }
+        ],
+        "samplingMethod": "inverse-distance cell-centre interpolation with exact Dirichlet wall anchors",
+        "valid": true
+      },
+      "case": "cavity",
+      "counts": {
+        "cells": 196,
+        "faces": 420
+      },
+      "independentContinuity": {
+        "boundaryFluxSum": 0.0,
+        "cellValid": true,
+        "globalLimit": 1.0009999999999999e-07,
+        "globalRelativeImbalance": 0.0,
+        "globalValid": true,
+        "l2CellImbalance": 8.492990991389463e-14,
+        "maxCellImbalance": 1.947140365610167e-14,
+        "maxScaledCellImbalance": 2.6883594791461878e-06,
+        "nativeDefinitionContinuity": 2.725996511854234e-13,
+        "referenceThroughput": 1.0
+      },
+      "issues": [],
+      "label": "cavity-l4",
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d",
+      "meshMeasurement": {
+        "area": 1.0,
+        "bounds": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "characteristicH": 0.07142857142857142
+      },
+      "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+      "native": {
+        "case": "cavity",
+        "cells": 196,
+        "continuity": 2.7259965118542335e-13,
+        "converged": true,
+        "domainHeight": 1,
+        "forceX": 0.1414916794394853,
+        "forceY": -0.012707812419843756,
+        "format": "cartmesh2d-flow-summary-v1",
+        "globalImbalance": 0,
+        "globalRelativeImbalance": 0,
+        "iterations": 111,
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "momentumResidual": 3.337439473168378e-07,
+        "nu": 0.01,
+        "pressureChange": 3.5384062407966275e-07,
+        "pressureReference": "cell 0, kinematic pressure zero",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "speed": 1,
+        "status": "converged",
+        "tolerance": 1e-06,
+        "units": {
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+          "nu": "m2/s",
+          "p": "m2/s2 (kinematic)",
+          "velocity": "m/s"
+        },
+        "velocityChange": 9.583635347564314e-07
+      },
+      "nu": 0.01,
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity",
+      "residualHistory": {
+        "first": {
+          "continuity": 5.248657411471849e-13,
+          "iteration": 1.0,
+          "momentumResidual": 0.09639606223766412,
+          "pressureChange": 0.16813616229919334,
+          "velocityChange": 0.2763677651488686
+        },
+        "last": {
+          "continuity": 2.7259965118542335e-13,
+          "iteration": 111.0,
+          "momentumResidual": 3.337439473168378e-07,
+          "pressureChange": 3.5384062407966275e-07,
+          "velocityChange": 9.583635347564314e-07
+        },
+        "rows": 111
+      },
+      "speed": 1.0,
+      "stage": {
+        "case": "cavity",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity",
+          "--case",
+          "cavity",
+          "--nu",
+          "0.01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity --case cavity --nu 0.01 --speed 1 --max-iterations 1500",
+        "label": "cavity-l4",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l4.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l4.stdout.log",
+        "timedOut": false
+      },
+      "valid": true
+    },
+    {
+      "artifactSha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity.cells.csv": "ce268f21189943841c38b24aba74e584d1b2c757ac4c5a0f501004c8f3f5a756",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity.faces.csv": "f47007a6c14de9d3f14d75cbf5a3948f56f189bea981813bf564f311ebc88a57",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity.json": "8b9427b30c2c4b7e55c338f099e165eda19ec9c760626d8dee30a897cff986b0",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity.residuals.csv": "9da2b28858d4eda2fd31f26fb0082cf5dc0c775e15ecacf9db3c332e1da8c977"
+      },
+      "benchmark": {
+        "centreU": -0.18436055554496156,
+        "centrelineMaxError": 0.027395142657431926,
+        "centrelineRmse": 0.012296700902017548,
+        "leftV": 0.16129751595538055,
+        "maximumSpeedRatio": 0.8863422712554669,
+        "reference": "Ghia, Ghia & Shin 1982, Re=100 centreline tables",
+        "reynolds": 100.00000000000001,
+        "rightV": -0.2201893634054844,
+        "samples": [
+          {
+            "actual": 0.8419498953152148,
+            "coordinate": 0.9766,
+            "field": "u",
+            "reference": 0.84123
+          },
+          {
+            "actual": 0.7964511342326147,
+            "coordinate": 0.9688,
+            "field": "u",
+            "reference": 0.78871
+          },
+          {
+            "actual": 0.7098248573425681,
+            "coordinate": 0.9609,
+            "field": "u",
+            "reference": 0.73722
+          },
+          {
+            "actual": 0.6717333159389699,
+            "coordinate": 0.9531,
+            "field": "u",
+            "reference": 0.68717
+          },
+          {
+            "actual": 0.21277824001584128,
+            "coordinate": 0.8516,
+            "field": "u",
+            "reference": 0.23151
+          },
+          {
+            "actual": -0.005871958494606049,
+            "coordinate": 0.7344,
+            "field": "u",
+            "reference": 0.00332
+          },
+          {
+            "actual": -0.13572291126609812,
+            "coordinate": 0.6172,
+            "field": "u",
+            "reference": -0.13641
+          },
+          {
+            "actual": -0.18372747455000785,
+            "coordinate": 0.5,
+            "field": "u",
+            "reference": -0.20581
+          },
+          {
+            "actual": -0.18506589860714281,
+            "coordinate": 0.4531,
+            "field": "u",
+            "reference": -0.2109
+          },
+          {
+            "actual": -0.14171487336136832,
+            "coordinate": 0.2813,
+            "field": "u",
+            "reference": -0.15662
+          },
+          {
+            "actual": -0.09814986628697543,
+            "coordinate": 0.1719,
+            "field": "u",
+            "reference": -0.1015
+          },
+          {
+            "actual": -0.064918426453439,
+            "coordinate": 0.1016,
+            "field": "u",
+            "reference": -0.06434
+          },
+          {
+            "actual": -0.04781654092812242,
+            "coordinate": 0.0703,
+            "field": "u",
+            "reference": -0.04775
+          },
+          {
+            "actual": -0.03728652743686721,
+            "coordinate": 0.0625,
+            "field": "u",
+            "reference": -0.04192
+          },
+          {
+            "actual": -0.03425965251815389,
+            "coordinate": 0.0547,
+            "field": "u",
+            "reference": -0.03717
+          },
+          {
+            "actual": -0.058955284264932045,
+            "coordinate": 0.9688,
+            "field": "v",
+            "reference": -0.05906
+          },
+          {
+            "actual": -0.08457597438021666,
+            "coordinate": 0.9609,
+            "field": "v",
+            "reference": -0.07391
+          },
+          {
+            "actual": -0.09581352068569628,
+            "coordinate": 0.9531,
+            "field": "v",
+            "reference": -0.08864
+          },
+          {
+            "actual": -0.10309779169723565,
+            "coordinate": 0.9453,
+            "field": "v",
+            "reference": -0.10313
+          },
+          {
+            "actual": -0.1646468950521074,
+            "coordinate": 0.9063,
+            "field": "v",
+            "reference": -0.16914
+          },
+          {
+            "actual": -0.21625510588023045,
+            "coordinate": 0.8594,
+            "field": "v",
+            "reference": -0.22445
+          },
+          {
+            "actual": -0.22080022958478948,
+            "coordinate": 0.8047,
+            "field": "v",
+            "reference": -0.24533
+          },
+          {
+            "actual": 0.04333208975804169,
+            "coordinate": 0.5,
+            "field": "v",
+            "reference": 0.05454
+          },
+          {
+            "actual": 0.16158724911973515,
+            "coordinate": 0.2344,
+            "field": "v",
+            "reference": 0.17527
+          },
+          {
+            "actual": 0.16235408876363933,
+            "coordinate": 0.2266,
+            "field": "v",
+            "reference": 0.17507
+          },
+          {
+            "actual": 0.15134299986310454,
+            "coordinate": 0.1563,
+            "field": "v",
+            "reference": 0.16077
+          },
+          {
+            "actual": 0.11375595742610793,
+            "coordinate": 0.0938,
+            "field": "v",
+            "reference": 0.12317
+          },
+          {
+            "actual": 0.10669344929587087,
+            "coordinate": 0.0781,
+            "field": "v",
+            "reference": 0.1089
+          },
+          {
+            "actual": 0.10067973289469824,
+            "coordinate": 0.0703,
+            "field": "v",
+            "reference": 0.10091
+          },
+          {
+            "actual": 0.0813182373144712,
+            "coordinate": 0.0625,
+            "field": "v",
+            "reference": 0.09233
+          }
+        ],
+        "samplingMethod": "inverse-distance cell-centre interpolation with exact Dirichlet wall anchors",
+        "valid": true
+      },
+      "case": "cavity",
+      "counts": {
+        "cells": 900,
+        "faces": 1860
+      },
+      "independentContinuity": {
+        "boundaryFluxSum": 0.0,
+        "cellValid": true,
+        "globalLimit": 1.0010000000000002e-07,
+        "globalRelativeImbalance": 0.0,
+        "globalValid": true,
+        "l2CellImbalance": 9.764170265365755e-14,
+        "maxCellImbalance": 1.2148024556776771e-14,
+        "maxScaledCellImbalance": 3.5382595796437223e-06,
+        "nativeDefinitionContinuity": 3.644407367033034e-13,
+        "referenceThroughput": 1.0000000000000002
+      },
+      "issues": [],
+      "label": "cavity-l5",
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d",
+      "meshMeasurement": {
+        "area": 1.0000000000000004,
+        "bounds": [
+          0.0,
+          0.0,
+          1.0000000000000002,
+          1.0000000000000002
+        ],
+        "characteristicH": 0.03333333333333334
+      },
+      "meshSha256": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+      "native": {
+        "case": "cavity",
+        "cells": 900,
+        "continuity": 3.6444073670330313e-13,
+        "converged": true,
+        "domainHeight": 1.0000000000000002,
+        "forceX": 0.1715991784364858,
+        "forceY": -0.019840075343294225,
+        "format": "cartmesh2d-flow-summary-v1",
+        "globalImbalance": 0,
+        "globalRelativeImbalance": 0,
+        "iterations": 403,
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "momentumResidual": 3.1816492784644057e-07,
+        "nu": 0.01,
+        "pressureChange": 3.77357688042801e-07,
+        "pressureReference": "cell 0, kinematic pressure zero",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "speed": 1,
+        "status": "converged",
+        "tolerance": 1e-06,
+        "units": {
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+          "nu": "m2/s",
+          "p": "m2/s2 (kinematic)",
+          "velocity": "m/s"
+        },
+        "velocityChange": 9.807962753464286e-07
+      },
+      "nu": 0.01,
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity",
+      "residualHistory": {
+        "first": {
+          "continuity": 7.692007837969961e-13,
+          "iteration": 1.0,
+          "momentumResidual": 0.1067353365805761,
+          "pressureChange": 0.463560152241649,
+          "velocityChange": 0.30432378751797295
+        },
+        "last": {
+          "continuity": 3.6444073670330313e-13,
+          "iteration": 403.0,
+          "momentumResidual": 3.1816492784644057e-07,
+          "pressureChange": 3.77357688042801e-07,
+          "velocityChange": 9.807962753464286e-07
+        },
+        "rows": 403
+      },
+      "speed": 1.0,
+      "stage": {
+        "case": "cavity",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity",
+          "--case",
+          "cavity",
+          "--nu",
+          "0.01",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity --case cavity --nu 0.01 --speed 1 --max-iterations 1500",
+        "label": "cavity-l5",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l5.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l5.stdout.log",
+        "timedOut": false
+      },
+      "valid": true
+    },
+    {
+      "artifactSha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external.cells.csv": "52b2c3e730e67c76f9e645407ed8eecd9dcb7899ce6ff51353026ea24547d07e",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external.faces.csv": "86647716064c6fceb332556d99f040dc1d4b6a569248037650c59f3ec1aaa1a0",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external.json": "e5b8a8861943e9124bb952aeaee554d7e54ddebd25e161f5c5a36a453b7caa18",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external.residuals.csv": "85e147105ade37150fec2fc979a7d16f9cae4a3df48e7505990f7fe8c9750d2c"
+      },
+      "benchmark": {
+        "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain, coarse upwind result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+        "derivedBodyCoefficients": {
+          "definition": "2 F / (U^2 D), unit density and depth",
+          "drag": 2.2872800540883635,
+          "lift": 2.3028454143592114e-16
+        },
+        "diameter": 2.0,
+        "forces": {
+          "dragForce": 2.2872800540883635,
+          "liftForce": 2.3028454143592114e-16
+        },
+        "issues": [],
+        "maximumSpeedRatio": 1.1629476726007149,
+        "minimumWakeUOverSpeed": -0.023130921556606503,
+        "openCylinderReference": {
+          "acceptanceGate": false,
+          "dragCoefficient": 2.045,
+          "relativeDifference": 0.11847435407743942,
+          "reynolds": 20.0,
+          "source": "Dennis & Chang 1970"
+        },
+        "reynoldsByMaximumSpeedAndDiameter": 20.0,
+        "valid": true
+      },
+      "case": "external",
+      "counts": {
+        "cells": 4880,
+        "faces": 10008
+      },
+      "independentContinuity": {
+        "boundaryFluxSum": 4.055644708955697e-13,
+        "cellValid": true,
+        "globalLimit": 4.196382348517246e-06,
+        "globalRelativeImbalance": 9.656296926084993e-15,
+        "globalValid": true,
+        "l2CellImbalance": 9.866609423691124e-14,
+        "maxCellImbalance": 5.9396931817445875e-15,
+        "maxScaledCellImbalance": 1.6405321293448216e-07,
+        "nativeDefinitionContinuity": 1.650531563276066e-14,
+        "referenceThroughput": 42.0
+      },
+      "issues": [],
+      "label": "circle-re20",
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+      "meshMeasurement": {
+        "area": 1760.8785548477413,
+        "bounds": [
+          -20.93,
+          -20.97,
+          21.07,
+          21.03
+        ],
+        "characteristicH": 0.6006960707679155
+      },
+      "meshSha256": "037251bb49046ed329a6063f75f254e4bfd510f388889719eb686a011be12788",
+      "native": {
+        "case": "external",
+        "cells": 4880,
+        "continuity": 1.650531563276066e-14,
+        "converged": true,
+        "domainHeight": 42,
+        "forceX": 2.2872800540883635,
+        "forceY": 2.3028454143592114e-16,
+        "format": "cartmesh2d-flow-summary-v1",
+        "globalImbalance": 4.055644708955697e-13,
+        "globalRelativeImbalance": 9.656296926084993e-15,
+        "iterations": 336,
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "momentumResidual": 3.171059940311344e-07,
+        "nu": 0.1,
+        "pressureChange": 3.6758164409359994e-07,
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+        "speed": 1,
+        "status": "converged",
+        "tolerance": 1e-06,
+        "units": {
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+          "nu": "m2/s",
+          "p": "m2/s2 (kinematic)",
+          "velocity": "m/s"
+        },
+        "velocityChange": 9.821553365898948e-07
+      },
+      "nu": 0.1,
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external",
+      "residualHistory": {
+        "first": {
+          "continuity": 9.027276280990225e-13,
+          "iteration": 1.0,
+          "momentumResidual": 1.4629880841290968,
+          "pressureChange": 55.26013603489902,
+          "velocityChange": 5.734965109449272
+        },
+        "last": {
+          "continuity": 1.650531563276066e-14,
+          "iteration": 336.0,
+          "momentumResidual": 3.171059940311344e-07,
+          "pressureChange": 3.6758164409359994e-07,
+          "velocityChange": 9.821553365898948e-07
+        },
+        "rows": 336
+      },
+      "speed": 1.0,
+      "stage": {
+        "case": "external",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external",
+          "--case",
+          "external",
+          "--nu",
+          "0.10000000000000001",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external --case external --nu 0.10000000000000001 --speed 1 --max-iterations 1500",
+        "label": "circle-re20",
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-circle-re20.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-circle-re20.stdout.log",
+        "timedOut": false
+      },
+      "valid": true
+    }
+  ],
+  "executables": {
+    "flowCli": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "sha256": "e08bda164669e6681cc32756120630f44ffd87a1c481a0f5b2ba9951032263b7"
+    },
+    "meshCli": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+      "sha256": "f1025f03a3fe5f50b9843e63ac05ea8e018c5bcef564364a8420bc2816c6ce69"
+    }
+  },
+  "format": "cartmesh2d-native-flow-verification-v1",
+  "issues": [],
+  "meshGeneration": [
+    {
+      "case": "channel",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/channel.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5",
+        "5",
+        "0.033333333333333333",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/openfoam",
+        "5",
+        "0"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/channel.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5 5 0.033333333333333333 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/openfoam 5 0",
+      "label": "channel-l5",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-channel-l5.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-channel-l5.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "channel",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/channel.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6",
+        "6",
+        "0.016129032258064516",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/openfoam",
+        "6",
+        "0"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/channel.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6 6 0.016129032258064516 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/openfoam 6 0",
+      "label": "channel-l6",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-channel-l6.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-channel-l6.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "cavity",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/cavity.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4",
+        "4",
+        "0.071428571428571425",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/openfoam",
+        "4",
+        "0"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/cavity.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4 4 0.071428571428571425 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/openfoam 4 0",
+      "label": "cavity-l4",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-cavity-l4.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-cavity-l4.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "cavity",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/cavity.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5",
+        "5",
+        "0.033333333333333333",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/openfoam",
+        "5",
+        "0"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/geometry/cavity.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5 5 0.033333333333333333 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/openfoam 5 0",
+      "label": "cavity-l5",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-cavity-l5.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-cavity-l5.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "external",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20",
+        "8",
+        "0.25",
+        "0.1",
+        "exterior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/openfoam",
+        "0",
+        "0",
+        "--size-field",
+        "--reference-length",
+        "2",
+        "--wall-relative-size",
+        "0.0625",
+        "--background-relative-size",
+        "0.5",
+        "--far-field-spans",
+        "10",
+        "--cells-per-level",
+        "3"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20 8 0.25 0.1 exterior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/openfoam 0 0 --size-field --reference-length 2 --wall-relative-size 0.0625 --background-relative-size 0.5 --far-field-spans 10 --cells-per-level 3",
+      "label": "circle-re20",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-circle-re20.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/mesh-circle-re20.stdout.log",
+      "timedOut": false
+    }
+  ],
+  "references": {
+    "cavity": "https://doi.org/10.1016/0021-9991(82)90058-4",
+    "dfg_re20": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+    "open_cylinder_re20": "https://doi.org/10.1017/S0022112070001428",
+    "poiseuille": "https://ocw.mit.edu/courses/2-25-advanced-fluid-mechanics-fall-2013/resources/mit2_25f13_couet_and_pois/"
+  },
+  "runs": [
+    {
+      "case": "channel",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel",
+        "--case",
+        "channel",
+        "--nu",
+        "0.01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel --case channel --nu 0.01 --speed 1 --max-iterations 1500",
+      "label": "channel-l5",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l5.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l5.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "channel",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel",
+        "--case",
+        "channel",
+        "--nu",
+        "0.01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel --case channel --nu 0.01 --speed 1 --max-iterations 1500",
+      "label": "channel-l6",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l6.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-channel-l6.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "cavity",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity",
+        "--case",
+        "cavity",
+        "--nu",
+        "0.01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity --case cavity --nu 0.01 --speed 1 --max-iterations 1500",
+      "label": "cavity-l4",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l4.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l4.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "cavity",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity",
+        "--case",
+        "cavity",
+        "--nu",
+        "0.01",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity --case cavity --nu 0.01 --speed 1 --max-iterations 1500",
+      "label": "cavity-l5",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l5.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-cavity-l5.stdout.log",
+      "timedOut": false
+    },
+    {
+      "case": "external",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external",
+        "--case",
+        "external",
+        "--nu",
+        "0.10000000000000001",
+        "--speed",
+        "1",
+        "--max-iterations",
+        "1500"
+      ],
+      "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external --case external --nu 0.10000000000000001 --speed 1 --max-iterations 1500",
+      "label": "circle-re20",
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-circle-re20.stderr.log",
+      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/logs/flow-circle-re20.stdout.log",
+      "timedOut": false
+    }
+  ],
+  "sequenceChecks": {
+    "issues": [],
+    "series": {
+      "cavity": [
+        {
+          "error": 0.02773114253694152,
+          "h": 0.07142857142857142,
+          "label": "cavity-l4"
+        },
+        {
+          "error": 0.012296700902017548,
+          "h": 0.03333333333333334,
+          "label": "cavity-l5"
+        }
+      ],
+      "channel": [
+        {
+          "error": 0.0007727249654335824,
+          "h": 0.0716114874039433,
+          "label": "channel-l5"
+        },
+        {
+          "error": 0.00016587512806182743,
+          "h": 0.033351867298253506,
+          "label": "channel-l6"
+        }
+      ]
+    },
+    "valid": true
+  },
+  "valid": true,
+  "delivery": {
+    "version": "0.4.0",
+    "platformActuallyRun": "macOS arm64",
+    "nativeCTest": {
+      "passed": 102,
+      "total": 102
+    },
+    "desktopTests": {
+      "passed": 106,
+      "total": 106
+    },
+    "externalOpenFOAM": {
+      "ran": false,
+      "reason": "Docker Desktop manually paused; rechecked at delivery"
+    },
+    "pressureSolver": "Jacobi-PCG; only verified true residual permits termination",
+    "historicalFailures": [
+      {
+        "case": "close-domain circle Re20",
+        "result": "explicit outlet-backflow rejection",
+        "retainedAt": "outputs/native-flow/coarse-probe/logs/flow-external-coarse.stderr.log"
+      },
+      {
+        "case": "3596-cell channel",
+        "result": "restarted pressure solve hit 3000-step limit",
+        "fix": "dedicated SPD PCG preserving conjugate directions; original stopping threshold and 3000 limit unchanged",
+        "regression": "tests/flow_cli_test.py generated-channel pressure-long-mode",
+        "retainedAt": "outputs/native-flow/formal-v1/logs/flow-channel-l6.stderr.log"
+      }
+    ],
+    "limitations": [
+      "Steady constant-property incompressible laminar only; first-order upwind convection",
+      "Fixed axis-aligned boundary presets; outlet backflow or disconnected fluid refused",
+      "External drag is not grid/domain independent; benchmark gate is not an accuracy certificate",
+      "New native solver has not been run on Linux or Windows",
+      "No external checkMesh or OpenFOAM solver comparison this round"
+    ]
+  },
+  "desktop": {
+    "status": "层流求解已收敛",
+    "detail": "336 次迭代；可切换速度或压力色图，并导出全部求解文件。",
+    "counters": "SOLVER CELLS\n4,880\nVERTICES\n5,128\nFACES\n10,008\nQUADTREE LEAVES\n5,128\nCUT CELLS\n100\nOPENFOAM CELLS\n4,880",
+    "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+    "flow": {
+      "summary": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "external",
+        "status": "converged",
+        "converged": true,
+        "cells": 4880,
+        "iterations": 336,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 1.650531563276066e-14,
+        "globalImbalance": 4.055644708955697e-13,
+        "momentumResidual": 3.171059940311344e-07,
+        "velocityChange": 9.821553365898948e-07,
+        "pressureChange": 3.6758164409359994e-07,
+        "forceX": 2.2872800540883635,
+        "forceY": 2.3028454143592114e-16,
+        "globalRelativeImbalance": 9.656296926084993e-15,
+        "domainHeight": 42,
+        "tolerance": 1e-06,
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; upwind momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "fieldCells": 4880,
+      "displayMode": "speed",
+      "resultText": "已收敛 · 336 次迭代 · 原生自研二维稳态层流\n局部连续性（无量纲）\n1.651e-14\n全局不平衡（m²/s）\n4.056e-13\n全局相对不平衡\n9.656e-15\n速度变化\n9.822e-7\n压力变化\n3.676e-7\n动量残差\n3.171e-7"
+    },
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 231.5,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": true
+      },
+      "previewCells": 4880,
+      "exportedCells": 4880,
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    },
+    "exportVerification": {
+      ".json": "e5b8a8861943e9124bb952aeaee554d7e54ddebd25e161f5c5a36a453b7caa18",
+      ".fields.json": "9d5db2444ce36dade945097456eabe806226a9374995f8f64577e32b7ecc7eed",
+      ".cells.csv": "52b2c3e730e67c76f9e645407ed8eecd9dcb7899ce6ff51353026ea24547d07e",
+      ".faces.csv": "86647716064c6fceb332556d99f040dc1d4b6a569248037650c59f3ec1aaa1a0",
+      ".residuals.csv": "85e147105ade37150fec2fc979a7d16f9cae4a3df48e7505990f7fe8c9750d2c",
+      ".vtk": "1b5b60a9abf2187f60a468e8922673dad5bfa9b98ee52a9afd9336772e3a53b2",
+      "cells": 4880,
+      "maxCellImbalance": 5.9396931817445875e-15,
+      "sameMeshAndFieldsAsIndependentVerification": true
+    },
+    "appScreenshot": "artifacts/current/native-flow-desktop.png",
+    "package": "desktop/dist/CartMesh2D-0.4.0-arm64-mac.zip"
+  },
+  "deliveryLogSha256": {
+    "outputs/native-flow/build-final.log": "c21df0289b51ff86c52731499c612fdb2499fecf04490a429027f36d262103a7",
+    "outputs/native-flow/ctest-final.log": "c475549bbce9845b9dd301038980d4591ce0531406fc3a6c5a6905aa3e7d7058",
+    "outputs/native-flow/frontend-final.log": "de6a8c14f742a2d93a1788183ff138d8b52c6085c7a24bd57580a06e05c3ce57",
+    "outputs/native-flow/runtime-final.log": "e382808ed9d52dd2242611fccbb4f8dac8c6972a9ca81d099dfcd43711c27b02",
+    "outputs/native-flow/package-final.log": "f097ac6400354f38a716bda154764f790570fb44be687ff8b7c10cdb0b9af131"
+  },
+  "figures": {
+    "figures": {
+      "benchmarks": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/figures/native-flow-benchmarks.png",
+      "fields": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/figures/native-flow-fields.png",
+      "residuals": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/figures/native-flow-residuals.png"
+    },
+    "format": "cartmesh2d-native-flow-render-v1",
+    "loadedCases": [
+      {
+        "case": "channel",
+        "label": "channel-l5",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l5/channel-l5.solver.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l5/channel",
+        "status": "converged",
+        "verificationValid": true
+      },
+      {
+        "case": "channel",
+        "label": "channel-l6",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/channel-l6/channel-l6.solver.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/channel-l6/channel",
+        "status": "converged",
+        "verificationValid": true
+      },
+      {
+        "case": "cavity",
+        "label": "cavity-l4",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l4/cavity-l4.solver.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l4/cavity",
+        "status": "converged",
+        "verificationValid": true
+      },
+      {
+        "case": "cavity",
+        "label": "cavity-l5",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/cavity-l5/cavity-l5.solver.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/cavity-l5/cavity",
+        "status": "converged",
+        "verificationValid": true
+      },
+      {
+        "case": "external",
+        "label": "circle-re20",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/meshes/circle-re20/circle-re20.solver.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/runs/circle-re20/external",
+        "status": "converged",
+        "verificationValid": true
+      }
+    ],
+    "skipped": [],
+    "sourceSummary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/formal-final/summary.json",
+    "sourceSummaryValid": true
+  }
+}

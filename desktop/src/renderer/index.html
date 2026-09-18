@@ -23,7 +23,7 @@
   <aside class="panel" id="settingsPanel">
     <header class="brand">
       <span class="mark">C2</span>
-      <span><b>CartMesh2D</b><i>二维网格工作台 · 0.3</i></span>
+      <span><b>CartMesh2D</b><i>二维网格与层流 · 0.4</i></span>
     </header>
 
     <section class="block">
@@ -185,6 +185,27 @@
       <p class="note" id="smallAlphaNote">小单元处理参数，并非密度或质量评分。通常保留样例值；提高它可能改变合并结果。</p>
     </section>
 
+    <section class="block flow-block" id="flowBlock" hidden>
+      <h2><span>5</span>原生稳态层流</h2>
+      <p class="note">在本次最终 solver.cm2d 上求解 SIMPLE 层流。首期不支持湍流；工况边界必须与几何相符。</p>
+      <label class="field">工况
+        <select id="flowCase">
+          <option value="external">外流</option>
+          <option value="channel">矩形通道</option>
+          <option value="cavity">顶盖方腔</option>
+        </select>
+      </label>
+      <p class="note flow-scope" id="flowScope"></p>
+      <div class="pair">
+        <label class="field">运动黏度 ν<span class="unit"><input id="flowNu" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>
+        <label class="field">参考速度<span class="unit"><input id="flowSpeed" type="number" min="0.000000000001" step="any" value="1"><i>m/s</i></span></label>
+      </div>
+      <label class="field">最大 SIMPLE 迭代
+        <input id="flowMaxIterations" type="number" min="1" max="100000" step="1" value="1500">
+      </label>
+      <button id="runFlow" class="wide" disabled>启动层流求解</button>
+    </section>
+
     <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许更高构造深度（高密度可能需要，质量标准不变）</label>
     <button id="generate" class="primary" disabled>生成预览</button>
     <button id="cancel" hidden>取消当前操作</button>
@@ -198,6 +219,8 @@
           <option value="level">尺寸配色</option>
           <option value="light">白底线框</option>
           <option value="dark">暗底线框</option>
+          <option id="flowSpeedOption" value="speed" hidden>速度色图</option>
+          <option id="flowPressureOption" value="pressure" hidden>压力色图</option>
         </select>
         <button id="fitOverview">物体周边</button><button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
@@ -217,6 +240,7 @@
       <div class="gates" id="gates"></div>
       <div class="histogram" id="histogram"></div>
       <div id="resolutionResult" class="note" hidden></div>
+      <div id="flowResult" class="flow-result" hidden></div>
     </div>
     <details class="logpanel"><summary>运行日志</summary><pre id="log"></pre></details>
   </section>
