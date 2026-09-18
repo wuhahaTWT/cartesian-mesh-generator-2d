@@ -1,11 +1,10 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
+#include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <limits>
-#include <map>
 #include <numeric>
-#include <sstream>
 #include <stdexcept>
 
 namespace cartmesh2d::fv {
@@ -22,152 +21,7 @@ double finite(double x) {
     return x;
 }
 
-double product(const Vec& a, const Vec& b) {
-    long double sum = 0;
-    for (std::size_t i = 0; i < a.size(); ++i)
-        sum += static_cast<long double>(a[i]) * b[i];
-    return finite(static_cast<double>(sum));
-}
-
-double norm(const Vec& a) {
-    long double result = 0;
-    for (double value : a)
-        result = std::hypot(result, static_cast<long double>(finite(value)));
-    return finite(static_cast<double>(result));
-}
-
-struct System {
-    Vec diag;
-    Vec rhs;
-    std::vector<std::map<std::size_t, double>> off;
-
-    explicit System(std::size_t n) : diag(n), rhs(n), off(n) {}
-
-    Vec apply(const Vec& x) const {
-        Vec y(x.size());
-        for (std::size_t i = 0; i < x.size(); ++i) {
-            y[i] = diag[i] * x[i];
-            for (auto [j, a] : off[i]) y[i] += a * x[j];
-            finite(y[i]);
-        }
-        return y;
-    }
-
-    void pin(std::size_t id) {
-        for (auto& row : off) row.erase(id);
-        off[id].clear();
-        rhs[id] = 0;
-    }
-
-    std::size_t solvePressure(Vec& x) const {
-        // Pressure correction is a symmetric positive graph Laplacian after
-        // outlet Dirichlet terms or a symmetric gauge elimination. Preserve
-        // conjugacy instead of restarting the nonsymmetric momentum method.
-        for (double d : diag) {
-            ensure(d > 0 && std::isfinite(d), "Flow pressure matrix diagonal invalid");
-        }
-        Vec residual(x.size()), z(x.size()), direction(x.size());
-        auto ax = apply(x);
-        for (std::size_t i = 0; i < x.size(); ++i) {
-            residual[i] = rhs[i] - ax[i];
-            direction[i] = z[i] = residual[i] / diag[i];
-        }
-        const double stop = finite(1e-13 + 1e-11 * norm(rhs));
-        if (norm(residual) <= stop) {
-            return 0;
-        }
-        double rz = product(residual, z);
-        for (std::size_t iteration = 0; iteration < 3000; ++iteration) {
-            const auto ad = apply(direction);
-            const double denominator = product(direction, ad);
-            ensure(denominator > 0 && rz > 0, "Flow pressure PCG lost positive definiteness");
-            const double alpha = rz / denominator;
-            for (std::size_t i = 0; i < x.size(); ++i) {
-                x[i] += alpha * direction[i];
-                residual[i] -= alpha * ad[i];
-            }
-            // Only an explicitly recomputed residual can terminate the solve.
-            if (norm(residual) <= stop) {
-                ax = apply(x);
-                for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
-                if (norm(residual) <= stop) {
-                    return iteration + 1;
-                }
-                for (std::size_t i = 0; i < x.size(); ++i) {
-                    direction[i] = z[i] = residual[i] / diag[i];
-                }
-                rz = product(residual, z);
-                continue;
-            }
-            for (std::size_t i = 0; i < x.size(); ++i) {
-                z[i] = residual[i] / diag[i];
-            }
-            const double next = product(residual, z);
-            const double beta = next / rz;
-            for (std::size_t i = 0; i < x.size(); ++i) {
-                direction[i] = z[i] + beta * direction[i];
-            }
-            rz = next;
-        }
-        ax = apply(x);
-        for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
-        std::ostringstream message;
-        message << "Flow pressure PCG iteration limit reached: true residual=" << norm(residual)
-                << ", target=" << stop << ", rhs=" << norm(rhs);
-        throw std::runtime_error(message.str());
-    }
-
-    std::size_t solve(Vec& x) const {
-        for (double d : diag) {
-            ensure(d > 0 && std::isfinite(d), "Flow singular/nonpositive matrix diagonal");
-        }
-        auto ax = apply(x);
-        Vec r(x.size()), r0, p(x.size()), v(x.size()), s(x.size()), t, z(x.size()), zs(x.size());
-        for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
-        r0 = r;
-        const double stop = finite(1e-13 + 1e-11 * norm(rhs));
-        if (norm(r) <= stop) return 0;
-        double rhoOld = 1, alpha = 1, omega = 1;
-        for (std::size_t step = 0; step < 3000; ++step) {
-            const double rho = product(r0, r);
-            ensure(rho != 0 && omega != 0, "Flow BiCGStab breakdown");
-            const double beta = (rho / rhoOld) * (alpha / omega);
-            for (std::size_t i = 0; i < x.size(); ++i) {
-                p[i] = r[i] + beta * (p[i] - omega * v[i]);
-                z[i] = p[i] / diag[i];
-            }
-            v = apply(z);
-            const double rv = product(r0, v);
-            ensure(rv != 0, "Flow BiCGStab singular projection");
-            alpha = rho / rv;
-            for (std::size_t i = 0; i < x.size(); ++i) s[i] = r[i] - alpha * v[i];
-            if (norm(s) <= stop) {
-                for (std::size_t i = 0; i < x.size(); ++i) x[i] += alpha * z[i];
-            } else {
-                for (std::size_t i = 0; i < x.size(); ++i) zs[i] = s[i] / diag[i];
-                t = apply(zs);
-                const double tt = product(t, t);
-                ensure(tt > 0, "Flow BiCGStab null update");
-                omega = product(t, s) / tt;
-                for (std::size_t i = 0; i < x.size(); ++i)
-                    x[i] += alpha * z[i] + omega * zs[i];
-            }
-            ax = apply(x);
-            for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
-            if (norm(r) <= stop) return step + 1;
-            // Restart with the true residual periodically; never accept recurrence alone.
-            if (step % 40 == 39) {
-                r0 = r;
-                std::fill(p.begin(), p.end(), 0);
-                std::fill(v.begin(), v.end(), 0);
-                rhoOld = alpha = omega = 1;
-            } else {
-                rhoOld = rho;
-            }
-        }
-        throw std::runtime_error("Flow linear solver iteration limit reached");
-    }
-};
+using System = detail::SparseSystem2D;
 
 enum class Role { Wall, Inlet, Outlet, Slip, Lid };
 
@@ -347,7 +201,8 @@ double interpolate(const Face& f, const Vec& x) {
                        : x[f.owner];
 }
 
-System momentum(const FvMesh2D& m,
+void momentum(System& a,
+                const FvMesh2D& m,
                 const FlowControls2D& c,
                 const Boundary& b,
                 const Vec& field,
@@ -356,7 +211,7 @@ System momentum(const FvMesh2D& m,
                 const std::vector<Vector2D>& gp,
                 bool y,
                 bool relaxed) {
-    System a(m.cells.size());
+    a.reset();
     const auto& bc = y ? b.v : b.u;
     const auto& fixed = y ? b.fixedV : b.fixedU;
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
@@ -370,9 +225,9 @@ System momentum(const FvMesh2D& m,
         if (f.neighbour) {
             const auto j = *f.neighbour;
             a.diag[i] += d + std::max(q, 0.);
-            a.off[i][j] += -d + std::min(q, 0.);
+            a.add(i, j, -d + std::min(q, 0.));
             a.diag[j] += d + std::max(-q, 0.);
-            a.off[j][i] += -d - std::max(q, 0.);
+            a.add(j, i, -d - std::max(q, 0.));
             const double correction =
                 c.nu * dot(interpolateGradient(f, gradField), f.correction);
             a.rhs[i] += correction;
@@ -396,7 +251,6 @@ System momentum(const FvMesh2D& m,
             a.rhs[i] += (a.diag[i] - old) * field[i];
         }
     }
-    return a;
 }
 
 } // namespace
@@ -415,6 +269,9 @@ FlowResult2D solveIncompressible2D(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
+    ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
+               c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0,
+           "Invalid pressure preconditioner");
     const auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
@@ -441,12 +298,22 @@ FlowResult2D solveIncompressible2D(
     ensure(pending.size() == n,
            "Flow requires one connected fluid region with an unambiguous pressure reference");
 
+    std::vector<std::pair<std::size_t, std::size_t>> connections;
+    connections.reserve(nf);
+    for (const auto& face : m.faces)
+        if (face.neighbour) connections.emplace_back(face.owner, *face.neighbour);
+    const detail::SparsePattern2D pattern(n, connections);
+    System au(pattern), av(pattern), ap(pattern), checkU(pattern), checkV(pattern);
+    detail::LinearWorkspace2D workspace(n);
+    Vec mu(n), mv(n);
     FlowResult2D r;
     // Profiling observes the same solves and stopping rules, including zero-step
     // solves. Timing includes each linear solver's setup, but not assembly.
     auto linearSolve = [&](const System& system, Vec& field, bool pressure) {
         const auto start = c.profile ? Clock::now() : Clock::time_point{};
-        const auto iterations = pressure ? system.solvePressure(field) : system.solve(field);
+        const auto iterations = pressure ? system.solvePressure(field, workspace,
+            c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0)
+            : system.solve(field, workspace);
         if (c.profile) {
             auto& p = r.performance;
             (pressure ? p.pressureSolves : p.momentumSolves) += 1;
@@ -493,8 +360,8 @@ FlowResult2D solveIncompressible2D(
         const auto gp = gradient(m, r.p, zeros, b.fixedP);
         const auto gu = gradient(m, r.u, b.u, b.fixedU);
         const auto gv = gradient(m, r.v, b.v, b.fixedV);
-        auto au = momentum(m, c, b, r.u, r.flux, gu, gp, false, true);
-        auto av = momentum(m, c, b, r.v, r.flux, gv, gp, true, true);
+        momentum(au, m, c, b, r.u, r.flux, gu, gp, false, true);
+        momentum(av, m, c, b, r.v, r.flux, gv, gp, true, true);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -523,11 +390,11 @@ FlowResult2D solveIncompressible2D(
         }
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
         for(int pass=0;pass<4;++pass){
-            System ap(n);const auto gc=gradient(m,pc,zeros,b.fixedP);
+            ap.reset();const auto gc=gradient(m,pc,zeros,b.fixedP);
             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
                 correction[id]=(f.neighbour||b.fixedP[id])?-interpolate(f,ra)*dot(interpolateGradient(f,gc),f.correction):0;
                 ap.rhs[i]-=predicted[id]+correction[id];
-                if(f.neighbour){const auto j=*f.neighbour;ap.rhs[j]+=predicted[id]+correction[id];ap.diag[i]+=df[id];ap.diag[j]+=df[id];ap.off[i][j]-=df[id];ap.off[j][i]-=df[id];}
+                if(f.neighbour){const auto j=*f.neighbour;ap.rhs[j]+=predicted[id]+correction[id];ap.diag[i]+=df[id];ap.diag[j]+=df[id];ap.add(i,j,-df[id]);ap.add(j,i,-df[id]);}
                 else if(b.fixedP[id])ap.diag[i]+=df[id];
             }
             if(b.closed){ap.pin(0);pc[0]=0;}
@@ -548,8 +415,9 @@ FlowResult2D solveIncompressible2D(
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
         const auto newGp=gradient(m,r.p,zeros,b.fixedP),newGu=gradient(m,r.u,b.u,b.fixedU),newGv=gradient(m,r.v,b.v,b.fixedV);
-        const auto checkU=momentum(m,c,b,r.u,r.flux,newGu,newGp,false,false),checkV=momentum(m,c,b,r.v,r.flux,newGv,newGp,true,false);
-        const auto mu=checkU.apply(r.u),mv=checkV.apply(r.v);double mr=0;
+        momentum(checkU,m,c,b,r.u,r.flux,newGu,newGp,false,false);
+        momentum(checkV,m,c,b,r.v,r.flux,newGv,newGp,true,false);
+        checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
             mr=std::max(mr,std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale);}

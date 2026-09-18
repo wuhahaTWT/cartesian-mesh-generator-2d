@@ -122,13 +122,30 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 `external` 为左侧恒速入口、右侧运动学压力0、上下滑移及物面无滑移；`channel` 为无孔矩形内域、左侧抛物线入口、右侧压力0及上下无滑移，speed 是抛物线峰值；`cavity` 为无孔矩形腔、顶盖水平移动、其他壁面静止，speed 是顶盖速度，固定 cell 0 的压力为0。只接受一个连通流体区域；边界位置/方向或内域形状不符、出口回流、数值范围错误均明确失败。它不是任意喷管/多孔腔的自动边界配置器。
 
-单元中心速度/运动学压力，共享边积分体积通量。动量对流为**一阶迎风**，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 Jacobi–PCG，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
+单元中心速度/运动学压力，共享边积分体积通量。动量对流为**一阶迎风**，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 IC(0)–PCG，保留 `--pressure-preconditioner jacobi` 对照，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
 
 本 CLI 的停止条件是：至少10次迭代，动量残差、相对速度变化、相对压力变化均小于 `--tolerance`（默认1e-6），逐格连续性及全局相对流量失衡均小于1e-8。动量残差是原离散方程失衡除以 `(aP_u+aP_v)*Uref`；逐格连续性为 `|sum(flux)|/(Uref*sqrt(area))`；速度变化以 Uref 归一化，压力变化以 `Uref²+nu*Uref/domainHeight` 归一化。全局失衡除以总入流，封闭腔使用 `Uref*domainHeight`。这些是本实现的数值停止条件，不是所有 CFD 软件的统一精度标准，不能与 OpenFOAM residual 数字直接等同。`converged` 也不等于网格无关或物理模型适用。
 
 退出0代表满足上述停止条件；退出2代表到达上限，保存诊断场但 `converged:false`；退出1代表输入/数值失败。输出六种文件：`.json` 工况/状态/单位/压力基准、`.fields.json` 桌面字段、`.cells.csv` 单元 u/v/p、`.faces.csv` owner向外的积分体积通量、`.residuals.csv` 全迭代历史、`.vtk` 原多边形上的速度/压力。p 为 p/ρ，单位 m²/s²；力为流体对静止 EmbeddedBoundary 的积分力除以密度和深度，单位 m³/s²，不是 Cd/Cl。`domainHeight` 只指外域高度，不是物体参考直径。桌面验证全字段有限、单元ID/数量/工况与本次最终网格一致后才绑定；失败或取消保留 `flow-incomplete-*` 诊断，部分复制文件不会充当完整结果。
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
+
+### 稀疏结构与压力预条件
+
+流动系统的非对角项采用固定、按列排序的 CSR 连接表，重复连接共享同一项并相加；动量、压力与残差检查矩阵复用该结构，数组清零后重新组装。U/V/压力按顺序共享线性工作区，矩阵乘向量不再每步分配结果。自然单元编号不重排，物理单元 ID 不变。
+
+压力默认 `--pressure-preconditioner ic0`，即自然顺序、零填充的不完全 LDLᵀ 分解；这是 IC(0) 的等价表示，只作用于预条件，不替换原方程。前代入、对角除法、后代入构成对称预条件。对称固定压力自由度，保留正对角；非对称系数、非正或非有限 pivot 明确拒绝，不移位、不修改容差、不暗中回退。`jacobi` 保留旧的对角预条件，便于隔离存储和预条件的性能贡献。两条路径仍使用原3000步上限和真实 `||b-Ax||₂ <= 1e-13 + 1e-11||b||₂` 停止条件。摘要及性能文件记录所选预条件器。
+
+实现位于 `include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp`，本仓库自行编写，未复制或链接外部线性求解库。公开方法参考 [Netlib Templates](https://netlib.org/templates/templates.html) 的预条件共轭梯度及不完全分解、[PETSc PCICC 文档](https://petsc.org/release/manualpages/PC/PCICC/)的零填充/自然顺序概念。没有采用 PETSc 的默认移位策略，也不声称 ICC 是原创数学方法或足以取代多重网格。
+
+`tests/flow_linear_test.cpp` 使用独立稠密矩阵检查真实残差、已知解、非对称 BiCGStab、图连接去重、压力约束、工作区复用及失败路径；CLI 同时测试两种预条件的物理解。单元测试不代替最终 Cut-cell 上的独立守恒与精度验证，实测结论见 CURRENT_STATE。
+
+单一大规模通道的真实场、粗细连接放大及解析速度对照可用专用绘图入口（只读最终CM2D和CSV）：
+
+```sh
+MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_flow_scale.py --summary outputs/native-flow/sparse-scale/summary.json --label channel-500k --zoom 1.21 1.29 .46 .54 --output outputs/native-flow/sparse-scale/channel.png
+```
+
 
 ### 扩展与性能测量
 
