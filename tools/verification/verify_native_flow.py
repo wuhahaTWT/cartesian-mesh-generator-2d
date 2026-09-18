@@ -1091,8 +1091,59 @@ def idw(cells: list[dict[str, float]], x: float, y: float, field: str, count: in
     return math.fsum(w * row[field] for w, row in zip(weights, nearest)) / math.fsum(weights)
 
 
+def affine_sample(cells: list[dict[str, float]], x: float, y: float, field: str,
+                  count: int = 8, boundary: Iterable[dict[str, float]] = ()) -> float:
+    """Local weighted plane fit, exact on affine fields including near walls.
+
+    Coordinates are relative to the query and scaled by the local stencil.
+    Unlike an inverse-distance average, the fit reproduces a gradient.  Wall
+    samples are constraints with the same distance weights, not a global blend.
+    Rank-deficient stencils fail explicitly rather than returning biased data.
+    This is a point-value diagnostic, not a conservative field remapping.
+    """
+    if count < 3 or not math.isfinite(x) or not math.isfinite(y):
+        raise VerificationError("invalid affine sampling controls")
+    rows = sorted([*cells, *boundary],
+                  key=lambda row: (math.hypot(row["x"] - x, row["y"] - y),
+                                   row["x"], row["y"]))[:count]
+    if len(rows) < 3 or any(not math.isfinite(row[key]) for row in rows for key in ("x", "y", field)):
+        raise VerificationError("affine sampling needs finite samples")
+    distances = [math.hypot(row["x"] - x, row["y"] - y) for row in rows]
+    exact = [row[field] for row, distance in zip(rows, distances) if distance == 0]
+    if exact:
+        if any(value != exact[0] for value in exact):
+            raise VerificationError("conflicting coincident samples")
+        return exact[0]
+    scale = max(distances)
+    minimum = min(distances)
+    # Normalize weights to avoid overflow on physically small geometries.
+    weights = [(minimum / distance) ** 2 for distance in distances]
+    weight_sum = math.fsum(weights)
+    dx = [(row["x"] - x) / scale for row in rows]
+    dy = [(row["y"] - y) / scale for row in rows]
+    values = [row[field] for row in rows]
+    def average(array: list[float]) -> float:
+        return math.fsum(w * value for w, value in zip(weights, array)) / weight_sum
+    mx, my, mv = average(dx), average(dy), average(values)
+    xx = average([(v - mx) ** 2 for v in dx])
+    yy = average([(v - my) ** 2 for v in dy])
+    xy = average([(a - mx) * (b - my) for a, b in zip(dx, dy)])
+    xv = average([(a - mx) * (v - mv) for a, v in zip(dx, values)])
+    yv = average([(b - my) * (v - mv) for b, v in zip(dy, values)])
+    determinant = xx * yy - xy * xy
+    if not determinant > 1e-12 * (xx + yy) ** 2:
+        raise VerificationError("rank-deficient affine sampling stencil")
+    gx = (yy * xv - xy * yv) / determinant
+    gy = (xx * yv - xy * xv) / determinant
+    result = mv - gx * mx - gy * my
+    if not math.isfinite(result):
+        raise VerificationError("non-finite affine sample")
+    return result
+
+
 def cavity_checks(measured: Measurement, cells: list[dict[str, float]], nu: float,
-                  speed: float, args: argparse.Namespace) -> dict[str, Any]:
+                  speed: float, args: argparse.Namespace, *, legacy: bool = False) -> dict[str, Any]:
+    sample = idw if legacy else affine_sample
     xmin, ymin, xmax, ymax = measured.bounds
     width, height = xmax - xmin, ymax - ymin
     re = speed * width / nu
@@ -1101,26 +1152,27 @@ def cavity_checks(measured: Measurement, cells: list[dict[str, float]], nu: floa
     if abs(re - 100.0) <= 1e-8 and abs(width / height - 1.0) <= 1e-8:
         for coordinate, reference in GHIA_U[1:-1]:
             x = xmin + 0.5 * width
-            actual = idw(cells, x, ymin + coordinate * height, "u", boundary=(
+            actual = sample(cells, x, ymin + coordinate * height, "u", boundary=(
                 {"x": x, "y": ymin, "u": 0.0}, {"x": x, "y": ymax, "u": speed})) / speed
             samples.append({"field": "u", "coordinate": coordinate, "reference": reference, "actual": actual})
             errors.append(actual - reference)
         for coordinate, reference in GHIA_V[1:-1]:
             y = ymin + 0.5 * height
-            actual = idw(cells, xmin + coordinate * width, y, "v", boundary=(
+            actual = sample(cells, xmin + coordinate * width, y, "v", boundary=(
                 {"x": xmin, "y": y, "v": 0.0}, {"x": xmax, "y": y, "v": 0.0})) / speed
             samples.append({"field": "v", "coordinate": coordinate, "reference": reference, "actual": actual})
             errors.append(actual - reference)
     rmse = math.sqrt(math.fsum(e * e for e in errors) / len(errors)) if errors else math.inf
     maximum = max(map(abs, errors), default=math.inf)
-    centre_u = idw(cells, xmin + 0.5 * width, ymin + 0.5 * height, "u") / speed
-    left_v = idw(cells, xmin + 0.25 * width, ymin + 0.5 * height, "v") / speed
-    right_v = idw(cells, xmin + 0.80 * width, ymin + 0.5 * height, "v") / speed
+    centre_u = sample(cells, xmin + 0.5 * width, ymin + 0.5 * height, "u") / speed
+    left_v = sample(cells, xmin + 0.25 * width, ymin + 0.5 * height, "v") / speed
+    right_v = sample(cells, xmin + 0.80 * width, ymin + 0.5 * height, "v") / speed
     max_speed = max(row["speed"] for row in cells) / speed
     checks = {
         "reynolds": re,
         "reference": "Ghia, Ghia & Shin 1982, Re=100 centreline tables",
-        "samplingMethod": "inverse-distance cell-centre interpolation with exact Dirichlet wall anchors",
+        "samplingMethod": ("legacy IDW8 with Dirichlet wall anchors" if legacy else
+                           "distance-weighted affine fit with Dirichlet wall anchors; v2"),
         "samples": samples,
         "centrelineRmse": rmse,
         "centrelineMaxError": maximum,
@@ -1132,6 +1184,8 @@ def cavity_checks(measured: Measurement, cells: list[dict[str, float]], nu: floa
     checks["valid"] = (bool(errors) and rmse <= args.cavity_rmse and maximum <= args.cavity_max_error
                        and centre_u < -0.03 and left_v > 0.03 and right_v < -0.03
                        and max_speed <= args.max_speed_ratio)
+    if not legacy:
+        checks["legacyIdw"] = cavity_checks(measured, cells, nu, speed, args, legacy=True)
     return checks
 
 
@@ -1555,6 +1609,9 @@ def sequence_checks(cases: list[dict[str, Any]]) -> dict[str, Any]:
                               ("cavity", "centrelineRmse"),
                               ("manufactured", "velocityL2Relative")):
         selected = [item for item in cases if item.get("case") == case_name and item.get("benchmark", {}).get(metric) is not None]
+        if case_name == "cavity" and len({item["benchmark"].get("samplingMethod", "unrecorded")
+                                         for item in selected}) > 1:
+            result["issues"].append("cavity sequence mixes different sampling methods")
         selected.sort(key=lambda item: item["meshMeasurement"]["characteristicH"], reverse=True)
         values = [{"label": item.get("label"), "h": item["meshMeasurement"]["characteristicH"],
                    "error": item["benchmark"][metric]} for item in selected]
@@ -1578,7 +1635,7 @@ def sequence_checks(cases: list[dict[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def main() -> int:
+def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--generate", action="store_true", help="generate the default five-case suite")
     parser.add_argument("--verify-only", action="store_true",
@@ -1617,7 +1674,11 @@ def main() -> int:
     parser.add_argument("--cavity-max-error", type=float, default=0.30)
     parser.add_argument("--max-speed-ratio", type=float, default=4.0)
     parser.add_argument("--external-lift-drag-ratio", type=float, default=0.30)
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> int:
+    args = argument_parser().parse_args()
 
     output_root = args.output_root.resolve()
     summary_path = args.summary.resolve() if args.summary else output_root / "summary.json"

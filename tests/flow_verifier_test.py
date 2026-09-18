@@ -3,6 +3,7 @@
 
 import csv
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -39,6 +40,81 @@ def tiny_mesh() -> verifier.Mesh:
         (verifier.Cell(0, 1.0, (0, 1, 2), (0,)),),
         (0, 0, 0, 0, 0, 0, 0),
     )
+
+
+class CavitySamplingTests(unittest.TestCase):
+    @staticmethod
+    def samples(n, function, scale=1.0):
+        return [dict(x=scale * (i + .5) / n, y=scale * (j + .5) / n,
+                     u=function((i + .5) / n, (j + .5) / n))
+                for j in range(n) for i in range(n)]
+
+    def test_affine_field_at_benchmark_points_across_scales(self):
+        f = lambda x, y: .7 + 1.3 * x - .8 * y
+        for scale in (1e-6, 1., 1e6):
+            for n in (14, 30, 62):
+                rows = self.samples(n, f, scale)
+                for coordinate, _ in verifier.GHIA_U[1:-1]:
+                    x, y = .5, coordinate
+                    walls = [dict(x=x*scale, y=endpoint*scale, u=f(x, endpoint))
+                             for endpoint in (0., 1.)]
+                    with self.subTest(scale=scale, n=n, y=y):
+                        self.assertAlmostEqual(verifier.affine_sample(
+                            rows, x*scale, y*scale, "u", boundary=walls), f(x, y), places=13)
+        # Keep the minimal evidence for why the former average was replaced.
+        rows = self.samples(14, f)
+        walls = [dict(x=.5, y=e, u=f(.5, e)) for e in (0., 1.)]
+        legacy_errors = [abs(verifier.idw(rows, .5, y, "u", boundary=walls)-f(.5, y))
+                         for y, _ in verifier.GHIA_U[1:-1]]
+        self.assertGreater(max(legacy_errors), .01)
+
+    def test_skewed_samples_and_exact_points(self):
+        f = lambda x, y: 2. + 3. * x - 4. * y
+        rows = [dict(x=x+.3*y, y=y, u=f(x+.3*y, y))
+                for x, y in ((0., 0.), (1., 0.), (0., 1.), (1., 1.), (.4, .8))]
+        self.assertAlmostEqual(verifier.affine_sample(rows, .4, .3, "u"), f(.4, .3), places=14)
+        self.assertEqual(verifier.affine_sample(rows, 0., 0., "u"), 2.)
+        walls = [dict(x=.5, y=1., u=1.)]
+        self.assertEqual(verifier.affine_sample(rows, .5, 1., "u", boundary=walls), 1.)
+        self.assertEqual(verifier.affine_sample(list(reversed(rows)), .4, .3, "u"),
+                         verifier.affine_sample(rows, .4, .3, "u"))
+
+    def test_smooth_quadratic_sampling_refines(self):
+        f = lambda x, y: x*x + y*y
+        errors = []
+        for n in (8, 16, 32):
+            rows = self.samples(n, f)
+            walls = [dict(x=.5, y=e, u=f(.5, e)) for e in (0., 1.)]
+            differences = [verifier.affine_sample(rows, .5, y, "u", boundary=walls)-f(.5, y)
+                           for y, _ in verifier.GHIA_U[1:-1]]
+            errors.append(math.sqrt(sum(e*e for e in differences)/len(differences)))
+        self.assertGreater(errors[0]/errors[1], 3.)
+        self.assertGreater(errors[1]/errors[2], 3.)
+
+    def test_invalid_or_rank_deficient_samples_fail(self):
+        line = [dict(x=float(i), y=0., u=1.) for i in range(8)]
+        with self.assertRaisesRegex(verifier.VerificationError, "rank-deficient"):
+            verifier.affine_sample(line, .5, .2, "u")
+        with self.assertRaises(verifier.VerificationError):
+            verifier.affine_sample([], .5, .2, "u")
+        with self.assertRaises(verifier.VerificationError):
+            verifier.affine_sample(line, math.nan, .2, "u")
+        with self.assertRaises(verifier.VerificationError):
+            verifier.affine_sample(line, .5, .2, "u", count=2)
+        line[0]["u"] = math.nan
+        with self.assertRaises(verifier.VerificationError):
+            verifier.affine_sample(line, .5, .2, "u")
+        duplicate = [dict(x=0., y=0., u=float(i)) for i in range(3)]
+        with self.assertRaisesRegex(verifier.VerificationError, "conflicting"):
+            verifier.affine_sample(duplicate, 0., 0., "u")
+
+    def test_cavity_sequence_rejects_mixed_sampling_methods(self):
+        cases = [dict(case="cavity", label=str(i), meshMeasurement=dict(characteristicH=h),
+                      benchmark=dict(centrelineRmse=e, samplingMethod=method))
+                 for i, h, e, method in ((0, .1, .02, "legacy"), (1, .05, .01, "affine-v2"))]
+        result = verifier.sequence_checks(cases)
+        self.assertFalse(result["valid"])
+        self.assertTrue(any("sampling" in issue for issue in result["issues"]))
 
 
 class FlowVerifierSchemaTests(unittest.TestCase):
