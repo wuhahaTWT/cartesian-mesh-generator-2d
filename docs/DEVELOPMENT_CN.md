@@ -122,11 +122,19 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 `external` 为左侧恒速入口、右侧运动学压力0、上下滑移及物面无滑移；`channel` 为无孔矩形内域、左侧抛物线入口、右侧压力0及上下无滑移，speed 是抛物线峰值；`cavity` 为无孔矩形腔、顶盖水平移动、其他壁面静止，speed 是顶盖速度，固定 cell 0 的压力为0。只接受一个连通流体区域；边界位置/方向或内域形状不符、出口回流、数值范围错误均明确失败。它不是任意喷管/多孔腔的自动边界配置器。
 
-单元中心速度/运动学压力，共享边积分体积通量。动量对流为**一阶迎风**，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 IC(0)–PCG，保留 `--pressure-preconditioner jacobi` 对照，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
+单元中心速度/运动学压力，共享边积分体积通量。动量默认一阶迎风，可用 `--convection limited-linear` 选择限制线性重构，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 IC(0)–PCG，保留 `--pressure-preconditioner jacobi` 对照，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
+
+压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按最小二乘梯度外推（梯度方程仍施加原零法向约束）。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。
+
+`--convection upwind|limited-linear` 的默认值为 upwind。限制线性格式保留隐式迎风矩阵，将唯一上游面重构值与迎风单元值之差作为显式共享面修正，owner/neighbour 严格反号；原方程残差也包含该修正。每个速度分量的 cell limiter 使全部实际面中心重构值落在邻居/Dirichlet 边界的局部范围内，黏性梯度不受此 limiter 修改。固定速度边界直接用边界值；自由分量的出流使用单边受限重构，回流仍明确拒绝。这是 **Barth–Jespersen 风格的面值限制**，不是速度场全局最大值原理，也不是任意网格上的完整 Navier–Stokes 二阶证明。光滑指数函数面值细化单独检查重构阶数，实际流动另做基准比较。方法依据参考 [Barth–Jespersen（1989）](https://ntrs.nasa.gov/citations/19890037939)的多维单调线性重构、[OpenFOAM 梯度限制说明](https://doc.openfoam.com/2306/tools/processing/numerics/schemes/gradient/)及 [MOOSE 压力动量项](https://mooseframework.inl.gov/source/fvkernels/INSFVMomentumPressure.html)，实现位于本仓库 `FlowFaceOperators2D.hpp`，没有复制其代码。
 
 本 CLI 的停止条件是：至少10次迭代，动量残差、相对速度变化、相对压力变化均小于 `--tolerance`（默认1e-6），逐格连续性及全局相对流量失衡均小于1e-8。动量残差是原离散方程失衡除以 `(aP_u+aP_v)*Uref`；逐格连续性为 `|sum(flux)|/(Uref*sqrt(area))`；速度变化以 Uref 归一化，压力变化以 `Uref²+nu*Uref/domainHeight` 归一化。全局失衡除以总入流，封闭腔使用 `Uref*domainHeight`。这些是本实现的数值停止条件，不是所有 CFD 软件的统一精度标准，不能与 OpenFOAM residual 数字直接等同。`converged` 也不等于网格无关或物理模型适用。
 
-退出0代表满足上述停止条件；退出2代表到达上限，保存诊断场但 `converged:false`；退出1代表输入/数值失败。输出六种文件：`.json` 工况/状态/单位/压力基准、`.fields.json` 桌面字段、`.cells.csv` 单元 u/v/p、`.faces.csv` owner向外的积分体积通量、`.residuals.csv` 全迭代历史、`.vtk` 原多边形上的速度/压力。p 为 p/ρ，单位 m²/s²；力为流体对静止 EmbeddedBoundary 的积分力除以密度和深度，单位 m³/s²，不是 Cd/Cl。`domainHeight` 只指外域高度，不是物体参考直径。桌面验证全字段有限、单元ID/数量/工况与本次最终网格一致后才绑定；失败或取消保留 `flow-incomplete-*` 诊断，部分复制文件不会充当完整结果。
+退出0代表满足上述停止条件；退出2代表到达上限，保存诊断场但 `converged:false`；退出1代表输入/数值失败。输出六种文件：`.json` 工况/状态/单位/压力基准、`.fields.json` 桌面字段、`.cells.csv` 单元 u/v/p、`.faces.csv` owner向外的积分体积通量，以及面压力、对流/扩散动量通量、`.residuals.csv` 全迭代历史、`.vtk` 原多边形上的速度/压力。p 为 p/ρ，单位 m²/s²；力为流体对静止 EmbeddedBoundary 的积分力除以密度和深度，单位 m³/s²，不是 Cd/Cl。`domainHeight` 只指外域高度，不是物体参考直径。桌面验证全字段有限、单元ID/数量/工况与本次最终网格一致后才绑定；失败或取消保留 `flow-incomplete-*` 诊断，部分复制文件不会充当完整结果。
+
+面动量的符号为 `q*U_face + p_face*S - nu*grad(U)·S`，CSV 的 advectionX/Y、diffusionX/Y 分别保存第一项和第三项；二维每单位深度的单位为 m³/s²，pressure 列仍为 m²/s²。独立验证器从 CM2D 多边形中心和边线法向、cell u/v/p、边界定义重建梯度/面值/通量，复算局部和全局动量失衡，不能仅对已导出通量求和就宣称离散正确。旧输出若完整缺少这些列，只能标为动量审核不可用；新列不完整应失败。
+
+力分开记录：`pressureForceX/Y` 是与动量共用的壁面压力积分；`discreteForceX/Y` 加上同一离散 Laplacian 黏性通量；原 `forceX/Y` 保留由速度梯度重构的完整 Newtonian 应力牵引，`forceDefinition` 明确标注。后者含转置梯度，与离散 Laplacian 面通量尚不完全相同，不能把二者混称同一受力或据此认定工程阻力精度。需要后续细化/应力离散验证；目前同时导出差别以供核查。
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 

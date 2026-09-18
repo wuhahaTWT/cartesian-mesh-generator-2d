@@ -200,6 +200,13 @@
         <label class="field">运动黏度 ν<span class="unit"><input id="flowNu" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>
         <label class="field">参考速度<span class="unit"><input id="flowSpeed" type="number" min="0.000000000001" step="any" value="1"><i>m/s</i></span></label>
       </div>
+      <label class="field">对流格式
+        <select id="flowConvection">
+          <option value="upwind" selected>一阶迎风（默认，稳健）</option>
+          <option value="limited-linear">线性迎风（限制重构）</option>
+        </select>
+      </label>
+      <p class="note">线性迎风使用有界限制重构，可减少数值扩散，但不保证所有工况都更准确；这里不代表通用二阶格式或新的工程合格结论。</p>
       <label class="field">最大 SIMPLE 迭代
         <input id="flowMaxIterations" type="number" min="1" max="100000" step="1" value="1500">
       </label>

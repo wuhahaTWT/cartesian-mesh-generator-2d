@@ -157,6 +157,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_flow_linear_tests tests/flow_linear_test.cpp)
     target_link_libraries(cartmesh2d_flow_linear_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_linear COMMAND cartmesh2d_flow_linear_tests)
+    add_executable(cartmesh2d_flow_face_tests tests/flow_face_test.cpp)
+    target_link_libraries(cartmesh2d_flow_face_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_flow_face COMMAND cartmesh2d_flow_face_tests)
     add_test(NAME cartmesh2d_fv_cli_validation
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fv_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_fv_cli>)
@@ -165,6 +168,10 @@ if(CARTMESH2D_BUILD_TESTS)
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
     set_tests_properties(cartmesh2d_flow_cli_validation PROPERTIES TIMEOUT 120)
+    add_test(NAME cartmesh2d_flow_verifier
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_verifier_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    set_tests_properties(cartmesh2d_flow_verifier PROPERTIES TIMEOUT 30)
 
 
     add_executable(cartmesh2d_geometry_tests tests/geometry_test.cpp)

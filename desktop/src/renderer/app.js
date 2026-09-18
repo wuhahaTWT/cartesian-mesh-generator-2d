@@ -749,16 +749,28 @@ function updateFlowScope() {
   $('flowScope').textContent = (selected?.scope || '') + mismatch;
 }
 
+function flowConvectionLabel(summary) {
+  const scheme = state.catalog?.flowConvectionSchemes?.[summary.convection];
+  const label = scheme?.label || (summary.convection === 'limited-linear'
+    ? '线性迎风（限制重构）' : '一阶迎风');
+  return `${label}${summary.convectionInferred ? '（旧摘要缺字段，按一阶迎风推断）' : ''}`;
+}
+
 function renderFlowResult(summary) {
   const container = $('flowResult');
   container.replaceChildren();
+  const convectionText = flowConvectionLabel(summary);
+  const pressureText = summary.pressureDiscretization === 'shared-face-gauss'
+    ? '共享面压力' : '旧结果未记录';
   const stateLine = document.createElement('div');
   stateLine.className = 'flow-state';
   stateLine.textContent = summary.converged
-    ? `已收敛 · ${summary.iterations} 次迭代 · 原生自研二维稳态层流`
-    : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛`;
+    ? `已收敛 · ${summary.iterations} 次迭代 · 对流：${convectionText}`
+    : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛 · 对流：${convectionText}`;
   container.appendChild(stateLine);
   const rows = [
+    ['对流格式', convectionText],
+    ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
     ['全局不平衡（m²/s）', summary.globalImbalance],
     ['全局相对不平衡', summary.globalRelativeImbalance],
@@ -769,7 +781,8 @@ function renderFlowResult(summary) {
   for (const [label, value] of rows) {
     const item = document.createElement('div');
     const caption = document.createElement('span'); caption.textContent = label;
-    const number = document.createElement('b'); number.textContent = Number(value).toExponential(3);
+    const number = document.createElement('b');
+    number.textContent = typeof value === 'number' ? value.toExponential(3) : value;
     item.append(caption, number); container.appendChild(item);
   }
   container.hidden = false;
@@ -786,7 +799,8 @@ async function runFlow() {
       case: $('flowCase').value,
       nu: Number($('flowNu').value),
       speed: Number($('flowSpeed').value),
-      maxIterations: Number($('flowMaxIterations').value)
+      maxIterations: Number($('flowMaxIterations').value),
+      convection: $('flowConvection').value
     });
     state.flow = payload;
     view.setFlowFields(payload.fields.cells);
@@ -798,9 +812,9 @@ async function runFlow() {
     renderLegend(state.mesh, state.levelBasis);
     renderFlowResult(payload.summary);
     if (payload.summary.converged) {
-      status('层流求解已收敛', `${payload.summary.iterations} 次迭代；可切换速度或压力色图，并导出全部求解文件。`);
+      status('层流求解已收敛', `${payload.summary.iterations} 次迭代；对流格式 ${flowConvectionLabel(payload.summary)}；可切换速度或压力色图，并导出全部求解文件。`);
     } else {
-      status('到达迭代上限，未收敛', `${payload.summary.iterations} 次迭代；保留有效结果，不能当作收敛解。`);
+      status('到达迭代上限，未收敛', `${payload.summary.iterations} 次迭代；对流格式 ${flowConvectionLabel(payload.summary)}；保留有效结果，不能当作收敛解。`);
     }
   } catch (error) {
     const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
@@ -870,6 +884,7 @@ $('flowCase').addEventListener('change', () => { clearFlowBinding(); updateFlowS
 for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
   $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 }
+$('flowConvection').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 
 $('displayMode').addEventListener('change', event => {

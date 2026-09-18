@@ -82,6 +82,11 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert all(math.isfinite(float(cell[k])) for k in ('u', 'v', 'p', 'speed'))
             assert abs(float(cell['speed']) - math.hypot(float(cell['u']), float(cell['v']))) < 1e-12
         assert data['converged'] is (code == 0)
+        assert data['pressureDiscretization'] == 'shared-face-gauss'
+        assert data['convection'] in ('upwind', 'limited-linear')
+        for face in flux:
+            assert all(math.isfinite(float(face[k])) for k in
+                       ('pressure','advectionX','advectionY','diffusionX','diffusionY'))
         assert len(json.loads(prefix.with_suffix('.fields.json').read_text())['cells']) == len(field)
         assert prefix.with_suffix('.vtk').read_text().count('CELL_DATA ') == 1
         return data, field
@@ -132,7 +137,8 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     assert limited['converged'] is False and limited['simpleIterations'] == 1
     for label, options in [('negative', ('--nu', '-1')), ('nan', ('--speed', 'nan')),
                            ('overflow', ('--speed', '1e200')), ('count', ('--max-iterations', '1.5')),
-                           ('preconditioner', ('--pressure-preconditioner', 'unknown'))]:
+                           ('preconditioner', ('--pressure-preconditioner', 'unknown')),
+                           ('convection', ('--convection', 'unknown'))]:
         run(label, mesh, extra=options, code=1)
     run('no-solid', mesh, case='external', code=1)
     separated = root / 'separated.solver.cm2d'
@@ -145,6 +151,14 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     assert abs(float(field[0]['p'])) < 1e-12  # Closed-domain pressure gauge.
     centre = min(field, key=lambda c: (float(c['x'])-.5)**2 + (float(c['y'])-.5)**2)
     assert -.3 < float(centre['u']) < -.05  # Clockwise recirculation, not zero flow.
+    high, high_field = run('cavity-high', cavity, case='cavity',
+                           extra=('--convection','limited-linear'))
+    assert high['convection'] == 'limited-linear'
+    assert abs(float(high_field[0]['p'])) < 1e-12
+    # The selection must actually change nonlinear transport, not only metadata.
+    assert max(abs(float(a['u'])-float(b['u'])) for a,b in zip(field,high_field)) > 1e-3
+    run('high-limit', cavity, case='cavity',
+        extra=('--convection','limited-linear','--max-iterations','1'), code=2)
     # Real regression: a 3596-cell generated channel previously exhausted the
     # restarted pressure Krylov solver before its first SIMPLE step.
     outline = root / 'channel.xy'

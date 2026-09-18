@@ -81,6 +81,15 @@ class Edge:
 
 
 @dataclass(frozen=True)
+class FaceGeometry:
+    centre: tuple[float, float]
+    area_vector: tuple[float, float]
+    correction: tuple[float, float]
+    transmissibility: float
+    neighbour_weight: float
+
+
+@dataclass(frozen=True)
 class Cell:
     id: int
     stored_area: float
@@ -289,6 +298,13 @@ def load_csv(path: Path, columns: Iterable[str]) -> list[dict[str, str]]:
     return rows
 
 
+def csv_fields(path: Path) -> tuple[str, ...]:
+    """Return the header without accepting a malformed/empty CSV as legacy."""
+    with path.open(newline="", encoding="utf-8-sig") as stream:
+        fields = csv.DictReader(stream).fieldnames or []
+    return tuple(fields)
+
+
 def read_cells(path: Path, mesh: Mesh, measured: Measurement) -> list[dict[str, float]]:
     rows = load_csv(path, ("cell", "x", "y", "area", "u", "v", "p", "speed"))
     values: dict[int, dict[str, float]] = {}
@@ -309,20 +325,33 @@ def read_cells(path: Path, mesh: Mesh, measured: Measurement) -> list[dict[str, 
     return [values[i] for i in range(len(mesh.cells))]
 
 
-def read_faces(path: Path, mesh: Mesh) -> list[float]:
+FACE_MOMENTUM_COLUMNS = ("pressure", "advectionX", "advectionY", "diffusionX", "diffusionY")
+
+
+def read_faces(path: Path, mesh: Mesh) -> tuple[list[dict[str, float]], bool]:
     rows = load_csv(path, ("face", "owner", "neighbour", "flux"))
-    fluxes: dict[int, float] = {}
+    fields = csv_fields(path)
+    present = [name for name in FACE_MOMENTUM_COLUMNS if name in fields]
+    if present and len(present) != len(FACE_MOMENTUM_COLUMNS):
+        missing = [name for name in FACE_MOMENTUM_COLUMNS if name not in fields]
+        raise VerificationError(f"{path}: partial momentum face schema; missing {missing}")
+    has_momentum = bool(present)
+    records: dict[int, dict[str, float]] = {}
     for line, row in enumerate(rows, 2):
         face = integer(row["face"], f"{path}:{line} face")
-        if face in fluxes or not (0 <= face < len(mesh.edges)):
+        if face in records or not (0 <= face < len(mesh.edges)):
             raise VerificationError(f"{path}:{line}: duplicate/out-of-range face {face}")
         edge = mesh.edges[face]
         if integer(row["owner"], "owner") != edge.owner or integer(row["neighbour"], "neighbour") != edge.neighbour:
             raise VerificationError(f"{path}:{line}: owner/neighbour differs from CM2D")
-        fluxes[face] = finite(row["flux"], f"{path}:{line} flux")
-    if len(fluxes) != len(mesh.edges):
-        raise VerificationError(f"{path}: got {len(fluxes)} faces, expected {len(mesh.edges)}")
-    return [fluxes[i] for i in range(len(mesh.edges))]
+        item = {"flux": finite(row["flux"], f"{path}:{line} flux")}
+        if has_momentum:
+            item.update({name: finite(row[name], f"{path}:{line} {name}")
+                         for name in FACE_MOMENTUM_COLUMNS})
+        records[face] = item
+    if len(records) != len(mesh.edges):
+        raise VerificationError(f"{path}: got {len(records)} faces, expected {len(mesh.edges)}")
+    return [records[i] for i in range(len(mesh.edges))], has_momentum
 
 
 def continuity(mesh: Mesh, measured: Measurement, fluxes: list[float], speed: float, case: str,
@@ -389,6 +418,344 @@ def weighted_l2(errors: Iterable[float], areas: Iterable[float]) -> float:
 def face_centre(mesh: Mesh, edge: Edge) -> tuple[float, float]:
     a, b = mesh.vertices[edge.v0], mesh.vertices[edge.v1]
     return ((a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5)
+
+
+def face_fluxes(records: list[dict[str, float]]) -> list[float]:
+    return [record["flux"] for record in records]
+
+
+def face_geometry(mesh: Mesh, measured: Measurement) -> list[FaceGeometry]:
+    """Rebuild FvMesh2D's owner-normal coefficients from CM2D polygons."""
+    result: list[FaceGeometry] = []
+    for edge_id, edge in enumerate(mesh.edges):
+        cell = mesh.cells[edge.owner]
+        try:
+            local = cell.edges.index(edge_id)
+        except ValueError as exc:
+            raise VerificationError(f"face {edge_id}: owner does not reference face") from exc
+        a = mesh.vertices[cell.vertices[local]]
+        b = mesh.vertices[cell.vertices[(local + 1) % len(cell.vertices)]]
+        # CM2D polygons are positive CCW.  (dy,-dx) is outward for owner.
+        s = (b[1] - a[1], a[0] - b[0])
+        fc = ((a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5)
+        centre = measured.centroids[edge.owner]
+        other = measured.centroids[edge.neighbour] if edge.neighbour >= 0 else fc
+        d = (other[0] - centre[0], other[1] - centre[1])
+        sd = s[0] * d[0] + s[1] * d[1]
+        s2 = s[0] * s[0] + s[1] * s[1]
+        if not (sd > 0.0 and s2 > 0.0):
+            raise VerificationError(f"face {edge_id}: nonpositive normal-centre distance")
+        transmissibility = s2 / sd
+        correction = (s[0] - transmissibility * d[0], s[1] - transmissibility * d[1])
+        weight = ((s[0] * (fc[0] - centre[0]) + s[1] * (fc[1] - centre[1])) / sd
+                  if edge.neighbour >= 0 else 0.0)
+        result.append(FaceGeometry(fc, s, correction, transmissibility, weight))
+    return result
+
+
+def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) -> dict[str, Any]:
+    """Mirror the solver's explicit role/fixed-value classification."""
+    xmin, ymin, xmax, ymax = measured.bounds
+    eps = 1e-10 * max(xmax - xmin, ymax - ymin) + 1e-12
+    roles: list[str] = ["internal"] * len(mesh.edges)
+    fixed_u = [False] * len(mesh.edges)
+    fixed_v = [False] * len(mesh.edges)
+    fixed_p = [False] * len(mesh.edges)
+    bc_u = [0.0] * len(mesh.edges)
+    bc_v = [0.0] * len(mesh.edges)
+    bc_p = [0.0] * len(mesh.edges)
+    height = ymax - ymin
+    for edge in mesh.edges:
+        if edge.neighbour >= 0:
+            continue
+        x, y = face_centre(mesh, edge)
+        left, right = abs(x - xmin) <= eps, abs(x - xmax) <= eps
+        top, bottom = abs(y - ymax) <= eps, abs(y - ymin) <= eps
+        if case == "external" and edge.patch == 1:
+            role = "wall"
+        elif case == "cavity":
+            role = "lid" if top else "wall"
+        elif left:
+            role = "inlet"
+        elif right:
+            role = "outlet"
+        else:
+            role = "slip" if case == "external" else "wall"
+        roles[edge.id] = role
+        if role == "wall":
+            fixed_u[edge.id] = fixed_v[edge.id] = True
+        elif role == "lid":
+            fixed_u[edge.id] = fixed_v[edge.id] = True
+            bc_u[edge.id] = speed
+        elif role == "inlet":
+            fixed_u[edge.id] = fixed_v[edge.id] = True
+            bc_u[edge.id] = (4.0 * speed * (y - ymin) * (ymax - y) / (height * height)
+                             if case == "channel" else speed)
+        elif role == "outlet":
+            fixed_p[edge.id] = True
+        elif role == "slip":
+            fixed_v[edge.id] = True
+    return {"roles": roles, "fixedU": fixed_u, "fixedV": fixed_v, "fixedP": fixed_p,
+            "u": bc_u, "v": bc_v, "p": bc_p}
+
+
+def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[FaceGeometry],
+                         values: list[float], boundary: list[float], fixed: list[bool]) -> list[tuple[float, float]]:
+    result: list[tuple[float, float]] = []
+    for cell in mesh.cells:
+        xx = xy = yy = bx = by = 0.0
+        ci = measured.centroids[cell.id]
+        for edge_id in cell.edges:
+            edge = mesh.edges[edge_id]
+            if edge.neighbour >= 0:
+                other = edge.neighbour
+                if edge.owner == cell.id:
+                    other = edge.neighbour
+                else:
+                    other = edge.owner
+                d = (measured.centroids[other][0] - ci[0], measured.centroids[other][1] - ci[1])
+                delta = values[other] - values[cell.id]
+            elif fixed[edge_id]:
+                fc = geometries[edge_id].centre
+                d = (fc[0] - ci[0], fc[1] - ci[1])
+                delta = boundary[edge_id] - values[cell.id]
+            else:
+                s = geometries[edge_id].area_vector
+                length = math.hypot(*s)
+                d = (s[0] / length, s[1] / length)
+                delta = 0.0
+            length = math.hypot(*d)
+            if not (length > 0.0):
+                raise VerificationError(f"cell {cell.id}: degenerate gradient stencil")
+            if edge.neighbour >= 0 or fixed[edge_id]:
+                d = (d[0] / length, d[1] / length)
+                delta /= length
+            xx += d[0] * d[0]
+            xy += d[0] * d[1]
+            yy += d[1] * d[1]
+            bx += d[0] * delta
+            by += d[1] * delta
+        det = xx * yy - xy * xy
+        if not (det > 64.0 * 2.220446049250313e-16 * (xx + yy) * (xx + yy)):
+            raise VerificationError(f"cell {cell.id}: rank-deficient gradient stencil")
+        result.append(((yy * bx - xy * by) / det, (xx * by - xy * bx) / det))
+    return result
+
+
+def face_limiter(mesh: Mesh, measured: Measurement, values: list[float],
+                 gradients: list[tuple[float, float]], boundary: list[float],
+                 fixed: list[bool]) -> list[float]:
+    limiter = [1.0] * len(mesh.cells)
+    for cell in mesh.cells:
+        lo = hi = values[cell.id]
+        for edge_id in cell.edges:
+            edge = mesh.edges[edge_id]
+            if edge.neighbour >= 0:
+                other = edge.neighbour if edge.owner == cell.id else edge.owner
+                lo, hi = min(lo, values[other]), max(hi, values[other])
+            elif fixed[edge_id]:
+                lo, hi = min(lo, boundary[edge_id]), max(hi, boundary[edge_id])
+        ci = measured.centroids[cell.id]
+        # The field reconstruction is evaluated at every actual face centre.
+        for edge_id in cell.edges:
+            fc = face_centre(mesh, mesh.edges[edge_id])
+            d = (fc[0] - ci[0], fc[1] - ci[1])
+            delta = gradients[cell.id][0] * d[0] + gradients[cell.id][1] * d[1]
+            if delta > 0.0:
+                limiter[cell.id] = min(limiter[cell.id], (hi - values[cell.id]) / delta)
+            elif delta < 0.0:
+                limiter[cell.id] = min(limiter[cell.id], (lo - values[cell.id]) / delta)
+        limiter[cell.id] = min(1.0, max(0.0, limiter[cell.id]))
+    return limiter
+
+
+def _interpolated_gradient(edge: Edge, gradients: list[tuple[float, float]], weight: float) -> tuple[float, float]:
+    if edge.neighbour < 0:
+        return gradients[edge.owner]
+    owner, neighbour = gradients[edge.owner], gradients[edge.neighbour]
+    return ((1.0 - weight) * owner[0] + weight * neighbour[0],
+            (1.0 - weight) * owner[1] + weight * neighbour[1])
+
+
+def _advective_value(mesh: Mesh, measured: Measurement, edge: Edge, geometry: FaceGeometry,
+                     flux: float, values: list[float], gradients: list[tuple[float, float]],
+                     limiter: list[float] | None, fixed: list[bool], boundary: list[float]) -> float:
+    if edge.neighbour < 0 and fixed[edge.id]:
+        return boundary[edge.id]
+    up = edge.neighbour if edge.neighbour >= 0 and flux < 0.0 else edge.owner
+    if limiter is None:
+        return values[up]
+    ci = measured.centroids[up]
+    d = (geometry.centre[0] - ci[0], geometry.centre[1] - ci[1])
+    return values[up] + limiter[up] * (gradients[up][0] * d[0] + gradients[up][1] * d[1])
+
+
+def _deviation(actual: float, expected: float) -> dict[str, float]:
+    return {"actual": actual, "expected": expected, "absolute": abs(actual - expected),
+            "relative": abs(actual - expected) / max(1.0, abs(actual), abs(expected))}
+
+
+def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
+                               face_records: list[dict[str, float]], nu: float, speed: float,
+                               case: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Rebuild face momentum terms, equation residuals and embedded-wall forces.
+
+    All expected values here come from CM2D geometry, exported cell fields and
+    the explicit scenario boundary definitions.  The face CSV is only the
+    observed value being checked.
+    """
+    geometries = face_geometry(mesh, measured)
+    boundaries = flow_boundaries(mesh, measured, case, speed)
+    u = [row["u"] for row in cells]
+    v = [row["v"] for row in cells]
+    p = [row["p"] for row in cells]
+    gu = reconstruct_gradient(mesh, measured, geometries, u, boundaries["u"], boundaries["fixedU"])
+    gv = reconstruct_gradient(mesh, measured, geometries, v, boundaries["v"], boundaries["fixedV"])
+    gp = reconstruct_gradient(mesh, measured, geometries, p, boundaries["p"], boundaries["fixedP"])
+    pressure_faces: list[float] = []
+    for edge, geom in zip(mesh.edges, geometries):
+        i = edge.owner
+        if edge.neighbour >= 0:
+            j = edge.neighbour
+            w = geom.neighbour_weight
+            point = ((1.0 - w) * measured.centroids[i][0] + w * measured.centroids[j][0],
+                     (1.0 - w) * measured.centroids[i][1] + w * measured.centroids[j][1])
+            g = ((1.0 - w) * gp[i][0] + w * gp[j][0],
+                 (1.0 - w) * gp[i][1] + w * gp[j][1])
+            d = (geom.centre[0] - point[0], geom.centre[1] - point[1])
+            pressure_faces.append((1.0 - w) * p[i] + w * p[j] + g[0] * d[0] + g[1] * d[1])
+        elif boundaries["fixedP"][edge.id]:
+            pressure_faces.append(boundaries["p"][edge.id])
+        else:
+            d = (geom.centre[0] - measured.centroids[i][0], geom.centre[1] - measured.centroids[i][1])
+            pressure_faces.append(p[i] + gp[i][0] * d[0] + gp[i][1] * d[1])
+    convection = payload.get("convection")
+    if convection not in ("upwind", "limited-linear"):
+        raise VerificationError(f"native convection is unsupported: {convection!r}")
+    lu = (face_limiter(mesh, measured, u, gu, boundaries["u"], boundaries["fixedU"])
+          if convection == "limited-linear" else None)
+    lv = (face_limiter(mesh, measured, v, gv, boundaries["v"], boundaries["fixedV"])
+          if convection == "limited-linear" else None)
+    fluxes = face_fluxes(face_records)
+    cell_residuals = [(0.0, 0.0) for _ in mesh.cells]
+    boundary_vector = [0.0, 0.0]
+    boundary_scale = 0.0
+    max_deviation = {name: 0.0 for name in FACE_MOMENTUM_COLUMNS}
+    deviations = {name: {"actual": 0.0, "expected": 0.0, "absolute": 0.0, "relative": 0.0}
+                  for name in FACE_MOMENTUM_COLUMNS}
+    pressure_force = [0.0, 0.0]
+    discrete_force = [0.0, 0.0]
+    for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
+        i = edge.owner
+        if edge.neighbour >= 0:
+            other_u, other_v = u[edge.neighbour], v[edge.neighbour]
+        else:
+            other_u, other_v = boundaries["u"][edge.id], boundaries["v"][edge.id]
+        av_u = flux * _advective_value(mesh, measured, edge, geom, flux, u, gu, lu,
+                                       boundaries["fixedU"], boundaries["u"])
+        av_v = flux * _advective_value(mesh, measured, edge, geom, flux, v, gv, lv,
+                                       boundaries["fixedV"], boundaries["v"])
+        if edge.neighbour >= 0 or boundaries["fixedU"][edge.id]:
+            gi = _interpolated_gradient(edge, gu, geom.neighbour_weight)
+            dx = -nu * (geom.transmissibility * (other_u - u[i]) +
+                        gi[0] * geom.correction[0] + gi[1] * geom.correction[1])
+        else:
+            dx = 0.0
+        if edge.neighbour >= 0 or boundaries["fixedV"][edge.id]:
+            gi = _interpolated_gradient(edge, gv, geom.neighbour_weight)
+            dy = -nu * (geom.transmissibility * (other_v - v[i]) +
+                        gi[0] * geom.correction[0] + gi[1] * geom.correction[1])
+        else:
+            dy = 0.0
+        expected = {"pressure": pf, "advectionX": av_u, "advectionY": av_v,
+                    "diffusionX": dx, "diffusionY": dy}
+        for name in FACE_MOMENTUM_COLUMNS:
+            item = _deviation(record[name], expected[name])
+            deviations[name] = item if item["absolute"] > deviations[name]["absolute"] else deviations[name]
+            max_deviation[name] = max(max_deviation[name], item["absolute"])
+        sx, sy = geom.area_vector
+        rx = pf * sx + av_u + dx
+        ry = pf * sy + av_v + dy
+        old = cell_residuals[i]
+        cell_residuals[i] = (old[0] + rx, old[1] + ry)
+        if edge.neighbour >= 0:
+            old = cell_residuals[edge.neighbour]
+            cell_residuals[edge.neighbour] = (old[0] - rx, old[1] - ry)
+        else:
+            boundary_vector[0] += rx
+            boundary_vector[1] += ry
+            boundary_scale += abs(pf * sx) + abs(pf * sy) + abs(av_u) + abs(av_v) + abs(dx) + abs(dy)
+        if edge.patch == 1 and boundaries["roles"][edge.id] == "wall":
+            px, py = pf * sx, pf * sy
+            pressure_force[0] += px
+            pressure_force[1] += py
+            discrete_force[0] += px + dx
+            discrete_force[1] += py + dy
+    diagonal_u = [0.0] * len(mesh.cells)
+    diagonal_v = [0.0] * len(mesh.cells)
+    for edge, flux in zip(mesh.edges, fluxes):
+        q = flux
+        d = nu * geometries[edge.id].transmissibility
+        if edge.neighbour >= 0:
+            j = edge.neighbour
+            diagonal_u[edge.owner] += d + max(q, 0.0)
+            diagonal_u[j] += d + max(-q, 0.0)
+            diagonal_v[edge.owner] += d + max(q, 0.0)
+            diagonal_v[j] += d + max(-q, 0.0)
+        else:
+            if boundaries["fixedU"][edge.id]:
+                diagonal_u[edge.owner] += d
+            else:
+                diagonal_u[edge.owner] += q
+            if boundaries["fixedV"][edge.id]:
+                diagonal_v[edge.owner] += d
+            else:
+                diagonal_v[edge.owner] += q
+    denominators = [(du + dv) * speed for du, dv in zip(diagonal_u, diagonal_v)]
+    if any(not math.isfinite(value) or value <= 0.0 for value in denominators):
+        raise VerificationError("independent momentum diagonal has no positive finite scale")
+    normalized = [math.hypot(rx, ry) / denominator
+                  for (rx, ry), denominator in zip(cell_residuals, denominators)]
+    momentum_residual = max(normalized, default=0.0)
+    final_native = finite(payload.get("momentumResidual"), "native momentumResidual")
+    summary_deviations = {
+        "momentumResidual": _deviation(final_native, momentum_residual),
+        "pressureForceX": _deviation(finite(payload.get("pressureForceX"), "native pressureForceX"), pressure_force[0]),
+        "pressureForceY": _deviation(finite(payload.get("pressureForceY"), "native pressureForceY"), pressure_force[1]),
+        "discreteForceX": _deviation(finite(payload.get("discreteForceX"), "native discreteForceX"), discrete_force[0]),
+        "discreteForceY": _deviation(finite(payload.get("discreteForceY"), "native discreteForceY"), discrete_force[1]),
+    }
+    cell_sum = (math.fsum(rx for rx, _ in cell_residuals),
+                math.fsum(ry for _, ry in cell_residuals))
+    conservation_difference = (cell_sum[0] - boundary_vector[0], cell_sum[1] - boundary_vector[1])
+    boundary_relative = (math.hypot(*boundary_vector) / boundary_scale
+                         if boundary_scale > 0.0 else 0.0)
+    return {
+        "status": "available", "valid": True, "convection": convection,
+        "pressureDiscretization": payload.get("pressureDiscretization"),
+        "faceCount": len(mesh.edges), "maxFaceDeviation": max_deviation,
+        "faceConsistencyTolerance": {"absolute": 5e-10, "relative": 0.0,
+                                      "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"},
+        "faceDeviation": deviations, "cellResidual": {
+            "maxNormalized": momentum_residual,
+            "l2": math.sqrt(math.fsum(x * x + y * y for x, y in cell_residuals)),
+            "maxCellVector": max((math.hypot(x, y) for x, y in cell_residuals), default=0.0),
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T",
+        },
+        "summaryDeviation": summary_deviations,
+        "pressureForce": {"x": pressure_force[0], "y": pressure_force[1]},
+        "discreteForce": {"x": discrete_force[0], "y": discrete_force[1]},
+        "globalBoundaryMomentum": {"x": boundary_vector[0], "y": boundary_vector[1],
+                                    "magnitude": math.hypot(*boundary_vector),
+                                    "boundaryTermScale": boundary_scale,
+                                    "relativeToBoundary": boundary_relative,
+                                    "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"},
+        "cellResidualSum": {"x": cell_sum[0], "y": cell_sum[1]},
+        "cellBoundaryConservationDifference": {"x": conservation_difference[0],
+                                                 "y": conservation_difference[1],
+                                                 "magnitude": math.hypot(*conservation_difference)},
+        "fullNewtonianForceAudit": "excluded: forceX/forceY are a separate reconstructed-traction diagnostic",
+    }
 
 
 def channel_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
@@ -568,7 +935,7 @@ def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, flo
                                                          if drag_coefficient is not None else None),
                                   "acceptanceGate": False},
         "minimumWakeUOverSpeed": min(wake) if wake else None,
-        "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain, coarse upwind result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+        "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
     }
 
 
@@ -587,7 +954,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     if missing:
         return {"valid": False, "case": case, "issues": issues + [f"missing artifact: {p}" for p in missing]}
     cells = read_cells(cells_path, mesh, measured)
-    fluxes = read_faces(faces_path, mesh)
+    face_records, face_momentum_available = read_faces(faces_path, mesh)
+    fluxes = face_fluxes(face_records)
     residuals = read_residuals(residual_path)
     with json_path.open(encoding="utf-8-sig") as stream:
         payload = json.load(stream, parse_constant=lambda token: (_ for _ in ()).throw(
@@ -601,6 +969,15 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     for field in required_json:
         if field not in payload:
             issues.append(f"native JSON missing {field}")
+    summary_momentum_columns = ("pressureForceX", "pressureForceY", "discreteForceX", "discreteForceY",
+                                "pressureDiscretization", "convection")
+    summary_present = [name for name in summary_momentum_columns if name in payload]
+    summary_momentum_available = bool(summary_present)
+    if summary_present and len(summary_present) != len(summary_momentum_columns):
+        missing = [name for name in summary_momentum_columns if name not in payload]
+        issues.append(f"native JSON partial momentum schema; missing {missing}")
+    if face_momentum_available != summary_momentum_available:
+        issues.append("face and summary momentum schemas are inconsistent")
     if payload.get("format") != "cartmesh2d-flow-summary-v1":
         issues.append("native JSON format is not cartmesh2d-flow-summary-v1")
     if payload.get("case") != case:
@@ -669,6 +1046,38 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         raise VerificationError(f"unsupported case {case}")
     if not benchmark.get("valid"):
         issues.append(f"{case} benchmark checks failed")
+    if face_momentum_available and summary_momentum_available:
+        try:
+            momentum_audit = reconstruct_momentum_audit(
+                mesh, measured, cells, face_records, nu, speed, case, payload)
+            if payload.get("pressureDiscretization") != "shared-face-gauss":
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append(
+                    "pressureDiscretization is not shared-face-gauss")
+            # Metadata is part of the schema contract; the field-value audit
+            # must not silently accept a different convection operator.
+            if payload.get("convection") not in ("upwind", "limited-linear"):
+                momentum_audit["valid"] = False
+            face_tol = 5e-10
+            summary_tol = 5e-10
+            if any(value > face_tol for value in momentum_audit["maxFaceDeviation"].values()):
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append("independent face momentum reconstruction differs")
+            if momentum_audit["summaryDeviation"]["momentumResidual"]["absolute"] > summary_tol:
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append("independent momentum residual differs from summary")
+            if any(momentum_audit["summaryDeviation"][name]["absolute"] > summary_tol
+                   for name in ("pressureForceX", "pressureForceY", "discreteForceX", "discreteForceY")):
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append("independent force reconstruction differs from summary")
+            if not momentum_audit["valid"]:
+                issues.extend(momentum_audit.get("issues", ["momentum audit failed"]))
+        except (VerificationError, ArithmeticError) as exc:
+            momentum_audit = {"status": "available", "valid": False, "issues": [str(exc)]}
+            issues.append(f"momentum audit failed: {exc}")
+    else:
+        momentum_audit = {"status": "unavailable", "valid": False,
+                          "reason": "legacy faces.csv/summary schema has no momentum face terms"}
     return {
         "valid": not issues, "case": case, "issues": issues,
         "mesh": str(mesh.path), "meshSha256": sha256_file(mesh.path),
@@ -677,6 +1086,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         "meshMeasurement": {"area": measured.total_area, "characteristicH": measured.characteristic_h,
                             "bounds": measured.bounds},
         "independentContinuity": independent, "residualHistory": residuals,
+        "momentumAudit": momentum_audit,
         "benchmark": benchmark, "native": payload,
         "artifactSha256": {str(path): sha256_file(path) for path in
                            (cells_path, faces_path, residual_path, json_path)},
