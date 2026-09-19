@@ -9,7 +9,7 @@ namespace cartmesh2d::fv {
 
 enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
 
-enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0 };
+enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation };
 enum class ViscousStress2D { Laplacian, Symmetric };
 
 struct FlowControls2D {
@@ -38,6 +38,12 @@ struct FlowPerformance2D {
     std::size_t momentumIterations = 0;
     std::size_t maxMomentumIterations = 0;
     std::size_t pressureSolves = 0;
+    std::size_t pressureFactorizations = 0;
+    std::size_t pressureFactorReuses = 0;
+    std::size_t pressureHierarchyBuilds = 0;
+    std::size_t pressureHierarchyReuses = 0;
+    std::size_t maxPressureHierarchyLevels = 0;
+    std::size_t maxPressureCoarseCells = 0;
     std::size_t pressureIterations = 0;
     std::size_t maxPressureIterations = 0;
     double momentumLinearSolveSeconds = 0;

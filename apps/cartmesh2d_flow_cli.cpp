@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
             "Transient retains inner relaxation flux correction; fixed DT; reports CFL without changing DT.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
-            "--pressure-preconditioner ic0|jacobi (default ic0); same true-residual tolerance.\n"
+            "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
@@ -117,10 +117,10 @@ int main(int argc, char** argv) {
                 controls.convection = v == "limited-linear"
                     ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
             } else if (a == "--pressure-preconditioner") {
-                if (v != "ic0" && v != "jacobi") {
-                    throw std::invalid_argument("pressure preconditioner must be ic0 or jacobi");
+                if (v != "ic0" && v != "jacobi" && v != "aggregation") {
+                    throw std::invalid_argument("pressure preconditioner must be ic0, jacobi or aggregation");
                 }
-                controls.pressurePreconditioner = v == "ic0"
+                controls.pressurePreconditioner = v == "aggregation" ? fv::PressurePreconditioner2D::Aggregation : v == "ic0"
                     ? fv::PressurePreconditioner2D::IncompleteCholesky0
                     : fv::PressurePreconditioner2D::Jacobi;
             } else if (a == "--max-iterations") {
@@ -197,6 +197,12 @@ int main(int argc, char** argv) {
                     totalPerformance.momentumIterations+=p.momentumIterations;
                     totalPerformance.maxMomentumIterations=std::max(totalPerformance.maxMomentumIterations,p.maxMomentumIterations);
                     totalPerformance.pressureSolves+=p.pressureSolves;
+                    totalPerformance.pressureFactorizations+=p.pressureFactorizations;
+                    totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
+                    totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
+                    totalPerformance.pressureHierarchyReuses+=p.pressureHierarchyReuses;
+                    totalPerformance.maxPressureHierarchyLevels=std::max(totalPerformance.maxPressureHierarchyLevels,p.maxPressureHierarchyLevels);
+                    totalPerformance.maxPressureCoarseCells=std::max(totalPerformance.maxPressureCoarseCells,p.maxPressureCoarseCells);
                     totalPerformance.pressureIterations+=p.pressureIterations;
                     totalPerformance.maxPressureIterations=std::max(totalPerformance.maxPressureIterations,p.maxPressureIterations);
                     totalPerformance.momentumLinearSolveSeconds+=p.momentumLinearSolveSeconds;
@@ -274,7 +280,8 @@ int main(int argc, char** argv) {
 
         auto summary = out(prefix, ".json");
         const char* preconditioner = controls.pressurePreconditioner ==
-            fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" : "jacobi";
+            fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" :
+            (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" : "jacobi");
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
@@ -377,6 +384,12 @@ int main(int argc, char** argv) {
                         << ",\n\"momentumIterations\":" << p.momentumIterations
                         << ",\n\"maxMomentumIterations\":" << p.maxMomentumIterations
                         << ",\n\"pressureSolves\":" << p.pressureSolves
+                        << ",\n\"pressureFactorizations\":" << p.pressureFactorizations
+                        << ",\n\"pressureFactorReuses\":" << p.pressureFactorReuses
+                        << ",\n\"pressureHierarchyBuilds\":" << p.pressureHierarchyBuilds
+                        << ",\n\"pressureHierarchyReuses\":" << p.pressureHierarchyReuses
+                        << ",\n\"maxPressureHierarchyLevels\":" << p.maxPressureHierarchyLevels
+                        << ",\n\"maxPressureCoarseCells\":" << p.maxPressureCoarseCells
                         << ",\n\"pressureIterations\":" << p.pressureIterations
                         << ",\n\"maxPressureIterations\":" << p.maxPressureIterations
                         << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement\"\n}\n";

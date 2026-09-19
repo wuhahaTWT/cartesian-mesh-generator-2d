@@ -23,7 +23,7 @@ const transientSummary = {
   cells: 1, iterations: 12, converged: true, status: 'converged',
   continuity: 1e-10, globalImbalance: 0, globalRelativeImbalance: 1e-10,
   tolerance: 1e-6, velocityChange: 2e-9, pressureChange: 3e-9, momentumResidual: 4e-9,
-  convection: 'upwind', pressureDiscretization: 'shared-face-gauss', viscousStress: 'symmetric',
+  convection: 'upwind', pressurePreconditioner: 'ic0', pressureDiscretization: 'shared-face-gauss', viscousStress: 'symmetric',
   forceDefinition: 'shared-face-newtonian-traction',
   forceX: 2, forceY: -3, pressureForceX: 1, pressureForceY: -1,
   discreteForceX: 2, discreteForceY: -3, wallForceX: 2, wallForceY: -3,

@@ -8,10 +8,14 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include <optional>
+
+#include "cartmesh2d/fv/detail/FlowAggregation2D.hpp"
 
 namespace cartmesh2d::fv::detail {
 
 using LinearVector2D = std::vector<double>;
+enum class LinearPressureMethod2D { Jacobi, IC0, Aggregation };
 
 inline void linearEnsure(bool ok, const char* message) {
     if (!ok) throw std::runtime_error(message);
@@ -95,9 +99,9 @@ struct SparsePattern2D {
 // Shared by sequential U, V and pressure solves; no vector allocation per
 // Krylov step. The original matrix is retained for true-residual checks.
 struct LinearWorkspace2D {
-    LinearVector2D r, r0, p, v, s, t, z, zs, ax, factorDiagonal, factorLower;
+    LinearVector2D r, r0, p, v, s, t, z, zs, ax;
     explicit LinearWorkspace2D(std::size_t n)
-        : r(n), r0(n), p(n), v(n), s(n), t(n), z(n), zs(n), ax(n), factorDiagonal(n) {}
+        : r(n), r0(n), p(n), v(n), s(n), t(n), z(n), zs(n), ax(n) {}
 };
 
 struct SparseSystem2D {
@@ -106,12 +110,23 @@ struct SparseSystem2D {
     explicit SparseSystem2D(const SparsePattern2D& graph)
         : pattern(graph), diag(graph.rows.size() - 1), rhs(diag.size()), off(graph.columns.size()) {}
 
+    std::size_t ic0Builds() const { return factorBuilds_; }
+    std::size_t ic0Reuses() const { return factorReuses_; }
+    std::size_t hierarchyBuilds() const { return hierarchyBuilds_; }
+    std::size_t hierarchyReuses() const { return hierarchyReuses_; }
+    std::size_t hierarchyLevels() const { return hierarchy_ ? hierarchy_->levels() : 0; }
+    std::size_t hierarchyCoarseCells() const { return hierarchy_ ? hierarchy_->coarseCells() : 0; }
+
     void reset() {
+        factorReady_ = false;
+        hierarchyReady_ = false;
         std::fill(diag.begin(), diag.end(), 0.);
         std::fill(rhs.begin(), rhs.end(), 0.);
         std::fill(off.begin(), off.end(), 0.);
     }
     void add(std::size_t row, std::size_t column, double value) {
+        factorReady_ = false;
+        hierarchyReady_ = false;
         off[pattern.slot(row, column)] += value;
     }
     void apply(const LinearVector2D& x, LinearVector2D& y) const {
@@ -126,6 +141,8 @@ struct SparseSystem2D {
     }
     void pin(std::size_t id) {
         linearEnsure(id < diag.size(), "Flow pressure gauge invalid");
+        factorReady_ = false;
+        hierarchyReady_ = false;
         for (std::size_t k = pattern.rows[id]; k < pattern.rows[id + 1]; ++k)
             off[k] = off[pattern.transpose[k]] = 0.;
         rhs[id] = 0.;
@@ -133,8 +150,18 @@ struct SparseSystem2D {
 
     // Natural-order incomplete LDL^T with zero fill (IC(0)). No diagonal shift,
     // threshold relaxation or silent fallback. A failed pivot is explicit.
-    void factorIC0(LinearWorkspace2D& w) const {
-        w.factorLower.assign(off.size(), 0.);
+    void factorIC0() const {
+        // Coefficients remain public for assembly. Exact snapshots guard direct
+        // writes as well as RHS-only reuse; no hash collision or approximate
+        // matrix comparison may authorize a stale preconditioner. The pattern
+        // is immutable for the lifetime of this system, as for CSR assembly.
+        if (factorReady_ && factorMatrixDiagonal_ == diag && factorMatrixOff_ == off) {
+            ++factorReuses_;
+            return;
+        }
+        factorReady_ = false; // A failed factorization must not leave a usable cache.
+        factorLower_.assign(off.size(), 0.);
+        factorDiagonal_.resize(diag.size());
         for (std::size_t k = 0; k < off.size(); ++k)
             linearEnsure(std::isfinite(off[k]) && off[k] == off[pattern.transpose[k]],
                          "Flow IC0 requires a finite symmetric matrix");
@@ -148,40 +175,54 @@ struct SparseSystem2D {
                 while (ik < ij && jk < pattern.lowerEnd[j]) {
                     const auto ci = pattern.columns[ik], cj = pattern.columns[jk];
                     if (ci == cj) {
-                        value -= w.factorLower[ik] * w.factorDiagonal[ci] * w.factorLower[jk];
+                        value -= factorLower_[ik] * factorDiagonal_[ci] * factorLower_[jk];
                         ++ik;
                         ++jk;
                     } else if (ci < cj) ++ik;
                     else ++jk;
                 }
-                const double factor = linearFinite(value / w.factorDiagonal[j]);
-                w.factorLower[ij] = factor;
-                pivot -= factor * factor * w.factorDiagonal[j];
+                const double factor = linearFinite(value / factorDiagonal_[j]);
+                factorLower_[ij] = factor;
+                pivot -= factor * factor * factorDiagonal_[j];
             }
             linearEnsure(std::isfinite(pivot) && pivot > 0, "Flow IC0 nonpositive/nonfinite pivot");
-            w.factorDiagonal[i] = pivot;
+            factorDiagonal_[i] = pivot;
         }
+        factorMatrixDiagonal_ = diag;
+        factorMatrixOff_ = off;
+        factorReady_ = true;
+        ++factorBuilds_;
     }
 
-    void precondition(LinearWorkspace2D& w, bool ic0) const {
-        if (!ic0) {
+    void precondition(LinearWorkspace2D& w, LinearPressureMethod2D method) const {
+        if (method == LinearPressureMethod2D::Aggregation) {
+            linearEnsure(hierarchyReady_ && hierarchy_.has_value(), "Flow aggregation hierarchy unavailable");
+            hierarchy_->apply(w.r,w.z);
+            return;
+        }
+        if (method == LinearPressureMethod2D::Jacobi) {
             for (std::size_t i = 0; i < diag.size(); ++i) w.z[i] = w.r[i] / diag[i];
             return;
         }
         for (std::size_t i = 0; i < diag.size(); ++i) {
             double value = w.r[i];
             for (std::size_t k = pattern.rows[i]; k < pattern.lowerEnd[i]; ++k)
-                value -= w.factorLower[k] * w.z[pattern.columns[k]];
+                value -= factorLower_[k] * w.z[pattern.columns[k]];
             w.z[i] = linearFinite(value);
         }
         for (std::size_t i = 0; i < diag.size(); ++i)
-            w.z[i] = linearFinite(w.z[i] / w.factorDiagonal[i]);
+            w.z[i] = linearFinite(w.z[i] / factorDiagonal_[i]);
         for (std::size_t i = diag.size(); i-- > 0;)
             for (std::size_t k = pattern.rows[i]; k < pattern.lowerEnd[i]; ++k)
-                w.z[pattern.columns[k]] -= w.factorLower[k] * w.z[i];
+                w.z[pattern.columns[k]] -= factorLower_[k] * w.z[i];
     }
 
     std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, bool ic0 = true) const {
+        return solvePressure(x,w,ic0?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi);
+    }
+    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method) const {
+        linearEnsure(method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0 ||
+                     method==LinearPressureMethod2D::Aggregation, "Flow pressure preconditioner invalid");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
         for (double d : diag)
             linearEnsure(d > 0 && std::isfinite(d), "Flow pressure matrix diagonal invalid");
@@ -193,8 +234,19 @@ struct SparseSystem2D {
         for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
         const double stop = linearFinite(1e-13 + 1e-11 * linearNorm(rhs));
         if (linearNorm(residual) <= stop) return 0;
-        if (ic0) factorIC0(w);
-        precondition(w, ic0);
+        if (method == LinearPressureMethod2D::IC0) factorIC0();
+        else if (method == LinearPressureMethod2D::Aggregation) {
+            if (hierarchyReady_ && hierarchy_ && hierarchy_->matches(diag,off)) ++hierarchyReuses_;
+            else {
+                hierarchyReady_=false;
+                // Release the old hierarchy before constructing the replacement
+                // to keep peak memory bounded when SIMPLE coefficients change.
+                hierarchy_.reset();
+                hierarchy_.emplace(pattern.rows,pattern.columns,diag,off);
+                hierarchyReady_=true; ++hierarchyBuilds_;
+            }
+        }
+        precondition(w, method);
         direction = z;
         double rz = linearProduct(residual, z);
         for (std::size_t iteration = 0; iteration < 3000; ++iteration) {
@@ -211,12 +263,12 @@ struct SparseSystem2D {
                 apply(x, ax);
                 for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
                 if (linearNorm(residual) <= stop) return iteration + 1;
-                precondition(w, ic0);
+                precondition(w, method);
                 direction = z;
                 rz = linearProduct(residual, z);
                 continue;
             }
-            precondition(w, ic0);
+            precondition(w, method);
             const double next = linearProduct(residual, z);
             const double beta = next / rz;
             for (std::size_t i = 0; i < x.size(); ++i)
@@ -292,6 +344,17 @@ struct SparseSystem2D {
         }
         throw std::runtime_error("Flow linear solver iteration limit reached");
     }
+private:
+    // Owned by this matrix, so another system using the same Krylov workspace
+    // cannot overwrite its factors. Storage is allocated lazily for pressure.
+    mutable LinearVector2D factorDiagonal_, factorLower_;
+    mutable LinearVector2D factorMatrixDiagonal_, factorMatrixOff_;
+    mutable std::optional<AggregationHierarchy2D> hierarchy_;
+    mutable bool hierarchyReady_ = false;
+    mutable std::size_t hierarchyBuilds_ = 0, hierarchyReuses_ = 0;
+    mutable bool factorReady_ = false;
+    mutable std::size_t factorBuilds_ = 0, factorReuses_ = 0;
+
 };
 
 } // namespace cartmesh2d::fv::detail

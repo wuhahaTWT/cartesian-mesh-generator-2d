@@ -24,6 +24,17 @@ const FLOW_CONVECTION_SCHEMES = Object.freeze({
     description: '减少数值扩散，但不保证所有工况都更准确。'
   }
 });
+const FLOW_PRESSURE_PRECONDITIONERS = Object.freeze({
+  ic0: {
+    id: 'ic0', label: '标准（IC0）',
+    description: '标准不完全 Cholesky 压力预条件。'
+  },
+  aggregation: {
+    id: 'aggregation', label: '多重网格（试验）',
+    description: '试验性聚合多重网格；不保证更快。'
+  }
+});
+const LEGACY_PRESSURE_PRECONDITIONER = 'legacy-unspecified';
 const PRESSURE_DISCRETIZATION = 'shared-face-gauss';
 const LEGACY_PRESSURE_DISCRETIZATION = 'legacy-unspecified';
 const VISCOUS_STRESS = 'symmetric';
@@ -41,12 +52,18 @@ const finite = (value, name) => {
 };
 const knownConvection = value => typeof value === 'string'
   && Object.prototype.hasOwnProperty.call(FLOW_CONVECTION_SCHEMES, value);
+const knownPressurePreconditioner = value => typeof value === 'string'
+  && Object.prototype.hasOwnProperty.call(FLOW_PRESSURE_PRECONDITIONERS, value);
 
 function validateFlowRequest(request = {}) {
   const flowCase = Object.hasOwn(FLOW_CASES, request.case) ? FLOW_CASES[request.case] : null;
   if (!flowCase) throw new Error('未知流动工况。');
   const convection = request.convection === undefined ? 'upwind' : request.convection;
   if (!knownConvection(convection)) throw new Error('未知对流格式。请选择 upwind 或 limited-linear。');
+  const pressurePreconditioner = request.pressurePreconditioner === undefined
+    ? 'ic0' : request.pressurePreconditioner;
+  if (!knownPressurePreconditioner(pressurePreconditioner))
+    throw new Error('未知压力预条件器。请选择 ic0 或 aggregation。');
   const nu = finite(request.nu, '运动黏度');
   const speed = finite(request.speed, '参考速度');
   const maxIterations = finite(request.maxIterations, '最大迭代数');
@@ -60,7 +77,8 @@ function validateFlowRequest(request = {}) {
   if (!['steady', 'transient'].includes(mode)) throw new Error('未知时间模式。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
-  const normalized = { case: flowCase.id, nu, speed, maxIterations, convection, viscousStress, mode, resume: Boolean(request.resume) };
+  const normalized = { case: flowCase.id, nu, speed, maxIterations, convection,
+    pressurePreconditioner, viscousStress, mode, resume: Boolean(request.resume) };
   if (mode === 'transient') {
     normalized.dt = finite(request.dt, '时间步长');
     normalized.steps = finite(request.steps, '本次时间步数');
@@ -86,7 +104,8 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
     args: ['--mesh', meshPath, '--output', outputPrefix,
       '--case', validated.case, '--nu', String(validated.nu),
       '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations),
-      '--convection', validated.convection, '--viscous-stress', validated.viscousStress, ...temporalArgs]
+      '--convection', validated.convection, '--pressure-preconditioner', validated.pressurePreconditioner,
+      '--viscous-stress', validated.viscousStress, ...temporalArgs]
   };
 }
 
@@ -177,6 +196,11 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   const convectionInferred = summary.convection === undefined;
   const convection = convectionInferred ? 'upwind' : summary.convection;
   if (!knownConvection(convection)) throw new Error('流动摘要对流格式无效。');
+  const pressurePreconditionerInferred = summary.pressurePreconditioner === undefined;
+  const pressurePreconditioner = pressurePreconditionerInferred
+    ? LEGACY_PRESSURE_PRECONDITIONER : summary.pressurePreconditioner;
+  if (!pressurePreconditionerInferred && !knownPressurePreconditioner(pressurePreconditioner))
+    throw new Error('流动摘要压力预条件器无效。');
   const pressureDiscretizationInferred = summary.pressureDiscretization === undefined;
   const pressureDiscretization = pressureDiscretizationInferred
     ? LEGACY_PRESSURE_DISCRETIZATION : summary.pressureDiscretization;
@@ -194,6 +218,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     ...summary,
     convection,
     convectionInferred,
+    pressurePreconditioner,
+    pressurePreconditionerInferred,
     pressureDiscretization,
     pressureDiscretizationInferred,
     viscousStress,
@@ -262,8 +288,11 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
       throw new Error('本次新流动结果缺少压力离散格式，不能与请求绑定。');
     if (viscousStressInferred || viscousStress !== request.viscousStress)
       throw new Error('本次新流动结果缺少对称黏性应力格式，不能与请求绑定。');
+    if (pressurePreconditionerInferred)
+      throw new Error('本次新流动结果缺少压力预条件器，不能与请求绑定。');
     if (normalizedSummary.case !== request.case || normalizedSummary.nu !== request.nu
         || normalizedSummary.speed !== request.speed || normalizedSummary.convection !== request.convection
+        || normalizedSummary.pressurePreconditioner !== request.pressurePreconditioner
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }
@@ -297,7 +326,7 @@ async function commitFlowFiles(fileSystem, entries) {
 }
 
 module.exports = {
-  FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_OUTPUT_SUFFIXES,
+  FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, LEGACY_PRESSURE_PRECONDITIONER, FLOW_OUTPUT_SUFFIXES,
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,

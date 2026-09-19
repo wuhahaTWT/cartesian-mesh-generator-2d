@@ -353,6 +353,160 @@ void zeroResetAndPivotRegression() {
             "IC(0) rejects a non-positive pivot explicitly");
 }
 
+void ic0CacheRegression() {
+    const std::vector<std::pair<std::size_t, std::size_t>> connections{
+        {0, 1}, {1, 0}, {1, 2}, {2, 1}};
+    SparsePattern2D pattern(3, connections);
+    SparseSystem2D system(pattern);
+    Dense dense = zeroMatrix(3);
+    addEntry(system, dense, 0, 0, 3.0);
+    addEntry(system, dense, 1, 1, 4.0);
+    addEntry(system, dense, 2, 2, 5.0);
+    addSymmetricEdge(system, dense, 0, 1, -0.5);
+    addSymmetricEdge(system, dense, 1, 2, -0.7);
+    LinearWorkspace2D workspace(3);
+    std::vector<double> x(3, 0.0);
+
+    const std::vector<double> exactA{1.2, -0.4, 0.8};
+    setRhs(system, dense, exactA);
+    const auto firstSteps = system.solvePressure(x, workspace, true);
+    check(firstSteps > 0, "IC(0) cache first solve iterates");
+    check(system.ic0Builds() == 1 && system.ic0Reuses() == 0,
+          "first IC(0) solve builds exactly one factorization");
+    checkKnownSolution(dense, exactA, system.rhs, x,
+                       "IC(0) cache first known solution");
+
+    // A new RHS must reuse the matrix factorization and still solve the new
+    // independent system, rather than returning a cached solution.
+    const std::vector<double> exactB{-0.3, 1.1, -0.6};
+    setRhs(system, dense, exactB);
+    x.assign(3, 0.0);
+    const auto secondSteps = system.solvePressure(x, workspace, true);
+    check(secondSteps > 0, "IC(0) cache changed-RHS solve iterates");
+    check(system.ic0Builds() == 1 && system.ic0Reuses() == 1,
+          "same matrix changed RHS reuses the cached factorization");
+    checkKnownSolution(dense, exactB, system.rhs, x,
+                       "IC(0) cache changed-RHS known solution");
+
+    // Coefficients are public for assembly, so direct writes must be covered
+    // by exact snapshots as well as the explicit add/reset invalidators.
+    system.diag[1] += 0.6;
+    dense[1][1] += 0.6;
+    const std::vector<double> exactC{0.4, -0.9, 1.3};
+    setRhs(system, dense, exactC);
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == 2,
+          "direct diagonal mutation rebuilds IC(0) exactly once");
+    checkKnownSolution(dense, exactC, system.rhs, x,
+                       "IC(0) direct diagonal mutation solution");
+
+    const auto edge01 = pattern.slot(0, 1);
+    const auto edge10 = pattern.slot(1, 0);
+    system.off[edge01] -= 0.1;
+    system.off[edge10] -= 0.1;
+    dense[0][1] -= 0.1;
+    dense[1][0] -= 0.1;
+    const std::vector<double> exactD{-0.8, 0.2, 0.7};
+    setRhs(system, dense, exactD);
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == 3,
+          "direct off-diagonal mutation rebuilds IC(0) exactly once");
+    checkKnownSolution(dense, exactD, system.rhs, x,
+                       "IC(0) direct off-diagonal mutation solution");
+
+    // A different system may share the Krylov workspace without sharing
+    // factors. Solving it must not corrupt the original system's cache.
+    SparseSystem2D other(pattern);
+    Dense otherDense = zeroMatrix(3);
+    addEntry(other, otherDense, 0, 0, 6.0);
+    addEntry(other, otherDense, 1, 1, 7.0);
+    addEntry(other, otherDense, 2, 2, 8.0);
+    addSymmetricEdge(other, otherDense, 0, 1, -0.4);
+    addSymmetricEdge(other, otherDense, 1, 2, -0.9);
+    const std::vector<double> otherExact{0.6, -1.4, 0.3};
+    setRhs(other, otherDense, otherExact);
+    x.assign(3, 0.0);
+    (void)other.solvePressure(x, workspace, true);
+    check(other.ic0Builds() == 1 && other.ic0Reuses() == 0,
+          "independent system owns an independent IC(0) factorization");
+    const std::vector<double> exactAfterOther{0.9, 0.5, -1.1};
+    setRhs(system, dense, exactAfterOther);
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == 3 && system.ic0Reuses() == 2,
+          "shared workspace does not replace the original cached factors");
+    checkKnownSolution(dense, exactAfterOther, system.rhs, x,
+                       "original system survives another-system solve");
+
+    // reset and pin both invalidate a previously built factorization.
+    system.reset();
+    dense = zeroMatrix(3);
+    addEntry(system, dense, 0, 0, 4.0);
+    addEntry(system, dense, 1, 1, 5.0);
+    addEntry(system, dense, 2, 2, 6.0);
+    addSymmetricEdge(system, dense, 0, 1, -0.3);
+    addSymmetricEdge(system, dense, 1, 2, -0.6);
+    const std::vector<double> exactReset{0.7, -0.2, 0.9};
+    setRhs(system, dense, exactReset);
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == 4,
+          "reset invalidates and rebuilds the IC(0) factorization");
+    checkKnownSolution(dense, exactReset, system.rhs, x,
+                       "reset matrix known solution");
+
+    system.pin(0);
+    dense[0][1] = dense[1][0] = 0.0;
+    const std::vector<double> exactPin{0.0, -0.4, 1.2};
+    setRhs(system, dense, exactPin);
+    system.rhs[0] = 0.0;
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == 5,
+          "pin invalidates and rebuilds the IC(0) factorization");
+    checkKnownSolution(dense, exactPin, system.rhs, x,
+                       "pinned matrix known solution after invalidation");
+
+    // Fail after entering factorization (asymmetric direct off write), then
+    // restore the matrix. The failed attempt must not leave stale factors
+    // usable for the repaired matrix.
+    const auto edge12 = pattern.slot(1, 2);
+    system.off[edge12] += 0.05;
+    const auto buildsBeforeFailure = system.ic0Builds();
+    rejects([&] {
+        std::vector<double> failedX(3, 0.0);
+        (void)system.solvePressure(failedX, workspace, true);
+    }, "failed IC(0) factorization is reported");
+    check(system.ic0Builds() == buildsBeforeFailure,
+          "failed IC(0) factorization is not counted as a build");
+    system.off[edge12] -= 0.05;
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, true);
+    check(system.ic0Builds() == buildsBeforeFailure + 1,
+          "repaired matrix rebuilds after failed IC(0) factorization");
+    checkKnownSolution(dense, exactPin, system.rhs, x,
+                       "repaired matrix does not use stale failed factors");
+
+    // Neither a Jacobi solve nor an exact zero-residual solve should create or
+    // consume IC(0) factorization statistics.
+    const auto buildsBeforeNoIc0 = system.ic0Builds();
+    const auto reusesBeforeNoIc0 = system.ic0Reuses();
+    x.assign(3, 0.0);
+    (void)system.solvePressure(x, workspace, false);
+    check(system.ic0Builds() == buildsBeforeNoIc0 &&
+              system.ic0Reuses() == reusesBeforeNoIc0,
+          "Jacobi pressure solve does not affect IC(0) counters");
+    system.rhs.assign(3, 0.0);
+    x.assign(3, 0.0);
+    check(system.solvePressure(x, workspace, true) == 0,
+          "zero-residual pressure solve skips Krylov iterations");
+    check(system.ic0Builds() == buildsBeforeNoIc0 &&
+              system.ic0Reuses() == reusesBeforeNoIc0,
+          "zero-residual pressure solve does not fake IC(0) use");
+}
+
 void localResidualScaleRegression() {
     SparsePattern2D pattern(2, {});
     SparseSystem2D system(pattern);
@@ -375,6 +529,7 @@ int main() {
         nonsymmetricBiCGRegression();
         structureAndPinRegression();
         zeroResetAndPivotRegression();
+        ic0CacheRegression();
         localResidualScaleRegression();
     } catch (const std::exception& error) {
         std::cerr << "UNEXPECTED EXCEPTION: " << error.what() << '\n';

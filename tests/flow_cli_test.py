@@ -113,12 +113,33 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert profile['converged'] is data['converged']
             assert profile['momentumSolves'] == 2 * data['iterations']
             assert profile['pressureSolves'] == 4 * data['iterations']
+            # Zero-residual pressure passes may skip preconditioning. Require
+            # bounded accounting without assuming every pressure solve builds
+            # or consumes a factor; direct cache tests cover actual reuse.
+            assert 0 <= profile['pressureFactorizations'] <= profile['pressureSolves']
+            assert 0 <= profile['pressureFactorReuses'] <= profile['pressureSolves']
+            assert (profile['pressureFactorizations'] +
+                    profile['pressureFactorReuses'] <= profile['pressureSolves'])
             assert profile['momentumIterations'] >= profile['maxMomentumIterations'] > 0
             assert profile['pressureIterations'] >= profile['maxPressureIterations'] > 0
             for key in ('readAndMeshSeconds', 'solveSeconds', 'momentumLinearSolveSeconds', 'pressureLinearSolveSeconds'):
                 assert math.isfinite(profile[key]) and profile[key] >= 0, (key, profile[key])
             assert profile['solveSeconds'] >= profile['momentumLinearSolveSeconds'] + profile['pressureLinearSolveSeconds']
             assert profile['pressurePreconditioner'] == 'ic0'
+            aggregation, aggregation_field = run(
+                'aggregation', mesh,
+                extra=('--pressure-preconditioner', 'aggregation', '--profile'))
+            aggregation_profile = json.loads(
+                (root / 'aggregation.performance.json').read_text())
+            assert aggregation_profile['pressurePreconditioner'] == 'aggregation'
+            assert 0 < aggregation_profile['pressureHierarchyBuilds'] <= aggregation_profile['simpleIterations']
+            assert 0 <= aggregation_profile['pressureHierarchyReuses'] <= (
+                aggregation_profile['pressureSolves'] - aggregation_profile['pressureHierarchyBuilds'])
+            assert aggregation_profile['maxPressureHierarchyLevels'] > 1
+            assert aggregation_profile['maxPressureCoarseCells'] <= 32
+            for first, second in zip(field, aggregation_field):
+                assert max(abs(float(first[k]) - float(second[k]))
+                           for k in ('u', 'v', 'p')) < 1e-8
             jacobi, jacobi_field = run('jacobi', mesh, extra=('--pressure-preconditioner', 'jacobi'))
             assert jacobi['pressurePreconditioner'] == 'jacobi'
             # Different Krylov paths must solve the same physical equations.
