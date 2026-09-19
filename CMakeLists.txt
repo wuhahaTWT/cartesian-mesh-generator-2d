@@ -114,7 +114,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/ScalarTransport2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 target_compile_features(cartmesh2d_fv PUBLIC cxx_std_20)
 add_executable(cartmesh2d_fv_cli apps/cartmesh2d_fv_cli.cpp)
@@ -146,11 +146,32 @@ else()
     target_compile_options(cartmesh2d_flow_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
 endif()
 
+add_executable(cartmesh2d_transport_cli apps/cartmesh2d_transport_cli.cpp)
+target_link_libraries(cartmesh2d_transport_cli PRIVATE cartmesh2d_fv)
+if(MSVC)
+    target_sources(cartmesh2d_transport_cli PRIVATE apps/cartmesh2d.exe.manifest)
+endif()
+if(COMMAND cartmesh_enable_warnings)
+    cartmesh_enable_warnings(cartmesh2d_transport_cli)
+elseif(MSVC)
+    target_compile_options(cartmesh2d_transport_cli PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(cartmesh2d_transport_cli PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    add_executable(cartmesh2d_scalar_transport_tests tests/scalar_transport_test.cpp)
+    target_link_libraries(cartmesh2d_scalar_transport_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_scalar_transport COMMAND cartmesh2d_scalar_transport_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_scalar_transport_cli COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/scalar_transport_cli_test.py
+        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
+        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
     add_executable(cartmesh2d_fv_tests tests/fv_test.cpp)
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_fv_foundation COMMAND cartmesh2d_fv_tests)
