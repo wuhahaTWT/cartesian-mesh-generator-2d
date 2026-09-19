@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace cartmesh2d::fv::detail {
@@ -59,7 +59,7 @@ class AggregationHierarchy2D {
     }
     void cycle(std::size_t index) const {
         const auto& level=levels_[index]; const auto n=level.diagonal.size();
-        auto& x=level.x; std::fill(x.begin(),x.end(),0.);
+        auto& x=level.x;
         if (index+1==levels_.size()) {
             if (diagonalCoarse_) {
                 for (std::size_t i=0;i<n;++i) x[i]=finite(level.rhs[i]/level.diagonal[i]);
@@ -75,10 +75,12 @@ class AggregationHierarchy2D {
                 for (std::size_t j=0;j<i;++j) x[j]-=coarseLower_[i*n+j]*x[i];
             return;
         }
-        // Forward smoothing, starting from zero (fixed linear operation).
+        // Forward smoothing from zero: upper unknowns are mathematically zero,
+        // so only the already overwritten lower entries are needed. This also
+        // avoids clearing/re-reading the full scratch vector each V-cycle.
         for (std::size_t i=0;i<n;++i) {
             double value=level.rhs[i];
-            for (std::size_t k=level.rows[i];k<level.rows[i+1];++k)
+            for (std::size_t k=level.rows[i];k<level.rows[i+1] && level.columns[k]<i;++k)
                 value-=level.off[k]*x[level.columns[k]];
             x[i]=finite(value/level.diagonal[i]);
         }
@@ -184,37 +186,64 @@ public:
             require(levels_.size()<32,"Flow aggregation depth budget exceeded");
             Level coarse;
             std::vector<long double> diagonalSum(count,0.);
-            using Entry=std::tuple<std::size_t,std::size_t,double>;
-            std::vector<Entry> upper;
-            upper.reserve(level.off.size()/2);
+            // Bucket upper-triangle fine contributions by their coarse row.
+            // Unlike a global tuple sort, bounded-degree rows only sort their
+            // local columns. Stable order within each coarse pair preserves the
+            // original fine-face summation order and long-double reduction.
+            std::vector<std::size_t> upperRows(count+1,0);
             for (std::size_t i=0;i<n;++i) {
                 const auto ci=level.aggregate[i]; diagonalSum[ci]+=level.diagonal[i];
                 for (std::size_t k=level.rows[i];k<level.rows[i+1];++k) {
                     const auto j=level.columns[k]; if (j<=i || level.off[k]==0) continue;
                     const auto cj=level.aggregate[j];
                     if (ci==cj) diagonalSum[ci]+=2*static_cast<long double>(level.off[k]);
-                    else upper.emplace_back(std::min(ci,cj),std::max(ci,cj),level.off[k]);
+                    else ++upperRows[std::min(ci,cj)+1];
                 }
             }
-            // Stable sorting preserves deterministic fine-face summation order.
-            std::stable_sort(upper.begin(),upper.end(),[](const Entry& a,const Entry& b) {
-                return std::tie(std::get<0>(a),std::get<1>(a))<std::tie(std::get<0>(b),std::get<1>(b));
-            });
-            std::vector<Entry> entries; entries.reserve(upper.size()*2);
-            for (std::size_t k=0;k<upper.size();) {
-                const auto i=std::get<0>(upper[k]),j=std::get<1>(upper[k]); long double value=0;
-                do {value+=std::get<2>(upper[k++]);}
-                while (k<upper.size()&&std::get<0>(upper[k])==i&&std::get<1>(upper[k])==j);
-                const double a=finite(static_cast<double>(value));
-                entries.emplace_back(i,j,a);entries.emplace_back(j,i,a);
+            for (std::size_t i=0;i<count;++i) upperRows[i+1]+=upperRows[i];
+            using Entry=std::pair<std::size_t,double>;
+            std::vector<Entry> upper(upperRows.back());
+            auto cursor=upperRows;
+            for (std::size_t i=0;i<n;++i) {
+                const auto ci=level.aggregate[i];
+                for (std::size_t k=level.rows[i];k<level.rows[i+1];++k) {
+                    const auto j=level.columns[k]; if (j<=i || level.off[k]==0) continue;
+                    const auto cj=level.aggregate[j];
+                    if (ci!=cj) upper[cursor[std::min(ci,cj)]++]={std::max(ci,cj),level.off[k]};
+                }
             }
-            std::sort(entries.begin(),entries.end());
-            coarse.rows.assign(count+1,0.);coarse.diagonal.resize(count);
-            for (std::size_t i=0;i<count;++i) coarse.diagonal[i]=finite(static_cast<double>(diagonalSum[i]));
-            for (const auto& [i,j,value]:entries) {
-                ++coarse.rows[i+1];coarse.columns.push_back(j);coarse.off.push_back(value);
+            std::vector<std::size_t> uniqueRows(count+1,0);
+            std::size_t used=0;
+            coarse.rows.assign(count+1,0);
+            for (std::size_t i=0;i<count;++i) {
+                const auto end=upperRows[i+1];
+                std::stable_sort(upper.begin()+static_cast<std::ptrdiff_t>(upperRows[i]),
+                    upper.begin()+static_cast<std::ptrdiff_t>(end),
+                    [](const Entry& a,const Entry& b) { return a.first<b.first; });
+                for (auto k=upperRows[i];k<end;) {
+                    const auto j=upper[k].first; long double value=0;
+                    do { value+=upper[k++].second; } while (k<end && upper[k].first==j);
+                    upper[used++]={j,finite(static_cast<double>(value))};
+                    ++coarse.rows[i+1]; ++coarse.rows[j+1];
+                }
+                uniqueRows[i+1]=used;
             }
             for (std::size_t i=0;i<count;++i) coarse.rows[i+1]+=coarse.rows[i];
+            coarse.columns.resize(coarse.rows.back()); coarse.off.resize(coarse.rows.back());
+            cursor=coarse.rows;
+            for (std::size_t i=0;i<count;++i) {
+                for (auto k=uniqueRows[i];k<uniqueRows[i+1];++k) {
+                    const auto [j,value]=upper[k];
+                    const auto ij=cursor[i]++, ji=cursor[j]++;
+                    coarse.columns[ij]=j; coarse.off[ij]=value;
+                    coarse.columns[ji]=i; coarse.off[ji]=value;
+                }
+            }
+            // Transposed lower entries arrive in increasing row order, before
+            // each row's sorted upper entries: CSR is sorted and exactly
+            // symmetric without a second global sort or a doubled tuple list.
+            coarse.diagonal.resize(count);
+            for (std::size_t i=0;i<count;++i) coarse.diagonal[i]=finite(static_cast<double>(diagonalSum[i]));
             scratch(coarse);levels_.push_back(std::move(coarse));
         }
         factorCoarse();
@@ -227,6 +256,8 @@ public:
         levels_.front().rhs=rhs; cycle(0); result=levels_.front().x;
         for (double value:result) finite(value);
     }
+    // Read-only matrix diagnostics for checking the Galerkin hierarchy.
+    const auto& level(std::size_t index) const { return levels_.at(index); }
     std::size_t levels() const { return levels_.size(); }
     std::size_t coarseCells() const { return levels_.back().diagonal.size(); }
 };

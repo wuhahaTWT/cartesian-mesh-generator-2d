@@ -2,7 +2,7 @@
 
 ## 打开与版本
 
-唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.9。
+唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.10。
 macOS 直接双击根目录 `打开CartMesh2D.command`；Apple Silicon App 在 `desktop/dist/mac-arm64/CartMesh2D.app`，Intel 本机构建在 `desktop/dist/mac/CartMesh2D.app`。
 开发模式：在 `desktop/` 执行 `npm start`。从其他目录调用 `sh desktop/scripts/build-macos.sh` 也可打包。
 不要再打开旧隐藏工作区路径；新旧代码关系见开发导航的历史表。

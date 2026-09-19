@@ -64,10 +64,95 @@ void known(const Grid& g,const std::vector<double>& actual,const std::vector<dou
     check(norm(e)<=5e-10*(1.+norm(exact)),label+" matches known solution");
 }
 
+void checkGalerkinHierarchy(const AggregationHierarchy2D& hierarchy,
+                            const std::string& label, bool requireRepeatedPair) {
+    bool repeatedPair=false, intraAggregate=false;
+    for (std::size_t levelIndex=0; levelIndex+1<hierarchy.levels(); ++levelIndex) {
+        const auto& fine=hierarchy.level(levelIndex);
+        const auto& coarse=hierarchy.level(levelIndex+1);
+        const auto n=fine.diagonal.size(), m=coarse.diagonal.size();
+        std::vector<std::vector<long double>> a(n,std::vector<long double>(n,0));
+        for (std::size_t i=0;i<n;++i) {
+            a[i][i]=fine.diagonal[i];
+            for (std::size_t k=fine.rows[i];k<fine.rows[i+1];++k)
+                a[i][fine.columns[k]]=fine.off[k];
+        }
+        std::vector<std::vector<long double>> expected(m,std::vector<long double>(m,0));
+        std::vector<std::vector<std::size_t>> pairCount(m,std::vector<std::size_t>(m,0));
+        for (std::size_t i=0;i<n;++i) {
+            check(fine.aggregate[i]<m,label+" aggregate id is in range");
+            for (std::size_t j=0;j<n;++j)
+                expected[fine.aggregate[i]][fine.aggregate[j]] += a[i][j];
+            for (std::size_t k=fine.rows[i];k<fine.rows[i+1];++k) {
+                const auto j=fine.columns[k];
+                if (j<=i || fine.off[k]==0) continue;
+                const auto ci=fine.aggregate[i], cj=fine.aggregate[j];
+                if (ci==cj) intraAggregate=true;
+                else {
+                    ++pairCount[std::min(ci,cj)][std::max(ci,cj)];
+                    if (pairCount[std::min(ci,cj)][std::max(ci,cj)]>1) repeatedPair=true;
+                }
+            }
+        }
+        check(coarse.rows.size()==m+1 && coarse.rows.front()==0 &&
+              coarse.rows.back()==coarse.columns.size() &&
+              coarse.columns.size()==coarse.off.size(),label+" CSR dimensions are valid");
+        std::vector<std::vector<bool>> present(m,std::vector<bool>(m,false));
+        for (std::size_t i=0;i<m;++i) {
+            check(coarse.rows[i]<=coarse.rows[i+1],label+" CSR row bounds are monotone");
+            std::size_t previous=m;
+            for (std::size_t k=coarse.rows[i];k<coarse.rows[i+1];++k) {
+                const auto j=coarse.columns[k];
+                check(j<m && j!=i && (previous==m || previous<j),
+                      label+" coarse CSR columns are sorted and duplicate-free");
+                if (j>=m || j==i) continue;
+                previous=j; present[i][j]=true;
+                const auto transpose=std::lower_bound(coarse.columns.begin()+coarse.rows[j],
+                    coarse.columns.begin()+coarse.rows[j+1],i);
+                check(transpose!=coarse.columns.begin()+coarse.rows[j+1] &&
+                      *transpose==i && coarse.off[static_cast<std::size_t>(transpose-coarse.columns.begin())]==coarse.off[k],
+                      label+" coarse CSR is exactly symmetric");
+                const auto expectedValue=static_cast<double>(expected[i][j]);
+                check(std::abs(coarse.off[k]-expectedValue)<=
+                      2e-12*(1.+std::abs(expectedValue)),label+" off-diagonal equals dense P^T A P");
+            }
+            const auto expectedDiagonal=static_cast<double>(expected[i][i]);
+            check(std::abs(coarse.diagonal[i]-expectedDiagonal)<=
+                  2e-12*(1.+std::abs(expectedDiagonal)),label+" diagonal equals dense P^T A P");
+        }
+        for (std::size_t i=0;i<m;++i) for (std::size_t j=0;j<m;++j)
+            if (i!=j && expected[i][j]!=0)
+                check(present[i][j],label+" retains every nonzero Galerkin coupling");
+    }
+    if (requireRepeatedPair) {
+        check(repeatedPair,label+" has multiple fine edges in one coarse pair");
+        check(intraAggregate,label+" has intra-aggregate fine edges");
+    }
+}
+
+void permutedGalerkinRegression() {
+    Grid g; SparseSystem2D source(g.pattern); g.assemble(source);
+    std::vector<std::size_t> permutation(g.n);
+    for (std::size_t i=0;i<g.n;++i) permutation[i]=(37*i+11)%g.n;
+    std::vector<std::pair<std::size_t,std::size_t>> connections;
+    for (std::size_t i=0;i<g.n;++i)
+        for (std::size_t k=g.pattern.rows[i];k<g.pattern.rows[i+1];++k)
+            connections.emplace_back(permutation[i],permutation[g.pattern.columns[k]]);
+    SparsePattern2D pattern(g.n,connections); SparseSystem2D permuted(pattern);
+    for (std::size_t i=0;i<g.n;++i) {
+        permuted.diag[permutation[i]]=source.diag[i];
+        for (std::size_t k=g.pattern.rows[i];k<g.pattern.rows[i+1];++k)
+            permuted.off[pattern.slot(permutation[i],permutation[g.pattern.columns[k]])]=source.off[k];
+    }
+    AggregationHierarchy2D hierarchy(pattern.rows,pattern.columns,permuted.diag,permuted.off);
+    checkGalerkinHierarchy(hierarchy,"permuted nonuniform Galerkin hierarchy",true);
+}
+
 void regression() {
     Grid g; SparseSystem2D s(g.pattern); g.assemble(s);
     AggregationHierarchy2D h(g.pattern.rows,g.pattern.columns,s.diag,s.off);
     check(h.levels()>3 && h.coarseCells()<=32,"17x17 grid exercises multiple bounded levels");
+    checkGalerkinHierarchy(h,"17x17 Galerkin hierarchy",false);
     std::vector<double> x(g.n),y(g.n); for(std::size_t i=0;i<g.n;++i){x[i]=std::sin(.17*(i+1));y[i]=std::cos(.11*(i+2));}
     std::vector<double> bx,by; h.apply(x,bx); h.apply(y,by); const auto scale=1.+std::abs(dot(x,by))+std::abs(dot(y,bx));
     check(std::abs(dot(x,by)-dot(y,bx))<=2e-11*scale,"V-cycle bilinear form is symmetric");
@@ -75,6 +160,10 @@ void regression() {
     std::vector<double> sum=x, linearResult, expected(bx.size());
     for(std::size_t i=0;i<g.n;++i) { sum[i]+=y[i]; expected[i]=bx[i]+by[i]; }
     h.apply(sum,linearResult);
+    std::vector<double> repeated, zeroResult;
+    h.apply(x,repeated); check(repeated==bx,"V-cycle scratch reuse is deterministic");
+    h.apply(std::vector<double>(g.n,0.),zeroResult);
+    check(zeroResult==std::vector<double>(g.n,0.),"zero RHS clears prior V-cycle state by overwrite");
     double linearError=0.; for(std::size_t i=0;i<g.n;++i) linearError=std::max(linearError,std::abs(linearResult[i]-expected[i]));
     check(linearError<=2e-13,"V-cycle is linear for fixed coefficients");
     LinearWorkspace2D w(g.n); std::vector<double> sol(g.n); s.rhs=g.reference(x);
@@ -137,6 +226,8 @@ void regression() {
     std::vector<std::size_t> weakRows(41,2);weakRows[0]=0;weakRows[1]=1;
     rejects([&]{AggregationHierarchy2D q(weakRows,{1,0},std::vector<double>(40,2.),{-1.,-1.});},
             "mostly isolated graph retains the explicit hierarchy memory guard");
+
+    permutedGalerkinRegression();
 
 }
 }
