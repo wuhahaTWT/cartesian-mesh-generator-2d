@@ -174,6 +174,12 @@ if(CARTMESH2D_BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_flow_cli_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
         --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
+    add_test(NAME cartmesh2d_thermal_scale_verifier COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_scale_verifier_test.py
+        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
+        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
+    set_tests_properties(cartmesh2d_thermal_scale_verifier PROPERTIES TIMEOUT 60)
     add_test(NAME cartmesh2d_scalar_transport_cli COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/scalar_transport_cli_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

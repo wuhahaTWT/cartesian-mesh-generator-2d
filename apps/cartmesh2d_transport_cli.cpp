@@ -86,6 +86,7 @@ int main(int argc,char**argv) {
     try {
         std::string meshPath,flowPath,bcPath,verification,evolve,restart;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
+        bool explicitVelocityRelaxation=false;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
         fv::ScalarTransportControls2D controls;
         for(int i=1;i<argc;++i) {
@@ -101,6 +102,7 @@ int main(int argc,char**argv) {
                     "Verification only: --verification sine|decay (unit-square decay), --speed 1 for sine.\n"
                     "Evolving flow: --evolve-flow external|channel|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
+                    "  --flow-velocity-relaxation 0.6: evolving carrier only; (0,1], larger may be unstable.\n"
                     "  --flow-convection upwind|limited-linear --pressure-preconditioner ic0|aggregation\n"
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
@@ -117,6 +119,12 @@ int main(int argc,char**argv) {
             else if(arg=="--flow-nu")flowControls.nu=number(value);
             else if(arg=="--flow-speed")flowControls.speed=number(value);
             else if(arg=="--flow-tolerance")flowControls.tolerance=number(value);
+            else if(arg=="--flow-velocity-relaxation") {
+                flowControls.velocityRelaxation=number(value);
+                require(flowControls.velocityRelaxation>0&&flowControls.velocityRelaxation<=1,
+                        "flow-velocity-relaxation must be in (0,1]");
+                explicitVelocityRelaxation=true;
+            }
             else if(arg=="--flow-max-iterations") {
                 const double n=number(value);require(n>=1&&n<=100000&&n==std::floor(n),"invalid flow iteration count");
                 flowControls.maxIterations=static_cast<std::size_t>(n);
@@ -150,6 +158,7 @@ int main(int argc,char**argv) {
             evolve="taylor-green";
         }
         const bool evolving=!evolve.empty();
+        require(!explicitVelocityRelaxation||evolving,"flow-velocity-relaxation option requires evolving flow");
         if(evolving) {
             require(dt>0&&flowPath.empty()&&(verification.empty()||verification=="thermal-vortex"),"evolving flow requires dt and cannot use a frozen carrier or other verification");
             require(evolve=="channel"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
@@ -293,6 +302,7 @@ int main(int argc,char**argv) {
             <<",\n\"cells\":"<<mesh.cells.size()<<",\n\"faces\":"<<mesh.faces.size()<<",\n\"time\":"<<time<<",\n\"timeStep\":"<<dt
             <<",\n\"verificationSpeed\":"<<speed<<",\n\"constantSource\":"<<source<<",\n\"initialValue\":"<<initial
             <<",\n\"flowNu\":"<<flowControls.nu<<",\n\"flowSpeed\":"<<flowControls.speed
+            <<",\n\"flowVelocityRelaxation\":"<<flowControls.velocityRelaxation
             <<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"outletBackflow\":"<<quote(flowControls.outletBackflow==fv::OutletBackflow2D::NormalInlet?"normal-inlet":"reject")
             <<",\n\"steps\":"<<steps

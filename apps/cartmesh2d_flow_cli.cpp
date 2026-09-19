@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
     try {
         std::string path;
         fv::FlowControls2D controls;
+        bool explicitVelocityRelaxation=false;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
         std::string restart;
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured|counterflow\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
+            "--velocity-relaxation 0.6: transient inner iterations only; (0,1], larger may be unstable.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
@@ -98,6 +100,11 @@ int main(int argc, char** argv) {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--velocity-relaxation") {
+                controls.velocityRelaxation=number(v);
+                if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
+                    throw std::invalid_argument("velocity-relaxation must be in (0,1]");
+                explicitVelocityRelaxation=true;
             } else if (a == "--time-step") {
                 timeStep=number(v);
                 if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
@@ -148,6 +155,8 @@ int main(int argc, char** argv) {
 
         if ((timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
             throw std::invalid_argument("--time-step and --steps must be provided together; restart requires them");
+        if (explicitVelocityRelaxation && timeStep==0)
+            throw std::invalid_argument("velocity-relaxation option requires transient flow");
 
         const auto readStart = std::chrono::steady_clock::now();
         const auto read = readCm2dTopology(path);

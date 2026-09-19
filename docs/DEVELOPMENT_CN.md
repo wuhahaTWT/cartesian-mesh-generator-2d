@@ -215,11 +215,26 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.4已提供时间步、物理量监测、取消保留与checkpoint续算，本地macOS已打包实测；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
 
+CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。显式选项仅允许非定常/同步模式，稳态或冻结载流拒绝；不会自动调大，桌面当前仍使用默认值。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
+
 ```bash
 build/cartmesh2d_flow_cli --mesh PATH/FINAL.solver.cm2d --output outputs/startup/result --case external --nu .05 --speed 1 --convection limited-linear --time-step .01 --steps 5 --tolerance 1e-9 --max-iterations 1000 --profile
 build/cartmesh2d_flow_cli --mesh PATH/FINAL.solver.cm2d --output outputs/continued/result --case external --nu .05 --speed 1 --convection limited-linear --time-step .01 --steps 5 --restart outputs/startup/result.checkpoint --tolerance 1e-9 --max-iterations 1000
 python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2d --prefix outputs/continued/result --output outputs/continued/audit.json
 ```
+
+同步热涡规模验证入口（串行，输出必须是新目录）：
+
+```sh
+python3 tools/verification/verify_thermal_scale.py --output outputs/thermal-scale-new --cells-across 100 200 320 --velocity-relaxation .8 --timeout 300
+python3 tools/visualization/render_thermal_scale.py --study outputs/thermal-scale-new/study.json --output outputs/thermal-scale-new/preview.png
+```
+
+默认步长 `.005`、2步、nu=.1、D=.02、Uref=1，固定物性与有限时间；不是长时间或湍流验证。默认系数仍为 `.6`，上面 `.8` 是显式对照设置，不能推广成所有工况推荐值。单进程时间预算最多300秒、磁盘不足1.5 GiB前停止；超时/失败留存并返回非零。`--reuse-mesh-study PATH`可读取此前同工具生成的 `nN/mesh/square.solver.cm2d`，不复制大网格，记录输入SHA。审核真实单元数、几何、最终逐面/逐格守恒、时间项和面通量；同步载流必须与同设置独立求解的checkpoint逐字节相同，各步接受历史和迭代数相符。未独立存档所有中间场，不能声称逐步全部重算审核。
+
+对这一个相切解析涡，标量 `sin(pi*x)sin(pi*y)` 的对流项解析为零；与速度的衰减率分别为 `2*pi²*D` 和 `2*pi²*nu`。同时报告连续指数解和空间连续、时间按后向欧拉的参考幅值 `(1+rate*dt)^(-steps)`。前者含时间离散误差；后者有助区分网格细化效果，但仍含空间、载流和迭代误差。三档校验固定物性/步长/终止时间/松弛，报告观测阶与误差趋势，不设通用工程精度分数。绘图读取实际最终CM2D及字段，失败研究不会被渲染成通过图。
+
+失败研究只在显式加 `--allow-incomplete` 后可绘制已独立审核的完整案例，图中保留醒目的未完成提示，不能拿中途checkpoint当最终场。规模工具在POSIX启动独立进程组，超时停止整个组；Windows使用有界taskkill及失败记录（本次未实测Windows）。资源计时器本身失败也保留非零状态；不能把缺失RSS当成0，或把封装器错误直接解释为方程失败。
 
 `--time-step`和`--steps`必须一起提供；后者表示本次追加的步数，`--max-iterations`是每步内迭代上限。普通channel/cavity/external从静止开始，在t>0施加入流/顶盖速度；这是瞬时启动，会产生启动压力，不是预先求稳态再贴上时间标签。外流仍限定矩形外域、固定固体和无回流出口。
 
