@@ -314,18 +314,26 @@ ctest --test-dir build -R sst_nonlinear --output-on-failure
 
 核心入口`SstRans2D.hpp/.cpp::solveSstRans2D(mesh, controls, initialK, initialOmega, progress)`，默认入口k=.001、omega=2，可明确给定初始场；两者需同时提供。沿用已有flow场景角色与几何限制，强制Symmetric应力、拒绝另传faceViscosity和未支持的回流模型。当前实测矩形通道；外流/方腔分类可调用但尚无本阶段耦合资格，不宣称URANS、任意patch或湍流传热。
 
-内部`detail/FlowMaterial2D.hpp`提供本构更新钩子：SIMPLE每次更新速度/压力/守恒面通量后，传出实际边界约束；返回完整正面黏度，验证后重建当前动量方程再验收。初次动量预测采用分子nu。SST钩子求非线性k/omega到子问题停止门，随后nu+nu_t统一进入共享面应力、矩阵、残差和壁面力。内部面按neighbourWeight线性插值；解析壁面取nu；入口按入口k/omega与owner的距离、梯度和应变评估nu_t；出口按owner闭合。SST标量扩散仍采用此前明确的墙nu、内部插值及其他边界owner系数规则。两套规则均由独立工具重算，未隐藏边界插值选择。
+内部`detail/FlowMaterial2D.hpp`提供本构更新钩子：SIMPLE每次更新速度/压力/守恒面通量后，传出实际边界约束；返回`MaterialState2D{faceViscosity, converged}`，验证系数后重建当前动量方程再验收；converged表示当前本构方程通过，不能用黏度变化小代替。初次动量预测采用分子nu。`turbulenceUpdatesPerIteration`默认1，限制每次SIMPLE中的SST非线性更新数；与`turbulence.maxIterations`取较小值，二者均须正。达到局部更新上限不抛出，继续推进流动；直到同一末态的动量和湍流均通过原门才可整体接受。内层求解/正性失败仍抛出。显式设为`turbulence.maxIterations`可恢复充分求解的nested策略。随后nu+nu_t统一进入共享面应力、矩阵、残差和壁面力。内部面按neighbourWeight线性插值；解析壁面取nu；入口按入口k/omega与owner的距离、梯度和应变评估nu_t；出口按owner闭合。SST标量扩散仍采用此前明确的墙nu、内部插值及其他边界owner系数规则。两套规则均由独立工具重算，未隐藏边界插值选择。
 
 采用TMR的**SST-2003m**，m明确省略各向同性2k/3应力，p直接是运动学压力，不定义p+2k/3修正量。结合不可压约束，动量使用nu_eff(grad U+grad U^T)；没有声称可压缩应力或其他SST变体。只有当前动量/质量与两条当前非线性湍流方程均通过才返回converged。次数字段分别报告SIMPLE和湍流更新；内层失败抛出，不能接受旧系数残差。尚未提供SST联合checkpoint及产品CLI/GUI，当前探针仅供复核。
 
 ```sh
 # 诊断约定：单位正方形通道，抛物线入口，nu=.001，k_in=.001，omega_in=2。
 build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/rans-probe
+# 配对性能诊断可另指定旧的充分求解策略；物理参数/最终停止条件不变。
+build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/rans-nested nested
 python3 tools/verification/verify_sst_rans.py --mesh /path/unit-square.solver.cm2d --prefix outputs/rans-probe --output outputs/rans-audit.json
 ctest --test-dir build -R sst_rans --output-on-failure
 ```
 
-读取器独立计算wall omega=60nu/(.075dn²)、原未拆分SST源项及稳态对角/norm目标；不把单纯源项拆分的内层方程当最终收敛。独立面黏度暂存为临时CSV交给既有动量读取器，明确使用one-sided-linear-2ring压力重建；临时目录退出即删除，审核报告保留其系数文件哈希。梯度和相消通量比较有以实际项尺度计算的机器舍入预算，求解器的停止门不变。报告中的不同规模两例只验证算得通且满足离散方程，不能当网格无关性或物理准确度证明。
+读取器独立计算wall omega=60nu/(.075dn²)、原未拆分SST源项及稳态对角/norm目标；不把单纯源项拆分的内层方程当最终收敛。独立面黏度暂存为临时CSV交给既有动量读取器，明确使用one-sided-linear-2ring压力重建；临时目录退出即删除，审核报告保留其系数文件哈希。梯度和相消通量比较有以实际项尺度计算的机器舍入预算，求解器的停止门不变。摘要与最终history中同一原始残差采用精确一致性检查，不为重复导出数据使用独立重算的舍入容差。审核更新次数不超过声明上限；中间湍流状态可未收敛，最终两条原方程门保留。不同规模案例只验证满足离散方程，不能当网格无关性或物理准确度证明。
+
+### 标准湍流参考的适用边界
+
+已核对[TMR 2DZP平板定义](https://tmbwg.github.io/turbmodels/flatplate.html)、[网格](https://tmbwg.github.io/turbmodels/flatplate_grids.html)及[SST参考结果](https://tmbwg.github.io/turbmodels/flatplate_sst.html)。平板x=0至2，参考长度1，Re_L=5e6、M=.2；网格35×25至545×385节点，需明确区分节点数与实际流体单元数。壁面omega及自由来流k/omega必须按该例指定，不能沿用诊断通道的数值。近壁y+、x约.97/1.90的剖面及壁面摩阻是后续关注量；不能只看残差。
+
+该现成平板数据使用**SST-Vm**，当前实现为**不可压SST-2003m**。低Mach相近不等于方程/变体相同，不能直接以该表作为本模型严格误差标准。下一步须明确选择匹配参考，或如实分开报告跨变体参考和独立制造解验证；在此之前不宣称平板验收。还需实现上游滑移/板面无滑移的混合底边、合适远场与各向异性近壁网格，目前未实现新的平板产品入口。
 
 ### 非正交压力修正固定点
 

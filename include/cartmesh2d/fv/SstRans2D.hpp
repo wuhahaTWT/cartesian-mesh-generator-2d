@@ -6,6 +6,10 @@ struct SstRansControls2D {
     FlowControls2D flow;
     SstTransportControls2D turbulence;
     double inletK=.001, inletOmega=2;
+    // Interleave a bounded number of nonlinear SST updates with each SIMPLE
+    // iteration. Final original-equation stopping gates are unchanged. Set to
+    // turbulence.maxIterations to recover the fully nested solve strategy.
+    std::size_t turbulenceUpdatesPerIteration=1;
 };
 struct SstRansIteration2D {
     std::size_t iteration=0, turbulenceIterations=0;

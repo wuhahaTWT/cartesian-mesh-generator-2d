@@ -98,6 +98,8 @@ def main(args):
                    lambda records, index, key: records[-1].__setitem__(key, str(float(records[-1][key]) + .1)))
         reject_csv(mesh, prefix, ".history.csv", "kNorm",
                    lambda records, index, key: records[-1].__setitem__(key, '0'))
+        reject_csv(mesh, prefix, ".history.csv", "turbulenceIterations",
+                   lambda records, index, key: records[index].__setitem__(key, '2'))
 
         def stale_closure(records, index, key):
             source = max(range(len(records)),
@@ -114,6 +116,9 @@ def main(args):
         reject_json(mesh, prefix, lambda data: data.__setitem__("momentumResidual", 0.0))
         reject_json(mesh, prefix, lambda data: data.__setitem__("scalarRelativeTolerance", 1.0))
         reject_json(mesh, prefix, lambda data: data.__setitem__("globalRelativeImbalance", 1.0))
+        for invalid in (0, -1, 501, 1.5, True):
+            reject_json(mesh, prefix, lambda data, value=invalid:
+                        data.__setitem__("turbulenceUpdatesPerIteration", value))
     print("SST-RANS verifier: real channel audit passed and all tamper cases rejected.")
 
 

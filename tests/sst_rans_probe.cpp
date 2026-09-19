@@ -9,11 +9,15 @@ using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 int main(int argc,char** argv) {
     try {
-        if(argc!=3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix");
+        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
+        if(argc==4) {
+            if(std::string(argv[3])!="nested")throw std::runtime_error("unknown SST coupling strategy");
+            c.turbulenceUpdatesPerIteration=c.turbulence.maxIterations;
+        }
         const std::string prefix=argv[2];
         const auto r=solveSstRans2D(mesh,c,{}, {},[](const auto& h){
             if(h.iteration==1||h.iteration%100==0)std::cerr<<h.iteration<<" momentum="<<h.momentumResidual<<'\n';
@@ -50,6 +54,7 @@ int main(int argc,char** argv) {
         meta<<std::setprecision(17)<<"{\"case\":\"channel\",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":0.001,\"speed\":1,\"inletK\":0.001,\"inletOmega\":2,\"tolerance\":1e-7,"
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
+            <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds
             <<",\"momentumResidual\":"<<flow.history.back().momentumResidual
             <<",\"forceX\":"<<flow.forceX<<",\"forceY\":"<<flow.forceY

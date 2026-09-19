@@ -35,20 +35,33 @@ void materialContract(const FvMesh2D& m) {
     const auto old=solveIncompressible2D(m,c);std::size_t updates=0;
     auto same=detail::solveMaterialFlow2D(m,c,[&](const auto& flow,const auto& bc) {
         require(flow.u.size()==m.cells.size()&&bc.size()==m.faces.size(),"callback current state missing");
-        ++updates;return std::vector<double>(m.faces.size(),c.nu);
+        ++updates;return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),true};
     });
     require(old.converged&&same.converged&&same.u==old.u&&same.v==old.v&&same.p==old.p&&same.flux==old.flux,
         "constant material callback changed legacy flow");
     require(updates==same.history.size(),"one constitutive refresh per current momentum residual");
+    // A converged momentum system cannot bypass an unfinished constitutive
+    // equation; conversely a later ready signal must allow ordinary acceptance.
+    auto held=c;held.maxIterations=old.history.size()+8;
+    const auto unfinished=detail::solveMaterialFlow2D(m,held,[&](const auto&,const auto&){
+        return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),false};
+    });
+    require(!unfinished.converged&&unfinished.history.size()==held.maxIterations&&
+        unfinished.history.back().momentumResidual<c.tolerance,"unfinished material bypassed coupled gate");
+    std::size_t count=0;const auto readyAt=old.history.size()+3;
+    const auto released=detail::solveMaterialFlow2D(m,held,[&](const auto&,const auto&){
+        return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),++count>=readyAt};
+    });
+    require(released.converged&&released.history.size()>=readyAt,"material readiness was not honored");
     rejects([&]{(void)detail::solveMaterialFlow2D(m,c,{});});
     for(double nu:{0.,-1.,std::numeric_limits<double>::quiet_NaN()})
-        rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return std::vector<double>(m.faces.size(),nu);});});
-    rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[](const auto&,const auto&){return std::vector<double>{};});});
+        rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return detail::MaterialState2D{std::vector<double>(m.faces.size(),nu),true};});});
+    rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[](const auto&,const auto&){return detail::MaterialState2D{};});});
     // A one-step run must assemble its returned diffusion with the NEW material,
     // even when it has not converged. Each shared viscous face flux is linear in nu.
     c.maxIterations=1;
     const auto frozen=solveIncompressible2D(m,c);
-    const auto changed=detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return std::vector<double>(m.faces.size(),2*c.nu);});
+    const auto changed=detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return detail::MaterialState2D{std::vector<double>(m.faces.size(),2*c.nu),true};});
     require(!changed.converged&&changed.u==frozen.u&&changed.p==frozen.p,"one-step coupling contract changed");
     double difference=0;
     for(std::size_t id=0;id<m.faces.size();++id) {
@@ -60,7 +73,7 @@ void materialContract(const FvMesh2D& m) {
         "new material not included in current-state momentum residual");
 }
 void ransContract(const FvMesh2D& m) {
-    SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.01;c.flow.tolerance=1e-8;c.inletK=0;
+    SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.01;c.flow.tolerance=1e-8;c.inletK=0;c.turbulenceUpdatesPerIteration=500;
     const auto laminar=solveIncompressible2D(m,c.flow);
     const auto r=solveSstRans2D(m,c);
     require(r.converged&&r.flow.u==laminar.u&&r.flow.v==laminar.v&&r.flow.p==laminar.p&&r.flow.flux==laminar.flux,
@@ -74,6 +87,14 @@ void ransContract(const FvMesh2D& m) {
     rejects([&]{(void)solveSstRans2D(m,c,{1},{});});
     invalid=c;invalid.flow.maxIterations=1;const auto limited=solveSstRans2D(m,invalid);
     require(!limited.converged&&limited.turbulence.converged,"scalar convergence mislabeled as RANS convergence");
+    invalid=c;invalid.turbulenceUpdatesPerIteration=0;rejects([&]{(void)solveSstRans2D(m,invalid);});
+    auto interleaved=c;interleaved.turbulenceUpdatesPerIteration=1;interleaved.inletK=.001;
+    const auto coupled=solveSstRans2D(m,interleaved);
+    require(coupled.converged&&coupled.turbulence.converged,"interleaved turbulence failed final equation gates");
+    for(const auto& h:coupled.history)require(h.turbulenceIterations<=1,"interleaved work limit ignored");
+    interleaved.flow.maxIterations=1;
+    const auto partial=solveSstRans2D(m,interleaved);
+    require(!partial.converged&&!partial.turbulence.converged,"partial scalar iteration claimed coupled success");
 }
 }
 int main(){try{const auto m=square();materialContract(m);ransContract(m);return 0;}

@@ -479,6 +479,7 @@ static FlowResult2D solveFlow(
     // iteration. Refresh after every field/flux/boundary update, then transfer
     // numeric storage and apply relaxation without rebuilding the same rows.
     std::vector<Vector2D> gp,gu,gv,forceGradient,stressCorrection;
+    bool materialConverged=!material;
     const auto refreshMomentum = [&](bool updateMaterial=false) {
         updateOutletBoundary(b,m,c,r.flux);
         if (material && updateMaterial) {
@@ -487,7 +488,9 @@ static FlowResult2D solveFlow(
                 snapshot[id]={{b.u[id],b.v[id]},b.fixedU[id],b.fixedV[id],
                     b.role[id]==Role::Wall||b.role[id]==Role::Lid,
                     b.role[id]==Role::Inlet,b.role[id]==Role::Outlet};
-            c.faceViscosity=material(r,snapshot);
+            auto materialState=material(r,snapshot);
+            materialConverged=materialState.converged;
+            c.faceViscosity=std::move(materialState.faceViscosity);
             ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
             validateViscosity(m,c);
         }
@@ -614,7 +617,7 @@ static FlowResult2D solveFlow(
             mr=std::max(mr,std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale);}
         FlowIteration2D step{it,finite(mr),finite(continuity),finite(du),finite(dp)};r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
-        if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8){r.converged=true;break;}
+        if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8&&materialConverged){r.converged=true;break;}
     }
     if (previous) {
         r.temporalIntegrals.resize(n);

@@ -1,6 +1,7 @@
 #include "cartmesh2d/fv/SstRans2D.hpp"
 #include "cartmesh2d/fv/WallDistance2D.hpp"
 #include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -13,6 +14,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
     const std::vector<double>& initialK,const std::vector<double>& initialOmega,
     const std::function<void(const FlowIteration2D&)>& progress) {
     validateFvMesh2D(mesh);
+    require(c.turbulenceUpdatesPerIteration>0,"SST RANS requires positive turbulence updates per iteration");
     require(c.flow.viscousStress==ViscousStress2D::Symmetric&&c.flow.faceViscosity.empty(),
         "SST RANS requires symmetric stress and owns its face viscosity");
     require(c.flow.outletBackflow==OutletBackflow2D::Reject,"SST RANS backflow boundary not implemented");
@@ -44,8 +46,9 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
         }
         if(p.wallDistance.empty())p.wallDistance=computeWallDistance2D(mesh,result.resolvedWalls).distance;
         setSst2003mResolvedWalls2D(mesh,p,result.resolvedWalls);
-        auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,c.turbulence);
-        require(next.converged,"SST RANS turbulence subproblem did not converge");
+        auto transport=c.turbulence;
+        transport.maxIterations=std::min(transport.maxIterations,c.turbulenceUpdatesPerIteration);
+        auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport);
         p.k=next.fields.k.values;p.omega=next.fields.omega.values;
         // Current strain/gradients/coefficient fields are evaluated at this same
         // velocity and returned k/omega. Use inlet closure from actual inlet
@@ -63,7 +66,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
         const auto& h=next.history.back();
         result.history.push_back({result.history.size()+1,h.iteration,h.kResidualNorm,h.omegaResidualNorm,h.kCellResidual,h.omegaCellResidual});
         result.turbulence=std::move(next);
-        return result.faceViscosity;
+        return detail::MaterialState2D{result.faceViscosity,result.turbulence.converged};
     };
     result.flow=detail::solveMaterialFlow2D(mesh,c.flow,update,progress);
     result.converged=result.flow.converged&&result.turbulence.converged;

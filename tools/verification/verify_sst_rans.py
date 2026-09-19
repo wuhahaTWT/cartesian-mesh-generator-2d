@@ -113,12 +113,19 @@ def read_artifacts(mesh_path, prefix):
         meta.get("pressureDiscretization") == "shared-face-gauss",
         "unsupported flow discretization")
     req(len(hrows) == int(meta.get("iterations", -1)) and len(hrows) > 0, "history length mismatch")
+    updates=meta.get('turbulenceUpdatesPerIteration',500) # legacy nested probe
+    req(type(updates) is int and 1<=updates<=500,'invalid constitutive update limit')
     for expected, row in enumerate(hrows, 1):
         req(int(row["iteration"]) == expected, "history iteration ordering mismatch")
         for key in ("momentumResidual", "continuity", "velocityChange", "pressureChange",
                     "kNorm", "omegaNorm", "kCellResidual", "omegaCellResidual"):
             req(num(row[key], key) >= 0, f"history {key} is negative")
-        req(0 <= int(row["turbulenceIterations"]) <= 500, "invalid turbulence iteration count")
+        req(0 <= int(row["turbulenceIterations"]) <= updates, "invalid turbulence iteration count")
+    # Both files serialize the very same native value at 17 digits. Independent
+    # reconstruction needs a roundoff allowance; duplicate export data does not.
+    req(num(meta["momentumResidual"], "momentumResidual") ==
+        num(hrows[-1]["momentumResidual"], "momentumResidual"),
+        "summary momentum residual differs from final history")
     return mesh, measured, meta, crows, frows, hrows
 
 
