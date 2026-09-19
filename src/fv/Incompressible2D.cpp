@@ -1,6 +1,7 @@
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
+#include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include <algorithm>
@@ -292,9 +293,11 @@ void momentum(System& a,
 } // namespace
 
 static FlowResult2D solveFlow(
-    const FvMesh2D& m, const FlowControls2D& c,
+    const FvMesh2D& m, const FlowControls2D& input,
     const std::function<void(const FlowIteration2D&)>& progress,
-    const FlowState2D* previous, double timeStep) {
+    const FlowState2D* previous, double timeStep,
+    const detail::MaterialUpdate2D& material = {}) {
+    auto c=input;
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
@@ -476,8 +479,18 @@ static FlowResult2D solveFlow(
     // iteration. Refresh after every field/flux/boundary update, then transfer
     // numeric storage and apply relaxation without rebuilding the same rows.
     std::vector<Vector2D> gp,gu,gv,forceGradient,stressCorrection;
-    const auto refreshMomentum = [&] {
+    const auto refreshMomentum = [&](bool updateMaterial=false) {
         updateOutletBoundary(b,m,c,r.flux);
+        if (material && updateMaterial) {
+            std::vector<detail::MaterialBoundary2D> snapshot(nf);
+            for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)
+                snapshot[id]={{b.u[id],b.v[id]},b.fixedU[id],b.fixedV[id],
+                    b.role[id]==Role::Wall||b.role[id]==Role::Lid,
+                    b.role[id]==Role::Inlet,b.role[id]==Role::Outlet};
+            c.faceViscosity=material(r,snapshot);
+            ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
+            validateViscosity(m,c);
+        }
         gp=flowGradient(m,r.p,zeros,b.fixedP,true);
         gu=flowGradient(m,r.u,b.u,b.fixedU);
         gv=flowGradient(m,r.v,b.v,b.fixedV);
@@ -594,7 +607,7 @@ static FlowResult2D solveFlow(
         const double flowScale=b.closed?finite(c.speed*h):finite(inflow);
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
-        refreshMomentum();
+        refreshMomentum(true);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
@@ -678,6 +691,13 @@ static FlowResult2D solveFlow(
 FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
     return solveFlow(m,c,progress,nullptr,0);
+}
+FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D& c,
+    const MaterialUpdate2D& material,const std::function<void(const FlowIteration2D&)>& progress) {
+    ensure(bool(material),"Material flow requires a constitutive update");
+    ensure(c.scenario=="channel"||c.scenario=="cavity"||c.scenario=="external",
+        "Material flow supports steady physical cases only");
+    return solveFlow(m,c,progress,nullptr,0,material);
 }
 FlowResult2D advanceIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const FlowState2D& previous, double timeStep,

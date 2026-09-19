@@ -308,7 +308,24 @@ ctest --test-dir build -R sst_nonlinear --output-on-failure
 
 探针设置U=(y,0)、初始k=.001/omega=2、nu=1e-5、dt=.02，底壁不穿透，非壁流出为零法向梯度，其余边界固定初值。独立读取器用原始端点重建壁距、几何与梯度，再计算当前源系数和未拆分的非线性PDE收支；历史必须描述实际返回场。近零梯度分量允许`128 epsilon max(1, |grad_native|, |grad_independent|)`的浮点舍入预算，原有相对/绝对误差门仍保留，实际误差/预算均写入审核。它处理独立几何计算的ulp差异，不修改求解收敛条件。既有ODE解析根、空间冻结输运、篡改拒绝与旧标量逐字节兼容性继续保留。
 
-完整RANS还需要外层速度/压力耦合及修正压力定义、适宜y+的网格、标准平板/分离工况和空间敏感性。当前固定载流案例不能证明这些能力；没有将SST加入桌面菜单。
+速度/压力耦合的后续实现见下一节；仍需适宜y+的网格、标准平板/分离工况和空间敏感性。当前固定载流案例本身不能证明这些能力；没有将SST加入桌面菜单。
+
+### 实验性稳态SST-RANS耦合
+
+核心入口`SstRans2D.hpp/.cpp::solveSstRans2D(mesh, controls, initialK, initialOmega, progress)`，默认入口k=.001、omega=2，可明确给定初始场；两者需同时提供。沿用已有flow场景角色与几何限制，强制Symmetric应力、拒绝另传faceViscosity和未支持的回流模型。当前实测矩形通道；外流/方腔分类可调用但尚无本阶段耦合资格，不宣称URANS、任意patch或湍流传热。
+
+内部`detail/FlowMaterial2D.hpp`提供本构更新钩子：SIMPLE每次更新速度/压力/守恒面通量后，传出实际边界约束；返回完整正面黏度，验证后重建当前动量方程再验收。初次动量预测采用分子nu。SST钩子求非线性k/omega到子问题停止门，随后nu+nu_t统一进入共享面应力、矩阵、残差和壁面力。内部面按neighbourWeight线性插值；解析壁面取nu；入口按入口k/omega与owner的距离、梯度和应变评估nu_t；出口按owner闭合。SST标量扩散仍采用此前明确的墙nu、内部插值及其他边界owner系数规则。两套规则均由独立工具重算，未隐藏边界插值选择。
+
+采用TMR的**SST-2003m**，m明确省略各向同性2k/3应力，p直接是运动学压力，不定义p+2k/3修正量。结合不可压约束，动量使用nu_eff(grad U+grad U^T)；没有声称可压缩应力或其他SST变体。只有当前动量/质量与两条当前非线性湍流方程均通过才返回converged。次数字段分别报告SIMPLE和湍流更新；内层失败抛出，不能接受旧系数残差。尚未提供SST联合checkpoint及产品CLI/GUI，当前探针仅供复核。
+
+```sh
+# 诊断约定：单位正方形通道，抛物线入口，nu=.001，k_in=.001，omega_in=2。
+build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/rans-probe
+python3 tools/verification/verify_sst_rans.py --mesh /path/unit-square.solver.cm2d --prefix outputs/rans-probe --output outputs/rans-audit.json
+ctest --test-dir build -R sst_rans --output-on-failure
+```
+
+读取器独立计算wall omega=60nu/(.075dn²)、原未拆分SST源项及稳态对角/norm目标；不把单纯源项拆分的内层方程当最终收敛。独立面黏度暂存为临时CSV交给既有动量读取器，明确使用one-sided-linear-2ring压力重建；临时目录退出即删除，审核报告保留其系数文件哈希。梯度和相消通量比较有以实际项尺度计算的机器舍入预算，求解器的停止门不变。报告中的不同规模两例只验证算得通且满足离散方程，不能当网格无关性或物理准确度证明。
 
 ### 非正交压力修正固定点
 

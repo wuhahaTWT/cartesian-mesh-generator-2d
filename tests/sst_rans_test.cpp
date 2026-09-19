@@ -1,0 +1,80 @@
+#include "cartmesh2d/fv/SstRans2D.hpp"
+#include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <stdexcept>
+using namespace cartmesh2d;
+using namespace cartmesh2d::fv;
+namespace {
+void require(bool b,const char* text){if(!b)throw std::runtime_error(text);}
+FvMesh2D square() {
+    TopologyMesh2D t;constexpr std::size_t n=4;
+    for(std::size_t y=0;y<=n;++y)for(std::size_t x=0;x<=n;++x)
+        t.vertices.push_back({t.vertices.size(),{double(x)/n,double(y)/n}});
+    std::map<std::pair<std::size_t,std::size_t>,std::size_t> ids;
+    for(std::size_t y=0;y<n;++y)for(std::size_t x=0;x<n;++x) {
+        TopologyCell2D c;c.id=t.cells.size();auto v=y*(n+1)+x;
+        c.vertices={v,v+1,v+n+2,v+n+1};c.geometryArea=1./(n*n);
+        for(std::size_t i=0;i<4;++i) {
+            const auto a=c.vertices[i],b=c.vertices[(i+1)%4];auto key=std::minmax(a,b);
+            auto [it,added]=ids.emplace(key,t.edges.size());const auto id=it->second;
+            if(added)t.edges.push_back({id,a,b,c.id,{},BoundaryPatch2D::DomainBoundary});
+            else {t.edges[id].neighbour=c.id;t.edges[id].patch=BoundaryPatch2D::None;}
+            c.edges.push_back(id);
+        }
+        t.cells.push_back(c);
+    }
+    return makeFvMesh2D(t);
+}
+template<class F>void rejects(F&& f) {bool thrown=false;try{f();}catch(const std::runtime_error&){thrown=true;}require(thrown,"invalid coupling input accepted");}
+void materialContract(const FvMesh2D& m) {
+    FlowControls2D c;c.scenario="channel";c.nu=.01;c.tolerance=1e-8;
+    const auto old=solveIncompressible2D(m,c);std::size_t updates=0;
+    auto same=detail::solveMaterialFlow2D(m,c,[&](const auto& flow,const auto& bc) {
+        require(flow.u.size()==m.cells.size()&&bc.size()==m.faces.size(),"callback current state missing");
+        ++updates;return std::vector<double>(m.faces.size(),c.nu);
+    });
+    require(old.converged&&same.converged&&same.u==old.u&&same.v==old.v&&same.p==old.p&&same.flux==old.flux,
+        "constant material callback changed legacy flow");
+    require(updates==same.history.size(),"one constitutive refresh per current momentum residual");
+    rejects([&]{(void)detail::solveMaterialFlow2D(m,c,{});});
+    for(double nu:{0.,-1.,std::numeric_limits<double>::quiet_NaN()})
+        rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return std::vector<double>(m.faces.size(),nu);});});
+    rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[](const auto&,const auto&){return std::vector<double>{};});});
+    // A one-step run must assemble its returned diffusion with the NEW material,
+    // even when it has not converged. Each shared viscous face flux is linear in nu.
+    c.maxIterations=1;
+    const auto frozen=solveIncompressible2D(m,c);
+    const auto changed=detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return std::vector<double>(m.faces.size(),2*c.nu);});
+    require(!changed.converged&&changed.u==frozen.u&&changed.p==frozen.p,"one-step coupling contract changed");
+    double difference=0;
+    for(std::size_t id=0;id<m.faces.size();++id) {
+        require(std::abs(changed.faceMomentum[id].diffusion.x-2*frozen.faceMomentum[id].diffusion.x)<1e-14,
+            "final diffusion uses stale viscosity");
+        difference+=std::abs(changed.faceMomentum[id].diffusion.x-frozen.faceMomentum[id].diffusion.x);
+    }
+    require(difference>1e-5&&changed.history.back().momentumResidual>frozen.history.back().momentumResidual,
+        "new material not included in current-state momentum residual");
+}
+void ransContract(const FvMesh2D& m) {
+    SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.01;c.flow.tolerance=1e-8;c.inletK=0;
+    const auto laminar=solveIncompressible2D(m,c.flow);
+    const auto r=solveSstRans2D(m,c);
+    require(r.converged&&r.flow.u==laminar.u&&r.flow.v==laminar.v&&r.flow.p==laminar.p&&r.flow.flux==laminar.flux,
+        "zero-k laminar limit differs from old solver");
+    for(double k:r.turbulence.fields.k.values)require(k==0,"zero-k solution was floored");
+    for(double nu:r.faceViscosity)require(nu==c.flow.nu,"zero k invented eddy viscosity");
+    auto invalid=c;invalid.inletOmega=0;rejects([&]{(void)solveSstRans2D(m,invalid);});
+    invalid=c;invalid.flow.viscousStress=ViscousStress2D::Laplacian;rejects([&]{(void)solveSstRans2D(m,invalid);});
+    invalid=c;invalid.flow.faceViscosity.assign(m.faces.size(),.01);rejects([&]{(void)solveSstRans2D(m,invalid);});
+    invalid=c;invalid.flow.outletBackflow=OutletBackflow2D::NormalInlet;rejects([&]{(void)solveSstRans2D(m,invalid);});
+    rejects([&]{(void)solveSstRans2D(m,c,{1},{});});
+    invalid=c;invalid.flow.maxIterations=1;const auto limited=solveSstRans2D(m,invalid);
+    require(!limited.converged&&limited.turbulence.converged,"scalar convergence mislabeled as RANS convergence");
+}
+}
+int main(){try{const auto m=square();materialContract(m);ransContract(m);return 0;}
+    catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
