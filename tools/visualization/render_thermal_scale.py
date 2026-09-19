@@ -53,7 +53,7 @@ def main():
         order_label=', '.join(f'{x:.2f}' if x is not None else 'undefined' for x in orders) or 'not available'
         ax.set(xlabel='h / H',ylabel='Area-weighted RMS',title=title+'\nCompleted-data error slope: '+order_label)
         ax.grid(True,which='both',alpha=.18);ax.legend(fontsize=8)
-    fig.suptitle('Thermal vortex: '+('INCOMPLETE SCALE STUDY' if incomplete else 'completed three-grid study'),fontsize=15,
+    fig.suptitle('Thermal vortex: '+('SCALE STUDY NOT PASSED' if incomplete else 'completed three-grid study'),fontsize=15,
                  color='#9d3434' if incomplete else '#222222')
     notice=''
     if incomplete:

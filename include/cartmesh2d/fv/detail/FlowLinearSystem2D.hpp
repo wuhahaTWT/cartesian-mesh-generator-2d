@@ -342,7 +342,13 @@ struct SparseSystem2D {
                 rhoOld = alpha = omega = 1;
             } else rhoOld = rho;
         }
-        throw std::runtime_error("Flow linear solver iteration limit reached");
+        double scaled=0;
+        for (std::size_t i=0;i<diag.size();++i) scaled=std::max(scaled,std::abs(r[i])/diag[i]);
+        std::ostringstream message;
+        message << "Flow linear solver iteration limit reached: true residual=" << linearNorm(r)
+                << ", target=" << stop << ", diagonal-scaled residual=" << scaled
+                << ", diagonal-scaled target=" << diagonalScaledStop << ", rhs=" << linearNorm(rhs);
+        throw std::runtime_error(message.str());
     }
 private:
     // Owned by this matrix, so another system using the same Krylov workspace

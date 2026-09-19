@@ -206,7 +206,6 @@ void momentum(System& a,
                 const std::vector<Vector2D>& source,
                 const std::vector<Vector2D>& stressCorrection,
                 bool y,
-                bool relaxed,
                 const Vec* previous = nullptr,
                 double timeStep = 0) {
     a.reset();
@@ -264,13 +263,6 @@ void momentum(System& a,
                 a.diag[i] += q;
                 a.rhs[i] -= q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-field[i]);
             }
-        }
-    }
-    if (relaxed) {
-        for (std::size_t i = 0; i < m.cells.size(); ++i) {
-            const double old = a.diag[i];
-            a.diag[i] /= c.velocityRelaxation;
-            a.rhs[i] += (a.diag[i] - old) * field[i];
         }
     }
 }
@@ -453,21 +445,41 @@ static FlowResult2D solveFlow(
         }
     }
 
-    for (std::size_t it = 1; it <= c.maxIterations; ++it) {
+    // The unrelaxed systems used to measure the accepted current iterate's
+    // residual are exactly the systems needed at the start of the next SIMPLE
+    // iteration. Refresh after every field/flux/boundary update, then transfer
+    // numeric storage and apply relaxation without rebuilding the same rows.
+    std::vector<Vector2D> gp,gu,gv,forceGradient,stressCorrection;
+    const auto refreshMomentum = [&] {
         updateOutletBoundary(b,m,c,r.flux);
+        gp=flowGradient(m,r.p,zeros,b.fixedP,true);
+        gu=flowGradient(m,r.u,b.u,b.fixedU);
+        gv=flowGradient(m,r.v,b.v,b.fixedV);
+        forceGradient=detail::conservativePressureGradient(m,
+            detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP));
+        stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
+            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+            : std::vector<Vector2D>{};
+        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,false,previous?&previous->u:nullptr,timeStep);
+        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,true,previous?&previous->v:nullptr,timeStep);
+    };
+    const auto takeRelaxed = [&](System& destination,System& source,const Vec& field) {
+        destination.diag.swap(source.diag);
+        destination.off.swap(source.off);
+        destination.rhs.swap(source.rhs);
+        for (std::size_t i=0;i<n;++i) {
+            const double old=destination.diag[i];
+            destination.diag[i]/=c.velocityRelaxation;
+            destination.rhs[i]+=(destination.diag[i]-old)*field[i];
+        }
+    };
+    refreshMomentum();
+    for (std::size_t it = 1; it <= c.maxIterations; ++it) {
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
-        const auto gp = flowGradient(m, r.p, zeros, b.fixedP, true);
-        const auto forceGradient = detail::conservativePressureGradient(m,
-            detail::pressureFaceValues(m, r.p, gp, zeros, b.fixedP));
-        const auto gu = flowGradient(m, r.u, b.u, b.fixedU);
-        const auto gv = flowGradient(m, r.v, b.v, b.fixedV);
-        const auto stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
-            : std::vector<Vector2D>{};
-        momentum(au, m, c, b, r.u, r.flux, gu, forceGradient, r.sourceIntegrals, stressCorrection, false, true, previous?&previous->u:nullptr, timeStep);
-        momentum(av, m, c, b, r.v, r.flux, gv, forceGradient, r.sourceIntegrals, stressCorrection, true, true, previous?&previous->v:nullptr, timeStep);
+        takeRelaxed(au,checkU,r.u);
+        takeRelaxed(av,checkV,r.v);
         // Use one pressure response for both components. Slip constraints can
         // give different diagonals; extra implicit relaxation preserves each
         // original fixed-point equation while making rAU scalar and consistent.
@@ -548,15 +560,7 @@ static FlowResult2D solveFlow(
         const double flowScale=b.closed?finite(c.speed*h):finite(inflow);
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
-        updateOutletBoundary(b,m,c,r.flux);
-        const auto newGp=flowGradient(m,r.p,zeros,b.fixedP,true),newGu=flowGradient(m,r.u,b.u,b.fixedU),newGv=flowGradient(m,r.v,b.v,b.fixedV);
-        const auto newForceGradient=detail::conservativePressureGradient(m,
-            detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
-        const auto newStressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-            ? detail::symmetricViscousCorrection(m,r.u,r.v,newGu,newGv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
-            : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,newGu,newForceGradient,r.sourceIntegrals,newStressCorrection,false,false,previous?&previous->u:nullptr,timeStep);
-        momentum(checkV,m,c,b,r.v,r.flux,newGv,newForceGradient,r.sourceIntegrals,newStressCorrection,true,false,previous?&previous->v:nullptr,timeStep);
+        refreshMomentum();
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
@@ -579,15 +583,11 @@ static FlowResult2D solveFlow(
             r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*absoluteFlux[i]/m.cells[i].area));
         }
     }
-    const auto gu=flowGradient(m,r.u,b.u,b.fixedU),gv=flowGradient(m,r.v,b.v,b.fixedV),gp=flowGradient(m,r.p,zeros,b.fixedP,true);
     const auto pf=detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP);
     const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
     const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.v,gv,b.v,b.fixedV) : Vec{};
-    const auto stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-        ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
-        : std::vector<Vector2D>{};
     r.faceMomentum.resize(nf);
     for(std::size_t id=0;id<nf;++id) {
         const auto& f=m.faces[id]; const auto i=f.owner;

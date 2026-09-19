@@ -211,6 +211,12 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 当前迭代动量装配复用
+
+0.4.11 将每轮末尾用于真实动量残差的未松弛矩阵和速度/压力梯度，直接用于下一轮 SIMPLE。字段、面通量和回流边界更新后先统一刷新；下一轮交换数值存储，再按原顺序施加速度松弛。对流、完整对称应力、时间项、边界、压力修正次数和所有停止条件不变；最后的面动量输出使用同一最终梯度。不同方程不共享可变预条件缓存，此处复用的是动量矩阵数值存储，压力求解器没有更换。
+
+同一工具链以保存的 d5eb688 CLI 与当前 CLI 配对，比较 cells/faces CSV、残差、fields JSON、VTK及瞬态checkpoint/时间历史；独立工具另从CM2D和实际结果重算质量/动量/时间项。参数、二进制/输入哈希和原始命令见 `artifacts/current/native-flow-momentum-reuse.json`，没有用时长变化替代正确性。线性迭代超限现在报告真实残差、目标和逐行对角缩放残差，诊断信息不改变算法或停止门。
+
 ### 非定常层流与断点续算
 
 开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.4已提供时间步、物理量监测、取消保留与checkpoint续算，本地macOS已打包实测；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
