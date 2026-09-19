@@ -1,0 +1,2810 @@
+{
+  "version": "0.4.9",
+  "baseCommit": "d1e527a",
+  "branch": "codex/cfd-development",
+  "scope": "Opt-in normal-inlet pressure outlet; specific analytic and compact-cylinder validation, not general industrial/open-boundary qualification.",
+  "references": [
+    "https://api.openfoam.com/2606/classFoam_1_1pressureInletOutletVelocityFvPatchVectorField.html"
+  ],
+  "cases": [
+    {
+      "prefix": "outputs/native-flow/outlet-backflow/final-counterflow-l4",
+      "run": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/backflow/thermal-regression/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l4",
+          "--case",
+          "counterflow",
+          "--outlet-backflow",
+          "normal-inlet",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "1500",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "seconds": 0.07866624998860061,
+        "returncode": 0,
+        "binarySha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "native": {
+        "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "counterflow",
+        "status": "converged",
+        "converged": true,
+        "cells": 196,
+        "iterations": 169,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 1.3911094498553214e-13,
+        "globalImbalance": -9.769962616701378e-15,
+        "momentumResidual": 3.6045425245613598e-09,
+        "velocityChange": 5.485926566361236e-09,
+        "pressureChange": 9.372936959401394e-09,
+        "forceX": 0,
+        "forceY": 0,
+        "pressureForceX": 0,
+        "pressureForceY": 0,
+        "discreteForceX": 0,
+        "discreteForceY": 0,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "convection": "limited-linear",
+        "viscousStress": "symmetric",
+        "outletBackflow": "normal-inlet",
+        "outletBackflowFaces": 4,
+        "outletInflow": 0.22338334542802005,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 0,
+        "reconstructedForceY": 0,
+        "wallForceX": 0,
+        "wallForceY": 0,
+        "wallViscousForceX": 0,
+        "wallViscousForceY": 0,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 6.786579936581585e-15,
+        "domainHeight": 1,
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "aggregation",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independent": {
+        "artifactSha256": {
+          "outputs/native-flow/outlet-backflow/final-counterflow-l4.cells.csv": "c3088f97b80550166f98803f9f2df92c4a9f057a9cfa0a7a850f6d9eb9ebb8cb",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l4.faces.csv": "7a33cf527ea5e450f2ec1a5f151982622813af461bcc2b8b7ff5b9069f112535",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l4.json": "f6ad89684f99fd3472042248cd1593d7e995099ef8ce2120a1a8737e98f0197f",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l4.residuals.csv": "e03ce2af5ab916c733042d03d580870cfbf6c66245b92936ff83a6a9feeac268"
+        },
+        "benchmark": {
+          "analyticErrors": {
+            "pL2": 0.03029437062906717,
+            "uL2": 0.014026083879750798,
+            "vL2": 0.003706069999135493
+          },
+          "columnAbsoluteTolerance": 2e-12,
+          "columnMaxDeviation": {
+            "exactP": 0.0,
+            "exactU": 1.7763568394002505e-15,
+            "exactV": 0.0,
+            "sourceX": 3.577946791846922e-17,
+            "sourceY": 0.0
+          },
+          "definition": "u=U*(1+2*cos(2*pi*y)), v=p=0; source=(8*pi^2*nu*U*cos(2*pi*y),0)",
+          "issues": [],
+          "outlet": {
+            "incomingFaces": 4,
+            "inwardVolumeFlux": 0.22338334542802005,
+            "outgoingFaces": 10,
+            "outwardVolumeFlux": 1.2233833454280103
+          },
+          "scope": "analytic errors are diagnostics; valid verifies source/BC consistency and exercises reverse flow, not accuracy certification",
+          "sourceSampling": "analytic source density at actual cell centroid times measured area",
+          "valid": true,
+          "velocityL2OverSpeed": 0.01450744580690541
+        },
+        "case": "counterflow",
+        "counts": {
+          "cells": 196,
+          "faces": 420
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -9.769962616701378e-15,
+          "cellValid": true,
+          "globalLimit": 1.0009999999999999e-07,
+          "globalRelativeImbalance": 6.786579936581583e-15,
+          "globalValid": true,
+          "l2CellImbalance": 3.154666700186581e-14,
+          "maxCellImbalance": 9.936496070395151e-15,
+          "maxScaledCellImbalance": 1.3719028105082066e-06,
+          "nativeDefinitionContinuity": 1.3911094498553214e-13,
+          "referenceThroughput": 1.4396003153279782
+        },
+        "issues": [],
+        "manufacturedPressureSlope": 0.0,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/backflow/thermal-regression/meshes/l4/mesh.solver.cm2d",
+        "meshMeasurement": {
+          "area": 1.0,
+          "bounds": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "characteristicH": 0.07142857142857142
+        },
+        "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+        "momentumAudit": {
+          "cellBoundaryConservationDifference": {
+            "magnitude": 8.333897564733124e-17,
+            "x": 3.469446951953614e-18,
+            "y": -8.326672684688674e-17
+          },
+          "cellResidual": {
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
+            "l2": 1.2394470631903122e-08,
+            "maxCellVector": 3.387037185920151e-09,
+            "maxNormalized": 3.6045425245550844e-09
+          },
+          "cellResidualSum": {
+            "x": -3.4923524961636168e-09,
+            "y": 6.064593272014918e-14
+          },
+          "convection": "limited-linear",
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "expectedCellResidualSum": {
+            "x": -3.4923524996330637e-09,
+            "y": 6.072919944699606e-14
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate",
+            "relative": 0.0
+          },
+          "faceCount": 420,
+          "faceDeviation": {
+            "advectionX": {
+              "absolute": 1.1102230246251565e-16,
+              "actual": 0.07146958850101806,
+              "expected": 0.07146958850101817,
+              "relative": 1.1102230246251565e-16
+            },
+            "advectionY": {
+              "absolute": 2.168404344971009e-19,
+              "actual": -0.0007459828026504477,
+              "expected": -0.0007459828026504479,
+              "relative": 2.168404344971009e-19
+            },
+            "diffusionX": {
+              "absolute": 2.724498415502402e-16,
+              "actual": 1.6039841328519015e-05,
+              "expected": 1.6039841328791465e-05,
+              "relative": 2.724498415502402e-16
+            },
+            "diffusionY": {
+              "absolute": 8.326672684688674e-17,
+              "actual": -0.07880917061492136,
+              "expected": -0.07880917061492144,
+              "relative": 8.326672684688674e-17
+            },
+            "pressure": {
+              "absolute": 1.3877787807814457e-17,
+              "actual": 0.08193126645000597,
+              "expected": 0.08193126645000595,
+              "relative": 1.3877787807814457e-17
+            }
+          },
+          "forceDefinition": "shared-face-newtonian-traction",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
+          "globalBoundaryMomentum": {
+            "boundaryTermScale": 7.743718899910638,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero",
+            "magnitude": 3.492352740858789e-09,
+            "relativeToBoundary": 4.5099167286393757e-10,
+            "x": -3.492352740330773e-09,
+            "y": 6.072919944699606e-14
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": -3.4923524996330637e-09,
+            "boundaryMinusSourceY": 6.072919944699606e-14,
+            "definition": "global boundary momentum minus independent volume source integral",
+            "magnitude": 3.4923525001610796e-09,
+            "sourceIntegralX": -2.4069770932209664e-16,
+            "sourceIntegralY": 0.0
+          },
+          "maxFaceDeviation": {
+            "advectionX": 1.1102230246251565e-16,
+            "advectionY": 2.168404344971009e-19,
+            "diffusionX": 2.724498415502402e-16,
+            "diffusionY": 8.326672684688674e-17,
+            "pressure": 1.3877787807814457e-17
+          },
+          "outletBackflow": "normal-inlet",
+          "outletBackflowAudit": {
+            "faceCount": 4,
+            "faceIds": [
+              411,
+              412,
+              413,
+              414
+            ],
+            "inwardVolumeFlux": 0.22338334542802005
+          },
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "sourceForcing": {
+            "case": "counterflow",
+            "definition": "independent analytic source integrated at CM2D cell centroids; subtracted from face balance",
+            "integralX": -2.4069770932209664e-16,
+            "integralY": 0.0
+          },
+          "status": "available",
+          "summaryDeviation": {
+            "discreteForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "momentumResidual": {
+              "absolute": 6.2754057171335445e-21,
+              "actual": 3.6045425245613598e-09,
+              "expected": 3.6045425245550844e-09,
+              "relative": 6.2754057171335445e-21
+            },
+            "pressureForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            }
+          },
+          "temporal": {
+            "dt": null,
+            "enabled": false,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "valid": true,
+          "viscousStress": "symmetric",
+          "wallFaceFlags": "checked",
+          "wallForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallViscousForce": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "native": {
+          "case": "counterflow",
+          "cells": 196,
+          "continuity": 1.3911094498553214e-13,
+          "convection": "limited-linear",
+          "converged": true,
+          "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -9.769962616701378e-15,
+          "globalRelativeImbalance": 6.786579936581585e-15,
+          "iterations": 169,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 3.6045425245613598e-09,
+          "nu": 0.1,
+          "outletBackflow": "normal-inlet",
+          "outletBackflowFaces": 4,
+          "outletInflow": 0.22338334542802005,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureChange": 9.372936959401394e-09,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "right outlet faces, kinematic pressure zero",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-08,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 5.485926566361236e-09,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 0,
+          "wallForceY": 0,
+          "wallViscousForceX": 0,
+          "wallViscousForceY": 0
+        },
+        "nu": 0.1,
+        "outletBackflow": "normal-inlet",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/final-counterflow-l4",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "residualHistory": {
+          "first": {
+            "continuity": 6.061817714453351e-14,
+            "iteration": 1.0,
+            "momentumResidual": 0.0007843396511844401,
+            "pressureChange": 0.014862951184553719,
+            "velocityChange": 0.0016633907489792313
+          },
+          "last": {
+            "continuity": 1.3911094498553214e-13,
+            "iteration": 169.0,
+            "momentumResidual": 3.6045425245613598e-09,
+            "pressureChange": 9.372936959401394e-09,
+            "velocityChange": 5.485926566361236e-09
+          },
+          "rows": 169
+        },
+        "speed": 1,
+        "valid": true
+      }
+    },
+    {
+      "prefix": "outputs/native-flow/outlet-backflow/final-counterflow-l5",
+      "run": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/backflow/thermal-regression/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l5",
+          "--case",
+          "counterflow",
+          "--outlet-backflow",
+          "normal-inlet",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "1500",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "seconds": 0.7757337920193095,
+        "returncode": 0,
+        "binarySha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "native": {
+        "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "counterflow",
+        "status": "converged",
+        "converged": true,
+        "cells": 900,
+        "iterations": 481,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 6.269984531570559e-13,
+        "globalImbalance": -2.1774249070460883e-14,
+        "momentumResidual": 3.906762593056234e-09,
+        "velocityChange": 6.18757716019162e-09,
+        "pressureChange": 9.765202548099467e-09,
+        "forceX": 0,
+        "forceY": 0,
+        "pressureForceX": 0,
+        "pressureForceY": 0,
+        "discreteForceX": 0,
+        "discreteForceY": 0,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "convection": "limited-linear",
+        "viscousStress": "symmetric",
+        "outletBackflow": "normal-inlet",
+        "outletBackflowFaces": 10,
+        "outletInflow": 0.22075527955368235,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 0,
+        "reconstructedForceY": 0,
+        "wallForceX": 0,
+        "wallForceY": 0,
+        "wallViscousForceX": 0,
+        "wallViscousForceY": 0,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 1.5123529001773093e-14,
+        "domainHeight": 1.0000000000000002,
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "aggregation",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independent": {
+        "artifactSha256": {
+          "outputs/native-flow/outlet-backflow/final-counterflow-l5.cells.csv": "ee10ade3397f92c6edbf3aaf6ff2ecc19f4eb788561bf3833c0a778f79bc6082",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l5.faces.csv": "8b57921cbadab56bce2952a3d240600e3234a3ee7c5ef0defd3503e4e99ea609",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l5.json": "dc70fdc8d5f00e80a53e0bbad8c481ad11df40476e75e800f696a31e570a9307",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l5.residuals.csv": "9fa8cdd37170120102043a219be4b865eadf59f57728d2f02d272e11b841d156"
+        },
+        "benchmark": {
+          "analyticErrors": {
+            "pL2": 0.006668386858099604,
+            "uL2": 0.0031079296911789853,
+            "vL2": 0.0008078213120631506
+          },
+          "columnAbsoluteTolerance": 2e-12,
+          "columnMaxDeviation": {
+            "exactP": 0.0,
+            "exactU": 7.771561172376096e-16,
+            "exactV": 0.0,
+            "sourceX": 3.469446951953614e-18,
+            "sourceY": 0.0
+          },
+          "definition": "u=U*(1+2*cos(2*pi*y)), v=p=0; source=(8*pi^2*nu*U*cos(2*pi*y),0)",
+          "issues": [],
+          "outlet": {
+            "incomingFaces": 10,
+            "inwardVolumeFlux": 0.22075527955368232,
+            "outgoingFaces": 20,
+            "outwardVolumeFlux": 1.2207552795536605
+          },
+          "scope": "analytic errors are diagnostics; valid verifies source/BC consistency and exercises reverse flow, not accuracy certification",
+          "sourceSampling": "analytic source density at actual cell centroid times measured area",
+          "valid": true,
+          "velocityL2OverSpeed": 0.0032111995013600968
+        },
+        "case": "counterflow",
+        "counts": {
+          "cells": 900,
+          "faces": 1860
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -2.1774249070460883e-14,
+          "cellValid": true,
+          "globalLimit": 1.0010000000000002e-07,
+          "globalRelativeImbalance": 1.512352900177309e-14,
+          "globalValid": true,
+          "l2CellImbalance": 9.640404967263016e-14,
+          "maxCellImbalance": 2.0899948438568572e-14,
+          "maxScaledCellImbalance": 6.08736362288404e-06,
+          "nativeDefinitionContinuity": 6.269984531570559e-13,
+          "referenceThroughput": 1.43975979864938
+        },
+        "issues": [],
+        "manufacturedPressureSlope": 0.0,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/backflow/thermal-regression/meshes/l5/mesh.solver.cm2d",
+        "meshMeasurement": {
+          "area": 1.0000000000000004,
+          "bounds": [
+            0.0,
+            0.0,
+            1.0000000000000002,
+            1.0000000000000002
+          ],
+          "characteristicH": 0.03333333333333334
+        },
+        "meshSha256": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+        "momentumAudit": {
+          "cellBoundaryConservationDifference": {
+            "magnitude": 4.26383288385649e-16,
+            "x": -4.2370620900733513e-16,
+            "y": 4.7704895589362195e-17
+          },
+          "cellResidual": {
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
+            "l2": 2.2614581807249444e-08,
+            "maxCellVector": 3.5401727062723094e-09,
+            "maxNormalized": 3.906762583040995e-09
+          },
+          "cellResidualSum": {
+            "x": -2.3907717804935066e-08,
+            "y": -4.992073594778379e-12
+          },
+          "convection": "limited-linear",
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "expectedCellResidualSum": {
+            "x": -2.3907717381228857e-08,
+            "y": -4.992121299673968e-12
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate",
+            "relative": 0.0
+          },
+          "faceCount": 1860,
+          "faceDeviation": {
+            "advectionX": {
+              "absolute": 5.551115123125783e-17,
+              "actual": 0.28093884216184156,
+              "expected": 0.2809388421618415,
+              "relative": 5.551115123125783e-17
+            },
+            "advectionY": {
+              "absolute": 1.6940658945086007e-20,
+              "actual": 1.5988350649068287e-05,
+              "expected": 1.5988350649068304e-05,
+              "relative": 1.6940658945086007e-20
+            },
+            "diffusionX": {
+              "absolute": 1.2691772275068985e-16,
+              "actual": 5.617861994289274e-06,
+              "expected": 5.617861994416191e-06,
+              "relative": 1.2691772275068985e-16
+            },
+            "diffusionY": {
+              "absolute": 4.163336342344337e-17,
+              "actual": 0.033697140514158126,
+              "expected": 0.033697140514158085,
+              "relative": 4.163336342344337e-17
+            },
+            "pressure": {
+              "absolute": 3.469446951953614e-18,
+              "actual": 0.011270747771755142,
+              "expected": 0.011270747771755138,
+              "relative": 3.469446951953614e-18
+            }
+          },
+          "forceDefinition": "shared-face-newtonian-traction",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
+          "globalBoundaryMomentum": {
+            "boundaryTermScale": 7.631460796411646,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero",
+            "magnitude": 2.3907716661334182e-08,
+            "relativeToBoundary": 3.13278378794473e-09,
+            "x": -2.390771614013687e-08,
+            "y": -4.992121299673968e-12
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": -2.3907717381228857e-08,
+            "boundaryMinusSourceY": -4.992121299673968e-12,
+            "definition": "global boundary momentum minus independent volume source integral",
+            "magnitude": 2.3907717902426143e-08,
+            "sourceIntegralX": 1.2410919878068565e-15,
+            "sourceIntegralY": 0.0
+          },
+          "maxFaceDeviation": {
+            "advectionX": 5.551115123125783e-17,
+            "advectionY": 1.6940658945086007e-20,
+            "diffusionX": 1.2691772275068985e-16,
+            "diffusionY": 4.163336342344337e-17,
+            "pressure": 3.469446951953614e-18
+          },
+          "outletBackflow": "normal-inlet",
+          "outletBackflowAudit": {
+            "faceCount": 10,
+            "faceIds": [
+              1841,
+              1842,
+              1843,
+              1844,
+              1845,
+              1846,
+              1847,
+              1848,
+              1849,
+              1850
+            ],
+            "inwardVolumeFlux": 0.22075527955368232
+          },
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "sourceForcing": {
+            "case": "counterflow",
+            "definition": "independent analytic source integrated at CM2D cell centroids; subtracted from face balance",
+            "integralX": 1.2410919878068565e-15,
+            "integralY": 0.0
+          },
+          "status": "available",
+          "summaryDeviation": {
+            "discreteForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "momentumResidual": {
+              "absolute": 1.0015238986176655e-17,
+              "actual": 3.906762593056234e-09,
+              "expected": 3.906762583040995e-09,
+              "relative": 1.0015238986176655e-17
+            },
+            "pressureForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            }
+          },
+          "temporal": {
+            "dt": null,
+            "enabled": false,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "valid": true,
+          "viscousStress": "symmetric",
+          "wallFaceFlags": "checked",
+          "wallForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallViscousForce": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "native": {
+          "case": "counterflow",
+          "cells": 900,
+          "continuity": 6.269984531570559e-13,
+          "convection": "limited-linear",
+          "converged": true,
+          "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1.0000000000000002,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -2.1774249070460883e-14,
+          "globalRelativeImbalance": 1.5123529001773093e-14,
+          "iterations": 481,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 3.906762593056234e-09,
+          "nu": 0.1,
+          "outletBackflow": "normal-inlet",
+          "outletBackflowFaces": 10,
+          "outletInflow": 0.22075527955368235,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureChange": 9.765202548099467e-09,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "right outlet faces, kinematic pressure zero",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-08,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 6.18757716019162e-09,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 0,
+          "wallForceY": 0,
+          "wallViscousForceX": 0,
+          "wallViscousForceY": 0
+        },
+        "nu": 0.1,
+        "outletBackflow": "normal-inlet",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/final-counterflow-l5",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "residualHistory": {
+          "first": {
+            "continuity": 3.697042672001771e-13,
+            "iteration": 1.0,
+            "momentumResidual": 4.578571427935281e-05,
+            "pressureChange": 0.0030551935418840653,
+            "velocityChange": 9.894283979114121e-05
+          },
+          "last": {
+            "continuity": 6.269984531570559e-13,
+            "iteration": 481.0,
+            "momentumResidual": 3.906762593056234e-09,
+            "pressureChange": 9.765202548099467e-09,
+            "velocityChange": 6.18757716019162e-09
+          },
+          "rows": 481
+        },
+        "speed": 1,
+        "valid": true
+      }
+    },
+    {
+      "prefix": "outputs/native-flow/outlet-backflow/final-counterflow-l6",
+      "run": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/backflow/thermal-regression/meshes/l6/mesh.solver.cm2d",
+          "--output",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l6",
+          "--case",
+          "counterflow",
+          "--outlet-backflow",
+          "normal-inlet",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "1500",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "seconds": 8.679123459005496,
+        "returncode": 0,
+        "binarySha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "native": {
+        "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "counterflow",
+        "status": "converged",
+        "converged": true,
+        "cells": 3844,
+        "iterations": 1363,
+        "nu": 0.1,
+        "speed": 1,
+        "continuity": 1.2578306451960243e-12,
+        "globalImbalance": 3.889943922530392e-14,
+        "momentumResidual": 4.055834734021509e-09,
+        "velocityChange": 5.87477191390293e-09,
+        "pressureChange": 9.969743069693352e-09,
+        "forceX": 0,
+        "forceY": 0,
+        "pressureForceX": 0,
+        "pressureForceY": 0,
+        "discreteForceX": 0,
+        "discreteForceY": 0,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "convection": "limited-linear",
+        "viscousStress": "symmetric",
+        "outletBackflow": "normal-inlet",
+        "outletBackflowFaces": 20,
+        "outletInflow": 0.21831651883349795,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 0,
+        "reconstructedForceY": 0,
+        "wallForceX": 0,
+        "wallForceY": 0,
+        "wallViscousForceX": 0,
+        "wallViscousForceY": 0,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 2.7084391955777595e-14,
+        "domainHeight": 1,
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "aggregation",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independent": {
+        "artifactSha256": {
+          "outputs/native-flow/outlet-backflow/final-counterflow-l6.cells.csv": "5b5b21a0f7d5c15e13de4823807aacb295e54f0eb0f7b36bc679eb11cd8f4c47",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l6.faces.csv": "f352e2a3249fd10e99df7056a58377bd34bb5cf1d7f18a6ea2d544d48939f901",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l6.json": "c0f883efbfd806cc2443301cb08e94c96db7fe805087a6a0feb0d5d4de7470fe",
+          "outputs/native-flow/outlet-backflow/final-counterflow-l6.residuals.csv": "1b28852d63dabbe4a00402458febadf15470207284e2b6da2081c378e688d2bd"
+        },
+        "benchmark": {
+          "analyticErrors": {
+            "pL2": 0.0015622728211124432,
+            "uL2": 0.0007298994487029319,
+            "vL2": 0.00018906975244116983
+          },
+          "columnAbsoluteTolerance": 2e-12,
+          "columnMaxDeviation": {
+            "exactP": 0.0,
+            "exactU": 1.7763568394002505e-15,
+            "exactV": 0.0,
+            "sourceX": 1.5178830414797062e-18,
+            "sourceY": 0.0
+          },
+          "definition": "u=U*(1+2*cos(2*pi*y)), v=p=0; source=(8*pi^2*nu*U*cos(2*pi*y),0)",
+          "issues": [],
+          "outlet": {
+            "incomingFaces": 20,
+            "inwardVolumeFlux": 0.21831651883349795,
+            "outgoingFaces": 42,
+            "outwardVolumeFlux": 1.2183165188335372
+          },
+          "scope": "analytic errors are diagnostics; valid verifies source/BC consistency and exercises reverse flow, not accuracy certification",
+          "sourceSampling": "analytic source density at actual cell centroid times measured area",
+          "valid": true,
+          "velocityL2OverSpeed": 0.0007539897721488065
+        },
+        "case": "counterflow",
+        "counts": {
+          "cells": 3844,
+          "faces": 7812
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": 3.889943922530392e-14,
+          "cellValid": true,
+          "globalLimit": 1.0009999999999999e-07,
+          "globalRelativeImbalance": 2.7084391955777592e-14,
+          "globalValid": true,
+          "l2CellImbalance": 6.822856925131733e-14,
+          "maxCellImbalance": 2.028759105154876e-14,
+          "maxScaledCellImbalance": 1.184397970994373e-05,
+          "nativeDefinitionContinuity": 1.2578306451960243e-12,
+          "referenceThroughput": 1.4362308479665156
+        },
+        "issues": [],
+        "manufacturedPressureSlope": 0.0,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/backflow/thermal-regression/meshes/l6/mesh.solver.cm2d",
+        "meshMeasurement": {
+          "area": 1.0,
+          "bounds": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "characteristicH": 0.016129032258064516
+        },
+        "meshSha256": "557f28bdf57b61c6acb8dab1f5559e3ae2251c1af4b106f68b371617675b2139",
+        "momentumAudit": {
+          "cellBoundaryConservationDifference": {
+            "magnitude": 7.989386054172287e-16,
+            "x": -7.926602083041523e-16,
+            "y": -9.996344030316351e-17
+          },
+          "cellResidual": {
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
+            "l2": 3.9048676817761875e-08,
+            "maxCellVector": 3.2329175573415924e-09,
+            "maxNormalized": 4.05583467675723e-09
+          },
+          "cellResidualSum": {
+            "x": -6.219130166940108e-08,
+            "y": -9.335717962577483e-14
+          },
+          "convection": "limited-linear",
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "expectedCellResidualSum": {
+            "x": -6.219130087674087e-08,
+            "y": -9.325721618547167e-14
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate",
+            "relative": 0.0
+          },
+          "faceCount": 7812,
+          "faceDeviation": {
+            "advectionX": {
+              "absolute": 4.163336342344337e-17,
+              "actual": 0.07408673211011359,
+              "expected": 0.07408673211011363,
+              "relative": 4.163336342344337e-17
+            },
+            "advectionY": {
+              "absolute": 5.929230630780102e-21,
+              "actual": 6.365868730655114e-06,
+              "expected": 6.365868730655108e-06,
+              "relative": 5.929230630780102e-21
+            },
+            "diffusionX": {
+              "absolute": 2.287971515805426e-16,
+              "actual": -1.0331497759153787e-06,
+              "expected": -1.0331497756865815e-06,
+              "relative": 2.287971515805426e-16
+            },
+            "diffusionY": {
+              "absolute": 3.469446951953614e-17,
+              "actual": 0.01770060890900315,
+              "expected": 0.017700608909003185,
+              "relative": 3.469446951953614e-17
+            },
+            "pressure": {
+              "absolute": 1.3010426069826053e-18,
+              "actual": 0.0020747629375280356,
+              "expected": 0.002074762937528037,
+              "relative": 1.3010426069826053e-18
+            }
+          },
+          "forceDefinition": "shared-face-newtonian-traction",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
+          "globalBoundaryMomentum": {
+            "boundaryTermScale": 7.607351857215747,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero",
+            "magnitude": 6.219130105351909e-08,
+            "relativeToBoundary": 8.175157692295935e-09,
+            "x": -6.219130105344917e-08,
+            "y": -9.325721618547167e-14
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": -6.219130087674087e-08,
+            "boundaryMinusSourceY": -9.325721618547167e-14,
+            "definition": "global boundary momentum minus independent volume source integral",
+            "magnitude": 6.21913008768108e-08,
+            "sourceIntegralX": -1.7670828726830687e-16,
+            "sourceIntegralY": 0.0
+          },
+          "maxFaceDeviation": {
+            "advectionX": 4.163336342344337e-17,
+            "advectionY": 5.929230630780102e-21,
+            "diffusionX": 2.287971515805426e-16,
+            "diffusionY": 3.469446951953614e-17,
+            "pressure": 1.3010426069826053e-18
+          },
+          "outletBackflow": "normal-inlet",
+          "outletBackflowAudit": {
+            "faceCount": 20,
+            "faceIds": [
+              7771,
+              7772,
+              7773,
+              7774,
+              7775,
+              7776,
+              7777,
+              7778,
+              7779,
+              7780,
+              7781,
+              7782,
+              7783,
+              7784,
+              7785,
+              7786,
+              7787,
+              7788,
+              7789,
+              7790
+            ],
+            "inwardVolumeFlux": 0.21831651883349795
+          },
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "sourceForcing": {
+            "case": "counterflow",
+            "definition": "independent analytic source integrated at CM2D cell centroids; subtracted from face balance",
+            "integralX": -1.7670828726830687e-16,
+            "integralY": 0.0
+          },
+          "status": "available",
+          "summaryDeviation": {
+            "discreteForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "momentumResidual": {
+              "absolute": 5.726427864868333e-17,
+              "actual": 4.055834734021509e-09,
+              "expected": 4.05583467675723e-09,
+              "relative": 5.726427864868333e-17
+            },
+            "pressureForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "absolute": 0.0,
+              "actual": 0.0,
+              "expected": 0.0,
+              "relative": 0.0
+            }
+          },
+          "temporal": {
+            "dt": null,
+            "enabled": false,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "valid": true,
+          "viscousStress": "symmetric",
+          "wallFaceFlags": "checked",
+          "wallForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallViscousForce": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "native": {
+          "case": "counterflow",
+          "cells": 3844,
+          "continuity": 1.2578306451960243e-12,
+          "convection": "limited-linear",
+          "converged": true,
+          "counterflowDefinition": "u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0",
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": 3.889943922530392e-14,
+          "globalRelativeImbalance": 2.7084391955777595e-14,
+          "iterations": 1363,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 4.055834734021509e-09,
+          "nu": 0.1,
+          "outletBackflow": "normal-inlet",
+          "outletBackflowFaces": 20,
+          "outletInflow": 0.21831651883349795,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureChange": 9.969743069693352e-09,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "right outlet faces, kinematic pressure zero",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-08,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 5.87477191390293e-09,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 0,
+          "wallForceY": 0,
+          "wallViscousForceX": 0,
+          "wallViscousForceY": 0
+        },
+        "nu": 0.1,
+        "outletBackflow": "normal-inlet",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/final-counterflow-l6",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "residualHistory": {
+          "first": {
+            "continuity": 5.063588437437261e-13,
+            "iteration": 1.0,
+            "momentumResidual": 2.775153618512088e-06,
+            "pressureChange": 0.0006726370785510348,
+            "velocityChange": 6.191282755938257e-06
+          },
+          "last": {
+            "continuity": 1.2578306451960243e-12,
+            "iteration": 1363.0,
+            "momentumResidual": 4.055834734021509e-09,
+            "pressureChange": 9.969743069693352e-09,
+            "velocityChange": 5.87477191390293e-09
+          },
+          "rows": 1363
+        },
+        "speed": 1,
+        "valid": true
+      }
+    },
+    {
+      "prefix": "outputs/native-flow/outlet-backflow/final-compact-circle-re40-reject",
+      "run": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/thermal/desktop-gui/mesh-nvzgvj/circle.solver.cm2d",
+          "--output",
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-reject",
+          "--case",
+          "external",
+          "--nu",
+          ".05",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--outlet-backflow",
+          "reject",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "1500",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "seconds": 4.121017416997347,
+        "returncode": 1,
+        "timedOut": false,
+        "binarySha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "stderr": "cartmesh2d_flow_cli: Flow outlet backflow unsupported in this laminar prototype\n"
+    },
+    {
+      "prefix": "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet",
+      "run": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/thermal/desktop-gui/mesh-nvzgvj/circle.solver.cm2d",
+          "--output",
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet",
+          "--case",
+          "external",
+          "--nu",
+          ".05",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--outlet-backflow",
+          "normal-inlet",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "1500",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "seconds": 19.557907999987947,
+        "returncode": 0,
+        "timedOut": false,
+        "binarySha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "native": {
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "external",
+        "status": "converged",
+        "converged": true,
+        "cells": 5204,
+        "iterations": 718,
+        "nu": 0.05,
+        "speed": 1,
+        "continuity": 1.9695356456850277e-13,
+        "globalImbalance": -2.687849942617504e-13,
+        "momentumResidual": 6.76337641969598e-09,
+        "velocityChange": 9.880420683108204e-09,
+        "pressureChange": 6.985927995206561e-09,
+        "forceX": 6.613348435972758,
+        "forceY": -8.897131078752785e-14,
+        "pressureForceX": 4.881992825060455,
+        "pressureForceY": -1.0030875869510014e-13,
+        "discreteForceX": 6.613348435972758,
+        "discreteForceY": -8.897131078752785e-14,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "convection": "limited-linear",
+        "viscousStress": "symmetric",
+        "outletBackflow": "normal-inlet",
+        "outletBackflowFaces": 16,
+        "outletInflow": 0.12829863446426423,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 6.5750329802160925,
+        "reconstructedForceY": -9.05529449167497e-14,
+        "wallForceX": 6.613348435972758,
+        "wallForceY": -8.898041808577672e-14,
+        "wallViscousForceX": 1.7313556109123038,
+        "wallViscousForceY": 1.133953499675433e-14,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 6.510793381512019e-14,
+        "domainHeight": 4,
+        "tolerance": 1e-08,
+        "pressurePreconditioner": "aggregation",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "right outlet faces, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+        "scope": "steady constant-property laminar flow; no turbulence or accuracy certification"
+      },
+      "independent": {
+        "artifactSha256": {
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet.cells.csv": "65e8c345d21f9fdcb81e34803f68cb03b171e72e9e19efd7077fb9eb27885d60",
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet.faces.csv": "6192b3cd551e97c2f4f1dd07496070005a0b0d7d07073ab62dfc2edf2f59606a",
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet.json": "067bc5ad2d99853e97e23c8b0e13e4594c9a97f11b1d04f7c5891c161a327bc7",
+          "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet.residuals.csv": "3dfdf1e0d4ae260437abcdc23a17d82728873e8509e83d181b1a12384ee0e2c2"
+        },
+        "benchmark": {
+          "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+          "derivedBodyCoefficients": {
+            "definition": "2 F / (U^2 D), unit density and depth",
+            "drag": 6.613348435972758,
+            "lift": -8.897131078752785e-14
+          },
+          "diameter": 2.0,
+          "forces": {
+            "dragForce": 6.613348435972758,
+            "liftForce": -8.897131078752785e-14
+          },
+          "issues": [],
+          "maximumSpeedRatio": 2.436164065980109,
+          "minimumWakeUOverSpeed": -0.18653264144938392,
+          "openCylinderReference": {
+            "acceptanceGate": false,
+            "dragCoefficient": 2.045,
+            "relativeDifference": null,
+            "reynolds": 20.0,
+            "reynoldsMatches": false,
+            "source": "Dennis & Chang 1970"
+          },
+          "reynoldsByMaximumSpeedAndDiameter": 40.0,
+          "valid": true
+        },
+        "case": "external",
+        "counts": {
+          "cells": 5204,
+          "faces": 10700
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -2.687849942617504e-13,
+          "cellValid": true,
+          "globalLimit": 3.5896703453704645e-07,
+          "globalRelativeImbalance": 6.510793381512019e-14,
+          "globalValid": true,
+          "l2CellImbalance": 4.9138450142096986e-14,
+          "maxCellImbalance": 1.2309597785531423e-14,
+          "maxScaledCellImbalance": 1.938519336304161e-06,
+          "nativeDefinitionContinuity": 1.9695356456850277e-13,
+          "referenceThroughput": 4.128298634464264
+        },
+        "issues": [],
+        "manufacturedPressureSlope": 0.0,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/desktop-gui/mesh-nvzgvj/circle.solver.cm2d",
+        "meshMeasurement": {
+          "area": 12.878554847741372,
+          "bounds": [
+            -1.93,
+            -1.97,
+            2.07,
+            2.0300000000000002
+          ],
+          "characteristicH": 0.049746773922611426
+        },
+        "meshSha256": "92b30e5f2800aa2b5731df54c8fb8bfb87544d839609afdd0f4e3140db8d066a",
+        "momentumAudit": {
+          "cellBoundaryConservationDifference": {
+            "magnitude": 6.002970749029323e-16,
+            "x": -5.829009692460974e-16,
+            "y": -1.4346789950709163e-16
+          },
+          "cellResidual": {
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
+            "l2": 2.1121151657353395e-08,
+            "maxCellVector": 2.8630467876758383e-09,
+            "maxNormalized": 6.763376417646976e-09
+          },
+          "cellResidualSum": {
+            "x": 1.4630696584801926e-07,
+            "y": -9.186198436178733e-14
+          },
+          "convection": "limited-linear",
+          "discreteForce": {
+            "x": 6.613348435972759,
+            "y": -8.888834221627839e-14
+          },
+          "expectedCellResidualSum": {
+            "x": 1.4630696643092023e-07,
+            "y": -9.171851646228024e-14
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate",
+            "relative": 0.0
+          },
+          "faceCount": 10700,
+          "faceDeviation": {
+            "advectionX": {
+              "absolute": 1.3877787807814457e-17,
+              "actual": 0.06916803643785217,
+              "expected": 0.06916803643785219,
+              "relative": 1.3877787807814457e-17
+            },
+            "advectionY": {
+              "absolute": 6.938893903907228e-18,
+              "actual": 0.047549126115702355,
+              "expected": 0.04754912611570236,
+              "relative": 6.938893903907228e-18
+            },
+            "diffusionX": {
+              "absolute": 4.380176776841438e-17,
+              "actual": -0.0007594808761478718,
+              "expected": -0.000759480876147828,
+              "relative": 4.380176776841438e-17
+            },
+            "diffusionY": {
+              "absolute": 9.86623976961809e-17,
+              "actual": -0.001706330006174985,
+              "expected": -0.0017063300061748864,
+              "relative": 9.86623976961809e-17
+            },
+            "pressure": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 3.19682530783437,
+              "expected": 3.196825307834369,
+              "relative": 2.778313902619237e-16
+            }
+          },
+          "forceDefinition": "shared-face-newtonian-traction",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
+          "globalBoundaryMomentum": {
+            "boundaryTermScale": 40.57101278645052,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero",
+            "magnitude": 1.4630696643094897e-07,
+            "relativeToBoundary": 3.606194580378113e-09,
+            "x": 1.4630696643092023e-07,
+            "y": -9.171851646228024e-14
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 1.4630696643092023e-07,
+            "boundaryMinusSourceY": -9.171851646228024e-14,
+            "definition": "global boundary momentum minus independent volume source integral",
+            "magnitude": 1.4630696643094897e-07,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0
+          },
+          "maxFaceDeviation": {
+            "advectionX": 1.3877787807814457e-17,
+            "advectionY": 6.938893903907228e-18,
+            "diffusionX": 4.380176776841438e-17,
+            "diffusionY": 9.86623976961809e-17,
+            "pressure": 8.881784197001252e-16
+          },
+          "outletBackflow": "normal-inlet",
+          "outletBackflowAudit": {
+            "faceCount": 16,
+            "faceIds": [
+              10669,
+              10670,
+              10671,
+              10672,
+              10673,
+              10674,
+              10675,
+              10676,
+              10677,
+              10678,
+              10679,
+              10680,
+              10681,
+              10682,
+              10683,
+              10684
+            ],
+            "inwardVolumeFlux": 0.12829863446426423
+          },
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForce": {
+            "x": 4.881992825060455,
+            "y": -1.0032307016377695e-13
+          },
+          "reconstructedForce": {
+            "x": 6.5750329802160925,
+            "y": -9.04961191703843e-14
+          },
+          "sourceForcing": {
+            "case": "external",
+            "definition": "zero/unforced non-manufactured case",
+            "integralX": 0.0,
+            "integralY": 0.0
+          },
+          "status": "available",
+          "summaryDeviation": {
+            "discreteForceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613348435972758,
+              "expected": 6.613348435972759,
+              "relative": 1.3430086563547033e-16
+            },
+            "discreteForceY": {
+              "absolute": 8.296857124945323e-17,
+              "actual": -8.897131078752785e-14,
+              "expected": -8.888834221627839e-14,
+              "relative": 8.296857124945323e-17
+            },
+            "forceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613348435972758,
+              "expected": 6.613348435972759,
+              "relative": 1.3430086563547033e-16
+            },
+            "forceY": {
+              "absolute": 8.296857124945323e-17,
+              "actual": -8.897131078752785e-14,
+              "expected": -8.888834221627839e-14,
+              "relative": 8.296857124945323e-17
+            },
+            "momentumResidual": {
+              "absolute": 2.0490041322714295e-18,
+              "actual": 6.76337641969598e-09,
+              "expected": 6.763376417646976e-09,
+              "relative": 2.0490041322714295e-18
+            },
+            "pressureForceX": {
+              "absolute": 0.0,
+              "actual": 4.881992825060455,
+              "expected": 4.881992825060455,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "absolute": 1.431146867680866e-17,
+              "actual": -1.0030875869510014e-13,
+              "expected": -1.0032307016377695e-13,
+              "relative": 1.431146867680866e-17
+            },
+            "reconstructedForceX": {
+              "absolute": 0.0,
+              "actual": 6.5750329802160925,
+              "expected": 6.5750329802160925,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "absolute": 5.68257463653965e-17,
+              "actual": -9.05529449167497e-14,
+              "expected": -9.04961191703843e-14,
+              "relative": 5.68257463653965e-17
+            },
+            "wallForceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613348435972758,
+              "expected": 6.613348435972759,
+              "relative": 1.3430086563547033e-16
+            },
+            "wallForceY": {
+              "absolute": 9.207586949833146e-17,
+              "actual": -8.898041808577672e-14,
+              "expected": -8.888834221627839e-14,
+              "relative": 9.207586949833146e-17
+            },
+            "wallViscousForceX": {
+              "absolute": 2.220446049250313e-16,
+              "actual": 1.7313556109123038,
+              "expected": 1.7313556109123036,
+              "relative": 1.2824898797539881e-16
+            },
+            "wallViscousForceY": {
+              "absolute": 8.124740030063249e-17,
+              "actual": 1.133953499675433e-14,
+              "expected": 1.1420782397054963e-14,
+              "relative": 8.124740030063249e-17
+            }
+          },
+          "temporal": {
+            "dt": null,
+            "enabled": false,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "valid": true,
+          "viscousStress": "symmetric",
+          "wallFaceFlags": "checked",
+          "wallForce": {
+            "x": 6.613348435972759,
+            "y": -8.888834221627839e-14
+          },
+          "wallViscousForce": {
+            "x": 1.7313556109123036,
+            "y": 1.1420782397054963e-14
+          }
+        },
+        "native": {
+          "case": "external",
+          "cells": 5204,
+          "continuity": 1.9695356456850277e-13,
+          "convection": "limited-linear",
+          "converged": true,
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 6.613348435972758,
+          "discreteForceY": -8.897131078752785e-14,
+          "domainHeight": 4,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 6.613348435972758,
+          "forceY": -8.897131078752785e-14,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -2.687849942617504e-13,
+          "globalRelativeImbalance": 6.510793381512019e-14,
+          "iterations": 718,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 6.76337641969598e-09,
+          "nu": 0.05,
+          "outletBackflow": "normal-inlet",
+          "outletBackflowFaces": 16,
+          "outletInflow": 0.12829863446426423,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureChange": 6.985927995206561e-09,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 4.881992825060455,
+          "pressureForceY": -1.0030875869510014e-13,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "right outlet faces, kinematic pressure zero",
+          "reconstructedForceX": 6.5750329802160925,
+          "reconstructedForceY": -9.05529449167497e-14,
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-08,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 9.880420683108204e-09,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 6.613348435972758,
+          "wallForceY": -8.898041808577672e-14,
+          "wallViscousForceX": 1.7313556109123038,
+          "wallViscousForceY": 1.133953499675433e-14
+        },
+        "nu": 0.05,
+        "outletBackflow": "normal-inlet",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "residualHistory": {
+          "first": {
+            "continuity": 4.479276890765258e-12,
+            "iteration": 1.0,
+            "momentumResidual": 0.3697908044180344,
+            "pressureChange": 112.46624925184739,
+            "velocityChange": 1.5146581059771749
+          },
+          "last": {
+            "continuity": 1.9695356456850277e-13,
+            "iteration": 718.0,
+            "momentumResidual": 6.76337641969598e-09,
+            "pressureChange": 6.985927995206561e-09,
+            "velocityChange": 9.880420683108204e-09
+          },
+          "rows": 718
+        },
+        "speed": 1,
+        "valid": true
+      }
+    }
+  ],
+  "checks": {
+    "ctest": "117/117",
+    "frontend": "140/140",
+    "independentVerifier": "42/42",
+    "windows": "not run",
+    "linux": "not run",
+    "openfoam": "not run"
+  },
+  "algorithm": {
+    "default": "reject",
+    "incoming": "p=0, normal velocity zero-gradient, tangential velocity zero; signed flux retained",
+    "linearization": "incoming normal q*owner velocity lagged on RHS; residual uses current field",
+    "outgoing": "original zero-gradient/outflow reconstruction",
+    "mask": "updated from corrected flux before momentum residual check",
+    "scope": "axis-aligned right pressure outlet; closed cases unaffected"
+  },
+  "convergence": {
+    "compactCircle": {
+      "audit": "outputs/native-flow/outlet-backflow/final-compact-circle-re40-normal-inlet.independent.json",
+      "auditSha256": "bbc2e6125b646463c8875606eff4a7148ee28cb961ffd0c9cec11ac630810246",
+      "incomingFaces": 16,
+      "inwardFlux": 0.12829863446426423,
+      "issues": [],
+      "maxFaceDeviation": 8.881784197001252e-16,
+      "nativeIncomingFaces": 16,
+      "nativeInwardFlux": 0.12829863446426423,
+      "referenceComparison": {
+        "acceptanceGate": false,
+        "dragCoefficient": 2.045,
+        "relativeDifference": null,
+        "reynolds": 20.0,
+        "reynoldsMatches": false,
+        "source": "Dennis & Chang 1970"
+      },
+      "residual": 6.763376417646976e-09,
+      "valid": true
+    },
+    "counterflow": [
+      {
+        "audit": "outputs/native-flow/outlet-backflow/final-counterflow-l4.independent.json",
+        "auditSha256": "504d9526145df107f50f136254f20d1978c2fdcdd3697dd9f2b68d0f29b07293",
+        "cells": 196,
+        "h": 0.07142857142857142,
+        "incomingFaces": 4,
+        "inwardFlux": 0.22338334542802005,
+        "issues": [],
+        "level": 4,
+        "maxFaceDeviation": 2.724498415502402e-16,
+        "nativeIncomingFaces": 4,
+        "nativeInwardFlux": 0.22338334542802005,
+        "pressureL2": 0.03029437062906717,
+        "residual": 3.6045425245550844e-09,
+        "valid": true,
+        "velocityL2": 0.01450744580690541
+      },
+      {
+        "audit": "outputs/native-flow/outlet-backflow/final-counterflow-l5.independent.json",
+        "auditSha256": "29523ba2c3ae9bbf394c14cba59196573bb324e6c78cdb1a84fa89dd94a7b61d",
+        "cells": 900,
+        "h": 0.03333333333333334,
+        "incomingFaces": 10,
+        "inwardFlux": 0.22075527955368232,
+        "issues": [],
+        "level": 5,
+        "maxFaceDeviation": 1.2691772275068985e-16,
+        "nativeIncomingFaces": 10,
+        "nativeInwardFlux": 0.22075527955368235,
+        "pressureL2": 0.006668386858099604,
+        "pressureOrderFromPrevious": 1.9859656017983296,
+        "residual": 3.906762583040995e-09,
+        "valid": true,
+        "velocityL2": 0.0032111995013600968,
+        "velocityOrderFromPrevious": 1.9786618925543418
+      },
+      {
+        "audit": "outputs/native-flow/outlet-backflow/final-counterflow-l6.independent.json",
+        "auditSha256": "de5f7ea6b918602371c2bb804d8213d88dfaab3fcaa6a2ee1fe31d973e3a8868",
+        "cells": 3844,
+        "h": 0.016129032258064516,
+        "incomingFaces": 20,
+        "inwardFlux": 0.21831651883349795,
+        "issues": [],
+        "level": 6,
+        "maxFaceDeviation": 2.287971515805426e-16,
+        "nativeIncomingFaces": 20,
+        "nativeInwardFlux": 0.21831651883349795,
+        "pressureL2": 0.0015622728211124432,
+        "pressureOrderFromPrevious": 1.9991215160332882,
+        "residual": 4.05583467675723e-09,
+        "valid": true,
+        "velocityL2": 0.0007539897721488065,
+        "velocityOrderFromPrevious": 1.9960699246372993
+      }
+    ],
+    "scope": "Independent source, geometry, final signed flux, momentum and artifact audit; analytic orders apply only to counterflow family; no compact-domain external accuracy claim"
+  },
+  "nativeThermalReverse": {
+    "test": "tests/thermal_flow_test.cpp::transientOutletInflow",
+    "cells": 64,
+    "dt": 0.001,
+    "initialVelocity": "(1+2cos(2pi*y),0); new boundary conditions: channel inlet/walls/pressure outlet",
+    "incomingScalar": 7,
+    "otherIncomingScalar": 5,
+    "sourceDensity": 0,
+    "log": "reverse thermal: faces=4 inflow=0.306901 globalBalance=-1.36693e-08 cellScaled=3.6628e-10\nthermal flow failures: 0\n",
+    "checks": [
+      "default mode rejects",
+      "new step accepted with actual negative outlet flux",
+      "incoming scalar enters with range5..7",
+      "abs(globalBalance)<=sqrt(N)*||cellResidual||2+1e-12",
+      "missing inflow scalar rejected",
+      "2 steps equal1+checkpoint+1"
+    ],
+    "initialFailure": "outputs/native-flow/outlet-backflow/thermal-reverse-test.log",
+    "failureExplanation": "New test initially used fixed dimensional global balance1e-8; replaced by mathematical sum-residual bound. Solver tolerance/equations unchanged."
+  },
+  "gui-flow": {
+    "summary": {
+      "format": "cartmesh2d-flow-summary-v1",
+      "case": "external",
+      "status": "converged",
+      "converged": true,
+      "cells": 5204,
+      "iterations": 498,
+      "nu": 0.05,
+      "speed": 1,
+      "continuity": 3.5837999234900053e-13,
+      "globalImbalance": -8.854028621385623e-14,
+      "momentumResidual": 6.766000199089828e-07,
+      "velocityChange": 9.812299894527817e-07,
+      "pressureChange": 7.147332419189098e-07,
+      "forceX": 6.613334071156324,
+      "forceY": 9.275810100486254e-13,
+      "pressureForceX": 4.88197714049916,
+      "pressureForceY": 9.375183870332857e-13,
+      "discreteForceX": 6.613334071156324,
+      "discreteForceY": 9.275810100486254e-13,
+      "pressureDiscretization": "shared-face-gauss",
+      "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+      "convection": "limited-linear",
+      "viscousStress": "symmetric",
+      "outletBackflow": "normal-inlet",
+      "outletBackflowFaces": 16,
+      "outletInflow": 0.1282686366627043,
+      "forceDefinition": "shared-face-newtonian-traction",
+      "reconstructedForceX": 6.575018768279514,
+      "reconstructedForceY": 9.28426863926017e-13,
+      "wallForceX": 6.613334071156324,
+      "wallForceY": 9.275792753251494e-13,
+      "wallViscousForceX": 1.7313569306571617,
+      "wallViscousForceY": -9.937526062459012e-15,
+      "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+      "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+      "globalRelativeImbalance": 2.1447317024754537e-14,
+      "domainHeight": 4,
+      "tolerance": 1e-06,
+      "pressurePreconditioner": "aggregation",
+      "units": {
+        "velocity": "m/s",
+        "p": "m2/s2 (kinematic)",
+        "nu": "m2/s",
+        "faceFlux": "m2/s per unit depth",
+        "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+      },
+      "pressureReference": "right outlet faces, kinematic pressure zero",
+      "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+      "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+      "convectionInferred": false,
+      "pressurePreconditionerInferred": false,
+      "outletBackflowInferred": false,
+      "pressureDiscretizationInferred": false,
+      "viscousStressInferred": false
+    },
+    "resultText": "已收敛 · 498 次迭代 · 对流：线性迎风（限制重构）\n对流格式\n线性迎风（限制重构）\n压力求解\n多重网格（试验）\n出口回流\n允许法向回流（试验）\n压力离散\n共享面压力\n局部连续性（无量纲）\n3.584e-13\n全局不平衡（m²/s）\n-8.854e-14\n全局相对不平衡\n2.145e-14\n速度变化\n9.812e-7\n压力变化\n7.147e-7\n动量残差\n6.766e-7\n回流出口面数\n1.600e+1\n出口流入量（m²/s）\n1.283e-1",
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 200,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": true
+      },
+      "previewCells": 5204,
+      "exportedCells": 5204,
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    }
+  },
+  "gui-thermal-final": {
+    "summary": {
+      "format": "cartmesh2d-scalar-transport-v1",
+      "status": "converged",
+      "converged": true,
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/circle.solver.cm2d",
+      "carrierCheckpoint": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.carrier.checkpoint",
+      "carrierTime": 0.3,
+      "boundaryFile": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/boundary.csv",
+      "verification": "",
+      "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+      "evolvingFlow": true,
+      "acceptedTime": 0.3,
+      "restart": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/input.thermal.checkpoint",
+      "flowCase": "external",
+      "cells": 5204,
+      "faces": 10700,
+      "time": 0.3,
+      "timeStep": 0.05,
+      "verificationSpeed": 1,
+      "constantSource": 0,
+      "initialValue": 300,
+      "flowNu": 0.1,
+      "flowSpeed": 1,
+      "flowConvection": "limited-linear",
+      "outletBackflow": "normal-inlet",
+      "steps": 1,
+      "diffusivity": 0.1,
+      "convection": "upwind",
+      "relativeTolerance": 1e-09,
+      "absoluteTolerance": 1e-12,
+      "cellTolerance": 1e-09,
+      "residualNorm": 1.1775054100405803e-09,
+      "maxCellImbalance": 2.978852720048053e-10,
+      "maxDiagonalScaledImbalance": 7.045124729898633e-10,
+      "boundaryFlux": -128.3335284728547,
+      "sourceIntegral": 0,
+      "temporalIntegral": 128.33352846718878,
+      "globalBalance": -5.6659246183699e-09,
+      "maxCarrierImbalance": 1.9761969838327786e-14,
+      "minValue": 300.0000007568779,
+      "maxValue": 349.67745301429034,
+      "maxCourant": 4.1884273238976375,
+      "l2Error": null,
+      "nativeTopologyRevalidated": true,
+      "solverQualityPassed": true,
+      "externalCheckMesh": "not run",
+      "dt": 0.05
+    },
+    "resultText": "温度与流动已接受 t=0.300000 s · 本次 1 步 · 单向恒物性输运\n时间步（s）\n5.0000e-2\n最低温度（K）\n3.0000e+2\n最高温度（K）\n3.4968e+2\n热扩散率（m²/s）\n1.0000e-1\n温度积分（K·m²）\n3.9295e+3\n全域平衡（K·m²/s）\n-5.6659e-9\n温度残差\n1.1775e-9\n最后一步最大 CFL\n4.1884e+0",
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 200,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": true
+      },
+      "previewCells": 5204,
+      "exportedCells": 5204,
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    }
+  },
+  "notes": [
+    "CLI cylinder uses1e-8 stop; GUI uses unchanged1e-6.",
+    "First thermal smoke used reject due to test routing; preserved and reran final with asserted normal-inlet.",
+    "Last repack changes only user-facing hints and integer formatting; computational binaries match GUI-tested binaries."
+  ],
+  "packageCheck": {
+    "artifacts": {
+      "guiFlowPngJson": "cab2de2fb0899967c0dc818a8a1f5ca6c642f4376895825ad68d9f028a88ec90",
+      "guiThermalPngJson": "50d26c83d2ae54b7aa057a54b7d88fca5bf3c1d2a731ed469bf6a63bca4f0a07",
+      "guiFlowPngExists": true,
+      "guiThermalPngExists": true,
+      "guiThermalFinalPngExists": true,
+      "guiThermalFinalPngJson": "fc81bb00fe9315242d852f447e3b3b82065e4cca56d5ae0f4a1b4e3474ecc77c"
+    },
+    "independent": {
+      "flow": true,
+      "flowReport": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/gui-flow-independent.json",
+      "thermalReject": true,
+      "thermalNormalInletFinal": true,
+      "thermalFinalPrefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs"
+    },
+    "nativeSummaries": {
+      "guiFlow": {
+        "nu": 0.05,
+        "tolerance": 1e-06,
+        "cells": 5204,
+        "outletBackflow": "normal-inlet",
+        "outletBackflowFaces": 16,
+        "outletInflow": 0.1282686366627043
+      },
+      "guiThermalOriginal": {
+        "outletBackflow": "reject",
+        "time": 0.3,
+        "cells": 5204
+      },
+      "guiThermalFinal": {
+        "format": "cartmesh2d-scalar-transport-v1",
+        "status": "converged",
+        "converged": true,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/circle.solver.cm2d",
+        "carrierCheckpoint": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.carrier.checkpoint",
+        "carrierTime": 0.3,
+        "boundaryFile": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/boundary.csv",
+        "verification": "",
+        "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+        "evolvingFlow": true,
+        "acceptedTime": 0.3,
+        "restart": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/input.thermal.checkpoint",
+        "flowCase": "external",
+        "cells": 5204,
+        "faces": 10700,
+        "time": 0.3,
+        "timeStep": 0.05,
+        "verificationSpeed": 1,
+        "constantSource": 0,
+        "initialValue": 300,
+        "flowNu": 0.1,
+        "flowSpeed": 1,
+        "flowConvection": "limited-linear",
+        "outletBackflow": "normal-inlet",
+        "steps": 1,
+        "diffusivity": 0.1,
+        "convection": "upwind",
+        "relativeTolerance": 1e-09,
+        "absoluteTolerance": 1e-12,
+        "cellTolerance": 1e-09,
+        "residualNorm": 1.1775054100405803e-09,
+        "maxCellImbalance": 2.978852720048053e-10,
+        "maxDiagonalScaledImbalance": 7.045124729898633e-10,
+        "boundaryFlux": -128.3335284728547,
+        "sourceIntegral": 0,
+        "temporalIntegral": 128.33352846718878,
+        "globalBalance": -5.6659246183699e-09,
+        "maxCarrierImbalance": 1.9761969838327786e-14,
+        "minValue": 300.0000007568779,
+        "maxValue": 349.67745301429034,
+        "maxCourant": 4.1884273238976375,
+        "l2Error": null,
+        "nativeTopologyRevalidated": true,
+        "solverQualityPassed": true,
+        "externalCheckMesh": "not run"
+      }
+    },
+    "zip": {
+      "guiFlow": {
+        "sha256": "65318e8656a32e131d4abe05bf5fe40b4611cd4b05c581be3e3bc78e330c0801",
+        "crcBad": null,
+        "entriesCompared": 32,
+        "mismatches": []
+      },
+      "guiThermal": {
+        "sha256": "5ebd2403b3d15d14b88f6dca8610134bd90314133ee1a37a83ca0a29417f498e",
+        "crcBad": null,
+        "entriesCompared": 73,
+        "mismatches": []
+      },
+      "guiThermalFinal": {
+        "sha256": "88530308d7f7502952d317198ca006c9908411a88821436d4ba7ade6ff5dd1fb",
+        "crcBad": null,
+        "entriesCompared": 73,
+        "mismatches": []
+      }
+    },
+    "jointFlowV2NormalInlet": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-pstjMz/thermal.thermal.checkpoint",
+      "header": "CARTMESH2D_FLOW_CHECKPOINT 2",
+      "config": "CONFIG \"external\" 0.10000000000000001 1 limited-linear symmetric 0 normal-inlet",
+      "containsNormalInlet": true
+    },
+    "packagedApp": {
+      "asar": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/Resources/app.asar",
+      "asarSha256": "373c816a280c0fd7394b95e6c135abf07c0e9ca12966b2949ff94b63f5b14fab",
+      "version": "0.4.9",
+      "sourceFiles": {
+        "src/core/flow.js": {
+          "equal": true,
+          "asarSha256": "3a20338597eb4be30470b4b1a4896fd71ded6795f99ec0c93bcd78aab1c47a23",
+          "sourceSha256": "3a20338597eb4be30470b4b1a4896fd71ded6795f99ec0c93bcd78aab1c47a23"
+        },
+        "src/core/flow-checkpoint.js": {
+          "equal": true,
+          "asarSha256": "0725e9f065306005299a5fbd597ccd18c1fadf86bdaf9da79008e77657001ad6",
+          "sourceSha256": "0725e9f065306005299a5fbd597ccd18c1fadf86bdaf9da79008e77657001ad6"
+        },
+        "src/core/thermal.js": {
+          "equal": true,
+          "asarSha256": "79217a9652fa3f2551f14c59059d91b4823721457f396d9d80f3992807ad20ce",
+          "sourceSha256": "79217a9652fa3f2551f14c59059d91b4823721457f396d9d80f3992807ad20ce"
+        },
+        "src/core/thermal-job.js": {
+          "equal": true,
+          "asarSha256": "56ef96ecb41d1f6e9757031621a46ef56b6f79acc9d85160eb7021ba9327b9d7",
+          "sourceSha256": "56ef96ecb41d1f6e9757031621a46ef56b6f79acc9d85160eb7021ba9327b9d7"
+        },
+        "src/main.js": {
+          "equal": true,
+          "asarSha256": "a57aaf137449a998d2db5b86e643fd36c8bf3ffc95c0a09267c7085034d02a33",
+          "sourceSha256": "a57aaf137449a998d2db5b86e643fd36c8bf3ffc95c0a09267c7085034d02a33"
+        },
+        "src/renderer/app.js": {
+          "equal": true,
+          "asarSha256": "17a1f16b8c4871c59e350c8c2ac629f7cbd43e79aebfff5409f0189eaf27e36a",
+          "sourceSha256": "17a1f16b8c4871c59e350c8c2ac629f7cbd43e79aebfff5409f0189eaf27e36a"
+        },
+        "src/renderer/index.html": {
+          "equal": true,
+          "asarSha256": "b07422fd31608a424cf367e550f4a3a19e1a02b8caac65d91ca5aba1a83ce195",
+          "sourceSha256": "b07422fd31608a424cf367e550f4a3a19e1a02b8caac65d91ca5aba1a83ce195"
+        }
+      },
+      "bins": {
+        "cartmesh2d_flow_cli": {
+          "equal": true,
+          "packagedSha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801",
+          "buildSha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+        },
+        "cartmesh2d_transport_cli": {
+          "equal": true,
+          "packagedSha256": "f2b1f2d0ecfe8a2ccf4e8ec4a97a7687d02a6a38264d4b79b61390d1ffabd4e8",
+          "buildSha256": "f2b1f2d0ecfe8a2ccf4e8ec4a97a7687d02a6a38264d4b79b61390d1ffabd4e8"
+        }
+      }
+    },
+    "jointFlow2NormalInlet": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.thermal.checkpoint",
+      "header": "CARTMESH2D_FLOW_CHECKPOINT 2",
+      "config": "CONFIG \"external\" 0.10000000000000001 1 limited-linear symmetric 0 normal-inlet",
+      "containsNormalInlet": true
+    }
+  },
+  "guiThermalIndependent": {
+    "valid": true,
+    "cells": 5204,
+    "faces": 10700,
+    "residualNorm": 1.1775054019564244e-09,
+    "residualStop": 3.805929619806889e-06,
+    "maxDiagonalScaledImbalance": 7.045124729898633e-10,
+    "maxCarrierImbalance": 1.9761969838327786e-14,
+    "globalBalance": -5.66382141187205e-09,
+    "boundaryAbsoluteFlux": 2528.8710740215224,
+    "minValue": 300.0000007568779,
+    "maxValue": 349.67745301429034,
+    "maxConstitutiveDifference": 3.0753177782116836e-14,
+    "l2Error": null,
+    "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+    "sha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/circle.solver.cm2d": "92b30e5f2800aa2b5731df54c8fb8bfb87544d839609afdd0f4e3140db8d066a",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.json": "6987fa67f34e05eedf7ab64e51ad90ac30e2989a8456a592f26ca6a446d942c3",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "5e5e99ad024594118d20459a54d1b3056737e56007aabd820591fa36e56a924f",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/boundary.csv": "57783ad3fea732ce6869fd5ac5a86ab9bc6e6a81385a1070b377ec2f415aad39",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.carrier.checkpoint": "ec718f5f6e083b7eed027cac4c085f3707e88462576626f2b8cd3ca6f9cd8eb8",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.thermal.checkpoint": "7ae4ea92b2e24c2b46c19f95dfe054055709f75e28d18c030ba00de618c70856",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.thermal-history.csv": "57d631ce21cab06a9d5c32dcf480cfbaff0c1fbbe3cd887a087fc0ad617ff9ea",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.cells.csv": "0723f2af86efa9243a35bd845d229bcabece5cb841539cee9cdb10ad72479f2d",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.faces.csv": "f898ba879720761578a0b43d86e839eacfb56ed0c77cf70d05c0ba88a47ac86b",
+      "outputs/native-flow/outlet-backflow/gui-thermal-final/mesh-aCOTza/thermal-run-x4Mxhs/thermal.history.csv": "6eace8d0571f053c614f1186df609bd034cbe96474c0fac4d5dd20cebcf33aa2"
+    }
+  },
+  "guiFlowIndependent": {
+    "acceptanceScope": {
+      "cavity": {
+        "centrelineMaxError": 0.3,
+        "centrelineRmse": 0.12
+      },
+      "channel": {
+        "fluxError": 0.08,
+        "gradientError": 0.12,
+        "pressureL2": 0.12,
+        "transverseL2": 0.05,
+        "velocityL2": 0.08
+      },
+      "convection": "limited-linear",
+      "external": {
+        "maximumLiftDragRatio": 0.3,
+        "maximumSpeedRatio": 4.0,
+        "referenceDragIsGate": false
+      },
+      "manufactured": {
+        "definition": "analytic stream-function vortex on [0,1]^2; source forcing is verification-only",
+        "nu": 0.1,
+        "pressureSlope": 0.0,
+        "velocityErrorGate": "reported with refinement decrease and observed order; no universal physical threshold"
+      },
+      "maxIterations": 1500,
+      "maxReportedContinuity": 1e-06,
+      "statement": "Project milestone regression gates for these cases and meshes; not universal CFD quality standards.",
+      "viscousStress": "symmetric"
+    },
+    "cases": [
+      {
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external.cells.csv": "857a2359a15607d7270f98187968236a949c1c427e096210b8602bb11e74da60",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external.faces.csv": "b27ca5845c16fe378073eb924a3d538de1bc2055ccb1a06815497399457efe20",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external.json": "cb5336e0b68c9ce5d11090486995de30aea12766b8d868561ef5c92776fa5c5b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external.residuals.csv": "3d98699bfd1b730c435eca372d31a7d393f3e3b8123cd24d835a1f0dbae3739b"
+        },
+        "benchmark": {
+          "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+          "derivedBodyCoefficients": {
+            "definition": "2 F / (U^2 D), unit density and depth",
+            "drag": 6.613334071156324,
+            "lift": 9.275810100486254e-13
+          },
+          "diameter": 2.0,
+          "forces": {
+            "dragForce": 6.613334071156324,
+            "liftForce": 9.275810100486254e-13
+          },
+          "issues": [],
+          "maximumSpeedRatio": 2.4361634488821973,
+          "minimumWakeUOverSpeed": -0.18648632389872055,
+          "openCylinderReference": {
+            "acceptanceGate": false,
+            "dragCoefficient": 2.045,
+            "relativeDifference": null,
+            "reynolds": 20.0,
+            "reynoldsMatches": false,
+            "source": "Dennis & Chang 1970"
+          },
+          "reynoldsByMaximumSpeedAndDiameter": 40.0,
+          "valid": true
+        },
+        "case": "external",
+        "counts": {
+          "cells": 5204,
+          "faces": 10700
+        },
+        "independentContinuity": {
+          "boundaryFluxSum": -8.854028621385623e-14,
+          "cellValid": true,
+          "globalLimit": 3.5896703453704645e-07,
+          "globalRelativeImbalance": 2.144731702475454e-14,
+          "globalValid": true,
+          "l2CellImbalance": 9.94692833354891e-14,
+          "maxCellImbalance": 2.2398749521812533e-14,
+          "maxScaledCellImbalance": 3.5273621294192966e-06,
+          "nativeDefinitionContinuity": 3.5837999234900053e-13,
+          "referenceThroughput": 4.128268636662704
+        },
+        "issues": [],
+        "label": "gui",
+        "manufacturedPressureSlope": 0.0,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-flow/mesh-Q35VrE/circle.solver.cm2d",
+        "meshMeasurement": {
+          "area": 12.878554847741372,
+          "bounds": [
+            -1.93,
+            -1.97,
+            2.07,
+            2.0300000000000002
+          ],
+          "characteristicH": 0.049746773922611426
+        },
+        "meshSha256": "92b30e5f2800aa2b5731df54c8fb8bfb87544d839609afdd0f4e3140db8d066a",
+        "momentumAudit": {
+          "cellBoundaryConservationDifference": {
+            "magnitude": 8.012305938133381e-16,
+            "x": -7.780031501848639e-16,
+            "y": 1.9152431376956436e-16
+          },
+          "cellResidual": {
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
+            "l2": 2.1153552370332734e-06,
+            "maxCellVector": 2.8641183909112887e-07,
+            "maxNormalized": 6.766000199151296e-07
+          },
+          "cellResidualSum": {
+            "x": 1.4489625315693685e-05,
+            "y": 2.5333885380132704e-13
+          },
+          "convection": "limited-linear",
+          "discreteForce": {
+            "x": 6.6133340711563235,
+            "y": 9.276741430152419e-13
+          },
+          "expectedCellResidualSum": {
+            "x": 1.4489625316471688e-05,
+            "y": 2.5314732948755747e-13
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate",
+            "relative": 0.0
+          },
+          "faceCount": 10700,
+          "faceDeviation": {
+            "advectionX": {
+              "absolute": 2.7755575615628914e-17,
+              "actual": 0.1554532800926691,
+              "expected": 0.15545328009266912,
+              "relative": 2.7755575615628914e-17
+            },
+            "advectionY": {
+              "absolute": 6.938893903907228e-18,
+              "actual": 0.044074933437960546,
+              "expected": 0.04407493343796054,
+              "relative": 6.938893903907228e-18
+            },
+            "diffusionX": {
+              "absolute": 4.401860820291148e-17,
+              "actual": -0.0007593965380258859,
+              "expected": -0.0007593965380258418,
+              "relative": 4.401860820291148e-17
+            },
+            "diffusionY": {
+              "absolute": 9.8879238130678e-17,
+              "actual": -0.0017060733304992645,
+              "expected": -0.0017060733304991656,
+              "relative": 9.8879238130678e-17
+            },
+            "pressure": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 2.676096755423194,
+              "expected": 2.676096755423193,
+              "relative": 3.318932388749412e-16
+            }
+          },
+          "forceDefinition": "shared-face-newtonian-traction",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic",
+          "globalBoundaryMomentum": {
+            "boundaryTermScale": 40.570735452926435,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero",
+            "magnitude": 1.448962531647169e-05,
+            "relativeToBoundary": 3.5714475359421983e-07,
+            "x": 1.4489625316471688e-05,
+            "y": 2.5314732948755747e-13
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 1.4489625316471688e-05,
+            "boundaryMinusSourceY": 2.5314732948755747e-13,
+            "definition": "global boundary momentum minus independent volume source integral",
+            "magnitude": 1.448962531647169e-05,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0
+          },
+          "maxFaceDeviation": {
+            "advectionX": 2.7755575615628914e-17,
+            "advectionY": 6.938893903907228e-18,
+            "diffusionX": 4.401860820291148e-17,
+            "diffusionY": 9.8879238130678e-17,
+            "pressure": 8.881784197001252e-16
+          },
+          "outletBackflow": "normal-inlet",
+          "outletBackflowAudit": {
+            "faceCount": 16,
+            "faceIds": [
+              10669,
+              10670,
+              10671,
+              10672,
+              10673,
+              10674,
+              10675,
+              10676,
+              10677,
+              10678,
+              10679,
+              10680,
+              10681,
+              10682,
+              10683,
+              10684
+            ],
+            "inwardVolumeFlux": 0.12826863666270433
+          },
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForce": {
+            "x": 4.88197714049916,
+            "y": 9.375177432882457e-13
+          },
+          "reconstructedForce": {
+            "x": 6.575018768279514,
+            "y": 9.28446393117649e-13
+          },
+          "sourceForcing": {
+            "case": "external",
+            "definition": "zero/unforced non-manufactured case",
+            "integralX": 0.0,
+            "integralY": 0.0
+          },
+          "status": "available",
+          "summaryDeviation": {
+            "discreteForceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613334071156324,
+              "expected": 6.6133340711563235,
+              "relative": 1.3430115735024853e-16
+            },
+            "discreteForceY": {
+              "absolute": 9.313296661650483e-17,
+              "actual": 9.275810100486254e-13,
+              "expected": 9.276741430152419e-13,
+              "relative": 9.313296661650483e-17
+            },
+            "forceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613334071156324,
+              "expected": 6.6133340711563235,
+              "relative": 1.3430115735024853e-16
+            },
+            "forceY": {
+              "absolute": 9.313296661650483e-17,
+              "actual": 9.275810100486254e-13,
+              "expected": 9.276741430152419e-13,
+              "relative": 9.313296661650483e-17
+            },
+            "momentumResidual": {
+              "absolute": 6.146812219106051e-18,
+              "actual": 6.766000199089828e-07,
+              "expected": 6.766000199151296e-07,
+              "relative": 6.146812219106051e-18
+            },
+            "pressureForceX": {
+              "absolute": 0.0,
+              "actual": 4.88197714049916,
+              "expected": 4.88197714049916,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "absolute": 6.437450399132683e-19,
+              "actual": 9.375183870332857e-13,
+              "expected": 9.375177432882457e-13,
+              "relative": 6.437450399132683e-19
+            },
+            "reconstructedForceX": {
+              "absolute": 0.0,
+              "actual": 6.575018768279514,
+              "expected": 6.575018768279514,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "absolute": 1.952919163189515e-17,
+              "actual": 9.28426863926017e-13,
+              "expected": 9.28446393117649e-13,
+              "relative": 1.952919163189515e-17
+            },
+            "wallForceX": {
+              "absolute": 8.881784197001252e-16,
+              "actual": 6.613334071156324,
+              "expected": 6.6133340711563235,
+              "relative": 1.3430115735024853e-16
+            },
+            "wallForceY": {
+              "absolute": 9.486769009248164e-17,
+              "actual": 9.275792753251494e-13,
+              "expected": 9.276741430152419e-13,
+              "relative": 9.486769009248164e-17
+            },
+            "wallViscousForceX": {
+              "absolute": 0.0,
+              "actual": 1.7313569306571617,
+              "expected": 1.7313569306571617,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "absolute": 8.982614999042404e-17,
+              "actual": -9.937526062459012e-15,
+              "expected": -9.847699912468588e-15,
+              "relative": 8.982614999042404e-17
+            }
+          },
+          "temporal": {
+            "dt": null,
+            "enabled": false,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "valid": true,
+          "viscousStress": "symmetric",
+          "wallFaceFlags": "checked",
+          "wallForce": {
+            "x": 6.6133340711563235,
+            "y": 9.276741430152419e-13
+          },
+          "wallViscousForce": {
+            "x": 1.7313569306571617,
+            "y": -9.847699912468588e-15
+          }
+        },
+        "native": {
+          "case": "external",
+          "cells": 5204,
+          "continuity": 3.5837999234900053e-13,
+          "convection": "limited-linear",
+          "converged": true,
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 6.613334071156324,
+          "discreteForceY": 9.275810100486254e-13,
+          "domainHeight": 4,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 6.613334071156324,
+          "forceY": 9.275810100486254e-13,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -8.854028621385623e-14,
+          "globalRelativeImbalance": 2.1447317024754537e-14,
+          "iterations": 498,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 6.766000199089828e-07,
+          "nu": 0.05,
+          "outletBackflow": "normal-inlet",
+          "outletBackflowFaces": 16,
+          "outletInflow": 0.1282686366627043,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "pressureChange": 7.147332419189098e-07,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 4.88197714049916,
+          "pressureForceY": 9.375183870332857e-13,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "right outlet faces, kinematic pressure zero",
+          "reconstructedForceX": 6.575018768279514,
+          "reconstructedForceY": 9.28426863926017e-13,
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-06,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 9.812299894527817e-07,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 6.613334071156324,
+          "wallForceY": 9.275792753251494e-13,
+          "wallViscousForceX": 1.7313569306571617,
+          "wallViscousForceY": -9.937526062459012e-15
+        },
+        "nu": 0.05,
+        "outletBackflow": "normal-inlet",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external",
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "residualHistory": {
+          "first": {
+            "continuity": 4.479276890765258e-12,
+            "iteration": 1.0,
+            "momentumResidual": 0.3697908044180344,
+            "pressureChange": 112.46624925184739,
+            "velocityChange": 1.5146581059771749
+          },
+          "last": {
+            "continuity": 3.5837999234900053e-13,
+            "iteration": 498.0,
+            "momentumResidual": 6.766000199089828e-07,
+            "pressureChange": 7.147332419189098e-07,
+            "velocityChange": 9.812299894527817e-07
+          },
+          "rows": 498
+        },
+        "speed": 1.0,
+        "stage": {
+          "case": "external",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-flow/mesh-Q35VrE/circle.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external",
+            "--case",
+            "external",
+            "--nu",
+            "0.050000000000000003",
+            "--speed",
+            "1",
+            "--max-iterations",
+            "1500",
+            "--viscous-stress",
+            "symmetric",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--convection",
+            "limited-linear"
+          ],
+          "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-flow/mesh-Q35VrE/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external --case external --nu 0.050000000000000003 --speed 1 --max-iterations 1500 --viscous-stress symmetric --pressure-preconditioner aggregation --convection limited-linear",
+          "execution": "reused-existing-artifacts",
+          "label": "gui",
+          "returncode": null,
+          "status": "passed",
+          "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/logs/flow-gui.stderr.log",
+          "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/logs/flow-gui.stdout.log",
+          "timedOut": false
+        },
+        "valid": true
+      }
+    ],
+    "executables": {
+      "flowCli": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "sha256": "9f4128ed5d568d5508cfcef524f40d35f439d8835b553bcedf45bff355ce5801"
+      },
+      "meshCli": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "sha256": "f1025f03a3fe5f50b9843e63ac05ea8e018c5bcef564364a8420bc2816c6ce69"
+      }
+    },
+    "format": "cartmesh2d-native-flow-verification-v1",
+    "issues": [],
+    "meshGeneration": [],
+    "references": {
+      "cavity": "https://doi.org/10.1016/0021-9991(82)90058-4",
+      "dfg_re20": "https://wwwold.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html",
+      "open_cylinder_re20": "https://doi.org/10.1017/S0022112070001428",
+      "poiseuille": "https://ocw.mit.edu/courses/2-25-advanced-fluid-mechanics-fall-2013/resources/mit2_25f13_couet_and_pois/"
+    },
+    "runs": [
+      {
+        "case": "external",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-flow/mesh-Q35VrE/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external",
+          "--case",
+          "external",
+          "--nu",
+          "0.050000000000000003",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "1500",
+          "--viscous-stress",
+          "symmetric",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--convection",
+          "limited-linear"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/gui-flow/mesh-Q35VrE/circle.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/runs/gui/external --case external --nu 0.050000000000000003 --speed 1 --max-iterations 1500 --viscous-stress symmetric --pressure-preconditioner aggregation --convection limited-linear",
+        "execution": "reused-existing-artifacts",
+        "label": "gui",
+        "returncode": null,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/logs/flow-gui.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/outlet-backflow/package-independent/logs/flow-gui.stdout.log",
+        "timedOut": false
+      }
+    ],
+    "sequenceChecks": {
+      "issues": [],
+      "series": {
+        "cavity": [],
+        "channel": [],
+        "manufactured": []
+      },
+      "valid": true
+    },
+    "valid": true
+  },
+  "sha256": {
+    "outputs/native-flow/outlet-backflow/ctest-delivery.log": "d1e3f5ae2f9ccb0b7328d7b048d5fca0098619a49f64a4f33e98d92469011ed7",
+    "outputs/native-flow/outlet-backflow/frontend-delivery.log": "f984dffe89b0ff996d7ae9836fe4b120d3b9a9435289a9f378d37a2009c31a10",
+    "outputs/native-flow/outlet-backflow/thermal-reverse-final.log": "25783aa0406dd0d51380164da94218dd525618eabc72414496c50aa917005e75",
+    "outputs/native-flow/outlet-backflow/gui-flow.png.json": "cab2de2fb0899967c0dc818a8a1f5ca6c642f4376895825ad68d9f028a88ec90",
+    "outputs/native-flow/outlet-backflow/gui-thermal-final.png.json": "fc81bb00fe9315242d852f447e3b3b82065e4cca56d5ae0f4a1b4e3474ecc77c",
+    "outputs/native-flow/outlet-backflow/packaged-check.json": "e91e6b72eeb27085d4bf3946930fe87c54bce7543a9b4d36565c588ae4bf330d",
+    "src/fv/Incompressible2D.cpp": "ae24b567b9c0be2de7aa3c9a765712a3c101a3e1938bdca028fda4feb6ee487c",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "be9cabd325a4b5d5e7d0a6c3521404adf98eb9204f8145feb01aa418e75bf139",
+    "tools/verification/verify_native_flow.py": "5e5e99ad024594118d20459a54d1b3056737e56007aabd820591fa36e56a924f",
+    "artifacts/current/outlet-backflow.png": "017f38ef313b57b3c7262b9301963f0ce63da017dd397b58a9df2408f1d275e2",
+    "artifacts/current/desktop-outlet-backflow.png": "f5e345f7666eaf4f3aaa4a83c02480b6d37177e9b3fb26b3a671e0d425adc5af"
+  }
+}

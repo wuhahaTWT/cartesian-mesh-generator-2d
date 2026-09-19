@@ -62,17 +62,37 @@ inline const char* stressName(ViscousStress2D value) {
     return "";
 }
 
-inline void configuration(std::istream& in, const FlowControls2D& controls) {
+inline const char* outletBackflowName(OutletBackflow2D value) {
+    switch (value) {
+    case OutletBackflow2D::Reject: return "reject";
+    case OutletBackflow2D::NormalInlet: return "normal-inlet";
+    }
+    fail("invalid outlet backflow model");
+    return "";
+}
+
+inline OutletBackflow2D outletBackflowValue(const std::string& value) {
+    if (value == "reject") return OutletBackflow2D::Reject;
+    if (value == "normal-inlet") return OutletBackflow2D::NormalInlet;
+    fail("invalid outlet backflow model");
+    return OutletBackflow2D::Reject;
+}
+
+inline void configuration(std::istream& in, const FlowControls2D& controls, bool hasOutletBackflow) {
     std::string scenario, convection, stress;
+    std::string outletBackflow;
     double nu = 0, speed = 0, slope = 0;
     if (!(in >> std::quoted(scenario) >> nu >> speed >> convection >> stress >> slope))
         fail("truncated configuration");
+    if (hasOutletBackflow && !(in >> outletBackflow)) fail("truncated outlet backflow model");
     finite(nu, "configuration nu");
     finite(speed, "configuration speed");
     finite(slope, "configuration pressure slope");
     if (scenario != controls.scenario || nu != controls.nu || speed != controls.speed ||
         convection != convectionName(controls.convection) || stress != stressName(controls.viscousStress) ||
-        slope != controls.manufacturedPressureSlope)
+        slope != controls.manufacturedPressureSlope ||
+        ((!hasOutletBackflow && controls.outletBackflow != OutletBackflow2D::Reject) ||
+         (hasOutletBackflow && outletBackflowValue(outletBackflow) != controls.outletBackflow)))
         fail("incompatible configuration");
 }
 
@@ -104,7 +124,7 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
     for (const auto* values : {&state.u, &state.v, &state.p, &state.flux})
         for (const double value : *values) flow_checkpoint_detail::finite(value, "state value");
 
-    out << "CARTMESH2D_FLOW_CHECKPOINT 1\n"
+    out << "CARTMESH2D_FLOW_CHECKPOINT 2\n"
         << "DISCRETIZATION Euler-RC-v2\n"
         << "CONFIG " << std::quoted(controls.scenario) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.nu, "configuration nu"); out << ' ';
@@ -112,6 +132,7 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
         << flow_checkpoint_detail::convectionName(controls.convection) << ' '
         << flow_checkpoint_detail::stressName(controls.viscousStress) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.manufacturedPressureSlope, "configuration pressure slope");
+    out << ' ' << flow_checkpoint_detail::outletBackflowName(controls.outletBackflow);
     out << "\nCELLS " << mesh.cells.size() << '\n';
     for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
         const auto& cell = mesh.cells[i];
@@ -152,11 +173,14 @@ inline FlowState2D readFlowCheckpoint2D(std::istream& in, const FvMesh2D& mesh,
                                         const FlowControls2D& controls) {
     validateFvMesh2D(mesh);
     flow_checkpoint_detail::token(in, "CARTMESH2D_FLOW_CHECKPOINT");
-    flow_checkpoint_detail::token(in, "1");
+    std::string version;
+    if (!(in >> version) || (version != "1" && version != "2"))
+        flow_checkpoint_detail::fail("unsupported checkpoint version");
+    const bool hasOutletBackflow = version == "2";
     flow_checkpoint_detail::token(in, "DISCRETIZATION");
     flow_checkpoint_detail::token(in, "Euler-RC-v2");
     flow_checkpoint_detail::token(in, "CONFIG");
-    flow_checkpoint_detail::configuration(in, controls);
+    flow_checkpoint_detail::configuration(in, controls, hasOutletBackflow);
     flow_checkpoint_detail::token(in, "CELLS");
     flow_checkpoint_detail::count(in, mesh.cells.size(), "cell");
     for (std::size_t i = 0; i < mesh.cells.size(); ++i) {

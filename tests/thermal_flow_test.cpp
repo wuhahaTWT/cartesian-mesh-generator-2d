@@ -61,9 +61,8 @@ TopologyMesh2D fromPolygons(const std::vector<Polygon2D>& polygons) {
     return result;
 }
 
-FvMesh2D cavityMesh() {
-    constexpr int n = 3;
-    auto point = [](int i, int j) { return Point2D{static_cast<double>(i) / n, static_cast<double>(j) / n}; };
+FvMesh2D cavityMesh(int n = 3) {
+    auto point = [n](int i, int j) { return Point2D{static_cast<double>(i) / n, static_cast<double>(j) / n}; };
     std::vector<Polygon2D> polygons;
     for (int j = 0; j < n; ++j)
         for (int i = 0; i < n; ++i)
@@ -167,6 +166,49 @@ void restartMatchesContinuous() {
     compareState(continuous, restarted, "2+checkpoint+2 versus continuous 4");
 }
 
+void transientOutletInflow() {
+    const auto mesh=cavityMesh(8);
+    auto fc=flowControls();fc.scenario="channel";fc.maxIterations=600;
+    fc.outletBackflow=OutletBackflow2D::NormalInlet;
+    fc.convection=ConvectionScheme2D::LimitedLinearUpwind;
+    auto data=setup(mesh,0.);const auto sc=scalarControls();
+    ThermalFlowState2D start{initialIncompressibleState2D(mesh,fc),{}};
+    start.scalar.assign(mesh.cells.size(),5.);
+    const auto profile=[](double y) {return 1.+2.*std::cos(2.*std::acos(-1.)*y);};
+    // Divergence-free initial parallel flow, distinct from the new-time
+    // parabolic inlet. The right outlet initially has both signs of flux.
+    for(std::size_t i=0;i<mesh.cells.size();++i) start.flow.u[i]=profile(mesh.cells[i].centre.y);
+    for(std::size_t id=0;id<mesh.faces.size();++id) {
+        const auto& f=mesh.faces[id];start.flow.flux[id]=profile(f.centre.y)*f.areaVector.x;
+        data.boundary[id].inflowValue=f.centre.x==1.?7.:5.;
+    }
+    auto reject=fc;reject.outletBackflow=OutletBackflow2D::Reject;
+    rejects([&] {(void)advanceThermalFlow2D(mesh,reject,data,sc,start,.001);},
+            "backflow unsupported","default mode rejects true reverse outlet");
+    const auto step=advanceThermalFlow2D(mesh,fc,data,sc,start,.001);
+    check(step.accepted.has_value(),"transient reverse outlet step accepted");
+    if(!step.accepted) return;
+    check(step.flow.outletBackflowFaces>0 && step.flow.outletInflow>0,"accepted step retains outlet inflow");
+    check(*std::max_element(step.scalar.values.begin(),step.scalar.values.end())>5.,"incoming outlet scalar enters domain");
+    for(double value:step.scalar.values) check(value>=5.-1e-9 && value<=7.+1e-9,"reverse-flow thermal field remains bounded");
+    // The global defect is a sum of cell residuals, bounded by sqrt(N)||r||2;
+    // a separate fixed dimensional threshold would ignore dt-dependent mass.
+    check(std::abs(step.scalar.globalBalance)<=std::sqrt(static_cast<double>(mesh.cells.size()))*
+          step.scalar.history.back().residualNorm+1e-12,"reverse-flow thermal storage and boundary flux balance");
+    std::cout<<"reverse thermal: faces="<<step.flow.outletBackflowFaces
+             <<" inflow="<<step.flow.outletInflow<<" globalBalance="<<step.scalar.globalBalance
+             <<" cellScaled="<<step.scalar.history.back().maxDiagonalScaledImbalance<<'\n';
+    auto missing=data;
+    for(std::size_t id=0;id<mesh.faces.size();++id)
+        if(mesh.faces[id].centre.x==1.) missing.boundary[id].inflowValue.reset();
+    rejects([&] {(void)advanceThermalFlow2D(mesh,fc,missing,sc,start,.001);},
+            "inflow","reverse-flow scalar requires explicit inflow value");
+    const auto continuous=advanceAccepted(mesh,fc,data,sc,start,2,.001);
+    std::stringstream saved;writeThermalCheckpoint2D(saved,mesh,fc,data,sc,*step.accepted);
+    const auto restored=readThermalCheckpoint2D(saved,mesh,fc,data,sc);
+    compareState(continuous,advanceAccepted(mesh,fc,data,sc,restored,1,.001),"reverse-flow joint restart");
+}
+
 void failureDoesNotMutateInputs() {
     const auto mesh = cavityMesh(); const auto fc = flowControls(); const auto setupData = setup(mesh); const auto sc = scalarControls();
     const auto before = initial(mesh);
@@ -266,6 +308,7 @@ void indexedAndCallbackRepresentations() {
 int main() {
     try {
         uniformSourceAndEvolution(); restartMatchesContinuous(); failureDoesNotMutateInputs();
+        transientOutletInflow();
         strictCheckpointValidation(); indexedAndCallbackRepresentations();
     } catch (const std::exception& error) {
         std::cerr << "unexpected thermal test exception: " << error.what() << '\n';

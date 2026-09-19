@@ -51,7 +51,7 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
   requireValue(!r.resume||restart,'没有可用的联合续算状态。');
   const args=['--mesh',mesh,'--output',prefix,'--boundary',boundary,'--evolve-flow',r.case,
     '--flow-nu',String(r.nu),'--flow-speed',String(r.speed),'--flow-max-iterations',String(r.maxIterations),
-    '--flow-convection',r.convection,'--pressure-preconditioner',r.pressurePreconditioner,
+    '--flow-convection',r.convection,'--pressure-preconditioner',r.pressurePreconditioner,'--outlet-backflow',r.outletBackflow,
     '--diffusivity',String(r.diffusivity),'--source',String(r.source),'--initial',String(r.initial),
     '--convection',r.scalarConvection,'--dt',String(r.dt),'--steps',String(r.steps)];
   if(r.resume)args.push('--restart',restart);
@@ -77,9 +77,9 @@ function csvRows(text,header) {
 }
 // Metadata only; native restart still validates the complete geometry and state.
 function thermalCheckpointTime(text) {
-  requireValue(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 1\nCOUPLING new-time-flux-Euler-v1\n'),'续算文件格式错误。');
+  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT 1\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
   const parts=text.split('\nFLOW\n');
-  requireValue(parts.length===2 && parts[1].startsWith('CARTMESH2D_FLOW_CHECKPOINT 1\n'),'缺少联合流动状态。');
+  requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
   const m=parts[1].match(/^TIME (\S+)$/m);
   requireValue(m && /^[+\-\d.eE]+$/.test(m[1]),'缺少物理时间。');
   const time=Number(m[1]);finite(time,'续算时间');requireValue(time>=0,'续算时间不能为负。');
@@ -92,7 +92,8 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   for(const key of ['time','acceptedTime','carrierTime','timeStep','diffusivity','flowNu','flowSpeed','constantSource','initialValue','minValue','maxValue','globalBalance','residualNorm','maxDiagonalScaledImbalance'])finite(summary[key],key);
   requireValue(summary.cells===mesh.cells.length&&summary.faces===mesh.edges.length&&summary.steps===r.steps,'网格数量/步数不一致。');
   for(const [key,value] of Object.entries({timeStep:r.dt,diffusivity:r.diffusivity,flowNu:r.nu,flowSpeed:r.speed,constantSource:r.source,initialValue:r.initial}))requireValue(near(summary[key],value),`${key} 与请求不符。`);
-  requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection,'物理工况/格式不一致。');
+  requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
+    && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');
   const t=startTime+r.dt*r.steps;
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');

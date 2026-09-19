@@ -8,6 +8,7 @@ const readline = require('node:readline');
 const SUPPORTED_CASES = new Set(['external', 'channel', 'cavity']);
 const SUPPORTED_CONVECTION = new Set(['upwind', 'limited-linear']);
 const SUPPORTED_STRESS = new Set(['symmetric']);
+const SUPPORTED_OUTLET_BACKFLOW = new Set(['reject', 'normal-inlet']);
 
 function invalid(message) {
   throw new Error(`Invalid flow checkpoint metadata: ${message}`);
@@ -35,10 +36,10 @@ function fields(line) {
   return line.trim().split(/\s+/);
 }
 
-function parseConfig(line) {
+function parseConfig(line, version) {
   // std::quoted output uses backslash escaping. The supported case names do not
   // contain escapes, but parsing them explicitly keeps malformed metadata out.
-  const match = /^CONFIG\s+"((?:[^"\\]|\\.)*)"\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/.exec(line.trim());
+  const match = /^CONFIG\s+"((?:[^"\\]|\\.)*)"\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?$/.exec(line.trim());
   if (!match) invalid('CONFIG line is malformed');
   const scenario = match[1];
   if (!SUPPORTED_CASES.has(scenario)) invalid(`unsupported case '${scenario}'`);
@@ -50,7 +51,11 @@ function parseConfig(line) {
   if (!SUPPORTED_CONVECTION.has(convection)) invalid(`unsupported convection '${convection}'`);
   if (!SUPPORTED_STRESS.has(viscousStress)) invalid(`unsupported viscous stress '${viscousStress}'`);
   if (slope !== 0) invalid('manufactured/nonzero pressure slope is unsupported');
-  return { case: scenario, nu, speed, convection, viscousStress };
+  const outletBackflow = match[7] === undefined ? 'reject' : match[7];
+  if (version === 1 && match[7] !== undefined) invalid('legacy v1 CONFIG has unexpected outlet backflow mode');
+  if (version >= 2 && match[7] === undefined) invalid('missing outlet backflow mode');
+  if (!SUPPORTED_OUTLET_BACKFLOW.has(outletBackflow)) invalid(`unsupported outlet backflow mode '${outletBackflow}'`);
+  return { case: scenario, nu, speed, convection, viscousStress, outletBackflow };
 }
 
 async function readCheckpointMetadata(filePath) {
@@ -66,7 +71,7 @@ async function readCheckpointMetadata(filePath) {
 
   const stream = fs.createReadStream(filePath, { encoding: 'utf8' });
   const input = readline.createInterface({ input: stream, crlfDelay: Infinity });
-  let metadata = null;
+  let metadata = null, version;
   let cells = false;
   let faces = false;
   let time;
@@ -75,7 +80,8 @@ async function readCheckpointMetadata(filePath) {
       const line = rawLine.trim();
       if (line === '') continue;
       if (!metadata) {
-        if (line !== 'CARTMESH2D_FLOW_CHECKPOINT 1') invalid('unsupported header');
+        if (line !== 'CARTMESH2D_FLOW_CHECKPOINT 1' && line !== 'CARTMESH2D_FLOW_CHECKPOINT 2') invalid('unsupported header');
+        version = line.endsWith(' 2') ? 2 : 1;
         metadata = {};
         continue;
       }
@@ -85,7 +91,7 @@ async function readCheckpointMetadata(filePath) {
         continue;
       }
       if (!metadata.config) {
-        Object.assign(metadata, parseConfig(line));
+        Object.assign(metadata, parseConfig(line, version));
         metadata.config = true;
         continue;
       }
@@ -133,6 +139,7 @@ async function readCheckpointMetadata(filePath) {
     speed: metadata.speed,
     convection: metadata.convection,
     viscousStress: metadata.viscousStress,
+    outletBackflow: metadata.outletBackflow,
     time,
     fileName: path.basename(filePath)
   };

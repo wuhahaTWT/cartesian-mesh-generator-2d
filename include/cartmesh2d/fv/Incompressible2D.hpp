@@ -11,6 +11,7 @@ enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
 
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation };
 enum class ViscousStress2D { Laplacian, Symmetric };
+enum class OutletBackflow2D { Reject, NormalInlet };
 
 struct FlowControls2D {
     std::string scenario = "external";
@@ -25,6 +26,9 @@ struct FlowControls2D {
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
     PressurePreconditioner2D pressurePreconditioner = PressurePreconditioner2D::IncompleteCholesky0;
+    // Opt-in pressure outlet: reverse flow has zero tangential velocity and
+    // zero normal velocity gradient. The conservative flux is never clipped.
+    OutletBackflow2D outletBackflow = OutletBackflow2D::Reject;
 };
 
 // Accepted state at a physical time, including the conservative face flux.
@@ -82,6 +86,8 @@ struct FlowResult2D {
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;
     double globalRelativeImbalance = 0;
+    std::size_t outletBackflowFaces = 0;
+    double outletInflow = 0; // positive inward volume flux per unit depth
     double forceX = 0;
     double forceY = 0;
     double pressureForceX = 0;

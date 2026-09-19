@@ -11,7 +11,7 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
   if(normalized.resume&&!selected)throw new Error('没有可用的联合续算状态。');
   const boundary=thermalBoundaryCsv(mesh,normalized);
   if(selected) {
-    for(const key of ['case','nu','speed','convection','diffusivity','source','scalarConvection','boundaries'])
+    for(const key of ['case','nu','speed','convection','outletBackflow','diffusivity','source','scalarConvection','boundaries'])
       if(JSON.stringify(normalized[key])!==JSON.stringify(selected.metadata.request[key]))
         throw new Error('联合续算必须保持工况、物性、温度源、边界和对流格式。');
   }
@@ -57,7 +57,7 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
     try{currentResult.thermalRestart=await readRestart();}catch{currentResult.thermalRestart=previousRestart;}
     await fs.writeFile(path.join(directory,'desktop-state.json'),JSON.stringify({status:signal.aborted?'cancelled':'failed',
       request:normalized,acceptedTime:currentResult.thermalRestart?.metadata.time ?? null,error:String(error.message)},null,2)).catch(()=>{});
-    if(/outlet backflow unsupported/.test(error.message))error.message='当前流动模型不支持出口回流；请检查出口位置、计算域与工况。\n'+error.message;
+    if(/outlet backflow unsupported/.test(error.message))error.message='当前设置遇到出口回流会停止。请检查计算域，或在流动设置中选择试验性法向回流。\n'+error.message;
     error.message+=`\n诊断及最后联合状态保留在 ${directory}`;
     throw error;
   }

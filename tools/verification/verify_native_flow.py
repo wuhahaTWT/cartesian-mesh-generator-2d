@@ -328,12 +328,12 @@ def read_cells(path: Path, mesh: Mesh, measured: Measurement,
                case: str | None = None) -> list[dict[str, float]]:
     fields = csv_fields(path)
     manufactured_fields = [name for name in MANUFACTURED_CELL_COLUMNS if name in fields]
-    if case == "manufactured":
+    if case in ("manufactured", "counterflow"):
         if tuple(manufactured_fields) != MANUFACTURED_CELL_COLUMNS:
             missing = [name for name in MANUFACTURED_CELL_COLUMNS if name not in fields]
             raise VerificationError(f"{path}: manufactured CSV missing columns {missing}")
     elif manufactured_fields:
-        raise VerificationError(f"{path}: manufactured source/exact columns are only valid for case manufactured")
+        raise VerificationError(f"{path}: source/exact columns are only valid for manufactured/counterflow cases")
     rows = load_csv(path, ("cell", "x", "y", "area", "u", "v", "p", "speed"))
     values: dict[int, dict[str, float]] = {}
     for line, row in enumerate(rows, 2):
@@ -341,7 +341,7 @@ def read_cells(path: Path, mesh: Mesh, measured: Measurement,
         if cell in values or not (0 <= cell < len(mesh.cells)):
             raise VerificationError(f"{path}:{line}: duplicate/out-of-range cell {cell}")
         item = {name: finite(row[name], f"{path}:{line} {name}") for name in ("x", "y", "area", "u", "v", "p", "speed")}
-        if case == "manufactured":
+        if case in ("manufactured", "counterflow"):
             item.update({name: finite(row[name], f"{path}:{line} {name}")
                          for name in MANUFACTURED_CELL_COLUMNS})
         if all(name in fields for name in ("previousU", "previousV", "temporalX", "temporalY")):
@@ -537,8 +537,23 @@ def face_geometry(mesh: Mesh, measured: Measurement) -> list[FaceGeometry]:
     return result
 
 
-def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) -> dict[str, Any]:
+def outlet_backflow_mode(payload: dict[str, Any]) -> str:
+    mode = payload.get("outletBackflow", "reject")
+    if mode not in ("reject", "normal-inlet"):
+        raise VerificationError(f"native outletBackflow is unsupported: {mode!r}")
+    return mode
+
+
+def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
+                    outlet_backflow: str = "reject",
+                    fluxes: list[float] | None = None) -> dict[str, Any]:
     """Mirror the solver's explicit role/fixed-value classification."""
+    outlet_backflow_mode({"outletBackflow": outlet_backflow})
+    if outlet_backflow == "normal-inlet" and fluxes is None:
+        raise VerificationError("normal-inlet boundary reconstruction requires final face fluxes")
+    if fluxes is not None and (len(fluxes) != len(mesh.edges) or
+                              any(not math.isfinite(q) for q in fluxes)):
+        raise VerificationError("outlet boundary reconstruction requires finite flux per face")
     xmin, ymin, xmax, ymax = measured.bounds
     eps = 1e-10 * max(xmax - xmin, ymax - ymin) + 1e-12
     roles: list[str] = ["internal"] * len(mesh.edges)
@@ -575,7 +590,7 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
         elif right:
             role = "outlet"
         else:
-            role = "slip" if case == "external" else "wall"
+            role = "slip" if case in ("external", "counterflow") else "wall"
         roles[edge.id] = role
         constant_u[edge.id] = role in ("wall", "lid")
         constant_v[edge.id] = constant_u[edge.id] or role == "slip"
@@ -588,8 +603,12 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
             fixed_u[edge.id] = fixed_v[edge.id] = True
             bc_u[edge.id] = (4.0 * speed * (y - ymin) * (ymax - y) / (height * height)
                              if case == "channel" else speed)
+            if case == "counterflow":
+                bc_u[edge.id] = speed * (1.0 + 2.0 * math.cos(2.0 * math.pi * y))
         elif role == "outlet":
             fixed_p[edge.id] = True
+            if outlet_backflow == "normal-inlet" and fluxes[edge.id] < 0.0:
+                fixed_v[edge.id] = constant_v[edge.id] = True
         elif role == "slip":
             if case == "taylor-green":
                 fixed_u[edge.id] = left or right
@@ -790,9 +809,12 @@ def _symmetric_viscous_correction(mesh: Mesh, measured: Measurement,
 
 def _advective_value(mesh: Mesh, measured: Measurement, edge: Edge, geometry: FaceGeometry,
                      flux: float, values: list[float], gradients: list[tuple[float, float]],
-                     limiter: list[float] | None, fixed: list[bool], boundary: list[float]) -> float:
+                     limiter: list[float] | None, fixed: list[bool], boundary: list[float],
+                     normal_inlet: bool = False) -> float:
     if edge.neighbour < 0 and fixed[edge.id]:
         return boundary[edge.id]
+    if normal_inlet and edge.neighbour < 0 and flux < 0.0:
+        return values[edge.owner]
     up = edge.neighbour if edge.neighbour >= 0 and flux < 0.0 else edge.owner
     if limiter is None:
         return values[up]
@@ -815,11 +837,26 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     """Rebuild face momentum terms, equation residuals and embedded-wall forces.
 
     All expected values here come from CM2D geometry, exported cell fields and
-    the explicit scenario boundary definitions.  The face CSV is only the
-    observed value being checked.
+    the explicit scenario boundary definitions. Actual final CSV flux selects
+    upwind direction and the opt-in outlet mask; exported momentum terms never
+    define the reconstructed stress, pressure or advected velocity.
     """
     geometries = face_geometry(mesh, measured)
-    boundaries = flow_boundaries(mesh, measured, case, speed)
+    fluxes = face_fluxes(face_records)
+    outlet_backflow = outlet_backflow_mode(payload)
+    boundaries = flow_boundaries(mesh, measured, case, speed, outlet_backflow, fluxes)
+    backflow_faces = [edge.id for edge in mesh.edges
+                      if boundaries["roles"][edge.id] == "outlet" and fluxes[edge.id] < 0.0]
+    outlet_inflow = math.fsum(-fluxes[i] for i in backflow_faces)
+    if "outletBackflowFaces" in payload and integer(payload["outletBackflowFaces"], "native outletBackflowFaces") != len(backflow_faces):
+        raise VerificationError("native outletBackflowFaces differs from actual negative outlet flux count")
+    if "outletInflow" in payload and not close(finite(payload["outletInflow"], "native outletInflow"),
+                                               outlet_inflow, 1e-14, 1e-9):
+        raise VerificationError("native outletInflow differs from actual inward outlet volume flux")
+    if outlet_backflow == "reject":
+        for fid in backflow_faces:
+            if fluxes[fid] < -1e-12 * speed * math.hypot(*geometries[fid].area_vector):
+                raise VerificationError(f"face {fid}: outlet backflow violates reject boundary mode")
     viscous_stress = payload.get("viscousStress", "laplacian")
     if viscous_stress not in ("symmetric", "laplacian"):
         raise VerificationError(f"native viscousStress is unsupported: {viscous_stress!r}")
@@ -864,11 +901,13 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
           if convection == "limited-linear" else None)
     lv = (face_limiter(mesh, measured, v, gv, boundaries["v"], boundaries["fixedV"])
           if convection == "limited-linear" else None)
-    fluxes = face_fluxes(face_records)
     cell_residuals = [(0.0, 0.0) for _ in mesh.cells]
     source_integrals = (manufactured_source_integral(mesh, measured, speed, nu,
                                                      manufactured_pressure_slope)
                         if case == "manufactured" else [(0.0, 0.0)] * len(mesh.cells))
+    if case == "counterflow":
+        source_integrals = [(area * counterflow_sample(y, speed, nu)["sourceX"], 0.0)
+                            for area, (_, y) in zip(measured.areas, measured.centroids)]
     source_sum = (math.fsum(x for x, _ in source_integrals),
                   math.fsum(y for _, y in source_integrals))
     boundary_vector = [0.0, 0.0]
@@ -882,14 +921,15 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     wall_viscous_force = [0.0, 0.0]
     for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
         i = edge.owner
+        normal_inlet = outlet_backflow == "normal-inlet" and boundaries["roles"][edge.id] == "outlet"
         if edge.neighbour >= 0:
             other_u, other_v = u[edge.neighbour], v[edge.neighbour]
         else:
             other_u, other_v = boundaries["u"][edge.id], boundaries["v"][edge.id]
         av_u = flux * _advective_value(mesh, measured, edge, geom, flux, u, gu, lu,
-                                       boundaries["fixedU"], boundaries["u"])
+                                       boundaries["fixedU"], boundaries["u"], normal_inlet)
         av_v = flux * _advective_value(mesh, measured, edge, geom, flux, v, gv, lv,
-                                       boundaries["fixedV"], boundaries["v"])
+                                       boundaries["fixedV"], boundaries["v"], normal_inlet)
         if edge.neighbour >= 0 or boundaries["fixedU"][edge.id]:
             gi = _interpolated_gradient(edge, gu, geom.neighbour_weight)
             dx = -nu * (geom.transmissibility * (other_u - u[i]) +
@@ -936,7 +976,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             wall_force[1] += pf * sy + dy
             wall_viscous_force[0] += dx
             wall_viscous_force[1] += dy
-    if case == "manufactured":
+    if case in ("manufactured", "counterflow"):
         # Subtract the independent cell-volume forcing before measuring the
         # equation residual.  Exported source columns are checked separately
         # and cannot influence this audit.
@@ -971,7 +1011,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
         else:
             if boundaries["fixedU"][edge.id]:
                 diagonal_u[edge.owner] += d
-            else:
+            elif not (outlet_backflow == "normal-inlet" and
+                      boundaries["roles"][edge.id] == "outlet" and q < 0.0):
                 diagonal_u[edge.owner] += q
             if boundaries["fixedV"][edge.id]:
                 diagonal_v[edge.owner] += d
@@ -1028,11 +1069,14 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     boundary_relative = (math.hypot(*boundary_vector) / boundary_scale
                          if boundary_scale > 0.0 else 0.0)
     source_definition = ("independent analytic source integrated at CM2D cell centroids; subtracted from face balance"
-                         if case == "manufactured" else "zero/unforced non-manufactured case")
+                         if case in ("manufactured", "counterflow") else "zero/unforced non-manufactured case")
     return {
         "status": "available", "valid": True, "convection": convection,
         "pressureDiscretization": payload.get("pressureDiscretization"),
         "pressureBoundaryReconstruction": pressure_boundary_reconstruction,
+        "outletBackflow": outlet_backflow,
+        "outletBackflowAudit": {"faceIds": backflow_faces, "faceCount": len(backflow_faces),
+                                "inwardVolumeFlux": outlet_inflow},
         "faceCount": len(mesh.edges), "maxFaceDeviation": max_deviation,
         "faceConsistencyTolerance": {"absolute": 5e-10, "relative": 0.0,
                                       "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"},
@@ -1040,7 +1084,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             "maxNormalized": momentum_residual,
             "l2": math.sqrt(math.fsum(x * x + y * y for x, y in cell_residuals)),
             "maxCellVector": max((math.hypot(x, y) for x, y in cell_residuals), default=0.0),
-            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; transient adds measuredArea/dt per component",
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
         },
         "summaryDeviation": summary_deviations,
         "sourceForcing": {
@@ -1245,6 +1289,60 @@ def cavity_checks(measured: Measurement, cells: list[dict[str, float]], nu: floa
     return checks
 
 
+def counterflow_sample(y: float, speed: float, nu: float) -> dict[str, float]:
+    cosine = math.cos(2.0 * math.pi * y)
+    return {"u": speed * (1.0 + 2.0 * cosine), "v": 0.0, "p": 0.0,
+            "sourceX": 8.0 * math.pi**2 * nu * speed * cosine, "sourceY": 0.0}
+
+
+def counterflow_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
+                       fluxes: list[float], nu: float, speed: float,
+                       payload: dict[str, Any]) -> dict[str, Any]:
+    issues = []
+    if (any(not close(x, y, 1e-12, 0.0) for x, y in zip(measured.bounds, (0., 0., 1., 1.)))
+            or not close(measured.total_area, 1.0, 1e-12, 0.0)):
+        issues.append("counterflow requires the complete unit square")
+    mode = outlet_backflow_mode(payload)
+    boundaries = flow_boundaries(mesh, measured, "counterflow", speed, mode, fluxes)
+    geometries = face_geometry(mesh, measured)
+    outgoing, incoming = [], []
+    for edge, geom in zip(mesh.edges, geometries):
+        if edge.neighbour >= 0:
+            continue
+        role = boundaries["roles"][edge.id]
+        q = fluxes[edge.id]
+        if role == "inlet" and not close(q, boundaries["u"][edge.id]*geom.area_vector[0], 1e-12, 1e-9):
+            issues.append(f"counterflow face {edge.id}: prescribed inlet flux differs")
+        elif role == "slip" and not close(q, 0.0, 1e-12, 0.0):
+            issues.append(f"counterflow face {edge.id}: slip wall leaks")
+        elif role == "outlet":
+            (incoming if q < 0.0 else outgoing).append(q)
+    if not incoming or not outgoing:
+        issues.append("counterflow must exercise simultaneous right-outlet inflow and outflow")
+    errors = {key: [] for key in ("u", "v", "p")}
+    column_errors = {key: 0.0 for key in MANUFACTURED_CELL_COLUMNS}
+    for row, area, (_, y) in zip(cells, measured.areas, measured.centroids):
+        exact = counterflow_sample(y, speed, nu)
+        for key in errors:
+            errors[key].append(row[key]-exact[key])
+        for column, key in (("exactU", "u"), ("exactV", "v"), ("exactP", "p"),
+                            ("sourceX", "sourceX"), ("sourceY", "sourceY")):
+            expected = exact[key] * (area if column.startswith("source") else 1.0)
+            column_errors[column] = max(column_errors[column], abs(row[column]-expected))
+    if any(error > 2e-12 for error in column_errors.values()):
+        issues.append("counterflow CSV exact/source columns differ from independent analytic formula")
+    return {"valid": not issues, "issues": issues,
+            "definition": "u=U*(1+2*cos(2*pi*y)), v=p=0; source=(8*pi^2*nu*U*cos(2*pi*y),0)",
+            "sourceSampling": "analytic source density at actual cell centroid times measured area",
+            "columnMaxDeviation": column_errors, "columnAbsoluteTolerance": 2e-12,
+            "analyticErrors": {key+"L2": weighted_l2(values, measured.areas) for key, values in errors.items()},
+            "velocityL2OverSpeed": math.hypot(weighted_l2(errors["u"], measured.areas),
+                                               weighted_l2(errors["v"], measured.areas))/speed,
+            "outlet": {"incomingFaces": len(incoming), "outgoingFaces": len(outgoing),
+                       "inwardVolumeFlux": -math.fsum(incoming), "outwardVolumeFlux": math.fsum(outgoing)},
+            "scope": "analytic errors are diagnostics; valid verifies source/BC consistency and exercises reverse flow, not accuracy certification"}
+
+
 def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
                         nu: float, speed: float, pressure_slope: float = 0.0) -> dict[str, Any]:
     """Audit the analytic fields and source columns of the closed MMS case."""
@@ -1380,8 +1478,9 @@ def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, flo
                                     "definition": "2 F / (U^2 D), unit density and depth"},
         "openCylinderReference": {"source": "Dennis & Chang 1970", "reynolds": 20.0,
                                   "dragCoefficient": reference_drag,
+                                  "reynoldsMatches": math.isclose(re,20.0,rel_tol=1e-10),
                                   "relativeDifference": (abs(drag_coefficient - reference_drag) / reference_drag
-                                                         if drag_coefficient is not None else None),
+                                                         if drag_coefficient is not None and math.isclose(re,20.0,rel_tol=1e-10) else None),
                                   "acceptanceGate": False},
         "minimumWakeUOverSpeed": min(wake) if wake else None,
         "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
@@ -1446,6 +1545,10 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         issues.append("native JSON format is not cartmesh2d-flow-summary-v1")
     if payload.get("case") != case:
         issues.append("native JSON case differs from requested case")
+    try:
+        outlet_backflow_mode(payload)
+    except VerificationError as exc:
+        issues.append(str(exc))
     viscous_stress = payload.get("viscousStress", "laplacian")
     if viscous_stress not in ("symmetric", "laplacian"):
         issues.append(f"native viscousStress is unsupported: {viscous_stress!r}")
@@ -1541,6 +1644,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         benchmark = external_checks(mesh, measured, cells, payload, nu, speed, args)
     elif case == "manufactured":
         benchmark = manufactured_checks(mesh, measured, cells, nu, speed, manufactured_pressure_slope)
+    elif case == "counterflow":
+        benchmark = counterflow_checks(mesh, measured, cells, fluxes, nu, speed, payload)
     else:
         raise VerificationError(f"unsupported case {case}")
     if not benchmark.get("valid"):
@@ -1574,6 +1679,9 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
             if momentum_audit["summaryDeviation"]["momentumResidual"]["absolute"] > summary_tol:
                 momentum_audit["valid"] = False
                 momentum_audit.setdefault("issues", []).append("independent momentum residual differs from summary")
+            if case == "counterflow" and momentum_audit["cellResidual"]["maxNormalized"] >= finite(payload.get("tolerance"), "native tolerance"):
+                momentum_audit["valid"] = False
+                momentum_audit.setdefault("issues", []).append("independent counterflow momentum residual is not below tolerance")
             if any(momentum_audit["summaryDeviation"][name]["absolute"] > summary_tol
                    for name in ("pressureForceX", "pressureForceY", "discreteForceX", "discreteForceY")):
                 momentum_audit["valid"] = False
@@ -1605,6 +1713,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         "prefix": str(prefix.resolve()), "nu": nu, "speed": speed,
         "manufacturedPressureSlope": manufactured_pressure_slope if case == "manufactured" else 0.0,
         "pressureBoundaryReconstruction": pressure_boundary_reconstruction,
+        "outletBackflow": payload.get("outletBackflow", "reject"),
         "counts": {"cells": len(mesh.cells), "faces": len(mesh.edges)},
         "meshMeasurement": {"area": measured.total_area, "characteristicH": measured.characteristic_h,
                             "bounds": measured.bounds},
@@ -1708,7 +1817,7 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="reuse existing output-root/runs artifacts without launching the flow CLI")
     parser.add_argument("--mesh", action="append", nargs=3, metavar=("CASE", "LABEL", "PATH"),
                         help="verify an existing mesh; repeat for multiple cases")
-    parser.add_argument("--cases", nargs="+", choices=("channel", "cavity", "external", "manufactured"),
+    parser.add_argument("--cases", nargs="+", choices=("channel", "cavity", "external", "manufactured", "counterflow"),
                         default=("channel", "cavity", "external"))
     parser.add_argument("--mesh-cli", type=Path, default=REPO / "build/cartmesh2d_cli")
     parser.add_argument("--flow-cli", type=Path, default=REPO / "build/cartmesh2d_flow_cli")
@@ -1718,6 +1827,8 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cavity-nu", type=float, default=0.01)
     parser.add_argument("--external-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-nu", type=float, default=0.1)
+    parser.add_argument("--counterflow-nu", type=float, default=0.1)
+    parser.add_argument("--outlet-backflow", choices=("reject", "normal-inlet"), default="reject")
     parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
     parser.add_argument("--pressure-preconditioner", choices=("ic0", "jacobi", "aggregation"), default="ic0",
                         help="native pressure preconditioner; aggregation remains experimental")
@@ -1773,7 +1884,8 @@ def main() -> int:
         if args.manufactured_pressure_slope != 0.0 and any(case != "manufactured" for case in args.cases):
             raise VerificationError("nonzero --manufactured-pressure-slope is only valid for --cases manufactured")
         nu_by_case = {"channel": args.channel_nu, "cavity": args.cavity_nu,
-                      "external": args.external_nu, "manufactured": args.manufactured_nu}
+                      "external": args.external_nu, "manufactured": args.manufactured_nu,
+                      "counterflow": args.counterflow_nu}
         if any(not math.isfinite(value) or value <= 0.0 for value in nu_by_case.values()):
             raise VerificationError("all viscosities must be positive finite")
         mesh_cli, flow_cli = args.mesh_cli.resolve(), args.flow_cli.resolve()
@@ -1842,6 +1954,8 @@ def main() -> int:
                        "--viscous-stress", args.viscous_stress,
                        "--pressure-preconditioner", args.pressure_preconditioner,
                        "--convection", args.convection]
+            if args.outlet_backflow != "reject":
+                command.extend(["--outlet-backflow", args.outlet_backflow])
             if case == "manufactured":
                 command.extend(["--manufactured-pressure-slope",
                                 f"{args.manufactured_pressure_slope:.17g}"])

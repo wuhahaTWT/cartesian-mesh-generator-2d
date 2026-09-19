@@ -28,6 +28,10 @@ using System = detail::SparseSystem2D;
 
 enum class Role { Wall, Inlet, Outlet, Slip, Lid };
 
+double counterflowSpeed(double y, double speed) {
+    return speed * (1 + 2 * std::cos(2 * std::acos(-1.) * y));
+}
+
 struct Boundary {
     std::vector<Role> role;
     Vec u;
@@ -107,7 +111,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                 b.role[id] = Role::Outlet;
                 ++outlets;
             } else {
-                b.role[id] = c.scenario == "external" ? Role::Slip : Role::Wall;
+                b.role[id] = (c.scenario == "external" || c.scenario == "counterflow") ? Role::Slip : Role::Wall;
             }
         }
 
@@ -127,6 +131,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                           ? 4 * c.speed * (f.centre.y - b.ymin) * (b.ymax - f.centre.y) /
                                 (height * height)
                           : c.speed;
+            if (c.scenario == "counterflow") b.u[id] = counterflowSpeed(f.centre.y, c.speed);
             break;
         case Role::Outlet:
             b.fixedP[id] = true;
@@ -139,7 +144,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         }
     }
     b.closed = c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green";
-    if (c.scenario == "manufactured" || c.scenario == "taylor-green")
+    if (c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow")
         ensure(equal(b.xmin,0) && equal(b.ymin,0) && equal(b.xmax,1) && equal(b.ymax,1),
                "Verification flow requires the unit square [0,1]^2");
     if (!b.closed) {
@@ -157,6 +162,18 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                "Channel/cavity requires a filled rectangle without holes");
     }
     return b;
+}
+
+void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
+                          const FlowControls2D& c, const Vec& flux) {
+    if (c.outletBackflow != OutletBackflow2D::NormalInlet) return;
+    for (std::size_t id = 0; id < m.faces.size(); ++id) {
+        if (m.faces[id].neighbour || b.role[id] != Role::Outlet) continue;
+        // Current cases have a right, axis-aligned pressure outlet. Keep its
+        // normal component free; constrain only the incoming tangential one.
+        b.fixedV[id] = b.constantV[id] = flux[id] < 0;
+        b.v[id] = 0;
+    }
 }
 
 using detail::flowGradient;
@@ -234,6 +251,14 @@ void momentum(System& a,
                 a.rhs[i] += d * bc[id] + c.nu * dot(gradField[i], f.correction);
                 a.rhs[i] -= q * bc[id];
             } else {
+                if (q < 0 && b.role[id] == Role::Outlet &&
+                    c.outletBackflow == OutletBackflow2D::NormalInlet) {
+                    // Same zero-gradient normal advective flux q*Uowner,
+                    // lagged in the linear solve to retain a positive diagonal.
+                    // The unrelaxed residual uses the current field exactly.
+                    a.rhs[i] -= q * field[i];
+                    continue;
+                }
                 ensure(q >= -1e-12 * c.speed * std::hypot(f.areaVector.x, f.areaVector.y),
                        "Flow outlet backflow unsupported in this laminar prototype");
                 a.diag[i] += q;
@@ -259,7 +284,7 @@ static FlowResult2D solveFlow(
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
@@ -279,14 +304,16 @@ static FlowResult2D solveFlow(
     ensure(c.viscousStress == ViscousStress2D::Symmetric ||
                c.viscousStress == ViscousStress2D::Laplacian,
            "Invalid viscous stress form");
-    const auto b = boundaries(m, c);
+    ensure(c.outletBackflow == OutletBackflow2D::Reject || c.outletBackflow == OutletBackflow2D::NormalInlet,
+           "Invalid outlet backflow model");
+    auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
     if (previous) {
         ensure(std::isfinite(timeStep) && timeStep>0 && std::isfinite(previous->time) && previous->time>=0 &&
                    std::isfinite(previous->time+timeStep) && previous->time+timeStep>previous->time,
                "Invalid physical time step");
-        ensure(c.scenario!="manufactured", "Transient forced manufactured case not implemented");
+        ensure(c.scenario!="manufactured" && c.scenario!="counterflow", "Transient forced manufactured case not implemented");
         ensure(previous->u.size()==n && previous->v.size()==n && previous->p.size()==n && previous->flux.size()==nf,
                "Transient state size differs from mesh");
         for (const auto* field : {&previous->u,&previous->v,&previous->p,&previous->flux})
@@ -371,6 +398,11 @@ static FlowResult2D solveFlow(
             r.sourceIntegrals.push_back({finite(cell.area*acceleration.x),finite(cell.area*acceleration.y)});
         }
     }
+    if (c.scenario == "counterflow") {
+        const double pi=std::acos(-1.);
+        for (const auto& cell : m.cells)
+            r.sourceIntegrals.push_back({finite(cell.area*8*pi*pi*c.nu*c.speed*std::cos(2*pi*cell.centre.y)),0});
+    }
     Vec zeros(nf);
     Vec ra(n);
     Vec pc(n);
@@ -384,6 +416,7 @@ static FlowResult2D solveFlow(
                           : (c.scenario == "channel"
                                  ? 4 * c.speed * (y - b.ymin) * (b.ymax - y) / (h * h)
                                  : c.speed);
+        if (c.scenario == "counterflow") r.u[i] = counterflowSpeed(y,c.speed);
     }
     for (std::size_t id = 0; id < nf; ++id) {
         const auto& f = m.faces[id];
@@ -398,6 +431,7 @@ static FlowResult2D solveFlow(
     Vec oldFluxDefect(nf);
     if (previous) {
         r.u=previous->u; r.v=previous->v; r.p=previous->p; r.flux=previous->flux;
+        updateOutletBoundary(b,m,c,r.flux);
         r.time=previous->time+timeStep; r.timeStep=timeStep;
         r.previousU=previous->u; r.previousV=previous->v;
         const auto oldGu=flowGradient(m,r.u,b.u,b.fixedU),oldGv=flowGradient(m,r.v,b.v,b.fixedV);
@@ -420,6 +454,7 @@ static FlowResult2D solveFlow(
     }
 
     for (std::size_t it = 1; it <= c.maxIterations; ++it) {
+        updateOutletBoundary(b,m,c,r.flux);
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
@@ -513,6 +548,7 @@ static FlowResult2D solveFlow(
         const double flowScale=b.closed?finite(c.speed*h):finite(inflow);
         ensure(flowScale>0,"Flow has no positive reference throughput");
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
+        updateOutletBoundary(b,m,c,r.flux);
         const auto newGp=flowGradient(m,r.p,zeros,b.fixedP,true),newGu=flowGradient(m,r.u,b.u,b.fixedU),newGv=flowGradient(m,r.v,b.v,b.fixedV);
         const auto newForceGradient=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,r.p,newGp,zeros,b.fixedP));
@@ -556,10 +592,16 @@ static FlowResult2D solveFlow(
     for(std::size_t id=0;id<nf;++id) {
         const auto& f=m.faces[id]; const auto i=f.owner;
         auto& fm=r.faceMomentum[id]; fm.pressure=finite(pf[id]);
+        if (!f.neighbour && b.role[id]==Role::Outlet && r.flux[id]<0) {
+            ++r.outletBackflowFaces;
+            r.outletInflow=finite(r.outletInflow-r.flux[id]);
+        }
         auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
                            const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter) {
+            const bool normalInflow = !f.neighbour && !fixed[id] && b.role[id]==Role::Outlet &&
+                r.flux[id]<0 && c.outletBackflow==OutletBackflow2D::NormalInlet;
             const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
-                : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
+                : normalInflow ? value[i] : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
             double diffusion=0;
             if(f.neighbour || fixed[id]) {
                 const double other=f.neighbour ? value[*f.neighbour] : bc[id];

@@ -66,6 +66,7 @@ int main() {
     controls.manufacturedPressureSlope = -0.75;
     const auto original = state();
     const auto text = serialized(m, controls, original);
+    require(text.find("CARTMESH2D_FLOW_CHECKPOINT 2\n") == 0, "writer did not emit checkpoint v2");
     std::ostringstream fixed;
     fixed << std::fixed << std::setprecision(2);
     writeFlowCheckpoint2D(fixed, m, controls, original);
@@ -85,6 +86,36 @@ int main() {
     const auto restored = readFlowCheckpoint2D(roundtrip, m, relaxed);
     require(restored.time == original.time && restored.u == original.u && restored.v == original.v &&
             restored.p == original.p && restored.flux == original.flux, "checkpoint roundtrip mismatch");
+
+    // Version 1 remains readable and carries the historical reject-default policy.
+    auto legacy = text;
+    const auto header = legacy.find("CARTMESH2D_FLOW_CHECKPOINT 2");
+    require(header != std::string::npos, "missing v2 header");
+    legacy.replace(header, 28, "CARTMESH2D_FLOW_CHECKPOINT 1");
+    const auto configEnd = legacy.find('\n', legacy.find("CONFIG "));
+    require(configEnd != std::string::npos, "missing config line");
+    const auto model = legacy.rfind(" ", configEnd - 1);
+    require(model != std::string::npos, "missing backflow model");
+    legacy.erase(model, configEnd - model);
+    auto legacyControls = controls;
+    legacyControls.outletBackflow = OutletBackflow2D::Reject;
+    std::istringstream legacyInput(legacy);
+    (void)readFlowCheckpoint2D(legacyInput, m, legacyControls);
+    auto legacyNormalMismatch = controls;
+    legacyNormalMismatch.outletBackflow = OutletBackflow2D::NormalInlet;
+    rejects([&] { std::istringstream in(legacy); (void)readFlowCheckpoint2D(in, m, legacyNormalMismatch); });
+    auto normalMismatch = controls;
+    normalMismatch.outletBackflow = OutletBackflow2D::NormalInlet;
+    rejects([&] { std::istringstream in(text); (void)readFlowCheckpoint2D(in, m, normalMismatch); });
+    auto unknownModel = text;
+    const auto modelText = unknownModel.find(" normal-inlet", unknownModel.find("CONFIG "));
+    if (modelText != std::string::npos) unknownModel.replace(modelText + 1, 12, "unknown-model");
+    else {
+        const auto rejectText = unknownModel.find(" reject", unknownModel.find("CONFIG "));
+        require(rejectText != std::string::npos, "missing backflow model token");
+        unknownModel.replace(rejectText + 1, 6, "unknown-model");
+    }
+    rejects([&] { std::istringstream in(unknownModel); (void)readFlowCheckpoint2D(in, m, controls); });
 
     auto incompatible = controls;
     incompatible.nu = .126;

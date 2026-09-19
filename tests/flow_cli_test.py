@@ -192,6 +192,38 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     assert max(abs(float(a['u'])-float(b['u'])) for a,b in zip(field,high_field)) > 1e-3
     run('high-limit', cavity, case='cavity',
         extra=('--convection','limited-linear','--max-iterations','1'), code=2)
+    # A single pressure boundary must retain both incoming and outgoing flux.
+    # Driven parallel counterflow has an analytic solution; do not clip its
+    # negative normal velocity or confuse this with a usual positive inlet.
+    reverse_errors=[]
+    for n in (8,16):
+        reverse_mesh=root/f'counterflow-{n}.solver.cm2d'
+        rectangle(reverse_mesh,n,n,1.)
+        if n==8:
+            run('reverse-rejected',reverse_mesh,case='counterflow',code=1,
+                error_contains='backflow unsupported')
+            run('bad-reverse-mode',reverse_mesh,case='counterflow',
+                extra=('--outlet-backflow','unknown'),code=1)
+        summary,field=run(f'reverse-{n}',reverse_mesh,case='counterflow',
+            extra=('--nu','.1','--outlet-backflow','normal-inlet',
+                   '--convection','limited-linear','--tolerance','1e-8'))
+        assert summary['outletBackflow']=='normal-inlet'
+        face_rows=rows(root/f'reverse-{n}.faces.csv')
+        # On this Cartesian fixture right-boundary owners have x=1-h/2.
+        outlet=[f for f in face_rows if int(f['neighbour'])<0 and
+                float(field[int(f['owner'])]['x'])>1-.51/n and abs(float(f['flux']))>1e-10]
+        incoming=[f for f in outlet if float(f['flux'])<0]
+        assert incoming and any(float(f['flux'])>0 for f in outlet)
+        assert summary['outletBackflowFaces']==len(incoming)
+        assert abs(summary['outletInflow']+sum(float(f['flux']) for f in incoming))<1e-12
+        for face in incoming:
+            cell=field[int(face['owner'])]
+            assert abs(float(face['advectionX'])-float(face['flux'])*float(cell['u']))<1e-12
+            assert float(face['advectionY'])==0 and float(face['pressure'])==0
+        reverse_errors.append(math.sqrt(sum(float(c['area'])*
+            ((float(c['u'])-1-2*math.cos(2*math.pi*float(c['y'])))**2+float(c['v'])**2)
+            for c in field)))
+    assert reverse_errors[1]<reverse_errors[0]/3,reverse_errors
     # Real regression: a 3596-cell generated channel previously exhausted the
     # restarted pressure Krylov solver before its first SIMPLE step.
     outline = root / 'channel.xy'

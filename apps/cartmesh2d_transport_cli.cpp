@@ -36,15 +36,23 @@ fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     // Recover only physical configuration, then run the existing strict full
     // geometry/incidence/state parser from the beginning. No CSV-order guessing.
     std::string line; fv::FlowControls2D c;
-    std::getline(in,line); require(line=="CARTMESH2D_FLOW_CHECKPOINT 1","invalid flow checkpoint header");
+    std::getline(in,line);
+    require(line=="CARTMESH2D_FLOW_CHECKPOINT 1"||line=="CARTMESH2D_FLOW_CHECKPOINT 2","invalid flow checkpoint header");
+    const bool v2=line.ends_with(" 2");
     std::getline(in,line); require(line=="DISCRETIZATION Euler-RC-v2","unsupported flow checkpoint discretization");
     std::getline(in,line); std::istringstream config(line); std::string token,scheme,stress;
-    require(bool(config>>token>>std::quoted(c.scenario)>>c.nu>>c.speed>>scheme>>stress>>c.manufacturedPressureSlope)&&token=="CONFIG",
+    std::string backflow;
+    require(bool(config>>token>>std::quoted(c.scenario)>>c.nu>>c.speed>>scheme>>stress>>c.manufacturedPressureSlope)
+        && (!v2 || bool(config>>backflow)) && token=="CONFIG",
         "invalid flow checkpoint configuration");
     require(scheme=="upwind"||scheme=="limited-linear","invalid carrier convection");
     require(stress=="symmetric"||stress=="laplacian","invalid carrier stress");
     c.convection=scheme=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
     c.viscousStress=stress=="symmetric"?fv::ViscousStress2D::Symmetric:fv::ViscousStress2D::Laplacian;
+    if (v2) {
+        require(backflow=="reject"||backflow=="normal-inlet","invalid carrier outlet backflow model");
+        c.outletBackflow=backflow=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
+    }
     in.clear(); in.seekg(0); return fv::readFlowCheckpoint2D(in,mesh,c);
 }
 std::vector<fv::ScalarBoundary2D> boundaries(const std::string& path,const fv::FvMesh2D& mesh) {
@@ -94,6 +102,7 @@ int main(int argc,char**argv) {
                     "Evolving flow: --evolve-flow external|channel|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
                     "  --flow-convection upwind|limited-linear --pressure-preconditioner ic0|aggregation\n"
+                    "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
                     "Outputs .json .vtk .cells.csv .faces.csv .history.csv; evolving mode adds joint checkpoint.\n";
@@ -114,6 +123,9 @@ int main(int argc,char**argv) {
             } else if(arg=="--flow-convection") {
                 require(value=="upwind"||value=="limited-linear","unknown flow convection");
                 flowControls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+            } else if(arg=="--outlet-backflow") {
+                require(value=="reject"||value=="normal-inlet","unknown outlet backflow model");
+                flowControls.outletBackflow=value=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
             } else if(arg=="--pressure-preconditioner") {
                 require(value=="ic0"||value=="aggregation","unknown pressure preconditioner");
                 flowControls.pressurePreconditioner=value=="ic0"?fv::PressurePreconditioner2D::IncompleteCholesky0:fv::PressurePreconditioner2D::Aggregation;
@@ -282,6 +294,7 @@ int main(int argc,char**argv) {
             <<",\n\"verificationSpeed\":"<<speed<<",\n\"constantSource\":"<<source<<",\n\"initialValue\":"<<initial
             <<",\n\"flowNu\":"<<flowControls.nu<<",\n\"flowSpeed\":"<<flowControls.speed
             <<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
+            <<",\n\"outletBackflow\":"<<quote(flowControls.outletBackflow==fv::OutletBackflow2D::NormalInlet?"normal-inlet":"reject")
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"relativeTolerance\":"<<controls.relativeTolerance<<",\n\"absoluteTolerance\":"<<controls.absoluteTolerance<<",\n\"cellTolerance\":"<<controls.cellTolerance

@@ -28,24 +28,36 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.equal(invocation.executable, 'cartmesh2d_flow_cli');
   assert.equal(invocation.request.convection, 'upwind');
   assert.equal(invocation.request.pressurePreconditioner, 'ic0');
+  assert.equal(invocation.request.outletBackflow, 'reject');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
     '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500',
-    '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--viscous-stress', 'symmetric']);
+    '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
   const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
   assert.equal(limited.request.convection, 'limited-linear');
   const aggregation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, pressurePreconditioner: 'aggregation' });
   assert.equal(aggregation.request.pressurePreconditioner, 'aggregation');
-  assert.deepEqual(aggregation.args.slice(-6), ['--convection', 'upwind', '--pressure-preconditioner', 'aggregation', '--viscous-stress', 'symmetric']);
+  assert.deepEqual(aggregation.args.slice(-8), ['--convection', 'upwind', '--pressure-preconditioner', 'aggregation', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
   assert.equal(limited.request.viscousStress, 'symmetric');
-  assert.deepEqual(limited.args.slice(-6), ['--convection', 'limited-linear', '--pressure-preconditioner', 'ic0', '--viscous-stress', 'symmetric']);
+  assert.deepEqual(limited.args.slice(-8), ['--convection', 'limited-linear', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
   assert.equal(limited.args.at(-1), 'symmetric');
   assert.throws(() => buildFlowInvocation('/tmp/intermediate.cm2d', '/tmp/run', invocation.request), /solver\.cm2d/);
   assert.throws(() => validateFlowRequest({ case: 'rans', nu: 0.01, speed: 1, maxIterations: 10 }), /未知/);
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'central' }), /对流格式/);
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, pressurePreconditioner: 'amg' }), /压力预条件器/);
   assert.throws(() => validateFlowRequest({ case: 'cavity', nu: 0, speed: 1, maxIterations: 10 }), /大于 0/);
+});
+
+test('optional outlet backflow diagnostics validate without inventing legacy values', () => {
+  const accepted = validateFlowOutput({ ...summary, outletBackflowFaces: 2, outletInflow: 0.25 }, fields, 2);
+  assert.equal(accepted.summary.outletBackflowFaces, 2);
+  assert.equal(accepted.summary.outletInflow, 0.25);
+  const legacy = validateFlowOutput(summary, fields, 2);
+  assert.equal(Object.hasOwn(legacy.summary, 'outletBackflowFaces'), false);
+  assert.equal(Object.hasOwn(legacy.summary, 'outletInflow'), false);
+  assert.throws(() => validateFlowOutput({ ...summary, outletBackflowFaces: -1 }, fields, 2), /回流出口面数/);
+  assert.throws(() => validateFlowOutput({ ...summary, outletInflow: -0.1 }, fields, 2), /出口流入量/);
 });
 
 test('progress accepts only complete native flow progress records', () => {

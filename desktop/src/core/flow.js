@@ -34,6 +34,10 @@ const FLOW_PRESSURE_PRECONDITIONERS = Object.freeze({
     description: '试验性聚合多重网格；不保证更快。'
   }
 });
+const FLOW_OUTLET_BACKFLOW_MODES = Object.freeze({
+  reject: { id: 'reject', label: '检测到回流时停止', description: '压力出口保持给定压力；检测到回流时停止。' },
+  'normal-inlet': { id: 'normal-inlet', label: '允许法向回流（试验）', description: '压力出口保持给定压力；回流方向垂直出口，仅适用于当前矩形计算域。' }
+});
 const LEGACY_PRESSURE_PRECONDITIONER = 'legacy-unspecified';
 const PRESSURE_DISCRETIZATION = 'shared-face-gauss';
 const LEGACY_PRESSURE_DISCRETIZATION = 'legacy-unspecified';
@@ -54,6 +58,8 @@ const knownConvection = value => typeof value === 'string'
   && Object.prototype.hasOwnProperty.call(FLOW_CONVECTION_SCHEMES, value);
 const knownPressurePreconditioner = value => typeof value === 'string'
   && Object.prototype.hasOwnProperty.call(FLOW_PRESSURE_PRECONDITIONERS, value);
+const knownOutletBackflow = value => typeof value === 'string'
+  && Object.prototype.hasOwnProperty.call(FLOW_OUTLET_BACKFLOW_MODES, value);
 
 function validateFlowRequest(request = {}) {
   const flowCase = Object.hasOwn(FLOW_CASES, request.case) ? FLOW_CASES[request.case] : null;
@@ -64,6 +70,9 @@ function validateFlowRequest(request = {}) {
     ? 'ic0' : request.pressurePreconditioner;
   if (!knownPressurePreconditioner(pressurePreconditioner))
     throw new Error('未知压力预条件器。请选择 ic0 或 aggregation。');
+  const outletBackflow = request.outletBackflow === undefined ? 'reject' : request.outletBackflow;
+  if (!knownOutletBackflow(outletBackflow))
+    throw new Error('未知出口回流处理。请选择一种已支持的处理方式。');
   const nu = finite(request.nu, '运动黏度');
   const speed = finite(request.speed, '参考速度');
   const maxIterations = finite(request.maxIterations, '最大迭代数');
@@ -78,7 +87,7 @@ function validateFlowRequest(request = {}) {
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, convection,
-    pressurePreconditioner, viscousStress, mode, resume: Boolean(request.resume) };
+    pressurePreconditioner, outletBackflow, viscousStress, mode, resume: Boolean(request.resume) };
   if (mode === 'transient') {
     normalized.dt = finite(request.dt, '时间步长');
     normalized.steps = finite(request.steps, '本次时间步数');
@@ -105,7 +114,7 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
       '--case', validated.case, '--nu', String(validated.nu),
       '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations),
       '--convection', validated.convection, '--pressure-preconditioner', validated.pressurePreconditioner,
-      '--viscous-stress', validated.viscousStress, ...temporalArgs]
+      '--outlet-backflow', validated.outletBackflow, '--viscous-stress', validated.viscousStress, ...temporalArgs]
   };
 }
 
@@ -201,6 +210,9 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     ? LEGACY_PRESSURE_PRECONDITIONER : summary.pressurePreconditioner;
   if (!pressurePreconditionerInferred && !knownPressurePreconditioner(pressurePreconditioner))
     throw new Error('流动摘要压力预条件器无效。');
+  const outletBackflowInferred = summary.outletBackflow === undefined;
+  const outletBackflow = outletBackflowInferred ? 'reject' : summary.outletBackflow;
+  if (!knownOutletBackflow(outletBackflow)) throw new Error('流动摘要出口回流处理无效。');
   const pressureDiscretizationInferred = summary.pressureDiscretization === undefined;
   const pressureDiscretization = pressureDiscretizationInferred
     ? LEGACY_PRESSURE_DISCRETIZATION : summary.pressureDiscretization;
@@ -220,6 +232,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     convectionInferred,
     pressurePreconditioner,
     pressurePreconditionerInferred,
+    outletBackflow,
+    outletBackflowInferred,
     pressureDiscretization,
     pressureDiscretizationInferred,
     viscousStress,
@@ -234,6 +248,15 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     momentumResidual: finite(summary.momentumResidual, 'momentumResidual'),
     tolerance: finite(summary.tolerance, 'tolerance')
   };
+  if (summary.outletBackflowFaces !== undefined) {
+    if (!Number.isSafeInteger(summary.outletBackflowFaces) || summary.outletBackflowFaces < 0)
+      throw new Error('流动摘要回流出口面数无效。');
+    normalizedSummary.outletBackflowFaces = summary.outletBackflowFaces;
+  }
+  if (summary.outletInflow !== undefined) {
+    normalizedSummary.outletInflow = finite(summary.outletInflow, 'outletInflow');
+    if (normalizedSummary.outletInflow < 0) throw new Error('流动摘要出口流入量不能为负。');
+  }
   if (!(normalizedSummary.nu > 0) || !(normalizedSummary.speed > 0))
     throw new Error('流动摘要物性或参考速度无效。');
   if (!(normalizedSummary.tolerance > 0)) throw new Error('流动停止条件无效。');
@@ -293,6 +316,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     if (normalizedSummary.case !== request.case || normalizedSummary.nu !== request.nu
         || normalizedSummary.speed !== request.speed || normalizedSummary.convection !== request.convection
         || normalizedSummary.pressurePreconditioner !== request.pressurePreconditioner
+        || normalizedSummary.outletBackflow !== request.outletBackflow
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }
@@ -326,7 +350,7 @@ async function commitFlowFiles(fileSystem, entries) {
 }
 
 module.exports = {
-  FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, LEGACY_PRESSURE_PRECONDITIONER, FLOW_OUTPUT_SUFFIXES,
+  FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, LEGACY_PRESSURE_PRECONDITIONER, FLOW_OUTPUT_SUFFIXES,
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,

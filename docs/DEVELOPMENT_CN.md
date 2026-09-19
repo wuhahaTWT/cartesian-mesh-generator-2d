@@ -189,7 +189,13 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 真实局部反例保留在 `tests/flow_face_test.cpp::fullRankBoundaryPressureStencil`。可视化命令：`python3 tools/visualization/render_pressure_stencil.py --mesh <mesh.solver.cm2d> --prefix <accepted-flow-prefix> --cell 2251 --time .1 --output <figure.png>`；2251仅是本次固定圆柱的单元ID，其他网格需重新选取。
 
-`--convection upwind|limited-linear` 的默认值为 upwind。限制线性格式保留隐式迎风矩阵，将唯一上游面重构值与迎风单元值之差作为显式共享面修正，owner/neighbour 严格反号；原方程残差也包含该修正。每个速度分量的 cell limiter 使全部实际面中心重构值落在邻居/Dirichlet 边界的局部范围内，黏性梯度不受此 limiter 修改。固定速度边界直接用边界值；自由分量的出流使用单边受限重构，回流仍明确拒绝。这是 **Barth–Jespersen 风格的面值限制**，不是速度场全局最大值原理，也不是任意网格上的完整 Navier–Stokes 二阶证明。光滑指数函数面值细化单独检查重构阶数，实际流动另做基准比较。方法依据参考 [Barth–Jespersen（1989）](https://ntrs.nasa.gov/citations/19890037939)的多维单调线性重构、[OpenFOAM 梯度限制说明](https://doc.openfoam.com/2306/tools/processing/numerics/schemes/gradient/)及 [MOOSE 压力动量项](https://mooseframework.inl.gov/source/fvkernels/INSFVMomentumPressure.html)，实现位于本仓库 `FlowFaceOperators2D.hpp`，没有复制其代码。
+`--outlet-backflow reject|normal-inlet` 默认reject；normal-inlet仅在右侧压力出口实际面通量q<0时激活：p=0不变，法向速度零法向梯度，切向速度固定0；流出仍使用旧零梯度/重构。动量中负q的法向q*Uowner放入显式右端，保持原完整方程与正主对角；最终残差和输出通量使用当前场，不能截掉负通量。每次压力修正后用新通量更新边界掩码，再重算原动量残差。摘要记录 `outletBackflow`、`outletBackflowFaces`、`outletInflow`（正的m²/s流入量）；没有压力出口的封闭算例不受此选项影响。模型形式参考[OpenFOAM pressureInletOutletVelocity](https://api.openfoam.com/2606/classFoam_1_1pressureInletOutletVelocityFvPatchVectorField.html)，实现为本仓库独立代码；不是任意方向/湍流或能量稳定开放边界资格。
+
+新增稳态验证专用 `--case counterflow`：单位方形u=U(1+2cos(2πy))、v=p=0，体积源sx=8π²nuUcos(2πy)；左侧给定有符号速度，右侧压力出口，上下滑移。正负出口通量同时存在，用于测试模型和空间误差；不作为桌面实际物理工况。原external求解不增加该体积源。`verify_native_flow.py --cases counterflow --outlet-backflow normal-inlet` 支持生成及独立审核；`render_outlet_backflow.py --help` 给出真实场/误差图入口。新增原生热输运回归从有符号平行初流启动到通道边界，检查真实回流温度、缺值拒绝和联合续算。
+
+流动checkpoint写v2，CONFIG末尾记录模式，读取v1默认reject；更改模式后续算拒绝。联合热状态外层仍是v1，仅嵌入的FLOW升级v2。桌面、冻结载流CLI及独立读取同时支持旧状态；模式不能只改JSON就绕过原生配置核对。
+
+`--convection upwind|limited-linear` 的默认值为 upwind。限制线性格式保留隐式迎风矩阵，将唯一上游面重构值与迎风单元值之差作为显式共享面修正，owner/neighbour 严格反号；原方程残差也包含该修正。每个速度分量的 cell limiter 使全部实际面中心重构值落在邻居/Dirichlet 边界的局部范围内，黏性梯度不受此 limiter 修改。固定速度边界直接用边界值；自由分量的出流使用单边受限重构；默认拒绝回流，显式normal-inlet按上文处理压力出口的流入。这是 **Barth–Jespersen 风格的面值限制**，不是速度场全局最大值原理，也不是任意网格上的完整 Navier–Stokes 二阶证明。光滑指数函数面值细化单独检查重构阶数，实际流动另做基准比较。方法依据参考 [Barth–Jespersen（1989）](https://ntrs.nasa.gov/citations/19890037939)的多维单调线性重构、[OpenFOAM 梯度限制说明](https://doc.openfoam.com/2306/tools/processing/numerics/schemes/gradient/)及 [MOOSE 压力动量项](https://mooseframework.inl.gov/source/fvkernels/INSFVMomentumPressure.html)，实现位于本仓库 `FlowFaceOperators2D.hpp`，没有复制其代码。
 
 本 CLI 的停止条件是：至少10次迭代，动量残差、相对速度变化、相对压力变化均小于 `--tolerance`（默认1e-6），逐格连续性及全局相对流量失衡均小于1e-8。动量残差是原离散方程失衡除以 `(aP_u+aP_v)*Uref`；逐格连续性为 `|sum(flux)|/(Uref*sqrt(area))`；速度变化以 Uref 归一化，压力变化以 `Uref²+nu*Uref/domainHeight` 归一化。全局失衡除以总入流，封闭腔使用 `Uref*domainHeight`。这些是本实现的数值停止条件，不是所有 CFD 软件的统一精度标准，不能与 OpenFOAM residual 数字直接等同。`converged` 也不等于网格无关或物理模型适用。
 

@@ -4,7 +4,7 @@
 The authoritative restart is a single file with this format:
 ``CARTMESH2D_THERMAL_CHECKPOINT 1`` / ``COUPLING new-time-flux-Euler-v1`` /
 ``THERMAL_CONFIG`` / ``SOURCES`` / ``BOUNDARIES`` / ``SCALAR`` / ``FLOW``;
-the FLOW section embeds the complete ``CARTMESH2D_FLOW_CHECKPOINT 1`` record,
+the FLOW section embeds the complete versioned ``CARTMESH2D_FLOW_CHECKPOINT`` record,
 including geometry, TIME, U/V/P and FLUX.  The file is replaced atomically.
 """
 import argparse

@@ -782,6 +782,10 @@ function flowPressurePreconditionerLabel(summary) {
     ? '多重网格（试验）' : '标准（IC0）');
   return label;
 }
+function flowOutletBackflowLabel(summary) {
+  if (summary.outletBackflow === 'normal-inlet') return '允许法向回流（试验）';
+  return '检测到回流时停止';
+}
 
 function renderFlowResult(summary) {
   const container = $('flowResult');
@@ -801,6 +805,7 @@ function renderFlowResult(summary) {
     ...(summary.temporalDiscretization ? [['时间步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
     ['对流格式', convectionText],
     ['压力求解', pressurePreconditionerText],
+    ['出口回流', flowOutletBackflowLabel(summary)],
     ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
     ['全局不平衡（m²/s）', summary.globalImbalance],
@@ -809,6 +814,10 @@ function renderFlowResult(summary) {
     ['压力变化', summary.pressureChange],
     ['动量残差', summary.momentumResidual]
   ];
+  if (summary.outletBackflowFaces !== undefined)
+    rows.push(['回流出口面数', String(summary.outletBackflowFaces)]);
+  if (summary.outletInflow !== undefined)
+    rows.push(['出口流入量（m²/s）', summary.outletInflow]);
   for (const [label, value] of rows) {
     const item = document.createElement('div');
     const caption = document.createElement('span'); caption.textContent = label;
@@ -828,7 +837,9 @@ function updateFlowMode() {
   $('flowResume').disabled = state.busy || !restart || !transient;
   const resuming = transient && $('flowResume').checked && restart;
   const thermalResuming = $('thermalResume').checked && state.thermalRestart;
-  for (const id of ['flowCase','flowNu','flowSpeed','flowConvection']) $(id).disabled = state.busy || Boolean(resuming || thermalResuming);
+  for (const id of ['flowCase','flowNu','flowSpeed','flowConvection','flowOutletBackflow']) {
+    const element=$(id); if (element) element.disabled = state.busy || Boolean(resuming || thermalResuming);
+  }
   $('flowPressurePreconditioner').disabled = state.busy;
   $('flowRestartInfo').textContent = restart
     ? `可续算：t=${Number(restart.time).toPrecision(6)} s · ${restart.fileName}。启动时原生核对完整网格与状态。`
@@ -842,11 +853,16 @@ function updateFlowMode() {
   updateThermalMode();
 }
 function applySharedFlowControls(request) {
-  const fields = { case:'flowCase', nu:'flowNu', speed:'flowSpeed', convection:'flowConvection' };
-  const changed = Object.entries(fields).some(([key, id]) =>
-    ['nu', 'speed'].includes(key) ? Number($(id).value) !== Number(request[key]) : $(id).value !== request[key]);
+  const fields = { case:'flowCase', nu:'flowNu', speed:'flowSpeed', convection:'flowConvection', outletBackflow:'flowOutletBackflow' };
+  const changed = Object.entries(fields).some(([key, id]) => {
+    const element=$(id); if (!element) return false;
+    const value=key==='outletBackflow' ? (request[key] ?? 'reject') : request[key];
+    return ['nu', 'speed'].includes(key) ? Number(element.value) !== Number(value) : element.value !== value;
+  });
   if (changed) { clearFlowBinding(); clearThermalBinding(); }
-  for (const [key, id] of Object.entries(fields)) $(id).value = request[key];
+  for (const [key, id] of Object.entries(fields)) {
+    const element=$(id); if (element) element.value = key==='outletBackflow' ? (request[key] ?? 'reject') : request[key];
+  }
 }
 function applyRestartControls() {
   const q = state.flowRestart;
@@ -964,6 +980,7 @@ function thermalRequest() {
   }
   return { case:$('flowCase').value, nu:Number($('flowNu').value), speed:Number($('flowSpeed').value),
     convection:$('flowConvection').value, pressurePreconditioner:$('flowPressurePreconditioner').value,
+    outletBackflow:$('flowOutletBackflow').value,
     maxIterations:Number($('flowMaxIterations').value), dt:Number($('flowDt').value), steps:Number($('flowSteps').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
@@ -1046,6 +1063,7 @@ async function runFlow() {
   const request={ case:$('flowCase').value,nu:Number($('flowNu').value),speed:Number($('flowSpeed').value),
     maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
     pressurePreconditioner:$('flowPressurePreconditioner').value,
+    outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),resume:transient && $('flowResume').checked };
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
@@ -1148,6 +1166,7 @@ for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
 }
 $('flowConvection').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('flowPressurePreconditioner').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
+$('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 
 $('displayMode').addEventListener('change', event => {

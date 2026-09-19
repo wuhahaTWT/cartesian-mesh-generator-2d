@@ -8,7 +8,8 @@ const {
   parseThermalProgress,
   thermalBoundaryCsv,
   validateThermalOutput,
-  validateThermalRequest
+  validateThermalRequest,
+  thermalCheckpointTime
 } = require('../src/core/thermal');
 
 const boundaries = {
@@ -18,6 +19,16 @@ const boundaries = {
   top: { kind: 'flux', value: 0, inflowValue: 0 },
   bottom: { kind: 'flux', value: 0, inflowValue: 0 }
 };
+
+test('thermal checkpoint format remains v1 while embedded flow may be v2', () => {
+  const valid = [
+    'CARTMESH2D_THERMAL_CHECKPOINT 1', 'COUPLING new-time-flux-Euler-v1', 'SCALAR 1 0', 'FLOW',
+    'CARTMESH2D_FLOW_CHECKPOINT 2', 'CONFIG "channel" 0.1 1 upwind symmetric 0 normal-inlet',
+    'TIME 0', 'FLUX 1 0', ''
+  ].join('\n');
+  assert.equal(thermalCheckpointTime(valid), 0);
+  assert.throws(() => thermalCheckpointTime(valid.replace('THERMAL_CHECKPOINT 1', 'THERMAL_CHECKPOINT 2')), /续算文件格式/);
+});
 
 function request(overrides = {}) {
   return {
@@ -88,9 +99,12 @@ test('thermal invocation rejects unsafe mesh and restart inputs and emits native
     '--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run', '--boundary', '/tmp/boundary.csv',
     '--evolve-flow', 'channel', '--flow-nu', '0.1', '--flow-speed', '1',
     '--flow-max-iterations', '100', '--flow-convection', 'limited-linear',
-    '--pressure-preconditioner', 'ic0', '--diffusivity', '0.1', '--source', '0',
+    '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--diffusivity', '0.1', '--source', '0',
     '--initial', '0', '--convection', 'upwind', '--dt', '0.05', '--steps', '4'
   ]);
+  const experimental = buildThermalInvocation('/tmp/final.solver.cm2d', '/tmp/run', '/tmp/boundary.csv', request({ outletBackflow: 'normal-inlet' }));
+  assert.ok(experimental.args.includes('--outlet-backflow'));
+  assert.ok(experimental.args.includes('normal-inlet'));
 });
 
 test('accepted thermal progress requires numeric, converged positive-step records', () => {

@@ -54,6 +54,15 @@ test('transient invocation requires dt and steps and puts restart only in backen
   assert.deepEqual(resumed.args.slice(-6), ['--time-step', '0.1', '--steps', '2', '--restart', '/tmp/state.checkpoint']);
 });
 
+test('outlet backflow mode defaults to reject and is propagated to native argv', () => {
+  const fresh = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run', transientRequest);
+  assert.equal(fresh.request.outletBackflow, 'reject');
+  assert.deepEqual(fresh.args.slice(-8), ['--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--time-step', '0.1', '--steps', '2']);
+  assert.throws(() => validateFlowRequest({ ...transientRequest, outletBackflow: 'clip' }), /出口回流/);
+  const experimental = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run', { ...transientRequest, outletBackflow: 'normal-inlet' });
+  assert.ok(experimental.args.includes('normal-inlet'));
+});
+
 test('physical progress events retain accepted time-step information', () => {
   const accepted = parseFlowProgress(JSON.stringify({ type: 'flow-time-step', time: 0.3, step: 1,
     maxCourant: 0.5, kineticEnergy: 0.2, forceX: 2, forceY: -3 }));

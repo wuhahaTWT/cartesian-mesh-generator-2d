@@ -16,7 +16,7 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
-const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, buildFlowInvocation, commitFlowFiles,
+const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
@@ -189,7 +189,8 @@ app.whenReady().then(async () => {
     samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) })),
     flowCases: FLOW_CASES,
     flowConvectionSchemes: FLOW_CONVECTION_SCHEMES,
-    flowPressurePreconditioners: FLOW_PRESSURE_PRECONDITIONERS
+    flowPressurePreconditioners: FLOW_PRESSURE_PRECONDITIONERS,
+    flowOutletBackflowModes: FLOW_OUTLET_BACKFLOW_MODES
   }));
 
   ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
@@ -258,7 +259,7 @@ app.whenReady().then(async () => {
         await fs.copyFile(selectedRestart.path, restartPath);
         const metadata = await readCheckpointMetadata(restartPath);
         startTime = metadata.time;
-        for (const key of ['case', 'nu', 'speed', 'convection'])
+        for (const key of ['case', 'nu', 'speed', 'convection', 'outletBackflow'])
           if (metadata[key] !== (['nu','speed'].includes(key) ? Number(request[key]) : request[key]))
             throw new Error('续算必须保持原工况、物性和对流格式；可调整时间步与步数。');
       } catch (error) {
@@ -754,6 +755,10 @@ async function runSmoke() {
     if (!document.getElementById('sample').disabled || document.getElementById('cancel').hidden)
       throw new Error('Parameters are not locked during generation');
     await pending;
+    if (${JSON.stringify(Boolean(argument('outlet-backflow')))}) {
+      document.getElementById('flowOutletBackflow').value = ${JSON.stringify(argument('outlet-backflow') || 'reject')};
+      document.getElementById('flowOutletBackflow').dispatchEvent(new Event('change'));
+    }
     if (${JSON.stringify(Boolean(argument('flow')))}) {
       document.getElementById('flowCase').value = ${JSON.stringify(argument('flow') || 'external')};
       document.getElementById('flowCase').dispatchEvent(new Event('change'));
@@ -824,6 +829,8 @@ async function runSmoke() {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:'limited-linear',flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();
       if(!smoke.state.thermal || smoke.state.thermal.summary.time!==.1)throw new Error('Thermal result did not reach renderer');
+      if(smoke.state.thermal.summary.outletBackflow!==${JSON.stringify(argument('outlet-backflow') || 'reject')})
+        throw new Error('Thermal outlet mode did not reach the native solver');
       const before=smoke.state.thermal;
       await smoke.runThermal();
       if(!smoke.state.thermal || Math.abs(smoke.state.thermal.summary.time-.2)>1e-12)throw new Error('Thermal resume did not advance');

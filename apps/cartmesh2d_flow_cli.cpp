@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
             if (a == "--help") {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
-            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured\n"
+            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured|counterflow\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
@@ -74,11 +74,12 @@ int main(int argc, char** argv) {
             "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
+            "--outlet-backflow reject|normal-inlet (default reject).\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
-            "No turbulence/compressibility; outlet backflow explicitly unsupported.\n";
+            "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
             }
             if (i + 1 >= argc) {
@@ -116,6 +117,11 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument("convection must be upwind or limited-linear");
                 controls.convection = v == "limited-linear"
                     ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
+            } else if (a == "--outlet-backflow") {
+                if (v != "reject" && v != "normal-inlet")
+                    throw std::invalid_argument("outlet-backflow must be reject or normal-inlet");
+                controls.outletBackflow = v == "normal-inlet"
+                    ? fv::OutletBackflow2D::NormalInlet : fv::OutletBackflow2D::Reject;
             } else if (a == "--pressure-preconditioner") {
                 if (v != "ic0" && v != "jacobi" && v != "aggregation") {
                     throw std::invalid_argument("pressure preconditioner must be ic0, jacobi or aggregation");
@@ -229,7 +235,8 @@ int main(int argc, char** argv) {
 
         auto cells = out(prefix, ".cells.csv");
         cells << "cell,x,y,area,u,v,p,speed";
-        if (controls.scenario == "manufactured") cells << ",sourceX,sourceY,exactU,exactV,exactP";
+        const bool counterflow = controls.scenario == "counterflow";
+        if (controls.scenario == "manufactured" || counterflow) cells << ",sourceX,sourceY,exactU,exactV,exactP";
         if (timeStep>0) cells << ",previousU,previousV,temporalX,temporalY";
         cells << '\n';
         auto fields = out(prefix, ".fields.json");
@@ -244,6 +251,11 @@ int main(int argc, char** argv) {
                 const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu,controls.manufacturedPressureSlope).pressure;
                 cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
                       << ',' << exact.velocity.x << ',' << exact.velocity.y << ',' << exact.pressure-gauge;
+            } else if (counterflow) {
+                const double pi = std::acos(-1.0);
+                const double exactU = controls.speed * (1.0 + 2.0 * std::cos(2.0 * pi * c.centre.y));
+                cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
+                      << ',' << exactU << ',' << 0.0 << ',' << 0.0;
             }
             if (timeStep>0) cells << ',' << r.previousU[i] << ',' << r.previousV[i]
                 << ',' << r.temporalIntegrals[i].x << ',' << r.temporalIntegrals[i].y;
@@ -284,6 +296,7 @@ int main(int argc, char** argv) {
             (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" : "jacobi");
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
+        const bool counterflowCase=controls.scenario == "counterflow";
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
         summary << "{\n";
@@ -295,6 +308,7 @@ int main(int argc, char** argv) {
             << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
                                   << "\"manufacturedPressureSlope\":" << controls.manufacturedPressureSlope << ",\n";
+        if (counterflowCase) summary << "\"counterflowDefinition\":\"u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0\",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
                 << (r.converged ? "converged" : (timeStep>0?"time_step_not_converged":"iteration_limit"))
@@ -318,6 +332,9 @@ int main(int argc, char** argv) {
                 << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear-2ring\""
                 << ",\n\"convection\":\"" << convection << '"'
                 << ",\n\"viscousStress\":\"" << (symmetric?"symmetric":"laplacian") << '\"'
+                << ",\n\"outletBackflow\":\"" << (controls.outletBackflow == fv::OutletBackflow2D::NormalInlet ? "normal-inlet" : "reject") << '\"'
+                << ",\n\"outletBackflowFaces\":" << r.outletBackflowFaces
+                << ",\n\"outletInflow\":" << r.outletInflow
                 << ",\n\"forceDefinition\":\"" << (symmetric?"shared-face-newtonian-traction":"reconstructed-newtonian-traction") << '\"'
                 << ",\n\"reconstructedForceX\":" << r.reconstructedForceX
                 << ",\n\"reconstructedForceY\":" << r.reconstructedForceY

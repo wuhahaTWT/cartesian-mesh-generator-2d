@@ -2,7 +2,7 @@
 
 ## 打开与版本
 
-唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.8。
+唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.9。
 macOS 直接双击根目录 `打开CartMesh2D.command`；Apple Silicon App 在 `desktop/dist/mac-arm64/CartMesh2D.app`，Intel 本机构建在 `desktop/dist/mac/CartMesh2D.app`。
 开发模式：在 `desktop/` 执行 `npm start`。从其他目录调用 `sh desktop/scripts/build-macos.sh` 也可打包。
 不要再打开旧隐藏工作区路径；新旧代码关系见开发导航的历史表。
@@ -72,7 +72,7 @@ GitHub 的 `desktop-platforms` 工作流在三个系统分别编译、打包并�
 
 D=k/(ρcp)，单位m²/s；热源填Q/(ρcp)，单位K/s。指定通量是向外q/(ρcp)，单位K·m/s。初温和定值用K，300K约27℃。默认数值只是演示；物性须按实际材料填写。温度不反馈流动，无浮力、辐射和共轭传热。
 
-**若报出口回流**：当前流动边界不支持这种状态，检查出口位置、计算域与工况；不是把温度回流值填上就能解决。取消后的可续算时间可能比显示场更新，分别看标签。每次独立运行目录中的 `desktop-state.json` 标明 complete/failed/cancelled，失败目录的CSV不代表已完成结果。
+**若报出口回流**：默认设置会停止，先检查出口位置、计算域与工况；需要时选择试验性法向回流，同时填写出口流入温度。单独填写温度不会开启流动回流模式。取消后的可续算时间可能比显示场更新，分别看标签。每次独立运行目录中的 `desktop-state.json` 标明 complete/failed/cancelled，失败目录的CSV不代表已完成结果。
 
 ## 用照片或图片生成网格
 
@@ -141,3 +141,5 @@ D=k/(ρcp)，单位m²/s；热源填Q/(ρcp)，单位K/s。指定通量是向外
 开发时颜色和字体变量集中在 `desktop/src/renderer/theme.css`；画布配色在 `viewport.js` 的 `THEMES` / `RAMP`，布局在 `style.css`。
 
 构建、真实桌面 smoke、独立读取器及 checkMesh 命令统一见 [开发导航](DEVELOPMENT_CN.md)。
+
+压力出口默认“检测到回流时停止”。需要处理出口流入时，可选“允许法向回流（试验）”：流入方向垂直右侧出口，压力保持给定值；仅适用于当前矩形计算域。结果显示真实回流面数及流入量。做温度计算还需提供出口的流入温度。续算会锁定这一物理选项；旧v1流动状态按停止模式读取，新v2显式保存模式。

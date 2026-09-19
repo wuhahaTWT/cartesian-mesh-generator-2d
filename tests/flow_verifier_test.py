@@ -43,6 +43,120 @@ def tiny_mesh() -> verifier.Mesh:
     )
 
 
+class OutletBackflowVerifierTests(unittest.TestCase):
+    def setUp(self):
+        self.mesh = verifier.Mesh(
+            Path("square.solver.cm2d"), ((0., 0.), (1., 0.), (1., 1.), (0., 1.)),
+            tuple(verifier.Edge(i, i, (i+1) % 4, 0, -1, 2) for i in range(4)),
+            (verifier.Cell(0, 1., (0, 1, 2, 3), (0, 1, 2, 3)),), (0,) * 7)
+        self.measured = verifier.measure(self.mesh, 1e-11, 1e-9)
+        self.geo = verifier.face_geometry(self.mesh, self.measured)
+
+    def test_final_flux_sign_controls_incoming_outlet_tangent(self):
+        for q in (-.1, -1e-20, 0., .1):
+            bc = verifier.flow_boundaries(self.mesh, self.measured, "counterflow", 1.,
+                                          "normal-inlet", [0., q, 0., -q])
+            self.assertFalse(bc["fixedU"][1])
+            self.assertTrue(bc["fixedP"][1])
+            self.assertEqual(bc["fixedV"][1], q < 0)
+            self.assertEqual(bc["constantV"][1], q < 0)
+            self.assertEqual(bc["v"][1], 0.)
+            self.assertEqual(bc["u"][3], -1.)  # signed left profile at y=.5
+            self.assertTrue(bc["fixedV"][0])
+
+    def test_reverse_normal_advection_and_tangential_stress(self):
+        bc = verifier.flow_boundaries(self.mesh, self.measured, "external", 1.,
+                                      "normal-inlet", [0., -.1, 0., .1])
+        edge, geo = self.mesh.edges[1], self.geo[1]
+        gu, gv = [(9., 2.)], [(7., 8.)]
+        self.assertEqual(verifier._viscous_face_gradient(self.mesh, self.measured, edge, geo,
+            [-.2], gu, bc["u"], bc["fixedU"], bc["constantU"]), (0., 2.))
+        self.assertEqual(verifier._viscous_face_gradient(self.mesh, self.measured, edge, geo,
+            [.3], gv, bc["v"], bc["fixedV"], bc["constantV"]), (-.6, 0.))
+        for limiter in (None, [1.]):
+            self.assertEqual(verifier._advective_value(self.mesh, self.measured, edge, geo,
+                -.1, [-.2], gu, limiter, bc["fixedU"], bc["u"], normal_inlet=True), -.2)
+            self.assertEqual(verifier._advective_value(self.mesh, self.measured, edge, geo,
+                -.1, [.3], gv, limiter, bc["fixedV"], bc["v"], normal_inlet=True), 0.)
+
+    def test_audit_uses_actual_flux_and_rejects_default_or_unknown_reverse_policy(self):
+        cells = [{"u": -.2, "v": .3, "p": 0.}]
+        records = [dict(flux=q, wall=0., pressure=0., advectionX=0.,
+                        advectionY=0., diffusionX=0., diffusionY=0.)
+                   for q in (0., -.1, 0., .1)]
+        payload = dict(outletBackflow="normal-inlet", convection="limited-linear",
+                       viscousStress="symmetric", momentumResidual=0.,
+                       pressureForceX=0., pressureForceY=0., discreteForceX=0.,
+                       discreteForceY=0., forceX=0., forceY=0.)
+        def audit():
+            return verifier.reconstruct_momentum_audit(self.mesh, self.measured, cells,
+                records, .1, 1., "external", payload)
+        result = audit()
+        self.assertEqual(result["outletBackflowAudit"],
+                         dict(faceCount=1, inwardVolumeFlux=.1, faceIds=[1]))
+        self.assertEqual(result["maxFaceDeviation"]["advectionY"], 0.)
+        payload.update(outletBackflowFaces=1, outletInflow=.1)
+        self.assertEqual(audit()["outletBackflowAudit"], result["outletBackflowAudit"])
+        for key, bad in (("outletBackflowFaces", 0), ("outletInflow", .2)):
+            old = payload[key]
+            payload[key] = bad
+            with self.assertRaisesRegex(verifier.VerificationError, key):
+                audit()
+            payload[key] = old
+        records[1]["advectionY"] = -.03
+        self.assertEqual(audit()["maxFaceDeviation"]["advectionY"], .03)
+        for mode in ("reject", "unknown"):
+            payload["outletBackflow"] = mode
+            with self.assertRaisesRegex(verifier.VerificationError, "backflow|outletBackflow"):
+                audit()
+        self.assertEqual(verifier.outlet_backflow_mode({}), "reject")
+
+    def test_counterflow_exact_source_formula(self):
+        # Values at extrema independently establish sign and amplitude.
+        nu, speed = .2, 3.
+        for y, factor in ((0., 1.), (.5, -1.), (1., 1.)):
+            sample = verifier.counterflow_sample(y, speed, nu)
+            self.assertEqual(sample["u"], speed*(1+2*factor))
+            self.assertEqual(sample["v"], 0.)
+            self.assertEqual(sample["p"], 0.)
+            self.assertAlmostEqual(sample["sourceX"], factor*8*math.pi**2*nu*speed)
+            self.assertEqual(sample["sourceY"], 0.)
+
+    def test_normal_inlet_is_numerically_inert_for_closed_cavity(self):
+        flux = [0.]*4
+        default = verifier.flow_boundaries(self.mesh, self.measured, "cavity", 1.)
+        enabled = verifier.flow_boundaries(self.mesh, self.measured, "cavity", 1., "normal-inlet", flux)
+        self.assertEqual(default, enabled)
+        cells = [{"u": .2, "v": .3, "p": 0.}]
+        records = [dict(flux=0., wall=1., pressure=0., advectionX=0.,
+                        advectionY=0., diffusionX=0., diffusionY=0.) for _ in flux]
+        payload = dict(convection="limited-linear", viscousStress="symmetric", momentumResidual=0.,
+                       pressureForceX=0., pressureForceY=0., discreteForceX=0.,
+                       discreteForceY=0., forceX=0., forceY=0.)
+        results = []
+        for mode in ("reject", "normal-inlet"):
+            payload["outletBackflow"] = mode
+            result = verifier.reconstruct_momentum_audit(self.mesh, self.measured, cells,
+                records, .1, 1., "cavity", payload)
+            result.pop("outletBackflow")
+            results.append(result)
+        self.assertEqual(*results)
+
+    def test_re20_reference_is_not_compared_to_other_reynolds_numbers(self):
+        args = SimpleNamespace(external_lift_drag_ratio=.3, max_speed_ratio=4.)
+        cells = [dict(x=1.1, y=0., u=1., speed=1.)]
+        payload = dict(forceX=1.0225, forceY=0.)
+        for nu, matches in ((.05, True), (.025, False)):
+            result = verifier.external_checks(tiny_mesh(), self.measured, cells, payload, nu, 1., args)
+            reference = result["openCylinderReference"]
+            self.assertEqual(reference["reynoldsMatches"], matches)
+            self.assertFalse(reference["acceptanceGate"])
+            if matches:
+                self.assertEqual(reference["relativeDifference"], 0.)
+            else:
+                self.assertIsNone(reference["relativeDifference"])
+
+
 class PressureBoundaryStencilTests(unittest.TestCase):
     def setUp(self):
         # Gradient-only fixture: wall-adjacent cell 0 has two almost parallel
@@ -735,6 +849,50 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
              "--case", "manufactured", "--nu", ".1", "--speed", "1", "--max-iterations", "10"],
             capture_output=True, text=True, timeout=30)
         self.assertNotEqual(result.returncode, 0)
+
+    def test_counterflow_native_fixture_and_tampering(self):
+        prefix = self.root / "counterflow"
+        completed = subprocess.run(
+            [str(FLOW_CLI), "--mesh", str(self.mesh), "--output", str(prefix),
+             "--case", "counterflow", "--nu", ".1", "--speed", "1",
+             "--convection", "limited-linear", "--outlet-backflow", "normal-inlet",
+             "--max-iterations", "1500"], capture_output=True, text=True, timeout=90)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = verifier.verify_case(self.mesh, prefix, "counterflow", .1, 1., self._args())
+        self.assertTrue(result["valid"], result["issues"])
+        self.assertGreater(result["benchmark"]["outlet"]["incomingFaces"], 0)
+        self.assertGreater(result["benchmark"]["outlet"]["outgoingFaces"], 0)
+        for suffix, column in ((".cells.csv", "sourceX"), (".cells.csv", "exactU"),
+                               (".faces.csv", "advectionY"), (".faces.csv", "flux")):
+            with self.subTest(column=column), tempfile.TemporaryDirectory() as folder:
+                copied = Path(folder) / "counterflow"
+                for ending in (".cells.csv", ".faces.csv", ".json", ".residuals.csv"):
+                    shutil.copyfile(Path(str(prefix)+ending), Path(str(copied)+ending))
+                path = Path(str(copied)+suffix)
+                with path.open(newline="") as stream:
+                    rows = list(csv.DictReader(stream))
+                idx = (result["momentumAudit"]["outletBackflowAudit"]["faceIds"][0]
+                       if suffix == ".faces.csv" else 0)
+                rows[idx][column] = str(float(rows[idx][column]) + .01)
+                with path.open("w", newline="") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=rows[0].keys())
+                    writer.writeheader(); writer.writerows(rows)
+                tampered = verifier.verify_case(self.mesh, copied, "counterflow", .1, 1., self._args())
+                self.assertFalse(tampered["valid"])
+        path = Path(str(prefix)+".json")
+        payload = json.loads(path.read_text())
+        for mode in ("reject", None, "unknown"):
+            with self.subTest(mode=mode):
+                if mode is None:
+                    payload.pop("outletBackflow", None)
+                else:
+                    payload["outletBackflow"] = mode
+                path.write_text(json.dumps(payload))
+                if mode == "unknown":
+                    with self.assertRaisesRegex(verifier.VerificationError, "outletBackflow"):
+                        verifier.verify_case(self.mesh, prefix, "counterflow", .1, 1., self._args())
+                else:
+                    self.assertFalse(verifier.verify_case(self.mesh, prefix, "counterflow", .1, 1., self._args())["valid"])
 
 
 if __name__ == "__main__":

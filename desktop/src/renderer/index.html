@@ -229,6 +229,13 @@
         </select>
       </label>
       <p class="note">大网格可尝试；内存占用可能增加。</p>
+      <label class="field">出口回流
+        <select id="flowOutletBackflow">
+          <option value="reject" selected>检测到回流时停止</option>
+          <option value="normal-inlet">允许法向回流（试验）</option>
+        </select>
+      </label>
+      <p class="note">压力出口保持给定压力；回流方向垂直出口，仅适用于当前矩形计算域。</p>
       <label class="field"><span id="flowIterationLabel">最大 SIMPLE 迭代</span>
         <input id="flowMaxIterations" type="number" min="1" max="100000" step="1" value="1500">
       </label>
@@ -270,7 +277,7 @@
       </details>
       <label class="toggle"><input id="thermalResume" type="checkbox" disabled>从联合状态继续</label>
       <button id="pickThermalCheckpoint" class="wide">载入联合状态…</button>
-      <p class="note">外流物面用“物面”；矩形内流按四边设置。温度的流入值不代表流动支持出口回流。</p>
+      <p class="note">外流物面用“物面”；矩形内流按四边设置。允许出口回流时，还需设置出口的流入温度。</p>
       <p class="note" id="thermalRestartInfo">每个流动与温度均收敛的时间步保存联合状态；取消后可续算。</p>
       <p class="note" id="thermalTimeHint"></p>
       <button id="runThermal" class="wide" disabled>启动温度与流动推进</button>

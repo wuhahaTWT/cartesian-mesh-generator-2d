@@ -39,8 +39,18 @@ test('reads native checkpoint metadata without loading state vectors', async () 
   const result = await withFile(SERIALIZED, readCheckpointMetadata);
   assert.deepEqual(result, {
     case: 'channel', nu: 0.01, speed: 1, convection: 'limited-linear',
-    viscousStress: 'symmetric', time: 0.125, fileName: 'restart.flow'
+    viscousStress: 'symmetric', outletBackflow: 'reject', time: 0.125, fileName: 'restart.flow'
   });
+});
+
+test('reads v2 outlet backflow mode and preserves legacy v1 default', async () => {
+  const v2 = SERIALIZED.replace('CARTMESH2D_FLOW_CHECKPOINT 1', 'CARTMESH2D_FLOW_CHECKPOINT 2')
+    .replace('symmetric 0', 'symmetric 0 normal-inlet');
+  const result = await withFile(v2, readCheckpointMetadata);
+  assert.equal(result.outletBackflow, 'normal-inlet');
+  await assert.rejects(withFile(v2.replace(' symmetric 0 normal-inlet', ' symmetric 0'), readCheckpointMetadata), /Invalid flow checkpoint metadata/);
+  await assert.rejects(withFile(v2.replace('normal-inlet', 'unsupported'), readCheckpointMetadata), /Invalid flow checkpoint metadata/);
+  await assert.rejects(withFile(SERIALIZED.replace('symmetric 0', 'symmetric 0 normal-inlet'), readCheckpointMetadata), /Invalid flow checkpoint metadata/);
 });
 
 test('accepts supported external and cavity configurations', async () => {
