@@ -2,6 +2,7 @@
 """Focused negative tests for the independent native-flow momentum audit."""
 
 import csv
+import decimal
 import json
 import math
 import os
@@ -40,6 +41,71 @@ def tiny_mesh() -> verifier.Mesh:
         (verifier.Cell(0, 1.0, (0, 1, 2), (0,)),),
         (0, 0, 0, 0, 0, 0, 0),
     )
+
+
+class PressureBoundaryStencilTests(unittest.TestCase):
+    def setUp(self):
+        # Gradient-only fixture: wall-adjacent cell 0 has two almost parallel
+        # interior neighbour directions. Their shared second ring spans y.
+        centres = ((0., 0.), (-1., .01), (-2., -.01), (-1., 1.), (-1., -1.))
+        pairs = ((0, -1), (0, 1), (0, 2), (1, 3), (1, 4), (2, 3), (2, 4))
+        edges = tuple(verifier.Edge(i, 0, 1, owner, other, int(other < 0))
+                      for i, (owner, other) in enumerate(pairs))
+        cells = tuple(verifier.Cell(i, 1., (), tuple(e.id for e in edges
+                       if e.owner == i or e.neighbour == i)) for i in range(5))
+        self.mesh = verifier.Mesh(Path('pressure-stencil.cm2d'), (), edges, cells, (0,) * 7)
+        self.measured = verifier.Measurement((1.,)*5, centres, (-2., -1., 0., 1.), 5., 1., ())
+        self.geo = [verifier.FaceGeometry((0., .5), (0., 1.), (0., 0.), 1., .5)
+                    for _ in edges]
+        self.fixed = [False] * len(edges)
+        self.bc = [0.] * len(edges)
+        self.values = [2. + 3.*x - 4.*y for x, y in centres]
+
+    def gradients(self, values=None, skip=True, fixed=None, second_ring=True):
+        return verifier.reconstruct_gradient(self.mesh, self.measured, self.geo,
+            self.values if values is None else values, self.bc,
+            self.fixed if fixed is None else fixed, skip_unknown_boundary=skip,
+            boundary_second_ring=second_ring)
+
+    def test_affine_pressure_survives_nearly_collinear_boundary_stencil(self):
+        for gx, gy in self.gradients():
+            self.assertAlmostEqual(gx, 3., places=11)
+            self.assertAlmostEqual(gy, -4., places=11)
+
+    def test_second_ring_reduces_boundary_noise_amplification(self):
+        values = self.values.copy()
+        values[1] += 1e-4
+        values[2] -= 1e-4
+        gx, gy = self.gradients(values)[0]
+        self.assertLess(math.hypot(gx - 3., gy + 4.), 1e-4)
+        # Two direct samples alone solve -gx+.01gy=delta1 and
+        # -2gx-.01gy=delta2, amplifying this noise into a .01 y error.
+        d1, d2 = values[1] - values[0], values[2] - values[0]
+        direct_gy = (2.*d1 - d2)/.03
+        direct_gx = .01*direct_gy - d1
+        direct_error = math.hypot(direct_gx - 3., direct_gy + 4.)
+        self.assertGreater(direct_error, .009)
+        self.assertLess(math.hypot(gx - 3., gy + 4.), direct_error/100.)
+        old_gx, old_gy = self.gradients(values, second_ring=False)[0]
+        self.assertAlmostEqual(old_gx, direct_gx, places=10)
+        self.assertAlmostEqual(old_gy, direct_gy, places=10)
+
+    def test_second_ring_is_used_only_when_pressure_boundary_is_omitted(self):
+        changed = self.values.copy()
+        changed[3] += 1.
+        self.assertNotEqual(self.gradients(changed)[0], self.gradients()[0])
+        # Velocity / legacy zero-normal reconstruction keeps the direct ring.
+        self.assertEqual(self.gradients(changed, skip=False)[0],
+                         self.gradients(skip=False)[0])
+        # Prescribed pressure retains its boundary sample and direct ring.
+        fixed = self.fixed.copy()
+        fixed[0] = True
+        self.assertEqual(self.gradients(changed, fixed=fixed)[0],
+                         self.gradients(fixed=fixed)[0])
+        # Interior full-rank cell 1 must not sample second-ring cell 2.
+        changed = self.values.copy()
+        changed[2] += 1.
+        self.assertEqual(self.gradients(changed)[1], self.gradients()[1])
 
 
 class CavitySamplingTests(unittest.TestCase):
@@ -115,6 +181,54 @@ class CavitySamplingTests(unittest.TestCase):
         result = verifier.sequence_checks(cases)
         self.assertFalse(result["valid"])
         self.assertTrue(any("sampling" in issue for issue in result["issues"]))
+
+
+class PolygonMeasurementTests(unittest.TestCase):
+    @staticmethod
+    def high_precision(points):
+        # Reference uses the global-coordinate formula in 80-digit arithmetic
+        # on the exact binary input values, not native/exported cell metadata.
+        with decimal.localcontext() as context:
+            context.prec = 80
+            points = [tuple(decimal.Decimal.from_float(x) for x in p) for p in points]
+            pairs = list(zip(points, points[1:] + points[:1]))
+            cross = [x*v-u*y for ((x, y), (u, v)) in pairs]
+            twice = sum(cross)
+            centre = tuple(float(sum((a[k]+b[k])*c for (a, b), c in zip(pairs, cross))
+                                 / (3*twice)) for k in (0, 1))
+            return float(twice/2), centre
+
+    def assert_precise(self, points):
+        area, centre = verifier.polygon(points)
+        expected_area, expected_centre = self.high_precision(points)
+        self.assertLessEqual(abs(area-expected_area), 4*math.ulp(expected_area))
+        for actual, expected in zip(centre, expected_centre):
+            self.assertLessEqual(abs(actual-expected), 4*math.ulp(expected))
+
+    def test_translated_small_polygons_match_high_precision(self):
+        for shape in (((0., 0.), (1., 0.), (.75, 1.), (0., .8)),
+                      ((0., 0.), (1., 0.), (1., .2), (.2, .2), (.2, 1.), (0., 1.))):
+            for size, offset in ((1., (0., 0.)), (1e-6, (.6, -.8)),
+                                 (1e-4, (1e6, -1e6)), (1e3, (-1e9, 2e9))):
+                with self.subTest(shape=shape, size=size, offset=offset):
+                    self.assert_precise([(offset[0]+size*x, offset[1]+size*y) for x, y in shape])
+
+    def test_actual_small_cutcell_rejects_global_origin_cancellation(self):
+        points = [(0.6325000000000001, -0.81375),
+                  (0.6325000000000001, -0.7957824995171311),
+                  (0.62557023302, -0.801469612303)]
+        self.assert_precise(points)
+        pairs = list(zip(points, points[1:]+points[:1]))
+        cross = [a[0]*b[1]-b[0]*a[1] for a, b in pairs]
+        old_area = .5*math.fsum(cross)
+        exact_area, _ = self.high_precision(points)
+        self.assertGreater(abs(old_area-exact_area), 100*math.ulp(exact_area))
+
+    def test_invalid_polygons_still_fail(self):
+        for points in ([], [(1., 1.)], [(0., 0.), (1., 0.), (2., 0.)],
+                       [(0., 0.), (0., 1.), (1., 0.)]):
+            with self.assertRaises(verifier.VerificationError):
+                verifier.polygon(points)
 
 
 class Cm2dReaderTests(unittest.TestCase):
@@ -450,7 +564,7 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
         self.assertLess(result["benchmark"]["exactColumnMaxAbsolute"]["exactU"], 1e-10)
         self.assertGreater(result["benchmark"]["velocityL2Relative"], 0.0)
         self.assertEqual(result["benchmark"]["pressureSlope"], 0.0)
-        self.assertIn(result["pressureBoundaryReconstruction"], ("zero-normal", "one-sided-linear"))
+        self.assertIn(result["pressureBoundaryReconstruction"], ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"))
         self.assertTrue(result["momentumAudit"]["valid"])
 
     def test_nonzero_pressure_slope_fixture(self):
@@ -487,7 +601,7 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
                 shutil.copyfile(Path(str(self.slope_prefix) + suffix), Path(str(prefix) + suffix))
             summary = Path(str(prefix) + ".json")
             payload = json.loads(summary.read_text())
-            self.assertIn(payload.get("pressureBoundaryReconstruction"), ("zero-normal", "one-sided-linear"))
+            self.assertIn(payload.get("pressureBoundaryReconstruction"), ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"))
             payload["pressureBoundaryReconstruction"] = "unknown-mode"
             summary.write_text(json.dumps(payload), encoding="utf-8")
             args = self._args()

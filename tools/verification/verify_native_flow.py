@@ -241,13 +241,21 @@ def read_cm2d(path: Path) -> Mesh:
 
 
 def polygon(points: list[tuple[float, float]]) -> tuple[float, tuple[float, float]]:
-    pairs = list(zip(points, points[1:] + points[:1]))
+    if not points:
+        raise VerificationError("cell polygon is not finite counter-clockwise positive area")
+    # Translate before cross products: small Cut-cells far from the global
+    # origin otherwise subtract nearly equal products, corrupting their area
+    # and centroid even when the final sums use fsum. This remains a direct
+    # measurement of actual vertices, independent of exported cell geometry.
+    ox, oy = points[0]
+    local = [(x - ox, y - oy) for x, y in points]
+    pairs = list(zip(local, local[1:] + local[:1]))
     cross = [a[0] * b[1] - b[0] * a[1] for a, b in pairs]
     twice = math.fsum(cross)
     if not math.isfinite(twice) or twice <= 0.0:
         raise VerificationError("cell polygon is not finite counter-clockwise positive area")
-    cx = math.fsum((a[0] + b[0]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
-    cy = math.fsum((a[1] + b[1]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
+    cx = ox + math.fsum((a[0] + b[0]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
+    cy = oy + math.fsum((a[1] + b[1]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
     return 0.5 * twice, (cx, cy)
 
 
@@ -599,10 +607,12 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float) 
 
 def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[FaceGeometry],
                          values: list[float], boundary: list[float], fixed: list[bool],
-                         skip_unknown_boundary: bool = False) -> list[tuple[float, float]]:
+                         skip_unknown_boundary: bool = False,
+                         boundary_second_ring: bool = True) -> list[tuple[float, float]]:
     result: list[tuple[float, float]] = []
     for cell in mesh.cells:
         xx = xy = yy = bx = by = 0.0
+        omitted_boundary = False
         ci = measured.centroids[cell.id]
         for edge_id in cell.edges:
             edge = mesh.edges[edge_id]
@@ -610,6 +620,7 @@ def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[Fac
                 # One-sided pressure reconstruction uses only neighbouring
                 # cell values; an unknown pressure boundary contributes no
                 # artificial zero-normal row to the least-squares stencil.
+                omitted_boundary = True
                 continue
             if edge.neighbour >= 0:
                 other = edge.neighbour
@@ -642,9 +653,10 @@ def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[Fac
         if skip_unknown_boundary:
             determinant = xx * yy - xy * xy
             rank_limit = 64.0 * 2.220446049250313e-16 * (xx + yy) * (xx + yy)
-            if not determinant > rank_limit:
+            if (boundary_second_ring and omitted_boundary) or not determinant > rank_limit:
                 # Match the native pressure operator's deterministic two-ring
-                # fallback: collect sorted unique direct neighbours, then
+                # boundary stencil (also used for rank-deficient tips):
+                # collect sorted unique direct neighbours, then
                 # sorted unique neighbours of those cells, excluding the
                 # owner and the direct ring. Unknown boundary rows remain
                 # absent; only real cell values extend the LS stencil.
@@ -826,7 +838,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     gu = reconstruct_gradient(mesh, measured, geometries, u, boundaries["u"], boundaries["fixedU"])
     gv = reconstruct_gradient(mesh, measured, geometries, v, boundaries["v"], boundaries["fixedV"])
     gp = reconstruct_gradient(mesh, measured, geometries, p, boundaries["p"], boundaries["fixedP"],
-                             skip_unknown_boundary=(pressure_boundary_reconstruction == "one-sided-linear"))
+                             skip_unknown_boundary=pressure_boundary_reconstruction in ("one-sided-linear", "one-sided-linear-2ring"),
+                             boundary_second_ring=(pressure_boundary_reconstruction == "one-sided-linear-2ring"))
     pressure_faces: list[float] = []
     for edge, geom in zip(mesh.edges, geometries):
         i = edge.owner
@@ -1533,7 +1546,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     if not benchmark.get("valid"):
         issues.append(f"{case} benchmark checks failed")
     pressure_boundary_reconstruction = payload.get("pressureBoundaryReconstruction", "zero-normal")
-    if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear"):
+    if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"):
         issues.append(f"native pressureBoundaryReconstruction is unsupported: {pressure_boundary_reconstruction!r}")
     if face_momentum_available and summary_momentum_available:
         try:
@@ -1541,7 +1554,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
                 mesh, measured, cells, face_records, nu, speed, case, payload,
                 manufactured_pressure_slope, pressure_boundary_reconstruction
             )
-            if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear"):
+            if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"):
                 momentum_audit["valid"] = False
                 momentum_audit.setdefault("issues", []).append(
                     "unsupported pressureBoundaryReconstruction metadata")

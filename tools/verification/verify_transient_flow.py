@@ -113,7 +113,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     for field in ("nu", "speed", "tolerance"):
         if native.finite(summary.get(field), f"summary {field}") <= 0:
             fail(f"summary {field} must be positive")
-    if summary.get("pressureDiscretization") != "shared-face-gauss" or summary.get("pressureBoundaryReconstruction") != "one-sided-linear":
+    if summary.get("pressureDiscretization") != "shared-face-gauss" or summary.get("pressureBoundaryReconstruction") not in ("one-sided-linear", "one-sided-linear-2ring"):
         fail("unsupported transient pressure scheme")
     if summary.get("viscousStress") not in ("symmetric", "laplacian"):
         fail("unsupported viscous stress")

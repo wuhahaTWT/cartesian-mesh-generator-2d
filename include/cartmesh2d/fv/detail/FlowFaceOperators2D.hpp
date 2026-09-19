@@ -80,6 +80,7 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
         double yy = 0;
         double bx = 0;
         double by = 0;
+        bool omittedBoundary=false;
         for (auto id : m.cells[i].faces) {
             const auto& f = m.faces[id];
             const auto j =
@@ -93,7 +94,7 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                 value = ((j ? u[*j] : bc[id]) - u[i]) / length;
                 d = d * (1 / length);
             } else {
-                if (extrapolateUnknown) continue;
+                if (extrapolateUnknown) {omittedBoundary=true;continue;}
                 d = f.areaVector;
                 const double length = std::hypot(d.x, d.y);
                 d = d * (1 / length);
@@ -108,10 +109,12 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
             return xx * yy - xy * xy > 64 * std::numeric_limits<double>::epsilon() *
                                                (xx + yy) * (xx + yy);
         };
-        if (extrapolateUnknown && !fullRank()) {
-            // A boundary tip can have only one face-neighbour. Extend through
-            // that neighbour before rejecting a genuinely under-resolved mesh.
-            // Unknown wall values must not be replaced by invented zero slopes.
+        if (extrapolateUnknown && (omittedBoundary || !fullRank())) {
+            // Omitting an unknown wall value can leave a formally full-rank
+            // but nearly collinear two-neighbour pressure stencil. Include the
+            // complete second ring for these boundary cells, not just rank-
+            // deficient tips. Every row remains a real cell sample; affine
+            // consistency is retained without inventing wall pressure slopes.
             std::vector<std::size_t> adjacent, extended;
             for (auto id : m.cells[i].faces) {
                 const auto& f = m.faces[id];

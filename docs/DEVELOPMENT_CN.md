@@ -185,7 +185,9 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按内部压力的最小二乘梯度外推，重构时不对未知壁面压力强加零法向梯度。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。
 
-压力梯度先使用直接邻居和已知压力边界；若边界尖角只有一个直接邻居而无法恢复二维梯度，加入排序去重的第二圈真实单元，仍秩不足则明确失败。速度的滑移/出流零法向约束保持原定义。压力修正的固定速度边界仍不允许修正面体积通量，不能把“压力值线性外推”和“给压力泊松方程增加边界通量”混为一谈。该区别可参阅 [MOOSE 压力外推边界说明](https://mooseframework.inl.gov/source/linearfvbcs/LinearFVExtrapolatedPressureBC.html)；本仓库使用自行实现的最小二乘重构，没有复制其代码。摘要 `pressureBoundaryReconstruction=one-sided-linear` 标识本方案；旧文件缺字段时独立验证器按旧零法向重构审核，未知标记拒绝。
+压力梯度先使用直接邻居和已知压力边界；忽略未知压力边界的单元统一加入排序去重的第二圈真实单元，即使直接取样形式上满秩也如此。默认圆柱反例中两个近共线直接邻居的条件数约565，加入第二圈后约8.20。没有未知边界但秩不足的尖角仍尝试第二圈，最终秩不足则明确失败。速度的滑移/出流零法向约束保持原定义。压力修正的固定速度边界仍不允许修正面体积通量，不能把“压力值线性外推”和“给压力泊松方程增加边界通量”混为一谈。该区别可参阅 [MOOSE 压力外推边界说明](https://mooseframework.inl.gov/source/linearfvbcs/LinearFVExtrapolatedPressureBC.html)；本仓库使用自行实现的最小二乘重构，没有复制其代码。新摘要 `pressureBoundaryReconstruction=one-sided-linear-2ring` 标识本方案；独立验证器按旧 `one-sided-linear` 标记保留仅秩不足时扩展的算法，缺字段按旧零法向重构审核，未知标记拒绝。独立多边形测量改为相对局部顶点的面积/质心计算，并与80位Decimal参考对照，避免微小切割单元的全局坐标抵消；原收敛阈值不变。
+
+真实局部反例保留在 `tests/flow_face_test.cpp::fullRankBoundaryPressureStencil`。可视化命令：`python3 tools/visualization/render_pressure_stencil.py --mesh <mesh.solver.cm2d> --prefix <accepted-flow-prefix> --cell 2251 --time .1 --output <figure.png>`；2251仅是本次固定圆柱的单元ID，其他网格需重新选取。
 
 `--convection upwind|limited-linear` 的默认值为 upwind。限制线性格式保留隐式迎风矩阵，将唯一上游面重构值与迎风单元值之差作为显式共享面修正，owner/neighbour 严格反号；原方程残差也包含该修正。每个速度分量的 cell limiter 使全部实际面中心重构值落在邻居/Dirichlet 边界的局部范围内，黏性梯度不受此 limiter 修改。固定速度边界直接用边界值；自由分量的出流使用单边受限重构，回流仍明确拒绝。这是 **Barth–Jespersen 风格的面值限制**，不是速度场全局最大值原理，也不是任意网格上的完整 Navier–Stokes 二阶证明。光滑指数函数面值细化单独检查重构阶数，实际流动另做基准比较。方法依据参考 [Barth–Jespersen（1989）](https://ntrs.nasa.gov/citations/19890037939)的多维单调线性重构、[OpenFOAM 梯度限制说明](https://doc.openfoam.com/2306/tools/processing/numerics/schemes/gradient/)及 [MOOSE 压力动量项](https://mooseframework.inl.gov/source/fvkernels/INSFVMomentumPressure.html)，实现位于本仓库 `FlowFaceOperators2D.hpp`，没有复制其代码。
 

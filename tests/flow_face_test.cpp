@@ -267,6 +267,31 @@ void triangularTipUsesSecondRing() {
     }
 }
 
+// Actual boundary patch around cell 2251 from the compact shifted-circle
+// failure. Only two nearly collinear direct pressure neighbours (condition 565).
+void fullRankBoundaryPressureStencil() {
+    const auto mesh=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{-0.48557023302000002, -0.80146961230299996}, {-0.49249999999999994, -0.7957824995171312}, {-0.49249999999999994, -0.81374999999999997}}},
+        {{{-0.49249999999999994, -0.81374999999999997}, {-0.49249999999999994, -0.7957824995171312}, {-0.52374999999999994, -0.77013628730374439}, {-0.52374999999999994, -0.78249999999999997}}},
+        {{{-0.52374999999999994, -0.78249999999999997}, {-0.52374999999999994, -0.81374999999999997}, {-0.49249999999999994, -0.81374999999999997}}},
+        {{{-0.49249999999999994, -0.84499999999999997}, {-0.46124999999999994, -0.84499999999999997}, {-0.46124999999999994, -0.81446904768096717}, {-0.46259524359290649, -0.81374999999999997}, {-0.49249999999999994, -0.81374999999999997}}},
+        {{{-0.49249999999999994, -0.81374999999999997}, {-0.46259524359290649, -0.81374999999999997}, {-0.48557023302000002, -0.80146961230299996}}},
+        {{{-0.52374999999999994, -0.78249999999999997}, {-0.52374999999999994, -0.77013628730374439}, {-0.55499999999999994, -0.74449007509035747}, {-0.55499999999999994, -0.75124999999999997}}}
+    }));
+    std::vector<double> bc(mesh.faces.size(),0);
+    std::vector<bool> unknown(mesh.faces.size(),false);
+    auto pressure=cellValues(mesh,linear);
+    const auto exactGradient=flowGradient(mesh,pressure,bc,unknown,true);
+    near(exactGradient[0].x,linearGradient().x,1e-10,"full-rank boundary patch retains affine x");
+    near(exactGradient[0].y,linearGradient().y,1e-10,"full-rank boundary patch retains affine y");
+    // A one-micro-unit pressure perturbation on one direct sample previously
+    // amplified to O(1e-3) gradient noise. Real second-ring samples bound it.
+    pressure[1]+=1e-6;
+    const auto perturbed=flowGradient(mesh,pressure,bc,unknown,true);
+    check(std::hypot(perturbed[0].x-exactGradient[0].x,perturbed[0].y-exactGradient[0].y)<1e-4,
+          "boundary pressure reconstruction resists near-collinear sample amplification");
+}
+
 void checkerboardPressureKeepsDirectDifference(const FvMesh2D& mesh) {
     check(mesh.cells.size() == 2, "checkerboard fixture has two cells");
     const std::vector<double> pressure{1.0, -1.0};
@@ -559,6 +584,7 @@ int main() {
         splitFacesAreBothUsed(split);
 
         triangularTipUsesSecondRing();
+        fullRankBoundaryPressureStencil();
 
         checkerboardPressureKeepsDirectDifference(rectangularMesh(2, 1));
         limiterAndUpwindSelection();
