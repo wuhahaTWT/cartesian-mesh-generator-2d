@@ -12,6 +12,7 @@ enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation };
 enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
+enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 
 struct FlowControls2D {
     std::string scenario = "external";
@@ -33,6 +34,14 @@ struct FlowControls2D {
     // Empty uses nu. Positive finite values; no implicit material averaging.
     std::vector<double> faceViscosity;
     double manufacturedViscositySlope = 0; // verification only: nu(x)=nu*(1+slope*x)
+    // Experimental steady flat-plate case: left uniform inlet, right p=0,
+    // bottom symmetry upstream of this x and no-slip downstream. Top defaults
+    // to p=0 with free normal velocity, freestream tangential velocity on inflow
+    // and zero-gradient velocity on outflow; symmetry is an explicit alternative.
+    // Leading edge must coincide with a bottom face endpoint, never bisect a face.
+    // Other scenarios require zero. Not yet supported by transient/checkpoint APIs.
+    double flatPlateLeadingEdge = 0;
+    FlatPlateTop2D flatPlateTop = FlatPlateTop2D::PressureFarfield;
 };
 
 // Accepted state at a physical time, including the conservative face flux.

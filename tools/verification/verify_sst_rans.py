@@ -98,12 +98,18 @@ def read_artifacts(mesh_path, prefix):
     req(all(x in ffields for x in required_f), "incomplete SST-RANS face schema")
     req(all(x in hfields for x in required_h), "incomplete SST-RANS history schema")
     req(len(crows) == len(mesh.cells) and len(frows) == len(mesh.edges), "field row count mismatch")
-    req(meta.get("case") == "channel" and meta.get("model") == "SST-2003m" and
+    req(meta.get("case") in ("channel", "flatplate") and meta.get("model") == "SST-2003m" and
         meta.get("scope") == "coupled-steady-SST-2003m" and meta.get("converged") is True,
         "invalid SST-RANS metadata")
     req(meta.get("nu") == .001 and meta.get("speed") == 1 and meta.get("inletK") == .001 and
         meta.get("inletOmega") == 2 and meta.get("tolerance") == 1e-7,
         "changed SST-RANS physical configuration")
+    if meta['case']=='flatplate':
+        req(meta.get('flatPlateLeadingEdge')==.5 and
+            meta.get('flatPlateTop') in ('pressure-farfield','symmetry'), 'changed flat plate probe configuration')
+    else:
+        req(meta.get('flatPlateLeadingEdge',0)==0 and
+            meta.get('flatPlateTop','pressure-farfield')=='pressure-farfield', 'flat plate controls on channel')
     req(meta.get("cells") == len(mesh.cells) and meta.get("scalarRelativeTolerance") == 1e-9 and
         meta.get("scalarAbsoluteTolerance") == 1e-12 and meta.get("scalarCellTolerance") == 1e-9,
         "changed SST-RANS counts or scalar tolerances")
@@ -133,10 +139,18 @@ def audit(mesh_path, prefix):
     mesh, m, meta, cells, faces, history = read_artifacts(Path(mesh_path), Path(prefix))
     geo = native.face_geometry(mesh, m)
     nu = .001
-    boundaries = native.flow_boundaries(mesh, m, "channel", 1., "reject",
-                                        [num(r["flux"], "face flux") for r in faces])
+    case=meta['case']
+    if case=='flatplate':
+        req(all(close(a,b,1e-12,1e-10) for a,b in zip(m.bounds,(0.,0.,1.,1.))) and
+            close(m.total_area,1.,1e-12,1e-10), 'flat plate diagnostic requires complete unit square')
+    boundaries = native.flow_boundaries(mesh, m, case, 1., "reject",
+                                        [num(r["flux"], "face flux") for r in faces],
+                                        meta.get('flatPlateLeadingEdge'),meta.get('flatPlateTop','pressure-farfield'))
+    def entering(fid):
+        return boundaries['roles'][fid]=='inlet' or (
+            boundaries['roles'][fid]=='farfield' and num(faces[fid]['flux'],'flux')<0)
     independent_continuity = native.continuity(
-        mesh, m, [num(r["flux"], "face flux") for r in faces], 1., "channel", 1e-14, 1e-9)
+        mesh, m, [num(r["flux"], "face flux") for r in faces], 1., case, 1e-14, 1e-9)
     req(independent_continuity['nativeDefinitionContinuity'] < 1e-8 and
         independent_continuity['globalRelativeImbalance'] < 1e-8, 'independent continuity failed')
     req(close(num(meta['globalRelativeImbalance'], 'global continuity'),
@@ -159,10 +173,11 @@ def audit(mesh_path, prefix):
         if edge.neighbour < 0:
             q=num(face['flux'],'boundary flux')
             if wall: req(q==0, 'wall must be impermeable')
+            elif boundaries['roles'][i]=='slip': req(q==0, 'symmetry boundary must be impermeable')
             elif boundaries['roles'][i]=='inlet':
                 expected=sum(a*b for a,b in zip((boundaries['u'][i],boundaries['v'][i]),geo[i].area_vector))
                 req(close(q,expected,1e-13,1e-11),'inlet flux mismatch')
-            else: req(q>=0, 'unconfigured outlet backflow')
+            elif boundaries['roles'][i]=='outlet': req(q>=0, 'unconfigured outlet backflow')
         if wall:
             walls.append(i); kfixed[i] = wfixed[i] = True
             kb[i] = 0.
@@ -172,7 +187,7 @@ def audit(mesh_path, prefix):
             req(close(num(face["kBoundary"], "wall k boundary"), kb[i], 1e-12, 1e-10) and
                 close(num(face["omegaBoundary"], "wall omega boundary"), wb[i], 1e-10, 1e-10),
                 "invalid resolved wall turbulence boundary")
-        elif boundaries["roles"][i] == "inlet":
+        elif entering(i):
             kfixed[i] = wfixed[i] = True; kb[i] = .001; wb[i] = 2.
         req(close(num(face["kBoundary"], "k boundary"), kb[i], 1e-12, 1e-10) and
             close(num(face["omegaBoundary"], "omega boundary"), wb[i], 1e-12, 1e-10),
@@ -220,7 +235,7 @@ def audit(mesh_path, prefix):
         elif edge.neighbour >= 0:
             q = geo[i].neighbour_weight
             value = nu + (1-q) * coeff[edge.owner]["nuT"] + q * coeff[edge.neighbour]["nuT"]
-        elif boundaries["roles"][i] == "inlet":
+        elif entering(i):
             ci = edge.owner
             inlet = coefficients(.001, 2., nu, num(cells[ci]["distance"], "distance"), strain[ci], kg[ci], wg[ci])
             value = nu + inlet["nuT"]
@@ -309,12 +324,14 @@ def audit(mesh_path, prefix):
                           "discreteForceY", "reconstructedForceX", "reconstructedForceY", "forceX", "forceY",
                           "wallForceX", "wallForceY", "wallViscousForceX", "wallViscousForceY")
         req(all(field in meta for field in summary_fields), "SST-RANS JSON missing momentum summary fields")
-        payload = {"case": "channel", "viscosityModel": "face-values", "viscosityFile": str(vf),
+        payload = {"case": case, "viscosityModel": "face-values", "viscosityFile": str(vf),
+                   "flatPlateLeadingEdge":meta.get('flatPlateLeadingEdge'),
+                   "flatPlateTop":meta.get('flatPlateTop','pressure-farfield'),
                    "convection": "upwind", "viscousStress": "symmetric", "outletBackflow": "reject",
                    "pressureBoundaryReconstruction": "one-sided-linear-2ring",
                    **{field: meta[field] for field in summary_fields}}
         momentum = native.reconstruct_momentum_audit(
-            mesh, m, flow_cells, flow_faces, nu, 1., "channel", payload,
+            mesh, m, flow_cells, flow_faces, nu, 1., case, payload,
             pressure_boundary_reconstruction="one-sided-linear-2ring")
         req(all(value <= 5e-10 for value in momentum["maxFaceDeviation"].values()),
             "independent momentum face reconstruction differs")
@@ -337,7 +354,26 @@ def audit(mesh_path, prefix):
     req(num(history[-1]["kCellResidual"], "kCellResidual") <= float(meta["scalarCellTolerance"]) and
         num(history[-1]["omegaCellResidual"], "omegaCellResidual") <= float(meta["scalarCellTolerance"]),
         "reported scalar cell residual exceeds configured tolerance")
-    return {"valid": True, "scope": meta["scope"], "cells": n, "iterations": meta["iterations"],
+    boundary_summary={}
+    for role in ('inlet','outlet','wall','slip','farfield'):
+        ids=[i for i,e in enumerate(mesh.edges) if e.neighbour<0 and boundaries['roles'][i]==role]
+        fluxes=[num(faces[i]['flux'],'boundary flux') for i in ids]
+        boundary_summary[role]={'faces':len(ids),'length':math.fsum(math.hypot(*geo[i].area_vector) for i in ids),
+            'netOutwardFlux':math.fsum(fluxes),'inwardFlux':math.fsum(-q for q in fluxes if q<0),
+            'outwardFlux':math.fsum(q for q in fluxes if q>0),'inflowFaces':sum(q<0 for q in fluxes)}
+    wall_samples=[]
+    if case=='flatplate':
+        for i in walls:
+            e=mesh.edges[i];length=math.hypot(*geo[i].area_vector)
+            tau=num(faces[i]['diffusionX'],'wall tangential force')/length
+            dn=abs(geo[i].centre[1]-m.centroids[e.owner][1])
+            wall_samples.append({'face':i,'x':geo[i].centre[0],'xFromLeadingEdge':geo[i].centre[0]-.5,
+                'length':length,'kinematicShear':tau,'Cf':2*tau,'yPlus':dn*math.sqrt(abs(tau))/nu})
+        wall_samples.sort(key=lambda row:row['x'])
+    return {"valid": True, "scope": meta["scope"], "case":case,
+            "flatPlateTop":meta.get('flatPlateTop'),"boundarySummary":boundary_summary,
+            "plateWallSamples":wall_samples,"wallSampleScope":"Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+            "cells": n, "iterations": meta["iterations"],
             "scalar": scalar_diagnostics, "momentum": momentum, "continuity": independent_continuity,
             "mesh": str(mesh_path), "prefix": str(prefix)}
 

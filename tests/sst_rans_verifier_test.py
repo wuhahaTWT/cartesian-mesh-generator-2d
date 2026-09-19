@@ -3,6 +3,7 @@
 import argparse
 import csv
 import json
+import math
 import subprocess
 import sys
 import tempfile
@@ -22,8 +23,8 @@ def run(command, timeout=90):
         raise RuntimeError(result.stdout)
 
 
-def make_mesh(mesh_cli, root, output):
-    request = native.Request("sst-rans-test", "channel", 3, 1 / 6, .001, 1.)
+def make_mesh(mesh_cli, root, output, case="channel"):
+    request = native.Request("sst-rans-test", case, 3, 1 / 6, .001, 1.)
     command = native.mesh_command(mesh_cli, output, request, root)
     run(command)
     mesh = output.with_suffix(".solver.cm2d")
@@ -74,52 +75,65 @@ def reject_json(mesh, prefix, mutate):
 def main(args):
     with tempfile.TemporaryDirectory(prefix="cartmesh-sst-rans-") as name:
         root = Path(name)
-        mesh = make_mesh(args.mesh_cli, root, root / "channel")
-        prefix = root / "probe"
-        run([args.probe, mesh, prefix])
-        accepted = verifier.audit(mesh, prefix)
-        assert accepted["valid"] is True and accepted["cells"] > 1
+        channel_mesh = make_mesh(args.mesh_cli, root, root / "channel")
+        plate_mesh = make_mesh(args.mesh_cli, root, root / "flatplate", "manufactured")
+        for mode in ('channel', 'flatplate', 'flatplate-symmetry'):
+            mesh = channel_mesh if mode=='channel' else plate_mesh
+            prefix = root / mode
+            run([args.probe, mesh, prefix] + ([] if mode == 'channel' else [mode]))
+            accepted = verifier.audit(mesh, prefix)
+            assert accepted["valid"] is True and accepted["cells"] > 1
 
-        def add(records, index, key):
-            records[index][key] = str(float(records[index][key]) + .1)
+            def add(records, index, key):
+                records[index][key] = str(float(records[index][key]) + .1)
 
-        for column in ("u", "p", "speed", "k", "omega", "nuT", "strain", "gradWx"):
-            reject_csv(mesh, prefix, ".cells.csv", column, add)
+            for column in ("u", "p", "speed", "k", "omega", "nuT", "strain", "gradWx"):
+                reject_csv(mesh, prefix, ".cells.csv", column, add)
 
-        with (Path(str(prefix) + ".faces.csv")).open(newline="") as stream:
-            face_rows = list(csv.DictReader(stream))
-        wall_row = next(i for i, row in enumerate(face_rows) if row["wall"] == "1")
-        reject_csv(mesh, prefix, ".faces.csv", "omegaBoundary", add, wall_row)
-        reject_csv(mesh, prefix, ".faces.csv", "viscosity", add)
-        reject_csv(mesh, prefix, ".faces.csv", "kDiffusion", add)
-        reject_csv(mesh, prefix, ".faces.csv", "advectionX", add)
+            with (Path(str(prefix) + ".faces.csv")).open(newline="") as stream:
+                face_rows = list(csv.DictReader(stream))
+            wall_row = next(i for i, row in enumerate(face_rows) if row["wall"] == "1")
+            reject_csv(mesh, prefix, ".faces.csv", "omegaBoundary", add, wall_row)
+            reject_csv(mesh, prefix, ".faces.csv", "viscosity", add)
+            reject_csv(mesh, prefix, ".faces.csv", "kDiffusion", add)
+            reject_csv(mesh, prefix, ".faces.csv", "advectionX", add)
 
-        reject_csv(mesh, prefix, ".history.csv", "momentumResidual",
-                   lambda records, index, key: records[-1].__setitem__(key, str(float(records[-1][key]) + .1)))
-        reject_csv(mesh, prefix, ".history.csv", "kNorm",
-                   lambda records, index, key: records[-1].__setitem__(key, '0'))
-        reject_csv(mesh, prefix, ".history.csv", "turbulenceIterations",
-                   lambda records, index, key: records[index].__setitem__(key, '2'))
+            reject_csv(mesh, prefix, ".history.csv", "momentumResidual",
+                       lambda records, index, key: records[-1].__setitem__(key, str(float(records[-1][key]) + .1)))
+            reject_csv(mesh, prefix, ".history.csv", "kNorm",
+                       lambda records, index, key: records[-1].__setitem__(key, '0'))
+            reject_csv(mesh, prefix, ".history.csv", "turbulenceIterations",
+                       lambda records, index, key: records[index].__setitem__(key, '2'))
 
-        def stale_closure(records, index, key):
-            source = max(range(len(records)),
-                         key=lambda j: abs(float(records[j][key]) - float(records[index][key])))
-            if source == index:
-                raise AssertionError(f"no distinct value for {key}")
-            records[index][key] = records[source][key]
-        for column in ("sourceW", "nuT", "Dk"):
-            reject_csv(mesh, prefix, ".cells.csv", column, stale_closure)
+            def stale_closure(records, index, key):
+                source = max(range(len(records)),
+                             key=lambda j: abs(float(records[j][key]) - float(records[index][key])))
+                if source == index:
+                    raise AssertionError(f"no distinct value for {key}")
+                records[index][key] = records[source][key]
+            for column in ("sourceW", "nuT", "Dk"):
+                reject_csv(mesh, prefix, ".cells.csv", column, stale_closure)
 
-        reject_json(mesh, prefix, lambda data: data.__setitem__("model", "wrong-model"))
-        reject_json(mesh, prefix, lambda data: data.__setitem__("pressureConvention", "p/rho+2k/3"))
-        reject_json(mesh, prefix, lambda data: data.__setitem__("converged", False))
-        reject_json(mesh, prefix, lambda data: data.__setitem__("momentumResidual", 0.0))
-        reject_json(mesh, prefix, lambda data: data.__setitem__("scalarRelativeTolerance", 1.0))
-        reject_json(mesh, prefix, lambda data: data.__setitem__("globalRelativeImbalance", 1.0))
-        for invalid in (0, -1, 501, 1.5, True):
-            reject_json(mesh, prefix, lambda data, value=invalid:
-                        data.__setitem__("turbulenceUpdatesPerIteration", value))
-    print("SST-RANS verifier: real channel audit passed and all tamper cases rejected.")
+            reject_json(mesh, prefix, lambda data: data.__setitem__("model", "wrong-model"))
+            reject_json(mesh, prefix, lambda data: data.__setitem__("pressureConvention", "p/rho+2k/3"))
+            reject_json(mesh, prefix, lambda data: data.__setitem__("converged", False))
+            reject_json(mesh, prefix, lambda data: data.__setitem__("momentumResidual", 0.0))
+            reject_json(mesh, prefix, lambda data: data.__setitem__("scalarRelativeTolerance", 1.0))
+            reject_json(mesh, prefix, lambda data: data.__setitem__("globalRelativeImbalance", 1.0))
+            for invalid in (0, -1, 501, 1.5, True):
+                reject_json(mesh, prefix, lambda data, value=invalid:
+                            data.__setitem__("turbulenceUpdatesPerIteration", value))
+            if mode != 'channel':
+                assert abs(accepted['boundarySummary']['wall']['length']-.5) <= 8*math.ulp(.5)
+                assert accepted['plateWallSamples']
+                if mode == 'flatplate':
+                    assert accepted['boundarySummary']['farfield']['outwardFlux'] > 0
+                reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateLeadingEdge', .51))
+                reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateTop', 'invalid'))
+                reject_json(mesh, prefix, lambda data: data.__setitem__('case', 'channel'))
+                if mode == 'flatplate':
+                    reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateTop', 'symmetry'))
+    print("SST-RANS verifier: channel and both flat plate boundaries audited; all tamper cases rejected.")
 
 
 if __name__ == "__main__":

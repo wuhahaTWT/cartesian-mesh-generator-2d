@@ -27,7 +27,7 @@ double finite(double x) {
 
 using System = detail::SparseSystem2D;
 
-enum class Role { Wall, Inlet, Outlet, Slip, Lid };
+enum class Role { Wall, Inlet, Outlet, Slip, Lid, Farfield };
 
 double counterflowSpeed(double y, double speed) {
     return speed * (1 + 2 * std::cos(2 * std::acos(-1.) * y));
@@ -74,6 +74,9 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     ensure(width > 0 && height > 0, "Flow empty domain");
     const double eps = TolerancePolicy{}.scale(std::max(width, height));
     const auto equal = [&](double a, double d) { return std::abs(a - d) <= eps; };
+    if(c.scenario=="flatplate")
+        ensure(c.flatPlateLeadingEdge>=b.xmin && c.flatPlateLeadingEdge<b.xmax,
+               "Flat plate leading edge must lie within the bottom boundary");
 
     std::size_t inlets = 0;
     std::size_t outlets = 0;
@@ -111,6 +114,15 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             } else if (right) {
                 b.role[id] = Role::Outlet;
                 ++outlets;
+            } else if(c.scenario=="flatplate") {
+                b.role[id]=top && c.flatPlateTop==FlatPlateTop2D::PressureFarfield ? Role::Farfield : Role::Slip;
+                if(bottom) {
+                    const double halfLength=.5*std::abs(f.areaVector.y);
+                    const double lo=f.centre.x-halfLength,hi=f.centre.x+halfLength;
+                    ensure(!(lo<c.flatPlateLeadingEdge-eps && hi>c.flatPlateLeadingEdge+eps),
+                           "Flat plate leading edge crosses a boundary face; split the mesh edge");
+                    if(f.centre.x>=c.flatPlateLeadingEdge) {b.role[id]=Role::Wall;++walls;}
+                }
             } else {
                 b.role[id] = (c.scenario == "external" || c.scenario == "counterflow") ? Role::Slip : Role::Wall;
             }
@@ -137,6 +149,10 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         case Role::Outlet:
             b.fixedP[id] = true;
             break;
+        case Role::Farfield:
+            b.fixedP[id] = true;
+            b.u[id] = c.speed;
+            break;
         case Role::Slip:
             // Outer boundaries were checked to be axis aligned above.
             if (left || right) b.fixedU[id] = b.constantU[id] = true;
@@ -154,6 +170,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     if (c.scenario == "external") {
         ensure(walls > 0, "External case requires embedded solid wall");
     } else {
+        if(c.scenario=="flatplate")ensure(walls>0,"Flat plate requires resolved no-slip faces");
         double area = 0;
         for (const auto& cell : m.cells) {
             area += cell.area;
@@ -167,8 +184,15 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
 
 void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
                           const FlowControls2D& c, const Vec& flux) {
-    if (c.outletBackflow != OutletBackflow2D::NormalInlet) return;
+    if(c.scenario!="flatplate" && c.outletBackflow!=OutletBackflow2D::NormalInlet)return;
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
+        if(!m.faces[id].neighbour && b.role[id]==Role::Farfield) {
+            // Horizontal open top: pressure controls normal flux; only the
+            // entering tangential component is prescribed from the freestream.
+            b.fixedU[id]=b.constantU[id]=flux[id]<0;
+            continue;
+        }
+        if (c.outletBackflow != OutletBackflow2D::NormalInlet) continue;
         if (m.faces[id].neighbour || b.role[id] != Role::Outlet) continue;
         // Current cases have a right, axis-aligned pressure outlet. Keep its
         // normal component free; constrain only the incoming tangential one.
@@ -273,8 +297,8 @@ void momentum(System& a,
                 a.rhs[i] += d * bc[id] + viscosity * dot(gradField[i], f.correction);
                 a.rhs[i] -= q * bc[id];
             } else {
-                if (q < 0 && b.role[id] == Role::Outlet &&
-                    c.outletBackflow == OutletBackflow2D::NormalInlet) {
+                if (q < 0 && (b.role[id] == Role::Farfield ||
+                    (b.role[id] == Role::Outlet && c.outletBackflow == OutletBackflow2D::NormalInlet))) {
                     // Same zero-gradient normal advective flux q*Uowner,
                     // lagged in the linear solve to retain a positive diagonal.
                     // The unrelaxed residual uses the current field exactly.
@@ -301,10 +325,17 @@ static FlowResult2D solveFlow(
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow" || c.scenario == "flatplate") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
+    ensure(std::isfinite(c.flatPlateLeadingEdge) &&
+           (c.scenario=="flatplate" || c.flatPlateLeadingEdge==0),
+           "Leading edge is only supported by the flat plate case");
+    ensure(c.flatPlateTop==FlatPlateTop2D::PressureFarfield ||
+           (c.scenario=="flatplate" && c.flatPlateTop==FlatPlateTop2D::Symmetry),
+           "Invalid flat plate upper boundary");
+    ensure(!previous || c.scenario!="flatplate","Transient flat plate is not implemented");
     ensure(std::isfinite(c.manufacturedPressureSlope) &&
                (c.scenario == "manufactured" || c.manufacturedPressureSlope == 0),
            "Manufactured pressure slope is only valid for the verification case");
@@ -446,7 +477,7 @@ static FlowResult2D solveFlow(
                 ? interpolate(f, r.u) * f.areaVector.x
                 : (b.role[id] == Role::Inlet
                        ? b.u[id] * f.areaVector.x
-                       : (b.role[id] == Role::Outlet ? r.u[f.owner] * f.areaVector.x : 0.));
+                       : ((b.role[id] == Role::Outlet || b.role[id] == Role::Farfield) ? r.u[f.owner] * f.areaVector.x : 0.));
     }
 
     Vec oldFluxDefect(nf);
@@ -487,7 +518,8 @@ static FlowResult2D solveFlow(
             for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)
                 snapshot[id]={{b.u[id],b.v[id]},b.fixedU[id],b.fixedV[id],
                     b.role[id]==Role::Wall||b.role[id]==Role::Lid,
-                    b.role[id]==Role::Inlet,b.role[id]==Role::Outlet};
+                    b.role[id]==Role::Inlet || (b.role[id]==Role::Farfield && r.flux[id]<0),
+                    b.role[id]==Role::Outlet || (b.role[id]==Role::Farfield && r.flux[id]>=0)};
             auto materialState=material(r,snapshot);
             materialConverged=materialState.converged;
             c.faceViscosity=std::move(materialState.faceViscosity);
@@ -554,7 +586,7 @@ static FlowResult2D solveFlow(
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
                         +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 }
-            }else if(b.role[id]==Role::Outlet){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));
+            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Farfield){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));
                 if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
                     +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
@@ -648,8 +680,8 @@ static FlowResult2D solveFlow(
         }
         auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
                            const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter) {
-            const bool normalInflow = !f.neighbour && !fixed[id] && b.role[id]==Role::Outlet &&
-                r.flux[id]<0 && c.outletBackflow==OutletBackflow2D::NormalInlet;
+            const bool normalInflow = !f.neighbour && !fixed[id] && r.flux[id]<0 &&
+                (b.role[id]==Role::Farfield || (b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::NormalInlet));
             const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
                 : normalInflow ? value[i] : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
             double diffusion=0;
@@ -698,7 +730,7 @@ FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
 FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D& c,
     const MaterialUpdate2D& material,const std::function<void(const FlowIteration2D&)>& progress) {
     ensure(bool(material),"Material flow requires a constitutive update");
-    ensure(c.scenario=="channel"||c.scenario=="cavity"||c.scenario=="external",
+    ensure(c.scenario=="channel"||c.scenario=="cavity"||c.scenario=="external"||c.scenario=="flatplate",
         "Material flow supports steady physical cases only");
     return solveFlow(m,c,progress,nullptr,0,material);
 }
@@ -709,6 +741,8 @@ FlowResult2D advanceIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
 }
 FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D& c) {
     validateFvMesh2D(m);
+    ensure(c.flatPlateLeadingEdge==0 && c.flatPlateTop==FlatPlateTop2D::PressureFarfield,
+           "Flat plate controls are not supported by transient initialization");
     ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
            std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
            "Invalid transient initial-state controls");

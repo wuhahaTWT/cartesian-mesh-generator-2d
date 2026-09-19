@@ -554,7 +554,9 @@ def outlet_backflow_mode(payload: dict[str, Any]) -> str:
 
 def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                     outlet_backflow: str = "reject",
-                    fluxes: list[float] | None = None) -> dict[str, Any]:
+                    fluxes: list[float] | None = None,
+                    flat_plate_leading_edge: float | None = None,
+                    flat_plate_top: str = "pressure-farfield") -> dict[str, Any]:
     """Mirror the solver's explicit role/fixed-value classification."""
     outlet_backflow_mode({"outletBackflow": outlet_backflow})
     if outlet_backflow == "normal-inlet" and fluxes is None:
@@ -564,6 +566,11 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
         raise VerificationError("outlet boundary reconstruction requires finite flux per face")
     xmin, ymin, xmax, ymax = measured.bounds
     eps = 1e-10 * max(xmax - xmin, ymax - ymin) + 1e-12
+    if case == 'flatplate':
+        if (flat_plate_leading_edge is None or not math.isfinite(flat_plate_leading_edge) or
+                not xmin <= flat_plate_leading_edge < xmax or
+                flat_plate_top not in ('pressure-farfield', 'symmetry') or fluxes is None):
+            raise VerificationError('invalid flat plate boundary configuration')
     roles: list[str] = ["internal"] * len(mesh.edges)
     fixed_u = [False] * len(mesh.edges)
     fixed_v = [False] * len(mesh.edges)
@@ -597,6 +604,16 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
             role = "inlet"
         elif right:
             role = "outlet"
+        elif case == 'flatplate':
+            if not (top or bottom):
+                raise VerificationError('flat plate requires rectangular boundary')
+            if top:
+                role = 'farfield' if flat_plate_top == 'pressure-farfield' else 'slip'
+            else:
+                lo, hi = sorted((mesh.vertices[edge.v0][0], mesh.vertices[edge.v1][0]))
+                if lo < flat_plate_leading_edge - eps and hi > flat_plate_leading_edge + eps:
+                    raise VerificationError('flat plate leading edge bisects a mesh face')
+                role = 'wall' if x >= flat_plate_leading_edge else 'slip'
         else:
             role = "slip" if case in ("external", "counterflow") else "wall"
         roles[edge.id] = role
@@ -617,6 +634,10 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
             fixed_p[edge.id] = True
             if outlet_backflow == "normal-inlet" and fluxes[edge.id] < 0.0:
                 fixed_v[edge.id] = constant_v[edge.id] = True
+        elif role == 'farfield':
+            fixed_p[edge.id] = True
+            bc_u[edge.id] = speed
+            fixed_u[edge.id] = constant_u[edge.id] = fluxes[edge.id] < 0
         elif role == "slip":
             if case == "taylor-green":
                 fixed_u[edge.id] = left or right
@@ -892,7 +913,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     viscosity_slope = payload.get("manufacturedViscositySlope", 0.)
     fluxes = face_fluxes(face_records)
     outlet_backflow = outlet_backflow_mode(payload)
-    boundaries = flow_boundaries(mesh, measured, case, speed, outlet_backflow, fluxes)
+    boundaries = flow_boundaries(mesh, measured, case, speed, outlet_backflow, fluxes,
+                                payload.get('flatPlateLeadingEdge'), payload.get('flatPlateTop', 'pressure-farfield'))
     backflow_faces = [edge.id for edge in mesh.edges
                       if boundaries["roles"][edge.id] == "outlet" and fluxes[edge.id] < 0.0]
     outlet_inflow = math.fsum(-fluxes[i] for i in backflow_faces)
@@ -970,7 +992,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
         i = edge.owner
         face_nu = viscosities[edge.id]
-        normal_inlet = outlet_backflow == "normal-inlet" and boundaries["roles"][edge.id] == "outlet"
+        normal_inlet = boundaries["roles"][edge.id] == 'farfield' or (
+            outlet_backflow == "normal-inlet" and boundaries["roles"][edge.id] == "outlet")
         if edge.neighbour >= 0:
             other_u, other_v = u[edge.neighbour], v[edge.neighbour]
         else:
@@ -1058,14 +1081,15 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             diagonal_v[edge.owner] += d + max(q, 0.0)
             diagonal_v[j] += d + max(-q, 0.0)
         else:
+            normal_inflow = q < 0 and (boundaries['roles'][edge.id] == 'farfield' or
+                (outlet_backflow == 'normal-inlet' and boundaries['roles'][edge.id] == 'outlet'))
             if boundaries["fixedU"][edge.id]:
                 diagonal_u[edge.owner] += d
-            elif not (outlet_backflow == "normal-inlet" and
-                      boundaries["roles"][edge.id] == "outlet" and q < 0.0):
+            elif not normal_inflow:
                 diagonal_u[edge.owner] += q
             if boundaries["fixedV"][edge.id]:
                 diagonal_v[edge.owner] += d
-            else:
+            elif not normal_inflow:
                 diagonal_v[edge.owner] += q
     if time_step is not None:
         for i, area in enumerate(measured.areas):

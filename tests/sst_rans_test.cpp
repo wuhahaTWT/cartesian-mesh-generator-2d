@@ -1,11 +1,13 @@
 #include "cartmesh2d/fv/SstRans2D.hpp"
 #include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
+#include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <stdexcept>
+#include <sstream>
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 namespace {
@@ -96,6 +98,55 @@ void ransContract(const FvMesh2D& m) {
     const auto partial=solveSstRans2D(m,interleaved);
     require(!partial.converged&&!partial.turbulence.converged,"partial scalar iteration claimed coupled success");
 }
+void flatPlateContract(const FvMesh2D& m) {
+    SstRansControls2D c;c.flow.scenario="flatplate";c.flow.flatPlateLeadingEdge=.5;
+    c.flow.nu=.01;c.flow.tolerance=1e-7;
+    for(auto top:{FlatPlateTop2D::PressureFarfield,FlatPlateTop2D::Symmetry}) {
+        c.flow.flatPlateTop=top;
+        const auto r=solveSstRans2D(m,c);require(r.converged,"flat plate failed coupled gates");
+        double wallLength=0,slipLength=0,topFlux=0;
+        for(std::size_t id=0;id<m.faces.size();++id) {
+            const auto& f=m.faces[id];if(f.neighbour)continue;
+            const bool bottom=f.centre.y==0,upper=f.centre.y==1;
+            const bool wall=bottom&&f.centre.x>.5;
+            require(r.resolvedWalls[id]==wall&&r.flow.faceMomentum[id].wall==wall,"wrong mixed boundary wall mask");
+            if(wall) {wallLength+=std::abs(f.areaVector.y);
+                require(r.boundaryK[id].value==0&&r.faceViscosity[id]==c.flow.nu,"wrong resolved-wall SST data");}
+            if((bottom&&!wall)||(upper&&top==FlatPlateTop2D::Symmetry)) {
+                slipLength+=std::abs(f.areaVector.y);
+                require(r.flow.flux[id]==0&&!r.velocityBoundary[id].fixedX&&r.velocityBoundary[id].fixedY,
+                        "symmetry boundary leaks or fixes tangential velocity");
+            }
+            if(wall)require(r.flow.flux[id]==0,"plate wall leaks");
+            if(upper) {
+                topFlux+=r.flow.flux[id];
+                if(top==FlatPlateTop2D::PressureFarfield) {
+                    require(r.flow.faceMomentum[id].pressure==0&&!r.velocityBoundary[id].fixedY,
+                            "open top lost its pressure/normal condition");
+                    require(r.velocityBoundary[id].fixedX==(r.flow.flux[id]<0),"farfield tangential switch stale");
+                    require(r.boundaryK[id].kind==(r.flow.flux[id]<0?ScalarBoundaryKind2D::Value:ScalarBoundaryKind2D::DiffusiveFlux),
+                            "farfield turbulence switch stale");
+                }
+            }
+        }
+        require(wallLength==.5&&slipLength==(top==FlatPlateTop2D::Symmetry?1.5:.5),"boundary segment lengths differ");
+        require(top==FlatPlateTop2D::Symmetry?topFlux==0:std::abs(topFlux)>1e-6,"open top turned into symmetry");
+        require(std::abs(r.wallDistance[0]-std::hypot(.5-m.cells[0].centre.x,m.cells[0].centre.y))<1e-12,
+                "upstream wall distance used the slip extension");
+        require(r.flow.wallViscousForceX>0&&r.flow.wallForceX==r.flow.wallViscousForceX,"plate traction bookkeeping failed");
+    }
+    for(double edge:{-.1,1.,.51,std::numeric_limits<double>::quiet_NaN()}) {
+        auto bad=c;bad.flow.flatPlateLeadingEdge=edge;rejects([&]{(void)solveSstRans2D(m,bad);});
+    }
+    auto bad=c;bad.flow.flatPlateTop=static_cast<FlatPlateTop2D>(99);rejects([&]{(void)solveSstRans2D(m,bad);});
+    auto stale=c;stale.flow.scenario="channel";rejects([&]{(void)solveIncompressible2D(m,stale.flow);});
+    rejects([&]{(void)initialIncompressibleState2D(m,c.flow);});
+    rejects([&]{(void)advanceIncompressible2D(m,c.flow,{},.01);});
+    rejects([&]{std::ostringstream out;writeFlowCheckpoint2D(out,m,c.flow,{});});
+    FlowControls2D old;old.scenario="channel";const auto state=initialIncompressibleState2D(m,old);
+    std::ostringstream out;writeFlowCheckpoint2D(out,m,old,state);
+    rejects([&]{std::istringstream in(out.str());(void)readFlowCheckpoint2D(in,m,c.flow);});
 }
-int main(){try{const auto m=square();materialContract(m);ransContract(m);return 0;}
+}
+int main(){try{const auto m=square();materialContract(m);ransContract(m);flatPlateContract(m);return 0;}
     catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

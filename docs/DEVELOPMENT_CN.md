@@ -329,11 +329,29 @@ ctest --test-dir build -R sst_rans --output-on-failure
 
 读取器独立计算wall omega=60nu/(.075dn²)、原未拆分SST源项及稳态对角/norm目标；不把单纯源项拆分的内层方程当最终收敛。独立面黏度暂存为临时CSV交给既有动量读取器，明确使用one-sided-linear-2ring压力重建；临时目录退出即删除，审核报告保留其系数文件哈希。梯度和相消通量比较有以实际项尺度计算的机器舍入预算，求解器的停止门不变。摘要与最终history中同一原始残差采用精确一致性检查，不为重复导出数据使用独立重算的舍入容差。审核更新次数不超过声明上限；中间湍流状态可未收敛，最终两条原方程门保留。不同规模案例只验证满足离散方程，不能当网格无关性或物理准确度证明。
 
+### 平板混合边界与压力远场
+
+`FlowControls2D::scenario="flatplate"`是实验性**稳态矩形域**配置；`flatPlateLeadingEdge`给出底边无滑移段的起点x，须有限、在[xmin,xmax)内且落在网格面端点。底边前缘之前采用对称，之后无滑移；前缘跨面时报错，不自动拆分或重分类。左边固定(U∞,0)，右边压力0且回流策略沿用flow约定；SST仍拒绝未配置的右侧回流。真实壁距只使用无滑移段。
+
+`flatPlateTop`默认`FlatPlateTop2D::PressureFarfield`：水平顶面压力0，法向速度由压力修正及守恒面通量决定；进入时切向速度固定U∞，法向对流q*v_owner放到显式RHS，不产生负隐式对角；离开时速度零梯度。当前通量方向在每次残差重建前刷新；SST使用相同快照决定进入k/omega固定值及离开零扩散通量，黏度重建与原方程验收仍在同一状态。`Symmetry`则固定法向速度0、切向自由。两种上边界是不同问题，不能混用一个基准结果。
+
+当前最终实算只覆盖开放顶面的**出流**；进入分支有实现及代码审查，但尚无端到端真实输入验证。本配置不等价于TMR的可压缩特征远场。还没有瞬态平板或checkpoint格式：初始化、advance、checkpoint读写明确拒绝相关配置；其他工况传入非默认平板参数也拒绝。旧层流路径和默认输出保持不变，App没有提前开放本工况。
+
+```sh
+# 两种诊断均要求完整单位正方形，前缘固定.5且须与底面端点对齐。
+# U=1, nu=.001, k_in=.001, omega_in=2，仅边界/离散方程诊断。
+build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/plate flatplate
+build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/plate-symmetry flatplate-symmetry
+python3 tools/verification/verify_sst_rans.py --mesh /path/unit-square.solver.cm2d --prefix outputs/plate --output outputs/plate-audit.json
+```
+
+独立读取器由CM2D原端点辨认分段，从末态重算壁距、当前模型系数、质量/动量/两湍流方程。`boundarySummary`报告各类面的长度、进入/离开通量；`plateWallSamples`取水平底壁切向离散牵引tau/rho，给Cf=2tau/(rho U∞²)和y+=d_normal*sqrt(abs(tau)/rho)/nu。此诊断U∞固定1；这些量的数值收敛、近壁分辨率和物理精度需另证。绘图入口`tools/visualization/render_flat_plate.py`读取已通过审核的研究JSON，不将其视为TMR认证。
+
 ### 标准湍流参考的适用边界
 
 已核对[TMR 2DZP平板定义](https://tmbwg.github.io/turbmodels/flatplate.html)、[网格](https://tmbwg.github.io/turbmodels/flatplate_grids.html)及[SST参考结果](https://tmbwg.github.io/turbmodels/flatplate_sst.html)。平板x=0至2，参考长度1，Re_L=5e6、M=.2；网格35×25至545×385节点，需明确区分节点数与实际流体单元数。壁面omega及自由来流k/omega必须按该例指定，不能沿用诊断通道的数值。近壁y+、x约.97/1.90的剖面及壁面摩阻是后续关注量；不能只看残差。
 
-该现成平板数据使用**SST-Vm**，当前实现为**不可压SST-2003m**。低Mach相近不等于方程/变体相同，不能直接以该表作为本模型严格误差标准。下一步须明确选择匹配参考，或如实分开报告跨变体参考和独立制造解验证；在此之前不宣称平板验收。还需实现上游滑移/板面无滑移的混合底边、合适远场与各向异性近壁网格，目前未实现新的平板产品入口。
+该现成平板数据使用**SST-Vm**，当前实现为**不可压SST-2003m**。低Mach相近不等于方程/变体相同，不能直接以该表作为本模型严格误差标准。下一步须明确选择匹配参考，或如实分开报告跨变体参考和独立制造解验证；在此之前不宣称平板验收。混合底边与不可压压力远场的核心实现见上节，尚需各向异性近壁网格、匹配参考和实际进入流验证；没有平板产品入口。
 
 ### 非正交压力修正固定点
 

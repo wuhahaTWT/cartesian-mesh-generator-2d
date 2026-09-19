@@ -84,6 +84,9 @@ inline OutletBackflow2D outletBackflowValue(const std::string& value) {
 }
 
 inline void configuration(std::istream& in, const FlowControls2D& controls, bool hasOutletBackflow) {
+    if(controls.scenario=="flatplate" || controls.flatPlateLeadingEdge!=0 ||
+       controls.flatPlateTop!=FlatPlateTop2D::PressureFarfield)
+        fail("flat plate checkpoint configuration is not implemented");
     std::string scenario, convection, stress;
     std::string outletBackflow;
     double nu = 0, speed = 0, slope = 0;
@@ -110,6 +113,9 @@ inline void writeDouble(std::ostream& out, double value, const char* what) {
 
 inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
                                   const FlowControls2D& controls, const FlowState2D& state) {
+    if(controls.scenario=="flatplate" || controls.flatPlateLeadingEdge!=0 ||
+       controls.flatPlateTop!=FlatPlateTop2D::PressureFarfield)
+        flow_checkpoint_detail::fail("flat plate checkpoint configuration is not implemented");
     struct RestoreFormat {
         std::ostream& stream;
         std::ios_base::fmtflags flags;

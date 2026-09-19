@@ -9,14 +9,18 @@ using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 int main(int argc,char** argv) {
     try {
-        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested]");
+        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
         if(argc==4) {
-            if(std::string(argv[3])!="nested")throw std::runtime_error("unknown SST coupling strategy");
-            c.turbulenceUpdatesPerIteration=c.turbulence.maxIterations;
+            if(std::string(argv[3])=="nested")c.turbulenceUpdatesPerIteration=c.turbulence.maxIterations;
+            else if(std::string(argv[3])=="flatplate" || std::string(argv[3])=="flatplate-symmetry") {
+                c.flow.scenario="flatplate";c.flow.flatPlateLeadingEdge=.5;
+                if(std::string(argv[3])=="flatplate-symmetry")c.flow.flatPlateTop=FlatPlateTop2D::Symmetry;
+            }
+            else throw std::runtime_error("unknown SST probe configuration");
         }
         const std::string prefix=argv[2];
         const auto r=solveSstRans2D(mesh,c,{}, {},[](const auto& h){
@@ -51,7 +55,9 @@ int main(int argc,char** argv) {
             faces<<','<<flow.flux[id]<<','<<q.pressure<<','<<q.advection.x<<','<<q.advection.y<<','<<q.diffusion.x<<','<<q.diffusion.y<<','<<r.faceViscosity[id]<<','<<r.resolvedWalls[id]<<','
                 <<r.boundaryK[id].value<<','<<r.boundaryOmega[id].value<<','<<t.k.advectiveFlux[id]<<','<<t.k.diffusiveFlux[id]<<','<<t.omega.advectiveFlux[id]<<','<<t.omega.diffusiveFlux[id]<<'\n';
         }
-        meta<<std::setprecision(17)<<"{\"case\":\"channel\",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":0.001,\"speed\":1,\"inletK\":0.001,\"inletOmega\":2,\"tolerance\":1e-7,"
+        meta<<std::setprecision(17)<<"{\"case\":\""<<c.flow.scenario<<"\",\"flatPlateLeadingEdge\":"<<c.flow.flatPlateLeadingEdge
+            <<",\"flatPlateTop\":\""<<(c.flow.flatPlateTop==FlatPlateTop2D::Symmetry?"symmetry":"pressure-farfield")<<"\""
+            <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":0.001,\"speed\":1,\"inletK\":0.001,\"inletOmega\":2,\"tolerance\":1e-7,"
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
