@@ -149,7 +149,7 @@ face,type,value,inflowValue
 
 此片段仅说明格式，实际文件须含全部边界面。`value`是面定值；`flux`是向外 `-D grad(theta).n` **每单位边长**（不是积分面通量），0即绝热/零扩散通量。flux边界有负载流时，必须给`inflowValue`；上述25号面在回流时温度为300。流出对流采用owner迎风/限制重构，定值仍约束扩散；指定非零通量参与梯度重构。稳态连通域必须有定值或给定流入标量，纯绝热无入口没有唯一常数解；非定常可凭前态建立唯一性。
 
-方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须为正的常数。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向恒物性输运，不含浮力、变物性或共轭传热。基础ScalarTransport API以调用者提供的新时刻边界/源和共享通量推进一步；`--flow-checkpoint`模式载流冻结，`--evolve-flow`模式使用下述同步接口。
+方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须有限且为正；默认全域常数，冻结载流可显式提供下面的逐面空间场。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向输运：密度和比热固定，可预设空间扩散系数；不含随温度更新的材料模型、浮力或共轭传热。同步载流与联合续算仍仅支持常数D。基础ScalarTransport API以调用者提供的新时刻边界/源和共享通量推进一步；`--flow-checkpoint`模式载流冻结，`--evolve-flow`模式使用下述同步接口。
 
 输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。冻结载流模式尚无标量checkpoint；同步模式见下方联合保存。温度桌面入口见下方；失败的多步计算不可假作已完成全部物理时间。
 
@@ -222,9 +222,26 @@ python3 tools/visualization/render_thermal_time.py --study outputs/thermal-time-
 
 真实10,000格、dt=.005/.0025/.00125、t=.01证据在 `artifacts/current/native-flow-thermal-time.json`；它包含原始生成脚本、工具/网格哈希及复用首档的来源，不将复用结果算成本轮重新求解。
 
+### 预设空间扩散系数
+
+`ScalarTransportProblem2D::faceDiffusivity` 为空时沿用原常数D；否则须包含所有内部面与边界面的一份有限正值。`diffusivity`仍须为有限正参考值。每个共享面只有一个D，同时用于矩阵、非正交修正、通量边界梯度与最终面通量；相邻单元用相反符号，不重复制造两份界面热流。API不自动平均单元物性，调用者负责界面插值。例如对齐正交的分层材料，距离加权调和系数可表达两侧串联热阻；这不是任意扭曲材料界面的精度承诺。
+
+冻结载流的稳态/后向欧拉CLI可添加 `--face-diffusivity /path/D.csv`，严格表头 `face,diffusivity`，按当前最终网格face ID完整列出每个面一次。重复、漏项、额外列、非有限或非正值失败。该选项与验证模式、同步载流和联合重启互斥，避免checkpoint丢失物性场。变系数输出的faces CSV增加`diffusivity`列，JSON记录`diffusivityModel=face-values`及输入文件路径；恒系数输出保持原格式。独立读取器从输入CSV重新取得系数并记录哈希，而不是只相信导出列。
+
+```sh
+# 真正生成三档最终网格；光滑变D制造解，同一方程/参数/停止门：
+python3 tools/verification/verify_scalar_transport.py --generate outputs/variable-D-square --variable-diffusivity
+# 斜边平行四边形，仍由本机Cartesian/Cut-cell生成器构造网格：
+python3 tools/verification/verify_scalar_transport.py --generate outputs/variable-D-shear --variable-diffusivity --shear .2
+# 单个已有网格；不是普通工况的默认物理源项：
+build/cartmesh2d_transport_cli --mesh /path/case.solver.cm2d --output outputs/variable-D/result --verification variable-sine --diffusivity .08 --speed .35 --convection limited-linear
+```
+
+制造解为`phi=sin(pi*x)sin(pi*y)`、`D(x)=Dref*(1+x)`、`U=(speed,0)`，源项包含`-grad(D).grad(phi)`，固定边界取解析面值。仅允许稳态，域内D须处处为正。读取器从真实几何独立重建D、源、非正交通量与逐格平衡；观察到的约二阶趋势只适用于本组光滑场。双材料接口与倾斜网格非零通量边界另有核心解析回归。桌面和同步热输运尚未开放空间D输入。
+
 ### SST扩展前的物性场缺口
 
-当前 `FlowControls2D::nu`、`ScalarTransportProblem2D::diffusivity` 和热输运物性仍是全域常数。后续空间有效黏度必须统一进入动量矩阵、非正交修正、`FlowFaceOperators2D.hpp` 的共享面对称应力、壁面力及面输出；独立读取器和checkpoint也要记录并重算相同物性场。现有一个共享面通量、相邻单元反号的守恒结构可沿用，但尚无变黏度、湍黏度或湍流普朗特数实现。不能仅在力的后处理处替换nu，或将常数nu输入框改名为SST。先使用变系数制造解与共享面牵引测试验证，再接入具体版本的模型方程；这仍是未实现的工作。
+当前 `FlowControls2D::nu` 和同步热输运物性仍是全域常数。独立标量核心已加入 `ScalarTransportProblem2D::faceDiffusivity`；这只完成空间扩散场基础，不代表变黏度或SST已实现。后续空间有效黏度必须统一进入动量矩阵、非正交修正、`FlowFaceOperators2D.hpp` 的共享面对称应力、壁面力及面输出；独立读取器和checkpoint也要记录并重算相同物性场。现有一个共享面通量、相邻单元反号的守恒结构可沿用，但尚无变黏度、湍黏度或湍流普朗特数实现。不能仅在力的后处理处替换nu，或将常数nu输入框改名为SST。标量变系数制造解已验证；动量变黏度、共享面牵引及模型方程仍需实现和验证。
 
 ### 非正交压力修正固定点
 

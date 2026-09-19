@@ -291,6 +291,18 @@ void invalidInputs() {
     nonfinite.diffusivity = std::numeric_limits<double>::quiet_NaN();
     rejects([&] { (void)solveScalarTransport2D(mesh, nonfinite); }, "diffusivity must be finite positive", "nonfinite diffusivity is rejected");
 
+    auto wrongFaceCount = valid;
+    wrongFaceCount.faceDiffusivity.assign(mesh.faces.size() - 1, .1);
+    rejects([&] { (void)solveScalarTransport2D(mesh, wrongFaceCount); },
+            "face diffusivity dimensions mismatch", "face diffusivity size is rejected");
+    for (const double value : {0., -.1, std::numeric_limits<double>::quiet_NaN()}) {
+        auto badFace = valid;
+        badFace.faceDiffusivity.assign(mesh.faces.size(), .1);
+        badFace.faceDiffusivity[0] = value;
+        rejects([&] { (void)solveScalarTransport2D(mesh, badFace); },
+                "face diffusivity must be finite positive", "invalid face diffusivity is rejected");
+    }
+
     auto divergent = valid;
     divergent.volumeFlux[0] = 1.;
     rejects([&] { (void)solveScalarTransport2D(mesh, divergent); }, "carrier flux violates cell continuity", "non-divergence-free carrier is rejected");
@@ -319,6 +331,116 @@ void invalidInputs() {
     const auto result = solveScalarTransport2D(mesh, oneCorrection, controls);
     check(!result.converged, "one correction reports nonconvergence");
 }
+
+void uniformFaceDiffusivityIsIdentical() {
+    const auto mesh = fvGrid(5, 4, true);
+    ScalarTransportProblem2D scalar;
+    scalar.diffusivity = .17;
+    scalar.volumeFlux.assign(mesh.faces.size(), 0.);
+    scalar.source = [](Point2D p) { return .3 + p.x - .4 * p.y; };
+    scalar.boundary = [](std::size_t, const Face& face) { return valueBoundary(.2 + face.centre.x); };
+    auto faceValues = scalar;
+    faceValues.faceDiffusivity.assign(mesh.faces.size(), scalar.diffusivity);
+    const auto a = solveScalarTransport2D(mesh, scalar);
+    const auto b = solveScalarTransport2D(mesh, faceValues);
+    check(a.converged && b.converged, "uniform and face-valued scalar solves converge");
+    check(a.values == b.values, "uniform face diffusivity preserves scalar values exactly");
+    check(a.advectiveFlux == b.advectiveFlux && a.diffusiveFlux == b.diffusiveFlux,
+          "uniform face diffusivity preserves fluxes exactly");
+    check(a.globalBalance == b.globalBalance, "uniform face diffusivity preserves balance exactly");
+}
+
+void variableFaceDiffusivityConservesHarmonicInterface() {
+    const auto mesh = fvGrid(2, 1);
+    constexpr double leftD = .1, rightD = .4;
+    constexpr double interfaceD = 2. * leftD * rightD / (leftD + rightD);
+    constexpr double flux = .16;
+    const std::vector<double> exact{.6, .1};
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = 1.;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.faceDiffusivity.resize(mesh.faces.size(), 1.);
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id) {
+        const auto& face = mesh.faces[id];
+        if (face.neighbour) problem.faceDiffusivity[id] = interfaceD;
+        else if (face.centre.x < 1e-12) problem.faceDiffusivity[id] = leftD;
+        else if (face.centre.x > 1. - 1e-12) problem.faceDiffusivity[id] = rightD;
+    }
+    problem.source = [](Point2D) { return 0.; };
+    problem.boundary = [&](std::size_t id, const Face& face) {
+        if (face.neighbour) {
+            return valueBoundary(0.);
+        }
+        if (face.centre.x < 1e-12) {
+            return valueBoundary(1.);
+        }
+        if (face.centre.x > 1. - 1e-12) {
+            return valueBoundary(0.);
+        }
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux, 0., std::nullopt};
+    };
+    // Tight algebraic controls make this exact two-cell resistance check
+    // independent of the production default stopping error.
+    ScalarTransportControls2D controls;
+    controls.relativeTolerance = 1e-12;
+    controls.absoluteTolerance = 1e-14;
+    controls.cellTolerance = 1e-12;
+    const auto result = solveScalarTransport2D(mesh, problem, controls);
+    check(result.converged, "two-material harmonic-interface solve converges");
+    for (std::size_t i = 0; i < exact.size(); ++i)
+        check(std::abs(result.values[i] - exact[i]) < 2e-10,
+              "two-material interface recovers finite-volume analytic values");
+    std::size_t interface = mesh.faces.size();
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        if (mesh.faces[id].neighbour) interface = id;
+    check(interface < mesh.faces.size(), "two-material mesh has an internal interface");
+    if (interface < mesh.faces.size())
+        check(std::abs(result.diffusiveFlux[interface] - flux) < 2e-10,
+              "harmonic interface carries the analytic conserved flux");
+    check(std::abs(result.globalBalance) < 2e-10, "variable face diffusivity closes global balance");
+}
+
+void variableFaceDiffusivityManufacturedSkewAffine() {
+    const auto mesh = fvGrid(6, 5, true);
+    const auto exact = [](Point2D p) { return 1.7 + p.x + .3 * p.y; };
+    const Vector2D gradient{1., .3};
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .1;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.faceDiffusivity.resize(mesh.faces.size());
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        problem.faceDiffusivity[id] = .1 * (1. + mesh.faces[id].centre.x);
+    problem.source = [](Point2D) { return -.1; };
+    problem.boundary = [&](std::size_t, const Face& face) {
+        const double d = .1 * (1. + face.centre.x);
+        const double length = std::hypot(face.areaVector.x, face.areaVector.y);
+        // The left boundary is the only value anchor; all other boundaries
+        // prescribe the exact variable-D normal diffusive flux.
+        if (face.centre.x - .2 * face.centre.y < 1e-10)
+            return valueBoundary(exact(face.centre));
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,
+                                -d * (gradient.x * face.areaVector.x + gradient.y * face.areaVector.y) / length,
+                                std::nullopt};
+    };
+    ScalarTransportControls2D controls;
+    controls.maxCorrections = 3000;
+    controls.relativeTolerance = 1e-11;
+    controls.absoluteTolerance = 1e-13;
+    controls.cellTolerance = 1e-11;
+    const auto result = solveScalarTransport2D(mesh, problem, controls);
+    check(result.converged, "variable-D skew affine solve converges");
+    for (std::size_t i = 0; i < mesh.cells.size(); ++i)
+        check(std::abs(result.values[i] - exact(mesh.cells[i].centre)) < 2e-7,
+              "variable-D skew affine manufactured solution is recovered");
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id) {
+        const auto& face = mesh.faces[id];
+        const double expectedFlux = -problem.faceDiffusivity[id] * dot(gradient, face.areaVector);
+        check(std::abs(result.diffusiveFlux[id] - expectedFlux) < 2e-8,
+              "variable-D skew affine shared-face flux agrees with exact field");
+    }
+    check(std::abs(result.globalBalance) < 2e-8,
+          "variable-D skew affine flux balance closes");
+}
 }
 
 int main() {
@@ -330,6 +452,9 @@ int main() {
         manufacturedRefinement();
         transientSineTimeRefinement();
         invalidInputs();
+        uniformFaceDiffusivityIsIdentical();
+        variableFaceDiffusivityConservesHarmonicInterface();
+        variableFaceDiffusivityManufacturedSkewAffine();
     } catch (const std::exception& error) {
         std::cerr << "unexpected scalar transport exception: " << error.what() << '\n';
         return 1;

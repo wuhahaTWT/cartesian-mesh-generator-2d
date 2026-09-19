@@ -80,11 +80,33 @@ std::vector<fv::ScalarBoundary2D> boundaries(const std::string& path,const fv::F
         require(mesh.faces[id].neighbour.has_value()||seen[id],"missing scalar boundary face");
     return bc;
 }
+std::vector<double> faceDiffusivity(const std::string& path,std::size_t count) {
+    std::ifstream in(path); require(bool(in),"cannot open face diffusivity CSV");
+    std::string line; std::getline(in,line);
+    if(!line.empty()&&line.back()=='\r')line.pop_back();
+    require(line=="face,diffusivity","diffusivity CSV header must be face,diffusivity");
+    std::vector<double> values(count); std::vector<bool> seen(count,false);
+    while(std::getline(in,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        const auto comma=line.find(',');
+        require(comma!=std::string::npos && line.find(',',comma+1)==std::string::npos,
+            "diffusivity CSV row requires two fields");
+        const double index=number(line.substr(0,comma));
+        require(index>=0&&index<static_cast<double>(count)&&index==std::floor(index),"invalid diffusivity face ID");
+        const auto id=static_cast<std::size_t>(index);
+        require(!seen[id],"duplicate diffusivity face");
+        values[id]=number(line.substr(comma+1));
+        require(values[id]>0,"face diffusivity must be positive"); seen[id]=true;
+    }
+    require(in.eof(),"cannot read face diffusivity CSV");
+    require(std::all_of(seen.begin(),seen.end(),[](bool value){return value;}),"missing diffusivity face");
+    return values;
+}
 }
 int main(int argc,char**argv) {
     std::string prefix; bool started=false; double acceptedTime=0;
     try {
-        std::string meshPath,flowPath,bcPath,verification,evolve,restart;
+        std::string meshPath,flowPath,bcPath,verification,evolve,restart,diffusivityPath;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
         bool explicitVelocityRelaxation=false;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
@@ -92,14 +114,17 @@ int main(int argc,char**argv) {
         for(int i=1;i<argc;++i) {
             const std::string arg=argv[i];
             if(arg=="--help") {
-                std::cout<<"Native constant-property passive scalar / temperature transport.\n"
+                std::cout<<"Native passive scalar / temperature transport at constant density and heat capacity.\n"
                     "--mesh FINAL.solver.cm2d --flow-checkpoint FLOW.checkpoint --boundary BC.csv --output PREFIX\n"
                     "BC.csv: face,type,value,inflowValue; every boundary face, type=value|flux.\n"
                     "flux is outward -D grad(s).n per length; negative carrier flux requires inflow value.\n"
                     "--diffusivity .01 --source 0 --initial 0 --convection upwind|limited-linear\n"
+                    "--face-diffusivity D.csv: face,diffusivity; every face once, finite positive values.\n"
+                    "  Prescribed face coefficients, frozen carrier only; no evolving/restart/verification mixing.\n"
                     "--dt DT --steps N: backward Euler on FROZEN carrier flux (not coupled evolving flow).\n"
                     "Without dt: steady. Thermal D=k/(rho cp), source=Q/(rho cp), boundary flux=q/(rho cp).\n"
-                    "Verification only: --verification sine|decay (unit-square decay), --speed 1 for sine.\n"
+                    "Verification only: --verification sine|variable-sine|decay (unit-square decay).\n"
+                    "  variable-sine: steady D(x)=diffusivity*(1+x); --speed 1 for either sine case.\n"
                     "Evolving flow: --evolve-flow external|channel|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
                     "  --flow-velocity-relaxation 0.6: evolving carrier only; (0,1], larger may be unstable.\n"
@@ -139,6 +164,7 @@ int main(int argc,char**argv) {
                 flowControls.pressurePreconditioner=value=="ic0"?fv::PressurePreconditioner2D::IncompleteCholesky0:fv::PressurePreconditioner2D::Aggregation;
             }
             else if(arg=="--diffusivity")diffusivity=number(value);
+            else if(arg=="--face-diffusivity")diffusivityPath=value;
             else if(arg=="--source")source=number(value); else if(arg=="--initial")initial=number(value);
             else if(arg=="--dt")dt=number(value); else if(arg=="--speed")speed=number(value);
             else if(arg=="--steps"||arg=="--max-corrections") {
@@ -152,12 +178,15 @@ int main(int argc,char**argv) {
         require(!meshPath.empty()&&!prefix.empty(),"--mesh and --output required");
         require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final solver mesh");
         require(dt>=0&&diffusivity>0&&(dt>0||steps==1),"invalid time settings or diffusivity");
-        require(verification.empty()||verification=="sine"||verification=="decay"||verification=="thermal-vortex","unknown verification");
+        require(verification.empty()||verification=="sine"||verification=="variable-sine"||verification=="decay"||verification=="thermal-vortex","unknown verification");
+        const bool steadySine=verification=="sine"||verification=="variable-sine";
         if(verification=="thermal-vortex") {
             require(evolve.empty()&&flowPath.empty()&&bcPath.empty(),"thermal-vortex defines its own carrier and boundaries");
             evolve="taylor-green";
         }
         const bool evolving=!evolve.empty();
+        require(diffusivityPath.empty()||(!evolving&&restart.empty()&&verification.empty()),
+            "face-diffusivity requires frozen carrier without restart or verification");
         require(!explicitVelocityRelaxation||evolving,"flow-velocity-relaxation option requires evolving flow");
         if(evolving) {
             require(dt>0&&flowPath.empty()&&(verification.empty()||verification=="thermal-vortex"),"evolving flow requires dt and cannot use a frozen carrier or other verification");
@@ -167,16 +196,25 @@ int main(int argc,char**argv) {
         }
         require(restart.empty()||evolving,"joint restart requires evolving flow");
         require(verification.empty()?((!flowPath.empty()||evolving)&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
-        require(verification!="sine"||dt==0,"sine verification is steady");
+        require(!steadySine||dt==0,"sine verification is steady");
         require(verification!="decay"||dt>0,"decay verification needs dt");
         auto read=readCm2dTopology(meshPath); require(read.valid(),read.error);
         const auto mesh=fv::makeFvMesh2D(read.topology);
         fv::ScalarTransportProblem2D p; p.diffusivity=diffusivity;
+        if(!diffusivityPath.empty())p.faceDiffusivity=faceDiffusivity(diffusivityPath,mesh.faces.size());
+        if(verification=="variable-sine") {
+            for(const auto& vertex:read.topology.vertices)require(vertex.point.x>-1,"variable-sine requires positive D throughout domain");
+            for(const auto& f:mesh.faces) {
+                const double d=diffusivity*(1+f.centre.x);
+                require(std::isfinite(d)&&d>0,"variable-sine requires positive finite face diffusivity");
+                p.faceDiffusivity.push_back(d);
+            }
+        }
         std::vector<fv::ScalarBoundary2D> bc;
         double carrierTime=0,time=0;
         fv::ThermalSetup2D thermalSetup; fv::ThermalFlowState2D state;
         const double pi=std::numbers::pi;
-        const auto exact=[&](Point2D x) {return std::sin(pi*x.x)*std::sin(pi*x.y)*std::exp(verification!="sine"?-2*pi*pi*diffusivity*time:0.);};
+        const auto exact=[&](Point2D x) {return std::sin(pi*x.x)*std::sin(pi*x.y)*std::exp(!steadySine?-2*pi*pi*diffusivity*time:0.);};
         if(verification.empty()) {
             if(!evolving) {const auto frozen=carrier(flowPath,mesh); p.volumeFlux=frozen.flux; carrierTime=frozen.time;}
             bc=boundaries(bcPath,mesh);
@@ -195,9 +233,14 @@ int main(int argc,char**argv) {
                         "decay verification requires the unit square boundary");
             }
             p.volumeFlux.resize(mesh.faces.size());
-            for(std::size_t id=0;id<mesh.faces.size();++id) p.volumeFlux[id]=verification!="sine"?0:speed*mesh.faces[id].areaVector.x;
+            for(std::size_t id=0;id<mesh.faces.size();++id) p.volumeFlux[id]=!steadySine?0:speed*mesh.faces[id].areaVector.x;
             p.boundary=[&](std::size_t,const fv::Face& f){return fv::ScalarBoundary2D{fv::ScalarBoundaryKind2D::Value,exact(f.centre),{}};};
-            p.source=[&](Point2D x){return verification!="sine"?0:2*diffusivity*pi*pi*exact(x)+speed*pi*std::cos(pi*x.x)*std::sin(pi*x.y);};
+            p.source=[&](Point2D x){
+                if(!steadySine)return 0.;
+                const bool variable=verification=="variable-sine";
+                const double d=diffusivity*(variable?1+x.x:1.);
+                return 2*d*pi*pi*exact(x)+(speed-(variable?diffusivity:0.))*pi*std::cos(pi*x.x)*std::sin(pi*x.y);
+            };
         }
         if(evolving) {
             thermalSetup.diffusivity=diffusivity;
@@ -282,11 +325,15 @@ int main(int argc,char**argv) {
             if(!verification.empty()) {const double ex=exact(cell.centre);cells<<ex;error2+=cell.area*std::pow(result.values[i]-ex,2);area+=cell.area;}else cells<<"nan";
             cells<<'\n';
         }
-        auto faces=output(prefix,".faces.csv");faces<<"face,owner,neighbour,volumeFlux,advectiveFlux,diffusiveFlux\n";
+        auto faces=output(prefix,".faces.csv");faces<<"face,owner,neighbour,volumeFlux,advectiveFlux,diffusiveFlux";
+        if(!p.faceDiffusivity.empty())faces<<",diffusivity";
+        faces<<'\n';
         for(std::size_t id=0;id<mesh.faces.size();++id) {
             const auto& f=mesh.faces[id]; faces<<id<<','<<f.owner<<',';
             if(f.neighbour)faces<<*f.neighbour;else faces<<-1;
-            faces<<','<<p.volumeFlux[id]<<','<<result.advectiveFlux[id]<<','<<result.diffusiveFlux[id]<<'\n';
+            faces<<','<<p.volumeFlux[id]<<','<<result.advectiveFlux[id]<<','<<result.diffusiveFlux[id];
+            if(!p.faceDiffusivity.empty())faces<<','<<p.faceDiffusivity[id];
+            faces<<'\n';
         }
         std::string error;require(writeLegacyVtk2D(read.topology,prefix+".vtk",&error),error);
         std::ofstream vtk(prefix+".vtk",std::ios::app);vtk.exceptions(std::ios::badbit|std::ios::failbit);vtk<<std::setprecision(17)<<"SCALARS scalar double 1\nLOOKUP_TABLE default\n";
@@ -296,7 +343,7 @@ int main(int argc,char**argv) {
             <<",\n\"converged\":"<<(result.converged?"true":"false")<<",\n\"mesh\":"<<quote(meshPath)
             <<",\n\"carrierCheckpoint\":"<<quote(flowPath)<<",\n\"carrierTime\":"<<carrierTime
             <<",\n\"boundaryFile\":"<<quote(bcPath)<<",\n\"verification\":"<<quote(verification)
-            <<",\n\"scope\":"<<quote(evolving?"synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback":"constant-property passive scalar; frozen carrier flux; no buoyancy or thermal feedback")
+            <<",\n\"scope\":"<<quote(evolving?"synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback":p.faceDiffusivity.empty()?"constant-property passive scalar; frozen carrier flux; no buoyancy or thermal feedback":"prescribed face diffusivity; constant density and heat capacity; frozen carrier; no thermal feedback")
             <<",\n\"evolvingFlow\":"<<(evolving?"true":"false")<<",\n\"acceptedTime\":"<<acceptedTime
             <<",\n\"restart\":"<<quote(restart)<<",\n\"flowCase\":"<<quote(evolve)
             <<",\n\"cells\":"<<mesh.cells.size()<<",\n\"faces\":"<<mesh.faces.size()<<",\n\"time\":"<<time<<",\n\"timeStep\":"<<dt
@@ -315,6 +362,7 @@ int main(int argc,char**argv) {
             <<",\n\"globalBalance\":"<<result.globalBalance<<",\n\"maxCarrierImbalance\":"<<result.maxCarrierImbalance
             <<",\n\"minValue\":"<<result.minValue<<",\n\"maxValue\":"<<result.maxValue<<",\n\"maxCourant\":"<<result.maxCourant<<",\n\"l2Error\":";
         if(!verification.empty())json<<std::sqrt(error2/area);else json<<"null";
+        if(!p.faceDiffusivity.empty())json<<",\n\"diffusivityModel\":\"face-values\",\n\"diffusivityFile\":"<<quote(diffusivityPath);
         json<<",\n\"nativeTopologyRevalidated\":true,\n\"solverQualityPassed\":true,\n\"externalCheckMesh\":\"not run\"\n}\n";
         cells.close();faces.close();vtk.close();history.close();json.close();
         std::cout<<(result.converged?"Converged":"Correction limit")<<": "<<mesh.cells.size()<<" cells, time="<<time<<", scalar range=["<<result.minValue<<','<<result.maxValue<<"], balance="<<result.globalBalance<<'\n';

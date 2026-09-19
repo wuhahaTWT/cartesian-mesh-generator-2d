@@ -16,10 +16,13 @@ double finite(double value) {
     require(std::isfinite(value), "Scalar transport numerical range exceeded");
     return value;
 }
+double faceDiffusivity(const ScalarTransportProblem2D& p, std::size_t id) {
+    return p.faceDiffusivity.empty()?p.diffusivity:p.faceDiffusivity[id];
+}
 // Least squares uses actual prescribed normal derivatives at flux boundaries,
 // not an artificial zero gradient or a guessed face value.
 std::vector<Vector2D> gradients(const FvMesh2D& mesh, const Values& value,
-    const std::vector<ScalarBoundary2D>& bc, double diffusivity) {
+    const std::vector<ScalarBoundary2D>& bc, const ScalarTransportProblem2D& p) {
     std::vector<Vector2D> result(value.size());
     for (std::size_t i=0;i<value.size();++i) {
         double xx=0,xy=0,yy=0,bx=0,by=0;
@@ -36,7 +39,7 @@ std::vector<Vector2D> gradients(const FvMesh2D& mesh, const Values& value,
             } else {
                 const double length=std::hypot(f.areaVector.x,f.areaVector.y);
                 d=f.areaVector*(1/length);
-                delta=-bc[id].value/diffusivity;
+                delta=-bc[id].value/faceDiffusivity(p,id);
             }
             xx+=d.x*d.x; xy+=d.x*d.y; yy+=d.y*d.y;
             bx+=d.x*delta; by+=d.y*delta;
@@ -65,6 +68,10 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
         "Scalar transport requires exactly one valid boundary representation");
     require(std::isfinite(p.diffusivity)&&p.diffusivity>0,
         "Scalar transport diffusivity must be finite positive");
+    require(p.faceDiffusivity.empty() || p.faceDiffusivity.size()==nf,
+        "Scalar transport face diffusivity dimensions mismatch");
+    for (double d:p.faceDiffusivity) require(std::isfinite(d)&&d>0,
+        "Scalar transport face diffusivity must be finite positive");
     require(c.maxCorrections>0 && std::isfinite(c.relaxation)&&c.relaxation>0&&c.relaxation<=1,
         "Scalar transport invalid correction controls");
     require(c.convection==ConvectionScheme2D::Upwind || c.convection==ConvectionScheme2D::LimitedLinearUpwind,
@@ -133,7 +140,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     }
     for (std::size_t id=0;id<nf;++id) {
         const auto& f=mesh.faces[id]; const auto i=f.owner;
-        const double q=p.volumeFlux[id],d=finite(p.diffusivity*f.transmissibility);
+        const double q=p.volumeFlux[id],d=finite(faceDiffusivity(p,id)*f.transmissibility);
         if (f.neighbour) {
             const auto j=*f.neighbour;
             a.diag[i]+=d+std::max(q,0.); a.add(i,j,-d+std::min(q,0.));
@@ -151,7 +158,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     const double stop=finite(c.absoluteTolerance+c.relativeTolerance*scale);
     Values extra(nf),residual(n);
     const auto faceFluxes=[&]() {
-        const auto g=gradients(mesh,r.values,bc,p.diffusivity);
+        const auto g=gradients(mesh,r.values,bc,p);
         auto limitFixed=fixed;
         for (std::size_t id=0;id<nf;++id)
             if (!mesh.faces[id].neighbour && p.volumeFlux[id]<0) limitFixed[id]=true;
@@ -159,19 +166,20 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
             ?detail::faceReconstructionLimiter(mesh,r.values,g,boundaryValues,limitFixed):Values{};
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=mesh.faces[id]; const auto i=f.owner; const double q=p.volumeFlux[id];
+            const double diffusivity=faceDiffusivity(p,id);
             auto gf=g[i];
             if (f.neighbour) {
                 const auto gn=g[*f.neighbour]; const double w=f.neighbourWeight;
                 gf={gf.x*(1-w)+gn.x*w,gf.y*(1-w)+gn.y*w};
             }
-            const double diffCorrection=(!f.neighbour&&!fixed[id])?0:-p.diffusivity*dot(gf,f.correction);
+            const double diffCorrection=(!f.neighbour&&!fixed[id])?0:-diffusivity*dot(gf,f.correction);
             const double upwind=(!f.neighbour&&q<0)?boundaryValues[id]:r.values[(f.neighbour&&q<0)?*f.neighbour:i];
             const double advected=(!f.neighbour&&q<0)?boundaryValues[id]
                 :detail::upwindFaceValue(mesh,id,q,r.values,g,limiter);
             r.advectiveFlux[id]=finite(q*advected);
             r.diffusiveFlux[id]=finite(!f.neighbour&&!fixed[id]
                 ?bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y)
-                :p.diffusivity*f.transmissibility*(r.values[i]-(f.neighbour?r.values[*f.neighbour]:bc[id].value))+diffCorrection);
+                :diffusivity*f.transmissibility*(r.values[i]-(f.neighbour?r.values[*f.neighbour]:bc[id].value))+diffCorrection);
             extra[id]=finite(diffCorrection+q*(advected-upwind));
         }
     };

@@ -23,6 +23,11 @@ struct ScalarTransportProblem2D {
     std::vector<ScalarBoundary2D> boundaryData;
     std::function<double(Point2D)> source;
     std::function<ScalarBoundary2D(std::size_t, const Face&)> boundary;
+    // Optional prescribed face coefficients, including boundary faces. Empty
+    // uses diffusivity; otherwise exactly one finite positive D per face.
+    // The caller defines material-interface interpolation (no hidden averaging).
+    // diffusivity remains a finite positive reference value in either mode.
+    std::vector<double> faceDiffusivity;
 };
 struct ScalarTransportControls2D {
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
