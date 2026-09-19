@@ -211,6 +211,17 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 固定网格时间步审核
+
+`tools/verification/verify_thermal_time.py` 对至少三组已完成的同步热涡/独立流动输出进行审核。每组先复用空间验证器的实际几何、逐面本构、守恒、时间项与checkpoint一致性检查，再要求实际mesh SHA、最终物理时间、物性、格式、松弛和停止条件相同，仅dt减小/接受步数增加。比较**连续时间解析解**的面积加权RMS；空间连续后向欧拉参考仍保留，用于观察空间/迭代误差。若任一场误差不下降，则报告失败；观测斜率只做诊断，不硬套一个全软件通用阶数门。
+
+```bash
+python3 tools/verification/verify_thermal_time.py --case PATH/dt1/thermal PATH/dt1/flow --case PATH/dt2/thermal PATH/dt2/flow --case PATH/dt3/thermal PATH/dt3/flow --output outputs/thermal-time-audit/study.json
+python3 tools/visualization/render_thermal_time.py --study outputs/thermal-time-audit/study.json --output outputs/thermal-time-audit/figure.png
+```
+
+真实10,000格、dt=.005/.0025/.00125、t=.01证据在 `artifacts/current/native-flow-thermal-time.json`；它包含原始生成脚本、工具/网格哈希及复用首档的来源，不将复用结果算成本轮重新求解。
+
 ### SST扩展前的物性场缺口
 
 当前 `FlowControls2D::nu`、`ScalarTransportProblem2D::diffusivity` 和热输运物性仍是全域常数。后续空间有效黏度必须统一进入动量矩阵、非正交修正、`FlowFaceOperators2D.hpp` 的共享面对称应力、壁面力及面输出；独立读取器和checkpoint也要记录并重算相同物性场。现有一个共享面通量、相邻单元反号的守恒结构可沿用，但尚无变黏度、湍黏度或湍流普朗特数实现。不能仅在力的后处理处替换nu，或将常数nu输入框改名为SST。先使用变系数制造解与共享面牵引测试验证，再接入具体版本的模型方程；这仍是未实现的工作。
