@@ -48,6 +48,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('baseline','candidate','mesh','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--case',choices=('external','channel','cavity','taylor-green'),required=True)
+    p.add_argument('--baseline-preconditioner',choices=('ic0','jacobi','aggregation'),default='ic0')
+    p.add_argument('--candidate-preconditioner',choices=('ic0','jacobi','aggregation'),default='ic0')
     p.add_argument('--nu',type=float,required=True);p.add_argument('--speed',type=float,default=1.)
     p.add_argument('--convection',choices=('upwind','limited-linear'),default='limited-linear')
     p.add_argument('--tolerance',type=float,default=1e-9);p.add_argument('--max-iterations',type=int,default=1500)
@@ -60,6 +62,7 @@ def main():
     mesh=a.mesh.resolve(strict=True);a.output.mkdir(parents=True,exist_ok=False)
     report={'scope':'serial timing and output comparison only; independent physical audit separate',
             'platform':platform.platform(),'machine':platform.machine(),'mesh':str(mesh),'meshSha256':sha(mesh),
+            'preconditioners':{k:getattr(a,k+'_preconditioner') for k in binaries},
             'binarySha256':{k:sha(v) for k,v in binaries.items()},'runs':[],'pairs':[]}
     suffixes=['.cells.csv','.faces.csv','.fields.json','.vtk','.residuals.csv']
     if a.dt is not None:suffixes+=['.checkpoint','.time-history.csv']
@@ -69,6 +72,7 @@ def main():
         for label in (('baseline','candidate') if repeat%2==0 else ('candidate','baseline')):
             prefix=(a.output/f'{repeat}-{label}'/'result').resolve();prefix.parent.mkdir()
             cmd=[str(binaries[label]),'--mesh',str(mesh),'--output',str(prefix),'--case',a.case,'--nu',str(a.nu),'--speed',str(a.speed),'--convection',a.convection,'--viscous-stress','symmetric','--tolerance',str(a.tolerance),'--max-iterations',str(a.max_iterations),'--profile']
+            cmd+=['--pressure-preconditioner',getattr(a,label+'_preconditioner')]
             if a.dt is not None:cmd+=['--time-step',str(a.dt),'--steps',str(a.steps)]
             wrapper=[]
             if Path('/usr/bin/time').is_file():

@@ -172,9 +172,19 @@ python3 tools/verification/verify_transient_flow.py --mesh PATH/FINAL.solver.cm2
 
 最终矩阵图可用 `python3 tools/verification/plot_transient_flow.py --root outputs/native-flow/transient/final --output artifacts/current/native-flow-transient` 重建；先校验来源哈希。误差和时间步自收敛单独报告，离散守恒通过不等于物理精度验收。
 
+### 压力多重网格（实验选项）
+
+`cartmesh2d_flow_cli --pressure-preconditioner aggregation` 在原PCG中改用聚合多重网格预条件。默认仍是`ic0`，`jacobi`保留对照。非定常重启允许改变预条件器，因为它不改变物性或离散方程；它仍须通过原矩阵真实残差 `1e-13 + 1e-11*||rhs||₂` 检查。改变迭代路径会引入舍入差，不能要求不同方法逐字节相同，也不能据此放宽非线性或守恒门。
+
+实现位于`FlowAggregation2D.hpp`：按最大负耦合确定性配对，再将有连接的单独节点并入相邻配对组；分片常数延拓P、转置限制Pᵀ，粗算子为PᵀAP；内部面贡献以同一个累加结果写入两侧，保持精确对称。每次PCG应用固定一轮V-cycle，前向/反向Gauss–Seidel构成对称平滑，末层至多32单元用稠密LDLᵀ；纯对角末层直接求解。采用[标准多重网格与PCG原理](https://www.netlib.org/templates/templates.html)，[hypre官方说明](https://hypre.readthedocs.io/en/stable/solvers-boomeramg.html)也强调CG需要对称平滑。本仓库独立实现上述有限方案，没有复制或链接hypre；不宣称与成熟AMG库功能或鲁棒性相当。
+
+当前限对称、正对角、非正非对角的压力矩阵；分解失败、非有限数或每层聚合未至少减少约20%未知数时明确失败，提示选IC0，不静默替换方法。深度上限32，防止弱聚合图反复保留大层。实际层数、末层单元数、构建/复用次数随`--profile`记录；这些是资源诊断，不是物理精度等级。
+
+同一次SIMPLE的四次非正交修正共用矩阵；IC0/多重网格都由矩阵持有缓存，用精确系数比较防止直接写入导致缓存过期。下一轮重新装配会使缓存失效；分解失败不保留可用标记。多重网格每层工作数组预分配，V-cycle不逐步申请大数组。缓存和层次结构增加存储，峰值RSS需实测，不能只报告迭代次数降低。
+
 ### 相同输入的核心性能对照
 
-`benchmark_flow_pair.py` 对保存的旧CLI和当前CLI串行执行完全相同的输入，每一对轮换前后顺序；记录二进制/网格哈希、完整命令、实际返回码、超时和原生迭代计数。macOS用`/usr/bin/time -l`、Linux用`-v`读取峰值RSS，不可用时记录null，不冒充零内存。比较最终单元字段和输出文件哈希；性能比较本身不替代独立几何/物理审核。
+`benchmark_flow_pair.py` 对保存的旧CLI和当前CLI串行执行相同的物理输入，每一对轮换前后顺序；记录二进制/网格哈希、完整命令、实际返回码、超时和原生迭代计数。macOS用`/usr/bin/time -l`、Linux用`-v`读取峰值RSS，不可用时记录null，不冒充零内存。比较最终单元字段和输出文件哈希；性能比较本身不替代独立几何/物理审核。`--baseline-preconditioner` 和 `--candidate-preconditioner` 可分别指定 `ic0/jacobi/aggregation`，默认均为 IC0；比较不同方法时记录实际字段差异，不能宣称逐位一致。
 
 ```sh
 python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --candidate build/cartmesh2d_flow_cli --mesh PATH/channel.solver.cm2d --output outputs/new-performance-pair --case channel --nu .01 --convection upwind --tolerance 1e-6 --repeats 2 --timeout 180
@@ -264,7 +274,7 @@ build/cartmesh2d_flow_cli --mesh outputs/native-flow/formal-final/meshes/channel
 # Linux /usr/bin/time -v 的 Maximum resident set size 单位为 KiB，不能直接混比。
 ```
 
-相同几何/网格/工况/容差/线程数下比较，记录二进制哈希和系统版本。固定迭代吞吐不能冒充达到相同物理解精度的加速；完整求解须同时核对误差与守恒。初步小规模观测不外推50万格速度。前端继续使用原六份物理文件，本阶段未重新打包 App。
+相同几何/网格/工况/容差/线程数下比较，记录二进制哈希和系统版本。固定迭代吞吐不能冒充达到相同物理解精度的加速；完整求解须同时核对误差与守恒。初步小规模观测不外推50万格速度。前端只读取物理结果，不依赖计时文件；当前打包验证范围见 CURRENT_STATE。
 
 理论与验证参考：[殷雅俊专著及简介](https://www.tup.tsinghua.edu.cn/booksCenter/book_07344201.html)、[NASA Turbulence Modeling Resource](https://www.nasa.gov/nasa-turbulence-modeling-resource/)。前者用于评估张量表述与推导，未作为已经证明的加速方法；后者用于后续具体湍流版本与验证设计，不表示已实现 SST。
 

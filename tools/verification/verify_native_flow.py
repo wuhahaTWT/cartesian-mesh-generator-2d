@@ -1706,6 +1706,8 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--external-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
+    parser.add_argument("--pressure-preconditioner", choices=("ic0", "jacobi", "aggregation"), default="ic0",
+                        help="native pressure preconditioner; aggregation remains experimental")
     parser.add_argument("--viscous-stress", choices=("symmetric", "laplacian"), default="symmetric",
                         help="native viscous stress mode for generated runs; legacy metadata remains laplacian")
     parser.add_argument("--convection", choices=("upwind", "limited-linear"), default="upwind",
@@ -1825,6 +1827,7 @@ def main() -> int:
                        "--case", case, "--nu", f"{nu:.17g}", "--speed", f"{speed:.17g}",
                        "--max-iterations", str(args.max_iterations),
                        "--viscous-stress", args.viscous_stress,
+                       "--pressure-preconditioner", args.pressure_preconditioner,
                        "--convection", args.convection]
             if case == "manufactured":
                 command.extend(["--manufactured-pressure-slope",

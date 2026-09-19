@@ -762,10 +762,20 @@ function flowConvectionLabel(summary) {
   return `${label}${summary.convectionInferred ? '（旧摘要缺字段，按一阶迎风推断）' : ''}`;
 }
 
+function flowPressurePreconditionerLabel(summary) {
+  if (summary.pressurePreconditionerInferred || summary.pressurePreconditioner === 'legacy-unspecified')
+    return '旧结果未记录';
+  const scheme = state.catalog?.flowPressurePreconditioners?.[summary.pressurePreconditioner];
+  const label = scheme?.label || (summary.pressurePreconditioner === 'aggregation'
+    ? '多重网格（试验）' : '标准（IC0）');
+  return label;
+}
+
 function renderFlowResult(summary) {
   const container = $('flowResult');
   container.replaceChildren();
   const convectionText = flowConvectionLabel(summary);
+  const pressurePreconditionerText = flowPressurePreconditionerLabel(summary);
   const pressureText = summary.pressureDiscretization === 'shared-face-gauss'
     ? '共享面压力' : '旧结果未记录';
   const stateLine = document.createElement('div');
@@ -778,6 +788,7 @@ function renderFlowResult(summary) {
   const rows = [
     ...(summary.temporalDiscretization ? [['时间步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
     ['对流格式', convectionText],
+    ['压力求解', pressurePreconditionerText],
     ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
     ['全局不平衡（m²/s）', summary.globalImbalance],
@@ -805,6 +816,7 @@ function updateFlowMode() {
   $('flowResume').disabled = state.busy || !restart || !transient;
   const resuming = transient && $('flowResume').checked && restart;
   for (const id of ['flowCase','flowNu','flowSpeed','flowConvection']) $(id).disabled = state.busy || Boolean(resuming);
+  $('flowPressurePreconditioner').disabled = state.busy;
   $('flowRestartInfo').textContent = restart
     ? `可续算：t=${Number(restart.time).toPrecision(6)} s · ${restart.fileName}。启动时原生核对完整网格与状态。`
     : '每个完成的时间步都会保存；取消后可继续。';
@@ -867,6 +879,7 @@ async function runFlow() {
   const transient=$('flowMode').value==='transient';
   const request={ case:$('flowCase').value,nu:Number($('flowNu').value),speed:Number($('flowSpeed').value),
     maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
+    pressurePreconditioner:$('flowPressurePreconditioner').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),resume:transient && $('flowResume').checked };
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
@@ -956,6 +969,7 @@ for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
   $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 }
 $('flowConvection').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
+$('flowPressurePreconditioner').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 
 $('displayMode').addEventListener('change', event => {

@@ -16,7 +16,7 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
-const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, buildFlowInvocation, commitFlowFiles,
+const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, flowOutputSuffixes } = require('./core/flow');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { parseCm2d, levelHistogram, embeddedBounds,
@@ -181,7 +181,8 @@ app.whenReady().then(async () => {
     formats: GEOMETRY_FORMATS,
     samples: SAMPLES.map(sample => ({ ...sample, path: resourcePath('samples', sample.file) })),
     flowCases: FLOW_CASES,
-    flowConvectionSchemes: FLOW_CONVECTION_SCHEMES
+    flowConvectionSchemes: FLOW_CONVECTION_SCHEMES,
+    flowPressurePreconditioners: FLOW_PRESSURE_PRECONDITIONERS
   }));
 
   ipcMain.handle('plan-budget', (_event, { request, frame }) => planBudget(request, budgetFrame(request, frame)));
@@ -600,7 +601,7 @@ app.whenReady().then(async () => {
   if (process.argv.some(item => item.startsWith('--smoke='))) await runSmoke();
 });
 
-// `--smoke=<sample-id> [--out=<dir>] [--method=<id>] [--flow-convection=<scheme>] [--shot=<png>]` drives the real
+// `--smoke=<sample-id> [--out=<dir>] [--method=<id>] [--flow-convection=<scheme>] [--flow-pressure-preconditioner=<id>] [--shot=<png>]` drives the real
 // renderer through a full run and writes a screenshot.  Clicking the actual controls
 // is the only check that covers the renderer, the IPC surface and the CLI together.
 async function runSmoke() {
@@ -733,6 +734,8 @@ async function runSmoke() {
       document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
       document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'upwind')};
       document.getElementById('flowConvection').dispatchEvent(new Event('change'));
+      document.getElementById('flowPressurePreconditioner').value = ${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')};
+      document.getElementById('flowPressurePreconditioner').dispatchEvent(new Event('change'));
       if (${JSON.stringify(Boolean(argument('flow-dt')))}) {
         document.getElementById('flowMode').value='transient';
         document.getElementById('flowMode').dispatchEvent(new Event('change'));
@@ -745,6 +748,12 @@ async function runSmoke() {
         document.getElementById('flowSteps').value=${JSON.stringify(argument('flow-resume-steps') || '2')};
         document.getElementById('flowResume').checked=true;
         document.getElementById('flowResume').dispatchEvent(new Event('change'));
+        if (${JSON.stringify(Boolean(argument('flow-resume-pressure-preconditioner')))}) {
+          const method=document.getElementById('flowPressurePreconditioner');
+          if (method.disabled) throw new Error('Pressure solver selector is locked during idle resume');
+          method.value=${JSON.stringify(argument('flow-resume-pressure-preconditioner') || 'ic0')};
+          method.dispatchEvent(new Event('change'));
+        }
         await smoke.runFlow();
         const expected=before+Number(document.getElementById('flowDt').value)*Number(document.getElementById('flowSteps').value);
         if (!smoke.state.flow || Math.abs(smoke.state.flow.summary.acceptedTime-expected)>1e-10)

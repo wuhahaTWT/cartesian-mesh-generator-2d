@@ -220,6 +220,13 @@
         </select>
       </label>
       <p class="note">线性迎风使用有界限制重构，可减少数值扩散，但不保证所有工况都更准确；这里不代表通用二阶格式或新的工程合格结论。</p>
+      <label class="field">压力求解
+        <select id="flowPressurePreconditioner">
+          <option value="ic0" selected>标准（IC0）</option>
+          <option value="aggregation">多重网格（试验）</option>
+        </select>
+      </label>
+      <p class="note">大网格可尝试；内存占用可能增加。</p>
       <label class="field"><span id="flowIterationLabel">最大 SIMPLE 迭代</span>
         <input id="flowMaxIterations" type="number" min="1" max="100000" step="1" value="1500">
       </label>

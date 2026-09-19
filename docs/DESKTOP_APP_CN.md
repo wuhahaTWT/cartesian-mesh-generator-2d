@@ -2,7 +2,7 @@
 
 ## 打开与版本
 
-唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.5。
+唯一前端在根目录 `desktop/src/`，当前桌面版本为 0.4.6。
 macOS 直接双击根目录 `打开CartMesh2D.command`；Apple Silicon App 在 `desktop/dist/mac-arm64/CartMesh2D.app`，Intel 本机构建在 `desktop/dist/mac/CartMesh2D.app`。
 开发模式：在 `desktop/` 执行 `npm start`。从其他目录调用 `sh desktop/scripts/build-macos.sh` 也可打包。
 不要再打开旧隐藏工作区路径；新旧代码关系见开发导航的历史表。
@@ -56,6 +56,8 @@ GitHub 的 `desktop-platforms` 工作流在三个系统分别编译、打包并�
 3. 完成或取消后，勾选“从保存状态继续”再算。打开外部 `.checkpoint` 前先生成同一网格；物性、工况、网格和格式必须匹配，原生求解器会再次核对。可改时间步与本次步数。
 
 取消或某步不收敛时，仍可查看上次完整结果；续算时间可能比显示场更新，以各自标签为准。退出 App 前先导出 ZIP：`.flow.checkpoint` 是完整结果的续算状态；取消后更新的状态保存在 `flow-incomplete-*` 诊断目录，配有 `desktop-flow-error.json`。只用完整 `.checkpoint`，不要用 `.tmp` 或失败候选 CSV 重启。
+
+“压力求解”默认选**标准（IC0）**。大网格可试**多重网格（试验）**，它可能减少迭代，但会多用一些内存，也不保证每个案例更快。续算时可以切换；遇到聚合或分解失败可改回标准方法。结果和导出说明会记录实际使用的方法，不能靠切换方法跳过收敛检查。
 
 曲线显示本次计算的已接受时间步，`.flow.time-history.csv` 保存本次全部步记录；`.flow.residuals.csv` 只记录最后尝试步的内迭代。当前固定步长、一阶后向欧拉，CFL 是实测提示，不会自动调整步长。细网格通常需要更小步长，可靠结果仍须比较不同时间步与网格。
 

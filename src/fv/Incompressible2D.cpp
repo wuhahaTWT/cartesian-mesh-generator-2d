@@ -270,7 +270,8 @@ static FlowResult2D solveFlow(
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
-               c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0,
+               c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ||
+               c.pressurePreconditioner == PressurePreconditioner2D::Aggregation,
            "Invalid pressure preconditioner");
     ensure(c.convection == ConvectionScheme2D::Upwind ||
                c.convection == ConvectionScheme2D::LimitedLinearUpwind,
@@ -334,11 +335,22 @@ static FlowResult2D solveFlow(
     // solves. Timing includes each linear solver's setup, but not assembly.
     auto linearSolve = [&](const System& system, Vec& field, bool pressure) {
         const auto start = c.profile ? Clock::now() : Clock::time_point{};
+        const auto oldBuilds = system.ic0Builds(), oldReuses = system.ic0Reuses();
+        const auto oldHierarchies=system.hierarchyBuilds(), oldHierarchyReuses=system.hierarchyReuses();
         const auto iterations = pressure ? system.solvePressure(field, workspace,
-            c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0)
+            c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
+            (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi))
             : system.solve(field, workspace, momentumScaledStop);
         if (c.profile) {
             auto& p = r.performance;
+            if (pressure) {
+                p.pressureFactorizations += system.ic0Builds() - oldBuilds;
+                p.pressureFactorReuses += system.ic0Reuses() - oldReuses;
+                p.pressureHierarchyBuilds += system.hierarchyBuilds() - oldHierarchies;
+                p.pressureHierarchyReuses += system.hierarchyReuses() - oldHierarchyReuses;
+                p.maxPressureHierarchyLevels=std::max(p.maxPressureHierarchyLevels,system.hierarchyLevels());
+                p.maxPressureCoarseCells=std::max(p.maxPressureCoarseCells,system.hierarchyCoarseCells());
+            }
             (pressure ? p.pressureSolves : p.momentumSolves) += 1;
             (pressure ? p.pressureIterations : p.momentumIterations) += iterations;
             auto& maximum = pressure ? p.maxPressureIterations : p.maxMomentumIterations;
@@ -459,16 +471,30 @@ static FlowResult2D solveFlow(
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
             else predicted[id]=0;
         }
+        // rAU and the orthogonal pressure coefficients stay fixed across the
+        // four non-orthogonal corrections. Assemble and pin once; only the
+        // explicit correction/RHS changes. The next SIMPLE iteration resets
+        // the matrix and invalidates its IC(0) factorization.
+        ap.reset();
+        for (std::size_t id=0;id<nf;++id) {
+            const auto& f=m.faces[id]; const auto i=f.owner;
+            if (f.neighbour) {
+                const auto j=*f.neighbour;
+                ap.diag[i]+=df[id]; ap.diag[j]+=df[id];
+                ap.add(i,j,-df[id]); ap.add(j,i,-df[id]);
+            } else if (b.fixedP[id]) ap.diag[i]+=df[id];
+        }
+        if (b.closed) ap.pin(0);
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
         for(int pass=0;pass<4;++pass){
-            ap.reset();const auto gc=flowGradient(m,pc,zeros,b.fixedP,true);
+            std::fill(ap.rhs.begin(),ap.rhs.end(),0.);
+            const auto gc=flowGradient(m,pc,zeros,b.fixedP,true);
             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
                 correction[id]=(f.neighbour||b.fixedP[id])?-interpolate(f,ra)*dot(interpolateGradient(f,gc),f.correction):0;
                 ap.rhs[i]-=predicted[id]+correction[id];
-                if(f.neighbour){const auto j=*f.neighbour;ap.rhs[j]+=predicted[id]+correction[id];ap.diag[i]+=df[id];ap.diag[j]+=df[id];ap.add(i,j,-df[id]);ap.add(j,i,-df[id]);}
-                else if(b.fixedP[id])ap.diag[i]+=df[id];
+                if(f.neighbour)ap.rhs[*f.neighbour]+=predicted[id]+correction[id];
             }
-            if(b.closed){ap.pin(0);pc[0]=0;}
+            if(b.closed){ap.rhs[0]=0;pc[0]=0;}
             linearSolve(ap, pc, true);
         }
         const auto correctionGradient=flowGradient(m,pc,zeros,b.fixedP,true);
