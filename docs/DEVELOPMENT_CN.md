@@ -15,6 +15,7 @@
 | `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、Solver 质量和输出 |
 | `apps/cartmesh2d_hybrid_cli.cpp` | 边界层总流程、局部修复开关、fallback 与导出 |
 | `apps/cartmesh2d_flow_cli.cpp` | 原生稳态层流 CLI；SIMPLE / Rhie–Chow，桌面调用与诊断场导出 |
+| `apps/cartmesh2d_transport_cli.cpp`、`fv/ScalarTransport2D` | 守恒标量/恒物性温度；共享载流通量、混合边界、后向欧拉及独立导出 |
 | `apps/cartmesh2d_fv_cli.cpp` | 自研二维标量扩散/泊松 CLI；读取最终 solver.cm2d，输出场、通量、残差和误差 |
 | `fv/FvMesh2D`、`fv/Diffusion2D` | 最终多边形几何缓存、共享边通量、加权最小二乘梯度、非正交扩散、Jacobi-PCG |
 | `apps/cartmesh2d_dxf_cli.cpp` | DXF 导入命令行；`cartmesh2d_boundary_layer_cli.cpp` 是仍用于测试的独立边界层诊断工具 |
@@ -110,6 +111,37 @@ build/cartmesh2d_fv_cli --mesh outputs/native-fv/validation/meshes/h02/circle.so
 输出 `.vtk`（含 value / 制造解 exact / error）、`.cells.csv`、`.faces.csv`、`.residuals.csv` 和 `.json`。cells 的 source 是积分源项；faces 的 flux 是积分 `-k grad(value)·S`，不是质量流量。没有解析解的 diffusion 模式在 CSV exact/error 写 NaN、JSON 误差写 null，不伪造精度。验证工具独立读取 CM2D、CSV，复算几何、方程残差及误差，绘图使用真实多边形。
 
 数值设计参考公开的 [MOOSE 有限体积设计说明](https://mooseframework.inl.gov/finite_volumes/fv_design.html)中的共享面守恒和非正交思想。新增 C++ 为本仓库实现，没有引入 MOOSE/OpenFOAM 求解核心；这是公开方法的自研实现，不声称提出新 FVM 算法。`tests/fv_test.cpp` 覆盖斜网格和粗细交界、制造解收敛、错误缓存与溢出；`tests/fv_cli_test.py` 覆盖实际 CLI 输出和明确失败。最新数值与验证范围只在 CURRENT_STATE 维护。
+
+### 守恒标量与恒物性热输运
+
+独立入口 `cartmesh2d_transport_cli` 使用 `ScalarTransport2D`。它扩展了上方旧扩散CLI没有的对流、通量边界和时间推进；不会修改旧扩散/流动入口的行为。
+
+```sh
+cmake --build build --target cartmesh2d_transport_cli -j 2
+# 新目录，实际生成三档网格，分别验证迎风/限制线性和共同终止时刻的时间细化：
+python3 tools/verification/verify_scalar_transport.py --generate outputs/scalar-new
+# 从已有非定常流动的 accepted checkpoint 读取并冻结 U.S；逐面BC需匹配同一最终网格：
+build/cartmesh2d_transport_cli --mesh /path/case.solver.cm2d --flow-checkpoint /path/flow.checkpoint --boundary /path/thermal.csv --output outputs/temperature/result --diffusivity .1 --convection upwind
+# 标量在冻结载流上推进：另加 --dt .01 --steps 20 --initial 0
+python3 tools/verification/verify_scalar_transport.py --prefix outputs/temperature/result --output outputs/temperature/audit.json
+```
+
+热边界CSV必须完整列出每个边界face ID，禁止内部面、重复或漏项。ID与CM2D及flow.faces.csv对应，不能按屏幕位置猜序号：
+
+```csv
+face,type,value,inflowValue
+12,value,350,
+19,flux,0,
+25,flux,0,300
+```
+
+此片段仅说明格式，实际文件须含全部边界面。`value`是面定值；`flux`是向外 `-D grad(theta).n` **每单位边长**（不是积分面通量），0即绝热/零扩散通量。flux边界有负载流时，必须给`inflowValue`；上述25号面在回流时温度为300。流出对流采用owner迎风/限制重构，定值仍约束扩散；指定非零通量参与梯度重构。稳态连通域必须有定值或给定流入标量，纯绝热无入口没有唯一常数解；非定常可凭前态建立唯一性。
+
+方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须为正的常数。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向恒物性输运，不含浮力、变物性或共轭传热。API以调用者提供的新时刻边界/源和共享通量推进一步；CLI载流冻结，不能称为同步非定常流动/温度求解。
+
+输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。没有标量checkpoint和桌面入口，失败的多步计算不可假作已完成全部物理时间。
+
+温度/浓度采用同类输运方程的官方参考：[OpenFOAM scalarTransport方程说明](https://api.openfoam.com/2606/classFoam_1_1functionObjects_1_1scalarTransport.html)。本仓库自行实现FVM装配，复用自己的稀疏求解与面算子，没有复制或链接OpenFOAM代码，不声称原创输运方程。大输出仍在outputs，不加入日常源码历史。
 
 ### 原生层流求解
 
