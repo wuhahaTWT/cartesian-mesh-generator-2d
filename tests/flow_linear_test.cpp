@@ -14,6 +14,7 @@
 namespace {
 
 using cartmesh2d::fv::detail::LinearWorkspace2D;
+using cartmesh2d::fv::detail::LinearPressureMethod2D;
 using cartmesh2d::fv::detail::linearNorm;
 using cartmesh2d::fv::detail::SparsePattern2D;
 using cartmesh2d::fv::detail::SparseSystem2D;
@@ -505,6 +506,24 @@ void ic0CacheRegression() {
     check(system.ic0Builds() == buildsBeforeNoIc0 &&
               system.ic0Reuses() == reusesBeforeNoIc0,
           "zero-residual pressure solve does not fake IC(0) use");
+
+    // A zero residual is a completed solve for every pressure preconditioner:
+    // the caller's already-valid guess must remain byte-identical and no
+    // preconditioner work should be inferred from the zero iteration count.
+    for (const auto method : {LinearPressureMethod2D::Jacobi,
+                              LinearPressureMethod2D::IC0,
+                              LinearPressureMethod2D::Aggregation}) {
+        SparsePattern2D diagonalPattern(2, {});
+        SparseSystem2D diagonalSystem(diagonalPattern);
+        diagonalSystem.diag={2.,3.}; diagonalSystem.rhs={.6,-.9};
+        LinearWorkspace2D diagonalWorkspace(2);
+        std::vector<double> guess{.3,-.3};
+        const auto before=guess;
+        check(diagonalSystem.solvePressure(guess,diagonalWorkspace,method)==0,
+              "zero-residual pressure solve reports zero iterations for each method");
+        check(guess==before,
+              "zero-residual pressure solve preserves the caller guess for each method");
+    }
 }
 
 void localResidualScaleRegression() {

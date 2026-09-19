@@ -105,7 +105,8 @@ class ThermalScaleMathTests(unittest.TestCase):
     def test_command_line_rejects_invalid_study_arguments(self):
         with tempfile.TemporaryDirectory(prefix="cartmesh-thermal-scale-args-") as name:
             for extra in (("--cells-across", "4", "5"), ("--dt", "0"),
-                          ("--steps", "0")):
+                          ("--steps", "0"), ("--timeout", "0"), ("--timeout", "601"),
+                          ("--timeout", "nan")):
                 result = subprocess.run(
                     [sys.executable, str(VERIFY_PATH), "--output", str(Path(name) / "study"),
                      *extra], text=True, capture_output=True, timeout=10)

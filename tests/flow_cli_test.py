@@ -112,10 +112,10 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert profile['simpleIterations'] == data['iterations']
             assert profile['converged'] is data['converged']
             assert profile['momentumSolves'] == 2 * data['iterations']
-            assert profile['pressureSolves'] == 4 * data['iterations']
-            # Zero-residual pressure passes may skip preconditioning. Require
-            # bounded accounting without assuming every pressure solve builds
-            # or consumes a factor; direct cache tests cover actual reuse.
+            assert profile['pressureSolves'] + profile['pressureCorrectionPassesSkipped'] == 4 * data['iterations']
+            assert 0 < profile['pressureCorrectionPassesSkipped'] <= 3 * data['iterations']
+            assert profile['pressureSolves'] >= data['iterations']
+            # Zero-residual pressure passes are explicitly accounted for.
             assert 0 <= profile['pressureFactorizations'] <= profile['pressureSolves']
             assert 0 <= profile['pressureFactorReuses'] <= profile['pressureSolves']
             assert (profile['pressureFactorizations'] +
@@ -132,6 +132,9 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             aggregation_profile = json.loads(
                 (root / 'aggregation.performance.json').read_text())
             assert aggregation_profile['pressurePreconditioner'] == 'aggregation'
+            assert aggregation_profile['pressureSolves'] + aggregation_profile['pressureCorrectionPassesSkipped'] == 4 * aggregation_profile['simpleIterations']
+            assert 0 < aggregation_profile['pressureCorrectionPassesSkipped'] <= 3 * aggregation_profile['simpleIterations']
+            assert aggregation_profile['pressureSolves'] >= aggregation_profile['simpleIterations']
             assert 0 < aggregation_profile['pressureHierarchyBuilds'] <= aggregation_profile['simpleIterations']
             assert 0 <= aggregation_profile['pressureHierarchyReuses'] <= (
                 aggregation_profile['pressureSolves'] - aggregation_profile['pressureHierarchyBuilds'])

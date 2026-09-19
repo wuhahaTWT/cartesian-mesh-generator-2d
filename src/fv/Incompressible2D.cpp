@@ -379,6 +379,7 @@ static FlowResult2D solveFlow(
             (pressure ? p.pressureLinearSolveSeconds : p.momentumLinearSolveSeconds) +=
                 std::chrono::duration<double>(Clock::now() - start).count();
         }
+        return iterations;
     };
     r.u.resize(n);
     r.v.resize(n);
@@ -544,7 +545,15 @@ static FlowResult2D solveFlow(
                 if(f.neighbour)ap.rhs[*f.neighbour]+=predicted[id]+correction[id];
             }
             if(b.closed){ap.rhs[0]=0;pc[0]=0;}
-            linearSolve(ap, pc, true);
+            if (linearSolve(ap, pc, true)==0) {
+                // A zero-iteration solve does not modify pc. The next pass
+                // would reconstruct the exact same gradient, correction, RHS
+                // and matrix, and therefore return zero again. Keep this
+                // pass's correction for the accepted flux and omit only those
+                // identical repeats; no geometric approximation or new stop.
+                if (c.profile) r.performance.pressureCorrectionPassesSkipped+=3-pass;
+                break;
+            }
         }
         const auto correctionGradient=flowGradient(m,pc,zeros,b.fixedP,true);
         const auto gc=detail::conservativePressureGradient(m,

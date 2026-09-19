@@ -64,6 +64,7 @@ def main():
         else:notice='Study NOT passed: '+ '; '.join(study.get('issues',[]))+'\n'
     fig.supxlabel(f'Fixed dt = {info["timeStep"]:g} s, {info["steps"]} accepted steps; same final carrier as separately solved flow.\n'
                   +notice+
+                  f'Resource budget: {study["timeoutSeconds"]:g} s per process; numerical accuracy checked separately.\n'
                   'Short-time, constant-property analytic case. No buoyancy, turbulence or long-time accuracy qualification.',fontsize=10)
     a.output.parent.mkdir(parents=True,exist_ok=True);fig.savefig(a.output,dpi=155);plt.close(fig)
     print(a.output)

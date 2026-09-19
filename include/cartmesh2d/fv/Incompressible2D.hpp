@@ -42,6 +42,7 @@ struct FlowPerformance2D {
     std::size_t momentumIterations = 0;
     std::size_t maxMomentumIterations = 0;
     std::size_t pressureSolves = 0;
+    std::size_t pressureCorrectionPassesSkipped = 0;
     std::size_t pressureFactorizations = 0;
     std::size_t pressureFactorReuses = 0;
     std::size_t pressureHierarchyBuilds = 0;

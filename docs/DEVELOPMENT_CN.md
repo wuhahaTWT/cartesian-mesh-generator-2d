@@ -211,6 +211,14 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### SST扩展前的物性场缺口
+
+当前 `FlowControls2D::nu`、`ScalarTransportProblem2D::diffusivity` 和热输运物性仍是全域常数。后续空间有效黏度必须统一进入动量矩阵、非正交修正、`FlowFaceOperators2D.hpp` 的共享面对称应力、壁面力及面输出；独立读取器和checkpoint也要记录并重算相同物性场。现有一个共享面通量、相邻单元反号的守恒结构可沿用，但尚无变黏度、湍黏度或湍流普朗特数实现。不能仅在力的后处理处替换nu，或将常数nu输入框改名为SST。先使用变系数制造解与共享面牵引测试验证，再接入具体版本的模型方程；这仍是未实现的工作。
+
+### 非正交压力修正固定点
+
+每个SIMPLE外迭代保留原来的最多4遍修正。`solvePressure()`返回0时没有修改pc，因此下一遍会逐位构造相同的梯度、修正项和RHS；此时保留当前面修正，跳过必然相同的后续遍。没有角度容差或新的停止条件。profile的 `pressureSolves` 只计实际调用，新增 `pressureCorrectionPassesSkipped` 计省略遍数，两者之和仍为 `4 * simpleIterations`（瞬态按全部物理步累计）。独立线性测试核对三种预条件器的零次求解不修改场，实际新旧CLI输出逐字节比较见 `artifacts/current/native-flow-pressure-fixed-point.json`。
+
 ### 压力aggregation分组与系数分离
 
 `FlowAggregation2D.hpp`缓存每条跨组上三角边的粗层CSR目标位置。`refresh()`保持P不变，按原细层遍历顺序以long double累加当前 `P^T A P`，镜像写回保证精确对称，再重做最粗层LDLT。非有限值/符号/对称性错误显式抛出；相容性要求零模式不变、每项系数相对上一矩阵比值在[.5,2]内。`SparseSystem2D`最多连续刷新8次后重新分组；任何构造/刷新异常均丢弃缓存。这里的范围/次数是保守建层策略，最终PCG真实残差标准不变，不作为精度认证。
@@ -244,7 +252,7 @@ python3 tools/visualization/render_thermal_scale.py --study outputs/thermal-scal
 
 可用 `--flow-tolerance 1e-10` 做显式迭代敏感性对照，生成默认仍为1e-8；同一值传入transport和独立flow，不能将不同容差混为同一空间细化序列。结果分别记录coupledFlowTolerance、flowTolerance，以及标量三个停止条件。transport JSON的flowTolerance只在同步模式表示实际载流控制，冻结模式为null。历史同步结果缺失此字段可用不带期望容差的 `--audit-prefix` 单例复查，标记unknown，严格系列拒绝；显式给出 `--flow-tolerance` 时要求两边实际元数据都匹配，不用期望值补造历史记录。新驱动的这一选项不改变App默认设置，也不是全软件精度及格线。
 
-默认步长 `.005`、2步、nu=.1、D=.02、Uref=1，固定物性与有限时间；不是长时间或湍流验证。默认系数仍为 `.6`，上面 `.8` 是显式对照设置，不能推广成所有工况推荐值。单进程时间预算最多300秒、磁盘不足1.5 GiB前停止；超时/失败留存并返回非零。`--reuse-mesh-study PATH`可读取此前同工具生成的 `nN/mesh/square.solver.cm2d`，不复制大网格，记录输入SHA。审核真实单元数、几何、最终逐面/逐格守恒、时间项和面通量；同步载流必须与同设置独立求解的checkpoint逐字节相同，各步接受历史和迭代数相符。未独立存档所有中间场，不能声称逐步全部重算审核。
+默认步长 `.005`、2步、nu=.1、D=.02、Uref=1，固定物性与有限时间；不是长时间或湍流验证。默认系数仍为 `.6`，上面 `.8` 是显式对照设置，不能推广成所有工况推荐值。单进程时间预算默认180秒，可显式设至600秒；磁盘不足1.5 GiB前停止；超时/失败留存并返回非零。时间预算只控制本机资源，不是数值精度门；按实测设置420秒的新研究不能声称满足旧300秒预算。`--reuse-mesh-study PATH`可读取此前同工具生成的 `nN/mesh/square.solver.cm2d`，不复制大网格，记录输入SHA。审核真实单元数、几何、最终逐面/逐格守恒、时间项和面通量；同步载流必须与同设置独立求解的checkpoint逐字节相同，各步接受历史和迭代数相符。未独立存档所有中间场，不能声称逐步全部重算审核。
 
 对这一个相切解析涡，标量 `sin(pi*x)sin(pi*y)` 的对流项解析为零；与速度的衰减率分别为 `2*pi²*D` 和 `2*pi²*nu`。同时报告连续指数解和空间连续、时间按后向欧拉的参考幅值 `(1+rate*dt)^(-steps)`。前者含时间离散误差；后者有助区分网格细化效果，但仍含空间、载流和迭代误差。三档校验固定物性/步长/终止时间/松弛，报告观测阶与误差趋势，不设通用工程精度分数。绘图读取实际最终CM2D及字段，失败研究不会被渲染成通过图。
 

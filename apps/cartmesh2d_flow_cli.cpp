@@ -212,6 +212,7 @@ int main(int argc, char** argv) {
                     totalPerformance.momentumIterations+=p.momentumIterations;
                     totalPerformance.maxMomentumIterations=std::max(totalPerformance.maxMomentumIterations,p.maxMomentumIterations);
                     totalPerformance.pressureSolves+=p.pressureSolves;
+                    totalPerformance.pressureCorrectionPassesSkipped+=p.pressureCorrectionPassesSkipped;
                     totalPerformance.pressureFactorizations+=p.pressureFactorizations;
                     totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
                     totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
@@ -411,6 +412,7 @@ int main(int argc, char** argv) {
                         << ",\n\"momentumIterations\":" << p.momentumIterations
                         << ",\n\"maxMomentumIterations\":" << p.maxMomentumIterations
                         << ",\n\"pressureSolves\":" << p.pressureSolves
+                        << ",\n\"pressureCorrectionPassesSkipped\":" << p.pressureCorrectionPassesSkipped
                         << ",\n\"pressureFactorizations\":" << p.pressureFactorizations
                         << ",\n\"pressureFactorReuses\":" << p.pressureFactorReuses
                         << ",\n\"pressureHierarchyBuilds\":" << p.pressureHierarchyBuilds
