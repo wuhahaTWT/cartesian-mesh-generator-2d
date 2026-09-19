@@ -85,3 +85,41 @@ window.CartMeshExport = {
     return canvas.toDataURL('image/png');
   }
 };
+
+// Temperature is drawn from accepted cell values on the final native polygons.
+// Export is independent of camera, UI theme and any hidden interactive preview.
+window.CartMeshExport.renderThermal = function(mesh, thermal) {
+  const values=thermal.fields.cells;
+  if(values.length!==mesh.cells.length)throw new Error('温度场与最终网格数量不同。');
+  const canvas=document.createElement('canvas');canvas.width=1800;canvas.height=1050;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,1800,1050);
+  const text=(s,x,y,size=24)=>{ctx.fillStyle='#253746';ctx.font=`${size}px "CartMesh UI", sans-serif`;ctx.fillText(s,x,y);};
+  const min=thermal.summary.minValue,max=thermal.summary.maxValue;
+  text(`温度 · t = ${thermal.summary.acceptedTime} s · ${values.length.toLocaleString('en-US')} 个单元`,70,58,30);
+  text('单向恒物性热输运 · 温度不反馈流动',70,99,22);
+  const palette=['#263b80','#326fa5','#4eaaa5','#a0cf91','#e9db77','#f6ad55','#e86e42','#b72e37'];
+  const color=t=>palette[Math.min(7,Math.max(0,Math.floor(t*8)))];
+  let detail=mesh.bounds;
+  const wall=mesh.edges.filter(e=>e.patch===1);
+  if(thermal.request.case==='external' && wall.length){
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    for(const e of wall)for(const id of [e.a,e.b]){const p=mesh.vertices[id];minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
+    const pad=.35*Math.max(maxX-minX,maxY-minY);detail={minX:minX-pad,maxX:maxX+pad,minY:minY-pad,maxY:maxY+pad};
+  }
+  function panel(b,left,title){
+    const scale=Math.min(700/(b.maxX-b.minX),750/(b.maxY-b.minY));
+    const X=x=>left+350+(x-(b.minX+b.maxX)/2)*scale,Y=y=>565-(y-(b.minY+b.maxY)/2)*scale;
+    text(title,left,160,22);ctx.save();ctx.beginPath();ctx.rect(left,185,700,760);ctx.clip();
+    for(const cell of mesh.cells){
+      const v=values[cell.id];if(!v||v.id!==cell.id||!Number.isFinite(v.theta))throw new Error('温度场单元无效。');
+      ctx.beginPath();cell.vertices.forEach((id,i)=>{const p=mesh.vertices[id];i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.closePath();
+      ctx.fillStyle=color(max===min?.5:(v.theta-min)/(max-min));ctx.fill();
+    }
+    ctx.beginPath();for(const e of mesh.edges){if(e.neighbour>=0)continue;const a=mesh.vertices[e.a],z=mesh.vertices[e.b];ctx.moveTo(X(a[0]),Y(a[1]));ctx.lineTo(X(z[0]),Y(z[1]));}ctx.strokeStyle='#253746';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+  }
+  panel(mesh.bounds,70,'全域');panel(detail,850,detail===mesh.bounds?'全域细节':'物体周围放大');
+  for(let i=0;i<600;i++){ctx.fillStyle=color(1-i/599);ctx.fillRect(1600,255+i,30,1);}
+  text(`${max.toPrecision(6)} K`,1640,265,20);text(`${min.toPrecision(6)} K`,1640,857,20);
+  text(`D = ${thermal.request.diffusivity} m²/s · 完整场见同包 VTK / CSV；两图共用实际温度范围`,70,1008,21);
+  return canvas.toDataURL('image/png');
+};

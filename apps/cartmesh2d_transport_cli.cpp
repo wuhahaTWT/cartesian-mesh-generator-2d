@@ -233,6 +233,12 @@ int main(int argc,char**argv) {
                         <<quote(attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time<<"}\n";
                     return 2;
                 }
+                std::cout<<std::setprecision(17)<<"{\"type\":\"thermal-time-step\",\"accepted\":1,\"step\":"<<step
+                    <<",\"time\":"<<time<<",\"flowIterations\":"<<attempt.flow.history.size()
+                    <<",\"momentumResidual\":"<<fh.momentumResidual<<",\"continuity\":"<<fh.continuity
+                    <<",\"scalarIterations\":"<<result.history.size()<<",\"scalarResidual\":"<<result.history.back().residualNorm
+                    <<",\"heatContent\":"<<heat<<",\"globalBalance\":"<<result.globalBalance
+                    <<",\"maxCourant\":"<<attempt.flow.maxCourant<<"}\n"<<std::flush;
                 p.volumeFlux=state.flow.flux;carrierTime=state.flow.time;
             } else result=fv::solveScalarTransport2D(mesh,p,controls,previous,dt);
             for(const auto& h:result.history)history<<step<<','<<time<<','<<h.iteration<<','<<h.linearIterations<<','<<h.residualNorm<<','<<h.relativeResidual<<','<<h.maxCellImbalance<<','<<h.maxDiagonalScaledImbalance<<'\n';
@@ -274,6 +280,9 @@ int main(int argc,char**argv) {
             <<",\n\"restart\":"<<quote(restart)<<",\n\"flowCase\":"<<quote(evolve)
             <<",\n\"cells\":"<<mesh.cells.size()<<",\n\"faces\":"<<mesh.faces.size()<<",\n\"time\":"<<time<<",\n\"timeStep\":"<<dt
             <<",\n\"verificationSpeed\":"<<speed<<",\n\"constantSource\":"<<source<<",\n\"initialValue\":"<<initial
+            <<",\n\"flowNu\":"<<flowControls.nu<<",\n\"flowSpeed\":"<<flowControls.speed
+            <<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
+            <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"relativeTolerance\":"<<controls.relativeTolerance<<",\n\"absoluteTolerance\":"<<controls.absoluteTolerance<<",\n\"cellTolerance\":"<<controls.cellTolerance
             <<",\n\"residualNorm\":"<<h.residualNorm<<",\n\"maxCellImbalance\":"<<h.maxCellImbalance<<",\n\"maxDiagonalScaledImbalance\":"<<h.maxDiagonalScaledImbalance

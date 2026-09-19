@@ -18,6 +18,8 @@ const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, flowOutputSuffixes } = require('./core/flow');
+const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
+const { runThermalJob } = require('./core/thermal-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
@@ -40,6 +42,11 @@ async function exportPackage(destination) {
   if (typeof png !== 'string' || !png.startsWith('data:image/png;base64,'))
     throw new Error('网格预览图片生成失败，未写出结果包。');
   await fs.writeFile(path.join(currentResult.outputDirectory, 'mesh-preview.png'), Buffer.from(png.split(',')[1], 'base64'));
+  if (currentResult.thermal) {
+    const thermalPng=await mainWindow.webContents.executeJavaScript('window.__exportThermalPreview()');
+    if(typeof thermalPng!=='string'||!thermalPng.startsWith('data:image/png;base64,'))throw new Error('温度结果图片生成失败。');
+    await fs.writeFile(path.join(currentResult.outputDirectory,'temperature-preview.png'),Buffer.from(thermalPng.split(',')[1],'base64'));
+  }
   await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
   const temporary = path.join(sessionDirectory, 'export.zip');
   await fs.rm(temporary, { force: true });
@@ -212,7 +219,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('export-preview-data', async () => {
     if (!currentResult) throw new Error('没有可导出的网格。');
     return { mesh: currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')),
-      result: currentResult.result };
+      result: currentResult.result, thermal: currentResult.thermal || null };
   });
   ipcMain.handle('export-result', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成网格。');
@@ -352,6 +359,27 @@ app.whenReady().then(async () => {
       error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
       throw error;
     }
+  }));
+
+  ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
+  ipcMain.handle('pick-thermal-checkpoint',()=>exclusive(async()=>{
+    if(!currentResult)throw new Error('请先生成与联合状态对应的最终网格。');
+    const picked=await dialog.showOpenDialog(mainWindow,{title:'载入导出包中的联合续算状态',properties:['openFile'],filters:[{name:'联合状态',extensions:['checkpoint']}]});
+    if(picked.canceled)return null;
+    const file=picked.filePaths[0];
+    if(!file.endsWith('.thermal.checkpoint'))throw new Error('请选择 thermal.checkpoint，carrier.checkpoint 不能联合续算。');
+    const saved=await readJson(path.join(path.dirname(file),'desktop-state.json'));
+    if(!saved?.request)throw new Error('请保留同目录的 desktop-state.json，以恢复物性和热边界。');
+    const request=validateThermalRequest(saved.request),time=thermalCheckpointTime(await fs.readFile(file,'utf8'));
+    currentResult.thermalRestart={path:file,metadata:{time,request,fileName:path.basename(file)}};
+    return currentResult.thermalRestart.metadata;
+  }));
+  ipcMain.handle('run-thermal', (_event,request) => exclusive(async()=>{
+    if(!currentResult)throw new Error('请先成功生成最终网格。');
+    const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
+    log('正在同步推进原生流动与温度；温度不反馈物性或浮力。');
+    return runThermalJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
+      onProgress:progress=>mainWindow.webContents.send('thermal-progress',progress),log});
   }));
 
   ipcMain.handle('read-raster', async (_event, sourcePath) => {
@@ -792,6 +820,31 @@ async function runSmoke() {
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
     }
+    if (${JSON.stringify(argument('thermal') === 'true')}) {
+      for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:'limited-linear',flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
+      await smoke.runThermal();
+      if(!smoke.state.thermal || smoke.state.thermal.summary.time!==.1)throw new Error('Thermal result did not reach renderer');
+      const before=smoke.state.thermal;
+      await smoke.runThermal();
+      if(!smoke.state.thermal || Math.abs(smoke.state.thermal.summary.time-.2)>1e-12)throw new Error('Thermal resume did not advance');
+      const completed=smoke.state.thermal;
+      document.getElementById('flowMaxIterations').value='1';
+      await smoke.runThermal();
+      if(smoke.state.thermal.summary.time!==completed.summary.time)throw new Error('Failed thermal run replaced complete result');
+      document.getElementById('flowMaxIterations').value='1500';
+      document.getElementById('flowSteps').value='10000';
+      const pending=smoke.runThermal();
+      const deadline=Date.now()+30000;
+      while(smoke.state.busy&&!smoke.state.thermalHistory.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,30));
+      if(!smoke.state.busy||!smoke.state.thermalHistory.length)throw new Error('No live thermal step observed before cancel');
+      await window.cartmesh.cancel();await pending;
+      const restartTime=smoke.state.thermalRestart?.time;
+      if(!(restartTime>completed.summary.time)||smoke.state.thermal.summary.time!==completed.summary.time)throw new Error('Thermal cancellation lost accepted state');
+      document.getElementById('flowSteps').value='1';await smoke.runThermal();
+      if(Math.abs(smoke.state.thermal.summary.time-restartTime-.05)>1e-12)throw new Error('Thermal cancel/resume clock differs');
+      if(document.getElementById('displayMode').value!=='temperature'||document.getElementById('thermalOption').hidden)throw new Error('Temperature map not displayed');
+      document.getElementById('thermalBlock').scrollIntoView({block:'start'});
+    }
     if (${JSON.stringify(Boolean(argument('interaction-check')))}) {
       const mesh = smoke.state.mesh;
       const display = document.getElementById('displayMode').value;
@@ -853,6 +906,11 @@ async function runSmoke() {
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
+      thermal: smoke.state.thermal ? {summary:smoke.state.thermal.summary,request:smoke.state.thermal.request,files:smoke.state.thermal.files,
+        fieldCells:smoke.state.thermal.fields.cells.length,historyRows:smoke.state.thermal.history.length,
+        resultText:document.getElementById('thermalResult').innerText,restart:smoke.state.thermalRestart,
+        displayMode:document.getElementById('displayMode').value,monitorVisible:!document.getElementById('thermalTimeline').hidden,
+        failureAndCancelResumeChecked:true} : null,
       flow: smoke.state.flow ? {
         summary: smoke.state.flow.summary,
         fieldCells: smoke.state.flow.fields.cells.length,
@@ -929,6 +987,13 @@ async function runSmoke() {
       report.home.mainPreviewReleased = currentResult?.mesh === null;
       if (!Object.values(report.home).every(Boolean)) throw new Error('Return to start did not release preview or preserve export');
       if (argument('export')) report.home.exported = await exportPackage(argument('export').replace(/\.zip$/, '') + '-home.zip');
+    }
+    if(report.thermal && shot){
+      mainWindow.setSize(1320,900);
+      await new Promise(resolve=>setTimeout(resolve,200));
+      await mainWindow.webContents.executeJavaScript("document.getElementById('thermalBlock').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=document.querySelector('.results').scrollHeight;");
+      await new Promise(resolve=>setTimeout(resolve,200));
+      await fs.writeFile(shot.replace(/\.png$/, '-thermal.png'),(await mainWindow.webContents.capturePage()).toPNG());
     }
     mainWindow.setSize(800, 560);
     await new Promise(resolve => setTimeout(resolve, 200));

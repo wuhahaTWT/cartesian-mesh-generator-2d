@@ -549,3 +549,10 @@ html, body { height: 100%; }
 @media (max-width: 900px) {
   #flowTimeline { grid-row: 8; }
 }
+
+.thermal-boundary { margin: 9px 0; padding: 8px; border: 1px solid var(--line-soft); min-width: 0; }
+.thermal-boundary legend { color: var(--ink-dim); font-size: 11px; }
+#thermalBlock details > summary { cursor: pointer; margin: 10px 0; color: var(--ink-dim); }
+#thermalResult { grid-column: 1 / -1; grid-row: 9; }
+#thermalTimeline { grid-column: 1 / -1; grid-row: 10; min-width: 0; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+#thermalMonitor { display: block; width: 100%; max-height: 160px; color: var(--accent, #8d744d); }

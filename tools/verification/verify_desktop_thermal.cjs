@@ -1,0 +1,33 @@
+const fs=require('node:fs/promises'), path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../..');
+const option=name=>process.argv[process.argv.indexOf(name)+1];
+if(!process.argv.includes('--mesh')||!process.argv.includes('--output'))throw new Error('Usage: node verify_desktop_thermal.cjs --mesh FINAL.solver.cm2d --output NEW_DIRECTORY');
+const {runThermalJob}=require(path.join(root,'desktop/src/core/thermal-job'));
+const {parseCm2d}=require(path.join(root,'desktop/src/core/cm2d'));
+const {run}=require(path.join(root,'desktop/src/core/process'));
+(async()=>{
+const directory=path.resolve(option('--output'));
+await fs.mkdir(directory);
+const cm2dPath=path.resolve(option('--mesh'));
+const started=Date.now();
+const commands=[];
+const boundedRun=(exe,args,line,signal,_timeout,codes)=>{commands.push({exe,args});return run(exe,args,line,signal,90000,codes);};
+const mesh=parseCm2d(await fs.readFile(cm2dPath,'utf8'));
+const request={case:'external',nu:.1,speed:1,maxIterations:1500,convection:'limited-linear',pressurePreconditioner:'aggregation',dt:.05,steps:2,resume:false,diffusivity:.1,source:0,initial:300,scalarConvection:'upwind',boundaries:Object.fromEntries(['wall','inlet','outlet','top','bottom'].map(g=>[g,{kind:g==='wall'?'value':'flux',value:g==='wall'?350:0,inflowValue:300}]))};
+const currentResult={outputDirectory:directory,cm2dPath};
+let progress=[];
+async function solve(req,abort=new AbortController(),cancel=false){return runThermalJob({currentResult,mesh,request:req,executable:n=>path.join(root,'build',n),runProcess:boundedRun,signal:abort.signal,onProgress:r=>{progress.push(r);if(cancel)abort.abort();},log:()=>{}});}
+const first=await solve(request);assert.equal(first.summary.time,.1);assert.equal(progress.length,2);
+const resumed=await solve({...request,resume:true});assert.equal(resumed.summary.time,.2);
+const restartedPath=currentResult.thermalRestart.path;
+const continuous=await solve({...request,steps:4});assert.equal(continuous.summary.time,.2);
+assert.equal(await fs.readFile(restartedPath,'utf8'),await fs.readFile(currentResult.thermalRestart.path,'utf8'));
+const saved=currentResult.thermal;
+await assert.rejects(solve({...request,resume:true,maxIterations:1}));assert.equal(currentResult.thermal,saved);assert.equal(currentResult.thermalRestart.metadata.time,.2);
+await assert.rejects(solve({...request,resume:true,source:1}));assert.equal(currentResult.thermal,saved);
+await assert.rejects(solve({...request,resume:true,steps:1000},new AbortController(),true));assert.equal(currentResult.thermal,saved);assert.ok(currentResult.thermalRestart.metadata.time>.2);
+const restartTime=currentResult.thermalRestart.metadata.time;
+const afterCancel=await solve({...request,resume:true,steps:1});assert.ok(Math.abs(afterCancel.summary.time-restartTime-.05)<1e-12);
+await fs.writeFile(path.join(directory,'audit.json'),JSON.stringify({valid:true,mesh:cm2dPath,commands,wallSeconds:(Date.now()-started)/1000,cells:mesh.cells.length,progressEvents:progress.length,continuousVsRestartByteIdentical:true,failurePreservedResult:true,cancellationAcceptedTime:restartTime,resumedTime:afterCancel.summary.time,resultFiles:afterCancel.files},null,2));
+console.log(directory);
+})().catch(e=>{console.error(e);process.exit(1);});

@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  runThermal: request => ipcRenderer.invoke('run-thermal', request),
+  thermalState: () => ipcRenderer.invoke('thermal-state'),
+  pickThermalCheckpoint: () => ipcRenderer.invoke('pick-thermal-checkpoint'),
+  onThermalProgress: callback => {
+    ipcRenderer.removeAllListeners('thermal-progress');
+    ipcRenderer.on('thermal-progress', (_event, progress) => callback(progress));
+  },
   flowState: () => ipcRenderer.invoke('flow-state'),
   pickFlowCheckpoint: () => ipcRenderer.invoke('pick-flow-checkpoint'),
   openPath: target => ipcRenderer.invoke('open-path', target),

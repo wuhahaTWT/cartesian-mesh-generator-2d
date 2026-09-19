@@ -1,6 +1,6 @@
 'use strict';
 
-function exportGuide({ result, rasterImport, flow }) {
+function exportGuide({ result, rasterImport, flow, thermal }) {
   const transient = flow?.summary?.temporalDiscretization === 'backward-euler';
   const cells = Number(result.counts.cells).toLocaleString('en-US');
   const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
@@ -38,7 +38,21 @@ ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
-**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
+${thermal ? `## 温度结果
+
+最后完整温度场：t=${thermal.summary.acceptedTime} s，${thermal.summary.minValue.toPrecision(6)}–${thermal.summary.maxValue.toPrecision(6)} K。先看 **temperature-preview.png**。
+
+当前结果目录：${thermal.files['.json'].replace(/thermal\.json$/, '')}
+
+- thermal.vtk / thermal.cells.csv：ParaView 场与逐格温度（K）。
+- thermal.thermal-history.csv：每个已接受时间步的残差、温度积分和守恒平衡。
+- thermal.thermal.checkpoint：温度与流动的联合续算状态；carrier.checkpoint 仅供诊断。
+- boundary.csv / desktop-state.json：真实逐面热边界、请求参数与完成/失败状态。
+- thermal-run-*：各次计算的独立目录；以 desktop-state.json 的 complete 为完整结果，failed/cancelled 目录中的候选场不能冒充完成结果。
+
+D=k/(rho cp)，源项为 Q/(rho cp)，通量为向外 q/(rho cp)。这是单向恒物性热输运，没有浮力、温度反馈、辐射或共轭传热。
+` : ''}
+**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }
 

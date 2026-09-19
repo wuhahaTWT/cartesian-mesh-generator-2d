@@ -191,15 +191,17 @@
       <label class="field">时间模式
         <select id="flowMode"><option value="steady">稳态</option><option value="transient">非定常 · 随时间变化</option></select>
       </label>
-      <div id="flowTimeSettings" hidden>
+      <div id="flowTimeSettings">
         <div class="pair">
           <label class="field">时间步长<input id="flowDt" type="number" min="0.000000000001" step="any" value="0.01"><span class="note">秒</span></label>
           <label class="field">本次步数<input id="flowSteps" type="number" min="1" max="1000000" step="1" value="20"></label>
         </div>
         <p class="note" id="flowTimeHint">一阶时间格式；从静止启动。减小时间步通常更准确，也更慢。</p>
+        <div id="flowRestartSettings" hidden>
         <button id="pickFlowCheckpoint" class="wide">打开重启文件…</button>
         <label class="toggle"><input id="flowResume" type="checkbox" disabled>从已保存状态继续</label>
         <p class="note" id="flowRestartInfo">每个完成的时间步都会保存；取消后可继续。</p>
+        </div>
       </div>
       <label class="field">工况
         <select id="flowCase">
@@ -233,6 +235,47 @@
       <button id="runFlow" class="wide" disabled>启动层流求解</button>
     </section>
 
+    <section class="block flow-block" id="thermalBlock" hidden>
+      <h2><span>6</span>恒物性温度输运</h2>
+      <p class="note">每步同步推进流动与温度，始终按物理时间计算。共用上方工况、黏度、速度、流动格式、压力求解、迭代上限和时间步设置。</p>
+      <p class="note">单向恒物性模型：温度不反馈密度、黏度或浮力；不含共轭传热、辐射。</p>
+      <div class="pair">
+        <label class="field">热扩散率 D<span class="unit"><input id="thermalDiffusivity" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>
+        <label class="field">初始温度<span class="unit"><input id="thermalInitial" type="number" step="any" value="300"><i>K</i></span></label>
+      </div>
+      <details><summary>热源、温度格式与边界</summary>
+        <label class="field">均匀源项<span class="unit"><input id="thermalSource" type="number" step="any" value="0"><i>K/s</i></span></label>
+        <label class="field">温度对流格式<select id="thermalConvection"><option value="upwind">一阶迎风</option><option value="limited-linear">线性迎风（限制重构）</option></select></label>
+        <p class="note">定值单位 K；通量为向外扩散通量 −D∇θ·n，单位 K·m/s，零为绝热。流入温度用于入口及回流。</p>
+        <fieldset class="thermal-boundary"><legend>物面</legend>
+          <label class="field">热边界<select id="thermalWallKind"><option value="value" selected>定值（K）</option><option value="flux" >向外通量（K·m/s）</option></select></label>
+          <div class="pair"><label class="field">边界值<input id="thermalWallValue" type="number" step="any" value="350"></label><label class="field">流入温度（K）<input id="thermalWallInflow" type="number" step="any" value="300"></label></div>
+        </fieldset>
+        <fieldset class="thermal-boundary"><legend>入口 / 左边</legend>
+          <label class="field">热边界<select id="thermalInletKind"><option value="value" >定值（K）</option><option value="flux" selected>向外通量（K·m/s）</option></select></label>
+          <div class="pair"><label class="field">边界值<input id="thermalInletValue" type="number" step="any" value="0"></label><label class="field">流入温度（K）<input id="thermalInletInflow" type="number" step="any" value="300"></label></div>
+        </fieldset>
+        <fieldset class="thermal-boundary"><legend>出口 / 右边</legend>
+          <label class="field">热边界<select id="thermalOutletKind"><option value="value" >定值（K）</option><option value="flux" selected>向外通量（K·m/s）</option></select></label>
+          <div class="pair"><label class="field">边界值<input id="thermalOutletValue" type="number" step="any" value="0"></label><label class="field">流入温度（K）<input id="thermalOutletInflow" type="number" step="any" value="300"></label></div>
+        </fieldset>
+        <fieldset class="thermal-boundary"><legend>上边</legend>
+          <label class="field">热边界<select id="thermalTopKind"><option value="value" >定值（K）</option><option value="flux" selected>向外通量（K·m/s）</option></select></label>
+          <div class="pair"><label class="field">边界值<input id="thermalTopValue" type="number" step="any" value="0"></label><label class="field">流入温度（K）<input id="thermalTopInflow" type="number" step="any" value="300"></label></div>
+        </fieldset>
+        <fieldset class="thermal-boundary"><legend>下边</legend>
+          <label class="field">热边界<select id="thermalBottomKind"><option value="value" >定值（K）</option><option value="flux" selected>向外通量（K·m/s）</option></select></label>
+          <div class="pair"><label class="field">边界值<input id="thermalBottomValue" type="number" step="any" value="0"></label><label class="field">流入温度（K）<input id="thermalBottomInflow" type="number" step="any" value="300"></label></div>
+        </fieldset>
+      </details>
+      <label class="toggle"><input id="thermalResume" type="checkbox" disabled>从联合状态继续</label>
+      <button id="pickThermalCheckpoint" class="wide">载入联合状态…</button>
+      <p class="note">外流物面用“物面”；矩形内流按四边设置。温度的流入值不代表流动支持出口回流。</p>
+      <p class="note" id="thermalRestartInfo">每个流动与温度均收敛的时间步保存联合状态；取消后可续算。</p>
+      <p class="note" id="thermalTimeHint"></p>
+      <button id="runThermal" class="wide" disabled>启动温度与流动推进</button>
+    </section>
+
     <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许更高构造深度（高密度可能需要，质量标准不变）</label>
     <button id="generate" class="primary" disabled>生成预览</button>
     <button id="cancel" hidden>取消当前操作</button>
@@ -248,6 +291,7 @@
           <option value="dark">暗底线框</option>
           <option id="flowSpeedOption" value="speed" hidden>速度色图</option>
           <option id="flowPressureOption" value="pressure" hidden>压力色图</option>
+          <option id="thermalOption" value="temperature" hidden>温度色图（K）</option>
         </select>
         <button id="fitOverview">物体周边</button><button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
@@ -273,6 +317,12 @@
         <p class="note" id="flowMonitorCaption"></p>
       </section>
       <div id="flowResult" class="flow-result" hidden></div>
+      <div id="thermalResult" class="flow-result" hidden></div>
+      <section id="thermalTimeline" hidden aria-label="温度物理时间监测">
+        <div class="flow-monitor-heading"><b>温度时间监测</b><select id="thermalMonitorMetric" aria-label="温度监测量"><option value="heatContent">温度积分（K·m²）</option><option value="globalBalance">全域平衡（K·m²/s）</option><option value="scalarResidual">温度残差</option><option value="maxCourant">最大 CFL</option></select></div>
+        <svg id="thermalMonitor" viewBox="0 0 720 130" role="img" aria-label="温度监测量随物理时间变化"></svg>
+        <p class="note" id="thermalMonitorCaption"></p>
+      </section>
     </div>
     <details class="logpanel"><summary>运行日志</summary><pre id="log"></pre></details>
   </section>

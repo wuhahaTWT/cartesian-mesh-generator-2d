@@ -228,3 +228,48 @@ test('flow colour maps reuse final mesh polygons and expose physical ranges', ()
   assert.equal(view.fieldRange.max, 3);
   assert.equal(view.fieldRange.key, 'p');
 });
+
+test('temperature colour map uses Kelvin values independently from flow and clears on geometry replacement', () => {
+  const { sandbox } = viewportSandbox();
+  const { canvas } = fakeCanvas();
+  const mesh = {
+    bounds: { minX: 0, minY: 0, maxX: 2, maxY: 1 }, minLevel: 0, maxLevel: 0,
+    vertices: [[0, 0], [1, 0], [1, 1], [0, 1], [2, 0], [2, 1]],
+    cells: [{ id: 0, level: 0, vertices: [0, 1, 2, 3] }, { id: 1, level: 0, vertices: [1, 4, 5, 2] }], edges: []
+  };
+  const view = new sandbox.window.MeshView.Viewport(canvas);
+  view.setMesh(mesh);
+  view.setFlowFields([{ id: 0, speed: 1, p: -1 }, { id: 1, speed: 2, p: 1 }]);
+  view.setThermalFields([{ id: 0, theta: 301.25 }, { id: 1, theta: 348.75 }]);
+  view.mode = 'temperature'; view.draw();
+  assert.equal(view.fieldRange.min, 301.25);
+  assert.equal(view.fieldRange.max, 348.75);
+  assert.equal(view.fieldRange.key, 'theta');
+  assert.equal(view.meshCache.field.cells, view.thermalFields);
+  view.setFlowFields(null);
+  assert.equal(view.fieldRange.max, 348.75, 'clearing flow preserves displayed temperature');
+  view.setThermalFields([{ id: 0, theta: 300 }, { id: 1, theta: 300 }]);
+  assert.equal(view.fieldRange.min, 300);
+  assert.equal(view.fieldRange.max, 300, 'constant field keeps its actual range');
+  assert.ok(view.meshCache.field.bins.some(bin => bin.length), 'constant field still has filled polygons');
+  view.setMesh(mesh);
+  assert.equal(view.thermalFields, null);
+  assert.equal(view.flowFields, null);
+  assert.equal(view.fieldRange, null);
+  view.setThermalFields([{ id: 0, theta: 301 }, { id: 1, theta: 302 }]);
+  view.setOutline([[[0, 0], [1, 0], [0, 1]]]);
+  assert.equal(view.thermalFields, null);
+  assert.equal(view.fieldRange, null);
+});
+
+test('temperature binding rejects nonfinite or mismatched final-mesh cells', () => {
+  const { sandbox } = viewportSandbox();
+  const { canvas } = fakeCanvas();
+  const view = new sandbox.window.MeshView.Viewport(canvas);
+  assert.throws(() => view.setThermalFields([{ id: 0, theta: 300 }]), /不匹配/);
+  view.setMesh({ bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 }, minLevel: 0, maxLevel: 0,
+    vertices: [[0, 0], [1, 0], [0, 1]], cells: [{ id: 0, level: 0, vertices: [0, 1, 2] }], edges: [] });
+  for (const cells of [[], [{ id: 1, theta: 300 }], [{ id: 0, theta: NaN }]])
+    assert.throws(() => view.setThermalFields(cells), /不匹配/);
+  assert.equal(view.thermalFields, null);
+});

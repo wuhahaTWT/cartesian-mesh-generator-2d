@@ -89,6 +89,18 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 可加 `--verified-preset=true`（真实界面载入已有高密案例参数）、`--density=150000`、`--target-cells=100000`、`--auto-padding=0.5`、`--theme=duet`、`--interaction-check=true`（主题状态与实际参数转手动）、`--allow-unsafe=true`、`--control=manual`、`--density=dense`、`--method=hybrid`、`--mode=light`、`--regions=1`、`--repeat=1`。省略 `--out` 即验证默认临时预览；`--export=/绝对路径/result.zip` 验证结果包。每轮会缩到最小窗口并检查底部可达、预览/导出单元数。smoke 会走真实表单/IPC/CLI 后退出；它不等于所有界面操作都已验收。
 
+## 桌面热输运入口
+
+`desktop/src/core/thermal.js`负责请求/边界分组/原生调用/字段、时间与联合状态核对；`thermal-job.js`保留独立运行目录并在完整读回后发布。renderer温度字段与独立流场分别绑定；导出PNG通过后台保存的最终网格/温度生成，不依赖当前相机或预览是否被释放。打包清单包含 `cartmesh2d_transport_cli`。
+
+真实运行管理回归（90秒/进程上限；输出目录必须新建；使用已生成的圆柱最终网格）：
+
+```sh
+node tools/verification/verify_desktop_thermal.cjs --mesh PATH/circle.solver.cm2d --output outputs/thermal-desktop-new
+```
+
+该工具实算连续/重启一致性、失败不覆盖完整场、取消后正时间保存和继续。不会把测试夹具当数值验证。GUI/打包验证沿用原smoke，增加 `--thermal=true`，将真实表单设为同步温度算例并检验两次成功、一次故意失败、活进程取消与恢复；本轮成功几何参数为 `--control=manual --wall-relative-size=.0625 --background-relative-size=.5 --reference-length=2 --padding-relative-size=10 --band-cells=3 --small-alpha=.1`。默认紧凑域失败另记在CURRENT_STATE。
+
 ## 自研求解器入口
 
 已经实现独立可执行的**二维稳态标量扩散/泊松**基础，以及接入桌面的 **SIMPLE + Rhie–Chow 不可压稳态层流**。原有网格生成核心、质量门及 OpenFOAM 导出继续保留。
@@ -139,7 +151,7 @@ face,type,value,inflowValue
 
 方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须为正的常数。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向恒物性输运，不含浮力、变物性或共轭传热。基础ScalarTransport API以调用者提供的新时刻边界/源和共享通量推进一步；`--flow-checkpoint`模式载流冻结，`--evolve-flow`模式使用下述同步接口。
 
-输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。冻结载流模式尚无标量checkpoint；同步模式见下方联合保存。尚无温度桌面入口，失败的多步计算不可假作已完成全部物理时间。
+输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。冻结载流模式尚无标量checkpoint；同步模式见下方联合保存。温度桌面入口见下方；失败的多步计算不可假作已完成全部物理时间。
 
 同步模式按以下顺序执行：`advanceIncompressible2D` → 新时刻共享通量 → `solveScalarTransport2D` → 两者通过才接受。`ThermalSetup2D`的源项数组和热边界数组为固定空间分布，用于逐项检查续算兼容性；ScalarTransport另外保留回调形式，数组与回调必须二选一。同步源/边界当前固定时间，不含浮力反馈。
 
