@@ -80,15 +80,17 @@ Sst2003mCoefficients2D evaluateSst2003m2D(const Sst2003mPoint2D& p) {
     return r;
 }
 
-FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
+namespace {
+FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& p, const ScalarTransportControls2D& controls,
-    const std::vector<double>& previousK, const std::vector<double>& previousOmega, double dt) {
+    const std::vector<double>& previousK, const std::vector<double>& previousOmega, double dt,bool evaluateOnly) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
     require(n>0&&p.k.size()==n&&p.omega.size()==n&&p.wallDistance.size()==n&&
         p.strainMagnitude.size()==n&&p.gradientK.size()==n&&p.gradientOmega.size()==n&&
         p.volumeFlux.size()==nf&&p.boundaryK.size()==nf&&p.boundaryOmega.size()==nf,
         "SST-2003m field dimensions mismatch");
+    require(p.resolvedWalls.empty()||p.resolvedWalls.size()==nf,"SST wall mask dimensions mismatch");
     require(previousK.empty()==previousOmega.empty(),"SST-2003m both previous states required");
     for (double k:previousK) nonnegative(k);
     for (double w:previousOmega) positive(w);
@@ -106,12 +108,24 @@ FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
         kp.sourceDensity.push_back(c.sourceK); wp.sourceDensity.push_back(c.sourceOmega);
         kp.sinkRate.push_back(c.lossRateK); wp.sinkRate.push_back(c.lossRateOmega);
     }
-    for (const auto& f:mesh.faces) {
+    for (std::size_t id=0;id<nf;++id) {
+        const auto& f=mesh.faces[id];
+        if (!p.resolvedWalls.empty()&&p.resolvedWalls[id]) {
+            require(!f.neighbour&&p.volumeFlux[id]==0&&p.boundaryK[id].kind==ScalarBoundaryKind2D::Value&&
+                p.boundaryK[id].value==0&&p.boundaryOmega[id].kind==ScalarBoundaryKind2D::Value,
+                "SST resolved wall requires boundary k=0, positive omega and zero volume flux");
+            kp.faceDiffusivity.push_back(p.nu);wp.faceDiffusivity.push_back(p.nu);continue;
+        }
         const auto& co=result.coefficients[f.owner];
         const auto& cn=f.neighbour?result.coefficients[*f.neighbour]:co;
         const double weight=f.neighbour?f.neighbourWeight:0;
         kp.faceDiffusivity.push_back((1-weight)*co.diffusivityK+weight*cn.diffusivityK);
         wp.faceDiffusivity.push_back((1-weight)*co.diffusivityOmega+weight*cn.diffusivityOmega);
+    }
+    if(evaluateOnly) {
+        result.k=evaluateScalarTransport2D(mesh,kp,p.k,controls,previousK,dt);
+        result.omega=evaluateScalarTransport2D(mesh,wp,p.omega,controls,previousOmega,dt);
+        return result;
     }
     result.k=solveScalarTransport2D(mesh,kp,controls,previousK,dt);
     converged(result.k,"k");
@@ -120,6 +134,12 @@ FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
     converged(result.omega,"omega");
     require(result.omega.minValue>0,"SST-2003m nonpositive omega after transport; no clipping applied");
     return result;
+}
+}
+FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
+    const FrozenSst2003mProblem2D& p,const ScalarTransportControls2D& controls,
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
+    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,false);
 }
 
 Sst2003mGradients2D reconstructSst2003mGradients2D(const FvMesh2D& mesh,
@@ -158,6 +178,63 @@ Sst2003mGradients2D reconstructSst2003mGradients2D(const FvMesh2D& mesh,
         // components occur twice; rigid rotation must give zero production.
         result.strainMagnitude[i]=checked(std::hypot(std::sqrt(2.)*result.u[i].x,
             std::sqrt(2.)*result.v[i].y,checked(result.u[i].y+result.v[i].x)));
+    }
+    return result;
+}
+
+void setSst2003mResolvedWalls2D(const FvMesh2D& mesh,FrozenSst2003mProblem2D& p,
+    const std::vector<bool>& walls) {
+    validateFvMesh2D(mesh);positive(p.nu);
+    const auto nf=mesh.faces.size();
+    require(walls.size()==nf&&p.boundaryK.size()==nf&&p.boundaryOmega.size()==nf&&p.volumeFlux.size()==nf,
+        "SST wall boundary dimensions mismatch");
+    std::vector<double> values(nf);
+    for(std::size_t id=0;id<nf;++id)if(walls[id]) {
+        const auto& f=mesh.faces[id];
+        require(!f.neighbour&&p.volumeFlux[id]==0,"SST resolved wall must be impermeable boundary");
+        const double distance=checked(dot(f.centre-mesh.cells[f.owner].centre,f.areaVector)/
+            std::hypot(f.areaVector.x,f.areaVector.y));positive(distance);
+        values[id]=checked(60*p.nu/.075/distance/distance);positive(values[id]);
+    }
+    // Validate everything before changing caller state.
+    p.resolvedWalls=walls;
+    for(std::size_t id=0;id<nf;++id)if(walls[id]) {
+        p.boundaryK[id]={ScalarBoundaryKind2D::Value,0,{}};
+        p.boundaryOmega[id]={ScalarBoundaryKind2D::Value,values[id],{}};
+    }
+}
+
+SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
+    const FrozenSst2003mProblem2D& initial,const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& velocityBC,const SstTransportControls2D& controls,
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
+    require(controls.maxIterations>0&&std::isfinite(controls.relaxation)&&controls.relaxation>0&&controls.relaxation<=1,
+        "SST invalid nonlinear iteration controls");
+    auto p=initial;
+    const auto reconstruct=[&] {
+        auto g=reconstructSst2003mGradients2D(mesh,p,velocity,velocityBC);
+        p.gradientK=std::move(g.k);p.gradientOmega=std::move(g.omega);p.strainMagnitude=std::move(g.strainMagnitude);
+    };
+    reconstruct();
+    auto inner=controls.transport;
+    inner.relativeTolerance*=.1;inner.absoluteTolerance*=.1;inner.cellTolerance*=.1;
+    SstTransportResult2D result;
+    // Includes complete scalar/input validation and allows an already converged
+    // initial state to return without inventing a nonlinear update.
+    result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
+    for(std::size_t it=0;it<=controls.maxIterations;++it) {
+        const auto& k=result.fields.k.history.back();const auto& w=result.fields.omega.history.back();
+        result.history.push_back({it,k.residualNorm,w.residualNorm,k.maxDiagonalScaledImbalance,w.maxDiagonalScaledImbalance});
+        if(result.fields.k.converged&&result.fields.omega.converged) {result.converged=true;break;}
+        if(it==controls.maxIterations)break;
+        const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false);
+        for(std::size_t i=0;i<p.k.size();++i) {
+            p.k[i]=checked(p.k[i]+controls.relaxation*(candidate.k.values[i]-p.k[i]));
+            p.omega[i]=checked(p.omega[i]+controls.relaxation*(candidate.omega.values[i]-p.omega[i]));
+            nonnegative(p.k[i]);positive(p.omega[i]);
+        }
+        reconstruct();
+        result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
     }
     return result;
 }

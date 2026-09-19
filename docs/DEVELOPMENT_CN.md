@@ -274,7 +274,7 @@ build/cartmesh2d_flow_cli --mesh /path/unit-square.solver.cm2d --output outputs/
 python3 tools/verification/verify_sst_decay.py --probe build/cartmesh2d_sst_transport_tests --mesh /path/final.solver.cm2d --output outputs/sst-decay
 ```
 
-驱动对给定F1=1、无梯度/剪切的均匀衰减反复执行冻结步骤，检查原非线性残差；分别比较后向欧拉解析根与连续ODE参考，进行三档时间步细化。Python读取实际CM2D/全部最终单元/面及历史代表值进行独立审核，并有篡改拒绝测试。这不构成壁面流动验证。空间非均匀冻结输运与真实壁段距离的后续进展见下一节；仍需物理近壁处理、完整非线性及速度压力耦合/压力定义、标准平板及分离工况证据；当前无产品SST开关，也没有自动湍流热扩散或温度相关物性。
+驱动对给定F1=1、无梯度/剪切的均匀衰减反复执行冻结步骤，检查原非线性残差；分别比较后向欧拉解析根与连续ODE参考，进行三档时间步细化。Python读取实际CM2D/全部最终单元/面及历史代表值进行独立审核，并有篡改拒绝测试。这不构成壁面流动验证。空间非均匀冻结输运与真实壁段距离的后续进展见下一节；近壁条件与固定载流非线性进展见下节；仍需速度压力耦合/压力定义、标准平板及分离工况证据；当前无产品SST开关，也没有自动湍流热扩散或温度相关物性。
 
 ### SST壁面距离与空间重建
 
@@ -292,6 +292,23 @@ python3 tools/verification/verify_wall_distance.py --mesh /path/square.solver.cm
 ```
 
 空间驱动固定k=.02(1+.2x+.3y)、omega=4(1+.1x+.2y)、U=(y,0)、nu=1e-5、dt=.01，底部y=0边选作距离诊断；边界值固定为解析场。一次冻结输运的独立审核包含模型系数、重建后的共享面通量、原冻结矩阵norm及逐格收支。它不是完整非线性步，更不是物理近壁流动。读取器对距离/面ID/梯度/模型/源项/面通量均有篡改回归；矩形距离读取器拒绝斜边域，不能把简单解析公式套到任意几何。
+
+### 非线性SST与解析壁面边界
+
+`setSst2003mResolvedWalls2D(mesh, problem, walls)`验证全部wall mask之后才修改问题：墙必须为边界且volumeFlux严格为零，取k_wall=0、omega_wall=60 nu/(.075 d_normal²)，d_normal为owner-centre到当前face的法向间距。`resolvedWalls`使该面的两方程扩散系数取分子nu，内部面仍线性插值单元有效系数。壁距场与壁面间距用途不同，不互相覆盖；此处采用解析到壁面的低雷诺数处理，不是y+壁函数。调用者负责适宜网格和相符速度边界。
+
+`solveSst2003mTransport2D`默认最多500次、外松弛.5；传入当前初值、固定速度及边界、守恒面通量，非定常另给previousK/previousOmega和dt。每次更新重新计算空间梯度和SST闭合；用`evaluateScalarTransport2D`在返回的k/omega重建通量和真实残差，两个方程均满足所设norm及逐格门才接受。初值已满足可以零更新返回，超限返回converged=false；内层失败抛出而非修改上一物理时刻。内层容差取外层的.1倍，无场裁剪；输入、正性、载流守恒和稳态锚定检查不变。评估API不会求解或改变给定场，history仅一行iteration=linearIterations=0。当前重复建立标量工作区，尚未针对大规模非线性SST优化。
+
+```sh
+# 诊断入口：单位正方形或平行四边形底边y=0；不是通用RANS CLI。
+build/cartmesh2d_sst_nonlinear_probe /path/unit-domain.solver.cm2d outputs/nonlinear-probe
+python3 tools/verification/verify_sst_nonlinear.py --mesh /path/unit-domain.solver.cm2d --prefix outputs/nonlinear-probe --output outputs/nonlinear-audit.json
+ctest --test-dir build -R sst_nonlinear --output-on-failure
+```
+
+探针设置U=(y,0)、初始k=.001/omega=2、nu=1e-5、dt=.02，底壁不穿透，非壁流出为零法向梯度，其余边界固定初值。独立读取器用原始端点重建壁距、几何与梯度，再计算当前源系数和未拆分的非线性PDE收支；历史必须描述实际返回场。近零梯度分量允许`128 epsilon max(1, |grad_native|, |grad_independent|)`的浮点舍入预算，原有相对/绝对误差门仍保留，实际误差/预算均写入审核。它处理独立几何计算的ulp差异，不修改求解收敛条件。既有ODE解析根、空间冻结输运、篡改拒绝与旧标量逐字节兼容性继续保留。
+
+完整RANS还需要外层速度/压力耦合及修正压力定义、适宜y+的网格、标准平板/分离工况和空间敏感性。当前固定载流案例不能证明这些能力；没有将SST加入桌面菜单。
 
 ### 非正交压力修正固定点
 

@@ -163,6 +163,11 @@ option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    add_executable(cartmesh2d_sst_nonlinear_unit_tests tests/sst_nonlinear_unit_test.cpp)
+    target_link_libraries(cartmesh2d_sst_nonlinear_unit_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_sst_nonlinear_unit COMMAND cartmesh2d_sst_nonlinear_unit_tests)
+    add_executable(cartmesh2d_sst_nonlinear_probe tests/sst_nonlinear_probe.cpp)
+    target_link_libraries(cartmesh2d_sst_nonlinear_probe PRIVATE cartmesh2d_fv)
     add_executable(cartmesh2d_wall_distance_tests tests/wall_distance_test.cpp)
     target_link_libraries(cartmesh2d_wall_distance_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_wall_distance COMMAND cartmesh2d_wall_distance_tests)
@@ -178,6 +183,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_transport_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_transport COMMAND cartmesh2d_scalar_transport_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_sst_nonlinear_verifier COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_nonlinear_verifier_test.py
+        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --probe $<TARGET_FILE:cartmesh2d_sst_nonlinear_probe>)
     add_test(NAME cartmesh2d_sst_spatial_verifier COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_spatial_verifier_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

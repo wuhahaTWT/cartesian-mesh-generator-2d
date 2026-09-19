@@ -53,11 +53,16 @@ std::vector<Vector2D> gradients(const FvMesh2D& mesh, const Values& value,
 }
 }
 
-ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
+namespace {
+ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p, const ScalarTransportControls2D& c,
-    const Values& previous, double timeStep) {
+    const Values& previous, double timeStep, const Values* supplied) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
+    if (supplied) {
+        require(supplied->size()==n,"Scalar evaluation field dimensions mismatch");
+        for (double v:*supplied) finite(v);
+    }
     require(n>0 && p.volumeFlux.size()==nf,
         "Scalar transport invalid field dimensions or missing callback");
     require(bool(p.source)!=(!p.sourceDensity.empty()) &&
@@ -132,7 +137,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     require(queue.size()==n,"Scalar transport unanchored steady connected component");
     detail::SparsePattern2D pattern(n,connections);
     detail::SparseSystem2D a(pattern); detail::LinearWorkspace2D workspace(n);
-    r.values=transient?previous:Values(n,0.);
+    r.values=supplied?*supplied:(transient?previous:Values(n,0.));
     r.sourceIntegrals.resize(n); r.temporalIntegrals.resize(n);
     r.sinkIntegrals.resize(n);
     r.advectiveFlux.resize(nf); r.diffusiveFlux.resize(nf);
@@ -190,21 +195,24 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
             extra[id]=finite(diffCorrection+q*(advected-upwind));
         }
     };
-    for (std::size_t it=1;it<=c.maxCorrections;++it) {
-        faceFluxes(); a.rhs=base;
-        for (std::size_t id=0;id<nf;++id) {
-            const auto& f=mesh.faces[id]; a.rhs[f.owner]-=extra[id];
-            if (f.neighbour) a.rhs[*f.neighbour]+=extra[id];
+    for (std::size_t it=1;it<=(supplied?1:c.maxCorrections);++it) {
+        std::size_t linear=0;
+        if (!supplied) {
+            faceFluxes(); a.rhs=base;
+            for (std::size_t id=0;id<nf;++id) {
+                const auto& f=mesh.faces[id]; a.rhs[f.owner]-=extra[id];
+                if (f.neighbour) a.rhs[*f.neighbour]+=extra[id];
+            }
+            // Relax the field after solving the full elliptic operator. Diagonal
+            // equation relaxation would turn even a linear orthogonal diffusion
+            // problem into a slow, mesh-dependent stationary outer iteration.
+            auto candidate=r.values;
+            // User-requested tight outer tolerances must also constrain the inner
+            // solve; its legacy norm floor otherwise stalls relaxed scalar solves.
+            linear=a.solve(candidate,workspace,c.cellTolerance*.1,stop*.5);
+            for (std::size_t i=0;i<n;++i)
+                r.values[i]=finite(r.values[i]+c.relaxation*(candidate[i]-r.values[i]));
         }
-        // Relax the field after solving the full elliptic operator. Diagonal
-        // equation relaxation would turn even a linear orthogonal diffusion
-        // problem into a slow, mesh-dependent stationary outer iteration.
-        auto candidate=r.values;
-        // User-requested tight outer tolerances must also constrain the inner
-        // solve; its legacy norm floor otherwise stalls relaxed scalar solves.
-        const auto linear=a.solve(candidate,workspace,c.cellTolerance*.1,stop*.5);
-        for (std::size_t i=0;i<n;++i)
-            r.values[i]=finite(r.values[i]+c.relaxation*(candidate[i]-r.values[i]));
         faceFluxes(); r.boundaryFlux=0; r.temporalIntegral=0; r.sinkIntegral=0;
         for (std::size_t i=0;i<n;++i) {
             r.temporalIntegrals[i]=transient?finite(mesh.cells[i].area*(r.values[i]-previous[i])/timeStep):0;
@@ -227,7 +235,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
             maxScaled=std::max(maxScaled,std::abs(residual[i])/diagonal[i]);
         }
         const double norm=detail::linearNorm(residual);
-        r.history.push_back({it,linear,norm,finite(norm/std::max(scale,c.absoluteTolerance)),maxCell,maxScaled});
+        r.history.push_back({supplied?0:it,linear,norm,finite(norm/std::max(scale,c.absoluteTolerance)),maxCell,maxScaled});
         r.boundaryFlux=finite(r.boundaryFlux);
         r.globalBalance=finite(r.temporalIntegral+r.boundaryFlux-r.sourceIntegral);
         if (!p.sinkRate.empty()) r.globalBalance=finite(r.globalBalance+r.sinkIntegral);
@@ -236,5 +244,16 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     r.minValue=*std::min_element(r.values.begin(),r.values.end());
     r.maxValue=*std::max_element(r.values.begin(),r.values.end());
     return r;
+}
+}
+ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
+    const ScalarTransportProblem2D& p,const ScalarTransportControls2D& c,
+    const Values& previous,double timeStep) {
+    return scalarTransport(mesh,p,c,previous,timeStep,nullptr);
+}
+ScalarTransportResult2D evaluateScalarTransport2D(const FvMesh2D& mesh,
+    const ScalarTransportProblem2D& p,const Values& values,const ScalarTransportControls2D& c,
+    const Values& previous,double timeStep) {
+    return scalarTransport(mesh,p,c,previous,timeStep,&values);
 }
 }

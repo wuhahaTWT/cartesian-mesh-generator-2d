@@ -30,6 +30,9 @@ struct FrozenSst2003mProblem2D {
     std::vector<Vector2D> gradientK, gradientOmega;
     // Caller supplies actual wall/inlet/outlet data, not a guessed wall function.
     std::vector<ScalarBoundary2D> boundaryK, boundaryOmega;
+    // Optional resolved-wall mask. Such faces require k=0, finite positive
+    // omega, exactly zero carrier flux; face turbulent diffusivity is zero.
+    std::vector<bool> resolvedWalls;
 };
 struct FrozenSst2003mResult2D {
     ScalarTransportResult2D k, omega;
@@ -62,6 +65,41 @@ struct Sst2003mGradients2D {
 [[nodiscard]] FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(
     const FvMesh2D&, const FrozenSst2003mProblem2D&,
     const ScalarTransportControls2D& = {},
+    const std::vector<double>& previousK = {},
+    const std::vector<double>& previousOmega = {}, double timeStep = 0);
+
+// Set k_wall=0 and omega_wall=60*nu/(beta1*d_normal^2), beta1=.075,
+// with each wall face's own owner-to-face normal spacing. Low-Re resolved-wall
+// prescription from the TMR SST reference, NOT a y+ wall function or a mesh
+// qualification. Does not overwrite inlet/outlet data or cell distance field.
+void setSst2003mResolvedWalls2D(const FvMesh2D&, FrozenSst2003mProblem2D&,
+    const std::vector<bool>& walls);
+struct SstTransportControls2D {
+    std::size_t maxIterations = 500;
+    double relaxation = .5;
+    ScalarTransportControls2D transport;
+};
+struct SstTransportIteration2D {
+    std::size_t iteration = 0;
+    double kResidualNorm = 0, omegaResidualNorm = 0;
+    double kCellResidual = 0, omegaCellResidual = 0;
+};
+struct SstTransportResult2D {
+    bool converged = false;
+    // Coefficients/fluxes/residuals evaluated at the RETURNED fields, never
+    // reused from the preceding frozen linear solve.
+    FrozenSst2003mResult2D fields;
+    std::vector<SstTransportIteration2D> history;
+};
+// Nonlinear SST transport on a FIXED, conservative velocity/flux field. Each
+// iteration reconstructs k/omega gradients and updates the closure; acceptance
+// evaluates the original nonlinear equations with current coefficients.
+// No momentum/pressure feedback, wall functions, or RANS convergence claim.
+[[nodiscard]] SstTransportResult2D solveSst2003mTransport2D(
+    const FvMesh2D&, const FrozenSst2003mProblem2D& initial,
+    const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& velocityBoundary,
+    const SstTransportControls2D& = {},
     const std::vector<double>& previousK = {},
     const std::vector<double>& previousOmega = {}, double timeStep = 0);
 }

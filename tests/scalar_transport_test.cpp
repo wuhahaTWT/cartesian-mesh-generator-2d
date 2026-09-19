@@ -453,6 +453,86 @@ void zeroSinkCompatibilityAndLocalAnchor() {
     check(std::abs(anchored.globalBalance) < 2e-8, "local sink anchor balance closes");
 }
 
+void evaluateScalarTransportRegression() {
+    const auto mesh = fvGrid(4, 3, true);
+    const auto exact = [](Point2D p) { return 1.4 + p.x + .25 * p.y; };
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .1;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.faceDiffusivity.resize(mesh.faces.size());
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        problem.faceDiffusivity[id] = .1 * (1. + mesh.faces[id].centre.x);
+    problem.sinkRate.resize(mesh.cells.size());
+    for (std::size_t i = 0; i < mesh.cells.size(); ++i)
+        problem.sinkRate[i] = .2 * (1. + .1 * mesh.cells[i].centre.x);
+    problem.source = [&](Point2D p) { return -.1 + .2 * (1. + .1 * p.x) * exact(p); };
+    problem.boundary = [&](std::size_t, const Face& face) {
+        const double d = .1 * (1. + face.centre.x);
+        if (face.centre.x - .2 * face.centre.y < 1e-10) return valueBoundary(exact(face.centre));
+        const double length = std::hypot(face.areaVector.x, face.areaVector.y);
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,
+            -d * (face.areaVector.x + .25 * face.areaVector.y) / length, std::nullopt};
+    };
+    ScalarTransportControls2D controls;
+    controls.maxCorrections = 2500;
+    controls.relativeTolerance = 1e-11;
+    controls.absoluteTolerance = 1e-13;
+    controls.cellTolerance = 1e-11;
+    const auto solved = solveScalarTransport2D(mesh, problem, controls);
+    check(solved.converged, "nonlinear re-evaluation fixture converges");
+    const auto evaluated = evaluateScalarTransport2D(mesh, problem, solved.values, controls);
+    check(evaluated.values == solved.values, "evaluation preserves supplied solved values");
+    check(evaluated.advectiveFlux == solved.advectiveFlux && evaluated.diffusiveFlux == solved.diffusiveFlux,
+          "evaluation reproduces solved face fluxes");
+    check(evaluated.sinkIntegrals == solved.sinkIntegrals && evaluated.sourceIntegrals == solved.sourceIntegrals,
+          "evaluation reproduces solved source and sink integrals");
+    check(evaluated.globalBalance == solved.globalBalance && evaluated.converged == solved.converged,
+          "evaluation reproduces solved balance and convergence");
+    check(evaluated.history.size() == 1 && evaluated.history[0].iteration == 0 &&
+          evaluated.history[0].linearIterations == 0,
+          "evaluation records one zero-linear-iteration history entry");
+
+    auto perturbedValues = solved.values;
+    perturbedValues[0] += .5;
+    const auto perturbed = evaluateScalarTransport2D(mesh, problem, perturbedValues, controls);
+    check(perturbed.values == perturbedValues, "evaluation does not silently solve a perturbed field");
+    check(!perturbed.converged && perturbed.history.size() == 1 &&
+          perturbed.history[0].linearIterations == 0,
+          "perturbed evaluation reports the nonlinear residual without solving");
+    double maxResidual = 0., residualNormSquared = 0.;
+    for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
+        double residual = perturbed.sinkIntegrals[i] - perturbed.sourceIntegrals[i];
+        for (std::size_t id = 0; id < mesh.faces.size(); ++id) {
+            const auto& face = mesh.faces[id];
+            const double flux = perturbed.advectiveFlux[id] + perturbed.diffusiveFlux[id];
+            if (face.owner == i) residual += flux;
+            if (face.neighbour && *face.neighbour == i) residual -= flux;
+        }
+        maxResidual = std::max(maxResidual, std::abs(residual));
+        residualNormSquared += residual * residual;
+    }
+    check(std::abs(perturbed.history[0].maxCellImbalance - maxResidual) < 1e-12,
+          "evaluation history reports independently reconstructed cell residual");
+    check(std::abs(perturbed.history[0].residualNorm - std::sqrt(residualNormSquared)) < 1e-12,
+          "evaluation history reports independently reconstructed residual norm");
+
+    auto changedSink = problem;
+    changedSink.sinkRate[0] *= 20.;
+    const auto sinkChanged = evaluateScalarTransport2D(mesh, changedSink, solved.values, controls);
+    check(!sinkChanged.converged, "changed sink invalidates a previously converged field");
+    auto changedFace = problem;
+    changedFace.faceDiffusivity[0] *= 4.;
+    const auto faceChanged = evaluateScalarTransport2D(mesh, changedFace, solved.values, controls);
+    check(!faceChanged.converged, "changed face diffusivity invalidates a previously converged field");
+
+    rejects([&] { (void)evaluateScalarTransport2D(mesh, problem, std::vector<double>(mesh.cells.size() - 1), controls); },
+            "field dimensions", "evaluation rejects wrong value size");
+    auto nonfinite = solved.values;
+    nonfinite[0] = std::numeric_limits<double>::quiet_NaN();
+    rejects([&] { (void)evaluateScalarTransport2D(mesh, problem, nonfinite, controls); },
+            "numerical range", "evaluation rejects nonfinite values");
+}
+
 void uniformFaceDiffusivityIsIdentical() {
     const auto mesh = fvGrid(5, 4, true);
     ScalarTransportProblem2D scalar;
@@ -580,6 +660,7 @@ int main() {
         steadyNeumannReaction();
         spatialReactionVariableDiffusionBalance();
         zeroSinkCompatibilityAndLocalAnchor();
+        evaluateScalarTransportRegression();
     } catch (const std::exception& error) {
         std::cerr << "unexpected scalar transport exception: " << error.what() << '\n';
         return 1;
