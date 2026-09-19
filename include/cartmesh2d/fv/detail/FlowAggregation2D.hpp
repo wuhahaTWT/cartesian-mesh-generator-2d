@@ -16,7 +16,7 @@ namespace cartmesh2d::fv::detail {
 // Standard multigrid principles; independently implemented, no hypre code/library.
 class AggregationHierarchy2D {
     struct Level {
-        std::vector<std::size_t> rows, columns, aggregate;
+        std::vector<std::size_t> rows, columns, aggregate, coarseSlots;
         std::vector<double> diagonal, off;
         mutable std::vector<double> rhs, x;
     };
@@ -247,6 +247,71 @@ public:
             scratch(coarse);levels_.push_back(std::move(coarse));
         }
         factorCoarse();
+        // Cache only the destinations of inter-aggregate upper entries. The
+        // immutable CSR graph and P determine these slots, not the coefficients.
+        for (std::size_t l=0;l+1<levels_.size();++l) {
+            auto& fine=levels_[l]; const auto& coarse=levels_[l+1];
+            for (std::size_t i=0;i<fine.diagonal.size();++i)
+                for (auto k=fine.rows[i];k<fine.rows[i+1];++k) {
+                    const auto j=fine.columns[k];
+                    if (j<=i || fine.off[k]==0 || fine.aggregate[i]==fine.aggregate[j]) continue;
+                    const auto row=std::min(fine.aggregate[i],fine.aggregate[j]);
+                    const auto column=std::max(fine.aggregate[i],fine.aggregate[j]);
+                    const auto end=coarse.columns.begin()+coarse.rows[row+1];
+                    const auto slot=std::lower_bound(coarse.columns.begin()+coarse.rows[row],end,column);
+                    require(slot!=end && *slot==column,"Flow aggregation refresh slot missing");
+                    fine.coarseSlots.push_back(static_cast<std::size_t>(slot-coarse.columns.begin()));
+                }
+        }
+    }
+    // Reuse P and CSR only. Every coarse coefficient is recomputed as P^T A P
+    // for the CURRENT matrix, and the coarse solve is refactored. A large
+    // coefficient change or changed zero pattern asks the caller to regroup.
+    // Invalid dimensions, signs or symmetry throw before any updates.
+    // A later numerical failure requires the caller to discard this hierarchy.
+    bool refresh(const std::vector<double>& diagonal,const std::vector<double>& off) {
+        auto& fine=levels_.front(); const auto n=fine.diagonal.size();
+        require(diagonal.size()==n && off.size()==fine.off.size(),"Flow aggregation refresh dimensions invalid");
+        for (double d:diagonal) require(std::isfinite(d)&&d>0,"Flow aggregation refresh diagonal invalid");
+        for (std::size_t i=0;i<n;++i)
+            for (auto k=fine.rows[i];k<fine.rows[i+1];++k) {
+                const auto j=fine.columns[k];
+                require(std::isfinite(off[k])&&off[k]<=0,"Flow aggregation refresh off-diagonal invalid");
+                const auto slot=std::lower_bound(fine.columns.begin()+fine.rows[j],fine.columns.begin()+fine.rows[j+1],i);
+                require(off[static_cast<std::size_t>(slot-fine.columns.begin())]==off[k],
+                        "Flow aggregation refresh requires an exactly symmetric matrix");
+            }
+        const auto compatible=[](double old,double value) {
+            if (old==0 || value==0) return old==value;
+            const double ratio=value/old; return ratio>=.5 && ratio<=2.;
+        };
+        for (std::size_t i=0;i<n;++i) if(!compatible(fine.diagonal[i],diagonal[i])) return false;
+        for (std::size_t k=0;k<off.size();++k) if(!compatible(fine.off[k],off[k])) return false;
+        fine.diagonal=diagonal; fine.off=off;
+        for (std::size_t l=0;l+1<levels_.size();++l) {
+            const auto& current=levels_[l]; auto& coarse=levels_[l+1];
+            std::vector<long double> d(coarse.diagonal.size(),0.), a(coarse.off.size(),0.);
+            std::size_t cursor=0;
+            for (std::size_t i=0;i<current.diagonal.size();++i) {
+                const auto ci=current.aggregate[i]; d[ci]+=current.diagonal[i];
+                for (auto k=current.rows[i];k<current.rows[i+1];++k) {
+                    const auto j=current.columns[k]; if(j<=i || current.off[k]==0) continue;
+                    if(ci==current.aggregate[j]) d[ci]+=2*static_cast<long double>(current.off[k]);
+                    else a[current.coarseSlots[cursor++]]+=current.off[k];
+                }
+            }
+            require(cursor==current.coarseSlots.size(),"Flow aggregation refresh graph changed");
+            for (std::size_t i=0;i<coarse.diagonal.size();++i) {
+                coarse.diagonal[i]=finite(static_cast<double>(d[i]));
+                require(coarse.diagonal[i]>0,"Flow aggregation refresh nonpositive coarse diagonal");
+                for (auto k=coarse.rows[i];k<coarse.rows[i+1];++k) {
+                    const auto j=coarse.columns[k]; if(j<=i) continue;
+                    const auto slot=std::lower_bound(coarse.columns.begin()+coarse.rows[j],coarse.columns.begin()+coarse.rows[j+1],i);
+                    coarse.off[k]=coarse.off[static_cast<std::size_t>(slot-coarse.columns.begin())]=finite(static_cast<double>(a[k]));
+                }
+            }
+        }
+        factorCoarse(); return true;
     }
     bool matches(const std::vector<double>& diagonal,const std::vector<double>& off) const {
         return levels_.front().diagonal==diagonal && levels_.front().off==off;

@@ -216,6 +216,7 @@ int main(int argc, char** argv) {
                     totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
                     totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
                     totalPerformance.pressureHierarchyReuses+=p.pressureHierarchyReuses;
+                    totalPerformance.pressureHierarchyRefreshes+=p.pressureHierarchyRefreshes;
                     totalPerformance.maxPressureHierarchyLevels=std::max(totalPerformance.maxPressureHierarchyLevels,p.maxPressureHierarchyLevels);
                     totalPerformance.maxPressureCoarseCells=std::max(totalPerformance.maxPressureCoarseCells,p.maxPressureCoarseCells);
                     totalPerformance.pressureIterations+=p.pressureIterations;
@@ -414,6 +415,7 @@ int main(int argc, char** argv) {
                         << ",\n\"pressureFactorReuses\":" << p.pressureFactorReuses
                         << ",\n\"pressureHierarchyBuilds\":" << p.pressureHierarchyBuilds
                         << ",\n\"pressureHierarchyReuses\":" << p.pressureHierarchyReuses
+                        << ",\n\"pressureHierarchyRefreshes\":" << p.pressureHierarchyRefreshes
                         << ",\n\"maxPressureHierarchyLevels\":" << p.maxPressureHierarchyLevels
                         << ",\n\"maxPressureCoarseCells\":" << p.maxPressureCoarseCells
                         << ",\n\"pressureIterations\":" << p.pressureIterations

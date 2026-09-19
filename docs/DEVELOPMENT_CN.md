@@ -211,6 +211,12 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 解析通道验证速度分布、压降梯度和流量；方腔 Re=100 对比 [Ghia 等（1982）](https://doi.org/10.1016/0021-9991(82)90058-4)中心线数据。圆柱只验证低 Re 定常试算、有限场和守恒，不与几何/边界不同的 DFG 基准混比。误差及外部工具实测范围见 CURRENT_STATE，绘图直接读取 CM2D/CSV。桌面 smoke 可加 `--flow=external --flow-nu=0.1 --flow-speed=1 --flow-max-iterations=30`，迭代上限场不得作为收敛证明。
 
+### 压力aggregation分组与系数分离
+
+`FlowAggregation2D.hpp`缓存每条跨组上三角边的粗层CSR目标位置。`refresh()`保持P不变，按原细层遍历顺序以long double累加当前 `P^T A P`，镜像写回保证精确对称，再重做最粗层LDLT。非有限值/符号/对称性错误显式抛出；相容性要求零模式不变、每项系数相对上一矩阵比值在[.5,2]内。`SparseSystem2D`最多连续刷新8次后重新分组；任何构造/刷新异常均丢弃缓存。这里的范围/次数是保守建层策略，最终PCG真实残差标准不变，不作为精度认证。
+
+profile分别记录 `pressureHierarchyBuilds`（完整分组）、`pressureHierarchyRefreshes`（当前系数刷新）及 `pressureHierarchyReuses`（完全相同系数）。原有IC0默认不变。单测独立稠密P^TAP验证非均匀更新、V-cycle线性/对称/正性、已知解真实残差、零模式/比例/不对称拒绝、定期重建及数值失败后丢弃缓存。实际圆柱及三档涡流用独立CM2D/CSV读取器核对，profile计时不能替代解误差；证据见 `artifacts/current/native-flow-aggregation-refresh.json`。绘图入口 `tools/visualization/render_aggregation_refresh.py` 从真实单元读取速度，未用示意场替代计算结果。
+
 ### 当前迭代动量装配复用
 
 0.4.11 将每轮末尾用于真实动量残差的未松弛矩阵和速度/压力梯度，直接用于下一轮 SIMPLE。字段、面通量和回流边界更新后先统一刷新；下一轮交换数值存储，再按原顺序施加速度松弛。对流、完整对称应力、时间项、边界、压力修正次数和所有停止条件不变；最后的面动量输出使用同一最终梯度。不同方程不共享可变预条件缓存，此处复用的是动量矩阵数值存储，压力求解器没有更换。

@@ -356,6 +356,7 @@ static FlowResult2D solveFlow(
         const auto start = c.profile ? Clock::now() : Clock::time_point{};
         const auto oldBuilds = system.ic0Builds(), oldReuses = system.ic0Reuses();
         const auto oldHierarchies=system.hierarchyBuilds(), oldHierarchyReuses=system.hierarchyReuses();
+        const auto oldHierarchyRefreshes=system.hierarchyRefreshes();
         const auto iterations = pressure ? system.solvePressure(field, workspace,
             c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
             (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi))
@@ -367,6 +368,7 @@ static FlowResult2D solveFlow(
                 p.pressureFactorReuses += system.ic0Reuses() - oldReuses;
                 p.pressureHierarchyBuilds += system.hierarchyBuilds() - oldHierarchies;
                 p.pressureHierarchyReuses += system.hierarchyReuses() - oldHierarchyReuses;
+                p.pressureHierarchyRefreshes += system.hierarchyRefreshes() - oldHierarchyRefreshes;
                 p.maxPressureHierarchyLevels=std::max(p.maxPressureHierarchyLevels,system.hierarchyLevels());
                 p.maxPressureCoarseCells=std::max(p.maxPressureCoarseCells,system.hierarchyCoarseCells());
             }

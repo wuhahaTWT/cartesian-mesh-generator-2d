@@ -153,6 +153,32 @@ void regression() {
     AggregationHierarchy2D h(g.pattern.rows,g.pattern.columns,s.diag,s.off);
     check(h.levels()>3 && h.coarseCells()<=32,"17x17 grid exercises multiple bounded levels");
     checkGalerkinHierarchy(h,"17x17 Galerkin hierarchy",false);
+    {
+        auto refreshedDiagonal=s.diag, refreshedOff=s.off;
+        for (auto& value:refreshedDiagonal) value*=1.1;
+        for (auto& value:refreshedOff) value*=1.1;
+        // A local edge change and unequal positive diagonal shifts exercise
+        // coefficient refresh beyond a uniform scaling of the old hierarchy.
+        const auto edge=g.pattern.slot(10,9), transpose=g.pattern.slot(9,10);
+        refreshedOff[edge]-=.07; refreshedOff[transpose]-=.07;
+        refreshedDiagonal[10]+=.12; refreshedDiagonal[9]+=.09;
+        check(h.refresh(refreshedDiagonal,refreshedOff),"compatible coefficient refresh is accepted");
+        checkGalerkinHierarchy(h,"refreshed 17x17 Galerkin hierarchy",false);
+        const auto preservedDiagonal=h.level(0).diagonal;
+        refreshedDiagonal[0]*=3.;
+        check(!h.refresh(refreshedDiagonal,refreshedOff),"large coefficient change rejects refresh");
+        check(h.level(0).diagonal==preservedDiagonal,"failed refresh leaves hierarchy unchanged");
+        auto zeroPattern=refreshedOff; if (!zeroPattern.empty()) zeroPattern[0]=zeroPattern[g.pattern.transpose[0]]=0.;
+        check(!h.refresh(s.diag,zeroPattern),"zero pattern change rejects refresh");
+        check(h.level(0).diagonal==preservedDiagonal,"pattern rejection leaves hierarchy unchanged");
+        auto asymmetric=s.off; asymmetric[0]*=1.1;
+        rejects([&]{ h.refresh(s.diag,asymmetric); },"asymmetric coefficient refresh rejects");
+        rejects([&]{ h.refresh(std::vector<double>(s.diag.size()-1),s.off); },"refresh rejects invalid diagonal size");
+        auto nonfinite=s.diag; nonfinite[0]=std::numeric_limits<double>::quiet_NaN();
+        rejects([&]{ h.refresh(nonfinite,s.off); },"refresh rejects nonfinite diagonal");
+        auto positive=s.off; if (!positive.empty()) positive[0]=std::abs(positive[0]);
+        rejects([&]{ h.refresh(s.diag,positive); },"refresh rejects positive off-diagonal");
+    }
     std::vector<double> x(g.n),y(g.n); for(std::size_t i=0;i<g.n;++i){x[i]=std::sin(.17*(i+1));y[i]=std::cos(.11*(i+2));}
     std::vector<double> bx,by; h.apply(x,bx); h.apply(y,by); const auto scale=1.+std::abs(dot(x,by))+std::abs(dot(y,bx));
     check(std::abs(dot(x,by)-dot(y,bx))<=2e-11*scale,"V-cycle bilinear form is symmetric");
@@ -172,12 +198,39 @@ void regression() {
     s.rhs=g.reference(y); sol.assign(g.n,0.); (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);
     check(s.hierarchyBuilds()==1&&s.hierarchyReuses()==1,"changed RHS reuses hierarchy"); known(g,sol,y,"changed-RHS aggregation solve");
     s.diag[10]+=.25; g.d[10]+=.25; s.rhs=g.reference(y); sol.assign(g.n,0.);
-    (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation); check(s.hierarchyBuilds()==2,"direct diagonal mutation rebuilds hierarchy"); known(g,sol,y,"diagonal mutation solve");
+    (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation); check(s.hierarchyBuilds()==1&&s.hierarchyRefreshes()==1,"compatible diagonal mutation refreshes hierarchy"); known(g,sol,y,"diagonal mutation solve");
     const auto a=g.pattern.slot(10,9),at=g.pattern.slot(9,10); s.off[a]-=.1;s.off[at]-=.1;g.h[9]+=.1;
-    s.rhs=g.reference(y);sol.assign(g.n,0.);(void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);check(s.hierarchyBuilds()==3,"direct off mutation rebuilds hierarchy");known(g,sol,y,"off mutation solve");
+    s.rhs=g.reference(y);sol.assign(g.n,0.);(void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);check(s.hierarchyBuilds()==1&&s.hierarchyRefreshes()==2,"compatible off mutation refreshes hierarchy");known(g,sol,y,"off mutation solve");
     s.off[a]+=.1; const auto before=s.hierarchyBuilds(); rejects([&]{std::vector<double> z(g.n);(void)s.solvePressure(z,w,LinearPressureMethod2D::Aggregation);},"invalid asymmetric hierarchy rejected");
     check(s.hierarchyBuilds()==before,"failed hierarchy build is not counted"); s.off[a]-=.1; s.rhs=g.reference(y); sol.assign(g.n,0.); (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);
     check(s.hierarchyBuilds()==before+1,"repaired hierarchy rebuilds after failure"); known(g,sol,y,"repaired hierarchy solve");
+    for (std::size_t i=0;i<8;++i) {
+        s.diag[10]*=1.01; g.d[10]*=1.01; s.rhs=g.reference(y); sol.assign(g.n,0.);
+        (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);
+        known(g,sol,y,"successive coefficient refresh solve");
+    }
+    check(s.hierarchyBuilds()==before+1&&s.hierarchyRefreshes()==2+8,"eight compatible refreshes remain incremental");
+    s.diag[10]*=1.01; g.d[10]*=1.01; s.rhs=g.reference(y); sol.assign(g.n,0.);
+    (void)s.solvePressure(sol,w,LinearPressureMethod2D::Aggregation);
+    check(s.hierarchyBuilds()==before+2,"ninth refresh request performs a full rebuild"); known(g,sol,y,"post-refresh-limit solve");
+    // A compatible-looking update can still lose positive definiteness during
+    // coarse factorization. A partly refreshed cache must never be reused.
+    {
+        SparsePattern2D pairPattern(2,{{0,1},{1,0}});
+        SparseSystem2D pair(pairPattern); LinearWorkspace2D pairWorkspace(2);
+        pair.diag={2.,2.}; pair.off={-1.,-1.}; pair.rhs={1.,0.};
+        std::vector<double> z(2);
+        (void)pair.solvePressure(z,pairWorkspace,LinearPressureMethod2D::Aggregation);
+        pair.diag={1.,1.}; pair.off={-2.,-2.}; z.assign(2,0.);
+        rejects([&]{ (void)pair.solvePressure(z,pairWorkspace,LinearPressureMethod2D::Aggregation); },
+                "numerical refresh failure rejects nonpositive coarse pivot");
+        pair.diag={2.,2.}; pair.off={-1.,-1.}; z.assign(2,0.);
+        (void)pair.solvePressure(z,pairWorkspace,LinearPressureMethod2D::Aggregation);
+        check(pair.hierarchyBuilds()==2 && pair.hierarchyRefreshes()==0,
+              "partially updated cache is discarded after numerical failure");
+        check(std::abs(z[0]-2./3.)<1e-11 && std::abs(z[1]-1./3.)<1e-11,
+              "repair after numerical refresh failure solves original system");
+    }
     const std::vector<std::size_t> rows{0,1,2},cols{1,0};
     rejects([&]{AggregationHierarchy2D q(rows,cols,{0.,2.},{-1.,-1.});},"zero diagonal rejected");
     rejects([&]{AggregationHierarchy2D q(rows,cols,{std::numeric_limits<double>::infinity(),2.},{-1.,-1.});},"nonfinite diagonal rejected");

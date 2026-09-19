@@ -46,6 +46,7 @@ struct FlowPerformance2D {
     std::size_t pressureFactorReuses = 0;
     std::size_t pressureHierarchyBuilds = 0;
     std::size_t pressureHierarchyReuses = 0;
+    std::size_t pressureHierarchyRefreshes = 0;
     std::size_t maxPressureHierarchyLevels = 0;
     std::size_t maxPressureCoarseCells = 0;
     std::size_t pressureIterations = 0;

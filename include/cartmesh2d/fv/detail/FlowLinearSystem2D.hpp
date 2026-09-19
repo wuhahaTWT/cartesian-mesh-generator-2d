@@ -114,6 +114,7 @@ struct SparseSystem2D {
     std::size_t ic0Reuses() const { return factorReuses_; }
     std::size_t hierarchyBuilds() const { return hierarchyBuilds_; }
     std::size_t hierarchyReuses() const { return hierarchyReuses_; }
+    std::size_t hierarchyRefreshes() const { return hierarchyRefreshes_; }
     std::size_t hierarchyLevels() const { return hierarchy_ ? hierarchy_->levels() : 0; }
     std::size_t hierarchyCoarseCells() const { return hierarchy_ ? hierarchy_->coarseCells() : 0; }
 
@@ -236,14 +237,23 @@ struct SparseSystem2D {
         if (linearNorm(residual) <= stop) return 0;
         if (method == LinearPressureMethod2D::IC0) factorIC0();
         else if (method == LinearPressureMethod2D::Aggregation) {
-            if (hierarchyReady_ && hierarchy_ && hierarchy_->matches(diag,off)) ++hierarchyReuses_;
-            else {
-                hierarchyReady_=false;
-                // Release the old hierarchy before constructing the replacement
-                // to keep peak memory bounded when SIMPLE coefficients change.
-                hierarchy_.reset();
-                hierarchy_.emplace(pattern.rows,pattern.columns,diag,off);
-                hierarchyReady_=true; ++hierarchyBuilds_;
+            hierarchyReady_=false;
+            try {
+                if (hierarchy_ && hierarchy_->matches(diag,off)) ++hierarchyReuses_;
+                else if (hierarchy_ && refreshesSinceBuild_<8 && hierarchy_->refresh(diag,off)) {
+                    ++hierarchyRefreshes_; ++refreshesSinceBuild_;
+                } else {
+                    // Periodic regrouping bounds how long the interpolation
+                    // topology lags changing strengths. This is a setup policy,
+                    // not a relaxation of the true-residual stopping criterion.
+                    hierarchy_.reset();
+                    hierarchy_.emplace(pattern.rows,pattern.columns,diag,off);
+                    refreshesSinceBuild_=0; ++hierarchyBuilds_;
+                }
+                hierarchyReady_=true;
+            } catch (...) {
+                // A failed numerical refresh must never remain a usable cache.
+                hierarchy_.reset(); refreshesSinceBuild_=0; throw;
             }
         }
         precondition(w, method);
@@ -358,6 +368,7 @@ private:
     mutable std::optional<AggregationHierarchy2D> hierarchy_;
     mutable bool hierarchyReady_ = false;
     mutable std::size_t hierarchyBuilds_ = 0, hierarchyReuses_ = 0;
+    mutable std::size_t hierarchyRefreshes_ = 0, refreshesSinceBuild_ = 0;
     mutable bool factorReady_ = false;
     mutable std::size_t factorBuilds_ = 0, factorReuses_ = 0;
 
