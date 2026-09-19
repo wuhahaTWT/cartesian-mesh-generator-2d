@@ -1,5 +1,5 @@
 #include "cartmesh2d/fv/ScalarTransport2D.hpp"
-#include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/ThermalCheckpoint2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
 #include <cmath>
@@ -74,9 +74,10 @@ std::vector<fv::ScalarBoundary2D> boundaries(const std::string& path,const fv::F
 }
 }
 int main(int argc,char**argv) {
-    std::string prefix; bool started=false;
+    std::string prefix; bool started=false; double acceptedTime=0;
     try {
-        std::string meshPath,flowPath,bcPath,verification;
+        std::string meshPath,flowPath,bcPath,verification,evolve,restart;
+        fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
         fv::ScalarTransportControls2D controls;
         for(int i=1;i<argc;++i) {
@@ -90,13 +91,33 @@ int main(int argc,char**argv) {
                     "--dt DT --steps N: backward Euler on FROZEN carrier flux (not coupled evolving flow).\n"
                     "Without dt: steady. Thermal D=k/(rho cp), source=Q/(rho cp), boundary flux=q/(rho cp).\n"
                     "Verification only: --verification sine|decay (unit-square decay), --speed 1 for sine.\n"
-                    "Outputs .json .vtk .cells.csv .faces.csv .history.csv. No scalar restart/UI yet.\n";
+                    "Evolving flow: --evolve-flow external|channel|cavity --boundary BC.csv --dt DT --steps N\n"
+                    "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
+                    "  --flow-convection upwind|limited-linear --pressure-preconditioner ic0|aggregation\n"
+                    "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
+                    "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
+                    "Outputs .json .vtk .cells.csv .faces.csv .history.csv; evolving mode adds joint checkpoint.\n";
                 return 0;
             }
             require(i+1<argc,"missing option value"); const std::string value=argv[++i];
             if(arg=="--mesh")meshPath=value; else if(arg=="--output")prefix=value;
             else if(arg=="--flow-checkpoint")flowPath=value; else if(arg=="--boundary")bcPath=value;
             else if(arg=="--verification")verification=value;
+            else if(arg=="--evolve-flow")evolve=value;
+            else if(arg=="--restart")restart=value;
+            else if(arg=="--flow-nu")flowControls.nu=number(value);
+            else if(arg=="--flow-speed")flowControls.speed=number(value);
+            else if(arg=="--flow-tolerance")flowControls.tolerance=number(value);
+            else if(arg=="--flow-max-iterations") {
+                const double n=number(value);require(n>=1&&n<=100000&&n==std::floor(n),"invalid flow iteration count");
+                flowControls.maxIterations=static_cast<std::size_t>(n);
+            } else if(arg=="--flow-convection") {
+                require(value=="upwind"||value=="limited-linear","unknown flow convection");
+                flowControls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+            } else if(arg=="--pressure-preconditioner") {
+                require(value=="ic0"||value=="aggregation","unknown pressure preconditioner");
+                flowControls.pressurePreconditioner=value=="ic0"?fv::PressurePreconditioner2D::IncompleteCholesky0:fv::PressurePreconditioner2D::Aggregation;
+            }
             else if(arg=="--diffusivity")diffusivity=number(value);
             else if(arg=="--source")source=number(value); else if(arg=="--initial")initial=number(value);
             else if(arg=="--dt")dt=number(value); else if(arg=="--speed")speed=number(value);
@@ -111,8 +132,20 @@ int main(int argc,char**argv) {
         require(!meshPath.empty()&&!prefix.empty(),"--mesh and --output required");
         require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final solver mesh");
         require(dt>=0&&diffusivity>0&&(dt>0||steps==1),"invalid time settings or diffusivity");
-        require(verification.empty()||verification=="sine"||verification=="decay","unknown verification");
-        require(verification.empty()?(!flowPath.empty()&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
+        require(verification.empty()||verification=="sine"||verification=="decay"||verification=="thermal-vortex","unknown verification");
+        if(verification=="thermal-vortex") {
+            require(evolve.empty()&&flowPath.empty()&&bcPath.empty(),"thermal-vortex defines its own carrier and boundaries");
+            evolve="taylor-green";
+        }
+        const bool evolving=!evolve.empty();
+        if(evolving) {
+            require(dt>0&&flowPath.empty()&&(verification.empty()||verification=="thermal-vortex"),"evolving flow requires dt and cannot use a frozen carrier or other verification");
+            require(evolve=="channel"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
+            require(evolve!="taylor-green"||verification=="thermal-vortex","use thermal-vortex verification for Taylor-Green");
+            flowControls.scenario=evolve;
+        }
+        require(restart.empty()||evolving,"joint restart requires evolving flow");
+        require(verification.empty()?((!flowPath.empty()||evolving)&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
         require(verification!="sine"||dt==0,"sine verification is steady");
         require(verification!="decay"||dt>0,"decay verification needs dt");
         auto read=readCm2dTopology(meshPath); require(read.valid(),read.error);
@@ -120,15 +153,16 @@ int main(int argc,char**argv) {
         fv::ScalarTransportProblem2D p; p.diffusivity=diffusivity;
         std::vector<fv::ScalarBoundary2D> bc;
         double carrierTime=0,time=0;
+        fv::ThermalSetup2D thermalSetup; fv::ThermalFlowState2D state;
         const double pi=std::numbers::pi;
-        const auto exact=[&](Point2D x) {return std::sin(pi*x.x)*std::sin(pi*x.y)*std::exp(verification=="decay"?-2*pi*pi*diffusivity*time:0.);};
+        const auto exact=[&](Point2D x) {return std::sin(pi*x.x)*std::sin(pi*x.y)*std::exp(verification!="sine"?-2*pi*pi*diffusivity*time:0.);};
         if(verification.empty()) {
-            const auto state=carrier(flowPath,mesh); p.volumeFlux=state.flux; carrierTime=state.time;
+            if(!evolving) {const auto frozen=carrier(flowPath,mesh); p.volumeFlux=frozen.flux; carrierTime=frozen.time;}
             bc=boundaries(bcPath,mesh);
             p.boundary=[&](std::size_t id,const fv::Face&){return bc[id];};
             p.source=[&](Point2D){return source;};
         } else {
-            if(verification=="decay") {
+            if(verification=="decay"||verification=="thermal-vortex") {
                 double area=0;
                 for(const auto& cell:mesh.cells) {
                     require(cell.centre.x>0&&cell.centre.x<1&&cell.centre.y>0&&cell.centre.y<1,"decay requires interior unit-square cells");
@@ -140,9 +174,24 @@ int main(int argc,char**argv) {
                         "decay verification requires the unit square boundary");
             }
             p.volumeFlux.resize(mesh.faces.size());
-            for(std::size_t id=0;id<mesh.faces.size();++id) p.volumeFlux[id]=verification=="decay"?0:speed*mesh.faces[id].areaVector.x;
+            for(std::size_t id=0;id<mesh.faces.size();++id) p.volumeFlux[id]=verification!="sine"?0:speed*mesh.faces[id].areaVector.x;
             p.boundary=[&](std::size_t,const fv::Face& f){return fv::ScalarBoundary2D{fv::ScalarBoundaryKind2D::Value,exact(f.centre),{}};};
-            p.source=[&](Point2D x){return verification=="decay"?0:2*diffusivity*pi*pi*exact(x)+speed*pi*std::cos(pi*x.x)*std::sin(pi*x.y);};
+            p.source=[&](Point2D x){return verification!="sine"?0:2*diffusivity*pi*pi*exact(x)+speed*pi*std::cos(pi*x.x)*std::sin(pi*x.y);};
+        }
+        if(evolving) {
+            thermalSetup.diffusivity=diffusivity;
+            thermalSetup.sourceDensity.assign(mesh.cells.size(),verification.empty()?source:0.);
+            thermalSetup.boundary=verification.empty()?bc:std::vector<fv::ScalarBoundary2D>(mesh.faces.size());
+            fv::validateThermalSetup2D(mesh,thermalSetup);
+            if(restart.empty()) {
+                state.flow=fv::initialIncompressibleState2D(mesh,flowControls);
+                state.scalar.assign(mesh.cells.size(),initial);
+                if(verification=="thermal-vortex")for(std::size_t i=0;i<mesh.cells.size();++i)state.scalar[i]=exact(mesh.cells[i].centre);
+            } else {
+                std::ifstream in(restart);require(bool(in),"cannot open joint restart");
+                state=fv::readThermalCheckpoint2D(in,mesh,flowControls,thermalSetup,controls);
+            }
+            acceptedTime=state.flow.time;
         }
         const auto parent=std::filesystem::path(prefix).parent_path();if(!parent.empty())std::filesystem::create_directories(parent);
         {auto pending=output(prefix,".json");pending<<"{\"status\":\"running\",\"converged\":false}\n";} started=true;
@@ -150,12 +199,51 @@ int main(int argc,char**argv) {
         std::vector<double> previous;
         if(dt>0) {previous.assign(mesh.cells.size(),initial);if(verification=="decay") for(std::size_t i=0;i<previous.size();++i)previous[i]=exact(mesh.cells[i].centre);}
         fv::ScalarTransportResult2D result;
+        std::ofstream thermalHistory;
+        const auto saveAccepted=[&](const fv::ThermalFlowState2D& accepted) {
+            auto out=output(prefix,".thermal.checkpoint.tmp");
+            fv::writeThermalCheckpoint2D(out,mesh,flowControls,thermalSetup,controls,accepted);
+            out.close();std::filesystem::rename(prefix+".thermal.checkpoint.tmp",prefix+".thermal.checkpoint");
+        };
+        if(evolving) {
+            saveAccepted(state);
+            thermalHistory=output(prefix,".thermal-history.csv");
+            thermalHistory<<"step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant\n";
+        }
         for(std::size_t step=1;step<=steps;++step) {
-            time=dt*static_cast<double>(step); require(std::isfinite(time),"physical time overflow");
-            result=fv::solveScalarTransport2D(mesh,p,controls,previous,dt);
+            time=evolving?state.flow.time+dt:dt*static_cast<double>(step);
+            require(std::isfinite(time),"physical time overflow");
+            if(evolving) {
+                previous=state.scalar;
+                const auto attempt=fv::advanceThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,dt);
+                result=attempt.scalar;
+                double heat=0;
+                for(std::size_t i=0;i<result.values.size();++i)heat+=mesh.cells[i].area*result.values[i];
+                if(attempt.accepted) {
+                    saveAccepted(*attempt.accepted);state=*attempt.accepted;acceptedTime=state.flow.time;
+                }
+                const auto& fh=attempt.flow.history.back();
+                thermalHistory<<step<<','<<time<<','<<(attempt.accepted?1:0)<<','<<attempt.flow.history.size()<<','<<fh.momentumResidual<<','<<fh.continuity
+                    <<','<<result.history.size()<<',';
+                if(result.history.empty())thermalHistory<<"nan";else thermalHistory<<result.history.back().residualNorm;
+                thermalHistory<<','<<heat<<','<<result.globalBalance<<','<<attempt.flow.maxCourant<<'\n';thermalHistory.flush();
+                if(!attempt.accepted) {
+                    auto failed=output(prefix,".json");
+                    failed<<"{\"status\":\"step-not-accepted\",\"converged\":false,\"failedStage\":"
+                        <<quote(attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time<<"}\n";
+                    return 2;
+                }
+                p.volumeFlux=state.flow.flux;carrierTime=state.flow.time;
+            } else result=fv::solveScalarTransport2D(mesh,p,controls,previous,dt);
             for(const auto& h:result.history)history<<step<<','<<time<<','<<h.iteration<<','<<h.linearIterations<<','<<h.residualNorm<<','<<h.relativeResidual<<','<<h.maxCellImbalance<<','<<h.maxDiagonalScaledImbalance<<'\n';
+            history.flush();
             if(!result.converged)break;
-            if(step<steps)previous=result.values;
+            if(!evolving&&step<steps)previous=result.values;
+        }
+        if(evolving) {
+            // Diagnostic carrier export is not the authoritative joint restart.
+            flowPath=prefix+".carrier.checkpoint";
+            auto out=output(prefix,".carrier.checkpoint");fv::writeFlowCheckpoint2D(out,mesh,flowControls,state.flow);out.close();
         }
         auto cells=output(prefix,".cells.csv");cells<<"cell,x,y,area,value,previous,sourceIntegral,temporalIntegral,exact\n";
         double error2=0,area=0;
@@ -181,7 +269,9 @@ int main(int argc,char**argv) {
             <<",\n\"converged\":"<<(result.converged?"true":"false")<<",\n\"mesh\":"<<quote(meshPath)
             <<",\n\"carrierCheckpoint\":"<<quote(flowPath)<<",\n\"carrierTime\":"<<carrierTime
             <<",\n\"boundaryFile\":"<<quote(bcPath)<<",\n\"verification\":"<<quote(verification)
-            <<",\n\"scope\":\"constant-property passive scalar; frozen carrier flux; no buoyancy or thermal feedback\""
+            <<",\n\"scope\":"<<quote(evolving?"synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback":"constant-property passive scalar; frozen carrier flux; no buoyancy or thermal feedback")
+            <<",\n\"evolvingFlow\":"<<(evolving?"true":"false")<<",\n\"acceptedTime\":"<<acceptedTime
+            <<",\n\"restart\":"<<quote(restart)<<",\n\"flowCase\":"<<quote(evolve)
             <<",\n\"cells\":"<<mesh.cells.size()<<",\n\"faces\":"<<mesh.faces.size()<<",\n\"time\":"<<time<<",\n\"timeStep\":"<<dt
             <<",\n\"verificationSpeed\":"<<speed<<",\n\"constantSource\":"<<source<<",\n\"initialValue\":"<<initial
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
@@ -196,7 +286,7 @@ int main(int argc,char**argv) {
         std::cout<<(result.converged?"Converged":"Correction limit")<<": "<<mesh.cells.size()<<" cells, time="<<time<<", scalar range=["<<result.minValue<<','<<result.maxValue<<"], balance="<<result.globalBalance<<'\n';
         return result.converged?0:2;
     } catch(const std::exception& e) {
-        if(started)try {auto out=output(prefix,".json");out<<"{\"status\":\"failed\",\"converged\":false,\"error\":"<<quote(e.what())<<"}\n";}catch(...){}
+        if(started)try {auto out=output(prefix,".json");out<<"{\"status\":\"failed\",\"converged\":false,\"acceptedTime\":"<<acceptedTime<<",\"error\":"<<quote(e.what())<<"}\n";}catch(...){}
         std::cerr<<"cartmesh2d_transport_cli: "<<e.what()<<'\n';return 1;
     }
 }

@@ -17,6 +17,10 @@ struct ScalarTransportProblem2D {
     // d(s)/dt + div(U*s - D grad(s)) = source, constant density and D>0.
     double diffusivity = .01;
     std::vector<double> volumeFlux; // one owner-outward integrated U.S per mesh face
+    // Supply callbacks OR indexed data, never both. Indexed data supports
+    // exact restart validation of spatially varying fixed source/BC data.
+    std::vector<double> sourceDensity;
+    std::vector<ScalarBoundary2D> boundaryData;
     std::function<double(Point2D)> source;
     std::function<ScalarBoundary2D(std::size_t, const Face&)> boundary;
 };

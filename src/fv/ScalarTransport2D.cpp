@@ -55,8 +55,14 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     const Values& previous, double timeStep) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
-    require(n>0 && p.volumeFlux.size()==nf && p.source && p.boundary,
+    require(n>0 && p.volumeFlux.size()==nf,
         "Scalar transport invalid field dimensions or missing callback");
+    require(bool(p.source)!=(!p.sourceDensity.empty()) &&
+        (p.sourceDensity.empty() || p.sourceDensity.size()==n),
+        "Scalar transport requires exactly one valid source representation");
+    require(bool(p.boundary)!=(!p.boundaryData.empty()) &&
+        (p.boundaryData.empty() || p.boundaryData.size()==nf),
+        "Scalar transport requires exactly one valid boundary representation");
     require(std::isfinite(p.diffusivity)&&p.diffusivity>0,
         "Scalar transport diffusivity must be finite positive");
     require(c.maxCorrections>0 && std::isfinite(c.relaxation)&&c.relaxation>0&&c.relaxation<=1,
@@ -84,7 +90,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
             carrier[*f.neighbour]-=q; carrierScale[*f.neighbour]+=std::abs(q);
             connections.emplace_back(f.owner,*f.neighbour);
         } else {
-            bc[id]=p.boundary(id,f); finite(bc[id].value);
+            bc[id]=p.boundary?p.boundary(id,f):p.boundaryData[id]; finite(bc[id].value);
             require(bc[id].kind==ScalarBoundaryKind2D::Value || bc[id].kind==ScalarBoundaryKind2D::DiffusiveFlux,
                 "Scalar transport invalid boundary kind");
             if (bc[id].inflowValue) finite(*bc[id].inflowValue);
@@ -118,7 +124,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     r.sourceIntegrals.resize(n); r.temporalIntegrals.resize(n);
     r.advectiveFlux.resize(nf); r.diffusiveFlux.resize(nf);
     for (std::size_t i=0;i<n;++i) {
-        a.rhs[i]=r.sourceIntegrals[i]=finite(p.source(mesh.cells[i].centre)*mesh.cells[i].area);
+        a.rhs[i]=r.sourceIntegrals[i]=finite((p.source?p.source(mesh.cells[i].centre):p.sourceDensity[i])*mesh.cells[i].area);
         r.sourceIntegral=finite(r.sourceIntegral+a.rhs[i]);
         if (transient) {
             const double mass=finite(mesh.cells[i].area/timeStep);

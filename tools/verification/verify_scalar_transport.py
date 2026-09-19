@@ -51,7 +51,7 @@ def verify(prefix: Path) -> dict:
     for key in ('relativeTolerance', 'absoluteTolerance', 'cellTolerance'):
         require(0 < finite(info[key]) <= (1e-9 if key != 'absoluteTolerance' else 1e-12), 'verification does not permit relaxed stops')
     mode = info['verification']
-    require(mode in ('', 'sine', 'decay'), 'unknown verification mode')
+    require(mode in ('', 'sine', 'decay', 'thermal-vortex'), 'unknown verification mode')
     u = [finite(c['value']) for c in cells]
     q = [finite(f['volumeFlux']) for f in faces]
     bc = [None] * len(faces)
@@ -59,10 +59,11 @@ def verify(prefix: Path) -> dict:
     if mode:
         pi = math.pi
         def exact(x, y):
-            return math.sin(pi*x)*math.sin(pi*y)*math.exp(-2*pi*pi*k*time if mode == 'decay' else 0)
+            return math.sin(pi*x)*math.sin(pi*y)*math.exp(-2*pi*pi*k*time if mode != 'sine' else 0)
         speed = finite(info['verificationSpeed']) if mode == 'sine' else 0
         for e, g in zip(mesh.edges, geo):
-            same(q[e.id], speed*g.area_vector[0], 'manufactured carrier mismatch')
+            if mode != 'thermal-vortex':
+                same(q[e.id], speed*g.area_vector[0], 'manufactured carrier mismatch')
             if e.neighbour < 0:
                 bc[e.id] = ('value', exact(*g.centre), None)
     else:
@@ -78,6 +79,31 @@ def verify(prefix: Path) -> dict:
         require(len(flux_lines) == 1 and int(flux_lines[0][1]) == len(faces), 'checkpoint flux count mismatch')
         carrier_q = list(map(finite, flux_lines[0][2:]))
         require(carrier_q == q, 'scalar carrier differs from imported checkpoint')
+    if info.get('evolvingFlow'):
+        require(dt > 0 and time > 0, 'invalid evolving flow clock')
+        same(info['acceptedTime'],time,'joint accepted clock mismatch',absolute=1e-14,relative=1e-14)
+        same(info['carrierTime'],time,'lagged carrier time',absolute=1e-14,relative=1e-14)
+        carrier_path = Path(info['carrierCheckpoint'])
+        joint_path = Path(str(prefix)+'.thermal.checkpoint')
+        inputs += [carrier_path,joint_path,Path(str(prefix)+'.thermal-history.csv')]
+        carrier_text=carrier_path.read_text();joint=joint_path.read_text()
+        parts=joint.split('\nFLOW\n',1)
+        require(len(parts)==2 and parts[1]==carrier_text,'joint carrier differs from diagnostic checkpoint')
+        scalar_lines=[line.split() for line in joint.splitlines() if line.startswith('SCALAR ')]
+        require(len(scalar_lines)==1 and int(scalar_lines[0][1])==len(u), 'joint scalar dimensions mismatch')
+        require(list(map(finite,scalar_lines[0][2:]))==u,'joint scalar differs from output')
+        flux_lines=[line.split() for line in carrier_text.splitlines() if line.startswith('FLUX ')]
+        require(len(flux_lines)==1 and int(flux_lines[0][1])==len(q), 'joint carrier flux count mismatch')
+        require(list(map(finite,flux_lines[0][2:]))==q,'scalar used a different carrier flux')
+        times=[line.split() for line in carrier_text.splitlines() if line.startswith('TIME ')]
+        require(len(times)==1,'joint checkpoint clock missing')
+        same(times[0][1],time,'joint checkpoint time mismatch',absolute=1e-14,relative=1e-14)
+        with Path(str(prefix)+'.thermal-history.csv').open() as stream:
+            thermal_history=list(csv.DictReader(stream))
+        require(bool(thermal_history) and all(int(row['accepted'])==1 for row in thermal_history),'unaccepted thermal history')
+        same(thermal_history[-1]['time'],time,'thermal history clock mismatch',absolute=1e-14,relative=1e-14)
+        for a,b in zip(thermal_history,thermal_history[1:]):
+            same(float(b['time'])-float(a['time']),dt,'thermal history step mismatch',absolute=1e-14,relative=1e-12)
     for e in mesh.edges:
         if e.neighbour < 0:
             require(bc[e.id] is not None, 'missing boundary condition')
@@ -118,7 +144,7 @@ def verify(prefix: Path) -> dict:
             x,y = centre
             src = 2*k*math.pi**2*exact(x,y)+speed*math.pi*math.cos(math.pi*x)*math.sin(math.pi*y)
         else:
-            src = 0. if mode == 'decay' else finite(info['constantSource'])
+            src = 0. if mode in ('decay','thermal-vortex') else finite(info['constantSource'])
         sources[i] = src*area
         same(row['sourceIntegral'], sources[i], 'source integral mismatch')
         temporal[i] = area*(u[i]-finite(row['previous']))/dt if dt else 0.

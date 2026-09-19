@@ -1,0 +1,1150 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Synchronized one-way passive thermal flow with atomic joint restart",
+  "validation": {
+    "valid": true,
+    "runs": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh",
+          "4",
+          "0.071428571428571425",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/openfoam",
+          "4",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh 4 0.071428571428571425 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/openfoam 4 0",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l4.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l4.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.013314834010088816
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.0025",
+          "--steps",
+          "20",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.02",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4 --verification thermal-vortex --dt 0.0025 --steps 20 --flow-nu .1 --diffusivity 0.02 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l4.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l4.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.2826185000012629
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh",
+          "5",
+          "0.033333333333333333",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/openfoam",
+          "5",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh 5 0.033333333333333333 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/openfoam 5 0",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l5.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l5.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.033183916995767504
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.0025",
+          "--steps",
+          "20",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.02",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5 --verification thermal-vortex --dt 0.0025 --steps 20 --flow-nu .1 --diffusivity 0.02 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l5.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l5.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 1.4919156249961816
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/mesh",
+          "6",
+          "0.016129032258064516",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/openfoam",
+          "6",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/geometry/manufactured.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/mesh 6 0.016129032258064516 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/openfoam 6 0",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l6.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-l6.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.1193508330034092
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.0025",
+          "--steps",
+          "20",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.02",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6 --verification thermal-vortex --dt 0.0025 --steps 20 --flow-nu .1 --diffusivity 0.02 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l6.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/l6.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 10.775582624977687
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.02",
+          "--steps",
+          "5",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5 --verification thermal-vortex --dt 0.02 --steps 5 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n5.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n5.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.9739260000060312
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.01",
+          "--steps",
+          "10",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10 --verification thermal-vortex --dt 0.01 --steps 10 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n10.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n10.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 1.2431299999880139
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.005",
+          "--steps",
+          "20",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20 --verification thermal-vortex --dt 0.005 --steps 20 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n20.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/n20.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 1.752469667000696
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.01",
+          "--steps",
+          "4",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous --verification thermal-vortex --dt 0.01 --steps 4 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/continuous.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/continuous.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.0699640829989221
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/split",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.01",
+          "--steps",
+          "2",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/split --verification thermal-vortex --dt 0.01 --steps 2 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/split.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/split.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.03958033301751129
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed",
+          "--verification",
+          "thermal-vortex",
+          "--dt",
+          "0.01",
+          "--steps",
+          "2",
+          "--flow-nu",
+          ".1",
+          "--diffusivity",
+          "0.2",
+          "--flow-convection",
+          "limited-linear",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--restart",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/split.thermal.checkpoint"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed --verification thermal-vortex --dt 0.01 --steps 2 --flow-nu .1 --diffusivity 0.2 --flow-convection limited-linear --convection limited-linear --pressure-preconditioner aggregation --restart /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/split.thermal.checkpoint",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/resumed.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/resumed.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.040038582985289395
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex",
+          "--case",
+          "taylor-green",
+          "--time-step",
+          ".01",
+          "--steps",
+          "4",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex --case taylor-green --time-step .01 --steps 4 --nu .1 --speed 1 --tolerance 1e-8 --convection limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/flow-independent.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/flow-independent.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.06353666700306349
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/mesh",
+          "8",
+          "0.25",
+          "0.1",
+          "exterior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/openfoam",
+          "0",
+          "0",
+          "--size-field",
+          "--reference-length",
+          "2",
+          "--wall-relative-size",
+          "0.0625",
+          "--background-relative-size",
+          "0.5",
+          "--far-field-spans",
+          "10",
+          "--cells-per-level",
+          "3"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/mesh 8 0.25 0.1 exterior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/openfoam 0 0 --size-field --reference-length 2 --wall-relative-size 0.0625 --background-relative-size 0.5 --far-field-spans 10 --cells-per-level 3",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-circle.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/mesh-circle.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 0.48405529200681485
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result",
+          "--evolve-flow",
+          "external",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle-boundary.csv",
+          "--flow-nu",
+          ".1",
+          "--flow-speed",
+          "1",
+          "--flow-convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--diffusivity",
+          ".1",
+          "--initial",
+          "0",
+          "--dt",
+          ".05",
+          "--steps",
+          "4"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result --evolve-flow external --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle-boundary.csv --flow-nu .1 --flow-speed 1 --flow-convection limited-linear --pressure-preconditioner aggregation --diffusivity .1 --initial 0 --dt .05 --steps 4",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/heated-circle.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/logs/heated-circle.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 7.133798584021861
+      }
+    ],
+    "spatial": [
+      {
+        "valid": true,
+        "cells": 196,
+        "faces": 420,
+        "residualNorm": 7.160499453012904e-09,
+        "residualStop": 1.4021513748237916e-08,
+        "maxDiagonalScaledImbalance": 4.821856599108295e-10,
+        "maxCarrierImbalance": 2.1104645808733835e-14,
+        "globalBalance": 8.053279856867768e-08,
+        "boundaryAbsoluteFlux": 0.1570002599562605,
+        "minValue": 0.012327045191605655,
+        "maxValue": 0.9675532178700613,
+        "maxConstitutiveDifference": 7.771561172376096e-16,
+        "l2Error": 0.00012509457543603304,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.json": "ac99e5d3c47e542ef821195864189f1620e1ef3a632f5cc1382135d459ec44bb",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.carrier.checkpoint": "fa53eb5481871efc9e990383c6d61c5dc5e8ea89ba100b55d829b245a4ecc6ef",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.thermal.checkpoint": "3b7a04e34f7c38784bb78218c8283c5cf99b5f4b7a07b43f17ce1102d0f8b4c3",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.thermal-history.csv": "d50f88f37bdd0a1e6408737618cdd283de93b3c3a1b07c0a7a15d4e5e872dff9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.cells.csv": "b8051e45b8e82330927819eb731147dbd09d84b09d80ca201aadffaf0a87c5df",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.faces.csv": "5d14dc9b0bec997a56cf302f8661b4d9d20f261752ef38a73b21df1c7b9d025e",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4.history.csv": "3e701a6908456795dad4685fb7e7ba638a288f78565b98f9018b18e911409f94"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l4",
+        "dt": 0.0025,
+        "time": 0.05000000000000001
+      },
+      {
+        "valid": true,
+        "cells": 900,
+        "faces": 1860,
+        "residualNorm": 3.3253753687695165e-09,
+        "residualStop": 6.543941038174451e-09,
+        "maxDiagonalScaledImbalance": 4.208844913320938e-10,
+        "maxCarrierImbalance": 1.3771969675779872e-14,
+        "globalBalance": 8.055123099093286e-08,
+        "boundaryAbsoluteFlux": 0.15689352616136612,
+        "minValue": 0.0026867125962810766,
+        "maxValue": 0.9777179034978527,
+        "maxConstitutiveDifference": 4.041038337287972e-15,
+        "l2Error": 1.2543203376874117e-05,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.json": "8847187628fa2c1c302d55ac58527a5a675865a037fbb4dbe4f7493b25482e1b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.carrier.checkpoint": "e2e50d4fd692ad11f1cea8b131b8f918279461df9d2a9a2b0154f66641694566",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.thermal.checkpoint": "0496e132c1d4291ac78c0b864fe46b6191604d97f5bb4b35ea0eb2d5bd77217c",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.thermal-history.csv": "77bfc23c10b5a23bcce01c602fe9bece69294a50607ac0c604578c3d5133c6ca",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.cells.csv": "8bc40b4d47107bc94905c1f1eb488af11ca6e33d84e73f2b78a93f778474820a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.faces.csv": "49979ed6996f6d5c1ffe30460522e6789ff37350e0128717c54852d794407397",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5.history.csv": "56989312cc26b2802fa01eb0a53357ddfe5ec9a8cf0def92566062d9f5522c2c"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l5",
+        "dt": 0.0025,
+        "time": 0.05000000000000001,
+        "observedOrder": 3.0176751546516853
+      },
+      {
+        "valid": true,
+        "cells": 3844,
+        "faces": 7812,
+        "residualNorm": 1.605447818702643e-09,
+        "residualStop": 3.1669183364783316e-09,
+        "maxDiagonalScaledImbalance": 2.8140318953803066e-10,
+        "maxCarrierImbalance": 1.4502505099600604e-14,
+        "globalBalance": 8.0532807311684e-08,
+        "boundaryAbsoluteFlux": 0.15687688400066424,
+        "minValue": 0.0006292439597670863,
+        "maxValue": 0.9798330425089754,
+        "maxConstitutiveDifference": 1.6055949972337835e-14,
+        "l2Error": 6.450153854900183e-06,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l6/mesh.solver.cm2d": "557f28bdf57b61c6acb8dab1f5559e3ae2251c1af4b106f68b371617675b2139",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.json": "0099920a94a478d7104cfbb8d7625bab08348814b4ad8b198ee74a6037c0de58",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.carrier.checkpoint": "1aab6f4a7830365eec546f5b599969d84dff773aafbfb56e8bdd23a12bf0b3fe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.thermal.checkpoint": "33269a0e7ce92a1fd8188f6bee67ec122d0d229556bb0b620382cb522a1d19bf",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.thermal-history.csv": "3273d072f07c2094e00bf66643f03d0b3d72152e4408352a2bb017e4fea7c6a7",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.cells.csv": "a70dfa57bcd0a1beafe37389520666182b7d4f736963442fd0ed0a6d560e3199",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.faces.csv": "a7d9a8b55dc36b63854a41036c17cedc900fd77a2e61b44db15e4b0d90dab7fd",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6.history.csv": "9af26957bea489404c5a6fe002527def946a7659d30fcd94a51ff597e9b134a0"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/spatial/l6",
+        "dt": 0.0025,
+        "time": 0.05000000000000001,
+        "observedOrder": 0.9161607249501994
+      }
+    ],
+    "temporal": [
+      {
+        "valid": true,
+        "cells": 900,
+        "faces": 1860,
+        "residualNorm": 2.084519993559169e-10,
+        "residualStop": 6.160548556604002e-10,
+        "maxDiagonalScaledImbalance": 1.5413896863049276e-11,
+        "maxCarrierImbalance": 1.1535477434376773e-14,
+        "globalBalance": 4.893534688577006e-09,
+        "boundaryAbsoluteFlux": 1.094596032212243,
+        "minValue": 0.0018740032796291518,
+        "maxValue": 0.6822175144205385,
+        "maxConstitutiveDifference": 2.7297608617971036e-14,
+        "l2Error": 0.0051367963851106915,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.json": "8298d561169e5ba973dc555729974c8814cf54beb290f61145ef8053bb62b30e",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.carrier.checkpoint": "11be96b6ead3c7419e27e910d16cd3a47799b362e4612be4140748b88b570167",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.thermal.checkpoint": "2d01bcae285bb686d30d815880086e8e0330d2a1240fdff62af749d613707e5c",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.thermal-history.csv": "cc958fe800e64bc07817f1a329562cf0de1435da88cd82e12af045e7c2fab1f1",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.cells.csv": "88c8d87f8df04acc7abedce9d455b4a8c902a95c34232ea691d608bf2502a9b2",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.faces.csv": "bf5f8fe44f3b9da0965fa090153d941d73fcb0812854d4f2a6952256e456b478",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5.history.csv": "eb508b3748581c29d4e4fd8d96b01be0753e7f05eb326a8c6619b1964869248f"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n5",
+        "dt": 0.02,
+        "time": 0.1
+      },
+      {
+        "valid": true,
+        "cells": 900,
+        "faces": 1860,
+        "residualNorm": 9.711534624249838e-10,
+        "residualStop": 1.1776289381828038e-09,
+        "maxDiagonalScaledImbalance": 6.889267582149556e-11,
+        "maxCarrierImbalance": 7.79671466277776e-15,
+        "globalBalance": 2.326321202339443e-08,
+        "boundaryAbsoluteFlux": 1.0867386882767063,
+        "minValue": 0.0018605546985080053,
+        "maxValue": 0.6773195122907162,
+        "maxConstitutiveDifference": 2.7103319588661634e-14,
+        "l2Error": 0.00268112305758211,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.json": "e1010df71b2b876884e2e434aa102d4a8fe861cc10d1d91126f5620a4e502aa2",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.carrier.checkpoint": "26e16601c377f55794b3bdf489ad823260d8f584dbca47d6224afdc63841fa2e",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.thermal.checkpoint": "e3a8cfd81f547b1268a250945b17318f8ecb66fb0289ad8cf4883170bb6b06c1",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.thermal-history.csv": "64d17acb3ecc0284577a3297e60786472692b57254a9271b092b5942269deb95",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.cells.csv": "b31e00df870d73851766c815aeabd9a8c846e1178a1495e4854437fa05a13f90",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.faces.csv": "f1169409bed2d05af3a9fe77a53f1e5418efe3fb62e3ac745f3bc59bfb689ee9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10.history.csv": "5b2e8fd8cea9fc311e97e111dd1708284910fb07a26600cbcd4866315a2e5fdf"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n10",
+        "dt": 0.01,
+        "time": 0.09999999999999999,
+        "observedOrder": 0.9380314512227408
+      },
+      {
+        "valid": true,
+        "cells": 900,
+        "faces": 1860,
+        "residualNorm": 9.3928618494283e-10,
+        "residualStop": 2.300987360124424e-09,
+        "maxDiagonalScaledImbalance": 5.849286175362907e-11,
+        "maxCarrierImbalance": 2.0276749029823904e-14,
+        "globalBalance": 2.286868028278377e-08,
+        "boundaryAbsoluteFlux": 1.0826810062316365,
+        "minValue": 0.001853609471891435,
+        "maxValue": 0.6747900963292609,
+        "maxConstitutiveDifference": 2.7000970903579002e-14,
+        "l2Error": 0.0014129743907132547,
+        "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+        "sha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.json": "23aab48b6810c61708f69822cf24d78af076c32d56c5bce9f056f0a4488b2005",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.carrier.checkpoint": "126d0fcb34174396bc702b693a16047b96bde6067398de6a2c02e87844df431b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.thermal.checkpoint": "67fb924742e2e0981fffacbcc49ddc5ca45d39ae28347a27d084ce77a564df65",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.thermal-history.csv": "c6ca3c9330dc454cce1ce1f7b03c7b22ff00704b6f8b7e3d7e2a304ea91eeadf",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.cells.csv": "b43ffc3abc27f284ffcb845283d2ab4a273b5b046dcf23392f610ddcbbc8d302",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.faces.csv": "9efa4256f73ff00147e0aab25663d9026dd601aeb36643d714c4222da73ac643",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20.history.csv": "9f7807590bb2671b6bcc183219201791eb454d94dd53a1f1a28c79cb8ab224d4"
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/time/n20",
+        "dt": 0.005,
+        "time": 0.10000000000000002,
+        "observedOrder": 0.9241021193784378
+      }
+    ],
+    "circle": {
+      "valid": true,
+      "cells": 4880,
+      "faces": 10008,
+      "residualNorm": 3.250474697409674e-09,
+      "residualStop": 7.974867999191278e-09,
+      "maxDiagonalScaledImbalance": 6.931658168870646e-10,
+      "maxCarrierImbalance": 1.0227929614359255e-14,
+      "globalBalance": -1.51054022623498e-08,
+      "boundaryAbsoluteFlux": 3.2885416353583548,
+      "minValue": 5.086644381442554e-103,
+      "maxValue": 0.9946238052146019,
+      "maxConstitutiveDifference": 9.347314589014388e-13,
+      "l2Error": null,
+      "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+      "sha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/circle/mesh.solver.cm2d": "037251bb49046ed329a6063f75f254e4bfd510f388889719eb686a011be12788",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.json": "a4f9d118062b1cc61265f19cb0e4812eb519f0c694ab22a2cd18e6a410a27da2",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle-boundary.csv": "e9ad32409db665915c7090a62e504597ac684a374ab0dbf162948478d241edc4",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.carrier.checkpoint": "c7b5640237a79b864ff9200144d8c7dfd975f21ef50477ec8fa293870c8c0f09",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.thermal.checkpoint": "b558c33ee076a32128e2bc06fb44f7e7dbd99d85ca1fa4eb5528dd2e73c094c7",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.thermal-history.csv": "553cfe916f93bd684b232d23a6c81ebb5063b79a7b78f8f62d3c5fffcdab73c1",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.cells.csv": "ab48b1ffc71dbd4fcd86eb9c10c99498127e9ee6c1769982dc5924ae484ad349",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.faces.csv": "ad56e81f9551c86f43b58443e3595f54e3db1433a80615d51f4a9e0f8311deb8",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result.history.csv": "e10bd1ee28e9b5012c73ed0ff27566a04c089bb10c42ecb7de12cccdda007049"
+      },
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/circle/result"
+    },
+    "restart": {
+      "byteIdentical": {
+        ".thermal.checkpoint": true,
+        ".carrier.checkpoint": true,
+        ".cells.csv": true,
+        ".faces.csv": true
+      },
+      "continuousPrefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous",
+      "resumedPrefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed",
+      "readback": {
+        "continuousPrefix": {
+          "valid": true,
+          "cells": 196,
+          "faces": 420,
+          "residualNorm": 2.7053572981734188e-09,
+          "residualStop": 3.182142047142878e-09,
+          "maxDiagonalScaledImbalance": 2.767924502488326e-10,
+          "maxCarrierImbalance": 9.950373858202965e-15,
+          "globalBalance": 2.9348307561960496e-08,
+          "boundaryAbsoluteFlux": 1.3716017228521944,
+          "minValue": 0.010753775236906779,
+          "maxValue": 0.8461176869331521,
+          "maxConstitutiveDifference": 3.649858193455202e-15,
+          "l2Error": 0.001546058372521072,
+          "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+          "sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.json": "f7c1c1ac84a745134d6545206c28fdc13192dbec54d84b3dd6264a71d7b776c0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.carrier.checkpoint": "2510405e7402b900d82c509617c4ffc8a45c219c2c3c6315a4940f0b68500def",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.thermal.checkpoint": "64725fffc3a7ba41ab7cfb889809fd25750bbba5dfee47eeb9685d017966de77",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.thermal-history.csv": "c9429025eee77da180939d33a5c1033ae5ae333948bd759ba20d44fc6c94ef54",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.cells.csv": "967c0645f1788b8b93bbaf64a8f5c82748f521b627a21bb3d004b85040e5bfa7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.faces.csv": "edd7594ca20e2cb183a19c42bdd0f2e00a70c2764a96c98450af79ace060d0d8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/continuous.history.csv": "41ba22ec5242718097283d7cb2b6dcf5722eae5320db556f569d0854c06e9d5e"
+          }
+        },
+        "resumedPrefix": {
+          "valid": true,
+          "cells": 196,
+          "faces": 420,
+          "residualNorm": 2.7053572981734188e-09,
+          "residualStop": 3.182142047142878e-09,
+          "maxDiagonalScaledImbalance": 2.767924502488326e-10,
+          "maxCarrierImbalance": 9.950373858202965e-15,
+          "globalBalance": 2.9348307561960496e-08,
+          "boundaryAbsoluteFlux": 1.3716017228521944,
+          "minValue": 0.010753775236906779,
+          "maxValue": 0.8461176869331521,
+          "maxConstitutiveDifference": 3.649858193455202e-15,
+          "l2Error": 0.001546058372521072,
+          "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+          "sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.json": "dca621f5c7463be87a4592177979155322866d1449f206cbf7185ec0bd45d008",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "df1b3521cd62c8f0a1389f16336e054f10f98e14b9fbea8a9f5898c2c3df5046",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.carrier.checkpoint": "2510405e7402b900d82c509617c4ffc8a45c219c2c3c6315a4940f0b68500def",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.thermal.checkpoint": "64725fffc3a7ba41ab7cfb889809fd25750bbba5dfee47eeb9685d017966de77",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.thermal-history.csv": "8bbc05631384519cffb169ed130e2749ee45ac3b81374939402ee4000a165626",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.cells.csv": "967c0645f1788b8b93bbaf64a8f5c82748f521b627a21bb3d004b85040e5bfa7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.faces.csv": "edd7594ca20e2cb183a19c42bdd0f2e00a70c2764a96c98450af79ace060d0d8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/restart/resumed.history.csv": "066333362597b55b060bb163da0ff280d8ce64cdca241562b09574f7a06cec8b"
+          }
+        }
+      }
+    },
+    "carrierAudit": {
+      "valid": true,
+      "scope": "discrete transient balance and artifact consistency; analytic errors are diagnostics, not engineering qualification",
+      "sha256": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/meshes/l4/mesh.solver.cm2d": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex.cells.csv": "3e8a8e1b72a84b06cb5904908b84e51ac6650782672c29cb32cd2441a48cc406",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex.faces.csv": "cc2f8bc0f42762203780a1230b84a6bfec79364298d3db13d281791c28fd7531",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex.json": "0fc8a8375223adc55f9465d1bd456572d8923e4571b9d3ab6c54080184ee481f",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex.time-history.csv": "8f02d4e999f1d906767c0b29640defb15387f95b90c7be6668078eb752ebcff3",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal/validation/flow-independent/vortex.residuals.csv": "e4a296fc51972ec50975158dd809ed3613bad13840e50292c61b8068d03130c1"
+      },
+      "controls": {
+        "nu": 0.1,
+        "speed": 1,
+        "tolerance": 1e-08,
+        "convection": "limited-linear",
+        "viscousStress": "symmetric",
+        "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+        "velocityRelaxation": 0.6
+      },
+      "case": "taylor-green",
+      "time": 0.04,
+      "dt": 0.01,
+      "history": [
+        {
+          "time": 0.01,
+          "dt": 0.01,
+          "accepted": 1,
+          "innerIterations": 42,
+          "momentumResidual": 7.183515669469638e-10,
+          "continuity": 2.2297094726120285e-13,
+          "maxCourant": 0.13586004334268698,
+          "kineticEnergy": 0.2403752826880017,
+          "forceX": 0.0,
+          "forceY": 0.0,
+          "step": 1
+        },
+        {
+          "time": 0.02,
+          "dt": 0.01,
+          "accepted": 1,
+          "innerIterations": 40,
+          "momentumResidual": 1.2018012770998413e-09,
+          "continuity": 1.4649392809928936e-13,
+          "maxCourant": 0.13307883582981955,
+          "kineticEnergy": 0.23111958901727053,
+          "forceX": 0.0,
+          "forceY": 0.0,
+          "step": 2
+        },
+        {
+          "time": 0.03,
+          "dt": 0.01,
+          "accepted": 1,
+          "innerIterations": 40,
+          "momentumResidual": 1.1793313400198388e-09,
+          "continuity": 1.4542533843808764e-13,
+          "maxCourant": 0.1304185436013281,
+          "kineticEnergy": 0.22221955683878053,
+          "forceX": 0.0,
+          "forceY": 0.0,
+          "step": 3
+        },
+        {
+          "time": 0.04,
+          "dt": 0.01,
+          "accepted": 1,
+          "innerIterations": 40,
+          "momentumResidual": 1.1596755786794223e-09,
+          "continuity": 1.3930523401484147e-13,
+          "maxCourant": 0.1278447224713878,
+          "kineticEnergy": 0.21366208012094823,
+          "forceX": 0.0,
+          "forceY": 0.0,
+          "step": 4
+        }
+      ],
+      "independentContinuity": {
+        "maxCellImbalance": 9.950373858202965e-15,
+        "l2CellImbalance": 4.160216365743956e-14,
+        "maxScaledCellImbalance": 1.3738188758860029e-06,
+        "nativeDefinitionContinuity": 1.3930523401484068e-13,
+        "boundaryFluxSum": 0.0,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 0.0,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.0009999999999999e-07
+      },
+      "temporalIntegral": {
+        "maxAbsX": 0.009243374518901934,
+        "maxAbsY": 0.00924337451890092
+      },
+      "analyticErrors": {
+        "uL2": 0.0010166907017733992,
+        "vL2": 0.0010166907017778825,
+        "pL2": 0.0030314855995870133,
+        "energy": 0.00018120570954477389,
+        "velocityVectorL2": 0.001437817779189731,
+        "relativeVelocityL2": 0.0022004391597935744,
+        "relativeEnergy": 0.0008488147242434878
+      },
+      "analyticDecay": {
+        "definition": "continuous unit-square kinetic energy / density / depth",
+        "scope": "intermediate CSV monitors; final energy independently rebuilt from cells; diagnostics only",
+        "exactEnergyDecayRate": 3.947841760435743,
+        "observedEnergyDecayRate": 3.9268559269271273,
+        "energyIncreaseCount": 0,
+        "history": [
+          {
+            "time": 0.01,
+            "energy": 0.2403752826880017,
+            "exactEnergy": 0.24032267518073647,
+            "relativeEnergyError": 0.00021890363539635207
+          },
+          {
+            "time": 0.02,
+            "energy": 0.23111958901727053,
+            "exactEnergy": 0.23101995282410306,
+            "relativeEnergyError": 0.0004312882586524056
+          },
+          {
+            "time": 0.03,
+            "energy": 0.22221955683878053,
+            "exactEnergy": 0.22207733233126392,
+            "relativeEnergyError": 0.0006404278456680026
+          },
+          {
+            "time": 0.04,
+            "energy": 0.21366208012094823,
+            "exactEnergy": 0.2134808744114032,
+            "relativeEnergyError": 0.000848814724244658
+          }
+        ]
+      },
+      "kineticEnergy": 0.213662080120948,
+      "computedMaxCourant": 0.12784472247138765,
+      "momentumAudit": {
+        "status": "available",
+        "valid": true,
+        "convection": "limited-linear",
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear",
+        "faceCount": 420,
+        "maxFaceDeviation": {
+          "pressure": 1.1518563880485999e-14,
+          "advectionX": 3.0270924655795284e-16,
+          "advectionY": 3.48245737802344e-16,
+          "diffusionX": 3.975986206938842e-15,
+          "diffusionY": 3.795574965437254e-15
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": -0.1848863728695201,
+            "expected": -0.1848863728695316,
+            "absolute": 1.1518563880485999e-14,
+            "relative": 1.1518563880485999e-14
+          },
+          "advectionX": {
+            "actual": -0.0033995997796955123,
+            "expected": -0.003399599779695815,
+            "absolute": 3.0270924655795284e-16,
+            "relative": 3.0270924655795284e-16
+          },
+          "advectionY": {
+            "actual": -0.003209773599648535,
+            "expected": -0.003209773599648883,
+            "absolute": 3.48245737802344e-16,
+            "relative": 3.48245737802344e-16
+          },
+          "diffusionX": {
+            "actual": -0.039975827107001316,
+            "expected": -0.03997582710700529,
+            "absolute": 3.975986206938842e-15,
+            "relative": 3.975986206938842e-15
+          },
+          "diffusionY": {
+            "actual": 0.03818111055590692,
+            "expected": 0.03818111055591072,
+            "absolute": 3.795574965437254e-15,
+            "relative": 3.795574965437254e-15
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 1.1596755706122385e-09,
+          "l2": 7.46613577689686e-09,
+          "maxCellVector": 2.1447556584295323e-09,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 1.1596755786794223e-09,
+            "expected": 1.1596755706122385e-09,
+            "absolute": 8.067183769066043e-18,
+            "relative": 8.067183769066043e-18
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "taylor-green",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": true,
+          "dt": 0.01,
+          "integralX": 6.23275573947285e-14,
+          "integralY": 5.692461205100002e-14,
+          "maxAbsX": 0.009243374518901936,
+          "maxAbsY": 0.009243374518900921
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 3.217565103241782e-14,
+          "y": -7.292777493006497e-14,
+          "magnitude": 7.971030595606908e-14,
+          "boundaryTermScale": 2.2508035288601698,
+          "relativeToBoundary": 3.541415540450801e-14,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 3.217565103241782e-14,
+          "boundaryMinusSourceY": -7.292777493006497e-14,
+          "magnitude": 7.971030595606908e-14,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 9.451188204452621e-14,
+          "y": -1.5964321336235654e-14
+        },
+        "expectedCellResidualSum": {
+          "x": 9.450320842714632e-14,
+          "y": -1.6003162879064947e-14
+        },
+        "cellBoundaryConservationDifference": {
+          "x": 8.673617379884035e-18,
+          "y": 3.8841542829293196e-17,
+          "magnitude": 3.9798204580262714e-17
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallViscousForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "counts": {
+        "cells": 196,
+        "faces": 420
+      },
+      "bitwiseMatchesCoupledCarrier": true
+    },
+    "scope": "synchronized one-way passive thermal transport; fixed properties and thermal BC/source; no desktop or external CFD qualification",
+    "executables": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f1025f03a3fe5f50b9843e63ac05ea8e018c5bcef564364a8420bc2816c6ce69",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "0e0252e9b3a7419530f0582a4bbecbf7a50423399d43de61dad1096ba9981785",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli": "08923b08afd082950a6f3b3ba925f38efa5530e4f58257f9ea8f78a7b38093be"
+    }
+  },
+  "tests": {
+    "ctest": {
+      "passed": 117,
+      "total": 117
+    },
+    "frontend": {
+      "passed": 124,
+      "total": 124
+    },
+    "finalReadbackGuardFocusedTests": {
+      "passed": 2,
+      "total": 2
+    }
+  },
+  "limitations": [
+    "One-way constant properties; no temperature feedback, buoyancy, conjugate heat transfer or radiation",
+    "Fixed thermal boundary data and source in time",
+    "No desktop thermal interface or thermal app package",
+    "No current OpenFOAM or Linux/Windows execution",
+    "Spatial refinement has mixed time error and does not establish universal second-order accuracy",
+    "Heated cylinder is a startup demonstration without heat-transfer coefficient qualification",
+    "No peak RSS measurement or large-scale thermal qualification"
+  ],
+  "sha256": {
+    "CMakeLists.txt": "b7077968c4cac372e3b01f956a6f579d91fbeaef5bb41fcbb12f3895d14d63e9",
+    "apps/cartmesh2d_transport_cli.cpp": "7792145cf23d28f7ff768cabb74452180c195b8b93eb952bdba358476f534abb",
+    "include/cartmesh2d/fv/ThermalFlow2D.hpp": "2efa117cc22e479fe6cd4356ac4d15a0cb08c93807e3e82ba769239cd1385a7b",
+    "include/cartmesh2d/fv/ThermalCheckpoint2D.hpp": "b8127a43e80359d4b79146e734d55df46ba1a101464b81a95fdc7a9fc2d3147d",
+    "src/fv/ThermalFlow2D.cpp": "04d9c60f9212c2a414a3ca9e9af239dc46b8c16081d16a6db3747f6c10fdf776",
+    "include/cartmesh2d/fv/ScalarTransport2D.hpp": "b7f3eb605e3f3d72cd872d31f9a610fe9e353c0882adafaede53c69208155d18",
+    "src/fv/ScalarTransport2D.cpp": "8b21a748ba3e9845e88ab2f4f473fee40a1be4efe1bae76003e0ae9f63e597ac",
+    "tests/thermal_flow_test.cpp": "40ebbf1bdf1d8e1b1ff1929f8eb397cad1ea90607b0838ce84b85da10a6c7bea",
+    "tests/thermal_flow_cli_test.py": "f22c9e1920f3798930fb2af34ad2ce9c820d1c779e7232913c5268de20218da0",
+    "tools/verification/verify_scalar_transport.py": "41b82ea94a70f9a46c42082077a7b9c8203f7dd77e671769459eaf924a335cce",
+    "tools/verification/verify_thermal_flow.py": "8c40ad44e42f39ac5adfb28fc5cac636b79eef582da9d808920f6fd9497348de",
+    "tools/visualization/render_thermal_flow.py": "9b7244873131f3cd053c710495129db9968322c43e8654f2b3c2e89d07c49ef8",
+    "artifacts/current/native-thermal-flow.png": "da16595ffcda36f5030db42b01060260e406ba90ebd0a3d7c795264d364f8236",
+    "outputs/native-flow/thermal/build.log": "74f2744e99cad8bac381d05090c6acee1f9f926172b5a8d2ab498c21a6a4dbac",
+    "outputs/native-flow/thermal/ctest.log": "d19b773d6bb8afd4903e9638e8c17dbe52defa478d8f11ab366ec0004cd6f684",
+    "outputs/native-flow/thermal/frontend.log": "16c37595dff7849d77e2ec85fc2e9ab494493499c06e0f13a84dc724b42d0b2d",
+    "outputs/native-flow/thermal/readback-final.log": "a7d392b39b3e147d406f9f0dc44251a42af7b52eea0cf005d115e8e80faf06fd"
+  }
+}

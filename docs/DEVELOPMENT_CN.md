@@ -15,7 +15,7 @@
 | `apps/cartmesh2d_cli.cpp` | 纯 Cut-cell 总流程、尺寸场参数、物理面积门、Solver 质量和输出 |
 | `apps/cartmesh2d_hybrid_cli.cpp` | 边界层总流程、局部修复开关、fallback 与导出 |
 | `apps/cartmesh2d_flow_cli.cpp` | 原生稳态层流 CLI；SIMPLE / Rhie–Chow，桌面调用与诊断场导出 |
-| `apps/cartmesh2d_transport_cli.cpp`、`fv/ScalarTransport2D` | 守恒标量/恒物性温度；共享载流通量、混合边界、后向欧拉及独立导出 |
+| `apps/cartmesh2d_transport_cli.cpp`、`fv/ScalarTransport2D`、`fv/ThermalFlow2D`、`fv/ThermalCheckpoint2D` | 守恒标量/恒物性温度；共享通量、混合边界、同步后向欧拉、联合状态续算与导出 |
 | `apps/cartmesh2d_fv_cli.cpp` | 自研二维标量扩散/泊松 CLI；读取最终 solver.cm2d，输出场、通量、残差和误差 |
 | `fv/FvMesh2D`、`fv/Diffusion2D` | 最终多边形几何缓存、共享边通量、加权最小二乘梯度、非正交扩散、Jacobi-PCG |
 | `apps/cartmesh2d_dxf_cli.cpp` | DXF 导入命令行；`cartmesh2d_boundary_layer_cli.cpp` 是仍用于测试的独立边界层诊断工具 |
@@ -137,9 +137,24 @@ face,type,value,inflowValue
 
 此片段仅说明格式，实际文件须含全部边界面。`value`是面定值；`flux`是向外 `-D grad(theta).n` **每单位边长**（不是积分面通量），0即绝热/零扩散通量。flux边界有负载流时，必须给`inflowValue`；上述25号面在回流时温度为300。流出对流采用owner迎风/限制重构，定值仍约束扩散；指定非零通量参与梯度重构。稳态连通域必须有定值或给定流入标量，纯绝热无入口没有唯一常数解；非定常可凭前态建立唯一性。
 
-方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须为正的常数。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向恒物性输运，不含浮力、变物性或共轭传热。API以调用者提供的新时刻边界/源和共享通量推进一步；CLI载流冻结，不能称为同步非定常流动/温度求解。
+方程 `d(theta)/dt + div(U theta - D grad(theta)) = source`，D必须为正的常数。温度用Kelvin时，D=k/(rho cp)，`--source`是Q/(rho cp)，热通量CSV中是物理向外q/(rho cp)。没有自动材料库/单位推断。当前是单向恒物性输运，不含浮力、变物性或共轭传热。基础ScalarTransport API以调用者提供的新时刻边界/源和共享通量推进一步；`--flow-checkpoint`模式载流冻结，`--evolve-flow`模式使用下述同步接口。
 
-输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。没有标量checkpoint和桌面入口，失败的多步计算不可假作已完成全部物理时间。
+输出JSON、VTK、cells/faces/history CSV。cells含前态、积分源项/时间项；faces分别含载流体积通量、对流与扩散标量通量。逐面/逐格读回见`verify_scalar_transport.py`，它同时检查本构离散与几何，不只复述JSON的converged。默认完整方程L2门为1e-12+1e-9*||baseRHS||，并检查失衡/未松弛对角系数<=1e-9；这是有单位的代数停止设置，不是全软件的精度评级。未收敛返回2；非法输入/线性求解失败返回1。冻结载流模式尚无标量checkpoint；同步模式见下方联合保存。尚无温度桌面入口，失败的多步计算不可假作已完成全部物理时间。
+
+同步模式按以下顺序执行：`advanceIncompressible2D` → 新时刻共享通量 → `solveScalarTransport2D` → 两者通过才接受。`ThermalSetup2D`的源项数组和热边界数组为固定空间分布，用于逐项检查续算兼容性；ScalarTransport另外保留回调形式，数组与回调必须二选一。同步源/边界当前固定时间，不含浮力反馈。
+
+```sh
+# 需要完整匹配此网格的热边界CSV；从静止流体和初始温度开始：
+build/cartmesh2d_transport_cli --mesh /path/case.solver.cm2d --boundary /path/thermal.csv --output outputs/thermal/run --evolve-flow external --flow-nu .1 --flow-speed 1 --diffusivity .1 --initial 0 --dt .05 --steps 4 --pressure-preconditioner aggregation
+# 同时续算流动和温度；物性、源、BC及格式必须相同，迭代控制/时间步可以更改：
+build/cartmesh2d_transport_cli --mesh /path/case.solver.cm2d --boundary /path/thermal.csv --output outputs/thermal/continued --evolve-flow external --flow-nu .1 --flow-speed 1 --diffusivity .1 --dt .05 --steps 4 --pressure-preconditioner aggregation --restart outputs/thermal/run.thermal.checkpoint
+# 新目录，重生成三档方形和真实圆柱，运行同步解析验证、独立流场对照和续算比较：
+python3 tools/verification/verify_thermal_flow.py --generate outputs/thermal-verification-new
+```
+
+`--flow-convection`单独控制速度对流，`--convection`控制标量；默认均迎风。`--flow-tolerance`默认1e-8，`--flow-max-iterations`默认1500，标量保留原完整方程停止设置。同步可选channel/cavity/external，边界条件仍依各自流动工况适用；它没有自动识别任意流动BC。`--verification thermal-vortex`是单位方形解析测试专用入口，内置初值和BC，不能混入用户的BC文件或冻结流场。
+
+权威续算文件是单个`.thermal.checkpoint`，先临时写入再原子替换；`.carrier.checkpoint`仅供独立读取/诊断。`.thermal-history.csv`记录各步是否被接受、两套残差、储热量、热量平衡及载流CFL。流动/标量未收敛返回2并保留上次接受的joint checkpoint；异常返回1，取消进程后也可从最后完整保存时刻续算。失败输出JSON明确标记未完成，旧VTK/CSV即使还在也不能冒充新结果。读取时检查几何、时间、全场及物理配置；同编译器续算逐位一致已实测，跨平台相同位模式尚未认证。
 
 温度/浓度采用同类输运方程的官方参考：[OpenFOAM scalarTransport方程说明](https://api.openfoam.com/2606/classFoam_1_1functionObjects_1_1scalarTransport.html)。本仓库自行实现FVM装配，复用自己的稀疏求解与面算子，没有复制或链接OpenFOAM代码，不声称原创输运方程。大输出仍在outputs，不加入日常源码历史。
 
