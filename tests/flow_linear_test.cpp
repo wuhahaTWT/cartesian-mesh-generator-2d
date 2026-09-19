@@ -538,6 +538,39 @@ void localResidualScaleRegression() {
     rejects([&] {system.solve(x,workspace,0);},"nonpositive scaled residual target rejected");
 }
 
+void tightResidualNormRegression() {
+    SparsePattern2D pattern(4, {{0,1},{1,0},{1,2},{2,1},{2,3},{3,2}});
+    SparseSystem2D system(pattern);
+    Dense dense = zeroMatrix(4);
+    for (std::size_t i = 0; i < 4; ++i) addEntry(system, dense, i, i, 3.0);
+    for (std::size_t i = 0; i + 1 < 4; ++i) addSymmetricEdge(system, dense, i, i + 1, -.9);
+    const std::vector<double> exact{.7, -1.1, .4, 1.3};
+    setRhs(system, dense, exact);
+    LinearWorkspace2D workspace(4);
+    std::vector<double> defaultGuess(4, 0.0);
+    const auto defaultSteps = system.solve(defaultGuess, workspace);
+    std::vector<double> tightGuess(4, 0.0);
+    const auto tightSteps = system.solve(tightGuess, workspace, std::numeric_limits<double>::infinity(), 1e-15);
+    check(tightSteps >= defaultSteps, "explicit tight residual norm does not stop earlier than default");
+    check(residualNorm(dense, tightGuess, system.rhs) <= 1.1e-15,
+          "explicit tight residual norm is independently reached");
+    check(errorNorm(tightGuess, exact) <= 2e-14,
+          "tight residual norm retains the correct linear solution");
+    auto nearGuess=exact; nearGuess[0]+=1e-12;
+    check(system.solve(nearGuess,workspace)==0,
+          "legacy norm accepts an already close guess");
+    check(system.solve(nearGuess,workspace,std::numeric_limits<double>::infinity(),1e-15)>0,
+          "tight norm corrects a guess accepted by the legacy norm");
+    check(residualNorm(dense,nearGuess,system.rhs)<=1.1e-15,
+          "warm-start true residual meets the explicitly tight norm");
+    rejects([&] { std::vector<double> guess(4); (void)system.solve(guess, workspace, std::numeric_limits<double>::infinity(), 0.); },
+            "invalid linear residual norm tolerance");
+    rejects([&] { std::vector<double> guess(4); (void)system.solve(guess, workspace, std::numeric_limits<double>::infinity(), -.1); },
+            "invalid linear residual norm tolerance");
+    rejects([&] { std::vector<double> guess(4); (void)system.solve(guess, workspace, std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()); },
+            "invalid linear residual norm tolerance");
+}
+
 } // namespace
 
 int main() {
@@ -550,6 +583,7 @@ int main() {
         zeroResetAndPivotRegression();
         ic0CacheRegression();
         localResidualScaleRegression();
+        tightResidualNormRegression();
     } catch (const std::exception& error) {
         std::cerr << "UNEXPECTED EXCEPTION: " << error.what() << '\n';
         return 1;

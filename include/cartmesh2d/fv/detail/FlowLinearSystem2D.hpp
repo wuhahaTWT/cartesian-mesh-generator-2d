@@ -294,8 +294,10 @@ struct SparseSystem2D {
     }
 
     std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
-                      double diagonalScaledStop = std::numeric_limits<double>::infinity()) const {
+                      double diagonalScaledStop = std::numeric_limits<double>::infinity(),
+                      double residualNormStop = std::numeric_limits<double>::infinity()) const {
         linearEnsure(diagonalScaledStop > 0 && !std::isnan(diagonalScaledStop), "Invalid momentum diagonal-scaled residual tolerance");
+        linearEnsure(residualNormStop > 0 && !std::isnan(residualNormStop), "Invalid linear residual norm tolerance");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
         for (double d : diag)
             linearEnsure(d > 0 && std::isfinite(d), "Flow singular/nonpositive matrix diagonal");
@@ -307,7 +309,7 @@ struct SparseSystem2D {
         r0 = r;
         std::fill(p.begin(), p.end(), 0.);
         std::fill(v.begin(), v.end(), 0.);
-        const double stop = linearFinite(1e-13 + 1e-11 * linearNorm(rhs));
+        const double stop = std::min(linearFinite(1e-13 + 1e-11 * linearNorm(rhs)),residualNormStop);
         const auto smallResidual = [&](const LinearVector2D& residual) {
             if (linearNorm(residual)>stop) return false;
             // In addition to the existing global norm, constrain every row in

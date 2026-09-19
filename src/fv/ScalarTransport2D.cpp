@@ -72,6 +72,10 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
         "Scalar transport face diffusivity dimensions mismatch");
     for (double d:p.faceDiffusivity) require(std::isfinite(d)&&d>0,
         "Scalar transport face diffusivity must be finite positive");
+    require(p.sinkRate.empty() || p.sinkRate.size()==n,
+        "Scalar transport sink rate dimensions mismatch");
+    for (double rate:p.sinkRate) require(std::isfinite(rate)&&rate>=0,
+        "Scalar transport sink rate must be finite nonnegative");
     require(c.maxCorrections>0 && std::isfinite(c.relaxation)&&c.relaxation>0&&c.relaxation<=1,
         "Scalar transport invalid correction controls");
     require(c.convection==ConvectionScheme2D::Upwind || c.convection==ConvectionScheme2D::LimitedLinearUpwind,
@@ -110,6 +114,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     }
     for (std::size_t i=0;i<n;++i) {
         finite(carrier[i]); finite(carrierScale[i]);
+        if (!p.sinkRate.empty() && p.sinkRate[i]>0) anchored[i]=true;
         r.maxCarrierImbalance=std::max(r.maxCarrierImbalance,std::abs(carrier[i]));
         require(std::abs(carrier[i])<=finite(c.carrierAbsoluteTolerance+c.carrierRelativeTolerance*carrierScale[i]),
             "Scalar transport carrier flux violates cell continuity");
@@ -129,6 +134,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     detail::SparseSystem2D a(pattern); detail::LinearWorkspace2D workspace(n);
     r.values=transient?previous:Values(n,0.);
     r.sourceIntegrals.resize(n); r.temporalIntegrals.resize(n);
+    r.sinkIntegrals.resize(n);
     r.advectiveFlux.resize(nf); r.diffusiveFlux.resize(nf);
     for (std::size_t i=0;i<n;++i) {
         a.rhs[i]=r.sourceIntegrals[i]=finite((p.source?p.source(mesh.cells[i].centre):p.sourceDensity[i])*mesh.cells[i].area);
@@ -137,6 +143,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
             const double mass=finite(mesh.cells[i].area/timeStep);
             a.diag[i]=mass; a.rhs[i]+=finite(mass*previous[i]);
         }
+        if (!p.sinkRate.empty()) a.diag[i]+=finite(p.sinkRate[i]*mesh.cells[i].area);
     }
     for (std::size_t id=0;id<nf;++id) {
         const auto& f=mesh.faces[id]; const auto i=f.owner;
@@ -193,14 +200,21 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
         // equation relaxation would turn even a linear orthogonal diffusion
         // problem into a slow, mesh-dependent stationary outer iteration.
         auto candidate=r.values;
-        const auto linear=a.solve(candidate,workspace,c.cellTolerance*.1);
+        // User-requested tight outer tolerances must also constrain the inner
+        // solve; its legacy norm floor otherwise stalls relaxed scalar solves.
+        const auto linear=a.solve(candidate,workspace,c.cellTolerance*.1,stop*.5);
         for (std::size_t i=0;i<n;++i)
             r.values[i]=finite(r.values[i]+c.relaxation*(candidate[i]-r.values[i]));
-        faceFluxes(); r.boundaryFlux=0; r.temporalIntegral=0;
+        faceFluxes(); r.boundaryFlux=0; r.temporalIntegral=0; r.sinkIntegral=0;
         for (std::size_t i=0;i<n;++i) {
             r.temporalIntegrals[i]=transient?finite(mesh.cells[i].area*(r.values[i]-previous[i])/timeStep):0;
             r.temporalIntegral=finite(r.temporalIntegral+r.temporalIntegrals[i]);
             residual[i]=r.temporalIntegrals[i]-r.sourceIntegrals[i];
+            if (!p.sinkRate.empty()) {
+                r.sinkIntegrals[i]=finite(p.sinkRate[i]*mesh.cells[i].area*r.values[i]);
+                r.sinkIntegral=finite(r.sinkIntegral+r.sinkIntegrals[i]);
+                residual[i]+=r.sinkIntegrals[i];
+            }
         }
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=mesh.faces[id]; const double flux=finite(r.advectiveFlux[id]+r.diffusiveFlux[id]);
@@ -216,6 +230,7 @@ ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
         r.history.push_back({it,linear,norm,finite(norm/std::max(scale,c.absoluteTolerance)),maxCell,maxScaled});
         r.boundaryFlux=finite(r.boundaryFlux);
         r.globalBalance=finite(r.temporalIntegral+r.boundaryFlux-r.sourceIntegral);
+        if (!p.sinkRate.empty()) r.globalBalance=finite(r.globalBalance+r.sinkIntegral);
         if (norm<=stop && maxScaled<=c.cellTolerance) { r.converged=true; break; }
     }
     r.minValue=*std::min_element(r.values.begin(),r.values.end());

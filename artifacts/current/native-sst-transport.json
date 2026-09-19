@@ -1,0 +1,412 @@
+{
+  "valid": true,
+  "cases": {
+    "square": {
+      "valid": true,
+      "definition": "SST-2003m rho=1, SI; F1=1 homogeneous zero-shear decay",
+      "notValidated": [
+        "wall distance",
+        "wall conditions",
+        "velocity-pressure coupling",
+        "spatial SST gradients",
+        "engineering turbulence"
+      ],
+      "source": "https://tmbwg.github.io/turbmodels/sst.html#sst-2003",
+      "probeSha256": "72ec7b3afe7d2306977ef6c944697a49e898410d79acbd39b484117829753407",
+      "runs": [
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 196,
+          "faces": 420,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n4",
+          "timeStep": 0.2,
+          "steps": 4,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 3.1167513014906945e-10,
+          "maxNonlinearRateResidual": 4.097000175449259e-10,
+          "globalKBalance": -2.2321614555668578e-12,
+          "globalOmegaBalance": -4.0947249502663225e-10,
+          "maxFaceFlux": 2.2390295974534644e-16,
+          "kContinuousRms": 0.00020089533934042247,
+          "omegaContinuousRms": 0.031551137249226445,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "132a7315a3586fc22b459f8a19cd461b5a236e4cb8c1d49cdccafedb08ab059b",
+            ".faces.csv": "b44f7eb918c80e107ec17b3c7a6896c79d70889ac0fd48911ac30ff145989126",
+            ".history.csv": "b201da72f26545304272e4f3b52aeea6fe04bbbaf980951001634e4f95278f67"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n4",
+            "0.2",
+            "4"
+          ],
+          "wallSeconds": 0.05345941599807702
+        },
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 196,
+          "faces": 420,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n8",
+          "timeStep": 0.1,
+          "steps": 8,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 2.0538681866355546e-10,
+          "maxNonlinearRateResidual": 1.532509214856265e-10,
+          "globalKBalance": 1.0036114822913764e-12,
+          "globalOmegaBalance": 1.5314533371605218e-10,
+          "maxFaceFlux": 2.246330964946247e-16,
+          "kContinuousRms": 0.00010371926739125202,
+          "omegaContinuousRms": 0.01626306974079872,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "a3b11fba6f6980a8cdd73c0a981d4cb55a66f8966d4be3ac02330031f38d5485",
+            ".faces.csv": "9ef45bdde066f30bbdbaa5175d1219af45eafa0c21605ce112ddef3fe0dc17d5",
+            ".history.csv": "59af2bdf6eb952fdf8304d5175c56528f359488c1d301f364bd8ce024d07eed2"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n8",
+            "0.1",
+            "8"
+          ],
+          "wallSeconds": 0.07150141699821688
+        },
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 196,
+          "faces": 420,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n16",
+          "timeStep": 0.05,
+          "steps": 16,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 2.5710544804269375e-10,
+          "maxNonlinearRateResidual": 1.9403889544052682e-10,
+          "globalKBalance": -9.916849043688367e-13,
+          "globalOmegaBalance": -1.9323399569790748e-10,
+          "maxFaceFlux": 6.3915211069525e-16,
+          "kContinuousRms": 5.272543795695699e-05,
+          "omegaContinuousRms": 0.008260298367624461,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "90aed17784a76fb1880a8a5d79cfc1615bb88907a58409f8c9196da9cce3d12e",
+            ".faces.csv": "418e58d1b5c6803b99ad4dd2fa382163f6089f15fedb305485209fc260e9f7ff",
+            ".history.csv": "28c7ab6591af53d471c8873984a8218c83c5f7dc7e8ae3af8e210723bfcd3346"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-square/n16",
+            "0.05",
+            "16"
+          ],
+          "wallSeconds": 0.10377125002560206
+        }
+      ],
+      "temporalOrders": {
+        "kContinuousRms": [
+          0.9537601737064554,
+          0.9761128422953509
+        ],
+        "omegaContinuousRms": [
+          0.956092408092281,
+          0.9773338006391898
+        ]
+      }
+    },
+    "shear": {
+      "valid": true,
+      "definition": "SST-2003m rho=1, SI; F1=1 homogeneous zero-shear decay",
+      "notValidated": [
+        "wall distance",
+        "wall conditions",
+        "velocity-pressure coupling",
+        "spatial SST gradients",
+        "engineering turbulence"
+      ],
+      "source": "https://tmbwg.github.io/turbmodels/sst.html#sst-2003",
+      "probeSha256": "72ec7b3afe7d2306977ef6c944697a49e898410d79acbd39b484117829753407",
+      "runs": [
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 176,
+          "faces": 376,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "bd8167bb4af87d8b0134d4863a57251f861a489199ae73bf7acd1e49613259d2",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n4",
+          "timeStep": 0.2,
+          "steps": 4,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 3.117164304455855e-10,
+          "maxNonlinearRateResidual": 4.095631898488239e-10,
+          "globalKBalance": -2.2244351889252675e-12,
+          "globalOmegaBalance": -4.0948770706142447e-10,
+          "maxFaceFlux": 6.576885884580688e-16,
+          "kContinuousRms": 0.0002008953393155829,
+          "omegaContinuousRms": 0.03155113724922112,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "3d7955bf14f48d1722466d4126e5f5ba1d7c751a34bb196e74dd358fa225329e",
+            ".faces.csv": "db646dfa2d3ae90d3682f502356a78053af38b05ad55858f8e971f137f9bb84c",
+            ".history.csv": "12c14c17f1bd97b0e44bc8d7c4c1f94f24898691b9a528af29fb38d57f4d1fd3"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n4",
+            "0.2",
+            "4"
+          ],
+          "wallSeconds": 0.05336229101521894
+        },
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 176,
+          "faces": 376,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "bd8167bb4af87d8b0134d4863a57251f861a489199ae73bf7acd1e49613259d2",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n8",
+          "timeStep": 0.1,
+          "steps": 8,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 2.053890391096047e-10,
+          "maxNonlinearRateResidual": 1.5356466464580877e-10,
+          "globalKBalance": 1.0076462289119087e-12,
+          "globalOmegaBalance": 1.5315173147167677e-10,
+          "maxFaceFlux": 4.277715943783782e-16,
+          "kContinuousRms": 0.00010371926739381621,
+          "omegaContinuousRms": 0.016263069740802893,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "5b37762c3510815ad6b9265944404da320be56d7273a83ad66673b967378da0c",
+            ".faces.csv": "287efea79fb701cc218816c9d3ea8d2808eb7c9fad5dc2ed000c6b1b7a5799ac",
+            ".history.csv": "ba8bed0de4798213aef0693a3531f5135b6240214a612a4247b8a0d220af9480"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n8",
+            "0.1",
+            "8"
+          ],
+          "wallSeconds": 0.06993483399855904
+        },
+        {
+          "valid": true,
+          "scope": "homogeneous-decay-only",
+          "cells": 176,
+          "faces": 376,
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+          "meshSha256": "bd8167bb4af87d8b0134d4863a57251f861a489199ae73bf7acd1e49613259d2",
+          "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n16",
+          "timeStep": 0.05,
+          "steps": 16,
+          "time": 0.8,
+          "maxAcceptedHistoryError": 2.565463397274925e-10,
+          "maxNonlinearRateResidual": 1.9334746572503563e-10,
+          "globalKBalance": -9.89876467453868e-13,
+          "globalOmegaBalance": -1.9322391645041558e-10,
+          "maxFaceFlux": 4.147166771566299e-16,
+          "kContinuousRms": 5.272543795855435e-05,
+          "omegaContinuousRms": 0.008260298367631216,
+          "exactK": 0.015449839547483163,
+          "exactOmega": 3.2258064516129035,
+          "files": {
+            ".cells.csv": "fb8ce7f820e7be317492cce3f4ea3943f354caf5e3012c1c69e15bb450b4ea5b",
+            ".faces.csv": "225377d26141a048f079851a69fdce06f63df00a903533eecb663615195127b8",
+            ".history.csv": "9a769b052127efe593f9716334ff4d9ba350f8d10271eab0d469ebf3de6d1c40"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_transport_tests",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/final-shear/n16",
+            "0.05",
+            "16"
+          ],
+          "wallSeconds": 0.0987767500046175
+        }
+      ],
+      "temporalOrders": {
+        "kContinuousRms": [
+          0.9537601734924074,
+          0.9761128422873101
+        ],
+        "omegaContinuousRms": [
+          0.9560924080916674,
+          0.9773338006383803
+        ]
+      }
+    }
+  },
+  "scope": "SST-2003m frozen transport foundation, homogeneous decay only",
+  "source": "https://tmbwg.github.io/turbmodels/sst.html#sst-2003",
+  "sourceHtmlSha256": "ccc4bc8d999444104e4e41f2c610dc9de7e7cb213d3e8b7bdb1997c4b8d6ee9f",
+  "initialFailure": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/initial-inner-failure.log",
+  "fix": "inner residual norm additionally constrained by half the requested scalar outer norm; original default bound remains active",
+  "externalOpenFOAM": "not run",
+  "desktop": "unchanged 0.4.11",
+  "platform": "macOS system clang only",
+  "validation": {
+    "ctest": {
+      "passed": 122,
+      "total": 122,
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/ctest.log",
+      "sha256": "2832185b29bee606cac402015a610b97dc4dc7c887edf427deb2dc9c2ef1611e"
+    },
+    "frontend": {
+      "passed": 140,
+      "total": 140,
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/frontend.log",
+      "sha256": "7dca63bb2e133a14cb5a1d5e05cbed24f0907bf3b834cda72dbd558ca83c0d8c"
+    },
+    "tightWarmStartRegression": {
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/linear-regression.log",
+      "sha256": "5f50efde91bcc0bb3766dedd9d4b04887a235b989c41ddb50e48877c9d21d38a"
+    }
+  },
+  "compatibility": {
+    "valid": true,
+    "cases": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/sine",
+          "--verification",
+          "sine",
+          "--diffusivity",
+          ".08",
+          "--speed",
+          ".35",
+          "--convection",
+          "limited-linear"
+        ],
+        "baselinePrefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/uniform/sine/before",
+        "equalFileSha256": {
+          ".json": "60070bcc44c823a85a4f5dd48dcab1198639cea76e8c864609e059fdd14fead5",
+          ".vtk": "a9cfa1475ec9d9640e017554a84dc5e26c00b982749aed3644ec7b447410897a",
+          ".cells.csv": "b0e9144273f43e0d627eddc0c8bfc09f3776a0a8c542605b61b3ce11053ace00",
+          ".faces.csv": "3d5fc0e8467fd48084043d210587f4f1a2caae74b8bab8c767f20852d7d7d362",
+          ".history.csv": "30426d215f2e87985df120d251baf7ee009584db913e513f1a88a84222b3ed99"
+        },
+        "audit": {
+          "valid": true,
+          "cells": 900,
+          "faces": 1860,
+          "residualNorm": 1.1109213229605123e-11,
+          "residualStop": 3.30706653328237e-11,
+          "maxDiagonalScaledImbalance": 4.65814572843874e-12,
+          "maxCarrierImbalance": 0.0,
+          "globalBalance": -1.4336887232957451e-10,
+          "boundaryAbsoluteFlux": 0.6405851861305939,
+          "minValue": 0.00273907591526368,
+          "maxValue": 0.9978664024972719,
+          "maxConstitutiveDifference": 8.673617379884035e-18,
+          "l2Error": 0.0003474141927531899,
+          "diffusivityModel": "uniform",
+          "minFaceDiffusivity": 0.08,
+          "maxFaceDiffusivity": 0.08,
+          "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+          "sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/sine.json": "60070bcc44c823a85a4f5dd48dcab1198639cea76e8c864609e059fdd14fead5",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "d5d5b10b9e9f17dae5cda91e40ee84c7025a5e469812ecf13c7ab0caff25ca64",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "6688ed4dc3b1faed7df5a7b9c657f35aacd091b68a0cc46fb8e21cd4e64c09e7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/sine.cells.csv": "b0e9144273f43e0d627eddc0c8bfc09f3776a0a8c542605b61b3ce11053ace00",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/sine.faces.csv": "3d5fc0e8467fd48084043d210587f4f1a2caae74b8bab8c767f20852d7d7d362",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/sine.history.csv": "30426d215f2e87985df120d251baf7ee009584db913e513f1a88a84222b3ed99"
+          }
+        }
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_transport_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/decay",
+          "--verification",
+          "decay",
+          "--diffusivity",
+          ".08",
+          "--speed",
+          ".35",
+          "--convection",
+          "limited-linear",
+          "--dt",
+          ".025",
+          "--steps",
+          "4"
+        ],
+        "baselinePrefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/uniform/decay/before",
+        "equalFileSha256": {
+          ".json": "1ecc022f924b47f886986a9f313fb677d1f78cd526e611aae0c72618e6ce69ba",
+          ".vtk": "8fe964a9b76cef649081400a8402490b4275d02764e58a9b9adbd7baf5ec453f",
+          ".cells.csv": "c868b47fc91885ce58338b59756a2678b8ff59ebfe2a8435993d14bd577d90bf",
+          ".faces.csv": "eb395d5220323322bb2e749a1a038730acab1eb74ec7402082ed5e7221d7d754",
+          ".history.csv": "7b386a4c37863d595764e50a210c9cf75158205e3af05b512cda638e35770f30"
+        },
+        "audit": {
+          "valid": true,
+          "cells": 900,
+          "faces": 1860,
+          "residualNorm": 4.795236560830269e-10,
+          "residualStop": 5.946186212346215e-10,
+          "maxDiagonalScaledImbalance": 8.740631063347805e-11,
+          "maxCarrierImbalance": 0.0,
+          "globalBalance": 1.1711916214629525e-08,
+          "boundaryAbsoluteFlux": 0.5482496215851076,
+          "minValue": 0.0023463818684902995,
+          "maxValue": 0.8542936518006019,
+          "maxConstitutiveDifference": 7.806255641895632e-18,
+          "l2Error": 0.0013582680125667722,
+          "diffusivityModel": "uniform",
+          "minFaceDiffusivity": 0.08,
+          "maxFaceDiffusivity": 0.08,
+          "scope": "independent actual geometry, constitutive flux, local/global scalar and time balance; not external CFD or accuracy certification",
+          "sha256": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/decay.json": "1ecc022f924b47f886986a9f313fb677d1f78cd526e611aae0c72618e6ce69ba",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_scalar_transport.py": "d5d5b10b9e9f17dae5cda91e40ee84c7025a5e469812ecf13c7ab0caff25ca64",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "6688ed4dc3b1faed7df5a7b9c657f35aacd091b68a0cc46fb8e21cd4e64c09e7",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/decay.cells.csv": "c868b47fc91885ce58338b59756a2678b8ff59ebfe2a8435993d14bd577d90bf",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/decay.faces.csv": "eb395d5220323322bb2e749a1a038730acab1eb74ec7402082ed5e7221d7d754",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-transport/compatibility/decay.history.csv": "7b386a4c37863d595764e50a210c9cf75158205e3af05b512cda638e35770f30"
+          }
+        }
+      }
+    ]
+  },
+  "sourcesSha256": {
+    "include/cartmesh2d/fv/Sst2003m2D.hpp": "6f315690caee82bdc8808e01e11a78640b5c0835aab31e63088f1196e354911a",
+    "src/fv/Sst2003m2D.cpp": "5e3a299332e6c93aea36bb96d8636dd6c1823e8782154ff27df6ccd130ca5f03",
+    "include/cartmesh2d/fv/ScalarTransport2D.hpp": "b1053c985041a267063a56dd6250b15429763fbb3eac6106787774899272afeb",
+    "src/fv/ScalarTransport2D.cpp": "743cb2f1e6b4090a6115bca261307f915f4fa306f4b102683662702a292f3f74",
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "e969a4acc64774ffa3f7661525ae937066abc1988ce79e57692ecb1759a8901d",
+    "tests/sst_transport_test.cpp": "4131ff3fddacda8fd8b6e168301658e5d2aee57b0ce84814f3d2ff817d1cc088",
+    "tools/verification/verify_sst_decay.py": "9e2483a5ec84afe225c313a4159c17b165d0fd88b958c878136fa23d9b213f88"
+  },
+  "sourceCommitBeforeChanges": "bf92920",
+  "compiler": "/usr/bin/clang++",
+  "boundary": "prescribed F1=1 via d=1e-4; zero diffusive flux, no flow; no physical wall-distance claim"
+}

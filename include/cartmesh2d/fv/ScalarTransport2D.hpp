@@ -14,7 +14,7 @@ struct ScalarBoundary2D {
     std::optional<double> inflowValue;
 };
 struct ScalarTransportProblem2D {
-    // d(s)/dt + div(U*s - D grad(s)) = source, constant density and D>0.
+    // d(s)/dt + div(U*s - D grad(s)) + sinkRate*s = source, fixed density.
     double diffusivity = .01;
     std::vector<double> volumeFlux; // one owner-outward integrated U.S per mesh face
     // Supply callbacks OR indexed data, never both. Indexed data supports
@@ -28,6 +28,10 @@ struct ScalarTransportProblem2D {
     // The caller defines material-interface interpolation (no hidden averaging).
     // diffusivity remains a finite positive reference value in either mode.
     std::vector<double> faceDiffusivity;
+    // Optional prescribed nonnegative loss rate [1/time] per cell. Empty is
+    // zero. Integrated implicitly, and included in the reported true balance.
+    // A caller linearizing nonlinear losses must also check nonlinear convergence.
+    std::vector<double> sinkRate;
 };
 struct ScalarTransportControls2D {
     ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
@@ -49,11 +53,13 @@ struct ScalarTransportResult2D {
     std::vector<ScalarTransportIteration2D> history;
     double boundaryFlux = 0, sourceIntegral = 0, temporalIntegral = 0, globalBalance = 0;
     double maxCarrierImbalance = 0, minValue = 0, maxValue = 0, maxCourant = 0;
+    std::vector<double> sinkIntegrals;
+    double sinkIntegral = 0;
 };
 // Conservative transport on a validated final mesh. No clipping or hidden sinks.
 // Empty previous means steady; otherwise backward Euler with dt>0. Callbacks are
 // sampled at the new physical time by the caller. Do not accept unconverged output.
-// A steady connected component needs a value boundary or prescribed inflow.
+// A steady component needs a value boundary, prescribed inflow, or positive loss.
 // Outflow advection uses owner reconstruction; boundary values constrain diffusion.
 [[nodiscard]] ScalarTransportResult2D solveScalarTransport2D(
     const FvMesh2D&, const ScalarTransportProblem2D&,

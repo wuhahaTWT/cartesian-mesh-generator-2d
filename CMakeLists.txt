@@ -114,7 +114,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 target_compile_features(cartmesh2d_fv PUBLIC cxx_std_20)
 add_executable(cartmesh2d_fv_cli apps/cartmesh2d_fv_cli.cpp)
@@ -163,6 +163,9 @@ option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    add_executable(cartmesh2d_sst_transport_tests tests/sst_transport_test.cpp)
+    target_link_libraries(cartmesh2d_sst_transport_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_sst_transport COMMAND cartmesh2d_sst_transport_tests)
     add_executable(cartmesh2d_thermal_flow_tests tests/thermal_flow_test.cpp)
     target_link_libraries(cartmesh2d_thermal_flow_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_thermal_flow COMMAND cartmesh2d_thermal_flow_tests)
@@ -170,6 +173,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_transport_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_transport COMMAND cartmesh2d_scalar_transport_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_sst_decay_verifier COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_decay_verifier_test.py
+        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --probe $<TARGET_FILE:cartmesh2d_sst_transport_tests>)
     add_test(NAME cartmesh2d_thermal_flow_cli COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_flow_cli_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

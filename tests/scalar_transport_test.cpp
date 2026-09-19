@@ -291,6 +291,16 @@ void invalidInputs() {
     nonfinite.diffusivity = std::numeric_limits<double>::quiet_NaN();
     rejects([&] { (void)solveScalarTransport2D(mesh, nonfinite); }, "diffusivity must be finite positive", "nonfinite diffusivity is rejected");
 
+    for (const auto bad : {std::vector<double>(mesh.cells.size() - 1, .1),
+                           std::vector<double>(mesh.cells.size(), -.1),
+                           std::vector<double>(mesh.cells.size(), std::numeric_limits<double>::quiet_NaN()),
+                           std::vector<double>(mesh.cells.size(), std::numeric_limits<double>::infinity())}) {
+        auto invalidSink = valid;
+        invalidSink.sinkRate = bad;
+        rejects([&] { (void)solveScalarTransport2D(mesh, invalidSink); }, "sink",
+                "invalid sink field is rejected");
+    }
+
     auto wrongFaceCount = valid;
     wrongFaceCount.faceDiffusivity.assign(mesh.faces.size() - 1, .1);
     rejects([&] { (void)solveScalarTransport2D(mesh, wrongFaceCount); },
@@ -330,6 +340,117 @@ void invalidInputs() {
     controls.maxCorrections = 1;
     const auto result = solveScalarTransport2D(mesh, oneCorrection, controls);
     check(!result.converged, "one correction reports nonconvergence");
+}
+
+void transientUniformReaction() {
+    const auto mesh = fvGrid(4, 3);
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .2;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.sinkRate.assign(mesh.cells.size(), .7);
+    problem.source = [](Point2D) { return 2.; };
+    problem.boundary = [](std::size_t, const Face&) {
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux, 0., std::nullopt};
+    };
+    const std::vector<double> previous(mesh.cells.size(), 1.);
+    const double dt = 10.;
+    const auto result = solveScalarTransport2D(mesh, problem, {}, previous, dt);
+    const double expected = (1. + dt * 2.) / (1. + dt * .7);
+    check(result.converged, "implicit uniform reaction converges for large dt");
+    for (double value : result.values) {
+        check(std::abs(value - expected) < 2e-9, "implicit reaction matches backward-Euler exact value");
+        check(value > 0., "implicit reaction remains nonnegative for large dt");
+    }
+    check(std::abs(result.sinkIntegral - .7 * expected) < 2e-9,
+          "reaction sink integral is reported");
+    check(std::abs(result.globalBalance) < 2e-8,
+          "reaction transient global balance closes");
+}
+
+void steadyNeumannReaction() {
+    const auto mesh = fvGrid(3, 2);
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .3;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.sinkRate.assign(mesh.cells.size(), .4);
+    problem.source = [](Point2D) { return 2.; };
+    problem.boundary = [](std::size_t, const Face&) {
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux, 0., std::nullopt};
+    };
+    const auto result = solveScalarTransport2D(mesh, problem);
+    check(result.converged, "positive reaction anchors steady Neumann problem");
+    for (double value : result.values)
+        check(std::abs(value - 5.) < 2e-8, "steady Neumann reaction has source-over-sink constant solution");
+    check(std::abs(result.sinkIntegral - 2.) < 2e-8, "steady reaction sink balances source");
+    check(std::abs(result.globalBalance) < 2e-8, "steady reaction global balance closes");
+}
+
+void spatialReactionVariableDiffusionBalance() {
+    const auto mesh = fvGrid(5, 4, true);
+    const auto exact = [](Point2D p) { return 1.7 + p.x + .3 * p.y; };
+    const Vector2D gradient{1., .3};
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .1;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.faceDiffusivity.resize(mesh.faces.size());
+    problem.sinkRate.resize(mesh.cells.size());
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        problem.faceDiffusivity[id] = .1 * (1. + mesh.faces[id].centre.x);
+    for (std::size_t i = 0; i < mesh.cells.size(); ++i)
+        problem.sinkRate[i] = .2 * (1. + .3 * mesh.cells[i].centre.x);
+    problem.source = [&](Point2D p) { return -.1 + .2 * (1. + .3 * p.x) * exact(p); };
+    problem.boundary = [&](std::size_t, const Face& face) {
+        const double d = .1 * (1. + face.centre.x);
+        if (face.centre.x - .2 * face.centre.y < 1e-10)
+            return valueBoundary(exact(face.centre));
+        const double length = std::hypot(face.areaVector.x, face.areaVector.y);
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,
+            -d * (gradient.x * face.areaVector.x + gradient.y * face.areaVector.y) / length,
+            std::nullopt};
+    };
+    ScalarTransportControls2D controls;
+    controls.maxCorrections = 3000;
+    controls.relativeTolerance = 1e-11;
+    controls.absoluteTolerance = 1e-13;
+    controls.cellTolerance = 1e-11;
+    const auto result = solveScalarTransport2D(mesh, problem, controls);
+    check(result.converged, "spatial reaction variable-D affine solve converges");
+    for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
+        check(std::abs(result.values[i] - exact(mesh.cells[i].centre)) < 3e-7,
+              "spatial reaction variable-D affine solution is recovered");
+        double balance = result.sinkIntegrals[i] - result.sourceIntegrals[i];
+        for (std::size_t id = 0; id < mesh.faces.size(); ++id) {
+            const auto& face = mesh.faces[id];
+            const double flux = result.advectiveFlux[id] + result.diffusiveFlux[id];
+            if (face.owner == i) balance += flux;
+            if (face.neighbour && *face.neighbour == i) balance -= flux;
+        }
+        check(std::abs(balance) < 3e-8, "spatial reaction cell balance includes sink");
+    }
+}
+
+void zeroSinkCompatibilityAndLocalAnchor() {
+    const auto mesh = fvGrid(3, 2);
+    ScalarTransportProblem2D base;
+    base.diffusivity = .2;
+    base.volumeFlux.assign(mesh.faces.size(), 0.);
+    base.source = [](Point2D) { return 0.; };
+    base.boundary = [](std::size_t, const Face&) {
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux, 0., std::nullopt};
+    };
+    auto previous = std::vector<double>(mesh.cells.size(), 1.25);
+    const auto oldResult = solveScalarTransport2D(mesh, base, {}, previous, .1);
+    auto zero = base;
+    zero.sinkRate.assign(mesh.cells.size(), 0.);
+    const auto zeroResult = solveScalarTransport2D(mesh, zero, {}, previous, .1);
+    check(oldResult.values == zeroResult.values && oldResult.diffusiveFlux == zeroResult.diffusiveFlux,
+          "empty and explicit zero sink preserve old outputs");
+    auto local = base;
+    local.sinkRate.assign(mesh.cells.size(), 0.);
+    local.sinkRate[0] = .5;
+    const auto anchored = solveScalarTransport2D(mesh, local);
+    check(anchored.converged, "one positive sink anchors a connected Neumann component");
+    check(std::abs(anchored.globalBalance) < 2e-8, "local sink anchor balance closes");
 }
 
 void uniformFaceDiffusivityIsIdentical() {
@@ -455,6 +576,10 @@ int main() {
         uniformFaceDiffusivityIsIdentical();
         variableFaceDiffusivityConservesHarmonicInterface();
         variableFaceDiffusivityManufacturedSkewAffine();
+        transientUniformReaction();
+        steadyNeumannReaction();
+        spatialReactionVariableDiffusionBalance();
+        zeroSinkCompatibilityAndLocalAnchor();
     } catch (const std::exception& error) {
         std::cerr << "unexpected scalar transport exception: " << error.what() << '\n';
         return 1;

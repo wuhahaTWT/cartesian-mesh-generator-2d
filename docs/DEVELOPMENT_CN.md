@@ -259,9 +259,22 @@ build/cartmesh2d_flow_cli --mesh /path/unit-square.solver.cm2d --output outputs/
 
 非空场写checkpoint v3，CONFIG后增加`FACE_VISCOSITY count values...`；加载时逐项精确匹配，不允许用缺失场的v1/v2恢复变系数计算。恒黏度继续写原v2字节，原v1/v2仍可读。冻结标量入口可读v3并从头核对完整几何/状态。变黏度制造解是稳态验证，checkpoint明确拒绝。当前桌面不提供空间黏度输入，也没有验证桌面导入v3；同步热输运CLI仍使用恒黏度/恒扩散系数。
 
-### SST扩展前的剩余项
+### SST-2003m输运基础及待完成部分
 
-预设空间扩散与黏度已接入核心并有制造解和重启证据。尚需把SST的k、omega输运、生产/耗散与交叉扩散、壁面距离/处理、混合函数和湍黏度更新组成收敛耦合迭代，并验证标准工况。当前固定正系数不能替代这些步骤；也没有自动湍流普朗特数或温度相关材料模型。实际SST实现前继续核对指定模型版本和适用范围。
+实现入口为`Sst2003m2D.hpp/.cpp`，固定采用[TMR的SST-2003m](https://tmbwg.github.io/turbmodels/sst.html#sst-2003)。使用应变不变量S而非旧SST的涡量；k与omega均限制生产项为`min(nu_t S²,10 betaStar omega k)`；gamma1=5/9、gamma2=.44，CD下限1e-10。这里固定密度归一化rho=1、SI量纲；CD下限未做任意单位/密度重标定。k=0时通过代数连续极限求`P/nu_t`，不引入虚构k下限。tanh饱和前限制函数自变量防止幂溢出，不修改物理场。
+
+`evaluateSst2003m2D`接收k、omega、nu、最近壁面距离、S以及k/omega梯度，返回F1/F2、混合常数、nu_t、扩散率、生产/损失与交叉扩散。k>=0、omega/nu/d>0，所有输入有限。负交叉扩散C拆成omega损失率`-C/omega_old`；该步骤在旧场处严格恢复原源，外层须重新评价非线性方程。
+
+`solveFrozenSst2003mTransport2D`只执行一轮冻结系数k/omega输运。调用者提供一致的梯度、距离、应变、载流面通量及全部边界；内部面按已有几何权重线性插值单元扩散率，边界取owner系数。它不提供壁函数、不自行判断湍流入口、不更新动量/压力，也不保证非正交高阶格式无条件保持正性；不收敛、负k或非正omega均抛出失败。返回的内层converged不能充当RANS外层收敛。
+
+隐式损失使用`ScalarTransportProblem2D::sinkRate`：空表示零，否则每格一个有限非负1/s系数；结果的`sinkIntegrals/sinkIntegral`纳入局部/全域平衡。瞬态可与后向欧拉叠加，稳态正损失可锚定全Neumann分量。线性求解现在同时满足原norm门与标量外层norm目标的一半，避免紧外层容差在较松内层门处停滞；默认标量门下原内层门仍更紧。
+
+```sh
+# 测试驱动，不是用户RANS求解入口。复用已有真实最终网格：
+python3 tools/verification/verify_sst_decay.py --probe build/cartmesh2d_sst_transport_tests --mesh /path/final.solver.cm2d --output outputs/sst-decay
+```
+
+驱动对给定F1=1、无梯度/剪切的均匀衰减反复执行冻结步骤，检查原非线性残差；分别比较后向欧拉解析根与连续ODE参考，进行三档时间步细化。Python读取实际CM2D/全部最终单元/面及历史代表值进行独立审核，并有篡改拒绝测试。这不构成壁面流动验证。下一步仍需空间非均匀输运、真实壁面距离与近壁处理、完整速度压力耦合/压力定义、标准平板及分离工况证据；当前无产品SST开关，也没有自动湍流热扩散或温度相关物性。
 
 ### 非正交压力修正固定点
 
