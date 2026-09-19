@@ -194,6 +194,9 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_verifier_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
     set_tests_properties(cartmesh2d_flow_verifier PROPERTIES TIMEOUT 30)
+    add_test(NAME cartmesh2d_cavity_reference
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/cavity_reference_test.py)
+    set_tests_properties(cartmesh2d_cavity_reference PROPERTIES TIMEOUT 30)
 
 
     add_executable(cartmesh2d_geometry_tests tests/geometry_test.cpp)

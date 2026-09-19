@@ -1,0 +1,189 @@
+{
+  "format": "cartmesh2d-published-cavity-reference-v1",
+  "reynolds": 100,
+  "lidSpeed": 1,
+  "domain": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "doi": "10.1590/S1678-58782009000300004",
+  "sourceUrl": "https://pdfs.semanticscholar.org/8546/81866a777be1f5f9b43f25506c5e171b056d.pdf",
+  "pdfSha256": "0569c809b643d5c07a1f71e0ea4987159dd83792defb21e9587882598b5d1587",
+  "tables": {
+    "solution": {
+      "number": 6,
+      "printedPage": 194,
+      "pdfPageOneBased": 9,
+      "column": "Re = 100"
+    },
+    "estimatedError": {
+      "number": 7,
+      "printedPage": 195,
+      "pdfPageOneBased": 10,
+      "column": "Re = 100"
+    }
+  },
+  "u": [
+    {
+      "coordinate": 0.0625,
+      "value": -0.041974991,
+      "estimatedError": 4.5e-08
+    },
+    {
+      "coordinate": 0.125,
+      "value": -0.077125399,
+      "estimatedError": 7.2e-08
+    },
+    {
+      "coordinate": 0.1875,
+      "value": -0.109816214,
+      "estimatedError": 8.6e-08
+    },
+    {
+      "coordinate": 0.25,
+      "value": -0.141930064,
+      "estimatedError": 8.6e-08
+    },
+    {
+      "coordinate": 0.3125,
+      "value": -0.172712391,
+      "estimatedError": 7.3e-08
+    },
+    {
+      "coordinate": 0.375,
+      "value": -0.198470859,
+      "estimatedError": 5e-08
+    },
+    {
+      "coordinate": 0.4375,
+      "value": -0.212962392,
+      "estimatedError": 2e-08
+    },
+    {
+      "coordinate": 0.5,
+      "value": -0.2091491418,
+      "estimatedError": 8.6e-09
+    },
+    {
+      "coordinate": 0.5625,
+      "value": -0.182080595,
+      "estimatedError": 2.8e-08
+    },
+    {
+      "coordinate": 0.625,
+      "value": -0.131256301,
+      "estimatedError": 3.5e-08
+    },
+    {
+      "coordinate": 0.6875,
+      "value": -0.060245594,
+      "estimatedError": 3.7e-08
+    },
+    {
+      "coordinate": 0.75,
+      "value": 0.027874448,
+      "estimatedError": 4.6e-08
+    },
+    {
+      "coordinate": 0.8125,
+      "value": 0.140425325,
+      "estimatedError": 7.1e-08
+    },
+    {
+      "coordinate": 0.875,
+      "value": 0.31055709,
+      "estimatedError": 1.1e-07
+    },
+    {
+      "coordinate": 0.9375,
+      "value": 0.597466694,
+      "estimatedError": 9.5e-08
+    }
+  ],
+  "v": [
+    {
+      "coordinate": 0.0625,
+      "value": 0.094807616,
+      "estimatedError": 7.2e-08
+    },
+    {
+      "coordinate": 0.125,
+      "value": 0.149243,
+      "estimatedError": 1e-07
+    },
+    {
+      "coordinate": 0.1875,
+      "value": 0.174342933,
+      "estimatedError": 9.7e-08
+    },
+    {
+      "coordinate": 0.25,
+      "value": 0.179243328,
+      "estimatedError": 7.9e-08
+    },
+    {
+      "coordinate": 0.3125,
+      "value": 0.169132064,
+      "estimatedError": 5.5e-08
+    },
+    {
+      "coordinate": 0.375,
+      "value": 0.145730201,
+      "estimatedError": 2.9e-08
+    },
+    {
+      "coordinate": 0.4375,
+      "value": 0.1087758646,
+      "estimatedError": 3.7e-09
+    },
+    {
+      "coordinate": 0.5,
+      "value": 0.057536559,
+      "estimatedError": 2e-08
+    },
+    {
+      "coordinate": 0.5625,
+      "value": -0.007748504,
+      "estimatedError": 4.8e-08
+    },
+    {
+      "coordinate": 0.625,
+      "value": -0.084066715,
+      "estimatedError": 5.3e-08
+    },
+    {
+      "coordinate": 0.6875,
+      "value": -0.163010143,
+      "estimatedError": 5e-08
+    },
+    {
+      "coordinate": 0.75,
+      "value": -0.227827313,
+      "estimatedError": 5.2e-08
+    },
+    {
+      "coordinate": 0.8125,
+      "value": -0.253768577,
+      "estimatedError": 7.3e-08
+    },
+    {
+      "coordinate": 0.875,
+      "value": -0.218690812,
+      "estimatedError": 8.7e-08
+    },
+    {
+      "coordinate": 0.9375,
+      "value": -0.12331817,
+      "estimatedError": 5.8e-08
+    }
+  ],
+  "sourceNotes": [
+    "The u rows are u(0.5;y), so coordinate is y; the v rows are v(x;0.5), so coordinate is x.",
+    "Table 6 states that non-coordinate variables use extrapolations through Eq. (12) from the 1024x1024 grid; these values are therefore Richardson-extrapolated estimates, not raw 1024-grid samples.",
+    "Table 7 U is the authors' estimated discretization error from Eqs. (13) or (14). It is recorded as published and is not treated here as a rigorous confidence interval or acceptance tolerance."
+  ],
+  "citation": "C. H. Marchi, R. Suero and L. K. Araki, The Lid-Driven Square Cavity Flow: Numerical Solution with a 1024 x 1024 Grid (2009)",
+  "transcriptionVerification": "All 30 values and 30 error estimates checked against rendered Tables 6/7 and an independent extraction of the PDF text."
+}
