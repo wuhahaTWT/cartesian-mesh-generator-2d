@@ -102,7 +102,7 @@ def read(prefix, suffix):
     return json.loads(Path(str(prefix)+suffix).read_text())
 
 
-def reference_errors(prefix, flow_prefix):
+def reference_errors(prefix, flow_prefix, expected_flow_tolerance=None):
     info=read(prefix,'.json'); flow=read(flow_prefix,'.json')
     scalar.require(info.get('verification')=='thermal-vortex' and info.get('evolvingFlow') is True,
                    'reference requires synchronized thermal vortex')
@@ -113,6 +113,34 @@ def reference_errors(prefix, flow_prefix):
                    'reference carrier must use backward Euler Taylor-Green')
     steps=info['steps'];dt=scalar.finite(info['timeStep']);nu=scalar.finite(info['flowNu'])
     diffusivity=scalar.finite(info['diffusivity']);speed=scalar.finite(info['flowSpeed'])
+    coupled_present='flowTolerance' in info
+    coupled_tolerance=info.get('flowTolerance')
+    coupled_tolerance_status='legacy-unknown' if not coupled_present else 'explicit-thermal-flow-json'
+    if coupled_present:
+        scalar.require(coupled_tolerance is not None,'thermal carrier flow tolerance explicitly null')
+        coupled_tolerance=scalar.finite(coupled_tolerance)
+        scalar.require(coupled_tolerance>0,'thermal carrier flow tolerance must be positive')
+    scalar_tolerances={key: info.get(key) for key in ('relativeTolerance','absoluteTolerance','cellTolerance')}
+    for key,value in scalar_tolerances.items():
+        if key in info:
+            scalar.require(value is not None,key+' explicitly null')
+        if value is not None:
+            scalar_tolerances[key]=scalar.finite(value)
+            scalar.require(scalar_tolerances[key]>0,key+' must be positive')
+    flow_present='tolerance' in flow
+    flow_tolerance=flow.get('tolerance')
+    flow_tolerance_status='legacy-unknown' if not flow_present else 'explicit-flow-json'
+    if flow_present:
+        scalar.require(flow_tolerance is not None,'carrier flow tolerance explicitly null')
+        flow_tolerance=scalar.finite(flow_tolerance)
+        scalar.require(flow_tolerance>0,'carrier flow tolerance must be positive')
+        if coupled_tolerance is not None:
+            scalar.same(coupled_tolerance,flow_tolerance,'thermal/carrier flow tolerance mismatch',absolute=0,relative=1e-14)
+        if expected_flow_tolerance is not None:
+            scalar.same(flow_tolerance,expected_flow_tolerance,'carrier flow tolerance mismatch',absolute=0,relative=1e-14)
+    if expected_flow_tolerance is not None:
+        scalar.require(coupled_tolerance is not None and flow_tolerance is not None,'coupled or standalone carrier flow tolerance missing or legacy unknown')
+        scalar.same(coupled_tolerance,expected_flow_tolerance,'thermal carrier flow tolerance mismatch',absolute=0,relative=1e-14)
     theta_be=amplitude(2*math.pi**2*diffusivity,dt,steps)
     velocity_be=speed*amplitude(2*math.pi**2*nu,dt,steps)
     scalar.require(speed>0 and flow['completedSteps']==steps,'carrier step count mismatch')
@@ -153,6 +181,10 @@ def reference_errors(prefix, flow_prefix):
     result={k:math.sqrt(math.fsum(v)/math.fsum(areas)) for k,v in terms.items()}
     result.update(cells=len(areas),h=1/math.sqrt(len(areas)),dt=dt,steps=steps,time=dt*steps,
                   nu=nu,diffusivity=diffusivity,speed=speed,velocityRelaxation=relaxation,
+                  coupledFlowTolerance=coupled_tolerance,coupledFlowToleranceStatus=coupled_tolerance_status,
+                  scalarRelativeTolerance=scalar_tolerances['relativeTolerance'],
+                  scalarAbsoluteTolerance=scalar_tolerances['absoluteTolerance'],scalarCellTolerance=scalar_tolerances['cellTolerance'],
+                  flowTolerance=flow_tolerance,flowToleranceStatus=flow_tolerance_status,
                   relaxationMetadata='explicit' if 'flowVelocityRelaxation' in info else 'legacy fixed 0.6',
                   carrierCheckpointByteIdentical=True,
                   definition='Area-weighted RMS at real cell centroids; velocity is vector error in m/s, scalar uses input units.',
@@ -187,7 +219,7 @@ def iteration_counts(prefix,flow_prefix):
             'scope':'Raw accepted histories checked against separately computed carrier step counts; intermediate fields are not independently archived.'}
 
 
-def audit(prefix, flow_prefix, output):
+def audit(prefix, flow_prefix, output, expected_flow_tolerance=None):
     result={'valid':False,'prefix':str(prefix),'flowPrefix':str(flow_prefix),'issues':[],
             'verifierSha256':{str(Path(p).resolve()):native.sha256_file(Path(p)) for p in
                               (__file__,native.__file__,scalar.__file__,transient.__file__)}}
@@ -196,7 +228,7 @@ def audit(prefix, flow_prefix, output):
         result['scalar']=scalar.verify(prefix)
         result['flow']=transient.verify(Path(info['mesh']),flow_prefix,output.with_name('flow-audit.json'))
         scalar.require(result['flow']['valid'],'independent carrier momentum/time audit failed')
-        result['reference']=reference_errors(prefix,flow_prefix)
+        result['reference']=reference_errors(prefix,flow_prefix,expected_flow_tolerance)
         result['iterations']=iteration_counts(prefix,flow_prefix)
         result['valid']=True
     except (ValueError,OSError,KeyError,OverflowError,TypeError) as exc:result['issues'].append(str(exc))
@@ -208,9 +240,19 @@ def series_checks(cases):
     scalar.require(len(cases)>=3,'spatial study requires at least three grids')
     scalar.require(all(c.get('valid') is True for c in cases),'invalid physical audit in series')
     rows=[dict(c['reference']) for c in cases]
+    required=('dt','steps','time','nu','diffusivity','speed','velocityRelaxation','coupledFlowTolerance',
+               'flowTolerance','scalarRelativeTolerance','scalarAbsoluteTolerance','scalarCellTolerance')
+    scalar.require(all(all(key in row for key in required) for row in rows),'reference tolerance metadata missing')
     for row in rows[1:]:
-        for key in ('dt','steps','time','nu','diffusivity','speed','velocityRelaxation'):
+        for key in ('dt','steps','time','nu','diffusivity','speed','velocityRelaxation','coupledFlowTolerance','flowTolerance',
+                    'scalarRelativeTolerance','scalarAbsoluteTolerance','scalarCellTolerance'):
             scalar.require(row[key]==rows[0][key],'mixed spatial study '+key)
+    scalar.require(all(row.get('coupledFlowToleranceStatus') == 'explicit-thermal-flow-json' and row.get('flowToleranceStatus') == 'explicit-flow-json' for row in rows),
+                   'spatial study contains legacy/unknown carrier flow tolerance')
+    for row in rows:
+        for key in ('coupledFlowTolerance','flowTolerance','scalarRelativeTolerance','scalarAbsoluteTolerance','scalarCellTolerance'):
+            scalar.require(row[key] is not None and math.isfinite(row[key]) and row[key]>0,'invalid series tolerance '+key)
+        scalar.same(row['coupledFlowTolerance'],row['flowTolerance'],'series carrier tolerance mismatch',absolute=0,relative=1e-14)
     decreasing={key:True for key in ('scalarBackwardEulerL2','velocityBackwardEulerL2')}
     for coarse,fine in zip(rows,rows[1:]):
         scalar.require(0<fine['h']<coarse['h'],'spatial grids must strictly refine')
@@ -231,7 +273,7 @@ def generate(args):
             'executables':{str(p):native.sha256_file(p) for p in binaries.values()},
             'runnerSha256':native.sha256_file(Path(__file__).resolve()),
             'platform':platform.platform(),'timeoutSeconds':args.timeout,
-            'velocityRelaxation':args.velocity_relaxation,
+            'velocityRelaxation':args.velocity_relaxation,'flowTolerance':args.flow_tolerance,
             'scope':'Serial two-equation unforced thermal vortex scale/accuracy study; fixed properties and step count. Not long-time, external CFD, GUI or turbulent qualification.'}
     def save():native.write_json(root/'study.json',report)
     def execute(cmd,label):
@@ -261,12 +303,12 @@ def generate(args):
             execute([binaries['transport_cli'],'--mesh',mesh,'--output',prefix,'--verification','thermal-vortex',
                      '--dt',str(args.dt),'--steps',str(args.steps),'--flow-nu','.1','--diffusivity','.02',
                      '--flow-convection','limited-linear','--convection','limited-linear','--pressure-preconditioner','aggregation',
-                     '--flow-velocity-relaxation',str(args.velocity_relaxation)],f'thermal-{across}')
+                     '--flow-velocity-relaxation',str(args.velocity_relaxation),'--flow-tolerance',str(args.flow_tolerance)],f'thermal-{across}')
             execute([binaries['flow_cli'],'--mesh',mesh,'--output',flow,'--case','taylor-green',
-                     '--time-step',str(args.dt),'--steps',str(args.steps),'--nu','.1','--speed','1','--tolerance','1e-8',
+                     '--time-step',str(args.dt),'--steps',str(args.steps),'--nu','.1','--speed','1','--tolerance',str(args.flow_tolerance),
                      '--convection','limited-linear','--pressure-preconditioner','aggregation','--profile',
                      '--velocity-relaxation',str(args.velocity_relaxation)],f'flow-{across}')
-            execute([sys.executable,Path(__file__).resolve(),'--audit-prefix',prefix,'--flow-prefix',flow,'--output',directory/'audit.json'],f'audit-{across}')
+            execute([sys.executable,Path(__file__).resolve(),'--audit-prefix',prefix,'--flow-prefix',flow,'--output',directory/'audit.json','--flow-tolerance',str(args.flow_tolerance)],f'audit-{across}')
             record=read(directory/'audit','.json');report['cases'].append(record);save()
             scalar.require(record['valid'],'independent thermal/flow audit failed')
             scalar.require(record['reference']['cells']==across**2,'mesh did not produce requested square grid')
@@ -283,15 +325,18 @@ def main():
     p.add_argument('--dt',type=float,default=.005);p.add_argument('--steps',type=int,default=2)
     p.add_argument('--timeout',type=float,default=180.)
     p.add_argument('--velocity-relaxation',type=float,default=.6)
+    p.add_argument('--flow-tolerance',type=float,default=None)
     p.add_argument('--reuse-mesh-study',type=Path,help='Reuse already generated nN/mesh/square.solver.cm2d files; never copy or modify them')
     for name in ('mesh','flow','transport'):p.add_argument('--'+name+'-cli',type=Path,default=Path('build/cartmesh2d_'+('cli' if name=='mesh' else name+'_cli')))
     a=p.parse_args()
     if not math.isfinite(a.timeout) or not 0<a.timeout<=300:p.error('timeout must be in (0,300] seconds')
     if not math.isfinite(a.velocity_relaxation) or not 0<a.velocity_relaxation<=1:p.error('velocity relaxation must be in (0,1]')
+    if a.flow_tolerance is not None and (not math.isfinite(a.flow_tolerance) or a.flow_tolerance<=0):p.error('flow tolerance must be finite and positive')
     if a.audit_prefix:
         if not a.flow_prefix:p.error('--flow-prefix required for audit')
-        result=audit(a.audit_prefix,a.flow_prefix,a.output)
+        result=audit(a.audit_prefix,a.flow_prefix,a.output,a.flow_tolerance)
     else:
+        if a.flow_tolerance is None:a.flow_tolerance=1e-8
         if len(a.cells_across)<3 or any(n<4 or n>1024 for n in a.cells_across) or any(b<=a for a,b in zip(a.cells_across,a.cells_across[1:])):p.error('at least three increasing cells-across values in [4,1024] required')
         if a.steps<1 or not math.isfinite(a.dt) or a.dt<=0:p.error('positive dt/steps required')
         result=generate(a)

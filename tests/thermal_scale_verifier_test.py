@@ -60,6 +60,10 @@ class ThermalScaleMathTests(unittest.TestCase):
         def case(h, scalar_error, velocity_error, **overrides):
             reference = dict(h=h, dt=.01, steps=2, time=.02, nu=.1,
                              diffusivity=.02, speed=1., velocityRelaxation=.6,
+                             coupledFlowTolerance=1e-8, flowTolerance=1e-8,
+                             coupledFlowToleranceStatus='explicit-thermal-flow-json',
+                             flowToleranceStatus='explicit-flow-json',
+                             scalarRelativeTolerance=1e-9, scalarAbsoluteTolerance=1e-12, scalarCellTolerance=1e-9,
                              scalarBackwardEulerL2=scalar_error,
                              velocityBackwardEulerL2=velocity_error)
             reference.update(overrides)
@@ -74,7 +78,7 @@ class ThermalScaleMathTests(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 VERIFY.series_checks(bad)
-        for key,value in [('steps',3),('time',.03),('nu',.2),('diffusivity',.04),('speed',2.)]:
+        for key,value in [('steps',3),('time',.03),('nu',.2),('diffusivity',.04),('speed',2.),('flowTolerance',2e-8),('coupledFlowTolerance',2e-9),('scalarRelativeTolerance',2e-9)]:
             with self.assertRaises(ValueError):
                 VERIFY.series_checks([case(.2,.3,.2),case(.1,.2,.1,**{key:value}),case(.05,.1,.05)])
         nondecreasing = VERIFY.series_checks(
@@ -86,6 +90,10 @@ class ThermalScaleMathTests(unittest.TestCase):
             return {"valid": valid, "reference": {
                 "h": h, "dt": .01, "steps": 2, "time": .02, "nu": .1,
                 "diffusivity": .02, "speed": 1., "velocityRelaxation": .6,
+                "coupledFlowTolerance": 1e-8, "flowTolerance": 1e-8,
+                "coupledFlowToleranceStatus": "explicit-thermal-flow-json",
+                "flowToleranceStatus": "explicit-flow-json",
+                "scalarRelativeTolerance": 1e-9, "scalarAbsoluteTolerance": 1e-12, "scalarCellTolerance": 1e-9,
                 "scalarBackwardEulerL2": scalar_error,
                 "velocityBackwardEulerL2": velocity_error,
             }}
@@ -102,6 +110,8 @@ class ThermalScaleMathTests(unittest.TestCase):
                     [sys.executable, str(VERIFY_PATH), "--output", str(Path(name) / "study"),
                      *extra], text=True, capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 2, result.stderr)
+            result = subprocess.run([sys.executable, str(VERIFY_PATH), "--output", str(Path(name) / "bad-flow-tol"), "--flow-tolerance", "nan"], text=True, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 2, result.stderr)
 
 
 class ThermalScaleArtifactTests(unittest.TestCase):
@@ -215,6 +225,32 @@ class ThermalScaleArtifactTests(unittest.TestCase):
         self.assertEqual(Path(str(prefix)+'.checkpoint').read_bytes(),
                          Path(str(self.flow)+'.checkpoint').read_bytes())
 
+    def test_generate_small_nondefault_flow_tolerance_is_propagated_and_series_checked(self):
+        study_dir = self.root / 'generated-tolerance-1e-9'
+        command = [sys.executable, str(VERIFY_PATH), '--output', study_dir,
+                   '--cells-across', '6', '10', '14', '--flow-tolerance', '1e-9',
+                   '--timeout', '30', '--mesh-cli', self.mesh_cli,
+                   '--flow-cli', self.flow_cli, '--transport-cli', self.transport_cli]
+        result = subprocess.run(command, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+        report = json.loads((study_dir / 'study.json').read_text())
+        self.assertEqual(report['flowTolerance'], 1e-9)
+        self.assertTrue(report['spatial']['valid'])
+        for case in report['cases']:
+            reference = case['reference']
+            self.assertEqual(reference['coupledFlowTolerance'], 1e-9)
+            self.assertEqual(reference['flowTolerance'], 1e-9)
+            self.assertEqual(reference['coupledFlowToleranceStatus'], 'explicit-thermal-flow-json')
+            self.assertEqual(reference['flowToleranceStatus'], 'explicit-flow-json')
+        flow_tolerances=[]; solver_tolerances=[]
+        for run in report['runs']:
+            command=[str(x) for x in run['command']]
+            for i,token in enumerate(command[:-1]):
+                if token == '--flow-tolerance': flow_tolerances.append(float(command[i+1]))
+                if token == '--tolerance': solver_tolerances.append(float(command[i+1]))
+        self.assertGreaterEqual(sum(math.isclose(x,1e-9,rel_tol=0,abs_tol=1e-15) for x in flow_tolerances), 3)
+        self.assertGreaterEqual(sum(math.isclose(x,1e-9,rel_tol=0,abs_tol=1e-15) for x in solver_tolerances), 3)
+
     @classmethod
     def tearDownClass(cls):
         if hasattr(cls, "tmp"):
@@ -237,6 +273,21 @@ class ThermalScaleArtifactTests(unittest.TestCase):
         self.assertEqual(result["cells"], 196)
         self.assertGreater(result["scalarContinuousL2"], result["scalarBackwardEulerL2"])
         self.assertGreater(result["velocityContinuousL2"], result["velocityBackwardEulerL2"])
+        self.assertEqual(result["coupledFlowTolerance"], 1e-8)
+        self.assertEqual(result["flowTolerance"], 1e-8)
+
+        legacy, legacy_flow = self.copy_case("legacy-missing-flow-tolerance")
+        legacy_metadata = json.loads(Path(str(legacy) + ".json").read_text())
+        legacy_metadata.pop("flowTolerance", None)
+        Path(str(legacy) + ".json").write_text(json.dumps(legacy_metadata))
+        legacy_result = VERIFY.reference_errors(legacy, legacy_flow)
+        self.assertEqual(legacy_result["coupledFlowToleranceStatus"], "legacy-unknown")
+        explicit_null, explicit_null_flow = self.copy_case("explicit-null-flow-tolerance")
+        null_metadata = json.loads(Path(str(explicit_null) + ".json").read_text())
+        null_metadata["flowTolerance"] = None
+        Path(str(explicit_null) + ".json").write_text(json.dumps(null_metadata))
+        with self.assertRaises(ValueError):
+            VERIFY.reference_errors(explicit_null, explicit_null_flow)
 
         for suffix, mutate in (
             (".cells.csv", self._swap_first_two_cells),
@@ -252,6 +303,13 @@ class ThermalScaleArtifactTests(unittest.TestCase):
         checkpoint.write_text(checkpoint.read_text() + "\n")
         with self.assertRaises(ValueError):
             VERIFY.reference_errors(bad, bad_flow)
+
+        bad, bad_flow = self.copy_case("bad-flow-tolerance")
+        flow_metadata = json.loads(Path(str(bad_flow) + ".json").read_text())
+        flow_metadata["tolerance"] = 2e-8
+        Path(str(bad_flow) + ".json").write_text(json.dumps(flow_metadata))
+        with self.assertRaises(ValueError):
+            VERIFY.reference_errors(bad, bad_flow, expected_flow_tolerance=1e-8)
 
         bad, bad_flow = self.copy_case("bad-relaxation")
         metadata = json.loads(Path(str(bad) + ".json").read_text())

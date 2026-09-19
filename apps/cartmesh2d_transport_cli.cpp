@@ -303,7 +303,9 @@ int main(int argc,char**argv) {
             <<",\n\"verificationSpeed\":"<<speed<<",\n\"constantSource\":"<<source<<",\n\"initialValue\":"<<initial
             <<",\n\"flowNu\":"<<flowControls.nu<<",\n\"flowSpeed\":"<<flowControls.speed
             <<",\n\"flowVelocityRelaxation\":"<<flowControls.velocityRelaxation
-            <<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
+            <<",\n\"flowTolerance\":";
+        if(evolving) json<<flowControls.tolerance; else json<<"null";
+        json<<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"outletBackflow\":"<<quote(flowControls.outletBackflow==fv::OutletBackflow2D::NormalInlet?"normal-inlet":"reject")
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")

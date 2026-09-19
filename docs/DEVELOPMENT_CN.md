@@ -236,6 +236,8 @@ python3 tools/verification/verify_thermal_scale.py --output outputs/thermal-scal
 python3 tools/visualization/render_thermal_scale.py --study outputs/thermal-scale-new/study.json --output outputs/thermal-scale-new/preview.png
 ```
 
+可用 `--flow-tolerance 1e-10` 做显式迭代敏感性对照，生成默认仍为1e-8；同一值传入transport和独立flow，不能将不同容差混为同一空间细化序列。结果分别记录coupledFlowTolerance、flowTolerance，以及标量三个停止条件。transport JSON的flowTolerance只在同步模式表示实际载流控制，冻结模式为null。历史同步结果缺失此字段可用不带期望容差的 `--audit-prefix` 单例复查，标记unknown，严格系列拒绝；显式给出 `--flow-tolerance` 时要求两边实际元数据都匹配，不用期望值补造历史记录。新驱动的这一选项不改变App默认设置，也不是全软件精度及格线。
+
 默认步长 `.005`、2步、nu=.1、D=.02、Uref=1，固定物性与有限时间；不是长时间或湍流验证。默认系数仍为 `.6`，上面 `.8` 是显式对照设置，不能推广成所有工况推荐值。单进程时间预算最多300秒、磁盘不足1.5 GiB前停止；超时/失败留存并返回非零。`--reuse-mesh-study PATH`可读取此前同工具生成的 `nN/mesh/square.solver.cm2d`，不复制大网格，记录输入SHA。审核真实单元数、几何、最终逐面/逐格守恒、时间项和面通量；同步载流必须与同设置独立求解的checkpoint逐字节相同，各步接受历史和迭代数相符。未独立存档所有中间场，不能声称逐步全部重算审核。
 
 对这一个相切解析涡，标量 `sin(pi*x)sin(pi*y)` 的对流项解析为零；与速度的衰减率分别为 `2*pi²*D` 和 `2*pi²*nu`。同时报告连续指数解和空间连续、时间按后向欧拉的参考幅值 `(1+rate*dt)^(-steps)`。前者含时间离散误差；后者有助区分网格细化效果，但仍含空间、载流和迭代误差。三档校验固定物性/步长/终止时间/松弛，报告观测阶与误差趋势，不设通用工程精度分数。绘图读取实际最终CM2D及字段，失败研究不会被渲染成通过图。
