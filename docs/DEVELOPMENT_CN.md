@@ -245,6 +245,22 @@ python3 tools/verification/compare_cavity_centrelines.py --reference-root output
 
 比较器只读取已有结果，核对数组/CSV哈希、有限值和规则网格完整性；目前限定196/900/3,844格、单位方腔、速度1、ν=.01。FVM 在实际单元中心上做张量积线性插值，并加入真实壁面中心线值，与33/65/129节点参考在101个共同位置比较；原始 summary 的失败系列完整保留。坐标取12位仅用于识别行列，不改动求解网格或场值。FD 深处散度与壁面相邻散度分开报告，不能据此声称所有单元有限体积守恒。
 
+### 方腔独立公开参考复核
+
+`audit_cavity_reference.py`并排使用旧Ghia表与Marchi等2009表6/7；只针对单位方腔Re100。数据在`tools/verification/references/cavity-marchi-2009-re100.json`，包含原文DOI、PDF哈希、页码及估计误差。两组均使用相同的仿射取样实现和既有细化规则，保持旧失败可见，不把外推数值当成解析真解。
+
+```sh
+# 新目录：原生生成、串行求解、独立读回；默认三档196/900/3844格。
+python3 tools/verification/audit_cavity_reference.py --generate outputs/cavity-reference-new --output outputs/cavity-reference-new/audit.json
+# 加上 --levels 4 5 6 7 可扩展至15876格；默认单例预算360秒。
+# 重审已有完整输出，不启动求解器：
+python3 tools/verification/audit_cavity_reference.py --runs outputs/cavity-reference-new/runs.json --output outputs/cavity-reference-new/recheck.json
+```
+
+生成模式固定nu=.01、速度1、限制重构、对称应力、聚合预条件及容差1e-8；原生上限20000轮。既有目录拒绝覆盖，失败/超时保留日志与已产生的manifest。复审核对实际返回码、网格/二进制哈希、命令和摘要、单位几何、同格式同容差；至少三档并保持同一生产二进制，该二进制需仍在原路径可读取。不同版本请新生成一组，不混用旧场。参考估计误差用于呈现敏感性范围，不用来放宽原生容差。
+
+当前预期是`independentAuditsPassed:true`、`publishedSequence.valid:true`、`ghiaSequence.valid:false`、`allChecksPassed:false`，退出1。退出码保留未通过检查，不是求解进程失败。两份参考的坐标集合不同，各序列的误差只在自身固定采样点上比较。新的公开参考说明旧表单调误差门的局限，但没有删除或重写旧门。
+
 ### 稀疏结构与压力预条件
 
 流动系统的非对角项采用固定、按列排序的 CSR 连接表，重复连接共享同一项并相加；动量、压力与残差检查矩阵复用该结构，数组清零后重新组装。U/V/压力按顺序共享线性工作区，矩阵乘向量不再每步分配结果。自然单元编号不重排，物理单元 ID 不变。
