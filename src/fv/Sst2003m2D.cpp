@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/Sst2003m2D.hpp"
+#include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -118,6 +119,46 @@ FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
     result.omega=solveScalarTransport2D(mesh,wp,controls,previousOmega,dt);
     converged(result.omega,"omega");
     require(result.omega.minValue>0,"SST-2003m nonpositive omega after transport; no clipping applied");
+    return result;
+}
+
+Sst2003mGradients2D reconstructSst2003mGradients2D(const FvMesh2D& mesh,
+    const FrozenSst2003mProblem2D& p,const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& bc) {
+    validateFvMesh2D(mesh);
+    const auto n=mesh.cells.size(),nf=mesh.faces.size();
+    require(n>0&&p.k.size()==n&&p.omega.size()==n&&velocity.size()==n&&bc.size()==nf&&
+        p.boundaryK.size()==nf&&p.boundaryOmega.size()==nf,"SST gradient field dimensions mismatch");
+    boundaries(mesh,p.boundaryK,true);boundaries(mesh,p.boundaryOmega,false);
+    std::vector<double> u(n),v(n),ub(nf),vb(nf),kb(nf),wb(nf);
+    std::vector<bool> uf(nf),vf(nf),kf(nf),wf(nf);
+    for(std::size_t i=0;i<n;++i) {
+        nonnegative(p.k[i]);positive(p.omega[i]);
+        u[i]=checked(velocity[i].x);v[i]=checked(velocity[i].y);
+    }
+    for(std::size_t id=0;id<nf;++id) {
+        if(mesh.faces[id].neighbour)continue;
+        const auto scalar=[&](const ScalarBoundary2D& b,double& value,std::vector<bool>& fixed) {
+            require(b.kind==ScalarBoundaryKind2D::Value||b.kind==ScalarBoundaryKind2D::DiffusiveFlux,
+                "SST gradient invalid boundary kind");
+            if(b.kind==ScalarBoundaryKind2D::DiffusiveFlux)
+                require(b.value==0,"SST gradient requires zero diffusive flux or a value boundary");
+            value=checked(b.value);fixed[id]=b.kind==ScalarBoundaryKind2D::Value;
+        };
+        scalar(p.boundaryK[id],kb[id],kf);scalar(p.boundaryOmega[id],wb[id],wf);
+        ub[id]=checked(bc[id].value.x);vb[id]=checked(bc[id].value.y);
+        uf[id]=bc[id].fixedX;vf[id]=bc[id].fixedY;
+    }
+    Sst2003mGradients2D result;
+    result.k=detail::flowGradient(mesh,p.k,kb,kf);result.omega=detail::flowGradient(mesh,p.omega,wb,wf);
+    result.u=detail::flowGradient(mesh,u,ub,uf);result.v=detail::flowGradient(mesh,v,vb,vf);
+    result.strainMagnitude.resize(n);
+    for(std::size_t i=0;i<n;++i) {
+        // sqrt(2 ux^2 + 2 vy^2 + (uy+vx)^2). Off-diagonal tensor
+        // components occur twice; rigid rotation must give zero production.
+        result.strainMagnitude[i]=checked(std::hypot(std::sqrt(2.)*result.u[i].x,
+            std::sqrt(2.)*result.v[i].y,checked(result.u[i].y+result.v[i].x)));
+    }
     return result;
 }
 }

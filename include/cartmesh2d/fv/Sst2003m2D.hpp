@@ -35,6 +35,23 @@ struct FrozenSst2003mResult2D {
     ScalarTransportResult2D k, omega;
     std::vector<Sst2003mCoefficients2D> coefficients;
 };
+struct SstVelocityBoundary2D {
+    Vector2D value{};
+    // Each unset component has zero normal derivative, not zero value.
+    bool fixedX = false, fixedY = false;
+};
+struct Sst2003mGradients2D {
+    std::vector<Vector2D> k, omega, u, v;
+    std::vector<double> strainMagnitude;
+};
+// Least-squares reconstruction from actual cell and face data. Turbulence BCs
+// may be fixed values or ZERO diffusive flux only (nonzero flux requires known
+// effective diffusivity and is explicitly rejected here). Velocity components
+// independently accept fixed values or zero-normal derivatives.
+[[nodiscard]] Sst2003mGradients2D reconstructSst2003mGradients2D(
+    const FvMesh2D&, const FrozenSst2003mProblem2D&,
+    const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& velocityBoundary);
 // One frozen nonlinear iteration: evaluate closure at p.k/omega, linearly
 // interpolate cell diffusivities to internal face centres with mesh weights,
 // use owner diffusivity at boundary faces, solve k and omega with implicit loss.

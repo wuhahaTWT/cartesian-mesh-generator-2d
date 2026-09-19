@@ -1,0 +1,307 @@
+{
+  "valid": true,
+  "scope": "spatial closure reconstruction and one frozen SST iteration, NOT nonlinear RANS convergence",
+  "cases": {
+    "study": [
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+        "meshSha256": "f10e56b4ab911a1e72c80f25feacc4f72ea1858c355482655381e8e8e37bd1f0",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l4",
+        "cells": 196,
+        "wallSegments": 14,
+        "segmentTests": 1372,
+        "bruteForceSegmentTests": 2744,
+        "maxDistanceError": 1.1102230246251565e-16,
+        "maxAffineGradientError": 7.327471962526033e-15,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 1.0185887129332898e-13,
+            "residualNorm": 4.370953240104495e-13,
+            "nativeNormTarget": 1.915006455081161e-12,
+            "globalBalance": 5.138647753838432e-12,
+            "maxConstitutiveError": 2.168404344971009e-19
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 3.011855707790693e-12,
+            "residualNorm": 1.69489865965617e-11,
+            "nativeNormTarget": 3.3266652028101927e-10,
+            "globalBalance": 2.2747623749930224e-10,
+            "maxConstitutiveError": 8.348356728138384e-18
+          }
+        },
+        "files": {
+          ".cells.csv": "d3bff3f35fb43579ff4a53198518af35d977dfc4330d06701b04071fb7c06f85",
+          ".faces.csv": "28269353bb7b77a5a6bc999315bfdc8d1800a8c71989f409e8c8bcf44b806f0f",
+          ".json": "9de90deeb0e595217b91df19470e887cfaa306391098b4252ed5f214a50f2bfb"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l4"
+        ],
+        "wallSeconds": 0.025332249992061406
+      },
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d",
+        "meshSha256": "79517df9b652b60fce01256ccf1e97aa8a2e7a6a7447804de629c61c87c3de8a",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l5",
+        "cells": 900,
+        "wallSegments": 30,
+        "segmentTests": 6780,
+        "bruteForceSegmentTests": 27000,
+        "maxDistanceError": 5.551115123125783e-17,
+        "maxAffineGradientError": 1.532107773982716e-14,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 1.0307974708744569e-13,
+            "residualNorm": 2.161499514689149e-13,
+            "nativeNormTarget": 9.534280377163095e-13,
+            "globalBalance": 4.771276838791243e-12,
+            "maxConstitutiveError": 2.168404344971009e-19
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 2.525720211347477e-12,
+            "residualNorm": 8.038023536924714e-12,
+            "nativeNormTarget": 1.5618325476410336e-10,
+            "globalBalance": 2.3072786953584612e-10,
+            "maxConstitutiveError": 8.673617379884035e-18
+          }
+        },
+        "files": {
+          ".cells.csv": "aa8cda66c8eeed01a6a3456d4f6090fb53c52c39bd24ac9fb49e6cd15f81f88e",
+          ".faces.csv": "70c892ef25f64744331aefc39e65d8fba5153498a8340991da37f9f79345dad5",
+          ".json": "016cb355409e22ee645c3bd077b0d832cd0e2af8002e257ff9e40ed76da1c03b"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l5/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l5"
+        ],
+        "wallSeconds": 0.10076012500212528
+      },
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l6/mesh.solver.cm2d",
+        "meshSha256": "557f28bdf57b61c6acb8dab1f5559e3ae2251c1af4b106f68b371617675b2139",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l6",
+        "cells": 3844,
+        "wallSegments": 62,
+        "segmentTests": 29884,
+        "bruteForceSegmentTests": 238328,
+        "maxDistanceError": 1.1102230246251565e-16,
+        "maxAffineGradientError": 2.475797344914099e-14,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 4.0799768596548556e-13,
+            "residualNorm": 5.111094480912504e-13,
+            "nativeNormTarget": 5.20773672077598e-13,
+            "globalBalance": 2.824348548970541e-11,
+            "maxConstitutiveError": 8.004461351553138e-20
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 7.49384381654913e-12,
+            "residualNorm": 1.9043170689824575e-11,
+            "nativeNormTarget": 7.667009384511239e-11,
+            "globalBalance": 1.1328964076530099e-09,
+            "maxConstitutiveError": 1.3877787807814457e-17
+          }
+        },
+        "files": {
+          ".cells.csv": "99d4a66f25465d2b5b4c062fb1b7d491bf51b7ff99eff0d7f4a9d8c61ac138c3",
+          ".faces.csv": "0d97d0dd2b2ad3dba6970857ad1f2338c83be7d393b7f692d38744c7a94e54e9",
+          ".json": "1de6a5d4c1134932b7662a6cdd2536f2ce99b04473ecc614cd1f8695664eac71"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l6/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-study-l6"
+        ],
+        "wallSeconds": 0.4827114579966292
+      }
+    ],
+    "shear": [
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+        "meshSha256": "bd8167bb4af87d8b0134d4863a57251f861a489199ae73bf7acd1e49613259d2",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l4",
+        "cells": 176,
+        "wallSegments": 12,
+        "segmentTests": 1056,
+        "bruteForceSegmentTests": 2112,
+        "maxDistanceError": 1.1102230246251565e-16,
+        "maxAffineGradientError": 2.2315482794965646e-14,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 1.4715332627955633e-13,
+            "residualNorm": 4.871730505224095e-13,
+            "nativeNormTarget": 2.0811338300256245e-12,
+            "globalBalance": 5.473140088027228e-12,
+            "maxConstitutiveError": 2.168404344971009e-19
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 3.4845614170277745e-12,
+            "residualNorm": 1.8691169319941074e-11,
+            "nativeNormTarget": 3.6038628007078335e-10,
+            "globalBalance": 2.3283909565016106e-10,
+            "maxConstitutiveError": 2.7755575615628914e-17
+          }
+        },
+        "files": {
+          ".cells.csv": "cf88bbe7002d271e1308d20c53eff763e8ae2a15bd4ebdd499978402bb6cdba6",
+          ".faces.csv": "c2ed73c13c9726728402d2a36fa08dd86839e602a246c39bf4c992a5f6237c9a",
+          ".json": "10adcb635de132a9a9cae9e4ddaaebc8adecf2f9634c48077c6013fe283f6f86"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l4/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l4"
+        ],
+        "wallSeconds": 0.024303625017637387
+      },
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l5/mesh.solver.cm2d",
+        "meshSha256": "f2ea5bc446baf7cad8b2bb63fc66c8ce281ff8dc94c0b06d0205e6c48e0b11a4",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l5",
+        "cells": 782,
+        "wallSegments": 25,
+        "segmentTests": 4993,
+        "bruteForceSegmentTests": 19550,
+        "maxDistanceError": 2.220446049250313e-16,
+        "maxAffineGradientError": 7.488454301096681e-14,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 2.9461844879525353e-12,
+            "residualNorm": 3.9144852969036825e-13,
+            "nativeNormTarget": 1.0409610654604118e-12,
+            "globalBalance": 5.659858346925822e-13,
+            "maxConstitutiveError": 1.5797164466292701e-19
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 4.397150796091205e-12,
+            "residualNorm": 5.237163044515756e-13,
+            "nativeNormTarget": 1.708311855865777e-10,
+            "globalBalance": 5.672572149402884e-13,
+            "maxConstitutiveError": 2.7755575615628914e-17
+          }
+        },
+        "files": {
+          ".cells.csv": "ad1e53ed406d39ae7b6f7948da4535416e2f7e889a491c07a5fe0ba1d896d789",
+          ".faces.csv": "9178f0d287518404d77fe5a5a8c00d0a66cef10ddae68eabfbe5692549d276eb",
+          ".json": "cb7b460f64313ec40c89d8c5c5b99747ebc88ed8847ac6f6b29a977fd6752377"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l5/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l5"
+        ],
+        "wallSeconds": 0.09499829198466614
+      },
+      {
+        "valid": true,
+        "scope": "one-frozen-SST-transport-iteration",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l6/mesh.solver.cm2d",
+        "meshSha256": "547b2620d664859e3c09a0a39f8cfce515eafd1d7c66c08b9ea09a9ed051491f",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l6",
+        "cells": 3268,
+        "wallSegments": 52,
+        "segmentTests": 21633,
+        "bruteForceSegmentTests": 169936,
+        "maxDistanceError": 2.220446049250313e-16,
+        "maxAffineGradientError": 1.4721557306529576e-13,
+        "balance": {
+          "k": {
+            "maxDiagonalScaledResidual": 2.0344928477202193e-12,
+            "residualNorm": 2.6063732751572035e-13,
+            "nativeNormTarget": 5.697213762288703e-13,
+            "globalBalance": 7.198579087668193e-13,
+            "maxConstitutiveError": 1.6263032587282567e-19
+          },
+          "omega": {
+            "maxDiagonalScaledResidual": 5.848243280033221e-12,
+            "residualNorm": 6.238077891218114e-13,
+            "nativeNormTarget": 8.463835435511184e-11,
+            "globalBalance": 7.994393582528336e-13,
+            "maxConstitutiveError": 1.7171051906739176e-17
+          }
+        },
+        "files": {
+          ".cells.csv": "a30dca3c6b488e3551f49a5bd824c8c3f1ffc5fa45586296cb74e81da5055972",
+          ".faces.csv": "35c544b5ec95d81957d73304df6d2169847c8440d8e775650b2294127d6e5549",
+          ".json": "ac48a7d80244d592c4dd235c8ff39ec36d707a5eb9c6a6a8bc931b36736f52e0"
+        },
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_spatial_tests",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/shear/meshes/l6/mesh.solver.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/final-shear-l6"
+        ],
+        "wallSeconds": 0.42421837500296533
+      }
+    ]
+  },
+  "probeSha256": "2a5249358d0f7f85660665aee08b48915cc2f4b55906485b24cbdd267af94785",
+  "wallDistanceScale": {
+    "valid": true,
+    "scope": "all-cell rectangular distance only",
+    "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/thermal-scale/qualification/n320/mesh/square.solver.cm2d",
+    "meshSha256": "a1cadfc536a5733bea79e77e3209ea072eeac1d7732ad33df44537a913fe2935",
+    "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/distance-102400",
+    "allCellsAudited": 102400,
+    "maxError": 1.1102230246251565e-16,
+    "cells": 102400,
+    "wallSegments": 1280,
+    "segmentTests": 514690,
+    "distanceSeconds": 0.065189875,
+    "bruteForceSegmentTests": 131072000,
+    "csvSha256": "9a0c94e1e6f59f004bebb3ba347bcd129ad71cf3314d0af54a5d9094bbbfe10a",
+    "metaSha256": "6d2100ee241d8914145417c6a8a8a3339f24186f4839faab04768998252ed28f",
+    "probeSha256": "3b5c3ec27cf9f06c087688d73c908ab157a192088013f0f1fff70e4596a915d4",
+    "command": [
+      "build/cartmesh2d_wall_distance_tests",
+      "outputs/native-flow/thermal-scale/qualification/n320/mesh/square.solver.cm2d",
+      "outputs/native-flow/sst-spatial/distance-102400"
+    ]
+  },
+  "externalOpenFOAM": "not run",
+  "desktop": "unchanged 0.4.11",
+  "platform": "macOS system clang",
+  "validation": {
+    "ctest": {
+      "passed": 124,
+      "total": 124,
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/ctest.log",
+      "sha256": "cd91457c66298512e0390a506ed12e074fe3270cb7fe6c79675d01d64e038cb0"
+    },
+    "frontend": {
+      "passed": 140,
+      "total": 140,
+      "log": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-spatial/frontend.log",
+      "sha256": "686b00ffccadcb16be46a8776dc53c67e08f357ac3cc2d9c4038d596ff36d069"
+    }
+  },
+  "sourcesSha256": {
+    "include/cartmesh2d/fv/WallDistance2D.hpp": "b3a76e7ba36630f8fdce4d9bc0981bd2b6a2181870bc12a6984e5fc1eacc2e1f",
+    "src/fv/WallDistance2D.cpp": "d577fa050836e8b5588a83c08e9bbbd7f6c74123e22259175d2c6f8bf87a0660",
+    "include/cartmesh2d/fv/Sst2003m2D.hpp": "ca491559fbe78ad93a53a55f37c54ccfb04ca724d39ad1803e716e7fa01b7c44",
+    "src/fv/Sst2003m2D.cpp": "acf79934498f3bb40763eca7f002b2d793fd75b408d1ebd5f2fc32ce0445549f",
+    "tests/sst_spatial_test.cpp": "7f5d5c0a2c8917ec56e018b8dd6cbcb9ef45be7396b8f824fd61a02a3ff46389",
+    "tests/wall_distance_test.cpp": "0c6c7a37c23068b1b6f39b26fa065ead4f3715e20f34c939339c6d52b405a4c5",
+    "tools/verification/verify_sst_spatial.py": "b06fe64e3fd32c8b382994ff2470fffd424814c265555b98d13fc750549651dd",
+    "tools/verification/verify_wall_distance.py": "6d4337b55f8346e55ce5636ff6c06eaeb7547a2fdb2876db17178cd0a377f841"
+  },
+  "timingScope": "single M1/macOS run; distance module includes cache validation, BVH build and cell queries only; excludes mesh read, export, independent audit",
+  "resources": {
+    "perProcessTimeoutSeconds": 90,
+    "diskFloorGiB": 1.5,
+    "largeMeshReused": true
+  },
+  "sourceCommitBeforeChanges": "88ef228"
+}

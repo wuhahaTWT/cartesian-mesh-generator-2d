@@ -99,6 +99,27 @@ void frozenSourceSplit() {
         near(r.omega.sinkIntegrals[0],c.lossRateOmega*r.omega.values[0],1e-12,"reported omega loss");
     }
 }
+void reconstructedBoundaryDerivatives() {
+    const auto m=oneCell();auto p=problem(m);
+    // Affine k=.02+.004*x; omega=4+.4*x, values on vertical sides,
+    // zero normal derivative on horizontal sides.
+    p.k[0]=.022;p.omega[0]=4.2;
+    std::vector<SstVelocityBoundary2D> bc(m.faces.size());
+    for(std::size_t id=0;id<m.faces.size();++id) {
+        const auto& f=m.faces[id];const bool fixed=std::abs(f.areaVector.x)>0;
+        if(fixed) {
+            p.boundaryK[id]={ScalarBoundaryKind2D::Value,.02+.004*f.centre.x,{}};
+            p.boundaryOmega[id]={ScalarBoundaryKind2D::Value,4+.4*f.centre.x,{}};
+        }
+        bc[id]={{f.centre.x,2},fixed,false};
+    }
+    const auto g=reconstructSst2003mGradients2D(m,p,{{.5,2}},bc);
+    near(g.k[0].x,.004,1e-15,"mixed boundary k derivative");near(g.k[0].y,0,0,"zero flux k derivative");
+    near(g.omega[0].x,.4,1e-14,"mixed omega derivative");
+    near(g.strainMagnitude[0],std::sqrt(2.),1e-14,"normal strain includes diagonal tensor terms");
+    rejects([&]{(void)reconstructSst2003mGradients2D(m,p,{},bc);},"dimensions");
+    p.k[0]=-1;rejects([&]{(void)reconstructSst2003mGradients2D(m,p,{{.5,2}},bc);},"nonnegative");
+}
 // Homogeneous no-shear decay is an ODE limit of the TWO PDEs. Wall distance is
 // prescribed to saturate F1=1, not claimed to represent a physical wall domain.
 // Converge the frozen iterations against the ORIGINAL nonlinear cell residual.
@@ -159,7 +180,7 @@ void decay(const FvMesh2D& mesh,double dt,int steps,const std::string& prefix) {
 }
 int main(int argc,char** argv) {
     try {
-        coefficients();invalidTransport();frozenSourceSplit();
+        coefficients();invalidTransport();frozenSourceSplit();reconstructedBoundaryDerivatives();
         if(argc==1) {decay(oneCell(),.2,4,"");return 0;}
         check(argc==5,"usage: sst_transport_tests [mesh.cm2d outputPrefix dt steps]");
         const auto read=readCm2dTopology(argv[1]);check(read.valid(),"invalid real mesh");

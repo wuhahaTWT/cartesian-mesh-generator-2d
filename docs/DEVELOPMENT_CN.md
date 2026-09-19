@@ -274,7 +274,24 @@ build/cartmesh2d_flow_cli --mesh /path/unit-square.solver.cm2d --output outputs/
 python3 tools/verification/verify_sst_decay.py --probe build/cartmesh2d_sst_transport_tests --mesh /path/final.solver.cm2d --output outputs/sst-decay
 ```
 
-驱动对给定F1=1、无梯度/剪切的均匀衰减反复执行冻结步骤，检查原非线性残差；分别比较后向欧拉解析根与连续ODE参考，进行三档时间步细化。Python读取实际CM2D/全部最终单元/面及历史代表值进行独立审核，并有篡改拒绝测试。这不构成壁面流动验证。下一步仍需空间非均匀输运、真实壁面距离与近壁处理、完整速度压力耦合/压力定义、标准平板及分离工况证据；当前无产品SST开关，也没有自动湍流热扩散或温度相关物性。
+驱动对给定F1=1、无梯度/剪切的均匀衰减反复执行冻结步骤，检查原非线性残差；分别比较后向欧拉解析根与连续ODE参考，进行三档时间步细化。Python读取实际CM2D/全部最终单元/面及历史代表值进行独立审核，并有篡改拒绝测试。这不构成壁面流动验证。空间非均匀冻结输运与真实壁段距离的后续进展见下一节；仍需物理近壁处理、完整非线性及速度压力耦合/压力定义、标准平板及分离工况证据；当前无产品SST开关，也没有自动湍流热扩散或温度相关物性。
+
+### SST壁面距离与空间重建
+
+`WallDistance2D.hpp/.cpp`提供`computeWallDistance2D(mesh, wallFaces)`：wall mask按当前最终网格face ID，必须至少选一个真实boundary face；不能把内部面或所有外域边界默认当壁面。返回每格`distance`和`nearestFace`以及诊断`segmentTests`。索引只在一次调用内创建；固定网格调用者可保存距离场，不应每次非线性迭代重算。有限线段端点由直线面缓存的centre和areaVector恢复，最近点可能是端点；AABB树按几何中心/face ID确定排序，同一计算中精确等距取较小ID。没有跨编译器位级确定性的额外资格声明，也不支持曲面高阶几何。
+
+`reconstructSst2003mGradients2D(mesh, frozenProblem, velocity, velocityBoundary)`按各分量固定值/零法向导数作最小二乘。k/omega只接受Value或零DiffusiveFlux；若需要非零通量，必须后续明确有效扩散系数及迭代约定，当前显式拒绝。返回k、omega、u、v梯度和`S=sqrt(2 ux²+2 vy²+(uy+vx)²)`，将k/omega梯度及S写入冻结问题即可使用。辅助函数不替调用方选壁面、不推断壁函数、不代表非线性迭代完成。
+
+```sh
+# 指定仿射场的空间验证驱动（非产品RANS入口）：
+build/cartmesh2d_sst_spatial_tests /path/unit-domain.solver.cm2d outputs/spatial-probe
+python3 tools/verification/verify_sst_spatial.py --mesh /path/unit-domain.solver.cm2d --prefix outputs/spatial-probe --output outputs/spatial-audit.json
+# 仅距离的规模探针，选择全部外边界；独立checker限定轴对齐矩形：
+build/cartmesh2d_wall_distance_tests /path/square.solver.cm2d outputs/distance-probe
+python3 tools/verification/verify_wall_distance.py --mesh /path/square.solver.cm2d --prefix outputs/distance-probe --output outputs/distance-audit.json
+```
+
+空间驱动固定k=.02(1+.2x+.3y)、omega=4(1+.1x+.2y)、U=(y,0)、nu=1e-5、dt=.01，底部y=0边选作距离诊断；边界值固定为解析场。一次冻结输运的独立审核包含模型系数、重建后的共享面通量、原冻结矩阵norm及逐格收支。它不是完整非线性步，更不是物理近壁流动。读取器对距离/面ID/梯度/模型/源项/面通量均有篡改回归；矩形距离读取器拒绝斜边域，不能把简单解析公式套到任意几何。
 
 ### 非正交压力修正固定点
 
