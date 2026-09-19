@@ -195,6 +195,27 @@ double interpolate(const Face& f, const Vec& x) {
                        : x[f.owner];
 }
 
+double faceNu(const FlowControls2D& c, std::size_t id) {
+    return c.faceViscosity.empty()?c.nu:c.faceViscosity[id];
+}
+void validateViscosity(const FvMesh2D& m, const FlowControls2D& c) {
+    ensure(c.faceViscosity.empty() || c.faceViscosity.size()==m.faces.size(),
+           "Face viscosity dimensions mismatch");
+    for (double value:c.faceViscosity)
+        ensure(std::isfinite(value)&&value>0,"Face viscosity must be finite positive");
+    ensure(std::isfinite(c.manufacturedViscositySlope) &&
+           (c.manufacturedViscositySlope==0 || (c.scenario=="manufactured" && !c.faceViscosity.empty() && c.manufacturedViscositySlope>-1)),
+           "Manufactured viscosity slope requires manufactured case and positive face field");
+    if (!c.faceViscosity.empty()) {
+        ensure(c.scenario!="taylor-green" && c.scenario!="counterflow",
+               "Verification case does not support prescribed face viscosity");
+        if (c.scenario=="manufactured")
+            for (std::size_t id=0;id<m.faces.size();++id)
+                ensure(c.faceViscosity[id]==c.nu*(1+c.manufacturedViscositySlope*m.faces[id].centre.x),
+                       "Manufactured viscosity field differs from analytic definition");
+    }
+}
+
 void momentum(System& a,
                 const FvMesh2D& m,
                 const FlowControls2D& c,
@@ -226,7 +247,8 @@ void momentum(System& a,
         const auto& f = m.faces[id];
         const auto i = f.owner;
         const double q = flux[id];
-        const double d = c.nu * f.transmissibility;
+        const double viscosity=faceNu(c,id);
+        const double d = viscosity * f.transmissibility;
         if (!stressCorrection.empty()) {
             const double extra=y?stressCorrection[id].y:stressCorrection[id].x;
             a.rhs[i]-=extra;
@@ -239,7 +261,7 @@ void momentum(System& a,
             a.diag[j] += d + std::max(-q, 0.);
             a.add(j, i, -d - std::max(q, 0.));
             const double correction =
-                c.nu * dot(interpolateGradient(f, gradField), f.correction);
+                viscosity * dot(interpolateGradient(f, gradField), f.correction);
             const double upwind = q >= 0 ? field[i] : field[j];
             const double deferred = q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-upwind);
             a.rhs[i] += correction-deferred;
@@ -247,7 +269,7 @@ void momentum(System& a,
         } else {
             if (fixed[id]) {
                 a.diag[i] += d;
-                a.rhs[i] += d * bc[id] + c.nu * dot(gradField[i], f.correction);
+                a.rhs[i] += d * bc[id] + viscosity * dot(gradField[i], f.correction);
                 a.rhs[i] -= q * bc[id];
             } else {
                 if (q < 0 && b.role[id] == Role::Outlet &&
@@ -298,6 +320,7 @@ static FlowResult2D solveFlow(
            "Invalid viscous stress form");
     ensure(c.outletBackflow == OutletBackflow2D::Reject || c.outletBackflow == OutletBackflow2D::NormalInlet,
            "Invalid outlet backflow model");
+    validateViscosity(m,c);
     auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
@@ -389,7 +412,7 @@ static FlowResult2D solveFlow(
     if (c.scenario == "manufactured") {
         r.sourceIntegrals.reserve(n);
         for (const auto& cell : m.cells) {
-            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu,c.manufacturedPressureSlope).acceleration;
+            const auto acceleration=manufacturedFlow2D(cell.centre,c.speed,c.nu,c.manufacturedPressureSlope,c.manufacturedViscositySlope,c.viscousStress==ViscousStress2D::Symmetric).acceleration;
             r.sourceIntegrals.push_back({finite(cell.area*acceleration.x),finite(cell.area*acceleration.y)});
         }
     }
@@ -461,7 +484,7 @@ static FlowResult2D solveFlow(
         forceGradient=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP));
         stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
-            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu)
+            ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu,c.faceViscosity)
             : std::vector<Vector2D>{};
         momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,false,previous?&previous->u:nullptr,timeStep);
         momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,true,previous?&previous->v:nullptr,timeStep);
@@ -616,7 +639,7 @@ static FlowResult2D solveFlow(
             double diffusion=0;
             if(f.neighbour || fixed[id]) {
                 const double other=f.neighbour ? value[*f.neighbour] : bc[id];
-                diffusion=-c.nu*(f.transmissibility*(other-value[i])+dot(interpolateGradient(f,g),f.correction));
+                diffusion=-faceNu(c,id)*(f.transmissibility*(other-value[i])+dot(interpolateGradient(f,g),f.correction));
             }
             return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
         };
@@ -636,8 +659,8 @@ static FlowResult2D solveFlow(
         r.discreteForceX+=px+dx; r.discreteForceY+=py+dy;
         // Preserve the old cell-gradient diagnostic for explicit comparison;
         // symmetric mode reports the actual shared-face stress above as force.
-        r.reconstructedForceX+=px-c.nu*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
-        r.reconstructedForceY+=py-c.nu*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
+        r.reconstructedForceX+=px-faceNu(c,id)*(2*gu[i].x*f.areaVector.x+(gu[i].y+gv[i].x)*f.areaVector.y);
+        r.reconstructedForceY+=py-faceNu(c,id)*((gu[i].y+gv[i].x)*f.areaVector.x+2*gv[i].y*f.areaVector.y);
     }
     r.forceX=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceX:r.reconstructedForceX;
     r.forceY=c.viscousStress==ViscousStress2D::Symmetric?r.discreteForceY:r.reconstructedForceY;
@@ -666,6 +689,7 @@ FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D
     ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
            std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
            "Invalid transient initial-state controls");
+    validateViscosity(m,c);
     const auto b=boundaries(m,c); (void)b;
     FlowState2D s;
     s.u.resize(m.cells.size());s.v.resize(m.cells.size());s.p.resize(m.cells.size());s.flux.resize(m.faces.size());

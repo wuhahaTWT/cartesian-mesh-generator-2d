@@ -75,6 +75,36 @@ int main() {
     require(fixedRestored.u == original.u && fixedRestored.flux == original.flux,
             "fixed-format writer did not roundtrip");
 
+    auto variable = controls;
+    variable.faceViscosity = {.11, .17, .23, .31};
+    const auto variableText = serialized(m, variable, original);
+    require(variableText.find("CARTMESH2D_FLOW_CHECKPOINT 3\n") == 0,
+            "face viscosity writer did not emit checkpoint v3");
+    const auto viscosityLine = variableText.find("FACE_VISCOSITY 4 ");
+    require(viscosityLine != std::string::npos, "v3 checkpoint omitted face viscosity field");
+    std::istringstream variableInput(variableText);
+    const auto variableRestored = readFlowCheckpoint2D(variableInput, m, variable);
+    require(variableRestored.flux == original.flux && variableRestored.u == original.u,
+            "v3 face viscosity checkpoint did not roundtrip");
+    auto mismatchViscosity = variable;
+    mismatchViscosity.faceViscosity[2] += .01;
+    rejects([&] { std::istringstream in(variableText); (void)readFlowCheckpoint2D(in, m, mismatchViscosity); });
+    auto missingViscosity = controls;
+    rejects([&] { std::istringstream in(variableText); (void)readFlowCheckpoint2D(in, m, missingViscosity); });
+    auto badViscosity = variableText;
+    const auto valueStart = badViscosity.find("FACE_VISCOSITY 4 ") + std::string("FACE_VISCOSITY 4 ").size();
+    badViscosity.replace(valueStart, 4, "nan");
+    rejects([&] { std::istringstream in(badViscosity); (void)readFlowCheckpoint2D(in, m, variable); });
+    auto badViscosityCount = variableText;
+    badViscosityCount.replace(badViscosityCount.find("FACE_VISCOSITY 4"), 17, "FACE_VISCOSITY 3");
+    rejects([&] { std::istringstream in(badViscosityCount); (void)readFlowCheckpoint2D(in, m, variable); });
+    auto badWriter = controls;
+    badWriter.faceViscosity = {.1};
+    rejects([&] { std::ostringstream out; writeFlowCheckpoint2D(out, m, badWriter, original); });
+    auto legacyWithField = controls;
+    legacyWithField.faceViscosity = variable.faceViscosity;
+    rejects([&] { std::istringstream in(text); (void)readFlowCheckpoint2D(in, m, legacyWithField); });
+
     // Restart policy ignores iteration/relaxation controls while retaining the
     // physical/discretization identity that affects the state.
     auto relaxed = controls;

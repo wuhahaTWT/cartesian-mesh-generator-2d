@@ -47,19 +47,25 @@ inline std::vector<Vector2D> symmetricViscousCorrection(const FvMesh2D& m,
     const std::vector<Vector2D>& gu, const std::vector<Vector2D>& gv,
     const std::vector<double>& bu, const std::vector<double>& bv,
     const std::vector<bool>& fu, const std::vector<bool>& fv,
-    const std::vector<bool>& constantU, const std::vector<bool>& constantV, double nu) {
+    const std::vector<bool>& constantU, const std::vector<bool>& constantV, double nu,
+    const std::vector<double>& faceViscosity = {}) {
+    if (!faceViscosity.empty() && faceViscosity.size()!=m.faces.size())
+        throw std::runtime_error("Viscous face coefficient dimensions mismatch");
     std::vector<Vector2D> result(m.faces.size());
     for (std::size_t id=0;id<m.faces.size();++id) {
+        const double viscosity=faceViscosity.empty()?nu:faceViscosity[id];
+        if (!std::isfinite(viscosity) || viscosity<=0)
+            throw std::runtime_error("Viscous face coefficient must be finite positive");
         const auto& f=m.faces[id];
         const auto a=viscousFaceGradient(m,id,u,gu,bu,fu,constantU);
         const auto b=viscousFaceGradient(m,id,v,gv,bv,fv,constantV);
-        result[id]={-nu*(a.x*f.areaVector.x+b.x*f.areaVector.y),
-                    -nu*(a.y*f.areaVector.x+b.y*f.areaVector.y)};
+        result[id]={-viscosity*(a.x*f.areaVector.x+b.x*f.areaVector.y),
+                    -viscosity*(a.y*f.areaVector.x+b.y*f.areaVector.y)};
         if (!f.neighbour) {
             if (constantU[id] && fu[id])
-                result[id].x+=nu*(gu[f.owner].x*f.correction.x+gu[f.owner].y*f.correction.y);
+                result[id].x+=viscosity*(gu[f.owner].x*f.correction.x+gu[f.owner].y*f.correction.y);
             if (constantV[id] && fv[id])
-                result[id].y+=nu*(gv[f.owner].x*f.correction.x+gv[f.owner].y*f.correction.y);
+                result[id].y+=viscosity*(gv[f.owner].x*f.correction.x+gv[f.owner].y*f.correction.y);
         }
     }
     return result;

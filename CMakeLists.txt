@@ -187,6 +187,12 @@ if(CARTMESH2D_BUILD_TESTS)
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
         --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
         --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
+    add_test(NAME cartmesh2d_variable_viscosity_cli COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/variable_viscosity_cli_test.py
+        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
+        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
+    set_tests_properties(cartmesh2d_variable_viscosity_cli PROPERTIES TIMEOUT 60)
     add_executable(cartmesh2d_fv_tests tests/fv_test.cpp)
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_fv_foundation COMMAND cartmesh2d_fv_tests)

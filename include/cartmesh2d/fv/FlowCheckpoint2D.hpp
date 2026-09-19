@@ -35,6 +35,11 @@ inline void finite(double value, const char* what) {
     if (!std::isfinite(value)) fail(std::string("nonfinite ") + what);
 }
 
+inline void positive(double value, const char* what) {
+    finite(value, what);
+    if (value <= 0) fail(std::string("nonpositive ") + what);
+}
+
 inline void exact(double actual, double expected, const char* what) {
     finite(actual, what);
     if (actual != expected) fail(std::string("mesh mismatch in ") + what);
@@ -85,7 +90,7 @@ inline void configuration(std::istream& in, const FlowControls2D& controls, bool
     if (!(in >> std::quoted(scenario) >> nu >> speed >> convection >> stress >> slope))
         fail("truncated configuration");
     if (hasOutletBackflow && !(in >> outletBackflow)) fail("truncated outlet backflow model");
-    finite(nu, "configuration nu");
+    positive(nu, "configuration nu");
     finite(speed, "configuration speed");
     finite(slope, "configuration pressure slope");
     if (scenario != controls.scenario || nu != controls.nu || speed != controls.speed ||
@@ -114,17 +119,24 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
     out << std::defaultfloat << std::dec << std::noshowpos << std::noshowbase << std::setprecision(17);
     validateFvMesh2D(mesh);
     flow_checkpoint_detail::finite(controls.nu, "configuration nu");
+    flow_checkpoint_detail::positive(controls.nu, "configuration nu");
     flow_checkpoint_detail::finite(controls.speed, "configuration speed");
     flow_checkpoint_detail::finite(controls.manufacturedPressureSlope, "configuration pressure slope");
     flow_checkpoint_detail::finite(state.time, "time");
     if (state.time < 0) flow_checkpoint_detail::fail("time must be nonnegative");
+    if (!controls.faceViscosity.empty() && controls.faceViscosity.size() != mesh.faces.size())
+        flow_checkpoint_detail::fail("invalid face viscosity field size");
+    for (const double value : controls.faceViscosity)
+        flow_checkpoint_detail::positive(value, "face viscosity");
+    if (controls.manufacturedViscositySlope != 0)
+        flow_checkpoint_detail::fail("manufactured viscosity checkpoint is not restartable");
     if (state.u.size() != mesh.cells.size() || state.v.size() != mesh.cells.size() ||
         state.p.size() != mesh.cells.size() || state.flux.size() != mesh.faces.size())
         flow_checkpoint_detail::fail("invalid state vector size");
     for (const auto* values : {&state.u, &state.v, &state.p, &state.flux})
         for (const double value : *values) flow_checkpoint_detail::finite(value, "state value");
 
-    out << "CARTMESH2D_FLOW_CHECKPOINT 2\n"
+    out << "CARTMESH2D_FLOW_CHECKPOINT " << (controls.faceViscosity.empty() ? 2 : 3) << "\n"
         << "DISCRETIZATION Euler-RC-v2\n"
         << "CONFIG " << std::quoted(controls.scenario) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.nu, "configuration nu"); out << ' ';
@@ -133,7 +145,13 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
         << flow_checkpoint_detail::stressName(controls.viscousStress) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.manufacturedPressureSlope, "configuration pressure slope");
     out << ' ' << flow_checkpoint_detail::outletBackflowName(controls.outletBackflow);
-    out << "\nCELLS " << mesh.cells.size() << '\n';
+    out << '\n';
+    if (!controls.faceViscosity.empty()) {
+        out << "FACE_VISCOSITY " << controls.faceViscosity.size();
+        for (const double value : controls.faceViscosity) out << ' ', flow_checkpoint_detail::writeDouble(out, value, "face viscosity");
+        out << '\n';
+    }
+    out << "CELLS " << mesh.cells.size() << '\n';
     for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
         const auto& cell = mesh.cells[i];
         out << "CELL " << i << ' ';
@@ -174,13 +192,30 @@ inline FlowState2D readFlowCheckpoint2D(std::istream& in, const FvMesh2D& mesh,
     validateFvMesh2D(mesh);
     flow_checkpoint_detail::token(in, "CARTMESH2D_FLOW_CHECKPOINT");
     std::string version;
-    if (!(in >> version) || (version != "1" && version != "2"))
+    if (!(in >> version) || (version != "1" && version != "2" && version != "3"))
         flow_checkpoint_detail::fail("unsupported checkpoint version");
-    const bool hasOutletBackflow = version == "2";
+    const bool hasOutletBackflow = version == "2" || version == "3";
+    const bool hasFaceViscosity = version == "3";
+    if (!hasFaceViscosity && !controls.faceViscosity.empty())
+        flow_checkpoint_detail::fail("legacy checkpoint has no face viscosity field");
+    if (controls.manufacturedViscositySlope != 0)
+        flow_checkpoint_detail::fail("manufactured viscosity checkpoint is not restartable");
     flow_checkpoint_detail::token(in, "DISCRETIZATION");
     flow_checkpoint_detail::token(in, "Euler-RC-v2");
     flow_checkpoint_detail::token(in, "CONFIG");
     flow_checkpoint_detail::configuration(in, controls, hasOutletBackflow);
+    if (hasFaceViscosity) {
+        flow_checkpoint_detail::token(in, "FACE_VISCOSITY");
+        flow_checkpoint_detail::count(in, mesh.faces.size(), "face viscosity");
+        if (controls.faceViscosity.size() != mesh.faces.size())
+            flow_checkpoint_detail::fail("caller face viscosity field is missing or has invalid size");
+        for (std::size_t i = 0; i < mesh.faces.size(); ++i) {
+            double value = 0;
+            if (!(in >> value)) flow_checkpoint_detail::fail("truncated face viscosity");
+            flow_checkpoint_detail::positive(value, "face viscosity");
+            flow_checkpoint_detail::exact(value, controls.faceViscosity[i], "face viscosity");
+        }
+    }
     flow_checkpoint_detail::token(in, "CELLS");
     flow_checkpoint_detail::count(in, mesh.cells.size(), "cell");
     for (std::size_t i = 0; i < mesh.cells.size(); ++i) {

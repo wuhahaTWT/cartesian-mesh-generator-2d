@@ -26,6 +26,32 @@ double number(const std::string& s) {
     return v;
 }
 
+std::vector<double> viscosityCsv(const std::string& path,std::size_t count) {
+    std::ifstream in(path); if(!in)throw std::runtime_error("cannot open face viscosity CSV");
+    std::string line; std::getline(in,line);
+    if(!line.empty()&&line.back()=='\r')line.pop_back();
+    if(line!="face,viscosity")throw std::runtime_error("viscosity CSV header must be face,viscosity");
+    std::vector<double> values(count);std::vector<bool> seen(count,false);
+    while(std::getline(in,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        const auto comma=line.find(',');
+        if(comma==std::string::npos || line.find(',',comma+1)!=std::string::npos)
+            throw std::runtime_error("viscosity CSV row requires two fields");
+        const double index=number(line.substr(0,comma));
+        if(index<0 || index>=static_cast<double>(count) || index!=std::floor(index))
+            throw std::runtime_error("invalid viscosity face ID");
+        const auto id=static_cast<std::size_t>(index);
+        if(seen[id])throw std::runtime_error("duplicate viscosity face");
+        values[id]=number(line.substr(comma+1));
+        if(values[id]<=0)throw std::runtime_error("face viscosity must be positive");
+        seen[id]=true;
+    }
+    if(!in.eof())throw std::runtime_error("cannot read viscosity CSV");
+    if(!std::all_of(seen.begin(),seen.end(),[](bool value){return value;}))
+        throw std::runtime_error("missing viscosity face");
+    return values;
+}
+
 std::ofstream out(const std::string& p, const char* ext) {
     std::ofstream s(p + ext);
     s.exceptions(std::ios::badbit | std::ios::failbit);
@@ -49,7 +75,7 @@ int main(int argc, char** argv) {
     double acceptedTime=0;
     bool transientOutputStarted=false;
     try {
-        std::string path;
+        std::string path,viscosityPath;
         fv::FlowControls2D controls;
         bool explicitVelocityRelaxation=false;
         double timeStep=0;
@@ -66,6 +92,8 @@ int main(int argc, char** argv) {
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured|counterflow\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
+            "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
+            "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
             "--velocity-relaxation 0.6: transient inner iterations only; (0,1], larger may be unstable.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
@@ -96,6 +124,10 @@ int main(int argc, char** argv) {
                 controls.scenario = v;
             } else if (a == "--nu") {
                 controls.nu = number(v);
+            } else if (a == "--face-viscosity") {
+                viscosityPath=v;
+            } else if (a == "--manufactured-viscosity-slope") {
+                controls.manufacturedViscositySlope=number(v);
             } else if (a == "--speed") {
                 controls.speed = number(v);
             } else if (a == "--tolerance") {
@@ -164,6 +196,17 @@ int main(int argc, char** argv) {
             throw std::runtime_error(read.error);
         }
         const auto mesh = fv::makeFvMesh2D(read.topology);
+        if(!viscosityPath.empty()) {
+            if(controls.scenario=="manufactured" || controls.scenario=="taylor-green" || controls.scenario=="counterflow")
+                throw std::invalid_argument("face-viscosity file requires a physical flow case");
+            controls.faceViscosity=viscosityCsv(viscosityPath,mesh.faces.size());
+        }
+        if(controls.manufacturedViscositySlope!=0) {
+            if(controls.scenario!="manufactured" || timeStep!=0 || !viscosityPath.empty() || controls.manufacturedViscositySlope<=-1)
+                throw std::invalid_argument("manufactured-viscosity-slope requires steady manufactured case, slope > -1, without viscosity file");
+            for(const auto& f:mesh.faces)
+                controls.faceViscosity.push_back(controls.nu*(1+controls.manufacturedViscositySlope*f.centre.x));
+        }
         const double readSeconds = std::chrono::duration<double>(
             std::chrono::steady_clock::now() - readStart).count();
         const auto parent = std::filesystem::path(prefix).parent_path();
@@ -258,8 +301,8 @@ int main(int argc, char** argv) {
             cells << i << ',' << c.centre.x << ',' << c.centre.y << ',' << c.area << ','
                   << r.u[i] << ',' << r.v[i] << ',' << r.p[i] << ',' << speed;
             if (controls.scenario == "manufactured") {
-                const auto exact=fv::manufacturedFlow2D(c.centre,controls.speed,controls.nu,controls.manufacturedPressureSlope);
-                const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu,controls.manufacturedPressureSlope).pressure;
+                const auto exact=fv::manufacturedFlow2D(c.centre,controls.speed,controls.nu,controls.manufacturedPressureSlope,controls.manufacturedViscositySlope,controls.viscousStress==fv::ViscousStress2D::Symmetric);
+                const double gauge=fv::manufacturedFlow2D(mesh.cells.front().centre,controls.speed,controls.nu,controls.manufacturedPressureSlope,controls.manufacturedViscositySlope,controls.viscousStress==fv::ViscousStress2D::Symmetric).pressure;
                 cells << ',' << r.sourceIntegrals[i].x << ',' << r.sourceIntegrals[i].y
                       << ',' << exact.velocity.x << ',' << exact.velocity.y << ',' << exact.pressure-gauge;
             } else if (counterflow) {
@@ -280,7 +323,9 @@ int main(int argc, char** argv) {
         fields << "\n]}\n";
 
         auto faces = out(prefix, ".faces.csv");
-        faces << "face,owner,neighbour,flux,pressure,advectionX,advectionY,diffusionX,diffusionY,wall\n";
+        faces << "face,owner,neighbour,flux,pressure,advectionX,advectionY,diffusionX,diffusionY,wall";
+        if(!controls.faceViscosity.empty())faces<<",viscosity";
+        faces<<'\n';
         for (std::size_t i = 0; i < mesh.faces.size(); ++i) {
             const auto& f = mesh.faces[i];
             faces << i << ',' << f.owner << ',';
@@ -291,7 +336,9 @@ int main(int argc, char** argv) {
             }
             const auto& fm = r.faceMomentum[i];
             faces << ',' << r.flux[i] << ',' << fm.pressure << ',' << fm.advection.x
-                  << ',' << fm.advection.y << ',' << fm.diffusion.x << ',' << fm.diffusion.y << ',' << (fm.wall?1:0) << '\n';
+                  << ',' << fm.advection.y << ',' << fm.diffusion.x << ',' << fm.diffusion.y << ',' << (fm.wall?1:0);
+            if(!controls.faceViscosity.empty())faces<<','<<controls.faceViscosity[i];
+            faces<<'\n';
         }
 
         auto history = out(prefix, ".residuals.csv");
@@ -317,8 +364,12 @@ int main(int argc, char** argv) {
             << ",\n\"acceptedTime\":" << acceptedTime << ",\n\"requestedSteps\":" << requestedSteps
             << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
             << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
-        if (manufactured) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
+        if (manufactured && controls.manufacturedViscositySlope==0) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
                                   << "\"manufacturedPressureSlope\":" << controls.manufacturedPressureSlope << ",\n";
+        if(manufactured && controls.manufacturedViscositySlope!=0) summary<<"\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+pressureSlope*(x+y)); nu(x)=nu*(1+viscositySlope*x); source=advection+grad(p)-div(nu*stressGradient); stressGradient=grad(U)+grad(U)^T for symmetric, grad(U) for laplacian; centroid quadrature\",\n"
+            <<"\"manufacturedPressureSlope\":"<<controls.manufacturedPressureSlope<<",\n";
+        if(!controls.faceViscosity.empty()) summary<<"\"viscosityModel\":\"face-values\",\n\"viscosityFile\":"<<std::quoted(viscosityPath)
+            <<",\n\"manufacturedViscositySlope\":"<<controls.manufacturedViscositySlope<<",\n";
         if (counterflowCase) summary << "\"counterflowDefinition\":\"u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0\",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""

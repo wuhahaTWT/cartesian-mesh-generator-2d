@@ -15,7 +15,8 @@ struct ManufacturedFlowSample2D {
 };
 
 inline ManufacturedFlowSample2D manufacturedFlow2D(Point2D point, double speed, double nu,
-                                                  double pressureSlope = 0) {
+                                                  double pressureSlope = 0,
+                                                  double viscositySlope = 0, bool symmetric = true) {
     constexpr double pi = std::numbers::pi;
     const double sx=std::sin(pi*point.x), sy=std::sin(pi*point.y);
     const double cx=std::cos(pi*point.x), cy=std::cos(pi*point.y);
@@ -28,8 +29,13 @@ inline ManufacturedFlowSample2D manufacturedFlow2D(Point2D point, double speed, 
     const double lapV=-2*speed*pi*pi*s2x*(2*c2y-1);
     const double px=speed*speed*(-pi*sx*cy+pressureSlope);
     const double py=speed*speed*(-pi*cx*sy+pressureSlope);
+    if (viscositySlope==0)
+        return {{u,v},speed*speed*(cx*cy+pressureSlope*(point.x+point.y)),
+                {u*ux+v*uy+px-nu*lapU,u*vx+v*vy+py-nu*lapV}};
+    const double localNu=nu*(1+viscositySlope*point.x), dxNu=nu*viscositySlope;
     return {{u,v},speed*speed*(cx*cy+pressureSlope*(point.x+point.y)),
-            {u*ux+v*uy+px-nu*lapU,u*vx+v*vy+py-nu*lapV}};
+            {u*ux+v*uy+px-localNu*lapU-dxNu*(symmetric?2*ux:ux),
+             u*vx+v*vy+py-localNu*lapV-dxNu*(symmetric?vx+uy:vx)}};
 }
 
 } // namespace cartmesh2d::fv

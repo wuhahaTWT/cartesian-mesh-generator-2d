@@ -239,9 +239,29 @@ build/cartmesh2d_transport_cli --mesh /path/case.solver.cm2d --output outputs/va
 
 制造解为`phi=sin(pi*x)sin(pi*y)`、`D(x)=Dref*(1+x)`、`U=(speed,0)`，源项包含`-grad(D).grad(phi)`，固定边界取解析面值。仅允许稳态，域内D须处处为正。读取器从真实几何独立重建D、源、非正交通量与逐格平衡；观察到的约二阶趋势只适用于本组光滑场。双材料接口与倾斜网格非零通量边界另有核心解析回归。桌面和同步热输运尚未开放空间D输入。
 
-### SST扩展前的物性场缺口
+### 空间黏度、共享应力与重启
 
-当前 `FlowControls2D::nu` 和同步热输运物性仍是全域常数。独立标量核心已加入 `ScalarTransportProblem2D::faceDiffusivity`；这只完成空间扩散场基础，不代表变黏度或SST已实现。后续空间有效黏度必须统一进入动量矩阵、非正交修正、`FlowFaceOperators2D.hpp` 的共享面对称应力、壁面力及面输出；独立读取器和checkpoint也要记录并重算相同物性场。现有一个共享面通量、相邻单元反号的守恒结构可沿用，但尚无变黏度、湍黏度或湍流普朗特数实现。不能仅在力的后处理处替换nu，或将常数nu输入框改名为SST。标量变系数制造解已验证；动量变黏度、共享面牵引及模型方程仍需实现和验证。
+`FlowControls2D::faceViscosity` 为空沿用`nu`；否则每个内部面和边界面提供一个有限正运动学黏度（m²/s）。该值统一进入动量矩阵、非正交修正、完整对称应力、共享面输出、壁面力和旧梯度受力诊断。密度仍固定；`nu`保留为有限正参考值及原压力变化归一化尺度。不自动平均单元材料，不随温度或剪切更新，不是SST。默认完整对称应力保持不变；变黏度时Laplacian与对称应力是不同方程，Laplacian只保留作显式诊断选择，不能混用同一制造源项。
+
+物理`external/channel/cavity` CLI使用`--face-viscosity /path/nu.csv`，严格表头`face,viscosity`，须完整列出同一最终网格的所有face ID一次。steady和backward Euler均支持。重复/漏项/额外列/非正或非有限值失败；验证案例不能混入材料文件。faces CSV新增`viscosity`列，summary记录`viscosityModel=face-values`与输入路径。独立读取器从原始CSV重建系数并保存输入SHA；变黏度工况不套用恒黏度Poiseuille/Ghia参考，明确标记其不适用，几何/逐面/逐格/受力门继续执行。
+
+```sh
+build/cartmesh2d_flow_cli --mesh /path/case.solver.cm2d --output outputs/variable-nu/run --case cavity --nu .1 --face-viscosity /path/nu.csv --speed 1 --time-step .01 --steps 2 --tolerance 1e-9
+# 续算必须再次提供与checkpoint逐项一致的黏度场：
+build/cartmesh2d_flow_cli --mesh /path/case.solver.cm2d --output outputs/variable-nu/continued --case cavity --nu .1 --face-viscosity /path/nu.csv --speed 1 --time-step .01 --steps 2 --tolerance 1e-9 --restart outputs/variable-nu/run.checkpoint
+# 独立审核包括原方程的时间项：
+python3 tools/verification/verify_transient_flow.py --help
+# 稳态制造解，nu(x)=.1*(1+x)，梯度源项按选定应力形式推导：
+build/cartmesh2d_flow_cli --mesh /path/unit-square.solver.cm2d --output outputs/variable-nu/mms --case manufactured --nu .1 --speed 1 --manufactured-viscosity-slope 1 --manufactured-pressure-slope .7 --convection limited-linear --tolerance 1e-9 --max-iterations 5000 --pressure-preconditioner aggregation
+```
+
+`manufactured-viscosity-slope`仅steady manufactured且大于-1；非零时构造并检查一致的逐面场。独立制造解重建黏度梯度源项、源列和面应力，记录速度/压力/壁面黏性牵引误差。`verify_native_flow.py`可用同名选项生成或核对指定斜率；单例审核未传时使用记录的物性定义。三档对照要固定nu、斜率、速度、压力定义、格式、容差与迭代预算。
+
+非空场写checkpoint v3，CONFIG后增加`FACE_VISCOSITY count values...`；加载时逐项精确匹配，不允许用缺失场的v1/v2恢复变系数计算。恒黏度继续写原v2字节，原v1/v2仍可读。冻结标量入口可读v3并从头核对完整几何/状态。变黏度制造解是稳态验证，checkpoint明确拒绝。当前桌面不提供空间黏度输入，也没有验证桌面导入v3；同步热输运CLI仍使用恒黏度/恒扩散系数。
+
+### SST扩展前的剩余项
+
+预设空间扩散与黏度已接入核心并有制造解和重启证据。尚需把SST的k、omega输运、生产/耗散与交叉扩散、壁面距离/处理、混合函数和湍黏度更新组成收敛耦合迭代，并验证标准工况。当前固定正系数不能替代这些步骤；也没有自动湍流普朗特数或温度相关材料模型。实际SST实现前继续核对指定模型版本和适用范围。
 
 ### 非正交压力修正固定点
 

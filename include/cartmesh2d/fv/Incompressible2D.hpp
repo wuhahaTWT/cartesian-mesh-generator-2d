@@ -29,6 +29,10 @@ struct FlowControls2D {
     // Opt-in pressure outlet: reverse flow has zero tangential velocity and
     // zero normal velocity gradient. The conservative flux is never clipped.
     OutletBackflow2D outletBackflow = OutletBackflow2D::Reject;
+    // Prescribed kinematic viscosity on every shared face, including boundaries.
+    // Empty uses nu. Positive finite values; no implicit material averaging.
+    std::vector<double> faceViscosity;
+    double manufacturedViscositySlope = 0; // verification only: nu(x)=nu*(1+slope*x)
 };
 
 // Accepted state at a physical time, including the conservative face flux.
@@ -106,7 +110,8 @@ struct FlowResult2D {
     FlowPerformance2D performance;
 };
 
-// Fixed-grid, constant-property laminar SIMPLE, kinematic pressure.
+// Fixed-grid, constant-density laminar SIMPLE, kinematic pressure.
+// Viscosity is uniform or explicitly prescribed on faces; no material feedback.
 // No turbulence, heat transport, moving mesh or compressibility.
 [[nodiscard]] FlowResult2D solveIncompressible2D(
     const FvMesh2D&,

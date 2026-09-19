@@ -383,6 +383,8 @@ def read_faces(path: Path, mesh: Mesh) -> tuple[list[dict[str, float]], bool]:
         if has_momentum:
             item.update({name: finite(row[name], f"{path}:{line} {name}")
                          for name in FACE_MOMENTUM_COLUMNS})
+        if "viscosity" in fields:
+            item["viscosity"] = finite(row["viscosity"], "face viscosity")
         if has_wall:
             wall = integer(row["wall"], f"{path}:{line} wall")
             if wall not in (0, 1):
@@ -462,7 +464,8 @@ def weighted_l2(errors: Iterable[float], areas: Iterable[float]) -> float:
 
 
 def manufactured_sample(x: float, y: float, speed: float, nu: float,
-                       pressure_slope: float = 0.0) -> dict[str, float]:
+                       pressure_slope: float = 0.0, viscosity_slope: float = 0.0,
+                       symmetric: bool = True) -> dict[str, float]:
     """Evaluate the smooth unit-square manufactured field independently.
 
     The expressions below are an analytic differentiation of the stream
@@ -485,17 +488,22 @@ def manufactured_sample(x: float, y: float, speed: float, nu: float,
     pressure = speed * speed * (cx * cy + pressure_slope * (x + y))
     pressure_x = speed * speed * (-pi * sx * cy + pressure_slope)
     pressure_y = speed * speed * (-pi * cx * sy + pressure_slope)
-    source_x = convective_x + pressure_x - nu * lap_u
-    source_y = convective_y + pressure_y - nu * lap_v
+    local_nu = nu*(1+viscosity_slope*x)
+    ux = speed*pi*s2x*s2y
+    uy = 2*speed*pi*sx*sx*(1-2*sy*sy)
+    vx = -2*speed*pi*(1-2*sx*sx)*sy*sy
+    source_x = convective_x + pressure_x - local_nu * lap_u - nu*viscosity_slope*(2*ux if symmetric else ux)
+    source_y = convective_y + pressure_y - local_nu * lap_v - nu*viscosity_slope*(vx+uy if symmetric else vx)
     return {"u": u, "v": v, "p": pressure, "sourceX": source_x, "sourceY": source_y}
 
 
 def manufactured_source_integral(mesh: Mesh, measured: Measurement, speed: float,
-                                 nu: float, pressure_slope: float = 0.0) -> list[tuple[float, float]]:
+                                 nu: float, pressure_slope: float = 0.0, viscosity_slope: float = 0.0,
+                                 symmetric: bool = True) -> list[tuple[float, float]]:
     return [
         (area * sample["sourceX"], area * sample["sourceY"])
         for area, (x, y) in zip(measured.areas, measured.centroids)
-        for sample in (manufactured_sample(x, y, speed, nu, pressure_slope),)
+        for sample in (manufactured_sample(x, y, speed, nu, pressure_slope, viscosity_slope, symmetric),)
     ]
 
 
@@ -828,6 +836,44 @@ def _deviation(actual: float, expected: float) -> dict[str, float]:
             "relative": abs(actual - expected) / max(1.0, abs(actual), abs(expected))}
 
 
+def prescribed_face_viscosity(mesh, geometry, records, nu, payload):
+    """Derive coefficients from analytic definition or original file, not output."""
+    model = payload.get('viscosityModel', 'uniform')
+    alpha = finite(payload.get('manufacturedViscositySlope', 0.), 'viscosity slope')
+    if model == 'uniform':
+        if alpha != 0 or payload.get('viscosityFile') or any('viscosity' in r for r in records):
+            raise VerificationError('uniform viscosity metadata conflicts with face field')
+        return [nu]*len(mesh.edges), {'model':'uniform'}
+    if model != 'face-values':raise VerificationError('unknown viscosity model')
+    source = {'model':model}
+    if payload.get('case') == 'manufactured':
+        if payload.get('viscosityFile') or alpha <= -1:
+            raise VerificationError('invalid manufactured viscosity definition')
+        values = [nu*(1+alpha*g.centre[0]) for g in geometry]
+        source['manufacturedViscositySlope'] = alpha
+    else:
+        if alpha != 0 or payload.get('case') in ('counterflow','taylor-green'):
+            raise VerificationError('unsupported variable viscosity verification case')
+        path = Path(payload.get('viscosityFile',''))
+        if not path.is_file():raise VerificationError('missing viscosity input file')
+        lines=path.read_text().splitlines()
+        if not lines or not all(lines):raise VerificationError('empty viscosity CSV row')
+        reader=csv.DictReader(lines)
+        if reader.fieldnames != ['face','viscosity']:raise VerificationError('invalid viscosity CSV header')
+        values=[None]*len(mesh.edges)
+        for row in reader:
+            if set(row) != {'face','viscosity'}:raise VerificationError('invalid viscosity CSV row')
+            idx=integer(row['face'],'viscosity face')
+            if idx<0 or idx>=len(values) or values[idx] is not None:raise VerificationError('duplicate/out of range viscosity face')
+            values[idx]=finite(row['viscosity'],'input face viscosity')
+        source.update(file=str(path), sha256=sha256_file(path))
+    for value,record in zip(values,records):
+        if value is None or not math.isfinite(value) or value<=0:raise VerificationError('missing or nonpositive face viscosity')
+        if 'viscosity' not in record or not close(record['viscosity'],value,0.,1e-13):
+            raise VerificationError('exported viscosity differs from independent input')
+    return values,source
+
+
 def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
                                face_records: list[dict[str, float]], nu: float, speed: float,
                                case: str, payload: dict[str, Any],
@@ -842,6 +888,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     define the reconstructed stress, pressure or advected velocity.
     """
     geometries = face_geometry(mesh, measured)
+    viscosities, viscosity_source = prescribed_face_viscosity(mesh, geometries, face_records, nu, payload)
+    viscosity_slope = payload.get("manufacturedViscositySlope", 0.)
     fluxes = face_fluxes(face_records)
     outlet_backflow = outlet_backflow_mode(payload)
     boundaries = flow_boundaries(mesh, measured, case, speed, outlet_backflow, fluxes)
@@ -903,7 +951,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
           if convection == "limited-linear" else None)
     cell_residuals = [(0.0, 0.0) for _ in mesh.cells]
     source_integrals = (manufactured_source_integral(mesh, measured, speed, nu,
-                                                     manufactured_pressure_slope)
+                                                     manufactured_pressure_slope, viscosity_slope, viscous_stress=="symmetric")
                         if case == "manufactured" else [(0.0, 0.0)] * len(mesh.cells))
     if case == "counterflow":
         source_integrals = [(area * counterflow_sample(y, speed, nu)["sourceX"], 0.0)
@@ -921,6 +969,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     wall_viscous_force = [0.0, 0.0]
     for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
         i = edge.owner
+        face_nu = viscosities[edge.id]
         normal_inlet = outlet_backflow == "normal-inlet" and boundaries["roles"][edge.id] == "outlet"
         if edge.neighbour >= 0:
             other_u, other_v = u[edge.neighbour], v[edge.neighbour]
@@ -932,19 +981,19 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                                        boundaries["fixedV"], boundaries["v"], normal_inlet)
         if edge.neighbour >= 0 or boundaries["fixedU"][edge.id]:
             gi = _interpolated_gradient(edge, gu, geom.neighbour_weight)
-            dx = -nu * (geom.transmissibility * (other_u - u[i]) +
+            dx = -face_nu * (geom.transmissibility * (other_u - u[i]) +
                         gi[0] * geom.correction[0] + gi[1] * geom.correction[1])
         else:
             dx = 0.0
         if edge.neighbour >= 0 or boundaries["fixedV"][edge.id]:
             gi = _interpolated_gradient(edge, gv, geom.neighbour_weight)
-            dy = -nu * (geom.transmissibility * (other_v - v[i]) +
+            dy = -face_nu * (geom.transmissibility * (other_v - v[i]) +
                         gi[0] * geom.correction[0] + gi[1] * geom.correction[1])
         else:
             dy = 0.0
         if viscous_stress == "symmetric":
             sx, sy = _symmetric_viscous_correction(
-                mesh, measured, geom, edge, u, v, gu, gv, boundaries, nu)
+                mesh, measured, geom, edge, u, v, gu, gv, boundaries, face_nu)
             dx += sx
             dy += sy
         expected = {"pressure": pf, "advectionX": av_u, "advectionY": av_v,
@@ -1001,7 +1050,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     diagonal_v = [0.0] * len(mesh.cells)
     for edge, flux in zip(mesh.edges, fluxes):
         q = flux
-        d = nu * geometries[edge.id].transmissibility
+        d = viscosities[edge.id] * geometries[edge.id].transmissibility
         if edge.neighbour >= 0:
             j = edge.neighbour
             diagonal_u[edge.owner] += d + max(q, 0.0)
@@ -1041,8 +1090,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
         if edge.patch == 1 and boundaries["roles"][edge.id] == "wall":
             i = edge.owner
             sx, sy = geom.area_vector
-            reconstructed_force[0] += pf * sx - nu * (2 * gu[i][0] * sx + (gu[i][1] + gv[i][0]) * sy)
-            reconstructed_force[1] += pf * sy - nu * ((gu[i][1] + gv[i][0]) * sx + 2 * gv[i][1] * sy)
+            reconstructed_force[0] += pf * sx - viscosities[edge.id] * (2 * gu[i][0] * sx + (gu[i][1] + gv[i][0]) * sy)
+            reconstructed_force[1] += pf * sy - viscosities[edge.id] * ((gu[i][1] + gv[i][0]) * sx + 2 * gv[i][1] * sy)
     summary_deviations.update({
         "reconstructedForceX": _deviation(finite(payload.get("reconstructedForceX", payload.get("forceX")), "native reconstructedForceX"), reconstructed_force[0]),
         "reconstructedForceY": _deviation(finite(payload.get("reconstructedForceY", payload.get("forceY")), "native reconstructedForceY"), reconstructed_force[1]),
@@ -1071,7 +1120,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     source_definition = ("independent analytic source integrated at CM2D cell centroids; subtracted from face balance"
                          if case in ("manufactured", "counterflow") else "zero/unforced non-manufactured case")
     return {
-        "status": "available", "valid": True, "convection": convection,
+        "status": "available", "valid": True, "viscosityInput": viscosity_source, "convection": convection,
         "pressureDiscretization": payload.get("pressureDiscretization"),
         "pressureBoundaryReconstruction": pressure_boundary_reconstruction,
         "outletBackflow": outlet_backflow,
@@ -1343,8 +1392,27 @@ def counterflow_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, 
             "scope": "analytic errors are diagnostics; valid verifies source/BC consistency and exercises reverse flow, not accuracy certification"}
 
 
+def manufactured_wall_traction(mesh, measured, face_records, nu, speed, viscosity_slope, symmetric):
+    """Exact face-centre Newtonian traction of the verification velocity field."""
+    geometry=face_geometry(mesh,measured);squared=[];lengths=[];errors=[]
+    for edge,g,row in zip(mesh.edges,geometry,face_records):
+        if edge.neighbour>=0:continue
+        x,y=g.centre;sx,sy=g.area_vector;length=math.hypot(sx,sy);pi=math.pi
+        ux=speed*pi*math.sin(2*pi*x)*math.sin(2*pi*y)
+        uy=2*speed*pi*math.sin(pi*x)**2*math.cos(2*pi*y)
+        vx=-2*speed*pi*math.cos(2*pi*x)*math.sin(pi*y)**2;vy=-ux
+        material=nu*(1+viscosity_slope*x)
+        if symmetric:exact=(-material*(2*ux*sx+(uy+vx)*sy),-material*((vx+uy)*sx+2*vy*sy))
+        else:exact=(-material*(ux*sx+uy*sy),-material*(vx*sx+vy*sy))
+        error=math.hypot(row['diffusionX']-exact[0],row['diffusionY']-exact[1])/length
+        squared.append(length*error*error);lengths.append(length);errors.append(error)
+    return {'l2':math.sqrt(math.fsum(squared)/math.fsum(lengths)), 'linf':max(errors),
+            'definition':'Viscous traction / density at boundary face centre; edge-length weighted vector RMS. Diagnostic, not a universal tolerance.'}
+
+
 def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
-                        nu: float, speed: float, pressure_slope: float = 0.0) -> dict[str, Any]:
+                        nu: float, speed: float, pressure_slope: float = 0.0,
+                        viscosity_slope: float = 0.0, symmetric: bool = True) -> dict[str, Any]:
     """Audit the analytic fields and source columns of the closed MMS case."""
     xmin, ymin, xmax, ymax = measured.bounds
     geometry_ok = (close(xmin, 0.0, 1e-12, 0.0) and close(ymin, 0.0, 1e-12, 0.0)
@@ -1357,7 +1425,7 @@ def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str,
                    and all(boundaries["fixedU"][edge.id] and boundaries["fixedV"][edge.id]
                            and not boundaries["fixedP"][edge.id] for edge in boundary_edges))
 
-    first = manufactured_sample(*measured.centroids[0], speed, nu, pressure_slope)
+    first = manufactured_sample(*measured.centroids[0], speed, nu, pressure_slope, viscosity_slope, symmetric)
     gauge = first["p"]
     velocity_errors: list[float] = []
     pressure_errors: list[float] = []
@@ -1365,7 +1433,7 @@ def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str,
     exact_errors = {name: [] for name in ("exactU", "exactV", "exactP")}
     expected_sources: list[tuple[float, float]] = []
     for row, area, (x, y) in zip(cells, measured.areas, measured.centroids):
-        sample = manufactured_sample(x, y, speed, nu, pressure_slope)
+        sample = manufactured_sample(x, y, speed, nu, pressure_slope, viscosity_slope, symmetric)
         expected_sources.append((area * sample["sourceX"], area * sample["sourceY"]))
         exact_u, exact_v, exact_p = sample["u"], sample["v"], sample["p"] - gauge
         velocity_errors.extend((row["u"] - exact_u, row["v"] - exact_v))
@@ -1376,9 +1444,9 @@ def manufactured_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str,
         source_errors.extend((row["sourceX"] - area * sample["sourceX"],
                               row["sourceY"] - area * sample["sourceY"]))
     velocity_l2 = math.sqrt(
-        weighted_l2([row["u"] - manufactured_sample(x, y, speed, nu, pressure_slope)["u"]
+        weighted_l2([row["u"] - manufactured_sample(x, y, speed, nu, pressure_slope, viscosity_slope, symmetric)["u"]
                      for row, (x, y) in zip(cells, measured.centroids)], measured.areas) ** 2
-        + weighted_l2([row["v"] - manufactured_sample(x, y, speed, nu, pressure_slope)["v"]
+        + weighted_l2([row["v"] - manufactured_sample(x, y, speed, nu, pressure_slope, viscosity_slope, symmetric)["v"]
                        for row, (x, y) in zip(cells, measured.centroids)], measured.areas) ** 2
     ) / speed
     pressure_l2 = weighted_l2(pressure_errors, measured.areas) / max(speed * speed, 1e-300)
@@ -1515,6 +1583,11 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
             VerificationError(f"native JSON contains non-finite token {token}")))
     if not isinstance(payload, dict):
         raise VerificationError("native JSON root is not an object")
+    expected_viscosity_slope = getattr(args, 'manufactured_viscosity_slope', None)
+    if expected_viscosity_slope is not None:
+        actual_slope = finite(payload.get('manufacturedViscositySlope',0.), 'viscosity slope')
+        if not math.isfinite(expected_viscosity_slope) or actual_slope != expected_viscosity_slope:
+            issues.append('manufactured viscosity slope differs from requested configuration')
     # The steady verifier must never silently reinterpret a transient field as
     # a steady result.  Transient artifacts have both explicit metadata and
     # previous-state columns; reject either marker here.
@@ -1636,18 +1709,25 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
                 issues.append(f"native {native_name} differs from final residual CSV row")
     except VerificationError as exc:
         issues.append(str(exc))
-    if case == "channel":
+    if payload.get('viscosityModel') == 'face-values' and case in ('channel','cavity','external'):
+        benchmark = {'valid':True, 'status':'not-applicable',
+                     'scope':'Prescribed variable viscosity: constant-property reference is inapplicable; only geometry/conservation/constitutive audit is performed, no accuracy qualification.'}
+    elif case == "channel":
         benchmark = channel_checks(mesh, measured, cells, fluxes, nu, speed, args)
     elif case == "cavity":
         benchmark = cavity_checks(measured, cells, nu, speed, args)
     elif case == "external":
         benchmark = external_checks(mesh, measured, cells, payload, nu, speed, args)
     elif case == "manufactured":
-        benchmark = manufactured_checks(mesh, measured, cells, nu, speed, manufactured_pressure_slope)
+        benchmark = manufactured_checks(mesh, measured, cells, nu, speed, manufactured_pressure_slope,
+                                        payload.get("manufacturedViscositySlope",0.), payload.get("viscousStress")=="symmetric")
     elif case == "counterflow":
         benchmark = counterflow_checks(mesh, measured, cells, fluxes, nu, speed, payload)
     else:
         raise VerificationError(f"unsupported case {case}")
+    if case == 'manufactured' and payload.get('viscosityModel') == 'face-values' and face_momentum_available:
+        benchmark['wallTraction'] = manufactured_wall_traction(mesh,measured,face_records,nu,speed,
+            payload.get('manufacturedViscositySlope',0.),payload.get('viscousStress')=='symmetric')
     if not benchmark.get("valid"):
         issues.append(f"{case} benchmark checks failed")
     pressure_boundary_reconstruction = payload.get("pressureBoundaryReconstruction", "zero-normal")
@@ -1830,6 +1910,8 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--counterflow-nu", type=float, default=0.1)
     parser.add_argument("--outlet-backflow", choices=("reject", "normal-inlet"), default="reject")
     parser.add_argument("--manufactured-pressure-slope", type=float, default=0.0)
+    parser.add_argument("--manufactured-viscosity-slope",type=float,default=None,
+                        help="manufactured nu(x)=nu*(1+slope*x); omitted audit uses recorded material definition, generation uses zero")
     parser.add_argument("--pressure-preconditioner", choices=("ic0", "jacobi", "aggregation"), default="ic0",
                         help="native pressure preconditioner; aggregation remains experimental")
     parser.add_argument("--viscous-stress", choices=("symmetric", "laplacian"), default="symmetric",
@@ -1959,6 +2041,8 @@ def main() -> int:
             if case == "manufactured":
                 command.extend(["--manufactured-pressure-slope",
                                 f"{args.manufactured_pressure_slope:.17g}"])
+            if case == 'manufactured' and args.manufactured_viscosity_slope is not None:
+                command.extend(['--manufactured-viscosity-slope',str(args.manufactured_viscosity_slope)])
             if args.verify_only:
                 log = output_root / "logs" / f"flow-{label}"
                 stage = {"command": command, "commandText": shlex.join(command), "returncode": None,

@@ -126,6 +126,70 @@ Difference finiteDifferenceSource(double h) {
     return {maximum, std::sqrt(sum / static_cast<double>(count))};
 }
 
+Difference finiteDifferenceVariableViscosity(double h, double viscositySlope,
+                                              bool symmetric, double pressureSlope) {
+    const std::array<Point2D, 3> points{{{.17, .29}, {.31, .57}, {.63, .78}}};
+    constexpr double speed = 1.0, nu = .01;
+    double sum = 0.0, maximum = 0.0;
+    std::size_t count = 0;
+    const auto sample = [&](Point2D p) {
+        return manufacturedFlow2D(p, speed, nu, pressureSlope, viscositySlope, symmetric);
+    };
+    for (const auto point : points) {
+        const auto centre = sample(point);
+        const auto xp = sample({point.x + h, point.y});
+        const auto xm = sample({point.x - h, point.y});
+        const auto yp = sample({point.x, point.y + h});
+        const auto ym = sample({point.x, point.y - h});
+        const double ux=(xp.velocity.x-xm.velocity.x)/(2*h);
+        const double uy=(yp.velocity.x-ym.velocity.x)/(2*h);
+        const double vx=(xp.velocity.y-xm.velocity.y)/(2*h);
+        const double vy=(yp.velocity.y-ym.velocity.y)/(2*h);
+        const double dpdx=(xp.pressure-xm.pressure)/(2*h);
+        const double dpdy=(yp.pressure-ym.pressure)/(2*h);
+        // Differentiate the variable-coefficient stress flux numerically;
+        // do not reuse the analytic product-rule formula from the source.
+        const auto stress = [&](Point2D p) {
+            const auto ax=sample({p.x+h,p.y}), bx=sample({p.x-h,p.y});
+            const auto ay=sample({p.x,p.y+h}), by=sample({p.x,p.y-h});
+            const double dux=(ax.velocity.x-bx.velocity.x)/(2*h);
+            const double duy=(ay.velocity.x-by.velocity.x)/(2*h);
+            const double dvx=(ax.velocity.y-bx.velocity.y)/(2*h);
+            const double dvy=(ay.velocity.y-by.velocity.y)/(2*h);
+            const double material=nu*(1+viscositySlope*p.x);
+            return std::array<double,4>{material*(symmetric?2*dux:dux),
+                material*(symmetric?duy+dvx:duy),
+                material*(symmetric?dvx+duy:dvx),material*(symmetric?2*dvy:dvy)};
+        };
+        const auto txp=stress({point.x+h,point.y}), txm=stress({point.x-h,point.y});
+        const auto typ=stress({point.x,point.y+h}), tym=stress({point.x,point.y-h});
+        const double viscX=(txp[0]-txm[0]+typ[1]-tym[1])/(2*h);
+        const double viscY=(txp[2]-txm[2]+typ[3]-tym[3])/(2*h);
+        const double expectedX=centre.velocity.x*ux+centre.velocity.y*uy+dpdx-viscX;
+        const double expectedY=centre.velocity.x*vx+centre.velocity.y*vy+dpdy-viscY;
+        const double scale=std::max({1.0,std::abs(expectedX),std::abs(expectedY)});
+        const double error=std::hypot(centre.acceleration.x-expectedX,
+                                      centre.acceleration.y-expectedY)/scale;
+        maximum=std::max(maximum,error); sum+=error*error; ++count;
+    }
+    return {maximum,std::sqrt(sum/static_cast<double>(count))};
+}
+
+void variableViscosityChecks() {
+    for (const bool symmetric : {false, true}) {
+        for (const double alpha : {1.0, -.5}) {
+            for (const double pressureSlope : {0.0, 1.0, -.7}) {
+                const auto coarse=finiteDifferenceVariableViscosity(1e-4,alpha,symmetric,pressureSlope);
+                const auto fine=finiteDifferenceVariableViscosity(5e-5,alpha,symmetric,pressureSlope);
+                check(coarse.maxRelative<3e-5 && fine.maxRelative<3e-5,
+                      "variable-viscosity manufactured source matches independent difference");
+                check(fine.rmsRelative<coarse.rmsRelative,
+                      "variable-viscosity finite-difference source refines");
+            }
+        }
+    }
+}
+
 void knownValuesAndBoundaries() {
     constexpr double pi = std::numbers::pi;
     const auto sample = manufacturedFlow2D({.2, .3}, 1.0, .01);
@@ -197,6 +261,7 @@ int main() {
           "manufactured acceleration agrees with independent finite differences");
     check(fine.rmsRelative < coarse.rmsRelative,
           "finite-difference source error improves when h is halved");
+    variableViscosityChecks();
     if (failures != 0) std::cerr << "manufactured flow failures=" << failures << '\n';
     return failures == 0 ? 0 : 1;
 }

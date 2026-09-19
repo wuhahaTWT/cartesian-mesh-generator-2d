@@ -37,8 +37,9 @@ fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     // geometry/incidence/state parser from the beginning. No CSV-order guessing.
     std::string line; fv::FlowControls2D c;
     std::getline(in,line);
-    require(line=="CARTMESH2D_FLOW_CHECKPOINT 1"||line=="CARTMESH2D_FLOW_CHECKPOINT 2","invalid flow checkpoint header");
-    const bool v2=line.ends_with(" 2");
+    require(line=="CARTMESH2D_FLOW_CHECKPOINT 1"||line=="CARTMESH2D_FLOW_CHECKPOINT 2"||line=="CARTMESH2D_FLOW_CHECKPOINT 3","invalid flow checkpoint header");
+    const bool v2=line.ends_with(" 2")||line.ends_with(" 3");
+    const bool v3=line.ends_with(" 3");
     std::getline(in,line); require(line=="DISCRETIZATION Euler-RC-v2","unsupported flow checkpoint discretization");
     std::getline(in,line); std::istringstream config(line); std::string token,scheme,stress;
     std::string backflow;
@@ -52,6 +53,15 @@ fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     if (v2) {
         require(backflow=="reject"||backflow=="normal-inlet","invalid carrier outlet backflow model");
         c.outletBackflow=backflow=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
+    }
+    if (v3) {
+        std::string label; std::size_t count=0;
+        require(bool(in>>label>>count)&&label=="FACE_VISCOSITY"&&count==mesh.faces.size(),
+                "invalid face viscosity field");
+        c.faceViscosity.resize(count);
+        for (double& value:c.faceViscosity) {
+            require(bool(in>>value)&&std::isfinite(value)&&value>0,"invalid face viscosity value");
+        }
     }
     in.clear(); in.seekg(0); return fv::readFlowCheckpoint2D(in,mesh,c);
 }
