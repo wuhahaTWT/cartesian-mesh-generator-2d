@@ -41,7 +41,7 @@ function validateSizeField(request, safeWallLevel) {
   }
   if (request.wake) {
     field.wake = {
-      angleOfAttackDeg: number(request.wake.angleOfAttackDeg, '来流角（度）', { min: -180, max: 180 }),
+      angleOfAttackDeg: number(request.wake.angleOfAttackDeg, '尾迹加密方向（度）', { min: -180, max: 180 }),
       downstreamSpans: number(request.wake.downstreamSpans, '尾迹长度（体长倍数）', { min: 0.1, max: 1000 }),
       halfWidthSpans: number(request.wake.halfWidthSpans, '尾迹半宽（体长倍数）', { min: 0.05, max: 100 }),
       levelsBelowWall: number(request.wake.levelsBelowWall, '尾迹低于壁面的级数', { min: 0, max: 20, integer: true })

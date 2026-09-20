@@ -199,6 +199,23 @@ function correctionBounds(previous) {
   return { minimum, maximum };
 }
 
+// A failed coarse solver partition has no admissible cell count to feed into
+// refineBudget. Try one finer tree level, within the same safety/count budget.
+// This changes resolution only; the physical domain and all quality gates stay.
+function refineFailedQuality(previous) {
+  const plan = previous.budgetPlan;
+  if (!plan || plan.attempt >= MAX_ATTEMPTS || previous.method !== 'cutcell') return null;
+  const wall = previous.wallRelativeSize * 0.5;
+  const background = previous.backgroundRelativeSize * 0.5;
+  if (wall < 1e-12 || (previous.allowUnsafeWallLevel !== true &&
+      wall < plan.minimumWallRelativeSize) ||
+      !(plan.estimatedCells > 0) || plan.estimatedCells * 4 > MAX_TARGET_CELLS) return null;
+  return { ...previous, wallRelativeSize: wall, backgroundRelativeSize: background,
+    budgetPlan: { ...plan, attempt: plan.attempt + 1,
+      estimatedCells: plan.estimatedCells * 4, correctionFactor: 0.5,
+      correctionKind: 'solver-quality-resolution-retry', exhausted: false } };
+}
+
 function refineBudget(previous, actual, target = previous?.budgetPlan?.targetCells ?? previous?.targetCells) {
   if (!previous || typeof previous !== 'object') throw new Error('缺少上一次预算计划。');
   const assessment = assessBudget(actual, target);
@@ -280,5 +297,6 @@ module.exports = {
   MAX_TARGET_CELLS,
   planBudget,
   refineBudget,
+  refineFailedQuality,
   assessBudget
 };

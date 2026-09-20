@@ -603,6 +603,18 @@ app.whenReady().then(async () => {
     if (operation.signal.aborted) throw new Error('操作已取消');
     const reports = await collectReports(job.method, prefix);
     const mesh = await firstReadable(invocation.cm2dCandidates);
+    if (failure) {
+      const failedQuality = await readJson(`${prefix}.failed.solver-quality.json`);
+      failure.solverQualityFailure = job.method === 'cutcell' && failure.code === 1 &&
+        /solver-quality gate failed/.test(failure.stderr || '') &&
+        failedQuality?.quality_class === 'solver_quality' && failedQuality.valid === false;
+      failure.outputDirectory = job.outputDirectory;
+      await fs.writeFile(path.join(job.outputDirectory, 'generation-failure.json'), JSON.stringify({
+        parameters: job, invocation, reason: failure.message,
+        solverQualityFailure: failure.solverQualityFailure,
+        stdout: failure.stdout || '', stderr: failure.stderr || ''
+      }, null, 2));
+    }
     if (!mesh) throw failure || new Error('生成结束但没有找到可预览的 CM2D 网格文件。');
     if (failure) log(`网格已写出，但后续步骤失败：${failure.message.split('\n')[0]}`);
     else log('生成完成。');
@@ -657,7 +669,14 @@ app.whenReady().then(async () => {
             estimatedSeconds: request.targetCells >= 100000 ? 90 : 30, estimateSource: '数量档位粗估' });
           log(`数量目标 ${request.targetCells}：第 ${attempt}/${maximum} 组，壁面 h/Lref=${parameters.wallRelativeSize}，背景=${parameters.backgroundRelativeSize}。`);
         }
-      }); } catch (error) { currentResult = null; throw error; }
+      }); } catch (error) {
+        currentResult = null;
+        if (error.outputDirectory && Array.isArray(error.attempts))
+          await fs.writeFile(path.join(error.outputDirectory, 'selection-failure.json'), JSON.stringify({
+            automatic: true, targetCells: request.targetCells, attempts: error.attempts
+          }, null, 2));
+        throw error;
+      }
       currentResult = payload;
       await fs.writeFile(path.join(payload.outputDirectory, 'selection.json'), JSON.stringify({
         automatic: true, cellBudget: payload.cellBudget,

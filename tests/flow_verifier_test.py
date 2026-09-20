@@ -43,6 +43,16 @@ def tiny_mesh() -> verifier.Mesh:
     )
 
 
+def circle_boundary_fixture(segments=32, subdivisions=3, stretch=1., stride=1):
+    # Boundary-only fixture for reference applicability, not a valid FV mesh.
+    corners=[(.07+.5*math.cos(2*math.pi*i*stride/segments),.03+.5*stretch*math.sin(2*math.pi*i*stride/segments)) for i in range(segments)]
+    points=[]
+    for a,b in zip(corners,corners[1:]+corners[:1]):
+        points.extend(((1-j/subdivisions)*a[0]+j/subdivisions*b[0],(1-j/subdivisions)*a[1]+j/subdivisions*b[1]) for j in range(subdivisions))
+    return verifier.Mesh(Path('boundary-only.cm2d'),tuple(points),
+        tuple(verifier.Edge(i,i,(i+1)%len(points),0,-1,1) for i in range(len(points))),(),(0,)*7)
+
+
 class OutletBackflowVerifierTests(unittest.TestCase):
     def setUp(self):
         self.mesh = verifier.Mesh(
@@ -147,7 +157,7 @@ class OutletBackflowVerifierTests(unittest.TestCase):
         cells = [dict(x=1.1, y=0., u=1., speed=1.)]
         payload = dict(forceX=1.0225, forceY=0.)
         for nu, matches in ((.05, True), (.025, False)):
-            result = verifier.external_checks(tiny_mesh(), self.measured, cells, payload, nu, 1., args)
+            result = verifier.external_checks(circle_boundary_fixture(), self.measured, cells, payload, nu, 1., args)
             reference = result["openCylinderReference"]
             self.assertEqual(reference["reynoldsMatches"], matches)
             self.assertFalse(reference["acceptanceGate"])
@@ -155,6 +165,29 @@ class OutletBackflowVerifierTests(unittest.TestCase):
                 self.assertEqual(reference["relativeDifference"], 0.)
             else:
                 self.assertIsNone(reference["relativeDifference"])
+
+    def test_circle_reference_requires_matching_geometry_and_preserves_symmetry_gate(self):
+        for segments in (16,32,64):
+            classified=verifier.circular_obstacle_reference(circle_boundary_fixture(segments))
+            self.assertTrue(classified['circleReferenceApplicable']);self.assertEqual(classified['segments'],segments)
+            self.assertAlmostEqual(classified['radius'],.5)
+        for mesh in (tiny_mesh(),circle_boundary_fixture(8),circle_boundary_fixture(stretch=.7),circle_boundary_fixture(stride=3)):
+            self.assertFalse(verifier.circular_obstacle_reference(mesh)['circleReferenceApplicable'])
+        one=circle_boundary_fixture();count=len(one.vertices)
+        pair=verifier.Mesh(Path('two-bodies.cm2d'),one.vertices+tuple((x+2,y) for x,y in one.vertices),
+            one.edges+tuple(verifier.Edge(e.id+count,e.v0+count,e.v1+count,0,-1,1) for e in one.edges),(),(0,)*7)
+        self.assertFalse(verifier.circular_obstacle_reference(pair)['circleReferenceApplicable'])
+        args=SimpleNamespace(external_lift_drag_ratio=.3,max_speed_ratio=4.)
+        cells=[dict(x=1.1,y=0.,u=1.,speed=1.)];payload=dict(forceX=1.,forceY=.5)
+        circle=verifier.external_checks(circle_boundary_fixture(),None,cells,payload,.05,1.,args)
+        self.assertFalse(circle['valid']);self.assertIn('symmetric-circle lift/drag ratio is too large',circle['issues'])
+        other=verifier.external_checks(circle_boundary_fixture(stretch=.7),None,cells,payload,.05,1.,args)
+        self.assertTrue(other['valid']);self.assertEqual(other['status'],'not-qualified')
+        self.assertFalse(other['symmetricCircleLiftCheck']['applicable']);self.assertFalse(other['openCylinderReference']['geometryMatches'])
+        self.assertIsNone(other['openCylinderReference']['relativeDifference'])
+        # Generic finite/force/stability checks still apply to unmatched shapes.
+        other=verifier.external_checks(circle_boundary_fixture(stretch=.7),None,[dict(x=1.1,y=0.,u=5.,speed=5.)],payload,.05,1.,args)
+        self.assertFalse(other['valid'])
 
 
 class PressureBoundaryStencilTests(unittest.TestCase):

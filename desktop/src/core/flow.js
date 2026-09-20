@@ -11,7 +11,7 @@ const FLOW_CASES = Object.freeze({
   },
   external: {
     id: 'external', label: '外流',
-    scope: '矩形域：左侧恒速入口、右侧压力出口、上下滑移，物面无滑移。'
+    scope: '矩形域：左侧沿 +X 的恒速入口、右侧压力出口、上下滑移，物面无滑移。尾迹加密方向不会旋转入口速度。'
   },
   channel: {
     id: 'channel', label: '通道',

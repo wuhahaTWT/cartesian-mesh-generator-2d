@@ -30,7 +30,7 @@ const SAMPLES = Object.freeze([
     label: '厚弯度翼型',
     file: 'thick_cambered_airfoil.xy',
     fluidRegion: 'exterior',
-    note: '钝后缘厚翼型，比尖后缘容易收敛，适合先试尾迹加密。',
+    note: '钝后缘厚翼型，可观察尾缘与尾迹细化。过粗数量档可能无法通过质量门；自动模式最多细化重试两次。',
     sizeField: { farFieldSpans: 10, wallCellsPerSpan: 64, cellsPerLevel: 3 },
     smallAlpha: 0.35,
     wake: { angleOfAttackDeg: 0, downstreamSpans: 8, halfWidthSpans: 0.7, levelsBelowWall: 4 }
@@ -92,10 +92,10 @@ const SAMPLES = Object.freeze([
   },
   {
     id: 'annulus',
-    label: '圆环（内流）',
+    label: '方形环隙（内流）',
     file: 'annulus.xy',
     fluidRegion: 'interior',
-    note: '外环加一个孔，流体在两环之间。闭域没有左右开口，不能直接使用通道／喷管工况；旋转壁面工况尚未提供。',
+    note: '方形外边界加一个方孔，流体在两者之间。闭域没有左右开口，不能套用通道／喷管预设。圆形旋转验证请选“同心圆旋转环隙”。',
     sizeField: { farFieldSpans: 1, wallCellsPerSpan: 32, cellsPerLevel: 3 },
     smallAlpha: 0.15
   },

@@ -136,11 +136,12 @@
       </label>
       <label class="toggle"><input id="useWake" type="checkbox">尾迹加密</label>
       <div id="wakeFields" class="pair" hidden>
-        <label class="field">来流角<span class="unit"><input id="wakeAngle" type="number" step="any" value="0"><i>°</i></span></label>
+        <label class="field">尾迹加密方向<span class="unit"><input id="wakeAngle" type="number" step="any" value="0"><i>°</i></span></label>
         <label class="field">下游长度<span class="unit"><input id="wakeLength" type="number" min="0.1" step="any" value="8"><i>倍体长</i></span></label>
         <label class="field">半宽<span class="unit"><input id="wakeHalfWidth" type="number" min="0.05" step="any" value="0.7"><i>倍体长</i></span></label>
         <label class="field">低于壁面<span class="unit"><input id="wakeLevels" type="number" min="0" max="20" step="1" value="4"><i>级</i></span></label>
       </div>
+      <p class="note">尾迹方向只控制网格加密，不改变流动入口方向或几何攻角。</p>
       <label class="toggle" hidden><input id="allowUnsafe" type="checkbox">允许越过实测安全层级上限</label>
 
       <div class="regions">

@@ -1,6 +1,6 @@
 'use strict';
 
-const { planBudget, refineBudget, assessBudget } = require('./cell-budget');
+const { planBudget, refineBudget, refineFailedQuality, assessBudget } = require('./cell-budget');
 
 // Keep every attempt's provenance and select the nearest successfully exported
 // solver mesh. A later failed attempt must not destroy an earlier valid result.
@@ -42,7 +42,8 @@ async function runBudget(request, frame, { generate, progress = () => {}, signal
     } catch (error) {
       lastError = error;
       attempts.push({ parameters: choice, seconds: (Date.now() - started) / 1000,
-        success: false, reason: error.message });
+        success: false, reason: error.message,
+        ...(error.outputDirectory ? { outputDirectory: error.outputDirectory } : {}) });
       if (signal?.aborted) throw new Error('操作已取消');
       // A failed layer construction may be retried with a thinner/thicker first
       // layer. This bounded geometric adjustment never changes the quality gates,
@@ -53,10 +54,14 @@ async function runBudget(request, frame, { generate, progress = () => {}, signal
           budgetPlan: { ...choice.budgetPlan, attempt: i+2, correctionKind: 'first-layer-retry' } };
         continue;
       }
+      if (!best && error.solverQualityFailure === true && i < 2) {
+        const refined = refineFailedQuality(choice);
+        if (refined) { choice = refined; continue; }
+      }
       break;
     }
   }
-  if (!best) throw lastError || new Error('未得到可导出的网格。');
+  if (!best) throw Object.assign(lastError || new Error('未得到可导出的网格。'), { attempts });
   const payload = best.payload;
   payload.automatic = true;
   payload.selectedRequest = best.choice;

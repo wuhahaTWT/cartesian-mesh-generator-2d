@@ -1753,6 +1753,49 @@ def force_values(payload: dict[str, Any]) -> dict[str, float]:
     return found
 
 
+def circular_obstacle_reference(mesh: Mesh) -> dict[str, Any]:
+    """Identify one regular polygon circle, ignoring collinear Cut-cell splits.
+
+    A geometry-specific benchmark must not silently become an acceptance gate
+    for a lifting airfoil, ellipse or several obstacles.
+    """
+    wall = [e for e in mesh.edges if e.neighbour < 0 and e.patch == 1]
+    other = {"kind": "unmatched", "circleReferenceApplicable": False}
+    if not wall:return {**other, "reason": "no embedded boundary"}
+    adjacency: dict[int, list[int]] = {}
+    for e in wall:
+        adjacency.setdefault(e.v0, []).append(e.v1);adjacency.setdefault(e.v1, []).append(e.v0)
+    if any(len(v) != 2 for v in adjacency.values()):return {**other, "reason": "embedded boundary is not a single simple cycle"}
+    first = min(adjacency);loop = [];seen = set();previous = None;current = first
+    while current not in seen:
+        loop.append(current);seen.add(current);neighbors = adjacency[current]
+        following = neighbors[0] if neighbors[0] != previous else neighbors[1]
+        previous,current = current,following
+    if current != first or len(loop) != len(adjacency):return {**other, "reason": "multiple or incomplete embedded boundary cycles"}
+    points = [mesh.vertices[v] for v in loop]
+    changed = True
+    while changed and len(points) >= 16:
+        changed = False;retained = []
+        for i,b in enumerate(points):
+            a,c = points[i-1],points[(i+1) % len(points)]
+            ux,uy = b[0]-a[0],b[1]-a[1];vx,vy = c[0]-b[0],c[1]-b[1]
+            if ux*vx+uy*vy > 0 and abs(ux*vy-uy*vx) <= 1e-9*math.hypot(ux,uy)*math.hypot(vx,vy):
+                changed = True
+            else:retained.append(b)
+        points = retained
+    if len(points) < 16:return {**other, "reason": "fewer than 16 circular polygon corners"}
+    centre = [math.fsum(p[j] for p in points)/len(points) for j in (0,1)]
+    vectors = [(p[0]-centre[0],p[1]-centre[1]) for p in points]
+    radii = [math.hypot(*v) for v in vectors];radius = math.fsum(radii)/len(radii)
+    if radius <= 0 or max(abs(r-radius) for r in radii) > 1e-8*radius:
+        return {**other, "reason": "embedded shape is not circular"}
+    angles = [math.atan2(a[0]*b[1]-a[1]*b[0],a[0]*b[0]+a[1]*b[1]) for a,b in zip(vectors,vectors[1:]+vectors[:1])]
+    if any(a*angles[0] <= 0 or abs(abs(a)-2*math.pi/len(points)) > 1e-8 for a in angles):
+        return {**other, "reason": "circular polygon is not regularly sampled"}
+    return {"kind": "regular-polygon-circle", "circleReferenceApplicable": True,
+            "centre": centre, "radius": radius, "segments": len(points)}
+
+
 def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
                     payload: dict[str, Any], nu: float, speed: float,
                     args: argparse.Namespace) -> dict[str, Any]:
@@ -1771,6 +1814,8 @@ def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, flo
     drag_coefficient = 2.0 * drag / (speed * speed * diameter) if drag is not None else None
     lift_coefficient = 2.0 * lift / (speed * speed * diameter) if lift is not None else None
     reference_drag = 2.045  # Dennis & Chang (1970), open circular cylinder, Re=20.
+    geometry_reference = circular_obstacle_reference(mesh)
+    circle = geometry_reference["circleReferenceApplicable"]
     wake = [row["u"] / speed for row in cells if row["x"] > obstacle_xmax and min(ys) < row["y"] < max(ys)]
     max_speed = max(row["speed"] for row in cells) / speed
     issues: list[str] = []
@@ -1778,23 +1823,28 @@ def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, flo
         issues.append("native JSON does not expose both drag and lift force/coefficient")
     elif not (drag > 0.0):
         issues.append("drag is not positive")
-    elif abs(lift) > args.external_lift_drag_ratio * abs(drag):
+    elif circle and abs(lift) > args.external_lift_drag_ratio * abs(drag):
         issues.append("symmetric-circle lift/drag ratio is too large")
     if max_speed > args.max_speed_ratio:
         issues.append("external maximum speed ratio exceeds stability limit")
     return {
-        "valid": not issues, "issues": issues, "reynoldsByMaximumSpeedAndDiameter": re,
+        "valid": not issues, "issues": issues, "status": "not-qualified", "geometryReference": geometry_reference,
+        "reynoldsByMaximumSpeedAndDiameter": re,
+        "symmetricCircleLiftCheck": {"applicable": circle, "maximumLiftDragRatio": args.external_lift_drag_ratio,
+                                    "observedLiftDragRatio": abs(lift/drag) if lift is not None and drag else None},
         "diameter": diameter, "forces": forces, "maximumSpeedRatio": max_speed,
         "derivedBodyCoefficients": {"drag": drag_coefficient, "lift": lift_coefficient,
                                     "definition": "2 F / (U^2 D), unit density and depth"},
         "openCylinderReference": {"source": "Dennis & Chang 1970", "reynolds": 20.0,
                                   "dragCoefficient": reference_drag,
                                   "reynoldsMatches": math.isclose(re,20.0,rel_tol=1e-10),
+                                  "geometryMatches": circle,
                                   "relativeDifference": (abs(drag_coefficient - reference_drag) / reference_drag
-                                                         if drag_coefficient is not None and math.isclose(re,20.0,rel_tol=1e-10) else None),
+                                                         if circle and drag_coefficient is not None and math.isclose(re,20.0,rel_tol=1e-10) else None),
                                   "acceptanceGate": False},
         "minimumWakeUOverSpeed": min(wake) if wake else None,
-        "benchmarkCaveat": "Reference drag is context only: this 32-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions.",
+        "benchmarkCaveat": (f"Reference drag is context only: this {geometry_reference['segments']}-gon, finite slip-domain result is not an accuracy certification; DFG 2D-1 has different geometry and boundary conditions."
+                            if circle else "No matched circular-cylinder reference: only the declared stability, geometry and discrete-balance checks apply. This is not a physical accuracy qualification."),
     }
 
 

@@ -926,3 +926,9 @@ MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified 
 0.4.22把App流动容差接到原生`--tolerance`，范围1e-12..1e-6，默认1e-6；核对结果容差等于实际请求。流动工况v2增加`tolerance`，读v1时显式赋旧默认1e-6，不允许v1额外携带该字段。连续性和全局相对流量门仍为1e-8。共享界面的温度联算使用`min(tolerance,1e-8)`作为`--flow-tolerance`，原来1e-8默认保持不变；温度自身停止门未修改。检查点保留物理状态而不锁死迭代预算，续算允许加严容差。实际App回归可用`--flow-tolerance=1e-9`，工况保存回归会改动并恢复该值。
 
 `tools/visualization/render_annulus_facets.py`绘制保存在`outputs/native-flow/annulus-facet-study/`的固定背景、圆边界细分研究，重新审核真实场并核对解析误差。完整单元压力误差用对称对数色标显示，最大偏差不能被颜色裁切；两侧力矩的非单调变化一并保留，不能把该研究误称三档流动网格验证。
+
+### 外流参考适用性与有界尺寸重试
+
+`verify_native_flow.circular_obstacle_reference`在最终嵌入边界上检查闭合单环、圆半径和等角折线，剔除共线分割点；只有匹配圆柱才应用圆柱对称升力检查/参考对照。其他几何保持not-qualified，仍须通过同一离散守恒/动量等检查；不把翼型当成圆柱校验。对应回归在`tests/flow_verifier_test.py`。
+
+`cell-budget.refineFailedQuality`只在尚无有效候选且原生明确Solver质量拒绝时细化一个树层级；`budget-runner`仍最多三次，保留安全深度/估计数量上限、所有失败原因和最接近数量目标的有效结果。main保存每个失败目录的`generation-failure.json`，全部失败时再写`selection-failure.json`；不因重试而删除坏网格证据。原质量门不变。实际App可用`--smoke=thick_airfoil --target-cells=2000 --flow=external --flow-nu=.05 --flow-tolerance=1e-8 --flow-convection=face-limited-linear --flow-pressure-preconditioner=aggregation`重现三档流程。
