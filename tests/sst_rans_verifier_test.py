@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "verification"))
 import verify_native_flow as native  # noqa: E402
 import verify_sst_rans as verifier  # noqa: E402
+import analyze_sst_flatplate as flatplate  # noqa: E402
 
 
 def run(command, timeout=90):
@@ -145,6 +146,7 @@ def main(args):
         # Similarity transformation: x,y -> 2(x,y)+(-1,2), U -> 2U,
         # nu -> 4nu, k -> 4k, omega unchanged; same Re and dimensionless model.
         similarity=[]
+        physical_profiles=[]
         for label,bounds,options in (
             ('unit',[],[]),
             ('scaled',['-1','2','1','4'],['--speed','2','--nu','.004','--inlet-k','.004','--inlet-omega','2','--leading-edge','0'])):
@@ -154,6 +156,9 @@ def main(args):
             run([args.probe,mesh,prefix,'flatplate-sweep',*options])
             result=verifier.audit(mesh,prefix)
             assert result['valid'] and result['plateReynolds']==500
+            physical=flatplate.analyze_case(label,mesh,prefix,(.75 if label=='unit' else .5,))
+            assert physical['equationAuditValid'] and physical['physicalAccuracyQualified'] is False
+            physical_profiles.append(physical['profiles'][0])
             with Path(str(prefix)+'.cells.csv').open() as stream:fields=list(csv.DictReader(stream))
             similarity.append((fields,result))
             for key in ('nu','speed','inletK','inletOmega'):
@@ -172,6 +177,10 @@ def main(args):
                 assert abs(float(a[key])-float(b[key])/factor)<1e-5*max(1,abs(float(a[key]))),(key,a[key],b[key])
         for a,b in zip(similarity[0][1]['plateWallSamples'],similarity[1][1]['plateWallSamples']):
             assert abs(a['Cf']-b['Cf'])<1e-5 and abs(a['yPlus']-b['yPlus'])<1e-5
+        assert abs(physical_profiles[0]['Cf']-physical_profiles[1]['Cf'])<1e-5
+        for a,b in zip(physical_profiles[0]['samples'],physical_profiles[1]['samples']):
+            assert abs(a['y']-b['y']/2)<1e-14
+            assert abs(a['uOverU']-b['uOverU'])<1e-5
         for bad_bounds in (['0','0','0','1'],['0','1','1','0'],['nan','0','1','1']):
             rejected=subprocess.run([str(args.rect_probe),'8','8','1',str(root/'bad-mesh'),*bad_bounds],
                                     stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
@@ -220,6 +229,12 @@ def main(args):
         assert diagnosis['valid'] is False and diagnosis['diagnosticOnly'] is True
         assert diagnosis['failedConvergenceChecks']
         assert diagnosis['scalar']['omega']['worstCellIndex']>=0
+        try:
+            flatplate.analyze_case('failed',plate_mesh,failed_prefix,(.75,))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('physical analysis accepted an unconverged field')
         timed=root/'timed-stop'
         result=subprocess.run([str(args.probe),str(plate_mesh),str(timed),'flatplate-sweep',
                                '--max-seconds','1e-12'],capture_output=True,timeout=30)

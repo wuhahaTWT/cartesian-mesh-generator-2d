@@ -483,6 +483,21 @@ SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（�
 
 修复案例可用上一节命令将nx改40、stretch改8复现。查看原失败文件与新最终场需要区别其源码/可执行文件哈希；不应把旧文件重新标为已通过。绘图脚本继续只展示有独立审核的真实场。
 
+### 实际平板剖面与域敏感性测量
+
+`tools/verification/analyze_sst_flatplate.py`读取manifest的cases（name/mesh/prefix）及comparisons（两两名称）。每例先从实际文件运行严格`verify_sst_rans.audit`，再测量；拒绝未收敛、任意非矩形/非完整张量积网格、非法物性或站位外推。此工具不是通用Cut-cell剖面插值器。固定站位x=.97008、1.90334：各水平行按单元中心x线性插值；wall kinematic shear另按墙面中心插值，Cf=2tau/U²、u_tau=sqrt(tau)、u+=u/u_tau、y+=(y-ywall)u_tau/nu。负剪切不套用此缩放。delta99仅为从无滑移点开始的0.99U首次交点，无交点返回null，不声称测得边界层外缘速度。
+
+跨网格剖面对照在共有高度范围内取100个对数分布点（最高.05），两侧均线性插值、不外推，以U归一化速度差，避免把不同单元编号当同一物理位置。积分Cd=2sum(tau*面长)/(U²*实际板长)。同模型敏感性要求物性、入口k/omega、前缘、顶部条件及离散声明相同；不自动推出误差阶或通过阈值。顶部域几何隔离另由实际多边形精确对照提供证据，不从cell数量或文件名猜测。
+
+```sh
+python3 tools/verification/analyze_sst_flatplate.py --manifest outputs/native-flow/sst-physical-check/manifest.json --reference-dir outputs/native-flow/sst-physical-check/reference --output outputs/native-flow/sst-physical-check/analysis.json
+python3 tools/visualization/render_sst_flatplate_analysis.py --study artifacts/current/native-sst-physical-check.json --output outputs/sst-physical-check.png
+```
+
+参考数据来源为下节TMR页面的[墙面Cf](https://tmbwg.github.io/turbmodels/FlatPlate/SST/cf_plate_sstv.dat)、[速度剖面](https://tmbwg.github.io/turbmodels/FlatPlate/SST/flatplate_u_sstv.dat)、[不可压Cf对照](https://tmbwg.github.io/turbmodels/FlatPlate_validation/cf_incomp_results_sstv.dat)。仅解析该类ASCII POINT zone表，验证列数/有限值/分区及插值坐标。速度表的u/U∞、y/L含义来自无量纲工况和远场数值的解释，文件头仅写u,y。参考比较仅限U/nu=5e6、k/U²=2.25e-7、omega/U=125、前缘0、板长2的物理尺度；即使满足，SST变体、可压缩性与边界差异仍阻止精度认证。输出始终physicalAccuracyQualified=false；不会因为数值接近参考而授予通过。
+
+`native-sst-physical-check.json`保留三档旧网格的重新审核及新顶部扩域实际场，另保存精确保留下部单元的检查、生成器/监测源码、原生门、时间/RSS/磁盘、工具与参考SHA256。完整场留在outputs中，不加入Git。原始参考表的不可压结果是背景对照，不被自动挑选最接近值作为本项目标准。
+
 ### 标准湍流参考的适用边界
 
 已核对[TMR 2DZP平板定义](https://tmbwg.github.io/turbmodels/flatplate.html)、[网格](https://tmbwg.github.io/turbmodels/flatplate_grids.html)及[SST参考结果](https://tmbwg.github.io/turbmodels/flatplate_sst.html)。平板x=0至2，参考长度1，Re_L=5e6、M=.2；网格35×25至545×385节点，需明确区分节点数与实际流体单元数。壁面omega及自由来流k/omega必须按该例指定，不能沿用诊断通道的数值。近壁y+、x约.97/1.90的剖面及壁面摩阻是后续关注量；不能只看残差。
