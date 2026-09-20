@@ -103,6 +103,11 @@ def main(args):
                        lambda records, index, key: records[-1].__setitem__(key, str(float(records[-1][key]) + .1)))
             reject_csv(mesh, prefix, ".history.csv", "kNorm",
                        lambda records, index, key: records[-1].__setitem__(key, '0'))
+            for column in ('kCellResidual','omegaCellResidual'):
+                reject_csv(mesh,prefix,'.history.csv',column,
+                           lambda records,index,key:records[-1].__setitem__(key,'1e-4'))
+            for column in ('lossW','sourceK'):
+                reject_csv(mesh,prefix,'.cells.csv',column,add)
             reject_csv(mesh, prefix, ".history.csv", "turbulenceIterations",
                        lambda records, index, key: records[index].__setitem__(key, '2'))
 

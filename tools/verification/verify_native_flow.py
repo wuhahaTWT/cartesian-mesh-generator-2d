@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import decimal
 import hashlib
 import json
 import math
@@ -254,6 +255,24 @@ def polygon(points: list[tuple[float, float]]) -> tuple[float, tuple[float, floa
     twice = math.fsum(cross)
     if not math.isfinite(twice) or twice <= 0.0:
         raise VerificationError("cell polygon is not finite counter-clockwise positive area")
+    # Thin/low-area polygons amplify a one-ulp centroid displacement into a
+    # tangential gradient error. Re-measure their original binary64 vertices
+    # independently in Decimal, rather than copying the native centred-moment
+    # implementation or widening field-audit tolerances. This is an arithmetic
+    # precision trigger, not a geometry acceptance threshold.
+    span=max(max(x for x,y in local)-min(x for x,y in local),
+             max(y for x,y in local)-min(y for x,y in local))
+    if span*span > 16.0*twice:
+        with decimal.localcontext() as context:
+            context.prec=80
+            origin=tuple(decimal.Decimal.from_float(x) for x in points[0])
+            vertices=[tuple(decimal.Decimal.from_float(p[k])-origin[k] for k in (0,1)) for p in points]
+            edges=list(zip(vertices,vertices[1:]+vertices[:1]))
+            products=[a[0]*b[1]-b[0]*a[1] for a,b in edges]
+            total=sum(products)
+            if total<=0:raise VerificationError("cell polygon is not finite counter-clockwise positive area")
+            centre=tuple(float(origin[k]+sum((a[k]+b[k])*q for (a,b),q in zip(edges,products))/(3*total)) for k in (0,1))
+            return float(total/2),centre
     cx = ox + math.fsum((a[0] + b[0]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
     cy = oy + math.fsum((a[1] + b[1]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
     return 0.5 * twice, (cx, cy)

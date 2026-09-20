@@ -186,7 +186,9 @@ def main(args):
 
         text = checkpoint.read_text()
         truncated = root / "truncated.checkpoint"
-        truncated.write_text(text[: text.rfind("\n") // 2])
+        # Keep the final retained record intact. Cutting inside a number can
+        # legitimately report mesh mismatch before reaching the missing record.
+        truncated.write_text(text[:len(text)//2].rsplit('\n',1)[0]+'\n')
         expect_failure(invoke(args.transport_cli, mesh, root / "bad-truncated", 1,
                               restart=truncated), r"truncated|unexpected end")
         altered = root / "altered.checkpoint"

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <numeric>
 #include <utility>
 
 namespace cartmesh2d {
@@ -330,6 +331,24 @@ std::optional<Point2D> Polygon2D::centroid(const TolerancePolicy& tol) const noe
     const long double areaEps = std::max(
         static_cast<long double>(tol.absolute) * tol.absolute, roundoff);
     if (std::abs(twiceArea) <= 2.0L * areaEps) return std::nullopt;
+    // Exact axis-aligned rectangles have an analytic centroid. Dividing first
+    // moments adds unnecessary rounding, which can move a thin cell sideways
+    // by one ulp and pollute large wall-normal gradients. Use exact coordinate
+    // comparisons only: an almost-rectangle/cut polygon keeps the general path.
+    // Keep the original area/tolerance rejection above this fast path.
+    if (vertices.size() == 4) {
+        const auto box = bounds();
+        unsigned corners = 0;
+        bool rectangular = box.max.x > box.min.x && box.max.y > box.min.y;
+        for (std::size_t i=0; i<4; ++i) {
+            const auto a=vertices[i], b=vertices[(i+1)%4];
+            rectangular = rectangular && ((a.x==b.x)!=(a.y==b.y)) &&
+                (a.x==box.min.x || a.x==box.max.x) && (a.y==box.min.y || a.y==box.max.y);
+            corners |= 1U << ((a.x==box.max.x ? 1U : 0U) + (a.y==box.max.y ? 2U : 0U));
+        }
+        if (rectangular && corners==15U)
+            return Point2D{std::midpoint(box.min.x,box.max.x),std::midpoint(box.min.y,box.max.y)};
+    }
     return Point2D{origin.x + static_cast<double>(cx / (3.0L * twiceArea)),
                    origin.y + static_cast<double>(cy / (3.0L * twiceArea))};
 }

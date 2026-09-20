@@ -307,8 +307,34 @@ def audit(mesh_path, prefix):
                                     "globalBalance": math.fsum(residual),"normRoundoffBudget":roundoff}
         history_norm = num(history[-1]["kNorm" if name == "k" else "omegaNorm"], "history norm")
         history_cell = num(history[-1]["kCellResidual" if name == "k" else "omegaCellResidual"], "history cell residual")
-        req(close(history_norm, norm, roundoff, 1e-6) and close(history_cell, max_cell, 1e-12, 1e-6),
-            f"{name} history does not describe independently reconstructed balance")
+        # The nonlinear gate above uses independently reconstructed, UNSPLIT
+        # sources and fluxes. History instead reports the scalar API's SPLIT
+        # source/loss arithmetic on its exported binary64 terms. Cancellation
+        # makes these mathematically equivalent evaluations differ at roundoff.
+        # Check like-for-like reporting separately without widening either gate.
+        # All exported closure/face terms were independently checked above; they
+        # are never substituted for the original-equation acceptance residual.
+        reported_residual=[]
+        for i,row in enumerate(cells):
+            area=num(row['area'],'reported area')
+            source=num(row[source_key],'reported source')
+            loss=num(row[loss_key],'reported loss')
+            reported_residual.append(-area*source+(loss*area)*values[i])
+        scalar_diffusion_key='kDiffusion' if name=='k' else 'omegaDiffusion'
+        for edge,row in zip(mesh.edges,faces):
+            flux=num(row[adv_key],'reported advection')+num(row[scalar_diffusion_key],'reported diffusion')
+            reported_residual[edge.owner]+=flux
+            if edge.neighbour>=0:reported_residual[edge.neighbour]-=flux
+        reported_norm=math.sqrt(math.fsum(x*x for x in reported_residual))
+        reported_cell=max(abs(x)/diagonal[i] for i,x in enumerate(reported_residual))
+        req(close(history_norm, reported_norm, roundoff, 1e-6) and
+            close(history_cell, reported_cell, 1e-12, 1e-6),
+            f"{name} history does not describe the checked exported transport balance: "
+            f"norm reported={history_norm}, reconstructed={reported_norm}; "
+            f"cell reported={history_cell}, reconstructed={reported_cell}")
+        scalar_diagnostics[name]['reportedTransportBalance']={
+            'residualNorm':reported_norm,'maxCellResidual':reported_cell,
+            'originalEquationCellDifference':abs(max_cell-reported_cell)}
 
     # Reuse the independently implemented momentum auditor with a temporary
     # face-viscosity file derived above, never with native viscosity values.

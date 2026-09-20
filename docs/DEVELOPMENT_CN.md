@@ -405,7 +405,17 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 
 `sst_rans_verifier_test.py`增加坐标平移/尺度变换相似性：x长度×2、U×2、nu×4、k×4、omega不变，要求无量纲场及Cf/y+一致；又故意篡改物性、速度、入口湍流和边界配置，须被重算拒绝。旧固定物理量改为可配置没有放松这些检查。矩形输入与参数格式也有失败回归。
 
-一份40×32/stretch8高Re算例仍未通过梯度独立重构：源码返回中心与独立/80位几何在薄单元有舍入差异，处于大法向omega梯度下。现保留失败，无容差修改。`native-sst-physical-inputs.json`整体为false，不能仅取其中通过的80×32档声明全网格鲁棒性。原生几何中的long double在Apple Silicon不保证比double更宽，这一修复需单独核实和回归。
+72cb13a阶段的40×32/stretch8高Re算例未通过梯度独立重构，原`native-sst-physical-inputs.json`仍保留该失败。后续解析矩形中心修复与80位独立几何复测使**重新计算**的同一案例通过；原错误场继续拒绝。新证据为`native-centroid-stability.json`，不得覆盖旧文件。系统clang宏验证Apple ARM64的long double与double均为53位有效位，不能假设long double足以防止这类几何舍入。
+
+### 薄矩形中心与独立核算精度
+
+`Polygon2D::centroid`保留原面积阈值和通用路径；仅当四个顶点覆盖四个**精确**包围盒角点、各边严格轴向且非零时，返回`std::midpoint`解析中心。不按tolerance近似识别，不改变signedArea、拓扑或质量策略。它统一薄矩形中心的中点舍入，避免行间细小横向偏移被大法向梯度放大；不承诺修复所有非矩形或所有条件数问题。原生几何变化可能使旧checkpoint的严格几何签名不匹配，此时仍明确拒绝。
+
+`verify_native_flow.polygon`在span²/area>32时，以80位Decimal从原binary64顶点独立计算面积与中心，其余保留原算法。该分支提高测量精度，没有改变任何几何/CFD允许误差。测试包含实际半ulp中点、轮换/反向/平移、非对称薄多边形和拒绝规则；独立读取器没有复用原生解析识别代码。
+
+`verify_sst_rans`输出两种残差：`maxCellResidual`是从实际字段和独立本构计算的**未拆分原方程**；`reportedTransportBalance`是已逐项独立核对过的导出binary64 source/loss/通量按标量API报告顺序形成的余额。前者按原门决定方程资格，后者按原摘要容差核对history；`originalEquationCellDifference`保留运算顺序/舍入差异。不能用history小、或split余额小，跳过前者。导出系数、通量及history篡改仍由对应检查拒绝。
+
+修复案例可用上一节命令将nx改40、stretch改8复现。查看原失败文件与新最终场需要区别其源码/可执行文件哈希；不应把旧文件重新标为已通过。绘图脚本继续只展示有独立审核的真实场。
 
 ### 标准湍流参考的适用边界
 

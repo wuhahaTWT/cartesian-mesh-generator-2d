@@ -21,7 +21,8 @@ inline void fail(const std::string& message) {
 
 inline void token(std::istream& in, const char* expected) {
     std::string actual;
-    if (!(in >> actual) || actual != expected) fail("expected '" + std::string(expected) + "'");
+    if (!(in >> actual)) fail(std::string(in.eof() ? "unexpected end before '" : "cannot read token '") + expected + "'");
+    if (actual != expected) fail("expected '" + std::string(expected) + "'");
 }
 
 inline std::size_t count(std::istream& in, std::size_t expected, const char* what) {

@@ -338,6 +338,17 @@ class PolygonMeasurementTests(unittest.TestCase):
         exact_area, _ = self.high_precision(points)
         self.assertGreater(abs(old_area-exact_area), 100*math.ulp(exact_area))
 
+    def test_thin_centres_do_not_shift_tangentially(self):
+        height=9.531188624900715e-5
+        for x in (.3125,.9375,1024.3125):
+            points=[(x,0.),(x+.0625,0.),(x+.0625,height),(x,height)]
+            for start in range(4):
+                _,centre=verifier.polygon(points[start:]+points[:start])
+                self.assertEqual(centre,(x+.03125,height/2))
+        # The independent high-precision path also handles an asymmetric thin
+        # polygon; its centre must not be replaced by a box midpoint.
+        self.assert_precise([(.3125,0.),(.375,0.),(.32,height)])
+
     def test_invalid_polygons_still_fail(self):
         for points in ([], [(1., 1.)], [(0., 0.), (1., 0.), (2., 0.)],
                        [(0., 0.), (0., 1.), (1., 0.)]):

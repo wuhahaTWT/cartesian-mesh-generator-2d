@@ -38,6 +38,41 @@ int main() {
     near(rectangleCentroid->x, 2.0, 1e-12, "rectangle centroid x");
     near(rectangleCentroid->y, 1.0, 1e-12, "rectangle centroid y");
 
+    // Actual near-wall failure: a one-ulp tangential centre shift pollutes a
+    // wall-normal omega gradient of about 6.4e8. Analytic rectangle centre is
+    // exact, irrespective of winding or starting vertex.
+    for(double shift : {0., -1., 1024.}) {
+        Polygon2D thin{{{.3125+shift,0.},{.375+shift,0.},
+                         {.375+shift,9.531188624900715e-5},{.3125+shift,9.531188624900715e-5}}};
+        for(int winding=0;winding<2;++winding) {
+            for(int start=0;start<4;++start) {
+                const auto centre=thin.centroid(tol);
+                check(centre && centre->x==.34375+shift && centre->y==4.7655943124503574e-5,
+                      "thin rectangle preserves its exact analytic centre");
+                std::rotate(thin.vertices.begin(),thin.vertices.begin()+1,thin.vertices.end());
+            }
+            std::reverse(thin.vertices.begin(),thin.vertices.end());
+        }
+    }
+    for(const auto pair : std::vector<std::pair<double,double>>{
+            {.3125,std::nextafter(.375,0.)},{.8125,std::nextafter(.875,1.)}}) {
+        Polygon2D tied{{{pair.first,.00021769477070518315},{pair.second,.00021769477070518315},
+                         {pair.second,.0003748375049144722},{pair.first,.0003748375049144722}}};
+        const auto centre=tied.centroid(tol);
+        const double expected=pair.first==.3125?.34375:.84375;
+        check(centre && centre->x==expected,"rectangle centre resolves half-ulp midpoint ties");
+    }
+    // An asymmetric polygon must keep its true area-weighted centre, not the
+    // bounding box centre used for the rectangle shortcut.
+    Polygon2D thinTriangle{{{.3125,0.},{.375,0.},{.3125,0x1p-14}}};
+    const auto thinCentre=thinTriangle.centroid(tol);
+    check(thinCentre && std::abs(thinCentre->x-1./3.)<=std::numeric_limits<double>::epsilon()/3. &&
+          std::abs(thinCentre->y-0x1p-14/3.)<=std::numeric_limits<double>::epsilon()*0x1p-14/3.,
+          "asymmetric thin polygon retains area-weighted centroid");
+
+    check(!Polygon2D{{{0,0},{1,0},{1,1e-15},{0,1e-15}}}.centroid(tol),
+          "analytic rectangle centre cannot bypass original area rejection");
+
     Polygon2D triangle{{{0, 0}, {4, 0}, {0, 2}}};
     near(triangle.area(), 4.0, 1e-12, "triangle area");
 
