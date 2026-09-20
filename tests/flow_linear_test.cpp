@@ -14,6 +14,7 @@
 namespace {
 
 using cartmesh2d::fv::detail::LinearWorkspace2D;
+using cartmesh2d::fv::detail::LinearSolveMethod2D;
 using cartmesh2d::fv::detail::LinearPressureMethod2D;
 using cartmesh2d::fv::detail::linearNorm;
 using cartmesh2d::fv::detail::SparsePattern2D;
@@ -88,6 +89,45 @@ double solverTolerance(const std::vector<double>& rhs) {
 
 double solutionTolerance(const std::vector<double>& exact) {
     return 5e-11 * (1.0 + norm2(exact));
+}
+
+std::vector<double> denseMaskedILU0Solve(
+    const Dense& matrix, const std::vector<std::pair<std::size_t, std::size_t>>& pattern,
+    const std::vector<double>& rhs) {
+    const std::size_t n = matrix.size();
+    Dense lower = zeroMatrix(n);
+    Dense upper = zeroMatrix(n);
+    std::vector<std::vector<bool>> present(n, std::vector<bool>(n, false));
+    for (const auto [row, col] : pattern) present[row][col] = true;
+    for (std::size_t i = 0; i < n; ++i) {
+        lower[i][i] = 1.0;
+        for (std::size_t j = 0; j <= i; ++j) {
+            if (j < i && !present[i][j]) continue;
+            double value = matrix[i][j];
+            for (std::size_t k = 0; k < j; ++k)
+                value -= lower[i][k] * upper[k][j];
+            if (j == i) upper[i][i] = value;
+            else lower[i][j] = value / upper[j][j];
+        }
+        for (std::size_t j = i + 1; j < n; ++j) {
+            if (!present[i][j]) continue;
+            double value = matrix[i][j];
+            for (std::size_t k = 0; k < i; ++k)
+                value -= lower[i][k] * upper[k][j];
+            upper[i][j] = value;
+        }
+    }
+    std::vector<double> y(n, 0.0), result(n, 0.0);
+    for (std::size_t i = 0; i < n; ++i) {
+        y[i] = rhs[i];
+        for (std::size_t j = 0; j < i; ++j) y[i] -= lower[i][j] * y[j];
+    }
+    for (std::size_t i = n; i-- > 0;) {
+        result[i] = y[i];
+        for (std::size_t j = i + 1; j < n; ++j) result[i] -= upper[i][j] * result[j];
+        result[i] /= upper[i][i];
+    }
+    return result;
 }
 
 void linearNormRegression() {
@@ -627,6 +667,163 @@ void tightResidualNormRegression() {
             "invalid linear residual norm tolerance");
 }
 
+void ilu0SelectionAndCacheRegression() {
+    // This deliberately has unequal upper/lower coefficients.  It must be
+    // exercised as a genuinely nonsymmetric factorization, rather than being
+    // accepted by the symmetric IC(0) path after silently symmetrizing it.
+    constexpr std::size_t n = 4;
+    SparsePattern2D pattern(n, {{0,1},{1,0},{1,2},{2,1},{2,3},{3,2}});
+    SparseSystem2D system(pattern);
+    Dense dense = zeroMatrix(n);
+    for (std::size_t i = 0; i < n; ++i) addEntry(system, dense, i, i, 4.0);
+    addEntry(system, dense, 0, 1, -1.25);
+    addEntry(system, dense, 1, 0, -0.35);
+    addEntry(system, dense, 1, 2, -1.10);
+    addEntry(system, dense, 2, 1, -0.55);
+    addEntry(system, dense, 2, 3, -0.90);
+    addEntry(system, dense, 3, 2, -0.25);
+
+    const std::vector<double> exactA{1.2, -0.7, 0.35, 1.1};
+    setRhs(system, dense, exactA);
+    LinearWorkspace2D workspace(n);
+    std::vector<double> x(n, 0.0);
+    const auto steps = system.solve(x, workspace,
+                                   std::numeric_limits<double>::infinity(),
+                                   std::numeric_limits<double>::infinity(),
+                                   LinearSolveMethod2D::ILU0);
+    check(steps > 0, "ILU(0) reports work on a nonsymmetric known system");
+    checkKnownSolution(dense, exactA, system.rhs, x,
+                       "ILU(0) nonsymmetric known solution");
+    check(system.ilu0Builds() == 1 && system.ilu0Reuses() == 0,
+          "first ILU(0) solve builds one factorization");
+
+    // The direct preconditioner API is independently checked on a vector;
+    // this catches a solver that happens to converge while applying the wrong
+    // triangular factors.
+    std::vector<double> preconditioned(n, 0.0);
+    const std::vector<double> probe{1.0, -2.0, 0.5, 3.0};
+    system.preconditionILU0(probe, preconditioned);
+    for (double value : preconditioned)
+        check(std::isfinite(value), "ILU(0) preconditioner returns finite values");
+    check(residualNorm(dense, preconditioned, probe) <= 2e-14,
+          "tridiagonal ILU(0) preconditioner is an exact dense solve");
+
+    // The next pattern contains a ring and a triangle but omits the fill
+    // edge (1,3).  Compare against an independently coded dense masked
+    // Doolittle factorization, so a preconditioner that accidentally keeps
+    // fill or uses the wrong triangular order is detected.
+    const std::vector<std::pair<std::size_t, std::size_t>> maskedConnections{
+        {0,1},{1,0},{1,2},{2,1},{2,3},{3,2},{0,2},{2,0},{0,3},{3,0}};
+    SparsePattern2D maskedPattern(n, maskedConnections);
+    SparseSystem2D masked(maskedPattern);
+    Dense maskedDense = zeroMatrix(n);
+    const std::vector<double> maskedDiagonal{5.,4.,3.,6.};
+    for (std::size_t i = 0; i < n; ++i) addEntry(masked, maskedDense, i, i,maskedDiagonal[i]);
+    const auto addMasked = [&](std::size_t row, std::size_t col, double value) {
+        addEntry(masked, maskedDense, row, col, value);
+    };
+    addMasked(0,1,1.0); addMasked(1,0,-0.5);
+    addMasked(1,2,1.2); addMasked(2,1,-0.4);
+    addMasked(2,3,0.8); addMasked(3,2,-0.3);
+    addMasked(0,2,-0.6); addMasked(2,0,0.25);
+    addMasked(0,3,0.7); addMasked(3,0,-0.2);
+    LinearWorkspace2D maskedWorkspace(n);
+    masked.factorILU0();
+    const std::vector<double> maskedProbe{0.8, -1.1, 2.0, 0.35};
+    std::vector<double> maskedActual(n, 0.0);
+    masked.preconditionILU0(maskedProbe, maskedActual);
+    const auto maskedExpected = denseMaskedILU0Solve(maskedDense, maskedConnections,
+                                                     maskedProbe);
+    check(errorNorm(maskedActual, maskedExpected) <= 2e-13,
+          "masked nonsymmetric ILU(0) matches independent Doolittle factors");
+    check(residualNorm(maskedDense, maskedActual, maskedProbe) > 1e-8,
+          "masked ILU(0) exposes the intentionally dropped fill in dense residual");
+
+    const std::vector<double> exactB{-0.4, 0.8, -1.3, 0.6};
+    setRhs(system, dense, exactB);
+    x.assign(n, 0.0);
+    (void)system.solve(x, workspace,
+                       std::numeric_limits<double>::infinity(),
+                       std::numeric_limits<double>::infinity(),
+                       LinearSolveMethod2D::ILU0);
+    check(system.ilu0Builds() == 1 && system.ilu0Reuses() == 1,
+          "changed RHS reuses the exact ILU(0) coefficient snapshot");
+    checkKnownSolution(dense, exactB, system.rhs, x,
+                       "ILU(0) changed-RHS known solution");
+
+    // Public assembly arrays are intentionally mutable.  A changed diagonal
+    // or off coefficient must invalidate the factorization independently of
+    // the RHS and solve the new matrix.
+    system.diag[1] += 0.7;
+    dense[1][1] += 0.7;
+    const auto edge = pattern.slot(1, 2);
+    system.off[edge] += 0.13;
+    dense[1][2] += 0.13;
+    const std::vector<double> exactC{0.3, -0.9, 1.4, -0.2};
+    setRhs(system, dense, exactC);
+    x.assign(n, 0.0);
+    (void)system.solve(x, workspace,
+                       std::numeric_limits<double>::infinity(),
+                       std::numeric_limits<double>::infinity(),
+                       LinearSolveMethod2D::ILU0);
+    check(system.ilu0Builds() == 2 && system.ilu0Reuses() == 1,
+          "ILU(0) coefficient mutation rebuilds instead of reusing stale factors");
+    checkKnownSolution(dense, exactC, system.rhs, x,
+                       "ILU(0) changed-coefficient known solution");
+
+    // A bad pivot must fail closed.  Repairing it must force a fresh build;
+    // no partial factor from the failed attempt may survive.
+    system.diag[2] = 0.0;
+    rejects([&] { system.factorILU0(); },
+            "ILU(0) rejects a zero pivot without shifting or fallback");
+    check(system.ilu0Builds() == 2,
+          "failed ILU(0) factorization is not counted as a successful build");
+    system.diag[2] = dense[2][2];
+    setRhs(system, dense, exactA);
+    x.assign(n, 0.0);
+    (void)system.solve(x, workspace,
+                       std::numeric_limits<double>::infinity(),
+                       std::numeric_limits<double>::infinity(),
+                       LinearSolveMethod2D::ILU0);
+    check(system.ilu0Builds() == 3,
+          "repaired ILU(0) matrix rebuilds after failed factorization");
+
+    SparsePattern2D eliminationPattern(2, {{0,1},{1,0}});
+    system.diag[0] += .25;
+    rejects([&] { system.preconditionILU0(probe, preconditioned); },
+            "direct ILU(0) application rejects stale factors after coefficient mutation");
+
+    SparseSystem2D elimination(eliminationPattern);
+    elimination.diag = {1.0, 1.0};
+    elimination.add(0, 1, 2.0);
+    elimination.add(1, 0, 1.0);
+    rejects([&] { elimination.factorILU0(); },
+            "ILU(0) rejects a pivot made nonpositive by elimination");
+    SparseSystem2D nanSystem(eliminationPattern);
+    nanSystem.diag = {1.0, std::numeric_limits<double>::quiet_NaN()};
+    rejects([&] { nanSystem.factorILU0(); }, "ILU(0) rejects a NaN coefficient");
+    SparseSystem2D infSystem(eliminationPattern);
+    infSystem.diag = {1.0, std::numeric_limits<double>::infinity()};
+    rejects([&] { infSystem.factorILU0(); }, "ILU(0) rejects an infinite coefficient");
+
+    // Default Jacobi remains a separate method and must not create or consume
+    // ILU(0) factors.  The invalid enum check also prevents accidental
+    // fallback to a different preconditioner.
+    const auto builds = system.ilu0Builds();
+    const auto reuses = system.ilu0Reuses();
+    system.rhs = denseApply(dense, exactB);
+    x.assign(n, 0.0);
+    (void)system.solve(x, workspace);
+    check(system.ilu0Builds() == builds && system.ilu0Reuses() == reuses,
+          "default Jacobi solve does not touch ILU(0) cache counters");
+    rejects([&] {
+        (void)system.solve(x, workspace,
+                           std::numeric_limits<double>::infinity(),
+                           std::numeric_limits<double>::infinity(),
+                           static_cast<LinearSolveMethod2D>(99));
+    }, "invalid linear solve method is rejected");
+}
+
 } // namespace
 
 int main() {
@@ -642,6 +839,7 @@ int main() {
         ic0CacheRegression();
         localResidualScaleRegression();
         tightResidualNormRegression();
+        ilu0SelectionAndCacheRegression();
     } catch (const std::exception& error) {
         std::cerr << "UNEXPECTED EXCEPTION: " << error.what() << '\n';
         return 1;

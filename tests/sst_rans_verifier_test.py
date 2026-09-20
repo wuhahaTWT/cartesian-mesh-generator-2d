@@ -183,6 +183,30 @@ def main(args):
             rejected=subprocess.run([str(args.rect_probe),*dims,'0',str(root/'bad-size')],
                                     stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
             assert rejected.returncode!=0, dims
+        ilu=root/'ilu'
+        run([args.probe,plate_mesh,ilu,'flatplate-sweep','--scalar-preconditioner','ilu0'])
+        assert verifier.audit(plate_mesh,ilu)['scalarPreconditioner']=='ilu0'
+        reject_json(plate_mesh,ilu,lambda data:data.__setitem__('scalarPreconditioner','invalid'))
+        # Iteration-bounded diagnostics must never masquerade as accepted fields.
+        limited=root/'limited'
+        stopped=subprocess.run([str(args.probe),str(plate_mesh),str(limited),'flatplate-sweep',
+                                '--max-iterations','1'],capture_output=True,timeout=90)
+        assert stopped.returncode!=0
+        diagnostic=json.loads(Path(str(limited)+'.diagnostics.json').read_text())
+        assert diagnostic['converged'] is False and diagnostic['stopReason']=='iteration-limit'
+        assert diagnostic['iterations']==diagnostic['maxIterations']==1
+        assert diagnostic['performance']['sstUpdates']==1
+        assert Path(str(limited)+'.history.csv').exists()
+        assert not any(Path(str(limited)+s).exists() for s in ('.json','.cells.csv','.faces.csv'))
+        previous=Path(str(ilu)+'.json').read_bytes()
+        rerun=subprocess.run([str(args.probe),str(plate_mesh),str(ilu),'flatplate-sweep'],capture_output=True,timeout=90)
+        assert rerun.returncode!=0 and b'fresh output prefix' in rerun.stderr
+        assert Path(str(ilu)+'.json').read_bytes()==previous
+        for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','2001'],
+                        ['--scalar-preconditioner','ic0']):
+            rejected=subprocess.run([str(args.probe),str(plate_mesh),str(root/'bad-options'),'flatplate-sweep',*options],
+                                    capture_output=True,timeout=90)
+            assert rejected.returncode!=0
     print("SST-RANS verifier: channel, both flat plate boundaries and bounded corrections audited; all tamper cases rejected.")
 
 

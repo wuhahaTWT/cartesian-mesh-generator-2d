@@ -394,23 +394,26 @@ void preciseCandidateDoesNotQualifyRoundedField() {
     p.boundary=[](std::size_t,const Face&){
         return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,0.,std::nullopt};
     };
-    ScalarTransportControls2D c;
-    c.relaxation=1;c.maxCorrections=3;
-    c.relativeTolerance=1e-18;c.absoluteTolerance=1e-18;c.cellTolerance=1e-18;
-    const auto result=solveScalarTransport2D(mesh,p,c);
-    check(!result.converged && result.values[0]==1-e,
-          "high-precision linear candidate cannot qualify an inaccurate rounded field");
-    const auto& h=result.history.back();
-    check(h.matrixAudited && h.matrixMaxDiagonalScaledImbalance>c.cellTolerance,
-          "rounded-field rejection reports its faithful original-operator residual");
-    check(std::abs(h.matrixResidualNorm-std::ldexp(1.,-54))<1e-30,
-          "rounded-field residual matches independent binary identity");
-    const auto evaluated=evaluateScalarTransport2D(mesh,p,result.values,c);
-    check(!evaluated.converged && evaluated.history.back().matrixAudited,
-          "supplied-field evaluation enforces the same rounded-field check");
-    c.relativeTolerance=1e-10;c.absoluteTolerance=1e-12;c.cellTolerance=1e-10;
-    check(solveScalarTransport2D(mesh,p,c).converged,
-          "representable requested scalar accuracy remains supported");
+    for(auto method:{ScalarPreconditioner2D::Jacobi,ScalarPreconditioner2D::ILU0}) {
+        ScalarTransportControls2D c;
+        c.preconditioner=method;
+        c.relaxation=1;c.maxCorrections=3;
+        c.relativeTolerance=1e-18;c.absoluteTolerance=1e-18;c.cellTolerance=1e-18;
+        const auto result=solveScalarTransport2D(mesh,p,c);
+        check(!result.converged && result.values[0]==1-e,
+              "high-precision linear candidate cannot qualify an inaccurate rounded field");
+        const auto& h=result.history.back();
+        check(h.matrixAudited && h.matrixMaxDiagonalScaledImbalance>c.cellTolerance,
+              "rounded-field rejection reports its faithful original-operator residual");
+        check(std::abs(h.matrixResidualNorm-std::ldexp(1.,-54))<1e-30,
+              "rounded-field residual matches independent binary identity");
+        const auto evaluated=evaluateScalarTransport2D(mesh,p,result.values,c);
+        check(!evaluated.converged && evaluated.history.back().matrixAudited,
+              "supplied-field evaluation enforces the same rounded-field check");
+        c.relativeTolerance=1e-10;c.absoluteTolerance=1e-12;c.cellTolerance=1e-10;
+        check(solveScalarTransport2D(mesh,p,c).converged,
+              "representable requested scalar accuracy remains supported");
+    }
 }
 
 void deferredMatrixAuditAcrossSkewFace() {

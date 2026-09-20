@@ -64,6 +64,10 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const auto seconds=[](Clock::time_point t){return std::chrono::duration<double>(Clock::now()-t).count();};
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
+    require(c.preconditioner==ScalarPreconditioner2D::Jacobi || c.preconditioner==ScalarPreconditioner2D::ILU0,
+            "Scalar transport invalid preconditioner");
+    const auto method=c.preconditioner==ScalarPreconditioner2D::ILU0
+        ?detail::LinearSolveMethod2D::ILU0:detail::LinearSolveMethod2D::Jacobi;
     if(initial) {
         require(!supplied && previous.empty() && timeStep==0,
                 "Scalar steady initial guess cannot be mixed with evaluation or time history");
@@ -241,7 +245,7 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
             // recheck the actual double values. Candidate success is not outer
             // transport convergence.
             const auto linearStart=c.profile?Clock::now():Clock::time_point{};
-            const auto candidate=a.solveCandidate(r.values,*workspace,c.cellTolerance*.1,stop*.5);
+            const auto candidate=a.solveCandidate(r.values,*workspace,c.cellTolerance*.1,stop*.5,method);
             if(c.profile) {r.performance.linearSeconds+=seconds(linearStart);r.performance.linearIterations+=candidate.iterations;}
             linear=candidate.iterations;
             for (std::size_t i=0;i<n;++i)
@@ -312,7 +316,10 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     }
     r.minValue=*std::min_element(r.values.begin(),r.values.end());
     r.maxValue=*std::max_element(r.values.begin(),r.values.end());
-    if(c.profile)r.performance.totalSeconds=seconds(start);
+    if(c.profile) {
+        r.performance.totalSeconds=seconds(start);
+        if(matrix) {r.performance.ilu0Builds=matrix->ilu0Builds();r.performance.ilu0Reuses=matrix->ilu0Reuses();}
+    }
     return r;
 }
 }

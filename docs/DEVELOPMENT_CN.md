@@ -408,6 +408,16 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 72cb13a阶段的40×32/stretch8高Re算例未通过梯度独立重构，原`native-sst-physical-inputs.json`仍保留该失败。后续解析矩形中心修复与80位独立几何复测使**重新计算**的同一案例通过；原错误场继续拒绝。新证据为`native-centroid-stability.json`，不得覆盖旧文件。系统clang宏验证Apple ARM64的long double与double均为53位有效位，不能假设long double足以防止这类几何舍入。
 
 
+### 标量ILU(0)与SST有界诊断
+
+`ScalarTransportControls2D::preconditioner`新增`ScalarPreconditioner2D::{Jacobi,ILU0}`，默认Jacobi保持。ILU(0)用于非对称标量BiCGStab，按原CSR图自然序做零填充Doolittle分解及前/后代入；标准方法参考[Netlib Templates §3.4](https://www.netlib.org/templates/templates.pdf)，本实现没有复制库源码。它不是压力IC0，也不改变压力预条件选择。要求有限系数和正原对角/消元主元；不满足就失败，不做shift、重排序或隐式fallback，因而不是任意矩阵通用求解器。
+
+每次solve先检查真实初始残差，仅确需求解时建立因子；完全相同diag/off可供RHS变化复用，系数变化重建。失败构造清除ready状态，不计成功构造；`add/reset`失效缓存。公开`preconditionILU0`必须先factor且快照相符，否则拒绝；Krylov内部私有apply在当前solve系数不变前提下省去重复快照比较。原补偿b-Ax、norm/逐格门、高低位候选、实际场四舍五入后的最终验收不变。独立稠密掩码Doolittle、丢弃fill、非对称已知解、失效缓存、非正主元/NaN/Inf和表示精度反例均覆盖。
+
+SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..2000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写`.json/.cells.csv/.faces.csv`。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
+
+审核器验证方法声明合法，仍从真实场重算原方程；不能由末态独立推断实际执行的是哪个预条件器，执行路径另由命令/二进制哈希记录。`kSolves`与`omegaSolves`互斥地组成`scalarSolves`；`ilu0Builds/ilu0Reuses`只统计实际成功factor，不强求其等于solve调用数。计时和Krylov次数不构成物理验收。实际比较与12,800格完整超时保存在`native-sst-ilu-performance.json`；图用`python3 tools/visualization/render_sst_ilu.py --study artifacts/current/native-sst-ilu-performance.json --output outputs/sst-ilu.png`重建，需要对应本地网格及CSV。
+
 ### SST近壁规模诊断与计时
 
 `ScalarTransportControls2D::profile`默认关闭。结果`ScalarTransportPerformance2D`记录calls、patternBuilds、linearIterations、total/setup/linear/faceFlux秒；SST按`scalarSolves`和`scalarEvaluations`累计，RANS由`flow.profile`统一启用。setup包含验证、初始组装及按需的延迟CSR构建；total包含全部子项，Krylov迭代不包含既有补偿细化扫掠，其耗时仍包含在线性时间中。初始和每次更新后的k/omega评估均计入，零线性迭代不意味着零成本。

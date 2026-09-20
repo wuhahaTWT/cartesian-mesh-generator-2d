@@ -92,6 +92,7 @@ struct SstTransportIteration2D {
 };
 struct SstTransportResult2D {
     ScalarTransportPerformance2D scalarSolves, scalarEvaluations;
+    ScalarTransportPerformance2D kSolves, omegaSolves; // disjoint parts of scalarSolves
     bool converged = false;
     // Coefficients/fluxes/residuals evaluated at the RETURNED fields, never
     // reused from the preceding frozen linear solve.

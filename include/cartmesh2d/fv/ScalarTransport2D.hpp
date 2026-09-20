@@ -5,6 +5,7 @@
 
 namespace cartmesh2d::fv {
 enum class ScalarBoundaryKind2D { Value, DiffusiveFlux };
+enum class ScalarPreconditioner2D { Jacobi, ILU0 };
 struct ScalarBoundary2D {
     ScalarBoundaryKind2D kind = ScalarBoundaryKind2D::Value;
     // Value: scalar at face. DiffusiveFlux: outward -D grad(s).n per unit length.
@@ -41,6 +42,7 @@ struct ScalarTransportControls2D {
     double cellTolerance = 1e-9; // imbalance / unrelaxed diagonal, in scalar units
     double carrierRelativeTolerance = 1e-8, carrierAbsoluteTolerance = 1e-12;
     bool profile = false; // diagnostic only; no numerical effect
+    ScalarPreconditioner2D preconditioner = ScalarPreconditioner2D::Jacobi;
 };
 struct ScalarTransportIteration2D {
     std::size_t iteration = 0, linearIterations = 0;
@@ -55,10 +57,11 @@ struct ScalarTransportIteration2D {
 // totalSeconds includes all subphases. setup includes validation and assembly;
 // faceFluxSeconds includes all reconstructions, before and after corrections.
 struct ScalarTransportPerformance2D {
-    std::size_t calls=0, patternBuilds=0, linearIterations=0;
+    std::size_t calls=0, patternBuilds=0, linearIterations=0, ilu0Builds=0, ilu0Reuses=0;
     double totalSeconds=0, setupSeconds=0, linearSeconds=0, faceFluxSeconds=0;
     void add(const ScalarTransportPerformance2D& p) {
         calls+=p.calls;patternBuilds+=p.patternBuilds;linearIterations+=p.linearIterations;
+        ilu0Builds+=p.ilu0Builds;ilu0Reuses+=p.ilu0Reuses;
         totalSeconds+=p.totalSeconds;setupSeconds+=p.setupSeconds;
         linearSeconds+=p.linearSeconds;faceFluxSeconds+=p.faceFluxSeconds;
     }

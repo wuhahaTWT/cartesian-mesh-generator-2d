@@ -63,6 +63,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
             result.performance.transportSeconds+=elapsed(transportStart);
             result.performance.scalarSolves.add(next.scalarSolves);
             result.performance.scalarEvaluations.add(next.scalarEvaluations);
+            result.performance.kSolves.add(next.kSolves);result.performance.omegaSolves.add(next.omegaSolves);
         }
         p.k=next.fields.k.values;p.omega=next.fields.omega.values;
         // Current strain/gradients/coefficient fields are evaluated at this same

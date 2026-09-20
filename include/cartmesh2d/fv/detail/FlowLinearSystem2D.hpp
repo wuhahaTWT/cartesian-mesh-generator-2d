@@ -16,6 +16,7 @@ namespace cartmesh2d::fv::detail {
 
 using LinearVector2D = std::vector<double>;
 enum class LinearPressureMethod2D { Jacobi, IC0, Aggregation };
+enum class LinearSolveMethod2D { Jacobi, ILU0 };
 
 inline void linearEnsure(bool ok, const char* message) {
     if (!ok) throw std::runtime_error(message);
@@ -151,15 +152,60 @@ struct SparseSystem2D {
     std::size_t hierarchyLevels() const { return hierarchy_ ? hierarchy_->levels() : 0; }
     std::size_t hierarchyCoarseCells() const { return hierarchy_ ? hierarchy_->coarseCells() : 0; }
 
+    std::size_t ilu0Builds() const {return iluBuilds_;}
+    std::size_t ilu0Reuses() const {return iluReuses_;}
+
+    // Natural-order nonsymmetric ILU(0): eliminate only entries in the original
+    // CSR graph. Independent implementation of the standard zero-fill method;
+    // see https://www.netlib.org/templates/templates.pdf, section 3.4.
+    // No diagonal shift, pivot replacement, symmetrization or fallback.
+    void factorILU0() const {
+        linearEnsure(diag.size()+1==pattern.rows.size() && off.size()==pattern.columns.size(),
+                     "Flow ILU0 dimensions invalid");
+        if(iluReady_ && iluMatrixDiagonal_==diag && iluMatrixOff_==off) {++iluReuses_;return;}
+        iluReady_=false;
+        for(double d:diag)linearEnsure(std::isfinite(d)&&d>0,"Flow ILU0 nonpositive/nonfinite diagonal");
+        for(double v:off)linearEnsure(std::isfinite(v),"Flow ILU0 nonfinite coefficient");
+        iluDiagonal_=diag;iluOff_=off;
+        for(std::size_t i=0;i<diag.size();++i) {
+            for(auto ij=pattern.rows[i];ij<pattern.lowerEnd[i];++ij) {
+                const auto j=pattern.columns[ij];
+                const double factor=linearFinite(iluOff_[ij]/iluDiagonal_[j]);
+                iluOff_[ij]=factor;
+                auto ik=ij+1;
+                for(auto jk=pattern.lowerEnd[j];jk<pattern.rows[j+1];++jk) {
+                    const auto k=pattern.columns[jk];
+                    if(k==i)iluDiagonal_[i]=linearFinite(iluDiagonal_[i]-factor*iluOff_[jk]);
+                    else {
+                        while(ik<pattern.rows[i+1] && pattern.columns[ik]<k)++ik;
+                        if(ik<pattern.rows[i+1] && pattern.columns[ik]==k)
+                            iluOff_[ik]=linearFinite(iluOff_[ik]-factor*iluOff_[jk]);
+                    }
+                }
+            }
+            linearEnsure(std::isfinite(iluDiagonal_[i])&&iluDiagonal_[i]>0,
+                         "Flow ILU0 nonpositive/nonfinite pivot");
+        }
+        iluMatrixDiagonal_=diag;iluMatrixOff_=off;iluReady_=true;++iluBuilds_;
+    }
+    // Public diagnostic application rejects stale factors after direct coefficient
+    // mutation. Krylov uses the private application after factorILU0 once per
+    // solve; coefficients remain unchanged throughout that solve.
+    void preconditionILU0(const LinearVector2D& input,LinearVector2D& output) const {
+        linearEnsure(iluMatrixDiagonal_==diag && iluMatrixOff_==off,
+                     "Flow ILU0 factors are stale");
+        applyILU0(input,output);
+    }
+
     void reset() {
-        factorReady_ = false;
+        factorReady_ = false;iluReady_=false;
         hierarchyReady_ = false;
         std::fill(diag.begin(), diag.end(), 0.);
         std::fill(rhs.begin(), rhs.end(), 0.);
         std::fill(off.begin(), off.end(), 0.);
     }
     void add(std::size_t row, std::size_t column, double value) {
-        factorReady_ = false;
+        factorReady_ = false;iluReady_=false;
         hierarchyReady_ = false;
         off[pattern.slot(row, column)] += value;
     }
@@ -201,7 +247,7 @@ struct SparseSystem2D {
     }
     void pin(std::size_t id) {
         linearEnsure(id < diag.size(), "Flow pressure gauge invalid");
-        factorReady_ = false;
+        factorReady_ = false;iluReady_=false;
         hierarchyReady_ = false;
         for (std::size_t k = pattern.rows[id]; k < pattern.rows[id + 1]; ++k)
             off[k] = off[pattern.transpose[k]] = 0.;
@@ -354,23 +400,42 @@ struct SparseSystem2D {
 
     std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
                       double diagonalScaledStop = std::numeric_limits<double>::infinity(),
-                      double residualNormStop = std::numeric_limits<double>::infinity()) const {
-        return solveImpl(x,w,diagonalScaledStop,residualNormStop,nullptr);
+                      double residualNormStop = std::numeric_limits<double>::infinity(),
+                      LinearSolveMethod2D method=LinearSolveMethod2D::Jacobi) const {
+        return solveImpl(x,w,diagonalScaledStop,residualNormStop,nullptr,method);
     }
 
     // The original gates apply to high+low, not to high alone. A transport
     // caller must round after relaxation and recheck its original equations.
     LinearCandidate2D solveCandidate(LinearVector2D initial,LinearWorkspace2D& w,
-                      double diagonalScaledStop,double residualNormStop) const {
+                      double diagonalScaledStop,double residualNormStop,
+                      LinearSolveMethod2D method=LinearSolveMethod2D::Jacobi) const {
         LinearCandidate2D candidate{std::move(initial),{},0};
         candidate.iterations=solveImpl(candidate.high,w,diagonalScaledStop,
-                                      residualNormStop,&candidate.low);
+                                      residualNormStop,&candidate.low,method);
         return candidate;
     }
 private:
+    void applyILU0(const LinearVector2D& input,LinearVector2D& output) const {
+        linearEnsure(iluReady_ && input.size()==diag.size() && output.size()==diag.size() && &input!=&output,
+                     "Flow ILU0 factors/workspace unavailable");
+        for(std::size_t i=0;i<diag.size();++i) {
+            double value=input[i];
+            for(auto k=pattern.rows[i];k<pattern.lowerEnd[i];++k)value-=iluOff_[k]*output[pattern.columns[k]];
+            output[i]=linearFinite(value);
+        }
+        for(std::size_t i=diag.size();i-- >0;) {
+            double value=output[i];
+            for(auto k=pattern.lowerEnd[i];k<pattern.rows[i+1];++k)value-=iluOff_[k]*output[pattern.columns[k]];
+            output[i]=linearFinite(value/iluDiagonal_[i]);
+        }
+    }
+
     std::size_t solveImpl(LinearVector2D& x,LinearWorkspace2D& w,
                          double diagonalScaledStop,double residualNormStop,
-                         LinearVector2D* tail) const {
+                         LinearVector2D* tail,LinearSolveMethod2D method) const {
+        linearEnsure(method==LinearSolveMethod2D::Jacobi || method==LinearSolveMethod2D::ILU0,
+                     "Flow linear preconditioner invalid");
         linearEnsure(diagonalScaledStop > 0 && !std::isnan(diagonalScaledStop), "Invalid momentum diagonal-scaled residual tolerance");
         linearEnsure(residualNormStop > 0 && !std::isnan(residualNormStop), "Invalid linear residual norm tolerance");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
@@ -416,6 +481,7 @@ private:
             for(std::size_t i=0;i<x.size();++i)r[i]=rowResidual(i);
         r0=r;
         if (smallResidual(r)) return 0;
+        if(method==LinearSolveMethod2D::ILU0)factorILU0();
         double rhoOld = 1, alpha = 1, omega = 1;
         const auto restart = [&] {
             // r is the freshly recomputed b-Ax, not a recursively updated
@@ -433,9 +499,14 @@ private:
                 linearEnsure(rho>0,"Flow BiCGStab residual product underflow");
             }
             const double beta = (rho / rhoOld) * (alpha / omega);
-            for (std::size_t i = 0; i < x.size(); ++i) {
-                p[i] = r[i] + beta * (p[i] - omega * v[i]);
-                z[i] = p[i] / diag[i];
+            if(method==LinearSolveMethod2D::Jacobi) {
+                for (std::size_t i = 0; i < x.size(); ++i) {
+                    p[i] = r[i] + beta * (p[i] - omega * v[i]);
+                    z[i] = p[i] / diag[i];
+                }
+            } else {
+                for(std::size_t i=0;i<x.size();++i)p[i]=r[i]+beta*(p[i]-omega*v[i]);
+                applyILU0(p,z);
             }
             apply(z, v);
             const double rv = linearProduct(r0, v);
@@ -445,7 +516,8 @@ private:
             if (smallResidual(s)) {
                 for (std::size_t i = 0; i < x.size(); ++i) addUpdate(i,alpha*z[i]);
             } else {
-                for (std::size_t i = 0; i < x.size(); ++i) zs[i] = s[i] / diag[i];
+                if(method==LinearSolveMethod2D::ILU0)applyILU0(s,zs);
+                else for (std::size_t i = 0; i < x.size(); ++i) zs[i] = s[i] / diag[i];
                 apply(zs, t);
                 const double tt = linearProduct(t, t);
                 linearEnsure(tt > 0, "Flow BiCGStab null update");
@@ -502,6 +574,9 @@ private:
 private:
     // Owned by this matrix, so another system using the same Krylov workspace
     // cannot overwrite its factors. Storage is allocated lazily for pressure.
+    mutable LinearVector2D iluDiagonal_,iluOff_,iluMatrixDiagonal_,iluMatrixOff_;
+    mutable bool iluReady_=false;
+    mutable std::size_t iluBuilds_=0,iluReuses_=0;
     mutable LinearVector2D factorDiagonal_, factorLower_;
     mutable LinearVector2D factorMatrixDiagonal_, factorMatrixOff_;
     mutable std::optional<AggregationHierarchy2D> hierarchy_;

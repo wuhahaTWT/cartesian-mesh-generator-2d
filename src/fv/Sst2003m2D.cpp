@@ -234,6 +234,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     const auto record=[&](const FrozenSst2003mResult2D& fields,bool evaluation) {
         auto& total=evaluation?result.scalarEvaluations:result.scalarSolves;
         total.add(fields.k.performance);total.add(fields.omega.performance);
+        if(!evaluation) {result.kSolves.add(fields.k.performance);result.omegaSolves.add(fields.omega.performance);}
     };
     // Includes complete scalar/input validation and allows an already converged
     // initial state to return without inventing a nonlinear update.

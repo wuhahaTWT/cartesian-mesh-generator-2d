@@ -97,6 +97,12 @@ void ransContract(const FvMesh2D& m) {
             observed.performance.scalarEvaluations.calls==2*(nonlinearUpdates+observed.history.size()) &&
             observed.performance.scalarEvaluations.linearIterations==0,
             "SST scalar profile omitted or duplicated current-state evaluations");
+    const auto& sp=observed.performance;
+    require(sp.kSolves.calls==nonlinearUpdates && sp.omegaSolves.calls==nonlinearUpdates &&
+            sp.kSolves.linearIterations+sp.omegaSolves.linearIterations==sp.scalarSolves.linearIterations &&
+            sp.kSolves.patternBuilds+sp.omegaSolves.patternBuilds==sp.scalarSolves.patternBuilds &&
+            sp.kSolves.ilu0Builds+sp.omegaSolves.ilu0Builds==sp.scalarSolves.ilu0Builds,
+            "SST k/omega counters do not partition scalar solves");
     for(double k:r.turbulence.fields.k.values)require(k==0,"zero-k solution was floored");
     for(double nu:r.faceViscosity)require(nu==c.flow.nu,"zero k invented eddy viscosity");
     auto invalid=c;invalid.inletOmega=0;rejects([&]{(void)solveSstRans2D(m,invalid);});
