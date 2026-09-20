@@ -99,6 +99,19 @@ struct SstTransportResult2D {
     FrozenSst2003mResult2D fields;
     std::vector<SstTransportIteration2D> history;
 };
+// Evaluate the ORIGINAL nonlinear equations at the supplied k/omega without
+// updating either field or solving a linear system. Reconstructs gradients and
+// strain from velocity and boundary data; ignores any cached gradients/strain
+// in the problem. Both returned scalar convergence flags are required, and
+// neither establishes momentum/RANS convergence. Useful for trial-step checks
+// and Jacobian diagnostics. Previous states/dt have the same meaning as below.
+[[nodiscard]] FrozenSst2003mResult2D evaluateSst2003mTransport2D(
+    const FvMesh2D&, const FrozenSst2003mProblem2D&,
+    const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& velocityBoundary,
+    const ScalarTransportControls2D& = {},
+    const std::vector<double>& previousK = {},
+    const std::vector<double>& previousOmega = {}, double timeStep = 0);
 // Nonlinear SST transport on a FIXED, conservative velocity/flux field. Each
 // iteration reconstructs k/omega gradients and updates the closure; acceptance
 // evaluates the original nonlinear equations with current coefficients.

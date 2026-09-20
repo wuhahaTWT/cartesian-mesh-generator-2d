@@ -416,6 +416,23 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 
 Anderson单历史试验依据[Walker与Ni，2011](https://doi.org/10.1137/10078356X)，用固定初值尺度加权的两次更新差求一个混合系数，再检查正性和原局部残差下降。所有候选均未采用；没有集成到求解器，也没有把探索用局部残差筛选冒充完整收敛门。下一步非线性方法仍须验证最终原方程与同一物理解。
 
+### SST集中更新、原方程评估与协作停止
+
+`SstRansControls2D::turbulenceCompletionUpdates`默认0，保持原交错调度。大于0时，前一SIMPLE记录的momentumResidual/velocityChange/pressureChange小于flow.tolerance、continuity小于1e-8且当前globalRelativeImbalance小于1e-8，才将本次更新预算设为max(普通更新数,集中更新数)，仍受turbulence.maxIterations限制。该条件只安排工作；更新后当前黏度、动量和两条原湍流方程重新验收，不能只凭前一步或标量通过接受整体结果。history追加completionUpdate；探针`--completion-updates N`允许整数0..500，显式启用。
+
+`evaluateSst2003mTransport2D`接收固定载流/边界和给定k/omega，重新构造梯度、应变及闭合，调用原方程evaluate路径；忽略传入缓存梯度/应变，不修改输入或解线性系统。两个标量收敛标志不等于动量/RANS收敛。previousK/Omega与dt含义沿用非线性输运API；解析后向欧拉原方程根和非原方程冻结根的拒绝有回归。
+
+`FlowControls2D::stopRequested`为空时保持原行为。回调在完整SIMPLE迭代后的正常收敛判断之后执行；true返回stopped=true、converged=false及该完整末态，仍进行最终面/力装配。若所有收敛门已通过，不被同时到来的停止请求改为失败。回调异常原样传播；不能中断内层线性/湍流求解。探针`--max-seconds T`接受有限正秒数，从求解入口计时，正常停止写.unconverged场、diagnostics.stopReason=time-budget并退出1；不代替外部硬超时，也尚未接入桌面取消按钮。
+
+```sh
+# 明确预算的诊断示例；不改变入口、初值、方程和停止门。
+build/cartmesh2d_sst_rans_probe /path/mesh.cm2d outputs/run/flow flatplate-sweep --nu 2e-7 --speed 1 --inlet-k 2.25e-7 --inlet-omega 125 --leading-edge 0 --scalar-preconditioner ilu0 --completion-updates 500 --max-iterations 20000 --max-seconds 540
+```
+
+独立读取器拒绝stopped与converged同时为true、非法调度声明和超限更新。每次集中更新需有前一history的流动条件；逐次globalRelativeImbalance未保存，因而不能独立证明这部分触发轨迹，最终质量守恒依旧独立计算。旧文件缺少新增字段时按未启用处理，所有原方程门保持。
+
+`native-sst-completion.json`保存12,800格原调度10,000次仍失败及集中更新3,866次通过的实际证据。纯omega损耗线性化和局部有限差分Newton为未采用的失败探索；晚期固定载流317步通过只解释调度依据，不单独构成耦合验收。实际图由`tools/visualization/render_sst_completion.py --study artifacts/current/native-sst-completion.json --output outputs/sst-completion.png`读取哈希匹配的真实网格/场/历史生成，需本地原数据。仍为实验SST探针，未提供GUI或通用物理精度资格。
+
 ### SST未收敛现场与最差单元
 
 `FlowIteration2D`额外记录`momentumWorstCell`及同一单元有符号的`momentumResidualX/Y`，归一化仍为(diagU+diagV)*speed；二者hypot对应原momentumResidual。profile时另外记录压力修正前的`momentumPredictorResidual`（两分量max |b-Au|/(diag*speed)）及其单元，`pressureLinearResidual`为本次各PCG调用真实残差norm的最大值除以speed*shortestFace。这两个线性诊断使用补偿行残差，未作为新验收门；计时包含profile诊断开销，不能和旧无该诊断二进制的时间直接当提速比较。
@@ -438,7 +455,7 @@ python3 tools/verification/verify_sst_rans.py --mesh /path/mesh.cm2d --prefix ou
 
 每次solve先检查真实初始残差，仅确需求解时建立因子；完全相同diag/off可供RHS变化复用，系数变化重建。失败构造清除ready状态，不计成功构造；`add/reset`失效缓存。公开`preconditionILU0`必须先factor且快照相符，否则拒绝；Krylov内部私有apply在当前solve系数不变前提下省去重复快照比较。原补偿b-Ax、norm/逐格门、高低位候选、实际场四舍五入后的最终验收不变。独立稠密掩码Doolittle、丢弃fill、非对称已知解、失效缓存、非正主元/NaN/Inf和表示精度反例均覆盖。
 
-SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..2000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写普通`.json/.cells.csv/.faces.csv`，另保留上述显式`.unconverged.*`诊断场。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
+SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..20000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写普通`.json/.cells.csv/.faces.csv`，另保留上述显式`.unconverged.*`诊断场。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
 
 审核器验证方法声明合法，仍从真实场重算原方程；不能由末态独立推断实际执行的是哪个预条件器，执行路径另由命令/二进制哈希记录。`kSolves`与`omegaSolves`互斥地组成`scalarSolves`；`ilu0Builds/ilu0Reuses`只统计实际成功factor，不强求其等于solve调用数。计时和Krylov次数不构成物理验收。实际比较与12,800格完整超时保存在`native-sst-ilu-performance.json`；图用`python3 tools/visualization/render_sst_ilu.py --study artifacts/current/native-sst-ilu-performance.json --output outputs/sst-ilu.png`重建，需要对应本地网格及CSV。
 

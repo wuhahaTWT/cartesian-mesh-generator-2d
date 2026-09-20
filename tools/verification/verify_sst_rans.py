@@ -103,6 +103,8 @@ def read_artifacts(mesh_path, prefix, *, diagnostic=False):
     req(meta.get("case") in ("channel", "flatplate") and meta.get("model") == "SST-2003m" and
         meta.get("scope") == "coupled-steady-SST-2003m" and (meta.get("converged") is True or (diagnostic and meta.get("converged") is False)),
         "invalid SST-RANS metadata")
+    req(type(meta.get('stopped',False)) is bool and not (meta.get('stopped',False) and meta['converged']),
+        'invalid or contradictory cooperative stop declaration')
     for key in ('nu','speed','inletK','inletOmega'):
         value=meta.get(key)
         req(type(value) in (int,float) and math.isfinite(value) and
@@ -133,6 +135,9 @@ def read_artifacts(mesh_path, prefix, *, diagnostic=False):
     req(len(hrows) == int(meta.get("iterations", -1)) and len(hrows) > 0, "history length mismatch")
     updates=meta.get('turbulenceUpdatesPerIteration',500) # legacy nested probe
     req(type(updates) is int and 1<=updates<=500,'invalid constitutive update limit')
+    completion=meta.get('turbulenceCompletionUpdates',0)
+    req(type(completion) is int and 0<=completion<=500,'invalid constitutive completion limit')
+    if completion: req('completionUpdate' in hfields,'missing completion schedule history')
     corrections=meta.get('scalarCorrectionsPerUpdate',0) # legacy complete frozen solve
     req(type(corrections) is int and corrections in (0,1),'unsupported scalar correction schedule')
     for expected, row in enumerate(hrows, 1):
@@ -140,7 +145,14 @@ def read_artifacts(mesh_path, prefix, *, diagnostic=False):
         for key in ("momentumResidual", "continuity", "velocityChange", "pressureChange",
                     "kNorm", "omegaNorm", "kCellResidual", "omegaCellResidual"):
             req(num(row[key], key) >= 0, f"history {key} is negative")
-        req(0 <= int(row["turbulenceIterations"]) <= updates, "invalid turbulence iteration count")
+        complete=row.get('completionUpdate','0')
+        req(complete in ('0','1'),'invalid completion schedule flag')
+        if complete=='1':
+            req(completion>0 and expected>1,'unexpected completion update')
+            previous=hrows[expected-2]
+            req(all(num(previous[key],key)<meta['tolerance'] for key in ('momentumResidual','velocityChange','pressureChange')) and
+                num(previous['continuity'],'continuity')<1e-8,'completion update started before flow was ready')
+        req(0 <= int(row["turbulenceIterations"]) <= (max(updates,completion) if complete=='1' else updates), "invalid turbulence iteration count")
     # Both files serialize the very same native value at 17 digits. Independent
     # reconstruction needs a roundoff allowance; duplicate export data does not.
     req(num(meta["momentumResidual"], "momentumResidual") ==
@@ -426,6 +438,7 @@ def audit(mesh_path, prefix, *, diagnostic=False):
                 'length':length,'kinematicShear':tau,'Cf':2*tau/(speed*speed),'yPlus':dn*math.sqrt(abs(tau))/nu})
         wall_samples.sort(key=lambda row:row['x'])
     return {"valid": not diagnostic,"diagnosticOnly":diagnostic,"declaredConverged":meta["converged"],
+            "stopped":meta.get('stopped',False),
             "failedConvergenceChecks":failed_convergence, "scope": meta["scope"], "case":case,
             "physicalInputs":{key:meta[key] for key in ('nu','speed','inletK','inletOmega')},
             "declaredInitialTurbulence":{key:meta.get(key,meta['inletK' if key=='initialK' else 'inletOmega'])

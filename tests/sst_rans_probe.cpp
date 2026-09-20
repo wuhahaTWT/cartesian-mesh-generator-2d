@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <set>
+#include <chrono>
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 
@@ -35,12 +36,13 @@ void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --initial-k value --initial-omega value --leading-edge x --max-iterations N --turbulence-updates N --scalar-preconditioner jacobi|ilu0]");
+        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --initial-k value --initial-omega value --leading-edge x --max-iterations N --max-seconds seconds --turbulence-updates N --completion-updates N --scalar-preconditioner jacobi|ilu0]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
         std::optional<double> initialK,initialOmega;
+        std::optional<double> maxSeconds;
         int firstOption=3;
         if(argc>3 && std::string(argv[3]).rfind("--",0)!=0) {
             firstOption=4;
@@ -72,13 +74,21 @@ int main(int argc,char** argv) {
             else if(option=="--inlet-omega")c.inletOmega=value;
             else if(option=="--initial-k")initialK=value;
             else if(option=="--initial-omega")initialOmega=value;
+            else if(option=="--max-seconds") {
+                if(value<=0)throw std::runtime_error("max-seconds must be positive");
+                maxSeconds=value;
+            }
             else if(option=="--max-iterations") {
-                if(value<1 || value>2000 || std::floor(value)!=value)throw std::runtime_error("max-iterations must be an integer in 1..2000");
+                if(value<1 || value>20000 || std::floor(value)!=value)throw std::runtime_error("max-iterations must be an integer in 1..20000");
                 c.flow.maxIterations=static_cast<std::size_t>(value);
             }
             else if(option=="--turbulence-updates") {
                 if(value<1 || value>500 || std::floor(value)!=value)throw std::runtime_error("turbulence-updates must be an integer in 1..500");
                 c.turbulenceUpdatesPerIteration=static_cast<std::size_t>(value);
+            }
+            else if(option=="--completion-updates") {
+                if(value<0 || value>500 || std::floor(value)!=value)throw std::runtime_error("completion-updates must be an integer in 0..500");
+                c.turbulenceCompletionUpdates=static_cast<std::size_t>(value);
             }
             else if(option=="--leading-edge" && c.flow.scenario=="flatplate")c.flow.flatPlateLeadingEdge=value;
             else throw std::runtime_error("unknown or inapplicable probe option: "+option);
@@ -90,6 +100,8 @@ int main(int argc,char** argv) {
         const std::string prefix=argv[2];
         for(const auto suffix:{".json",".diagnostics.json",".cells.csv",".faces.csv",".history.csv",".unconverged.json",".unconverged.cells.csv",".unconverged.faces.csv"})
             if(std::filesystem::exists(prefix+suffix))throw std::runtime_error("probe requires a fresh output prefix");
+        const auto started=std::chrono::steady_clock::now();
+        if(maxSeconds)c.flow.stopRequested=[&]{return std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()>=*maxSeconds;};
         const auto r=solveSstRans2D(mesh,c,
             initialK?std::vector<double>(mesh.cells.size(),*initialK):std::vector<double>{},
             initialOmega?std::vector<double>(mesh.cells.size(),*initialOmega):std::vector<double>{},[](const auto& h){
@@ -98,16 +110,17 @@ int main(int argc,char** argv) {
                 <<" predictor="<<h.momentumPredictorResidual<<" predictorCell="<<h.momentumPredictorWorstCell<<" pressureLinear="<<h.pressureLinearResidual<<'\n';
         });
         std::ofstream history(prefix+".history.csv");history<<std::setprecision(17);
-        history<<"iteration,momentumResidual,continuity,velocityChange,pressureChange,kNorm,omegaNorm,kCellResidual,omegaCellResidual,turbulenceIterations,momentumWorstCell,momentumResidualX,momentumResidualY,momentumPredictorResidual,momentumPredictorWorstCell,pressureLinearResidual\n";
+        history<<"iteration,momentumResidual,continuity,velocityChange,pressureChange,kNorm,omegaNorm,kCellResidual,omegaCellResidual,turbulenceIterations,momentumWorstCell,momentumResidualX,momentumResidualY,momentumPredictorResidual,momentumPredictorWorstCell,pressureLinearResidual,completionUpdate\n";
         for(std::size_t i=0;i<r.history.size();++i) {
             const auto& f=r.flow.history[i];const auto& h=r.history[i];
             history<<f.iteration<<','<<f.momentumResidual<<','<<f.continuity<<','<<f.velocityChange<<','<<f.pressureChange<<','
                 <<h.kNorm<<','<<h.omegaNorm<<','<<h.kCellResidual<<','<<h.omegaCellResidual<<','<<h.turbulenceIterations<<','
-                <<f.momentumWorstCell<<','<<f.momentumResidualX<<','<<f.momentumResidualY<<','<<f.momentumPredictorResidual<<','<<f.momentumPredictorWorstCell<<','<<f.pressureLinearResidual<<'\n';
+                <<f.momentumWorstCell<<','<<f.momentumResidualX<<','<<f.momentumResidualY<<','<<f.momentumPredictorResidual<<','<<f.momentumPredictorWorstCell<<','<<f.pressureLinearResidual<<','<<h.completionUpdate<<'\n';
         }
         std::ofstream diagnostics(prefix+".diagnostics.json");
         diagnostics<<std::setprecision(17)<<"{\"converged\":"<<(r.converged?"true":"false")
-            <<",\"stopReason\":\""<<(r.converged?"converged":"iteration-limit")<<"\",\"maxIterations\":"<<c.flow.maxIterations
+            <<",\"stopped\":"<<(r.flow.stopped?"true":"false")
+            <<",\"stopReason\":\""<<(r.converged?"converged":(r.flow.stopped?"time-budget":"iteration-limit"))<<"\",\"maxIterations\":"<<c.flow.maxIterations
             <<",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<r.flow.performance.solveSeconds<<",\"performance\":";
@@ -141,9 +154,11 @@ int main(int argc,char** argv) {
             <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":"<<(r.converged?"true":"false")<<",\"nu\":"<<c.flow.nu
             <<",\"speed\":"<<c.flow.speed<<",\"inletK\":"<<c.inletK<<",\"inletOmega\":"<<c.inletOmega
             <<",\"initialK\":"<<initialK.value_or(c.inletK)<<",\"initialOmega\":"<<initialOmega.value_or(c.inletOmega)<<",\"tolerance\":1e-7,"
+            <<"\"stopped\":"<<(r.flow.stopped?"true":"false")<<","
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
+            <<",\"turbulenceCompletionUpdates\":"<<c.turbulenceCompletionUpdates
             <<",\"scalarCorrectionsPerUpdate\":"<<c.turbulence.scalarCorrectionsPerUpdate
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds

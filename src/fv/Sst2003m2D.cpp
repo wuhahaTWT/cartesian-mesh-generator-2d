@@ -212,6 +212,16 @@ void setSst2003mResolvedWalls2D(const FvMesh2D& mesh,FrozenSst2003mProblem2D& p,
     }
 }
 
+FrozenSst2003mResult2D evaluateSst2003mTransport2D(const FvMesh2D& mesh,
+    const FrozenSst2003mProblem2D& initial,const std::vector<Vector2D>& velocity,
+    const std::vector<SstVelocityBoundary2D>& velocityBC,const ScalarTransportControls2D& controls,
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
+    auto p=initial;
+    auto g=reconstructSst2003mGradients2D(mesh,p,velocity,velocityBC);
+    p.gradientK=std::move(g.k);p.gradientOmega=std::move(g.omega);p.strainMagnitude=std::move(g.strainMagnitude);
+    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,true);
+}
+
 SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& initial,const std::vector<Vector2D>& velocity,
     const std::vector<SstVelocityBoundary2D>& velocityBC,const SstTransportControls2D& controls,

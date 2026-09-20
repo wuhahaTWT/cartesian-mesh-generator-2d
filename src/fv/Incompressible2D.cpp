@@ -673,6 +673,7 @@ static FlowResult2D solveFlow(
         r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
         if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8&&materialConverged){r.converged=true;break;}
+        if(c.stopRequested && c.stopRequested()){r.stopped=true;break;}
     }
     if (previous) {
         r.temporalIntegrals.resize(n);

@@ -189,9 +189,10 @@ def main(args):
         reject_json(plate_mesh,ilu,lambda data:data.__setitem__('scalarPreconditioner','invalid'))
         seeded=root/'seeded'
         run([args.probe,plate_mesh,seeded,'flatplate-sweep','--scalar-preconditioner','ilu0',
-             '--initial-k','.004','--initial-omega','3'])
+             '--initial-k','.004','--initial-omega','3','--completion-updates','100'])
         seeded_audit=verifier.audit(plate_mesh,seeded)
         assert seeded_audit['valid'] and seeded_audit['physicalInputs']['inletK']==.001
+        reject_json(plate_mesh,seeded,lambda data:data.__setitem__('turbulenceCompletionUpdates',501))
         assert seeded_audit['declaredInitialTurbulence']=={'initialK':.004,'initialOmega':3}
         for key in ('initialK','initialOmega'):
             for invalid in (-1,True,'1',float('nan')):
@@ -219,6 +220,19 @@ def main(args):
         assert diagnosis['valid'] is False and diagnosis['diagnosticOnly'] is True
         assert diagnosis['failedConvergenceChecks']
         assert diagnosis['scalar']['omega']['worstCellIndex']>=0
+        timed=root/'timed-stop'
+        result=subprocess.run([str(args.probe),str(plate_mesh),str(timed),'flatplate-sweep',
+                               '--max-seconds','1e-12'],capture_output=True,timeout=30)
+        assert result.returncode!=0
+        timed_diag=json.loads(Path(str(timed)+'.diagnostics.json').read_text())
+        assert timed_diag['stopped'] is True and timed_diag['stopReason']=='time-budget'
+        assert timed_diag['iterations']==1 and timed_diag['converged'] is False
+        assert not Path(str(timed)+'.json').exists()
+        assert verifier.audit(plate_mesh,Path(str(timed)+'.unconverged'),diagnostic=True)['stopped'] is True
+        for suffix in ('.cells.csv','.faces.csv'):
+            assert Path(str(timed)+'.unconverged'+suffix).read_bytes()==Path(str(failed_prefix)+suffix).read_bytes()
+        reject_json(plate_mesh,ilu,lambda data:data.__setitem__('stopped',True))
+        reject_json(plate_mesh,ilu,lambda data:data.__setitem__('stopped','false'))
         # Explicit diagnostic mode must not bless even an otherwise accepted run.
         assert verifier.audit(plate_mesh,ilu,diagnostic=True)['valid'] is False
         damaged=Path(str(failed_prefix)+'.cells.csv')
@@ -240,13 +254,14 @@ def main(args):
         rerun=subprocess.run([str(args.probe),str(plate_mesh),str(ilu),'flatplate-sweep'],capture_output=True,timeout=90)
         assert rerun.returncode!=0 and b'fresh output prefix' in rerun.stderr
         assert Path(str(ilu)+'.json').read_bytes()==previous
-        for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','2001'],
+        for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','20001'],
                         ['--scalar-preconditioner','ic0'],['--turbulence-updates','0'],
                         ['--turbulence-updates','501'],['--turbulence-updates','1.5'],
                         ['--initial-k','.1'],['--initial-omega','2'],
                         ['--initial-k','-1','--initial-omega','2'],
                         ['--initial-k','.1','--initial-omega','0'],
-                        ['--initial-k','nan','--initial-omega','2']):
+                        ['--initial-k','nan','--initial-omega','2'],['--max-seconds','0'],['--max-seconds','nan'],
+                        ['--completion-updates','501'],['--completion-updates','-.1']):
             rejected=subprocess.run([str(args.probe),str(plate_mesh),str(root/'bad-options'),'flatplate-sweep',*options],
                                     capture_output=True,timeout=90)
             assert rejected.returncode!=0

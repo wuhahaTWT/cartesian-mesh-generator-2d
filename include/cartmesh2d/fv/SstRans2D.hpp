@@ -10,10 +10,16 @@ struct SstRansControls2D {
     // iteration. Final original-equation stopping gates are unchanged. Set to
     // turbulence.maxIterations to recover the fully nested solve strategy.
     std::size_t turbulenceUpdatesPerIteration=1;
+    // Optional bounded completion sweep once the preceding flow iteration
+    // meets its momentum/change/continuity gates. Zero keeps the legacy
+    // schedule. Recompute CURRENT momentum with the resulting viscosity and
+    // require every original gate; a completed scalar sweep alone cannot pass.
+    std::size_t turbulenceCompletionUpdates=0;
 };
 struct SstRansIteration2D {
     std::size_t iteration=0, turbulenceIterations=0;
     double kNorm=0, omegaNorm=0, kCellResidual=0, omegaCellResidual=0;
+    bool completionUpdate=false;
 };
 // Enabled by flow.profile. updateSeconds includes the other SST timers;
 // never sum them as disjoint phases. Failed calls do not return a result.

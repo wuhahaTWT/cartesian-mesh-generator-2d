@@ -42,6 +42,21 @@ void materialContract(const FvMesh2D& m) {
     require(old.converged&&same.converged&&same.u==old.u&&same.v==old.v&&same.p==old.p&&same.flux==old.flux,
         "constant material callback changed legacy flow");
     require(updates==same.history.size(),"one constitutive refresh per current momentum residual");
+    // A cooperative stop returns the same completed state as an iteration
+    // limit, including constitutive refresh, fluxes and final force assembly.
+    auto limitedControls=c;limitedControls.maxIterations=3;
+    const auto limitedState=solveIncompressible2D(m,limitedControls);
+    std::size_t stopChecks=0;auto stoppedControls=c;
+    stoppedControls.stopRequested=[&]{return ++stopChecks==3;};
+    const auto stoppedState=solveIncompressible2D(m,stoppedControls);
+    require(stoppedState.stopped && !stoppedState.converged && !limitedState.stopped &&
+            stoppedState.history.size()==3 && stoppedState.u==limitedState.u && stoppedState.v==limitedState.v &&
+            stoppedState.p==limitedState.p && stoppedState.flux==limitedState.flux &&
+            stoppedState.wallForceX==limitedState.wallForceX,"cooperative stop changed completed iterate or acceptance");
+    stopChecks=0;stoppedControls.stopRequested=[&]{return ++stopChecks>=old.history.size();};
+    const auto finished=solveIncompressible2D(m,stoppedControls);
+    require(finished.converged && !finished.stopped && finished.u==old.u,
+            "a pending cooperative stop overrode full convergence");
     // A converged momentum system cannot bypass an unfinished constitutive
     // equation; conversely a later ready signal must allow ordinary acceptance.
     auto held=c;held.maxIterations=old.history.size()+8;
@@ -126,6 +141,18 @@ void ransContract(const FvMesh2D& m) {
     const auto coupled=solveSstRans2D(m,interleaved);
     require(coupled.converged&&coupled.turbulence.converged,"interleaved turbulence failed final equation gates");
     for(const auto& h:coupled.history)require(h.turbulenceIterations<=1,"interleaved work limit ignored");
+    auto completion=interleaved;completion.turbulenceCompletionUpdates=100;
+    const auto completed=solveSstRans2D(m,completion);
+    require(completed.converged && completed.turbulence.converged,"completion sweep bypassed original coupled gates");
+    for(std::size_t i=0;i<completed.history.size();++i) {
+        const auto& h=completed.history[i];
+        require(h.turbulenceIterations<=(h.completionUpdate?100:1),"completion work limit ignored");
+        if(h.completionUpdate) {
+            require(i>0,"completion before any flow history");const auto& f=completed.flow.history[i-1];
+            require(f.momentumResidual<completion.flow.tolerance && f.velocityChange<completion.flow.tolerance &&
+                    f.pressureChange<completion.flow.tolerance && f.continuity<1e-8,"premature completion sweep");
+        }
+    }
     interleaved.flow.maxIterations=1;
     const auto partial=solveSstRans2D(m,interleaved);
     require(!partial.converged&&!partial.turbulence.converged,"partial scalar iteration claimed coupled success");

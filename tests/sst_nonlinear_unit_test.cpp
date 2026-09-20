@@ -156,10 +156,50 @@ void boundedScalarCorrectionContract() {
     catch(const std::exception&){rejected=true;}
     require(rejected,"public frozen transport still requires its complete solve");
 }
+
+void originalEquationEvaluation() {
+    const auto mesh=oneCell();auto p=uniformProblem(mesh);
+    p.boundaryK.assign(mesh.faces.size(),{ScalarBoundaryKind2D::DiffusiveFlux,0.,{}});
+    p.boundaryOmega=p.boundaryK;
+    const auto oldK=p.k,oldW=p.omega;const auto bc=zeroVelocityBC(mesh);
+    // Cached closure inputs are deliberately stale; the API must reconstruct
+    // the actual zero-velocity, spatially homogeneous state, not trust these.
+    p.strainMagnitude={100};p.gradientK={{1,2}};p.gradientOmega={{3,4}};
+    ScalarTransportControls2D c;c.profile=true;c.absoluteTolerance=1e-13;
+    c.relativeTolerance=1e-11;c.cellTolerance=1e-11;
+    const double dt=.2;
+    const auto r=evaluateSst2003mTransport2D(mesh,p,{{0,0}},bc,c,oldK,oldW,dt);
+    require(r.k.values==oldK && r.omega.values==oldW && p.strainMagnitude[0]==100 &&
+            p.gradientK[0].x==1 && p.gradientOmega[0].y==4,"evaluation altered caller or candidate state");
+    // Unit area: at the old state the time term is zero, and only beta*k*w
+    // and beta*w^2 remain. These are analytical ORIGINAL equation residuals.
+    require(std::abs(r.k.history.back().residualNorm-.09*.02*4)<1e-15 &&
+            std::abs(r.omega.history.back().residualNorm-.075*4*4)<1e-14,
+            "evaluation did not measure original nonlinear destruction");
+    require(!r.k.converged && !r.omega.converged,"nonzero residual was accepted");
+    for(const auto* field:{&r.k,&r.omega}) {
+        require(field->performance.linearIterations==0 && field->history.size()==1 &&
+                field->history[0].linearIterations==0,"evaluation performed a scalar solve");
+    }
+    const double w=2*oldW[0]/(1+std::sqrt(1+4*dt*.075*oldW[0]));
+    p.omega[0]=w;p.k[0]=oldK[0]/(1+dt*.09*w);
+    const auto root=evaluateSst2003mTransport2D(mesh,p,{{0,0}},bc,c,oldK,oldW,dt);
+    require(root.k.converged && root.omega.converged && root.k.values==p.k && root.omega.values==p.omega,
+            "analytical backward-Euler root failed original evaluation");
+    // Reusing a preceding frozen loss rate is not a valid nonlinear residual.
+    p.omega[0]=oldW[0]/(1+dt*.075*oldW[0]);
+    const auto stale=evaluateSst2003mTransport2D(mesh,p,{{0,0}},bc,c,oldK,oldW,dt);
+    require(!stale.omega.converged,"frozen-coefficient solution passed nonlinear equation gate");
+    p.volumeFlux[0]=1;
+    bool rejected=false;
+    try{(void)evaluateSst2003mTransport2D(mesh,p,{{0,0}},bc,c,oldK,oldW,dt);}
+    catch(const std::exception&){rejected=true;}
+    require(rejected,"evaluation bypassed carrier continuity");
+}
 }
 
 int main() {
-    try { homogeneousDecay(); resolvedWallContract(); invalidNonlinearInputs(); boundedScalarCorrectionContract(); }
+    try { homogeneousDecay(); resolvedWallContract(); invalidNonlinearInputs(); boundedScalarCorrectionContract(); originalEquationEvaluation(); }
     catch (const std::exception& error) { std::cerr << "SST nonlinear unit test failed: " << error.what() << '\n'; return 1; }
     return 0;
 }

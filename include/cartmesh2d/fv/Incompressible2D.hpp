@@ -42,6 +42,12 @@ struct FlowControls2D {
     // Other scenarios require zero. Not yet supported by transient/checkpoint APIs.
     double flatPlateLeadingEdge = 0;
     FlatPlateTop2D flatPlateTop = FlatPlateTop2D::PressureFarfield;
+    // Optional cooperative stop, checked after a COMPLETE SIMPLE iteration.
+    // A result already meeting every convergence gate wins over this request.
+    // Otherwise return the current diagnostic field with stopped=true and
+    // converged=false. Does not interrupt a running linear solve; callers still
+    // need a hard timeout. Callback exceptions propagate. Empty is unchanged.
+    std::function<bool()> stopRequested;
 };
 
 // Accepted state at a physical time, including the conservative face flux.
@@ -102,6 +108,7 @@ struct FlowResult2D {
     std::vector<double> previousU, previousV;
     std::vector<Vector2D> temporalIntegrals;
     bool converged = false;
+    bool stopped = false;
     std::vector<double> u;
     std::vector<double> v;
     std::vector<double> p;

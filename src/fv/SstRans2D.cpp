@@ -56,7 +56,15 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
         setSst2003mResolvedWalls2D(mesh,p,result.resolvedWalls);
         auto transport=c.turbulence;
         transport.transport.profile=c.flow.profile;
-        transport.maxIterations=std::min(transport.maxIterations,c.turbulenceUpdatesPerIteration);
+        bool completion=false;
+        if(c.turbulenceCompletionUpdates && !flow.history.empty()) {
+            const auto& previous=flow.history.back();
+            completion=previous.momentumResidual<c.flow.tolerance && previous.velocityChange<c.flow.tolerance &&
+                previous.pressureChange<c.flow.tolerance && previous.continuity<1e-8 && flow.globalRelativeImbalance<1e-8;
+        }
+        const auto updates=completion?std::max(c.turbulenceUpdatesPerIteration,c.turbulenceCompletionUpdates)
+                                     :c.turbulenceUpdatesPerIteration;
+        transport.maxIterations=std::min(transport.maxIterations,updates);
         const auto transportStart=c.flow.profile?Clock::now():Clock::time_point{};
         auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport);
         if(c.flow.profile) {
@@ -82,7 +90,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
             result.faceViscosity[id]=p.nu+nt;
         }
         const auto& h=next.history.back();
-        result.history.push_back({result.history.size()+1,h.iteration,h.kResidualNorm,h.omegaResidualNorm,h.kCellResidual,h.omegaCellResidual});
+        result.history.push_back({result.history.size()+1,h.iteration,h.kResidualNorm,h.omegaResidualNorm,h.kCellResidual,h.omegaCellResidual,completion});
         result.turbulence=std::move(next);
         if(c.flow.profile) {++result.performance.updates;result.performance.updateSeconds+=elapsed(updateStart);}
         return detail::MaterialState2D{result.faceViscosity,result.turbulence.converged};
