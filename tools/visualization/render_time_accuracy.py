@@ -9,12 +9,12 @@ sys.path.insert(0,str(ROOT/'tools/verification'))
 import verify_transient_flow as audit
 import compare_transient_steps as compare
 
-def main(root,output):
+def main(root,output,binary_snapshot=None):
     report={'valid':True,'scope':'One Taylor-Green decay, fixed grids; temporal self-convergence, not general CFD qualification','groups':{}}
     fig,axes=plt.subplots(2,2,figsize=(13,9),layout='constrained')
     for name in ('cartesian','warped'):
         runset=root/name/'runs.json';source=json.loads(runset.read_text());mesh=Path(source['mesh'])
-        comparison=compare.compare(runset,root/name/'comparison.json')
+        comparison=compare.compare(runset,root/name/'comparison.json',binary_snapshot)
         runs=[]
         for entry in source['runs']:
             command=entry['command'];prefix=Path(command[command.index('--output')+1])
@@ -69,4 +69,5 @@ def main(root,output):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();main(a.root,a.output)
+    p.add_argument('--binary-snapshot',type=Path)
+    a=p.parse_args();main(a.root,a.output,a.binary_snapshot)

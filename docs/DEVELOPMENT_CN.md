@@ -652,13 +652,15 @@ python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --ca
 
 `.attempt-history.csv`记录所有试算，含开始/候选时间、dt、是否接受、拒绝原因、内迭代停止指标及实际CFL；`.time-history.csv`在自动模式只含接受步，dt可以变化。摘要`timeStepControl=adaptive-cfl-retry`记录全部控制、起终点、attemptCount/rejectedSteps/completedSteps；`dt`是最后接受步长度，不再带固定模式的requestedSteps。独立Python审核与App读回均检查拒绝原因、状态时间不前移、缩步规则和接受历史的一致性；最终场仍独立重建时间项/动量/质量/CFL。
 
+0.4.19避免把反复加法留下的舍入尾差单独推进成近零时间步：末步在最多64倍机器精度且相对dt不超过1e-12的范围内取真实剩余时长并重新计算；若正常尾差小于最小步且允许，则把末段分成两个可解析的步长。实际CFL与原非线性/守恒接受门保持不变。
+
 `tests/adaptive_flow_cli_test.py`覆盖CFL和内迭代两种拒绝、最小步/重试耗尽、接受步预算续算逐字节一致、非法组合与篡改历史拒绝。App失败或取消保留上次完整显示和最后接受检查点，ZIP含全部当前完成运行试算及未完成诊断。CFL控制不构成时间误差估计，物理精度仍须时间与网格细化。
 
-当前涡衰减的真实场与误差图：`python3 tools/visualization/render_time_accuracy.py --root outputs/native-flow/current-time-accuracy --output artifacts/current/native-time-accuracy`。脚本重新独立审核两个四档序列、加严容差和自动CFL对照，输入缺失或被篡改会失败；图中的自收敛阶不替代通用工程精度验收。
+当前涡衰减的真实场与误差图：`python3 tools/visualization/render_time_accuracy.py --root outputs/native-flow/current-time-accuracy --output outputs/native-flow/current-time-accuracy/reproduced --binary-snapshot outputs/native-flow/binaries/flow-0.4.18`。脚本重新独立审核两个四档序列、加严容差和自动CFL对照，输入缺失或被篡改会失败；图中的自收敛阶不替代通用工程精度验收。
 
 ### 固定网格的时间步比较
 
-`tools/verification/compare_transient_steps.py` 从 `run_transient_flow.py` 的 `runs.json` 重新读取最终场与时间历史，不信任旧 PASS。至少三档严格减半的时间步，要求同一网格、二进制、工况、物性、格式、容差及终止时间；逐项核对命令与独立读回，并要求从 t=0 开始。本入口暂不比较重启序列。按相同 cell id、实际面积计算相邻时间步速度差和观测阶；负阶也照实报告，`valid` 仅表示比较输入一致且离散审核通过，不是工程精度合格。
+`tools/verification/compare_transient_steps.py` 从 `run_transient_flow.py` 的 `runs.json` 重新读取最终场与时间历史，不信任旧 PASS。构建路径上的程序更新后，可用`--binary-snapshot`指向保存的旧可执行文件；必须与原runs.json的SHA256相同，原执行命令保留，不重写为新命令。至少三档严格减半的时间步，要求同一网格、二进制、工况、物性、格式、容差及终止时间；逐项核对命令与独立读回，并要求从 t=0 开始。本入口暂不比较重启序列。按相同 cell id、实际面积计算相邻时间步速度差和观测阶；负阶也照实报告，`valid` 仅表示比较输入一致且离散审核通过，不是工程精度合格。
 
 ```sh
 python3 tools/verification/run_transient_flow.py --mesh PATH/unit-square.solver.cm2d --output outputs/my-time-study --dt .04 .02 .01 .005 --end-time 2

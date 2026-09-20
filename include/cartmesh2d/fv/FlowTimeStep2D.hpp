@@ -51,7 +51,17 @@ inline double nextAdaptiveFlowTimeStep2D(const FvMesh2D& mesh, const FlowState2D
     // The 0.8 factor leaves room for velocity changes. It cannot replace the
     // acceptance check on the trial's actual conservative face fluxes.
     double step=rate>0?std::min(c.maximumStep,.8*c.maximumCourant/rate):c.maximumStep;
-    step=std::min(remaining,std::max(c.minimumStep,step));
+    step=std::max(c.minimumStep,step);
+    const double gap=remaining-step;
+    // Repeated floating-point additions can leave an ulp-sized extra step at
+    // an otherwise exact end time (e.g. 100 * .05). Compute the final physical
+    // step using the full remaining interval; never just relabel an old state.
+    const double roundoff=std::min(64*std::numeric_limits<double>::epsilon()*
+        std::max({state.time,c.targetTime,step}),1e-12*step);
+    if (gap>0 && gap<=roundoff) step=remaining;
+    else if (gap>0 && gap<c.minimumStep && .5*remaining>=c.minimumStep)
+        step=.5*remaining; // two resolvable steps instead of a sub-minimum tail
+    else step=std::min(remaining,step);
     if (!(state.time+step>state.time) || !std::isfinite(state.time+step))
         throw std::runtime_error("Adaptive time step cannot advance floating-point time");
     return step;

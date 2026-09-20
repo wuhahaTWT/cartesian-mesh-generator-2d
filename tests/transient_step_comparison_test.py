@@ -71,6 +71,19 @@ class TransientStepComparisonTests(unittest.TestCase):
         self.assertEqual(len(report["adjacentDistances"]), 2)
         self.assertTrue(report["adjacentDistances"][1]["observedOrder"] > 0)
 
+    def test_retained_binary_snapshot_requires_original_hash(self):
+        runset = self.write_runset(self.runset())
+        retained = self.root / 'saved-cli'
+        retained.write_bytes(self.binary.read_bytes())
+        self.binary.write_bytes(b'new build')
+        with self.assertRaises(COMPARE.audit.native.VerificationError):
+            COMPARE.compare(runset, self.root / 'report.json')
+        result = COMPARE.compare(runset, self.root / 'report.json', retained)
+        self.assertEqual(result['verifiedBinarySnapshot'], str(retained.resolve()))
+        retained.write_bytes(b'incorrect snapshot')
+        with self.assertRaises(COMPARE.audit.native.VerificationError):
+            COMPARE.compare(runset, self.root / 'report.json', retained)
+
     def test_mutated_mesh_hash_rejected(self):
         data = self.runset()
         self.mesh.write_text("mutated mesh\n")

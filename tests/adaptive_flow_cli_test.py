@@ -61,6 +61,15 @@ def main(cli):
             else:raise AssertionError('forged adaptive attempt history accepted')
         path.write_text(original)
         assert check(whole)['valid']
+        # Ten nominal .05 steps must not become ten plus a ~1e-17 tail.
+        endpoint,_=solve('endpoint',['--time-step',.05,'--end-time',.5,'--max-courant',100])
+        assert check(endpoint)['valid']
+        endpoint_summary=json.loads(Path(str(endpoint)+'.json').read_text())
+        assert endpoint_summary['completedSteps']==10 and endpoint_summary['dt']>.049,endpoint_summary
+        balanced,_=solve('balanced-end',['--time-step',.04,'--min-time-step',.01,'--end-time',.041,'--max-courant',100])
+        assert check(balanced)['valid']
+        balanced_rows=list(csv.DictReader(open(str(balanced)+'.time-history.csv')))
+        assert len(balanced_rows)==2 and all(float(row['dt'])>=.01 for row in balanced_rows)
         print(json.dumps(dict(valid=True,continuousRestartIdentical=True,courantRetries=q['rejectedSteps'],
             acceptedSteps=q['completedSteps'],innerRetry=True,minimumStepRollback=True)))
 

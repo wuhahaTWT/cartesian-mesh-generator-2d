@@ -1,0 +1,2220 @@
+{
+  "format": "cartmesh2d-time-endpoint-v1",
+  "version": "0.4.19",
+  "valid": true,
+  "scope": "Remove roundoff-sized terminal step without relabelling an old state; no physics acceptance threshold changes",
+  "before": {
+    "temporalDiscretization": "backward-euler",
+    "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+    "time": 5,
+    "dt": 9.769962616701378e-15,
+    "acceptedTime": 5,
+    "timeStepControl": "adaptive-cfl-retry",
+    "startTime": 0,
+    "targetTime": 5,
+    "maximumTimeStep": 0.05,
+    "minimumTimeStep": 1e-05,
+    "targetCourant": 2,
+    "maximumRetries": 10,
+    "maximumAcceptedSteps": 1500,
+    "attemptCount": 101,
+    "rejectedSteps": 0,
+    "completedSteps": 101,
+    "maxCourant": 9.434858609277301e-14,
+    "velocityRelaxation": 0.6,
+    "format": "cartmesh2d-flow-summary-v1",
+    "case": "external",
+    "status": "converged",
+    "converged": true,
+    "cells": 5168,
+    "iterations": 10,
+    "nu": 0.02,
+    "speed": 1,
+    "continuity": 1.6171225902387671e-13,
+    "globalImbalance": 4.75175454539567e-14,
+    "momentumResidual": 9.310658547234965e-16,
+    "velocityChange": 0,
+    "pressureChange": 0,
+    "forceX": 1.3881662313584833,
+    "forceY": -9.114237142782144e-15,
+    "pressureForceX": 1.0451191735800471,
+    "pressureForceY": -1.215347267269351e-14,
+    "discreteForceX": 1.3881662313584833,
+    "discreteForceY": -9.114237142782144e-15,
+    "pressureDiscretization": "shared-face-gauss",
+    "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+    "convection": "face-limited-linear",
+    "viscousStress": "symmetric",
+    "outletBackflow": "reject",
+    "outletBackflowFaces": 0,
+    "outletInflow": 0,
+    "forceDefinition": "shared-face-newtonian-traction",
+    "reconstructedForceX": 1.3427676818044163,
+    "reconstructedForceY": -1.2293117912509643e-14,
+    "wallForceX": 1.3881662313584833,
+    "wallForceY": -9.121176036686052e-15,
+    "wallViscousForceX": 0.3430470577784358,
+    "wallViscousForceY": 3.0557154029331457e-15,
+    "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+    "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+    "globalRelativeImbalance": 1.1313701298561118e-15,
+    "domainHeight": 42,
+    "tolerance": 1e-08,
+    "pressurePreconditioner": "aggregation",
+    "units": {
+      "velocity": "m/s",
+      "p": "m2/s2 (kinematic)",
+      "nu": "m2/s",
+      "faceFlux": "m2/s per unit depth",
+      "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+    },
+    "pressureReference": "right outlet faces, kinematic pressure zero",
+    "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+    "scope": "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
+  },
+  "after": {
+    "temporalDiscretization": "backward-euler",
+    "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+    "time": 5,
+    "dt": 0.05000000000000959,
+    "acceptedTime": 5,
+    "timeStepControl": "adaptive-cfl-retry",
+    "startTime": 0,
+    "targetTime": 5,
+    "maximumTimeStep": 0.05,
+    "minimumTimeStep": 1e-05,
+    "targetCourant": 2,
+    "maximumRetries": 10,
+    "maximumAcceptedSteps": 1500,
+    "attemptCount": 100,
+    "rejectedSteps": 0,
+    "completedSteps": 100,
+    "maxCourant": 0.48285029223912196,
+    "velocityRelaxation": 0.6,
+    "format": "cartmesh2d-flow-summary-v1",
+    "case": "external",
+    "status": "converged",
+    "converged": true,
+    "cells": 5168,
+    "iterations": 40,
+    "nu": 0.02,
+    "speed": 1,
+    "continuity": 1.6054687775368567e-13,
+    "globalImbalance": 4.75175454539567e-14,
+    "momentumResidual": 7.079820328247015e-10,
+    "velocityChange": 1.053903840720885e-10,
+    "pressureChange": 9.698916416153573e-09,
+    "forceX": 1.3881662313584908,
+    "forceY": -2.066229132235975e-14,
+    "pressureForceX": 1.0451191735800556,
+    "pressureForceY": -2.3810814431257654e-14,
+    "discreteForceX": 1.3881662313584908,
+    "discreteForceY": -2.066229132235975e-14,
+    "pressureDiscretization": "shared-face-gauss",
+    "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+    "convection": "face-limited-linear",
+    "viscousStress": "symmetric",
+    "outletBackflow": "reject",
+    "outletBackflowFaces": 0,
+    "outletInflow": 0,
+    "forceDefinition": "shared-face-newtonian-traction",
+    "reconstructedForceX": 1.342767681804425,
+    "reconstructedForceY": -2.385591724163305e-14,
+    "wallForceX": 1.3881662313584908,
+    "wallForceY": -2.066229132235975e-14,
+    "wallViscousForceX": 0.3430470577784359,
+    "wallViscousForceY": 3.1686892693061353e-15,
+    "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+    "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+    "globalRelativeImbalance": 1.1313701298561118e-15,
+    "domainHeight": 42,
+    "tolerance": 1e-08,
+    "pressurePreconditioner": "aggregation",
+    "units": {
+      "velocity": "m/s",
+      "p": "m2/s2 (kinematic)",
+      "nu": "m2/s",
+      "faceFlux": "m2/s per unit depth",
+      "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+    },
+    "pressureReference": "right outlet faces, kinematic pressure zero",
+    "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+    "scope": "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
+  },
+  "originalExecution": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--mesh",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/re100-startup/fine.solver.cm2d",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/re100-startup-fine/flow",
+      "--case",
+      "external",
+      "--nu",
+      ".02",
+      "--speed",
+      "1",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--max-iterations",
+      "500",
+      "--tolerance",
+      "1e-8",
+      "--time-step",
+      ".05",
+      "--end-time",
+      "5",
+      "--max-courant",
+      "2",
+      "--min-time-step",
+      ".00001",
+      "--max-time-steps",
+      "1500",
+      "--profile"
+    ],
+    "timeoutSeconds": 180,
+    "valid": true,
+    "returnCode": 0,
+    "elapsedSeconds": 101.82692125000176,
+    "scope": "Discrete startup balance only; different adaptive histories and spatial resolution, no force accuracy qualification"
+  },
+  "fixedExecution": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--mesh",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/re100-startup/fine.solver.cm2d",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/re100-startup-fine-endpoint/flow",
+      "--case",
+      "external",
+      "--nu",
+      ".02",
+      "--speed",
+      "1",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--max-iterations",
+      "500",
+      "--tolerance",
+      "1e-8",
+      "--time-step",
+      ".05",
+      "--end-time",
+      "5",
+      "--max-courant",
+      "2",
+      "--min-time-step",
+      ".00001",
+      "--max-time-steps",
+      "1500",
+      "--profile"
+    ],
+    "timeoutSeconds": 180,
+    "valid": true,
+    "returnCode": 0,
+    "elapsedSeconds": 102.4364084589979
+  },
+  "fieldDifference": {
+    "maxVelocity": 1.8319205572553516e-15,
+    "maxPressure": 5.3866633376031814e-14
+  },
+  "tests": {
+    "ctestPassed": 140,
+    "frontendPassed": 155,
+    "binarySnapshotCases": 7
+  },
+  "independentAuditHashes": {
+    "outputs/native-flow/re100-startup-fine/audit.json": "eab86a2925e52e32aed33881c640378a399383524428d28180e4055ae3f1367b",
+    "outputs/native-flow/re100-startup-fine-endpoint/audit.json": "4b289bf4aaae11f9fd67cbe6f8ffb0d3417d1b1dfc346f76385a201610ea618a",
+    "outputs/native-flow/endpoint-app/run-export-audit.json": "06bb4d918537fc800b0b51e568fbea1d07c11d9df4816b8967cb650c6e774f90"
+  },
+  "app": {
+    "reportSha256": "d3624f96aefa73accb7143082ce4e58d63addcbbe382b1e6e4b56de9f10592de",
+    "zipSha256": "ec877af9275729b2d1cb4a1e41caf66572403470120eda39479c05adf116ae50",
+    "adaptive": {
+      "initial": {
+        "boundaryFileSuffix": ".boundaries",
+        "referenceSpeedRole": "normalization-only",
+        "boundaryConditions": [
+          {
+            "face": 0,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 1,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 3,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 5,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 7,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 8,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 9,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 11,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 13,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 15,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 17,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 18,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 19,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 20,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 22,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 37,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 38,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 40,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 42,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 43,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 44,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 46,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 48,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 49,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 50,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 72,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 73,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 74,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 75,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 78,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 81,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 82,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 84,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 86,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 118,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 119,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 121,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 156,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 157,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 158,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 160,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 206,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 208,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 209,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 210,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 211,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 212,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.024533837163708765,
+            "v": -0.4993977281025862,
+            "p": 0
+          },
+          {
+            "face": 213,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.02453383716370933,
+            "v": -0.49939772810258615,
+            "p": 0
+          },
+          {
+            "face": 214,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.07336523722768115,
+            "v": -0.49458825498239045,
+            "p": 0
+          },
+          {
+            "face": 215,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.07336523722768074,
+            "v": -0.49458825498239045,
+            "p": 0
+          },
+          {
+            "face": 216,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.07336523722768051,
+            "v": -0.49458825498239056,
+            "p": 0
+          },
+          {
+            "face": 217,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.07336523722767814,
+            "v": -0.49458825498239084,
+            "p": 0
+          },
+          {
+            "face": 218,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.12149008995163192,
+            "v": -0.48501562659727193,
+            "p": 0
+          },
+          {
+            "face": 219,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.12149008995163244,
+            "v": -0.4850156265972718,
+            "p": 0
+          },
+          {
+            "face": 220,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.16844492669610966,
+            "v": -0.47077203259151057,
+            "p": 0
+          },
+          {
+            "face": 221,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.1684449266961096,
+            "v": -0.47077203259151057,
+            "p": 0
+          },
+          {
+            "face": 222,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 223,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 225,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 261,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 262,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.1684449266961097,
+            "v": -0.47077203259151046,
+            "p": 0
+          },
+          {
+            "face": 263,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.1684449266961114,
+            "v": -0.47077203259150985,
+            "p": 0
+          },
+          {
+            "face": 264,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.21377754671514115,
+            "v": -0.45199464656172156,
+            "p": 0
+          },
+          {
+            "face": 265,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.21377754671514115,
+            "v": -0.45199464656172156,
+            "p": 0
+          },
+          {
+            "face": 266,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.2570513720966107,
+            "v": -0.42886430500013617,
+            "p": 0
+          },
+          {
+            "face": 267,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.2570513720966107,
+            "v": -0.42886430500013617,
+            "p": 0
+          },
+          {
+            "face": 268,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.2978496522462153,
+            "v": -0.40160376574032347,
+            "p": 0
+          },
+          {
+            "face": 269,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.2978496522462173,
+            "v": -0.40160376574032197,
+            "p": 0
+          },
+          {
+            "face": 270,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.29784965224621696,
+            "v": -0.4016037657403222,
+            "p": 0
+          },
+          {
+            "face": 271,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.2978496522462168,
+            "v": -0.40160376574032236,
+            "p": 0
+          },
+          {
+            "face": 272,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.33577947742350844,
+            "v": -0.3704755626774803,
+            "p": 0
+          },
+          {
+            "face": 273,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.33577947742350917,
+            "v": -0.3704755626774796,
+            "p": 0
+          },
+          {
+            "face": 274,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 275,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 277,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 292,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3357794774235089,
+            "v": -0.37047556267747983,
+            "p": 0
+          },
+          {
+            "face": 294,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.33577947742350944,
+            "v": -0.3704755626774794,
+            "p": 0
+          },
+          {
+            "face": 309,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 310,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3704755626774798,
+            "v": -0.335779477423509,
+            "p": 0
+          },
+          {
+            "face": 311,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.3704755626774794,
+            "v": -0.33577947742350933,
+            "p": 0
+          },
+          {
+            "face": 312,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 314,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 316,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.37047556267747983,
+            "v": -0.33577947742350894,
+            "p": 0
+          },
+          {
+            "face": 317,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.37047556267747944,
+            "v": -0.33577947742350917,
+            "p": 0
+          },
+          {
+            "face": 318,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4016037657403224,
+            "v": -0.2978496522462167,
+            "p": 0
+          },
+          {
+            "face": 319,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.40160376574032275,
+            "v": -0.2978496522462163,
+            "p": 0
+          },
+          {
+            "face": 320,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 321,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 322,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 338,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.40160376574032197,
+            "v": -0.2978496522462173,
+            "p": 0
+          },
+          {
+            "face": 339,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.40160376574032347,
+            "v": -0.2978496522462153,
+            "p": 0
+          },
+          {
+            "face": 355,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 356,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4288643050001358,
+            "v": -0.2570513720966112,
+            "p": 0
+          },
+          {
+            "face": 357,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4288643050001358,
+            "v": -0.2570513720966112,
+            "p": 0
+          },
+          {
+            "face": 358,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4519946465617217,
+            "v": -0.21377754671514101,
+            "p": 0
+          },
+          {
+            "face": 359,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4519946465617218,
+            "v": -0.21377754671514068,
+            "p": 0
+          },
+          {
+            "face": 360,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 361,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 362,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.47077203259151085,
+            "v": -0.16844492669610886,
+            "p": 0
+          },
+          {
+            "face": 363,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.47077203259151085,
+            "v": -0.1684449266961086,
+            "p": 0
+          },
+          {
+            "face": 365,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 378,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4707720325915103,
+            "v": -0.16844492669611025,
+            "p": 0
+          },
+          {
+            "face": 380,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4707720325915103,
+            "v": -0.1684449266961103,
+            "p": 0
+          },
+          {
+            "face": 393,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 394,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.485015626597272,
+            "v": -0.12149008995163191,
+            "p": 0
+          },
+          {
+            "face": 396,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.48501562659727204,
+            "v": -0.12149008995163167,
+            "p": 0
+          },
+          {
+            "face": 398,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 399,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 401,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.49458825498238995,
+            "v": -0.0733652372276847,
+            "p": 0
+          },
+          {
+            "face": 402,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4945882549823903,
+            "v": -0.07336523722768208,
+            "p": 0
+          },
+          {
+            "face": 405,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 417,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4945882549823905,
+            "v": -0.07336523722768105,
+            "p": 0
+          },
+          {
+            "face": 419,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.49458825498239045,
+            "v": -0.07336523722768121,
+            "p": 0
+          },
+          {
+            "face": 431,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 432,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4993977281025862,
+            "v": -0.024533837163708768,
+            "p": 0
+          },
+          {
+            "face": 433,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4993977281025862,
+            "v": -0.024533837163708876,
+            "p": 0
+          },
+          {
+            "face": 435,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 437,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4993977281025862,
+            "v": 0.024533837163708876,
+            "p": 0
+          },
+          {
+            "face": 458,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4993977281025862,
+            "v": 0.02453383716370933,
+            "p": 0
+          },
+          {
+            "face": 459,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 461,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4945882549823905,
+            "v": 0.07336523722768075,
+            "p": 0
+          },
+          {
+            "face": 462,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4945882549823904,
+            "v": 0.07336523722768068,
+            "p": 0
+          },
+          {
+            "face": 465,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 479,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4945882549823905,
+            "v": 0.07336523722768104,
+            "p": 0
+          },
+          {
+            "face": 481,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.49458825498239045,
+            "v": 0.07336523722768076,
+            "p": 0
+          },
+          {
+            "face": 495,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 496,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.48501562659727193,
+            "v": 0.12149008995163192,
+            "p": 0
+          },
+          {
+            "face": 497,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4850156265972719,
+            "v": 0.12149008995163216,
+            "p": 0
+          },
+          {
+            "face": 498,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 499,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 500,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.47077203259151035,
+            "v": 0.1684449266961101,
+            "p": 0
+          },
+          {
+            "face": 501,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.47077203259151057,
+            "v": 0.16844492669610953,
+            "p": 0
+          },
+          {
+            "face": 503,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 516,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4707720325915107,
+            "v": 0.16844492669610928,
+            "p": 0
+          },
+          {
+            "face": 518,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.47077203259150946,
+            "v": 0.1684449266961125,
+            "p": 0
+          },
+          {
+            "face": 531,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 532,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.45199464656172156,
+            "v": 0.21377754671514115,
+            "p": 0
+          },
+          {
+            "face": 534,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4519946465617217,
+            "v": 0.21377754671514101,
+            "p": 0
+          },
+          {
+            "face": 536,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 539,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 540,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.428864305000136,
+            "v": 0.25705137209661083,
+            "p": 0
+          },
+          {
+            "face": 542,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.42886430500013617,
+            "v": 0.2570513720966108,
+            "p": 0
+          },
+          {
+            "face": 545,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4016037657403227,
+            "v": 0.2978496522462164,
+            "p": 0
+          },
+          {
+            "face": 546,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.4016037657403228,
+            "v": 0.2978496522462163,
+            "p": 0
+          },
+          {
+            "face": 548,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 560,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.4016037657403226,
+            "v": 0.29784965224621646,
+            "p": 0
+          },
+          {
+            "face": 561,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.40160376574032236,
+            "v": 0.2978496522462168,
+            "p": 0
+          },
+          {
+            "face": 573,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 574,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 575,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 576,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.3704755626774796,
+            "v": 0.33577947742350917,
+            "p": 0
+          },
+          {
+            "face": 578,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3704755626774797,
+            "v": 0.3357794774235091,
+            "p": 0
+          },
+          {
+            "face": 580,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3704755626774794,
+            "v": 0.3357794774235093,
+            "p": 0
+          },
+          {
+            "face": 582,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.3704755626774794,
+            "v": 0.33577947742350944,
+            "p": 0
+          },
+          {
+            "face": 584,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 585,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 587,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3357794774235095,
+            "v": 0.3704755626774794,
+            "p": 0
+          },
+          {
+            "face": 588,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.33577947742350933,
+            "v": 0.3704755626774794,
+            "p": 0
+          },
+          {
+            "face": 591,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 604,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.3357794774235097,
+            "v": 0.3704755626774791,
+            "p": 0
+          },
+          {
+            "face": 606,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.33577947742350917,
+            "v": 0.3704755626774796,
+            "p": 0
+          },
+          {
+            "face": 619,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 620,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 621,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 622,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.29784965224621646,
+            "v": 0.4016037657403227,
+            "p": 0
+          },
+          {
+            "face": 624,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.2978496522462164,
+            "v": 0.4016037657403227,
+            "p": 0
+          },
+          {
+            "face": 626,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.2978496522462173,
+            "v": 0.40160376574032197,
+            "p": 0
+          },
+          {
+            "face": 627,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.2978496522462173,
+            "v": 0.40160376574032197,
+            "p": 0
+          },
+          {
+            "face": 628,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.257051372096611,
+            "v": 0.42886430500013606,
+            "p": 0
+          },
+          {
+            "face": 630,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.25705137209661105,
+            "v": 0.42886430500013595,
+            "p": 0
+          },
+          {
+            "face": 632,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.21377754671514146,
+            "v": 0.45199464656172145,
+            "p": 0
+          },
+          {
+            "face": 634,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.21377754671514096,
+            "v": 0.4519946465617218,
+            "p": 0
+          },
+          {
+            "face": 636,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.16844492669610778,
+            "v": 0.47077203259151124,
+            "p": 0
+          },
+          {
+            "face": 638,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.16844492669610756,
+            "v": 0.47077203259151124,
+            "p": 0
+          },
+          {
+            "face": 641,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.1684449266961104,
+            "v": 0.47077203259151035,
+            "p": 0
+          },
+          {
+            "face": 643,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.16844492669611005,
+            "v": 0.47077203259151035,
+            "p": 0
+          },
+          {
+            "face": 645,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 679,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 680,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 681,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 682,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.12149008995163191,
+            "v": 0.485015626597272,
+            "p": 0
+          },
+          {
+            "face": 684,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.12149008995163207,
+            "v": 0.48501562659727193,
+            "p": 0
+          },
+          {
+            "face": 686,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.07336523722768418,
+            "v": 0.49458825498239,
+            "p": 0
+          },
+          {
+            "face": 688,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.07336523722768157,
+            "v": 0.49458825498239045,
+            "p": 0
+          },
+          {
+            "face": 690,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.07336523722768108,
+            "v": 0.49458825498239045,
+            "p": 0
+          },
+          {
+            "face": 692,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.07336523722768117,
+            "v": 0.49458825498239045,
+            "p": 0
+          },
+          {
+            "face": 694,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": 0.024533837163708813,
+            "v": 0.4993977281025862,
+            "p": 0
+          },
+          {
+            "face": 696,
+            "type": "smooth-moving-wall",
+            "name": "rotor",
+            "u": -0.02453383716370879,
+            "v": 0.49939772810258615,
+            "p": 0
+          },
+          {
+            "face": 699,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 700,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 701,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 702,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 704,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 739,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 740,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 741,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 743,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 778,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 779,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 780,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 812,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 813,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 814,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 815,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 816,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 817,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 818,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 819,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 820,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 842,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 843,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 844,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 845,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 846,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 847,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 848,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 849,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 850,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 852,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 867,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 868,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 869,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 870,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 871,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 872,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 873,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 874,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 875,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 876,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 877,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 878,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          },
+          {
+            "face": 879,
+            "type": "wall",
+            "name": "housing",
+            "u": 0,
+            "v": 0,
+            "p": 0
+          }
+        ],
+        "wallLoadReference": [
+          0,
+          0
+        ],
+        "wallLoadDefinition": "fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise",
+        "namedWallLoads": [
+          {
+            "name": "housing",
+            "faces": 136,
+            "length": 6.280662313909502,
+            "pressureForceX": 5.496941202798333e-10,
+            "pressureForceY": 7.358462058265293e-10,
+            "viscousForceX": -7.002112275688189e-13,
+            "viscousForceY": -6.613713483122341e-13,
+            "forceX": 5.489939090522645e-10,
+            "forceY": 7.35184834478217e-10,
+            "pressureTorque": -2.2664299650309857e-05,
+            "viscousTorque": 0.0010384714736327355,
+            "torque": 0.0010158071739824256
+          },
+          {
+            "name": "rotor",
+            "faces": 96,
+            "length": 3.140331156954751,
+            "pressureForceX": -2.762021839540496e-10,
+            "pressureForceY": -3.446896685720298e-10,
+            "viscousForceX": -3.5595419840828146e-13,
+            "viscousForceY": -3.7319453083384246e-13,
+            "forceX": -2.765581381524579e-10,
+            "forceY": -3.4506286310286363e-10,
+            "pressureTorque": 0.00035208371487148346,
+            "viscousTorque": -0.7475108821299823,
+            "torque": -0.7471587984151108
+          }
+        ],
+        "temporalDiscretization": "backward-euler",
+        "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+        "time": 0.08,
+        "dt": 0.0001873599660873193,
+        "acceptedTime": 0.08,
+        "timeStepControl": "adaptive-cfl-retry",
+        "startTime": 0,
+        "targetTime": 0.08,
+        "maximumTimeStep": 0.04,
+        "minimumTimeStep": 1e-05,
+        "targetCourant": 0.3,
+        "maximumRetries": 10,
+        "maximumAcceptedSteps": 100000,
+        "attemptCount": 51,
+        "rejectedSteps": 5,
+        "completedSteps": 46,
+        "maxCourant": 0.033161232067541485,
+        "velocityRelaxation": 0.6,
+        "format": "cartmesh2d-flow-summary-v1",
+        "case": "custom",
+        "status": "converged",
+        "converged": true,
+        "cells": 380,
+        "iterations": 35,
+        "nu": 0.1,
+        "speed": 0.5,
+        "continuity": 1.37269245482109e-12,
+        "globalImbalance": 0,
+        "momentumResidual": 2.451975793063298e-09,
+        "velocityChange": 4.841971346485732e-10,
+        "pressureChange": 9.233208094433004e-07,
+        "forceX": 5.489939097400552e-10,
+        "forceY": 7.351848337468041e-10,
+        "pressureForceX": 5.496941202798333e-10,
+        "pressureForceY": 7.358462058265293e-10,
+        "discreteForceX": 5.489939097400552e-10,
+        "discreteForceY": 7.351848337468041e-10,
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+        "convection": "face-limited-linear",
+        "viscousStress": "symmetric",
+        "outletBackflow": "reject",
+        "outletBackflowFaces": 0,
+        "outletInflow": 0,
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForceX": 5.49436972725444e-10,
+        "reconstructedForceY": 7.356297171347455e-10,
+        "wallForceX": 2.724357580621752e-10,
+        "wallForceY": 3.901218967555624e-10,
+        "wallViscousForceX": -1.0561593815499887e-12,
+        "wallViscousForceY": -1.0347146316841416e-12,
+        "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+        "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+        "globalRelativeImbalance": 0,
+        "domainHeight": 2,
+        "tolerance": 1e-06,
+        "pressurePreconditioner": "aggregation",
+        "units": {
+          "velocity": "m/s",
+          "p": "m2/s2 (kinematic)",
+          "nu": "m2/s",
+          "faceFlux": "m2/s per unit depth",
+          "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+        },
+        "pressureReference": "cell 0, kinematic pressure zero",
+        "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+        "scope": "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification",
+        "convectionInferred": false,
+        "pressurePreconditionerInferred": false,
+        "outletBackflowInferred": false,
+        "pressureDiscretizationInferred": false,
+        "viscousStressInferred": false
+      },
+      "failedAcceptedTime": 0.12,
+      "cancelledAcceptedTime": 0.12126359949328334,
+      "resumedTime": 0.14126359949328335
+    }
+  },
+  "binaries": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "0c41ea0e558e68e84dc9f27ab9f9a2d15976f42eaca0775917d6a4a22fd2d308",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  }
+}

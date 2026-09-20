@@ -86,7 +86,7 @@ def _same(a: Any, b: Any, label: str) -> None:
         fail(f"runset {label} differs: {a!r} vs {b!r}")
 
 
-def compare(runset: Path, output: Path) -> dict[str, Any]:
+def compare(runset: Path, output: Path, binary_snapshot: Path | None = None) -> dict[str, Any]:
     try:
         data = json.loads(runset.read_text(encoding="utf-8-sig"), parse_constant=lambda x: fail(f"non-finite JSON token {x}"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -118,7 +118,9 @@ def compare(runset: Path, output: Path) -> dict[str, Any]:
             fail(f"run {index} has no usable command")
         if "--restart" in command:
             fail(f"run {index} uses --restart; comparison requires fresh runs")
-        binary = Path(command[0]).expanduser()
+        # Build paths are mutable. A retained byte-identical executable can
+        # verify the recorded hash without rewriting historical commands.
+        binary = binary_snapshot if binary_snapshot is not None else Path(command[0]).expanduser()
         if not binary.is_file():
             fail(f"run {index} binary is missing: {binary}")
         binary_hash = audit.native.sha256_file(binary)
@@ -225,6 +227,8 @@ def compare(runset: Path, output: Path) -> dict[str, Any]:
               "controls": controls, "acceptedEndTime": expected_end, "cellIds": len(mesh_ids),
               "runs": [{"dt": r["dt"], "acceptedTime": r["acceptedTime"], "binarySha256": r["binarySha256"], "audit": r["audit"], "auditSha256": r["auditSha256"]} for r in records],
               "adjacentDistances": distances}
+    if binary_snapshot is not None:
+        result['verifiedBinarySnapshot'] = str(binary_snapshot.resolve())
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
@@ -234,9 +238,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--binary-snapshot", type=Path, help="retained executable, required to match the original recorded SHA256")
     args = parser.parse_args()
     try:
-        result = compare(args.runs, args.output)
+        result = compare(args.runs, args.output, args.binary_snapshot)
     except (audit.native.VerificationError, OSError, ValueError, json.JSONDecodeError) as exc:
         failure = {"valid": False, "issues": [str(exc)]}
         audit.native.write_json(args.output, failure)
