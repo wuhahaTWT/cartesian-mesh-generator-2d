@@ -77,8 +77,9 @@ def main(args):
         root = Path(name)
         channel_mesh = make_mesh(args.mesh_cli, root, root / "channel")
         plate_mesh = make_mesh(args.mesh_cli, root, root / "flatplate", "manufactured")
-        for mode in ('channel', 'flatplate', 'flatplate-symmetry'):
-            mesh = channel_mesh if mode=='channel' else plate_mesh
+        for mode in ('channel', 'flatplate', 'flatplate-symmetry', 'channel-sweep', 'flatplate-sweep'):
+            is_channel=mode.startswith('channel')
+            mesh = channel_mesh if is_channel else plate_mesh
             prefix = root / mode
             run([args.probe, mesh, prefix] + ([] if mode == 'channel' else [mode]))
             accepted = verifier.audit(mesh, prefix)
@@ -123,17 +124,20 @@ def main(args):
             for invalid in (0, -1, 501, 1.5, True):
                 reject_json(mesh, prefix, lambda data, value=invalid:
                             data.__setitem__("turbulenceUpdatesPerIteration", value))
-            if mode != 'channel':
+            for invalid in (-1, 2, 1.5, True):
+                reject_json(mesh, prefix, lambda data, value=invalid:
+                            data.__setitem__('scalarCorrectionsPerUpdate', value))
+            if not is_channel:
                 assert abs(accepted['boundarySummary']['wall']['length']-.5) <= 8*math.ulp(.5)
                 assert accepted['plateWallSamples']
-                if mode == 'flatplate':
+                if mode in ('flatplate','flatplate-sweep'):
                     assert accepted['boundarySummary']['farfield']['outwardFlux'] > 0
                 reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateLeadingEdge', .51))
                 reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateTop', 'invalid'))
                 reject_json(mesh, prefix, lambda data: data.__setitem__('case', 'channel'))
-                if mode == 'flatplate':
+                if mode in ('flatplate','flatplate-sweep'):
                     reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateTop', 'symmetry'))
-    print("SST-RANS verifier: channel and both flat plate boundaries audited; all tamper cases rejected.")
+    print("SST-RANS verifier: channel, both flat plate boundaries and bounded corrections audited; all tamper cases rejected.")
 
 
 if __name__ == "__main__":

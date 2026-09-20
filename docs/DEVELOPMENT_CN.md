@@ -369,7 +369,25 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-grad
 
 `ScalarTransport2D`的最终面通量/守恒检查继续保留；接近舍入尺度时，增加当前deferred source下的补偿原矩阵检查，结果在`ScalarTransportIteration2D::matrixAudited/matrixResidualNorm/matrixMaxDiagonalScaledImbalance`。它是附加门，不能替代原非线性通量；SST失败信息区分该门。两份矩阵的high+low通过、rounded失败，以及最终三个流场通过/一个失败，分别保存在`native-flatplate-precision.json`，不能混成单一PASS。
 
-数值方法依据误差分解和额外精度残差/更新的公开原理独立实现，未复制第三方求解器代码；背景见[Error Bounds from Extra Precise Iterative Refinement](https://www.netlib.org/lapack/lawnspdf/lawn165.pdf)。本文实现是保持两部分候选的BiCGStab，不等同于论文的完整算法或误差上界证明。复现仍用本节同一网格与probe命令；更细ny=64目前应显式失败，不能改容差掩盖。
+数值方法依据误差分解和额外精度残差/更新的公开原理独立实现，未复制第三方求解器代码；背景见[Error Bounds from Extra Precise Iterative Refinement](https://www.netlib.org/lapack/lawnspdf/lawn165.pdf)。本文实现是保持两部分候选的BiCGStab，不等同于论文的完整算法或误差上界证明。复现原冻结算法仍用本节同一网格与probe命令；ny=64的原失败保留。下节新增显式选择的迭代组织，最终完整非线性方程门不变。
+
+### 显式稳态初值与有限次数的SST校正
+
+`solveSteadyScalarTransportFromInitial2D(mesh, problem, initial, controls)`接受每个单元一个有限值作为**稳态初始猜测**；不把它当成上一物理时刻，不加入时间项。原`solveScalarTransport2D`接口及零初始默认路径保留。新接口可以返回未收敛的有限次校正结果，调用方必须检查`converged`，不能直接称其为解。
+
+`SstTransportControls2D::scalarCorrectionsPerUpdate`默认0，保持充分求解每个冻结输运子问题。正值是实验性稳态Picard/deferred-correction组织：从当前k/omega开始，最多作指定次数的标量校正，再松弛、重建梯度/闭合、评估原完整非线性方程。内部线性失败仍抛错，标量中间状态不作为最终接受依据；最终返回的fields是实际double字段的完整重算。公共冻结求解API仍必须充分收敛，新组织拒绝dt/previous混用；不裁剪负k或非正omega。当前诊断probe只开放0和1，因此独立审核器也只接受这两个声明值；库API可指定更大正整数，但未因此获得验证。
+
+分离输运方程、更新系数的组织可参考[OpenFOAM官方kOmegaSSTBase源码](https://api.openfoam.com/2506/kOmegaSSTBase_8C_source.html)。本实现独立编码，模型固定SST-2003m、无裁剪，不能说成对OpenFOAM模型/算法的完整复刻。完成冻结方程与收敛完整非线性方程是不同阶段；不得把中间未收敛改标成通过。
+
+```sh
+mkdir -p outputs/native-flow/my-graded-plate
+build/cartmesh2d_rectilinear_probe 32 64 4 outputs/native-flow/my-graded-plate/mesh
+build/cartmesh2d_sst_rans_probe outputs/native-flow/my-graded-plate/mesh.cm2d outputs/native-flow/my-graded-plate/flow flatplate-sweep
+python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-graded-plate/mesh.cm2d --prefix outputs/native-flow/my-graded-plate/flow --output outputs/native-flow/my-graded-plate/audit.json
+# 原默认算法仍使用 flatplate；通道可用 channel-sweep 选择相同校正组织。
+```
+
+`native-flatplate-bounded-corrections.json`保留四例实际审核、旧二进制同输入比较、单纯warm-start的失败尝试和原2048格的高精度复算。两个时长不含网格读取/导出，都是单次观测；输出SHA与执行命令保留，审核器只验证模式标签的合法性，不从末态推断其执行历史。三档仅法向细化，不能冒充完整网格无关性；该实验仍为Re_plate=500，未获得高Re、瞬态或十万格SST资格。
 
 ### 标准湍流参考的适用边界
 

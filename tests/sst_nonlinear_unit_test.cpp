@@ -129,10 +129,37 @@ void invalidNonlinearInputs() {
         require(rejected,"invalid nonlinear controls are rejected");
     }
 }
+
+void boundedScalarCorrectionContract() {
+    const auto mesh=oneCell();const auto p=uniformProblem(mesh);const auto bc=zeroVelocityBC(mesh);
+    SstTransportControls2D full;
+    const auto reference=solveSst2003mTransport2D(mesh,p,{{0,0}},bc,full);
+    require(reference.converged,"reference complete frozen solves converge");
+    auto sweep=full;sweep.scalarCorrectionsPerUpdate=1;
+    auto limited=sweep;limited.maxIterations=1;
+    const auto incomplete=solveSst2003mTransport2D(mesh,p,{{0,0}},bc,limited);
+    require(!incomplete.converged && incomplete.history.back().omegaCellResidual>full.transport.cellTolerance,
+            "one frozen correction cannot claim nonlinear convergence");
+    const auto actual=solveSst2003mTransport2D(mesh,p,{{0,0}},bc,sweep);
+    require(actual.converged && actual.fields.k.converged && actual.fields.omega.converged,
+            "bounded updates must pass the original returned-field gates");
+    require(std::abs(actual.fields.k.values[0]-reference.fields.k.values[0])<1e-8 &&
+            std::abs(actual.fields.omega.values[0]-reference.fields.omega.values[0])<1e-8,
+            "bounded updates recover the same nonlinear equations' solution");
+    bool rejected=false;
+    try{(void)solveSst2003mTransport2D(mesh,p,{{0,0}},bc,sweep,p.k,p.omega,.1);}
+    catch(const std::exception&){rejected=true;}
+    require(rejected,"experimental steady corrections reject physical time history");
+    ScalarTransportControls2D frozen;frozen.maxCorrections=1;
+    rejected=false;
+    try{(void)solveFrozenSst2003mTransport2D(mesh,p,frozen);}
+    catch(const std::exception&){rejected=true;}
+    require(rejected,"public frozen transport still requires its complete solve");
+}
 }
 
 int main() {
-    try { homogeneousDecay(); resolvedWallContract(); invalidNonlinearInputs(); }
+    try { homogeneousDecay(); resolvedWallContract(); invalidNonlinearInputs(); boundedScalarCorrectionContract(); }
     catch (const std::exception& error) { std::cerr << "SST nonlinear unit test failed: " << error.what() << '\n'; return 1; }
     return 0;
 }

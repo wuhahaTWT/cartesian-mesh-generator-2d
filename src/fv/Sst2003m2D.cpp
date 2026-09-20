@@ -86,7 +86,8 @@ Sst2003mCoefficients2D evaluateSst2003m2D(const Sst2003mPoint2D& p) {
 namespace {
 FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& p, const ScalarTransportControls2D& controls,
-    const std::vector<double>& previousK, const std::vector<double>& previousOmega, double dt,bool evaluateOnly) {
+    const std::vector<double>& previousK, const std::vector<double>& previousOmega, double dt,bool evaluateOnly,
+    bool correctionOnly=false) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
     require(n>0&&p.k.size()==n&&p.omega.size()==n&&p.wallDistance.size()==n&&
@@ -130,11 +131,15 @@ FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
         result.omega=evaluateScalarTransport2D(mesh,wp,p.omega,controls,previousOmega,dt);
         return result;
     }
-    result.k=solveScalarTransport2D(mesh,kp,controls,previousK,dt);
-    converged(result.k,"k");
+    if(correctionOnly)require(previousK.empty() && previousOmega.empty() && dt==0,
+                         "SST steady initial guess with time history");
+    result.k=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,kp,p.k,controls)
+                      :solveScalarTransport2D(mesh,kp,controls,previousK,dt);
+    if(!correctionOnly)converged(result.k,"k");
     require(result.k.minValue>=0,"SST-2003m negative k after transport; no clipping applied");
-    result.omega=solveScalarTransport2D(mesh,wp,controls,previousOmega,dt);
-    converged(result.omega,"omega");
+    result.omega=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,wp,p.omega,controls)
+                          :solveScalarTransport2D(mesh,wp,controls,previousOmega,dt);
+    if(!correctionOnly)converged(result.omega,"omega");
     require(result.omega.minValue>0,"SST-2003m nonpositive omega after transport; no clipping applied");
     return result;
 }
@@ -213,6 +218,9 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
     require(controls.maxIterations>0&&std::isfinite(controls.relaxation)&&controls.relaxation>0&&controls.relaxation<=1,
         "SST invalid nonlinear iteration controls");
+    const bool correctionOnly=controls.scalarCorrectionsPerUpdate>0;
+    require(!correctionOnly || (previousK.empty()&&previousOmega.empty()&&dt==0),
+            "SST scalar correction updates are currently steady only");
     auto p=initial;
     const auto reconstruct=[&] {
         auto g=reconstructSst2003mGradients2D(mesh,p,velocity,velocityBC);
@@ -221,6 +229,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     reconstruct();
     auto inner=controls.transport;
     inner.relativeTolerance*=.1;inner.absoluteTolerance*=.1;inner.cellTolerance*=.1;
+    if(correctionOnly)inner.maxCorrections=std::min(inner.maxCorrections,controls.scalarCorrectionsPerUpdate);
     SstTransportResult2D result;
     // Includes complete scalar/input validation and allows an already converged
     // initial state to return without inventing a nonlinear update.
@@ -230,7 +239,10 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
         result.history.push_back({it,k.residualNorm,w.residualNorm,k.maxDiagonalScaledImbalance,w.maxDiagonalScaledImbalance});
         if(result.fields.k.converged&&result.fields.omega.converged) {result.converged=true;break;}
         if(it==controls.maxIterations)break;
-        const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false);
+        // A bounded correction is only an iterate. Reconstruct and evaluate all
+        // ORIGINAL nonlinear equations below; never propagate its convergence
+        // flag as the nonlinear/RANS acceptance. Linear failures still throw.
+        const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false,correctionOnly);
         for(std::size_t i=0;i<p.k.size();++i) {
             p.k[i]=checked(p.k[i]+controls.relaxation*(candidate.k.values[i]-p.k[i]));
             p.omega[i]=checked(p.omega[i]+controls.relaxation*(candidate.omega.values[i]-p.omega[i]));

@@ -78,6 +78,12 @@ struct SstTransportControls2D {
     std::size_t maxIterations = 500;
     double relaxation = .5;
     ScalarTransportControls2D transport;
+    // Experimental steady Picard/deferred-correction iteration. Zero preserves
+    // complete frozen transport solves. Positive values start from current k/w
+    // and take at most this many scalar corrections before updating the closure.
+    // A correction is NOT a converged transport result; only the recomputed full
+    // nonlinear equations with transport's original gates can accept the result.
+    std::size_t scalarCorrectionsPerUpdate = 0;
 };
 struct SstTransportIteration2D {
     std::size_t iteration = 0;

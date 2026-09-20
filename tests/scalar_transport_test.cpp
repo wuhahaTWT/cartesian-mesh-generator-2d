@@ -413,6 +413,31 @@ void preciseCandidateDoesNotQualifyRoundedField() {
           "representable requested scalar accuracy remains supported");
 }
 
+void steadyInitialGuessContract() {
+    const auto mesh=fvGrid(3,2);const auto n=mesh.cells.size();
+    ScalarTransportProblem2D p;p.diffusivity=.3;p.volumeFlux.assign(mesh.faces.size(),0.);
+    p.sinkRate.assign(n,.4);p.source=[](Point2D){return 2.;};
+    p.boundary=[](std::size_t,const Face&){return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,0.,{}};};
+    ScalarTransportControls2D controls;
+    const auto cold=solveScalarTransport2D(mesh,p,controls);
+    const auto zero=solveSteadyScalarTransportFromInitial2D(mesh,p,std::vector<double>(n,0.),controls);
+    check(cold.values==zero.values && cold.advectiveFlux==zero.advectiveFlux &&
+          cold.diffusiveFlux==zero.diffusiveFlux && cold.history.size()==zero.history.size(),
+          "explicit zero initial guess preserves the original steady solve");
+    const auto warm=solveSteadyScalarTransportFromInitial2D(mesh,p,std::vector<double>(n,5.),controls);
+    check(warm.converged && warm.history.size()==1 && warm.history[0].linearIterations==0 &&
+          warm.history.size()<cold.history.size(),"steady initial guess avoids unnecessary elliptic solves");
+    for(auto x:warm.values)check(x==5.,"exact initial guess remains unchanged");
+    controls.maxCorrections=1;
+    const auto unfinished=solveSteadyScalarTransportFromInitial2D(mesh,p,std::vector<double>(n,4.5),controls);
+    check(!unfinished.converged,"nonconverged initial guess must still satisfy original transport gates");
+    rejects([&]{(void)solveSteadyScalarTransportFromInitial2D(mesh,p,{});},"dimensions",
+            "steady guess must include every cell");
+    auto invalid=std::vector<double>(n,0.);invalid[0]=std::numeric_limits<double>::quiet_NaN();
+    rejects([&]{(void)solveSteadyScalarTransportFromInitial2D(mesh,p,invalid);},"numerical range",
+            "nonfinite steady guess rejected");
+}
+
 void spatialReactionVariableDiffusionBalance() {
     const auto mesh = fvGrid(5, 4, true);
     const auto exact = [](Point2D p) { return 1.7 + p.x + .3 * p.y; };
@@ -687,6 +712,7 @@ int main() {
         transientUniformReaction();
         steadyNeumannReaction();
         preciseCandidateDoesNotQualifyRoundedField();
+        steadyInitialGuessContract();
         spatialReactionVariableDiffusionBalance();
         zeroSinkCompatibilityAndLocalAnchor();
         evaluateScalarTransportRegression();

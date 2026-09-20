@@ -70,6 +70,12 @@ struct ScalarTransportResult2D {
     const FvMesh2D&, const ScalarTransportProblem2D&,
     const ScalarTransportControls2D& = {},
     const std::vector<double>& previous = {}, double timeStep = 0);
+// Iterative initial guess for a STEADY equation only; not a previous physical
+// time layer. Original source, operator and convergence requirements apply.
+// Explicit initial values must contain exactly one finite value per cell.
+[[nodiscard]] ScalarTransportResult2D solveSteadyScalarTransportFromInitial2D(
+    const FvMesh2D&, const ScalarTransportProblem2D&,
+    const std::vector<double>& initial, const ScalarTransportControls2D& = {});
 // Rebuild constitutive face fluxes and the original equation residual at supplied
 // values without solving or modifying them. Uses the same validation/stopping
 // definitions; history contains one entry with iteration=linearIterations=0.

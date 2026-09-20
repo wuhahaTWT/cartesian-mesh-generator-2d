@@ -56,9 +56,16 @@ std::vector<Vector2D> gradients(const FvMesh2D& mesh, const Values& value,
 namespace {
 ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p, const ScalarTransportControls2D& c,
-    const Values& previous, double timeStep, const Values* supplied) {
+    const Values& previous, double timeStep, const Values* supplied,
+    const Values* initial=nullptr) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
+    if(initial) {
+        require(!supplied && previous.empty() && timeStep==0,
+                "Scalar steady initial guess cannot be mixed with evaluation or time history");
+        require(initial->size()==n,"Scalar steady initial field dimensions mismatch");
+        for(double value:*initial)finite(value);
+    }
     if (supplied) {
         require(supplied->size()==n,"Scalar evaluation field dimensions mismatch");
         for (double v:*supplied) finite(v);
@@ -137,7 +144,7 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     require(queue.size()==n,"Scalar transport unanchored steady connected component");
     detail::SparsePattern2D pattern(n,connections);
     detail::SparseSystem2D a(pattern); detail::LinearWorkspace2D workspace(n);
-    r.values=supplied?*supplied:(transient?previous:Values(n,0.));
+    r.values=supplied?*supplied:(initial?*initial:(transient?previous:Values(n,0.)));
     r.sourceIntegrals.resize(n); r.temporalIntegrals.resize(n);
     r.sinkIntegrals.resize(n);
     r.advectiveFlux.resize(nf); r.diffusiveFlux.resize(nf);
@@ -284,5 +291,9 @@ ScalarTransportResult2D evaluateScalarTransport2D(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p,const Values& values,const ScalarTransportControls2D& c,
     const Values& previous,double timeStep) {
     return scalarTransport(mesh,p,c,previous,timeStep,&values);
+}
+ScalarTransportResult2D solveSteadyScalarTransportFromInitial2D(const FvMesh2D& mesh,
+    const ScalarTransportProblem2D& p,const Values& initial,const ScalarTransportControls2D& c) {
+    return scalarTransport(mesh,p,c,{},0,nullptr,&initial);
 }
 }

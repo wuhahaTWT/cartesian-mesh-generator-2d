@@ -9,16 +9,18 @@ using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 int main(int argc,char** argv) {
     try {
-        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry]");
+        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
         if(argc==4) {
             if(std::string(argv[3])=="nested")c.turbulenceUpdatesPerIteration=c.turbulence.maxIterations;
-            else if(std::string(argv[3])=="flatplate" || std::string(argv[3])=="flatplate-symmetry") {
+            else if(std::string(argv[3])=="channel-sweep")c.turbulence.scalarCorrectionsPerUpdate=1;
+            else if(std::string(argv[3])=="flatplate" || std::string(argv[3])=="flatplate-symmetry" || std::string(argv[3])=="flatplate-sweep") {
                 c.flow.scenario="flatplate";c.flow.flatPlateLeadingEdge=.5;
                 if(std::string(argv[3])=="flatplate-symmetry")c.flow.flatPlateTop=FlatPlateTop2D::Symmetry;
+                if(std::string(argv[3])=="flatplate-sweep")c.turbulence.scalarCorrectionsPerUpdate=1;
             }
             else throw std::runtime_error("unknown SST probe configuration");
         }
@@ -61,6 +63,7 @@ int main(int argc,char** argv) {
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
+            <<",\"scalarCorrectionsPerUpdate\":"<<c.turbulence.scalarCorrectionsPerUpdate
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds
             <<",\"momentumResidual\":"<<flow.history.back().momentumResidual
             <<",\"forceX\":"<<flow.forceX<<",\"forceY\":"<<flow.forceY

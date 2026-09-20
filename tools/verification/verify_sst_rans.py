@@ -121,6 +121,8 @@ def read_artifacts(mesh_path, prefix):
     req(len(hrows) == int(meta.get("iterations", -1)) and len(hrows) > 0, "history length mismatch")
     updates=meta.get('turbulenceUpdatesPerIteration',500) # legacy nested probe
     req(type(updates) is int and 1<=updates<=500,'invalid constitutive update limit')
+    corrections=meta.get('scalarCorrectionsPerUpdate',0) # legacy complete frozen solve
+    req(type(corrections) is int and corrections in (0,1),'unsupported scalar correction schedule')
     for expected, row in enumerate(hrows, 1):
         req(int(row["iteration"]) == expected, "history iteration ordering mismatch")
         for key in ("momentumResidual", "continuity", "velocityChange", "pressureChange",
@@ -371,6 +373,7 @@ def audit(mesh_path, prefix):
                 'length':length,'kinematicShear':tau,'Cf':2*tau,'yPlus':dn*math.sqrt(abs(tau))/nu})
         wall_samples.sort(key=lambda row:row['x'])
     return {"valid": True, "scope": meta["scope"], "case":case,
+            "scalarCorrectionsPerUpdate":meta.get('scalarCorrectionsPerUpdate',0),
             "flatPlateTop":meta.get('flatPlateTop'),"boundarySummary":boundary_summary,
             "plateWallSamples":wall_samples,"wallSampleScope":"Current discrete wall traction and owner-centre y+; not an accuracy qualification",
             "cells": n, "iterations": meta["iterations"],
