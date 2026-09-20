@@ -91,6 +91,7 @@ struct SstTransportIteration2D {
     double kCellResidual = 0, omegaCellResidual = 0;
 };
 struct SstTransportResult2D {
+    ScalarTransportPerformance2D scalarSolves, scalarEvaluations;
     bool converged = false;
     // Coefficients/fluxes/residuals evaluated at the RETURNED fields, never
     // reused from the preceding frozen linear solve.

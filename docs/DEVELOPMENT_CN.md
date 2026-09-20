@@ -410,6 +410,13 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 
 ### SST近壁规模诊断与计时
 
+`ScalarTransportControls2D::profile`默认关闭。结果`ScalarTransportPerformance2D`记录calls、patternBuilds、linearIterations、total/setup/linear/faceFlux秒；SST按`scalarSolves`和`scalarEvaluations`累计，RANS由`flow.profile`统一启用。setup包含验证、初始组装及按需的延迟CSR构建；total包含全部子项，Krylov迭代不包含既有补偿细化扫掠，其耗时仍包含在线性时间中。初始和每次更新后的k/omega评估均计入，零线性迭代不意味着零成本。
+
+纯评估保留对角/RHS和原面方程，正常时不构建CSR/线性工作区；接近表示极限时仍重建当前矩阵并执行补偿b-Ax，不能复用候选或上一轮的矩阵。`FvMesh2D`诊断辅助函数使用string_view避免成功校验构造临时字符串，所有校验照常执行。错误文字只在抛异常时转成拥有存储的string；临时字符串参数在本次调用结束前有效。
+
+性能复核见`native-sst-setup-performance.json`，分配计数小程序源码也在该证据内。画图：`python3 tools/visualization/render_sst_performance.py --study artifacts/current/native-sst-setup-performance.json --output outputs/sst-performance.png`，需要证据对应本地CM2D/CSV；图只展示已独立审核且前后字段一致的场。实际数值变化与当前状态见唯一状态文档。
+
+
 `SstRansPerformance2D`由`flow.profile`启用，默认关闭；不影响数值路径。`updates`是本构回调次数，`updateSeconds`包含`transportSeconds`、返回场梯度重算及一次壁距构造。probe输出`performance`对象，另列动量/压力线性求解时间和迭代数。不要相加包含式阶段，也不要将有界更新次数解释为已收敛次数。失败抛错/进程超时没有最终性能结果；计数与时钟不是独立物理审核器的验收内容。
 
 `rectilinear_probe`允许每轴2..4096的整数，总单元仍≤65536；原质量门不变。高Re近壁诊断可将上述例的网格改为`160 32 10`，其他输入相同；当前该5,120格已完成独立审核。`400 32 11`的12,800格网格通过几何与Solver检查，但求解在90秒预算内未完成，不应当成已验收的快速配置。研究证据`native-sst-wall-scale.json`保留失败，不自动延长预算；场prefix与审核summary路径必须不同以免覆盖元数据。

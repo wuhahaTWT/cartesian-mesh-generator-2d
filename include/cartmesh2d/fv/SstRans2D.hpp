@@ -18,6 +18,7 @@ struct SstRansIteration2D {
 // Enabled by flow.profile. updateSeconds includes the other SST timers;
 // never sum them as disjoint phases. Failed calls do not return a result.
 struct SstRansPerformance2D {
+    ScalarTransportPerformance2D scalarSolves, scalarEvaluations;
     std::size_t updates=0;
     double updateSeconds=0, transportSeconds=0, gradientSeconds=0, wallDistanceSeconds=0;
 };

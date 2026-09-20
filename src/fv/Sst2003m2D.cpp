@@ -231,9 +231,14 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     inner.relativeTolerance*=.1;inner.absoluteTolerance*=.1;inner.cellTolerance*=.1;
     if(correctionOnly)inner.maxCorrections=std::min(inner.maxCorrections,controls.scalarCorrectionsPerUpdate);
     SstTransportResult2D result;
+    const auto record=[&](const FrozenSst2003mResult2D& fields,bool evaluation) {
+        auto& total=evaluation?result.scalarEvaluations:result.scalarSolves;
+        total.add(fields.k.performance);total.add(fields.omega.performance);
+    };
     // Includes complete scalar/input validation and allows an already converged
     // initial state to return without inventing a nonlinear update.
     result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
+    record(result.fields,true);
     for(std::size_t it=0;it<=controls.maxIterations;++it) {
         const auto& k=result.fields.k.history.back();const auto& w=result.fields.omega.history.back();
         result.history.push_back({it,k.residualNorm,w.residualNorm,k.maxDiagonalScaledImbalance,w.maxDiagonalScaledImbalance});
@@ -243,6 +248,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
         // ORIGINAL nonlinear equations below; never propagate its convergence
         // flag as the nonlinear/RANS acceptance. Linear failures still throw.
         const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false,correctionOnly);
+        record(candidate,false);
         for(std::size_t i=0;i<p.k.size();++i) {
             p.k[i]=checked(p.k[i]+controls.relaxation*(candidate.k.values[i]-p.k[i]));
             p.omega[i]=checked(p.omega[i]+controls.relaxation*(candidate.omega.values[i]-p.omega[i]));
@@ -250,6 +256,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
         }
         reconstruct();
         result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
+        record(result.fields,true);
     }
     return result;
 }

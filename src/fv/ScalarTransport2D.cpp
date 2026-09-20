@@ -3,6 +3,7 @@
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 #include <limits>
 #include <stdexcept>
 
@@ -58,6 +59,9 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p, const ScalarTransportControls2D& c,
     const Values& previous, double timeStep, const Values* supplied,
     const Values* initial=nullptr) {
+    using Clock=std::chrono::steady_clock;
+    const auto start=c.profile?Clock::now():Clock::time_point{};
+    const auto seconds=[](Clock::time_point t){return std::chrono::duration<double>(Clock::now()-t).count();};
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
     if(initial) {
@@ -142,41 +146,55 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         }
     }
     require(queue.size()==n,"Scalar transport unanchored steady connected component");
-    detail::SparsePattern2D pattern(n,connections);
-    detail::SparseSystem2D a(pattern); detail::LinearWorkspace2D workspace(n);
+    // Evaluation needs the original diagonal/RHS and face balances, but no
+    // Krylov workspace. Materialize CSR only for solves or the additional tight
+    // rounded-field audit below. Never reuse an older coefficient matrix.
+    std::optional<detail::SparsePattern2D> pattern;
+    std::optional<detail::SparseSystem2D> matrix;
+    std::optional<detail::LinearWorkspace2D> workspace;
+    const auto createSparse=[&] {
+        pattern.emplace(n,connections);matrix.emplace(*pattern);
+        if(c.profile)++r.performance.patternBuilds;
+    };
+    if(!supplied) {createSparse();workspace.emplace(n);}
+    Values evaluationRhs(supplied?n:0),evaluationDiagonal(supplied?n:0);
+    auto& rhs=supplied?evaluationRhs:matrix->rhs;
+    auto& diag=supplied?evaluationDiagonal:matrix->diag;
     r.values=supplied?*supplied:(initial?*initial:(transient?previous:Values(n,0.)));
     r.sourceIntegrals.resize(n); r.temporalIntegrals.resize(n);
     r.sinkIntegrals.resize(n);
     r.advectiveFlux.resize(nf); r.diffusiveFlux.resize(nf);
     for (std::size_t i=0;i<n;++i) {
-        a.rhs[i]=r.sourceIntegrals[i]=finite((p.source?p.source(mesh.cells[i].centre):p.sourceDensity[i])*mesh.cells[i].area);
-        r.sourceIntegral=finite(r.sourceIntegral+a.rhs[i]);
+        rhs[i]=r.sourceIntegrals[i]=finite((p.source?p.source(mesh.cells[i].centre):p.sourceDensity[i])*mesh.cells[i].area);
+        r.sourceIntegral=finite(r.sourceIntegral+rhs[i]);
         if (transient) {
             const double mass=finite(mesh.cells[i].area/timeStep);
-            a.diag[i]=mass; a.rhs[i]+=finite(mass*previous[i]);
+            diag[i]=mass; rhs[i]+=finite(mass*previous[i]);
         }
-        if (!p.sinkRate.empty()) a.diag[i]+=finite(p.sinkRate[i]*mesh.cells[i].area);
+        if (!p.sinkRate.empty()) diag[i]+=finite(p.sinkRate[i]*mesh.cells[i].area);
     }
     for (std::size_t id=0;id<nf;++id) {
         const auto& f=mesh.faces[id]; const auto i=f.owner;
         const double q=p.volumeFlux[id],d=finite(faceDiffusivity(p,id)*f.transmissibility);
         if (f.neighbour) {
             const auto j=*f.neighbour;
-            a.diag[i]+=d+std::max(q,0.); a.add(i,j,-d+std::min(q,0.));
-            a.diag[j]+=d+std::max(-q,0.); a.add(j,i,-d-std::max(q,0.));
+            diag[i]+=d+std::max(q,0.); if(matrix)matrix->add(i,j,-d+std::min(q,0.));
+            diag[j]+=d+std::max(-q,0.); if(matrix)matrix->add(j,i,-d-std::max(q,0.));
         } else {
-            if (fixed[id]) { a.diag[i]+=d; a.rhs[i]+=d*bc[id].value; }
-            else a.rhs[i]-=finite(bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y));
-            if (q<0) a.rhs[i]-=q*boundaryValues[id];
-            else a.diag[i]+=q;
+            if (fixed[id]) { diag[i]+=d; rhs[i]+=d*bc[id].value; }
+            else rhs[i]-=finite(bc[id].value*std::hypot(f.areaVector.x,f.areaVector.y));
+            if (q<0) rhs[i]-=q*boundaryValues[id];
+            else diag[i]+=q;
         }
     }
-    const Values base=a.rhs,diagonal=a.diag;
+    const Values base=rhs,diagonal=diag;
     for (double d:diagonal) require(std::isfinite(d)&&d>0,"Scalar transport invalid matrix diagonal");
     const double scale=detail::linearNorm(base);
     const double stop=finite(c.absoluteTolerance+c.relativeTolerance*scale);
     Values extra(nf),residual(n);
+    if(c.profile) {r.performance.calls=1;r.performance.setupSeconds=seconds(start);}
     const auto faceFluxes=[&]() {
+        const auto phaseStart=c.profile?Clock::now():Clock::time_point{};
         const auto g=gradients(mesh,r.values,bc,p);
         auto limitFixed=fixed;
         for (std::size_t id=0;id<nf;++id)
@@ -201,10 +219,12 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
                 :diffusivity*f.transmissibility*(r.values[i]-(f.neighbour?r.values[*f.neighbour]:bc[id].value))+diffCorrection);
             extra[id]=finite(diffCorrection+q*(advected-upwind));
         }
+        if(c.profile)r.performance.faceFluxSeconds+=seconds(phaseStart);
     };
     for (std::size_t it=1;it<=(supplied?1:c.maxCorrections);++it) {
         std::size_t linear=0;
         if (!supplied) {
+            auto& a=*matrix;
             faceFluxes(); a.rhs=base;
             for (std::size_t id=0;id<nf;++id) {
                 const auto& f=mesh.faces[id]; a.rhs[f.owner]-=extra[id];
@@ -220,7 +240,9 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
             // only after relaxation; faceFluxes and original balances below
             // recheck the actual double values. Candidate success is not outer
             // transport convergence.
-            const auto candidate=a.solveCandidate(r.values,workspace,c.cellTolerance*.1,stop*.5);
+            const auto linearStart=c.profile?Clock::now():Clock::time_point{};
+            const auto candidate=a.solveCandidate(r.values,*workspace,c.cellTolerance*.1,stop*.5);
+            if(c.profile) {r.performance.linearSeconds+=seconds(linearStart);r.performance.linearIterations+=candidate.iterations;}
             linear=candidate.iterations;
             for (std::size_t i=0;i<n;++i)
                 r.values[i]=candidate.relaxedDouble(i,r.values[i],c.relaxation);
@@ -259,7 +281,18 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
                 // not at the old iterate used by the preceding linear solve.
                 // Accurate b-Ax prevents a rounded product from creating a
                 // false zero in an exceptionally tight outer acceptance check.
-                a.rhs=base;
+                if(!matrix) {
+                    const auto matrixStart=c.profile?Clock::now():Clock::time_point{};
+                    createSparse();matrix->diag=diagonal;
+                    for(std::size_t id=0;id<nf;++id) {
+                        const auto& f=mesh.faces[id];if(!f.neighbour)continue;
+                        const double q=p.volumeFlux[id],d=finite(faceDiffusivity(p,id)*f.transmissibility);
+                        matrix->add(f.owner,*f.neighbour,-d+std::min(q,0.));
+                        matrix->add(*f.neighbour,f.owner,-d-std::max(q,0.));
+                    }
+                    if(c.profile)r.performance.setupSeconds+=seconds(matrixStart);
+                }
+                auto& a=*matrix;a.rhs=base;
                 for(std::size_t id=0;id<nf;++id) {
                     const auto& f=mesh.faces[id];a.rhs[f.owner]-=extra[id];
                     if(f.neighbour)a.rhs[*f.neighbour]+=extra[id];
@@ -279,6 +312,7 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     }
     r.minValue=*std::min_element(r.values.begin(),r.values.end());
     r.maxValue=*std::max_element(r.values.begin(),r.values.end());
+    if(c.profile)r.performance.totalSeconds=seconds(start);
     return r;
 }
 }

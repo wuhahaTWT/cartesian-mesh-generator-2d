@@ -7,11 +7,14 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace cartmesh2d::fv {
 namespace {
-void require(bool test, const std::string& message) {
-    if (!test) throw std::runtime_error("FVM mesh: " + message);
+void require(bool test, std::string_view message) {
+    // Successful per-face/cell checks must not allocate diagnostic strings.
+    // A temporary string argument remains alive throughout this call.
+    if (!test) throw std::runtime_error("FVM mesh: " + std::string(message));
 }
 bool finite(Point2D p) { return std::isfinite(p.x) && std::isfinite(p.y); }
 }

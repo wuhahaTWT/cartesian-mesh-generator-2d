@@ -90,6 +90,13 @@ void ransContract(const FvMesh2D& m) {
             observed.turbulence.fields.k.values==r.turbulence.fields.k.values &&
             observed.turbulence.fields.omega.values==r.turbulence.fields.omega.values,
             "SST profiling changed numerical fields");
+    std::size_t nonlinearUpdates=0;
+    for(const auto& h:observed.history)nonlinearUpdates+=h.turbulenceIterations;
+    require(r.performance.scalarSolves.calls==0 && r.performance.scalarEvaluations.calls==0 &&
+            observed.performance.scalarSolves.calls==2*nonlinearUpdates &&
+            observed.performance.scalarEvaluations.calls==2*(nonlinearUpdates+observed.history.size()) &&
+            observed.performance.scalarEvaluations.linearIterations==0,
+            "SST scalar profile omitted or duplicated current-state evaluations");
     for(double k:r.turbulence.fields.k.values)require(k==0,"zero-k solution was floored");
     for(double nu:r.faceViscosity)require(nu==c.flow.nu,"zero k invented eddy viscosity");
     auto invalid=c;invalid.inletOmega=0;rejects([&]{(void)solveSstRans2D(m,invalid);});

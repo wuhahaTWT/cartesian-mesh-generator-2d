@@ -413,6 +413,49 @@ void preciseCandidateDoesNotQualifyRoundedField() {
           "representable requested scalar accuracy remains supported");
 }
 
+void deferredMatrixAuditAcrossSkewFace() {
+    // Binary-exact sheared cells: area=1/2, internal transmissibility=17/8.
+    // For constant x=1-e, (1+e)*x rounds to one. Face balances therefore
+    // appear zero, but each original matrix row has b-Ax=e^2/2 exactly.
+    const auto mesh=makeFvMesh2D(fromPolygons({
+        {{{0,0},{.5,0},{.75,1},{.25,1}}},
+        {{{.5,0},{1,0},{1.25,1},{.75,1}}}}));
+    ScalarTransportProblem2D p;p.diffusivity=.125;
+    p.volumeFlux.assign(mesh.faces.size(),0.);
+    const double e=std::ldexp(1.,-27);
+    p.sinkRate.assign(2,1+e);p.source=[](Point2D){return 1.;};
+    p.boundary=[](std::size_t,const Face&){return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,0.,{}};};
+    ScalarTransportControls2D c;c.profile=true;
+    c.relativeTolerance=c.absoluteTolerance=c.cellTolerance=1e-18;
+    const std::vector<double> values(2,1-e);
+    const auto r=evaluateScalarTransport2D(mesh,p,values,c);
+    const auto& h=r.history.back();
+    const double expected=std::ldexp(1.,-55);
+    check(r.values==values && r.history.size()==1 && h.linearIterations==0,
+          "tight skew evaluation preserves supplied values without solving");
+    check(h.residualNorm==0 && h.matrixAudited && !r.converged,
+          "zero rounded face balance cannot bypass skew CSR audit");
+    check(std::abs(h.matrixResidualNorm-std::sqrt(2.)*expected)<1e-30 &&
+          std::abs(h.matrixMaxDiagonalScaledImbalance-expected/(.765625+.5*e))<1e-30,
+          "skew two-cell CSR audit matches independent binary identity");
+    check(r.performance.patternBuilds==1 && r.performance.linearIterations==0,
+          "tight evaluation materializes current matrix without Krylov work");
+    p.sinkRate.assign(2,1.);
+    const auto exact=evaluateScalarTransport2D(mesh,p,std::vector<double>(2,1.),c);
+    check(exact.converged && exact.history.back().matrixAudited,
+          "representable tight skew state passes the same audit");
+    c.relativeTolerance=c.cellTolerance=1e-9;c.absoluteTolerance=1e-12;
+    const auto ordinary=evaluateScalarTransport2D(mesh,p,std::vector<double>(2,1.),c);
+    check(ordinary.converged && ordinary.performance.patternBuilds==0,
+          "ordinary evaluation preserves acceptance without building unused CSR");
+    c.profile=false;
+    const auto silent=evaluateScalarTransport2D(mesh,p,std::vector<double>(2,1.),c);
+    check(silent.values==ordinary.values && silent.diffusiveFlux==ordinary.diffusiveFlux &&
+          silent.history.back().residualNorm==ordinary.history.back().residualNorm &&
+          silent.performance.calls==0 && silent.performance.totalSeconds==0,
+          "scalar profiling does not change evaluation fields or balances");
+}
+
 void steadyInitialGuessContract() {
     const auto mesh=fvGrid(3,2);const auto n=mesh.cells.size();
     ScalarTransportProblem2D p;p.diffusivity=.3;p.volumeFlux.assign(mesh.faces.size(),0.);
@@ -586,6 +629,59 @@ void evaluateScalarTransportRegression() {
             "numerical range", "evaluation rejects nonfinite values");
 }
 
+void evaluateTransientNonOrthogonalRegression() {
+    const auto mesh = fvGrid(4, 3, true);
+    ScalarTransportProblem2D problem;
+    problem.diffusivity = .17;
+    problem.volumeFlux.assign(mesh.faces.size(), 0.);
+    problem.sinkRate.assign(mesh.cells.size(), .4);
+    problem.source = [](Point2D) { return 2.; };
+    problem.boundary = [](std::size_t, const Face&) {
+        return ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux, 0., std::nullopt};
+    };
+
+    const double previousValue = 1.25;
+    const double timeStep = .125;
+    const double expected = (previousValue / timeStep + 2.) /
+        (1. / timeStep + .4);
+    const std::vector<double> previous(mesh.cells.size(), previousValue);
+    const std::vector<double> supplied(mesh.cells.size(), expected);
+    ScalarTransportControls2D controls;
+    controls.relativeTolerance = 1e-11;
+    controls.absoluteTolerance = 1e-13;
+    controls.cellTolerance = 1e-11;
+
+    const auto result = evaluateScalarTransport2D(
+        mesh, problem, supplied, controls, previous, timeStep);
+    check(result.values == supplied,
+          "transient evaluation preserves the supplied non-orthogonal field");
+    check(result.history.size() == 1 && result.history[0].iteration == 0 &&
+          result.history[0].linearIterations == 0,
+          "transient evaluation performs no linear solve");
+    check(result.converged,
+          "analytical backward-Euler constant state passes transient evaluation");
+
+    double expectedTemporal = 0., expectedSource = 0., expectedSink = 0.;
+    for (const auto& cell : mesh.cells) {
+        expectedTemporal += cell.area * (expected - previousValue) / timeStep;
+        expectedSource += cell.area * 2.;
+        expectedSink += cell.area * .4 * expected;
+    }
+    check(std::abs(result.temporalIntegral - expectedTemporal) < 1e-12,
+          "transient evaluation reports the backward-Euler time integral");
+    check(std::abs(result.sourceIntegral - expectedSource) < 1e-12,
+          "transient evaluation reports the source integral");
+    check(std::abs(result.sinkIntegral - expectedSink) < 1e-12,
+          "transient evaluation reports the sink integral");
+    check(std::abs(result.boundaryFlux) < 1e-12 &&
+          std::abs(result.globalBalance) < 1e-12,
+          "transient evaluation closes the source-time-sink balance");
+    for (std::size_t id = 0; id < mesh.faces.size(); ++id)
+        check(std::abs(result.advectiveFlux[id]) < 1e-12 &&
+              std::abs(result.diffusiveFlux[id]) < 1e-12,
+              "constant transient field has zero internal and boundary face flux");
+}
+
 void uniformFaceDiffusivityIsIdentical() {
     const auto mesh = fvGrid(5, 4, true);
     ScalarTransportProblem2D scalar;
@@ -716,6 +812,8 @@ int main() {
         spatialReactionVariableDiffusionBalance();
         zeroSinkCompatibilityAndLocalAnchor();
         evaluateScalarTransportRegression();
+        deferredMatrixAuditAcrossSkewFace();
+        evaluateTransientNonOrthogonalRegression();
     } catch (const std::exception& error) {
         std::cerr << "unexpected scalar transport exception: " << error.what() << '\n';
         return 1;

@@ -40,6 +40,7 @@ struct ScalarTransportControls2D {
     double relativeTolerance = 1e-9, absoluteTolerance = 1e-12;
     double cellTolerance = 1e-9; // imbalance / unrelaxed diagonal, in scalar units
     double carrierRelativeTolerance = 1e-8, carrierAbsoluteTolerance = 1e-12;
+    bool profile = false; // diagnostic only; no numerical effect
 };
 struct ScalarTransportIteration2D {
     std::size_t iteration = 0, linearIterations = 0;
@@ -51,7 +52,19 @@ struct ScalarTransportIteration2D {
     bool matrixAudited = false;
     double matrixResidualNorm = 0, matrixMaxDiagonalScaledImbalance = 0;
 };
+// totalSeconds includes all subphases. setup includes validation and assembly;
+// faceFluxSeconds includes all reconstructions, before and after corrections.
+struct ScalarTransportPerformance2D {
+    std::size_t calls=0, patternBuilds=0, linearIterations=0;
+    double totalSeconds=0, setupSeconds=0, linearSeconds=0, faceFluxSeconds=0;
+    void add(const ScalarTransportPerformance2D& p) {
+        calls+=p.calls;patternBuilds+=p.patternBuilds;linearIterations+=p.linearIterations;
+        totalSeconds+=p.totalSeconds;setupSeconds+=p.setupSeconds;
+        linearSeconds+=p.linearSeconds;faceFluxSeconds+=p.faceFluxSeconds;
+    }
+};
 struct ScalarTransportResult2D {
+    ScalarTransportPerformance2D performance;
     bool converged = false;
     std::vector<double> values, advectiveFlux, diffusiveFlux;
     std::vector<double> sourceIntegrals, temporalIntegrals;

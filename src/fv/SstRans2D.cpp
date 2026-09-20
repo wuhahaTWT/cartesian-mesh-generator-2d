@@ -55,10 +55,15 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
         }
         setSst2003mResolvedWalls2D(mesh,p,result.resolvedWalls);
         auto transport=c.turbulence;
+        transport.transport.profile=c.flow.profile;
         transport.maxIterations=std::min(transport.maxIterations,c.turbulenceUpdatesPerIteration);
         const auto transportStart=c.flow.profile?Clock::now():Clock::time_point{};
         auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport);
-        if(c.flow.profile)result.performance.transportSeconds+=elapsed(transportStart);
+        if(c.flow.profile) {
+            result.performance.transportSeconds+=elapsed(transportStart);
+            result.performance.scalarSolves.add(next.scalarSolves);
+            result.performance.scalarEvaluations.add(next.scalarEvaluations);
+        }
         p.k=next.fields.k.values;p.omega=next.fields.omega.values;
         // Current strain/gradients/coefficient fields are evaluated at this same
         // velocity and returned k/omega. Use inlet closure from actual inlet

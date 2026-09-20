@@ -89,7 +89,16 @@ int main(int argc,char** argv) {
             <<",\"sstGradientSeconds\":"<<r.performance.gradientSeconds<<",\"wallDistanceSeconds\":"<<r.performance.wallDistanceSeconds
             <<",\"momentumLinearSeconds\":"<<flow.performance.momentumLinearSolveSeconds
             <<",\"pressureLinearSeconds\":"<<flow.performance.pressureLinearSolveSeconds
-            <<",\"momentumIterations\":"<<flow.performance.momentumIterations<<",\"pressureIterations\":"<<flow.performance.pressureIterations<<"}"
+            <<",\"momentumIterations\":"<<flow.performance.momentumIterations<<",\"pressureIterations\":"<<flow.performance.pressureIterations;
+        const auto scalarProfile=[&](const char* label,const ScalarTransportPerformance2D& p) {
+            meta<<",\""<<label<<"\":{\"calls\":"<<p.calls<<",\"patternBuilds\":"<<p.patternBuilds
+                <<",\"linearIterations\":"<<p.linearIterations<<",\"totalSeconds\":"<<p.totalSeconds
+                <<",\"setupSeconds\":"<<p.setupSeconds<<",\"linearSeconds\":"<<p.linearSeconds
+                <<",\"faceFluxSeconds\":"<<p.faceFluxSeconds<<"}";
+        };
+        scalarProfile("scalarSolves",r.performance.scalarSolves);
+        scalarProfile("scalarEvaluations",r.performance.scalarEvaluations);
+        meta<<"}"
             <<",\"momentumResidual\":"<<flow.history.back().momentumResidual
             <<",\"forceX\":"<<flow.forceX<<",\"forceY\":"<<flow.forceY
             <<",\"pressureForceX\":"<<flow.pressureForceX<<",\"pressureForceY\":"<<flow.pressureForceY
