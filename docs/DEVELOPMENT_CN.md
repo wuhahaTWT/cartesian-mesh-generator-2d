@@ -455,7 +455,7 @@ python3 tools/verification/verify_sst_rans.py --mesh /path/mesh.cm2d --prefix ou
 
 每次solve先检查真实初始残差，仅确需求解时建立因子；完全相同diag/off可供RHS变化复用，系数变化重建。失败构造清除ready状态，不计成功构造；`add/reset`失效缓存。公开`preconditionILU0`必须先factor且快照相符，否则拒绝；Krylov内部私有apply在当前solve系数不变前提下省去重复快照比较。原补偿b-Ax、norm/逐格门、高低位候选、实际场四舍五入后的最终验收不变。独立稠密掩码Doolittle、丢弃fill、非对称已知解、失效缓存、非正主元/NaN/Inf和表示精度反例均覆盖。
 
-SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..20000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写普通`.json/.cells.csv/.faces.csv`，另保留上述显式`.unconverged.*`诊断场。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
+SST探针提供`--pressure-preconditioner jacobi|ic0|aggregation`（默认ic0，与旧版本相同）、`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..20000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写普通`.json/.cells.csv/.faces.csv`，另保留上述显式`.unconverged.*`诊断场。硬超时或内部异常可能没有这些最终诊断，应保留stderr。压力方法同时写入diagnostics及场元数据；独立审核只验证声明合法并重算原方程，不能从末态反推实际算法，执行命令与二进制哈希须一起保存。旧证据没有该字段时按旧默认ic0解释。固定步数计时不代表全程收敛速度；同输入、同迭代和容差下串行交错重复，失败或超时单独记录，禁止混入完成组的提速比。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
 
 审核器验证方法声明合法，仍从真实场重算原方程；不能由末态独立推断实际执行的是哪个预条件器，执行路径另由命令/二进制哈希记录。`kSolves`与`omegaSolves`互斥地组成`scalarSolves`；`ilu0Builds/ilu0Reuses`只统计实际成功factor，不强求其等于solve调用数。计时和Krylov次数不构成物理验收。实际比较与12,800格完整超时保存在`native-sst-ilu-performance.json`；图用`python3 tools/visualization/render_sst_ilu.py --study artifacts/current/native-sst-ilu-performance.json --output outputs/sst-ilu.png`重建，需要对应本地网格及CSV。
 

@@ -12,6 +12,14 @@ using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 
 namespace {
+const char* pressureName(PressurePreconditioner2D method) {
+    switch(method) {
+        case PressurePreconditioner2D::Jacobi:return "jacobi";
+        case PressurePreconditioner2D::IncompleteCholesky0:return "ic0";
+        case PressurePreconditioner2D::Aggregation:return "aggregation";
+    }
+    throw std::runtime_error("unknown pressure preconditioner");
+}
 void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
     meta<<"{\"sstUpdates\":"<<r.performance.updates
             <<",\"sstUpdateSeconds\":"<<r.performance.updateSeconds<<",\"sstTransportSeconds\":"<<r.performance.transportSeconds
@@ -36,7 +44,7 @@ void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --initial-k value --initial-omega value --leading-edge x --max-iterations N --max-seconds seconds --turbulence-updates N --completion-updates N --scalar-preconditioner jacobi|ilu0]");
+        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --initial-k value --initial-omega value --leading-edge x --max-iterations N --max-seconds seconds --turbulence-updates N --completion-updates N --scalar-preconditioner jacobi|ilu0 --pressure-preconditioner jacobi|ic0|aggregation]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
@@ -64,6 +72,13 @@ int main(int argc,char** argv) {
                 if(text=="jacobi")c.turbulence.transport.preconditioner=ScalarPreconditioner2D::Jacobi;
                 else if(text=="ilu0")c.turbulence.transport.preconditioner=ScalarPreconditioner2D::ILU0;
                 else throw std::runtime_error("unknown scalar preconditioner");
+                continue;
+            }
+            if(option=="--pressure-preconditioner") {
+                if(text=="jacobi")c.flow.pressurePreconditioner=PressurePreconditioner2D::Jacobi;
+                else if(text=="ic0")c.flow.pressurePreconditioner=PressurePreconditioner2D::IncompleteCholesky0;
+                else if(text=="aggregation")c.flow.pressurePreconditioner=PressurePreconditioner2D::Aggregation;
+                else throw std::runtime_error("unknown pressure preconditioner");
                 continue;
             }
             std::size_t end=0;const double value=std::stod(text,&end);
@@ -122,6 +137,7 @@ int main(int argc,char** argv) {
             <<",\"stopped\":"<<(r.flow.stopped?"true":"false")
             <<",\"stopReason\":\""<<(r.converged?"converged":(r.flow.stopped?"time-budget":"iteration-limit"))<<"\",\"maxIterations\":"<<c.flow.maxIterations
             <<",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
+            <<",\"pressurePreconditioner\":\""<<pressureName(c.flow.pressurePreconditioner)<<"\""
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<r.flow.performance.solveSeconds<<",\"performance\":";
         writePerformance(diagnostics,r);
@@ -160,6 +176,7 @@ int main(int argc,char** argv) {
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
             <<",\"turbulenceCompletionUpdates\":"<<c.turbulenceCompletionUpdates
             <<",\"scalarCorrectionsPerUpdate\":"<<c.turbulence.scalarCorrectionsPerUpdate
+            <<",\"pressurePreconditioner\":\""<<pressureName(c.flow.pressurePreconditioner)<<"\""
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds
             <<",\"performance\":";

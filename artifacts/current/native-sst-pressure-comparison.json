@@ -1,0 +1,4822 @@
+{
+  "scope": "SST pressure-preconditioner comparison on one 24000-cell wall-resolved flat plate; fixed work is not convergence or physical accuracy",
+  "baseCommit": "e608d2c",
+  "host": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "defaultPressureUnchanged": "ic0",
+  "mesh": {
+    "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+    "sha256": "d8422e73682fd4df27f7d1abe23b05aec3becb9e3bcc34071a33c5b895a456fc",
+    "bytes": 4549429
+  },
+  "binary": {
+    "path": "build/cartmesh2d_sst_rans_probe",
+    "sha256": "6a8d1ed3f29e2790b0c3180d51fc84bc69b176a018f3a290f266c4985e58becf",
+    "bytes": 373160
+  },
+  "sourceFiles": [
+    {
+      "path": "tests/sst_rans_probe.cpp",
+      "sha256": "a456b03e929ae428a930b75ad14fac1f4d6a88d65ac4f2ca4c571c2402d64850",
+      "bytes": 15731
+    },
+    {
+      "path": "tools/verification/verify_sst_rans.py",
+      "sha256": "0c1f2ea524ce04a6385104bf5271ff0c2edc2da6b300ee524e6d17c0f261a3b0",
+      "bytes": 30263
+    },
+    {
+      "path": "tests/sst_rans_verifier_test.py",
+      "sha256": "0957206c2962be327a459cb50863c4466c37f3d091004276ffce9307200bf7bd",
+      "bytes": 18852
+    }
+  ],
+  "runOrder": [
+    "ic0-1",
+    "aggregation-1",
+    "jacobi-1",
+    "jacobi-2",
+    "aggregation-2",
+    "ic0-2",
+    "aggregation-full"
+  ],
+  "runs": {
+    "ic0-1": {
+      "runtime": {
+        "method": "ic0",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/ic0-1/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "ic0"
+        ],
+        "runtimeSeconds": 24.087919333018363,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 101171200,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.001164000015705824,
+            "rssBytes": null,
+            "diskFreeBytes": 2198507520
+          },
+          {
+            "elapsedSeconds": 2.0098442080197856,
+            "rssBytes": null,
+            "diskFreeBytes": 2198437888
+          },
+          {
+            "elapsedSeconds": 4.013980125018861,
+            "rssBytes": null,
+            "diskFreeBytes": 2198331392
+          },
+          {
+            "elapsedSeconds": 6.0240677910041995,
+            "rssBytes": null,
+            "diskFreeBytes": 2198216704
+          },
+          {
+            "elapsedSeconds": 8.034189333033282,
+            "rssBytes": null,
+            "diskFreeBytes": 2197651456
+          },
+          {
+            "elapsedSeconds": 10.035326708049979,
+            "rssBytes": null,
+            "diskFreeBytes": 2197454848
+          },
+          {
+            "elapsedSeconds": 12.045438083005138,
+            "rssBytes": null,
+            "diskFreeBytes": 2197422080
+          },
+          {
+            "elapsedSeconds": 14.055534666054882,
+            "rssBytes": null,
+            "diskFreeBytes": 2197315584
+          },
+          {
+            "elapsedSeconds": 16.063123875006568,
+            "rssBytes": null,
+            "diskFreeBytes": 2197184512
+          },
+          {
+            "elapsedSeconds": 18.07325433305232,
+            "rssBytes": null,
+            "diskFreeBytes": 2196987904
+          },
+          {
+            "elapsedSeconds": 20.07783833303256,
+            "rssBytes": null,
+            "diskFreeBytes": 2196955136
+          },
+          {
+            "elapsedSeconds": 22.078647750022355,
+            "rssBytes": null,
+            "diskFreeBytes": 2196774912
+          },
+          {
+            "elapsedSeconds": 24.087779500056058,
+            "rssBytes": null,
+            "diskFreeBytes": 2171088896
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/audit.json",
+          "sha256": "75f799c9e016bd71c1835422e97aef371caedfc0413d9bb76d02860766f59ca3",
+          "bytes": 90997
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/audit.status",
+          "sha256": "3d48d50c87a4c3f9a59d720aa9e9637fabcc9182a7b304c23e71c037216b3399",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/audit.stdout",
+          "sha256": "75f799c9e016bd71c1835422e97aef371caedfc0413d9bb76d02860766f59ca3",
+          "bytes": 90997
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/flow.diagnostics.json",
+          "sha256": "7ecb1b1c65d8108f656a940b240ebfc466a28bf3a2645d5d51058d8fa2561836",
+          "bytes": 1499
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/flow.history.csv",
+          "sha256": "271917c627100d9202ea805aae0764b18fbb5ba65dba9050ccf44962b8a14650",
+          "bytes": 28483
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/flow.unconverged.cells.csv",
+          "sha256": "5df61b0401a26d306a1046581ca0a9f3730a36aafa89ac2a2bc93ca8373425e4",
+          "bytes": 12339358
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/flow.unconverged.faces.csv",
+          "sha256": "1fd205dd3371c124bbc65ae1d5e6790449ccf1390343fafd2cf6ce20df9722a3",
+          "bytes": 13184553
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/flow.unconverged.json",
+          "sha256": "f3f9ea437a0224389bba1acdb30f99c51e78d3e3e3c8670543e543c4d62c373c",
+          "bytes": 2481
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/runtime.json",
+          "sha256": "4a6262f977ab64bed665e453bec395e3bdaf85f0313853ecefab5d6a0d028c53",
+          "bytes": 2486
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/stderr.log",
+          "sha256": "cdebfa84f592332ff08ec5266ec63b89ea9a35e05221511d3636b944896ee445",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-1/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "ic0",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 22.494776125,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.609021706,
+          "sstTransportSeconds": 10.255465872999999,
+          "sstGradientSeconds": 0.2457567379999999,
+          "wallDistanceSeconds": 0.006899084,
+          "momentumLinearSeconds": 1.4762808309999993,
+          "pressureLinearSeconds": 9.540137248999992,
+          "momentumIterations": 2842,
+          "pressureIterations": 20136,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3720,
+            "totalSeconds": 8.184162466,
+            "setupSeconds": 0.8699278829999998,
+            "linearSeconds": 6.856522443000001,
+            "faceFluxSeconds": 0.31988584
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.003973711,
+            "setupSeconds": 0.5674958780000001,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.3161248000000001
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 589,
+            "totalSeconds": 1.3010199649999998,
+            "setupSeconds": 0.4372582589999999,
+            "linearSeconds": 0.6641267000000001,
+            "faceFluxSeconds": 0.159768802
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3131,
+            "totalSeconds": 6.883142501000001,
+            "setupSeconds": 0.43266962399999986,
+            "linearSeconds": 6.1923957430000005,
+            "faceFluxSeconds": 0.160117038
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "ic0",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932158065,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932158065,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.0003670067841969795,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0003670067841969795,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.293314809207839e-08,
+            "worstDiagonal": 0.0004452485205148532,
+            "residualNorm": 1.048354931873862e-06,
+            "normTarget": 1.0342051180631668e-12,
+            "maxCellResidual": 0.00011888450079715106,
+            "maxFaceFlux": 8.069770109408769e-07,
+            "globalBalance": -8.04921109573939e-05,
+            "normRoundoffBudget": 3.553178116983709e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483549318738632e-06,
+              "maxCellResidual": 0.00011888450079715099,
+              "originalEquationCellDifference": 6.776263578034403e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.01741832815107805,
+            "worstDiagonal": 0.00033329834138240725,
+            "residualNorm": 0.50606676347695,
+            "normTarget": 8.901321045435159e-05,
+            "maxCellResidual": 52.26047054069575,
+            "maxFaceFlux": 4547.472801339922,
+            "globalBalance": -10.726065413056663,
+            "normRoundoffBudget": 2.002285148923955e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060667634750893,
+              "maxCellResidual": 52.26047054069658,
+              "originalEquationCellDifference": 8.313350008393172e-13
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-xu2r6w1i/face-viscosity.csv",
+            "sha256": "2c55c3eab708ae904f691d1e6340bf54b5af69c5d02a3eff340097246c8ce651"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.0164395367051604e-20,
+            "diffusionY": 2.117582368135751e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.005285507281466117,
+              "expected": 0.005285507281466118,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897025400036994e-05,
+              "expected": -1.6897025400037004e-05,
+              "absolute": 1.0164395367051604e-20,
+              "relative": 1.0164395367051604e-20
+            },
+            "diffusionY": {
+              "actual": -2.437230480162026e-07,
+              "expected": -2.4372304801620237e-07,
+              "absolute": 2.117582368135751e-22,
+              "relative": 2.117582368135751e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.00147183446635978,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471834465031995,
+            "worstNormalizedY": 6.251846635734271e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.08952150407475e-05,
+            "maxCellVector": 1.4482948609290062e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.001471834466359788,
+              "expected": 0.00147183446635978,
+              "absolute": 8.023096076392733e-18,
+              "relative": 8.023096076392733e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.0031638560247632193,
+              "expected": 0.0031638560247632184,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "wallForceY": {
+              "actual": -8.514637718958558e-05,
+              "expected": -8.514637718958558e-05,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.0031638560247632193,
+              "expected": 0.0031638560247632184,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218431695828372e-07,
+              "expected": 2.0218431695828372e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.002522899545076701,
+            "y": -0.0006647519090194655,
+            "magnitude": 0.0026090069404072595,
+            "boundaryTermScale": 2.004080614028817,
+            "relativeToBoundary": 0.001301847302021626,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.002522899545076701,
+            "boundaryMinusSourceY": -0.0006647519090194655,
+            "magnitude": 0.0026090069404072595,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228995450761005,
+            "y": -0.0006647519090194658
+          },
+          "expectedCellResidualSum": {
+            "x": 0.002522899545076701,
+            "y": -0.0006647519090194655
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -6.006480035569695e-16,
+            "y": -3.2526065174565133e-19,
+            "magnitude": 6.006480916239264e-16
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638560247632184,
+            "y": -8.514637718958558e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638560247632184,
+            "y": 2.0218431695828372e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 5.607168375443283e-15,
+          "l2CellImbalance": 8.822271704478883e-14,
+          "maxScaledCellImbalance": 0.004820277562207961,
+          "nativeDefinitionContinuity": 4.959369949049598e-12,
+          "boundaryFluxSum": 3.4139358007223564e-15,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 3.4139358007223564e-15,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/ic0-1/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "aggregation-1": {
+      "runtime": {
+        "method": "aggregation",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-1/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.093896208971273,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 106921984,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0014151249779388309,
+            "rssBytes": null,
+            "diskFreeBytes": 2169737216
+          },
+          {
+            "elapsedSeconds": 2.011530291987583,
+            "rssBytes": null,
+            "diskFreeBytes": 2169733120
+          },
+          {
+            "elapsedSeconds": 4.021621999971103,
+            "rssBytes": null,
+            "diskFreeBytes": 2169606144
+          },
+          {
+            "elapsedSeconds": 6.031691999989562,
+            "rssBytes": null,
+            "diskFreeBytes": 2169561088
+          },
+          {
+            "elapsedSeconds": 8.041798499994911,
+            "rssBytes": null,
+            "diskFreeBytes": 2169483264
+          },
+          {
+            "elapsedSeconds": 10.05187741696136,
+            "rssBytes": null,
+            "diskFreeBytes": 2169323520
+          },
+          {
+            "elapsedSeconds": 12.052605249977205,
+            "rssBytes": null,
+            "diskFreeBytes": 2169315328
+          },
+          {
+            "elapsedSeconds": 14.062697624962311,
+            "rssBytes": null,
+            "diskFreeBytes": 2169409536
+          },
+          {
+            "elapsedSeconds": 16.072801125003025,
+            "rssBytes": null,
+            "diskFreeBytes": 2169389056
+          },
+          {
+            "elapsedSeconds": 18.08287558396114,
+            "rssBytes": null,
+            "diskFreeBytes": 2165383168
+          },
+          {
+            "elapsedSeconds": 20.09313408395974,
+            "rssBytes": null,
+            "diskFreeBytes": 2143588352
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/audit.json",
+          "sha256": "6263dd2139cf9afa30e59a95de87093eaae0f1f52382311216b515a0f43f2eff",
+          "bytes": 91105
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/audit.status",
+          "sha256": "3d48d50c87a4c3f9a59d720aa9e9637fabcc9182a7b304c23e71c037216b3399",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/audit.stdout",
+          "sha256": "6263dd2139cf9afa30e59a95de87093eaae0f1f52382311216b515a0f43f2eff",
+          "bytes": 91105
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.diagnostics.json",
+          "sha256": "5d1490134a3b9bf6360dcd35b6192543bfecbee81fa80fbdec8092ef36d3a2b9",
+          "bytes": 1511
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.unconverged.json",
+          "sha256": "e0c9933b881c5b1fff79f5ccdd879467d184d4ef42fb4ce8ff579e3fe41ad268",
+          "bytes": 2494
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/runtime.json",
+          "sha256": "531c6afc14c57297c21fd09f384cf94d49f13c0fdf14462750c4859e6a659bcb",
+          "bytes": 2278
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-1/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.884725083,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.641266705999994,
+          "sstTransportSeconds": 10.291107489999998,
+          "sstGradientSeconds": 0.24453646200000012,
+          "wallDistanceSeconds": 0.006788792,
+          "momentumLinearSeconds": 1.4838729870000007,
+          "pressureLinearSeconds": 4.902816909999997,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 8.227754458,
+            "setupSeconds": 0.8726470819999999,
+            "linearSeconds": 6.896864795000002,
+            "faceFluxSeconds": 0.319904945
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.0012258979999995,
+            "setupSeconds": 0.565455702,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.31521930100000006
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.2823525779999998,
+            "setupSeconds": 0.43749974999999974,
+            "linearSeconds": 0.6453042560000002,
+            "faceFluxSeconds": 0.15989145000000002
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.945401880000001,
+            "setupSeconds": 0.43514733200000005,
+            "linearSeconds": 6.251560539000001,
+            "faceFluxSeconds": 0.16001349500000003
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-_76m1m0g/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-1/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "jacobi-1": {
+      "runtime": {
+        "method": "jacobi",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/jacobi-1/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "jacobi"
+        ],
+        "runtimeSeconds": 2.0024511669762433,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 46170112,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.001303416967857629,
+            "rssBytes": null,
+            "diskFreeBytes": 2141716480
+          },
+          {
+            "elapsedSeconds": 2.002053292002529,
+            "rssBytes": null,
+            "diskFreeBytes": 2141671424
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/audit.status",
+          "sha256": "ae69f79acaab065d0cb41423b94e2e549bfb75b896757bea992714b6ef87aa14",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/audit.stderr",
+          "sha256": "6fe748c4af902eb845e2e62e8066f657f5e81d73059a88e20ee7ea80922ce1f4",
+          "bytes": 1651
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/audit.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/runtime.json",
+          "sha256": "58fd4d4d02b7073b0d1c78d48d431ae899fa15f538141632081e25ec448ae799",
+          "bytes": 1232
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/stderr.log",
+          "sha256": "b769ac5f9425c920a28a80a4a2abc673f59c9b0e61b56a5c61849f8bc0006d70",
+          "bytes": 106
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/jacobi-1/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "completedFixed100": false
+    },
+    "aggregation-2": {
+      "runtime": {
+        "method": "aggregation",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-2/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.09402754099574,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 105562112,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0012029999634250998,
+            "rssBytes": null,
+            "diskFreeBytes": 2140176384
+          },
+          {
+            "elapsedSeconds": 2.0113207909744233,
+            "rssBytes": null,
+            "diskFreeBytes": 2140344320
+          },
+          {
+            "elapsedSeconds": 4.019134290982038,
+            "rssBytes": null,
+            "diskFreeBytes": 2140254208
+          },
+          {
+            "elapsedSeconds": 6.02924304100452,
+            "rssBytes": null,
+            "diskFreeBytes": 2140229632
+          },
+          {
+            "elapsedSeconds": 8.039338083006442,
+            "rssBytes": null,
+            "diskFreeBytes": 2140221440
+          },
+          {
+            "elapsedSeconds": 10.04946775001008,
+            "rssBytes": null,
+            "diskFreeBytes": 2140221440
+          },
+          {
+            "elapsedSeconds": 12.052638707973529,
+            "rssBytes": null,
+            "diskFreeBytes": 2140221440
+          },
+          {
+            "elapsedSeconds": 14.062713790975977,
+            "rssBytes": null,
+            "diskFreeBytes": 2140221440
+          },
+          {
+            "elapsedSeconds": 16.07276924996404,
+            "rssBytes": null,
+            "diskFreeBytes": 2140221440
+          },
+          {
+            "elapsedSeconds": 18.082841750001535,
+            "rssBytes": null,
+            "diskFreeBytes": 2135035904
+          },
+          {
+            "elapsedSeconds": 20.09320837497944,
+            "rssBytes": null,
+            "diskFreeBytes": 2114572288
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/audit.json",
+          "sha256": "13a825b4f0be50134ea5459d892eb7d768ae64a19321ba2a76474dfea6165871",
+          "bytes": 91105
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/audit.status",
+          "sha256": "3d48d50c87a4c3f9a59d720aa9e9637fabcc9182a7b304c23e71c037216b3399",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/audit.stdout",
+          "sha256": "13a825b4f0be50134ea5459d892eb7d768ae64a19321ba2a76474dfea6165871",
+          "bytes": 91105
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.diagnostics.json",
+          "sha256": "b454154dcb83cb3b88090b72bcc315b52425ec2b0a2b68b8b43fbcbd69c12346",
+          "bytes": 1495
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.unconverged.json",
+          "sha256": "4e3398695a55ac617aad1626ee4bcbccf0949f0ac300cc5c08989a3212f2644c",
+          "bytes": 2478
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/runtime.json",
+          "sha256": "09163d248c37a9c74a774a32a3c0621e9d84014510710ea41c194d5851d7225d",
+          "bytes": 2277
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-2/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.85771175,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.629538915000001,
+          "sstTransportSeconds": 10.278130333000004,
+          "sstGradientSeconds": 0.24509137300000008,
+          "wallDistanceSeconds": 0.006907166,
+          "momentumLinearSeconds": 1.470477665999999,
+          "pressureLinearSeconds": 4.900621949000001,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 8.213845535999997,
+            "setupSeconds": 0.8677464600000001,
+            "linearSeconds": 6.888650297999999,
+            "faceFluxSeconds": 0.31933566500000005
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.0015500789999998,
+            "setupSeconds": 0.5658432029999999,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.315463506
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.279535454,
+            "setupSeconds": 0.43555191600000004,
+            "linearSeconds": 0.6445593809999999,
+            "faceFluxSeconds": 0.159563336
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.934310082,
+            "setupSeconds": 0.4321945440000001,
+            "linearSeconds": 6.244090917,
+            "faceFluxSeconds": 0.159772329
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-j8xql9bu/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-2/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "ic0-2": {
+      "runtime": {
+        "method": "ic0",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/ic0-2/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "ic0"
+        ],
+        "runtimeSeconds": 24.103159125021193,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 100777984,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.001355583022814244,
+            "rssBytes": null,
+            "diskFreeBytes": 2113511424
+          },
+          {
+            "elapsedSeconds": 2.007088583020959,
+            "rssBytes": null,
+            "diskFreeBytes": 2113470464
+          },
+          {
+            "elapsedSeconds": 4.010992791969329,
+            "rssBytes": null,
+            "diskFreeBytes": 2113462272
+          },
+          {
+            "elapsedSeconds": 6.021088249981403,
+            "rssBytes": null,
+            "diskFreeBytes": 2113458176
+          },
+          {
+            "elapsedSeconds": 8.031175957992673,
+            "rssBytes": null,
+            "diskFreeBytes": 2113441792
+          },
+          {
+            "elapsedSeconds": 10.04126491700299,
+            "rssBytes": null,
+            "diskFreeBytes": 2113417216
+          },
+          {
+            "elapsedSeconds": 12.051362541969866,
+            "rssBytes": null,
+            "diskFreeBytes": 2113277952
+          },
+          {
+            "elapsedSeconds": 14.061439457989763,
+            "rssBytes": null,
+            "diskFreeBytes": 2113249280
+          },
+          {
+            "elapsedSeconds": 16.06185399997048,
+            "rssBytes": null,
+            "diskFreeBytes": 2113249280
+          },
+          {
+            "elapsedSeconds": 18.071952749975026,
+            "rssBytes": null,
+            "diskFreeBytes": 2113437696
+          },
+          {
+            "elapsedSeconds": 20.082065167021938,
+            "rssBytes": null,
+            "diskFreeBytes": 2113409024
+          },
+          {
+            "elapsedSeconds": 22.09215254196897,
+            "rssBytes": null,
+            "diskFreeBytes": 2113359872
+          },
+          {
+            "elapsedSeconds": 24.102723499992862,
+            "rssBytes": null,
+            "diskFreeBytes": 2087686144
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/audit.json",
+          "sha256": "4703dfaa1500e44e6ca27f488978675d81f6d2b9515212112955b1cbf65710ec",
+          "bytes": 90997
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/audit.status",
+          "sha256": "3d48d50c87a4c3f9a59d720aa9e9637fabcc9182a7b304c23e71c037216b3399",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/audit.stdout",
+          "sha256": "4703dfaa1500e44e6ca27f488978675d81f6d2b9515212112955b1cbf65710ec",
+          "bytes": 90997
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/flow.diagnostics.json",
+          "sha256": "ce54259e1d27cd768ee412852e4c74b412ca57099a666f70531e0e6985bf1581",
+          "bytes": 1512
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/flow.history.csv",
+          "sha256": "271917c627100d9202ea805aae0764b18fbb5ba65dba9050ccf44962b8a14650",
+          "bytes": 28483
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/flow.unconverged.cells.csv",
+          "sha256": "5df61b0401a26d306a1046581ca0a9f3730a36aafa89ac2a2bc93ca8373425e4",
+          "bytes": 12339358
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/flow.unconverged.faces.csv",
+          "sha256": "1fd205dd3371c124bbc65ae1d5e6790449ccf1390343fafd2cf6ce20df9722a3",
+          "bytes": 13184553
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/flow.unconverged.json",
+          "sha256": "4d66bf33232fe4613414b47b309f00ef8311b3c99de60b8d9c8f4e981234201c",
+          "bytes": 2494
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/runtime.json",
+          "sha256": "3cec9e81c4c3a7a8df36048346acfa59d3b926f3be17d423f6d00416ba0f7155",
+          "bytes": 2483
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/stderr.log",
+          "sha256": "cdebfa84f592332ff08ec5266ec63b89ea9a35e05221511d3636b944896ee445",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/ic0-2/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "ic0",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 22.573029,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.644961747000005,
+          "sstTransportSeconds": 10.292968755000002,
+          "sstGradientSeconds": 0.24568561900000008,
+          "wallDistanceSeconds": 0.00697075,
+          "momentumLinearSeconds": 1.4746960810000003,
+          "pressureLinearSeconds": 9.597806841000006,
+          "momentumIterations": 2842,
+          "pressureIterations": 20136,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3720,
+            "totalSeconds": 8.223369381000001,
+            "setupSeconds": 0.8725205820000003,
+            "linearSeconds": 6.892055661999997,
+            "faceFluxSeconds": 0.3210539700000001
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.0025080830000002,
+            "setupSeconds": 0.5655386230000001,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.3164252509999999
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 589,
+            "totalSeconds": 1.3052902979999998,
+            "setupSeconds": 0.4378101709999999,
+            "linearSeconds": 0.6671896200000003,
+            "faceFluxSeconds": 0.16051546300000008
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3131,
+            "totalSeconds": 6.918079082999999,
+            "setupSeconds": 0.4347104110000001,
+            "linearSeconds": 6.224866042000002,
+            "faceFluxSeconds": 0.16053850699999997
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "ic0",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932158065,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932158065,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.0003670067841969795,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0003670067841969795,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.293314809207839e-08,
+            "worstDiagonal": 0.0004452485205148532,
+            "residualNorm": 1.048354931873862e-06,
+            "normTarget": 1.0342051180631668e-12,
+            "maxCellResidual": 0.00011888450079715106,
+            "maxFaceFlux": 8.069770109408769e-07,
+            "globalBalance": -8.04921109573939e-05,
+            "normRoundoffBudget": 3.553178116983709e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483549318738632e-06,
+              "maxCellResidual": 0.00011888450079715099,
+              "originalEquationCellDifference": 6.776263578034403e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.01741832815107805,
+            "worstDiagonal": 0.00033329834138240725,
+            "residualNorm": 0.50606676347695,
+            "normTarget": 8.901321045435159e-05,
+            "maxCellResidual": 52.26047054069575,
+            "maxFaceFlux": 4547.472801339922,
+            "globalBalance": -10.726065413056663,
+            "normRoundoffBudget": 2.002285148923955e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060667634750893,
+              "maxCellResidual": 52.26047054069658,
+              "originalEquationCellDifference": 8.313350008393172e-13
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-ht3o6fmk/face-viscosity.csv",
+            "sha256": "2c55c3eab708ae904f691d1e6340bf54b5af69c5d02a3eff340097246c8ce651"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.0164395367051604e-20,
+            "diffusionY": 2.117582368135751e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.005285507281466117,
+              "expected": 0.005285507281466118,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897025400036994e-05,
+              "expected": -1.6897025400037004e-05,
+              "absolute": 1.0164395367051604e-20,
+              "relative": 1.0164395367051604e-20
+            },
+            "diffusionY": {
+              "actual": -2.437230480162026e-07,
+              "expected": -2.4372304801620237e-07,
+              "absolute": 2.117582368135751e-22,
+              "relative": 2.117582368135751e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.00147183446635978,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471834465031995,
+            "worstNormalizedY": 6.251846635734271e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.08952150407475e-05,
+            "maxCellVector": 1.4482948609290062e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.001471834466359788,
+              "expected": 0.00147183446635978,
+              "absolute": 8.023096076392733e-18,
+              "relative": 8.023096076392733e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.0031638560247632193,
+              "expected": 0.0031638560247632184,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "wallForceY": {
+              "actual": -8.514637718958558e-05,
+              "expected": -8.514637718958558e-05,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.0031638560247632193,
+              "expected": 0.0031638560247632184,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218431695828372e-07,
+              "expected": 2.0218431695828372e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.002522899545076701,
+            "y": -0.0006647519090194655,
+            "magnitude": 0.0026090069404072595,
+            "boundaryTermScale": 2.004080614028817,
+            "relativeToBoundary": 0.001301847302021626,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.002522899545076701,
+            "boundaryMinusSourceY": -0.0006647519090194655,
+            "magnitude": 0.0026090069404072595,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228995450761005,
+            "y": -0.0006647519090194658
+          },
+          "expectedCellResidualSum": {
+            "x": 0.002522899545076701,
+            "y": -0.0006647519090194655
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -6.006480035569695e-16,
+            "y": -3.2526065174565133e-19,
+            "magnitude": 6.006480916239264e-16
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638560247632184,
+            "y": -8.514637718958558e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638560247632184,
+            "y": 2.0218431695828372e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 5.607168375443283e-15,
+          "l2CellImbalance": 8.822271704478883e-14,
+          "maxScaledCellImbalance": 0.004820277562207961,
+          "nativeDefinitionContinuity": 4.959369949049598e-12,
+          "boundaryFluxSum": 3.4139358007223564e-15,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 3.4139358007223564e-15,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/ic0-2/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "aggregation-full": {
+      "runtime": {
+        "method": "aggregation",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-full/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "20000",
+          "--max-seconds",
+          "540",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 449.9720693330164,
+        "exitCode": 0,
+        "timeout": false,
+        "peakRssBytes": 104660992,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "rssLimitBytes": 536870912,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0012325000134296715,
+            "rssBytes": null,
+            "diskFreeBytes": 2085744640
+          },
+          {
+            "elapsedSeconds": 2.0096847080276348,
+            "rssBytes": null,
+            "diskFreeBytes": 2085527552
+          },
+          {
+            "elapsedSeconds": 4.019882208027411,
+            "rssBytes": null,
+            "diskFreeBytes": 2085478400
+          },
+          {
+            "elapsedSeconds": 6.029989167000167,
+            "rssBytes": null,
+            "diskFreeBytes": 2085474304
+          },
+          {
+            "elapsedSeconds": 8.040116708027199,
+            "rssBytes": null,
+            "diskFreeBytes": 2085326848
+          },
+          {
+            "elapsedSeconds": 10.044298375025392,
+            "rssBytes": null,
+            "diskFreeBytes": 2085302272
+          },
+          {
+            "elapsedSeconds": 12.054429083014838,
+            "rssBytes": null,
+            "diskFreeBytes": 2085089280
+          },
+          {
+            "elapsedSeconds": 14.064578125020489,
+            "rssBytes": null,
+            "diskFreeBytes": 2085269504
+          },
+          {
+            "elapsedSeconds": 16.070914958021604,
+            "rssBytes": null,
+            "diskFreeBytes": 2085302272
+          },
+          {
+            "elapsedSeconds": 18.08099145803135,
+            "rssBytes": null,
+            "diskFreeBytes": 2085220352
+          },
+          {
+            "elapsedSeconds": 20.091084541985765,
+            "rssBytes": null,
+            "diskFreeBytes": 2085171200
+          },
+          {
+            "elapsedSeconds": 22.10118662501918,
+            "rssBytes": null,
+            "diskFreeBytes": 2085085184
+          },
+          {
+            "elapsedSeconds": 24.111273250018712,
+            "rssBytes": null,
+            "diskFreeBytes": 2085076992
+          },
+          {
+            "elapsedSeconds": 26.12137095798971,
+            "rssBytes": null,
+            "diskFreeBytes": 2085072896
+          },
+          {
+            "elapsedSeconds": 28.131479542003945,
+            "rssBytes": null,
+            "diskFreeBytes": 2085044224
+          },
+          {
+            "elapsedSeconds": 30.14158666698495,
+            "rssBytes": null,
+            "diskFreeBytes": 2085011456
+          },
+          {
+            "elapsedSeconds": 32.151688000012655,
+            "rssBytes": null,
+            "diskFreeBytes": 2085158912
+          },
+          {
+            "elapsedSeconds": 34.15451479202602,
+            "rssBytes": null,
+            "diskFreeBytes": 2084331520
+          },
+          {
+            "elapsedSeconds": 36.16461329202866,
+            "rssBytes": null,
+            "diskFreeBytes": 2084216832
+          },
+          {
+            "elapsedSeconds": 38.17473470803816,
+            "rssBytes": null,
+            "diskFreeBytes": 2084208640
+          },
+          {
+            "elapsedSeconds": 40.18484487500973,
+            "rssBytes": null,
+            "diskFreeBytes": 2084188160
+          },
+          {
+            "elapsedSeconds": 42.194919708010275,
+            "rssBytes": null,
+            "diskFreeBytes": 2084139008
+          },
+          {
+            "elapsedSeconds": 44.200636708003,
+            "rssBytes": null,
+            "diskFreeBytes": 2084069376
+          },
+          {
+            "elapsedSeconds": 46.210758208006155,
+            "rssBytes": null,
+            "diskFreeBytes": 2084220928
+          },
+          {
+            "elapsedSeconds": 48.21594083303353,
+            "rssBytes": null,
+            "diskFreeBytes": 2083946496
+          },
+          {
+            "elapsedSeconds": 50.22605812503025,
+            "rssBytes": null,
+            "diskFreeBytes": 2083487744
+          },
+          {
+            "elapsedSeconds": 52.23619179200614,
+            "rssBytes": null,
+            "diskFreeBytes": 2083389440
+          },
+          {
+            "elapsedSeconds": 54.24631887499709,
+            "rssBytes": null,
+            "diskFreeBytes": 2083381248
+          },
+          {
+            "elapsedSeconds": 56.25275824998971,
+            "rssBytes": null,
+            "diskFreeBytes": 2083381248
+          },
+          {
+            "elapsedSeconds": 58.26283975003753,
+            "rssBytes": null,
+            "diskFreeBytes": 2083348480
+          },
+          {
+            "elapsedSeconds": 60.27293162501883,
+            "rssBytes": null,
+            "diskFreeBytes": 2083282944
+          },
+          {
+            "elapsedSeconds": 62.27464104199316,
+            "rssBytes": null,
+            "diskFreeBytes": 2083258368
+          },
+          {
+            "elapsedSeconds": 64.28436575003434,
+            "rssBytes": null,
+            "diskFreeBytes": 2083147776
+          },
+          {
+            "elapsedSeconds": 66.29447558301035,
+            "rssBytes": null,
+            "diskFreeBytes": 2083094528
+          },
+          {
+            "elapsedSeconds": 68.30459170800168,
+            "rssBytes": null,
+            "diskFreeBytes": 2083049472
+          },
+          {
+            "elapsedSeconds": 70.31368504202692,
+            "rssBytes": null,
+            "diskFreeBytes": 2082897920
+          },
+          {
+            "elapsedSeconds": 72.31803345802473,
+            "rssBytes": null,
+            "diskFreeBytes": 2082873344
+          },
+          {
+            "elapsedSeconds": 74.32154316699598,
+            "rssBytes": null,
+            "diskFreeBytes": 2082856960
+          },
+          {
+            "elapsedSeconds": 76.33162612502929,
+            "rssBytes": null,
+            "diskFreeBytes": 2083004416
+          },
+          {
+            "elapsedSeconds": 78.33828875003383,
+            "rssBytes": null,
+            "diskFreeBytes": 2082951168
+          },
+          {
+            "elapsedSeconds": 80.34838491701521,
+            "rssBytes": null,
+            "diskFreeBytes": 2082893824
+          },
+          {
+            "elapsedSeconds": 82.35848841699772,
+            "rssBytes": null,
+            "diskFreeBytes": 2082787328
+          },
+          {
+            "elapsedSeconds": 84.36858312500408,
+            "rssBytes": null,
+            "diskFreeBytes": 2082787328
+          },
+          {
+            "elapsedSeconds": 86.37869816698367,
+            "rssBytes": null,
+            "diskFreeBytes": 2082848768
+          },
+          {
+            "elapsedSeconds": 88.38879341701977,
+            "rssBytes": null,
+            "diskFreeBytes": 2082803712
+          },
+          {
+            "elapsedSeconds": 90.39890987501713,
+            "rssBytes": null,
+            "diskFreeBytes": 2082631680
+          },
+          {
+            "elapsedSeconds": 92.40902437502518,
+            "rssBytes": null,
+            "diskFreeBytes": 2082590720
+          },
+          {
+            "elapsedSeconds": 94.41909262503032,
+            "rssBytes": null,
+            "diskFreeBytes": 2082078720
+          },
+          {
+            "elapsedSeconds": 96.42921233299421,
+            "rssBytes": null,
+            "diskFreeBytes": 2082099200
+          },
+          {
+            "elapsedSeconds": 98.43932429200504,
+            "rssBytes": null,
+            "diskFreeBytes": 2082091008
+          },
+          {
+            "elapsedSeconds": 100.44944179203594,
+            "rssBytes": null,
+            "diskFreeBytes": 2081923072
+          },
+          {
+            "elapsedSeconds": 102.45954175002407,
+            "rssBytes": null,
+            "diskFreeBytes": 2081918976
+          },
+          {
+            "elapsedSeconds": 104.46265633299481,
+            "rssBytes": null,
+            "diskFreeBytes": 2081869824
+          },
+          {
+            "elapsedSeconds": 106.47277520800708,
+            "rssBytes": null,
+            "diskFreeBytes": 2082131968
+          },
+          {
+            "elapsedSeconds": 108.4822312920005,
+            "rssBytes": null,
+            "diskFreeBytes": 2082103296
+          },
+          {
+            "elapsedSeconds": 110.49234512500698,
+            "rssBytes": null,
+            "diskFreeBytes": 2082045952
+          },
+          {
+            "elapsedSeconds": 112.50244341703365,
+            "rssBytes": null,
+            "diskFreeBytes": 2082045952
+          },
+          {
+            "elapsedSeconds": 114.51250962499762,
+            "rssBytes": null,
+            "diskFreeBytes": 2081980416
+          },
+          {
+            "elapsedSeconds": 116.51691412500804,
+            "rssBytes": null,
+            "diskFreeBytes": 2081808384
+          },
+          {
+            "elapsedSeconds": 118.52700175001519,
+            "rssBytes": null,
+            "diskFreeBytes": 2081619968
+          },
+          {
+            "elapsedSeconds": 120.53129937499762,
+            "rssBytes": null,
+            "diskFreeBytes": 2081800192
+          },
+          {
+            "elapsedSeconds": 122.53218149999157,
+            "rssBytes": null,
+            "diskFreeBytes": 2081800192
+          },
+          {
+            "elapsedSeconds": 124.5423012500396,
+            "rssBytes": null,
+            "diskFreeBytes": 2081783808
+          },
+          {
+            "elapsedSeconds": 126.55238458298845,
+            "rssBytes": null,
+            "diskFreeBytes": 2081783808
+          },
+          {
+            "elapsedSeconds": 128.5545080830343,
+            "rssBytes": null,
+            "diskFreeBytes": 2081554432
+          },
+          {
+            "elapsedSeconds": 130.56466366699897,
+            "rssBytes": null,
+            "diskFreeBytes": 2081546240
+          },
+          {
+            "elapsedSeconds": 132.5747510829824,
+            "rssBytes": null,
+            "diskFreeBytes": 2081542144
+          },
+          {
+            "elapsedSeconds": 134.58483287499985,
+            "rssBytes": null,
+            "diskFreeBytes": 2081521664
+          },
+          {
+            "elapsedSeconds": 136.59359845798463,
+            "rssBytes": null,
+            "diskFreeBytes": 2081472512
+          },
+          {
+            "elapsedSeconds": 138.60369587503374,
+            "rssBytes": null,
+            "diskFreeBytes": 2081402880
+          },
+          {
+            "elapsedSeconds": 140.60910208302084,
+            "rssBytes": null,
+            "diskFreeBytes": 2081394688
+          },
+          {
+            "elapsedSeconds": 142.6192804169841,
+            "rssBytes": null,
+            "diskFreeBytes": 2081361920
+          },
+          {
+            "elapsedSeconds": 144.62189337500604,
+            "rssBytes": null,
+            "diskFreeBytes": 2081095680
+          },
+          {
+            "elapsedSeconds": 146.63199616700877,
+            "rssBytes": null,
+            "diskFreeBytes": 2081058816
+          },
+          {
+            "elapsedSeconds": 148.6421111249947,
+            "rssBytes": null,
+            "diskFreeBytes": 2081046528
+          },
+          {
+            "elapsedSeconds": 150.65219933300978,
+            "rssBytes": null,
+            "diskFreeBytes": 2081034240
+          },
+          {
+            "elapsedSeconds": 152.66228500002762,
+            "rssBytes": null,
+            "diskFreeBytes": 2081034240
+          },
+          {
+            "elapsedSeconds": 154.66990295803407,
+            "rssBytes": null,
+            "diskFreeBytes": 2081013760
+          },
+          {
+            "elapsedSeconds": 156.68001333298162,
+            "rssBytes": null,
+            "diskFreeBytes": 2080980992
+          },
+          {
+            "elapsedSeconds": 158.69011958298506,
+            "rssBytes": null,
+            "diskFreeBytes": 2080935936
+          },
+          {
+            "elapsedSeconds": 160.70022495801095,
+            "rssBytes": null,
+            "diskFreeBytes": 2080935936
+          },
+          {
+            "elapsedSeconds": 162.7103398750187,
+            "rssBytes": null,
+            "diskFreeBytes": 2080915456
+          },
+          {
+            "elapsedSeconds": 164.72043862502323,
+            "rssBytes": null,
+            "diskFreeBytes": 2080772096
+          },
+          {
+            "elapsedSeconds": 166.73054708301788,
+            "rssBytes": null,
+            "diskFreeBytes": 2080985088
+          },
+          {
+            "elapsedSeconds": 168.73855662503047,
+            "rssBytes": null,
+            "diskFreeBytes": 2080935936
+          },
+          {
+            "elapsedSeconds": 170.74866799998563,
+            "rssBytes": null,
+            "diskFreeBytes": 2080931840
+          },
+          {
+            "elapsedSeconds": 172.75877416698495,
+            "rssBytes": null,
+            "diskFreeBytes": 2080927744
+          },
+          {
+            "elapsedSeconds": 174.7688652080251,
+            "rssBytes": null,
+            "diskFreeBytes": 2080751616
+          },
+          {
+            "elapsedSeconds": 176.77189050003653,
+            "rssBytes": null,
+            "diskFreeBytes": 2080710656
+          },
+          {
+            "elapsedSeconds": 178.7819934170111,
+            "rssBytes": null,
+            "diskFreeBytes": 2080706560
+          },
+          {
+            "elapsedSeconds": 180.79211204202147,
+            "rssBytes": null,
+            "diskFreeBytes": 2080661504
+          },
+          {
+            "elapsedSeconds": 182.80224625003757,
+            "rssBytes": null,
+            "diskFreeBytes": 2080636928
+          },
+          {
+            "elapsedSeconds": 184.81235495803412,
+            "rssBytes": null,
+            "diskFreeBytes": 2080636928
+          },
+          {
+            "elapsedSeconds": 186.82245612499537,
+            "rssBytes": null,
+            "diskFreeBytes": 2080632832
+          },
+          {
+            "elapsedSeconds": 188.8325548330322,
+            "rssBytes": null,
+            "diskFreeBytes": 2080542720
+          },
+          {
+            "elapsedSeconds": 190.84264758299105,
+            "rssBytes": null,
+            "diskFreeBytes": 2080415744
+          },
+          {
+            "elapsedSeconds": 192.85275754198665,
+            "rssBytes": null,
+            "diskFreeBytes": 2080411648
+          },
+          {
+            "elapsedSeconds": 194.86285179201514,
+            "rssBytes": null,
+            "diskFreeBytes": 2080223232
+          },
+          {
+            "elapsedSeconds": 196.86873470799765,
+            "rssBytes": null,
+            "diskFreeBytes": 2080468992
+          },
+          {
+            "elapsedSeconds": 198.8788522920222,
+            "rssBytes": null,
+            "diskFreeBytes": 2080251904
+          },
+          {
+            "elapsedSeconds": 200.88893925002776,
+            "rssBytes": null,
+            "diskFreeBytes": 2080165888
+          },
+          {
+            "elapsedSeconds": 202.899031708017,
+            "rssBytes": null,
+            "diskFreeBytes": 2080116736
+          },
+          {
+            "elapsedSeconds": 204.90911391703412,
+            "rssBytes": null,
+            "diskFreeBytes": 2079903744
+          },
+          {
+            "elapsedSeconds": 206.91920137498528,
+            "rssBytes": null,
+            "diskFreeBytes": 2079842304
+          },
+          {
+            "elapsedSeconds": 208.92181991698453,
+            "rssBytes": null,
+            "diskFreeBytes": 2079678464
+          },
+          {
+            "elapsedSeconds": 210.93191408301936,
+            "rssBytes": null,
+            "diskFreeBytes": 2079232000
+          },
+          {
+            "elapsedSeconds": 212.94205195800168,
+            "rssBytes": null,
+            "diskFreeBytes": 2078638080
+          },
+          {
+            "elapsedSeconds": 214.95216162502766,
+            "rssBytes": null,
+            "diskFreeBytes": 2078380032
+          },
+          {
+            "elapsedSeconds": 216.96225445799064,
+            "rssBytes": null,
+            "diskFreeBytes": 2078281728
+          },
+          {
+            "elapsedSeconds": 218.9723994579981,
+            "rssBytes": null,
+            "diskFreeBytes": 2078261248
+          },
+          {
+            "elapsedSeconds": 220.9825016669929,
+            "rssBytes": null,
+            "diskFreeBytes": 2078216192
+          },
+          {
+            "elapsedSeconds": 222.99261962500168,
+            "rssBytes": null,
+            "diskFreeBytes": 2078072832
+          },
+          {
+            "elapsedSeconds": 225.00270762498258,
+            "rssBytes": null,
+            "diskFreeBytes": 2077941760
+          },
+          {
+            "elapsedSeconds": 227.01283933303785,
+            "rssBytes": null,
+            "diskFreeBytes": 2078314496
+          },
+          {
+            "elapsedSeconds": 229.01580691698473,
+            "rssBytes": null,
+            "diskFreeBytes": 2078228480
+          },
+          {
+            "elapsedSeconds": 231.02590216702083,
+            "rssBytes": null,
+            "diskFreeBytes": 2078216192
+          },
+          {
+            "elapsedSeconds": 233.0359935000306,
+            "rssBytes": null,
+            "diskFreeBytes": 2078224384
+          },
+          {
+            "elapsedSeconds": 235.04610999999568,
+            "rssBytes": null,
+            "diskFreeBytes": 2078216192
+          },
+          {
+            "elapsedSeconds": 237.05228054203326,
+            "rssBytes": null,
+            "diskFreeBytes": 2078203904
+          },
+          {
+            "elapsedSeconds": 239.06238279200625,
+            "rssBytes": null,
+            "diskFreeBytes": 2078183424
+          },
+          {
+            "elapsedSeconds": 241.07249737501843,
+            "rssBytes": null,
+            "diskFreeBytes": 2077974528
+          },
+          {
+            "elapsedSeconds": 243.08262891700724,
+            "rssBytes": null,
+            "diskFreeBytes": 2077974528
+          },
+          {
+            "elapsedSeconds": 245.09275012498256,
+            "rssBytes": null,
+            "diskFreeBytes": 2077806592
+          },
+          {
+            "elapsedSeconds": 247.10287154198159,
+            "rssBytes": null,
+            "diskFreeBytes": 2077806592
+          },
+          {
+            "elapsedSeconds": 249.11299850000069,
+            "rssBytes": null,
+            "diskFreeBytes": 2077659136
+          },
+          {
+            "elapsedSeconds": 251.1231000419939,
+            "rssBytes": null,
+            "diskFreeBytes": 2077650944
+          },
+          {
+            "elapsedSeconds": 253.13319570798194,
+            "rssBytes": null,
+            "diskFreeBytes": 2077650944
+          },
+          {
+            "elapsedSeconds": 255.14329137501772,
+            "rssBytes": null,
+            "diskFreeBytes": 2077626368
+          },
+          {
+            "elapsedSeconds": 257.14596041699406,
+            "rssBytes": null,
+            "diskFreeBytes": 2077818880
+          },
+          {
+            "elapsedSeconds": 259.1560816250276,
+            "rssBytes": null,
+            "diskFreeBytes": 2077782016
+          },
+          {
+            "elapsedSeconds": 261.16617604199564,
+            "rssBytes": null,
+            "diskFreeBytes": 2077519872
+          },
+          {
+            "elapsedSeconds": 263.1762641670066,
+            "rssBytes": null,
+            "diskFreeBytes": 2077458432
+          },
+          {
+            "elapsedSeconds": 265.18635408300906,
+            "rssBytes": null,
+            "diskFreeBytes": 2077585408
+          },
+          {
+            "elapsedSeconds": 267.1964413750102,
+            "rssBytes": null,
+            "diskFreeBytes": 2077577216
+          },
+          {
+            "elapsedSeconds": 269.20657045801636,
+            "rssBytes": null,
+            "diskFreeBytes": 2077528064
+          },
+          {
+            "elapsedSeconds": 271.21668041701196,
+            "rssBytes": null,
+            "diskFreeBytes": 2077519872
+          },
+          {
+            "elapsedSeconds": 273.2268188750022,
+            "rssBytes": null,
+            "diskFreeBytes": 2077511680
+          },
+          {
+            "elapsedSeconds": 275.23694520798745,
+            "rssBytes": null,
+            "diskFreeBytes": 2077573120
+          },
+          {
+            "elapsedSeconds": 277.2470732079819,
+            "rssBytes": null,
+            "diskFreeBytes": 2077511680
+          },
+          {
+            "elapsedSeconds": 279.2571713750367,
+            "rssBytes": null,
+            "diskFreeBytes": 2077511680
+          },
+          {
+            "elapsedSeconds": 281.26731245801784,
+            "rssBytes": null,
+            "diskFreeBytes": 2077372416
+          },
+          {
+            "elapsedSeconds": 283.27742825000314,
+            "rssBytes": null,
+            "diskFreeBytes": 2077372416
+          },
+          {
+            "elapsedSeconds": 285.28751824999927,
+            "rssBytes": null,
+            "diskFreeBytes": 2077351936
+          },
+          {
+            "elapsedSeconds": 287.29763129202183,
+            "rssBytes": null,
+            "diskFreeBytes": 2077417472
+          },
+          {
+            "elapsedSeconds": 289.304711417004,
+            "rssBytes": null,
+            "diskFreeBytes": 2077233152
+          },
+          {
+            "elapsedSeconds": 291.3090759170009,
+            "rssBytes": null,
+            "diskFreeBytes": 2077204480
+          },
+          {
+            "elapsedSeconds": 293.31213058298454,
+            "rssBytes": null,
+            "diskFreeBytes": 2077167616
+          },
+          {
+            "elapsedSeconds": 295.3222592920065,
+            "rssBytes": null,
+            "diskFreeBytes": 2077159424
+          },
+          {
+            "elapsedSeconds": 297.33237625000766,
+            "rssBytes": null,
+            "diskFreeBytes": 2077155328
+          },
+          {
+            "elapsedSeconds": 299.33539908303646,
+            "rssBytes": null,
+            "diskFreeBytes": 2077143040
+          },
+          {
+            "elapsedSeconds": 301.34549762500683,
+            "rssBytes": null,
+            "diskFreeBytes": 2077089792
+          },
+          {
+            "elapsedSeconds": 303.35462699999334,
+            "rssBytes": null,
+            "diskFreeBytes": 2077089792
+          },
+          {
+            "elapsedSeconds": 305.3647583749844,
+            "rssBytes": null,
+            "diskFreeBytes": 2077081600
+          },
+          {
+            "elapsedSeconds": 307.37486224999884,
+            "rssBytes": null,
+            "diskFreeBytes": 2077081600
+          },
+          {
+            "elapsedSeconds": 309.38497516699135,
+            "rssBytes": null,
+            "diskFreeBytes": 2077077504
+          },
+          {
+            "elapsedSeconds": 311.39125437499024,
+            "rssBytes": null,
+            "diskFreeBytes": 2077044736
+          },
+          {
+            "elapsedSeconds": 313.4013366670115,
+            "rssBytes": null,
+            "diskFreeBytes": 2077003776
+          },
+          {
+            "elapsedSeconds": 315.40492791699944,
+            "rssBytes": null,
+            "diskFreeBytes": 2077016064
+          },
+          {
+            "elapsedSeconds": 317.41503845801344,
+            "rssBytes": null,
+            "diskFreeBytes": 2077016064
+          },
+          {
+            "elapsedSeconds": 319.4251323750359,
+            "rssBytes": null,
+            "diskFreeBytes": 2076864512
+          },
+          {
+            "elapsedSeconds": 321.42951587500283,
+            "rssBytes": null,
+            "diskFreeBytes": 2076815360
+          },
+          {
+            "elapsedSeconds": 323.43174158298643,
+            "rssBytes": null,
+            "diskFreeBytes": 2076811264
+          },
+          {
+            "elapsedSeconds": 325.4418461250025,
+            "rssBytes": null,
+            "diskFreeBytes": 2076778496
+          },
+          {
+            "elapsedSeconds": 327.4519533329876,
+            "rssBytes": null,
+            "diskFreeBytes": 2076737536
+          },
+          {
+            "elapsedSeconds": 329.4521349170245,
+            "rssBytes": null,
+            "diskFreeBytes": 2076676096
+          },
+          {
+            "elapsedSeconds": 331.4622359999921,
+            "rssBytes": null,
+            "diskFreeBytes": 2076672000
+          },
+          {
+            "elapsedSeconds": 333.4723169580102,
+            "rssBytes": null,
+            "diskFreeBytes": 2076545024
+          },
+          {
+            "elapsedSeconds": 335.4824140830315,
+            "rssBytes": null,
+            "diskFreeBytes": 2076540928
+          },
+          {
+            "elapsedSeconds": 337.4924958749907,
+            "rssBytes": null,
+            "diskFreeBytes": 2076540928
+          },
+          {
+            "elapsedSeconds": 339.5025739999837,
+            "rssBytes": null,
+            "diskFreeBytes": 2076540928
+          },
+          {
+            "elapsedSeconds": 341.5033038330148,
+            "rssBytes": null,
+            "diskFreeBytes": 2076540928
+          },
+          {
+            "elapsedSeconds": 343.5133958749939,
+            "rssBytes": null,
+            "diskFreeBytes": 2076540928
+          },
+          {
+            "elapsedSeconds": 345.5235131669906,
+            "rssBytes": null,
+            "diskFreeBytes": 2076528640
+          },
+          {
+            "elapsedSeconds": 347.53094908298226,
+            "rssBytes": null,
+            "diskFreeBytes": 2076463104
+          },
+          {
+            "elapsedSeconds": 349.5375521670212,
+            "rssBytes": null,
+            "diskFreeBytes": 2076422144
+          },
+          {
+            "elapsedSeconds": 351.5391658330336,
+            "rssBytes": null,
+            "diskFreeBytes": 2074005504
+          },
+          {
+            "elapsedSeconds": 353.5492825830006,
+            "rssBytes": null,
+            "diskFreeBytes": 2073960448
+          },
+          {
+            "elapsedSeconds": 355.55933779198676,
+            "rssBytes": null,
+            "diskFreeBytes": 2073817088
+          },
+          {
+            "elapsedSeconds": 357.569427874987,
+            "rssBytes": null,
+            "diskFreeBytes": 2073812992
+          },
+          {
+            "elapsedSeconds": 359.5701432499918,
+            "rssBytes": null,
+            "diskFreeBytes": 2073800704
+          },
+          {
+            "elapsedSeconds": 361.5802670000121,
+            "rssBytes": null,
+            "diskFreeBytes": 2073800704
+          },
+          {
+            "elapsedSeconds": 363.5903639169992,
+            "rssBytes": null,
+            "diskFreeBytes": 2073755648
+          },
+          {
+            "elapsedSeconds": 365.60049758298555,
+            "rssBytes": null,
+            "diskFreeBytes": 2073755648
+          },
+          {
+            "elapsedSeconds": 367.6106125420192,
+            "rssBytes": null,
+            "diskFreeBytes": 2073739264
+          },
+          {
+            "elapsedSeconds": 369.620742292027,
+            "rssBytes": null,
+            "diskFreeBytes": 2073714688
+          },
+          {
+            "elapsedSeconds": 371.6308584170183,
+            "rssBytes": null,
+            "diskFreeBytes": 2073534464
+          },
+          {
+            "elapsedSeconds": 373.6373310830095,
+            "rssBytes": null,
+            "diskFreeBytes": 2073518080
+          },
+          {
+            "elapsedSeconds": 375.6474310000194,
+            "rssBytes": null,
+            "diskFreeBytes": 2073772032
+          },
+          {
+            "elapsedSeconds": 377.65751812502276,
+            "rssBytes": null,
+            "diskFreeBytes": 2073714688
+          },
+          {
+            "elapsedSeconds": 379.66762616700726,
+            "rssBytes": null,
+            "diskFreeBytes": 2073690112
+          },
+          {
+            "elapsedSeconds": 381.67773570801364,
+            "rssBytes": null,
+            "diskFreeBytes": 2073681920
+          },
+          {
+            "elapsedSeconds": 383.6878283750266,
+            "rssBytes": null,
+            "diskFreeBytes": 2073681920
+          },
+          {
+            "elapsedSeconds": 385.69794166699285,
+            "rssBytes": null,
+            "diskFreeBytes": 2073677824
+          },
+          {
+            "elapsedSeconds": 387.70334162499057,
+            "rssBytes": null,
+            "diskFreeBytes": 2073677824
+          },
+          {
+            "elapsedSeconds": 389.71343804203207,
+            "rssBytes": null,
+            "diskFreeBytes": 2073612288
+          },
+          {
+            "elapsedSeconds": 391.7235735830036,
+            "rssBytes": null,
+            "diskFreeBytes": 2073436160
+          },
+          {
+            "elapsedSeconds": 393.7336707080249,
+            "rssBytes": null,
+            "diskFreeBytes": 2073415680
+          },
+          {
+            "elapsedSeconds": 395.74379629199393,
+            "rssBytes": null,
+            "diskFreeBytes": 2073276416
+          },
+          {
+            "elapsedSeconds": 397.74764912499813,
+            "rssBytes": null,
+            "diskFreeBytes": 2073260032
+          },
+          {
+            "elapsedSeconds": 399.7577960420167,
+            "rssBytes": null,
+            "diskFreeBytes": 2073255936
+          },
+          {
+            "elapsedSeconds": 401.75941262498964,
+            "rssBytes": null,
+            "diskFreeBytes": 2073214976
+          },
+          {
+            "elapsedSeconds": 403.7671016670065,
+            "rssBytes": null,
+            "diskFreeBytes": 2073178112
+          },
+          {
+            "elapsedSeconds": 405.77721058303723,
+            "rssBytes": null,
+            "diskFreeBytes": 2073321472
+          },
+          {
+            "elapsedSeconds": 407.7872984170099,
+            "rssBytes": null,
+            "diskFreeBytes": 2073260032
+          },
+          {
+            "elapsedSeconds": 409.7974229999818,
+            "rssBytes": null,
+            "diskFreeBytes": 2073206784
+          },
+          {
+            "elapsedSeconds": 411.807511083025,
+            "rssBytes": null,
+            "diskFreeBytes": 2073075712
+          },
+          {
+            "elapsedSeconds": 413.8176144580357,
+            "rssBytes": null,
+            "diskFreeBytes": 2073059328
+          },
+          {
+            "elapsedSeconds": 415.82024000003,
+            "rssBytes": null,
+            "diskFreeBytes": 2073059328
+          },
+          {
+            "elapsedSeconds": 417.83035637502326,
+            "rssBytes": null,
+            "diskFreeBytes": 2073055232
+          },
+          {
+            "elapsedSeconds": 419.8404577919864,
+            "rssBytes": null,
+            "diskFreeBytes": 2073010176
+          },
+          {
+            "elapsedSeconds": 421.85059983300744,
+            "rssBytes": null,
+            "diskFreeBytes": 2073001984
+          },
+          {
+            "elapsedSeconds": 423.86072458303533,
+            "rssBytes": null,
+            "diskFreeBytes": 2072989696
+          },
+          {
+            "elapsedSeconds": 425.86084066703916,
+            "rssBytes": null,
+            "diskFreeBytes": 2072989696
+          },
+          {
+            "elapsedSeconds": 427.86863020801684,
+            "rssBytes": null,
+            "diskFreeBytes": 2072989696
+          },
+          {
+            "elapsedSeconds": 429.87871412502136,
+            "rssBytes": null,
+            "diskFreeBytes": 2072821760
+          },
+          {
+            "elapsedSeconds": 431.8888382919831,
+            "rssBytes": null,
+            "diskFreeBytes": 2072817664
+          },
+          {
+            "elapsedSeconds": 433.89014195802156,
+            "rssBytes": null,
+            "diskFreeBytes": 2072690688
+          },
+          {
+            "elapsedSeconds": 435.9002546670381,
+            "rssBytes": null,
+            "diskFreeBytes": 2072846336
+          },
+          {
+            "elapsedSeconds": 437.9103557920316,
+            "rssBytes": null,
+            "diskFreeBytes": 2072842240
+          },
+          {
+            "elapsedSeconds": 439.92045045801206,
+            "rssBytes": null,
+            "diskFreeBytes": 2072817664
+          },
+          {
+            "elapsedSeconds": 441.9305695419898,
+            "rssBytes": null,
+            "diskFreeBytes": 2072784896
+          },
+          {
+            "elapsedSeconds": 443.9406943329959,
+            "rssBytes": null,
+            "diskFreeBytes": 2072584192
+          },
+          {
+            "elapsedSeconds": 445.95082808303414,
+            "rssBytes": null,
+            "diskFreeBytes": 2072563712
+          },
+          {
+            "elapsedSeconds": 447.960930250003,
+            "rssBytes": null,
+            "diskFreeBytes": 2072539136
+          },
+          {
+            "elapsedSeconds": 449.97128774999874,
+            "rssBytes": null,
+            "diskFreeBytes": 2046087168
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/audit.json",
+          "sha256": "f961e6b08d586c06c961f73cf7e5f88676fe6c0a1a8aa7c8fd1864a7471ecd93",
+          "bytes": 90565
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/audit.status",
+          "sha256": "9fc06401eaf520715aad732ec584d01d26e7450aa1f83f762e1cf595cc87cb78",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/audit.stdout",
+          "sha256": "f961e6b08d586c06c961f73cf7e5f88676fe6c0a1a8aa7c8fd1864a7471ecd93",
+          "bytes": 90565
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.cells.csv",
+          "sha256": "e86a66f2d8995eda0720ce9a734a406f1c2ebd9a622ae2a26b6998aee9aec376",
+          "bytes": 12237405
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.diagnostics.json",
+          "sha256": "bbebacc00905762411ca39a46ec88c6a02758d5ba75fb3b1bacfad47b1ee95ec",
+          "bytes": 1514
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.faces.csv",
+          "sha256": "692b7da834f6631ae54f202864d7d5875a4b49e768b2182b9453244febda3037",
+          "bytes": 13198202
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.history.csv",
+          "sha256": "3786051a1c1f39d9443f3d2f763d6b2e5b57a3f70a0b01305fd000bcae0a3746",
+          "bytes": 916490
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.json",
+          "sha256": "bc694e09825645596b7ef3ce106f68204f4244cd93d9cef2d5d71d8708db47e8",
+          "bytes": 2501
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/runtime.json",
+          "sha256": "e3c6829db1e939af2f731f067b170360cf1aecd983b2434fb8a493617a6d61c9",
+          "bytes": 26784
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/stderr.log",
+          "sha256": "4dbbbeb43057852254f40e2f305a9a2e4087b2d54c6ca15b7695b8d3e6172d40",
+          "bytes": 4309
+        },
+        {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/stdout.log",
+          "sha256": "2c6957771ac824a9309dd00edcc7eb64939299cbcd01d9dbaf338b12b89fcbdb",
+          "bytes": 51
+        }
+      ],
+      "diagnostics": {
+        "converged": true,
+        "stopped": false,
+        "stopReason": "converged",
+        "maxIterations": 20000,
+        "iterations": 3136,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 448.889887708,
+        "performance": {
+          "sstUpdates": 3136,
+          "sstUpdateSeconds": 309.07369970300067,
+          "sstTransportSeconds": 298.2306383149999,
+          "sstGradientSeconds": 7.712332080000014,
+          "wallDistanceSeconds": 0.00690625,
+          "momentumLinearSeconds": 22.967157841000027,
+          "pressureLinearSeconds": 90.33661547799996,
+          "momentumIterations": 40213,
+          "pressureIterations": 74604,
+          "scalarSolves": {
+            "calls": 10262,
+            "patternBuilds": 10262,
+            "ilu0Builds": 10230,
+            "ilu0Reuses": 0,
+            "linearIterations": 80854,
+            "totalSeconds": 210.43734644599988,
+            "setupSeconds": 44.741620844999964,
+            "linearSeconds": 141.93790648399983,
+            "faceFluxSeconds": 16.44730670299996
+          },
+          "scalarEvaluations": {
+            "calls": 16534,
+            "patternBuilds": 3,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 41.75332886199992,
+            "setupSeconds": 23.514045194,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 13.101833862000014
+          },
+          "kSolves": {
+            "calls": 5131,
+            "patternBuilds": 5131,
+            "ilu0Builds": 5099,
+            "ilu0Reuses": 0,
+            "linearIterations": 22133,
+            "totalSeconds": 58.42007800799998,
+            "setupSeconds": 22.398744117000007,
+            "linearSeconds": 25.670507137000005,
+            "faceFluxSeconds": 8.215997907000016
+          },
+          "omegaSolves": {
+            "calls": 5131,
+            "patternBuilds": 5131,
+            "ilu0Builds": 5131,
+            "ilu0Reuses": 0,
+            "linearIterations": 58721,
+            "totalSeconds": 152.01726843800006,
+            "setupSeconds": 22.342876728,
+            "linearSeconds": 116.26739934699984,
+            "faceFluxSeconds": 8.23130879600001
+          }
+        }
+      },
+      "audit": {
+        "valid": true,
+        "diagnosticOnly": false,
+        "declaredConverged": true,
+        "stopped": false,
+        "failedConvergenceChecks": [],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9972408393262914,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9972408393262914,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.002759160673730171,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.002759160673730171,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 3136,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": 4.704023303772926e-15,
+            "worstDiagonal": 0.0004942236619003491,
+            "residualNorm": 3.152875696935736e-14,
+            "normTarget": 1.0157449140338329e-12,
+            "maxCellResidual": 9.518005037811006e-12,
+            "maxFaceFlux": 5.274391671586805e-06,
+            "globalBalance": 1.5423010303139862e-12,
+            "normRoundoffBudget": 2.3223527825201466e-17,
+            "reportedTransportBalance": {
+              "residualNorm": 3.1528756546579945e-14,
+              "maxCellResidual": 9.518005305602509e-12,
+              "originalEquationCellDifference": 2.6779150320670546e-19
+            }
+          },
+          "omega": {
+            "worstCellIndex": 229,
+            "worstCentre": [
+              0.934375,
+              3.4257934624264215e-06
+            ],
+            "worstSignedResidual": -3.892774991243186e-12,
+            "worstDiagonal": 0.004274641827123485,
+            "residualNorm": 2.2476711363258632e-11,
+            "normTarget": 8.900577476899091e-05,
+            "maxCellResidual": 9.106669397521741e-10,
+            "maxFaceFlux": 4547.505214697115,
+            "globalBalance": -1.17463659838387e-10,
+            "normRoundoffBudget": 2.002299420759449e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 2.086078340839076e-11,
+              "maxCellResidual": 7.244974555624704e-10,
+              "originalEquationCellDifference": 1.8616948418970377e-10
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-pvb03qmz/face-viscosity.csv",
+            "sha256": "0c9a43e05b21274635fb13718ef456cc2d4220e657061df59fbddd1ff9d9d643"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 2.9408983928669308e-18,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 5.082197683525802e-21,
+            "diffusionY": 8.470329472543003e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": -0.0001174966704581793,
+              "expected": -0.00011749667045818225,
+              "absolute": 2.9408983928669308e-18,
+              "relative": 2.9408983928669308e-18
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.3780870802238084e-05,
+              "expected": -1.378087080223808e-05,
+              "absolute": 5.082197683525802e-21,
+              "relative": 5.082197683525802e-21
+            },
+            "diffusionY": {
+              "actual": -1.2159441461480674e-06,
+              "expected": -1.2159441461480666e-06,
+              "absolute": 8.470329472543003e-22,
+              "relative": 8.470329472543003e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 5.5474513864456725e-08,
+            "worstCellIndex": 882,
+            "worstNormalizedX": 5.547448753945442e-08,
+            "worstNormalizedY": 5.4043803689831795e-11,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 2.3326877008614392e-05
+            },
+            "l2": 1.523017691528103e-10,
+            "maxCellVector": 2.3435187439990243e-11,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 5.5474513865514285e-08,
+              "expected": 5.5474513864456725e-08,
+              "absolute": 1.0575603393163965e-18,
+              "relative": 1.0575603393163965e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.002684315091458152,
+              "expected": 0.002684315091458152,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "actual": -0.0004782154333720321,
+              "expected": -0.0004782154333720321,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.002684315091458152,
+              "expected": 0.002684315091458152,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "actual": 1.9958522407109038e-07,
+              "expected": 1.9958522407109038e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 5.98350230474054e-09,
+            "y": -1.1653739929442727e-09,
+            "magnitude": 6.095932773109151e-09,
+            "boundaryTermScale": 2.0043958996971782,
+            "relativeToBoundary": 3.041281801679058e-09,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 5.98350230474054e-09,
+            "boundaryMinusSourceY": -1.1653739929442727e-09,
+            "magnitude": 6.095932773109151e-09,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 5.983502509490329e-09,
+            "y": -1.1653739919674992e-09
+          },
+          "expectedCellResidualSum": {
+            "x": 5.98350230474054e-09,
+            "y": -1.1653739929442727e-09
+          },
+          "cellBoundaryConservationDifference": {
+            "x": 2.0474978860068072e-16,
+            "y": 9.76773537996252e-19,
+            "magnitude": 2.0475211847150196e-16
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.002684315091458152,
+            "y": -0.0004782154333720321
+          },
+          "wallViscousForce": {
+            "x": 0.002684315091458152,
+            "y": 1.9958522407109038e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.2052834147131385e-14,
+          "l2CellImbalance": 7.594733414896617e-14,
+          "maxScaledCellImbalance": 0.043678295179249225,
+          "nativeDefinitionContinuity": 4.5455697407310327e-11,
+          "boundaryFluxSum": 2.1566082253343666e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 2.1566082253343666e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-pressure-comparison/aggregation-full/flow"
+      },
+      "completedFixed100": false
+    }
+  },
+  "fixedWorkMeans": {
+    "ic0": {
+      "samples": 2,
+      "nativeSeconds": 22.5339025625,
+      "pressureSeconds": 9.568972044999999,
+      "pressureIterations": [
+        20136,
+        20136
+      ]
+    },
+    "aggregation": {
+      "samples": 2,
+      "nativeSeconds": 17.8712184165,
+      "pressureSeconds": 4.901719429499999,
+      "pressureIterations": [
+        4233,
+        4233
+      ]
+    }
+  },
+  "fixedWorkFieldDifference": {
+    "aggregation": {
+      "u": {
+        "maxAbsoluteDifference": 5.627078916214945e-06,
+        "maxReferenceMagnitude": 1.0013183046865715
+      },
+      "v": {
+        "maxAbsoluteDifference": 2.9168318369573315e-08,
+        "maxReferenceMagnitude": 0.006308885365306643
+      },
+      "p": {
+        "maxAbsoluteDifference": 3.236987101626343e-08,
+        "maxReferenceMagnitude": 0.006980408975095896
+      },
+      "k": {
+        "maxAbsoluteDifference": 1.7017079678846234e-07,
+        "maxReferenceMagnitude": 0.008387689764676402
+      },
+      "omega": {
+        "maxAbsoluteDifference": 0.1788673815462971,
+        "maxReferenceMagnitude": 1170661.4901666255
+      }
+    }
+  },
+  "timingLimitations": "Native solveSeconds used for comparisons; process wall time includes I/O and up to 2s polling delay. Two observations do not establish statistical performance. Sequential local macOS runs only.",
+  "monitor": {
+    "file": {
+      "path": "outputs/native-flow/sst-pressure-comparison/run_one.py",
+      "sha256": "13f67033778f8227f065d09d6bc9b42ccc897a5eebc20a070f08f63e203ccb65",
+      "bytes": 2206
+    },
+    "source": "import json, resource, shutil, subprocess, sys, time\nfrom pathlib import Path\n\ntry:\n    import psutil\nexcept Exception:\n    psutil = None\n\nif len(sys.argv) not in (3,4): raise SystemExit('usage: run_one.py method output-dir [full]')\nmethod = sys.argv[1]; root = Path(sys.argv[2]).resolve(); root.mkdir(parents=True, exist_ok=True)\nfull = len(sys.argv)==4 and sys.argv[3]=='full'\nmesh = Path('outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d').resolve(); prefix = root/'flow'\ncmd=[str(Path.cwd()/'build/cartmesh2d_sst_rans_probe'),str(mesh),str(prefix),'flatplate-sweep','--nu','2e-7','--speed','1','--inlet-k','2.25e-7','--inlet-omega','125','--leading-edge','0','--max-iterations',('20000' if full else '100'),'--max-seconds',('540' if full else '90'),'--completion-updates','500','--scalar-preconditioner','ilu0','--pressure-preconditioner',method]\nstart=time.monotonic(); samples=[]; timeout=False; disk_floor=int(1.5*1024**3); rss_limit=512*1024*1024\nwith (root/'stdout.log').open('wb') as out,(root/'stderr.log').open('wb') as err:\n    p=subprocess.Popen(cmd,stdout=out,stderr=err); proc=psutil.Process(p.pid) if psutil else None\n    while True:\n        rc=p.poll(); elapsed=time.monotonic()-start; rss=None\n        if proc:\n            try:rss=proc.memory_info().rss\n            except psutil.Error:rss=None\n        free=shutil.disk_usage(root).free; samples.append({'elapsedSeconds':elapsed,'rssBytes':rss,'diskFreeBytes':free})\n        if free<disk_floor or (rss is not None and rss>rss_limit):p.kill();p.wait();rc=p.returncode;break\n        if rc is not None:break\n        if elapsed>=(600 if full else 120):timeout=True;p.kill();p.wait();rc=p.returncode;break\n        time.sleep(2)\nend=time.monotonic(); child_rss=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss\nresult={'method':method,'command':cmd,'runtimeSeconds':end-start,'exitCode':rc,'timeout':timeout,'peakRssBytes':child_rss,'peakRssSource':'resource.RUSAGE_CHILDREN.ru_maxrss','liveRssGuardActive':psutil is not None,'rssLimitBytes':rss_limit,'diskFloorBytes':disk_floor,'samples':samples}\n(root/'runtime.json').write_text(json.dumps(result,indent=2)+'\\n')\nsys.exit(124 if timeout else (rc if rc is not None else 1))\n"
+  },
+  "rawRoot": "outputs/native-flow/sst-pressure-comparison",
+  "thresholdsChanged": false,
+  "matchingFullRunControls": {
+    "case": "flatplate",
+    "flatPlateLeadingEdge": 0,
+    "flatPlateTop": "pressure-farfield",
+    "model": "SST-2003m",
+    "scope": "coupled-steady-SST-2003m",
+    "nu": 2e-07,
+    "speed": 1,
+    "inletK": 2.25e-07,
+    "inletOmega": 125,
+    "initialK": 2.25e-07,
+    "initialOmega": 125,
+    "tolerance": 1e-07,
+    "scalarRelativeTolerance": 1e-09,
+    "scalarAbsoluteTolerance": 1e-12,
+    "scalarCellTolerance": 1e-09,
+    "convection": "upwind",
+    "viscousStress": "symmetric",
+    "turbulenceUpdatesPerIteration": 1,
+    "turbulenceCompletionUpdates": 500,
+    "scalarCorrectionsPerUpdate": 1,
+    "scalarPreconditioner": "ilu0",
+    "cells": 24000
+  },
+  "fullComparison": {
+    "baselineDiagnostics": {
+      "converged": true,
+      "stopped": false,
+      "stopReason": "converged",
+      "maxIterations": 20000,
+      "iterations": 3136,
+      "cells": 24000,
+      "scalarPreconditioner": "ilu0",
+      "solveSeconds": 524.647583292,
+      "performance": {
+        "sstUpdates": 3136,
+        "sstUpdateSeconds": 306.3012422570003,
+        "sstTransportSeconds": 295.8693865570002,
+        "sstGradientSeconds": 7.3141686140000175,
+        "wallDistanceSeconds": 0.006760625,
+        "momentumLinearSeconds": 22.965713779999923,
+        "pressureLinearSeconds": 169.7006365370007,
+        "momentumIterations": 40194,
+        "pressureIterations": 351039,
+        "scalarSolves": {
+          "calls": 10262,
+          "patternBuilds": 10262,
+          "ilu0Builds": 10230,
+          "ilu0Reuses": 0,
+          "linearIterations": 80530,
+          "totalSeconds": 209.49672593700018,
+          "setupSeconds": 44.696880846999996,
+          "linearSeconds": 141.1976929919997,
+          "faceFluxSeconds": 16.406479205000004
+        },
+        "scalarEvaluations": {
+          "calls": 16534,
+          "patternBuilds": 3,
+          "ilu0Builds": 0,
+          "ilu0Reuses": 0,
+          "linearIterations": 0,
+          "totalSeconds": 41.343491197999896,
+          "setupSeconds": 23.190035188999985,
+          "linearSeconds": 0,
+          "faceFluxSeconds": 13.061774517999993
+        },
+        "kSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5099,
+          "ilu0Reuses": 0,
+          "linearIterations": 22153,
+          "totalSeconds": 58.44000005600003,
+          "setupSeconds": 22.39037187499998,
+          "linearSeconds": 25.741181923999985,
+          "faceFluxSeconds": 8.19666330300001
+        },
+        "omegaSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5131,
+          "ilu0Reuses": 0,
+          "linearIterations": 58377,
+          "totalSeconds": 151.0567258809999,
+          "setupSeconds": 22.306508972000024,
+          "linearSeconds": 115.4565110679999,
+          "faceFluxSeconds": 8.209815901999994
+        }
+      }
+    },
+    "baselineFiles": [
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.json",
+        "sha256": "a76c06dd13040044930244ce83acde3ef6047bb8c3cd81913c1f306dfc72706a",
+        "bytes": 2468
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.cells.csv",
+        "sha256": "5b154aa3d0fea6ef7ac0e8fcaf324c485c3b6d03bd54836f994976bfa10338da",
+        "bytes": 12237539
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.faces.csv",
+        "sha256": "ce923e64d1d9d58a1314857e4d922e49a65e05763097a08d7f653270bc1245e7",
+        "bytes": 13198539
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.history.csv",
+        "sha256": "0dcddaa5a0c6e79441bd76a41d3b5b2b617f23733a32897e68c49e38582b099f",
+        "bytes": 916457
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/audit.json",
+        "sha256": "955457b48372e1550811d72b61c4c31d134bcc5c780385f8d815e11fd7236828",
+        "bytes": 90608
+      }
+    ],
+    "fieldDifference": {
+      "u": {
+        "maxAbsoluteDifference": 1.347547629038104e-10,
+        "maxReferenceMagnitude": 1.0013174033747283
+      },
+      "v": {
+        "maxAbsoluteDifference": 6.1332683723436254e-12,
+        "maxReferenceMagnitude": 0.006062536346126347
+      },
+      "p": {
+        "maxAbsoluteDifference": 3.415785601416921e-11,
+        "maxReferenceMagnitude": 0.007969444827921793
+      },
+      "k": {
+        "maxAbsoluteDifference": 1.882162828370504e-12,
+        "maxReferenceMagnitude": 0.005574435763595431
+      },
+      "omega": {
+        "maxAbsoluteDifference": 5.286972736939788e-06,
+        "maxReferenceMagnitude": 1170680.823905931
+      }
+    },
+    "scope": "One earlier IC0 full solve and one new aggregation full solve; same mesh/physics/initial values/tolerances/core numerical code. Not paired repeated full-run timing."
+  },
+  "coreLibraries": [
+    {
+      "path": "build/libcartmesh2d_fv.a",
+      "sha256": "7e8d8cfb22992f48ed60b2e12984ca7b4d800f30fef459b6d358921fc1277f65",
+      "bytes": 434128
+    },
+    {
+      "path": "build/libcartmesh2d.a",
+      "sha256": "b65bc76e3fb3b5ebd33d1118d7d25aa9c2a3437ed5392f5fb161ed17de76a86f",
+      "bytes": 2431032
+    }
+  ],
+  "coreLibrariesIdenticalToBaseline": true,
+  "baselineHashFile": {
+    "path": "outputs/native-flow/sst-normal-refinement/midpoint/hashes-pre-run.sha256",
+    "sha256": "198c83720511da64802da00b8c58ed9dae4ddd0aa187b82b07e5724044e0fb3e",
+    "bytes": 627
+  },
+  "summarizer": {
+    "file": {
+      "path": "outputs/native-flow/sst-pressure-comparison/summarize.py",
+      "sha256": "2a259185aff532e44cb586196155fbaa6ee8ee2aca8db8d98946db2c2eb9c986",
+      "bytes": 6335
+    },
+    "source": "import csv, hashlib, json, platform, statistics\nfrom pathlib import Path\nroot=Path('outputs/native-flow/sst-pressure-comparison')\ndef record(path):\n    p=Path(path)\n    return {'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}\ndef read(path):return json.loads(Path(path).read_text())\nrun_order=['ic0-1','aggregation-1','jacobi-1','jacobi-2','aggregation-2','ic0-2','aggregation-full']\nruns={}\nfor name in run_order:\n    folder=root/name\n    if not (folder/'runtime.json').exists():continue\n    entry={'runtime':read(folder/'runtime.json'),'files':[record(p) for p in sorted(folder.iterdir()) if p.is_file()]}\n    if (folder/'flow.diagnostics.json').exists():entry['diagnostics']=read(folder/'flow.diagnostics.json')\n    if (folder/'audit.json').exists():\n        a=read(folder/'audit.json')\n        entry['audit']={k:v for k,v in a.items() if k!='plateWallSamples'}\n    method=name.rsplit('-',1)[0]\n    command=entry['runtime']['command']\n    assert entry['runtime']['method']==method==command[command.index('--pressure-preconditioner')+1]\n    assert Path(command[1]).resolve()==Path('outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d').resolve()\n    if 'diagnostics' in entry:\n        assert entry['diagnostics']['pressurePreconditioner']==entry['runtime']['method']\n    entry['completedFixed100']=name!='aggregation-full' and entry.get('diagnostics',{}).get('iterations')==100 and entry['diagnostics']['stopReason']=='iteration-limit'\n    runs[name]=entry\nmeans={}\nfor method in ['ic0','aggregation','jacobi']:\n    selected=[e for n,e in runs.items() if n.startswith(method+'-') and e['completedFixed100']]\n    if selected:\n        means[method]={'samples':len(selected),'nativeSeconds':statistics.mean(e['diagnostics']['solveSeconds'] for e in selected),\n                       'pressureSeconds':statistics.mean(e['diagnostics']['performance']['pressureLinearSeconds'] for e in selected),\n                       'pressureIterations':[e['diagnostics']['performance']['pressureIterations'] for e in selected]}\n\ndef field_diff(a,b):\n    with Path(str(a)+'.cells.csv').open() as f:left=list(csv.DictReader(f))\n    with Path(str(b)+'.cells.csv').open() as f:right=list(csv.DictReader(f))\n    assert len(left)==len(right)\n    result={}\n    for key in ['u','v','p','k','omega']:\n        pairs=[(float(x[key]),float(y[key])) for x,y in zip(left,right)]\n        assert all(x['cell']==y['cell'] for x,y in zip(left,right))\n        result[key]={'maxAbsoluteDifference':max(abs(x-y) for x,y in pairs),\n                     'maxReferenceMagnitude':max(abs(x) for x,y in pairs)}\n    return result\ncomparison={}\nfor method in ['aggregation','jacobi']:\n    if runs.get(method+'-1',{}).get('completedFixed100'):\n        comparison[method]=field_diff(root/'ic0-1/flow.unconverged',root/(method+'-1')/'flow.unconverged')\nbaseline=Path('outputs/native-flow/sst-normal-refinement/midpoint')\nstudy={'scope':'SST pressure-preconditioner comparison on one 24000-cell wall-resolved flat plate; fixed work is not convergence or physical accuracy',\n       'baseCommit':'e608d2c','host':platform.platform(),'defaultPressureUnchanged':'ic0',\n       'mesh':record(baseline/'mesh.cm2d'),'binary':record('build/cartmesh2d_sst_rans_probe'),\n       'sourceFiles':[record(p) for p in ['tests/sst_rans_probe.cpp','tools/verification/verify_sst_rans.py','tests/sst_rans_verifier_test.py']],\n       'runOrder':run_order,'runs':runs,'fixedWorkMeans':means,'fixedWorkFieldDifference':comparison,\n       'timingLimitations':'Native solveSeconds used for comparisons; process wall time includes I/O and up to 2s polling delay. Two observations do not establish statistical performance. Sequential local macOS runs only.',\n       'monitor':{'file':record(root/'run_one.py'),'source':(root/'run_one.py').read_text()},\n       'rawRoot':str(root),'thresholdsChanged':False}\nif runs.get('aggregation-full',{}).get('audit',{}).get('valid'):\n    old_meta=read(baseline/'flow.json');new_meta=read(root/'aggregation-full/flow.json')\n    control_keys=['case','flatPlateLeadingEdge','flatPlateTop','model','scope','nu','speed','inletK','inletOmega','initialK','initialOmega','tolerance','scalarRelativeTolerance','scalarAbsoluteTolerance','scalarCellTolerance','convection','viscousStress','turbulenceUpdatesPerIteration','turbulenceCompletionUpdates','scalarCorrectionsPerUpdate','scalarPreconditioner','cells']\n    assert all(old_meta[k]==new_meta[k] for k in control_keys)\n    study['matchingFullRunControls']={k:old_meta[k] for k in control_keys}\n    study['fullComparison']={'baselineDiagnostics':read(baseline/'flow.diagnostics.json'),\n        'baselineFiles':[record(baseline/f) for f in ['flow.json','flow.cells.csv','flow.faces.csv','flow.history.csv','audit.json']],\n        'fieldDifference':field_diff(baseline/'flow',root/'aggregation-full/flow'),\n        'scope':'One earlier IC0 full solve and one new aggregation full solve; same mesh/physics/initial values/tolerances/core numerical code. Not paired repeated full-run timing.'}\nbaseline_hashes={}\nfor line in (baseline/'hashes-pre-run.sha256').read_text().splitlines():\n    digest,path=line.split(None,1);baseline_hashes[path]=digest\nstudy['coreLibraries']=[record(p) for p in ['build/libcartmesh2d_fv.a','build/libcartmesh2d.a']]\nstudy['coreLibrariesIdenticalToBaseline']=all(r['sha256']==baseline_hashes[r['path']] for r in study['coreLibraries'])\nassert study['coreLibrariesIdenticalToBaseline']\nstudy['baselineHashFile']=record(baseline/'hashes-pre-run.sha256')\nstudy['summarizer']={'file':record(root/'summarize.py'),'source':(root/'summarize.py').read_text()}\nstudy['renderer']=record('tools/visualization/render_sst_pressure_comparison.py')\nfor name in ['build.log','ctest.log','frontend.log']:\n    p=root/name\n    if p.exists():study.setdefault('validationLogs',[]).append(record(p))\nif (root/'physical-analysis.json').exists():\n    a=read(root/'physical-analysis.json');study['physicalAnalysisFile']=record(root/'physical-analysis.json');study['physicalComparisons']=a.get('comparisons')\nout=Path('artifacts/current/native-sst-pressure-comparison.json');out.write_text(json.dumps(study,indent=2,allow_nan=False)+'\\n')\nprint(json.dumps({'means':means,'runs':{n:e.get('diagnostics',{}).get('stopReason','no diagnostics') for n,e in runs.items()}},indent=2))\n"
+  },
+  "renderer": {
+    "path": "tools/visualization/render_sst_pressure_comparison.py",
+    "sha256": "2a33bebf409855d54a92116ec047e85563a9ce18324407db16f3085463b01de2",
+    "bytes": 4636
+  },
+  "validationLogs": [
+    {
+      "path": "outputs/native-flow/sst-pressure-comparison/build.log",
+      "sha256": "78868431ab1a41e57aa1f1f1243a0de53df8f01c7c5473e652cd8acc8f57da36",
+      "bytes": 2525
+    },
+    {
+      "path": "outputs/native-flow/sst-pressure-comparison/ctest.log",
+      "sha256": "7ec5a3ab83faf55ec1d549860c66607d1b214d8455c27f8a9ac2bc708a21adfd",
+      "bytes": 20177
+    },
+    {
+      "path": "outputs/native-flow/sst-pressure-comparison/frontend.log",
+      "sha256": "7c2b9e0032310a3f3deda76645d611c47fb2343d357222c57907087961b6c51c",
+      "bytes": 11709
+    }
+  ],
+  "physicalAnalysisFile": {
+    "path": "outputs/native-flow/sst-pressure-comparison/physical-analysis.json",
+    "sha256": "5ab0dc6faf53a6b9cb29e734014d367ac16f2a617f1b8e6033577992d08d2c25",
+    "bytes": 531199
+  },
+  "physicalComparisons": [
+    {
+      "from": "ic0",
+      "to": "aggregation",
+      "stations": [
+        {
+          "x": 0.97008,
+          "CfA": 0.00253722295351665,
+          "CfB": 0.002537222953453011,
+          "signedRelativeCfChange": -2.5082269594634e-11,
+          "profileCommonY": [
+            3.4257934624264215e-06,
+            3.7741911478664935e-06,
+            4.158020317589342e-06,
+            4.580884296562224e-06,
+            5.0467528621063535e-06,
+            5.559999511511937e-06,
+            6.125442519709719e-06,
+            6.74839017244169e-06,
+            7.434690599572508e-06,
+            8.190786676368544e-06,
+            9.023776508148712e-06,
+            9.941480066127007e-06,
+            1.0952512600013063e-05,
+            1.2066365516556114e-05,
+            1.3293495483306797e-05,
+            1.4645422594088252e-05,
+            1.6134838517737702e-05,
+            1.7775725645401157e-05,
+            1.9583488354916373e-05,
+            2.1575097624572396e-05,
+            2.3769250353855935e-05,
+            2.6186544886861335e-05,
+            2.8849674386149115e-05,
+            3.1783639872414905e-05,
+            3.501598492995003e-05,
+            3.8577054281270004e-05,
+            4.250027865836689e-05,
+            4.6822488644909854e-05,
+            5.158426043569277e-05,
+            5.6830296759261495e-05,
+            6.260984653975981e-05,
+            6.897716723771008e-05,
+            7.599203421010777e-05,
+            8.372030187161827e-05,
+            9.223452192496524e-05,
+            0.0001016146244643546,
+            0.00011194866834602182,
+            0.00012333366787025684,
+            0.0001358765035356614,
+            0.00014969492541564976,
+            0.00016491865857672525,
+            0.0001816906209160184,
+            0.00020016826485094375,
+            0.0002205250554565368,
+            0.00024295209892698092,
+            0.0002676599366490531,
+            0.0002948805217299523,
+            0.0003248693965348305,
+            0.0003579080916763883,
+            0.0003943067689778531,
+            0.0004344071332210428,
+            0.00047858564001452354,
+            0.000527257029896802,
+            0.0005808782218521233,
+            0.0006399526027905715,
+            0.0007050347532613911,
+            0.0007767356537637534,
+            0.0008557284205309609,
+            0.0009427546246346702,
+            0.0010386312537318616,
+            0.0011442583818102741,
+            0.00126062761893461,
+            0.0013888314203183557,
+            0.0015300733421132115,
+            0.0016856793401958388,
+            0.0018571102180230188,
+            0.002045975340413689,
+            0.00225404774200054,
+            0.0024832807721868345,
+            0.0027358264328685945,
+            0.0030140555810736006,
+            0.00332058018617633,
+            0.0036582778506358236,
+            0.004030318824453163,
+            0.004440195766955852,
+            0.0048917565353077605,
+            0.005389240307557841,
+            0.005937317379344779,
+            0.0065411330078624765,
+            0.007206355714686387,
+            0.0079392305009195,
+            0.008746637474233208,
+            0.009636156438183793,
+            0.010616138050158678,
+            0.011695782215971265,
+            0.012885224457059974,
+            0.014195631061092647,
+            0.0156393039092342,
+            0.017229795964178993,
+            0.01898203850313025,
+            0.020912481290168795,
+            0.023039247003926462,
+            0.02538230137030523,
+            0.02796364059742062,
+            0.03080749787237699,
+            0.033940570858433154,
+            0.03739227232826365,
+            0.04119500628621942,
+            0.0453844721717789,
+            0.05
+          ],
+          "profileDifferenceOverU": [
+            -5.45032768917153e-13,
+            -6.003739172477651e-13,
+            -6.61342508534446e-13,
+            -7.285144709712199e-13,
+            -8.025108355624866e-13,
+            -8.840428389333965e-13,
+            -9.738529427316678e-13,
+            -1.0728085086952888e-12,
+            -1.1818254708195752e-12,
+            -1.3019238465084015e-12,
+            -1.4342416143620085e-12,
+            -1.5800138974952915e-12,
+            -1.7406076580073204e-12,
+            -1.9152457397808575e-12,
+            -2.1028179197912777e-12,
+            -2.3094859358252506e-12,
+            -2.5371788003880624e-12,
+            -2.7880198150143087e-12,
+            -3.06435432584351e-12,
+            -3.3688052347713437e-12,
+            -3.688077621077923e-12,
+            -3.9695746689716316e-12,
+            -4.279632204173822e-12,
+            -4.621247828850983e-12,
+            -4.997613434198911e-12,
+            -5.412226222745176e-12,
+            -5.707767591900392e-12,
+            -5.9577898170459775e-12,
+            -6.23329166060671e-12,
+            -6.529166096669314e-12,
+            -6.800726648492628e-12,
+            -7.099931753629107e-12,
+            -7.366773857597764e-12,
+            -7.65304486449736e-12,
+            -7.943201651983145e-12,
+            -8.252620808946176e-12,
+            -8.528899808624146e-12,
+            -8.796852135617428e-12,
+            -9.046985383065476e-12,
+            -9.291734048844091e-12,
+            -9.49818002027314e-12,
+            -9.687417534820497e-12,
+            -9.875211759435842e-12,
+            -1.0071388167887108e-11,
+            -1.0223266677655829e-11,
+            -1.0370149183813737e-11,
+            -1.0499046076972718e-11,
+            -1.0635270442094225e-11,
+            -1.0719869436570661e-11,
+            -1.0807577055516049e-11,
+            -1.0866085808913795e-11,
+            -1.0915712778114539e-11,
+            -1.0932810212693767e-11,
+            -1.092370638389184e-11,
+            -1.0877632128369896e-11,
+            -1.0826672891539602e-11,
+            -1.0770495606493569e-11,
+            -1.0658807170216278e-11,
+            -1.0523693028119396e-11,
+            -1.0393574889633328e-11,
+            -1.0238365710790731e-11,
+            -1.0016432128168162e-11,
+            -9.787948229700305e-12,
+            -9.560574554257073e-12,
+            -9.291789559995323e-12,
+            -8.983258581451992e-12,
+            -8.667400130946135e-12,
+            -8.325340417059124e-12,
+            -7.968181670037211e-12,
+            -7.582268146677507e-12,
+            -7.1812555901829e-12,
+            -6.8020034049709466e-12,
+            -6.4641625385775114e-12,
+            -6.0464966367135276e-12,
+            -5.5642157548163595e-12,
+            -5.114908496750559e-12,
+            -4.645617224241505e-12,
+            -4.242273199395186e-12,
+            -4.11404244005098e-12,
+            -4.658384789024694e-12,
+            -5.77959902159364e-12,
+            -7.44471151392645e-12,
+            -9.027667502436998e-12,
+            -1.0679679363079231e-11,
+            -9.538592138369495e-12,
+            -8.308242982479896e-12,
+            -7.055578343795332e-12,
+            -5.681011217006926e-12,
+            -4.1737724387758135e-12,
+            -3.0739855105821334e-12,
+            -2.164046719599355e-12,
+            -1.8061108164602047e-12,
+            -1.5050183321818622e-12,
+            -1.3162804179955856e-12,
+            -8.857359290459499e-13,
+            2.930988785010413e-14,
+            5.904166044956582e-13,
+            8.364420267525929e-13,
+            1.1668443988810395e-12,
+            1.5443202272535927e-12
+          ],
+          "maxAbsoluteVelocityChangeOverU": 1.0932810212693767e-11
+        },
+        {
+          "x": 1.90334,
+          "CfA": 0.0023102447203672436,
+          "CfB": 0.0023102447201529507,
+          "signedRelativeCfChange": -9.275769041749982e-11,
+          "profileCommonY": [
+            3.4257934624264215e-06,
+            3.7741911478664935e-06,
+            4.158020317589342e-06,
+            4.580884296562224e-06,
+            5.0467528621063535e-06,
+            5.559999511511937e-06,
+            6.125442519709719e-06,
+            6.74839017244169e-06,
+            7.434690599572508e-06,
+            8.190786676368544e-06,
+            9.023776508148712e-06,
+            9.941480066127007e-06,
+            1.0952512600013063e-05,
+            1.2066365516556114e-05,
+            1.3293495483306797e-05,
+            1.4645422594088252e-05,
+            1.6134838517737702e-05,
+            1.7775725645401157e-05,
+            1.9583488354916373e-05,
+            2.1575097624572396e-05,
+            2.3769250353855935e-05,
+            2.6186544886861335e-05,
+            2.8849674386149115e-05,
+            3.1783639872414905e-05,
+            3.501598492995003e-05,
+            3.8577054281270004e-05,
+            4.250027865836689e-05,
+            4.6822488644909854e-05,
+            5.158426043569277e-05,
+            5.6830296759261495e-05,
+            6.260984653975981e-05,
+            6.897716723771008e-05,
+            7.599203421010777e-05,
+            8.372030187161827e-05,
+            9.223452192496524e-05,
+            0.0001016146244643546,
+            0.00011194866834602182,
+            0.00012333366787025684,
+            0.0001358765035356614,
+            0.00014969492541564976,
+            0.00016491865857672525,
+            0.0001816906209160184,
+            0.00020016826485094375,
+            0.0002205250554565368,
+            0.00024295209892698092,
+            0.0002676599366490531,
+            0.0002948805217299523,
+            0.0003248693965348305,
+            0.0003579080916763883,
+            0.0003943067689778531,
+            0.0004344071332210428,
+            0.00047858564001452354,
+            0.000527257029896802,
+            0.0005808782218521233,
+            0.0006399526027905715,
+            0.0007050347532613911,
+            0.0007767356537637534,
+            0.0008557284205309609,
+            0.0009427546246346702,
+            0.0010386312537318616,
+            0.0011442583818102741,
+            0.00126062761893461,
+            0.0013888314203183557,
+            0.0015300733421132115,
+            0.0016856793401958388,
+            0.0018571102180230188,
+            0.002045975340413689,
+            0.00225404774200054,
+            0.0024832807721868345,
+            0.0027358264328685945,
+            0.0030140555810736006,
+            0.00332058018617633,
+            0.0036582778506358236,
+            0.004030318824453163,
+            0.004440195766955852,
+            0.0048917565353077605,
+            0.005389240307557841,
+            0.005937317379344779,
+            0.0065411330078624765,
+            0.007206355714686387,
+            0.0079392305009195,
+            0.008746637474233208,
+            0.009636156438183793,
+            0.010616138050158678,
+            0.011695782215971265,
+            0.012885224457059974,
+            0.014195631061092647,
+            0.0156393039092342,
+            0.017229795964178993,
+            0.01898203850313025,
+            0.020912481290168795,
+            0.023039247003926462,
+            0.02538230137030523,
+            0.02796364059742062,
+            0.03080749787237699,
+            0.033940570858433154,
+            0.03739227232826365,
+            0.04119500628621942,
+            0.0453844721717789,
+            0.05
+          ],
+          "profileDifferenceOverU": [
+            -1.8353096820078463e-12,
+            -2.0211783635648572e-12,
+            -2.2259485921161115e-12,
+            -2.4515389718260394e-12,
+            -2.7000762736761885e-12,
+            -2.9738919660182717e-12,
+            -3.2755465007028306e-12,
+            -3.6078848242304673e-12,
+            -3.974015561070132e-12,
+            -4.377394280385971e-12,
+            -4.821781862673902e-12,
+            -5.31136246095798e-12,
+            -5.850750439684305e-12,
+            -6.439515587430833e-12,
+            -7.0766587034754025e-12,
+            -7.778611088582466e-12,
+            -8.551936936385118e-12,
+            -9.403935963270271e-12,
+            -1.0342546263863994e-11,
+            -1.1376649622363288e-11,
+            -1.2465029008978945e-11,
+            -1.3442219559678392e-11,
+            -1.4518775071081791e-11,
+            -1.570485408386446e-11,
+            -1.7011503317121424e-11,
+            -1.845110175757725e-11,
+            -1.947683681002843e-11,
+            -2.0344392837046144e-11,
+            -2.130018383894594e-11,
+            -2.2312762748555315e-11,
+            -2.313910174578382e-11,
+            -2.4049484625976447e-11,
+            -2.4855728586459236e-11,
+            -2.5719815166524995e-11,
+            -2.650785146940393e-11,
+            -2.730971004893945e-11,
+            -2.805722321141957e-11,
+            -2.880407024008491e-11,
+            -2.949329669377221e-11,
+            -3.016109584308424e-11,
+            -3.077271770735024e-11,
+            -3.137162751798428e-11,
+            -3.194056130695344e-11,
+            -3.252081937077378e-11,
+            -3.304373441537223e-11,
+            -3.358280320497897e-11,
+            -3.406852577825248e-11,
+            -3.458489050700564e-11,
+            -3.501443579523311e-11,
+            -3.547284688210084e-11,
+            -3.5872527170965895e-11,
+            -3.62770924411393e-11,
+            -3.663347403204398e-11,
+            -3.697553374593099e-11,
+            -3.728750641585066e-11,
+            -3.756517319430941e-11,
+            -3.7831959787126834e-11,
+            -3.803712900207756e-11,
+            -3.824007777097904e-11,
+            -3.8377967470637486e-11,
+            -3.851063912208019e-11,
+            -3.857536512441584e-11,
+            -3.861699848783928e-11,
+            -3.861855280007376e-11,
+            -3.8565928228706525e-11,
+            -3.847078211549615e-11,
+            -3.8323233475523466e-11,
+            -3.814992766137948e-11,
+            -3.789035751822212e-11,
+            -3.75948161490669e-11,
+            -3.723921171427946e-11,
+            -3.6819658433273617e-11,
+            -3.632161238442677e-11,
+            -3.5772718121052094e-11,
+            -3.5167757594933846e-11,
+            -3.446520846495105e-11,
+            -3.36881633700159e-11,
+            -3.284605920583772e-11,
+            -3.191302777594274e-11,
+            -3.0872748801868966e-11,
+            -2.969580137346384e-11,
+            -2.83737477957402e-11,
+            -2.67699196143667e-11,
+            -2.4957258482061206e-11,
+            -2.3107071811523383e-11,
+            -2.117617192709531e-11,
+            -1.946287575549377e-11,
+            -1.7710166666518035e-11,
+            -1.595168441781425e-11,
+            -1.4229728506620631e-11,
+            -1.244848668591203e-11,
+            -8.814726726313893e-12,
+            -4.872990899684737e-12,
+            -2.76711986657574e-12,
+            -1.1577405700791132e-12,
+            -7.915890165577366e-13,
+            -4.076738946423575e-13,
+            -6.661338147750939e-16,
+            3.5149660959632456e-13,
+            7.118750033896504e-13
+          ],
+          "maxAbsoluteVelocityChangeOverU": 3.861855280007376e-11
+        }
+      ],
+      "signedRelativeCdChange": -5.0589421540792046e-11,
+      "interpretation": "Sensitivity observation, not a convergence order or error estimate"
+    }
+  ]
+}

@@ -118,6 +118,8 @@ def read_artifacts(mesh_path, prefix, *, diagnostic=False):
     req(meta.get('tolerance')==1e-7, 'changed SST-RANS stopping tolerance')
     req(meta.get('scalarPreconditioner','jacobi') in ('jacobi','ilu0'),
         'unsupported scalar preconditioner declaration')
+    req(meta.get('pressurePreconditioner','ic0') in ('jacobi','ic0','aggregation'),
+        'unsupported pressure preconditioner declaration')
     if meta['case']=='flatplate':
         req(type(meta.get('flatPlateLeadingEdge')) in (int,float) and math.isfinite(meta['flatPlateLeadingEdge']) and
             meta.get('flatPlateTop') in ('pressure-farfield','symmetry'), 'changed flat plate probe configuration')
@@ -446,6 +448,7 @@ def audit(mesh_path, prefix, *, diagnostic=False):
             "bounds":list(m.bounds),
             "plateReynolds":speed*(m.bounds[2]-meta['flatPlateLeadingEdge'])/nu if case=='flatplate' else None,
             "scalarCorrectionsPerUpdate":meta.get('scalarCorrectionsPerUpdate',0),
+            "pressurePreconditioner":meta.get('pressurePreconditioner','ic0'),
             "scalarPreconditioner":meta.get('scalarPreconditioner','jacobi'),
             "flatPlateTop":meta.get('flatPlateTop'),"boundarySummary":boundary_summary,
             "plateWallSamples":wall_samples,"wallSampleScope":"Current discrete wall traction and owner-centre y+; not an accuracy qualification",

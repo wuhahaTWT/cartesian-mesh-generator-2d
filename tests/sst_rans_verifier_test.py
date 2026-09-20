@@ -196,6 +196,27 @@ def main(args):
         run([args.probe,plate_mesh,ilu,'flatplate-sweep','--scalar-preconditioner','ilu0','--turbulence-updates','2'])
         assert verifier.audit(plate_mesh,ilu)['scalarPreconditioner']=='ilu0'
         reject_json(plate_mesh,ilu,lambda data:data.__setitem__('scalarPreconditioner','invalid'))
+        # Same equations and stopping gates must hold for every pressure solver.
+        pressure_fields=[]
+        for method in ('ic0','jacobi','aggregation'):
+            pressure_prefix=root/('pressure-'+method)
+            run([args.probe,plate_mesh,pressure_prefix,'flatplate-sweep',
+                 '--scalar-preconditioner','ilu0','--pressure-preconditioner',method,'--turbulence-updates','2'])
+            assert verifier.audit(plate_mesh,pressure_prefix)['pressurePreconditioner']==method
+            with Path(str(pressure_prefix)+'.cells.csv').open() as stream:
+                pressure_fields.append(list(csv.DictReader(stream)))
+            reject_json(plate_mesh,pressure_prefix,lambda data:data.__setitem__('pressurePreconditioner','invalid'))
+        for other in pressure_fields[1:]:
+            for a,b in zip(pressure_fields[0],other):
+                for key in ('u','v','p','k','omega'):
+                    assert abs(float(a[key])-float(b[key]))<1e-5*max(1,abs(float(a[key]))),(key,a[key],b[key])
+        assert verifier.audit(plate_mesh,ilu)['pressurePreconditioner']=='ic0'
+        # Older evidence omitted the field and used the unchanged IC0 default.
+        old_meta=Path(str(ilu)+'.json');saved=old_meta.read_bytes()
+        try:
+            data=json.loads(saved);data.pop('pressurePreconditioner');old_meta.write_text(json.dumps(data))
+            assert verifier.audit(plate_mesh,ilu)['pressurePreconditioner']=='ic0'
+        finally:old_meta.write_bytes(saved)
         seeded=root/'seeded'
         run([args.probe,plate_mesh,seeded,'flatplate-sweep','--scalar-preconditioner','ilu0',
              '--initial-k','.004','--initial-omega','3','--completion-updates','100'])
@@ -270,7 +291,9 @@ def main(args):
         assert rerun.returncode!=0 and b'fresh output prefix' in rerun.stderr
         assert Path(str(ilu)+'.json').read_bytes()==previous
         for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','20001'],
-                        ['--scalar-preconditioner','ic0'],['--turbulence-updates','0'],
+                        ['--scalar-preconditioner','ic0'],['--pressure-preconditioner','ilu0'],
+                        ['--pressure-preconditioner','ic0','--pressure-preconditioner','jacobi'],
+                        ['--pressure-preconditioner'],['--turbulence-updates','0'],
                         ['--turbulence-updates','501'],['--turbulence-updates','1.5'],
                         ['--initial-k','.1'],['--initial-omega','2'],
                         ['--initial-k','-1','--initial-omega','2'],
