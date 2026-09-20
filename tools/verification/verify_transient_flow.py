@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import verify_native_flow as native  # noqa: E402
+import verify_flow_initialization as initialization
 
 
 def fail(message: str) -> None:
@@ -234,6 +235,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     if fields & required != required:
         fail("transient cell schema is missing previous/temporal columns")
     cells_list = native.read_cells(cells_path, mesh, measured, summary.get("case", "taylor-green"))
+    initial_audit = initialization.audit(prefix,mesh,measured,summary,history,cells_list)
     cells = {i: row for i, row in enumerate(cells_list)}
     for i, vals in cells.items():
         if not native.close(vals["temporalX"], vals["area"]*(vals["u"]-vals["previousU"])/dt, 1e-12, 1e-9):
@@ -331,7 +333,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
               "sha256": {str(path): native.sha256_file(path) for path in (mesh_path, cells_path, faces_path, summary_path, history_path, residual_path,
                         *((Path(str(prefix)+'.boundaries'),) if case == 'custom' else ()))},
               "controls": {k: summary[k] for k in ("nu", "speed", "tolerance", "convection", "viscousStress", "temporalFaceInterpolation", "velocityRelaxation")}, "case": case, "time": final_time,
-              "dt": dt, "history": history, "adaptiveTimeControl":adaptive_audit, "independentContinuity": cont,
+              "dt": dt, "history": history, "initialVortex":initial_audit, "adaptiveTimeControl":adaptive_audit, "independentContinuity": cont,
               "temporalIntegral": {"maxAbsX": max(abs(c["temporalX"]) for c in cells.values()),
                                     "maxAbsY": max(abs(c["temporalY"]) for c in cells.values())},
               "analyticErrors": errors, "analyticDecay": decay, "kineticEnergy": energy,

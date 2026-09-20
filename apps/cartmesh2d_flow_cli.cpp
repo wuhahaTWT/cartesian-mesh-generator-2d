@@ -3,6 +3,7 @@
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowTimeStep2D.hpp"
+#include "cartmesh2d/fv/FlowInitialization2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
@@ -87,6 +88,8 @@ int main(int argc, char** argv) {
         double startTime=0;
         std::size_t attemptCount=0,rejectedSteps=0;
         std::string restart;
+        fv::FlowInitialVortex2D initialVortex;
+        unsigned vortexOptions=0;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--profile") {
@@ -109,6 +112,8 @@ int main(int argc, char** argv) {
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
+            "--initial-vortex-x X --initial-vortex-y Y --initial-vortex-radius R --initial-vortex-speed V:\n"
+            "optional compact interior vortex at t=0, signed peak speed (positive CCW); all four required, no restart.\n"
             "Fixed-step mode reports CFL. Adaptive mode retries unaccepted steps without advancing the saved state.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
@@ -175,6 +180,16 @@ int main(int argc, char** argv) {
                 else adaptiveControls.maximumAcceptedSteps=static_cast<std::size_t>(n);
             } else if (a == "--restart") {
                 restart=v;
+            } else if (a == "--initial-vortex-x" || a == "--initial-vortex-y" ||
+                       a == "--initial-vortex-radius" || a == "--initial-vortex-speed") {
+                const unsigned bit=a=="--initial-vortex-x"?1:a=="--initial-vortex-y"?2:a=="--initial-vortex-radius"?4:8;
+                if (vortexOptions&bit) throw std::invalid_argument("duplicate initial vortex option");
+                vortexOptions|=bit;
+                const double value=number(v);
+                if (bit==1) initialVortex.centre.x=value;
+                else if (bit==2) initialVortex.centre.y=value;
+                else if (bit==4) initialVortex.radius=value;
+                else initialVortex.peakSpeed=value;
             } else if (a == "--manufactured-pressure-slope") {
                 controls.manufacturedPressureSlope = number(v);
             } else if (a == "--viscous-stress") {
@@ -225,6 +240,13 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
         if (explicitVelocityRelaxation && timeStep==0)
             throw std::invalid_argument("velocity-relaxation option requires transient flow");
+        if (vortexOptions) {
+            if (vortexOptions!=15 || timeStep==0 || !restart.empty() || !boundaryExportPath.empty() ||
+                (controls.scenario!="external" && controls.scenario!="channel" && controls.scenario!="duct" &&
+                 controls.scenario!="custom" && controls.scenario!="cavity"))
+                throw std::invalid_argument("initial vortex requires all four options and a fresh physical transient case, without restart/template export");
+            fv::validateFlowInitialVortex2D(initialVortex);
+        }
 
         const auto readStart = std::chrono::steady_clock::now();
         const auto read = readCm2dTopology(path);
@@ -281,6 +303,7 @@ int main(int argc, char** argv) {
                 if (!input) throw std::runtime_error("cannot open restart checkpoint");
                 state=fv::readFlowCheckpoint2D(input,mesh,controls);
             }
+            if (vortexOptions) state=fv::withInitialVortex2D(mesh,state,initialVortex);
             startTime=state.time;
             if (adaptive && !(adaptiveControls.targetTime>startTime))
                 throw std::invalid_argument("end-time must be after the accepted restart time");
@@ -296,6 +319,10 @@ int main(int argc, char** argv) {
             { auto pending=out(prefix,".json");
               pending << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"running\",\"converged\":false}\n"; }
             transientOutputStarted=true;
+            if (vortexOptions) {
+                auto initial=out(prefix,".initial.checkpoint");
+                fv::writeFlowCheckpoint2D(initial,mesh,controls,state);
+            } else std::filesystem::remove(prefix+".initial.checkpoint");
             saveAccepted(); // even a failed first step retains the valid initial/restart state
             auto times=out(prefix,".time-history.csv");
             times << "step,time,dt,accepted,innerIterations,momentumResidual,continuity,maxCourant,kineticEnergy,forceX,forceY\n";
@@ -455,6 +482,9 @@ int main(int argc, char** argv) {
         const bool counterflowCase=controls.scenario == "counterflow";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        if (vortexOptions) summary << "\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
+            << initialVortex.centre.x << ',' << initialVortex.centre.y << "],\"radius\":" << initialVortex.radius
+            << ",\"peakSpeed\":" << initialVortex.peakSpeed << ",\"checkpointSuffix\":\".initial.checkpoint\"},\n";
         if (custom) {
             summary << "\"boundaryFileSuffix\":\".boundaries\",\n\"referenceSpeedRole\":\"normalization-only\",\n\"boundaryConditions\":[";
             bool comma = false;

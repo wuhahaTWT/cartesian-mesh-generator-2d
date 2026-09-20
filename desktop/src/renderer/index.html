@@ -208,6 +208,19 @@
           <label class="field">本次接受步数上限<input id="flowMaxSteps" type="number" min="1" max="1000000" step="1" value="100000"><span class="note">达到上限后保存状态并停止，可继续。</span></label>
         </div>
         <p class="note" id="flowTimeHint">一阶时间格式；从静止启动。减小时间步通常更准确，也更慢。</p>
+        <details id="flowInitialSettings" hidden>
+          <summary>初始局部涡扰动</summary>
+          <label class="toggle"><input id="flowInitialVortex" type="checkbox">从静止场叠加局部涡</label>
+          <div class="pair">
+            <label class="field">中心 X<input id="flowVortexX" type="number" step="any" value="3"><span class="note">米</span></label>
+            <label class="field">中心 Y<input id="flowVortexY" type="number" step="any" value="0"><span class="note">米</span></label>
+          </div>
+          <div class="pair">
+            <label class="field">支撑半径<input id="flowVortexRadius" type="number" min="0.000000000001" step="any" value="1"><span class="note">米；整个圆盘须在流体内</span></label>
+            <label class="field">峰值速度<input id="flowVortexSpeed" type="number" step="any" value="0.01"><span class="note">米/秒；正值逆时针</span></label>
+          </div>
+          <p class="note">只在零时刻施加一次，支撑圆盘内平滑衰减到零；不改变入口或壁面。续算沿用已保存状态。</p>
+        </details>
         <div id="flowRestartSettings" hidden>
         <button id="pickFlowCheckpoint" class="wide">打开重启文件…</button>
         <label class="toggle"><input id="flowResume" type="checkbox" disabled>从已保存状态继续</label>

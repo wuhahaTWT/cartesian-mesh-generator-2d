@@ -1,0 +1,30 @@
+{
+  "valid": true,
+  "scope": "Initial state and short transient response only; not shedding qualification",
+  "initial": {
+    "valid": true,
+    "definition": {
+      "definition": "compact-cubic-v1",
+      "centre": [
+        3,
+        0
+      ],
+      "radius": 1,
+      "peakSpeed": 0.01,
+      "checkpointSuffix": ".initial.checkpoint"
+    },
+    "checkpointSha256": "706822a641ced963488165c265a999163d770a23be0b9e7731591a41c3139166",
+    "minimumBoundaryClearance": 1.9302331465395572,
+    "maximumCellFluxImbalance": 4.336808689942018e-19,
+    "sampledPeakSpeed": 0.009919201609837164
+  },
+  "time": 5.0,
+  "cells": 5168,
+  "finalForceY": -6.67701956965621e-05,
+  "maxAbsoluteForceY": 0.0001471037648327388,
+  "meshSha256": "9f263306e43a6e358a82cd44f99b4474a5f99903e1cf0b6f623d701fa05d2955",
+  "auditSha256": "346f0a35d040cfee4652d1e8e5d98ebb835e9d30080dc5a58d505976197f79c2",
+  "sourceSha256": "c539039c071c8f7e3beab08f75b01c6aaa06c245ae371f619c831657091f2d5c",
+  "unperturbedFinalForceY": -2.066229132235975e-14,
+  "baselineAuditSha256": "fdcd0f1caf24cde91a22e825173bb00fd492e72af05ad8d1ac02d7165215f9a8"
+}

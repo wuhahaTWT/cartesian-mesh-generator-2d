@@ -658,6 +658,16 @@ python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --ca
 
 当前涡衰减的真实场与误差图：`python3 tools/visualization/render_time_accuracy.py --root outputs/native-flow/current-time-accuracy --output outputs/native-flow/current-time-accuracy/reproduced --binary-snapshot outputs/native-flow/binaries/flow-0.4.18`。脚本重新独立审核两个四档序列、加严容差和自动CFL对照，输入缺失或被篡改会失败；图中的自收敛阶不替代通用工程精度验收。
 
+### 显式初始局部涡
+
+0.4.20的`FlowInitialization2D.hpp`给新的物理非定常工况增加一次性初始条件：`--initial-vortex-x X --initial-vortex-y Y --initial-vortex-radius R --initial-vortex-speed V`四项必须齐全；V是带符号峰值速度，正值逆时针，R和中心坐标使用米。不能与稳态、解析制造解、边界模板或`--restart`一起使用。支撑圆盘必须严格位于流体域内且远离所有固体壁面、入口和出口；通过有向边界绕数及点到线段距离检查，包括孔洞。非零扰动若在单元中心或面端点上完全无法解析，会明确失败。
+
+定义`s=1-|x-centre|²/R²`，圆盘内`psi=V*R*(25*sqrt(5)/96)*s³`，盘外为零；`u=dpsi/dy,v=-dpsi/dx`，速度峰值在`r/R=1/sqrt(5)`。真实共享面通量增加`psi(b)-psi(a)`，a/b沿owner多边形方向，因此每个封闭单元初始通量望远镜相消。边界通量、初始压力及后续方程不变，不是重复的源项或持续外力；当前仅支持流动，温度联合初始化后置。
+
+摘要`initialVortex`记录定义与全部参数，`.initial.checkpoint`保存真正t=0的网格绑定U/V/P/FLUX，`.checkpoint`仍是最后接受状态。续算只读取状态，不再施加扰动；原v2/v4格式无需升级。App同步提供可折叠设置、续算锁定、独立初始文件和导出说明。`verify_flow_initialization.py`从CM2D重建有向端点、几何、解析速度/流函数和局部守恒，核对完整初始checkpoint；单步结果同时核对previousU/V与初始状态。多步审核不声称重建所有中间场。
+
+`tests/flow_initialization_test.cpp`核对峰值定义、微分关系、散度、旋转协变与非法输入；CLI回归含连续与1+1续算逐字节一致、反向涡、圆环固体孔/穿壁/未解析拒绝和篡改检查点拒绝。实际计算证据见CURRENT_STATE。
+
 ### 固定网格的时间步比较
 
 `tools/verification/compare_transient_steps.py` 从 `run_transient_flow.py` 的 `runs.json` 重新读取最终场与时间历史，不信任旧 PASS。构建路径上的程序更新后，可用`--binary-snapshot`指向保存的旧可执行文件；必须与原runs.json的SHA256相同，原执行命令保留，不重写为新命令。至少三档严格减半的时间步，要求同一网格、二进制、工况、物性、格式、容差及终止时间；逐项核对命令与独立读回，并要求从 t=0 开始。本入口暂不比较重启序列。按相同 cell id、实际面积计算相邻时间步速度差和观测阶；负阶也照实报告，`valid` 仅表示比较输入一致且离散审核通过，不是工程精度合格。

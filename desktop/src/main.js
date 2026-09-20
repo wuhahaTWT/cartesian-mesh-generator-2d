@@ -343,6 +343,7 @@ app.whenReady().then(async () => {
         cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv` };
       if (transient) Object.assign(outputFiles, { checkpoint: `${pendingPrefix}.checkpoint`, timeHistory: `${pendingPrefix}.time-history.csv` });
       if (adaptive) outputFiles.attemptHistory=`${pendingPrefix}.attempt-history.csv`;
+      if (invocation.request.initialVortex) outputFiles.initialCheckpoint=`${pendingPrefix}.initial.checkpoint`;
       if (boundaryDefinition) outputFiles.boundaries=`${pendingPrefix}.boundaries`;
       const [summary, fields] = await Promise.all([readJson(outputFiles.summary), readJson(outputFiles.fields),
         ...Object.values(outputFiles).map(file => fs.stat(file))]);
@@ -358,6 +359,11 @@ app.whenReady().then(async () => {
         history = validateTimeHistory(await fs.readFile(outputFiles.timeHistory, 'utf8'), validated.summary, startTime);
         if (adaptive) attempts=validateAttemptHistory(await fs.readFile(outputFiles.attemptHistory,'utf8'),validated.summary,history);
         checkpointMetadata = await readCheckpointMetadata(outputFiles.checkpoint);
+        if (outputFiles.initialCheckpoint) {
+          const initial=await readCheckpointMetadata(outputFiles.initialCheckpoint);
+          if (initial.time!==0 || ['case','nu','speed','convection','outletBackflow'].some(k=>initial[k]!==checkpointMetadata[k]))
+            throw new Error('初始局部涡检查点的时间或物性与结果不一致。');
+        }
         if (Math.abs(checkpointMetadata.time-summary.acceptedTime) > 1e-12+1e-9*Math.abs(summary.acceptedTime))
           throw new Error('重启状态时间与摘要不一致。');
         if (!validated.summary.converged)
@@ -365,7 +371,7 @@ app.whenReady().then(async () => {
       }
       operation.signal.throwIfAborted();
       // Preserve the earlier complete result even if copying the new set fails.
-      const allSuffixes = flowOutputSuffixes({ mode: 'adaptive', case:'custom' });
+      const allSuffixes = flowOutputSuffixes({ mode: 'adaptive', case:'custom', initialVortex:true });
       for (const suffix of allSuffixes) {
         const destination = `${currentResult.prefix}.flow${suffix}`;
         const backup = path.join(incompleteDirectory, `previous${suffix}`);
@@ -389,7 +395,7 @@ app.whenReady().then(async () => {
       return payload;
     } catch (error) {
       if (commitStarted) {
-        for (const suffix of flowOutputSuffixes({ mode: 'adaptive', case:'custom' }))
+        for (const suffix of flowOutputSuffixes({ mode: 'adaptive', case:'custom', initialVortex:true }))
           await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }).catch(() => {});
       }
       const restored = await Promise.allSettled(backups.map(entry => fs.copyFile(entry.backup, entry.destination)));
@@ -835,7 +841,23 @@ async function runSmoke() {
         document.getElementById('flowEndTime').value=${JSON.stringify(argument('flow-end-time') || '1')};
         document.getElementById('flowMaxCourant').value=${JSON.stringify(argument('flow-max-courant') || '1')};
       }
+      if (${JSON.stringify(argument('flow-vortex-speed')!==null)}) {
+        document.getElementById('flowInitialSettings').open=true;
+        document.getElementById('flowInitialVortex').checked=true;
+        document.getElementById('flowInitialVortex').dispatchEvent(new Event('change'));
+        for(const [id,value] of Object.entries({flowVortexX:${JSON.stringify(argument('flow-vortex-x') || '3')},
+          flowVortexY:${JSON.stringify(argument('flow-vortex-y') || '0')},flowVortexRadius:${JSON.stringify(argument('flow-vortex-radius') || '1')},
+          flowVortexSpeed:${JSON.stringify(argument('flow-vortex-speed') || '.01')}}))document.getElementById(id).value=value;
+        if(document.getElementById('flowVortexRadius').disabled)throw new Error('Initial vortex controls are disabled for fresh transient run');
+      }
       await smoke.runFlow();
+      if (${JSON.stringify(argument('flow-vortex-speed')!==null)}) {
+        if(!smoke.state.flow?.summary.initialVortex || !smoke.state.flow.files.initialCheckpoint)
+          throw new Error('Initial vortex summary/checkpoint missing from real App result');
+        if(!document.getElementById('flowInitialVortex').disabled || !document.getElementById('flowVortexRadius').disabled)
+          throw new Error('Resume would allow duplicate vortex initialization');
+        smoke.state.initialVortexSmoke=smoke.state.flow.summary.initialVortex;
+      }
       if (${JSON.stringify(Boolean(argument('flow-end-time')))}) {
         if (!smoke.state.flow || smoke.state.flow.summary.timeStepControl!=='adaptive-cfl-retry') throw new Error('Missing adaptive App result');
         const initial=smoke.state.flow.summary;
@@ -1006,6 +1028,7 @@ async function runSmoke() {
       cellBudget: smoke.state.cellBudget,
       raster: smoke.state.rasterEvidence,
       adaptive: smoke.state.adaptiveSmoke || null,
+      initialVortex: smoke.state.initialVortexSmoke || null,
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
@@ -1143,6 +1166,9 @@ async function runSmoke() {
         await new Promise(resolve=>setTimeout(resolve,200));
         await mainWindow.webContents.executeJavaScript("document.getElementById('flowMode').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
         await new Promise(resolve=>setTimeout(resolve,200));
+      }
+      if (argument('flow-initial-shot')) {
+        await mainWindow.webContents.executeJavaScript("document.getElementById('flowInitialSettings').open=true; document.getElementById('flowInitialSettings').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
       }
       if (argument('flow-load-shot')) {
         mainWindow.setSize(1320,900);

@@ -916,6 +916,10 @@ function updateFlowMode() {
   $('flowResume').disabled = state.busy || !restart || !transient;
   const resuming = transient && $('flowResume').checked && restart;
   const thermalResuming = $('thermalResume').checked && state.thermalRestart;
+  $('flowInitialSettings').hidden=!transient;
+  $('flowInitialVortex').disabled=Boolean(state.busy||!transient||resuming||thermalResuming);
+  for(const id of ['flowVortexX','flowVortexY','flowVortexRadius','flowVortexSpeed'])
+    $(id).disabled=Boolean(state.busy||!transient||resuming||thermalResuming||!$('flowInitialVortex').checked);
   for (const id of ['flowCase','flowNu','flowSpeed','flowConvection','flowOutletBackflow']) {
     const element=$(id); if (element) element.disabled = state.busy || Boolean(resuming || thermalResuming);
   }
@@ -933,7 +937,7 @@ function updateFlowMode() {
     : Number.isFinite(dt*steps) && dt > 0 && steps > 0
     ? `本次 ${start.toPrecision(5)} → ${(start+dt*steps).toPrecision(5)} s。一阶时间格式；时间步越小通常越准确，也更慢。`
     : '请填写正的时间步长和整数步数。';
-  if (!state.busy) $('runFlow').textContent = transient ? (resuming ? '继续计算' : '从静止开始计算') : '启动层流求解';
+  if (!state.busy) $('runFlow').textContent = transient ? (resuming ? '继续计算' : $('flowInitialVortex').checked?'从初始局部涡开始计算':'从静止开始计算') : '启动层流求解';
   updateThermalMode();
 }
 function applySharedFlowControls(request) {
@@ -1033,14 +1037,15 @@ function updateThermalMode() {
   $('pickThermalCheckpoint').disabled=state.busy||!state.result;
   for (const input of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
     input.disabled = Boolean(state.busy || resuming);
-  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || $('flowMode').value==='adaptive');
+  const vortex=$('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
+  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || $('flowMode').value==='adaptive' || vortex);
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
   $('thermalRestartInfo').textContent = restart
     ? `联合续算状态：t=${Number(restart.time).toPrecision(6)} s。物性、源项与边界锁定；可调整时间步和迭代控制。`
     : '每个流动与温度均收敛的时间步保存联合状态；取消后可续算。';
   const start = resuming ? Number(restart.time) : 0;
   const duration = Number($('flowDt').value) * Number($('flowSteps').value);
-  $('thermalTimeHint').textContent = $('flowMode').value==='adaptive'
+  $('thermalTimeHint').textContent = vortex ? '温度联合推进尚不支持初始局部涡；请先关闭该初始条件。' : $('flowMode').value==='adaptive'
     ? '温度联合推进目前使用固定步长；请在上方切换为固定步长模式。'
     : Number.isFinite(duration) && duration > 0
     ? `温度始终非定常：本次 ${start.toPrecision(5)} → ${(start + duration).toPrecision(5)} s。温度积分需乘 ρcp 才是单位深度热量。`
@@ -1157,6 +1162,9 @@ async function runFlow() {
     endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
     maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),resume:transient && $('flowResume').checked };
   if(request.case==='custom')request.boundaryDefinition=state.flowBoundaryDefinition;
+  if(transient && !request.resume && $('flowInitialVortex').checked)
+    request.initialVortex={centre:[Number($('flowVortexX').value),Number($('flowVortexY').value)],
+      radius:Number($('flowVortexRadius').value),peakSpeed:Number($('flowVortexSpeed').value)};
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
   try {
@@ -1242,6 +1250,7 @@ $('thermalMonitorMetric').addEventListener('change', renderThermalMonitor);
 for (const control of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
   control.addEventListener('change', () => { if (state.thermal) clearThermalBinding(); });
 $('flowMode').addEventListener('change',applyRestartControls);
+$('flowInitialVortex').addEventListener('change',updateFlowMode);
 $('flowResume').addEventListener('change',applyRestartControls);
 for(const id of ['flowDt','flowSteps','flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).addEventListener('input',updateFlowMode);
 $('flowMonitorMetric').addEventListener('change',renderFlowMonitor);

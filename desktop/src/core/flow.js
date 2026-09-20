@@ -1,4 +1,5 @@
 'use strict';
+const {normalizeInitialVortex,validateInitialVortexOutput}=require('./initial-vortex');
 const { validateAdaptiveSummary, validateAttemptHistory } = require('./adaptive-flow');
 const { validateWallLoads } = require('./wall-loads');
 const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./flow-boundaries');
@@ -127,6 +128,10 @@ function validateFlowRequest(request = {}) {
         throw new Error('自动步长的目标时间、步长范围、CFL 或计算预算无效。');
     }
   }
+  if (request.initialVortex!==undefined) {
+    if (mode==='steady' || normalized.resume) throw new Error('初始局部涡仅用于新的非定常计算，续算不可重复施加。');
+    normalized.initialVortex=normalizeInitialVortex(request.initialVortex);
+  }
   return normalized;
 }
 
@@ -141,6 +146,11 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
       '--min-time-step',String(validated.minDt),'--max-courant',String(validated.maxCourant),
       '--max-step-retries',String(validated.maxRetries),'--max-time-steps',String(validated.maxSteps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
+  if (validated.initialVortex) {
+    const v=validated.initialVortex;
+    temporalArgs.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
+      '--initial-vortex-radius',String(v.radius),'--initial-vortex-speed',String(v.peakSpeed));
+  }
   if (validated.case === 'custom') {
     if (typeof boundaryPath !== 'string' || !boundaryPath) throw new Error('缺少命名边界输入路径。');
     temporalArgs.push('--boundary', boundaryPath);
@@ -206,6 +216,7 @@ const near = (a, b) => Math.abs(a - b) <= 1e-12 + 1e-9 * Math.max(Math.abs(a), M
 function flowOutputSuffixes(request) {
   return [...FLOW_OUTPUT_SUFFIXES, ...(['transient','adaptive'].includes(request?.mode) ? ['.checkpoint', '.time-history.csv'] : []),
     ...(request?.mode === 'adaptive' ? ['.attempt-history.csv'] : []),
+    ...(request?.initialVortex ? ['.initial.checkpoint'] : []),
     ...(request?.case === 'custom' ? ['.boundaries'] : [])];
 }
 
@@ -364,9 +375,11 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   }
 
   validateWallLoads(normalizedSummary);
+  validateInitialVortexOutput(summary,null,startTime);
 
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
+    validateInitialVortexOutput(summary,request,startTime);
     if (request.case === 'custom' && !sameConditions(request.boundaryDefinition.records, summary.boundaryConditions))
       throw new Error('求解结果的命名边界与请求不一致。');
     if ((request.mode !== 'steady') !== transient || (request.mode==='adaptive')!==adaptive

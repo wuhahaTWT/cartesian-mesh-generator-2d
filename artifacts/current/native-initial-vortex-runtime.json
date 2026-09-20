@@ -1,0 +1,161 @@
+{
+  "format": "cartmesh2d-initial-vortex-evidence-v1",
+  "valid": true,
+  "scope": "Explicit initial state, discrete balances and macOS workflow; not long-time shedding qualification",
+  "appVersion": "0.4.20",
+  "nativeBinarySha256": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "app": {
+    "fresh": {
+      "summarySha256": "53737caf95e9b6b06590b7601ee82d2e2fec58d1b67840ef59f5bbcfcb0868f4",
+      "zipSha256": "f30d423f00854c9a96eee2edec60fc38ea8b7ad6a71f8aa5b131deb7c8389717",
+      "independentAuditSha256": "d94a118cd23c442c0e0bc5de4f7d9256b52fa079c5b9da408346cace570495ff",
+      "cells": 380,
+      "acceptedTime": 0.02,
+      "initialVortex": {
+        "definition": "compact-cubic-v1",
+        "centre": [
+          0.75,
+          0
+        ],
+        "radius": 0.1,
+        "peakSpeed": 0.05,
+        "checkpointSuffix": ".initial.checkpoint"
+      },
+      "initialAudit": {
+        "checkpointSha256": "4f692f6c57a3c8c267493d0cdf17e47fce78454e6aee921d04d4c1bc9a4d7c1f",
+        "definition": {
+          "centre": [
+            0.75,
+            0
+          ],
+          "checkpointSuffix": ".initial.checkpoint",
+          "definition": "compact-cubic-v1",
+          "peakSpeed": 0.05,
+          "radius": 0.1
+        },
+        "maximumCellFluxImbalance": 0.0,
+        "minimumBoundaryClearance": 0.2496988640512931,
+        "sampledPeakSpeed": 0.0363877483537061,
+        "valid": true
+      },
+      "gates": "\u5185\u90e8\u62d3\u6251\u68c0\u67e5\nPASS\n\u8be6\u60c5\nSolver \u8d28\u91cf\nPASS\n\u8be6\u60c5\n\u65b9\u5411\u8fde\u901a\u8d28\u91cf\nFAIL\n\u8be6\u60c5"
+    },
+    "resume": {
+      "summarySha256": "bfbc1c5f3c790ce183662af5912f9d777da867a2d996f1eb8fd6becc31404869",
+      "zipSha256": "b740d9d40f5f3ac8b7f322c15aabbeb7c8be391e41d37ee9d1f721c3bc4c3d00",
+      "independentAuditSha256": "6312630f9697cd97732405b638759cdca9307ee6079eadd10a2195b11502e48c",
+      "cells": 380,
+      "acceptedTime": 0.14126359404872899,
+      "initialVortex": {
+        "definition": "compact-cubic-v1",
+        "centre": [
+          0.75,
+          0
+        ],
+        "radius": 0.1,
+        "peakSpeed": 0.05,
+        "checkpointSuffix": ".initial.checkpoint"
+      },
+      "initialAudit": null,
+      "gates": "\u5185\u90e8\u62d3\u6251\u68c0\u67e5\nPASS\n\u8be6\u60c5\nSolver \u8d28\u91cf\nPASS\n\u8be6\u60c5\n\u65b9\u5411\u8fde\u901a\u8d28\u91cf\nFAIL\n\u8be6\u60c5",
+      "adaptive": {
+        "initialAcceptedSteps": 46,
+        "initialRejectedSteps": 5,
+        "failedAcceptedTime": 0.12,
+        "cancelledAcceptedTime": 0.121263594048729,
+        "resumedTime": 0.14126359404872899
+      }
+    }
+  },
+  "external": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--mesh",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/re100-startup/fine.solver.cm2d",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/initial-vortex-wake/flow",
+      "--case",
+      "external",
+      "--nu",
+      ".02",
+      "--speed",
+      "1",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--max-iterations",
+      "500",
+      "--tolerance",
+      "1e-8",
+      "--time-step",
+      ".05",
+      "--end-time",
+      "5",
+      "--max-courant",
+      "2",
+      "--min-time-step",
+      ".00001",
+      "--max-time-steps",
+      "1500",
+      "--profile",
+      "--initial-vortex-x",
+      "3",
+      "--initial-vortex-y",
+      "0",
+      "--initial-vortex-radius",
+      "1",
+      "--initial-vortex-speed",
+      ".01"
+    ],
+    "timeoutSeconds": 180,
+    "valid": true,
+    "binarySha256": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+    "meshSha256": "9f263306e43a6e358a82cd44f99b4474a5f99903e1cf0b6f623d701fa05d2955",
+    "returnCode": 0,
+    "elapsedSeconds": 102.17338841699893,
+    "initialVortex": {
+      "valid": true,
+      "definition": {
+        "definition": "compact-cubic-v1",
+        "centre": [
+          3,
+          0
+        ],
+        "radius": 1,
+        "peakSpeed": 0.01,
+        "checkpointSuffix": ".initial.checkpoint"
+      },
+      "checkpointSha256": "706822a641ced963488165c265a999163d770a23be0b9e7731591a41c3139166",
+      "minimumBoundaryClearance": 1.9302331465395572,
+      "maximumCellFluxImbalance": 4.336808689942018e-19,
+      "sampledPeakSpeed": 0.009919201609837164
+    }
+  },
+  "tests": {
+    "ctest": {
+      "passed": 142,
+      "logSha256": "4830dddf192ed09841a6af2c9dfac767b05198119c9cbeeb6d036c623b3f11f0"
+    },
+    "frontend": {
+      "passed": 157,
+      "logSha256": "82b847ad1d1ce864c747b0980095d7083d20309d291bb8e3f1bc78a638adf7c3"
+    },
+    "cli": {
+      "logSha256": "5ecb0ba1ac511f72c17301bfd4057218c08a655d3218f5ab1d7e2f95eb0ca30a",
+      "continuousVersusOnePlusOneByteIdentical": true
+    }
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Windows",
+    "Linux",
+    "compressible flow"
+  ]
+}
