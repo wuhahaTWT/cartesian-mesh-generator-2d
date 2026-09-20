@@ -19,6 +19,7 @@ add_library(cartmesh2d
     src/geometry/IntersectionConstruction2D.cpp
     src/geometry/BoundarySimplification2D.cpp
     src/grid/CartesianGrid2D.cpp
+    src/grid/RectilinearMesh2D.cpp
     src/hybrid/HybridMesh2D.cpp
     src/hybrid/TransitionCanonicalization2D.cpp
     src/spatial/BoundarySegmentIndex2D.cpp
@@ -163,6 +164,11 @@ option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    add_executable(cartmesh2d_rectilinear_tests tests/rectilinear_test.cpp)
+    target_link_libraries(cartmesh2d_rectilinear_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_rectilinear COMMAND cartmesh2d_rectilinear_tests)
+    add_executable(cartmesh2d_rectilinear_probe tests/rectilinear_probe.cpp)
+    target_link_libraries(cartmesh2d_rectilinear_probe PRIVATE cartmesh2d_fv)
     add_executable(cartmesh2d_sst_rans_tests tests/sst_rans_test.cpp)
     target_link_libraries(cartmesh2d_sst_rans_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_sst_rans COMMAND cartmesh2d_sst_rans_tests)

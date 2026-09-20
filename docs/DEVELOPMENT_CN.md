@@ -347,6 +347,23 @@ python3 tools/verification/verify_sst_rans.py --mesh /path/unit-square.solver.cm
 
 独立读取器由CM2D原端点辨认分段，从末态重算壁距、当前模型系数、质量/动量/两湍流方程。`boundarySummary`报告各类面的长度、进入/离开通量；`plateWallSamples`取水平底壁切向离散牵引tau/rho，给Cf=2tau/(rho U∞²)和y+=d_normal*sqrt(abs(tau)/rho)/nu。此诊断U∞固定1；这些量的数值收敛、近壁分辨率和物理精度需另证。绘图入口`tools/visualization/render_flat_plate.py`读取已通过审核的研究JSON，不将其视为TMR认证。
 
+### 原生矩形近壁网格与精确残差诊断
+
+`grid/RectilinearMesh2D.hpp`的`makeRectilinearMesh2D(x,y)`使用有限严格递增坐标数组；返回真实二维四边形共享拓扑，所有外边为DomainBoundary，物理边界由求解器另行指定。仅限完整矩形流体区域，不接受固体裁切。核心执行原默认Solver质量检查；FVM读取器继续检查几何/面关联。非法坐标、退化面积、尺寸溢出或质量失败显式报错。
+
+```sh
+mkdir -p outputs/native-flow/my-graded-plate
+build/cartmesh2d_rectilinear_probe 32 16 4 outputs/native-flow/my-graded-plate/mesh
+build/cartmesh2d_sst_rans_probe outputs/native-flow/my-graded-plate/mesh.cm2d outputs/native-flow/my-graded-plate/flow flatplate
+python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-graded-plate/mesh.cm2d --prefix outputs/native-flow/my-graded-plate/flow --output outputs/native-flow/my-graded-plate/audit.json
+```
+
+诊断probe是单位正方形，nx/ny各2..256，stretch在0..20；0为均匀，正值采用`expm1(a*j/ny)/expm1(a)`。半域前缘要求nx为偶数，否则跨越面会由平板边界检查拒绝。probe维数限制是资源保护，不是库API上限。更强加密仍可能触发默认网格质量门或求解精度失败，不能把本例参数当成通用预设。
+
+线性系统恢复在`fv/detail/FlowLinearSystem2D.hpp`：精确影子正交breakdown重启，近舍入尺度使用补偿逐行`b-Ax`，对角占优时可作最多8次坐标校正，原双重残差门不变。补偿算法依据[Ogita、Rump、Oishi 2005](https://doi.org/10.1137/030601818)的误差分解原理独立实现；没有复制外部求解器代码或引入库。它不保证任意矩阵收敛或任意绝对容差可表示。Krylov步数不含坐标扫描，性能比较须同时报告总时间。数学breakdown背景见[Netlib Templates](https://www.netlib.org/templates/templates.html)。
+
+真实对照及失败见当前状态。`artifacts/current/native-flatplate-grading.json`的`valid=false`明确表示四例没有全部通过；`cases`是有独立审核的完成结果，`failures`保留未通过项，`geometryChecksPassed`只表示网格几何。渲染工具`tools/visualization/render_flat_plate_grading.py`会同时展示这两类结果，不把失败网格配上伪造流场。
+
 ### 标准湍流参考的适用边界
 
 已核对[TMR 2DZP平板定义](https://tmbwg.github.io/turbmodels/flatplate.html)、[网格](https://tmbwg.github.io/turbmodels/flatplate_grids.html)及[SST参考结果](https://tmbwg.github.io/turbmodels/flatplate_sst.html)。平板x=0至2，参考长度1，Re_L=5e6、M=.2；网格35×25至545×385节点，需明确区分节点数与实际流体单元数。壁面omega及自由来流k/omega必须按该例指定，不能沿用诊断通道的数值。近壁y+、x约.97/1.90的剖面及壁面摩阻是后续关注量；不能只看残差。

@@ -265,6 +265,40 @@ void nonsymmetricBiCGRegression() {
             "IC(0) rejects the nonsymmetric convection matrix");
 }
 
+void compensatedResidualRegression() {
+    SparsePattern2D single(1,{});SparseSystem2D product(single);
+    const double e=std::ldexp(1.,-27);
+    product.diag={1+e};product.rhs={1};
+    // Exact binary arithmetic: 1-(1+2^-27)(1-2^-27)=2^-54.
+    check(product.compensatedResidualRow(0,{1-e})==std::ldexp(1.,-54),
+          "compensated residual retains rounded product error");
+    rejects([&] {
+        LinearWorkspace2D workspace(1);std::vector<double> x={1-e};
+        (void)product.solve(x,workspace,1e-18);
+    },"unrepresentable row accuracy must not pass through a rounded zero");
+    SparsePattern2D pair(2,{{0,1}});SparseSystem2D cancellation(pair);
+    cancellation.diag={1e16,1};cancellation.rhs={1e16,1};cancellation.add(0,1,1);
+    check(cancellation.compensatedResidualRow(0,{1,1})==-1,
+          "compensated residual does not turn cancellation into false zero");
+    check(cancellation.compensatedResidualRow(1,{1,1})==0,
+          "compensated residual retains exact zero");
+}
+
+void biorthogonalBreakdownRegression() {
+    // Three one-way coupled control volumes: A is nonsingular and positive
+    // diagonal. After the first update, r=(0,.5,.5) is exactly orthogonal to
+    // the original shadow (1,0,0); the old solver aborted despite x != (1,1,1).
+    SparsePattern2D pattern(3,{{0,1},{1,2}});
+    SparseSystem2D system(pattern);Dense dense=zeroMatrix(3);
+    for(std::size_t i=0;i<3;++i)addEntry(system,dense,i,i,1.);
+    addEntry(system,dense,1,0,-1.);addEntry(system,dense,2,1,-1.);
+    const std::vector<double> exact{1,1,1};setRhs(system,dense,exact);
+    std::vector<double> x(3,0.);LinearWorkspace2D workspace(3);
+    const auto steps=system.solve(x,workspace);
+    check(steps>1,"breakdown recovery reports actual work");
+    checkKnownSolution(dense,exact,system.rhs,x,"BiCGStab orthogonal shadow restart");
+}
+
 void structureAndPinRegression() {
     const std::vector<std::pair<std::size_t, std::size_t>> connections{
         {0, 1}, {1, 0}, {0, 1}, {0, 1}, {1, 2}, {2, 1}, {2, 1}};
@@ -579,6 +613,8 @@ int main() {
         tridiagonalPressureRegression();
         irregularGraphRegression();
         nonsymmetricBiCGRegression();
+        biorthogonalBreakdownRegression();
+        compensatedResidualRegression();
         structureAndPinRegression();
         zeroResetAndPivotRegression();
         ic0CacheRegression();

@@ -140,6 +140,27 @@ struct SparseSystem2D {
             linearFinite(y[i]);
         }
     }
+    // Compensated b_i - A_i*x: preserve both multiplication and addition
+    // roundoff. In particular, do not first round A_i*x and then subtract b_i.
+    // Error-free TwoSum and FMA-product principles (independent implementation):
+    // Ogita, Rump, Oishi, SIAM SISC 26(6), doi:10.1137/030601818.
+    // Finite normal arithmetic is required; this is not arbitrary precision.
+    double compensatedResidualRow(std::size_t i, const LinearVector2D& x) const {
+        double sum=rhs[i], correction=0;
+        const auto subtractProduct=[&](double coefficient,double value) {
+            const double product=linearFinite(-coefficient*value);
+            const double productError=std::fma(-coefficient,value,-product);
+            const double next=linearFinite(sum+product);
+            const double split=next-sum;
+            const double additionError=(sum-(next-split))+(product-split);
+            correction=linearFinite(correction+(additionError+productError));
+            sum=next;
+        };
+        subtractProduct(diag[i],x[i]);
+        for(auto k=pattern.rows[i];k<pattern.rows[i+1];++k)
+            subtractProduct(off[k],x[pattern.columns[k]]);
+        return linearFinite(sum+correction);
+    }
     void pin(std::size_t id) {
         linearEnsure(id < diag.size(), "Flow pressure gauge invalid");
         factorReady_ = false;
@@ -318,11 +339,32 @@ struct SparseSystem2D {
                 if (std::abs(residual[i])/diag[i]>diagonalScaledStop) return false;
             return true;
         };
+        const auto nearRoundoff=[&] {
+            double magnitude=0;
+            for(double value:x)magnitude=std::max(magnitude,std::abs(value));
+            return diagonalScaledStop<16*std::numeric_limits<double>::epsilon()*magnitude;
+        };
+        bool compensated=nearRoundoff(), refined=false;
+        if(compensated)
+            for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+        r0=r;
         if (smallResidual(r)) return 0;
         double rhoOld = 1, alpha = 1, omega = 1;
+        const auto restart = [&] {
+            // r is the freshly recomputed b-Ax, not a recursively updated
+            // estimate. A new shadow residual can recover exact biorthogonal
+            // breakdown without changing the matrix, iterate or stopping gates.
+            r0=r;
+            std::fill(p.begin(),p.end(),0.);
+            std::fill(v.begin(),v.end(),0.);
+            rhoOld=alpha=omega=1;
+        };
         for (std::size_t step = 0; step < 3000; ++step) {
-            const double rho = linearProduct(r0, r);
-            linearEnsure(rho != 0 && omega != 0, "Flow BiCGStab breakdown");
+            double rho = linearProduct(r0, r);
+            if(rho==0 || omega==0) {
+                restart();rho=linearProduct(r0,r);
+                linearEnsure(rho>0,"Flow BiCGStab residual product underflow");
+            }
             const double beta = (rho / rhoOld) * (alpha / omega);
             for (std::size_t i = 0; i < x.size(); ++i) {
                 p[i] = r[i] + beta * (p[i] - omega * v[i]);
@@ -344,9 +386,34 @@ struct SparseSystem2D {
                 for (std::size_t i = 0; i < x.size(); ++i)
                     x[i] += alpha * z[i] + omega * zs[i];
             }
-            apply(x, ax);
-            for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
+            if(!compensated && nearRoundoff())compensated=true;
+            if(compensated) {
+                for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+            } else {
+                apply(x, ax);
+                for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
+            }
             if (smallResidual(r)) return step + 1;
+            // Near the floating-point floor, use accurately recomputed b-Ax
+            // for every acceptance. Once only, try bounded coordinate refinement
+            // for a diagonally dominant matrix. Gates and matrix stay unchanged;
+            // unrepresentable accuracy requests still fail. Iteration counts
+            // remain Krylov steps, not a count of these additional row sweeps.
+            if(compensated && !refined && step%40==39 && linearNorm(r)<=stop) {
+                refined=true;
+                bool diagonallyDominant=true;
+                for(std::size_t i=0;i<x.size();++i) {
+                    double rowSum=0;
+                    for(auto k=pattern.rows[i];k<pattern.rows[i+1];++k)rowSum+=std::abs(off[k]);
+                    if(rowSum>diag[i])diagonallyDominant=false;
+                }
+                for(std::size_t sweep=0;diagonallyDominant && sweep<8;++sweep) {
+                    for(std::size_t i=0;i<x.size();++i)
+                        x[i]=linearFinite(x[i]+compensatedResidualRow(i,x)/diag[i]);
+                    for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+                    if(smallResidual(r))return step+1;
+                }
+            }
             if (step % 40 == 39) {
                 r0 = r;
                 std::fill(p.begin(), p.end(), 0.);
