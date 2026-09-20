@@ -135,7 +135,7 @@ int main(int argc,char**argv) {
                     "Without dt: steady. Thermal D=k/(rho cp), source=Q/(rho cp), boundary flux=q/(rho cp).\n"
                     "Verification only: --verification sine|variable-sine|decay (unit-square decay).\n"
                     "  variable-sine: steady D(x)=diffusivity*(1+x); --speed 1 for either sine case.\n"
-                    "Evolving flow: --evolve-flow external|channel|cavity --boundary BC.csv --dt DT --steps N\n"
+                    "Evolving flow: --evolve-flow external|channel|duct|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
                     "  --flow-velocity-relaxation 0.6: evolving carrier only; (0,1], larger may be unstable.\n"
                     "  --flow-convection upwind|limited-linear --pressure-preconditioner ic0|aggregation\n"
@@ -200,7 +200,7 @@ int main(int argc,char**argv) {
         require(!explicitVelocityRelaxation||evolving,"flow-velocity-relaxation option requires evolving flow");
         if(evolving) {
             require(dt>0&&flowPath.empty()&&(verification.empty()||verification=="thermal-vortex"),"evolving flow requires dt and cannot use a frozen carrier or other verification");
-            require(evolve=="channel"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
+            require(evolve=="channel"||evolve=="duct"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
             require(evolve!="taylor-green"||verification=="thermal-vortex","use thermal-vortex verification for Taylor-Green");
             flowControls.scenario=evolve;
         }

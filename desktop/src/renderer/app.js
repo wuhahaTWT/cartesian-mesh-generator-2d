@@ -397,6 +397,10 @@ function applySizeField(field) {
   if (field.wallCellsPerSpan !== undefined) $('wallRelativeSize').value = 1/field.wallCellsPerSpan;
   if (field.farFieldSpans !== undefined) {
     $('relativePadding').value = field.farFieldSpans;
+    // Loading a geometry/preset defines its physical domain in both modes.
+    // Leaving auto mode at the generic 0.5 default silently truncated the
+    // external-flow domain, even when the sample prescribed ten body spans.
+    $('autoPadding').value = field.farFieldSpans;
     $('backgroundRelativeSize').value = (1+2*field.farFieldSpans)/Math.pow(2,field.farLevel ?? 0);
   }
   if (field.cellsPerLevel !== undefined) $('relativeBandCells').value = field.cellsPerLevel;
@@ -737,7 +741,7 @@ async function generate() {
     $('flowBlock').hidden = Boolean(payload.incomplete);
     $('thermalBlock').hidden = Boolean(payload.incomplete);
     if (!payload.incomplete) {
-      $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'channel' : 'external';
+      $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
       updateFlowScope();
     }
     const seconds = payload.result.timings.total_seconds;

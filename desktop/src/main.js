@@ -692,6 +692,10 @@ async function runSmoke() {
     if (!sample) throw new Error('unknown sample ' + ${JSON.stringify(sampleId)});
     document.getElementById('sample').value = sample.id;
     await smoke.chooseGeometry(sample.path, sample.label, sample);
+    const sampleField = sample.fluidRegion === 'interior' && sample.interiorSizeField || sample.sizeField;
+    if (sampleField?.farFieldSpans !== undefined &&
+        Number(document.getElementById('autoPadding').value) !== sampleField.farFieldSpans)
+      throw new Error('Loading sample did not apply its physical domain to automatic mode');
     if (${JSON.stringify(Boolean(argument('image')))}) {
       const previousPath = smoke.state.geometryPath;
       const pendingImport = smoke.importGeometryFile(${JSON.stringify(argument('image'))});

@@ -90,6 +90,19 @@ test('thermal boundary CSV groups rectangle domain and embedded external wall', 
   assert.throws(() => thermalBoundaryCsv(parseCm2d(EMBEDDED_RECTANGLE), request()), /轴对齐矩形外边界/);
 });
 
+test('duct assigns inclined walls to the wall temperature and keeps both ports', () => {
+  const mesh = parseCm2d(RECTANGLE.replace('2 1 1', '2 1 0.6').replace('3 0 1', '3 0 0.8'));
+  const input = request({ case: 'duct', boundaries: { ...boundaries,
+    inlet: { kind: 'value', value: 2, inflowValue: 2 } } });
+  assert.deepEqual(thermalBoundaryCsv(mesh, input).trim().split('\n'), [
+    'face,type,value,inflowValue', '0,value,1,0', '1,flux,0,0',
+    '2,value,1,0', '3,value,2,2'
+  ]);
+  assert.throws(() => thermalBoundaryCsv(mesh, request()), /轴对齐矩形外边界/);
+  const invocation = buildThermalInvocation('/tmp/final.solver.cm2d', '/tmp/run', '/tmp/b.csv', input);
+  assert.equal(invocation.args[invocation.args.indexOf('--evolve-flow') + 1], 'duct');
+});
+
 test('thermal invocation rejects unsafe mesh and restart inputs and emits native arguments', () => {
   assert.throws(() => buildThermalInvocation('/tmp/mesh.cm2d', '/tmp/run', '/tmp/boundary.csv', request()), /solver\.cm2d/);
   assert.throws(() => buildThermalInvocation('/tmp/final.solver.cm2d', '/tmp/run', '/tmp/boundary.csv', request({ resume: true }), null), /联合续算状态/);

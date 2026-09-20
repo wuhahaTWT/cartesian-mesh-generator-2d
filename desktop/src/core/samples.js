@@ -95,7 +95,7 @@ const SAMPLES = Object.freeze([
     label: '圆环（内流）',
     file: 'annulus.xy',
     fluidRegion: 'interior',
-    note: '外环加一个孔。这是内流语义，流体在两环之间，不是默认外流。',
+    note: '外环加一个孔，流体在两环之间。闭域没有左右开口，不能直接使用通道／喷管工况；旋转壁面工况尚未提供。',
     sizeField: { farFieldSpans: 1, wallCellsPerSpan: 32, cellsPerLevel: 3 },
     smallAlpha: 0.15
   },
@@ -104,7 +104,7 @@ const SAMPLES = Object.freeze([
     label: '喷管型线',
     file: 'nozzle_profile.xy',
     fluidRegion: 'interior',
-    note: '收缩扩张喷管，默认在轮廓内部生成流体网格；可显式切换为外流。',
+    note: '收缩扩张喷管，默认生成内部流体网格。不可压计算选择“曲壁通道／喷管”：左均匀速度入口、右零压出口、曲壁无滑移。',
     sizeField: { farFieldSpans: 6, wallCellsPerSpan: 16, cellsPerLevel: 3 },
     interiorSizeField: { farFieldSpans: 0.5, wallCellsPerSpan: 128, cellsPerLevel: 3, farLevel: 7 },
     interiorSmallAlpha: 0.45,

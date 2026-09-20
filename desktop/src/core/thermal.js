@@ -23,7 +23,7 @@ function validateThermalRequest(input) {
   }
   return r;
 }
-// Match the native rectangular flow cases. A nonrectangular boundary fails;
+// Match the native flow cases. A nonrectangular boundary outside duct fails;
 // assigning the closest screen side would silently invent a physical condition.
 function thermalBoundaryCsv(mesh, request) {
   const r=validateThermalRequest(request), b=mesh.bounds;
@@ -37,6 +37,7 @@ function thermalBoundaryCsv(mesh, request) {
     if(r.case==='external' && e.patch===1)group='wall';
     else if(equal(a[0],b.minX)&&equal(z[0],b.minX))group='inlet';
     else if(equal(a[0],b.maxX)&&equal(z[0],b.maxX))group='outlet';
+    else if(r.case==='duct')group='wall';
     else if(equal(a[1],b.maxY)&&equal(z[1],b.maxY))group='top';
     else if(equal(a[1],b.minY)&&equal(z[1],b.minY))group='bottom';
     requireValue(group,'所选流动工况要求轴对齐矩形外边界。');

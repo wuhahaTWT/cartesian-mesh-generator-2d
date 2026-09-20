@@ -9,6 +9,10 @@ const FLOW_CASES = Object.freeze({
     id: 'channel', label: '通道',
     scope: '矩形内流：左侧抛物线入口、右侧 p=0，其余边界无滑移。'
   },
+  duct: {
+    id: 'duct', label: '曲壁通道／喷管',
+    scope: '内流：最左侧竖直端面为均匀速度入口，最右侧竖直端面为 p=0 出口，其余曲壁及障碍物无滑移。入口和出口必须是明确的竖直端面。'
+  },
   cavity: {
     id: 'cavity', label: '顶盖方腔',
     scope: '方形内流：顶盖移动，其余边界无滑移，并固定参考压力。'
@@ -36,7 +40,7 @@ const FLOW_PRESSURE_PRECONDITIONERS = Object.freeze({
 });
 const FLOW_OUTLET_BACKFLOW_MODES = Object.freeze({
   reject: { id: 'reject', label: '检测到回流时停止', description: '压力出口保持给定压力；检测到回流时停止。' },
-  'normal-inlet': { id: 'normal-inlet', label: '允许法向回流（试验）', description: '压力出口保持给定压力；回流方向垂直出口，仅适用于当前矩形计算域。' }
+  'normal-inlet': { id: 'normal-inlet', label: '允许法向回流（试验）', description: '压力出口保持给定压力；回流方向垂直出口，适用于当前预设的竖直右出口。' }
 });
 const LEGACY_PRESSURE_PRECONDITIONER = 'legacy-unspecified';
 const PRESSURE_DISCRETIZATION = 'shared-face-gauss';

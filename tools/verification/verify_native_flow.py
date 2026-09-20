@@ -611,6 +611,11 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
             role = "wall"
         elif case == "cavity":
             role = "lid" if top else "wall"
+        elif case == "duct":
+            a, z = mesh.vertices[edge.v0], mesh.vertices[edge.v1]
+            at_inlet = abs(a[0] - xmin) <= eps and abs(z[0] - xmin) <= eps
+            at_outlet = abs(a[0] - xmax) <= eps and abs(z[0] - xmax) <= eps
+            role = "inlet" if at_inlet else "outlet" if at_outlet else "wall"
         elif left:
             role = "inlet"
         elif right:
@@ -659,6 +664,8 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                 constant_v[edge.id] = fixed_v[edge.id]
             else:
                 fixed_v[edge.id] = True
+    if case == "duct" and not all(role in roles for role in ("inlet", "outlet", "wall")):
+        raise VerificationError("duct requires vertical end openings and stationary walls")
     return {"roles": roles, "fixedU": fixed_u, "fixedV": fixed_v, "fixedP": fixed_p,
             "constantU": constant_u, "constantV": constant_v,
             "u": bc_u, "v": bc_v, "p": bc_p}
@@ -1761,6 +1768,9 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     if payload.get('viscosityModel') == 'face-values' and case in ('channel','cavity','external'):
         benchmark = {'valid':True, 'status':'not-applicable',
                      'scope':'Prescribed variable viscosity: constant-property reference is inapplicable; only geometry/conservation/constitutive audit is performed, no accuracy qualification.'}
+    elif case == "duct":
+        benchmark = {'valid': True, 'status': 'not-qualified',
+                     'scope': 'Arbitrary duct: geometry, constitutive and conservation audits only; no physical reference or accuracy qualification.'}
     elif case == "channel":
         benchmark = channel_checks(mesh, measured, cells, fluxes, nu, speed, args)
     elif case == "cavity":
@@ -1953,6 +1963,8 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--channel-nu", type=float, default=0.01)
+    parser.add_argument("--duct-nu", type=float, default=0.1,
+                        help="viscosity for explicit --mesh duct LABEL PATH; conservation audit only")
     parser.add_argument("--cavity-nu", type=float, default=0.01)
     parser.add_argument("--external-nu", type=float, default=0.1)
     parser.add_argument("--manufactured-nu", type=float, default=0.1)
@@ -2014,7 +2026,7 @@ def main() -> int:
             raise VerificationError("--manufactured-pressure-slope must be finite")
         if args.manufactured_pressure_slope != 0.0 and any(case != "manufactured" for case in args.cases):
             raise VerificationError("nonzero --manufactured-pressure-slope is only valid for --cases manufactured")
-        nu_by_case = {"channel": args.channel_nu, "cavity": args.cavity_nu,
+        nu_by_case = {"channel": args.channel_nu, "duct": args.duct_nu, "cavity": args.cavity_nu,
                       "external": args.external_nu, "manufactured": args.manufactured_nu,
                       "counterflow": args.counterflow_nu}
         if any(not math.isfinite(value) or value <= 0.0 for value in nu_by_case.values()):

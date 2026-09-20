@@ -15,6 +15,9 @@ enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 
 struct FlowControls2D {
+    // duct: planar vertical x-extrema are the inlet/outlet; all remaining
+    // boundaries are stationary no-slip walls, including curved walls/holes.
+    // It must be selected explicitly and is not a general patch-BC interface.
     std::string scenario = "external";
     double nu = .01;
     double speed = 1;

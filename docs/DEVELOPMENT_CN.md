@@ -181,6 +181,16 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 `external` 为左侧恒速入口、右侧运动学压力0、上下滑移及物面无滑移；`channel` 为无孔矩形内域、左侧抛物线入口、右侧压力0及上下无滑移，speed 是抛物线峰值；`cavity` 为无孔矩形腔、顶盖水平移动、其他壁面静止，speed 是顶盖速度，固定 cell 0 的压力为0。只接受一个连通流体区域；边界位置/方向或内域形状不符、出口回流、数值范围错误均明确失败。它不是任意喷管/多孔腔的自动边界配置器。
 
+`duct`（桌面0.4.12）用于有左右竖直开口的曲壁内流：最左侧端面均匀速度`speed`，最右侧运动学压力0，其余边界（含孔洞）无滑移。端口按最终边界的真实坐标极值和法向识别；曲壁不能套用旧矩形`channel`。旋转后的非竖直端口、没有开口的圆环不支持此预设，会明确失败；任意方向命名边界仍待实现。稳态、非定常、检查点续算和被动热输运共用同一边界定义，App同步提供该选项；几何物面标签不等于每个面的流动边界类型。
+
+```sh
+build/cartmesh2d_cli examples/complex/nozzle_profile.xy outputs/duct/mesh 5 0.03333333333333333 0.1 interior outputs/duct/openfoam 5 0
+build/cartmesh2d_flow_cli --mesh outputs/duct/mesh.solver.cm2d --output outputs/duct/flow --case duct --nu 0.1 --speed 1 --convection limited-linear --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-9
+python3 tools/verification/verify_duct_flow.py --output outputs/duct-study
+```
+
+喷管study串行生成三档真实网格，独立复核几何、共享面通量/动量、壁面力，记录压降、最大速度和壁面力的网格变化；每个子进程默认180秒，失败保留日志。`--verify-only`只允许与已记录成功命令完全相同的参数，重审已有原始场。守恒通过不等于参考精度认证；无参考的喷管始终保留`not-qualified`状态。App的原生导出可独立重新读取，OpenFOAM边界条件仍需单独设置。
+
 单元中心速度/运动学压力，共享边积分体积通量。动量默认一阶迎风，可用 `--convection limited-linear` 选择限制线性重构，黏性项用最小二乘梯度及显式非正交修正；内部面速度包含偏斜修正和 Rhie–Chow 压力项，压力修正使用四次非正交迭代，最终通量与最后一次实际线性方程一致。动量松弛0.6、压力松弛0.25；动量使用自行实现的 Jacobi–BiCGStab，压力修正利用对称正定结构使用 IC(0)–PCG，保留 `--pressure-preconditioner jacobi` 对照，均检查真正矩阵残差。设计依据包括 [MOOSE 的同位有限体积说明](https://mooseframework.inl.gov/modules/navier_stokes/insfv.html)中关于 Rhie–Chow 和压力零空间的说明；没有复制或链接其求解核心。
 
 压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按内部压力的最小二乘梯度外推，重构时不对未知壁面压力强加零法向梯度。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。

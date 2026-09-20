@@ -5,7 +5,7 @@ const fsp = fs.promises;
 const path = require('node:path');
 const readline = require('node:readline');
 
-const SUPPORTED_CASES = new Set(['external', 'channel', 'cavity']);
+const SUPPORTED_CASES = new Set(['external', 'channel', 'duct', 'cavity']);
 const SUPPORTED_CONVECTION = new Set(['upwind', 'limited-linear']);
 const SUPPORTED_STRESS = new Set(['symmetric']);
 const SUPPORTED_OUTLET_BACKFLOW = new Set(['reject', 'normal-inlet']);

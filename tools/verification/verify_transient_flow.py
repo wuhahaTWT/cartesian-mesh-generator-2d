@@ -188,7 +188,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
         fail("transient faces.csv lacks complete face momentum columns")
     fluxes = native.face_fluxes(faces)
     case = summary.get("case")
-    if case not in ("taylor-green", "cavity", "channel", "external"):
+    if case not in ("taylor-green", "cavity", "channel", "duct", "external"):
         fail(f"unsupported transient case {case!r}")
     cont = native.continuity(mesh, measured, fluxes, native.finite(summary.get("speed"), "summary speed"), case, 1e-10, 1e-7)
     if not cont["cellValid"] or not cont["globalValid"]:

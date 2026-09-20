@@ -49,6 +49,18 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.throws(() => validateFlowRequest({ case: 'cavity', nu: 0, speed: 1, maxIterations: 10 }), /大于 0/);
 });
 
+test('curved duct can run steady and transient and is retained in output metadata', () => {
+  for (const mode of ['steady', 'transient']) {
+    const invocation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
+      { case: 'duct', nu: .1, speed: 1, maxIterations: 200, mode, dt: .01, steps: 2 });
+    assert.equal(invocation.args[invocation.args.indexOf('--case') + 1], 'duct');
+    assert.equal(invocation.args.includes('--time-step'), mode === 'transient');
+  }
+  assert.equal(validateFlowOutput({ ...summary, case: 'duct' }, fields, 2).summary.case, 'duct');
+  assert.match(exportGuide({ result: { counts: { cells: 2 } },
+    flow: { summary: { ...summary, case: 'duct' } } }), /几何物面标签并不全是流动壁面/);
+});
+
 test('optional outlet backflow diagnostics validate without inventing legacy values', () => {
   const accepted = validateFlowOutput({ ...summary, outletBackflowFaces: 2, outletInflow: 0.25 }, fields, 2);
   assert.equal(accepted.summary.outletBackflowFaces, 2);

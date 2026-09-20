@@ -190,7 +190,7 @@ def render_fields(cases: list[CaseData], output: Path, dpi: int, source_note: st
     from matplotlib.collections import PolyCollection
     from matplotlib.colors import Normalize, TwoSlopeNorm
 
-    selected = [case for name in ("channel", "cavity", "external")
+    selected = [case for name in ("channel", "duct", "cavity", "external")
                 if (case := select_finest(cases, name)) is not None]
     if not selected:
         raise ValueError("summary has no loadable flow field")
@@ -220,7 +220,7 @@ def render_fields(cases: list[CaseData], output: Path, dpi: int, source_note: st
             figure.colorbar(collection, ax=axis, shrink=0.82, label=label)
     figure.suptitle("Native 2-D steady laminar flow on final CM2D polygons", fontsize=14)
     figure.text(0.5, 0.002, source_note + "\n"
-                "External solid interiors remain white and are bounded in black. "
+                "Fields use true fluid polygons. Geometry/conservation audits do not establish physical accuracy. "
                 "Iteration-limit and failed runs are not labelled converged.",
                 ha="center", fontsize=8.5, color="#455a64")
     figure.tight_layout(rect=(0.0, 0.055, 1.0, 0.96))

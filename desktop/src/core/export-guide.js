@@ -1,6 +1,7 @@
 'use strict';
 
 function exportGuide({ result, rasterImport, flow, thermal }) {
+  const duct = (flow?.summary?.case || thermal?.summary?.flowCase) === 'duct';
   const transient = flow?.summary?.temporalDiscretization === 'backward-euler';
   const cells = Number(result.counts.cells).toLocaleString('en-US');
   const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
@@ -37,6 +38,7 @@ ${rasterImport ? '| source-image.* / image-outline.png / image-import.json | 原
 ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最终 CM2D cell id 对齐的速度、运动学压力场。 |\n| *.flow.vtk / *.flow.cells.csv / *.flow.faces.csv | ParaView 流场、逐单元数值及面通量；faces.csv 还含压力与动量通量列。 |\n| *.flow.residuals.csv | SIMPLE 内迭代历史；非定常时仅含最后一个时间步。 |\n' : ''}${transient ? '| *.flow.time-history.csv | 本次全部物理时间步、CFL、动能及受力监测。 |\n| *.flow.checkpoint | 最后接受状态，可配合同一最终网格继续计算；需要保持物性与离散格式。 |\n' : ''}| flow-incomplete-* | 取消/失败诊断；候选CSV不能当作完成的流场。目录内完整 .checkpoint 可用于续算，忽略 .tmp。 |
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
+${duct ? '本次曲壁通道／喷管工况：最左侧竖直端面为均匀速度入口，最右侧竖直端面为运动学 p=0 出口，其余曲壁及障碍物无滑移。CM2D 的几何物面标签并不全是流动壁面；这些入口/出口条件由原生求解器的 duct 工况指定，使用 OpenFOAM 时仍需分别设置。\n' : ''}
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
 ${thermal ? `## 温度结果
 

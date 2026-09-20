@@ -63,10 +63,14 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     b.xmax = b.ymax = -b.xmin;
     for (const auto& f : m.faces) {
         if (!f.neighbour) {
-            b.xmin = std::min(b.xmin, f.centre.x);
-            b.xmax = std::max(b.xmax, f.centre.x);
-            b.ymin = std::min(b.ymin, f.centre.y);
-            b.ymax = std::max(b.ymax, f.centre.y);
+            // Curved duct extrema may occur at vertices, not face centres.
+            // For a 2-D edge, rotating its area vector gives its tangent.
+            const double dx = c.scenario == "duct" ? .5 * std::abs(f.areaVector.y) : 0;
+            const double dy = c.scenario == "duct" ? .5 * std::abs(f.areaVector.x) : 0;
+            b.xmin = std::min(b.xmin, f.centre.x - dx);
+            b.xmax = std::max(b.xmax, f.centre.x + dx);
+            b.ymin = std::min(b.ymin, f.centre.y - dy);
+            b.ymax = std::max(b.ymax, f.centre.y + dy);
         }
     }
     const double width = b.xmax - b.xmin;
@@ -95,6 +99,21 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         if (embedded) {
             b.role[id] = Role::Wall;
             ++walls;
+        } else if (c.scenario == "duct") {
+            // A user-selected duct has planar x-end openings and arbitrary
+            // stationary walls between them. Unlike the channel preset, its
+            // fluid region need not fill the bounding rectangle.
+            const bool vertical = std::abs(f.areaVector.y) <= eps;
+            if (left && vertical && f.areaVector.x < 0) {
+                b.role[id] = Role::Inlet;
+                ++inlets;
+            } else if (right && vertical && f.areaVector.x > 0) {
+                b.role[id] = Role::Outlet;
+                ++outlets;
+            } else {
+                b.role[id] = Role::Wall;
+                ++walls;
+            }
         } else {
             ensure(left || right || top || bottom,
                    "Selected flow case requires rectangular outer boundary");
@@ -169,6 +188,8 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     }
     if (c.scenario == "external") {
         ensure(walls > 0, "External case requires embedded solid wall");
+    } else if (c.scenario == "duct") {
+        ensure(walls > 0, "Duct requires stationary wall faces between its openings");
     } else {
         if(c.scenario=="flatplate")ensure(walls>0,"Flat plate requires resolved no-slip faces");
         double area = 0;
@@ -325,7 +346,7 @@ static FlowResult2D solveFlow(
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow" || c.scenario == "flatplate") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "duct" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow" || c.scenario == "flatplate") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
@@ -767,7 +788,7 @@ FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D
     validateFvMesh2D(m);
     ensure(c.flatPlateLeadingEdge==0 && c.flatPlateTop==FlatPlateTop2D::PressureFarfield,
            "Flat plate controls are not supported by transient initialization");
-    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
+    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="duct" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
            std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
            "Invalid transient initial-state controls");
     validateViscosity(m,c);

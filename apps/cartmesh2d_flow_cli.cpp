@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
             if (a == "--help") {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
-            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|cavity|manufactured|counterflow\n"
+            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|cavity|manufactured|counterflow\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
@@ -108,7 +108,8 @@ int main(int argc, char** argv) {
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
-            "Only fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
+            "duct: uniform left inlet, right p=0, arbitrary no-slip walls; both openings must be vertical x-extrema.\n"
+            "Other presets require fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
             }

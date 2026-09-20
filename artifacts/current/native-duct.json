@@ -1,0 +1,323 @@
+{
+  "format": "cartmesh2d-duct-milestone-v1",
+  "scope": "Steady curved duct geometry/conservation audit and grid sensitivity; no reference accuracy qualification.",
+  "physicalAccuracyQualified": false,
+  "study": {
+    "valid": true,
+    "geometry": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+      "sha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e"
+    },
+    "controls": {
+      "convection": "limited-linear",
+      "maxIterations": 4000,
+      "nu": 0.1,
+      "speed": 1.0,
+      "timeoutSeconds": 180,
+      "tolerance": 1e-09
+    },
+    "executables": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "6294074f00a208f75ec96b0f2c12b633a6ba27e9523609e814089e889adcf274",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "c9959443af6a069d6f7824f7bf3a518b6b60128f88c3aed22ee2f6fa84665d1d"
+    },
+    "meshSensitivity": [
+      {
+        "cells": 628,
+        "h": 0.11593637064448999,
+        "label": "nozzle-l5",
+        "metrics": {
+          "maxSpeed": 2.856386314115465,
+          "pressureDrop": 7.996302889937049,
+          "wallForceX": 15.080034016174176,
+          "wallForceY": 3.2709251973628284e-13
+        },
+        "relativeChange": null
+      },
+      {
+        "cells": 2380,
+        "h": 0.05955401474517824,
+        "label": "nozzle-l6",
+        "metrics": {
+          "maxSpeed": 2.8787769823591556,
+          "pressureDrop": 8.250363330635334,
+          "wallForceX": 15.64254151278893,
+          "wallForceY": 4.898581540402347e-13
+        },
+        "relativeChange": {
+          "maxSpeed": 0.007777840513835706,
+          "pressureDrop": 0.03079384876965419,
+          "wallForceX": 0.035960108921869356
+        }
+      },
+      {
+        "cells": 9336,
+        "h": 0.030069008035117126,
+        "label": "nozzle-l7",
+        "metrics": {
+          "maxSpeed": 2.8844419419756284,
+          "pressureDrop": 8.447632431068733,
+          "wallForceX": 15.987728509999066,
+          "wallForceY": -5.858949401630308e-06
+        },
+        "relativeChange": {
+          "maxSpeed": 0.0019639707542848882,
+          "pressureDrop": 0.023351998568010825,
+          "wallForceX": 0.021590746740179467
+        }
+      }
+    ]
+  },
+  "runs": [
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l5/mesh",
+        "5",
+        "0.03333333333333333",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l5/openfoam",
+        "5",
+        "0"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.30082674999994197
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l5/mesh.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l5/flow",
+        "--case",
+        "duct",
+        "--nu",
+        "0.1",
+        "--speed",
+        "1.0",
+        "--tolerance",
+        "1e-9",
+        "--max-iterations",
+        "4000",
+        "--pressure-preconditioner",
+        "aggregation",
+        "--convection",
+        "limited-linear"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.2721290829995269
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l6/mesh",
+        "6",
+        "0.03333333333333333",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l6/openfoam",
+        "6",
+        "0"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.5275059579998924
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l6/mesh.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l6/flow",
+        "--case",
+        "duct",
+        "--nu",
+        "0.1",
+        "--speed",
+        "1.0",
+        "--tolerance",
+        "1e-9",
+        "--max-iterations",
+        "4000",
+        "--pressure-preconditioner",
+        "aggregation",
+        "--convection",
+        "limited-linear"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 3.029475459000423
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/complex/nozzle_profile.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l7/mesh",
+        "7",
+        "0.03333333333333333",
+        "0.1",
+        "interior",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l7/openfoam",
+        "7",
+        "0"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 47.28121045899934
+    },
+    {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+        "--mesh",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l7/mesh.solver.cm2d",
+        "--output",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/duct-study/nozzle-l7/flow",
+        "--case",
+        "duct",
+        "--nu",
+        "0.1",
+        "--speed",
+        "1.0",
+        "--tolerance",
+        "1e-9",
+        "--max-iterations",
+        "4000",
+        "--pressure-preconditioner",
+        "aggregation",
+        "--convection",
+        "limited-linear"
+      ],
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 46.39252412499991
+    }
+  ],
+  "audits": [
+    {
+      "label": "nozzle-l5",
+      "valid": true,
+      "issues": [],
+      "iterations": 143,
+      "continuity": 4.0367892580471223e-13,
+      "momentumResidual": 1.7138279336098936e-10,
+      "maxFaceDeviation": {
+        "advectionX": 2.7755575615628914e-17,
+        "advectionY": 7.37257477290143e-18,
+        "diffusionX": 2.3592239273284576e-16,
+        "diffusionY": 1.3183898417423734e-16,
+        "pressure": 2.6645352591003757e-15
+      },
+      "globalRelativeImbalance": 3.022445884840305e-14
+    },
+    {
+      "label": "nozzle-l6",
+      "valid": true,
+      "issues": [],
+      "iterations": 442,
+      "continuity": 2.512362701519877e-13,
+      "momentumResidual": 2.0086944857931994e-10,
+      "maxFaceDeviation": {
+        "advectionX": 6.938893903907228e-18,
+        "advectionY": 1.734723475976807e-18,
+        "diffusionX": 2.3592239273284576e-16,
+        "diffusionY": 4.163336342344337e-17,
+        "pressure": 1.2434497875801753e-14
+      },
+      "globalRelativeImbalance": 7.842128351531187e-15
+    },
+    {
+      "label": "nozzle-l7",
+      "valid": true,
+      "issues": [],
+      "iterations": 1928,
+      "continuity": 5.779140538157226e-13,
+      "momentumResidual": 3.290662148112609e-10,
+      "maxFaceDeviation": {
+        "advectionX": 1.734723475976807e-18,
+        "advectionY": 8.673617379884035e-19,
+        "diffusionX": 1.942890293094024e-16,
+        "diffusionY": 5.551115123125783e-17,
+        "pressure": 3.019806626980426e-14
+      },
+      "globalRelativeImbalance": 5.4734231868372025e-15
+    }
+  ],
+  "app": {
+    "version": "0.4.12",
+    "nozzleCells": 2784,
+    "nozzleAcceptedTime": 0.14,
+    "cancelResumeChecked": true,
+    "failurePreservedCompleteState": true,
+    "externalCells": 5168,
+    "externalIterations": 293,
+    "externalFarFieldSpans": 10,
+    "outletBackflow": "reject",
+    "exportAudits": {
+      "nozzleSteady": {
+        "valid": true,
+        "sha256": "27c031a68f45af43c87e81054784a012483ac9a71d21d6a7b368d53b4c07dee0"
+      },
+      "nozzleTransient": {
+        "valid": true,
+        "sha256": "4062db5370597fb383fc6db65e642282a31cffa1873365c12e7feebb75dc02b2"
+      },
+      "circle": {
+        "valid": true,
+        "sha256": "672bc1f8a2a3d234a40a60e2a9148a282e4cbf1d1c0a976dd957416ad9536a0b"
+      }
+    },
+    "packagedExternalVerified": {
+      "cells": 5168,
+      "iterations": 293,
+      "converged": true
+    },
+    "path": "desktop/dist/mac-arm64/CartMesh2D.app"
+  },
+  "validation": {
+    "ctest": "133/133",
+    "frontend": "142/142",
+    "latestDuctThermalRegression": "passed",
+    "compiler": "system clang, Release, macOS arm64",
+    "externalCheckMesh": "not run",
+    "otherPlatforms": "not run"
+  },
+  "retainedFailures": [
+    "Small external domain 0.5 Lref: outlet backflow; both 2192 and 5204 cells. Sample-loading domain bug fixed to 10 Lref, no backflow-policy change.",
+    "Study runner initially audited 1928 iterations against default 1500 despite original command max 4000. Corrected metadata forwarding and reaudited unchanged fields.",
+    "Sandbox /usr/bin/time sysctl permission failure; complete CTest passed outside sandbox."
+  ],
+  "rawData": "outputs/native-flow/duct-study and outputs/native-flow/duct",
+  "next": "Named arbitrary-orientation boundaries, physical reference checks, broader internal/external geometries and transient robustness before compressible flow",
+  "sourceSha256": {
+    "apps/cartmesh2d_flow_cli.cpp": "0b6630d48b46d2be18988d86be1f91c11fbf84ad3d98a5f1954ce2dba09452e7",
+    "apps/cartmesh2d_transport_cli.cpp": "029793b0707e9354a05867b023495c4ad28f0ee439f4dabecf64f7931e8ff95a",
+    "desktop/src/core/export-guide.js": "5bfcbbc8f024820fbcf5c3be7efbce9569f2b79889874e8fada05cafd65558a5",
+    "desktop/src/core/flow-checkpoint.js": "8aa9af1b55d85a32ea1cad45c399c91ff4a666b4db475dfb85421daae97ebf9e",
+    "desktop/src/core/flow.js": "0cafc8825bd1abd66fbf355ba8f575b39598005be3def03e1deaf2b5f2154cb9",
+    "desktop/src/core/samples.js": "04949f46803cf9cd273b9bdf6eee124a8d352f234999f3afcd6791ca88a80d14",
+    "desktop/src/core/thermal.js": "d59efd48689ebec42c8a3f4208df9f80c656b29c089e5a8a43507b218260528d",
+    "desktop/src/main.js": "7b5a69245d767275a0d0ecfe81b915d39bd08e09b5ebe07deef3dd8716cf557c",
+    "desktop/src/renderer/app.js": "c3ec5dcdb07d7299f93e1a0e59f52f380efffe684946b51ef528d3ce96776385",
+    "desktop/src/renderer/index.html": "b463e96ae233878bf4691fbdeabb95688d6670e3fac69c38409d045f0e7b791e",
+    "desktop/tests/flow-checkpoint.test.js": "78e05a626ec29b2071601da47fc55f18165d237352d217a0e378c63831ce9078",
+    "desktop/tests/flow.test.js": "240712b13de674ce2085de8dd488b51d71ae902fb3cee2b16ad133d5d9bf948a",
+    "desktop/tests/thermal.test.js": "631e39bbdadfe2465ee78d82fe2fbd99a0328787f8f78646c98ab9f3f00f45be",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "5c83c48c828f8ef2e123055128e4d56160b3f5b29efe039ffeb8a85ac03a1630",
+    "src/fv/Incompressible2D.cpp": "c87359d22b3334beec55d913f06bcd545340cf9e45ed15ab1d49ab48081ee499",
+    "tools/verification/verify_native_flow.py": "d3312511320d831fddd4099d4533b383910bc25046e081a45b3fd2ddbcee7378",
+    "tools/verification/verify_transient_flow.py": "decd60ebc885d90db7137bf725e514f5efcf97bf1695e4c37e2288f3872dc539",
+    "tests/duct_flow_cli_test.py": "8ccdf429b2bc8559dfb2bb74b77f27135ffe0b1a908d53f5329c6ec1ba8b2dcb",
+    "tools/verification/verify_duct_flow.py": "793924155f8a0a51d66e97a0a9c8b78b3ad322b60d9619af6ece203342745785"
+  },
+  "packagedBinarySha256": {
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796",
+    "cartmesh2d_flow_cli": "c9959443af6a069d6f7824f7bf3a518b6b60128f88c3aed22ee2f6fa84665d1d",
+    "cartmesh2d_transport_cli": "313602c23b1ce2ae4abb536c457ede1e2144f14cd77c79f8187701fbcb3ca9d1"
+  }
+}

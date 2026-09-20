@@ -53,8 +53,8 @@ test('reads v2 outlet backflow mode and preserves legacy v1 default', async () =
   await assert.rejects(withFile(SERIALIZED.replace('symmetric 0', 'symmetric 0 normal-inlet'), readCheckpointMetadata), /Invalid flow checkpoint metadata/);
 });
 
-test('accepts supported external and cavity configurations', async () => {
-  for (const scenario of ['external', 'cavity']) {
+test('accepts supported external, cavity and curved duct configurations', async () => {
+  for (const scenario of ['external', 'cavity', 'duct']) {
     const text = SERIALIZED.replace('"channel"', `"${scenario}"`).replace('TIME 0.125', 'TIME 0');
     const result = await withFile(text, readCheckpointMetadata);
     assert.equal(result.case, scenario);
