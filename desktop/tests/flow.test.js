@@ -30,7 +30,7 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.equal(invocation.request.pressurePreconditioner, 'ic0');
   assert.equal(invocation.request.outletBackflow, 'reject');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
-    '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500',
+    '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500', '--tolerance', '0.000001',
     '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
   const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
@@ -134,6 +134,8 @@ test('new symmetric stress output requires force metadata and consistent totals'
     wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 };
   const request = { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' };
   const validated = validateFlowOutput(current, fields, 2, request);
+  assert.throws(() => validateFlowOutput(current, fields, 2, {...request,tolerance:1e-8}), /不一致/);
+  assert.equal(validateFlowOutput({...current,tolerance:1e-8}, fields, 2, {...request,tolerance:1e-8}).summary.tolerance,1e-8);
   assert.equal(validated.summary.forceX, 2);
   assert.throws(() => validateFlowOutput({ ...current, forceDefinition: 'legacy' }, fields, 2, request), /受力定义/);
   assert.throws(() => validateFlowOutput({ ...current, discreteForceX: 2.1 }, fields, 2, request), /离散力不一致/);
@@ -198,4 +200,13 @@ test('a partial flow-file copy removes every top-level committed name', async ()
   await assert.rejects(commitFlowFiles(fileSystem, entries), /faces copy failed/);
   assert.equal(copied.length, entries.length);
   assert.deepEqual(removed.sort(), entries.map(entry => entry.destination).sort());
+});
+
+
+test('desktop tolerance can only tighten the historical flow default',()=>{
+  const request={case:'external',nu:.1,speed:1,maxIterations:500,tolerance:1e-9};
+  const invocation=buildFlowInvocation('/tmp/final.solver.cm2d','/tmp/run',request);
+  assert.equal(invocation.args[invocation.args.indexOf('--tolerance')+1],'1e-9');
+  for(const tolerance of [0,-1,NaN,Infinity,1e-5,1e-13])
+    assert.throws(()=>validateFlowRequest({...request,tolerance}));
 });

@@ -909,7 +909,7 @@ python3 tools/verification/verify_rotating_annulus.py --output outputs/ring-refe
 
 ### 保存流动工况与分段续算核对
 
-macOS 0.4.21 的“保存工况 / 读取工况”使用 `cartmesh2d-flow-case-v1` JSON（`desktop/src/core/flow-case.js`）。绑定最终CM2D文件SHA256及单元/面/顶点数，保存规范化的物性、边界逐面数值与名称、数值格式、时间控制和初始局部涡。读取还逐面检查边界位置、法向、owner、覆盖及物理约束；未知版本、额外/缺失/无效字段明确拒绝。JSON不携带可执行命令或读写路径。保存通过同目录临时文件完成后替换目标。
+macOS 0.4.21 的“保存工况 / 读取工况”最初使用 `cartmesh2d-flow-case-v1` JSON（`desktop/src/core/flow-case.js`）。绑定最终CM2D文件SHA256及单元/面/顶点数，保存规范化的物性、边界逐面数值与名称、数值格式、时间控制和初始局部涡。读取还逐面检查边界位置、法向、owner、覆盖及物理约束；未知版本、额外/缺失/无效字段明确拒绝。JSON不携带可执行命令或读写路径。保存通过同目录临时文件完成后替换目标。
 
 这是从零起算的流动设置，不包含几何生成参数、网格数据、温度条件或已接受流场。下一次会话先按原参数生成同一最终网格，再读取；完整项目导入仍待做。续算模式下保存按钮禁用；读取会取消流动/温度续算并清除旧场的界面绑定，必须重新计算。已有结果包仍保留上次完成的物理结果，不会被配置文件重新标记。真实App验证入口 `--flow-case-check=true`（同时提供 `--smoke` 和绝对 `--out`）替代文件选择对话框，经过相同IPC/表单处理，修改参数后读回，并检查两次真实计算的场及时间历史一致。
 
@@ -921,3 +921,8 @@ MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified 
 ```
 
 原始目录已压缩时从同名`.tar.gz`和`.manifest.json`独立验证；工具不重算求解器、覆盖失败输入或延长预设计算预算。当前绘图工况固定为Re100圆柱，显示真实网格、速度/重构涡量及完整受力历史，不能作为空间/时间独立性或饱和脱涡资格。
+
+
+0.4.22把App流动容差接到原生`--tolerance`，范围1e-12..1e-6，默认1e-6；核对结果容差等于实际请求。流动工况v2增加`tolerance`，读v1时显式赋旧默认1e-6，不允许v1额外携带该字段。连续性和全局相对流量门仍为1e-8。共享界面的温度联算使用`min(tolerance,1e-8)`作为`--flow-tolerance`，原来1e-8默认保持不变；温度自身停止门未修改。检查点保留物理状态而不锁死迭代预算，续算允许加严容差。实际App回归可用`--flow-tolerance=1e-9`，工况保存回归会改动并恢复该值。
+
+`tools/visualization/render_annulus_facets.py`绘制保存在`outputs/native-flow/annulus-facet-study/`的固定背景、圆边界细分研究，重新审核真实场并核对解析误差。完整单元压力误差用对称对数色标显示，最大偏差不能被颜色裁切；两侧力矩的非单调变化一并保留，不能把该研究误称三档流动网格验证。

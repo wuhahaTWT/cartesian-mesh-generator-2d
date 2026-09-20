@@ -5,7 +5,7 @@ const { parseCm2d } = require('./cm2d');
 const { validateFlowRequest } = require('./flow');
 const { validateBoundaryMesh } = require('./flow-boundaries');
 
-const FORMAT = 'cartmesh2d-flow-case-v1';
+const FORMAT = 'cartmesh2d-flow-case-v2';
 const MAX_BYTES = 32 * 1024 * 1024;
 const fail = message => { throw new Error(`流动工况：${message}`); };
 function keys(value, allowed) {
@@ -39,7 +39,13 @@ function parseFlowCaseDocument(text, meshSource) {
   let document;
   try { document = JSON.parse(text); } catch { fail('不是有效的JSON文件。'); }
   keys(document, ['format', 'mesh', 'request']);
-  if (document.format !== FORMAT) fail('不支持的文件版本。');
+  if (![FORMAT, 'cartmesh2d-flow-case-v1'].includes(document.format)) fail('不支持的文件版本。');
+  if (document.format === 'cartmesh2d-flow-case-v1') {
+    // Version 1 used the native fixed default. Never reinterpret an added v2
+    // parameter as if the old application had supported it.
+    if (!document.request || Object.hasOwn(document.request, 'tolerance')) fail('旧版工况不支持自定义容差。');
+    document.request = { ...document.request, tolerance: 1e-6 };
+  }
   keys(document.mesh, ['sha256', 'cells', 'faces', 'vertices']);
   const { mesh, identity } = meshIdentity(meshSource);
   if (Object.entries(identity).some(([key, value]) => document.mesh[key] !== value))

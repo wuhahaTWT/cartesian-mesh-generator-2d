@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "facets": 64,
+      "maximumAbsoluteNormalizedPressureError": 1.3363097040723155,
+      "metrics": {
+        "cells": 1615,
+        "housingTorque": 0.41728603557560207,
+        "housingTorqueError": 0.003802971323836528,
+        "iterations": 678,
+        "pressureL2": 0.05002440602526976,
+        "radialVelocityL2": 0.002873972034626869,
+        "rotorTorque": -0.4164781525321627,
+        "rotorTorqueError": 0.005731650020889036,
+        "torqueImbalance": 0.001928678697052508,
+        "velocityL2": 0.004514029487883808
+      },
+      "reauditSha256": "bfa1d9198958519facc65bfbbb4eed961e3c0a8a2039744a0b857897df71ec99"
+    },
+    {
+      "facets": 128,
+      "maximumAbsoluteNormalizedPressureError": 0.8942815946062623,
+      "metrics": {
+        "cells": 1664,
+        "housingTorque": 0.4170758840157228,
+        "housingTorqueError": 0.004304671217135344,
+        "iterations": 683,
+        "pressureL2": 0.028338779163975997,
+        "radialVelocityL2": 0.001578955547859436,
+        "rotorTorque": -0.4188851805311641,
+        "rotorTorqueError": 1.4706042135932904e-05,
+        "torqueImbalance": 0.0043193772592712764,
+        "velocityL2": 0.0028050446880346245
+      },
+      "reauditSha256": "fe15cc891626961b6b14c3e8ffb00480d1bd80b6d4927eaca8ffeeb1ba956c05"
+    },
+    {
+      "facets": 256,
+      "maximumAbsoluteNormalizedPressureError": 0.6524128780505638,
+      "metrics": {
+        "cells": 1777,
+        "housingTorque": 0.4167715180293608,
+        "housingTorqueError": 0.005031291485713684,
+        "iterations": 694,
+        "pressureL2": 0.020499450383477922,
+        "radialVelocityL2": 0.0009064833609087437,
+        "rotorTorque": -0.41756841567328745,
+        "rotorTorqueError": 0.0031288384981755053,
+        "torqueImbalance": 0.0019024529875381788,
+        "velocityL2": 0.0025444395976605026
+      },
+      "reauditSha256": "2e95427deddb2043d81f9fd0ed8aa6295f426f3ddd14a44e18a2e580440e18a7"
+    }
+  ],
+  "controls": {
+    "level": 6,
+    "maximumIterations": 6000,
+    "minimumLevel": 6,
+    "nu": 0.1,
+    "padding": 0.15,
+    "smallAlpha": 0.1,
+    "speed": 0.5,
+    "tolerance": 1e-09
+  },
+  "figureDriverSha256": "03df42c58d7ffa1ee881060778e414ede9f60cefc5b8a6c486ed6a94a91463df",
+  "notRun": [
+    "checkMesh"
+  ],
+  "reference": "https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html",
+  "scope": "Geometry and wall-sampling sensitivity at fixed Cartesian background resolution; not a three-grid flow qualification",
+  "source": "outputs/native-flow/annulus-facet-study/study.json",
+  "sourceSha256": "67cb5118d112d2512d928c660eb3f74daf8fdd1805f8e3a4cb5fd6dda5e87d38",
+  "valid": true
+}

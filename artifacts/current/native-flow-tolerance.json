@@ -1,0 +1,68 @@
+{
+  "format": "cartmesh2d-flow-tolerance-evidence-v1",
+  "valid": true,
+  "appVersion": "0.4.22",
+  "defaultFlowTolerance": 1e-06,
+  "defaultThermalFlowTolerance": 1e-08,
+  "scope": "Stricter iterative stopping controls and result binding; no lowered continuity gate or new physical qualification",
+  "cases": {
+    "nozzle": {
+      "cells": 2784,
+      "iterations": 360,
+      "tolerance": 1e-09,
+      "reportSha256": "e34de2cf1ffdcf781511baaaece5d930ec67438a89eca91d955eadc364423e58",
+      "zipSha256": "40f9d8d6ca3565b4ecc9c84d2247269a5e472741edcecdf9ff403ebdd29cff92",
+      "auditSha256": "27eff36e278abe6be841478a2ba093f31ebcc1cb6908f9465ba8ca66a3ae4dff",
+      "caseRoundTripAndCalculationIdentical": true
+    },
+    "thermal": {
+      "cells": 2504,
+      "iterations": 291,
+      "tolerance": 1e-09,
+      "reportSha256": "91a9e2446d50dfbd9f7a0c175106ce02f8e8a127fcb15cb49ed1f56eea23f456",
+      "zipSha256": "13ffb5397a76fe020cca03f0012d98c20324e28f73578a5593636013c244cb87",
+      "auditSha256": "81159a7410a8a5b3dd03cf00a5759ad6bddbc3104f5146879d7ddedcef232965",
+      "thermal": {
+        "time": 0.3,
+        "minValue": 299.9999999999995,
+        "maxValue": 325.392662560467,
+        "tolerance": 1e-09,
+        "failureAndCancelResumeChecked": true
+      }
+    }
+  },
+  "nozzleIterativeSensitivity": {
+    "meshSha256": "879e681670d60b16c05b56a47261ee73b9aa407a26395a0c2e5cbe7ff206708a",
+    "baseCellsSha256": "56b266900ac71be3a3557aeff5fb910b44669f7cbcbf4c701ca4cd4c4d7376c1",
+    "tightCellsSha256": "31a58800e6b8d76ff74aa1074c76deedb50176f52d8926eb100ae31b832db99e",
+    "baseTolerance": 1e-06,
+    "tightTolerance": 1e-09,
+    "maxAbsoluteDifference": {
+      "u": 1.0407033462778159e-05,
+      "v": 5.60523073572794e-06,
+      "p": 1.1963022336303197e-05
+    },
+    "scope": "Iterative sensitivity on one fixed mesh; not mesh independence"
+  },
+  "nativeBinarySha256": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "nativeUnchangedSinceFullCTest": {
+    "passed": 143,
+    "logSha256": "e396c4dabb066d4f930f6131ad8ff287d18911a73f928f0e88c224806845881f"
+  },
+  "frontend": {
+    "passed": 163,
+    "logSha256": "a654fecfac145e465474ab1cb138107abdf87f4b7f82c1df5879c4e4b0495b1a"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Windows",
+    "Linux",
+    "compressible flow"
+  ]
+}

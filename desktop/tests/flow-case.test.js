@@ -10,7 +10,7 @@ const boundaryDefinition={cells:1,faces:4,records:[
   {face:1,owner:0,x:1,y:.5,sx:1,sy:0,type:'pressure-outlet',name:'出口',u:0,v:0,p:7.25},
   {face:2,owner:0,x:.5,y:1,sx:0,sy:1,type:'wall',name:'上壁',u:0,v:0,p:0},
   {face:3,owner:0,x:0,y:.5,sx:-1,sy:0,type:'velocity-inlet',name:'入口',u:1,v:.1,p:0}]};
-const common={case:'custom',nu:.1,speed:1,maxIterations:500,convection:'face-limited-linear',
+const common={case:'custom',nu:.1,speed:1,maxIterations:500,tolerance:1e-9,convection:'face-limited-linear',
   pressurePreconditioner:'aggregation',boundaryDefinition};
 const temporal={dt:.04,endTime:1,minDt:.00001,maxCourant:.3,maxRetries:8,maxSteps:2000,steps:2,
   initialVortex:{centre:[.5,.5],radius:.1,peakSpeed:-.05}};
@@ -38,7 +38,8 @@ test('case rejects a different mesh even with equal counts and checks boundary g
 });
 test('case never silently accepts restart, unknown or inactive solver settings, or invalid values',()=>{
   const saved=createFlowCaseDocument({...common,...temporal,mode:'adaptive'},mesh);
-  const mutations=[d=>d.format='cartmesh2d-flow-case-v2',d=>d.request.resume=true,
+  const mutations=[d=>d.format='cartmesh2d-flow-case-v3',d=>d.request.resume=true,
+    d=>delete d.request.tolerance,d=>d.request.tolerance=1e-4,
     d=>delete d.request.nu,d=>d.request.nu='0.1',d=>d.request.nu=-1,d=>d.request.dt=0,
     d=>d.request.turbulence='sst',d=>d.request.steps=10,d=>d.request.command='/bin/sh',
     d=>d.request.boundaryDefinition.records[0].path='/tmp/other',
@@ -47,4 +48,14 @@ test('case never silently accepts restart, unknown or inactive solver settings, 
   assert.throws(()=>createFlowCaseDocument({...common,mode:'transient',dt:.1,steps:1,resume:true},mesh),/取消续算/);
   assert.throws(()=>parseFlowCaseDocument('null',mesh));
   assert.throws(()=>parseFlowCaseDocument('{broken',mesh),/JSON/);
+});
+
+test('legacy case files retain the exact old default while v2 preserves tighter stopping controls',()=>{
+  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v2');
+  const legacy=structuredClone(saved);legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;
+  const restored=parseFlowCaseDocument(serializeFlowCase(legacy),mesh);
+  assert.equal(restored.request.tolerance,1e-6);assert.equal(restored.format,saved.format);
+  assert.equal(parseFlowCaseDocument(serializeFlowCase(saved),mesh).request.tolerance,1e-9);
+  legacy.request.tolerance=1e-9;
+  assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(legacy),mesh),/旧版工况/);
 });

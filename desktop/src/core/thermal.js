@@ -11,6 +11,9 @@ const near = (a,b) => Math.abs(a-b) <= 1e-12 + 1e-9*Math.max(Math.abs(a),Math.ab
 function validateThermalRequest(input) {
   requireValue(input && typeof input === 'object','缺少配置。');
   const flow = validateFlowRequest({ ...input, mode:'transient' });
+  // Preserve the tighter historical coupled-flow default even when standalone
+  // flow is configured at 1e-6. A smaller user tolerance also applies here.
+  flow.tolerance = Math.min(flow.tolerance, 1e-8);
   const r = { ...flow, diffusivity:finite(input.diffusivity,'热扩散率'), initial:finite(input.initial,'初温'),
     source:finite(input.source,'温度源'), scalarConvection:input.scalarConvection, boundaries:{} };
   requireValue(r.diffusivity>0 && r.initial>=0,'热扩散率须为正、初温不得低于 0 K。');
@@ -52,6 +55,7 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
   requireValue(!r.resume||restart,'没有可用的联合续算状态。');
   const args=['--mesh',mesh,'--output',prefix,'--boundary',boundary,'--evolve-flow',r.case,
     '--flow-nu',String(r.nu),'--flow-speed',String(r.speed),'--flow-max-iterations',String(r.maxIterations),
+    '--flow-tolerance',String(r.tolerance),
     '--flow-convection',r.convection,'--pressure-preconditioner',r.pressurePreconditioner,'--outlet-backflow',r.outletBackflow,
     '--diffusivity',String(r.diffusivity),'--source',String(r.source),'--initial',String(r.initial),
     '--convection',r.scalarConvection,'--dt',String(r.dt),'--steps',String(r.steps)];
@@ -59,12 +63,12 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
   return {executable:'cartmesh2d_transport_cli',request:r,args};
 }
 const METRICS=['step','time','flowIterations','momentumResidual','continuity','scalarIterations','scalarResidual','heatContent','globalBalance','maxCourant'];
-function validateRow(row) {
+function validateRow(row,tolerance=1e-8) {
   for(const k of METRICS)finite(row[k],k);
   requireValue(row.accepted===1 && row.time>0,'监测只接受完成的正时间状态。');
   for(const k of ['step','flowIterations','scalarIterations'])requireValue(Number.isSafeInteger(row[k])&&row[k]>0,'步数/迭代数无效。');
   for(const k of ['momentumResidual','continuity','scalarResidual','maxCourant'])requireValue(row[k]>=0,'残差或 CFL 为负。');
-  requireValue(row.momentumResidual<1e-8&&row.continuity<1e-8,'流动未达接受条件。');
+  requireValue(row.momentumResidual<tolerance&&row.continuity<1e-8,'流动未达接受条件。');
   return row;
 }
 function parseThermalProgress(line) {
@@ -95,6 +99,7 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   for(const [key,value] of Object.entries({timeStep:r.dt,diffusivity:r.diffusivity,flowNu:r.nu,flowSpeed:r.speed,constantSource:r.source,initialValue:r.initial}))requireValue(near(summary[key],value),`${key} 与请求不符。`);
   requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
     && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
+  requireValue(summary.flowTolerance===r.tolerance,'流动停止容差与请求不符。');
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');
   const t=startTime+r.dt*r.steps;
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');
@@ -118,7 +123,7 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
     requireValue(row.every(v=>v.trim()!==''&&Number.isFinite(Number(v))),'时间历史含非法值。');
     const [step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant]=row.map(Number);
     requireValue(step===i+1&&near(time,startTime+(i+1)*r.dt),'时间历史次序错误。');
-    return validateRow({step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant});
+    return validateRow({step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant},r.tolerance);
   });
   requireValue(history.length===r.steps,'时间历史不完整。');
   requireValue(near(history.at(-1).heatContent,heat)&&near(history.at(-1).globalBalance,summary.globalBalance)&&near(history.at(-1).scalarResidual,summary.residualNorm),'历史、场与摘要不一致。');

@@ -856,6 +856,7 @@ async function runSmoke() {
       document.getElementById('flowCase').value = ${JSON.stringify(argument('flow') || 'external')};
       document.getElementById('flowCase').dispatchEvent(new Event('change'));
       document.getElementById('flowMaxIterations').value = ${JSON.stringify(argument('flow-max-iterations') || '20')};
+      document.getElementById('flowTolerance').value = ${JSON.stringify(argument('flow-tolerance') || '0.000001')};
       document.getElementById('flowNu').value = ${JSON.stringify(argument('flow-nu') || '0.01')};
       document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
       document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'upwind')};
@@ -895,6 +896,7 @@ async function runSmoke() {
         const saved=await smoke.saveFlowCase();
         if(!saved)throw new Error('App did not save flow case');
         document.getElementById('flowNu').value='4';
+        document.getElementById('flowTolerance').value='0.000001';
         document.getElementById('flowSpeed').value='2';
         document.getElementById('flowMode').value='steady';
         document.getElementById('flowMode').dispatchEvent(new Event('change'));

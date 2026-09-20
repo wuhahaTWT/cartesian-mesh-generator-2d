@@ -119,7 +119,7 @@ test('thermal invocation rejects unsafe mesh and restart inputs and emits native
   assert.deepEqual(invocation.args, [
     '--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run', '--boundary', '/tmp/boundary.csv',
     '--evolve-flow', 'channel', '--flow-nu', '0.1', '--flow-speed', '1',
-    '--flow-max-iterations', '100', '--flow-convection', 'limited-linear',
+    '--flow-max-iterations', '100', '--flow-tolerance', '1e-8', '--flow-convection', 'limited-linear',
     '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--diffusivity', '0.1', '--source', '0',
     '--initial', '0', '--convection', 'upwind', '--dt', '0.05', '--steps', '4'
   ]);
@@ -149,7 +149,7 @@ function thermalContractFixture() {
     format: 'cartmesh2d-scalar-transport-v1', status: 'converged', converged: true,
     evolvingFlow: true, cells: 1, faces: 4, steps: 4,
     time: 0.2, acceptedTime: 0.2, carrierTime: 0.2, timeStep: 0.05,
-    diffusivity: 0.1, flowNu: 0.1, flowSpeed: 1, flowCase: 'external',
+    diffusivity: 0.1, flowNu: 0.1, flowSpeed: 1, flowCase: 'external', flowTolerance:1e-8,
     convection: 'upwind', flowConvection: 'limited-linear', constantSource: 0,
     initialValue: 0, minValue: 0, maxValue: 0, globalBalance: 0,
     residualNorm: 1e-10, maxDiagonalScaledImbalance: 1e-10
@@ -208,4 +208,19 @@ test('thermal output contract rejects tampered joint time/value, summary types, 
       mutation.input || fixture.input
     ), /热输运|温度|联合|历史|请求|有限|不一致/, name);
   }
+});
+
+
+test('coupled flow retains its 1e-8 default and binds stricter user tolerance to summary and history',()=>{
+  const invoke=tolerance=>buildThermalInvocation('/tmp/final.solver.cm2d','/tmp/flow','/tmp/b.csv',request({tolerance}));
+  for(const [requested,expected] of [[1e-6,1e-8],[1e-8,1e-8],[1e-10,1e-10]]) {
+    const call=invoke(requested);assert.equal(call.request.tolerance,expected);
+    assert.equal(Number(call.args[call.args.indexOf('--flow-tolerance')+1]),expected);
+  }
+  const f=thermalContractFixture();
+  assert.throws(()=>validateThermalOutput(f.summary,f.cells,f.history,f.joint,f.mesh,{...f.input,tolerance:1e-10}),/容差/);
+  const q={...f.summary,flowTolerance:1e-10};
+  const history=f.history.replaceAll(',10,1e-10,1e-12,',',10,1e-11,1e-12,');
+  validateThermalOutput(q,f.cells,history,f.joint,f.mesh,{...f.input,tolerance:1e-10});
+  assert.throws(()=>validateThermalOutput(q,f.cells,history.replace(',10,1e-11,1e-12,',',10,1e-9,1e-12,'),f.joint,f.mesh,{...f.input,tolerance:1e-10}),/接受条件/);
 });

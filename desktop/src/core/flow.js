@@ -92,6 +92,8 @@ function validateFlowRequest(request = {}) {
   const nu = finite(request.nu, '运动黏度');
   const speed = finite(request.speed, '参考速度');
   const maxIterations = finite(request.maxIterations, '最大迭代数');
+  const tolerance = finite(request.tolerance ?? 1e-6, '流动停止容差');
+  if (tolerance < 1e-12 || tolerance > 1e-6) throw new Error('流动停止容差须在 1e-12 到 1e-6 之间；只能加严默认停止条件。');
   if (!(nu > 0)) throw new Error('运动黏度必须大于 0。');
   if (!(speed > 0)) throw new Error('参考速度必须大于 0。');
   if (!Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 100000)
@@ -102,7 +104,7 @@ function validateFlowRequest(request = {}) {
   if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
-  const normalized = { case: flowCase.id, nu, speed, maxIterations, convection,
+  const normalized = { case: flowCase.id, nu, speed, maxIterations, tolerance, convection,
     pressurePreconditioner, outletBackflow, viscousStress, mode, resume: Boolean(request.resume) };
   if (flowCase.id === 'custom') {
     if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
@@ -161,6 +163,7 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
     args: ['--mesh', meshPath, '--output', outputPrefix,
       '--case', validated.case, '--nu', String(validated.nu),
       '--speed', String(validated.speed), '--max-iterations', String(validated.maxIterations),
+      '--tolerance', String(validated.tolerance),
       '--convection', validated.convection, '--pressure-preconditioner', validated.pressurePreconditioner,
       '--outlet-backflow', validated.outletBackflow, '--viscous-stress', validated.viscousStress, ...temporalArgs]
   };
@@ -396,6 +399,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         || normalizedSummary.speed !== request.speed || normalizedSummary.convection !== request.convection
         || normalizedSummary.pressurePreconditioner !== request.pressurePreconditioner
         || normalizedSummary.outletBackflow !== request.outletBackflow
+        || normalizedSummary.tolerance !== request.tolerance
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }
