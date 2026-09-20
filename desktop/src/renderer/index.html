@@ -219,6 +219,7 @@
             <option value="duct">曲壁通道：均匀入口</option>
             <option value="channel">矩形通道：抛物线入口</option>
             <option value="cavity">顶盖方腔：移动壁面</option>
+            <option value="annulus">同心圆环：内壁旋转</option>
           </select>
         </label>
         <div class="pair">
@@ -228,6 +229,7 @@
         <p class="note" id="flowBoundaryInfo">边界绑定本次最终网格。重新生成网格后需要重新配置。</p>
         <div id="flowBoundaryPatches"></div>
         <p class="note">速度分量单位 m/s；出口运动学压力单位 m²/s²（Pa = ρ × 运动学压力）。不同面原有不同数值时，留空保持原分布，填写数值则统一该组。当前命名边界只计算流动，温度联算仍使用原预设。</p>
+        <p class="note">圆环模板将参考速度作为初始内壁切向速度，外壁静止；生成后参考速度仍只用于归一化。沿曲壁平滑变化的速度选“平滑变化”移动壁面，折角处不连续的速度保留“逐面恒速”。圆环模板仅适用同心圆的规则多边形近似，方形环不适用。</p>
       </div>
       <div class="pair">
         <label class="field">运动黏度 ν<span class="unit"><input id="flowNu" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>

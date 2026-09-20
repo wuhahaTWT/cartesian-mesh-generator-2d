@@ -247,7 +247,7 @@ app.whenReady().then(async () => {
       if ((await fs.stat(picked.filePaths[0])).size>32*1024*1024) throw new Error('边界文件超过32MB。');
       text=await fs.readFile(picked.filePaths[0],'utf8');
     } else {
-      if (!['channel','duct','cavity'].includes(request.source)) throw new Error('请选择支持的边界预设。');
+      if (!['channel','duct','cavity','annulus'].includes(request.source)) throw new Error('请选择支持的边界预设。');
       const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'boundary-input-'));
       const target=path.join(directory,'input.boundaries');
       try {

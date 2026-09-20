@@ -14,11 +14,14 @@ enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 
-enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall };
+enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall };
 
 // Explicit conditions refer to boundary face IDs in the final FvMesh2D only.
 // Velocity and kinematic pressure are physical values, not multiples of speed.
-// Wall velocity is a constant trace on each face (values may vary by face).
+// MovingWall has a constant trace per face. SmoothMovingWall treats supplied
+// face-centre velocities as samples of a smooth wall field and reconstructs
+// its tangential derivative from the adjacent cell gradient. Both are
+// impermeable on the actual polygon faces; neither moves the mesh.
 struct FlowBoundaryCondition2D {
     std::size_t face = 0;
     FlowBoundaryKind2D kind = FlowBoundaryKind2D::Wall;

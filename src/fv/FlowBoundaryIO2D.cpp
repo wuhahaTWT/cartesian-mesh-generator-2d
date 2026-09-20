@@ -28,14 +28,81 @@ const char* flowBoundaryKindName2D(FlowBoundaryKind2D kind) {
     case FlowBoundaryKind2D::PressureOutlet:return "pressure-outlet";
     case FlowBoundaryKind2D::Wall:return "wall";
     case FlowBoundaryKind2D::MovingWall:return "moving-wall";
+    case FlowBoundaryKind2D::SmoothMovingWall:return "smooth-moving-wall";
     }
     throw std::runtime_error("Flow boundaries: unknown condition type");
 }
 FlowBoundaryKind2D flowBoundaryKindFromName2D(const std::string& name) {
     for(auto kind:{FlowBoundaryKind2D::VelocityInlet,FlowBoundaryKind2D::PressureOutlet,
-                  FlowBoundaryKind2D::Wall,FlowBoundaryKind2D::MovingWall})
+                  FlowBoundaryKind2D::Wall,FlowBoundaryKind2D::MovingWall,FlowBoundaryKind2D::SmoothMovingWall})
         if(name==flowBoundaryKindName2D(kind))return kind;
     throw std::runtime_error("Flow boundaries: unknown condition type");
+}
+
+std::vector<FlowBoundaryCondition2D> rotatingAnnulusBoundaryPreset2D(
+    const FvMesh2D& mesh, double speed) {
+    validateFvMesh2D(mesh);
+    require(std::isfinite(speed) && speed > 0, "inner surface speed must be positive");
+    double xmin=std::numeric_limits<double>::infinity(),ymin=xmin,xmax=-xmin,ymax=-xmin;
+    for (const auto& f : mesh.faces) if (!f.neighbour) {
+        xmin=std::min(xmin,f.centre.x-.5*std::abs(f.areaVector.y));
+        xmax=std::max(xmax,f.centre.x+.5*std::abs(f.areaVector.y));
+        ymin=std::min(ymin,f.centre.y-.5*std::abs(f.areaVector.x));
+        ymax=std::max(ymax,f.centre.y+.5*std::abs(f.areaVector.x));
+    }
+    const Point2D centre{.5*(xmin+xmax),.5*(ymin+ymax)};
+    const double eps=16*TolerancePolicy{}.scale(std::max(xmax-xmin,ymax-ymin));
+    const double angleEps=128*TolerancePolicy{}.scale(1.);
+    const double pi=std::acos(-1.);
+    struct Ring { double distance=0,length=0; std::vector<double> angles; std::vector<std::size_t> faces; };
+    Ring rings[2]; // inner, outer
+    std::vector<FlowBoundaryCondition2D> result;
+    for (std::size_t id=0;id<mesh.faces.size();++id) {
+        const auto& f=mesh.faces[id]; if (f.neighbour) continue;
+        const double length=std::hypot(f.areaVector.x,f.areaVector.y);
+        const auto n=f.areaVector*(1/length);
+        const auto d=f.centre-centre;
+        const double offset=d.x*n.x+d.y*n.y;
+        require(std::abs(offset)>eps,"annulus boundary crosses its inferred centre");
+        const bool inner=offset<0;
+        auto& ring=rings[inner?0:1];
+        if (ring.faces.empty()) ring.distance=std::abs(offset);
+        require(std::abs(std::abs(offset)-ring.distance)<=eps,
+                "annulus template requires two concentric regular circular polygons");
+        double angle=std::atan2(n.y,n.x); if (angle<0) angle+=2*pi;
+        ring.angles.push_back(angle);ring.faces.push_back(id);ring.length+=length;
+        result.push_back({id,inner?FlowBoundaryKind2D::SmoothMovingWall:FlowBoundaryKind2D::Wall,
+            inner?Vector2D{speed*n.y,-speed*n.x}:Vector2D{},0,inner?"rotor":"housing"});
+    }
+    double radii[2]{};
+    for (int side=0;side<2;++side) {
+        auto& ring=rings[side];auto& angles=ring.angles;
+        require(!angles.empty(),"annulus template needs both inner and outer walls");
+        std::sort(angles.begin(),angles.end());
+        angles.erase(std::unique(angles.begin(),angles.end(),[&](double a,double b){return b-a<=angleEps;}),angles.end());
+        if (angles.size()>1 && angles.front()+2*pi-angles.back()<=angleEps) angles.pop_back();
+        const auto count=angles.size();
+        require(count>=16 && count%2==0,"annulus template requires even regular polygons with at least 16 sides");
+        for (std::size_t i=0;i<count;++i) {
+            const double next=i+1<count?angles[i+1]:angles[0]+2*pi;
+            require(std::abs(next-angles[i]-2*pi/count)<=angleEps,"annulus facet directions are not regularly spaced");
+        }
+        radii[side]=ring.distance/std::cos(pi/count);
+        const double perimeter=2*count*ring.distance*std::tan(pi/count);
+        require(std::abs(perimeter-ring.length)<=count*eps,"annulus perimeter is incomplete or duplicated");
+        for (auto id:ring.faces) {
+            const auto& f=mesh.faces[id];
+            for (double sign:{-1.,1.}) {
+                const double x=f.centre.x-centre.x+sign*.5*f.areaVector.y;
+                const double y=f.centre.y-centre.y-sign*.5*f.areaVector.x;
+                require(std::hypot(x,y)<=radii[side]+eps,"annulus face extends outside its regular polygon");
+            }
+        }
+    }
+    require(radii[0]+eps<rings[1].distance,"annulus inner and outer polygons overlap");
+    FlowControls2D controls;controls.scenario="custom";controls.speed=speed;controls.boundaryConditions=result;
+    validateFlowBoundaryConditions2D(mesh,controls);
+    return result;
 }
 
 std::vector<FlowBoundaryCondition2D> readFlowBoundaryConditions2D(

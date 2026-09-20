@@ -11,7 +11,13 @@ namespace cartmesh2d::fv {
     std::istream&, const FvMesh2D&, const FlowControls2D&);
 void writeFlowBoundaryConditions2D(std::ostream&, const FvMesh2D&, const FlowControls2D&);
 
-// Converts supported physical presets (channel, duct, cavity) to explicit data.
+// Template for concentric regular polygon approximations to circular walls
+// (even numbers of sides >=16); inner wall moves CCW at the supplied speed.
+// Rejects squares, eccentric/irregular rings and extra boundary components.
+[[nodiscard]] std::vector<FlowBoundaryCondition2D> rotatingAnnulusBoundaryPreset2D(
+    const FvMesh2D&, double innerSurfaceSpeed);
+
+// Converts supported physical presets (channel, duct, cavity, annulus) to explicit data.
 // Verification forcing and unsupported slip/farfield conditions are rejected.
 [[nodiscard]] std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
     const FvMesh2D&, const FlowControls2D&);

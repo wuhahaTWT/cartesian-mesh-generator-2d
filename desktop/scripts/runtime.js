@@ -21,6 +21,7 @@ const SAMPLE_SOURCES = Object.freeze([
   'complex/serpentine_body.xy',
   'complex/gear_star.xy',
   'complex/annulus.xy',
+  'complex/rotating_annulus.xy',
   'complex/nozzle_profile.xy',
   'h4_3/narrow_gap.xy',
   'h4_3/sharp_trailing_edge.xy'

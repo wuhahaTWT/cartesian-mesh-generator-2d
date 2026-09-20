@@ -796,7 +796,7 @@ function renderFlowBoundaries() {
     nameInput.addEventListener('change',()=>{records.forEach(b=>b.name=nameInput.value);edited();renderFlowBoundaries();updateFlowMode();});
     label.append(nameInput);card.append(label);
     const type=document.createElement('select');type.setAttribute('aria-label',`${name} 边界类型`);
-    for(const [value,text] of [['velocity-inlet','速度入口'],['pressure-outlet','压力出口'],['wall','静止壁面'],['moving-wall','移动壁面']]){
+    for(const [value,text] of [['velocity-inlet','速度入口'],['pressure-outlet','压力出口'],['wall','静止壁面'],['moving-wall','移动壁面（逐面恒速）'],['smooth-moving-wall','移动壁面（平滑变化）']]){
       const option=document.createElement('option');option.value=value;option.textContent=text;type.append(option);
     }
     type.value=records[0].type;

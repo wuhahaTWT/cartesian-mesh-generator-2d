@@ -100,6 +100,17 @@ const SAMPLES = Object.freeze([
     smallAlpha: 0.15
   },
   {
+    id: 'rotating_annulus',
+    label: '同心圆旋转环隙',
+    file: 'rotating_annulus.xy',
+    fluidRegion: 'interior',
+    note: '半径0.5/1m的64段同心圆。选择命名边界，再生成“同心圆环”模板：内壁逆时针运动，外壁静止；几何网格保持固定。',
+    sizeField: { farFieldSpans: .25, wallCellsPerSpan: 16, cellsPerLevel: 3 },
+    interiorSizeField: { farFieldSpans: .25, wallCellsPerSpan: 16, cellsPerLevel: 3, farLevel: 4 },
+    interiorSmallAlpha: .05,
+    smallAlpha: .05
+  },
+  {
     id: 'nozzle',
     label: '喷管型线',
     file: 'nozzle_profile.xy',

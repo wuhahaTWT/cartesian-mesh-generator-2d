@@ -867,3 +867,17 @@ Git 历史和标签没有清除。最近前端临时保存 `f43a51f` 涉及的�
 `FlowResult2D::namedWallLoads`按custom边界名称积分无滑移静止/移动壁面；`FaceMomentum2D`中的实际压力及黏性通量进入力和力矩，入口/出口不计入。CLI摘要`namedWallLoads`保留压力/黏性分项、总量、面数和长度，`wallLoadReference=[0,0]`。力的单位m³/s²、力矩m⁴/s²，均除以密度和单位厚度，正力矩为逆时针；其他基准O处力矩为M_O=M_0-(O_x F_y-O_y F_x)。开放壁面分组的压力载荷随压力基准改变，不把单组载荷冒称全域守恒。
 
 `verify_native_flow.py::audit_named_wall_loads`从真实CM2D面中心/外法向与CSV重新积分，原方程审核另行重建各面通量；非定常共享同一审核。`desktop/src/core/wall-loads.js`检查名称覆盖、单位基准语义、分项加和与全壁面合力，App显示各组，旧无载荷字段的结果兼容但不补造数据。
+
+### 平滑移动壁面与旋转环隙
+
+`MovingWall`保留逐面常量速度迹线；`SmoothMovingWall`/`smooth-moving-wall`把面心速度解释为平滑壁面速度场的采样，黏性应力重构保留单元梯度的切向分量，再施加紧致法向导数。二者均要求实际面上的法向速度为零，固定网格，没有刚体网格运动或滑移网格。类型写入边界v1和检查点v4（扩展枚举，旧程序遇未知类型失败）；改变类型不能继续原检查点。避免在速度有跳变的尖角处误用平滑假设。
+
+`rotatingAnnulusBoundaryPreset2D`检查两圈同心偶数正多边形（至少16边），使用最终实际分段面生成内壁逆时针速度、静止外壁。`annulus`仅为边界模板名，不是新增固定求解场景，真正求解仍用custom。App同心圆样例与原方形带孔annulus样例分开。
+
+```sh
+build/cartmesh2d_flow_cli --mesh case.solver.cm2d --case annulus --speed .5 --export-boundaries case.boundaries
+build/cartmesh2d_flow_cli --mesh case.solver.cm2d --case custom --boundary case.boundaries --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner aggregation --output outputs/ring/flow
+python3 tools/verification/verify_rotating_annulus.py --output outputs/ring-reference-new
+```
+
+参考工具独立构造环形四边形以分离求解器误差，不称为Cut-cell；仍由原生几何工厂执行完整Solver质量门，Python另重算几何、通量与方程。径向/角向和多边形圆边界同步细化；解析式与力矩来自[UT Austin](https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html)，速度L2按内壁速度归一化，压力L2按速度平方归一化，压力基准取cell0。预设误差门在运行前保存，加严容差对照单独核查迭代误差；不把圆环结果泛化为全部旋转设备或三维Taylor涡。

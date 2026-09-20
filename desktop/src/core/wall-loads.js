@@ -14,7 +14,7 @@ function validateWallLoads(summary) {
       || summary.wallLoadReference.some(x => x !== 0) || !Array.isArray(summary.namedWallLoads)
       || !Array.isArray(summary.boundaryConditions)) fail();
   const expected = new Map();
-  for (const b of summary.boundaryConditions) if (['wall','moving-wall'].includes(b.type))
+  for (const b of summary.boundaryConditions) if (['wall','moving-wall','smooth-moving-wall'].includes(b.type))
     expected.set(b.name,(expected.get(b.name)||0)+1);
   const seen = new Set();
   for (const load of summary.namedWallLoads) {

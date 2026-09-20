@@ -133,6 +133,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                 break;
             case FlowBoundaryKind2D::Wall:
             case FlowBoundaryKind2D::MovingWall:
+            case FlowBoundaryKind2D::SmoothMovingWall:
                 ensure(condition.pressure == 0, "Wall cannot prescribe pressure");
                 if (condition.kind == FlowBoundaryKind2D::Wall)
                     ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
@@ -142,7 +143,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                        "Moving wall velocity must be tangential to its face");
                 b.role[id] = condition.kind == FlowBoundaryKind2D::Wall ? Role::Wall : Role::Lid;
                 b.fixedU[id] = b.fixedV[id] = true;
-                b.constantU[id] = b.constantV[id] = true;
+                b.constantU[id] = b.constantV[id] = condition.kind != FlowBoundaryKind2D::SmoothMovingWall;
                 b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
                 break;
             default:
@@ -956,6 +957,8 @@ std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
         validateFlowBoundaryConditions2D(mesh, controls);
         return controls.boundaryConditions;
     }
+    if (controls.scenario == "annulus")
+        return rotatingAnnulusBoundaryPreset2D(mesh, controls.speed);
     ensure(controls.scenario == "duct" || controls.scenario == "channel" || controls.scenario == "cavity",
            "Explicit boundary template currently supports duct, channel and cavity only");
     const auto b=boundaries(mesh, controls);

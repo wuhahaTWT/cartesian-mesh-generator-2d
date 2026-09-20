@@ -74,3 +74,17 @@ test('custom checkpoint restores every named condition and geometry for the edit
      await assert.rejects(metadata(text));
    }
 });
+
+test('smooth wall samples keep their distinct physical type through input and checkpoint',async()=>{
+  const d=copy();Object.assign(d.records[0],{type:'smooth-moving-wall',name:'rotor',u:.2});
+  validateBoundaryMesh(d,mesh,1);
+  assert.deepEqual(parseBoundaryDefinition(serializeBoundaryDefinition(d)),d);
+  const original=copy();Object.assign(original.records[0],{type:'moving-wall',name:'rotor',u:.2});
+  assert(!sameConditions(d.records,original.records));
+  const text=checkpoint().replace('BOUNDARY 0 wall "曲壁" 0 0 0','BOUNDARY 0 smooth-moving-wall "rotor" 0.2 0 0');
+  const result=await metadata(text);
+  assert.equal(result.boundaryDefinition.records[0].type,'smooth-moving-wall');
+  validateBoundaryMesh(result.boundaryDefinition,mesh,result.speed);
+  d.records[0].v=.1;
+  assert.throws(()=>validateBoundaryMesh(d,mesh,1),/切向/);
+});

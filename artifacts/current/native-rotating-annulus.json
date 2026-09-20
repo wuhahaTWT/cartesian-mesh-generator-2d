@@ -1,0 +1,375 @@
+{
+  "format": "cartmesh2d-smooth-rotating-wall-v1",
+  "version": "0.4.17",
+  "reference": "https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html",
+  "scope": "Smooth tangential moving-wall samples on fixed polygon meshes. Ring-quadrilateral accuracy is distinct from Cut-cell qualification; no moving/deforming geometry or 3-D Taylor vortices.",
+  "templates": "Concentric regular even polygons, >=16 facets each. Reject square/odd/eccentric rings. Inner speed is explicit surface speed; reference speed does not rescale existing boundaries.",
+  "structured": {
+    "valid": true,
+    "definition": {
+      "innerOmega": 1,
+      "innerRadius": 0.5,
+      "nu": 0.1,
+      "outerOmega": 0,
+      "outerRadius": 1,
+      "pressure": "r*r/18-2*log(r)/9-1/(18*r*r)+C",
+      "pressureGauge": "cell 0",
+      "torque": 0.41887902047863906,
+      "velocityTheta": "-r/3+1/(3*r)"
+    },
+    "controls": {
+      "maxIterations": 6000,
+      "tightTolerance": 1.0000000000000001e-11,
+      "timeout": 180,
+      "tolerance": 1e-09
+    },
+    "predeclaredLimits": {
+      "finePressureL2": 0.005,
+      "fineTorqueRelative": 0.01,
+      "fineVelocityL2": 0.005,
+      "tighterVelocityMaxChange": 1e-06,
+      "torqueImbalance": 0.005
+    },
+    "cases": [
+      {
+        "cells": 512,
+        "housingTorque": 0.4148814934630096,
+        "housingTorqueError": 0.009543392770212274,
+        "iterations": 281,
+        "pressureL2": 0.0018791461800772688,
+        "radialVelocityL2": 0.0002709133283901075,
+        "rotorTorque": -0.4144939139217244,
+        "rotorTorqueError": 0.010468670767764731,
+        "torqueImbalance": 0.0009252779975524578,
+        "velocityL2": 0.008202233621690029
+      },
+      {
+        "cells": 2048,
+        "housingTorque": 0.4179225039800576,
+        "housingTorqueError": 0.0022835149334728983,
+        "iterations": 972,
+        "pressureL2": 0.0006998645614570067,
+        "radialVelocityL2": 2.9850306280024147e-05,
+        "rotorTorque": -0.417800554413756,
+        "rotorTorqueError": 0.0025746480777450167,
+        "torqueImbalance": 0.00029113314427211845,
+        "velocityL2": 0.002025339257934193
+      },
+      {
+        "cells": 8192,
+        "housingTorque": 0.4186460125268074,
+        "housingTorqueError": 0.000556265509705943,
+        "iterations": 3486,
+        "pressureL2": 0.0002098032861397696,
+        "radialVelocityL2": 2.9316978644233192e-06,
+        "rotorTorque": -0.4186130007539951,
+        "rotorTorqueError": 0.0006350753120554721,
+        "torqueImbalance": 7.880980234952898e-05,
+        "velocityL2": 0.0005011074702595255
+      }
+    ],
+    "observedOrders": {
+      "housingTorqueError": [
+        2.0632460252101144,
+        2.0374106628889765
+      ],
+      "pressureL2": [
+        1.4249296370806612,
+        1.7380384822102215
+      ],
+      "rotorTorqueError": [
+        2.023631118967368,
+        2.019375654486457
+      ],
+      "velocityL2": [
+        2.017853246735715,
+        2.0149716393359287
+      ]
+    },
+    "iterationSensitivity": {
+      "maxAbs": {
+        "p": 2.4276379594068143e-08,
+        "u": 1.1751862982745109e-07,
+        "v": 1.1751867684539619e-07
+      },
+      "metrics": {
+        "cells": 8192,
+        "housingTorque": 0.4186463847353319,
+        "housingTorqueError": 0.0005553769273079123,
+        "iterations": 4894,
+        "pressureL2": 0.000209799637618526,
+        "radialVelocityL2": 2.9316966269381424e-06,
+        "rotorTorque": -0.4186128480791885,
+        "rotorTorqueError": 0.0006354397963077522,
+        "torqueImbalance": 8.006286899983992e-05,
+        "velocityL2": 0.0005009754578774893
+      }
+    }
+  },
+  "cutcell": {
+    "qualified": false,
+    "cases": [
+      {
+        "metrics": {
+          "cells": 504,
+          "housingTorque": 0.40890419363649533,
+          "housingTorqueError": 0.023813144976193447,
+          "iterations": 214,
+          "pressureL2": 0.05397550050138637,
+          "radialVelocityL2": 0.005380123951857628,
+          "rotorTorque": -0.4129773117199466,
+          "rotorTorqueError": 0.014089291824519554,
+          "torqueImbalance": 0.009723853151673895,
+          "velocityL2": 0.012358780987722232
+        },
+        "runs": [
+          {
+            "command": [
+              "build/cartmesh2d_flow_cli",
+              "--mesh",
+              "outputs/native-flow/couette-probe/l5/mesh.solver.cm2d",
+              "--case",
+              "annulus",
+              "--speed",
+              "0.5",
+              "--export-boundaries",
+              "outputs/native-flow/annulus-cutcell-smooth/l5.boundaries"
+            ],
+            "commandText": "build/cartmesh2d_flow_cli --mesh outputs/native-flow/couette-probe/l5/mesh.solver.cm2d --case annulus --speed 0.5 --export-boundaries outputs/native-flow/annulus-cutcell-smooth/l5.boundaries",
+            "returncode": 0,
+            "seconds": 0.010320749999664258,
+            "status": "passed",
+            "stderr": "outputs/native-flow/annulus-cutcell-smooth/l5-boundary.stderr.log",
+            "stdout": "outputs/native-flow/annulus-cutcell-smooth/l5-boundary.stdout.log",
+            "timedOut": false
+          },
+          {
+            "command": [
+              "build/cartmesh2d_flow_cli",
+              "--mesh",
+              "outputs/native-flow/couette-probe/l5/mesh.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "outputs/native-flow/annulus-cutcell-smooth/l5.boundaries",
+              "--output",
+              "outputs/native-flow/annulus-cutcell-smooth/l5",
+              "--nu",
+              "0.1",
+              "--speed",
+              "0.5",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--max-iterations",
+              "6000",
+              "--tolerance",
+              "1e-09"
+            ],
+            "commandText": "build/cartmesh2d_flow_cli --mesh outputs/native-flow/couette-probe/l5/mesh.solver.cm2d --case custom --boundary outputs/native-flow/annulus-cutcell-smooth/l5.boundaries --output outputs/native-flow/annulus-cutcell-smooth/l5 --nu 0.1 --speed 0.5 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-09",
+            "returncode": 0,
+            "seconds": 0.39961008400132414,
+            "status": "passed",
+            "stderr": "outputs/native-flow/annulus-cutcell-smooth/l5-flow.stderr.log",
+            "stdout": "outputs/native-flow/annulus-cutcell-smooth/l5-flow.stdout.log",
+            "timedOut": false
+          }
+        ],
+        "valid": true
+      },
+      {
+        "metrics": {
+          "cells": 1672,
+          "housingTorque": 0.4166654284589771,
+          "housingTorqueError": 0.005284561678769643,
+          "iterations": 684,
+          "pressureL2": 0.03012968137162794,
+          "radialVelocityL2": 0.0014379699595866264,
+          "rotorTorque": -0.41855222097798495,
+          "rotorTorqueError": 0.0007801763389359896,
+          "torqueImbalance": 0.004504385339833654,
+          "velocityL2": 0.00304367514716105
+        },
+        "runs": [
+          {
+            "command": [
+              "build/cartmesh2d_flow_cli",
+              "--mesh",
+              "outputs/native-flow/couette-probe/l6/mesh.solver.cm2d",
+              "--case",
+              "annulus",
+              "--speed",
+              "0.5",
+              "--export-boundaries",
+              "outputs/native-flow/annulus-cutcell-smooth/l6.boundaries"
+            ],
+            "commandText": "build/cartmesh2d_flow_cli --mesh outputs/native-flow/couette-probe/l6/mesh.solver.cm2d --case annulus --speed 0.5 --export-boundaries outputs/native-flow/annulus-cutcell-smooth/l6.boundaries",
+            "returncode": 0,
+            "seconds": 0.013569333999839728,
+            "status": "passed",
+            "stderr": "outputs/native-flow/annulus-cutcell-smooth/l6-boundary.stderr.log",
+            "stdout": "outputs/native-flow/annulus-cutcell-smooth/l6-boundary.stdout.log",
+            "timedOut": false
+          },
+          {
+            "command": [
+              "build/cartmesh2d_flow_cli",
+              "--mesh",
+              "outputs/native-flow/couette-probe/l6/mesh.solver.cm2d",
+              "--case",
+              "custom",
+              "--boundary",
+              "outputs/native-flow/annulus-cutcell-smooth/l6.boundaries",
+              "--output",
+              "outputs/native-flow/annulus-cutcell-smooth/l6",
+              "--nu",
+              "0.1",
+              "--speed",
+              "0.5",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--max-iterations",
+              "6000",
+              "--tolerance",
+              "1e-09"
+            ],
+            "commandText": "build/cartmesh2d_flow_cli --mesh outputs/native-flow/couette-probe/l6/mesh.solver.cm2d --case custom --boundary outputs/native-flow/annulus-cutcell-smooth/l6.boundaries --output outputs/native-flow/annulus-cutcell-smooth/l6 --nu 0.1 --speed 0.5 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-09",
+            "returncode": 0,
+            "seconds": 4.1241399999998976,
+            "status": "passed",
+            "stderr": "outputs/native-flow/annulus-cutcell-smooth/l6-flow.stderr.log",
+            "stdout": "outputs/native-flow/annulus-cutcell-smooth/l6-flow.stdout.log",
+            "timedOut": false
+          }
+        ],
+        "valid": true
+      }
+    ],
+    "limitation": "Third mesh with 256 facets exceeded the unchanged 180s generation budget. Pressure L2/Uwall^2 remains about 3% on 1672 cells. No three-grid Cut-cell qualification."
+  },
+  "retainedFailure": {
+    "initialStudy": "outputs/native-flow/rotating-annulus-smooth/summary.json",
+    "reason": "1e-8 vs 1e-10 iterative velocity change 1.1712e-6 exceeded predeclared 1e-6; rerun at 1e-9 vs 1e-11 without relaxing limits"
+  },
+  "tests": {
+    "ctest": 139,
+    "frontend": 152,
+    "rotationAngle": 0.63,
+    "checkpointContinuousVsRestart": "byte-identical",
+    "differentWallTraceRestartRejected": true,
+    "templateGeometryRejections": true
+  },
+  "app": {
+    "steady": {
+      "cells": 380,
+      "iterations": 131,
+      "continuity": 4.2981935261659463e-13,
+      "momentumResidual": 1.1401999860576618e-07,
+      "namedWallLoads": [
+        {
+          "faces": 136,
+          "forceX": -1.9976349133893345e-13,
+          "forceY": 5.410438451289778e-13,
+          "length": 6.280662313909502,
+          "name": "housing",
+          "pressureForceX": -3.673571321270719e-13,
+          "pressureForceY": 8.286106904651291e-13,
+          "pressureTorque": 3.1861153040809076e-05,
+          "torque": 0.401943846221923,
+          "viscousForceX": 1.6759364078813843e-13,
+          "viscousForceY": -2.875668453361513e-13,
+          "viscousTorque": 0.40191198506888215
+        },
+        {
+          "faces": 96,
+          "forceX": 1.9836378633425467e-13,
+          "forceY": -4.3724962886515506e-13,
+          "length": 3.140331156954751,
+          "name": "rotor",
+          "pressureForceX": 1.6357781015136075e-13,
+          "pressureForceY": -3.9596321013690705e-13,
+          "pressureTorque": 0.0003728121145118413,
+          "torque": -0.41224812019536655,
+          "viscousForceX": 3.478597618289392e-14,
+          "viscousForceY": -4.128641872824801e-14,
+          "viscousTorque": -0.4126209323098784
+        }
+      ]
+    },
+    "transient": {
+      "cells": 380,
+      "iterations": 40,
+      "continuity": 5.377619465090884e-13,
+      "momentumResidual": 2.821413119577525e-08,
+      "namedWallLoads": [
+        {
+          "faces": 136,
+          "forceX": -8.016374035628817e-13,
+          "forceY": -1.3752214720750776e-13,
+          "length": 6.280662313909502,
+          "name": "housing",
+          "pressureForceX": -7.414012924876685e-13,
+          "pressureForceY": 2.3189014434761903e-13,
+          "pressureTorque": -2.601808193970263e-06,
+          "torque": 0.026772818371426695,
+          "viscousForceX": -6.023611107521323e-14,
+          "viscousForceY": -3.694122915551268e-13,
+          "viscousTorque": 0.026775420179620667
+        },
+        {
+          "faces": 96,
+          "forceX": 3.6937293501626556e-13,
+          "forceY": -1.3326349030361173e-13,
+          "length": 3.140331156954751,
+          "name": "rotor",
+          "pressureForceX": 2.046932501970078e-13,
+          "pressureForceY": -4.561832140335953e-14,
+          "pressureTorque": 0.00027936484790691606,
+          "torque": -0.6448618615897149,
+          "viscousForceX": 1.6467968481925777e-13,
+          "viscousForceY": -8.76451689002522e-14,
+          "viscousTorque": -0.6451412264376218
+        }
+      ],
+      "acceptedTime": 0.14,
+      "failureCancelResumeChecked": true
+    }
+  },
+  "executables": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "53e96d735d0ee96ac65e248ac8fb5049e756b47aef511c52faaa5fe56eb41b78",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "5cd5401bc764a8ee38901521e9600c5a42503a61d171fa58b3134c12ce6afc04",
+    "src/fv/Incompressible2D.cpp": "8a39dc363073b969a4c0f54502f6e37250d4c281a3e86aa32e1a770f03a64e7f",
+    "src/fv/FlowBoundaryIO2D.cpp": "62f14e50c571090cf532cd0bb264f6d2a3bb591f57a572a9fb861f6f186767c4",
+    "tools/verification/verify_native_flow.py": "fa5665cd40860d0ea17eba1e82b0c12262d00fe0046963bef6ebc8331c17b699",
+    "tools/verification/verify_rotating_annulus.py": "bd694062df327e92ad774c7f4fd5c5f24d1a26ac012987f24cb71002ad96f3ee",
+    "tests/rotating_annulus_cli_test.py": "c20e3f1dcbfb2b27d82d2b248d4560228fc1c2394c8146f3704bd3466c93c4dd",
+    "desktop/src/core/flow-boundaries.js": "d0403232eee50c9206aae2cf30413e426e25684d19e8464347417c87d0e174dc",
+    "desktop/src/core/samples.js": "58afe52ff3878f38ffbff8e29fc53c8778a39ba546e009c2269aa2173a2d83f5",
+    "examples/complex/rotating_annulus.xy": "829eeccefd03606663459185d222a635de9a73c7f2444506d4a14640aab2cb0f"
+  },
+  "files": {
+    "outputs/native-flow/rotating-annulus-validated/summary.json": "6cba0be0d6bd131da71bc4d2aaae49349061894f70b1a6dea209618f6c21a538",
+    "outputs/native-flow/rotating-annulus-smooth/summary.json": "fd39406e29e8bba79b5cc8268060d564af278ee9bd993a512824bd014716e447",
+    "outputs/native-flow/rotating-annulus-app/steady-export-audit.json": "199bafd2cfc1e16d6699d37527acea06d2b6c9a35d4433fda4798b75ae6c09d5",
+    "outputs/native-flow/rotating-annulus-app/transient-export-audit.json": "87c4e7f5dc946e57487d8703214e8992379f8179093d4bd264b087ad8f72f6a6",
+    "outputs/native-flow/rotating-annulus-app/steady.png": "f902c1db7f4c5cbb9abdc4020f8e60846ee42193ba7b95dfeba6f6f30399ed71",
+    "outputs/native-flow/rotating-annulus-app/transient.png": "0189b11589e2fffdd58a49c61d6d6a634c7983a9552b9ca871c0c86c58cab45b",
+    "outputs/native-flow/rotating-annulus-app/steady.zip": "8517e454702815a818d287fdaf9170032c0f01345c0cd8371784aab05ff8a85e",
+    "outputs/native-flow/rotating-annulus-app/transient.zip": "51552bab768816b24920a68e5435661f6bb1cf8cbade37fdb75ab8a7b298451c"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Linux",
+    "Windows",
+    "compressible flow"
+  ]
+}

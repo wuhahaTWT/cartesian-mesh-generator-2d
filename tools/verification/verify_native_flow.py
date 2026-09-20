@@ -684,12 +684,13 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                     raise VerificationError('custom pressure outlet cannot prescribe velocity')
                 roles[face] = 'outlet'
                 fixed_p[face] = True
-            elif kind in ('wall', 'moving-wall'):
+            elif kind in ('wall', 'moving-wall', 'smooth-moving-wall'):
                 tolerance = (1e-12 + 1e-10*max(speed, math.hypot(u,v))) * math.hypot(sx,sy)
                 if p != 0 or (kind == 'wall' and (u != 0 or v != 0)) or abs(q) > tolerance:
                     raise VerificationError('custom wall has pressure or penetrating velocity')
                 roles[face] = 'wall' if kind == 'wall' else 'lid'
-                fixed_u[face] = fixed_v[face] = constant_u[face] = constant_v[face] = True
+                fixed_u[face] = fixed_v[face] = True
+                constant_u[face] = constant_v[face] = kind != 'smooth-moving-wall'
             else:
                 raise VerificationError('custom unsupported boundary type')
             bc_u[face], bc_v[face], bc_p[face] = u, v, p
@@ -1063,7 +1064,7 @@ def audit_named_wall_loads(mesh, measured, faces, payload):
     groups = {}
     geometry = face_geometry(mesh, measured)
     for bc in payload['boundaryConditions']:
-        if bc['type'] not in ('wall','moving-wall'): continue
+        if bc['type'] not in ('wall','moving-wall','smooth-moving-wall'): continue
         edge = mesh.edges[bc['face']]; f = geometry[edge.id]; row = faces[edge.id]
         x,y = f.centre; sx,sy = f.area_vector
         px,py = row['pressure']*sx,row['pressure']*sy

@@ -1,6 +1,6 @@
 'use strict';
 
-const KINDS = Object.freeze(['velocity-inlet','pressure-outlet','wall','moving-wall']);
+const KINDS = Object.freeze(['velocity-inlet','pressure-outlet','wall','moving-wall','smooth-moving-wall']);
 const fail = message => { throw new Error(`流动边界：${message}`); };
 const finite = value => { if (typeof value !== 'number' || !Number.isFinite(value)) fail('数值必须有限。'); return value; };
 const numberToken = value => {
@@ -107,7 +107,7 @@ function validateBoundaryMesh(value, mesh, speed) {
         Math.abs(b.sx-sx)>vectorTolerance || Math.abs(b.sy-sy)>vectorTolerance) fail('边界位置或法向与最终网格不匹配；请重新生成边界。');
     const flux=finite(b.u*sx+b.v*sy);
     if (b.type==='velocity-inlet' && !(flux<0)) fail(`入口 ${b.name} 在面 ${b.face} 上没有指向流体内部。`);
-    if (b.type==='moving-wall' && Math.abs(flux)>(1e-12+1e-10*Math.max(speed,Math.hypot(b.u,b.v)))*length)
+    if (['moving-wall','smooth-moving-wall'].includes(b.type) && Math.abs(flux)>(1e-12+1e-10*Math.max(speed,Math.hypot(b.u,b.v)))*length)
       fail(`移动壁面 ${b.name} 的速度必须沿壁面切向。`);
   }
   return d;

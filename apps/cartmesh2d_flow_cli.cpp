@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/wall conditions.\n"
-            "--export-boundaries FILE: export channel/duct/cavity preset without solving; --output optional.\n"
+            "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
