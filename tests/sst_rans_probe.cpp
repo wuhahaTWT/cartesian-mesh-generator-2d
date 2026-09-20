@@ -35,7 +35,7 @@ void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --leading-edge x --max-iterations N --scalar-preconditioner jacobi|ilu0]");
+        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --leading-edge x --max-iterations N --turbulence-updates N --scalar-preconditioner jacobi|ilu0]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
@@ -73,23 +73,30 @@ int main(int argc,char** argv) {
                 if(value<1 || value>2000 || std::floor(value)!=value)throw std::runtime_error("max-iterations must be an integer in 1..2000");
                 c.flow.maxIterations=static_cast<std::size_t>(value);
             }
+            else if(option=="--turbulence-updates") {
+                if(value<1 || value>500 || std::floor(value)!=value)throw std::runtime_error("turbulence-updates must be an integer in 1..500");
+                c.turbulenceUpdatesPerIteration=static_cast<std::size_t>(value);
+            }
             else if(option=="--leading-edge" && c.flow.scenario=="flatplate")c.flow.flatPlateLeadingEdge=value;
             else throw std::runtime_error("unknown or inapplicable probe option: "+option);
         }
         if(!(c.flow.nu>0 && c.flow.speed>0 && c.inletK>=0 && c.inletOmega>0))
             throw std::runtime_error("probe requires positive nu/speed/omega and nonnegative k");
         const std::string prefix=argv[2];
-        for(const auto suffix:{".json",".diagnostics.json",".cells.csv",".faces.csv",".history.csv"})
+        for(const auto suffix:{".json",".diagnostics.json",".cells.csv",".faces.csv",".history.csv",".unconverged.json",".unconverged.cells.csv",".unconverged.faces.csv"})
             if(std::filesystem::exists(prefix+suffix))throw std::runtime_error("probe requires a fresh output prefix");
         const auto r=solveSstRans2D(mesh,c,{}, {},[](const auto& h){
-            if(h.iteration==1||h.iteration%100==0)std::cerr<<h.iteration<<" momentum="<<h.momentumResidual<<'\n';
+            if(h.iteration==1||h.iteration%100==0)std::cerr<<h.iteration<<" momentum="<<h.momentumResidual<<" cell="<<h.momentumWorstCell
+                <<" mx="<<h.momentumResidualX<<" my="<<h.momentumResidualY
+                <<" predictor="<<h.momentumPredictorResidual<<" predictorCell="<<h.momentumPredictorWorstCell<<" pressureLinear="<<h.pressureLinearResidual<<'\n';
         });
         std::ofstream history(prefix+".history.csv");history<<std::setprecision(17);
-        history<<"iteration,momentumResidual,continuity,velocityChange,pressureChange,kNorm,omegaNorm,kCellResidual,omegaCellResidual,turbulenceIterations\n";
+        history<<"iteration,momentumResidual,continuity,velocityChange,pressureChange,kNorm,omegaNorm,kCellResidual,omegaCellResidual,turbulenceIterations,momentumWorstCell,momentumResidualX,momentumResidualY,momentumPredictorResidual,momentumPredictorWorstCell,pressureLinearResidual\n";
         for(std::size_t i=0;i<r.history.size();++i) {
             const auto& f=r.flow.history[i];const auto& h=r.history[i];
             history<<f.iteration<<','<<f.momentumResidual<<','<<f.continuity<<','<<f.velocityChange<<','<<f.pressureChange<<','
-                <<h.kNorm<<','<<h.omegaNorm<<','<<h.kCellResidual<<','<<h.omegaCellResidual<<','<<h.turbulenceIterations<<'\n';
+                <<h.kNorm<<','<<h.omegaNorm<<','<<h.kCellResidual<<','<<h.omegaCellResidual<<','<<h.turbulenceIterations<<','
+                <<f.momentumWorstCell<<','<<f.momentumResidualX<<','<<f.momentumResidualY<<','<<f.momentumPredictorResidual<<','<<f.momentumPredictorWorstCell<<','<<f.pressureLinearResidual<<'\n';
         }
         std::ofstream diagnostics(prefix+".diagnostics.json");
         diagnostics<<std::setprecision(17)<<"{\"converged\":"<<(r.converged?"true":"false")
@@ -100,13 +107,13 @@ int main(int argc,char** argv) {
         writePerformance(diagnostics,r);
         diagnostics<<"}\n";
         if(!history || !diagnostics)throw std::runtime_error("cannot write RANS history/diagnostics");
-        if(!r.converged)throw std::runtime_error("coupled RANS did not converge; history and diagnostics retained; no accepted fields");
+        const std::string fieldPrefix=prefix+(r.converged?"":".unconverged");
         const auto& flow=r.flow;const auto& t=r.turbulence.fields;
         FrozenSst2003mProblem2D p;p.k=t.k.values;p.omega=t.omega.values;
         p.boundaryK=r.boundaryK;p.boundaryOmega=r.boundaryOmega;
         std::vector<Vector2D> velocity;for(std::size_t i=0;i<p.k.size();++i)velocity.push_back({flow.u[i],flow.v[i]});
         const auto g=reconstructSst2003mGradients2D(mesh,p,velocity,r.velocityBoundary);
-        std::ofstream cells(prefix+".cells.csv"),faces(prefix+".faces.csv"),meta(prefix+".json");
+        std::ofstream cells(fieldPrefix+".cells.csv"),faces(fieldPrefix+".faces.csv"),meta(fieldPrefix+".json");
         if(!history||!cells||!faces||!meta)throw std::runtime_error("cannot write RANS evidence");
         cells<<std::setprecision(17)<<"cell,x,y,area,u,v,p,speed,k,omega,distance,gradKx,gradKy,gradWx,gradWy,strain,F1,F2,nuT,Dk,Dw,sourceK,sourceW,lossK,lossW\n";
         for(std::size_t i=0;i<p.k.size();++i) {
@@ -124,7 +131,7 @@ int main(int argc,char** argv) {
         }
         meta<<std::setprecision(17)<<"{\"case\":\""<<c.flow.scenario<<"\",\"flatPlateLeadingEdge\":"<<c.flow.flatPlateLeadingEdge
             <<",\"flatPlateTop\":\""<<(c.flow.flatPlateTop==FlatPlateTop2D::Symmetry?"symmetry":"pressure-farfield")<<"\""
-            <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":"<<c.flow.nu
+            <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":"<<(r.converged?"true":"false")<<",\"nu\":"<<c.flow.nu
             <<",\"speed\":"<<c.flow.speed<<",\"inletK\":"<<c.inletK<<",\"inletOmega\":"<<c.inletOmega<<",\"tolerance\":1e-7,"
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
@@ -142,6 +149,7 @@ int main(int argc,char** argv) {
             <<",\"wallForceX\":"<<flow.wallForceX<<",\"wallForceY\":"<<flow.wallForceY
             <<",\"wallViscousForceX\":"<<flow.wallViscousForceX<<",\"wallViscousForceY\":"<<flow.wallViscousForceY
             <<",\"globalRelativeImbalance\":"<<flow.globalRelativeImbalance<<"}\n";
+        if(!r.converged)throw std::runtime_error("coupled RANS did not converge; diagnostic-only .unconverged fields retained; no accepted fields");
         std::cout<<"coupled cells="<<mesh.cells.size()<<" iterations="<<r.history.size()<<" seconds="<<flow.performance.solveSeconds<<'\n';return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

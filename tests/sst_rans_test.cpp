@@ -103,6 +103,15 @@ void ransContract(const FvMesh2D& m) {
             sp.kSolves.patternBuilds+sp.omegaSolves.patternBuilds==sp.scalarSolves.patternBuilds &&
             sp.kSolves.ilu0Builds+sp.omegaSolves.ilu0Builds==sp.scalarSolves.ilu0Builds,
             "SST k/omega counters do not partition scalar solves");
+    for(const auto& h:observed.flow.history) {
+        require(h.momentumWorstCell<m.cells.size() && h.momentumPredictorWorstCell<m.cells.size(),
+                "momentum diagnostic cell index invalid");
+        require(std::abs(std::hypot(h.momentumResidualX,h.momentumResidualY)-h.momentumResidual)<1e-15,
+                "momentum diagnostic components do not describe worst residual");
+        require(std::isfinite(h.momentumPredictorResidual) && h.momentumPredictorResidual>=0 &&
+                std::isfinite(h.pressureLinearResidual) && h.pressureLinearResidual>=0,
+                "profiled linear residual diagnostics invalid");
+    }
     for(double k:r.turbulence.fields.k.values)require(k==0,"zero-k solution was floored");
     for(double nu:r.faceViscosity)require(nu==c.flow.nu,"zero k invented eddy viscosity");
     auto invalid=c;invalid.inletOmega=0;rejects([&]{(void)solveSstRans2D(m,invalid);});

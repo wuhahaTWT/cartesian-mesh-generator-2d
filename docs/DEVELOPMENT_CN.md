@@ -408,13 +408,29 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 72cb13a阶段的40×32/stretch8高Re算例未通过梯度独立重构，原`native-sst-physical-inputs.json`仍保留该失败。后续解析矩形中心修复与80位独立几何复测使**重新计算**的同一案例通过；原错误场继续拒绝。新证据为`native-centroid-stability.json`，不得覆盖旧文件。系统clang宏验证Apple ARM64的long double与double均为53位有效位，不能假设long double足以防止这类几何舍入。
 
 
+### SST未收敛现场与最差单元
+
+`FlowIteration2D`额外记录`momentumWorstCell`及同一单元有符号的`momentumResidualX/Y`，归一化仍为(diagU+diagV)*speed；二者hypot对应原momentumResidual。profile时另外记录压力修正前的`momentumPredictorResidual`（两分量max |b-Au|/(diag*speed)）及其单元，`pressureLinearResidual`为本次各PCG调用真实残差norm的最大值除以speed*shortestFace。这两个线性诊断使用补偿行残差，未作为新验收门；计时包含profile诊断开销，不能和旧无该诊断二进制的时间直接当提速比较。
+
+SST探针的`--turbulence-updates N`须整数1..500，控制既有每次流动更新允许的最多湍流更新，默认1不变；实际次数还受已有局部收敛及maxIterations限制。正常返回但未收敛时写`prefix.unconverged.json/.cells.csv/.faces.csv`，JSON中converged=false；history/diagnostics沿用原prefix。任何上述输出已存在都拒绝复写。内部异常/硬超时没有保证最终场，不自动接受部分文件。
+
+```sh
+# 保持普通audit的拒绝规则；只有明确诊断才读取该未收敛现场。
+python3 tools/verification/verify_sst_rans.py --mesh /path/mesh.cm2d --prefix outputs/run/flow.unconverged --output outputs/run/diagnostic.json --diagnostic
+# 诊断生成成功仍返回2、valid=false；不是普通验收的通过退出码。
+```
+
+诊断模式仅把原收敛门的失败汇集到`failedConvergenceChecks`，不抑制格式、物性、几何、本构、通量、history一致性失败；即使输入原本收敛，diagnostic也不会输出valid=true。独立报告给出动量/k/omega的最差单元及坐标。未收敛bundle共享原prefix的history，使用`.unconverged`后缀定位；默认audit继续拒绝converged=false。
+
+独立`verify_native_flow.polygon`使用原输入float的精确Fraction多边形矩，统一覆盖所有有效单元，避免相邻单元落在精度切换阈值两侧产生一个ULP中心错位。初始非有限/正面积检查保持；面积/中心仅在最终输出舍入，原生FVM不调用此Python参考。实际cell4001（长宽比小于32）的十六进制反例及顶点轮换回归保留在flow_verifier_test；参考精度修复不代表SST已收敛。
+
 ### 标量ILU(0)与SST有界诊断
 
 `ScalarTransportControls2D::preconditioner`新增`ScalarPreconditioner2D::{Jacobi,ILU0}`，默认Jacobi保持。ILU(0)用于非对称标量BiCGStab，按原CSR图自然序做零填充Doolittle分解及前/后代入；标准方法参考[Netlib Templates §3.4](https://www.netlib.org/templates/templates.pdf)，本实现没有复制库源码。它不是压力IC0，也不改变压力预条件选择。要求有限系数和正原对角/消元主元；不满足就失败，不做shift、重排序或隐式fallback，因而不是任意矩阵通用求解器。
 
 每次solve先检查真实初始残差，仅确需求解时建立因子；完全相同diag/off可供RHS变化复用，系数变化重建。失败构造清除ready状态，不计成功构造；`add/reset`失效缓存。公开`preconditionILU0`必须先factor且快照相符，否则拒绝；Krylov内部私有apply在当前solve系数不变前提下省去重复快照比较。原补偿b-Ax、norm/逐格门、高低位候选、实际场四舍五入后的最终验收不变。独立稠密掩码Doolittle、丢弃fill、非对称已知解、失效缓存、非正主元/NaN/Inf和表示精度反例均覆盖。
 
-SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..2000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写`.json/.cells.csv/.faces.csv`。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
+SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（整数1..2000，默认2000）。例如上一节高Re命令末尾加`--scalar-preconditioner ilu0 --max-iterations 100`，只用于固定工作量诊断，可能非零退出。返回后始终写`.history.csv`及`.diagnostics.json`，记录converged/stopReason、实际迭代、方法和分项计时；未收敛不会写普通`.json/.cells.csv/.faces.csv`，另保留上述显式`.unconverged.*`诊断场。硬超时或内部异常可能没有这些最终诊断，应保留stderr。prefix已有任一上述文件时拒绝，避免旧场冒充新结果。
 
 审核器验证方法声明合法，仍从真实场重算原方程；不能由末态独立推断实际执行的是哪个预条件器，执行路径另由命令/二进制哈希记录。`kSolves`与`omegaSolves`互斥地组成`scalarSolves`；`ilu0Builds/ilu0Reuses`只统计实际成功factor，不强求其等于solve调用数。计时和Krylov次数不构成物理验收。实际比较与12,800格完整超时保存在`native-sst-ilu-performance.json`；图用`python3 tools/visualization/render_sst_ilu.py --study artifacts/current/native-sst-ilu-performance.json --output outputs/sst-ilu.png`重建，需要对应本地网格及CSV。
 
@@ -436,7 +452,7 @@ SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（�
 
 `Polygon2D::centroid`保留原面积阈值和通用路径；仅当四个顶点覆盖四个**精确**包围盒角点、各边严格轴向且非零时，返回`std::midpoint`解析中心。不按tolerance近似识别，不改变signedArea、拓扑或质量策略。它统一薄矩形中心的中点舍入，避免行间细小横向偏移被大法向梯度放大；不承诺修复所有非矩形或所有条件数问题。原生几何变化可能使旧checkpoint的严格几何签名不匹配，此时仍明确拒绝。
 
-`verify_native_flow.polygon`在span²/area>32时，以80位Decimal从原binary64顶点独立计算面积与中心，其余保留原算法。该分支提高测量精度，没有改变任何几何/CFD允许误差。测试包含实际半ulp中点、轮换/反向/平移、非对称薄多边形和拒绝规则；独立读取器没有复用原生解析识别代码。
+此前`verify_native_flow.polygon`在span²/area>32时使用80位Decimal；最新已改为上节的统一精确有理数多边形测量，以修复阈值以下邻格的一个ULP错位。几何/CFD允许误差不变。测试包含实际半ulp中点、轮换/反向/平移、非对称薄多边形和拒绝规则；独立读取器没有复用原生解析识别代码。
 
 `verify_sst_rans`输出两种残差：`maxCellResidual`是从实际字段和独立本构计算的**未拆分原方程**；`reportedTransportBalance`是已逐项独立核对过的导出binary64 source/loss/通量按标量API报告顺序形成的余额。前者按原门决定方程资格，后者按原摘要容差核对history；`originalEquationCellDifference`保留运算顺序/舍入差异。不能用history小、或split余额小，跳过前者。导出系数、通量及history篡改仍由对应检查拒绝。
 

@@ -184,7 +184,7 @@ def main(args):
                                     stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
             assert rejected.returncode!=0, dims
         ilu=root/'ilu'
-        run([args.probe,plate_mesh,ilu,'flatplate-sweep','--scalar-preconditioner','ilu0'])
+        run([args.probe,plate_mesh,ilu,'flatplate-sweep','--scalar-preconditioner','ilu0','--turbulence-updates','2'])
         assert verifier.audit(plate_mesh,ilu)['scalarPreconditioner']=='ilu0'
         reject_json(plate_mesh,ilu,lambda data:data.__setitem__('scalarPreconditioner','invalid'))
         # Iteration-bounded diagnostics must never masquerade as accepted fields.
@@ -198,12 +198,41 @@ def main(args):
         assert diagnostic['performance']['sstUpdates']==1
         assert Path(str(limited)+'.history.csv').exists()
         assert not any(Path(str(limited)+s).exists() for s in ('.json','.cells.csv','.faces.csv'))
+        failed_prefix=Path(str(limited)+'.unconverged')
+        assert json.loads(Path(str(failed_prefix)+'.json').read_text())['converged'] is False
+        try:
+            verifier.audit(plate_mesh,failed_prefix)
+            raise AssertionError('ordinary acceptance approved an unconverged field')
+        except ValueError:
+            pass
+        diagnosis=verifier.audit(plate_mesh,failed_prefix,diagnostic=True)
+        assert diagnosis['valid'] is False and diagnosis['diagnosticOnly'] is True
+        assert diagnosis['failedConvergenceChecks']
+        assert diagnosis['scalar']['omega']['worstCellIndex']>=0
+        # Explicit diagnostic mode must not bless even an otherwise accepted run.
+        assert verifier.audit(plate_mesh,ilu,diagnostic=True)['valid'] is False
+        damaged=Path(str(failed_prefix)+'.cells.csv')
+        original=damaged.read_bytes()
+        try:
+            with damaged.open(newline='') as stream:
+                reader=csv.DictReader(stream);records=list(reader);fields=reader.fieldnames
+            records[0]['sourceK']=str(float(records[0]['sourceK'])+1)
+            with damaged.open('w',newline='') as stream:
+                writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows(records)
+            try:
+                verifier.audit(plate_mesh,failed_prefix,diagnostic=True)
+                raise AssertionError('diagnostic mode accepted a stale constitutive source')
+            except ValueError:
+                pass
+        finally:
+            damaged.write_bytes(original)
         previous=Path(str(ilu)+'.json').read_bytes()
         rerun=subprocess.run([str(args.probe),str(plate_mesh),str(ilu),'flatplate-sweep'],capture_output=True,timeout=90)
         assert rerun.returncode!=0 and b'fresh output prefix' in rerun.stderr
         assert Path(str(ilu)+'.json').read_bytes()==previous
         for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','2001'],
-                        ['--scalar-preconditioner','ic0']):
+                        ['--scalar-preconditioner','ic0'],['--turbulence-updates','0'],
+                        ['--turbulence-updates','501'],['--turbulence-updates','1.5']):
             rejected=subprocess.run([str(args.probe),str(plate_mesh),str(root/'bad-options'),'flatplate-sweep',*options],
                                     capture_output=True,timeout=90)
             assert rejected.returncode!=0

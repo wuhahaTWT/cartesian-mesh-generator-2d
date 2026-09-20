@@ -349,6 +349,19 @@ class PolygonMeasurementTests(unittest.TestCase):
         # polygon; its centre must not be replaced by a box midpoint.
         self.assert_precise([(.3125,0.),(.375,0.),(.32,height)])
 
+    def test_actual_centroid_halfway_below_old_precision_trigger(self):
+        # Actual cell 4001, aspect ~29.36: old aspect>32 trigger missed it.
+        # The exact x moment is halfway between binary64 values. Expected
+        # tie-to-even result is from exact input fractions, not exported metadata.
+        x0=float.fromhex('-0x1.f99999999999ap-2');x1=float.fromhex('-0x1.f333333333333p-2')
+        y0=float.fromhex('0x1.07a798a899018p-11');y1=float.fromhex('0x1.7767a6cfbae7fp-11')
+        points=[(x0,y0),(x1,y0),(x1,y1),(x0,y1)]
+        self.assertLess((x1-x0)/(y1-y0),32)
+        for start in range(4):
+            _,centre=verifier.polygon(points[start:]+points[:start])
+            self.assertEqual(centre[0].hex(),'-0x1.f666666666666p-2')
+            self.assertEqual(centre[1].hex(),'0x1.3f879fbc29f4cp-11')
+
     def test_invalid_polygons_still_fail(self):
         for points in ([], [(1., 1.)], [(0., 0.), (1., 0.), (2., 0.)],
                        [(0., 0.), (0., 1.), (1., 0.)]):

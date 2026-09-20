@@ -407,8 +407,13 @@ static FlowResult2D solveFlow(
     const double momentumScaledStop=previous?finite(.01*c.tolerance*c.speed*c.velocityRelaxation)
         :std::numeric_limits<double>::infinity();
     ensure(momentumScaledStop>0,"Transient linear residual scale underflow");
+    // Diagnostic normalization only; does not change pressure stopping.
+    double shortestFace=std::numeric_limits<double>::infinity();
+    for(const auto& face:m.faces)shortestFace=std::min(shortestFace,std::hypot(face.areaVector.x,face.areaVector.y));
     // Profiling observes the same solves and stopping rules, including zero-step
     // solves. Timing includes each linear solver's setup, but not assembly.
+    double predictorResidual=0,pressureLinearResidual=0;
+    std::size_t predictorWorstCell=0;
     auto linearSolve = [&](const System& system, Vec& field, bool pressure) {
         const auto start = c.profile ? Clock::now() : Clock::time_point{};
         const auto oldBuilds = system.ic0Builds(), oldReuses = system.ic0Reuses();
@@ -418,6 +423,17 @@ static FlowResult2D solveFlow(
             c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
             (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi))
             : system.solve(field, workspace, momentumScaledStop);
+        if(c.profile && pressure) {
+            for(std::size_t i=0;i<n;++i)workspace.ax[i]=system.compensatedResidualRow(i,field);
+            pressureLinearResidual=std::max(pressureLinearResidual,
+                detail::linearNorm(workspace.ax)/(c.speed*shortestFace));
+        }
+        if(c.profile && !pressure) {
+            for(std::size_t i=0;i<n;++i) {
+                const double scaled=std::abs(system.compensatedResidualRow(i,field))/(system.diag[i]*c.speed);
+                if(scaled>predictorResidual) {predictorResidual=scaled;predictorWorstCell=i;}
+            }
+        }
         if (c.profile) {
             auto& p = r.performance;
             if (pressure) {
@@ -563,6 +579,7 @@ static FlowResult2D solveFlow(
             av.rhs[i] += (common - av.diag[i]) * r.v[i];
             au.diag[i] = av.diag[i] = common;
         }
+        predictorResidual=0;predictorWorstCell=0;pressureLinearResidual=0;
         linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
@@ -644,10 +661,16 @@ static FlowResult2D solveFlow(
         r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
         refreshMomentum(true);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
+        std::size_t worstCell=0;double worstX=0,worstY=0;
         for(std::size_t i=0;i<n;++i){const double scale=finite((checkU.diag[i]+checkV.diag[i])*c.speed);
             ensure(scale>0,"Flow momentum scale underflow");
-            mr=std::max(mr,std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale);}
-        FlowIteration2D step{it,finite(mr),finite(continuity),finite(du),finite(dp)};r.history.push_back(step);
+            const double residual=std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale;
+            if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
+        FlowIteration2D step{it,finite(mr),finite(continuity),finite(du),finite(dp)};
+        step.momentumWorstCell=worstCell;step.momentumResidualX=worstX;step.momentumResidualY=worstY;
+        step.momentumPredictorResidual=finite(predictorResidual);step.momentumPredictorWorstCell=predictorWorstCell;
+        step.pressureLinearResidual=finite(pressureLinearResidual);
+        r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
         if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8&&materialConverged){r.converged=true;break;}
     }

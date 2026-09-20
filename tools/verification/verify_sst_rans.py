@@ -77,7 +77,7 @@ def coefficients(k, omega, nu, distance, strain, grad_k, grad_w):
     }
 
 
-def read_artifacts(mesh_path, prefix):
+def read_artifacts(mesh_path, prefix, *, diagnostic=False):
     mesh = native.read_cm2d(mesh_path)
     measured = native.measure(mesh, 1e-10, 1e-9)
     req(not measured.issues, str(measured.issues))
@@ -85,7 +85,9 @@ def read_artifacts(mesh_path, prefix):
     meta = json.loads(Path(str(base) + ".json").read_text(encoding="utf-8"))
     crows, cfields = rows(Path(str(base) + ".cells.csv"))
     frows, ffields = rows(Path(str(base) + ".faces.csv"))
-    hrows, hfields = rows(Path(str(base) + ".history.csv"))
+    # Diagnostic field bundles share the original run history, not an accepted field prefix.
+    history_base=str(base).removesuffix(".unconverged") if str(base).endswith(".unconverged") else str(base)
+    hrows, hfields = rows(Path(history_base + ".history.csv"))
     required_c = ("cell", "x", "y", "area", "u", "v", "p", "speed", "k", "omega",
                   "distance", "gradKx", "gradKy", "gradWx", "gradWy", "strain",
                   "F1", "F2", "nuT", "Dk", "Dw", "sourceK", "sourceW", "lossK", "lossW")
@@ -99,7 +101,7 @@ def read_artifacts(mesh_path, prefix):
     req(all(x in hfields for x in required_h), "incomplete SST-RANS history schema")
     req(len(crows) == len(mesh.cells) and len(frows) == len(mesh.edges), "field row count mismatch")
     req(meta.get("case") in ("channel", "flatplate") and meta.get("model") == "SST-2003m" and
-        meta.get("scope") == "coupled-steady-SST-2003m" and meta.get("converged") is True,
+        meta.get("scope") == "coupled-steady-SST-2003m" and (meta.get("converged") is True or (diagnostic and meta.get("converged") is False)),
         "invalid SST-RANS metadata")
     for key in ('nu','speed','inletK','inletOmega'):
         value=meta.get(key)
@@ -141,8 +143,19 @@ def read_artifacts(mesh_path, prefix):
     return mesh, measured, meta, crows, frows, hrows
 
 
-def audit(mesh_path, prefix):
-    mesh, m, meta, cells, faces, history = read_artifacts(Path(mesh_path), Path(prefix))
+def audit(mesh_path, prefix, *, diagnostic=False):
+    """Strict acceptance by default; explicit diagnostics can NEVER return valid=True.
+
+    Diagnostic mode records failed convergence gates while retaining every input,
+    geometry, constitutive, face reconstruction and reporting consistency check.
+    """
+    failed_convergence=[]
+    def convergence_check(condition, message):
+        if diagnostic:
+            if not condition: failed_convergence.append(message)
+        else:
+            req(condition,message)
+    mesh, m, meta, cells, faces, history = read_artifacts(Path(mesh_path), Path(prefix), diagnostic=diagnostic)
     geo = native.face_geometry(mesh, m)
     nu = meta["nu"]; speed=meta["speed"]; inlet_k=meta["inletK"]; inlet_w=meta["inletOmega"]
     case=meta['case']
@@ -158,7 +171,7 @@ def audit(mesh_path, prefix):
             boundaries['roles'][fid]=='farfield' and num(faces[fid]['flux'],'flux')<0)
     independent_continuity = native.continuity(
         mesh, m, [num(r["flux"], "face flux") for r in faces], speed, case, 1e-14, 1e-9)
-    req(independent_continuity['nativeDefinitionContinuity'] < 1e-8 and
+    convergence_check(independent_continuity['nativeDefinitionContinuity'] < 1e-8 and
         independent_continuity['globalRelativeImbalance'] < 1e-8, 'independent continuity failed')
     req(close(num(meta['globalRelativeImbalance'], 'global continuity'),
               independent_continuity['globalRelativeImbalance'], 1e-14, 1e-6), 'global continuity summary mismatch')
@@ -302,9 +315,12 @@ def audit(mesh_path, prefix):
         # opposing wall fluxes. Scale that budget with actual equation terms,
         # not a fixed allowance larger than the entire small-k stopping target.
         roundoff=128*math.ulp(1.)*max(base_norm,norm_flux*math.sqrt(n),1e-12)
-        req(norm <= norm_target + roundoff and max_cell <= float(meta["scalarCellTolerance"]) + 1e-12,
+        convergence_check(norm <= norm_target + roundoff and max_cell <= float(meta["scalarCellTolerance"]) + 1e-12,
             f"{name} independent residual exceeds scalar stopping gates")
-        scalar_diagnostics[name] = {"residualNorm": norm, "normTarget": norm_target,
+        worst=max(range(n), key=lambda i:abs(residual[i])/diagonal[i])
+        scalar_diagnostics[name] = {"worstCellIndex":worst,"worstCentre":list(m.centroids[worst]),
+                                    "worstSignedResidual":residual[worst],"worstDiagonal":diagonal[worst],
+                                    "residualNorm": norm, "normTarget": norm_target,
                                     "maxCellResidual": max_cell, "maxFaceFlux": norm_flux,
                                     "globalBalance": math.fsum(residual),"normRoundoffBudget":roundoff}
         history_norm = num(history[-1]["kNorm" if name == "k" else "omegaNorm"], "history norm")
@@ -370,21 +386,21 @@ def audit(mesh_path, prefix):
             "independent momentum face reconstruction differs")
         req(all(momentum["summaryDeviation"][field]["absolute"] <= 5e-10
                 for field in summary_fields), "independent momentum summary differs")
-        req(momentum["cellResidual"]["maxNormalized"] <= float(meta["tolerance"]),
+        convergence_check(momentum["cellResidual"]["maxNormalized"] <= float(meta["tolerance"]),
             "independent momentum residual exceeds configured tolerance")
-    req(num(history[-1]["momentumResidual"], "momentumResidual") <= float(meta["tolerance"]),
+    convergence_check(num(history[-1]["momentumResidual"], "momentumResidual") <= float(meta["tolerance"]),
         "reported momentum residual exceeds configured tolerance")
     req(close(num(history[-1]["momentumResidual"], "momentumResidual"),
               momentum["cellResidual"]["maxNormalized"], 1e-12, 1e-6),
         "reported momentum residual differs from independent reconstruction")
-    req(num(history[-1]["velocityChange"], "velocityChange") < float(meta["tolerance"]) and
+    convergence_check(num(history[-1]["velocityChange"], "velocityChange") < float(meta["tolerance"]) and
         num(history[-1]["pressureChange"], "pressureChange") < float(meta["tolerance"]) and
         num(history[-1]["continuity"], "continuity") < 1e-8,
         "reported coupled convergence metrics exceed configured gates")
     req(close(num(history[-1]["continuity"], "continuity"),
               independent_continuity["nativeDefinitionContinuity"], 1e-14, 1e-6),
         "reported continuity differs from independent face balance")
-    req(num(history[-1]["kCellResidual"], "kCellResidual") <= float(meta["scalarCellTolerance"]) and
+    convergence_check(num(history[-1]["kCellResidual"], "kCellResidual") <= float(meta["scalarCellTolerance"]) and
         num(history[-1]["omegaCellResidual"], "omegaCellResidual") <= float(meta["scalarCellTolerance"]),
         "reported scalar cell residual exceeds configured tolerance")
     boundary_summary={}
@@ -403,7 +419,8 @@ def audit(mesh_path, prefix):
             wall_samples.append({'face':i,'x':geo[i].centre[0],'xFromLeadingEdge':geo[i].centre[0]-meta['flatPlateLeadingEdge'],
                 'length':length,'kinematicShear':tau,'Cf':2*tau/(speed*speed),'yPlus':dn*math.sqrt(abs(tau))/nu})
         wall_samples.sort(key=lambda row:row['x'])
-    return {"valid": True, "scope": meta["scope"], "case":case,
+    return {"valid": not diagnostic,"diagnosticOnly":diagnostic,"declaredConverged":meta["converged"],
+            "failedConvergenceChecks":failed_convergence, "scope": meta["scope"], "case":case,
             "physicalInputs":{key:meta[key] for key in ('nu','speed','inletK','inletOmega')},
             "bounds":list(m.bounds),
             "plateReynolds":speed*(m.bounds[2]-meta['flatPlateLeadingEdge'])/nu if case=='flatplate' else None,
@@ -421,7 +438,10 @@ if __name__ == "__main__":
     parser.add_argument("--mesh", type=Path, required=True)
     parser.add_argument("--prefix", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--diagnostic", action="store_true", help="inspect an unconverged state; output is never accepted and exits 2")
     args = parser.parse_args()
-    result = audit(args.mesh.resolve(), args.prefix.resolve())
+    result = audit(args.mesh.resolve(), args.prefix.resolve(), diagnostic=args.diagnostic)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
+    if args.diagnostic:
+        sys.exit(2)

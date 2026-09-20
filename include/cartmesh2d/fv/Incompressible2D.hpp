@@ -76,6 +76,16 @@ struct FlowIteration2D {
     double continuity = 0;
     double velocityChange = 0;
     double pressureChange = 0;
+    // Original unrelaxed momentum residual at the cell setting momentumResidual.
+    // Signed components share the same (diagU+diagV)*speed normalization.
+    std::size_t momentumWorstCell = 0;
+    double momentumResidualX = 0, momentumResidualY = 0;
+    // profile only: max true relaxed predictor |b-Au| / (diag*speed),
+    // before pressure correction; distinct from nonlinear convergence.
+    double momentumPredictorResidual = 0;
+    std::size_t momentumPredictorWorstCell = 0;
+    // profile only: true PCG residual norm / (speed * shortest face length).
+    double pressureLinearResidual = 0;
 };
 
 struct FaceMomentum2D {

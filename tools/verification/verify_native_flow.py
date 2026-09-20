@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-import decimal
+from fractions import Fraction
 import hashlib
 import json
 import math
@@ -255,27 +255,19 @@ def polygon(points: list[tuple[float, float]]) -> tuple[float, tuple[float, floa
     twice = math.fsum(cross)
     if not math.isfinite(twice) or twice <= 0.0:
         raise VerificationError("cell polygon is not finite counter-clockwise positive area")
-    # Thin/low-area polygons amplify a one-ulp centroid displacement into a
-    # tangential gradient error. Re-measure their original binary64 vertices
-    # independently in Decimal, rather than copying the native centred-moment
-    # implementation or widening field-audit tolerances. This is an arithmetic
-    # precision trigger, not a geometry acceptance threshold.
-    span=max(max(x for x,y in local)-min(x for x,y in local),
-             max(y for x,y in local)-min(y for x,y in local))
-    if span*span > 16.0*twice:
-        with decimal.localcontext() as context:
-            context.prec=80
-            origin=tuple(decimal.Decimal.from_float(x) for x in points[0])
-            vertices=[tuple(decimal.Decimal.from_float(p[k])-origin[k] for k in (0,1)) for p in points]
-            edges=list(zip(vertices,vertices[1:]+vertices[:1]))
-            products=[a[0]*b[1]-b[0]*a[1] for a,b in edges]
-            total=sum(products)
-            if total<=0:raise VerificationError("cell polygon is not finite counter-clockwise positive area")
-            centre=tuple(float(origin[k]+sum((a[k]+b[k])*q for (a,b),q in zip(edges,products))/(3*total)) for k in (0,1))
-            return float(total/2),centre
-    cx = ox + math.fsum((a[0] + b[0]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
-    cy = oy + math.fsum((a[1] + b[1]) * q for (a, b), q in zip(pairs, cross)) / (3.0 * twice)
-    return 0.5 * twice, (cx, cy)
+    # This is the independent reference measurement, not the native mesher.
+    # Exact binary64 vertices -> rational polygon moments -> one final rounding.
+    # Selective high precision misses neighbours just below an aspect trigger;
+    # their one-ulp centroid drift can create a spurious transverse gradient.
+    # Finite Decimal arithmetic can also perturb exact halfway rounding ties.
+    origin=tuple(Fraction.from_float(x) for x in points[0])
+    vertices=[tuple(Fraction.from_float(p[k])-origin[k] for k in (0,1)) for p in points]
+    edges=list(zip(vertices,vertices[1:]+vertices[:1]))
+    products=[a[0]*b[1]-b[0]*a[1] for a,b in edges]
+    total=sum(products)
+    if total<=0:raise VerificationError("cell polygon is not finite counter-clockwise positive area")
+    centre=tuple(float(origin[k]+sum((a[k]+b[k])*q for (a,b),q in zip(edges,products))/(3*total)) for k in (0,1))
+    return float(total/2),centre
 
 
 def measure(mesh: Mesh, absolute: float, relative: float) -> Measurement:
@@ -1120,6 +1112,16 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     normalized = [math.hypot(rx, ry) / denominator
                   for (rx, ry), denominator in zip(cell_residuals, denominators)]
     momentum_residual = max(normalized, default=0.0)
+    worst_index = max(range(len(normalized)), key=normalized.__getitem__, default=None)
+    if worst_index is None:
+        worst_normalized_x = worst_normalized_y = 0.0
+        worst_centre = None
+    else:
+        worst_denominator = denominators[worst_index]
+        worst_normalized_x = cell_residuals[worst_index][0] / worst_denominator
+        worst_normalized_y = cell_residuals[worst_index][1] / worst_denominator
+        worst_centre = {"x": measured.centroids[worst_index][0],
+                        "y": measured.centroids[worst_index][1]}
     final_native = finite(payload.get("momentumResidual"), "native momentumResidual")
     summary_deviations = {
         "momentumResidual": _deviation(final_native, momentum_residual),
@@ -1174,6 +1176,10 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                                       "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"},
         "faceDeviation": deviations, "cellResidual": {
             "maxNormalized": momentum_residual,
+            "worstCellIndex": worst_index,
+            "worstNormalizedX": worst_normalized_x,
+            "worstNormalizedY": worst_normalized_y,
+            "worstCentre": worst_centre,
             "l2": math.sqrt(math.fsum(x * x + y * y for x, y in cell_residuals)),
             "maxCellVector": max((math.hypot(x, y) for x, y in cell_residuals), default=0.0),
             "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component",
