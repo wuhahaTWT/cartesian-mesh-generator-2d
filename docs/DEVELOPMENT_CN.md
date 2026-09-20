@@ -208,9 +208,11 @@ App选择“命名边界”，从预设生成或导入`.boundaries`，按组编�
 
 压力采用每个共享面唯一的运动学压力值：内部面按几何权重插值并修正面中心偏斜；出口面取0，其他边界按内部压力的最小二乘梯度外推，重构时不对未知壁面压力强加零法向梯度。`sum(p_face*S)/area` 进入动量源；Rhie–Chow 中取消单元压力响应的项、压力修正对单元速度的作用使用同一 Gauss 算子。面法向压力差仍保留直接相邻压力差及最小二乘非正交修正，不能用平均面压力替代这部分，否则棋盘压力可能成为零模态。壁面压力积分复用同一个面值。
 
-压力梯度先使用直接邻居和已知压力边界；忽略未知压力边界的单元统一加入排序去重的第二圈真实单元，即使直接取样形式上满秩也如此。默认圆柱反例中两个近共线直接邻居的条件数约565，加入第二圈后约8.20。没有未知边界但秩不足的尖角仍尝试第二圈，最终秩不足则明确失败。速度的滑移/出流零法向约束保持原定义。压力修正的固定速度边界仍不允许修正面体积通量，不能把“压力值线性外推”和“给压力泊松方程增加边界通量”混为一谈。该区别可参阅 [MOOSE 压力外推边界说明](https://mooseframework.inl.gov/source/linearfvbcs/LinearFVExtrapolatedPressureBC.html)；本仓库使用自行实现的最小二乘重构，没有复制其代码。新摘要 `pressureBoundaryReconstruction=one-sided-linear-2ring` 标识本方案；独立验证器按旧 `one-sided-linear` 标记保留仅秩不足时扩展的算法，缺字段按旧零法向重构审核，未知标记拒绝。独立多边形测量改为相对局部顶点的面积/质心计算，并与80位Decimal参考对照，避免微小切割单元的全局坐标抵消；原收敛阈值不变。
+压力梯度先使用直接邻居和已知压力边界；忽略未知压力边界的单元至少加入完整第二圈真实样本，秩不足的尖角也尝试扩展。随后检查归一化方向最小二乘正规矩阵的谱条件数：大于16时继续加入完整的下一圈，最多6圈或直到可达邻域用尽。16是重构邻域的几何选择参数（设计矩阵条件数目标4），不是网格或流动验收阈值；未达到目标时仍使用可达样本并执行原数值秩检查，不宣称任意网格均稳定。样本按cell ID排序去重，已有直接共享面采样权重不变；常数/仿射压力保持一致，几何选择随网格一起旋转。原反例条件数565→8.20只需两圈；2,504格圆柱的cell1723第二圈仍为140.39，扩展第三圈后为11.19。核心修复未修改几何、物理边界、压力修正次数、松弛或停止条件。
 
-真实局部反例保留在 `tests/flow_face_test.cpp::fullRankBoundaryPressureStencil`。可视化命令：`python3 tools/visualization/render_pressure_stencil.py --mesh <mesh.solver.cm2d> --prefix <accepted-flow-prefix> --cell 2251 --time .1 --output <figure.png>`；2251仅是本次固定圆柱的单元ID，其他网格需重新选取。
+未知壁面压力仍线性外推，不强加物理零法向压力梯度；压力修正仍不能改变指定速度边界的体积通量。速度滑移/出流约束保持原定义。相关边界概念见 [MOOSE压力外推说明](https://mooseframework.inl.gov/source/linearfvbcs/LinearFVExtrapolatedPressureBC.html)，具体重构为本仓库原生实现。新摘要使用`pressureBoundaryReconstruction=one-sided-linear-adaptive`；独立审核器保留`one-sided-linear-2ring`的固定两圈、`one-sided-linear`的仅秩不足扩展，以及缺字段时旧零法向算法，未知标记拒绝。续算的逐字节一致性只对相同求解器版本、设置和工具链成立；算子修复前后的结果按各自摘要标记审核。
+
+真实局部反例保留在 `tests/flow_face_test.cpp::fullRankBoundaryPressureStencil`及`pressureStencilBeyondSecondRing`；完整粗圆柱生成、稳态/非定常与续算回归在`tests/pressure_stencil_cli_test.py`。可视化命令：`python3 tools/visualization/render_pressure_stencil.py --mesh <mesh.solver.cm2d> --prefix <accepted-flow-prefix> --cell 2251 --time .1 --output <figure.png>`；2251仅是本次固定圆柱的单元ID，其他网格需重新选取。
 
 `--outlet-backflow reject|normal-inlet` 默认reject；normal-inlet仅在右侧压力出口实际面通量q<0时激活：p=0不变，法向速度零法向梯度，切向速度固定0；流出仍使用旧零梯度/重构。动量中负q的法向q*Uowner放入显式右端，保持原完整方程与正主对角；最终残差和输出通量使用当前场，不能截掉负通量。每次压力修正后用新通量更新边界掩码，再重算原动量残差。摘要记录 `outletBackflow`、`outletBackflowFaces`、`outletInflow`（正的m²/s流入量）；没有压力出口的封闭算例不受此选项影响。模型形式参考[OpenFOAM pressureInletOutletVelocity](https://api.openfoam.com/2606/classFoam_1_1pressureInletOutletVelocityFvPatchVectorField.html)，实现为本仓库独立代码；不是任意方向/湍流或能量稳定开放边界资格。
 

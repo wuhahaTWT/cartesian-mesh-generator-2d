@@ -1,0 +1,113 @@
+{
+  "format": "cartmesh2d-adaptive-pressure-stencil-v1",
+  "version": "0.4.15",
+  "scope": "Repair near-collinear pressure reconstruction on real coarse Cut-cells; discrete conservation and restart validation, not cylinder-flow accuracy qualification.",
+  "regression": {
+    "cells": 2504,
+    "meshSha256": "b66923104597c6e2a458f0760856d455a56c241bf92e9c3486cd788cb5084433",
+    "regeneratedSameBytes": true,
+    "oldCommit": "f21a0495679fa884c45b7a28dbcf48f83c512858",
+    "oldResult": "upwind, limited-linear and face-limited-linear all reject outlet backflow during steady startup",
+    "controls": {
+      "nu": 0.1,
+      "speed": 1,
+      "convection": "face-limited-linear",
+      "pressurePreconditioner": "aggregation",
+      "outletBackflow": "reject",
+      "tolerance": 1e-08
+    },
+    "fixed": {
+      "iterations": 256,
+      "momentumResidual": 3.6614641028714292e-09,
+      "continuity": 2.5262856537865978e-14,
+      "forceX": 2.2125398750265886,
+      "forceY": -0.042497866877250434,
+      "pressureBoundaryReconstruction": "one-sided-linear-adaptive"
+    },
+    "independentValid": true
+  },
+  "localStencil": {
+    "cell": 1723,
+    "directNormalMatrixCondition": 127.74656632622,
+    "secondRingNormalMatrixCondition": 140.39422879179,
+    "thirdRingNormalMatrixCondition": 11.19369911884,
+    "directSamples": 2,
+    "secondRingSamples": 4,
+    "adaptiveSamples": 7,
+    "oneMicroPressurePerturbationGradientErrorOld": 7.37718386566e-05,
+    "oneMicroPressurePerturbationGradientErrorNew": 3.10361977203e-06,
+    "targetCondition": 16,
+    "maxRings": 6
+  },
+  "tests": {
+    "ctestPassed": 138,
+    "ctestFailed": 0,
+    "frontendPassed": 149,
+    "frontendFailed": 0,
+    "steadySchemes": [
+      "upwind",
+      "face-limited-linear"
+    ],
+    "continuousVsRestart": "byte-identical checkpoints",
+    "wrongOperatorMetadataRejected": true,
+    "affineAndRotatedLocalFixture": "passed"
+  },
+  "channel": {
+    "cells": 3596,
+    "matchesOldFields": {
+      ".cells.csv": true,
+      ".faces.csv": true,
+      ".residuals.csv": true
+    },
+    "independentValid": true
+  },
+  "app": {
+    "flow": {
+      "cells": 2504,
+      "iterations": 189,
+      "convection": "face-limited-linear",
+      "momentumResidual": 3.288147432533148e-07,
+      "continuity": 5.968569439578718e-14,
+      "pressureBoundaryReconstruction": "one-sided-linear-adaptive"
+    },
+    "thermal": {
+      "cells": 2504,
+      "time": 0.3,
+      "minValue": 299.99999999999943,
+      "maxValue": 325.39266255854784,
+      "maxCourant": 2.536161053343081,
+      "flowConvection": "face-limited-linear"
+    },
+    "failureAndCancelResumeChecked": true,
+    "independentExportValid": true
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp": "c5d05e77f4e0546bfde813b4c2cb323ccc78aca5f3f7f49e5e556403e695fe2f",
+    "tests/flow_face_test.cpp": "c7364ab94d75949f29ae06db6013ebc5871e9f3818e410e0204cf14589a79b1c",
+    "tests/pressure_stencil_cli_test.py": "20a321c11ba3cfa68b6dd2b8cc372acbc48831ddb343c08e051d260230fb5887",
+    "tools/verification/verify_native_flow.py": "d1321685d2106ce654c507a6165bd4b8a0c276b935d721182cb5b347276d9c40"
+  },
+  "executables": {
+    "cartmesh2d_transport_cli": "029acdde9ff4aca3089cc7dfc1fc6002f3b484eaa3537665cba5478ac238ca03",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "bc26afce4b2e7e7df9e24dbcb3fd7bf76ddd19eb06fbe334b8695f00e4fe4b35",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "files": {
+    "outputs/native-flow/pressure-stencil/fixed-run.json": "fc075e0139045ee6c4e280decced524d7a5b4ba5009fa588ac09b15d0e617c3c",
+    "outputs/native-flow/pressure-stencil/fixed-audit.json": "40a0c579455cb3e12de5bdf8b16699f7db0c74beaeae3666808bf5f330f83cdd",
+    "outputs/native-flow/pressure-stencil/channel-comparison.json": "e0707d3d9a4e33e0cb34614c7afe473b44b59fff5cc602739bde9061f65f9378",
+    "outputs/native-flow/pressure-stencil/app-export-audit.json": "1cf07aeea80efab183c8d71cda35afa8b0187debc3868c3712f46cadbdc104f2",
+    "outputs/native-flow/pressure-stencil/app.zip": "519860cb73ac32a14c1172bafa27830aec07a2a86d67244ebea08e1b722b7ce0",
+    "outputs/native-flow/pressure-stencil/app.png": "6ffd89d4e3dff6136bfcce5ba29345e81481aca7a2e574a92a3aa38b220844c7",
+    "outputs/native-flow/pressure-stencil/app.png.json": "5a5e1889f1e5fa03563ef391c13198fa168470d96093b1a68d31ea2478908b29"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Linux",
+    "Windows",
+    "compressible flow"
+  ],
+  "freeDiskBytes": 30515200000
+}

@@ -6,6 +6,7 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+#include <utility>
 
 namespace cartmesh2d::fv::detail {
 
@@ -71,6 +72,12 @@ inline std::vector<Vector2D> symmetricViscousCorrection(const FvMesh2D& m,
     return result;
 }
 
+// Reconstruction policy, not a mesh/solution acceptance tolerance. With
+// inverse-distance-normalized rows this condition measures directional sample
+// coverage. A chain of wall triangles may need more than two graph rings.
+inline constexpr double pressureGradientConditionTarget2D = 16.;
+inline constexpr std::size_t pressureGradientMaximumRings2D = 6;
+
 // Pressure at velocity boundaries is extrapolated from interior values.
 // It is not a prescribed zero physical pressure gradient. Velocity slip/outflow
 // retains the zero-normal row; pressure-correction face flux remains a separate BC.
@@ -116,37 +123,30 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                                                (xx + yy) * (xx + yy);
         };
         if (extrapolateUnknown && (omittedBoundary || !fullRank())) {
-            // Omitting an unknown wall value can leave a formally full-rank
-            // but nearly collinear two-neighbour pressure stencil. Include the
-            // complete second ring for these boundary cells, not just rank-
-            // deficient tips. Every row remains a real cell sample; affine
-            // consistency is retained without inventing wall pressure slopes.
-            std::vector<std::size_t> adjacent, extended;
-            for (auto id : m.cells[i].faces) {
-                const auto& f = m.faces[id];
-                if (f.neighbour) adjacent.push_back(f.owner == i ? *f.neighbour : f.owner);
-            }
-            std::sort(adjacent.begin(), adjacent.end());
-            adjacent.erase(std::unique(adjacent.begin(), adjacent.end()), adjacent.end());
-            for (const auto j : adjacent) {
-                for (auto id : m.cells[j].faces) {
-                    const auto& f = m.faces[id];
-                    if (!f.neighbour) continue;
-                    const auto k = f.owner == j ? *f.neighbour : f.owner;
-                    if (k != i && !std::binary_search(adjacent.begin(), adjacent.end(), k))
-                        extended.push_back(k);
+            // Keep the complete second ring used by existing boundary
+            // reconstruction, then expand only poorly conditioned stencils.
+            // Add whole sorted rings for deterministic rotation-independent
+            // selection. Use all available samples if the graph ends sooner;
+            // the original numerical rank check still applies below.
+            std::vector<std::size_t> visited{i}, frontier{i};
+            for (std::size_t ring=1;ring<=pressureGradientMaximumRings2D;++ring) {
+                std::vector<std::size_t> next;
+                for (const auto j:frontier) for (const auto id:m.cells[j].faces) {
+                    const auto& f=m.faces[id];if(!f.neighbour)continue;
+                    const auto k=f.owner==j?*f.neighbour:f.owner;
+                    if(!std::binary_search(visited.begin(),visited.end(),k))next.push_back(k);
                 }
-            }
-            std::sort(extended.begin(), extended.end());
-            extended.erase(std::unique(extended.begin(), extended.end()), extended.end());
-            for (const auto k : extended) {
-                auto d = m.cells[k].centre - m.cells[i].centre;
-                const double length = std::hypot(d.x, d.y);
-                if (!(length > 0)) throw std::runtime_error("Flow gradient degenerate extended stencil");
-                const double value = (u[k] - u[i]) / length;
-                d = d * (1 / length);
-                xx += d.x*d.x; xy += d.x*d.y; yy += d.y*d.y;
-                bx += d.x*value; by += d.y*value;
+                std::sort(next.begin(),next.end());next.erase(std::unique(next.begin(),next.end()),next.end());
+                if(next.empty())break;
+                if(ring>1)for(const auto k:next){
+                    auto d=m.cells[k].centre-m.cells[i].centre;const double length=std::hypot(d.x,d.y);
+                    if (!(length>0)) throw std::runtime_error("Flow gradient degenerate extended stencil");
+                    const double value=(u[k]-u[i])/length;d=d*(1/length);
+                    xx+=d.x*d.x;xy+=d.x*d.y;yy+=d.y*d.y;bx+=d.x*value;by+=d.y*value;
+                }
+                visited.insert(visited.end(),next.begin(),next.end());std::sort(visited.begin(),visited.end());frontier=std::move(next);
+                const double maximum=.5*(xx+yy+std::hypot(xx-yy,2*xy));
+                if(ring>=2 && (xx*yy-xy*xy)>=maximum*maximum/pressureGradientConditionTarget2D)break;
             }
         }
         const double det = xx * yy - xy * xy;

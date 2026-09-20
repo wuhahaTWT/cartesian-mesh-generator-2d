@@ -292,6 +292,42 @@ void fullRankBoundaryPressureStencil() {
           "boundary pressure reconstruction resists near-collinear sample amplification");
 }
 
+// Actual third-ring patch around cell 1723 of the coarse circle. The
+// complete second ring is still nearly collinear (normal-matrix condition 140).
+void pressureStencilBeyondSecondRing() {
+    const auto mesh=cartmesh2d::fv::makeFvMesh2D(fromPolygons({
+        {{{-1.2424999999999997, 0.68625000000000114}, {-0.85387953251100002, 0.41268343236499999}, {-0.76146961230300003, 0.58557023302}}},
+        {{{-1.2424999999999997, -0.62624999999999886}, {-0.910785280403, -0.16509032201599999}, {-0.93000000000000005, 0.029999999999999999}, {-1.2424999999999997, 0.030000000000001137}}},
+        {{{-1.8987499999999997, 0.030000000000001137}, {-1.2424999999999997, 0.030000000000001137}, {-1.2424999999999997, 0.68625000000000114}, {-1.8987499999999997, 0.68625000000000114}}},
+        {{{-1.2424999999999997, 0.030000000000001137}, {-0.93000000000000005, 0.029999999999999999}, {-0.910785280403, 0.22509032201599999}, {-1.2424999999999997, 0.68625000000000114}}},
+        {{{-1.2424999999999997, 0.68625000000000114}, {-0.910785280403, 0.22509032201599999}, {-0.85387953251100002, 0.41268343236499999}}},
+        {{{-1.2424999999999997, 0.68625000000000114}, {-0.76146961230300003, 0.58557023302}, {-0.67884386287696974, 0.68625000000000114}}},
+        {{{-1.2424999999999997, 0.68625000000000114}, {-0.67884386287696974, 0.68625000000000114}, {-0.63710678118700004, 0.73710678118700002}}},
+        {{{-1.2424999999999997, 0.68625000000000114}, {-0.63710678118700004, 0.73710678118700002}, {-0.58624999999999972, 0.77884386287697094}}}
+    }));
+    std::vector<double> bc(mesh.faces.size(),0);
+    std::vector<bool> unknown(mesh.faces.size(),false);
+    auto pressure=cellValues(mesh,linear);
+    const auto exact=flowGradient(mesh,pressure,bc,unknown,true);
+    for(const auto g:exact){near(g.x,2.,1e-10,"extended pressure stencil affine x");near(g.y,-3.,1e-10,"extended pressure stencil affine y");}
+    pressure[0]+=1e-6;
+    const auto noisy=flowGradient(mesh,pressure,bc,unknown,true);
+    check(std::hypot(noisy[0].x-exact[0].x,noisy[0].y-exact[0].y)<1e-5,
+          "pressure gradient must resolve the normal direction beyond a tangential triangle chain");
+    auto rotated=mesh;
+    const double c=std::cos(.63),s=std::sin(.63);
+    const auto point=[&](Point2D p){return Point2D{c*p.x-s*p.y,s*p.x+c*p.y};};
+    const auto vector=[&](Vector2D p){return Vector2D{c*p.x-s*p.y,s*p.x+c*p.y};};
+    for(auto& cell:rotated.cells)cell.centre=point(cell.centre);
+    for(auto& f:rotated.faces){f.centre=point(f.centre);f.areaVector=vector(f.areaVector);f.correction=vector(f.correction);}
+    const auto turned=flowGradient(rotated,pressure,bc,unknown,true);
+    for(std::size_t i=0;i<turned.size();++i){
+        const auto expected=vector(noisy[i]);
+        near(turned[i].x,expected.x,1e-10,"extended stencil rotates with the mesh x");
+        near(turned[i].y,expected.y,1e-10,"extended stencil rotates with the mesh y");
+    }
+}
+
 void checkerboardPressureKeepsDirectDifference(const FvMesh2D& mesh) {
     check(mesh.cells.size() == 2, "checkerboard fixture has two cells");
     const std::vector<double> pressure{1.0, -1.0};
@@ -649,6 +685,7 @@ int main() {
 
         triangularTipUsesSecondRing();
         fullRankBoundaryPressureStencil();
+        pressureStencilBeyondSecondRing();
 
         checkerboardPressureKeepsDirectDifference(rectangularMesh(2, 1));
         limiterAndUpwindSelection();

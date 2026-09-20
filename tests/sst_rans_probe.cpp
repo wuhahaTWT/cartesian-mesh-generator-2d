@@ -139,6 +139,7 @@ int main(int argc,char** argv) {
             <<",\"stopReason\":\""<<(r.converged?"converged":(r.flow.stopped?"time-budget":"iteration-limit"))<<"\",\"maxIterations\":"<<c.flow.maxIterations
             <<",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"pressurePreconditioner\":\""<<pressureName(c.flow.pressurePreconditioner)<<"\""
+            <<",\"pressureBoundaryReconstruction\":\"one-sided-linear-adaptive\""
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<r.flow.performance.solveSeconds<<",\"performance\":";
         writePerformance(diagnostics,r);
@@ -178,6 +179,7 @@ int main(int argc,char** argv) {
             <<",\"turbulenceCompletionUpdates\":"<<c.turbulenceCompletionUpdates
             <<",\"scalarCorrectionsPerUpdate\":"<<c.turbulence.scalarCorrectionsPerUpdate
             <<",\"pressurePreconditioner\":\""<<pressureName(c.flow.pressurePreconditioner)<<"\""
+            <<",\"pressureBoundaryReconstruction\":\"one-sided-linear-adaptive\""
             <<",\"scalarPreconditioner\":\""<<(c.turbulence.transport.preconditioner==ScalarPreconditioner2D::ILU0?"ilu0":"jacobi")<<"\""
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds
             <<",\"performance\":";

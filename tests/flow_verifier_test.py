@@ -702,7 +702,7 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
         self.assertLess(result["benchmark"]["exactColumnMaxAbsolute"]["exactU"], 1e-10)
         self.assertGreater(result["benchmark"]["velocityL2Relative"], 0.0)
         self.assertEqual(result["benchmark"]["pressureSlope"], 0.0)
-        self.assertIn(result["pressureBoundaryReconstruction"], ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"))
+        self.assertIn(result["pressureBoundaryReconstruction"], ("zero-normal", "one-sided-linear", "one-sided-linear-2ring", "one-sided-linear-adaptive"))
         self.assertTrue(result["momentumAudit"]["valid"])
 
     def test_nonzero_pressure_slope_fixture(self):
@@ -739,7 +739,7 @@ class FlowVerifierManufacturedTests(unittest.TestCase):
                 shutil.copyfile(Path(str(self.slope_prefix) + suffix), Path(str(prefix) + suffix))
             summary = Path(str(prefix) + ".json")
             payload = json.loads(summary.read_text())
-            self.assertIn(payload.get("pressureBoundaryReconstruction"), ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"))
+            self.assertIn(payload.get("pressureBoundaryReconstruction"), ("zero-normal", "one-sided-linear", "one-sided-linear-2ring", "one-sided-linear-adaptive"))
             payload["pressureBoundaryReconstruction"] = "unknown-mode"
             summary.write_text(json.dumps(payload), encoding="utf-8")
             args = self._args()

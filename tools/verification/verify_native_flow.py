@@ -781,7 +781,8 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
 def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[FaceGeometry],
                          values: list[float], boundary: list[float], fixed: list[bool],
                          skip_unknown_boundary: bool = False,
-                         boundary_second_ring: bool = True) -> list[tuple[float, float]]:
+                         boundary_second_ring: bool = True,
+                         boundary_adaptive: bool = False) -> list[tuple[float, float]]:
     result: list[tuple[float, float]] = []
     for cell in mesh.cells:
         xx = xy = yy = bx = by = 0.0
@@ -827,40 +828,37 @@ def reconstruct_gradient(mesh: Mesh, measured: Measurement, geometries: list[Fac
             determinant = xx * yy - xy * xy
             rank_limit = 64.0 * 2.220446049250313e-16 * (xx + yy) * (xx + yy)
             if (boundary_second_ring and omitted_boundary) or not determinant > rank_limit:
-                # Match the native pressure operator's deterministic two-ring
-                # boundary stencil (also used for rank-deficient tips):
-                # collect sorted unique direct neighbours, then
-                # sorted unique neighbours of those cells, excluding the
-                # owner and the direct ring. Unknown boundary rows remain
-                # absent; only real cell values extend the LS stencil.
-                direct = sorted({
-                    (edge.neighbour if edge.owner == cell.id else edge.owner)
-                    for edge in (mesh.edges[edge_id] for edge_id in cell.edges)
-                    if edge.neighbour >= 0
-                })
-                direct_set = set(direct)
-                extended = set()
-                for neighbour in direct:
-                    for edge_id in mesh.cells[neighbour].edges:
-                        edge = mesh.edges[edge_id]
-                        if edge.neighbour < 0:
-                            continue
-                        other = edge.neighbour if edge.owner == neighbour else edge.owner
-                        if other != cell.id and other not in direct_set:
-                            extended.add(other)
-                for other in sorted(extended):
-                    d = (measured.centroids[other][0] - ci[0],
-                         measured.centroids[other][1] - ci[1])
-                    length = math.hypot(*d)
-                    if not (length > 0.0):
-                        raise VerificationError(f"cell {cell.id}: degenerate extended gradient stencil")
-                    unit = (d[0] / length, d[1] / length)
-                    delta = (values[other] - values[cell.id]) / length
-                    xx += unit[0] * unit[0]
-                    xy += unit[0] * unit[1]
-                    yy += unit[1] * unit[1]
-                    bx += unit[0] * delta
-                    by += unit[1] * delta
+                # Expand complete graph shells using geometry only. Legacy
+                # summaries retain the old two-ring operator; the new name
+                # selects a condition-based expansion up to six rings.
+                reached, shell = {cell.id}, {cell.id}
+                for ring in range(1, 7 if boundary_adaptive else 3):
+                    fresh = set()
+                    for neighbour in shell:
+                        for edge_id in mesh.cells[neighbour].edges:
+                            edge = mesh.edges[edge_id]
+                            if edge.neighbour < 0:
+                                continue
+                            other = edge.neighbour if edge.owner == neighbour else edge.owner
+                            if other not in reached:
+                                fresh.add(other)
+                    if not fresh:
+                        break
+                    if ring > 1:
+                        for other in sorted(fresh):
+                            d = (measured.centroids[other][0] - ci[0],
+                                 measured.centroids[other][1] - ci[1])
+                            length = math.hypot(*d)
+                            if not length > 0:
+                                raise VerificationError(f"cell {cell.id}: degenerate extended gradient stencil")
+                            unit = (d[0] / length, d[1] / length)
+                            delta = (values[other] - values[cell.id]) / length
+                            xx += unit[0] * unit[0]; xy += unit[0] * unit[1]; yy += unit[1] * unit[1]
+                            bx += unit[0] * delta; by += unit[1] * delta
+                    reached.update(fresh); shell = fresh
+                    maximum = .5 * (xx + yy + math.hypot(xx-yy, 2*xy))
+                    if ring >= 2 and (not boundary_adaptive or xx*yy-xy*xy >= maximum*maximum/16.):
+                        break
         det = xx * yy - xy * xy
         if not (det > 64.0 * 2.220446049250313e-16 * (xx + yy) * (xx + yy)):
             raise VerificationError(f"cell {cell.id}: rank-deficient gradient stencil")
@@ -1102,8 +1100,9 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     gu = reconstruct_gradient(mesh, measured, geometries, u, boundaries["u"], boundaries["fixedU"])
     gv = reconstruct_gradient(mesh, measured, geometries, v, boundaries["v"], boundaries["fixedV"])
     gp = reconstruct_gradient(mesh, measured, geometries, p, boundaries["p"], boundaries["fixedP"],
-                             skip_unknown_boundary=pressure_boundary_reconstruction in ("one-sided-linear", "one-sided-linear-2ring"),
-                             boundary_second_ring=(pressure_boundary_reconstruction == "one-sided-linear-2ring"))
+                             skip_unknown_boundary=pressure_boundary_reconstruction in ("one-sided-linear", "one-sided-linear-2ring", "one-sided-linear-adaptive"),
+                             boundary_second_ring=(pressure_boundary_reconstruction != "one-sided-linear"),
+                             boundary_adaptive=(pressure_boundary_reconstruction == "one-sided-linear-adaptive"))
     pressure_faces: list[float] = []
     for edge, geom in zip(mesh.edges, geometries):
         i = edge.owner
@@ -1938,7 +1937,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     if not benchmark.get("valid"):
         issues.append(f"{case} benchmark checks failed")
     pressure_boundary_reconstruction = payload.get("pressureBoundaryReconstruction", "zero-normal")
-    if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"):
+    if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring", "one-sided-linear-adaptive"):
         issues.append(f"native pressureBoundaryReconstruction is unsupported: {pressure_boundary_reconstruction!r}")
     if face_momentum_available and summary_momentum_available:
         try:
@@ -1946,7 +1945,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
                 mesh, measured, cells, face_records, nu, speed, case, payload,
                 manufactured_pressure_slope, pressure_boundary_reconstruction
             )
-            if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring"):
+            if pressure_boundary_reconstruction not in ("zero-normal", "one-sided-linear", "one-sided-linear-2ring", "one-sided-linear-adaptive"):
                 momentum_audit["valid"] = False
                 momentum_audit.setdefault("issues", []).append(
                     "unsupported pressureBoundaryReconstruction metadata")

@@ -397,11 +397,11 @@ def audit(mesh_path, prefix, *, diagnostic=False):
                    "flatPlateLeadingEdge":meta.get('flatPlateLeadingEdge'),
                    "flatPlateTop":meta.get('flatPlateTop','pressure-farfield'),
                    "convection": "upwind", "viscousStress": "symmetric", "outletBackflow": "reject",
-                   "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+                   "pressureBoundaryReconstruction": meta.get("pressureBoundaryReconstruction", "one-sided-linear-2ring"),
                    **{field: meta[field] for field in summary_fields}}
         momentum = native.reconstruct_momentum_audit(
             mesh, m, flow_cells, flow_faces, nu, speed, case, payload,
-            pressure_boundary_reconstruction="one-sided-linear-2ring")
+            pressure_boundary_reconstruction=payload["pressureBoundaryReconstruction"])
         req(all(value <= 5e-10 for value in momentum["maxFaceDeviation"].values()),
             "independent momentum face reconstruction differs")
         req(all(momentum["summaryDeviation"][field]["absolute"] <= 5e-10

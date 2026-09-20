@@ -439,7 +439,7 @@ int main(int argc, char** argv) {
                 << ",\n\"discreteForceX\":" << r.discreteForceX
                 << ",\n\"discreteForceY\":" << r.discreteForceY
                 << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
-                << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear-2ring\""
+                << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear-adaptive\""
                 << ",\n\"convection\":\"" << convection << '"'
                 << ",\n\"viscousStress\":\"" << (symmetric?"symmetric":"laplacian") << '\"'
                 << ",\n\"outletBackflow\":\"" << (controls.outletBackflow == fv::OutletBackflow2D::NormalInlet ? "normal-inlet" : "reject") << '\"'
