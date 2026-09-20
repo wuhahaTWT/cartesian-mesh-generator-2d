@@ -1,0 +1,585 @@
+{
+  "valid": true,
+  "scope": "One Taylor-Green decay, fixed grids; temporal self-convergence, not general CFD qualification",
+  "groups": {
+    "cartesian": {
+      "comparison": {
+        "valid": true,
+        "scope": "fixed-mesh transient artifact consistency; self-convergence is diagnostic, not an accuracy qualification",
+        "runsetSha256": "32500710317b8f9725c356a06efa18223ec9bfcc88373bc6ebbb9026c3d9e3ec",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian.solver.cm2d",
+        "meshSha256": "051631d0f8ce08148974dcf543bf399c6fb526eeb6190a445ed89d22f34ec76d",
+        "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+        "controls": {
+          "nu": 0.1,
+          "speed": 1,
+          "tolerance": 1e-09,
+          "convection": "face-limited-linear",
+          "viscousStress": "symmetric",
+          "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+          "velocityRelaxation": 0.6,
+          "case": "taylor-green"
+        },
+        "acceptedEndTime": 0.4,
+        "cellIds": 1024,
+        "runs": [
+          {
+            "dt": 0.04,
+            "acceptedTime": 0.39999999999999997,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/cartesian/comparison.run0.audit.json",
+            "auditSha256": "304e7b27c6467fce474f98ade47dbc7d027a477207023625a32f17b8bd5455ff"
+          },
+          {
+            "dt": 0.02,
+            "acceptedTime": 0.4000000000000001,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/cartesian/comparison.run1.audit.json",
+            "auditSha256": "1eea4b7ed2b0deffbeccb0a40caedaf23299805057f620249d0ba106a1c96733"
+          },
+          {
+            "dt": 0.01,
+            "acceptedTime": 0.4000000000000002,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/cartesian/comparison.run2.audit.json",
+            "auditSha256": "7e4308a134667c0a6359ea0158fcec02c6299c23e88b3cc7d76994a5d074c817"
+          },
+          {
+            "dt": 0.005,
+            "acceptedTime": 0.40000000000000024,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/cartesian/comparison.run3.audit.json",
+            "auditSha256": "c55a262f45f18ec329dcfc88f82a43f7d9ba7f6fcf265a1ba929b19991ee0cee"
+          }
+        ],
+        "adjacentDistances": [
+          {
+            "coarseDt": 0.04,
+            "fineDt": 0.02,
+            "uL2": 0.0033535653788069803,
+            "vL2": 0.003353565378793155,
+            "vectorL2": 0.004742657641003922
+          },
+          {
+            "coarseDt": 0.02,
+            "fineDt": 0.01,
+            "uL2": 0.0017224184549094823,
+            "vL2": 0.0017224184549133343,
+            "vectorL2": 0.002435867539017425,
+            "observedOrder": 0.9612600456094401
+          },
+          {
+            "coarseDt": 0.01,
+            "fineDt": 0.005,
+            "uL2": 0.0008730626130614346,
+            "vL2": 0.0008730626130611769,
+            "vectorL2": 0.0012346969881921923,
+            "observedOrder": 0.9802786546796612
+          }
+        ]
+      },
+      "runs": [
+        {
+          "dt": 0.04,
+          "elapsedSeconds": 3.649285790999784,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian/dt-0.04/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.04",
+            "--steps",
+            "10",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.006736945669643724,
+            "vL2": 0.006736945669635574,
+            "pL2": 0.006829992049819086,
+            "energy": 0.0031042233721963255,
+            "velocityVectorL2": 0.009527479934975085,
+            "relativeVelocityL2": 0.029675511886992682,
+            "relativeEnergy": 0.06023144919113386
+          },
+          "computedMaxCourant": 0.5969778194319691,
+          "independentAuditSha256": "304e7b27c6467fce474f98ade47dbc7d027a477207023625a32f17b8bd5455ff"
+        },
+        {
+          "dt": 0.02,
+          "elapsedSeconds": 4.324366458000441,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian/dt-0.02/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.02",
+            "--steps",
+            "20",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.003383401281409447,
+            "vL2": 0.0033834012814150383,
+            "pL2": 0.003371694939984435,
+            "energy": 0.0015476290566021275,
+            "velocityVectorL2": 0.004784851979123702,
+            "relativeVelocityL2": 0.014903514124730321,
+            "relativeEnergy": 0.030028747842169815
+          },
+          "computedMaxCourant": 0.294206682788642,
+          "independentAuditSha256": "1eea4b7ed2b0deffbeccb0a40caedaf23299805057f620249d0ba106a1c96733"
+        },
+        {
+          "dt": 0.01,
+          "elapsedSeconds": 5.2660882090003724,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian/dt-0.01/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.01",
+            "--steps",
+            "40",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.0016610262638311606,
+            "vL2": 0.0016610262638330332,
+            "pL2": 0.0016248311747967458,
+            "energy": 0.0007568925250703851,
+            "velocityVectorL2": 0.0023490458697692624,
+            "relativeVelocityL2": 0.007316639773286611,
+            "relativeEnergy": 0.014686035185242046
+          },
+          "computedMaxCourant": 0.14600365314356828,
+          "independentAuditSha256": "7e4308a134667c0a6359ea0158fcec02c6299c23e88b3cc7d76994a5d074c817"
+        },
+        {
+          "dt": 0.005,
+          "elapsedSeconds": 7.156677417000537,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/cartesian/dt-0.005/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.005",
+            "--steps",
+            "80",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.0007880572259663813,
+            "vL2": 0.000788057225968453,
+            "pL2": 0.000765882085272604,
+            "energy": 0.0003583485683550172,
+            "velocityVectorL2": 0.0011144812168892401,
+            "relativeVelocityL2": 0.0034713062452346403,
+            "relativeEnergy": 0.0069530607175087465
+          },
+          "computedMaxCourant": 0.07272311993541151,
+          "independentAuditSha256": "c55a262f45f18ec329dcfc88f82a43f7d9ba7f6fcf265a1ba929b19991ee0cee"
+        }
+      ],
+      "runsetSha256": "32500710317b8f9725c356a06efa18223ec9bfcc88373bc6ebbb9026c3d9e3ec"
+    },
+    "warped": {
+      "comparison": {
+        "valid": true,
+        "scope": "fixed-mesh transient artifact consistency; self-convergence is diagnostic, not an accuracy qualification",
+        "runsetSha256": "b3cc19179c42250b4ac1f72552bce4f0330eef06f56a687923d4ea4f05b9ca31",
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped.solver.cm2d",
+        "meshSha256": "5d10e4500bf5d66f230e19138e097e60fe530f327efed2d3b832a63ef63292c8",
+        "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+        "controls": {
+          "nu": 0.1,
+          "speed": 1,
+          "tolerance": 1e-09,
+          "convection": "face-limited-linear",
+          "viscousStress": "symmetric",
+          "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+          "velocityRelaxation": 0.6,
+          "case": "taylor-green"
+        },
+        "acceptedEndTime": 0.4,
+        "cellIds": 1024,
+        "runs": [
+          {
+            "dt": 0.04,
+            "acceptedTime": 0.39999999999999997,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/warped/comparison.run0.audit.json",
+            "auditSha256": "accc702ccb645b9f8a65f3c43c49eb1c22b8daf71ea3a486b115e10e456c6030"
+          },
+          {
+            "dt": 0.02,
+            "acceptedTime": 0.4000000000000001,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/warped/comparison.run1.audit.json",
+            "auditSha256": "d15ec490fbbfae8f31458cbaf0eee4ecabdcf4710b3dca2a151c6175d94a7c62"
+          },
+          {
+            "dt": 0.01,
+            "acceptedTime": 0.4000000000000002,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/warped/comparison.run2.audit.json",
+            "auditSha256": "7805f0ba5daee47bf71236ceddcf1d1294fe41bb887f9e55b501577b24e41d96"
+          },
+          {
+            "dt": 0.005,
+            "acceptedTime": 0.40000000000000024,
+            "binarySha256": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+            "audit": "outputs/native-flow/current-time-accuracy/warped/comparison.run3.audit.json",
+            "auditSha256": "d000e192bd0713dae2b46670d2b3e324f490d9e1d23d7dc4069464e02a50ded8"
+          }
+        ],
+        "adjacentDistances": [
+          {
+            "coarseDt": 0.04,
+            "fineDt": 0.02,
+            "uL2": 0.0033538974815056637,
+            "vL2": 0.003353923112726732,
+            "vectorL2": 0.004743145429199131
+          },
+          {
+            "coarseDt": 0.02,
+            "fineDt": 0.01,
+            "uL2": 0.001722590924324021,
+            "vL2": 0.0017226047199241804,
+            "vectorL2": 0.0024361212025817906,
+            "observedOrder": 0.9612581910557195
+          },
+          {
+            "coarseDt": 0.01,
+            "fineDt": 0.005,
+            "uL2": 0.0008731411617734666,
+            "vL2": 0.000873149573795045,
+            "vectorL2": 0.001234814021058065,
+            "observedOrder": 0.9802921427332874
+          }
+        ]
+      },
+      "runs": [
+        {
+          "dt": 0.04,
+          "elapsedSeconds": 7.511693042000843,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped/dt-0.04/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.04",
+            "--steps",
+            "10",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.006720251648526178,
+            "vL2": 0.006724495293546489,
+            "pL2": 0.006902614698833872,
+            "energy": 0.0030967528833061586,
+            "velocityVectorL2": 0.009506872207642621,
+            "relativeVelocityL2": 0.029611324414377443,
+            "relativeEnergy": 0.060086498806425345
+          },
+          "computedMaxCourant": 0.5972674369704415,
+          "independentAuditSha256": "accc702ccb645b9f8a65f3c43c49eb1c22b8daf71ea3a486b115e10e456c6030"
+        },
+        {
+          "dt": 0.02,
+          "elapsedSeconds": 9.070378917000198,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped/dt-0.02/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.02",
+            "--steps",
+            "20",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.0033665849604343585,
+            "vL2": 0.003371048844109398,
+            "pL2": 0.003442236136118105,
+            "energy": 0.0015401068336468662,
+            "velocityVectorL2": 0.004764227597963191,
+            "relativeVelocityL2": 0.01483927477996468,
+            "relativeEnergy": 0.029882793658011463
+          },
+          "computedMaxCourant": 0.29434884228968955,
+          "independentAuditSha256": "d15ec490fbbfae8f31458cbaf0eee4ecabdcf4710b3dca2a151c6175d94a7c62"
+        },
+        {
+          "dt": 0.01,
+          "elapsedSeconds": 11.465884833000018,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped/dt-0.01/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.01",
+            "--steps",
+            "40",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.0016444777557576204,
+            "vL2": 0.0016494414371650411,
+            "pL2": 0.001693056309471699,
+            "energy": 0.0007493445166795246,
+            "velocityVectorL2": 0.0023291552425329437,
+            "relativeVelocityL2": 0.007254685872672843,
+            "relativeEnergy": 0.014539580684589696
+          },
+          "computedMaxCourant": 0.1460740312352323,
+          "independentAuditSha256": "7805f0ba5daee47bf71236ceddcf1d1294fe41bb887f9e55b501577b24e41d96"
+        },
+        {
+          "dt": 0.005,
+          "elapsedSeconds": 15.547373957999298,
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped.solver.cm2d",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/current-time-accuracy/warped/dt-0.005/result",
+            "--case",
+            "taylor-green",
+            "--nu",
+            "0.1",
+            "--speed",
+            "1",
+            "--convection",
+            "face-limited-linear",
+            "--pressure-preconditioner",
+            "aggregation",
+            "--time-step",
+            "0.005",
+            "--steps",
+            "80",
+            "--tolerance",
+            "1e-09",
+            "--max-iterations",
+            "1000",
+            "--profile"
+          ],
+          "analyticErrors": {
+            "uL2": 0.0007724040292726989,
+            "vL2": 0.0007784835255844036,
+            "pL2": 0.0008290072890221168,
+            "energy": 0.00035079168118524323,
+            "velocityVectorL2": 0.001096651532640621,
+            "relativeVelocityL2": 0.0034157716221787683,
+            "relativeEnergy": 0.006806433941328225
+          },
+          "computedMaxCourant": 0.07275813265149135,
+          "independentAuditSha256": "d000e192bd0713dae2b46670d2b3e324f490d9e1d23d7dc4069464e02a50ded8"
+        }
+      ],
+      "runsetSha256": "b3cc19179c42250b4ac1f72552bce4f0330eef06f56a687923d4ea4f05b9ca31"
+    }
+  },
+  "tightening": {
+    "tolerances": [
+      1e-09,
+      1e-11
+    ],
+    "maxVelocityDifference": 8.99550561061147e-09,
+    "maxPressureDifference": 3.5579773988159147e-09,
+    "auditSha256": "f9489a4410b94ca200a1f9b8e1b4b82a813931e9e632776a1243247223ac4bb7"
+  },
+  "adaptive": {
+    "summary": {
+      "temporalDiscretization": "backward-euler",
+      "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+      "time": 0.4,
+      "dt": 0.0009492538059412414,
+      "acceptedTime": 0.4,
+      "timeStepControl": "adaptive-cfl-retry",
+      "startTime": 0,
+      "targetTime": 0.4,
+      "maximumTimeStep": 0.04,
+      "minimumTimeStep": 3.90625e-05,
+      "targetCourant": 0.15,
+      "maximumRetries": 10,
+      "maximumAcceptedSteps": 100000,
+      "attemptCount": 75,
+      "rejectedSteps": 0,
+      "completedSteps": 75,
+      "maxCourant": 0.013820179832542698,
+      "velocityRelaxation": 0.6,
+      "format": "cartmesh2d-flow-summary-v1",
+      "case": "taylor-green",
+      "status": "converged",
+      "converged": true,
+      "cells": 1024,
+      "iterations": 44,
+      "nu": 0.1,
+      "speed": 1,
+      "continuity": 5.801923868933953e-13,
+      "globalImbalance": 0,
+      "momentumResidual": 5.5337990700958214e-12,
+      "velocityChange": 2.0396946955215194e-12,
+      "pressureChange": 4.066184750806364e-11,
+      "forceX": 0,
+      "forceY": 0,
+      "pressureForceX": 0,
+      "pressureForceY": 0,
+      "discreteForceX": 0,
+      "discreteForceY": 0,
+      "pressureDiscretization": "shared-face-gauss",
+      "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+      "convection": "face-limited-linear",
+      "viscousStress": "symmetric",
+      "outletBackflow": "reject",
+      "outletBackflowFaces": 0,
+      "outletInflow": 0,
+      "forceDefinition": "shared-face-newtonian-traction",
+      "reconstructedForceX": 0,
+      "reconstructedForceY": 0,
+      "wallForceX": 0,
+      "wallForceY": 0,
+      "wallViscousForceX": 0,
+      "wallViscousForceY": 0,
+      "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+      "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+      "globalRelativeImbalance": 0,
+      "domainHeight": 1,
+      "tolerance": 1e-09,
+      "pressurePreconditioner": "aggregation",
+      "units": {
+        "velocity": "m/s",
+        "p": "m2/s2 (kinematic)",
+        "nu": "m2/s",
+        "faceFlux": "m2/s per unit depth",
+        "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes"
+      },
+      "pressureReference": "cell 0, kinematic pressure zero",
+      "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+      "scope": "transient backward-Euler constant-property laminar flow; no turbulence or accuracy certification"
+    },
+    "analyticErrors": {
+      "uL2": 0.0008874654644693832,
+      "vL2": 0.0008932681845601737,
+      "pL2": 0.0009218067426400729,
+      "energy": 0.0004033436524932127,
+      "velocityVectorL2": 0.0012591755239732413,
+      "relativeVelocityL2": 0.00392198970604034,
+      "relativeEnergy": 0.007826103278941112
+    },
+    "auditSha256": "4f0d6777e8c9932ec64f4d7308aa76d10800c2677c7add7edf083578aea9452c"
+  },
+  "sourceSha256": "00ed4e5ca05cf7dc5470ee27583087d798e20e492ffd88b08b5be80d06574b68"
+}

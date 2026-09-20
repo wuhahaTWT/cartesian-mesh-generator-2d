@@ -27,6 +27,8 @@ def main():
     p.add_argument('--speed', type=float, default=1)
     p.add_argument('--tolerance', type=float, default=1e-9)
     p.add_argument('--max-iterations', type=int, default=1000)
+    p.add_argument('--convection', choices=['upwind','limited-linear','face-limited-linear'], default='limited-linear')
+    p.add_argument('--pressure-preconditioner', choices=['ic0','jacobi','aggregation'], default='ic0')
     p.add_argument('--timeout', type=float, default=180)
     a = p.parse_args()
     for value in [a.end_time, a.nu, a.speed, a.tolerance, a.timeout, *a.dt]:
@@ -45,7 +47,8 @@ def main():
         prefix = a.output / ('dt-' + str(dt)) / 'result'
         prefix.parent.mkdir()
         command = [str(a.cli.resolve()), '--mesh', str(a.mesh.resolve()), '--output', str(prefix.resolve()),
-                   '--case', a.case, '--nu', str(a.nu), '--speed', str(a.speed), '--convection', 'limited-linear',
+                   '--case', a.case, '--nu', str(a.nu), '--speed', str(a.speed), '--convection', a.convection,
+                   '--pressure-preconditioner', a.pressure_preconditioner,
                    '--time-step', str(dt), '--steps', str(round(a.end_time/dt)), '--tolerance', str(a.tolerance),
                    '--max-iterations', str(a.max_iterations), '--profile']
         run = {'command': command, 'dt': dt, 'endTime': a.end_time, 'timeoutSeconds': a.timeout}

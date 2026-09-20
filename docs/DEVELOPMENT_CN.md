@@ -618,7 +618,7 @@ python3 tools/visualization/render_thermal_scale.py --study outputs/thermal-scal
 
 `--case taylor-green`是只在CLI使用的无源解析验证工况：完整单位方域、四壁无穿透自由滑移，`A=Uref*exp(-2*nu*pi²*t)`，`u=A*sin(pi*x)*cos(pi*y)`、`v=-A*cos(pi*x)*sin(pi*y)`、`p=A²/4*(cos(2*pi*x)+cos(2*pi*y))`。运动学压力减去cell0解析值；初始面通量由解析流函数沿真实边端点之差积分。解析微分/能量/边界条件另有测试，避免把错误压力符号作为“真值”。
 
-`run_transient_flow.py --mesh FINAL.solver.cm2d --output NEW_DIR`串行计算默认四档时间步，固定终止t=.2、nu=.1、速度1、限制线性对流和容差1e-9，每档限180秒；输出目录必须新建，保留实际命令、哈希、返回码与耗时。可选`--case/--dt/--end-time`，用同一入口核查启动工况。`verify_transient_flow.py`独立读回几何、时间积分、逐面压力/对流/应力、局部及全局动量/质量、CFL和能量；元数据/历史不一致时失败。旧稳态验证器明确拒绝非定常结果，避免误套稳态基准。
+`run_transient_flow.py --mesh FINAL.solver.cm2d --output NEW_DIR`串行计算默认四档时间步，固定终止t=.2、nu=.1、速度1、限制线性对流和容差1e-9，每档限180秒；输出目录必须新建，保留实际命令、哈希、返回码与耗时。可选`--case/--dt/--end-time`、`--convection`及`--pressure-preconditioner`，用同一入口核查启动工况。`verify_transient_flow.py`独立读回几何、时间积分、逐面压力/对流/应力、局部及全局动量/质量、CFL和能量；元数据/历史不一致时失败。旧稳态验证器明确拒绝非定常结果，避免误套稳态基准。
 
 最终矩阵图可用 `python3 tools/verification/plot_transient_flow.py --root outputs/native-flow/transient/final --output artifacts/current/native-flow-transient` 重建；先校验来源哈希。误差和时间步自收敛单独报告，离散守恒通过不等于物理精度验收。
 
@@ -653,6 +653,8 @@ python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --ca
 `.attempt-history.csv`记录所有试算，含开始/候选时间、dt、是否接受、拒绝原因、内迭代停止指标及实际CFL；`.time-history.csv`在自动模式只含接受步，dt可以变化。摘要`timeStepControl=adaptive-cfl-retry`记录全部控制、起终点、attemptCount/rejectedSteps/completedSteps；`dt`是最后接受步长度，不再带固定模式的requestedSteps。独立Python审核与App读回均检查拒绝原因、状态时间不前移、缩步规则和接受历史的一致性；最终场仍独立重建时间项/动量/质量/CFL。
 
 `tests/adaptive_flow_cli_test.py`覆盖CFL和内迭代两种拒绝、最小步/重试耗尽、接受步预算续算逐字节一致、非法组合与篡改历史拒绝。App失败或取消保留上次完整显示和最后接受检查点，ZIP含全部当前完成运行试算及未完成诊断。CFL控制不构成时间误差估计，物理精度仍须时间与网格细化。
+
+当前涡衰减的真实场与误差图：`python3 tools/visualization/render_time_accuracy.py --root outputs/native-flow/current-time-accuracy --output artifacts/current/native-time-accuracy`。脚本重新独立审核两个四档序列、加严容差和自动CFL对照，输入缺失或被篡改会失败；图中的自收敛阶不替代通用工程精度验收。
 
 ### 固定网格的时间步比较
 
