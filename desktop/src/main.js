@@ -17,7 +17,7 @@ const { normalizeResult, parseKeyValues } = require('./core/report');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
-        parseFlowProgress, validateFlowOutput, validateTimeHistory, flowOutputSuffixes } = require('./core/flow');
+        parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
@@ -299,7 +299,12 @@ app.whenReady().then(async () => {
     const boundaryPath=boundaryDefinition ? path.join(incompleteDirectory,'input.boundaries') : null;
     if (boundaryPath) await fs.writeFile(boundaryPath,serializeBoundaryDefinition(boundaryDefinition));
     const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request, restartPath, boundaryPath);
-    const transient = invocation.request.mode === 'transient';
+    const transient = invocation.request.mode !== 'steady';
+    const adaptive = invocation.request.mode === 'adaptive';
+    if (adaptive && !(invocation.request.endTime>startTime)) {
+      await fs.rm(incompleteDirectory,{recursive:true,force:true});
+      throw new Error('目标物理时间必须晚于已接受的重启时间。');
+    }
     const previousFlow = currentResult.flow;
     const previousRestart = currentResult.flowRestart;
     const preserveIncomplete = async error => {
@@ -337,6 +342,7 @@ app.whenReady().then(async () => {
         vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
         cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv` };
       if (transient) Object.assign(outputFiles, { checkpoint: `${pendingPrefix}.checkpoint`, timeHistory: `${pendingPrefix}.time-history.csv` });
+      if (adaptive) outputFiles.attemptHistory=`${pendingPrefix}.attempt-history.csv`;
       if (boundaryDefinition) outputFiles.boundaries=`${pendingPrefix}.boundaries`;
       const [summary, fields] = await Promise.all([readJson(outputFiles.summary), readJson(outputFiles.fields),
         ...Object.values(outputFiles).map(file => fs.stat(file))]);
@@ -347,9 +353,10 @@ app.whenReady().then(async () => {
       }
       if ((processResult.code === 0) !== validated.summary.converged)
         throw new Error('原生求解器退出码与收敛状态不一致。');
-      let history = null, checkpointMetadata = null;
+      let history = null, attempts = null, checkpointMetadata = null;
       if (transient) {
         history = validateTimeHistory(await fs.readFile(outputFiles.timeHistory, 'utf8'), validated.summary, startTime);
+        if (adaptive) attempts=validateAttemptHistory(await fs.readFile(outputFiles.attemptHistory,'utf8'),validated.summary,history);
         checkpointMetadata = await readCheckpointMetadata(outputFiles.checkpoint);
         if (Math.abs(checkpointMetadata.time-summary.acceptedTime) > 1e-12+1e-9*Math.abs(summary.acceptedTime))
           throw new Error('重启状态时间与摘要不一致。');
@@ -358,7 +365,7 @@ app.whenReady().then(async () => {
       }
       operation.signal.throwIfAborted();
       // Preserve the earlier complete result even if copying the new set fails.
-      const allSuffixes = flowOutputSuffixes({ mode: 'transient', case:'custom' });
+      const allSuffixes = flowOutputSuffixes({ mode: 'adaptive', case:'custom' });
       for (const suffix of allSuffixes) {
         const destination = `${currentResult.prefix}.flow${suffix}`;
         const backup = path.join(incompleteDirectory, `previous${suffix}`);
@@ -373,7 +380,7 @@ app.whenReady().then(async () => {
       for (const suffix of allSuffixes.filter(suffix => !flowOutputSuffixes(invocation.request).includes(suffix)))
         await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true });
       const saved = Object.fromEntries(entries.map(entry => [entry.kind, path.basename(entry.destination)]));
-      const payload = { ...validated, request: invocation.request, files: saved, history };
+      const payload = { ...validated, request: invocation.request, files: saved, history, attempts };
       currentResult.flow = payload;
       currentResult.flowRestart = transient ? { path: `${currentResult.prefix}.flow.checkpoint`, metadata: { ...checkpointMetadata, fileName: path.basename(`${currentResult.prefix}.flow.checkpoint`) } } : null;
       await fs.rm(incompleteDirectory, { recursive: true, force: true }).catch(error => log(`结果已保存，临时目录清理失败：${error.message}`));
@@ -382,7 +389,7 @@ app.whenReady().then(async () => {
       return payload;
     } catch (error) {
       if (commitStarted) {
-        for (const suffix of flowOutputSuffixes({ mode: 'transient', case:'custom' }))
+        for (const suffix of flowOutputSuffixes({ mode: 'adaptive', case:'custom' }))
           await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }).catch(() => {});
       }
       const restored = await Promise.allSettled(backups.map(entry => fs.copyFile(entry.backup, entry.destination)));
@@ -821,12 +828,49 @@ async function runSmoke() {
         if (!smoke.view.boundaryHighlight.length) throw new Error('Patch location was not highlighted');
       }
       if (${JSON.stringify(Boolean(argument('flow-dt')))}) {
-        document.getElementById('flowMode').value='transient';
+        document.getElementById('flowMode').value=${JSON.stringify(argument('flow-end-time') ? 'adaptive' : 'transient')};
         document.getElementById('flowMode').dispatchEvent(new Event('change'));
         document.getElementById('flowDt').value=${JSON.stringify(argument('flow-dt') || '.01')};
         document.getElementById('flowSteps').value=${JSON.stringify(argument('flow-steps') || '2')};
+        document.getElementById('flowEndTime').value=${JSON.stringify(argument('flow-end-time') || '1')};
+        document.getElementById('flowMaxCourant').value=${JSON.stringify(argument('flow-max-courant') || '1')};
       }
       await smoke.runFlow();
+      if (${JSON.stringify(Boolean(argument('flow-end-time')))}) {
+        if (!smoke.state.flow || smoke.state.flow.summary.timeStepControl!=='adaptive-cfl-retry') throw new Error('Missing adaptive App result');
+        const initial=smoke.state.flow.summary;
+        const before=initial.acceptedTime;
+        const target=before+Number(document.getElementById('flowDt').value);
+        document.getElementById('flowEndTime').value=String(target);
+        document.getElementById('flowResume').checked=true;
+        document.getElementById('flowResume').dispatchEvent(new Event('change'));
+        await smoke.runFlow();
+        if(smoke.state.flow?.summary.acceptedTime!==target) throw new Error('Adaptive absolute-time resume failed');
+        const completed=smoke.state.flow;
+        const iterations=document.getElementById('flowMaxIterations').value;
+        document.getElementById('flowMaxIterations').value='1';
+        document.getElementById('flowMaxRetries').value='0';
+        document.getElementById('flowEndTime').value=String(target+.04);
+        await smoke.runFlow();
+        if(smoke.state.flow?.summary.acceptedTime!==target || smoke.state.flowRestart?.time!==target)
+          throw new Error('Adaptive failure replaced the previous accepted result');
+        document.getElementById('flowMaxIterations').value=iterations;
+        document.getElementById('flowMaxRetries').value='10';
+        document.getElementById('flowEndTime').value=String(target+100);
+        const pending=smoke.runFlow(),deadline=Date.now()+90000;
+        while(smoke.state.busy && !smoke.state.flowHistory.length && Date.now()<deadline)
+          await new Promise(resolve=>setTimeout(resolve,25));
+        if(!smoke.state.busy || !smoke.state.flowHistory.length) throw new Error('Adaptive cancellation had no accepted live step');
+        document.getElementById('cancel').click();await pending;
+        const saved=smoke.state.flowRestart?.time;
+        if(!(saved>target) || smoke.state.flow?.summary.acceptedTime!==completed.summary.acceptedTime)
+          throw new Error('Adaptive cancellation lost accepted checkpoint or earlier result');
+        document.getElementById('flowEndTime').value=String(saved+.02);
+        await smoke.runFlow();
+        if(smoke.state.flow?.summary.acceptedTime!==saved+.02) throw new Error('Adaptive cancelled restart used wrong physical time');
+        smoke.state.adaptiveSmoke={initial,failedAcceptedTime:target,cancelledAcceptedTime:saved,
+          resumedTime:smoke.state.flow.summary.acceptedTime};
+      }
       if (${JSON.stringify(Boolean(argument('flow-resume-steps')))}) {
         const before=smoke.state.flow?.summary.acceptedTime;
         document.getElementById('flowSteps').value=${JSON.stringify(argument('flow-resume-steps') || '2')};
@@ -961,6 +1005,7 @@ async function runSmoke() {
       log: document.getElementById('log').textContent,
       cellBudget: smoke.state.cellBudget,
       raster: smoke.state.rasterEvidence,
+      adaptive: smoke.state.adaptiveSmoke || null,
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
@@ -1093,6 +1138,12 @@ async function runSmoke() {
       throw new Error('Window geometry is not constrained to the viewport');
     if (shot) {
       await mainWindow.webContents.executeJavaScript("document.querySelector('.panel').scrollTop=0");
+      if (argument('flow-adaptive-shot')) {
+        mainWindow.setSize(1320,900);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript("document.getElementById('flowMode').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
+        await new Promise(resolve=>setTimeout(resolve,200));
+      }
       if (argument('flow-load-shot')) {
         mainWindow.setSize(1320,900);
         await new Promise(resolve=>setTimeout(resolve,200));

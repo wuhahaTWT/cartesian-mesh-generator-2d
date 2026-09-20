@@ -1,4 +1,5 @@
 'use strict';
+const { validateAdaptiveSummary, validateAttemptHistory } = require('./adaptive-flow');
 const { validateWallLoads } = require('./wall-loads');
 const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./flow-boundaries');
 
@@ -97,7 +98,7 @@ function validateFlowRequest(request = {}) {
   const viscousStress = request.viscousStress === undefined ? VISCOUS_STRESS : request.viscousStress;
   if (viscousStress !== VISCOUS_STRESS) throw new Error('未知黏性应力格式。当前仅支持 symmetric。');
   const mode = request.mode ?? 'steady';
-  if (!['steady', 'transient'].includes(mode)) throw new Error('未知时间模式。');
+  if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, convection,
@@ -106,13 +107,25 @@ function validateFlowRequest(request = {}) {
     if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
     normalized.boundaryDefinition = normalizeBoundaryDefinition(request.boundaryDefinition);
   }
-  if (mode === 'transient') {
+  if (mode !== 'steady') {
     normalized.dt = finite(request.dt, '时间步长');
-    normalized.steps = finite(request.steps, '本次时间步数');
     if (!(normalized.dt > 0)) throw new Error('时间步长必须大于 0。');
-    if (!Number.isInteger(normalized.steps) || normalized.steps < 1 || normalized.steps > 1000000)
-      throw new Error('本次时间步数必须是 1 到 1000000 的整数。');
-    if (!Number.isFinite(normalized.dt * normalized.steps)) throw new Error('物理时间超出数值范围。');
+    if (mode === 'transient') {
+      normalized.steps = finite(request.steps, '本次时间步数');
+      if (!Number.isInteger(normalized.steps) || normalized.steps < 1 || normalized.steps > 1000000)
+        throw new Error('本次时间步数必须是 1 到 1000000 的整数。');
+      if (!Number.isFinite(normalized.dt * normalized.steps)) throw new Error('物理时间超出数值范围。');
+    } else {
+      normalized.endTime=finite(request.endTime,'目标物理时间');
+      normalized.minDt=finite(request.minDt ?? normalized.dt/1024,'最小时间步长');
+      normalized.maxCourant=finite(request.maxCourant ?? 1,'目标 CFL');
+      normalized.maxRetries=finite(request.maxRetries ?? 10,'最大重试次数');
+      normalized.maxSteps=finite(request.maxSteps ?? 100000,'最大接受步数');
+      if (!(normalized.endTime>0) || !(normalized.minDt>0) || normalized.minDt>normalized.dt || !(normalized.maxCourant>0)
+          || !Number.isInteger(normalized.maxRetries) || normalized.maxRetries<0 || normalized.maxRetries>30
+          || !Number.isInteger(normalized.maxSteps) || normalized.maxSteps<1 || normalized.maxSteps>1000000)
+        throw new Error('自动步长的目标时间、步长范围、CFL 或计算预算无效。');
+    }
   }
   return normalized;
 }
@@ -123,7 +136,10 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
   const validated = validateFlowRequest(request);
   if (validated.resume && !restartPath) throw new Error('请先选择重启状态。');
   const temporalArgs = validated.mode === 'transient'
-    ? ['--time-step', String(validated.dt), '--steps', String(validated.steps)] : [];
+    ? ['--time-step', String(validated.dt), '--steps', String(validated.steps)]
+    : validated.mode === 'adaptive' ? ['--time-step',String(validated.dt),'--end-time',String(validated.endTime),
+      '--min-time-step',String(validated.minDt),'--max-courant',String(validated.maxCourant),
+      '--max-step-retries',String(validated.maxRetries),'--max-time-steps',String(validated.maxSteps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
   if (validated.case === 'custom') {
     if (typeof boundaryPath !== 'string' || !boundaryPath) throw new Error('缺少命名边界输入路径。');
@@ -148,6 +164,14 @@ function parseFlowProgress(line) {
   if (typeof line !== 'string' || line[0] !== '{') return null;
   let value;
   try { value = JSON.parse(line); } catch { return null; }
+  if (value?.type === 'flow-time-retry') {
+    for (const key of ['step','attempt','acceptedTime','candidateTime','dt','nextDt','maxCourant']) progressNumber(value[key],key);
+    if (!Number.isInteger(value.step) || value.step<1 || !Number.isInteger(value.attempt) || value.attempt<1
+        || value.acceptedTime<0 || !(value.dt>value.nextDt) || !(value.nextDt>0) || value.maxCourant<0
+        || !near(value.candidateTime,value.acceptedTime+value.dt) || !['courant','nonconverged'].includes(value.reason))
+      throw new Error('自动步长重试进度无效。');
+    return value;
+  }
   if (value?.type === 'flow-time-step') {
     const time = progressNumber(value.time, '物理时间');
     const step = progressNumber(value.step, '时间步');
@@ -180,7 +204,8 @@ function parseFlowProgress(line) {
 
 const near = (a, b) => Math.abs(a - b) <= 1e-12 + 1e-9 * Math.max(Math.abs(a), Math.abs(b));
 function flowOutputSuffixes(request) {
-  return [...FLOW_OUTPUT_SUFFIXES, ...(request?.mode === 'transient' ? ['.checkpoint', '.time-history.csv'] : []),
+  return [...FLOW_OUTPUT_SUFFIXES, ...(['transient','adaptive'].includes(request?.mode) ? ['.checkpoint', '.time-history.csv'] : []),
+    ...(request?.mode === 'adaptive' ? ['.attempt-history.csv'] : []),
     ...(request?.case === 'custom' ? ['.boundaries'] : [])];
 }
 
@@ -188,13 +213,14 @@ function validateTimeHistory(text, summary, startTime = 0) {
   const lines = text.trim().split(/\r?\n/);
   const keys = ['step', 'time', 'dt', 'accepted', 'innerIterations', 'momentumResidual', 'continuity', 'maxCourant', 'kineticEnergy', 'forceX', 'forceY'];
   if (lines.shift() !== keys.join(',')) throw new Error('时间历史表头无效。');
+  const adaptive=summary.timeStepControl==='adaptive-cfl-retry';
   let lastTime = startTime;
   const rows = lines.map((line, i) => {
     const values = line.split(',');
     if (values.length !== keys.length) throw new Error('时间历史列数不匹配。');
     const row = Object.fromEntries(keys.map((k,j) => [k, finite(values[j], k)]));
-    if (row.step !== i + 1 || !(row.time > lastTime) || !near(row.time, lastTime + summary.dt)
-        || !near(row.dt, summary.dt) || ![0,1].includes(row.accepted)
+    if (row.step !== i + 1 || !(row.time > lastTime) || !near(row.time, lastTime + row.dt) || !(row.dt>0)
+        || (!adaptive && !near(row.dt, summary.dt)) || ![0,1].includes(row.accepted)
         || !Number.isInteger(row.innerIterations) || row.innerIterations < 1)
       throw new Error('时间历史顺序或步长不一致。');
     if (row.accepted === 0 && i !== lines.length - 1) throw new Error('失败时间步必须是最后一步。');
@@ -209,7 +235,7 @@ function validateTimeHistory(text, summary, startTime = 0) {
   if (!last || rows.filter(r => r.accepted).length !== summary.completedSteps
       || rows.length !== summary.completedSteps + (summary.converged ? 0 : 1)
       || Boolean(last.accepted) !== summary.converged || !near(last.time, summary.time)
-      || last.innerIterations !== summary.iterations)
+      || last.innerIterations !== summary.iterations || !near(last.dt,summary.dt))
     throw new Error('时间历史与最终状态不一致。');
   for (const name of ['momentumResidual','continuity','maxCourant','forceX','forceY'])
     if (!near(last[name], summary[name])) throw new Error(`时间历史 ${name} 与摘要不一致。`);
@@ -229,6 +255,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
       throw new Error('命名边界结果的压力基准或输入信息不匹配。');
   }
   const transient = summary.temporalDiscretization !== undefined;
+  const adaptive=summary.timeStepControl==='adaptive-cfl-retry';
+  if (summary.timeStepControl!==undefined && (!adaptive || !transient)) throw new Error('未知时间步控制模式。');
   if (summary.status !== 'converged' && summary.status !== (transient ? 'time_step_not_converged' : 'iteration_limit'))
     throw new Error('流动摘要状态无效。');
   if (typeof summary.converged !== 'boolean' || summary.converged !== (summary.status === 'converged'))
@@ -301,16 +329,17 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   if (transient) {
     if (summary.temporalDiscretization !== 'backward-euler' || summary.temporalFaceInterpolation !== 'old-and-iteration-flux-defect-skew-corrected-v2')
       throw new Error('未知非定常离散格式。');
-    for (const key of ['time','dt','acceptedTime','requestedSteps','completedSteps','maxCourant'])
+    for (const key of ['time','dt','acceptedTime','completedSteps','maxCourant',...(adaptive?[]:['requestedSteps'])])
       normalizedSummary[key] = finite(summary[key], key);
     const q = normalizedSummary;
+    if (adaptive) validateAdaptiveSummary(q,startTime);
     if (!(q.dt > 0) || q.maxCourant < 0 || q.acceptedTime < 0 || q.time <= startTime
-        || !Number.isInteger(q.requestedSteps) || q.requestedSteps < 1
+        || (!adaptive && (!Number.isInteger(q.requestedSteps) || q.requestedSteps < 1
         || !Number.isInteger(q.completedSteps) || q.completedSteps < 0 || q.completedSteps > q.requestedSteps
         || (q.converged && q.completedSteps !== q.requestedSteps)
         || (!q.converged && q.completedSteps >= q.requestedSteps)
         || !near(q.acceptedTime, startTime + q.completedSteps*q.dt)
-        || !near(q.time, q.acceptedTime + (q.converged ? 0 : q.dt)))
+        || !near(q.time, q.acceptedTime + (q.converged ? 0 : q.dt)))))
       throw new Error('非定常时间、接受状态或步数不一致。');
   } else if (['dt','time','acceptedTime','completedSteps','requestedSteps'].some(k => summary[k] !== undefined)) {
     throw new Error('缺少非定常离散格式，不能解释时间字段。');
@@ -340,8 +369,10 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     const request = validateFlowRequest(expectedRequest);
     if (request.case === 'custom' && !sameConditions(request.boundaryDefinition.records, summary.boundaryConditions))
       throw new Error('求解结果的命名边界与请求不一致。');
-    if ((request.mode === 'transient') !== transient || (transient && (!near(normalizedSummary.dt,request.dt) || normalizedSummary.requestedSteps !== request.steps)))
+    if ((request.mode !== 'steady') !== transient || (request.mode==='adaptive')!==adaptive
+        || (request.mode==='transient' && (!near(normalizedSummary.dt,request.dt) || normalizedSummary.requestedSteps !== request.steps)))
       throw new Error('原生求解时间模式或步长与请求不一致。');
+    if (adaptive) validateAdaptiveSummary(normalizedSummary,startTime,request);
     if (pressureDiscretizationInferred)
       throw new Error('本次新流动结果缺少压力离散格式，不能与请求绑定。');
     if (viscousStressInferred || viscousStress !== request.viscousStress)
@@ -389,5 +420,5 @@ module.exports = {
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
-  flowOutputSuffixes, validateTimeHistory
+  flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
 };

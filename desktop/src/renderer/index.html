@@ -189,12 +189,23 @@
       <h2><span>5</span>原生层流</h2>
       <p class="note">在最终网格上计算速度与压力。不含湍流模型；边界条件须与几何相符。</p>
       <label class="field">时间模式
-        <select id="flowMode"><option value="steady">稳态</option><option value="transient">非定常 · 随时间变化</option></select>
+        <select id="flowMode"><option value="steady">稳态</option><option value="transient">非定常 · 固定步长</option><option value="adaptive">非定常 · 自动步长</option></select>
       </label>
       <div id="flowTimeSettings">
         <div class="pair">
-          <label class="field">时间步长<input id="flowDt" type="number" min="0.000000000001" step="any" value="0.01"><span class="note">秒</span></label>
-          <label class="field">本次步数<input id="flowSteps" type="number" min="1" max="1000000" step="1" value="20"></label>
+          <label class="field"><span id="flowDtLabel">时间步长</span><input id="flowDt" type="number" min="0.000000000001" step="any" value="0.01"><span class="note">秒</span></label>
+          <label class="field" id="flowStepsField">本次步数<input id="flowSteps" type="number" min="1" max="1000000" step="1" value="20"></label>
+        </div>
+        <div id="flowAdaptiveSettings" hidden>
+          <div class="pair">
+            <label class="field">目标物理时间<input id="flowEndTime" type="number" min="0.000000000001" step="any" value="1"><span class="note">秒；续算也使用绝对时间</span></label>
+            <label class="field">最大 CFL<input id="flowMaxCourant" type="number" min="0.000000000001" step="any" value="1"></label>
+          </div>
+          <div class="pair">
+            <label class="field">最小步长<input id="flowMinDt" type="number" min="0.000000000000001" step="any" value="0.00001"><span class="note">秒；终点余量可更小</span></label>
+            <label class="field">每步重试上限<input id="flowMaxRetries" type="number" min="0" max="30" step="1" value="10"></label>
+          </div>
+          <label class="field">本次接受步数上限<input id="flowMaxSteps" type="number" min="1" max="1000000" step="1" value="100000"><span class="note">达到上限后保存状态并停止，可继续。</span></label>
         </div>
         <p class="note" id="flowTimeHint">一阶时间格式；从静止启动。减小时间步通常更准确，也更慢。</p>
         <div id="flowRestartSettings" hidden>

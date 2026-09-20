@@ -865,7 +865,8 @@ function renderFlowResult(summary) {
   if (summary.temporalDiscretization) stateLine.textContent=`已接受 t=${summary.acceptedTime.toPrecision(6)} s · 本次 ${summary.completedSteps} 步 · 最后一步内迭代 ${summary.iterations} 次`;
   container.appendChild(stateLine);
   const rows = [
-    ...(summary.temporalDiscretization ? [['时间步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
+    ...(summary.temporalDiscretization ? [['最后一步步长（s）',summary.dt],['最后一步最大 CFL',summary.maxCourant]] : []),
+    ...(summary.timeStepControl==='adaptive-cfl-retry' ? [['时间步控制','自动 CFL / 重试'],['拒绝的试算次数',String(summary.rejectedSteps)],['CFL 上限',summary.targetCourant]] : []),
     ['对流格式', convectionText],
     ['压力求解', pressurePreconditionerText],
     ['出口回流', flowOutletBackflowLabel(summary)],
@@ -901,7 +902,13 @@ function renderFlowResult(summary) {
 }
 
 function updateFlowMode() {
-  const transient = $('flowMode').value === 'transient';
+  const transient = $('flowMode').value !== 'steady';
+  const adaptive = $('flowMode').value === 'adaptive';
+  $('flowAdaptiveSettings').hidden=!adaptive;
+  $('flowStepsField').hidden=adaptive;
+  $('flowSteps').disabled=state.busy||adaptive;
+  $('flowDtLabel').textContent=adaptive?'最大时间步长':'时间步长';
+  for (const id of ['flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).disabled=state.busy||!adaptive;
   $('flowRestartSettings').hidden = !transient;
   $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
   const restart = state.flowRestart;
@@ -921,7 +928,9 @@ function updateFlowMode() {
     : '每个完成的时间步都会保存；取消后可继续。';
   const dt = Number($('flowDt').value), steps = Number($('flowSteps').value);
   const start = resuming ? restart.time : 0;
-  $('flowTimeHint').textContent = Number.isFinite(dt*steps) && dt > 0 && steps > 0
+  $('flowTimeHint').textContent = adaptive
+    ? `从 ${start.toPrecision(5)} s 推进到目标时间；按实际 CFL 和内迭代结果缩步重试。仍是一阶时间格式，需要另做时间步细化验证。`
+    : Number.isFinite(dt*steps) && dt > 0 && steps > 0
     ? `本次 ${start.toPrecision(5)} → ${(start+dt*steps).toPrecision(5)} s。一阶时间格式；时间步越小通常越准确，也更慢。`
     : '请填写正的时间步长和整数步数。';
   if (!state.busy) $('runFlow').textContent = transient ? (resuming ? '继续计算' : '从静止开始计算') : '启动层流求解';
@@ -944,7 +953,7 @@ function applySharedFlowControls(request) {
 }
 function applyRestartControls() {
   const q = state.flowRestart;
-  if ($('flowMode').value !== 'transient') $('flowResume').checked = false;
+  if ($('flowMode').value === 'steady') $('flowResume').checked = false;
   if (q && $('flowResume').checked) {
     $('thermalResume').checked = false;
     applySharedFlowControls(q);
@@ -1024,14 +1033,16 @@ function updateThermalMode() {
   $('pickThermalCheckpoint').disabled=state.busy||!state.result;
   for (const input of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
     input.disabled = Boolean(state.busy || resuming);
-  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom');
+  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || $('flowMode').value==='adaptive');
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
   $('thermalRestartInfo').textContent = restart
     ? `联合续算状态：t=${Number(restart.time).toPrecision(6)} s。物性、源项与边界锁定；可调整时间步和迭代控制。`
     : '每个流动与温度均收敛的时间步保存联合状态；取消后可续算。';
   const start = resuming ? Number(restart.time) : 0;
   const duration = Number($('flowDt').value) * Number($('flowSteps').value);
-  $('thermalTimeHint').textContent = Number.isFinite(duration) && duration > 0
+  $('thermalTimeHint').textContent = $('flowMode').value==='adaptive'
+    ? '温度联合推进目前使用固定步长；请在上方切换为固定步长模式。'
+    : Number.isFinite(duration) && duration > 0
     ? `温度始终非定常：本次 ${start.toPrecision(5)} → ${(start + duration).toPrecision(5)} s。温度积分需乘 ρcp 才是单位深度热量。`
     : '请在上方填写时间步长与本次步数。';
 }
@@ -1137,12 +1148,14 @@ async function refreshFlowState(restoreResult=false) {
 }
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
-  const transient=$('flowMode').value==='transient';
+  const transient=$('flowMode').value!=='steady';
   const request={ case:$('flowCase').value,nu:Number($('flowNu').value),speed:Number($('flowSpeed').value),
     maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
     pressurePreconditioner:$('flowPressurePreconditioner').value,
     outletBackflow:$('flowOutletBackflow').value,
-    mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),resume:transient && $('flowResume').checked };
+    mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),
+    endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
+    maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),resume:transient && $('flowResume').checked };
   if(request.case==='custom')request.boundaryDefinition=state.flowBoundaryDefinition;
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
@@ -1230,7 +1243,7 @@ for (const control of document.querySelectorAll('#thermalBlock input[type=number
   control.addEventListener('change', () => { if (state.thermal) clearThermalBinding(); });
 $('flowMode').addEventListener('change',applyRestartControls);
 $('flowResume').addEventListener('change',applyRestartControls);
-for(const id of ['flowDt','flowSteps']) $(id).addEventListener('input',updateFlowMode);
+for(const id of ['flowDt','flowSteps','flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).addEventListener('input',updateFlowMode);
 $('flowMonitorMetric').addEventListener('change',renderFlowMonitor);
 $('pickFlowCheckpoint').addEventListener('click',async()=>{
   if(state.busy)return;
@@ -1307,6 +1320,11 @@ window.cartmesh.onProgress(progress => {
   progressTimer = setInterval(update, 1000);
 });
 window.cartmesh.onFlowProgress(progress => {
+  if (progress.type==='flow-time-retry') {
+    const reason=progress.reason==='courant'?'CFL 超限':'内迭代未收敛';
+    const message=`${reason}；已接受到 t=${progress.acceptedTime.toPrecision(6)} s。步长 ${progress.dt.toExponential(3)} → ${progress.nextDt.toExponential(3)} s 后重试。`;
+    status('当前试算未接受',message);log(message);return;
+  }
   if (progress.type==='flow-time-step') {
     state.flowHistory.push(progress);
     if (state.flowHistory.length>1400) state.flowHistory=state.flowHistory.filter((_r,i)=>i%2===0 || i===state.flowHistory.length-1);

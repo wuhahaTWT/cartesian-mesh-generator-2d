@@ -93,6 +93,63 @@ def taylor_green_decay(history: list[dict[str, float]], nu: float, speed: float)
             'history': rows}
 
 
+def audit_adaptive_steps(prefix, summary, history):
+    controls = {key: native.finite(summary.get(key), 'adaptive '+key) for key in (
+        'startTime','targetTime','maximumTimeStep','minimumTimeStep','targetCourant')}
+    counts = {key: native.integer(summary.get(key),'adaptive '+key) for key in (
+        'maximumRetries','maximumAcceptedSteps','attemptCount','rejectedSteps')}
+    start,end,high,low,limit=(controls[k] for k in ('startTime','targetTime','maximumTimeStep','minimumTimeStep','targetCourant'))
+    if (start<0 or end<=start or not 0<low<=high or limit<=0 or not 0<=counts['maximumRetries']<=30
+            or not 1<=counts['maximumAcceptedSteps']<=1000000 or counts['rejectedSteps']<0
+            or len(history)>counts['maximumAcceptedSteps'] or 'requestedSteps' in summary):
+        fail('invalid adaptive time-step control metadata')
+    if not native.close(history[-1]['time'],end,1e-12,1e-10):
+        fail('adaptive result did not reach requested target time')
+    path=Path(str(prefix)+'.attempt-history.csv')
+    keys=('attempt','step','startTime','time','dt','accepted','reason','innerConverged','innerIterations',
+          'momentumResidual','continuity','velocityChange','pressureChange','maxCourant')
+    data=native.load_csv(path,keys)
+    if len(data)!=counts['attemptCount'] or not data:fail('adaptive attempt count differs from records')
+    accepted=0;rejected=0;time=start;retries=0;previous_rejection=None
+    for index,row in enumerate(data,1):
+        values={k:native.finite(row[k],'adaptive attempt '+k) for k in keys if k!='reason'}
+        reason=row['reason'];dt=values['dt']
+        if values['attempt']!=index or values['step']!=accepted+1 or values['accepted'] not in (0,1) or values['innerConverged'] not in (0,1):
+            fail('adaptive attempt sequence/status is invalid')
+        if not native.close(values['startTime'],time,1e-12,1e-10) or not native.close(values['time'],time+dt,1e-12,1e-10):
+            fail('rejected adaptive attempt changed accepted physical time')
+        if dt<=0 or dt>high*(1+1e-12) or values['time']>end+1e-12 or (dt<low and not native.close(dt,end-time,1e-14,1e-10)):
+            fail('adaptive dt lies outside bounds or skips the final remainder')
+        if any(values[k]<0 for k in ('momentumResidual','continuity','velocityChange','pressureChange','maxCourant')):
+            fail('adaptive attempt has negative residual/Courant data')
+        if values['innerIterations']<1 or values['innerIterations']!=int(values['innerIterations']):
+            fail('adaptive inner iteration count is invalid')
+        inner_valid=values['innerIterations']>=10 and values['continuity']<1e-8 and all(values[k]<summary['tolerance'] for k in ('momentumResidual','velocityChange','pressureChange'))
+        if values['innerConverged'] and not inner_valid:fail('adaptive inner convergence claim misses stopping gates')
+        if previous_rejection is not None:
+            old_dt,old_cfl=previous_rejection
+            factor=min(.5,.8*limit/old_cfl) if old_cfl>0 else .5
+            expected=max(min(low,end-time),old_dt*factor)
+            if not dt<old_dt or not native.close(dt,expected,1e-14,1e-10):
+                fail('adaptive retry did not reduce dt according to recorded controls')
+        if values['accepted']:
+            if reason!='accepted' or not values['innerConverged'] or values['maxCourant']>limit:
+                fail('adaptive step was accepted despite convergence/Courant rejection')
+            if accepted>=len(history):fail('adaptive accepted attempt has no time-history row')
+            actual=history[accepted]
+            for key in ('step','time','dt','innerIterations','momentumResidual','continuity','maxCourant'):
+                if not native.close(values[key],actual[key],1e-12,1e-10):fail('adaptive accepted attempt differs from time history')
+            time=values['time'];accepted+=1;retries=0;previous_rejection=None
+        else:
+            if (reason=='courant' and (not values['innerConverged'] or values['maxCourant']<=limit)) or (reason=='nonconverged' and values['innerConverged']) or reason not in ('courant','nonconverged'):
+                fail('adaptive rejection reason disagrees with numerical status')
+            retries+=1;rejected+=1;previous_rejection=(dt,values['maxCourant'])
+            if retries>counts['maximumRetries']:fail('adaptive retry budget was exceeded')
+    if previous_rejection is not None or accepted!=len(history) or rejected!=counts['rejectedSteps']:
+        fail('adaptive accepted/rejected records do not match completed calculation')
+    return dict(valid=True,controls=controls,counts=counts,attemptsSha256=native.sha256_file(path))
+
+
 def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     mesh = native.read_cm2d(mesh_path)
     measured = native.measure(mesh, 1e-11, 1e-9)
@@ -139,18 +196,22 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
     if dt <= 0:
         fail("summary dt must be positive")
     history = read_history(history_path)
+    adaptive=summary.get("timeStepControl")=="adaptive-cfl-retry"
+    if "timeStepControl" in summary and not adaptive:fail("unsupported time-step controller")
+    adaptive_audit=audit_adaptive_steps(prefix,summary,history) if adaptive else None
     completed = sum(row["accepted"] for row in history)
     if native.integer(summary.get("completedSteps"), "summary completedSteps") != completed:
         fail("completedSteps differs from accepted history rows")
-    if native.integer(summary.get("requestedSteps"), "summary requestedSteps") != len(history):
+    if not adaptive and native.integer(summary.get("requestedSteps"), "summary requestedSteps") != len(history):
         fail("requestedSteps differs from history length")
     if completed != len(history):
         fail("converged summary contains an unaccepted time step")
     for row in history:
-        if not native.close(row["dt"], dt, 1e-14, 1e-10):
+        if not adaptive and not native.close(row["dt"], dt, 1e-14, 1e-10):
             fail("history dt differs from summary")
         if row["innerIterations"] < 10 or row["momentumResidual"] >= summary["tolerance"] or row["continuity"] >= 1e-8:
             fail("accepted history row fails native stopping conditions")
+    if not native.close(history[-1]["dt"],dt,1e-14,1e-10):fail("last accepted dt differs from summary")
     residuals = native.read_residuals(residual_path)
     if native.integer(summary.get("iterations"), "summary iterations") != residuals["last"]["iteration"] or summary["iterations"] != history[-1]["innerIterations"]:
         fail("final inner iteration count differs between artifacts")
@@ -270,7 +331,7 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
               "sha256": {str(path): native.sha256_file(path) for path in (mesh_path, cells_path, faces_path, summary_path, history_path, residual_path,
                         *((Path(str(prefix)+'.boundaries'),) if case == 'custom' else ()))},
               "controls": {k: summary[k] for k in ("nu", "speed", "tolerance", "convection", "viscousStress", "temporalFaceInterpolation", "velocityRelaxation")}, "case": case, "time": final_time,
-              "dt": dt, "history": history, "independentContinuity": cont,
+              "dt": dt, "history": history, "adaptiveTimeControl":adaptive_audit, "independentContinuity": cont,
               "temporalIntegral": {"maxAbsX": max(abs(c["temporalX"]) for c in cells.values()),
                                     "maxAbsY": max(abs(c["temporalY"]) for c in cells.values())},
               "analyticErrors": errors, "analyticDecay": decay, "kineticEnergy": energy,

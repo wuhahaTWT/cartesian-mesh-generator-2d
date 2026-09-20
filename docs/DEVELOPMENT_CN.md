@@ -579,7 +579,7 @@ profile分别记录 `pressureHierarchyBuilds`（完整分组）、`pressureHiera
 
 ### 非定常层流与断点续算
 
-开发分支CLI/核心提供固定步长的一阶后向欧拉。桌面0.4.4已提供时间步、物理量监测、取消保留与checkpoint续算，本地macOS已打包实测；不支持自适应时间步、二阶时间格式、瞬态湍流或移动网格。
+开发分支CLI/核心提供一阶后向欧拉。桌面0.4.4起提供固定时间步、物理量监测、取消保留与checkpoint续算；0.4.18增加CFL控制的自动步长及失败重试，本地macOS已打包实测；不支持二阶时间格式、时间误差估计、瞬态湍流或移动网格。
 
 CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。显式选项仅允许非定常/同步模式，稳态或冻结载流拒绝；不会自动调大，桌面当前仍使用默认值。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
 
@@ -606,7 +606,7 @@ python3 tools/visualization/render_thermal_scale.py --study outputs/thermal-scal
 
 `--time-step`和`--steps`必须一起提供；后者表示本次追加的步数，`--max-iterations`是每步内迭代上限。普通channel/cavity/external从静止开始，在t>0施加入流/顶盖速度；这是瞬时启动，会产生启动压力，不是预先求稳态再贴上时间标签。外流仍限定矩形外域、固定固体和无回流出口。
 
-动量添加 `V*(Unew-Uold)/dt`；上一接受时刻的速度和唯一面通量保留，Rhie–Chow包含旧时刻与内松弛的插值缺陷修正。时间步内部原动量残差、速度/压力变化和质量守恒都达到原停止条件才接受。动量线性求解除既有全局真残差条件外，还约束每行 `abs(b-Ax)/aP <= .01*tolerance*Uref*alphaU`，避免远场大格子的右端项掩盖小Cut-cell的局部残差；没有放宽非线性门。CFL为每个单元 `dt*sum(abs(phi))/(2V)` 的最大值，只作诊断，不会自动修改dt。
+动量添加 `V*(Unew-Uold)/dt`；上一接受时刻的速度和唯一面通量保留，Rhie–Chow包含旧时刻与内松弛的插值缺陷修正。时间步内部原动量残差、速度/压力变化和质量守恒都达到原停止条件才接受。动量线性求解除既有全局真残差条件外，还约束每行 `abs(b-Ax)/aP <= .01*tolerance*Uref*alphaU`，避免远场大格子的右端项掩盖小Cut-cell的局部残差；没有放宽非线性门。CFL为每个单元 `dt*sum(abs(phi))/(2V)` 的最大值；固定步长模式仅作诊断，自动模式要求试算的实际CFL不超过指定上限。
 
 桌面实现：`core/flow-checkpoint.js` 流式读取配置与时间供界面使用，不替代原生完整状态和网格核验；`core/flow.js` 校验请求、物理进度、摘要和时间历史。main 先写独立待验目录，全部成功再替换完整结果；失败或取消保留诊断与最后接受状态。原完整流场和最新续算状态分别标注时间。稳态调用参数保持不变。桌面物理监测进度拒绝非数值JSON字段。
 
@@ -643,6 +643,16 @@ python3 tools/verification/benchmark_flow_pair.py --baseline PATH/saved-cli --ca
 ```
 
 残差范数仍为Euclidean L2，停止标准仍是`1e-13 + 1e-11*||rhs||`并回代原矩阵检查真实残差。改为带缩放的平方和，避免逐分量调用hypot；不直接累加double平方，以免极大/极小数溢出/下溢。这是[标准缩放范数思路](https://www.netlib.org/lapack/explore-html/d8/d76/group__lassq.html)的本仓库实现，没有引入LAPACK依赖，也不属于原创数值理论。累加仍使用long double，具体精度由平台决定；不同编译器逐位一致性需另证。
+
+### CFL 自动步长与拒绝试算
+
+`cartmesh2d_flow_cli --time-step MAX_DT --end-time ABSOLUTE_T`启用自动后向欧拉；不能同时给`--steps`。控制项为`--min-time-step MAX_DT/1024`、`--max-courant 1`、`--max-step-retries 10`及`--max-time-steps 100000`。目标时间必须晚于初始/续算已接受时间。App0.4.18的“非定常·自动步长”同步提供这些控制，温度联合推进仍使用原固定步长入口。
+
+`FlowTimeStep2D.hpp`从上次已接受面通量计算Courant增长率，使用0.8余量预测下一步；实际试算需同时通过原非线性/守恒门和实际CFL上限。拒绝后从原状态以`min(.5,.8*CFLlimit/CFLtrial)`缩步重算，不更新检查点；最小步或重试/接受步预算耗尽会失败并保留最后接受状态。终点剩余时间可小于最小步以精确到达目标。核心推进方程和检查点v2/v4格式不变，自动控制策略不是物理状态；相同控制和目标、从接受步预算中断后续算能逐字节复现连续检查点。
+
+`.attempt-history.csv`记录所有试算，含开始/候选时间、dt、是否接受、拒绝原因、内迭代停止指标及实际CFL；`.time-history.csv`在自动模式只含接受步，dt可以变化。摘要`timeStepControl=adaptive-cfl-retry`记录全部控制、起终点、attemptCount/rejectedSteps/completedSteps；`dt`是最后接受步长度，不再带固定模式的requestedSteps。独立Python审核与App读回均检查拒绝原因、状态时间不前移、缩步规则和接受历史的一致性；最终场仍独立重建时间项/动量/质量/CFL。
+
+`tests/adaptive_flow_cli_test.py`覆盖CFL和内迭代两种拒绝、最小步/重试耗尽、接受步预算续算逐字节一致、非法组合与篡改历史拒绝。App失败或取消保留上次完整显示和最后接受检查点，ZIP含全部当前完成运行试算及未完成诊断。CFL控制不构成时间误差估计，物理精度仍须时间与网格细化。
 
 ### 固定网格的时间步比较
 

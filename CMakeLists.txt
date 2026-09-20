@@ -314,6 +314,10 @@ if(CARTMESH2D_BUILD_TESTS)
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
     set_tests_properties(cartmesh2d_pressure_stencil_cli PROPERTIES TIMEOUT 90)
+    add_test(NAME cartmesh2d_adaptive_flow_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    set_tests_properties(cartmesh2d_adaptive_flow_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_rotating_annulus_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/rotating_annulus_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)

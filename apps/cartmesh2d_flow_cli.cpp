@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
+#include "cartmesh2d/fv/FlowTimeStep2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
@@ -81,6 +82,10 @@ int main(int argc, char** argv) {
         bool explicitVelocityRelaxation=false;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
+        fv::FlowTimeStepControls2D adaptiveControls;
+        bool adaptive=false, adaptiveOptions=false, explicitMinimumStep=false;
+        double startTime=0;
+        std::size_t attemptCount=0,rejectedSteps=0;
         std::string restart;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
@@ -98,11 +103,13 @@ int main(int argc, char** argv) {
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
+            "--time-step MAX_DT --end-time T: adaptive backward Euler to absolute physical time T.\n"
+            "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--velocity-relaxation 0.6: transient inner iterations only; (0,1], larger may be unstable.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
-            "Transient retains inner relaxation flux correction; fixed DT; reports CFL without changing DT.\n"
+            "Fixed-step mode reports CFL. Adaptive mode retries unaccepted steps without advancing the saved state.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
@@ -154,6 +161,18 @@ int main(int argc, char** argv) {
                 const double n=number(v);
                 if (n<1 || n>1000000 || n!=std::floor(n)) throw std::invalid_argument("bad physical step count");
                 requestedSteps=static_cast<std::size_t>(n);
+            } else if (a == "--end-time") {
+                adaptive=true;adaptiveControls.targetTime=number(v);
+            } else if (a == "--max-courant") {
+                adaptiveOptions=true;adaptiveControls.maximumCourant=number(v);
+            } else if (a == "--min-time-step") {
+                adaptiveOptions=true;explicitMinimumStep=true;adaptiveControls.minimumStep=number(v);
+            } else if (a == "--max-step-retries" || a == "--max-time-steps") {
+                adaptiveOptions=true;
+                const double n=number(v);
+                if (n<0 || n>1000000 || n!=std::floor(n)) throw std::invalid_argument("bad adaptive iteration budget");
+                if (a == "--max-step-retries") adaptiveControls.maximumRetries=static_cast<std::size_t>(n);
+                else adaptiveControls.maximumAcceptedSteps=static_cast<std::size_t>(n);
             } else if (a == "--restart") {
                 restart=v;
             } else if (a == "--manufactured-pressure-slope") {
@@ -191,14 +210,19 @@ int main(int argc, char** argv) {
         if (path.empty() || (prefix.empty() && boundaryExportPath.empty())) {
             throw std::invalid_argument("--mesh and --output required");
         }
-        if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || !restart.empty()))
+        if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty()))
             throw std::invalid_argument("boundary template export does not run time steps or restart");
         if (!path.ends_with(".solver.cm2d") || path.ends_with(".failed.solver.cm2d")) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
 
-        if ((timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
-            throw std::invalid_argument("--time-step and --steps must be provided together; restart requires them");
+        if (adaptive) {
+            if (timeStep<=0 || requestedSteps) throw std::invalid_argument("--end-time requires --time-step and cannot be combined with --steps");
+            adaptiveControls.maximumStep=timeStep;
+            if (!explicitMinimumStep) adaptiveControls.minimumStep=timeStep/1024;
+            fv::validateFlowTimeStepControls2D(adaptiveControls);
+        } else if (adaptiveOptions || (timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
+            throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
         if (explicitVelocityRelaxation && timeStep==0)
             throw std::invalid_argument("velocity-relaxation option requires transient flow");
 
@@ -257,6 +281,9 @@ int main(int argc, char** argv) {
                 if (!input) throw std::runtime_error("cannot open restart checkpoint");
                 state=fv::readFlowCheckpoint2D(input,mesh,controls);
             }
+            startTime=state.time;
+            if (adaptive && !(adaptiveControls.targetTime>startTime))
+                throw std::invalid_argument("end-time must be after the accepted restart time");
             acceptedTime=state.time;
             auto saveAccepted=[&]() {
                 auto checkpoint=out(prefix,".checkpoint.tmp");
@@ -272,45 +299,79 @@ int main(int argc, char** argv) {
             saveAccepted(); // even a failed first step retains the valid initial/restart state
             auto times=out(prefix,".time-history.csv");
             times << "step,time,dt,accepted,innerIterations,momentumResidual,continuity,maxCourant,kineticEnergy,forceX,forceY\n";
-            for (std::size_t step=1;step<=requestedSteps;++step) {
-                const double target=state.time+timeStep;
-                auto innerProgress=[&](const fv::FlowIteration2D& h) {
-                    std::cout << std::setprecision(17) << "{\"type\":\"flow-progress\",\"time\":" << target
-                              << ",\"timeStep\":" << step << ",\"iteration\":" << h.iteration
-                              << ",\"momentumResidual\":" << h.momentumResidual << ",\"continuity\":" << h.continuity
-                              << ",\"velocityChange\":" << h.velocityChange << ",\"pressureChange\":" << h.pressureChange << "}" << std::endl;
-                };
-                r=fv::advanceIncompressible2D(mesh,controls,state,timeStep,innerProgress);
-                const auto& last=r.history.back();
-                totalInnerIterations+=last.iteration;
-                if (controls.profile) {
-                    const auto& p=r.performance;
-                    totalPerformance.momentumSolves+=p.momentumSolves;
-                    totalPerformance.momentumIterations+=p.momentumIterations;
-                    totalPerformance.maxMomentumIterations=std::max(totalPerformance.maxMomentumIterations,p.maxMomentumIterations);
-                    totalPerformance.pressureSolves+=p.pressureSolves;
-                    totalPerformance.pressureCorrectionPassesSkipped+=p.pressureCorrectionPassesSkipped;
-                    totalPerformance.pressureFactorizations+=p.pressureFactorizations;
-                    totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
-                    totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
-                    totalPerformance.pressureHierarchyReuses+=p.pressureHierarchyReuses;
-                    totalPerformance.pressureHierarchyRefreshes+=p.pressureHierarchyRefreshes;
-                    totalPerformance.maxPressureHierarchyLevels=std::max(totalPerformance.maxPressureHierarchyLevels,p.maxPressureHierarchyLevels);
-                    totalPerformance.maxPressureCoarseCells=std::max(totalPerformance.maxPressureCoarseCells,p.maxPressureCoarseCells);
-                    totalPerformance.pressureIterations+=p.pressureIterations;
-                    totalPerformance.maxPressureIterations=std::max(totalPerformance.maxPressureIterations,p.maxPressureIterations);
-                    totalPerformance.momentumLinearSolveSeconds+=p.momentumLinearSolveSeconds;
-                    totalPerformance.pressureLinearSolveSeconds+=p.pressureLinearSolveSeconds;
-                    totalPerformance.solveSeconds+=p.solveSeconds;
+            std::ofstream attempts;
+            if (adaptive) {
+                attempts=out(prefix,".attempt-history.csv");
+                attempts << "attempt,step,startTime,time,dt,accepted,reason,innerConverged,innerIterations,momentumResidual,continuity,velocityChange,pressureChange,maxCourant\n";
+            }
+            for (std::size_t step=1;adaptive ? state.time<adaptiveControls.targetTime : step<=requestedSteps;++step) {
+                if (adaptive && completedSteps>=adaptiveControls.maximumAcceptedSteps)
+                    throw std::runtime_error("Adaptive accepted-step budget exhausted; last accepted checkpoint retained");
+                double trialStep=adaptive?fv::nextAdaptiveFlowTimeStep2D(mesh,state,adaptiveControls):timeStep;
+                std::size_t retry=0;
+                for (;;) {
+                    const double target=state.time+trialStep;
+                    auto innerProgress=[&](const fv::FlowIteration2D& h) {
+                        std::cout << std::setprecision(17) << "{\"type\":\"flow-progress\",\"time\":" << target
+                                  << ",\"timeStep\":" << step << ",\"iteration\":" << h.iteration
+                                  << ",\"momentumResidual\":" << h.momentumResidual << ",\"continuity\":" << h.continuity
+                                  << ",\"velocityChange\":" << h.velocityChange << ",\"pressureChange\":" << h.pressureChange << "}" << std::endl;
+                    };
+                    r=fv::advanceIncompressible2D(mesh,controls,state,trialStep,innerProgress);
+                    const auto& last=r.history.back();
+                    totalInnerIterations+=last.iteration;
+                    if (controls.profile) {
+                        const auto& p=r.performance;
+                        totalPerformance.momentumSolves+=p.momentumSolves;
+                        totalPerformance.momentumIterations+=p.momentumIterations;
+                        totalPerformance.maxMomentumIterations=std::max(totalPerformance.maxMomentumIterations,p.maxMomentumIterations);
+                        totalPerformance.pressureSolves+=p.pressureSolves;
+                        totalPerformance.pressureCorrectionPassesSkipped+=p.pressureCorrectionPassesSkipped;
+                        totalPerformance.pressureFactorizations+=p.pressureFactorizations;
+                        totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
+                        totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
+                        totalPerformance.pressureHierarchyReuses+=p.pressureHierarchyReuses;
+                        totalPerformance.pressureHierarchyRefreshes+=p.pressureHierarchyRefreshes;
+                        totalPerformance.maxPressureHierarchyLevels=std::max(totalPerformance.maxPressureHierarchyLevels,p.maxPressureHierarchyLevels);
+                        totalPerformance.maxPressureCoarseCells=std::max(totalPerformance.maxPressureCoarseCells,p.maxPressureCoarseCells);
+                        totalPerformance.pressureIterations+=p.pressureIterations;
+                        totalPerformance.maxPressureIterations=std::max(totalPerformance.maxPressureIterations,p.maxPressureIterations);
+                        totalPerformance.momentumLinearSolveSeconds+=p.momentumLinearSolveSeconds;
+                        totalPerformance.pressureLinearSolveSeconds+=p.pressureLinearSolveSeconds;
+                        totalPerformance.solveSeconds+=p.solveSeconds;
+                    }
+                    if (!adaptive) break;
+                    ++attemptCount;
+                    const bool accepted=r.converged && r.maxCourant<=adaptiveControls.maximumCourant;
+                    const char* reason=accepted?"accepted":r.converged?"courant":"nonconverged";
+                    if (accepted && trialStep==adaptiveControls.targetTime-state.time)
+                        r.time=adaptiveControls.targetTime; // canonical timestamp of the computed final remainder
+                    attempts << attemptCount << ',' << step << ',' << state.time << ',' << r.time << ',' << trialStep
+                             << ',' << (accepted?1:0) << ',' << reason << ',' << (r.converged?1:0) << ',' << last.iteration
+                             << ',' << last.momentumResidual << ',' << last.continuity << ',' << last.velocityChange
+                             << ',' << last.pressureChange << ',' << r.maxCourant << '\n';
+                    attempts.flush();
+                    if (accepted) break;
+                    ++rejectedSteps;
+                    if (r.stopped) throw std::runtime_error("Adaptive calculation stopped; last accepted checkpoint retained");
+                    const auto smaller=fv::reducedFlowTimeStep2D(trialStep,r.maxCourant,adaptiveControls.targetTime-state.time,adaptiveControls);
+                    if (retry>=adaptiveControls.maximumRetries || !smaller)
+                        throw std::runtime_error(std::string("Adaptive ")+reason+" rejection exhausted minimum step or retry budget; last accepted checkpoint retained");
+                    std::cout << "{\"type\":\"flow-time-retry\",\"step\":" << step << ",\"attempt\":" << attemptCount
+                              << ",\"acceptedTime\":" << state.time << ",\"candidateTime\":" << r.time
+                              << ",\"dt\":" << trialStep << ",\"nextDt\":" << *smaller
+                              << ",\"maxCourant\":" << r.maxCourant << ",\"reason\":\"" << reason << "\"}" << std::endl;
+                    trialStep=*smaller;++retry; // state has not been changed by a rejected trial
                 }
+                const auto& last=r.history.back();
                 double energy=0;
                 for (std::size_t i=0;i<mesh.cells.size();++i)
                     energy+=.5*mesh.cells[i].area*(r.u[i]*r.u[i]+r.v[i]*r.v[i]);
-                times << step << ',' << r.time << ',' << timeStep << ',' << (r.converged?1:0) << ',' << last.iteration
+                times << step << ',' << r.time << ',' << r.timeStep << ',' << (r.converged?1:0) << ',' << last.iteration
                       << ',' << last.momentumResidual << ',' << last.continuity << ',' << r.maxCourant
                       << ',' << energy << ',' << r.forceX << ',' << r.forceY << '\n';
                 times.flush();
-                if (!r.converged) break; // never advance the physical time with an unconverged candidate
+                if (!r.converged) break; // fixed-step mode preserves its diagnostic failure output
                 state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
                 saveAccepted();
                 std::cout << "{\"type\":\"flow-time-step\",\"time\":" << state.time
@@ -421,12 +482,20 @@ int main(int argc, char** argv) {
             }
             summary << "],\n";
         }
-        if (timeStep>0) summary << "\"temporalDiscretization\":\"backward-euler\",\n"
-            << "\"temporalFaceInterpolation\":\"old-and-iteration-flux-defect-skew-corrected-v2\",\n"
-            << "\"time\":" << r.time << ",\n\"dt\":" << timeStep
-            << ",\n\"acceptedTime\":" << acceptedTime << ",\n\"requestedSteps\":" << requestedSteps
-            << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
-            << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
+        if (timeStep>0) {
+            summary << "\"temporalDiscretization\":\"backward-euler\",\n"
+                << "\"temporalFaceInterpolation\":\"old-and-iteration-flux-defect-skew-corrected-v2\",\n"
+                << "\"time\":" << r.time << ",\n\"dt\":" << r.timeStep
+                << ",\n\"acceptedTime\":" << acceptedTime;
+            if (adaptive) summary << ",\n\"timeStepControl\":\"adaptive-cfl-retry\",\n\"startTime\":" << startTime
+                << ",\n\"targetTime\":" << adaptiveControls.targetTime << ",\n\"maximumTimeStep\":" << timeStep
+                << ",\n\"minimumTimeStep\":" << adaptiveControls.minimumStep << ",\n\"targetCourant\":" << adaptiveControls.maximumCourant
+                << ",\n\"maximumRetries\":" << adaptiveControls.maximumRetries << ",\n\"maximumAcceptedSteps\":" << adaptiveControls.maximumAcceptedSteps
+                << ",\n\"attemptCount\":" << attemptCount << ",\n\"rejectedSteps\":" << rejectedSteps;
+            else summary << ",\n\"requestedSteps\":" << requestedSteps;
+            summary << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
+                << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
+        }
         if (manufactured && controls.manufacturedViscositySlope==0) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
                                   << "\"manufacturedPressureSlope\":" << controls.manufacturedPressureSlope << ",\n";
         if(manufactured && controls.manufacturedViscositySlope!=0) summary<<"\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+pressureSlope*(x+y)); nu(x)=nu*(1+viscositySlope*x); source=advection+grad(p)-div(nu*stressGradient); stressGradient=grad(U)+grad(U)^T for symmetric, grad(U) for laplacian; centroid quadrature\",\n"

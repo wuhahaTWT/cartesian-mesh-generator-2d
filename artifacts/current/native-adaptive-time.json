@@ -1,0 +1,155 @@
+{
+  "format": "cartmesh2d-adaptive-time-evidence-v1",
+  "valid": true,
+  "version": "0.4.18",
+  "scope": "CFL/inner-convergence rollback and local Mac workflow; not temporal accuracy or universal engineering qualification",
+  "tests": {
+    "ctest": {
+      "passed": 140,
+      "total": 140
+    },
+    "frontend": {
+      "passed": 155,
+      "total": 155
+    },
+    "integration": {
+      "valid": true,
+      "continuousRestartIdentical": true,
+      "courantRetries": 2,
+      "acceptedSteps": 5,
+      "innerRetry": true,
+      "minimumStepRollback": true
+    }
+  },
+  "runs": {
+    "checked": {
+      "summary": {
+        "case": "custom",
+        "cells": 512,
+        "nu": 0.1,
+        "speed": 0.5,
+        "convection": "face-limited-linear",
+        "tolerance": 1e-08,
+        "time": 0.08,
+        "dt": 0.001288348788691468,
+        "startTime": 0,
+        "acceptedTime": 0.08,
+        "completedSteps": 5,
+        "rejectedSteps": 2,
+        "attemptCount": 7,
+        "maxCourant": 0.0087491204492692,
+        "targetCourant": 0.15,
+        "maximumTimeStep": 0.04,
+        "minimumTimeStep": 3.90625e-05,
+        "maximumRetries": 10,
+        "maximumAcceptedSteps": 100000
+      },
+      "independentAuditValid": true,
+      "computedMaxCourant": 0.0087491204492692,
+      "files": {
+        "outputs/native-flow/adaptive-probe/checked.json": "d0a6fef2b1f73da194deeea4b976ea48e132880ca3069ad6534ccc1064229690",
+        "outputs/native-flow/adaptive-probe/checked.checkpoint": "1e084942948f87806e4055e25619893790b22556d603c0e4dc37c788d466d9cb",
+        "outputs/native-flow/adaptive-probe/checked.time-history.csv": "f785b892d49dfd390e16899bcd344672cae2e5ffe94cfc999d36ba0f1cd3f3b7",
+        "outputs/native-flow/adaptive-probe/checked.attempt-history.csv": "12722bbf05045ea163c404e7b2d4220666cdb79782fc32f5c7cc31c532ce3acd",
+        "outputs/native-flow/adaptive-probe/checked.cells.csv": "784b62cb81bcc3883c94a3b62ac6c1bbb7d9d6bc41587b56d5474f2e9927b295",
+        "outputs/native-flow/adaptive-probe/checked.faces.csv": "575f6bf9dd8685180702ccced06771fdf142d46fac3f54b8ad2ce335506f1ad9"
+      }
+    },
+    "external": {
+      "summary": {
+        "case": "external",
+        "cells": 2504,
+        "nu": 0.1,
+        "speed": 1,
+        "convection": "face-limited-linear",
+        "tolerance": 1e-08,
+        "time": 0.12,
+        "dt": 0.0018451318765202313,
+        "startTime": 0,
+        "acceptedTime": 0.12,
+        "completedSteps": 21,
+        "rejectedSteps": 1,
+        "attemptCount": 22,
+        "maxCourant": 0.11470113257258421,
+        "targetCourant": 0.5,
+        "maximumTimeStep": 0.05,
+        "minimumTimeStep": 4.8828125e-05,
+        "maximumRetries": 10,
+        "maximumAcceptedSteps": 100000
+      },
+      "independentAuditValid": true,
+      "computedMaxCourant": 0.11470113257258421,
+      "files": {
+        "outputs/native-flow/adaptive-probe/external.json": "9fb8eeec45cc5b82d9328fa189140ba9a1c4a53275e682381e19dd08c4ae57fd",
+        "outputs/native-flow/adaptive-probe/external.checkpoint": "27ffb3583b436762e9f3971ffeeae0d4c2c2db7b9038f4346ea302f87d154d34",
+        "outputs/native-flow/adaptive-probe/external.time-history.csv": "c6d6edb7899f67cd6b34ec140bbb6e24bcaae750082fe8676a01f97b55469dcb",
+        "outputs/native-flow/adaptive-probe/external.attempt-history.csv": "8300770e04f48ea7f855b10b9c9cb91dc8745b523ba070200a63eb81b3c0d67b",
+        "outputs/native-flow/adaptive-probe/external.cells.csv": "d7bacad12851c002c5642cf33c744e7563c8cad374ffab506c3cad4d96f71942",
+        "outputs/native-flow/adaptive-probe/external.faces.csv": "7ce901f82f439ae72cd208d49568f3ba3dc52a20efdbde8b87185bd107a65dfb"
+      }
+    }
+  },
+  "app": {
+    "initial": {
+      "case": "custom",
+      "cells": 380,
+      "nu": 0.1,
+      "speed": 0.5,
+      "convection": "face-limited-linear",
+      "tolerance": 1e-06,
+      "time": 0.08,
+      "dt": 5.471136784890307e-05,
+      "startTime": 0,
+      "acceptedTime": 0.08,
+      "completedSteps": 218,
+      "rejectedSteps": 5,
+      "attemptCount": 223,
+      "maxCourant": 0.009708769640435735,
+      "targetCourant": 0.06,
+      "maximumTimeStep": 0.04,
+      "minimumTimeStep": 1e-05,
+      "maximumRetries": 10,
+      "maximumAcceptedSteps": 100000
+    },
+    "failureAcceptedTime": 0.12,
+    "cancelledAcceptedTime": 0.12025248402874737,
+    "final": {
+      "case": "custom",
+      "cells": 380,
+      "nu": 0.1,
+      "speed": 0.5,
+      "convection": "face-limited-linear",
+      "tolerance": 1e-06,
+      "time": 0.14025248402874738,
+      "dt": 2.7186327258843512e-05,
+      "startTime": 0.12025248402874737,
+      "acceptedTime": 0.14025248402874738,
+      "completedSteps": 81,
+      "rejectedSteps": 0,
+      "attemptCount": 81,
+      "maxCourant": 0.0052807743186206076,
+      "targetCourant": 0.06,
+      "maximumTimeStep": 0.04,
+      "minimumTimeStep": 1e-05,
+      "maximumRetries": 10,
+      "maximumAcceptedSteps": 100000
+    },
+    "exportAuditValid": true,
+    "reportSha256": "bda379088abc978ebeac97faa510a7c24118a2ef424c93413a9cc68f9999a5c4",
+    "zipSha256": "5dff0d71d78920d437ff828fc99102f09be43f4a11feebce450e1b275f7edb5e",
+    "meshQualityNote": "Original directional channel quality FAIL remains visible; topology and solver gates pass"
+  },
+  "nativeBinaryHashes": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "4cf1389f72996c5a4d6852f51335ceb3e4b19a78870e1653067b8ccedde7d8da",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "limitations": [
+    "Backward Euler first order; no temporal error estimator",
+    "Thermal coupled stepping remains fixed dt",
+    "No OpenFOAM/checkMesh or multi-platform run",
+    "No compressible implementation in this milestone"
+  ]
+}
