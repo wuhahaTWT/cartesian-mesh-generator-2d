@@ -1,0 +1,2072 @@
+{
+  "valid": false,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "cases": [
+    {
+      "valid": true,
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 32
+        },
+        "outlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.9826759899684079,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9826759899684079,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.01732401003163041,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.01732401003163041,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 16,
+          "x": 0.515625,
+          "xFromLeadingEdge": 0.015625,
+          "length": 0.03125,
+          "kinematicShear": 0.12860767524909736,
+          "Cf": 0.2572153504981947,
+          "yPlus": 0.4454405741015706
+        },
+        {
+          "face": 17,
+          "x": 0.546875,
+          "xFromLeadingEdge": 0.046875,
+          "length": 0.03125,
+          "kinematicShear": 0.07070956784255455,
+          "Cf": 0.1414191356851091,
+          "yPlus": 0.3302899968620658
+        },
+        {
+          "face": 18,
+          "x": 0.578125,
+          "xFromLeadingEdge": 0.078125,
+          "length": 0.03125,
+          "kinematicShear": 0.04726091208098569,
+          "Cf": 0.09452182416197139,
+          "yPlus": 0.2700271164820856
+        },
+        {
+          "face": 19,
+          "x": 0.609375,
+          "xFromLeadingEdge": 0.109375,
+          "length": 0.03125,
+          "kinematicShear": 0.03908511588844691,
+          "Cf": 0.07817023177689382,
+          "yPlus": 0.24556249165318492
+        },
+        {
+          "face": 20,
+          "x": 0.640625,
+          "xFromLeadingEdge": 0.140625,
+          "length": 0.03125,
+          "kinematicShear": 0.03360378516796743,
+          "Cf": 0.06720757033593486,
+          "yPlus": 0.2276933931805738
+        },
+        {
+          "face": 21,
+          "x": 0.671875,
+          "xFromLeadingEdge": 0.171875,
+          "length": 0.03125,
+          "kinematicShear": 0.029932223434765107,
+          "Cf": 0.05986444686953021,
+          "yPlus": 0.2148947564600041
+        },
+        {
+          "face": 22,
+          "x": 0.703125,
+          "xFromLeadingEdge": 0.203125,
+          "length": 0.03125,
+          "kinematicShear": 0.027197847887027476,
+          "Cf": 0.05439569577405495,
+          "yPlus": 0.204844165989627
+        },
+        {
+          "face": 23,
+          "x": 0.734375,
+          "xFromLeadingEdge": 0.234375,
+          "length": 0.03125,
+          "kinematicShear": 0.02507195275369909,
+          "Cf": 0.05014390550739818,
+          "yPlus": 0.19667556649446588
+        },
+        {
+          "face": 24,
+          "x": 0.765625,
+          "xFromLeadingEdge": 0.265625,
+          "length": 0.03125,
+          "kinematicShear": 0.023353235251784683,
+          "Cf": 0.04670647050356937,
+          "yPlus": 0.18981470596978386
+        },
+        {
+          "face": 25,
+          "x": 0.796875,
+          "xFromLeadingEdge": 0.296875,
+          "length": 0.03125,
+          "kinematicShear": 0.02192221362444744,
+          "Cf": 0.04384442724889488,
+          "yPlus": 0.18390711524971187
+        },
+        {
+          "face": 26,
+          "x": 0.828125,
+          "xFromLeadingEdge": 0.328125,
+          "length": 0.03125,
+          "kinematicShear": 0.020710489596768168,
+          "Cf": 0.041420979193536336,
+          "yPlus": 0.1787522480214083
+        },
+        {
+          "face": 27,
+          "x": 0.859375,
+          "xFromLeadingEdge": 0.359375,
+          "length": 0.03125,
+          "kinematicShear": 0.019638100272751438,
+          "Cf": 0.039276200545502876,
+          "yPlus": 0.1740628403360319
+        },
+        {
+          "face": 28,
+          "x": 0.890625,
+          "xFromLeadingEdge": 0.390625,
+          "length": 0.03125,
+          "kinematicShear": 0.01876071741065585,
+          "Cf": 0.0375214348213117,
+          "yPlus": 0.17013005809233303
+        },
+        {
+          "face": 29,
+          "x": 0.921875,
+          "xFromLeadingEdge": 0.421875,
+          "length": 0.03125,
+          "kinematicShear": 0.017738535590482406,
+          "Cf": 0.03547707118096481,
+          "yPlus": 0.16543035863090297
+        },
+        {
+          "face": 30,
+          "x": 0.953125,
+          "xFromLeadingEdge": 0.453125,
+          "length": 0.03125,
+          "kinematicShear": 0.017484693421857076,
+          "Cf": 0.03496938684371415,
+          "yPlus": 0.16424242182798754
+        },
+        {
+          "face": 31,
+          "x": 0.984375,
+          "xFromLeadingEdge": 0.484375,
+          "length": 0.03125,
+          "kinematicShear": 0.015167620203956558,
+          "Cf": 0.030335240407913116,
+          "yPlus": 0.15297309449084612
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 1024,
+      "iterations": 575,
+      "scalar": {
+        "k": {
+          "residualNorm": 4.902492089025701e-14,
+          "normTarget": 1.2787828180087688e-12,
+          "maxCellResidual": 1.556949392449075e-13,
+          "maxFaceFlux": 0.00011975592003243895,
+          "globalBalance": -4.0841084159497726e-13,
+          "normRoundoffBudget": 1.0891737477544571e-16
+        },
+        "omega": {
+          "residualNorm": 9.17280580838824e-11,
+          "normTarget": 5.2183531144176586e-05,
+          "maxCellResidual": 7.226131320890626e-10,
+          "maxFaceFlux": 11930.575648313683,
+          "globalBalance": -2.7486175748631103e-10,
+          "normRoundoffBudget": 1.0850795341242413e-08
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-ytn5h723/face-viscosity.csv",
+          "sha256": "799605521d46865dfc3b03e1065dc115d3722c8985e54b60cb06fb621f5b1051"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 2112,
+        "maxFaceDeviation": {
+          "pressure": 5.551115123125783e-17,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 8.673617379884035e-19,
+          "diffusionY": 2.168404344971009e-19
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": 0.09401791549987294,
+            "expected": 0.09401791549987289,
+            "absolute": 5.551115123125783e-17,
+            "relative": 5.551115123125783e-17
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -0.0027886828826475755,
+            "expected": -0.0027886828826475763,
+            "absolute": 8.673617379884035e-19,
+            "relative": 8.673617379884035e-19
+          },
+          "diffusionY": {
+            "actual": -0.000683467252999354,
+            "expected": -0.0006834672529993542,
+            "absolute": 2.168404344971009e-19,
+            "relative": 2.168404344971009e-19
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 4.34602118908991e-11,
+          "l2": 1.2827158567855251e-11,
+          "maxCellVector": 2.326259476000959e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 4.346021242669325e-11,
+            "expected": 4.34602118908991e-11,
+            "absolute": 5.357941507271136e-19,
+            "relative": 5.357941507271136e-19
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.01738264642741398,
+            "expected": 0.01738264642741398,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": -0.0017104003777620232,
+            "expected": -0.0017104003777620228,
+            "absolute": 4.336808689942018e-19,
+            "relative": 4.336808689942018e-19
+          },
+          "wallViscousForceX": {
+            "actual": 0.01738264642741398,
+            "expected": 0.01738264642741398,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 0.0009095588552562791,
+            "expected": 0.0009095588552562791,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 1.52122828223078e-10,
+          "y": -5.842632584338037e-11,
+          "magnitude": 1.6295702015606738e-10,
+          "boundaryTermScale": 2.1196102312057445,
+          "relativeToBoundary": 7.688065369611324e-11,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 1.52122828223078e-10,
+          "boundaryMinusSourceY": -5.842632584338037e-11,
+          "magnitude": 1.6295702015606738e-10,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 1.5212271312993518e-10,
+          "y": -5.842632199648759e-11
+        },
+        "expectedCellResidualSum": {
+          "x": 1.52122828223078e-10,
+          "y": -5.842632584338037e-11
+        },
+        "cellBoundaryConservationDifference": {
+          "x": -1.1509314280701982e-16,
+          "y": 3.846892774184011e-18,
+          "magnitude": 1.1515741446043815e-16
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.01738264642741398,
+          "y": -0.0017104003777620228
+        },
+        "wallViscousForce": {
+          "x": 0.01738264642741398,
+          "y": 0.0009095588552562791
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 1.1789180742738381e-14,
+        "l2CellImbalance": 9.655563252954469e-14,
+        "maxScaledCellImbalance": 0.0006942195982901387,
+        "nativeDefinitionContinuity": 6.947960483265738e-13,
+        "boundaryFluxSum": 3.8288816561760086e-14,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 3.8288816561760086e-14,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.0000100000000001e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a4/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a4/final",
+      "nx": 32,
+      "ny": 32,
+      "stretch": 4,
+      "run": {
+        "command": [
+          "build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a4/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a4/final",
+          "flatplate"
+        ],
+        "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a4/final flatplate",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/flatplate-precision/x32-y32-a4/final.stdout.log",
+        "stderr": "outputs/native-flow/flatplate-precision/x32-y32-a4/final.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 62.92213137500221
+      },
+      "solveSeconds": 62.885912792,
+      "yPlusRange": [
+        0.15297309449084612,
+        0.4454405741015706
+      ],
+      "wallViscousForceX": 0.01738264642741398,
+      "sha256": {
+        "mesh.cm2d": "615997f453411ca1a153017a019820666bd61140fdb496921ac51724c0634872",
+        "final.json": "066fd577637e453d32e9f32b68539d9102001e6907734b5c8701aa0320529cef",
+        "final.cells.csv": "c464bbbf906ea1238f60b24b99f0335c1f9b2c772a9d1a9ccde7fb3298fac7c0",
+        "final.faces.csv": "333a1b733fc818cd2a8236795af9d2cf0690bb78ceaaa79687fdd4e01b1cc3e7",
+        "final.history.csv": "72188ff31f8fdef6585229e8dc8ed905cb2fbfe675657eea8b574cafea2a4fb9"
+      }
+    },
+    {
+      "valid": true,
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 16,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 16
+        },
+        "outlet": {
+          "faces": 16,
+          "length": 1.0,
+          "netOutwardFlux": 0.9825385239700429,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9825385239700429,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.017461476029930905,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.017461476029930905,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 16,
+          "x": 0.515625,
+          "xFromLeadingEdge": 0.015625,
+          "length": 0.03125,
+          "kinematicShear": 0.1271242013539796,
+          "Cf": 0.2542484027079592,
+          "yPlus": 0.9446948084235082
+        },
+        {
+          "face": 17,
+          "x": 0.546875,
+          "xFromLeadingEdge": 0.046875,
+          "length": 0.03125,
+          "kinematicShear": 0.07361928186254837,
+          "Cf": 0.14723856372509675,
+          "yPlus": 0.718907804369815
+        },
+        {
+          "face": 18,
+          "x": 0.578125,
+          "xFromLeadingEdge": 0.078125,
+          "length": 0.03125,
+          "kinematicShear": 0.05053923772013409,
+          "Cf": 0.10107847544026818,
+          "yPlus": 0.5956508330878943
+        },
+        {
+          "face": 19,
+          "x": 0.609375,
+          "xFromLeadingEdge": 0.109375,
+          "length": 0.03125,
+          "kinematicShear": 0.04018306342748184,
+          "Cf": 0.08036612685496368,
+          "yPlus": 0.5311276749625921
+        },
+        {
+          "face": 20,
+          "x": 0.640625,
+          "xFromLeadingEdge": 0.140625,
+          "length": 0.03125,
+          "kinematicShear": 0.03456584633745514,
+          "Cf": 0.06913169267491028,
+          "yPlus": 0.49260748602503623
+        },
+        {
+          "face": 21,
+          "x": 0.671875,
+          "xFromLeadingEdge": 0.171875,
+          "length": 0.03125,
+          "kinematicShear": 0.030733862191274535,
+          "Cf": 0.06146772438254907,
+          "yPlus": 0.46450027957888745
+        },
+        {
+          "face": 22,
+          "x": 0.703125,
+          "xFromLeadingEdge": 0.203125,
+          "length": 0.03125,
+          "kinematicShear": 0.027889056241180613,
+          "Cf": 0.055778112482361225,
+          "yPlus": 0.442480686214164
+        },
+        {
+          "face": 23,
+          "x": 0.734375,
+          "xFromLeadingEdge": 0.234375,
+          "length": 0.03125,
+          "kinematicShear": 0.025681381479836406,
+          "Cf": 0.05136276295967281,
+          "yPlus": 0.42460646360050747
+        },
+        {
+          "face": 24,
+          "x": 0.765625,
+          "xFromLeadingEdge": 0.265625,
+          "length": 0.03125,
+          "kinematicShear": 0.023903039902233414,
+          "Cf": 0.04780607980446683,
+          "yPlus": 0.40964152869392256
+        },
+        {
+          "face": 25,
+          "x": 0.796875,
+          "xFromLeadingEdge": 0.296875,
+          "length": 0.03125,
+          "kinematicShear": 0.022427366328418456,
+          "Cf": 0.04485473265683691,
+          "yPlus": 0.39679532652390365
+        },
+        {
+          "face": 26,
+          "x": 0.828125,
+          "xFromLeadingEdge": 0.328125,
+          "length": 0.03125,
+          "kinematicShear": 0.02117363508375114,
+          "Cf": 0.04234727016750228,
+          "yPlus": 0.3855450414028042
+        },
+        {
+          "face": 27,
+          "x": 0.859375,
+          "xFromLeadingEdge": 0.359375,
+          "length": 0.03125,
+          "kinematicShear": 0.020086851727427787,
+          "Cf": 0.040173703454855575,
+          "yPlus": 0.37552023742014806
+        },
+        {
+          "face": 28,
+          "x": 0.890625,
+          "xFromLeadingEdge": 0.390625,
+          "length": 0.03125,
+          "kinematicShear": 0.019130807769933842,
+          "Cf": 0.038261615539867684,
+          "yPlus": 0.36647475557808795
+        },
+        {
+          "face": 29,
+          "x": 0.921875,
+          "xFromLeadingEdge": 0.421875,
+          "length": 0.03125,
+          "kinematicShear": 0.0182358969994146,
+          "Cf": 0.0364717939988292,
+          "yPlus": 0.3578005264264602
+        },
+        {
+          "face": 30,
+          "x": 0.953125,
+          "xFromLeadingEdge": 0.453125,
+          "length": 0.03125,
+          "kinematicShear": 0.01761570037733818,
+          "Cf": 0.03523140075467636,
+          "yPlus": 0.35166355924563325
+        },
+        {
+          "face": 31,
+          "x": 0.984375,
+          "xFromLeadingEdge": 0.484375,
+          "length": 0.03125,
+          "kinematicShear": 0.015755802820130435,
+          "Cf": 0.03151160564026087,
+          "yPlus": 0.3325811865989518
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 512,
+      "iterations": 225,
+      "scalar": {
+        "k": {
+          "residualNorm": 6.601904544593935e-14,
+          "normTarget": 1.3934917974114219e-12,
+          "maxCellResidual": 1.559861773414372e-13,
+          "maxFaceFlux": 0.00022544014261184379,
+          "globalBalance": -3.1132927765486287e-13,
+          "normRoundoffBudget": 1.44982781050655e-16
+        },
+        "omega": {
+          "residualNorm": 6.8736960073777e-11,
+          "normTarget": 5.376648338046292e-06,
+          "maxCellResidual": 8.303728259587675e-10,
+          "maxFaceFlux": 1230.167145342901,
+          "globalBalance": -3.594853997812564e-10,
+          "normRoundoffBudget": 7.911326342444796e-10
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-q_p8kckg/face-viscosity.csv",
+          "sha256": "c8ab7e93c2ad2dda296a103d3123774737dd398449f47df2f0411a3132789d97"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 1072,
+        "maxFaceDeviation": {
+          "pressure": 4.85722573273506e-17,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 4.336808689942018e-19,
+          "diffusionY": 1.0842021724855044e-19
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": 0.009932009573973687,
+            "expected": 0.009932009573973735,
+            "absolute": 4.85722573273506e-17,
+            "relative": 4.85722573273506e-17
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -0.0010489780553563197,
+            "expected": -0.0010489780553563201,
+            "absolute": 4.336808689942018e-19,
+            "relative": 4.336808689942018e-19
+          },
+          "diffusionY": {
+            "actual": -0.0004080693054770918,
+            "expected": -0.0004080693054770917,
+            "absolute": 1.0842021724855044e-19,
+            "relative": 1.0842021724855044e-19
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 1.3010013843780993e-10,
+          "l2": 2.3611255234934642e-11,
+          "maxCellVector": 4.869251736467131e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 1.3010015135661745e-10,
+            "expected": 1.3010013843780993e-10,
+            "absolute": 1.2918807519330286e-17,
+            "relative": 1.2918807519330286e-17
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.017770782238204327,
+            "expected": 0.017770782238204327,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": -0.0022441426521042497,
+            "expected": -0.0022441426521042497,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.017770782238204327,
+            "expected": 0.017770782238204327,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 0.0010203196465090958,
+            "expected": 0.0010203196465090958,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 1.331165178086735e-10,
+          "y": -1.7299168174333968e-10,
+          "magnitude": 2.182799332643654e-10,
+          "boundaryTermScale": 2.1189842040360416,
+          "relativeToBoundary": 1.0301159057656322e-10,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 1.331165178086735e-10,
+          "boundaryMinusSourceY": -1.7299168174333968e-10,
+          "magnitude": 2.182799332643654e-10,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 1.3311657828619067e-10,
+          "y": -1.7299167871096172e-10
+        },
+        "expectedCellResidualSum": {
+          "x": 1.331165178086735e-10,
+          "y": -1.7299168174333968e-10
+        },
+        "cellBoundaryConservationDifference": {
+          "x": 6.04775171592466e-17,
+          "y": 3.0323779511703952e-18,
+          "magnitude": 6.055349203626255e-17
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.017770782238204327,
+          "y": -0.0022441426521042497
+        },
+        "wallViscousForce": {
+          "x": 0.017770782238204327,
+          "y": 0.0010203196465090958
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 1.429932561247682e-14,
+        "l2CellImbalance": 5.705374709542782e-14,
+        "maxScaledCellImbalance": 0.0005945278250209057,
+        "nativeDefinitionContinuity": 5.947751166527374e-13,
+        "boundaryFluxSum": -2.6117996654306808e-14,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 2.6117996654306808e-14,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.0000100000000001e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y16-a4/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y16-a4/final",
+      "nx": 32,
+      "ny": 16,
+      "stretch": 4,
+      "run": {
+        "command": [
+          "build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y16-a4/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y16-a4/final",
+          "flatplate"
+        ],
+        "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y16-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y16-a4/final flatplate",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/flatplate-precision/x32-y16-a4/final.stdout.log",
+        "stderr": "outputs/native-flow/flatplate-precision/x32-y16-a4/final.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 6.431126709008822
+      },
+      "solveSeconds": 6.410722375,
+      "yPlusRange": [
+        0.3325811865989518,
+        0.9446948084235082
+      ],
+      "wallViscousForceX": 0.017770782238204327,
+      "sha256": {
+        "mesh.cm2d": "80ef36d906aaa5060cf57598bacf19aa6d7b5f87e73d31257feb8e65450a3728",
+        "final.json": "5272731485a731cedb387fcb0e5f41d2ef67cb9eae7524f30fc4abb47f4be237",
+        "final.cells.csv": "8e6f69f6678f61d729ac1fef833c7f42e7bc0cc55f1be38e9358d4f216933453",
+        "final.faces.csv": "2bcb32e29b8c4dcfc930976433187deddadd7b30c9acc1ba889edb4165dcfc2a",
+        "final.history.csv": "2bde6b1be7f0c94e9a951b3ee798202ee8e1340e918816fe8f2f3e43f8abec1d"
+      }
+    },
+    {
+      "valid": true,
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 32
+        },
+        "outlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.9840297394365201,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9840297394365201,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.015970260563431586,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.015970260563431586,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 16,
+          "x": 0.515625,
+          "xFromLeadingEdge": 0.015625,
+          "length": 0.03125,
+          "kinematicShear": 0.057634271009804394,
+          "Cf": 0.11526854201960879,
+          "yPlus": 3.751115426876788
+        },
+        {
+          "face": 17,
+          "x": 0.546875,
+          "xFromLeadingEdge": 0.046875,
+          "length": 0.03125,
+          "kinematicShear": 0.054851141021580105,
+          "Cf": 0.10970228204316021,
+          "yPlus": 3.659425071096784
+        },
+        {
+          "face": 18,
+          "x": 0.578125,
+          "xFromLeadingEdge": 0.078125,
+          "length": 0.03125,
+          "kinematicShear": 0.05196344330947864,
+          "Cf": 0.10392688661895728,
+          "yPlus": 3.561795548136948
+        },
+        {
+          "face": 19,
+          "x": 0.609375,
+          "xFromLeadingEdge": 0.109375,
+          "length": 0.03125,
+          "kinematicShear": 0.04902598500234317,
+          "Cf": 0.09805197000468634,
+          "yPlus": 3.4596581651534137
+        },
+        {
+          "face": 20,
+          "x": 0.640625,
+          "xFromLeadingEdge": 0.140625,
+          "length": 0.03125,
+          "kinematicShear": 0.04617706744740935,
+          "Cf": 0.0923541348948187,
+          "yPlus": 3.357632813051134
+        },
+        {
+          "face": 21,
+          "x": 0.671875,
+          "xFromLeadingEdge": 0.171875,
+          "length": 0.03125,
+          "kinematicShear": 0.043452355328379884,
+          "Cf": 0.08690471065675977,
+          "yPlus": 3.257066960870277
+        },
+        {
+          "face": 22,
+          "x": 0.703125,
+          "xFromLeadingEdge": 0.203125,
+          "length": 0.03125,
+          "kinematicShear": 0.04085143849151788,
+          "Cf": 0.08170287698303576,
+          "yPlus": 3.158084185937454
+        },
+        {
+          "face": 23,
+          "x": 0.734375,
+          "xFromLeadingEdge": 0.234375,
+          "length": 0.03125,
+          "kinematicShear": 0.038376914135688014,
+          "Cf": 0.07675382827137603,
+          "yPlus": 3.0609416529326734
+        },
+        {
+          "face": 24,
+          "x": 0.765625,
+          "xFromLeadingEdge": 0.265625,
+          "length": 0.03125,
+          "kinematicShear": 0.03603356883490669,
+          "Cf": 0.07206713766981337,
+          "yPlus": 2.966017197579043
+        },
+        {
+          "face": 25,
+          "x": 0.796875,
+          "xFromLeadingEdge": 0.296875,
+          "length": 0.03125,
+          "kinematicShear": 0.0338240687315335,
+          "Cf": 0.067648137463067,
+          "yPlus": 2.8736439028104273
+        },
+        {
+          "face": 26,
+          "x": 0.828125,
+          "xFromLeadingEdge": 0.328125,
+          "length": 0.03125,
+          "kinematicShear": 0.031748904594599905,
+          "Cf": 0.06349780918919981,
+          "yPlus": 2.7840972344354267
+        },
+        {
+          "face": 27,
+          "x": 0.859375,
+          "xFromLeadingEdge": 0.359375,
+          "length": 0.03125,
+          "kinematicShear": 0.029807124480947127,
+          "Cf": 0.05961424896189425,
+          "yPlus": 2.697615613876675
+        },
+        {
+          "face": 28,
+          "x": 0.890625,
+          "xFromLeadingEdge": 0.390625,
+          "length": 0.03125,
+          "kinematicShear": 0.027996633575951273,
+          "Cf": 0.055993267151902545,
+          "yPlus": 2.6144054045095473
+        },
+        {
+          "face": 29,
+          "x": 0.921875,
+          "xFromLeadingEdge": 0.421875,
+          "length": 0.03125,
+          "kinematicShear": 0.02632016111604629,
+          "Cf": 0.05264032223209258,
+          "yPlus": 2.534920232467333
+        },
+        {
+          "face": 30,
+          "x": 0.953125,
+          "xFromLeadingEdge": 0.453125,
+          "length": 0.03125,
+          "kinematicShear": 0.02475351706890253,
+          "Cf": 0.04950703413780506,
+          "yPlus": 2.4583203876122477
+        },
+        {
+          "face": 31,
+          "x": 0.984375,
+          "xFromLeadingEdge": 0.484375,
+          "length": 0.03125,
+          "kinematicShear": 0.022967092246585344,
+          "Cf": 0.04593418449317069,
+          "yPlus": 2.3679527561828593
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 1024,
+      "iterations": 113,
+      "scalar": {
+        "k": {
+          "residualNorm": 4.0018965676121316e-14,
+          "normTarget": 1.1935864860202756e-12,
+          "maxCellResidual": 1.5041989362165715e-13,
+          "maxFaceFlux": 3.12658353837577e-05,
+          "globalBalance": -6.604120546705699e-13,
+          "normRoundoffBudget": 2.8436111628032176e-17
+        },
+        "omega": {
+          "residualNorm": 6.876590803595669e-11,
+          "normTarget": 2.748148071314991e-08,
+          "maxCellResidual": 8.516650944263473e-10,
+          "maxFaceFlux": 6.663187385390251,
+          "globalBalance": -4.078880913582772e-10,
+          "normRoundoffBudget": 6.060133623932644e-12
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-s48ikzpn/face-viscosity.csv",
+          "sha256": "520211e7cec1644ead3d497cb133be3562435ae3484f9afb95146c2d0df91653"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 2112,
+        "maxFaceDeviation": {
+          "pressure": 3.469446951953614e-18,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 5.421010862427522e-20,
+          "diffusionY": 1.0842021724855044e-19
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": 0.027168109062988766,
+            "expected": 0.02716810906298877,
+            "absolute": 3.469446951953614e-18,
+            "relative": 3.469446951953614e-18
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -0.0003535208080229977,
+            "expected": -0.00035352080802299776,
+            "absolute": 5.421010862427522e-20,
+            "relative": 5.421010862427522e-20
+          },
+          "diffusionY": {
+            "actual": -0.0007351864063455771,
+            "expected": -0.0007351864063455772,
+            "absolute": 1.0842021724855044e-19,
+            "relative": 1.0842021724855044e-19
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 3.983159449596409e-11,
+          "l2": 1.6101730508128512e-11,
+          "maxCellVector": 2.479766138392025e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 3.9831585708868514e-11,
+            "expected": 3.983159449596409e-11,
+            "absolute": 8.7870955739338e-18,
+            "relative": 8.7870955739338e-18
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.01924324019986481,
+            "expected": 0.01924324019986481,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": -0.012110417109047016,
+            "expected": -0.012110417109047016,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.01924324019986481,
+            "expected": 0.01924324019986481,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 0.0016562288736007345,
+            "expected": 0.0016562288736007345,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 7.759737991053228e-11,
+          "y": -2.204749027659783e-10,
+          "magnitude": 2.3373176103954524e-10,
+          "boundaryTermScale": 2.1121708506803576,
+          "relativeToBoundary": 1.1065949563893338e-10,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 7.759737991053228e-11,
+          "boundaryMinusSourceY": -2.204749027659783e-10,
+          "magnitude": 2.3373176103954524e-10,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 7.759727842920894e-11,
+          "y": -2.2047487377796976e-10
+        },
+        "expectedCellResidualSum": {
+          "x": 7.759737991053228e-11,
+          "y": -2.204749027659783e-10
+        },
+        "cellBoundaryConservationDifference": {
+          "x": -1.0148132334464322e-16,
+          "y": 2.898800855388392e-17,
+          "magnitude": 1.0554034123357796e-16
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.01924324019986481,
+          "y": -0.012110417109047016
+        },
+        "wallViscousForce": {
+          "x": 0.01924324019986481,
+          "y": 0.0016562288736007345
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 1.544597783009749e-14,
+        "l2CellImbalance": 5.524730558034451e-14,
+        "maxScaledCellImbalance": 0.0004941131743473285,
+        "nativeDefinitionContinuity": 4.942712905631197e-13,
+        "boundaryFluxSum": -4.841266276756073e-14,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 4.841266276756073e-14,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.0000100000000001e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a0/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a0/final",
+      "nx": 32,
+      "ny": 32,
+      "stretch": 0,
+      "run": {
+        "command": [
+          "build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a0/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a0/final",
+          "flatplate"
+        ],
+        "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a0/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a0/final flatplate",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/flatplate-precision/x32-y32-a0/final.stdout.log",
+        "stderr": "outputs/native-flow/flatplate-precision/x32-y32-a0/final.stderr.log",
+        "timedOut": false,
+        "status": "passed",
+        "wallSeconds": 3.865756000013789
+      },
+      "solveSeconds": 3.83320425,
+      "yPlusRange": [
+        2.3679527561828593,
+        3.751115426876788
+      ],
+      "wallViscousForceX": 0.01924324019986481,
+      "sha256": {
+        "mesh.cm2d": "4a9a9d9a6ab97892f66a6cfe91dc096ba110d412949e330d225dbc49fbfde7fc",
+        "final.json": "ea1374dc2685f93a174084473aceebcadf3d088e7c58cd9b8c122537809ae27f",
+        "final.cells.csv": "5e1b0591bb3242162c535a0c48efc11e6b5934c711db9885f0440225ecdf4a00",
+        "final.faces.csv": "87ddc78a420d271607a722cbfc8820cf24a039926cd604a21d8841839626843c",
+        "final.history.csv": "dfc377c6c41cbe6f5e606e3c826c2b9ced5946d273ee40f20b24e5da466e6c6f"
+      }
+    }
+  ],
+  "failures": [
+    {
+      "grid": [
+        32,
+        64,
+        4
+      ],
+      "run": {
+        "command": [
+          "build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y64-a4/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y64-a4/final",
+          "flatplate"
+        ],
+        "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y64-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y64-a4/final flatplate",
+        "returncode": 1,
+        "stdout": "outputs/native-flow/flatplate-precision/x32-y64-a4/final.stdout.log",
+        "stderr": "outputs/native-flow/flatplate-precision/x32-y64-a4/final.stderr.log",
+        "timedOut": false,
+        "status": "failed",
+        "wallSeconds": 1.1492852910014335
+      },
+      "error": "SST-2003m omega inner transport did not converge; norm=1.28029e-10, diagonalScaled=6.51021e-10\n"
+    }
+  ],
+  "runs": [
+    {
+      "command": [
+        "build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a4/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a4/final",
+        "flatplate"
+      ],
+      "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a4/final flatplate",
+      "returncode": 0,
+      "stdout": "outputs/native-flow/flatplate-precision/x32-y32-a4/final.stdout.log",
+      "stderr": "outputs/native-flow/flatplate-precision/x32-y32-a4/final.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 62.92213137500221
+    },
+    {
+      "command": [
+        "build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y64-a4/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y64-a4/final",
+        "flatplate"
+      ],
+      "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y64-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y64-a4/final flatplate",
+      "returncode": 1,
+      "stdout": "outputs/native-flow/flatplate-precision/x32-y64-a4/final.stdout.log",
+      "stderr": "outputs/native-flow/flatplate-precision/x32-y64-a4/final.stderr.log",
+      "timedOut": false,
+      "status": "failed",
+      "wallSeconds": 1.1492852910014335
+    },
+    {
+      "command": [
+        "build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y16-a4/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y16-a4/final",
+        "flatplate"
+      ],
+      "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y16-a4/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y16-a4/final flatplate",
+      "returncode": 0,
+      "stdout": "outputs/native-flow/flatplate-precision/x32-y16-a4/final.stdout.log",
+      "stderr": "outputs/native-flow/flatplate-precision/x32-y16-a4/final.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 6.431126709008822
+    },
+    {
+      "command": [
+        "build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a0/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a0/final",
+        "flatplate"
+      ],
+      "commandText": "build/cartmesh2d_sst_rans_probe /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-grading/x32-y32-a0/mesh.cm2d /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/x32-y32-a0/final flatplate",
+      "returncode": 0,
+      "stdout": "outputs/native-flow/flatplate-precision/x32-y32-a0/final.stdout.log",
+      "stderr": "outputs/native-flow/flatplate-precision/x32-y32-a0/final.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 3.865756000013789
+    }
+  ],
+  "executableSha256": "fb4f71b4545b97d93d4477eef30e46a372186e94bac2756941d2487b8fb27b39",
+  "scope": "Explicit high/low linear candidates with unchanged linear gates; rounded scalar fields must independently converge. Low-Re steady incompressible SST-2003m diagnostic, not engineering turbulence qualification.",
+  "sourceSha256": {
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "5e6ec603ef25bfaa07efafc211d7bc14132d0f1a41567574b28078f3cdc2683f",
+    "include/cartmesh2d/fv/ScalarTransport2D.hpp": "a1212a9c6cb6a4d269a56512dc77eacbc082aa0ad98d89c50f92a1a4e443172f",
+    "src/fv/ScalarTransport2D.cpp": "0d6795e8b96dec47168ce95b5aa7ca377d4919a68f04f9b93ca61e6610f0b557",
+    "src/fv/Sst2003m2D.cpp": "f68a8ec1506c6731f76f352b3e5d694c4981abd2c68296ccde2eb513f0270a5e"
+  },
+  "budget": {
+    "singleCaseSeconds": 90,
+    "minimumFreeDiskGiB": 1.5
+  },
+  "validation": {
+    "ctest": "129/129",
+    "frontend": "140/140",
+    "oldLaminarOutputFilesBitwiseIdentical": 14,
+    "externalOpenfoamRun": false,
+    "platformsRun": [
+      "macOS"
+    ],
+    "desktopChanged": false
+  },
+  "compatibility": {
+    "valid": true,
+    "runs": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-viscosity/flow-before",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/manufactured/before",
+          "--case",
+          "manufactured",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-9",
+          "--max-iterations",
+          "3000",
+          "--convection",
+          "limited-linear"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-viscosity/flow-before --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/manufactured/before --case manufactured --nu .1 --speed 1 --tolerance 1e-9 --max-iterations 3000 --convection limited-linear",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/manufactured-before.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/manufactured-before.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/manufactured/after",
+          "--case",
+          "manufactured",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-9",
+          "--max-iterations",
+          "3000",
+          "--convection",
+          "limited-linear"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/manufactured/after --case manufactured --nu .1 --speed 1 --tolerance 1e-9 --max-iterations 3000 --convection limited-linear",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/manufactured-after.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/manufactured-after.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-viscosity/flow-before",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/cavity/before",
+          "--case",
+          "cavity",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-9",
+          "--max-iterations",
+          "3000",
+          "--convection",
+          "limited-linear",
+          "--time-step",
+          ".01",
+          "--steps",
+          "2"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-viscosity/flow-before --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/cavity/before --case cavity --nu .1 --speed 1 --tolerance 1e-9 --max-iterations 3000 --convection limited-linear --time-step .01 --steps 2",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/cavity-before.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/cavity-before.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/cavity/after",
+          "--case",
+          "cavity",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-9",
+          "--max-iterations",
+          "3000",
+          "--convection",
+          "limited-linear",
+          "--time-step",
+          ".01",
+          "--steps",
+          "2"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-diffusion/study/meshes/l4/mesh.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/compatibility/cavity/after --case cavity --nu .1 --speed 1 --tolerance 1e-9 --max-iterations 3000 --convection limited-linear --time-step .01 --steps 2",
+        "returncode": 0,
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/cavity-after.stdout.log",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/flatplate-precision/logs/cavity-after.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      }
+    ],
+    "cases": [
+      {
+        "case": "manufactured",
+        "differences": [],
+        "sha256": {
+          ".json": [
+            "9119a71cbbfa486923c6347cde2c175aea4222e3349632224dd0c8780b96d366",
+            "9119a71cbbfa486923c6347cde2c175aea4222e3349632224dd0c8780b96d366"
+          ],
+          ".cells.csv": [
+            "d206a27ee80428dec630621776fd52c1857c644a94ee54cff44474a6ec4a3539",
+            "d206a27ee80428dec630621776fd52c1857c644a94ee54cff44474a6ec4a3539"
+          ],
+          ".faces.csv": [
+            "3be00b2c809910cd0893fd20e5bc7cc9013244ad1dc8fda879c8a3e79d95b0fa",
+            "3be00b2c809910cd0893fd20e5bc7cc9013244ad1dc8fda879c8a3e79d95b0fa"
+          ],
+          ".fields.json": [
+            "ad9c43d52d737ebf99f14375c60e4aeb4d5f0d98858871d82d8a13e003a9af36",
+            "ad9c43d52d737ebf99f14375c60e4aeb4d5f0d98858871d82d8a13e003a9af36"
+          ],
+          ".vtk": [
+            "89704ceecdcc0b78c14a8c2cf4be4dd7ada94994e810d4997745980b3f1314bd",
+            "89704ceecdcc0b78c14a8c2cf4be4dd7ada94994e810d4997745980b3f1314bd"
+          ],
+          ".residuals.csv": [
+            "76f689b0674210de7f853767df689c958b1477e41bbbb5a8c8fed4dda282c160",
+            "76f689b0674210de7f853767df689c958b1477e41bbbb5a8c8fed4dda282c160"
+          ]
+        }
+      },
+      {
+        "case": "cavity",
+        "differences": [],
+        "sha256": {
+          ".json": [
+            "e66a3115c031a02aafa893454e24b9fc487b0905ece5ae88f41f439ae930f702",
+            "e66a3115c031a02aafa893454e24b9fc487b0905ece5ae88f41f439ae930f702"
+          ],
+          ".cells.csv": [
+            "136987841a6847e64815478515a251c18f9eeec04869068fa652a5b49b71c24a",
+            "136987841a6847e64815478515a251c18f9eeec04869068fa652a5b49b71c24a"
+          ],
+          ".faces.csv": [
+            "e43c617b2298a4fd71e168cb2a6a3625047829dc8ea57f2118b7fb690344578f",
+            "e43c617b2298a4fd71e168cb2a6a3625047829dc8ea57f2118b7fb690344578f"
+          ],
+          ".fields.json": [
+            "f0a068729f07dafe39074b2b5c99c7bf81d7876ce0467cb8da66815cb7ab8a38",
+            "f0a068729f07dafe39074b2b5c99c7bf81d7876ce0467cb8da66815cb7ab8a38"
+          ],
+          ".vtk": [
+            "9462429ce6f6fc4f9f84253138215e0044f61d3a6f473084c709929d86a87b75",
+            "9462429ce6f6fc4f9f84253138215e0044f61d3a6f473084c709929d86a87b75"
+          ],
+          ".residuals.csv": [
+            "bafb2b35aa690332d143f9d2efa91112d1e043592f2b110dba9d03d3c94bd848",
+            "bafb2b35aa690332d143f9d2efa91112d1e043592f2b110dba9d03d3c94bd848"
+          ],
+          ".checkpoint": [
+            "80cacbbc2f259db8be1c9a5ee10f3966f21b3d93f2c5ef6a867f9f41e512c122",
+            "80cacbbc2f259db8be1c9a5ee10f3966f21b3d93f2c5ef6a867f9f41e512c122"
+          ],
+          ".time-history.csv": [
+            "8074dba06ac0b1b86ffdca86d9cbfe84a08b603d6efd1f5f92380f73df5457bf",
+            "8074dba06ac0b1b86ffdca86d9cbfe84a08b603d6efd1f5f92380f73df5457bf"
+          ]
+        }
+      }
+    ],
+    "executables": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/variable-viscosity/flow-before": "a5d61b86960bcfeb9990779651073e694730c5315fbfe0938bd1edd27161b5b1",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "a8e670853bfe6cd48597a9f4c4046f7e9cd8356b8ca8150e527bca7bb734d8ff"
+    }
+  },
+  "originalMatrixAudit": {
+    "failure-1024.txt": {
+      "n": 1024,
+      "m": 3968,
+      "initial": [
+        5.254681911139251e-11,
+        56,
+        1.3075484795346352e-12
+      ],
+      "round_to_double_sweeps": [
+        [
+          4.437584459869245e-11,
+          87,
+          1.0233379412921788e-12
+        ],
+        [
+          4.9248674818674994e-11,
+          121,
+          1.0697900663662746e-12
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ],
+        [
+          3.2104066029408874e-11,
+          159,
+          6.789819208981335e-13
+        ],
+        [
+          4.426299026677938e-11,
+          127,
+          9.561813589561325e-13
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ],
+        [
+          2.8978004450862794e-11,
+          125,
+          6.294873397752433e-13
+        ]
+      ],
+      "retained_high_precision_sweeps": [
+        [
+          2.204037489188088e-11,
+          122,
+          4.787725355117384e-13
+        ],
+        [
+          1.3695772940701971e-11,
+          57,
+          3.4079696520715554e-13
+        ],
+        [
+          9.190430577379125e-12,
+          90,
+          2.1193351368674048e-13
+        ],
+        [
+          6.751607545581245e-12,
+          58,
+          1.680021278652748e-13
+        ],
+        [
+          5.343207962721746e-12,
+          156,
+          1.137873702142173e-13
+        ],
+        [
+          4.7165748873166405e-12,
+          156,
+          1.0044277830668582e-13
+        ],
+        [
+          4.125248782444238e-12,
+          157,
+          8.785013933869815e-14
+        ],
+        [
+          3.5957963994302693e-12,
+          157,
+          7.657507010677078e-14
+        ],
+        [
+          3.1957305319172474e-12,
+          158,
+          6.805907264037377e-14
+        ],
+        [
+          2.8153248179800482e-12,
+          159,
+          5.954244708795468e-14
+        ]
+      ],
+      "retained_final_round_to_double": [
+        4.0715520485270497e-11,
+        86,
+        9.389423138826033e-13
+      ]
+    },
+    "failure-2048.txt": {
+      "n": 2048,
+      "m": 8000,
+      "initial": [
+        2.0979494078695618e-10,
+        27,
+        1.6339740217321024e-11
+      ],
+      "round_to_double_sweeps": [
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ],
+        [
+          1.9783323564310252e-10,
+          30,
+          1.5408109608017047e-11
+        ]
+      ],
+      "retained_high_precision_sweeps": [
+        [
+          5.759330314773957e-11,
+          351,
+          2.1367779076259624e-12
+        ],
+        [
+          2.4912758620866523e-11,
+          191,
+          1.1003243018930129e-12
+        ],
+        [
+          1.4413678588283091e-11,
+          159,
+          6.306514655351984e-13
+        ],
+        [
+          8.91937142290519e-12,
+          127,
+          4.024297362141408e-13
+        ],
+        [
+          7.097337432937972e-12,
+          127,
+          3.2022207569753485e-13
+        ],
+        [
+          5.535537128288676e-12,
+          159,
+          2.4220011436342096e-13
+        ],
+        [
+          4.9228864243119996e-12,
+          127,
+          2.22113845383823e-13
+        ],
+        [
+          4.231211403715641e-12,
+          127,
+          1.9090642247398756e-13
+        ],
+        [
+          3.634605416443591e-12,
+          127,
+          1.6398838322011083e-13
+        ],
+        [
+          3.205879561665306e-12,
+          447,
+          1.014469018184609e-13
+        ]
+      ],
+      "retained_final_round_to_double": [
+        2.582841531076882e-10,
+        21,
+        2.0116304876873177e-11
+      ]
+    }
+  },
+  "candidateAuditIndependentLuna": {
+    "1024": {
+      "n": 1024,
+      "high_only": {
+        "maxScaled": 4.246783531180011e-11,
+        "row": 157,
+        "abs": 9.04383092101417e-13,
+        "norm": 4.929158862325799e-12
+      },
+      "high_plus_low": {
+        "maxScaled": 9.171329132157855e-12,
+        "row": 185,
+        "abs": 1.9502117777135622e-13,
+        "norm": 8.962988449540516e-13
+      },
+      "rounded": {
+        "maxScaled": 4.246783531180011e-11,
+        "row": 157,
+        "abs": 9.04383092101417e-13,
+        "norm": 4.929158862325799e-12
+      }
+    },
+    "2048": {
+      "n": 2048,
+      "high_only": {
+        "maxScaled": 2.582841531076882e-10,
+        "row": 21,
+        "abs": 2.0116304876873177e-11,
+        "norm": 6.480920870395123e-11
+      },
+      "high_plus_low": {
+        "maxScaled": 8.11340937542921e-12,
+        "row": 126,
+        "abs": 3.664521964481723e-13,
+        "norm": 1.5046994743578255e-12
+      },
+      "rounded": {
+        "maxScaled": 2.582841531076882e-10,
+        "row": 21,
+        "abs": 2.0116304876873177e-11,
+        "norm": 6.480920870395123e-11
+      }
+    }
+  },
+  "candidateAuditPrimary": {
+    "1024": {
+      "highPlusLow": {
+        "residualNorm": 8.962988449540516e-13,
+        "maxDiagonalScaledResidual": 9.171329132157855e-12,
+        "normTarget": 5.218353351243087e-07,
+        "rowTarget": 1e-11,
+        "passed": true
+      },
+      "rounded": {
+        "residualNorm": 4.929158862325799e-12,
+        "maxDiagonalScaledResidual": 4.246783531180011e-11,
+        "normTarget": 5.218353351243087e-07,
+        "rowTarget": 1e-11,
+        "passed": false
+      },
+      "method": "Decimal 80 digits, exact binary64 coefficients and serialized high/low; no candidate code reused",
+      "sha256": {
+        "failure-1024.txt": "ff4ea28142e9c0a779a44c100191ff89c9b6c966902c754e1b66373c12e3cf76",
+        "candidate-1024.csv": "96484dac0393aadc90c862b3ceb047f1c06d764428f7e994539ab320fbc8ee67"
+      }
+    },
+    "2048": {
+      "highPlusLow": {
+        "residualNorm": 1.5046994743578255e-12,
+        "maxDiagonalScaledResidual": 8.11340937542921e-12,
+        "normTarget": 4.591688904683531e-06,
+        "rowTarget": 1e-11,
+        "passed": true
+      },
+      "rounded": {
+        "residualNorm": 6.480920870395123e-11,
+        "maxDiagonalScaledResidual": 2.582841531076882e-10,
+        "normTarget": 4.591688904683531e-06,
+        "rowTarget": 1e-11,
+        "passed": false
+      },
+      "method": "Decimal 80 digits, exact binary64 coefficients and serialized high/low; no candidate code reused",
+      "sha256": {
+        "failure-2048.txt": "76e793d589e9f3c9759a51bfc9399dabac3572bcb0b812e2d221d4e3de3e9bbe",
+        "candidate-2048.csv": "d77ac52bc62ed5184649a99b0c01311ab53b4e62c4c6ebd2e9572cf6929c2216"
+      }
+    }
+  },
+  "limits": [
+    "Re_plate=500, no matched high-Re reference",
+    "2048-cell graded case must remain rejected if actual rounded omega transport fails",
+    "No URANS, SST checkpoint or App turbulence input",
+    "Candidate precision is not guaranteed for arbitrary ill-conditioned matrices or underflow/overflow",
+    "No timing speedup claim; extended arithmetic has a cost",
+    "Observed Cf differences are not a mesh-independence qualification"
+  ]
+}

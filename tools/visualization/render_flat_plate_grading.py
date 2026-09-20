@@ -69,7 +69,7 @@ for axis in [ax[0, 2], *ax[1]]:
     axis.legend(fontsize=8)
 failed = ', '.join(f"{f['grid'][0]} x {f['grid'][1]} graded" for f in study['failures'])
 fig.suptitle('Near-wall refinement | steady incompressible SST-2003m | Re_plate = 500', fontsize=17)
-fig.supxlabel(f"Completed: {len(cases)} | Failed linear accuracy gate: {failed or 'none'}\n"
+fig.supxlabel(f"Completed: {len(cases)} | Rejected solves: {failed or 'none'}\n"
     'Same physical inputs; no high-Re reference or mesh-independence claim. Failed cases have no accepted flow fields.', fontsize=10)
 args.output.parent.mkdir(parents=True, exist_ok=True)
 fig.savefig(args.output, dpi=150)

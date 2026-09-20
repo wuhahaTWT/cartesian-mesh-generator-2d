@@ -26,6 +26,9 @@ void converged(const ScalarTransportResult2D& r,const char* name) {
     error<<"SST-2003m "<<name<<" inner transport did not converge";
     if (!r.history.empty()) error<<"; norm="<<r.history.back().residualNorm
         <<", diagonalScaled="<<r.history.back().maxDiagonalScaledImbalance;
+    if (!r.history.empty() && r.history.back().matrixAudited)
+        error<<", rounded-field matrix norm="<<r.history.back().matrixResidualNorm
+             <<", matrix diagonalScaled="<<r.history.back().matrixMaxDiagonalScaledImbalance;
     throw std::runtime_error(error.str());
 }
 void boundaries(const FvMesh2D& mesh, const std::vector<ScalarBoundary2D>& bc, bool isK) {

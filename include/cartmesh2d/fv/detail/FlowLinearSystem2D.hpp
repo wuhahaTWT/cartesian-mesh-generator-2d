@@ -26,6 +26,39 @@ inline double linearFinite(double value) {
     return value;
 }
 
+// Explicit two-component expansion. No implicit conversion to double: callers
+// must choose when to round and then audit the field they actually retain.
+struct LinearTwofold2D {
+    double high=0, low=0;
+    void add(double value) {
+        const double sum=linearFinite(high+value);
+        const double split=sum-high;
+        const double error=(high-(sum-split))+(value-split);
+        const double tail=linearFinite(low+error);
+        const double next=linearFinite(sum+tail);
+        const double nextSplit=next-sum;
+        low=linearFinite((sum-(next-nextSplit))+(tail-nextSplit));
+        high=next;
+    }
+    void scale(double factor) {
+        const double product=linearFinite(high*factor);
+        const double tail=linearFinite(std::fma(high,factor,-product)+low*factor);
+        high=product;low=0;add(tail);
+    }
+};
+
+struct LinearCandidate2D {
+    LinearVector2D high, low; // empty low means ordinary double arithmetic
+    std::size_t iterations=0;
+    double relaxedDouble(std::size_t i,double previous,double relaxation) const {
+        if(low.empty() || low[i]==0)
+            return linearFinite(previous+relaxation*(high[i]-previous));
+        LinearTwofold2D value{high[i],low[i]};
+        value.add(-previous);value.scale(relaxation);value.add(previous);
+        return value.high;
+    }
+};
+
 inline double linearProduct(const LinearVector2D& a, const LinearVector2D& b) {
     long double sum = 0;
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -145,7 +178,8 @@ struct SparseSystem2D {
     // Error-free TwoSum and FMA-product principles (independent implementation):
     // Ogita, Rump, Oishi, SIAM SISC 26(6), doi:10.1137/030601818.
     // Finite normal arithmetic is required; this is not arbitrary precision.
-    double compensatedResidualRow(std::size_t i, const LinearVector2D& x) const {
+    double compensatedResidualRow(std::size_t i, const LinearVector2D& x,
+                                  const LinearVector2D* low=nullptr) const {
         double sum=rhs[i], correction=0;
         const auto subtractProduct=[&](double coefficient,double value) {
             const double product=linearFinite(-coefficient*value);
@@ -157,8 +191,12 @@ struct SparseSystem2D {
             sum=next;
         };
         subtractProduct(diag[i],x[i]);
+        if(low)subtractProduct(diag[i],(*low)[i]);
         for(auto k=pattern.rows[i];k<pattern.rows[i+1];++k)
+        {
             subtractProduct(off[k],x[pattern.columns[k]]);
+            if(low)subtractProduct(off[k],(*low)[pattern.columns[k]]);
+        }
         return linearFinite(sum+correction);
     }
     void pin(std::size_t id) {
@@ -317,6 +355,22 @@ struct SparseSystem2D {
     std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
                       double diagonalScaledStop = std::numeric_limits<double>::infinity(),
                       double residualNormStop = std::numeric_limits<double>::infinity()) const {
+        return solveImpl(x,w,diagonalScaledStop,residualNormStop,nullptr);
+    }
+
+    // The original gates apply to high+low, not to high alone. A transport
+    // caller must round after relaxation and recheck its original equations.
+    LinearCandidate2D solveCandidate(LinearVector2D initial,LinearWorkspace2D& w,
+                      double diagonalScaledStop,double residualNormStop) const {
+        LinearCandidate2D candidate{std::move(initial),{},0};
+        candidate.iterations=solveImpl(candidate.high,w,diagonalScaledStop,
+                                      residualNormStop,&candidate.low);
+        return candidate;
+    }
+private:
+    std::size_t solveImpl(LinearVector2D& x,LinearWorkspace2D& w,
+                         double diagonalScaledStop,double residualNormStop,
+                         LinearVector2D* tail) const {
         linearEnsure(diagonalScaledStop > 0 && !std::isnan(diagonalScaledStop), "Invalid momentum diagonal-scaled residual tolerance");
         linearEnsure(residualNormStop > 0 && !std::isnan(residualNormStop), "Invalid linear residual norm tolerance");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
@@ -345,8 +399,21 @@ struct SparseSystem2D {
             return diagonalScaledStop<16*std::numeric_limits<double>::epsilon()*magnitude;
         };
         bool compensated=nearRoundoff(), refined=false;
+        if(tail) {
+            tail->clear();
+            if(compensated)tail->assign(x.size(),0.);
+        }
+        const auto rowResidual=[&](std::size_t i) {
+            return compensatedResidualRow(i,x,tail&&!tail->empty()?tail:nullptr);
+        };
+        const auto addUpdate=[&](std::size_t i,double update) {
+            if(tail&&!tail->empty()) {
+                LinearTwofold2D value{x[i],(*tail)[i]};value.add(update);
+                x[i]=value.high;(*tail)[i]=value.low;
+            } else x[i]=linearFinite(x[i]+update);
+        };
         if(compensated)
-            for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+            for(std::size_t i=0;i<x.size();++i)r[i]=rowResidual(i);
         r0=r;
         if (smallResidual(r)) return 0;
         double rhoOld = 1, alpha = 1, omega = 1;
@@ -376,7 +443,7 @@ struct SparseSystem2D {
             alpha = rho / rv;
             for (std::size_t i = 0; i < x.size(); ++i) s[i] = r[i] - alpha * v[i];
             if (smallResidual(s)) {
-                for (std::size_t i = 0; i < x.size(); ++i) x[i] += alpha * z[i];
+                for (std::size_t i = 0; i < x.size(); ++i) addUpdate(i,alpha*z[i]);
             } else {
                 for (std::size_t i = 0; i < x.size(); ++i) zs[i] = s[i] / diag[i];
                 apply(zs, t);
@@ -384,11 +451,14 @@ struct SparseSystem2D {
                 linearEnsure(tt > 0, "Flow BiCGStab null update");
                 omega = linearProduct(t, s) / tt;
                 for (std::size_t i = 0; i < x.size(); ++i)
-                    x[i] += alpha * z[i] + omega * zs[i];
+                    addUpdate(i,alpha*z[i]+omega*zs[i]);
             }
-            if(!compensated && nearRoundoff())compensated=true;
+            if(!compensated && nearRoundoff()) {
+                compensated=true;
+                if(tail)tail->assign(x.size(),0.);
+            }
             if(compensated) {
-                for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+                for(std::size_t i=0;i<x.size();++i)r[i]=rowResidual(i);
             } else {
                 apply(x, ax);
                 for (std::size_t i = 0; i < x.size(); ++i) r[i] = rhs[i] - ax[i];
@@ -409,8 +479,8 @@ struct SparseSystem2D {
                 }
                 for(std::size_t sweep=0;diagonallyDominant && sweep<8;++sweep) {
                     for(std::size_t i=0;i<x.size();++i)
-                        x[i]=linearFinite(x[i]+compensatedResidualRow(i,x)/diag[i]);
-                    for(std::size_t i=0;i<x.size();++i)r[i]=compensatedResidualRow(i,x);
+                        addUpdate(i,rowResidual(i)/diag[i]);
+                    for(std::size_t i=0;i<x.size();++i)r[i]=rowResidual(i);
                     if(smallResidual(r))return step+1;
                 }
             }

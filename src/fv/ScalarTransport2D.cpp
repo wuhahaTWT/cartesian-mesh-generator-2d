@@ -206,12 +206,17 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
             // Relax the field after solving the full elliptic operator. Diagonal
             // equation relaxation would turn even a linear orthogonal diffusion
             // problem into a slow, mesh-dependent stationary outer iteration.
-            auto candidate=r.values;
             // User-requested tight outer tolerances must also constrain the inner
             // solve; its legacy norm floor otherwise stalls relaxed scalar solves.
-            linear=a.solve(candidate,workspace,c.cellTolerance*.1,stop*.5);
+            // An explicit high+low candidate can satisfy the same linear gates
+            // when its low bits cannot fit in the returned double field. Round
+            // only after relaxation; faceFluxes and original balances below
+            // recheck the actual double values. Candidate success is not outer
+            // transport convergence.
+            const auto candidate=a.solveCandidate(r.values,workspace,c.cellTolerance*.1,stop*.5);
+            linear=candidate.iterations;
             for (std::size_t i=0;i<n;++i)
-                r.values[i]=finite(r.values[i]+c.relaxation*(candidate[i]-r.values[i]));
+                r.values[i]=candidate.relaxedDouble(i,r.values[i],c.relaxation);
         }
         faceFluxes(); r.boundaryFlux=0; r.temporalIntegral=0; r.sinkIntegral=0;
         for (std::size_t i=0;i<n;++i) {
@@ -239,7 +244,31 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         r.boundaryFlux=finite(r.boundaryFlux);
         r.globalBalance=finite(r.temporalIntegral+r.boundaryFlux-r.sourceIntegral);
         if (!p.sinkRate.empty()) r.globalBalance=finite(r.globalBalance+r.sinkIntegral);
-        if (norm<=stop && maxScaled<=c.cellTolerance) { r.converged=true; break; }
+        if (norm<=stop && maxScaled<=c.cellTolerance) {
+            double magnitude=0;
+            for(double value:r.values)magnitude=std::max(magnitude,std::abs(value));
+            if(c.cellTolerance<16*std::numeric_limits<double>::epsilon()*magnitude) {
+                // Reassemble deferred sources at the rounded, returned field,
+                // not at the old iterate used by the preceding linear solve.
+                // Accurate b-Ax prevents a rounded product from creating a
+                // false zero in an exceptionally tight outer acceptance check.
+                a.rhs=base;
+                for(std::size_t id=0;id<nf;++id) {
+                    const auto& f=mesh.faces[id];a.rhs[f.owner]-=extra[id];
+                    if(f.neighbour)a.rhs[*f.neighbour]+=extra[id];
+                }
+                auto& entry=r.history.back();entry.matrixAudited=true;
+                for(std::size_t i=0;i<n;++i) {
+                    residual[i]=a.compensatedResidualRow(i,r.values);
+                    entry.matrixMaxDiagonalScaledImbalance=std::max(
+                        entry.matrixMaxDiagonalScaledImbalance,std::abs(residual[i])/diagonal[i]);
+                }
+                entry.matrixResidualNorm=detail::linearNorm(residual);
+                if(entry.matrixResidualNorm>stop || entry.matrixMaxDiagonalScaledImbalance>c.cellTolerance)
+                    continue;
+            }
+            r.converged=true;break;
+        }
     }
     r.minValue=*std::min_element(r.values.begin(),r.values.end());
     r.maxValue=*std::max_element(r.values.begin(),r.values.end());

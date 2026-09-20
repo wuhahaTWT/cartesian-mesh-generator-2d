@@ -276,6 +276,28 @@ void compensatedResidualRegression() {
         LinearWorkspace2D workspace(1);std::vector<double> x={1-e};
         (void)product.solve(x,workspace,1e-18);
     },"unrepresentable row accuracy must not pass through a rounded zero");
+    LinearWorkspace2D candidateWorkspace(1);
+    const auto candidate=product.solveCandidate({1-e},candidateWorkspace,1e-25,1e-25);
+    check(candidate.high[0]==1-e && candidate.low.size()==1 && candidate.low[0]>0,
+          "accurate candidate exposes low bits instead of silently discarding them");
+    // Independent closed-form residual: d*high=1-2^-54 exactly for this input.
+    const double expandedResidual=std::ldexp(1.,-54)-(1+e)*candidate.low[0];
+    check(std::abs(expandedResidual)<1e-25,
+          "high+low candidate satisfies the original equation at the requested gate");
+    const auto late=product.solveCandidate({0},candidateWorkspace,1e-25,1e-25);
+    check(late.high[0]==1-e && late.low.size()==1 && late.low[0]>0 &&
+          std::abs(std::ldexp(1.,-54)-(1+e)*late.low[0])<1e-25,
+          "late expansion activation recovers lost bits from the recomputed residual");
+    const double rounded=candidate.relaxedDouble(0,0,1);
+    check(rounded==1-e && std::ldexp(1.,-54)/(1+e)>1e-18,
+          "rounded field demonstrably fails the gate satisfied by the candidate");
+    // Exact binary tie: premature rounding to 1 loses the positive low part.
+    cartmesh2d::fv::detail::LinearCandidate2D tie{{1},{std::ldexp(1.,-54)},0};
+    const double previous=1+std::ldexp(1.,-52);
+    check(tie.relaxedDouble(0,previous,.5)==previous,
+          "relaxation retains low bits until the final field rounding");
+    const auto ordinary=product.solveCandidate({1-e},candidateWorkspace,1e-10,1e-10);
+    check(ordinary.low.empty(),"ordinary accuracy does not allocate an expansion");
     SparsePattern2D pair(2,{{0,1}});SparseSystem2D cancellation(pair);
     cancellation.diag={1e16,1};cancellation.rhs={1e16,1};cancellation.add(0,1,1);
     check(cancellation.compensatedResidualRow(0,{1,1})==-1,

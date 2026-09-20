@@ -364,6 +364,13 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-grad
 
 真实对照及失败见当前状态。`artifacts/current/native-flatplate-grading.json`的`valid=false`明确表示四例没有全部通过；`cases`是有独立审核的完成结果，`failures`保留未通过项，`geometryChecksPassed`只表示网格几何。渲染工具`tools/visualization/render_flat_plate_grading.py`会同时展示这两类结果，不把失败网格配上伪造流场。
 
+
+后续增加的`SparseSystem2D::solveCandidate()`返回显式`LinearCandidate2D{high,low,iterations}`。low仅在精度风险触发时分配；通过重新计算真实残差，后启用仍能校正之前丢失的低位。`relaxedDouble()`在高低位中完成松弛后才舍入；调用方必须再次检查实际double字段。普通`solve()`没有这种候选语义，要求仍作用于真实返回的double值。没有隐式转换可悄悄丢弃low，也不保证任意病态矩阵、上溢/下溢或任意精度要求都可解。
+
+`ScalarTransport2D`的最终面通量/守恒检查继续保留；接近舍入尺度时，增加当前deferred source下的补偿原矩阵检查，结果在`ScalarTransportIteration2D::matrixAudited/matrixResidualNorm/matrixMaxDiagonalScaledImbalance`。它是附加门，不能替代原非线性通量；SST失败信息区分该门。两份矩阵的high+low通过、rounded失败，以及最终三个流场通过/一个失败，分别保存在`native-flatplate-precision.json`，不能混成单一PASS。
+
+数值方法依据误差分解和额外精度残差/更新的公开原理独立实现，未复制第三方求解器代码；背景见[Error Bounds from Extra Precise Iterative Refinement](https://www.netlib.org/lapack/lawnspdf/lawn165.pdf)。本文实现是保持两部分候选的BiCGStab，不等同于论文的完整算法或误差上界证明。复现仍用本节同一网格与probe命令；更细ny=64目前应显式失败，不能改容差掩盖。
+
 ### 标准湍流参考的适用边界
 
 已核对[TMR 2DZP平板定义](https://tmbwg.github.io/turbmodels/flatplate.html)、[网格](https://tmbwg.github.io/turbmodels/flatplate_grids.html)及[SST参考结果](https://tmbwg.github.io/turbmodels/flatplate_sst.html)。平板x=0至2，参考长度1，Re_L=5e6、M=.2；网格35×25至545×385节点，需明确区分节点数与实际流体单元数。壁面omega及自由来流k/omega必须按该例指定，不能沿用诊断通道的数值。近壁y+、x约.97/1.90的剖面及壁面摩阻是后续关注量；不能只看残差。

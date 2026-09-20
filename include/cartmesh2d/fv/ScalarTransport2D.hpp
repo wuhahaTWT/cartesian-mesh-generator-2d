@@ -45,6 +45,11 @@ struct ScalarTransportIteration2D {
     std::size_t iteration = 0, linearIterations = 0;
     double residualNorm = 0, relativeResidual = 0, maxCellImbalance = 0;
     double maxDiagonalScaledImbalance = 0;
+    // Additional original-operator check when an apparently converged double
+    // field requests accuracy near its representation floor. Face-flux balance
+    // remains independently required; a precise linear candidate is insufficient.
+    bool matrixAudited = false;
+    double matrixResidualNorm = 0, matrixMaxDiagonalScaledImbalance = 0;
 };
 struct ScalarTransportResult2D {
     bool converged = false;
