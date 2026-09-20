@@ -197,7 +197,8 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_sst_rans_verifier COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_rans_verifier_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --probe $<TARGET_FILE:cartmesh2d_sst_rans_probe>)
+        --probe $<TARGET_FILE:cartmesh2d_sst_rans_probe>
+        --rect-probe $<TARGET_FILE:cartmesh2d_rectilinear_probe>)
     add_test(NAME cartmesh2d_sst_nonlinear_verifier COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_nonlinear_verifier_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

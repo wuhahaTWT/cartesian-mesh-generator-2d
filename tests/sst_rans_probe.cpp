@@ -5,16 +5,19 @@
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <set>
 using namespace cartmesh2d;
 using namespace cartmesh2d::fv;
 int main(int argc,char** argv) {
     try {
-        if(argc!=3&&argc!=4)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep]");
+        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --leading-edge x]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
-        if(argc==4) {
+        int firstOption=3;
+        if(argc>3 && std::string(argv[3]).rfind("--",0)!=0) {
+            firstOption=4;
             if(std::string(argv[3])=="nested")c.turbulenceUpdatesPerIteration=c.turbulence.maxIterations;
             else if(std::string(argv[3])=="channel-sweep")c.turbulence.scalarCorrectionsPerUpdate=1;
             else if(std::string(argv[3])=="flatplate" || std::string(argv[3])=="flatplate-symmetry" || std::string(argv[3])=="flatplate-sweep") {
@@ -24,6 +27,21 @@ int main(int argc,char** argv) {
             }
             else throw std::runtime_error("unknown SST probe configuration");
         }
+        std::set<std::string> seen;
+        for(int i=firstOption;i<argc;i+=2) {
+            const std::string option=argv[i];
+            if(i+1==argc || !seen.insert(option).second)throw std::runtime_error("missing or duplicate probe option: "+option);
+            const std::string text=argv[i+1];std::size_t end=0;const double value=std::stod(text,&end);
+            if(end!=text.size()||!std::isfinite(value))throw std::runtime_error("invalid finite probe value: "+option);
+            if(option=="--nu")c.flow.nu=value;
+            else if(option=="--speed")c.flow.speed=value;
+            else if(option=="--inlet-k")c.inletK=value;
+            else if(option=="--inlet-omega")c.inletOmega=value;
+            else if(option=="--leading-edge" && c.flow.scenario=="flatplate")c.flow.flatPlateLeadingEdge=value;
+            else throw std::runtime_error("unknown or inapplicable probe option: "+option);
+        }
+        if(!(c.flow.nu>0 && c.flow.speed>0 && c.inletK>=0 && c.inletOmega>0))
+            throw std::runtime_error("probe requires positive nu/speed/omega and nonnegative k");
         const std::string prefix=argv[2];
         const auto r=solveSstRans2D(mesh,c,{}, {},[](const auto& h){
             if(h.iteration==1||h.iteration%100==0)std::cerr<<h.iteration<<" momentum="<<h.momentumResidual<<'\n';
@@ -59,7 +77,8 @@ int main(int argc,char** argv) {
         }
         meta<<std::setprecision(17)<<"{\"case\":\""<<c.flow.scenario<<"\",\"flatPlateLeadingEdge\":"<<c.flow.flatPlateLeadingEdge
             <<",\"flatPlateTop\":\""<<(c.flow.flatPlateTop==FlatPlateTop2D::Symmetry?"symmetry":"pressure-farfield")<<"\""
-            <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":0.001,\"speed\":1,\"inletK\":0.001,\"inletOmega\":2,\"tolerance\":1e-7,"
+            <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":true,\"nu\":"<<c.flow.nu
+            <<",\"speed\":"<<c.flow.speed<<",\"inletK\":"<<c.inletK<<",\"inletOmega\":"<<c.inletOmega<<",\"tolerance\":1e-7,"
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration

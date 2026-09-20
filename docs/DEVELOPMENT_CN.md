@@ -345,7 +345,7 @@ build/cartmesh2d_sst_rans_probe /path/unit-square.solver.cm2d outputs/plate-symm
 python3 tools/verification/verify_sst_rans.py --mesh /path/unit-square.solver.cm2d --prefix outputs/plate --output outputs/plate-audit.json
 ```
 
-独立读取器由CM2D原端点辨认分段，从末态重算壁距、当前模型系数、质量/动量/两湍流方程。`boundarySummary`报告各类面的长度、进入/离开通量；`plateWallSamples`取水平底壁切向离散牵引tau/rho，给Cf=2tau/(rho U∞²)和y+=d_normal*sqrt(abs(tau)/rho)/nu。此诊断U∞固定1；这些量的数值收敛、近壁分辨率和物理精度需另证。绘图入口`tools/visualization/render_flat_plate.py`读取已通过审核的研究JSON，不将其视为TMR认证。
+独立读取器由CM2D原端点辨认分段，从末态重算壁距、当前模型系数、质量/动量/两湍流方程。`boundarySummary`报告各类面的长度、进入/离开通量；`plateWallSamples`取水平底壁切向离散牵引tau/rho，给Cf=2tau/(rho U∞²)和y+=d_normal*sqrt(abs(tau)/rho)/nu。默认诊断U∞=1；可配置入口见下节。Cf使用实际U∞，这些量的数值收敛、近壁分辨率和物理精度需另证。绘图入口`tools/visualization/render_flat_plate.py`读取已通过审核的研究JSON，不将其视为TMR认证。
 
 ### 原生矩形近壁网格与精确残差诊断
 
@@ -358,7 +358,7 @@ build/cartmesh2d_sst_rans_probe outputs/native-flow/my-graded-plate/mesh.cm2d ou
 python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-graded-plate/mesh.cm2d --prefix outputs/native-flow/my-graded-plate/flow --output outputs/native-flow/my-graded-plate/audit.json
 ```
 
-诊断probe是单位正方形，nx/ny各2..256，stretch在0..20；0为均匀，正值采用`expm1(a*j/ny)/expm1(a)`。半域前缘要求nx为偶数，否则跨越面会由平板边界检查拒绝。probe维数限制是资源保护，不是库API上限。更强加密仍可能触发默认网格质量门或求解精度失败，不能把本例参数当成通用预设。
+诊断probe默认单位正方形，可附加`xmin ymin xmax ymax`四个有限边界值；必须满足xmax>xmin、ymax>ymin。nx/ny各2..256，stretch在0..20；0为均匀，正值采用`expm1(a*j/ny)/expm1(a)`。默认半域前缘要求nx为偶数；自定义域需自行对齐前缘，否则跨越面会由平板边界检查拒绝。probe维数限制是资源保护，不是库API上限。更强加密仍可能触发默认网格质量门或求解精度失败，不能把本例参数当成通用预设。
 
 线性系统恢复在`fv/detail/FlowLinearSystem2D.hpp`：精确影子正交breakdown重启，近舍入尺度使用补偿逐行`b-Ax`，对角占优时可作最多8次坐标校正，原双重残差门不变。补偿算法依据[Ogita、Rump、Oishi 2005](https://doi.org/10.1137/030601818)的误差分解原理独立实现；没有复制外部求解器代码或引入库。它不保证任意矩阵收敛或任意绝对容差可表示。Krylov步数不含坐标扫描，性能比较须同时报告总时间。数学breakdown背景见[Netlib Templates](https://www.netlib.org/templates/templates.html)。
 
@@ -388,6 +388,24 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/my-grad
 ```
 
 `native-flatplate-bounded-corrections.json`保留四例实际审核、旧二进制同输入比较、单纯warm-start的失败尝试和原2048格的高精度复算。两个时长不含网格读取/导出，都是单次观测；输出SHA与执行命令保留，审核器只验证模式标签的合法性，不从末态推断其执行历史。三档仅法向细化，不能冒充完整网格无关性；该实验仍为Re_plate=500，未获得高Re、瞬态或十万格SST资格。
+
+### SST诊断的物理输入与相似性
+
+`cartmesh2d_sst_rans_probe mesh prefix [mode] [options]`保留全部旧模式和默认参数，新增下列成对选项：`--nu`（运动黏度m²/s）、`--speed`（入口速度m/s；通道为最大速度）、`--inlet-k`（m²/s²）、`--inlet-omega`（1/s）、`--leading-edge`（m，只用于平板）。输入必须有限；nu/speed/omega>0，k>=0。缺值、重复、未知或不适用选项显式失败；前缘必须处于域内且与实际网格面端点对齐。不从任意“湍流强度”自动猜测另一项，没有隐式物理参数预设。
+
+```sh
+mkdir -p outputs/native-flow/highre
+# 此例板长2、单位长度Re=5e6，故板长Re=1e7；仍是诊断，不是TMR认证。
+build/cartmesh2d_rectilinear_probe 80 32 9 outputs/native-flow/highre/mesh -.5 0 2 1
+build/cartmesh2d_sst_rans_probe outputs/native-flow/highre/mesh.cm2d outputs/native-flow/highre/flow flatplate-sweep --nu 2e-7 --speed 1 --inlet-k 2.25e-7 --inlet-omega 125 --leading-edge 0
+python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/mesh.cm2d --prefix outputs/native-flow/highre/flow --output outputs/native-flow/highre/audit.json
+```
+
+审核器由原网格和实际物理输入独立计算入口/壁面条件、面黏度、质量/动量/原湍流方程及Cf/y+；停止门仍固定原值，不能用修改JSON容差绕过验收。`physicalInputs`、`bounds`和`plateReynolds`写入审核结果。JSON配置是待审核问题的声明，不是外部物理正确性的证明；运行命令、源码及工具哈希另存以保持来源可追溯。平板须完整矩形，任意非矩形或任意边界patch不在此入口范围内。
+
+`sst_rans_verifier_test.py`增加坐标平移/尺度变换相似性：x长度×2、U×2、nu×4、k×4、omega不变，要求无量纲场及Cf/y+一致；又故意篡改物性、速度、入口湍流和边界配置，须被重算拒绝。旧固定物理量改为可配置没有放松这些检查。矩形输入与参数格式也有失败回归。
+
+一份40×32/stretch8高Re算例仍未通过梯度独立重构：源码返回中心与独立/80位几何在薄单元有舍入差异，处于大法向omega梯度下。现保留失败，无容差修改。`native-sst-physical-inputs.json`整体为false，不能仅取其中通过的80×32档声明全网格鲁棒性。原生几何中的long double在Apple Silicon不保证比double更宽，这一修复需单独核实和回归。
 
 ### 标准湍流参考的适用边界
 

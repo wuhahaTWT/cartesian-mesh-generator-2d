@@ -137,6 +137,40 @@ def main(args):
                 reject_json(mesh, prefix, lambda data: data.__setitem__('case', 'channel'))
                 if mode in ('flatplate','flatplate-sweep'):
                     reject_json(mesh, prefix, lambda data: data.__setitem__('flatPlateTop', 'symmetry'))
+        # Similarity transformation: x,y -> 2(x,y)+(-1,2), U -> 2U,
+        # nu -> 4nu, k -> 4k, omega unchanged; same Re and dimensionless model.
+        similarity=[]
+        for label,bounds,options in (
+            ('unit',[],[]),
+            ('scaled',['-1','2','1','4'],['--speed','2','--nu','.004','--inlet-k','.004','--inlet-omega','2','--leading-edge','0'])):
+            mesh_prefix=root/('similarity-'+label);mesh=Path(str(mesh_prefix)+'.cm2d')
+            run([args.rect_probe,'8','8','1',mesh_prefix,*bounds])
+            prefix=root/('flow-'+label)
+            run([args.probe,mesh,prefix,'flatplate-sweep',*options])
+            result=verifier.audit(mesh,prefix)
+            assert result['valid'] and result['plateReynolds']==500
+            with Path(str(prefix)+'.cells.csv').open() as stream:fields=list(csv.DictReader(stream))
+            similarity.append((fields,result))
+            for key in ('nu','speed','inletK','inletOmega'):
+                for invalid in (-1,True,'1',float('nan')):
+                    reject_json(mesh,prefix,lambda data,key=key,value=invalid:data.__setitem__(key,value))
+                reject_json(mesh,prefix,lambda data,key=key:data.__setitem__(key,data[key]*1.1))
+            for options_bad in (['--nu','0'],['--speed','-1'],['--inlet-k','-.1'],
+                                ['--inlet-omega','nan'],['--nu','1junk'],['--nu'],
+                                ['--nu','.001','--nu','.002'],['--unknown','1'],
+                                ['--leading-edge','.12345']):
+                result_bad=subprocess.run([str(args.probe),str(mesh),str(root/'invalid'),'flatplate-sweep',*options_bad],
+                                          stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
+                assert result_bad.returncode!=0, options_bad
+        for a,b in zip(similarity[0][0],similarity[1][0]):
+            for key,factor in (('u',2),('v',2),('p',4),('k',4),('omega',1)):
+                assert abs(float(a[key])-float(b[key])/factor)<1e-5*max(1,abs(float(a[key]))),(key,a[key],b[key])
+        for a,b in zip(similarity[0][1]['plateWallSamples'],similarity[1][1]['plateWallSamples']):
+            assert abs(a['Cf']-b['Cf'])<1e-5 and abs(a['yPlus']-b['yPlus'])<1e-5
+        for bad_bounds in (['0','0','0','1'],['0','1','1','0'],['nan','0','1','1']):
+            rejected=subprocess.run([str(args.rect_probe),'8','8','1',str(root/'bad-mesh'),*bad_bounds],
+                                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
+            assert rejected.returncode!=0
     print("SST-RANS verifier: channel, both flat plate boundaries and bounded corrections audited; all tamper cases rejected.")
 
 
@@ -144,4 +178,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mesh-cli", type=Path, required=True)
     parser.add_argument("--probe", type=Path, required=True)
+    parser.add_argument("--rect-probe", type=Path, required=True)
     main(parser.parse_args())

@@ -101,11 +101,13 @@ def read_artifacts(mesh_path, prefix):
     req(meta.get("case") in ("channel", "flatplate") and meta.get("model") == "SST-2003m" and
         meta.get("scope") == "coupled-steady-SST-2003m" and meta.get("converged") is True,
         "invalid SST-RANS metadata")
-    req(meta.get("nu") == .001 and meta.get("speed") == 1 and meta.get("inletK") == .001 and
-        meta.get("inletOmega") == 2 and meta.get("tolerance") == 1e-7,
-        "changed SST-RANS physical configuration")
+    for key in ('nu','speed','inletK','inletOmega'):
+        value=meta.get(key)
+        req(type(value) in (int,float) and math.isfinite(value) and
+            (value>=0 if key=='inletK' else value>0), 'invalid SST-RANS physical input: '+key)
+    req(meta.get('tolerance')==1e-7, 'changed SST-RANS stopping tolerance')
     if meta['case']=='flatplate':
-        req(meta.get('flatPlateLeadingEdge')==.5 and
+        req(type(meta.get('flatPlateLeadingEdge')) in (int,float) and math.isfinite(meta['flatPlateLeadingEdge']) and
             meta.get('flatPlateTop') in ('pressure-farfield','symmetry'), 'changed flat plate probe configuration')
     else:
         req(meta.get('flatPlateLeadingEdge',0)==0 and
@@ -140,19 +142,20 @@ def read_artifacts(mesh_path, prefix):
 def audit(mesh_path, prefix):
     mesh, m, meta, cells, faces, history = read_artifacts(Path(mesh_path), Path(prefix))
     geo = native.face_geometry(mesh, m)
-    nu = .001
+    nu = meta["nu"]; speed=meta["speed"]; inlet_k=meta["inletK"]; inlet_w=meta["inletOmega"]
     case=meta['case']
     if case=='flatplate':
-        req(all(close(a,b,1e-12,1e-10) for a,b in zip(m.bounds,(0.,0.,1.,1.))) and
-            close(m.total_area,1.,1e-12,1e-10), 'flat plate diagnostic requires complete unit square')
-    boundaries = native.flow_boundaries(mesh, m, case, 1., "reject",
+        xmin,ymin,xmax,ymax=m.bounds
+        req(close(m.total_area,(xmax-xmin)*(ymax-ymin),1e-12,1e-10),
+            'flat plate diagnostic requires complete rectangle')
+    boundaries = native.flow_boundaries(mesh, m, case, speed, "reject",
                                         [num(r["flux"], "face flux") for r in faces],
                                         meta.get('flatPlateLeadingEdge'),meta.get('flatPlateTop','pressure-farfield'))
     def entering(fid):
         return boundaries['roles'][fid]=='inlet' or (
             boundaries['roles'][fid]=='farfield' and num(faces[fid]['flux'],'flux')<0)
     independent_continuity = native.continuity(
-        mesh, m, [num(r["flux"], "face flux") for r in faces], 1., case, 1e-14, 1e-9)
+        mesh, m, [num(r["flux"], "face flux") for r in faces], speed, case, 1e-14, 1e-9)
     req(independent_continuity['nativeDefinitionContinuity'] < 1e-8 and
         independent_continuity['globalRelativeImbalance'] < 1e-8, 'independent continuity failed')
     req(close(num(meta['globalRelativeImbalance'], 'global continuity'),
@@ -190,7 +193,7 @@ def audit(mesh_path, prefix):
                 close(num(face["omegaBoundary"], "wall omega boundary"), wb[i], 1e-10, 1e-10),
                 "invalid resolved wall turbulence boundary")
         elif entering(i):
-            kfixed[i] = wfixed[i] = True; kb[i] = .001; wb[i] = 2.
+            kfixed[i] = wfixed[i] = True; kb[i] = inlet_k; wb[i] = inlet_w
         req(close(num(face["kBoundary"], "k boundary"), kb[i], 1e-12, 1e-10) and
             close(num(face["omegaBoundary"], "omega boundary"), wb[i], 1e-12, 1e-10),
             f"face {i}: scalar boundary mismatch")
@@ -212,7 +215,7 @@ def audit(mesh_path, prefix):
         for keys,expected in [(('gradKx','gradKy'),kg[i]),(('gradWx','gradWy'),wg[i])]:
             actual=tuple(num(row[key],key) for key in keys)
             roundoff=128*math.ulp(1.)*max(1.,math.hypot(*actual),math.hypot(*expected))
-            req(all(close(a,b,1e-11+roundoff,1e-8) for a,b in zip(actual,expected)),f'cell {i}: gradient mismatch')
+            req(all(close(a,b,1e-11+roundoff,1e-8) for a,b in zip(actual,expected)),f'cell {i}: {keys} gradient mismatch: exported={actual}, independently reconstructed={expected}, roundoff={roundoff}')
         d = num(row["distance"], "distance")
         req(d > 0, "invalid wall distance")
         expected_distance = min(
@@ -239,7 +242,7 @@ def audit(mesh_path, prefix):
             value = nu + (1-q) * coeff[edge.owner]["nuT"] + q * coeff[edge.neighbour]["nuT"]
         elif entering(i):
             ci = edge.owner
-            inlet = coefficients(.001, 2., nu, num(cells[ci]["distance"], "distance"), strain[ci], kg[ci], wg[ci])
+            inlet = coefficients(inlet_k, inlet_w, nu, num(cells[ci]["distance"], "distance"), strain[ci], kg[ci], wg[ci])
             value = nu + inlet["nuT"]
         else:
             value = nu + coeff[edge.owner]["nuT"]
@@ -333,7 +336,7 @@ def audit(mesh_path, prefix):
                    "pressureBoundaryReconstruction": "one-sided-linear-2ring",
                    **{field: meta[field] for field in summary_fields}}
         momentum = native.reconstruct_momentum_audit(
-            mesh, m, flow_cells, flow_faces, nu, 1., case, payload,
+            mesh, m, flow_cells, flow_faces, nu, speed, case, payload,
             pressure_boundary_reconstruction="one-sided-linear-2ring")
         req(all(value <= 5e-10 for value in momentum["maxFaceDeviation"].values()),
             "independent momentum face reconstruction differs")
@@ -369,10 +372,13 @@ def audit(mesh_path, prefix):
             e=mesh.edges[i];length=math.hypot(*geo[i].area_vector)
             tau=num(faces[i]['diffusionX'],'wall tangential force')/length
             dn=abs(geo[i].centre[1]-m.centroids[e.owner][1])
-            wall_samples.append({'face':i,'x':geo[i].centre[0],'xFromLeadingEdge':geo[i].centre[0]-.5,
-                'length':length,'kinematicShear':tau,'Cf':2*tau,'yPlus':dn*math.sqrt(abs(tau))/nu})
+            wall_samples.append({'face':i,'x':geo[i].centre[0],'xFromLeadingEdge':geo[i].centre[0]-meta['flatPlateLeadingEdge'],
+                'length':length,'kinematicShear':tau,'Cf':2*tau/(speed*speed),'yPlus':dn*math.sqrt(abs(tau))/nu})
         wall_samples.sort(key=lambda row:row['x'])
     return {"valid": True, "scope": meta["scope"], "case":case,
+            "physicalInputs":{key:meta[key] for key in ('nu','speed','inletK','inletOmega')},
+            "bounds":list(m.bounds),
+            "plateReynolds":speed*(m.bounds[2]-meta['flatPlateLeadingEdge'])/nu if case=='flatplate' else None,
             "scalarCorrectionsPerUpdate":meta.get('scalarCorrectionsPerUpdate',0),
             "flatPlateTop":meta.get('flatPlateTop'),"boundarySummary":boundary_summary,
             "plateWallSamples":wall_samples,"wallSampleScope":"Current discrete wall traction and owner-centre y+; not an accuracy qualification",
