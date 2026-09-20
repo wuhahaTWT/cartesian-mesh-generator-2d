@@ -408,6 +408,14 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 72cb13a阶段的40×32/stretch8高Re算例未通过梯度独立重构，原`native-sst-physical-inputs.json`仍保留该失败。后续解析矩形中心修复与80位独立几何复测使**重新计算**的同一案例通过；原错误场继续拒绝。新证据为`native-centroid-stability.json`，不得覆盖旧文件。系统clang宏验证Apple ARM64的long double与double均为53位有效位，不能假设long double足以防止这类几何舍入。
 
 
+### SST初值与固定速度场对照
+
+`cartmesh2d_sst_rans_probe`新增成对的`--initial-k K --initial-omega W`，要求有限K≥0/W>0；省略时保持入口值初始化。该选项只向既有原生初值API传入单元数组，入口和壁面仍来自原工况。输出的initialK/Omega为可检查的运行声明，不可仅凭最终场证明；独立审核保持所有原方程及收敛门，另将声明放在declaredInitialTurbulence。
+
+固定速度场复现实验见`artifacts/current/native-sst-coupling.json`：其中reproductionSources保存转换器及两个小C++诊断程序的完整源码与哈希（临时编译，未加入生产核心），runs保存实际命令、history抽样及全文件哈希。需要本地保存的原网格和900次失败场；没有将大网格塞入Git。frozen.cpp使用系统clang++、C++20、Release原生静态库，固定u/v和通量后调用原SST输运。临时程序用于这一已核对输入，不是通用不可信文件导入器。
+
+Anderson单历史试验依据[Walker与Ni，2011](https://doi.org/10.1137/10078356X)，用固定初值尺度加权的两次更新差求一个混合系数，再检查正性和原局部残差下降。所有候选均未采用；没有集成到求解器，也没有把探索用局部残差筛选冒充完整收敛门。下一步非线性方法仍须验证最终原方程与同一物理解。
+
 ### SST未收敛现场与最差单元
 
 `FlowIteration2D`额外记录`momentumWorstCell`及同一单元有符号的`momentumResidualX/Y`，归一化仍为(diagU+diagV)*speed；二者hypot对应原momentumResidual。profile时另外记录压力修正前的`momentumPredictorResidual`（两分量max |b-Au|/(diag*speed)）及其单元，`pressureLinearResidual`为本次各PCG调用真实残差norm的最大值除以speed*shortestFace。这两个线性诊断使用补偿行残差，未作为新验收门；计时包含profile诊断开销，不能和旧无该诊断二进制的时间直接当提速比较。

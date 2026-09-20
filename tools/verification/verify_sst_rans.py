@@ -107,6 +107,12 @@ def read_artifacts(mesh_path, prefix, *, diagnostic=False):
         value=meta.get(key)
         req(type(value) in (int,float) and math.isfinite(value) and
             (value>=0 if key=='inletK' else value>0), 'invalid SST-RANS physical input: '+key)
+    req(('initialK' in meta)==('initialOmega' in meta), 'incomplete initial turbulence declaration')
+    for key in ('initialK','initialOmega'):
+        if key in meta:
+            value=meta[key]
+            req(type(value) in (int,float) and math.isfinite(value) and
+                (value>=0 if key=='initialK' else value>0), 'invalid initial turbulence declaration: '+key)
     req(meta.get('tolerance')==1e-7, 'changed SST-RANS stopping tolerance')
     req(meta.get('scalarPreconditioner','jacobi') in ('jacobi','ilu0'),
         'unsupported scalar preconditioner declaration')
@@ -422,6 +428,8 @@ def audit(mesh_path, prefix, *, diagnostic=False):
     return {"valid": not diagnostic,"diagnosticOnly":diagnostic,"declaredConverged":meta["converged"],
             "failedConvergenceChecks":failed_convergence, "scope": meta["scope"], "case":case,
             "physicalInputs":{key:meta[key] for key in ('nu','speed','inletK','inletOmega')},
+            "declaredInitialTurbulence":{key:meta.get(key,meta['inletK' if key=='initialK' else 'inletOmega'])
+                                         for key in ('initialK','initialOmega')},
             "bounds":list(m.bounds),
             "plateReynolds":speed*(m.bounds[2]-meta['flatPlateLeadingEdge'])/nu if case=='flatplate' else None,
             "scalarCorrectionsPerUpdate":meta.get('scalarCorrectionsPerUpdate',0),

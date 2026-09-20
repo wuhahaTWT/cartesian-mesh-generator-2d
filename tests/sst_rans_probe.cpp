@@ -35,11 +35,12 @@ void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --leading-edge x --max-iterations N --turbulence-updates N --scalar-preconditioner jacobi|ilu0]");
+        if(argc<3)throw std::runtime_error("usage: sst_rans_probe mesh.cm2d prefix [nested|flatplate|flatplate-symmetry|flatplate-sweep|channel-sweep] [--nu value --speed value --inlet-k value --inlet-omega value --initial-k value --initial-omega value --leading-edge x --max-iterations N --turbulence-updates N --scalar-preconditioner jacobi|ilu0]");
         const auto input=readCm2dTopology(argv[1]);if(!input.valid())throw std::runtime_error(input.error);
         const auto mesh=makeFvMesh2D(input.topology);
         SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.001;c.flow.tolerance=1e-7;
         c.flow.maxIterations=2000;c.flow.profile=true;
+        std::optional<double> initialK,initialOmega;
         int firstOption=3;
         if(argc>3 && std::string(argv[3]).rfind("--",0)!=0) {
             firstOption=4;
@@ -69,6 +70,8 @@ int main(int argc,char** argv) {
             else if(option=="--speed")c.flow.speed=value;
             else if(option=="--inlet-k")c.inletK=value;
             else if(option=="--inlet-omega")c.inletOmega=value;
+            else if(option=="--initial-k")initialK=value;
+            else if(option=="--initial-omega")initialOmega=value;
             else if(option=="--max-iterations") {
                 if(value<1 || value>2000 || std::floor(value)!=value)throw std::runtime_error("max-iterations must be an integer in 1..2000");
                 c.flow.maxIterations=static_cast<std::size_t>(value);
@@ -82,10 +85,14 @@ int main(int argc,char** argv) {
         }
         if(!(c.flow.nu>0 && c.flow.speed>0 && c.inletK>=0 && c.inletOmega>0))
             throw std::runtime_error("probe requires positive nu/speed/omega and nonnegative k");
+        if(initialK.has_value()!=initialOmega.has_value() || (initialK && (*initialK<0 || *initialOmega<=0)))
+            throw std::runtime_error("initial-k and initial-omega must be supplied together, k>=0 and omega>0");
         const std::string prefix=argv[2];
         for(const auto suffix:{".json",".diagnostics.json",".cells.csv",".faces.csv",".history.csv",".unconverged.json",".unconverged.cells.csv",".unconverged.faces.csv"})
             if(std::filesystem::exists(prefix+suffix))throw std::runtime_error("probe requires a fresh output prefix");
-        const auto r=solveSstRans2D(mesh,c,{}, {},[](const auto& h){
+        const auto r=solveSstRans2D(mesh,c,
+            initialK?std::vector<double>(mesh.cells.size(),*initialK):std::vector<double>{},
+            initialOmega?std::vector<double>(mesh.cells.size(),*initialOmega):std::vector<double>{},[](const auto& h){
             if(h.iteration==1||h.iteration%100==0)std::cerr<<h.iteration<<" momentum="<<h.momentumResidual<<" cell="<<h.momentumWorstCell
                 <<" mx="<<h.momentumResidualX<<" my="<<h.momentumResidualY
                 <<" predictor="<<h.momentumPredictorResidual<<" predictorCell="<<h.momentumPredictorWorstCell<<" pressureLinear="<<h.pressureLinearResidual<<'\n';
@@ -132,7 +139,8 @@ int main(int argc,char** argv) {
         meta<<std::setprecision(17)<<"{\"case\":\""<<c.flow.scenario<<"\",\"flatPlateLeadingEdge\":"<<c.flow.flatPlateLeadingEdge
             <<",\"flatPlateTop\":\""<<(c.flow.flatPlateTop==FlatPlateTop2D::Symmetry?"symmetry":"pressure-farfield")<<"\""
             <<",\"model\":\"SST-2003m\",\"scope\":\"coupled-steady-SST-2003m\",\"converged\":"<<(r.converged?"true":"false")<<",\"nu\":"<<c.flow.nu
-            <<",\"speed\":"<<c.flow.speed<<",\"inletK\":"<<c.inletK<<",\"inletOmega\":"<<c.inletOmega<<",\"tolerance\":1e-7,"
+            <<",\"speed\":"<<c.flow.speed<<",\"inletK\":"<<c.inletK<<",\"inletOmega\":"<<c.inletOmega
+            <<",\"initialK\":"<<initialK.value_or(c.inletK)<<",\"initialOmega\":"<<initialOmega.value_or(c.inletOmega)<<",\"tolerance\":1e-7,"
             <<"\"scalarRelativeTolerance\":1e-9,\"scalarAbsoluteTolerance\":1e-12,\"scalarCellTolerance\":1e-9,\"convection\":\"upwind\",\"viscousStress\":\"symmetric\","
             <<"\"pressureConvention\":\"p/rho (SST-2003m omits isotropic k stress)\",\"pressureDiscretization\":\"shared-face-gauss\",\"iterations\":"<<r.history.size()<<",\"cells\":"<<mesh.cells.size()
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration

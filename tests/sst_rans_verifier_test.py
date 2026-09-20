@@ -187,6 +187,16 @@ def main(args):
         run([args.probe,plate_mesh,ilu,'flatplate-sweep','--scalar-preconditioner','ilu0','--turbulence-updates','2'])
         assert verifier.audit(plate_mesh,ilu)['scalarPreconditioner']=='ilu0'
         reject_json(plate_mesh,ilu,lambda data:data.__setitem__('scalarPreconditioner','invalid'))
+        seeded=root/'seeded'
+        run([args.probe,plate_mesh,seeded,'flatplate-sweep','--scalar-preconditioner','ilu0',
+             '--initial-k','.004','--initial-omega','3'])
+        seeded_audit=verifier.audit(plate_mesh,seeded)
+        assert seeded_audit['valid'] and seeded_audit['physicalInputs']['inletK']==.001
+        assert seeded_audit['declaredInitialTurbulence']=={'initialK':.004,'initialOmega':3}
+        for key in ('initialK','initialOmega'):
+            for invalid in (-1,True,'1',float('nan')):
+                reject_json(plate_mesh,seeded,lambda data,key=key,value=invalid:data.__setitem__(key,value))
+        reject_json(plate_mesh,seeded,lambda data:data.pop('initialOmega'))
         # Iteration-bounded diagnostics must never masquerade as accepted fields.
         limited=root/'limited'
         stopped=subprocess.run([str(args.probe),str(plate_mesh),str(limited),'flatplate-sweep',
@@ -232,7 +242,11 @@ def main(args):
         assert Path(str(ilu)+'.json').read_bytes()==previous
         for options in (['--max-iterations','0'],['--max-iterations','1.5'],['--max-iterations','2001'],
                         ['--scalar-preconditioner','ic0'],['--turbulence-updates','0'],
-                        ['--turbulence-updates','501'],['--turbulence-updates','1.5']):
+                        ['--turbulence-updates','501'],['--turbulence-updates','1.5'],
+                        ['--initial-k','.1'],['--initial-omega','2'],
+                        ['--initial-k','-1','--initial-omega','2'],
+                        ['--initial-k','.1','--initial-omega','0'],
+                        ['--initial-k','nan','--initial-omega','2']):
             rejected=subprocess.run([str(args.probe),str(plate_mesh),str(root/'bad-options'),'flatplate-sweep',*options],
                                     capture_output=True,timeout=90)
             assert rejected.returncode!=0
