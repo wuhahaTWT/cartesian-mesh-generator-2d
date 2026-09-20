@@ -13,8 +13,8 @@ int main(int argc,char** argv){try{
     const auto parse=[](const char* text){std::size_t end=0;const double v=std::stod(text,&end);
         if(end!=std::string(text).size()||!std::isfinite(v))throw std::runtime_error("invalid number");return v;};
     const double xd=parse(argv[1]),yd=parse(argv[2]),a=parse(argv[3]);
-    if(xd<2||yd<2||xd>256||yd>256||std::floor(xd)!=xd||std::floor(yd)!=yd||a<0||a>20)
-        throw std::runtime_error("probe requires integer dimensions 2..256 and stretch 0..20");
+    if(xd<2||yd<2||xd>4096||yd>4096||xd*yd>65536||std::floor(xd)!=xd||std::floor(yd)!=yd||a<0||a>20)
+        throw std::runtime_error("probe requires integer dimensions 2..4096, at most 65536 cells, and stretch 0..20");
     const auto nx=static_cast<std::size_t>(xd),ny=static_cast<std::size_t>(yd);
     const double xmin=argc==9?parse(argv[5]):0.,ymin=argc==9?parse(argv[6]):0.;
     const double xmax=argc==9?parse(argv[7]):1.,ymax=argc==9?parse(argv[8]):1.;

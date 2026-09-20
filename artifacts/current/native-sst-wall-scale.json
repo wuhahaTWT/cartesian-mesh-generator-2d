@@ -1,0 +1,5207 @@
+{
+  "scope": "Incompressible steady SST-2003m high-Re near-wall and performance diagnostic",
+  "valid": false,
+  "sourceBase": "d2a5f83 plus non-numerical SST phase profiling",
+  "runs": [
+    {
+      "name": "baseline",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-physical-inputs/highre-a9/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/baseline/flow",
+        "flatplate-sweep",
+        "--nu",
+        "2e-7",
+        "--speed",
+        "1",
+        "--inlet-k",
+        "2.25e-7",
+        "--inlet-omega",
+        "125",
+        "--leading-edge",
+        "0"
+      ],
+      "timeoutSeconds": 90,
+      "timedOut": false,
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-physical-inputs/highre-a9/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/baseline/flow",
+      "meshSha256": "a7ca17f4cfaa399fcfcd17990d1406fc109d0927d354a4ec4315166746ca8cc8",
+      "probeSha256": "194221a30aa80c0025c6de80ff2a779f8f89b0d157a68c0bf13d8b855be1b010",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "rssScope": "Single direct solver subprocess; Python independent audit excluded; macOS ru_maxrss bytes",
+      "returncode": 0,
+      "processSeconds": 20.374310708022676,
+      "maximumRssBytes": 15155200,
+      "native": {
+        "case": "flatplate",
+        "flatPlateLeadingEdge": 0,
+        "flatPlateTop": "pressure-farfield",
+        "model": "SST-2003m",
+        "scope": "coupled-steady-SST-2003m",
+        "converged": true,
+        "nu": 2e-07,
+        "speed": 1,
+        "inletK": 2.25e-07,
+        "inletOmega": 125,
+        "tolerance": 1e-07,
+        "scalarRelativeTolerance": 1e-09,
+        "scalarAbsoluteTolerance": 1e-12,
+        "scalarCellTolerance": 1e-09,
+        "convection": "upwind",
+        "viscousStress": "symmetric",
+        "pressureConvention": "p/rho (SST-2003m omits isotropic k stress)",
+        "pressureDiscretization": "shared-face-gauss",
+        "iterations": 697,
+        "cells": 2560,
+        "turbulenceUpdatesPerIteration": 1,
+        "scalarCorrectionsPerUpdate": 1,
+        "solveSeconds": 19.837028375,
+        "performance": {
+          "sstUpdates": 697,
+          "sstUpdateSeconds": 17.132394196,
+          "sstTransportSeconds": 15.669497158000008,
+          "sstGradientSeconds": 0.7891283180000009,
+          "wallDistanceSeconds": 0.002373417,
+          "momentumLinearSeconds": 0.5783746250000005,
+          "pressureLinearSeconds": 1.4757026189999949,
+          "momentumIterations": 10794,
+          "pressureIterations": 28478
+        },
+        "momentumResidual": 7.730677990894355e-10,
+        "forceX": 0,
+        "forceY": 0,
+        "pressureForceX": 0,
+        "pressureForceY": 0,
+        "discreteForceX": 0,
+        "discreteForceY": 0,
+        "reconstructedForceX": 0,
+        "reconstructedForceY": 0,
+        "wallForceX": 0.0027971135945851922,
+        "wallForceY": -0.0004498625208088956,
+        "wallViscousForceX": 0.0027971135945851922,
+        "wallViscousForceY": 1.6399107026122935e-07,
+        "globalRelativeImbalance": 3.132216708223723e-13
+      },
+      "audit": {
+        "valid": true,
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 32,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 32
+          },
+          "outlet": {
+            "faces": 32,
+            "length": 1.0,
+            "netOutwardFlux": 0.9971204518655667,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9971204518655667,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 64,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 16,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 80,
+            "length": 2.5,
+            "netOutwardFlux": 0.002879548134120057,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.002879548134120057,
+            "inflowFaces": 0
+          }
+        },
+        "plateWallSamples": [
+          {
+            "face": 16,
+            "x": 0.015625000000000007,
+            "xFromLeadingEdge": 0.015625000000000007,
+            "length": 0.03124999999999996,
+            "kinematicShear": 0.002835058043735547,
+            "Cf": 0.005670116087471094,
+            "yPlus": 5.336049986482564
+          },
+          {
+            "face": 17,
+            "x": 0.046875,
+            "xFromLeadingEdge": 0.046875,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.002204454878212782,
+            "Cf": 0.004408909756425564,
+            "yPlus": 4.705323840405521
+          },
+          {
+            "face": 18,
+            "x": 0.078125,
+            "xFromLeadingEdge": 0.078125,
+            "length": 0.03124999999999996,
+            "kinematicShear": 0.0020300289740512894,
+            "Cf": 0.004060057948102579,
+            "yPlus": 4.515335553490442
+          },
+          {
+            "face": 19,
+            "x": 0.10937499999999999,
+            "xFromLeadingEdge": 0.10937499999999999,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.0019140307233961437,
+            "Cf": 0.0038280614467922874,
+            "yPlus": 4.384432255854229
+          },
+          {
+            "face": 20,
+            "x": 0.140625,
+            "xFromLeadingEdge": 0.140625,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.0018304544958722758,
+            "Cf": 0.0036609089917445515,
+            "yPlus": 4.287640656284286
+          },
+          {
+            "face": 21,
+            "x": 0.17187500000000006,
+            "xFromLeadingEdge": 0.17187500000000006,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.0017667705415904812,
+            "Cf": 0.0035335410831809624,
+            "yPlus": 4.212394009951897
+          },
+          {
+            "face": 22,
+            "x": 0.203125,
+            "xFromLeadingEdge": 0.203125,
+            "length": 0.03124999999999989,
+            "kinematicShear": 0.0017155797035949933,
+            "Cf": 0.0034311594071899866,
+            "yPlus": 4.150919983397946
+          },
+          {
+            "face": 23,
+            "x": 0.23437499999999994,
+            "xFromLeadingEdge": 0.23437499999999994,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.0016721733425349872,
+            "Cf": 0.0033443466850699745,
+            "yPlus": 4.098071767204686
+          },
+          {
+            "face": 24,
+            "x": 0.265625,
+            "xFromLeadingEdge": 0.265625,
+            "length": 0.03125000000000003,
+            "kinematicShear": 0.0016342644741064146,
+            "Cf": 0.003268528948212829,
+            "yPlus": 4.0513529658580705
+          },
+          {
+            "face": 25,
+            "x": 0.296875,
+            "xFromLeadingEdge": 0.296875,
+            "length": 0.03125,
+            "kinematicShear": 0.0016018095273507892,
+            "Cf": 0.0032036190547015783,
+            "yPlus": 4.01092321609214
+          },
+          {
+            "face": 26,
+            "x": 0.328125,
+            "xFromLeadingEdge": 0.328125,
+            "length": 0.031250000000000056,
+            "kinematicShear": 0.0015734512643826434,
+            "Cf": 0.003146902528765287,
+            "yPlus": 3.975260191810897
+          },
+          {
+            "face": 27,
+            "x": 0.359375,
+            "xFromLeadingEdge": 0.359375,
+            "length": 0.03124999999999989,
+            "kinematicShear": 0.0015482234409119856,
+            "Cf": 0.003096446881823971,
+            "yPlus": 3.9432628853908014
+          },
+          {
+            "face": 28,
+            "x": 0.390625,
+            "xFromLeadingEdge": 0.390625,
+            "length": 0.031250000000000056,
+            "kinematicShear": 0.0015256955362243747,
+            "Cf": 0.0030513910724487493,
+            "yPlus": 3.9144689237479025
+          },
+          {
+            "face": 29,
+            "x": 0.421875,
+            "xFromLeadingEdge": 0.421875,
+            "length": 0.03125,
+            "kinematicShear": 0.0015054794070876278,
+            "Cf": 0.0030109588141752556,
+            "yPlus": 3.8884482324283733
+          },
+          {
+            "face": 30,
+            "x": 0.453125,
+            "xFromLeadingEdge": 0.453125,
+            "length": 0.03125,
+            "kinematicShear": 0.0014869888264123067,
+            "Cf": 0.0029739776528246134,
+            "yPlus": 3.864495130520507
+          },
+          {
+            "face": 31,
+            "x": 0.484375,
+            "xFromLeadingEdge": 0.484375,
+            "length": 0.03125,
+            "kinematicShear": 0.0014699776468447342,
+            "Cf": 0.0029399552936894683,
+            "yPlus": 3.8423265982986763
+          },
+          {
+            "face": 32,
+            "x": 0.515625,
+            "xFromLeadingEdge": 0.515625,
+            "length": 0.03125,
+            "kinematicShear": 0.0014543000704629553,
+            "Cf": 0.0029086001409259106,
+            "yPlus": 3.821782121191086
+          },
+          {
+            "face": 33,
+            "x": 0.546875,
+            "xFromLeadingEdge": 0.546875,
+            "length": 0.03125,
+            "kinematicShear": 0.0014398304090993805,
+            "Cf": 0.002879660818198761,
+            "yPlus": 3.802722047086211
+          },
+          {
+            "face": 34,
+            "x": 0.578125,
+            "xFromLeadingEdge": 0.578125,
+            "length": 0.03125,
+            "kinematicShear": 0.001426416488570631,
+            "Cf": 0.002852832977141262,
+            "yPlus": 3.7849669098621934
+          },
+          {
+            "face": 35,
+            "x": 0.609375,
+            "xFromLeadingEdge": 0.609375,
+            "length": 0.03125,
+            "kinematicShear": 0.0014138531296534061,
+            "Cf": 0.0028277062593068123,
+            "yPlus": 3.76826173757141
+          },
+          {
+            "face": 36,
+            "x": 0.640625,
+            "xFromLeadingEdge": 0.640625,
+            "length": 0.03125,
+            "kinematicShear": 0.0014020385721452632,
+            "Cf": 0.0028040771442905264,
+            "yPlus": 3.752484376805131
+          },
+          {
+            "face": 37,
+            "x": 0.671875,
+            "xFromLeadingEdge": 0.671875,
+            "length": 0.03125,
+            "kinematicShear": 0.0013909118414785337,
+            "Cf": 0.0027818236829570673,
+            "yPlus": 3.7375646545423966
+          },
+          {
+            "face": 38,
+            "x": 0.703125,
+            "xFromLeadingEdge": 0.703125,
+            "length": 0.03125,
+            "kinematicShear": 0.0013804211561766837,
+            "Cf": 0.0027608423123533675,
+            "yPlus": 3.72344304514428
+          },
+          {
+            "face": 39,
+            "x": 0.734375,
+            "xFromLeadingEdge": 0.734375,
+            "length": 0.03125,
+            "kinematicShear": 0.0013705189335044374,
+            "Cf": 0.002741037867008875,
+            "yPlus": 3.7100642581497167
+          },
+          {
+            "face": 40,
+            "x": 0.765625,
+            "xFromLeadingEdge": 0.765625,
+            "length": 0.03124999999999989,
+            "kinematicShear": 0.0013611584747017164,
+            "Cf": 0.002722316949403433,
+            "yPlus": 3.69737293266835
+          },
+          {
+            "face": 41,
+            "x": 0.796875,
+            "xFromLeadingEdge": 0.796875,
+            "length": 0.03125000000000011,
+            "kinematicShear": 0.0013522684362901212,
+            "Cf": 0.0027045368725802424,
+            "yPlus": 3.6852789575651075
+          },
+          {
+            "face": 42,
+            "x": 0.828125,
+            "xFromLeadingEdge": 0.828125,
+            "length": 0.03125,
+            "kinematicShear": 0.0013437840639751487,
+            "Cf": 0.0026875681279502975,
+            "yPlus": 3.6736997191177974
+          },
+          {
+            "face": 43,
+            "x": 0.859375,
+            "xFromLeadingEdge": 0.859375,
+            "length": 0.03125000000000011,
+            "kinematicShear": 0.0013356709814003752,
+            "Cf": 0.0026713419628007504,
+            "yPlus": 3.662592967227812
+          },
+          {
+            "face": 44,
+            "x": 0.890625,
+            "xFromLeadingEdge": 0.890625,
+            "length": 0.03124999999999989,
+            "kinematicShear": 0.001327907956891975,
+            "Cf": 0.00265581591378395,
+            "yPlus": 3.651933817902815
+          },
+          {
+            "face": 45,
+            "x": 0.921875,
+            "xFromLeadingEdge": 0.921875,
+            "length": 0.03124999999999989,
+            "kinematicShear": 0.0013204766254014167,
+            "Cf": 0.0026409532508028335,
+            "yPlus": 3.641700877369189
+          },
+          {
+            "face": 46,
+            "x": 0.953125,
+            "xFromLeadingEdge": 0.953125,
+            "length": 0.03125000000000011,
+            "kinematicShear": 0.0013133569016551229,
+            "Cf": 0.0026267138033102457,
+            "yPlus": 3.6318699770478626
+          },
+          {
+            "face": 47,
+            "x": 0.984375,
+            "xFromLeadingEdge": 0.984375,
+            "length": 0.03125,
+            "kinematicShear": 0.0013065286905872592,
+            "Cf": 0.0026130573811745184,
+            "yPlus": 3.6224165330305165
+          },
+          {
+            "face": 48,
+            "x": 1.015625,
+            "xFromLeadingEdge": 1.015625,
+            "length": 0.03125,
+            "kinematicShear": 0.0012999745817204456,
+            "Cf": 0.0025999491634408913,
+            "yPlus": 3.61331931149168
+          },
+          {
+            "face": 49,
+            "x": 1.046875,
+            "xFromLeadingEdge": 1.046875,
+            "length": 0.03125,
+            "kinematicShear": 0.0012936791682631162,
+            "Cf": 0.0025873583365262323,
+            "yPlus": 3.604559545733014
+          },
+          {
+            "face": 50,
+            "x": 1.078125,
+            "xFromLeadingEdge": 1.078125,
+            "length": 0.03125,
+            "kinematicShear": 0.0012876174325125347,
+            "Cf": 0.0025752348650250694,
+            "yPlus": 3.5961047667559267
+          },
+          {
+            "face": 51,
+            "x": 1.109375,
+            "xFromLeadingEdge": 1.109375,
+            "length": 0.03125,
+            "kinematicShear": 0.0012817588794904933,
+            "Cf": 0.0025635177589809865,
+            "yPlus": 3.5879144499073936
+          },
+          {
+            "face": 52,
+            "x": 1.140625,
+            "xFromLeadingEdge": 1.140625,
+            "length": 0.03125,
+            "kinematicShear": 0.0012760874971875554,
+            "Cf": 0.002552174994375111,
+            "yPlus": 3.579967950124044
+          },
+          {
+            "face": 53,
+            "x": 1.171875,
+            "xFromLeadingEdge": 1.171875,
+            "length": 0.03125,
+            "kinematicShear": 0.0012705960846616004,
+            "Cf": 0.0025411921693232007,
+            "yPlus": 3.5722567718761153
+          },
+          {
+            "face": 54,
+            "x": 1.203125,
+            "xFromLeadingEdge": 1.203125,
+            "length": 0.03125,
+            "kinematicShear": 0.001265278575630976,
+            "Cf": 0.002530557151261952,
+            "yPlus": 3.564773896766985
+          },
+          {
+            "face": 55,
+            "x": 1.234375,
+            "xFromLeadingEdge": 1.234375,
+            "length": 0.03125,
+            "kinematicShear": 0.0012601294828091679,
+            "Cf": 0.0025202589656183358,
+            "yPlus": 3.557513019771549
+          },
+          {
+            "face": 56,
+            "x": 1.265625,
+            "xFromLeadingEdge": 1.265625,
+            "length": 0.03125,
+            "kinematicShear": 0.001255142369912864,
+            "Cf": 0.002510284739825728,
+            "yPlus": 3.550466399616026
+          },
+          {
+            "face": 57,
+            "x": 1.296875,
+            "xFromLeadingEdge": 1.296875,
+            "length": 0.03125,
+            "kinematicShear": 0.00125030936938328,
+            "Cf": 0.00250061873876656,
+            "yPlus": 3.5436241653765292
+          },
+          {
+            "face": 58,
+            "x": 1.328125,
+            "xFromLeadingEdge": 1.328125,
+            "length": 0.03125,
+            "kinematicShear": 0.0012456222270427852,
+            "Cf": 0.0024912444540855705,
+            "yPlus": 3.536975784241569
+          },
+          {
+            "face": 59,
+            "x": 1.359375,
+            "xFromLeadingEdge": 1.359375,
+            "length": 0.03125,
+            "kinematicShear": 0.001241073197077133,
+            "Cf": 0.002482146394154266,
+            "yPlus": 3.5305113340180325
+          },
+          {
+            "face": 60,
+            "x": 1.390625,
+            "xFromLeadingEdge": 1.390625,
+            "length": 0.03125,
+            "kinematicShear": 0.0012366556858982958,
+            "Cf": 0.0024733113717965915,
+            "yPlus": 3.5242224316580524
+          },
+          {
+            "face": 61,
+            "x": 1.421875,
+            "xFromLeadingEdge": 1.421875,
+            "length": 0.03125,
+            "kinematicShear": 0.0012323642049868941,
+            "Cf": 0.0024647284099737882,
+            "yPlus": 3.518102184389248
+          },
+          {
+            "face": 62,
+            "x": 1.453125,
+            "xFromLeadingEdge": 1.453125,
+            "length": 0.03125,
+            "kinematicShear": 0.0012281938682493288,
+            "Cf": 0.0024563877364986576,
+            "yPlus": 3.5121444877705312
+          },
+          {
+            "face": 63,
+            "x": 1.484375,
+            "xFromLeadingEdge": 1.484375,
+            "length": 0.03125,
+            "kinematicShear": 0.001224133068674131,
+            "Cf": 0.002448266137348262,
+            "yPlus": 3.5063335472040422
+          },
+          {
+            "face": 64,
+            "x": 1.515625,
+            "xFromLeadingEdge": 1.515625,
+            "length": 0.03125,
+            "kinematicShear": 0.0012201684188341447,
+            "Cf": 0.0024403368376682893,
+            "yPlus": 3.5006508893693145
+          },
+          {
+            "face": 65,
+            "x": 1.546875,
+            "xFromLeadingEdge": 1.546875,
+            "length": 0.03125,
+            "kinematicShear": 0.0012162928705107187,
+            "Cf": 0.0024325857410214375,
+            "yPlus": 3.4950870132741136
+          },
+          {
+            "face": 66,
+            "x": 1.578125,
+            "xFromLeadingEdge": 1.578125,
+            "length": 0.03125,
+            "kinematicShear": 0.0012125068008214436,
+            "Cf": 0.002425013601642887,
+            "yPlus": 3.4896430297540824
+          },
+          {
+            "face": 67,
+            "x": 1.609375,
+            "xFromLeadingEdge": 1.609375,
+            "length": 0.03125,
+            "kinematicShear": 0.0012088096348710775,
+            "Cf": 0.002417619269742155,
+            "yPlus": 3.484318672228476
+          },
+          {
+            "face": 68,
+            "x": 1.640625,
+            "xFromLeadingEdge": 1.640625,
+            "length": 0.03125,
+            "kinematicShear": 0.0012051993044341254,
+            "Cf": 0.0024103986088682508,
+            "yPlus": 3.47911150469026
+          },
+          {
+            "face": 69,
+            "x": 1.671875,
+            "xFromLeadingEdge": 1.671875,
+            "length": 0.03125,
+            "kinematicShear": 0.001201674867618202,
+            "Cf": 0.002403349735236404,
+            "yPlus": 3.4740206926064165
+          },
+          {
+            "face": 70,
+            "x": 1.703125,
+            "xFromLeadingEdge": 1.703125,
+            "length": 0.03125,
+            "kinematicShear": 0.001198235193871361,
+            "Cf": 0.002396470387742722,
+            "yPlus": 3.469045111684149
+          },
+          {
+            "face": 71,
+            "x": 1.734375,
+            "xFromLeadingEdge": 1.734375,
+            "length": 0.03125,
+            "kinematicShear": 0.001194878761257514,
+            "Cf": 0.002389757522515028,
+            "yPlus": 3.464183052248382
+          },
+          {
+            "face": 72,
+            "x": 1.765625,
+            "xFromLeadingEdge": 1.765625,
+            "length": 0.03125,
+            "kinematicShear": 0.0011916041961793392,
+            "Cf": 0.0023832083923586785,
+            "yPlus": 3.4594329990504464
+          },
+          {
+            "face": 73,
+            "x": 1.796875,
+            "xFromLeadingEdge": 1.796875,
+            "length": 0.03125,
+            "kinematicShear": 0.0011884108798445893,
+            "Cf": 0.0023768217596891786,
+            "yPlus": 3.4547945146515464
+          },
+          {
+            "face": 74,
+            "x": 1.828125,
+            "xFromLeadingEdge": 1.828125,
+            "length": 0.03125,
+            "kinematicShear": 0.0011853006406106652,
+            "Cf": 0.0023706012812213305,
+            "yPlus": 3.4502707100932266
+          },
+          {
+            "face": 75,
+            "x": 1.859375,
+            "xFromLeadingEdge": 1.859375,
+            "length": 0.03125,
+            "kinematicShear": 0.0011822765097592252,
+            "Cf": 0.0023645530195184504,
+            "yPlus": 3.44586645453215
+          },
+          {
+            "face": 76,
+            "x": 1.890625,
+            "xFromLeadingEdge": 1.890625,
+            "length": 0.03125,
+            "kinematicShear": 0.00117936631388103,
+            "Cf": 0.00235873262776206,
+            "yPlus": 3.4416228089067107
+          },
+          {
+            "face": 77,
+            "x": 1.921875,
+            "xFromLeadingEdge": 1.921875,
+            "length": 0.03125,
+            "kinematicShear": 0.0011765126990443094,
+            "Cf": 0.002353025398088619,
+            "yPlus": 3.4374565826049364
+          },
+          {
+            "face": 78,
+            "x": 1.953125,
+            "xFromLeadingEdge": 1.953125,
+            "length": 0.03125,
+            "kinematicShear": 0.0011742212169039228,
+            "Cf": 0.0023484424338078456,
+            "yPlus": 3.434107400934788
+          },
+          {
+            "face": 79,
+            "x": 1.984375,
+            "xFromLeadingEdge": 1.984375,
+            "length": 0.03125,
+            "kinematicShear": 0.0011696774664800998,
+            "Cf": 0.0023393549329601996,
+            "yPlus": 3.4274566732003398
+          }
+        ],
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 2560,
+        "iterations": 697,
+        "scalar": {
+          "k": {
+            "residualNorm": 5.184551900218168e-14,
+            "normTarget": 1.0649533287695597e-12,
+            "maxCellResidual": 6.134716739283781e-12,
+            "maxFaceFlux": 8.341109756481613e-06,
+            "globalBalance": -4.598958411789929e-13,
+            "normRoundoffBudget": 1.1994827693312946e-17,
+            "reportedTransportBalance": {
+              "residualNorm": 5.18455192123597e-14,
+              "maxCellResidual": 6.13471679526413e-12,
+              "originalEquationCellDifference": 5.598034864435329e-20
+            }
+          },
+          "omega": {
+            "residualNorm": 1.9785907455071164e-12,
+            "normTarget": 1.1756948864007994e-06,
+            "maxCellResidual": 5.362399038840571e-10,
+            "maxFaceFlux": 112.83987394339016,
+            "globalBalance": 1.741545276046086e-13,
+            "normRoundoffBudget": 1.6226795767006422e-10,
+            "reportedTransportBalance": {
+              "residualNorm": 1.982051254118666e-12,
+              "maxCellResidual": 5.361758981662385e-10,
+              "originalEquationCellDifference": 6.400571781860109e-14
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-l9tzlbhr/face-viscosity.csv",
+            "sha256": "2e49504fa69a08afede6eb311a51cd527b2cc758d02ae8f46a0854a8ccd370ac"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 5232,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 2.0328790734103208e-20,
+            "diffusionY": 1.2705494208814505e-21
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.004605609404849448,
+              "expected": 0.004605609404849449,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -6.098573932280892e-05,
+              "expected": -6.098573932280894e-05,
+              "absolute": 2.0328790734103208e-20,
+              "relative": 2.0328790734103208e-20
+            },
+            "diffusionY": {
+              "actual": -2.710134958616986e-06,
+              "expected": -2.710134958616985e-06,
+              "absolute": 1.2705494208814505e-21,
+              "relative": 1.2705494208814505e-21
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 7.730677337836596e-10,
+            "l2": 2.286825172827515e-11,
+            "maxCellVector": 4.05858950118212e-12,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 7.730677990894355e-10,
+              "expected": 7.730677337836596e-10,
+              "absolute": 6.530577587479018e-17,
+              "relative": 6.530577587479018e-17
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.0027971135945851922,
+              "expected": 0.0027971135945851922,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "actual": -0.0004498625208088956,
+              "expected": -0.0004498625208088956,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.0027971135945851922,
+              "expected": 0.0027971135945851922,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "actual": 1.6399107026122935e-07,
+              "expected": 1.6399107026122935e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 4.5485587518712123e-10,
+            "y": 9.427550970789178e-13,
+            "magnitude": 4.5485685218474514e-10,
+            "boundaryTermScale": 2.0045661813076046,
+            "relativeToBoundary": 2.2691036914931695e-10,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 4.5485587518712123e-10,
+            "boundaryMinusSourceY": 9.427550970789178e-13,
+            "magnitude": 4.5485685218474514e-10,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 4.5485574098840914e-10,
+            "y": 9.42755840508221e-13
+          },
+          "expectedCellResidualSum": {
+            "x": 4.5485587518712123e-10,
+            "y": 9.427550970789178e-13
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.3419871208616941e-16,
+            "y": 7.4342930315208905e-19,
+            "magnitude": 1.342007712821181e-16
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0027971135945851922,
+            "y": -0.0004498625208088956
+          },
+          "wallViscousForce": {
+            "x": 0.0027971135945851922,
+            "y": 1.6399107026122935e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 2.8004535539485897e-14,
+          "l2CellImbalance": 9.250835679905994e-14,
+          "maxScaledCellImbalance": 0.010121559681655967,
+          "nativeDefinitionContinuity": 1.0165947559807083e-11,
+          "boundaryFluxSum": -3.132216708223723e-13,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 3.132216708223723e-13,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-physical-inputs/highre-a9/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/baseline/flow"
+      },
+      "valid": true,
+      "nx": 80,
+      "ny": 32,
+      "stretch": 9,
+      "cells": 2560,
+      "independentGeometry": {
+        "cells": 2560,
+        "totalArea": 2.5,
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ]
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 1.2074182697257333e-06,
+          "max_internal_skewness": 7.105427357601027e-15,
+          "max_boundary_skewness": 2.263999449391945e-15,
+          "max_concavity_deg": 0,
+          "max_cell_aspect": 780.5628210130942,
+          "min_interior_angle_deg": 90,
+          "min_face_length": 4.008657052088328e-05,
+          "min_face_weight": 0.4301473485858425,
+          "min_volume_ratio": 0.7548396019890065,
+          "min_compactness": 0.004019622495943904
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "stderr": "1 momentum=0.148739\n100 momentum=0.000725965\n200 momentum=6.54532e-05\n300 momentum=7.41899e-06\n400 momentum=5.70094e-07\n500 momentum=3.17945e-08\n600 momentum=1.59024e-09\n",
+      "retainedFiles": {
+        "outputs/native-flow/sst-wall-scale/baseline/flow.cells.csv": "33778e9d65235ce4c94102ed7fcc36683a4b6a268787a4fdb31db3a0b6bd6758",
+        "outputs/native-flow/sst-wall-scale/baseline/flow.faces.csv": "e881b658628e8b8f08df68ecbc37a71247e1788b29dc87a0a79b1bb8a0d8a6f4",
+        "outputs/native-flow/sst-wall-scale/baseline/flow.history.csv": "96442c910cf1d29ff9a7e746f0c8c32dd0bbdc71a7daddbcce8ca4bc1d22329a",
+        "outputs/native-flow/sst-wall-scale/baseline/flow.json": "8b2de1eedea437020da0964ee7579793199cf038aa541131e7143d1093dce8d1"
+      }
+    },
+    {
+      "name": "medium",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/flow",
+        "flatplate-sweep",
+        "--nu",
+        "2e-7",
+        "--speed",
+        "1",
+        "--inlet-k",
+        "2.25e-7",
+        "--inlet-omega",
+        "125",
+        "--leading-edge",
+        "0"
+      ],
+      "timeoutSeconds": 90,
+      "timedOut": false,
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/flow",
+      "meshSha256": "964b6817865b5b872f051416b1cf4b68780d9ca8e2a0bf8c332e8d5375be4ea1",
+      "probeSha256": "194221a30aa80c0025c6de80ff2a779f8f89b0d157a68c0bf13d8b855be1b010",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "rssScope": "Single direct solver subprocess; Python independent audit excluded; macOS ru_maxrss bytes",
+      "returncode": 0,
+      "processSeconds": 60.50768787501147,
+      "maximumRssBytes": 27557888,
+      "native": {
+        "case": "flatplate",
+        "flatPlateLeadingEdge": 0,
+        "flatPlateTop": "pressure-farfield",
+        "model": "SST-2003m",
+        "scope": "coupled-steady-SST-2003m",
+        "converged": true,
+        "nu": 2e-07,
+        "speed": 1,
+        "inletK": 2.25e-07,
+        "inletOmega": 125,
+        "tolerance": 1e-07,
+        "scalarRelativeTolerance": 1e-09,
+        "scalarAbsoluteTolerance": 1e-12,
+        "scalarCellTolerance": 1e-09,
+        "convection": "upwind",
+        "viscousStress": "symmetric",
+        "pressureConvention": "p/rho (SST-2003m omits isotropic k stress)",
+        "pressureDiscretization": "shared-face-gauss",
+        "iterations": 897,
+        "cells": 5120,
+        "turbulenceUpdatesPerIteration": 1,
+        "scalarCorrectionsPerUpdate": 1,
+        "solveSeconds": 60.339922833,
+        "performance": {
+          "sstUpdates": 897,
+          "sstUpdateSeconds": 51.99191338100006,
+          "sstTransportSeconds": 48.339666447999996,
+          "sstGradientSeconds": 1.9769499299999977,
+          "wallDistanceSeconds": 0.003260333,
+          "momentumLinearSeconds": 1.3669489749999995,
+          "pressureLinearSeconds": 5.314508329000008,
+          "momentumIterations": 12466,
+          "pressureIterations": 48852
+        },
+        "momentumResidual": 7.273422652064025e-10,
+        "forceX": 0,
+        "forceY": 0,
+        "pressureForceX": 0,
+        "pressureForceY": 0,
+        "discreteForceX": 0,
+        "discreteForceY": 0,
+        "reconstructedForceX": 0,
+        "reconstructedForceY": 0,
+        "wallForceX": 0.002652930823261712,
+        "wallForceY": -0.0004621100285120324,
+        "wallViscousForceX": 0.002652930823261712,
+        "wallViscousForceY": 1.727240929842396e-07,
+        "globalRelativeImbalance": 7.432943149865423e-14
+      },
+      "audit": {
+        "valid": true,
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 32,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 32
+          },
+          "outlet": {
+            "faces": 32,
+            "length": 1.0,
+            "netOutwardFlux": 0.9972774276961891,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9972774276961891,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 128,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 32,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 160,
+            "length": 2.5,
+            "netOutwardFlux": 0.0027225723037365354,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0027225723037365354,
+            "inflowFaces": 0
+          }
+        },
+        "plateWallSamples": [
+          {
+            "face": 32,
+            "x": 0.0078125,
+            "xFromLeadingEdge": 0.0078125,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0030711336978385,
+            "Cf": 0.006142267395677,
+            "yPlus": 2.3074830314816883
+          },
+          {
+            "face": 33,
+            "x": 0.02343749999999998,
+            "xFromLeadingEdge": 0.02343749999999998,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.002175882213163485,
+            "Cf": 0.00435176442632697,
+            "yPlus": 1.9422576711238848
+          },
+          {
+            "face": 34,
+            "x": 0.03906249999999999,
+            "xFromLeadingEdge": 0.03906249999999999,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.002039588371636774,
+            "Cf": 0.004079176743273548,
+            "yPlus": 1.8804440581915307
+          },
+          {
+            "face": 35,
+            "x": 0.05468750000000001,
+            "xFromLeadingEdge": 0.05468750000000001,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.0019520607142825355,
+            "Cf": 0.003904121428565071,
+            "yPlus": 1.839652584903112
+          },
+          {
+            "face": 36,
+            "x": 0.07031250000000003,
+            "xFromLeadingEdge": 0.07031250000000003,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.0018854646164953872,
+            "Cf": 0.0037709292329907744,
+            "yPlus": 1.8079996735061954
+          },
+          {
+            "face": 37,
+            "x": 0.0859375,
+            "xFromLeadingEdge": 0.0859375,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0018308331937583924,
+            "Cf": 0.0036616663875167848,
+            "yPlus": 1.7816136985942281
+          },
+          {
+            "face": 38,
+            "x": 0.10156249999999997,
+            "xFromLeadingEdge": 0.10156249999999997,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.0017825096455096356,
+            "Cf": 0.003565019291019271,
+            "yPlus": 1.757944252363646
+          },
+          {
+            "face": 39,
+            "x": 0.1171875,
+            "xFromLeadingEdge": 0.1171875,
+            "length": 0.015625000000000014,
+            "kinematicShear": 0.0017411276896394812,
+            "Cf": 0.0034822553792789625,
+            "yPlus": 1.7374185958868096
+          },
+          {
+            "face": 40,
+            "x": 0.13281249999999997,
+            "xFromLeadingEdge": 0.13281249999999997,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0017053745018801422,
+            "Cf": 0.0034107490037602844,
+            "yPlus": 1.7194875554892752
+          },
+          {
+            "face": 41,
+            "x": 0.1484375,
+            "xFromLeadingEdge": 0.1484375,
+            "length": 0.015625000000000083,
+            "kinematicShear": 0.0016742823701991294,
+            "Cf": 0.003348564740398259,
+            "yPlus": 1.7037407325275753
+          },
+          {
+            "face": 42,
+            "x": 0.1640625,
+            "xFromLeadingEdge": 0.1640625,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0016471621308537633,
+            "Cf": 0.0032943242617075267,
+            "yPlus": 1.6898856922088124
+          },
+          {
+            "face": 43,
+            "x": 0.1796875,
+            "xFromLeadingEdge": 0.1796875,
+            "length": 0.015625000000000083,
+            "kinematicShear": 0.0016228223405730239,
+            "Cf": 0.0032456446811460478,
+            "yPlus": 1.6773536701374423
+          },
+          {
+            "face": 44,
+            "x": 0.19531250000000003,
+            "xFromLeadingEdge": 0.19531250000000003,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0016008776632281982,
+            "Cf": 0.0032017553264563963,
+            "yPlus": 1.6659740291179517
+          },
+          {
+            "face": 45,
+            "x": 0.21093749999999997,
+            "xFromLeadingEdge": 0.21093749999999997,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0015810603927048329,
+            "Cf": 0.0031621207854096657,
+            "yPlus": 1.6556303690432401
+          },
+          {
+            "face": 46,
+            "x": 0.2265625,
+            "xFromLeadingEdge": 0.2265625,
+            "length": 0.015625000000000083,
+            "kinematicShear": 0.0015630648572878209,
+            "Cf": 0.0031261297145756418,
+            "yPlus": 1.6461812615746647
+          },
+          {
+            "face": 47,
+            "x": 0.2421875,
+            "xFromLeadingEdge": 0.2421875,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0015464311650492113,
+            "Cf": 0.0030928623300984226,
+            "yPlus": 1.6373987370949565
+          },
+          {
+            "face": 48,
+            "x": 0.2578125,
+            "xFromLeadingEdge": 0.2578125,
+            "length": 0.015625000000000083,
+            "kinematicShear": 0.0015310195632921252,
+            "Cf": 0.0030620391265842504,
+            "yPlus": 1.6292192185391425
+          },
+          {
+            "face": 49,
+            "x": 0.2734375,
+            "xFromLeadingEdge": 0.2734375,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0015167283650714502,
+            "Cf": 0.0030334567301429005,
+            "yPlus": 1.6215974725512208
+          },
+          {
+            "face": 50,
+            "x": 0.2890625,
+            "xFromLeadingEdge": 0.2890625,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.001503444044500008,
+            "Cf": 0.003006888089000016,
+            "yPlus": 1.6144804443583212
+          },
+          {
+            "face": 51,
+            "x": 0.3046875,
+            "xFromLeadingEdge": 0.3046875,
+            "length": 0.015625000000000056,
+            "kinematicShear": 0.0014910612140128922,
+            "Cf": 0.0029821224280257843,
+            "yPlus": 1.607818017219207
+          },
+          {
+            "face": 52,
+            "x": 0.3203125,
+            "xFromLeadingEdge": 0.3203125,
+            "length": 0.015625,
+            "kinematicShear": 0.0014794155285641135,
+            "Cf": 0.002958831057128227,
+            "yPlus": 1.6015269117176483
+          },
+          {
+            "face": 53,
+            "x": 0.3359375,
+            "xFromLeadingEdge": 0.3359375,
+            "length": 0.015625000000000056,
+            "kinematicShear": 0.0014683923624894631,
+            "Cf": 0.0029367847249789263,
+            "yPlus": 1.595549245272614
+          },
+          {
+            "face": 54,
+            "x": 0.3515625,
+            "xFromLeadingEdge": 0.3515625,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0014579596685354178,
+            "Cf": 0.0029159193370708355,
+            "yPlus": 1.5898710799986127
+          },
+          {
+            "face": 55,
+            "x": 0.3671875,
+            "xFromLeadingEdge": 0.3671875,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0014480932676485634,
+            "Cf": 0.0028961865352971267,
+            "yPlus": 1.5844824076296966
+          },
+          {
+            "face": 56,
+            "x": 0.3828125,
+            "xFromLeadingEdge": 0.3828125,
+            "length": 0.015625000000000056,
+            "kinematicShear": 0.0014387529159904384,
+            "Cf": 0.002877505831980877,
+            "yPlus": 1.579364103005706
+          },
+          {
+            "face": 57,
+            "x": 0.3984375,
+            "xFromLeadingEdge": 0.3984375,
+            "length": 0.015625,
+            "kinematicShear": 0.0014298926203817977,
+            "Cf": 0.0028597852407635954,
+            "yPlus": 1.5744934808266773
+          },
+          {
+            "face": 58,
+            "x": 0.4140625,
+            "xFromLeadingEdge": 0.4140625,
+            "length": 0.015625000000000056,
+            "kinematicShear": 0.0014214683918502566,
+            "Cf": 0.0028429367837005132,
+            "yPlus": 1.5698485562464553
+          },
+          {
+            "face": 59,
+            "x": 0.4296875,
+            "xFromLeadingEdge": 0.4296875,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.0014134415301163307,
+            "Cf": 0.0028268830602326614,
+            "yPlus": 1.5654099078723982
+          },
+          {
+            "face": 60,
+            "x": 0.4453125,
+            "xFromLeadingEdge": 0.4453125,
+            "length": 0.015624999999999944,
+            "kinematicShear": 0.001405743234429937,
+            "Cf": 0.002811486468859874,
+            "yPlus": 1.5611410924243474
+          },
+          {
+            "face": 61,
+            "x": 0.4609375,
+            "xFromLeadingEdge": 0.4609375,
+            "length": 0.015625000000000056,
+            "kinematicShear": 0.001398331751394386,
+            "Cf": 0.002796663502788772,
+            "yPlus": 1.5570202610534725
+          },
+          {
+            "face": 62,
+            "x": 0.4765625,
+            "xFromLeadingEdge": 0.4765625,
+            "length": 0.015625,
+            "kinematicShear": 0.001391193477367812,
+            "Cf": 0.002782386954735624,
+            "yPlus": 1.5530409986281215
+          },
+          {
+            "face": 63,
+            "x": 0.4921875,
+            "xFromLeadingEdge": 0.4921875,
+            "length": 0.015625,
+            "kinematicShear": 0.0013843281855574667,
+            "Cf": 0.0027686563711149335,
+            "yPlus": 1.5492042691419936
+          },
+          {
+            "face": 64,
+            "x": 0.5078125,
+            "xFromLeadingEdge": 0.5078125,
+            "length": 0.015625,
+            "kinematicShear": 0.0013777355072254445,
+            "Cf": 0.002755471014450889,
+            "yPlus": 1.545510927288298
+          },
+          {
+            "face": 65,
+            "x": 0.5234375,
+            "xFromLeadingEdge": 0.5234375,
+            "length": 0.015625,
+            "kinematicShear": 0.001371403547081634,
+            "Cf": 0.002742807094163268,
+            "yPlus": 1.5419553161060202
+          },
+          {
+            "face": 66,
+            "x": 0.5390625,
+            "xFromLeadingEdge": 0.5390625,
+            "length": 0.015625,
+            "kinematicShear": 0.0013653099308934063,
+            "Cf": 0.0027306198617868126,
+            "yPlus": 1.5385257841295747
+          },
+          {
+            "face": 67,
+            "x": 0.5546875,
+            "xFromLeadingEdge": 0.5546875,
+            "length": 0.015625,
+            "kinematicShear": 0.001359426977404327,
+            "Cf": 0.002718853954808654,
+            "yPlus": 1.5352075460937593
+          },
+          {
+            "face": 68,
+            "x": 0.5703125,
+            "xFromLeadingEdge": 0.5703125,
+            "length": 0.015625,
+            "kinematicShear": 0.0013537530782984956,
+            "Cf": 0.002707506156596991,
+            "yPlus": 1.532000415129659
+          },
+          {
+            "face": 69,
+            "x": 0.5859375,
+            "xFromLeadingEdge": 0.5859375,
+            "length": 0.015625,
+            "kinematicShear": 0.001348273590100154,
+            "Cf": 0.002696547180200308,
+            "yPlus": 1.5288967878524136
+          },
+          {
+            "face": 70,
+            "x": 0.6015625,
+            "xFromLeadingEdge": 0.6015625,
+            "length": 0.015625,
+            "kinematicShear": 0.0013429749206402323,
+            "Cf": 0.0026859498412804645,
+            "yPlus": 1.525889574132773
+          },
+          {
+            "face": 71,
+            "x": 0.6171875,
+            "xFromLeadingEdge": 0.6171875,
+            "length": 0.015625,
+            "kinematicShear": 0.0013378315781392674,
+            "Cf": 0.002675663156278535,
+            "yPlus": 1.5229648354577157
+          },
+          {
+            "face": 72,
+            "x": 0.6328125,
+            "xFromLeadingEdge": 0.6328125,
+            "length": 0.015625,
+            "kinematicShear": 0.0013328232774258905,
+            "Cf": 0.002665646554851781,
+            "yPlus": 1.520111480099978
+          },
+          {
+            "face": 73,
+            "x": 0.6484375,
+            "xFromLeadingEdge": 0.6484375,
+            "length": 0.015625,
+            "kinematicShear": 0.0013279420076198515,
+            "Cf": 0.002655884015239703,
+            "yPlus": 1.5173253341052426
+          },
+          {
+            "face": 74,
+            "x": 0.6640625,
+            "xFromLeadingEdge": 0.6640625,
+            "length": 0.015625,
+            "kinematicShear": 0.0013231873157655888,
+            "Cf": 0.0026463746315311776,
+            "yPlus": 1.5146065091307794
+          },
+          {
+            "face": 75,
+            "x": 0.6796875,
+            "xFromLeadingEdge": 0.6796875,
+            "length": 0.015625,
+            "kinematicShear": 0.0013185591615591675,
+            "Cf": 0.002637118323118335,
+            "yPlus": 1.511955345242489
+          },
+          {
+            "face": 76,
+            "x": 0.6953125,
+            "xFromLeadingEdge": 0.6953125,
+            "length": 0.015625,
+            "kinematicShear": 0.0013140578213456664,
+            "Cf": 0.0026281156426913328,
+            "yPlus": 1.509372357683776
+          },
+          {
+            "face": 77,
+            "x": 0.7109375,
+            "xFromLeadingEdge": 0.7109375,
+            "length": 0.015625,
+            "kinematicShear": 0.0013096850800171295,
+            "Cf": 0.002619370160034259,
+            "yPlus": 1.5068589238536458
+          },
+          {
+            "face": 78,
+            "x": 0.7265625,
+            "xFromLeadingEdge": 0.7265625,
+            "length": 0.015625,
+            "kinematicShear": 0.0013054387172615584,
+            "Cf": 0.002610877434523117,
+            "yPlus": 1.5044141129975623
+          },
+          {
+            "face": 79,
+            "x": 0.7421875,
+            "xFromLeadingEdge": 0.7421875,
+            "length": 0.015625,
+            "kinematicShear": 0.0013013126074862486,
+            "Cf": 0.002602625214972497,
+            "yPlus": 1.5020347249846868
+          },
+          {
+            "face": 80,
+            "x": 0.7578125,
+            "xFromLeadingEdge": 0.7578125,
+            "length": 0.015625,
+            "kinematicShear": 0.0012973010389481596,
+            "Cf": 0.0025946020778963193,
+            "yPlus": 1.4997177697386264
+          },
+          {
+            "face": 81,
+            "x": 0.7734375,
+            "xFromLeadingEdge": 0.7734375,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.0012933983545141523,
+            "Cf": 0.0025867967090283045,
+            "yPlus": 1.4974602622260103
+          },
+          {
+            "face": 82,
+            "x": 0.7890625,
+            "xFromLeadingEdge": 0.7890625,
+            "length": 0.015625000000000222,
+            "kinematicShear": 0.001289598397100017,
+            "Cf": 0.002579196794200034,
+            "yPlus": 1.4952589022120386
+          },
+          {
+            "face": 83,
+            "x": 0.8046875,
+            "xFromLeadingEdge": 0.8046875,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.0012858949949347816,
+            "Cf": 0.002571789989869563,
+            "yPlus": 1.4931103548827636
+          },
+          {
+            "face": 84,
+            "x": 0.8203125,
+            "xFromLeadingEdge": 0.8203125,
+            "length": 0.015625,
+            "kinematicShear": 0.0012822822197273039,
+            "Cf": 0.0025645644394546078,
+            "yPlus": 1.4910114019033551
+          },
+          {
+            "face": 85,
+            "x": 0.8359375,
+            "xFromLeadingEdge": 0.8359375,
+            "length": 0.015625,
+            "kinematicShear": 0.0012787546049571196,
+            "Cf": 0.002557509209914239,
+            "yPlus": 1.4889590704534879
+          },
+          {
+            "face": 86,
+            "x": 0.8515625,
+            "xFromLeadingEdge": 0.8515625,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.0012753058309070073,
+            "Cf": 0.0025506116618140146,
+            "yPlus": 1.4869498693278527
+          },
+          {
+            "face": 87,
+            "x": 0.8671875,
+            "xFromLeadingEdge": 0.8671875,
+            "length": 0.015625000000000222,
+            "kinematicShear": 0.001271926401157881,
+            "Cf": 0.002543852802315762,
+            "yPlus": 1.48497843005344
+          },
+          {
+            "face": 88,
+            "x": 0.8828125,
+            "xFromLeadingEdge": 0.8828125,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.001268608094759809,
+            "Cf": 0.002537216189519618,
+            "yPlus": 1.4830400979647602
+          },
+          {
+            "face": 89,
+            "x": 0.8984375,
+            "xFromLeadingEdge": 0.8984375,
+            "length": 0.015625,
+            "kinematicShear": 0.00126534717607316,
+            "Cf": 0.00253069435214632,
+            "yPlus": 1.4811328166956252
+          },
+          {
+            "face": 90,
+            "x": 0.9140625,
+            "xFromLeadingEdge": 0.9140625,
+            "length": 0.015625,
+            "kinematicShear": 0.0012621433520576802,
+            "Cf": 0.0025242867041153604,
+            "yPlus": 1.479256534627839
+          },
+          {
+            "face": 91,
+            "x": 0.9296875,
+            "xFromLeadingEdge": 0.9296875,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.0012589975273386452,
+            "Cf": 0.0025179950546772903,
+            "yPlus": 1.4774119006476323
+          },
+          {
+            "face": 92,
+            "x": 0.9453125,
+            "xFromLeadingEdge": 0.9453125,
+            "length": 0.015625000000000222,
+            "kinematicShear": 0.001255910673599335,
+            "Cf": 0.00251182134719867,
+            "yPlus": 1.4755996042711552
+          },
+          {
+            "face": 93,
+            "x": 0.9609375,
+            "xFromLeadingEdge": 0.9609375,
+            "length": 0.015624999999999889,
+            "kinematicShear": 0.0012528832562847356,
+            "Cf": 0.0025057665125694712,
+            "yPlus": 1.4738200385525553
+          },
+          {
+            "face": 94,
+            "x": 0.9765625,
+            "xFromLeadingEdge": 0.9765625,
+            "length": 0.015625,
+            "kinematicShear": 0.0012499145836261255,
+            "Cf": 0.002499829167252251,
+            "yPlus": 1.472072914833153
+          },
+          {
+            "face": 95,
+            "x": 0.9921875,
+            "xFromLeadingEdge": 0.9921875,
+            "length": 0.015625,
+            "kinematicShear": 0.0012470042135454102,
+            "Cf": 0.0024940084270908204,
+            "yPlus": 1.4703580881287608
+          },
+          {
+            "face": 96,
+            "x": 1.0078125,
+            "xFromLeadingEdge": 1.0078125,
+            "length": 0.015625,
+            "kinematicShear": 0.001244153498148538,
+            "Cf": 0.002488306996297076,
+            "yPlus": 1.4686764696247891
+          },
+          {
+            "face": 97,
+            "x": 1.0234375,
+            "xFromLeadingEdge": 1.0234375,
+            "length": 0.015625,
+            "kinematicShear": 0.0012413623301285172,
+            "Cf": 0.0024827246602570343,
+            "yPlus": 1.4670281101113871
+          },
+          {
+            "face": 98,
+            "x": 1.0390625,
+            "xFromLeadingEdge": 1.0390625,
+            "length": 0.015625,
+            "kinematicShear": 0.001238628070692262,
+            "Cf": 0.002477256141384524,
+            "yPlus": 1.4654115608546727
+          },
+          {
+            "face": 99,
+            "x": 1.0546875,
+            "xFromLeadingEdge": 1.0546875,
+            "length": 0.015625,
+            "kinematicShear": 0.0012359484676235436,
+            "Cf": 0.002471896935247087,
+            "yPlus": 1.4638255935088993
+          },
+          {
+            "face": 100,
+            "x": 1.0703125,
+            "xFromLeadingEdge": 1.0703125,
+            "length": 0.015625,
+            "kinematicShear": 0.0012333218739495287,
+            "Cf": 0.0024666437478990575,
+            "yPlus": 1.4622693312269743
+          },
+          {
+            "face": 101,
+            "x": 1.0859375,
+            "xFromLeadingEdge": 1.0859375,
+            "length": 0.015625,
+            "kinematicShear": 0.0012307463979308508,
+            "Cf": 0.0024614927958617016,
+            "yPlus": 1.4607417463230699
+          },
+          {
+            "face": 102,
+            "x": 1.1015625,
+            "xFromLeadingEdge": 1.1015625,
+            "length": 0.015625,
+            "kinematicShear": 0.0012282199820971204,
+            "Cf": 0.002456439964194241,
+            "yPlus": 1.459241706624172
+          },
+          {
+            "face": 103,
+            "x": 1.1171875,
+            "xFromLeadingEdge": 1.1171875,
+            "length": 0.015625,
+            "kinematicShear": 0.0012257405159395753,
+            "Cf": 0.0024514810318791505,
+            "yPlus": 1.457768042152994
+          },
+          {
+            "face": 104,
+            "x": 1.1328125,
+            "xFromLeadingEdge": 1.1328125,
+            "length": 0.015625,
+            "kinematicShear": 0.001223305875593933,
+            "Cf": 0.002446611751187866,
+            "yPlus": 1.4563195687705168
+          },
+          {
+            "face": 105,
+            "x": 1.1484375,
+            "xFromLeadingEdge": 1.1484375,
+            "length": 0.015625,
+            "kinematicShear": 0.0012209139817970966,
+            "Cf": 0.0024418279635941933,
+            "yPlus": 1.4548951228459468
+          },
+          {
+            "face": 106,
+            "x": 1.1640625,
+            "xFromLeadingEdge": 1.1640625,
+            "length": 0.015625,
+            "kinematicShear": 0.001218562774922619,
+            "Cf": 0.002437125549845238,
+            "yPlus": 1.4534935466672325
+          },
+          {
+            "face": 107,
+            "x": 1.1796875,
+            "xFromLeadingEdge": 1.1796875,
+            "length": 0.015625,
+            "kinematicShear": 0.0012162503216166939,
+            "Cf": 0.0024325006432333878,
+            "yPlus": 1.4521137523148482
+          },
+          {
+            "face": 108,
+            "x": 1.1953125,
+            "xFromLeadingEdge": 1.1953125,
+            "length": 0.015625,
+            "kinematicShear": 0.0012139747087862893,
+            "Cf": 0.0024279494175725785,
+            "yPlus": 1.4507546588221218
+          },
+          {
+            "face": 109,
+            "x": 1.2109375,
+            "xFromLeadingEdge": 1.2109375,
+            "length": 0.015625,
+            "kinematicShear": 0.0012117327777490595,
+            "Cf": 0.002423465555498119,
+            "yPlus": 1.4494144352935374
+          },
+          {
+            "face": 110,
+            "x": 1.2265625,
+            "xFromLeadingEdge": 1.2265625,
+            "length": 0.015625,
+            "kinematicShear": 0.0012095205229382111,
+            "Cf": 0.0024190410458764223,
+            "yPlus": 1.4480907363044018
+          },
+          {
+            "face": 111,
+            "x": 1.2421875,
+            "xFromLeadingEdge": 1.2421875,
+            "length": 0.015625,
+            "kinematicShear": 0.0012073351056827502,
+            "Cf": 0.0024146702113655005,
+            "yPlus": 1.4467819063842382
+          },
+          {
+            "face": 112,
+            "x": 1.2578125,
+            "xFromLeadingEdge": 1.2578125,
+            "length": 0.015625,
+            "kinematicShear": 0.0012051754152641442,
+            "Cf": 0.0024103508305282884,
+            "yPlus": 1.4454873198253213
+          },
+          {
+            "face": 113,
+            "x": 1.2734375,
+            "xFromLeadingEdge": 1.2734375,
+            "length": 0.015625,
+            "kinematicShear": 0.001203041306363612,
+            "Cf": 0.002406082612727224,
+            "yPlus": 1.4442069277059515
+          },
+          {
+            "face": 114,
+            "x": 1.2890625,
+            "xFromLeadingEdge": 1.2890625,
+            "length": 0.015625,
+            "kinematicShear": 0.0012009331521180677,
+            "Cf": 0.0024018663042361353,
+            "yPlus": 1.4429409919774931
+          },
+          {
+            "face": 115,
+            "x": 1.3046875,
+            "xFromLeadingEdge": 1.3046875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011988515356363687,
+            "Cf": 0.0023977030712727374,
+            "yPlus": 1.4416899013335538
+          },
+          {
+            "face": 116,
+            "x": 1.3203125,
+            "xFromLeadingEdge": 1.3203125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011967970056747483,
+            "Cf": 0.0023935940113494966,
+            "yPlus": 1.440454024693802
+          },
+          {
+            "face": 117,
+            "x": 1.3359375,
+            "xFromLeadingEdge": 1.3359375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011947699736789517,
+            "Cf": 0.0023895399473579035,
+            "yPlus": 1.439233649067414
+          },
+          {
+            "face": 118,
+            "x": 1.3515625,
+            "xFromLeadingEdge": 1.3515625,
+            "length": 0.015625,
+            "kinematicShear": 0.001192770663668146,
+            "Cf": 0.002385541327336292,
+            "yPlus": 1.4380289489600255
+          },
+          {
+            "face": 119,
+            "x": 1.3671875,
+            "xFromLeadingEdge": 1.3671875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011907990936507638,
+            "Cf": 0.0023815981873015275,
+            "yPlus": 1.4368399746651053
+          },
+          {
+            "face": 120,
+            "x": 1.3828125,
+            "xFromLeadingEdge": 1.3828125,
+            "length": 0.015625,
+            "kinematicShear": 0.001188855073102255,
+            "Cf": 0.00237771014620451,
+            "yPlus": 1.4356666502143904
+          },
+          {
+            "face": 121,
+            "x": 1.3984375,
+            "xFromLeadingEdge": 1.3984375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011869379213202199,
+            "Cf": 0.0023738758426404397,
+            "yPlus": 1.434508602667842
+          },
+          {
+            "face": 122,
+            "x": 1.4140625,
+            "xFromLeadingEdge": 1.4140625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011850474710277399,
+            "Cf": 0.0023700949420554797,
+            "yPlus": 1.4333657678887906
+          },
+          {
+            "face": 123,
+            "x": 1.4296875,
+            "xFromLeadingEdge": 1.4296875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011831849220252698,
+            "Cf": 0.0023663698440505396,
+            "yPlus": 1.4322389084698381
+          },
+          {
+            "face": 124,
+            "x": 1.4453125,
+            "xFromLeadingEdge": 1.4453125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011813504869678955,
+            "Cf": 0.002362700973935791,
+            "yPlus": 1.4311281909564282
+          },
+          {
+            "face": 125,
+            "x": 1.4609375,
+            "xFromLeadingEdge": 1.4609375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011795428392432851,
+            "Cf": 0.0023590856784865702,
+            "yPlus": 1.4300328487942404
+          },
+          {
+            "face": 126,
+            "x": 1.4765625,
+            "xFromLeadingEdge": 1.4765625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011777610067489636,
+            "Cf": 0.0023555220134979273,
+            "yPlus": 1.4289523276250167
+          },
+          {
+            "face": 127,
+            "x": 1.4921875,
+            "xFromLeadingEdge": 1.4921875,
+            "length": 0.015625,
+            "kinematicShear": 0.001176004497086529,
+            "Cf": 0.002352008994173058,
+            "yPlus": 1.4278863621639095
+          },
+          {
+            "face": 128,
+            "x": 1.5078125,
+            "xFromLeadingEdge": 1.5078125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011742727529697459,
+            "Cf": 0.0023485455059394918,
+            "yPlus": 1.4268346464604502
+          },
+          {
+            "face": 129,
+            "x": 1.5234375,
+            "xFromLeadingEdge": 1.5234375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011725651536092726,
+            "Cf": 0.0023451303072185453,
+            "yPlus": 1.425796834619285
+          },
+          {
+            "face": 130,
+            "x": 1.5390625,
+            "xFromLeadingEdge": 1.5390625,
+            "length": 0.015625,
+            "kinematicShear": 0.001170881047718974,
+            "Cf": 0.002341762095437948,
+            "yPlus": 1.4247725607685386
+          },
+          {
+            "face": 131,
+            "x": 1.5546875,
+            "xFromLeadingEdge": 1.5546875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011692197617759591,
+            "Cf": 0.0023384395235519183,
+            "yPlus": 1.4237614440513755
+          },
+          {
+            "face": 132,
+            "x": 1.5703125,
+            "xFromLeadingEdge": 1.5703125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011675805952071389,
+            "Cf": 0.0023351611904142778,
+            "yPlus": 1.4227630856750448
+          },
+          {
+            "face": 133,
+            "x": 1.5859375,
+            "xFromLeadingEdge": 1.5859375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011659628399796923,
+            "Cf": 0.0023319256799593847,
+            "yPlus": 1.4217770808277452
+          },
+          {
+            "face": 134,
+            "x": 1.6015625,
+            "xFromLeadingEdge": 1.6015625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011643657830283903,
+            "Cf": 0.0023287315660567806,
+            "yPlus": 1.4208030201742006
+          },
+          {
+            "face": 135,
+            "x": 1.6171875,
+            "xFromLeadingEdge": 1.6171875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011627887241133427,
+            "Cf": 0.0023255774482266855,
+            "yPlus": 1.4198405007777055
+          },
+          {
+            "face": 136,
+            "x": 1.6328125,
+            "xFromLeadingEdge": 1.6328125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011612309726369945,
+            "Cf": 0.002322461945273989,
+            "yPlus": 1.4188891242108148
+          },
+          {
+            "face": 137,
+            "x": 1.6484375,
+            "xFromLeadingEdge": 1.6484375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011596918244170056,
+            "Cf": 0.002319383648834011,
+            "yPlus": 1.4179484824026902
+          },
+          {
+            "face": 138,
+            "x": 1.6640625,
+            "xFromLeadingEdge": 1.6640625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011581705644059927,
+            "Cf": 0.0023163411288119854,
+            "yPlus": 1.417018159302016
+          },
+          {
+            "face": 139,
+            "x": 1.6796875,
+            "xFromLeadingEdge": 1.6796875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011566667801106406,
+            "Cf": 0.002313333560221281,
+            "yPlus": 1.4160979227396788
+          },
+          {
+            "face": 140,
+            "x": 1.6953125,
+            "xFromLeadingEdge": 1.6953125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011551797637079986,
+            "Cf": 0.0023103595274159973,
+            "yPlus": 1.4151873588225012
+          },
+          {
+            "face": 141,
+            "x": 1.7109375,
+            "xFromLeadingEdge": 1.7109375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011537079556290055,
+            "Cf": 0.002307415911258011,
+            "yPlus": 1.4142855303260966
+          },
+          {
+            "face": 142,
+            "x": 1.7265625,
+            "xFromLeadingEdge": 1.7265625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011522498437145795,
+            "Cf": 0.002304499687429159,
+            "yPlus": 1.4133915265372872
+          },
+          {
+            "face": 143,
+            "x": 1.7421875,
+            "xFromLeadingEdge": 1.7421875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011508044728844465,
+            "Cf": 0.002301608945768893,
+            "yPlus": 1.4125047761776295
+          },
+          {
+            "face": 144,
+            "x": 1.7578125,
+            "xFromLeadingEdge": 1.7578125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011493712847106092,
+            "Cf": 0.0022987425694212184,
+            "yPlus": 1.4116249499938252
+          },
+          {
+            "face": 145,
+            "x": 1.7734375,
+            "xFromLeadingEdge": 1.7734375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011479501562675627,
+            "Cf": 0.0022959003125351254,
+            "yPlus": 1.410751985407314
+          },
+          {
+            "face": 146,
+            "x": 1.7890625,
+            "xFromLeadingEdge": 1.7890625,
+            "length": 0.015625,
+            "kinematicShear": 0.001146541254914715,
+            "Cf": 0.00229308250982943,
+            "yPlus": 1.4098859980634457
+          },
+          {
+            "face": 147,
+            "x": 1.8046875,
+            "xFromLeadingEdge": 1.8046875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011451449456233607,
+            "Cf": 0.0022902898912467214,
+            "yPlus": 1.4090272253637248
+          },
+          {
+            "face": 148,
+            "x": 1.8203125,
+            "xFromLeadingEdge": 1.8203125,
+            "length": 0.015625,
+            "kinematicShear": 0.0011437617434692884,
+            "Cf": 0.0022875234869385768,
+            "yPlus": 1.4081759975830621
+          },
+          {
+            "face": 149,
+            "x": 1.8359375,
+            "xFromLeadingEdge": 1.8359375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011423922912675792,
+            "Cf": 0.0022847845825351583,
+            "yPlus": 1.4073327243596723
+          },
+          {
+            "face": 150,
+            "x": 1.8515625,
+            "xFromLeadingEdge": 1.8515625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011410373655459597,
+            "Cf": 0.0022820747310919195,
+            "yPlus": 1.4064978985940668
+          },
+          {
+            "face": 151,
+            "x": 1.8671875,
+            "xFromLeadingEdge": 1.8671875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011396979438594262,
+            "Cf": 0.0022793958877188525,
+            "yPlus": 1.4056721381819046
+          },
+          {
+            "face": 152,
+            "x": 1.8828125,
+            "xFromLeadingEdge": 1.8828125,
+            "length": 0.015625,
+            "kinematicShear": 0.001138375339080312,
+            "Cf": 0.002276750678160624,
+            "yPlus": 1.4048562692095297
+          },
+          {
+            "face": 153,
+            "x": 1.8984375,
+            "xFromLeadingEdge": 1.8984375,
+            "length": 0.015625,
+            "kinematicShear": 0.0011370713298863124,
+            "Cf": 0.002274142659772625,
+            "yPlus": 1.404051407072864
+          },
+          {
+            "face": 154,
+            "x": 1.9140625,
+            "xFromLeadingEdge": 1.9140625,
+            "length": 0.015625,
+            "kinematicShear": 0.001135789024443505,
+            "Cf": 0.00227157804888701,
+            "yPlus": 1.4032594907715488
+          },
+          {
+            "face": 155,
+            "x": 1.9296875,
+            "xFromLeadingEdge": 1.9296875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011345303772339478,
+            "Cf": 0.0022690607544678955,
+            "yPlus": 1.4024817502799405
+          },
+          {
+            "face": 156,
+            "x": 1.9453125,
+            "xFromLeadingEdge": 1.9453125,
+            "length": 0.015625,
+            "kinematicShear": 0.001133312587475469,
+            "Cf": 0.002266625174950938,
+            "yPlus": 1.4017288455939483
+          },
+          {
+            "face": 157,
+            "x": 1.9609375,
+            "xFromLeadingEdge": 1.9609375,
+            "length": 0.015625,
+            "kinematicShear": 0.00113207432526551,
+            "Cf": 0.00226414865053102,
+            "yPlus": 1.4009628688250726
+          },
+          {
+            "face": 158,
+            "x": 1.9765625,
+            "xFromLeadingEdge": 1.9765625,
+            "length": 0.015625,
+            "kinematicShear": 0.0011311229434832876,
+            "Cf": 0.0022622458869665752,
+            "yPlus": 1.4003740688377933
+          },
+          {
+            "face": 159,
+            "x": 1.9921875,
+            "xFromLeadingEdge": 1.9921875,
+            "length": 0.015625,
+            "kinematicShear": 0.0011285938480418284,
+            "Cf": 0.0022571876960836568,
+            "yPlus": 1.3988076336263027
+          }
+        ],
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 5120,
+        "iterations": 897,
+        "scalar": {
+          "k": {
+            "residualNorm": 4.750908327089395e-14,
+            "normTarget": 1.0363879400835236e-12,
+            "maxCellResidual": 2.0299663581059116e-12,
+            "maxFaceFlux": 8.603725470487866e-06,
+            "globalBalance": -9.003543236497976e-13,
+            "normRoundoffBudget": 1.7497327473172145e-17,
+            "reportedTransportBalance": {
+              "residualNorm": 4.7509084024248863e-14,
+              "maxCellResidual": 2.0299663581059116e-12,
+              "originalEquationCellDifference": 0.0
+            }
+          },
+          "omega": {
+            "residualNorm": 4.199303078587515e-12,
+            "normTarget": 9.86840412623772e-06,
+            "maxCellResidual": 6.434800600330339e-10,
+            "maxFaceFlux": 791.284817739841,
+            "globalBalance": 4.020890608316674e-13,
+            "normRoundoffBudget": 1.609229586419875e-09,
+            "reportedTransportBalance": {
+              "residualNorm": 4.174728077515256e-12,
+              "maxCellResidual": 6.436887111549642e-10,
+              "originalEquationCellDifference": 2.086511219303208e-13
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-xduwq0bk/face-viscosity.csv",
+            "sha256": "055525d430bcd640ab690ad4da874de061bfd293231c47ccb3d9a2d1d2bc1ccd"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 10432,
+          "maxFaceDeviation": {
+            "pressure": 1.7618285302889447e-18,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.6940658945086007e-20,
+            "diffusionY": 8.470329472543003e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": -0.00016066175174024458,
+              "expected": -0.00016066175174024634,
+              "absolute": 1.7618285302889447e-18,
+              "relative": 1.7618285302889447e-18
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -2.379389133570296e-05,
+              "expected": -2.3793891335702977e-05,
+              "absolute": 1.6940658945086007e-20,
+              "relative": 1.6940658945086007e-20
+            },
+            "diffusionY": {
+              "actual": -2.2071808694839817e-06,
+              "expected": -2.2071808694839825e-06,
+              "absolute": 8.470329472543003e-22,
+              "relative": 8.470329472543003e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 7.273422518580155e-10,
+            "l2": 3.2674162861356847e-11,
+            "maxCellVector": 2.9466152516680896e-12,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 7.273422652064025e-10,
+              "expected": 7.273422518580155e-10,
+              "absolute": 1.334838704590169e-17,
+              "relative": 1.334838704590169e-17
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.002652930823261712,
+              "expected": 0.002652930823261712,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "actual": -0.0004621100285120324,
+              "expected": -0.0004621100285120324,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.002652930823261712,
+              "expected": 0.002652930823261712,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "actual": 1.727240929842396e-07,
+              "expected": 1.727240929842396e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 9.109633047899024e-10,
+            "y": -3.8270217073491097e-13,
+            "magnitude": 9.109633851778523e-10,
+            "boundaryTermScale": 2.004314660420659,
+            "relativeToBoundary": 4.545011834552277e-10,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 9.109633047899024e-10,
+            "boundaryMinusSourceY": -3.8270217073491097e-13,
+            "magnitude": 9.109633851778523e-10,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 9.109633825208984e-10,
+            "y": -3.827027799423874e-13
+          },
+          "expectedCellResidualSum": {
+            "x": 9.109633047899024e-10,
+            "y": -3.8270217073491097e-13
+          },
+          "cellBoundaryConservationDifference": {
+            "x": 7.773099595966546e-17,
+            "y": -6.092074764362995e-19,
+            "magnitude": 7.773338321873604e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.002652930823261712,
+            "y": -0.0004621100285120324
+          },
+          "wallViscousForce": {
+            "x": 0.002652930823261712,
+            "y": 1.727240929842396e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0452522094389627e-14,
+          "l2CellImbalance": 9.343710500069829e-14,
+          "maxScaledCellImbalance": 0.006932255735016885,
+          "nativeDefinitionContinuity": 6.985471328881587e-12,
+          "boundaryFluxSum": -7.432943149865423e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 7.432943149865423e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/flow"
+      },
+      "valid": true,
+      "nx": 160,
+      "ny": 32,
+      "stretch": 10,
+      "cells": 5120,
+      "independentGeometry": {
+        "cells": 5120,
+        "totalArea": 2.5,
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ]
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 1.2074182697257333e-06,
+          "max_internal_skewness": 0,
+          "max_boundary_skewness": 5.551115123125784e-16,
+          "max_concavity_deg": 0,
+          "max_cell_aspect": 939.1469701380024,
+          "min_interior_angle_deg": 90,
+          "min_face_length": 1.6655172907185073e-05,
+          "min_face_weight": 0.4225046348141878,
+          "min_volume_ratio": 0.7316156289466409,
+          "min_compactness": 0.0033415935927764828
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "stderr": "1 momentum=0.15049\n100 momentum=0.000867435\n200 momentum=0.000137776\n300 momentum=2.54474e-05\n400 momentum=3.1091e-06\n500 momentum=2.85794e-07\n600 momentum=2.29877e-08\n700 momentum=1.85823e-09\n800 momentum=7.29671e-10\n",
+      "retainedFiles": {
+        "outputs/native-flow/sst-wall-scale/medium/flow.cells.csv": "9b6ee2adb8c18365b3bb2ba8edfdfc830d989bd5ab86584c0135928f43405758",
+        "outputs/native-flow/sst-wall-scale/medium/flow.faces.csv": "62e579d9543110b30c98b83d0fa51da5bce3c2fe96190c34030dca39c742513d",
+        "outputs/native-flow/sst-wall-scale/medium/flow.history.csv": "e168526678f85a927599743e364561a08b02298e30278f542ca999a93a597798",
+        "outputs/native-flow/sst-wall-scale/medium/flow.json": "382b2d09b783b7508c4b5d0a81c6d54fe88fd2308cb5d7be8f9afbcefc0a22c9"
+      }
+    },
+    {
+      "name": "fine",
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/fine/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/fine/flow",
+        "flatplate-sweep",
+        "--nu",
+        "2e-7",
+        "--speed",
+        "1",
+        "--inlet-k",
+        "2.25e-7",
+        "--inlet-omega",
+        "125",
+        "--leading-edge",
+        "0"
+      ],
+      "timeoutSeconds": 90,
+      "timedOut": true,
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/fine/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/fine/flow",
+      "meshSha256": "7614a85ea5174180687abe627f0de3705bb4f2d26e52f23feb97d99fd655c462",
+      "probeSha256": "194221a30aa80c0025c6de80ff2a779f8f89b0d157a68c0bf13d8b855be1b010",
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "rssScope": "Single direct solver subprocess; Python independent audit excluded; macOS ru_maxrss bytes",
+      "returncode": null,
+      "processSeconds": 90.0122505420004,
+      "maximumRssBytes": 59637760,
+      "valid": false,
+      "nx": 400,
+      "ny": 32,
+      "stretch": 11,
+      "cells": 12800,
+      "independentGeometry": {
+        "cells": 12800,
+        "totalArea": 2.5,
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ]
+      },
+      "solverQuality": {
+        "quality_class": "solver_quality",
+        "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+        "valid": true,
+        "policy": {
+          "max_non_orthogonality_deg": 70,
+          "max_internal_skewness": 4,
+          "max_boundary_skewness": 4,
+          "max_concavity_deg": 80,
+          "max_cell_aspect": 1000,
+          "min_interior_angle_deg": 0.5,
+          "min_face_length": 1.01e-10,
+          "min_face_weight": 0.05,
+          "min_volume_ratio": 0.01
+        },
+        "metrics": {
+          "max_non_orthogonality_deg": 1.2074182697257333e-06,
+          "max_internal_skewness": 0,
+          "max_boundary_skewness": 6.938893903907624e-16,
+          "max_concavity_deg": 0,
+          "max_cell_aspect": 913.1974322955185,
+          "min_interior_angle_deg": 90,
+          "min_face_length": 6.851586924852843e-06,
+          "min_face_weight": 0.4148988457967684,
+          "min_volume_ratio": 0.7091061824373976,
+          "min_compactness": 0.003436444662161739
+        },
+        "issue_count": 0,
+        "issues": []
+      },
+      "stderr": "1 momentum=0.151542\n100 momentum=0.00107875\n",
+      "retainedFiles": {}
+    }
+  ],
+  "cases": [
+    {
+      "valid": true,
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "physicalInputs": {
+        "nu": 2e-07,
+        "speed": 1,
+        "inletK": 2.25e-07,
+        "inletOmega": 125
+      },
+      "bounds": [
+        -0.5,
+        0.0,
+        2.0,
+        1.0
+      ],
+      "plateReynolds": 10000000.0,
+      "scalarCorrectionsPerUpdate": 1,
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 32
+        },
+        "outlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.9971204518655667,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9971204518655667,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 64,
+          "length": 2.0,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 16,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 80,
+          "length": 2.5,
+          "netOutwardFlux": 0.002879548134120057,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.002879548134120057,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 16,
+          "x": 0.015625000000000007,
+          "xFromLeadingEdge": 0.015625000000000007,
+          "length": 0.03124999999999996,
+          "kinematicShear": 0.002835058043735547,
+          "Cf": 0.005670116087471094,
+          "yPlus": 5.336049986482564
+        },
+        {
+          "face": 17,
+          "x": 0.046875,
+          "xFromLeadingEdge": 0.046875,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.002204454878212782,
+          "Cf": 0.004408909756425564,
+          "yPlus": 4.705323840405521
+        },
+        {
+          "face": 18,
+          "x": 0.078125,
+          "xFromLeadingEdge": 0.078125,
+          "length": 0.03124999999999996,
+          "kinematicShear": 0.0020300289740512894,
+          "Cf": 0.004060057948102579,
+          "yPlus": 4.515335553490442
+        },
+        {
+          "face": 19,
+          "x": 0.10937499999999999,
+          "xFromLeadingEdge": 0.10937499999999999,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.0019140307233961437,
+          "Cf": 0.0038280614467922874,
+          "yPlus": 4.384432255854229
+        },
+        {
+          "face": 20,
+          "x": 0.140625,
+          "xFromLeadingEdge": 0.140625,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.0018304544958722758,
+          "Cf": 0.0036609089917445515,
+          "yPlus": 4.287640656284286
+        },
+        {
+          "face": 21,
+          "x": 0.17187500000000006,
+          "xFromLeadingEdge": 0.17187500000000006,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.0017667705415904812,
+          "Cf": 0.0035335410831809624,
+          "yPlus": 4.212394009951897
+        },
+        {
+          "face": 22,
+          "x": 0.203125,
+          "xFromLeadingEdge": 0.203125,
+          "length": 0.03124999999999989,
+          "kinematicShear": 0.0017155797035949933,
+          "Cf": 0.0034311594071899866,
+          "yPlus": 4.150919983397946
+        },
+        {
+          "face": 23,
+          "x": 0.23437499999999994,
+          "xFromLeadingEdge": 0.23437499999999994,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.0016721733425349872,
+          "Cf": 0.0033443466850699745,
+          "yPlus": 4.098071767204686
+        },
+        {
+          "face": 24,
+          "x": 0.265625,
+          "xFromLeadingEdge": 0.265625,
+          "length": 0.03125000000000003,
+          "kinematicShear": 0.0016342644741064146,
+          "Cf": 0.003268528948212829,
+          "yPlus": 4.0513529658580705
+        },
+        {
+          "face": 25,
+          "x": 0.296875,
+          "xFromLeadingEdge": 0.296875,
+          "length": 0.03125,
+          "kinematicShear": 0.0016018095273507892,
+          "Cf": 0.0032036190547015783,
+          "yPlus": 4.01092321609214
+        },
+        {
+          "face": 26,
+          "x": 0.328125,
+          "xFromLeadingEdge": 0.328125,
+          "length": 0.031250000000000056,
+          "kinematicShear": 0.0015734512643826434,
+          "Cf": 0.003146902528765287,
+          "yPlus": 3.975260191810897
+        },
+        {
+          "face": 27,
+          "x": 0.359375,
+          "xFromLeadingEdge": 0.359375,
+          "length": 0.03124999999999989,
+          "kinematicShear": 0.0015482234409119856,
+          "Cf": 0.003096446881823971,
+          "yPlus": 3.9432628853908014
+        },
+        {
+          "face": 28,
+          "x": 0.390625,
+          "xFromLeadingEdge": 0.390625,
+          "length": 0.031250000000000056,
+          "kinematicShear": 0.0015256955362243747,
+          "Cf": 0.0030513910724487493,
+          "yPlus": 3.9144689237479025
+        },
+        {
+          "face": 29,
+          "x": 0.421875,
+          "xFromLeadingEdge": 0.421875,
+          "length": 0.03125,
+          "kinematicShear": 0.0015054794070876278,
+          "Cf": 0.0030109588141752556,
+          "yPlus": 3.8884482324283733
+        },
+        {
+          "face": 30,
+          "x": 0.453125,
+          "xFromLeadingEdge": 0.453125,
+          "length": 0.03125,
+          "kinematicShear": 0.0014869888264123067,
+          "Cf": 0.0029739776528246134,
+          "yPlus": 3.864495130520507
+        },
+        {
+          "face": 31,
+          "x": 0.484375,
+          "xFromLeadingEdge": 0.484375,
+          "length": 0.03125,
+          "kinematicShear": 0.0014699776468447342,
+          "Cf": 0.0029399552936894683,
+          "yPlus": 3.8423265982986763
+        },
+        {
+          "face": 32,
+          "x": 0.515625,
+          "xFromLeadingEdge": 0.515625,
+          "length": 0.03125,
+          "kinematicShear": 0.0014543000704629553,
+          "Cf": 0.0029086001409259106,
+          "yPlus": 3.821782121191086
+        },
+        {
+          "face": 33,
+          "x": 0.546875,
+          "xFromLeadingEdge": 0.546875,
+          "length": 0.03125,
+          "kinematicShear": 0.0014398304090993805,
+          "Cf": 0.002879660818198761,
+          "yPlus": 3.802722047086211
+        },
+        {
+          "face": 34,
+          "x": 0.578125,
+          "xFromLeadingEdge": 0.578125,
+          "length": 0.03125,
+          "kinematicShear": 0.001426416488570631,
+          "Cf": 0.002852832977141262,
+          "yPlus": 3.7849669098621934
+        },
+        {
+          "face": 35,
+          "x": 0.609375,
+          "xFromLeadingEdge": 0.609375,
+          "length": 0.03125,
+          "kinematicShear": 0.0014138531296534061,
+          "Cf": 0.0028277062593068123,
+          "yPlus": 3.76826173757141
+        },
+        {
+          "face": 36,
+          "x": 0.640625,
+          "xFromLeadingEdge": 0.640625,
+          "length": 0.03125,
+          "kinematicShear": 0.0014020385721452632,
+          "Cf": 0.0028040771442905264,
+          "yPlus": 3.752484376805131
+        },
+        {
+          "face": 37,
+          "x": 0.671875,
+          "xFromLeadingEdge": 0.671875,
+          "length": 0.03125,
+          "kinematicShear": 0.0013909118414785337,
+          "Cf": 0.0027818236829570673,
+          "yPlus": 3.7375646545423966
+        },
+        {
+          "face": 38,
+          "x": 0.703125,
+          "xFromLeadingEdge": 0.703125,
+          "length": 0.03125,
+          "kinematicShear": 0.0013804211561766837,
+          "Cf": 0.0027608423123533675,
+          "yPlus": 3.72344304514428
+        },
+        {
+          "face": 39,
+          "x": 0.734375,
+          "xFromLeadingEdge": 0.734375,
+          "length": 0.03125,
+          "kinematicShear": 0.0013705189335044374,
+          "Cf": 0.002741037867008875,
+          "yPlus": 3.7100642581497167
+        },
+        {
+          "face": 40,
+          "x": 0.765625,
+          "xFromLeadingEdge": 0.765625,
+          "length": 0.03124999999999989,
+          "kinematicShear": 0.0013611584747017164,
+          "Cf": 0.002722316949403433,
+          "yPlus": 3.69737293266835
+        },
+        {
+          "face": 41,
+          "x": 0.796875,
+          "xFromLeadingEdge": 0.796875,
+          "length": 0.03125000000000011,
+          "kinematicShear": 0.0013522684362901212,
+          "Cf": 0.0027045368725802424,
+          "yPlus": 3.6852789575651075
+        },
+        {
+          "face": 42,
+          "x": 0.828125,
+          "xFromLeadingEdge": 0.828125,
+          "length": 0.03125,
+          "kinematicShear": 0.0013437840639751487,
+          "Cf": 0.0026875681279502975,
+          "yPlus": 3.6736997191177974
+        },
+        {
+          "face": 43,
+          "x": 0.859375,
+          "xFromLeadingEdge": 0.859375,
+          "length": 0.03125000000000011,
+          "kinematicShear": 0.0013356709814003752,
+          "Cf": 0.0026713419628007504,
+          "yPlus": 3.662592967227812
+        },
+        {
+          "face": 44,
+          "x": 0.890625,
+          "xFromLeadingEdge": 0.890625,
+          "length": 0.03124999999999989,
+          "kinematicShear": 0.001327907956891975,
+          "Cf": 0.00265581591378395,
+          "yPlus": 3.651933817902815
+        },
+        {
+          "face": 45,
+          "x": 0.921875,
+          "xFromLeadingEdge": 0.921875,
+          "length": 0.03124999999999989,
+          "kinematicShear": 0.0013204766254014167,
+          "Cf": 0.0026409532508028335,
+          "yPlus": 3.641700877369189
+        },
+        {
+          "face": 46,
+          "x": 0.953125,
+          "xFromLeadingEdge": 0.953125,
+          "length": 0.03125000000000011,
+          "kinematicShear": 0.0013133569016551229,
+          "Cf": 0.0026267138033102457,
+          "yPlus": 3.6318699770478626
+        },
+        {
+          "face": 47,
+          "x": 0.984375,
+          "xFromLeadingEdge": 0.984375,
+          "length": 0.03125,
+          "kinematicShear": 0.0013065286905872592,
+          "Cf": 0.0026130573811745184,
+          "yPlus": 3.6224165330305165
+        },
+        {
+          "face": 48,
+          "x": 1.015625,
+          "xFromLeadingEdge": 1.015625,
+          "length": 0.03125,
+          "kinematicShear": 0.0012999745817204456,
+          "Cf": 0.0025999491634408913,
+          "yPlus": 3.61331931149168
+        },
+        {
+          "face": 49,
+          "x": 1.046875,
+          "xFromLeadingEdge": 1.046875,
+          "length": 0.03125,
+          "kinematicShear": 0.0012936791682631162,
+          "Cf": 0.0025873583365262323,
+          "yPlus": 3.604559545733014
+        },
+        {
+          "face": 50,
+          "x": 1.078125,
+          "xFromLeadingEdge": 1.078125,
+          "length": 0.03125,
+          "kinematicShear": 0.0012876174325125347,
+          "Cf": 0.0025752348650250694,
+          "yPlus": 3.5961047667559267
+        },
+        {
+          "face": 51,
+          "x": 1.109375,
+          "xFromLeadingEdge": 1.109375,
+          "length": 0.03125,
+          "kinematicShear": 0.0012817588794904933,
+          "Cf": 0.0025635177589809865,
+          "yPlus": 3.5879144499073936
+        },
+        {
+          "face": 52,
+          "x": 1.140625,
+          "xFromLeadingEdge": 1.140625,
+          "length": 0.03125,
+          "kinematicShear": 0.0012760874971875554,
+          "Cf": 0.002552174994375111,
+          "yPlus": 3.579967950124044
+        },
+        {
+          "face": 53,
+          "x": 1.171875,
+          "xFromLeadingEdge": 1.171875,
+          "length": 0.03125,
+          "kinematicShear": 0.0012705960846616004,
+          "Cf": 0.0025411921693232007,
+          "yPlus": 3.5722567718761153
+        },
+        {
+          "face": 54,
+          "x": 1.203125,
+          "xFromLeadingEdge": 1.203125,
+          "length": 0.03125,
+          "kinematicShear": 0.001265278575630976,
+          "Cf": 0.002530557151261952,
+          "yPlus": 3.564773896766985
+        },
+        {
+          "face": 55,
+          "x": 1.234375,
+          "xFromLeadingEdge": 1.234375,
+          "length": 0.03125,
+          "kinematicShear": 0.0012601294828091679,
+          "Cf": 0.0025202589656183358,
+          "yPlus": 3.557513019771549
+        },
+        {
+          "face": 56,
+          "x": 1.265625,
+          "xFromLeadingEdge": 1.265625,
+          "length": 0.03125,
+          "kinematicShear": 0.001255142369912864,
+          "Cf": 0.002510284739825728,
+          "yPlus": 3.550466399616026
+        },
+        {
+          "face": 57,
+          "x": 1.296875,
+          "xFromLeadingEdge": 1.296875,
+          "length": 0.03125,
+          "kinematicShear": 0.00125030936938328,
+          "Cf": 0.00250061873876656,
+          "yPlus": 3.5436241653765292
+        },
+        {
+          "face": 58,
+          "x": 1.328125,
+          "xFromLeadingEdge": 1.328125,
+          "length": 0.03125,
+          "kinematicShear": 0.0012456222270427852,
+          "Cf": 0.0024912444540855705,
+          "yPlus": 3.536975784241569
+        },
+        {
+          "face": 59,
+          "x": 1.359375,
+          "xFromLeadingEdge": 1.359375,
+          "length": 0.03125,
+          "kinematicShear": 0.001241073197077133,
+          "Cf": 0.002482146394154266,
+          "yPlus": 3.5305113340180325
+        },
+        {
+          "face": 60,
+          "x": 1.390625,
+          "xFromLeadingEdge": 1.390625,
+          "length": 0.03125,
+          "kinematicShear": 0.0012366556858982958,
+          "Cf": 0.0024733113717965915,
+          "yPlus": 3.5242224316580524
+        },
+        {
+          "face": 61,
+          "x": 1.421875,
+          "xFromLeadingEdge": 1.421875,
+          "length": 0.03125,
+          "kinematicShear": 0.0012323642049868941,
+          "Cf": 0.0024647284099737882,
+          "yPlus": 3.518102184389248
+        },
+        {
+          "face": 62,
+          "x": 1.453125,
+          "xFromLeadingEdge": 1.453125,
+          "length": 0.03125,
+          "kinematicShear": 0.0012281938682493288,
+          "Cf": 0.0024563877364986576,
+          "yPlus": 3.5121444877705312
+        },
+        {
+          "face": 63,
+          "x": 1.484375,
+          "xFromLeadingEdge": 1.484375,
+          "length": 0.03125,
+          "kinematicShear": 0.001224133068674131,
+          "Cf": 0.002448266137348262,
+          "yPlus": 3.5063335472040422
+        },
+        {
+          "face": 64,
+          "x": 1.515625,
+          "xFromLeadingEdge": 1.515625,
+          "length": 0.03125,
+          "kinematicShear": 0.0012201684188341447,
+          "Cf": 0.0024403368376682893,
+          "yPlus": 3.5006508893693145
+        },
+        {
+          "face": 65,
+          "x": 1.546875,
+          "xFromLeadingEdge": 1.546875,
+          "length": 0.03125,
+          "kinematicShear": 0.0012162928705107187,
+          "Cf": 0.0024325857410214375,
+          "yPlus": 3.4950870132741136
+        },
+        {
+          "face": 66,
+          "x": 1.578125,
+          "xFromLeadingEdge": 1.578125,
+          "length": 0.03125,
+          "kinematicShear": 0.0012125068008214436,
+          "Cf": 0.002425013601642887,
+          "yPlus": 3.4896430297540824
+        },
+        {
+          "face": 67,
+          "x": 1.609375,
+          "xFromLeadingEdge": 1.609375,
+          "length": 0.03125,
+          "kinematicShear": 0.0012088096348710775,
+          "Cf": 0.002417619269742155,
+          "yPlus": 3.484318672228476
+        },
+        {
+          "face": 68,
+          "x": 1.640625,
+          "xFromLeadingEdge": 1.640625,
+          "length": 0.03125,
+          "kinematicShear": 0.0012051993044341254,
+          "Cf": 0.0024103986088682508,
+          "yPlus": 3.47911150469026
+        },
+        {
+          "face": 69,
+          "x": 1.671875,
+          "xFromLeadingEdge": 1.671875,
+          "length": 0.03125,
+          "kinematicShear": 0.001201674867618202,
+          "Cf": 0.002403349735236404,
+          "yPlus": 3.4740206926064165
+        },
+        {
+          "face": 70,
+          "x": 1.703125,
+          "xFromLeadingEdge": 1.703125,
+          "length": 0.03125,
+          "kinematicShear": 0.001198235193871361,
+          "Cf": 0.002396470387742722,
+          "yPlus": 3.469045111684149
+        },
+        {
+          "face": 71,
+          "x": 1.734375,
+          "xFromLeadingEdge": 1.734375,
+          "length": 0.03125,
+          "kinematicShear": 0.001194878761257514,
+          "Cf": 0.002389757522515028,
+          "yPlus": 3.464183052248382
+        },
+        {
+          "face": 72,
+          "x": 1.765625,
+          "xFromLeadingEdge": 1.765625,
+          "length": 0.03125,
+          "kinematicShear": 0.0011916041961793392,
+          "Cf": 0.0023832083923586785,
+          "yPlus": 3.4594329990504464
+        },
+        {
+          "face": 73,
+          "x": 1.796875,
+          "xFromLeadingEdge": 1.796875,
+          "length": 0.03125,
+          "kinematicShear": 0.0011884108798445893,
+          "Cf": 0.0023768217596891786,
+          "yPlus": 3.4547945146515464
+        },
+        {
+          "face": 74,
+          "x": 1.828125,
+          "xFromLeadingEdge": 1.828125,
+          "length": 0.03125,
+          "kinematicShear": 0.0011853006406106652,
+          "Cf": 0.0023706012812213305,
+          "yPlus": 3.4502707100932266
+        },
+        {
+          "face": 75,
+          "x": 1.859375,
+          "xFromLeadingEdge": 1.859375,
+          "length": 0.03125,
+          "kinematicShear": 0.0011822765097592252,
+          "Cf": 0.0023645530195184504,
+          "yPlus": 3.44586645453215
+        },
+        {
+          "face": 76,
+          "x": 1.890625,
+          "xFromLeadingEdge": 1.890625,
+          "length": 0.03125,
+          "kinematicShear": 0.00117936631388103,
+          "Cf": 0.00235873262776206,
+          "yPlus": 3.4416228089067107
+        },
+        {
+          "face": 77,
+          "x": 1.921875,
+          "xFromLeadingEdge": 1.921875,
+          "length": 0.03125,
+          "kinematicShear": 0.0011765126990443094,
+          "Cf": 0.002353025398088619,
+          "yPlus": 3.4374565826049364
+        },
+        {
+          "face": 78,
+          "x": 1.953125,
+          "xFromLeadingEdge": 1.953125,
+          "length": 0.03125,
+          "kinematicShear": 0.0011742212169039228,
+          "Cf": 0.0023484424338078456,
+          "yPlus": 3.434107400934788
+        },
+        {
+          "face": 79,
+          "x": 1.984375,
+          "xFromLeadingEdge": 1.984375,
+          "length": 0.03125,
+          "kinematicShear": 0.0011696774664800998,
+          "Cf": 0.0023393549329601996,
+          "yPlus": 3.4274566732003398
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 2560,
+      "iterations": 697,
+      "scalar": {
+        "k": {
+          "residualNorm": 5.184551900218168e-14,
+          "normTarget": 1.0649533287695597e-12,
+          "maxCellResidual": 6.134716739283781e-12,
+          "maxFaceFlux": 8.341109756481613e-06,
+          "globalBalance": -4.598958411789929e-13,
+          "normRoundoffBudget": 1.1994827693312946e-17,
+          "reportedTransportBalance": {
+            "residualNorm": 5.18455192123597e-14,
+            "maxCellResidual": 6.13471679526413e-12,
+            "originalEquationCellDifference": 5.598034864435329e-20
+          }
+        },
+        "omega": {
+          "residualNorm": 1.9785907455071164e-12,
+          "normTarget": 1.1756948864007994e-06,
+          "maxCellResidual": 5.362399038840571e-10,
+          "maxFaceFlux": 112.83987394339016,
+          "globalBalance": 1.741545276046086e-13,
+          "normRoundoffBudget": 1.6226795767006422e-10,
+          "reportedTransportBalance": {
+            "residualNorm": 1.982051254118666e-12,
+            "maxCellResidual": 5.361758981662385e-10,
+            "originalEquationCellDifference": 6.400571781860109e-14
+          }
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-l9tzlbhr/face-viscosity.csv",
+          "sha256": "2e49504fa69a08afede6eb311a51cd527b2cc758d02ae8f46a0854a8ccd370ac"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 5232,
+        "maxFaceDeviation": {
+          "pressure": 8.673617379884035e-19,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 2.0328790734103208e-20,
+          "diffusionY": 1.2705494208814505e-21
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": 0.004605609404849448,
+            "expected": 0.004605609404849449,
+            "absolute": 8.673617379884035e-19,
+            "relative": 8.673617379884035e-19
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -6.098573932280892e-05,
+            "expected": -6.098573932280894e-05,
+            "absolute": 2.0328790734103208e-20,
+            "relative": 2.0328790734103208e-20
+          },
+          "diffusionY": {
+            "actual": -2.710134958616986e-06,
+            "expected": -2.710134958616985e-06,
+            "absolute": 1.2705494208814505e-21,
+            "relative": 1.2705494208814505e-21
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 7.730677337836596e-10,
+          "l2": 2.286825172827515e-11,
+          "maxCellVector": 4.05858950118212e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 7.730677990894355e-10,
+            "expected": 7.730677337836596e-10,
+            "absolute": 6.530577587479018e-17,
+            "relative": 6.530577587479018e-17
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.0027971135945851922,
+            "expected": 0.0027971135945851922,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": -0.0004498625208088956,
+            "expected": -0.0004498625208088956,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.0027971135945851922,
+            "expected": 0.0027971135945851922,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 1.6399107026122935e-07,
+            "expected": 1.6399107026122935e-07,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 4.5485587518712123e-10,
+          "y": 9.427550970789178e-13,
+          "magnitude": 4.5485685218474514e-10,
+          "boundaryTermScale": 2.0045661813076046,
+          "relativeToBoundary": 2.2691036914931695e-10,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 4.5485587518712123e-10,
+          "boundaryMinusSourceY": 9.427550970789178e-13,
+          "magnitude": 4.5485685218474514e-10,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 4.5485574098840914e-10,
+          "y": 9.42755840508221e-13
+        },
+        "expectedCellResidualSum": {
+          "x": 4.5485587518712123e-10,
+          "y": 9.427550970789178e-13
+        },
+        "cellBoundaryConservationDifference": {
+          "x": -1.3419871208616941e-16,
+          "y": 7.4342930315208905e-19,
+          "magnitude": 1.342007712821181e-16
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.0027971135945851922,
+          "y": -0.0004498625208088956
+        },
+        "wallViscousForce": {
+          "x": 0.0027971135945851922,
+          "y": 1.6399107026122935e-07
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 2.8004535539485897e-14,
+        "l2CellImbalance": 9.250835679905994e-14,
+        "maxScaledCellImbalance": 0.010121559681655967,
+        "nativeDefinitionContinuity": 1.0165947559807083e-11,
+        "boundaryFluxSum": -3.132216708223723e-13,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 3.132216708223723e-13,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.5811488300841898e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-physical-inputs/highre-a9/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/baseline/flow",
+      "name": "baseline",
+      "nx": 80,
+      "ny": 32,
+      "stretch": 9,
+      "solveSeconds": 19.837028375,
+      "maximumRssBytes": 15155200
+    },
+    {
+      "valid": true,
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "physicalInputs": {
+        "nu": 2e-07,
+        "speed": 1,
+        "inletK": 2.25e-07,
+        "inletOmega": 125
+      },
+      "bounds": [
+        -0.5,
+        0.0,
+        2.0,
+        1.0
+      ],
+      "plateReynolds": 10000000.0,
+      "scalarCorrectionsPerUpdate": 1,
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 32
+        },
+        "outlet": {
+          "faces": 32,
+          "length": 1.0,
+          "netOutwardFlux": 0.9972774276961891,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9972774276961891,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 128,
+          "length": 2.0,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 32,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 160,
+          "length": 2.5,
+          "netOutwardFlux": 0.0027225723037365354,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0027225723037365354,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 32,
+          "x": 0.0078125,
+          "xFromLeadingEdge": 0.0078125,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0030711336978385,
+          "Cf": 0.006142267395677,
+          "yPlus": 2.3074830314816883
+        },
+        {
+          "face": 33,
+          "x": 0.02343749999999998,
+          "xFromLeadingEdge": 0.02343749999999998,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.002175882213163485,
+          "Cf": 0.00435176442632697,
+          "yPlus": 1.9422576711238848
+        },
+        {
+          "face": 34,
+          "x": 0.03906249999999999,
+          "xFromLeadingEdge": 0.03906249999999999,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.002039588371636774,
+          "Cf": 0.004079176743273548,
+          "yPlus": 1.8804440581915307
+        },
+        {
+          "face": 35,
+          "x": 0.05468750000000001,
+          "xFromLeadingEdge": 0.05468750000000001,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.0019520607142825355,
+          "Cf": 0.003904121428565071,
+          "yPlus": 1.839652584903112
+        },
+        {
+          "face": 36,
+          "x": 0.07031250000000003,
+          "xFromLeadingEdge": 0.07031250000000003,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.0018854646164953872,
+          "Cf": 0.0037709292329907744,
+          "yPlus": 1.8079996735061954
+        },
+        {
+          "face": 37,
+          "x": 0.0859375,
+          "xFromLeadingEdge": 0.0859375,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0018308331937583924,
+          "Cf": 0.0036616663875167848,
+          "yPlus": 1.7816136985942281
+        },
+        {
+          "face": 38,
+          "x": 0.10156249999999997,
+          "xFromLeadingEdge": 0.10156249999999997,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.0017825096455096356,
+          "Cf": 0.003565019291019271,
+          "yPlus": 1.757944252363646
+        },
+        {
+          "face": 39,
+          "x": 0.1171875,
+          "xFromLeadingEdge": 0.1171875,
+          "length": 0.015625000000000014,
+          "kinematicShear": 0.0017411276896394812,
+          "Cf": 0.0034822553792789625,
+          "yPlus": 1.7374185958868096
+        },
+        {
+          "face": 40,
+          "x": 0.13281249999999997,
+          "xFromLeadingEdge": 0.13281249999999997,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0017053745018801422,
+          "Cf": 0.0034107490037602844,
+          "yPlus": 1.7194875554892752
+        },
+        {
+          "face": 41,
+          "x": 0.1484375,
+          "xFromLeadingEdge": 0.1484375,
+          "length": 0.015625000000000083,
+          "kinematicShear": 0.0016742823701991294,
+          "Cf": 0.003348564740398259,
+          "yPlus": 1.7037407325275753
+        },
+        {
+          "face": 42,
+          "x": 0.1640625,
+          "xFromLeadingEdge": 0.1640625,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0016471621308537633,
+          "Cf": 0.0032943242617075267,
+          "yPlus": 1.6898856922088124
+        },
+        {
+          "face": 43,
+          "x": 0.1796875,
+          "xFromLeadingEdge": 0.1796875,
+          "length": 0.015625000000000083,
+          "kinematicShear": 0.0016228223405730239,
+          "Cf": 0.0032456446811460478,
+          "yPlus": 1.6773536701374423
+        },
+        {
+          "face": 44,
+          "x": 0.19531250000000003,
+          "xFromLeadingEdge": 0.19531250000000003,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0016008776632281982,
+          "Cf": 0.0032017553264563963,
+          "yPlus": 1.6659740291179517
+        },
+        {
+          "face": 45,
+          "x": 0.21093749999999997,
+          "xFromLeadingEdge": 0.21093749999999997,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0015810603927048329,
+          "Cf": 0.0031621207854096657,
+          "yPlus": 1.6556303690432401
+        },
+        {
+          "face": 46,
+          "x": 0.2265625,
+          "xFromLeadingEdge": 0.2265625,
+          "length": 0.015625000000000083,
+          "kinematicShear": 0.0015630648572878209,
+          "Cf": 0.0031261297145756418,
+          "yPlus": 1.6461812615746647
+        },
+        {
+          "face": 47,
+          "x": 0.2421875,
+          "xFromLeadingEdge": 0.2421875,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0015464311650492113,
+          "Cf": 0.0030928623300984226,
+          "yPlus": 1.6373987370949565
+        },
+        {
+          "face": 48,
+          "x": 0.2578125,
+          "xFromLeadingEdge": 0.2578125,
+          "length": 0.015625000000000083,
+          "kinematicShear": 0.0015310195632921252,
+          "Cf": 0.0030620391265842504,
+          "yPlus": 1.6292192185391425
+        },
+        {
+          "face": 49,
+          "x": 0.2734375,
+          "xFromLeadingEdge": 0.2734375,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0015167283650714502,
+          "Cf": 0.0030334567301429005,
+          "yPlus": 1.6215974725512208
+        },
+        {
+          "face": 50,
+          "x": 0.2890625,
+          "xFromLeadingEdge": 0.2890625,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.001503444044500008,
+          "Cf": 0.003006888089000016,
+          "yPlus": 1.6144804443583212
+        },
+        {
+          "face": 51,
+          "x": 0.3046875,
+          "xFromLeadingEdge": 0.3046875,
+          "length": 0.015625000000000056,
+          "kinematicShear": 0.0014910612140128922,
+          "Cf": 0.0029821224280257843,
+          "yPlus": 1.607818017219207
+        },
+        {
+          "face": 52,
+          "x": 0.3203125,
+          "xFromLeadingEdge": 0.3203125,
+          "length": 0.015625,
+          "kinematicShear": 0.0014794155285641135,
+          "Cf": 0.002958831057128227,
+          "yPlus": 1.6015269117176483
+        },
+        {
+          "face": 53,
+          "x": 0.3359375,
+          "xFromLeadingEdge": 0.3359375,
+          "length": 0.015625000000000056,
+          "kinematicShear": 0.0014683923624894631,
+          "Cf": 0.0029367847249789263,
+          "yPlus": 1.595549245272614
+        },
+        {
+          "face": 54,
+          "x": 0.3515625,
+          "xFromLeadingEdge": 0.3515625,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0014579596685354178,
+          "Cf": 0.0029159193370708355,
+          "yPlus": 1.5898710799986127
+        },
+        {
+          "face": 55,
+          "x": 0.3671875,
+          "xFromLeadingEdge": 0.3671875,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0014480932676485634,
+          "Cf": 0.0028961865352971267,
+          "yPlus": 1.5844824076296966
+        },
+        {
+          "face": 56,
+          "x": 0.3828125,
+          "xFromLeadingEdge": 0.3828125,
+          "length": 0.015625000000000056,
+          "kinematicShear": 0.0014387529159904384,
+          "Cf": 0.002877505831980877,
+          "yPlus": 1.579364103005706
+        },
+        {
+          "face": 57,
+          "x": 0.3984375,
+          "xFromLeadingEdge": 0.3984375,
+          "length": 0.015625,
+          "kinematicShear": 0.0014298926203817977,
+          "Cf": 0.0028597852407635954,
+          "yPlus": 1.5744934808266773
+        },
+        {
+          "face": 58,
+          "x": 0.4140625,
+          "xFromLeadingEdge": 0.4140625,
+          "length": 0.015625000000000056,
+          "kinematicShear": 0.0014214683918502566,
+          "Cf": 0.0028429367837005132,
+          "yPlus": 1.5698485562464553
+        },
+        {
+          "face": 59,
+          "x": 0.4296875,
+          "xFromLeadingEdge": 0.4296875,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.0014134415301163307,
+          "Cf": 0.0028268830602326614,
+          "yPlus": 1.5654099078723982
+        },
+        {
+          "face": 60,
+          "x": 0.4453125,
+          "xFromLeadingEdge": 0.4453125,
+          "length": 0.015624999999999944,
+          "kinematicShear": 0.001405743234429937,
+          "Cf": 0.002811486468859874,
+          "yPlus": 1.5611410924243474
+        },
+        {
+          "face": 61,
+          "x": 0.4609375,
+          "xFromLeadingEdge": 0.4609375,
+          "length": 0.015625000000000056,
+          "kinematicShear": 0.001398331751394386,
+          "Cf": 0.002796663502788772,
+          "yPlus": 1.5570202610534725
+        },
+        {
+          "face": 62,
+          "x": 0.4765625,
+          "xFromLeadingEdge": 0.4765625,
+          "length": 0.015625,
+          "kinematicShear": 0.001391193477367812,
+          "Cf": 0.002782386954735624,
+          "yPlus": 1.5530409986281215
+        },
+        {
+          "face": 63,
+          "x": 0.4921875,
+          "xFromLeadingEdge": 0.4921875,
+          "length": 0.015625,
+          "kinematicShear": 0.0013843281855574667,
+          "Cf": 0.0027686563711149335,
+          "yPlus": 1.5492042691419936
+        },
+        {
+          "face": 64,
+          "x": 0.5078125,
+          "xFromLeadingEdge": 0.5078125,
+          "length": 0.015625,
+          "kinematicShear": 0.0013777355072254445,
+          "Cf": 0.002755471014450889,
+          "yPlus": 1.545510927288298
+        },
+        {
+          "face": 65,
+          "x": 0.5234375,
+          "xFromLeadingEdge": 0.5234375,
+          "length": 0.015625,
+          "kinematicShear": 0.001371403547081634,
+          "Cf": 0.002742807094163268,
+          "yPlus": 1.5419553161060202
+        },
+        {
+          "face": 66,
+          "x": 0.5390625,
+          "xFromLeadingEdge": 0.5390625,
+          "length": 0.015625,
+          "kinematicShear": 0.0013653099308934063,
+          "Cf": 0.0027306198617868126,
+          "yPlus": 1.5385257841295747
+        },
+        {
+          "face": 67,
+          "x": 0.5546875,
+          "xFromLeadingEdge": 0.5546875,
+          "length": 0.015625,
+          "kinematicShear": 0.001359426977404327,
+          "Cf": 0.002718853954808654,
+          "yPlus": 1.5352075460937593
+        },
+        {
+          "face": 68,
+          "x": 0.5703125,
+          "xFromLeadingEdge": 0.5703125,
+          "length": 0.015625,
+          "kinematicShear": 0.0013537530782984956,
+          "Cf": 0.002707506156596991,
+          "yPlus": 1.532000415129659
+        },
+        {
+          "face": 69,
+          "x": 0.5859375,
+          "xFromLeadingEdge": 0.5859375,
+          "length": 0.015625,
+          "kinematicShear": 0.001348273590100154,
+          "Cf": 0.002696547180200308,
+          "yPlus": 1.5288967878524136
+        },
+        {
+          "face": 70,
+          "x": 0.6015625,
+          "xFromLeadingEdge": 0.6015625,
+          "length": 0.015625,
+          "kinematicShear": 0.0013429749206402323,
+          "Cf": 0.0026859498412804645,
+          "yPlus": 1.525889574132773
+        },
+        {
+          "face": 71,
+          "x": 0.6171875,
+          "xFromLeadingEdge": 0.6171875,
+          "length": 0.015625,
+          "kinematicShear": 0.0013378315781392674,
+          "Cf": 0.002675663156278535,
+          "yPlus": 1.5229648354577157
+        },
+        {
+          "face": 72,
+          "x": 0.6328125,
+          "xFromLeadingEdge": 0.6328125,
+          "length": 0.015625,
+          "kinematicShear": 0.0013328232774258905,
+          "Cf": 0.002665646554851781,
+          "yPlus": 1.520111480099978
+        },
+        {
+          "face": 73,
+          "x": 0.6484375,
+          "xFromLeadingEdge": 0.6484375,
+          "length": 0.015625,
+          "kinematicShear": 0.0013279420076198515,
+          "Cf": 0.002655884015239703,
+          "yPlus": 1.5173253341052426
+        },
+        {
+          "face": 74,
+          "x": 0.6640625,
+          "xFromLeadingEdge": 0.6640625,
+          "length": 0.015625,
+          "kinematicShear": 0.0013231873157655888,
+          "Cf": 0.0026463746315311776,
+          "yPlus": 1.5146065091307794
+        },
+        {
+          "face": 75,
+          "x": 0.6796875,
+          "xFromLeadingEdge": 0.6796875,
+          "length": 0.015625,
+          "kinematicShear": 0.0013185591615591675,
+          "Cf": 0.002637118323118335,
+          "yPlus": 1.511955345242489
+        },
+        {
+          "face": 76,
+          "x": 0.6953125,
+          "xFromLeadingEdge": 0.6953125,
+          "length": 0.015625,
+          "kinematicShear": 0.0013140578213456664,
+          "Cf": 0.0026281156426913328,
+          "yPlus": 1.509372357683776
+        },
+        {
+          "face": 77,
+          "x": 0.7109375,
+          "xFromLeadingEdge": 0.7109375,
+          "length": 0.015625,
+          "kinematicShear": 0.0013096850800171295,
+          "Cf": 0.002619370160034259,
+          "yPlus": 1.5068589238536458
+        },
+        {
+          "face": 78,
+          "x": 0.7265625,
+          "xFromLeadingEdge": 0.7265625,
+          "length": 0.015625,
+          "kinematicShear": 0.0013054387172615584,
+          "Cf": 0.002610877434523117,
+          "yPlus": 1.5044141129975623
+        },
+        {
+          "face": 79,
+          "x": 0.7421875,
+          "xFromLeadingEdge": 0.7421875,
+          "length": 0.015625,
+          "kinematicShear": 0.0013013126074862486,
+          "Cf": 0.002602625214972497,
+          "yPlus": 1.5020347249846868
+        },
+        {
+          "face": 80,
+          "x": 0.7578125,
+          "xFromLeadingEdge": 0.7578125,
+          "length": 0.015625,
+          "kinematicShear": 0.0012973010389481596,
+          "Cf": 0.0025946020778963193,
+          "yPlus": 1.4997177697386264
+        },
+        {
+          "face": 81,
+          "x": 0.7734375,
+          "xFromLeadingEdge": 0.7734375,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.0012933983545141523,
+          "Cf": 0.0025867967090283045,
+          "yPlus": 1.4974602622260103
+        },
+        {
+          "face": 82,
+          "x": 0.7890625,
+          "xFromLeadingEdge": 0.7890625,
+          "length": 0.015625000000000222,
+          "kinematicShear": 0.001289598397100017,
+          "Cf": 0.002579196794200034,
+          "yPlus": 1.4952589022120386
+        },
+        {
+          "face": 83,
+          "x": 0.8046875,
+          "xFromLeadingEdge": 0.8046875,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.0012858949949347816,
+          "Cf": 0.002571789989869563,
+          "yPlus": 1.4931103548827636
+        },
+        {
+          "face": 84,
+          "x": 0.8203125,
+          "xFromLeadingEdge": 0.8203125,
+          "length": 0.015625,
+          "kinematicShear": 0.0012822822197273039,
+          "Cf": 0.0025645644394546078,
+          "yPlus": 1.4910114019033551
+        },
+        {
+          "face": 85,
+          "x": 0.8359375,
+          "xFromLeadingEdge": 0.8359375,
+          "length": 0.015625,
+          "kinematicShear": 0.0012787546049571196,
+          "Cf": 0.002557509209914239,
+          "yPlus": 1.4889590704534879
+        },
+        {
+          "face": 86,
+          "x": 0.8515625,
+          "xFromLeadingEdge": 0.8515625,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.0012753058309070073,
+          "Cf": 0.0025506116618140146,
+          "yPlus": 1.4869498693278527
+        },
+        {
+          "face": 87,
+          "x": 0.8671875,
+          "xFromLeadingEdge": 0.8671875,
+          "length": 0.015625000000000222,
+          "kinematicShear": 0.001271926401157881,
+          "Cf": 0.002543852802315762,
+          "yPlus": 1.48497843005344
+        },
+        {
+          "face": 88,
+          "x": 0.8828125,
+          "xFromLeadingEdge": 0.8828125,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.001268608094759809,
+          "Cf": 0.002537216189519618,
+          "yPlus": 1.4830400979647602
+        },
+        {
+          "face": 89,
+          "x": 0.8984375,
+          "xFromLeadingEdge": 0.8984375,
+          "length": 0.015625,
+          "kinematicShear": 0.00126534717607316,
+          "Cf": 0.00253069435214632,
+          "yPlus": 1.4811328166956252
+        },
+        {
+          "face": 90,
+          "x": 0.9140625,
+          "xFromLeadingEdge": 0.9140625,
+          "length": 0.015625,
+          "kinematicShear": 0.0012621433520576802,
+          "Cf": 0.0025242867041153604,
+          "yPlus": 1.479256534627839
+        },
+        {
+          "face": 91,
+          "x": 0.9296875,
+          "xFromLeadingEdge": 0.9296875,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.0012589975273386452,
+          "Cf": 0.0025179950546772903,
+          "yPlus": 1.4774119006476323
+        },
+        {
+          "face": 92,
+          "x": 0.9453125,
+          "xFromLeadingEdge": 0.9453125,
+          "length": 0.015625000000000222,
+          "kinematicShear": 0.001255910673599335,
+          "Cf": 0.00251182134719867,
+          "yPlus": 1.4755996042711552
+        },
+        {
+          "face": 93,
+          "x": 0.9609375,
+          "xFromLeadingEdge": 0.9609375,
+          "length": 0.015624999999999889,
+          "kinematicShear": 0.0012528832562847356,
+          "Cf": 0.0025057665125694712,
+          "yPlus": 1.4738200385525553
+        },
+        {
+          "face": 94,
+          "x": 0.9765625,
+          "xFromLeadingEdge": 0.9765625,
+          "length": 0.015625,
+          "kinematicShear": 0.0012499145836261255,
+          "Cf": 0.002499829167252251,
+          "yPlus": 1.472072914833153
+        },
+        {
+          "face": 95,
+          "x": 0.9921875,
+          "xFromLeadingEdge": 0.9921875,
+          "length": 0.015625,
+          "kinematicShear": 0.0012470042135454102,
+          "Cf": 0.0024940084270908204,
+          "yPlus": 1.4703580881287608
+        },
+        {
+          "face": 96,
+          "x": 1.0078125,
+          "xFromLeadingEdge": 1.0078125,
+          "length": 0.015625,
+          "kinematicShear": 0.001244153498148538,
+          "Cf": 0.002488306996297076,
+          "yPlus": 1.4686764696247891
+        },
+        {
+          "face": 97,
+          "x": 1.0234375,
+          "xFromLeadingEdge": 1.0234375,
+          "length": 0.015625,
+          "kinematicShear": 0.0012413623301285172,
+          "Cf": 0.0024827246602570343,
+          "yPlus": 1.4670281101113871
+        },
+        {
+          "face": 98,
+          "x": 1.0390625,
+          "xFromLeadingEdge": 1.0390625,
+          "length": 0.015625,
+          "kinematicShear": 0.001238628070692262,
+          "Cf": 0.002477256141384524,
+          "yPlus": 1.4654115608546727
+        },
+        {
+          "face": 99,
+          "x": 1.0546875,
+          "xFromLeadingEdge": 1.0546875,
+          "length": 0.015625,
+          "kinematicShear": 0.0012359484676235436,
+          "Cf": 0.002471896935247087,
+          "yPlus": 1.4638255935088993
+        },
+        {
+          "face": 100,
+          "x": 1.0703125,
+          "xFromLeadingEdge": 1.0703125,
+          "length": 0.015625,
+          "kinematicShear": 0.0012333218739495287,
+          "Cf": 0.0024666437478990575,
+          "yPlus": 1.4622693312269743
+        },
+        {
+          "face": 101,
+          "x": 1.0859375,
+          "xFromLeadingEdge": 1.0859375,
+          "length": 0.015625,
+          "kinematicShear": 0.0012307463979308508,
+          "Cf": 0.0024614927958617016,
+          "yPlus": 1.4607417463230699
+        },
+        {
+          "face": 102,
+          "x": 1.1015625,
+          "xFromLeadingEdge": 1.1015625,
+          "length": 0.015625,
+          "kinematicShear": 0.0012282199820971204,
+          "Cf": 0.002456439964194241,
+          "yPlus": 1.459241706624172
+        },
+        {
+          "face": 103,
+          "x": 1.1171875,
+          "xFromLeadingEdge": 1.1171875,
+          "length": 0.015625,
+          "kinematicShear": 0.0012257405159395753,
+          "Cf": 0.0024514810318791505,
+          "yPlus": 1.457768042152994
+        },
+        {
+          "face": 104,
+          "x": 1.1328125,
+          "xFromLeadingEdge": 1.1328125,
+          "length": 0.015625,
+          "kinematicShear": 0.001223305875593933,
+          "Cf": 0.002446611751187866,
+          "yPlus": 1.4563195687705168
+        },
+        {
+          "face": 105,
+          "x": 1.1484375,
+          "xFromLeadingEdge": 1.1484375,
+          "length": 0.015625,
+          "kinematicShear": 0.0012209139817970966,
+          "Cf": 0.0024418279635941933,
+          "yPlus": 1.4548951228459468
+        },
+        {
+          "face": 106,
+          "x": 1.1640625,
+          "xFromLeadingEdge": 1.1640625,
+          "length": 0.015625,
+          "kinematicShear": 0.001218562774922619,
+          "Cf": 0.002437125549845238,
+          "yPlus": 1.4534935466672325
+        },
+        {
+          "face": 107,
+          "x": 1.1796875,
+          "xFromLeadingEdge": 1.1796875,
+          "length": 0.015625,
+          "kinematicShear": 0.0012162503216166939,
+          "Cf": 0.0024325006432333878,
+          "yPlus": 1.4521137523148482
+        },
+        {
+          "face": 108,
+          "x": 1.1953125,
+          "xFromLeadingEdge": 1.1953125,
+          "length": 0.015625,
+          "kinematicShear": 0.0012139747087862893,
+          "Cf": 0.0024279494175725785,
+          "yPlus": 1.4507546588221218
+        },
+        {
+          "face": 109,
+          "x": 1.2109375,
+          "xFromLeadingEdge": 1.2109375,
+          "length": 0.015625,
+          "kinematicShear": 0.0012117327777490595,
+          "Cf": 0.002423465555498119,
+          "yPlus": 1.4494144352935374
+        },
+        {
+          "face": 110,
+          "x": 1.2265625,
+          "xFromLeadingEdge": 1.2265625,
+          "length": 0.015625,
+          "kinematicShear": 0.0012095205229382111,
+          "Cf": 0.0024190410458764223,
+          "yPlus": 1.4480907363044018
+        },
+        {
+          "face": 111,
+          "x": 1.2421875,
+          "xFromLeadingEdge": 1.2421875,
+          "length": 0.015625,
+          "kinematicShear": 0.0012073351056827502,
+          "Cf": 0.0024146702113655005,
+          "yPlus": 1.4467819063842382
+        },
+        {
+          "face": 112,
+          "x": 1.2578125,
+          "xFromLeadingEdge": 1.2578125,
+          "length": 0.015625,
+          "kinematicShear": 0.0012051754152641442,
+          "Cf": 0.0024103508305282884,
+          "yPlus": 1.4454873198253213
+        },
+        {
+          "face": 113,
+          "x": 1.2734375,
+          "xFromLeadingEdge": 1.2734375,
+          "length": 0.015625,
+          "kinematicShear": 0.001203041306363612,
+          "Cf": 0.002406082612727224,
+          "yPlus": 1.4442069277059515
+        },
+        {
+          "face": 114,
+          "x": 1.2890625,
+          "xFromLeadingEdge": 1.2890625,
+          "length": 0.015625,
+          "kinematicShear": 0.0012009331521180677,
+          "Cf": 0.0024018663042361353,
+          "yPlus": 1.4429409919774931
+        },
+        {
+          "face": 115,
+          "x": 1.3046875,
+          "xFromLeadingEdge": 1.3046875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011988515356363687,
+          "Cf": 0.0023977030712727374,
+          "yPlus": 1.4416899013335538
+        },
+        {
+          "face": 116,
+          "x": 1.3203125,
+          "xFromLeadingEdge": 1.3203125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011967970056747483,
+          "Cf": 0.0023935940113494966,
+          "yPlus": 1.440454024693802
+        },
+        {
+          "face": 117,
+          "x": 1.3359375,
+          "xFromLeadingEdge": 1.3359375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011947699736789517,
+          "Cf": 0.0023895399473579035,
+          "yPlus": 1.439233649067414
+        },
+        {
+          "face": 118,
+          "x": 1.3515625,
+          "xFromLeadingEdge": 1.3515625,
+          "length": 0.015625,
+          "kinematicShear": 0.001192770663668146,
+          "Cf": 0.002385541327336292,
+          "yPlus": 1.4380289489600255
+        },
+        {
+          "face": 119,
+          "x": 1.3671875,
+          "xFromLeadingEdge": 1.3671875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011907990936507638,
+          "Cf": 0.0023815981873015275,
+          "yPlus": 1.4368399746651053
+        },
+        {
+          "face": 120,
+          "x": 1.3828125,
+          "xFromLeadingEdge": 1.3828125,
+          "length": 0.015625,
+          "kinematicShear": 0.001188855073102255,
+          "Cf": 0.00237771014620451,
+          "yPlus": 1.4356666502143904
+        },
+        {
+          "face": 121,
+          "x": 1.3984375,
+          "xFromLeadingEdge": 1.3984375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011869379213202199,
+          "Cf": 0.0023738758426404397,
+          "yPlus": 1.434508602667842
+        },
+        {
+          "face": 122,
+          "x": 1.4140625,
+          "xFromLeadingEdge": 1.4140625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011850474710277399,
+          "Cf": 0.0023700949420554797,
+          "yPlus": 1.4333657678887906
+        },
+        {
+          "face": 123,
+          "x": 1.4296875,
+          "xFromLeadingEdge": 1.4296875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011831849220252698,
+          "Cf": 0.0023663698440505396,
+          "yPlus": 1.4322389084698381
+        },
+        {
+          "face": 124,
+          "x": 1.4453125,
+          "xFromLeadingEdge": 1.4453125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011813504869678955,
+          "Cf": 0.002362700973935791,
+          "yPlus": 1.4311281909564282
+        },
+        {
+          "face": 125,
+          "x": 1.4609375,
+          "xFromLeadingEdge": 1.4609375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011795428392432851,
+          "Cf": 0.0023590856784865702,
+          "yPlus": 1.4300328487942404
+        },
+        {
+          "face": 126,
+          "x": 1.4765625,
+          "xFromLeadingEdge": 1.4765625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011777610067489636,
+          "Cf": 0.0023555220134979273,
+          "yPlus": 1.4289523276250167
+        },
+        {
+          "face": 127,
+          "x": 1.4921875,
+          "xFromLeadingEdge": 1.4921875,
+          "length": 0.015625,
+          "kinematicShear": 0.001176004497086529,
+          "Cf": 0.002352008994173058,
+          "yPlus": 1.4278863621639095
+        },
+        {
+          "face": 128,
+          "x": 1.5078125,
+          "xFromLeadingEdge": 1.5078125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011742727529697459,
+          "Cf": 0.0023485455059394918,
+          "yPlus": 1.4268346464604502
+        },
+        {
+          "face": 129,
+          "x": 1.5234375,
+          "xFromLeadingEdge": 1.5234375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011725651536092726,
+          "Cf": 0.0023451303072185453,
+          "yPlus": 1.425796834619285
+        },
+        {
+          "face": 130,
+          "x": 1.5390625,
+          "xFromLeadingEdge": 1.5390625,
+          "length": 0.015625,
+          "kinematicShear": 0.001170881047718974,
+          "Cf": 0.002341762095437948,
+          "yPlus": 1.4247725607685386
+        },
+        {
+          "face": 131,
+          "x": 1.5546875,
+          "xFromLeadingEdge": 1.5546875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011692197617759591,
+          "Cf": 0.0023384395235519183,
+          "yPlus": 1.4237614440513755
+        },
+        {
+          "face": 132,
+          "x": 1.5703125,
+          "xFromLeadingEdge": 1.5703125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011675805952071389,
+          "Cf": 0.0023351611904142778,
+          "yPlus": 1.4227630856750448
+        },
+        {
+          "face": 133,
+          "x": 1.5859375,
+          "xFromLeadingEdge": 1.5859375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011659628399796923,
+          "Cf": 0.0023319256799593847,
+          "yPlus": 1.4217770808277452
+        },
+        {
+          "face": 134,
+          "x": 1.6015625,
+          "xFromLeadingEdge": 1.6015625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011643657830283903,
+          "Cf": 0.0023287315660567806,
+          "yPlus": 1.4208030201742006
+        },
+        {
+          "face": 135,
+          "x": 1.6171875,
+          "xFromLeadingEdge": 1.6171875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011627887241133427,
+          "Cf": 0.0023255774482266855,
+          "yPlus": 1.4198405007777055
+        },
+        {
+          "face": 136,
+          "x": 1.6328125,
+          "xFromLeadingEdge": 1.6328125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011612309726369945,
+          "Cf": 0.002322461945273989,
+          "yPlus": 1.4188891242108148
+        },
+        {
+          "face": 137,
+          "x": 1.6484375,
+          "xFromLeadingEdge": 1.6484375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011596918244170056,
+          "Cf": 0.002319383648834011,
+          "yPlus": 1.4179484824026902
+        },
+        {
+          "face": 138,
+          "x": 1.6640625,
+          "xFromLeadingEdge": 1.6640625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011581705644059927,
+          "Cf": 0.0023163411288119854,
+          "yPlus": 1.417018159302016
+        },
+        {
+          "face": 139,
+          "x": 1.6796875,
+          "xFromLeadingEdge": 1.6796875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011566667801106406,
+          "Cf": 0.002313333560221281,
+          "yPlus": 1.4160979227396788
+        },
+        {
+          "face": 140,
+          "x": 1.6953125,
+          "xFromLeadingEdge": 1.6953125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011551797637079986,
+          "Cf": 0.0023103595274159973,
+          "yPlus": 1.4151873588225012
+        },
+        {
+          "face": 141,
+          "x": 1.7109375,
+          "xFromLeadingEdge": 1.7109375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011537079556290055,
+          "Cf": 0.002307415911258011,
+          "yPlus": 1.4142855303260966
+        },
+        {
+          "face": 142,
+          "x": 1.7265625,
+          "xFromLeadingEdge": 1.7265625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011522498437145795,
+          "Cf": 0.002304499687429159,
+          "yPlus": 1.4133915265372872
+        },
+        {
+          "face": 143,
+          "x": 1.7421875,
+          "xFromLeadingEdge": 1.7421875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011508044728844465,
+          "Cf": 0.002301608945768893,
+          "yPlus": 1.4125047761776295
+        },
+        {
+          "face": 144,
+          "x": 1.7578125,
+          "xFromLeadingEdge": 1.7578125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011493712847106092,
+          "Cf": 0.0022987425694212184,
+          "yPlus": 1.4116249499938252
+        },
+        {
+          "face": 145,
+          "x": 1.7734375,
+          "xFromLeadingEdge": 1.7734375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011479501562675627,
+          "Cf": 0.0022959003125351254,
+          "yPlus": 1.410751985407314
+        },
+        {
+          "face": 146,
+          "x": 1.7890625,
+          "xFromLeadingEdge": 1.7890625,
+          "length": 0.015625,
+          "kinematicShear": 0.001146541254914715,
+          "Cf": 0.00229308250982943,
+          "yPlus": 1.4098859980634457
+        },
+        {
+          "face": 147,
+          "x": 1.8046875,
+          "xFromLeadingEdge": 1.8046875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011451449456233607,
+          "Cf": 0.0022902898912467214,
+          "yPlus": 1.4090272253637248
+        },
+        {
+          "face": 148,
+          "x": 1.8203125,
+          "xFromLeadingEdge": 1.8203125,
+          "length": 0.015625,
+          "kinematicShear": 0.0011437617434692884,
+          "Cf": 0.0022875234869385768,
+          "yPlus": 1.4081759975830621
+        },
+        {
+          "face": 149,
+          "x": 1.8359375,
+          "xFromLeadingEdge": 1.8359375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011423922912675792,
+          "Cf": 0.0022847845825351583,
+          "yPlus": 1.4073327243596723
+        },
+        {
+          "face": 150,
+          "x": 1.8515625,
+          "xFromLeadingEdge": 1.8515625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011410373655459597,
+          "Cf": 0.0022820747310919195,
+          "yPlus": 1.4064978985940668
+        },
+        {
+          "face": 151,
+          "x": 1.8671875,
+          "xFromLeadingEdge": 1.8671875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011396979438594262,
+          "Cf": 0.0022793958877188525,
+          "yPlus": 1.4056721381819046
+        },
+        {
+          "face": 152,
+          "x": 1.8828125,
+          "xFromLeadingEdge": 1.8828125,
+          "length": 0.015625,
+          "kinematicShear": 0.001138375339080312,
+          "Cf": 0.002276750678160624,
+          "yPlus": 1.4048562692095297
+        },
+        {
+          "face": 153,
+          "x": 1.8984375,
+          "xFromLeadingEdge": 1.8984375,
+          "length": 0.015625,
+          "kinematicShear": 0.0011370713298863124,
+          "Cf": 0.002274142659772625,
+          "yPlus": 1.404051407072864
+        },
+        {
+          "face": 154,
+          "x": 1.9140625,
+          "xFromLeadingEdge": 1.9140625,
+          "length": 0.015625,
+          "kinematicShear": 0.001135789024443505,
+          "Cf": 0.00227157804888701,
+          "yPlus": 1.4032594907715488
+        },
+        {
+          "face": 155,
+          "x": 1.9296875,
+          "xFromLeadingEdge": 1.9296875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011345303772339478,
+          "Cf": 0.0022690607544678955,
+          "yPlus": 1.4024817502799405
+        },
+        {
+          "face": 156,
+          "x": 1.9453125,
+          "xFromLeadingEdge": 1.9453125,
+          "length": 0.015625,
+          "kinematicShear": 0.001133312587475469,
+          "Cf": 0.002266625174950938,
+          "yPlus": 1.4017288455939483
+        },
+        {
+          "face": 157,
+          "x": 1.9609375,
+          "xFromLeadingEdge": 1.9609375,
+          "length": 0.015625,
+          "kinematicShear": 0.00113207432526551,
+          "Cf": 0.00226414865053102,
+          "yPlus": 1.4009628688250726
+        },
+        {
+          "face": 158,
+          "x": 1.9765625,
+          "xFromLeadingEdge": 1.9765625,
+          "length": 0.015625,
+          "kinematicShear": 0.0011311229434832876,
+          "Cf": 0.0022622458869665752,
+          "yPlus": 1.4003740688377933
+        },
+        {
+          "face": 159,
+          "x": 1.9921875,
+          "xFromLeadingEdge": 1.9921875,
+          "length": 0.015625,
+          "kinematicShear": 0.0011285938480418284,
+          "Cf": 0.0022571876960836568,
+          "yPlus": 1.3988076336263027
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 5120,
+      "iterations": 897,
+      "scalar": {
+        "k": {
+          "residualNorm": 4.750908327089395e-14,
+          "normTarget": 1.0363879400835236e-12,
+          "maxCellResidual": 2.0299663581059116e-12,
+          "maxFaceFlux": 8.603725470487866e-06,
+          "globalBalance": -9.003543236497976e-13,
+          "normRoundoffBudget": 1.7497327473172145e-17,
+          "reportedTransportBalance": {
+            "residualNorm": 4.7509084024248863e-14,
+            "maxCellResidual": 2.0299663581059116e-12,
+            "originalEquationCellDifference": 0.0
+          }
+        },
+        "omega": {
+          "residualNorm": 4.199303078587515e-12,
+          "normTarget": 9.86840412623772e-06,
+          "maxCellResidual": 6.434800600330339e-10,
+          "maxFaceFlux": 791.284817739841,
+          "globalBalance": 4.020890608316674e-13,
+          "normRoundoffBudget": 1.609229586419875e-09,
+          "reportedTransportBalance": {
+            "residualNorm": 4.174728077515256e-12,
+            "maxCellResidual": 6.436887111549642e-10,
+            "originalEquationCellDifference": 2.086511219303208e-13
+          }
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-xduwq0bk/face-viscosity.csv",
+          "sha256": "055525d430bcd640ab690ad4da874de061bfd293231c47ccb3d9a2d1d2bc1ccd"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 10432,
+        "maxFaceDeviation": {
+          "pressure": 1.7618285302889447e-18,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 1.6940658945086007e-20,
+          "diffusionY": 8.470329472543003e-22
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": -0.00016066175174024458,
+            "expected": -0.00016066175174024634,
+            "absolute": 1.7618285302889447e-18,
+            "relative": 1.7618285302889447e-18
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -2.379389133570296e-05,
+            "expected": -2.3793891335702977e-05,
+            "absolute": 1.6940658945086007e-20,
+            "relative": 1.6940658945086007e-20
+          },
+          "diffusionY": {
+            "actual": -2.2071808694839817e-06,
+            "expected": -2.2071808694839825e-06,
+            "absolute": 8.470329472543003e-22,
+            "relative": 8.470329472543003e-22
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 7.273422518580155e-10,
+          "l2": 3.2674162861356847e-11,
+          "maxCellVector": 2.9466152516680896e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 7.273422652064025e-10,
+            "expected": 7.273422518580155e-10,
+            "absolute": 1.334838704590169e-17,
+            "relative": 1.334838704590169e-17
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.002652930823261712,
+            "expected": 0.002652930823261712,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceY": {
+            "actual": -0.0004621100285120324,
+            "expected": -0.0004621100285120324,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.002652930823261712,
+            "expected": 0.002652930823261712,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceY": {
+            "actual": 1.727240929842396e-07,
+            "expected": 1.727240929842396e-07,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 9.109633047899024e-10,
+          "y": -3.8270217073491097e-13,
+          "magnitude": 9.109633851778523e-10,
+          "boundaryTermScale": 2.004314660420659,
+          "relativeToBoundary": 4.545011834552277e-10,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 9.109633047899024e-10,
+          "boundaryMinusSourceY": -3.8270217073491097e-13,
+          "magnitude": 9.109633851778523e-10,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 9.109633825208984e-10,
+          "y": -3.827027799423874e-13
+        },
+        "expectedCellResidualSum": {
+          "x": 9.109633047899024e-10,
+          "y": -3.8270217073491097e-13
+        },
+        "cellBoundaryConservationDifference": {
+          "x": 7.773099595966546e-17,
+          "y": -6.092074764362995e-19,
+          "magnitude": 7.773338321873604e-17
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.002652930823261712,
+          "y": -0.0004621100285120324
+        },
+        "wallViscousForce": {
+          "x": 0.002652930823261712,
+          "y": 1.727240929842396e-07
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 1.0452522094389627e-14,
+        "l2CellImbalance": 9.343710500069829e-14,
+        "maxScaledCellImbalance": 0.006932255735016885,
+        "nativeDefinitionContinuity": 6.985471328881587e-12,
+        "boundaryFluxSum": -7.432943149865423e-14,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 7.432943149865423e-14,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.5811488300841898e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-wall-scale/medium/flow",
+      "name": "medium",
+      "nx": 160,
+      "ny": 32,
+      "stretch": 10,
+      "solveSeconds": 60.339922833,
+      "maximumRssBytes": 27557888
+    }
+  ],
+  "failures": [
+    {
+      "name": "fine (90 s budget stop)",
+      "timedOut": true,
+      "reason": "No final fields; final-flow audit not run"
+    }
+  ],
+  "commonStationComparison": [
+    {
+      "x": 0.97,
+      "baselineCf": 0.002619339335356953,
+      "mediumCf": 0.0025023228522854835,
+      "relativeDifferenceFromBaseline": 0.0446740448982427,
+      "method": "Linear interpolation to common x; diagnostic comparison, not a formal error estimate"
+    },
+    {
+      "x": 1.9,
+      "baselineCf": 0.0023570204588600277,
+      "mediumCf": 0.0022738861986840637,
+      "relativeDifferenceFromBaseline": 0.03527091157120115,
+      "method": "Linear interpolation to common x; diagnostic comparison, not a formal error estimate"
+    }
+  ],
+  "profileCompatibility": {
+    "sourcePrefix": "outputs/native-flow/centroid-stability/highre-a9",
+    "currentPrefix": "outputs/native-flow/sst-wall-scale/baseline/flow",
+    "fields": {
+      ".cells.csv": {
+        "equal": true,
+        "previousSha256": "33778e9d65235ce4c94102ed7fcc36683a4b6a268787a4fdb31db3a0b6bd6758",
+        "currentSha256": "33778e9d65235ce4c94102ed7fcc36683a4b6a268787a4fdb31db3a0b6bd6758"
+      },
+      ".faces.csv": {
+        "equal": true,
+        "previousSha256": "e881b658628e8b8f08df68ecbc37a71247e1788b29dc87a0a79b1bb8a0d8a6f4",
+        "currentSha256": "e881b658628e8b8f08df68ecbc37a71247e1788b29dc87a0a79b1bb8a0d8a6f4"
+      },
+      ".history.csv": {
+        "equal": true,
+        "previousSha256": "96442c910cf1d29ff9a7e746f0c8c32dd0bbdc71a7daddbcce8ca4bc1d22329a",
+        "currentSha256": "96442c910cf1d29ff9a7e746f0c8c32dd0bbdc71a7daddbcce8ca4bc1d22329a"
+      }
+    }
+  },
+  "resources": {
+    "perSolverTimeoutSeconds": 90,
+    "minimumDiskFreeBytes": 1610612736,
+    "diskFreeBytesAfter": 2492952576
+  },
+  "limits": [
+    "No high-Re accuracy qualification, matched TMR comparison, or grid independence",
+    "SST update time contains transport/gradient/wall-distance subphases; do not sum overlapping timers",
+    "Independent field audit does not independently certify performance counters; clocks are native observations",
+    "90-second timeout is an operational budget stop, not proof of numerical divergence",
+    "Rectilinear meshes, not arbitrary Cut-cell SST qualification",
+    "Linux/Windows/OpenFOAM not run; desktop remains 0.4.11"
+  ],
+  "sourceHashes": {
+    "src/fv/SstRans2D.cpp": "68461df71cbae1f259db14c1eebdb95d4279197d5a51346b8b1e5bbe2f7d44ed",
+    "tests/sst_rans_probe.cpp": "f6e13d86387d55c4e0591c529ba0f9f7a1fa4dade0f1469390f3a54bcb1bda65",
+    "tests/rectilinear_probe.cpp": "e5f383cd0ee3d10909c60f2cb9d1bd2b14f91bf70cbd0e695f667d2049872e50",
+    "tools/verification/verify_sst_rans.py": "1938d04197cfc2f9c5c3e816e7b0c254297d541b31b24667db7d8d69dd226873",
+    "tools/verification/verify_native_flow.py": "77c1c254ce4220280c86092841a4a65879a65dff2fe864127728025fa3020fc4"
+  },
+  "verification": {
+    "compiler": "/usr/bin/clang++",
+    "buildType": "Release",
+    "ctest": {
+      "passed": 129,
+      "total": 129,
+      "seconds": 11.68,
+      "initialSandboxRun": {
+        "passed": 128,
+        "total": 129,
+        "failure": "thermal-scale timing wrapper: sysctl kern.clockrate permission denied; mesh stdout PASS"
+      },
+      "rerun": "Same tests and gates, native resource measurements permitted"
+    },
+    "frontend": {
+      "passed": 140,
+      "total": 140
+    },
+    "logs": {
+      "outputs/native-flow/sst-wall-scale/build-full.log": "0c312cb85cc64d24bc0d6a4e548d671c6d271bca4d507a34f8e9523d7cd9da89",
+      "outputs/native-flow/sst-wall-scale/ctest.log": "50baaa296c5df906f63950b9f4783dc82cf2fbbe43b7bdc9a0d798de5aec2035",
+      "outputs/native-flow/sst-wall-scale/ctest-native-metrics.log": "af4e51cb6358f867c1db81476e1f492fce8fdcc44420982371f23097a64975b7",
+      "outputs/native-flow/sst-wall-scale/frontend.log": "c213afd27d6f3ffd800c43407c9daba882f6fb2d81979c944cc62ca486602ffe"
+    }
+  }
+}

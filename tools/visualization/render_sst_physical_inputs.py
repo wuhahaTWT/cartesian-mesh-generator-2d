@@ -37,11 +37,11 @@ for c in cases:
  axes[1,0].plot([r['xFromLeadingEdge'] for r in samples],[r['Cf'] for r in samples],'.-',label=label)
  axes[1,1].plot([r['xFromLeadingEdge'] for r in samples],[r['yPlus'] for r in samples],'.-',label=label)
 axes[1,0].set(xlabel='Distance from leading edge [m]',ylabel='Cf',title='Wall friction remains grid-sensitive')
-axes[1,1].set(xlabel='Distance from leading edge [m]',ylabel='y+',yscale='log',title='First-cell wall resolution remains insufficient')
+axes[1,1].set(xlabel='Distance from leading edge [m]',ylabel='y+',yscale='log',title='First-cell wall resolution (owner centre)')
 axes[1,1].axhline(1,color='#777',ls='--',lw=1,label='y+ = 1 reference')
 for ax in axes[1]:ax.grid(alpha=.2);ax.legend(fontsize=8)
 failed=', '.join(c['name'] for c in study['failures']) or 'none'
 fig.suptitle('Incompressible SST-2003m | Re_plate = 10 million | diagnostic only',fontsize=16)
-fig.supxlabel(f'Independent audit rejected: {failed}\nNo TMR reference match or high-Re accuracy qualification; rejected fields are not plotted.',fontsize=10)
+fig.supxlabel(f'Cases without accepted final fields: {failed}\nNo TMR reference match or high-Re accuracy qualification; only independently audited fields are plotted.',fontsize=10)
 args.output.parent.mkdir(parents=True,exist_ok=True)
 fig.savefig(args.output,dpi=150)

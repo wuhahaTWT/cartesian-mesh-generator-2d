@@ -15,7 +15,14 @@ struct SstRansIteration2D {
     std::size_t iteration=0, turbulenceIterations=0;
     double kNorm=0, omegaNorm=0, kCellResidual=0, omegaCellResidual=0;
 };
+// Enabled by flow.profile. updateSeconds includes the other SST timers;
+// never sum them as disjoint phases. Failed calls do not return a result.
+struct SstRansPerformance2D {
+    std::size_t updates=0;
+    double updateSeconds=0, transportSeconds=0, gradientSeconds=0, wallDistanceSeconds=0;
+};
 struct SstRansResult2D {
+    SstRansPerformance2D performance;
     bool converged=false;
     FlowResult2D flow;
     SstTransportResult2D turbulence;

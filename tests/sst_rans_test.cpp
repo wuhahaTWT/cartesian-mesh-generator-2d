@@ -80,6 +80,16 @@ void ransContract(const FvMesh2D& m) {
     const auto r=solveSstRans2D(m,c);
     require(r.converged&&r.flow.u==laminar.u&&r.flow.v==laminar.v&&r.flow.p==laminar.p&&r.flow.flux==laminar.flux,
         "zero-k laminar limit differs from old solver");
+    auto profiled=c;profiled.flow.profile=true;
+    const auto observed=solveSstRans2D(m,profiled);
+    require(r.performance.updates==0 && r.performance.updateSeconds==0 &&
+            observed.performance.updates==observed.history.size() && observed.performance.updateSeconds>=observed.performance.transportSeconds &&
+            observed.performance.gradientSeconds>=0 && observed.performance.wallDistanceSeconds>=0,
+            "SST profile counters or inclusive timing invalid");
+    require(observed.flow.u==r.flow.u && observed.flow.v==r.flow.v && observed.flow.p==r.flow.p && observed.flow.flux==r.flow.flux &&
+            observed.turbulence.fields.k.values==r.turbulence.fields.k.values &&
+            observed.turbulence.fields.omega.values==r.turbulence.fields.omega.values,
+            "SST profiling changed numerical fields");
     for(double k:r.turbulence.fields.k.values)require(k==0,"zero-k solution was floored");
     for(double nu:r.faceViscosity)require(nu==c.flow.nu,"zero k invented eddy viscosity");
     auto invalid=c;invalid.inletOmega=0;rejects([&]{(void)solveSstRans2D(m,invalid);});

@@ -3,6 +3,7 @@
 #include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 #include <stdexcept>
 #include <utility>
 
@@ -30,7 +31,10 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
     for(double v:p.omega)require(std::isfinite(v)&&v>0,"SST RANS invalid initial omega");
     p.boundaryK.resize(nf);p.boundaryOmega.resize(nf);
     SstRansResult2D result;result.resolvedWalls.resize(nf);result.velocityBoundary.resize(nf);
+    using Clock=std::chrono::steady_clock;
+    const auto elapsed=[](Clock::time_point t){return std::chrono::duration<double>(Clock::now()-t).count();};
     auto update=[&](const FlowResult2D& flow,const std::vector<detail::MaterialBoundary2D>& bc) {
+        const auto updateStart=c.flow.profile?Clock::now():Clock::time_point{};
         p.volumeFlux=flow.flux;
         std::vector<Vector2D> velocity(n);
         for(std::size_t i=0;i<n;++i)velocity[i]={flow.u[i],flow.v[i]};
@@ -44,16 +48,24 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
             p.boundaryOmega[id]=b.inlet?ScalarBoundary2D{ScalarBoundaryKind2D::Value,c.inletOmega,{}}:
                 ScalarBoundary2D{ScalarBoundaryKind2D::DiffusiveFlux,0,{}};
         }
-        if(p.wallDistance.empty())p.wallDistance=computeWallDistance2D(mesh,result.resolvedWalls).distance;
+        if(p.wallDistance.empty()) {
+            const auto start=c.flow.profile?Clock::now():Clock::time_point{};
+            p.wallDistance=computeWallDistance2D(mesh,result.resolvedWalls).distance;
+            if(c.flow.profile)result.performance.wallDistanceSeconds+=elapsed(start);
+        }
         setSst2003mResolvedWalls2D(mesh,p,result.resolvedWalls);
         auto transport=c.turbulence;
         transport.maxIterations=std::min(transport.maxIterations,c.turbulenceUpdatesPerIteration);
+        const auto transportStart=c.flow.profile?Clock::now():Clock::time_point{};
         auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport);
+        if(c.flow.profile)result.performance.transportSeconds+=elapsed(transportStart);
         p.k=next.fields.k.values;p.omega=next.fields.omega.values;
         // Current strain/gradients/coefficient fields are evaluated at this same
         // velocity and returned k/omega. Use inlet closure from actual inlet
         // turbulence values; never extrapolate owner k/omega onto that boundary.
+        const auto gradientStart=c.flow.profile?Clock::now():Clock::time_point{};
         const auto g=reconstructSst2003mGradients2D(mesh,p,velocity,result.velocityBoundary);
+        if(c.flow.profile)result.performance.gradientSeconds+=elapsed(gradientStart);
         result.faceViscosity.resize(nf);
         for(std::size_t id=0;id<nf;++id) {
             const auto& f=mesh.faces[id];double nt=next.fields.coefficients[f.owner].turbulentViscosity;
@@ -66,6 +78,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
         const auto& h=next.history.back();
         result.history.push_back({result.history.size()+1,h.iteration,h.kResidualNorm,h.omegaResidualNorm,h.kCellResidual,h.omegaCellResidual});
         result.turbulence=std::move(next);
+        if(c.flow.profile) {++result.performance.updates;result.performance.updateSeconds+=elapsed(updateStart);}
         return detail::MaterialState2D{result.faceViscosity,result.turbulence.converged};
     };
     result.flow=detail::solveMaterialFlow2D(mesh,c.flow,update,progress);

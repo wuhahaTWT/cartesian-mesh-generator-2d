@@ -176,6 +176,13 @@ def main(args):
             rejected=subprocess.run([str(args.rect_probe),'8','8','1',str(root/'bad-mesh'),*bad_bounds],
                                     stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
             assert rejected.returncode!=0
+        # Anisotropic wall-resolved probes may exceed 256 cells on one axis,
+        # but the existing total-cell resource bound must remain enforced.
+        run([args.rect_probe,'400','2','0',root/'wide-mesh'])
+        for dims in (('400','400'),('4097','2'),('2','4097'),('2.5','2')):
+            rejected=subprocess.run([str(args.rect_probe),*dims,'0',str(root/'bad-size')],
+                                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=90)
+            assert rejected.returncode!=0, dims
     print("SST-RANS verifier: channel, both flat plate boundaries and bounded corrections audited; all tamper cases rejected.")
 
 

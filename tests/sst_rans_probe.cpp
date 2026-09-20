@@ -84,6 +84,12 @@ int main(int argc,char** argv) {
             <<",\"turbulenceUpdatesPerIteration\":"<<c.turbulenceUpdatesPerIteration
             <<",\"scalarCorrectionsPerUpdate\":"<<c.turbulence.scalarCorrectionsPerUpdate
             <<",\"solveSeconds\":"<<flow.performance.solveSeconds
+            <<",\"performance\":{\"sstUpdates\":"<<r.performance.updates
+            <<",\"sstUpdateSeconds\":"<<r.performance.updateSeconds<<",\"sstTransportSeconds\":"<<r.performance.transportSeconds
+            <<",\"sstGradientSeconds\":"<<r.performance.gradientSeconds<<",\"wallDistanceSeconds\":"<<r.performance.wallDistanceSeconds
+            <<",\"momentumLinearSeconds\":"<<flow.performance.momentumLinearSolveSeconds
+            <<",\"pressureLinearSeconds\":"<<flow.performance.pressureLinearSolveSeconds
+            <<",\"momentumIterations\":"<<flow.performance.momentumIterations<<",\"pressureIterations\":"<<flow.performance.pressureIterations<<"}"
             <<",\"momentumResidual\":"<<flow.history.back().momentumResidual
             <<",\"forceX\":"<<flow.forceX<<",\"forceY\":"<<flow.forceY
             <<",\"pressureForceX\":"<<flow.pressureForceX<<",\"pressureForceY\":"<<flow.pressureForceY

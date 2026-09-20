@@ -407,6 +407,14 @@ python3 tools/verification/verify_sst_rans.py --mesh outputs/native-flow/highre/
 
 72cb13a阶段的40×32/stretch8高Re算例未通过梯度独立重构，原`native-sst-physical-inputs.json`仍保留该失败。后续解析矩形中心修复与80位独立几何复测使**重新计算**的同一案例通过；原错误场继续拒绝。新证据为`native-centroid-stability.json`，不得覆盖旧文件。系统clang宏验证Apple ARM64的long double与double均为53位有效位，不能假设long double足以防止这类几何舍入。
 
+
+### SST近壁规模诊断与计时
+
+`SstRansPerformance2D`由`flow.profile`启用，默认关闭；不影响数值路径。`updates`是本构回调次数，`updateSeconds`包含`transportSeconds`、返回场梯度重算及一次壁距构造。probe输出`performance`对象，另列动量/压力线性求解时间和迭代数。不要相加包含式阶段，也不要将有界更新次数解释为已收敛次数。失败抛错/进程超时没有最终性能结果；计数与时钟不是独立物理审核器的验收内容。
+
+`rectilinear_probe`允许每轴2..4096的整数，总单元仍≤65536；原质量门不变。高Re近壁诊断可将上述例的网格改为`160 32 10`，其他输入相同；当前该5,120格已完成独立审核。`400 32 11`的12,800格网格通过几何与Solver检查，但求解在90秒预算内未完成，不应当成已验收的快速配置。研究证据`native-sst-wall-scale.json`保留失败，不自动延长预算；场prefix与审核summary路径必须不同以免覆盖元数据。
+
+
 ### 薄矩形中心与独立核算精度
 
 `Polygon2D::centroid`保留原面积阈值和通用路径；仅当四个顶点覆盖四个**精确**包围盒角点、各边严格轴向且非零时，返回`std::midpoint`解析中心。不按tolerance近似识别，不改变signedArea、拓扑或质量策略。它统一薄矩形中心的中点舍入，避免行间细小横向偏移被大法向梯度放大；不承诺修复所有非矩形或所有条件数问题。原生几何变化可能使旧checkpoint的严格几何签名不匹配，此时仍明确拒绝。
