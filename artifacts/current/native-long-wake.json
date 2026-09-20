@@ -1,0 +1,172 @@
+{
+  "valid": true,
+  "scope": "Each segment-final field independently audited; restart bytes identical. Intermediate monitor rows are recorded, not all reconstructed. No mesh/time independence or shedding qualification.",
+  "source": "outputs/native-flow/long-wake/trajectory.json",
+  "sourceSha256": "e0ec76663353e81a5bbed67222717bf0305d7a6a6c2d8f052d63291944ec6fe9",
+  "meshSha256": "9f263306e43a6e358a82cd44f99b4474a5f99903e1cf0b6f623d701fa05d2955",
+  "binarySha256": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+  "startTime": 0.0,
+  "endTime": 50.0,
+  "acceptedSteps": 1004,
+  "controls": {
+    "nu": 0.02,
+    "speed": 1,
+    "tolerance": 1e-08,
+    "convection": "face-limited-linear",
+    "viscousStress": "symmetric",
+    "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+    "velocityRelaxation": 0.6
+  },
+  "segments": [
+    {
+      "label": "initial",
+      "time": 5,
+      "finalStateAudited": true,
+      "initialCondition": {
+        "valid": true,
+        "definition": {
+          "definition": "compact-cubic-v1",
+          "centre": [
+            3,
+            0
+          ],
+          "radius": 1,
+          "peakSpeed": 0.01,
+          "checkpointSuffix": ".initial.checkpoint"
+        },
+        "checkpointSha256": "706822a641ced963488165c265a999163d770a23be0b9e7731591a41c3139166",
+        "minimumBoundaryClearance": 1.9302331465395572,
+        "maximumCellFluxImbalance": 4.336808689942018e-19,
+        "sampledPeakSpeed": 0.009919201609837164
+      }
+    },
+    {
+      "label": "to-0010",
+      "startTime": 5,
+      "time": 10.0,
+      "steps": 100,
+      "elapsedSeconds": 84.4033661249996,
+      "restartSha256": "1a9dadd878ceb156e388f7d7ddc0d714c04eb104b57743cc9cfe14577fa9b87d",
+      "checkpointSha256": "c69847baf1fcb96d7a8f32d4f7a64e2891a1ac572a1dd7e4a84733fb7f6d56dc",
+      "independentContinuity": 2.2965652082494456e-13,
+      "independentMomentumResidual": 4.5707890383986453e-10
+    },
+    {
+      "label": "to-0015",
+      "startTime": 10,
+      "time": 15.0,
+      "steps": 100,
+      "elapsedSeconds": 78.46299304100103,
+      "restartSha256": "c69847baf1fcb96d7a8f32d4f7a64e2891a1ac572a1dd7e4a84733fb7f6d56dc",
+      "checkpointSha256": "b0461f3bd754930d3d1cd323d60dc367af95678a42f2515dde4026d10401d3ce",
+      "independentContinuity": 2.675755220869051e-13,
+      "independentMomentumResidual": 3.295512915250919e-10
+    },
+    {
+      "label": "to-0020",
+      "startTime": 15,
+      "time": 20.0,
+      "steps": 100,
+      "elapsedSeconds": 75.13949008300187,
+      "restartSha256": "b0461f3bd754930d3d1cd323d60dc367af95678a42f2515dde4026d10401d3ce",
+      "checkpointSha256": "34389e24083bee04effe9be7a349d9d2eec126c2f03769e5db9145a1b8d8eb7a",
+      "independentContinuity": 2.4728155749430756e-13,
+      "independentMomentumResidual": 2.8748485380202797e-10
+    },
+    {
+      "label": "to-0025",
+      "startTime": 20,
+      "time": 25.0,
+      "steps": 100,
+      "elapsedSeconds": 74.36168333399837,
+      "restartSha256": "34389e24083bee04effe9be7a349d9d2eec126c2f03769e5db9145a1b8d8eb7a",
+      "checkpointSha256": "2570add8b3953c775e5939efe7ec34bc4d48ca9d936b8683ebea1e6562e98eff",
+      "independentContinuity": 2.3820141207184885e-13,
+      "independentMomentumResidual": 2.7637949445812365e-10
+    },
+    {
+      "label": "to-0030",
+      "startTime": 25,
+      "time": 30.0,
+      "steps": 100,
+      "elapsedSeconds": 72.06084562499746,
+      "restartSha256": "2570add8b3953c775e5939efe7ec34bc4d48ca9d936b8683ebea1e6562e98eff",
+      "checkpointSha256": "4101b873a2add2ff3e7754ccb22a224621ef0ae942e299ab2558bac9aecf0eae",
+      "independentContinuity": 1.6626612572148718e-13,
+      "independentMomentumResidual": 2.363658351235556e-10
+    },
+    {
+      "label": "to-0035",
+      "startTime": 30,
+      "time": 35.0,
+      "steps": 101,
+      "elapsedSeconds": 70.99896491699837,
+      "restartSha256": "4101b873a2add2ff3e7754ccb22a224621ef0ae942e299ab2558bac9aecf0eae",
+      "checkpointSha256": "f9f5ad918e5798c00c4dc1ac2e26afe8318eecaddf5e4a69258a1e3c603c1bf0",
+      "independentContinuity": 2.297520283772375e-13,
+      "independentMomentumResidual": 1.1782966275226011e-09
+    },
+    {
+      "label": "to-0040",
+      "startTime": 35,
+      "time": 40.0,
+      "steps": 101,
+      "elapsedSeconds": 67.81728791699788,
+      "restartSha256": "f9f5ad918e5798c00c4dc1ac2e26afe8318eecaddf5e4a69258a1e3c603c1bf0",
+      "checkpointSha256": "d583cb0644f79df6783671ffa2b3c9f918815dedf5ba58638451786cd23d0a4b",
+      "independentContinuity": 1.860408833786637e-13,
+      "independentMomentumResidual": 1.1613948916323484e-09
+    },
+    {
+      "label": "to-0045",
+      "startTime": 40,
+      "time": 45.0,
+      "steps": 101,
+      "elapsedSeconds": 64.69792920799955,
+      "restartSha256": "d583cb0644f79df6783671ffa2b3c9f918815dedf5ba58638451786cd23d0a4b",
+      "checkpointSha256": "95f8972aa1a13f380fe78090aebbea83c857898542f971a1cdbf563d6dbafa4a",
+      "independentContinuity": 1.886951321987379e-13,
+      "independentMomentumResidual": 1.148970987755009e-09
+    },
+    {
+      "label": "to-0050",
+      "startTime": 45,
+      "time": 50.0,
+      "steps": 101,
+      "elapsedSeconds": 63.71744675000082,
+      "restartSha256": "95f8972aa1a13f380fe78090aebbea83c857898542f971a1cdbf563d6dbafa4a",
+      "checkpointSha256": "04895e62c30669b7ae226860ba3a6732705c43b014415652cf3a3b175ecbb0ec",
+      "independentContinuity": 2.1529222410253287e-13,
+      "independentMomentumResidual": 1.1393397353902138e-09
+    }
+  ],
+  "historyFile": "outputs/native-flow/long-wake/verified.time-history.csv",
+  "historySha256": "e97b1911491987d6f85e6c095eb15941e0914cddfefbee914e8f99cb312e14ba",
+  "finalForceX": 1.1427799189956116,
+  "finalForceY": 2.2048422877098996e-05,
+  "initialRunPrefix": "outputs/native-flow/initial-vortex-wake/flow",
+  "parentTrajectory": null,
+  "parentTrajectorySha256": null,
+  "vorticityDefinition": "Least-squares gradient of exported final cell velocity; dv/dx-du/dy",
+  "vorticityRange": [
+    -7.88637835750489,
+    7.886368078880821
+  ],
+  "positiveLocalMonitorPeaks": [
+    {
+      "time": 9.800000000000015,
+      "forceY": 5.724406460493742e-05
+    },
+    {
+      "time": 23.700000000000053,
+      "forceY": 7.452472010402444e-05
+    },
+    {
+      "time": 38.599999999999795,
+      "forceY": 0.00011402286609519564
+    }
+  ],
+  "plotSourceSha256": "684badb7d0130082bc0c249c163bfd9abfad05146b9ac96b5027c57959c3b1c5",
+  "verifiedRecordSha256": "8ab8c7960fce299f636af60ca7ef24801b0bbcbba9ab94b926fba8d71e1ffdf5",
+  "finalFieldAuditSha256": "d5d358d486d1f1da12004b1ce44b73ec39d8ec3bc50957978c679579dd7704cb"
+}

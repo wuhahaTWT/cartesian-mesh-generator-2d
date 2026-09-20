@@ -22,6 +22,7 @@ const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
+const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -234,6 +235,46 @@ app.whenReady().then(async () => {
 
   const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
   ipcMain.handle('flow-state', () => flowState());
+  // Only the real smoke harness can supply a dialog replacement. Renderer
+  // requests never carry read/write paths for case files.
+  const smokeCasePath = () => {
+    if (!process.argv.includes('--flow-case-check=true') || !process.argv.some(a => a.startsWith('--smoke='))) return null;
+    const out = process.argv.find(a => a.startsWith('--out='))?.slice(6);
+    if (!out || !path.isAbsolute(out)) throw new Error('工况验证需要绝对输出目录。');
+    return path.join(out, 'saved-flow-case.json');
+  };
+  ipcMain.handle('save-flow-case', (_event, request) => exclusive(async () => {
+    if (!currentResult) throw new Error('请先生成最终网格。');
+    const document = createFlowCaseDocument(request, await fs.readFile(currentResult.cm2dPath));
+    const text = serializeFlowCase(document);
+    let file = smokeCasePath();
+    if (!file) {
+      const picked = await dialog.showSaveDialog(mainWindow, { title: '保存流动工况',
+        defaultPath: `${safeBaseName(currentResult.job.geometryPath)}.flow-case.json`,
+        filters: [{ name: '流动工况', extensions: ['json'] }] });
+      if (picked.canceled) return null;
+      file = picked.filePath;
+    }
+    const temporaryDirectory = await fs.mkdtemp(path.join(path.dirname(file), '.cartmesh2d-case-'));
+    try {
+      const temporary = path.join(temporaryDirectory, 'case.json');
+      await fs.writeFile(temporary, text, { flag: 'wx' }); await fs.rename(temporary, file);
+    } finally { await fs.rm(temporaryDirectory, { recursive: true, force: true }); }
+    return { fileName: path.basename(file), document };
+  }));
+  ipcMain.handle('load-flow-case', () => exclusive(async () => {
+    if (!currentResult) throw new Error('请先生成与工况对应的最终网格。');
+    let file = smokeCasePath();
+    if (!file) {
+      const picked = await dialog.showOpenDialog(mainWindow, { title: '读取流动工况', properties: ['openFile'],
+        filters: [{ name: '流动工况', extensions: ['json'] }] });
+      if (picked.canceled) return null;
+      file = picked.filePaths[0];
+    }
+    if ((await fs.stat(file)).size > FLOW_CASE_MAX_BYTES) throw new Error('工况文件超过32MB。');
+    const document = parseFlowCaseDocument(await fs.readFile(file, 'utf8'), await fs.readFile(currentResult.cm2dPath));
+    return { fileName: path.basename(file), document };
+  }));
   ipcMain.handle('prepare-flow-boundaries', (_event, request) => exclusive(async () => {
     if (!currentResult) throw new Error('请先生成最终网格。');
     const speed=Number(request?.speed);
@@ -850,7 +891,39 @@ async function runSmoke() {
           flowVortexSpeed:${JSON.stringify(argument('flow-vortex-speed') || '.01')}}))document.getElementById(id).value=value;
         if(document.getElementById('flowVortexRadius').disabled)throw new Error('Initial vortex controls are disabled for fresh transient run');
       }
+      if (${JSON.stringify(argument('flow-case-check')==='true')}) {
+        const saved=await smoke.saveFlowCase();
+        if(!saved)throw new Error('App did not save flow case');
+        document.getElementById('flowNu').value='4';
+        document.getElementById('flowSpeed').value='2';
+        document.getElementById('flowMode').value='steady';
+        document.getElementById('flowMode').dispatchEvent(new Event('change'));
+        document.getElementById('flowConvection').value='upwind';
+        document.getElementById('flowInitialVortex').checked=false;
+        document.getElementById('flowVortexSpeed').value='7';
+        smoke.state.flowBoundaryDefinition=null;
+        const loaded=await smoke.loadFlowCase();
+        const repeated=await smoke.saveFlowCase();
+        if(!loaded || !repeated || JSON.stringify(saved.document)!==JSON.stringify(repeated.document))
+          throw new Error('Saved flow settings did not survive editor modification and reload');
+        if(document.getElementById('flowResume').checked || document.getElementById('thermalResume').checked)
+          throw new Error('Loading a zero-time case silently enabled resume');
+        smoke.state.flowCaseSmoke={mesh:saved.document.mesh,request:saved.document.request,settingsRoundTrip:true};
+      }
       await smoke.runFlow();
+      if (${JSON.stringify(argument('flow-case-check')==='true')}) {
+        if(!smoke.state.flow)throw new Error('Restored case failed to calculate');
+        if(document.getElementById('flowMode').value!=='steady' && !document.getElementById('saveFlowCase').disabled)
+          throw new Error('Resume settings could be saved as a fresh case');
+        const fields=JSON.stringify(smoke.state.flow.fields),history=JSON.stringify(smoke.state.flow.history);
+        if(!await smoke.loadFlowCase())throw new Error('Case reload after calculation failed');
+        if(smoke.state.flow || !document.getElementById('flowResult').hidden)
+          throw new Error('Old result was incorrectly displayed as loaded case output');
+        await smoke.runFlow();
+        if(!smoke.state.flow || fields!==JSON.stringify(smoke.state.flow.fields) || history!==JSON.stringify(smoke.state.flow.history))
+          throw new Error('Repeated saved case changed its actual field or history');
+        smoke.state.flowCaseSmoke.repeatedCalculationIdentical=true;
+      }
       if (${JSON.stringify(argument('flow-vortex-speed')!==null)}) {
         if(!smoke.state.flow?.summary.initialVortex || !smoke.state.flow.files.initialCheckpoint)
           throw new Error('Initial vortex summary/checkpoint missing from real App result');
@@ -1029,6 +1102,7 @@ async function runSmoke() {
       raster: smoke.state.rasterEvidence,
       adaptive: smoke.state.adaptiveSmoke || null,
       initialVortex: smoke.state.initialVortexSmoke || null,
+      flowCase: smoke.state.flowCaseSmoke || null,
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
@@ -1169,6 +1243,9 @@ async function runSmoke() {
       }
       if (argument('flow-initial-shot')) {
         await mainWindow.webContents.executeJavaScript("document.getElementById('flowInitialSettings').open=true; document.getElementById('flowInitialSettings').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
+      }
+      if (argument('flow-case-check')) {
+        await mainWindow.webContents.executeJavaScript("document.getElementById('saveFlowCase').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
       }
       if (argument('flow-load-shot')) {
         mainWindow.setSize(1320,900);

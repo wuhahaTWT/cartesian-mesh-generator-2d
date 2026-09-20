@@ -102,7 +102,8 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
   state.flowHistory=[];
   $('flowTimeline').hidden=true;
-  if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();}
+  if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();
+    $('flowCaseFileInfo').textContent='保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。';}
   view.setFlowFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
@@ -904,10 +905,11 @@ function renderFlowResult(summary) {
 function updateFlowMode() {
   const transient = $('flowMode').value !== 'steady';
   const adaptive = $('flowMode').value === 'adaptive';
+  $('flowTimeSettings').hidden = !transient && $('flowCase').value === 'custom';
   $('flowAdaptiveSettings').hidden=!adaptive;
   $('flowStepsField').hidden=adaptive;
   $('flowSteps').disabled=state.busy||adaptive;
-  $('flowDtLabel').textContent=adaptive?'最大时间步长':'时间步长';
+  $('flowDtLabel').textContent=adaptive?'最大时间步长':transient?'时间步长':'温度联算步长';
   for (const id of ['flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).disabled=state.busy||!adaptive;
   $('flowRestartSettings').hidden = !transient;
   $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
@@ -916,6 +918,9 @@ function updateFlowMode() {
   $('flowResume').disabled = state.busy || !restart || !transient;
   const resuming = transient && $('flowResume').checked && restart;
   const thermalResuming = $('thermalResume').checked && state.thermalRestart;
+  $('saveFlowCase').disabled = Boolean(state.busy || !state.result || resuming || thermalResuming);
+  $('saveFlowCase').title = resuming || thermalResuming ? '请先取消续算，再保存从零起算的设置。' : '';
+  $('loadFlowCase').disabled = state.busy || !state.result;
   $('flowInitialSettings').hidden=!transient;
   $('flowInitialVortex').disabled=Boolean(state.busy||!transient||resuming||thermalResuming);
   for(const id of ['flowVortexX','flowVortexY','flowVortexRadius','flowVortexSpeed'])
@@ -932,7 +937,7 @@ function updateFlowMode() {
     : '每个完成的时间步都会保存；取消后可继续。';
   const dt = Number($('flowDt').value), steps = Number($('flowSteps').value);
   const start = resuming ? restart.time : 0;
-  $('flowTimeHint').textContent = adaptive
+  $('flowTimeHint').textContent = !transient ? '稳态流动不使用时间步长；这些设置仅在下方温度联合推进时生效。' : adaptive
     ? `从 ${start.toPrecision(5)} s 推进到目标时间；按实际 CFL 和内迭代结果缩步重试。仍是一阶时间格式，需要另做时间步细化验证。`
     : Number.isFinite(dt*steps) && dt > 0 && steps > 0
     ? `本次 ${start.toPrecision(5)} → ${(start+dt*steps).toPrecision(5)} s。一阶时间格式；时间步越小通常越准确，也更慢。`
@@ -1151,8 +1156,7 @@ async function refreshFlowState(restoreResult=false) {
   updateFlowMode();
   return saved;
 }
-async function runFlow() {
-  if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
+function flowRequest() {
   const transient=$('flowMode').value!=='steady';
   const request={ case:$('flowCase').value,nu:Number($('flowNu').value),speed:Number($('flowSpeed').value),
     maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
@@ -1165,6 +1169,51 @@ async function runFlow() {
   if(transient && !request.resume && $('flowInitialVortex').checked)
     request.initialVortex={centre:[Number($('flowVortexX').value),Number($('flowVortexY').value)],
       radius:Number($('flowVortexRadius').value),peakSpeed:Number($('flowVortexSpeed').value)};
+  return request;
+}
+function applyFlowCase(request) {
+  $('flowResume').checked=false;
+  $('thermalResume').checked=false;
+  clearFlowBinding(); clearThermalBinding();
+  state.flowBoundaryDefinition = request.boundaryDefinition ? structuredClone(request.boundaryDefinition) : null;
+  applySharedFlowControls(request);
+  const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',pressurePreconditioner:'flowPressurePreconditioner',
+    dt:'flowDt',steps:'flowSteps',endTime:'flowEndTime',minDt:'flowMinDt',maxCourant:'flowMaxCourant',
+    maxRetries:'flowMaxRetries',maxSteps:'flowMaxSteps'};
+  for (const [key,id] of Object.entries(fields)) if (request[key] !== undefined) $(id).value=request[key];
+  $('flowInitialVortex').checked=Boolean(request.initialVortex);
+  if (request.initialVortex) {
+    const q=request.initialVortex;
+    $('flowVortexX').value=q.centre[0];$('flowVortexY').value=q.centre[1];
+    $('flowVortexRadius').value=q.radius;$('flowVortexSpeed').value=q.peakSpeed;
+  }
+  view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowScope();updateFlowMode();
+}
+async function saveFlowCase() {
+  if (state.busy || !state.result || !validFlowInputs() || $('saveFlowCase').disabled) return null;
+  const request=flowRequest();
+  setBusy(true);
+  try {
+    const saved=await window.cartmesh.saveFlowCase(request);
+    if(saved){$('flowCaseFileInfo').textContent=`已保存 ${saved.fileName}：从零起算的流动设置，绑定当前最终网格。`;status('流动工况已保存','包括当前边界、物性、求解和初始设置。');}
+    return saved;
+  } catch(error){status('工况保存失败',error.message);log(error.message);return null;}
+  finally{setBusy(false);}
+}
+async function loadFlowCase() {
+  if(state.busy || !state.result)return null;
+  setBusy(true);
+  try {
+    const saved=await window.cartmesh.loadFlowCase();
+    if(saved){applyFlowCase(saved.document.request);$('flowCaseFileInfo').textContent=`已读取 ${saved.fileName}，绑定当前最终网格。后续编辑以当前表单为准。`;
+      status('流动工况已读取','设置已恢复，从零开始计算。结果导出仍保存上次已完成的计算；温度设置需单独核对。');}
+    return saved;
+  }catch(error){status('工况读取失败',error.message);log(error.message);return null;}
+  finally{setBusy(false);}
+}
+async function runFlow() {
+  if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
+  const request=flowRequest(),transient=request.mode!=='steady';
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
   try {
@@ -1237,6 +1286,8 @@ $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
+$('saveFlowCase').addEventListener('click', saveFlowCase);
+$('loadFlowCase').addEventListener('click', loadFlowCase);
 $('runThermal').addEventListener('click', runThermal);
 $('pickThermalCheckpoint').addEventListener('click',async()=>{
   if(state.busy||!state.result)return;
@@ -1362,7 +1413,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

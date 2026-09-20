@@ -1,0 +1,122 @@
+{
+  "format": "cartmesh2d-flow-case-evidence-v1",
+  "valid": true,
+  "appVersion": "0.4.21",
+  "scope": "Mesh-bound zero-time flow settings, native repeated results and macOS exports. Not a full project/mesh import or physical accuracy qualification.",
+  "cases": {
+    "annulus": {
+      "cells": 380,
+      "mode": "transient",
+      "case": "custom",
+      "meshSha256": "5a6beb84af90ca953e01b54b0adc6330ae2d79b07878ac96818584f6784739ac",
+      "settingsRoundTrip": true,
+      "repeatedFieldAndHistoryIdentical": true,
+      "boundaryPatches": {
+        "housing": {
+          "type": "wall",
+          "faces": 136
+        },
+        "rotor": {
+          "type": "smooth-moving-wall",
+          "faces": 96
+        }
+      },
+      "initialVortex": {
+        "centre": [
+          0.75,
+          0
+        ],
+        "radius": 0.1,
+        "peakSpeed": 0.05
+      },
+      "summarySha256": "54cba5780cf7b1f7834e117364834b200eddd270ec319b8329f628cf66eebc6f",
+      "zipSha256": "fded34e8b0dd141f758fc9cd318aaf18c7f200190f93594a534cc4d0c6b0463f",
+      "auditSha256": "9e326b3c323e48ee62d5fd575f4d1fbe4db6d292cc200b9d26b4c2f71c229dc5",
+      "savedCaseSha256": "0053d2de909c516e84d3f2421fd0de54d05d8bea080ddc453be6ebfaf2cc3d47",
+      "iterations": 47,
+      "acceptedTime": 0.02,
+      "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nFAIL\n详情"
+    },
+    "nozzle-final": {
+      "cells": 2784,
+      "mode": "steady",
+      "case": "custom",
+      "meshSha256": "879e681670d60b16c05b56a47261ee73b9aa407a26395a0c2e5cbe7ff206708a",
+      "settingsRoundTrip": true,
+      "repeatedFieldAndHistoryIdentical": true,
+      "boundaryPatches": {
+        "inlet": {
+          "type": "velocity-inlet",
+          "faces": 84
+        },
+        "wall": {
+          "type": "wall",
+          "faces": 576
+        },
+        "outlet": {
+          "type": "pressure-outlet",
+          "faces": 84
+        }
+      },
+      "initialVortex": null,
+      "summarySha256": "b020efac0280a2202c0328ee6682cf5f2e3727b072136b04bded322bbecd1cbf",
+      "zipSha256": "3b84cb9936bb4e7b5d35fe9130ba73a517bd0a14caed160ab72a0685f7666bdd",
+      "auditSha256": "5098de929448cfc28550bd6a780ba5324671abe74803094068247d2900b5b6da",
+      "savedCaseSha256": "e0966081bddbb3b003a2232feb4cc6370280cfa4f43bf3bd806d5f93b883d25d",
+      "iterations": 229,
+      "acceptedTime": null,
+      "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情"
+    },
+    "external": {
+      "cells": 2504,
+      "mode": "steady",
+      "case": "external",
+      "meshSha256": "b66923104597c6e2a458f0760856d455a56c241bf92e9c3486cd788cb5084433",
+      "settingsRoundTrip": true,
+      "repeatedFieldAndHistoryIdentical": true,
+      "boundaryPatches": {},
+      "initialVortex": null,
+      "summarySha256": "5fdfd1449fd75e65bee8f02e16157cc779d746f22a10a800ebf176827cb8db0e",
+      "zipSha256": "1d2989d356fe928811d49728adf7c1188e6854f4dfce4c2082b11711d3ae7fa3",
+      "auditSha256": "c4a4d93a4daa8619abd142c6ba3821639be9705a47be3c19ed9207f8cfca6cd9",
+      "savedCaseSha256": "ca7271d12cc8d5558e6cb3737bcfdcb3a58d77d4d91ddc6e4f4a5d11f6feb0ad",
+      "iterations": 189,
+      "acceptedTime": null,
+      "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nFAIL\n详情"
+    }
+  },
+  "nativeBinarySha256": {
+    "cartmesh2d_transport_cli": "9e7606bbbc55b2c35ca997fd2835b29d9347e2f465d3d74be65a7979f613930c",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "finalAppAsarSha256": "f8ed8fb44d83ef7b5d78899721eebf70c7309d4915b7d85177e298e1f535f10f",
+  "tests": {
+    "ctestPassed": 143,
+    "frontendPassed": 160,
+    "ctestLogSha256": "e396c4dabb066d4f930f6131ad8ff287d18911a73f928f0e88c224806845881f",
+    "frontendLogSha256": "bb2d3c53fe676d79c66b6800263f2ccf86ecfbbbd2ffc05806925179f55d8682"
+  },
+  "retainedUnfixedMeshFailure": {
+    "valid": false,
+    "stage": "mesh generation before flow",
+    "sample": "nozzle",
+    "control": "manual",
+    "wallRelativeSize": 0.04,
+    "backgroundRelativeSize": 0.04,
+    "paddingRelativeSize": 0.5,
+    "referenceLength": 4,
+    "bandCells": 3,
+    "smallAlpha": 0.45,
+    "issue": "2D-5B does not silently chain small-to-small agglomeration",
+    "note": "Retained new manual input failure; use previously verified automatic mesh only to validate saved-case feature, not a mesh bug fix."
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Windows",
+    "Linux",
+    "compressible flow"
+  ]
+}

@@ -905,3 +905,19 @@ python3 tools/verification/verify_rotating_annulus.py --output outputs/ring-refe
 ```
 
 参考工具独立构造环形四边形以分离求解器误差，不称为Cut-cell；仍由原生几何工厂执行完整Solver质量门，Python另重算几何、通量与方程。径向/角向和多边形圆边界同步细化；解析式与力矩来自[UT Austin](https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html)，速度L2按内壁速度归一化，压力L2按速度平方归一化，压力基准取cell0。预设误差门在运行前保存，加严容差对照单独核查迭代误差；不把圆环结果泛化为全部旋转设备或三维Taylor涡。
+
+
+### 保存流动工况与分段续算核对
+
+macOS 0.4.21 的“保存工况 / 读取工况”使用 `cartmesh2d-flow-case-v1` JSON（`desktop/src/core/flow-case.js`）。绑定最终CM2D文件SHA256及单元/面/顶点数，保存规范化的物性、边界逐面数值与名称、数值格式、时间控制和初始局部涡。读取还逐面检查边界位置、法向、owner、覆盖及物理约束；未知版本、额外/缺失/无效字段明确拒绝。JSON不携带可执行命令或读写路径。保存通过同目录临时文件完成后替换目标。
+
+这是从零起算的流动设置，不包含几何生成参数、网格数据、温度条件或已接受流场。下一次会话先按原参数生成同一最终网格，再读取；完整项目导入仍待做。续算模式下保存按钮禁用；读取会取消流动/温度续算并清除旧场的界面绑定，必须重新计算。已有结果包仍保留上次完成的物理结果，不会被配置文件重新标记。真实App验证入口 `--flow-case-check=true`（同时提供 `--smoke` 和绝对 `--out`）替代文件选择对话框，经过相同IPC/表单处理，修改参数后读回，并检查两次真实计算的场及时间历史一致。
+
+`tools/verification/verify_flow_trajectory.py`处理已完成的`cartmesh2d-bounded-trajectory-v1`外流序列。逐段复算最终面动量与守恒，完整读取v2检查点几何、拓扑、物性、U/V/P/FLUX，并与CM2D/CSV绑定；后一段输入字节必须等于前段接受状态。压缩目录须通过整体及逐文件SHA256校验，解包拒绝越界路径、链接和重复文件。父研究的最终时间/检查点/网格/二进制必须接上当前研究；中间时间的监测行不冒称全部重建了中间流场。
+
+```sh
+python3 tools/verification/verify_flow_trajectory.py --trajectory outputs/native-flow/long-wake/trajectory.json --initial outputs/native-flow/initial-vortex-wake/flow --output outputs/native-flow/long-wake/verified
+MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified outputs/native-flow/long-wake/verified.json --output artifacts/current/native-long-wake
+```
+
+原始目录已压缩时从同名`.tar.gz`和`.manifest.json`独立验证；工具不重算求解器、覆盖失败输入或延长预设计算预算。当前绘图工况固定为Re100圆柱，显示真实网格、速度/重构涡量及完整受力历史，不能作为空间/时间独立性或饱和脱涡资格。

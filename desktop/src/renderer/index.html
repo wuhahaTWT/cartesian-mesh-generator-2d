@@ -188,6 +188,11 @@
     <section class="block flow-block" id="flowBlock" hidden>
       <h2><span>5</span>原生层流</h2>
       <p class="note">在最终网格上计算速度与压力。不含湍流模型；边界条件须与几何相符。</p>
+      <div class="pair">
+        <button id="saveFlowCase">保存工况…</button>
+        <button id="loadFlowCase">读取工况…</button>
+      </div>
+      <p class="note" id="flowCaseFileInfo">保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。</p>
       <label class="field">时间模式
         <select id="flowMode"><option value="steady">稳态</option><option value="transient">非定常 · 固定步长</option><option value="adaptive">非定常 · 自动步长</option></select>
       </label>
