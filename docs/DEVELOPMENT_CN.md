@@ -483,6 +483,19 @@ SST探针增加`--scalar-preconditioner jacobi|ilu0`和`--max-iterations N`（�
 
 修复案例可用上一节命令将nx改40、stretch改8复现。查看原失败文件与新最终场需要区别其源码/可执行文件哈希；不应把旧文件重新标为已通过。绘图脚本继续只展示有独立审核的真实场。
 
+### 保持近壁层的精确法向细化审核
+
+`tools/verification/verify_rectilinear_refinement.py`独立读取两份最终CM2D并执行原几何测量，要求每份都是完整的轴向矩形张量积网格，不能带重复/缺失单元、斜边、交叉或退化四边形。流向坐标必须逐值相同；`--preserve-first-rows N`要求正整数且留下可细化区。前N个法向区间及其单元多边形保持不变，其余每个区间只能插入一次精确有理数中点舍入后的binary64坐标，所有原节点仍存在。面积证明针对解析后的坐标，不推断CAD精度或Solver质量。
+
+```sh
+python3 tools/verification/verify_rectilinear_refinement.py --original /path/original.cm2d --refined /path/refined.cm2d --preserve-first-rows 4 --output outputs/refinement.json
+python3 tools/visualization/render_sst_normal_refinement.py --study artifacts/current/native-sst-normal-refinement.json --output outputs/sst-normal-refinement.png
+```
+
+24,000格实例由临时C++生成器调用既有原生`makeRectilinearMesh2D`，原Solver门不变；源码/命令/哈希保存在证据JSON，未增加绕过质量门的网格入口。1,600个近壁单元原样保留，其余11,200个各二分成22,400个。`geometryValid`只代表上述关系，不授予流动/物理通过；必须另运行原Solver检查及严格场审核。`render_sst_flatplate_analysis.py --mesh-case NAME`可选择实际显示哪份已审核网格，默认fine兼容旧调用。
+
+本轮完整求解和独立物理量比较在`native-sst-normal-refinement.json`；方程全部通过，但Cf对中外部法向细化仅约0.2%敏感，仍非网格无关证明。原始场保留outputs，性能分项来自实际求解profile，不将标量setup全归因于CSR构造。
+
 ### 实际平板剖面与域敏感性测量
 
 `tools/verification/analyze_sst_flatplate.py`读取manifest的cases（name/mesh/prefix）及comparisons（两两名称）。每例先从实际文件运行严格`verify_sst_rans.audit`，再测量；拒绝未收敛、任意非矩形/非完整张量积网格、非法物性或站位外推。此工具不是通用Cut-cell剖面插值器。固定站位x=.97008、1.90334：各水平行按单元中心x线性插值；wall kinematic shear另按墙面中心插值，Cf=2tau/U²、u_tau=sqrt(tau)、u+=u/u_tau、y+=(y-ywall)u_tau/nu。负剪切不套用此缩放。delta99仅为从无滑移点开始的0.99U首次交点，无交点返回null，不声称测得边界层外缘速度。

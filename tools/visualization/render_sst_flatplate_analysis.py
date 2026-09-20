@@ -18,6 +18,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--study',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--mesh-case',default='fine',help='case whose actual mesh is displayed')
     args=parser.parse_args()
     study=json.loads(args.study.read_text())
     cases=study['cases']
@@ -30,7 +31,7 @@ def main():
                 raise ValueError('field provenance differs: '+record['path'])
     colors=['#8f9eae','#b68d52','#247c88','#9a5e82']
     fig,axes=plt.subplots(2,3,figsize=(15,8),layout='constrained')
-    selected=next(c for c in cases if c['name']=='fine')
+    selected=next(c for c in cases if c['name']==args.mesh_case)
     mesh=native.read_cm2d(Path(selected['files'][0]['path']))
     cells_path=next(Path(r['path']) for r in selected['files'] if r['path'].endswith('.cells.csv'))
     with cells_path.open() as stream:rows=list(csv.DictReader(stream))
@@ -41,7 +42,7 @@ def main():
             polys.append(vertices);values.append(float(row['u'])/selected['physicalInputs']['speed'])
     collection=PolyCollection(polys,array=values,cmap='viridis',edgecolors='#8495a1',linewidths=.3)
     axes[0,0].add_collection(collection)
-    axes[0,0].set(xlim=(-.03,.2),ylim=(0,.003),xlabel='x [m]',ylabel='y [m]',title='Actual fine mesh and u/U (vertical zoom)')
+    axes[0,0].set(xlim=(-.03,.2),ylim=(0,.003),xlabel='x [m]',ylabel='y [m]',title=f"Actual {selected['name']} mesh and u/U (vertical zoom)")
     fig.colorbar(collection,ax=axes[0,0],shrink=.8,label='u / U')
     reference=study.get('reference')
     for c,color in zip(cases,colors):

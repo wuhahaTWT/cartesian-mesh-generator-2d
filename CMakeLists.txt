@@ -196,6 +196,8 @@ if(CARTMESH2D_BUILD_TESTS)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME cartmesh2d_sst_flatplate_analysis COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_flatplate_analysis_test.py)
+    add_test(NAME cartmesh2d_rectilinear_refinement_verifier COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/rectilinear_refinement_verifier_test.py)
     add_test(NAME cartmesh2d_sst_rans_verifier COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_rans_verifier_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

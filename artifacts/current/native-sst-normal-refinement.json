@@ -1,0 +1,5566 @@
+{
+  "baseCommit": "8a79ad8",
+  "scope": "Controlled wall-normal refinement with unchanged original stopping gates",
+  "physicalAccuracyQualified": false,
+  "meshes": {
+    "original": {
+      "path": "outputs/native-flow/sst-wall-scale/fine/mesh.cm2d",
+      "sha256": "7614a85ea5174180687abe627f0de3705bb4f2d26e52f23feb97d99fd655c462"
+    },
+    "refined": {
+      "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+      "sha256": "d8422e73682fd4df27f7d1abe23b05aec3becb9e3bcc34071a33c5b895a456fc"
+    }
+  },
+  "geometry": {
+    "geometryValid": true,
+    "scope": "Exact rectangular midpoint refinement only; no Solver or flow qualification",
+    "originalCells": 12800,
+    "refinedCells": 24000,
+    "nx": 400,
+    "originalNy": 32,
+    "refinedNy": 60,
+    "preservedRows": 4,
+    "preservedBandTop": 4.935563156142981e-05,
+    "preservedCells": 1600,
+    "streamwiseNodesIdentical": true,
+    "originalNormalNodesRetained": true,
+    "lowerCellPolygonsIdentical": true,
+    "eachUpperParentSplitOnce": true,
+    "areaIdenticalAsExactRational": true,
+    "domainArea": 2.5,
+    "areaDefinition": "Exact rational equality for parsed binary64 coordinates, not source CAD/decimal geometry",
+    "originalY": [
+      0.0,
+      6.851586924852843e-06,
+      1.6513873186836912e-05,
+      3.0139880830391875e-05,
+      4.935563156142981e-05,
+      7.645418352298228e-05,
+      0.00011466926700795074,
+      0.0001685611726653128,
+      0.000244560941095085,
+      0.0003517377931830749,
+      0.0005028813803389402,
+      0.0007160280019582048,
+      0.001016612917022151,
+      0.0014405055899512616,
+      0.002038290073330142,
+      0.002881301315065655,
+      0.004070137715896128,
+      0.005746665759614638,
+      0.00811094925514955,
+      0.011445123394498049,
+      0.016147062570783327,
+      0.02277785961181798,
+      0.03212878223139341,
+      0.04531569676009441,
+      0.06391222694880867,
+      0.09013753798021545,
+      0.12712115437072974,
+      0.17927641307033823,
+      0.2528271167468118,
+      0.356550233958481,
+      0.5028232742740281,
+      0.7091013239347506,
+      1.0
+    ],
+    "refinedY": [
+      0.0,
+      6.851586924852843e-06,
+      1.6513873186836912e-05,
+      3.0139880830391875e-05,
+      4.935563156142981e-05,
+      6.290490754220604e-05,
+      7.645418352298228e-05,
+      9.55617252654665e-05,
+      0.00011466926700795074,
+      0.00014161521983663177,
+      0.0001685611726653128,
+      0.00020656105688019892,
+      0.000244560941095085,
+      0.00029814936713907993,
+      0.0003517377931830749,
+      0.0004273095867610076,
+      0.0005028813803389402,
+      0.0006094546911485726,
+      0.0007160280019582048,
+      0.000866320459490178,
+      0.001016612917022151,
+      0.0012285592534867062,
+      0.0014405055899512616,
+      0.0017393978316407018,
+      0.002038290073330142,
+      0.0024597956941978987,
+      0.002881301315065655,
+      0.0034757195154808914,
+      0.004070137715896128,
+      0.0049084017377553826,
+      0.005746665759614638,
+      0.006928807507382094,
+      0.00811094925514955,
+      0.0097780363248238,
+      0.011445123394498049,
+      0.013796092982640687,
+      0.016147062570783327,
+      0.019462461091300655,
+      0.02277785961181798,
+      0.027453320921605698,
+      0.03212878223139341,
+      0.03872223949574391,
+      0.04531569676009441,
+      0.05461396185445154,
+      0.06391222694880867,
+      0.07702488246451206,
+      0.09013753798021545,
+      0.1086293461754726,
+      0.12712115437072974,
+      0.15319878372053397,
+      0.17927641307033823,
+      0.21605176490857503,
+      0.2528271167468118,
+      0.30468867535264643,
+      0.356550233958481,
+      0.42968675411625457,
+      0.5028232742740281,
+      0.6059622991043894,
+      0.7091013239347506,
+      0.8545506619673753,
+      1.0
+    ],
+    "files": [
+      {
+        "path": "outputs/native-flow/sst-wall-scale/fine/mesh.cm2d",
+        "sha256": "7614a85ea5174180687abe627f0de3705bb4f2d26e52f23feb97d99fd655c462"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "sha256": "d8422e73682fd4df27f7d1abe23b05aec3becb9e3bcc34071a33c5b895a456fc"
+      }
+    ]
+  },
+  "nativeGeometry": {
+    "baselineCells": 12800,
+    "refinedCells": 24000,
+    "xCount": 401,
+    "baselineYCount": 33,
+    "refinedYCount": 61,
+    "firstFourStripPolygonSetIdentical": true,
+    "insertedMidpointsProper": true,
+    "domainAreaIdentical": true,
+    "domainAreaAbsDifference": 2.1760371282653068e-13,
+    "parentPartitionCoverage": true,
+    "parentsChecked": 12800,
+    "maxCoverageError": 1.0842021724855044e-19,
+    "qualityValid": true
+  },
+  "nativeSolverQuality": {
+    "quality_class": "solver_quality",
+    "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+    "valid": true,
+    "policy": {
+      "max_non_orthogonality_deg": 70,
+      "max_internal_skewness": 4,
+      "max_boundary_skewness": 4,
+      "max_concavity_deg": 80,
+      "max_cell_aspect": 1000,
+      "min_interior_angle_deg": 0.5,
+      "min_face_length": 1.01e-10,
+      "min_face_weight": 0.05,
+      "min_volume_ratio": 0.01
+    },
+    "metrics": {
+      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+      "max_internal_skewness": 0,
+      "max_boundary_skewness": 6.938893903907624e-16,
+      "max_concavity_deg": 0,
+      "max_cell_aspect": 913.1974322955185,
+      "min_interior_angle_deg": 90,
+      "min_face_length": 6.851586924852843e-06,
+      "min_face_weight": 0.413528610855389,
+      "min_volume_ratio": 0.705113017462855,
+      "min_compactness": 0.003436444662161739
+    },
+    "issue_count": 0,
+    "issues": []
+  },
+  "run": {
+    "runtime": {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/flow",
+        "flatplate-sweep",
+        "--nu",
+        "2e-7",
+        "--speed",
+        "1",
+        "--inlet-k",
+        "2.25e-7",
+        "--inlet-omega",
+        "125",
+        "--leading-edge",
+        "0",
+        "--max-iterations",
+        "20000",
+        "--completion-updates",
+        "500",
+        "--max-seconds",
+        "540",
+        "--scalar-preconditioner",
+        "ilu0"
+      ],
+      "startedAtEpoch": 1789875772.791358,
+      "endedAtEpoch": 1789876298.661033,
+      "runtimeSeconds": 525.8696749210358,
+      "exitCode": 0,
+      "timeout": false,
+      "peakRssBytes": 102219776,
+      "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+      "liveRssGuardActive": false,
+      "rssLimitBytes": 536870912,
+      "diskFloorBytes": 1610612736,
+      "samples": [
+        {
+          "elapsedSeconds": 0.0011818408966064453,
+          "rssBytes": null,
+          "diskFreeBytes": 2275987456
+        },
+        {
+          "elapsedSeconds": 5.011147975921631,
+          "rssBytes": null,
+          "diskFreeBytes": 2276089856
+        },
+        {
+          "elapsedSeconds": 10.014337062835693,
+          "rssBytes": null,
+          "diskFreeBytes": 2275827712
+        },
+        {
+          "elapsedSeconds": 15.024252891540527,
+          "rssBytes": null,
+          "diskFreeBytes": 2275966976
+        },
+        {
+          "elapsedSeconds": 20.03417205810547,
+          "rssBytes": null,
+          "diskFreeBytes": 2275811328
+        },
+        {
+          "elapsedSeconds": 25.037587881088257,
+          "rssBytes": null,
+          "diskFreeBytes": 2275540992
+        },
+        {
+          "elapsedSeconds": 30.04013991355896,
+          "rssBytes": null,
+          "diskFreeBytes": 2275364864
+        },
+        {
+          "elapsedSeconds": 35.04596996307373,
+          "rssBytes": null,
+          "diskFreeBytes": 2275287040
+        },
+        {
+          "elapsedSeconds": 40.05588984489441,
+          "rssBytes": null,
+          "diskFreeBytes": 2275086336
+        },
+        {
+          "elapsedSeconds": 45.06579923629761,
+          "rssBytes": null,
+          "diskFreeBytes": 2275282944
+        },
+        {
+          "elapsedSeconds": 50.075706005096436,
+          "rssBytes": null,
+          "diskFreeBytes": 2275115008
+        },
+        {
+          "elapsedSeconds": 55.08566188812256,
+          "rssBytes": null,
+          "diskFreeBytes": 2274967552
+        },
+        {
+          "elapsedSeconds": 60.09560012817383,
+          "rssBytes": null,
+          "diskFreeBytes": 2274893824
+        },
+        {
+          "elapsedSeconds": 65.10552597045898,
+          "rssBytes": null,
+          "diskFreeBytes": 2274848768
+        },
+        {
+          "elapsedSeconds": 70.11544704437256,
+          "rssBytes": null,
+          "diskFreeBytes": 2274516992
+        },
+        {
+          "elapsedSeconds": 75.12536382675171,
+          "rssBytes": null,
+          "diskFreeBytes": 2274660352
+        },
+        {
+          "elapsedSeconds": 80.12692975997925,
+          "rssBytes": null,
+          "diskFreeBytes": 2274639872
+        },
+        {
+          "elapsedSeconds": 85.13686609268188,
+          "rssBytes": null,
+          "diskFreeBytes": 2274353152
+        },
+        {
+          "elapsedSeconds": 90.14602589607239,
+          "rssBytes": null,
+          "diskFreeBytes": 2274197504
+        },
+        {
+          "elapsedSeconds": 95.15592694282532,
+          "rssBytes": null,
+          "diskFreeBytes": 2274177024
+        },
+        {
+          "elapsedSeconds": 100.16585397720337,
+          "rssBytes": null,
+          "diskFreeBytes": 2276769792
+        },
+        {
+          "elapsedSeconds": 105.17576909065247,
+          "rssBytes": null,
+          "diskFreeBytes": 2276753408
+        },
+        {
+          "elapsedSeconds": 110.17880702018738,
+          "rssBytes": null,
+          "diskFreeBytes": 2276347904
+        },
+        {
+          "elapsedSeconds": 115.18871188163757,
+          "rssBytes": null,
+          "diskFreeBytes": 2276347904
+        },
+        {
+          "elapsedSeconds": 120.19864392280579,
+          "rssBytes": null,
+          "diskFreeBytes": 2276188160
+        },
+        {
+          "elapsedSeconds": 125.20860314369202,
+          "rssBytes": null,
+          "diskFreeBytes": 2276081664
+        },
+        {
+          "elapsedSeconds": 130.2185971736908,
+          "rssBytes": null,
+          "diskFreeBytes": 2275958784
+        },
+        {
+          "elapsedSeconds": 135.22783398628235,
+          "rssBytes": null,
+          "diskFreeBytes": 2276167680
+        },
+        {
+          "elapsedSeconds": 140.23774194717407,
+          "rssBytes": null,
+          "diskFreeBytes": 2275856384
+        },
+        {
+          "elapsedSeconds": 145.24764204025269,
+          "rssBytes": null,
+          "diskFreeBytes": 2275635200
+        },
+        {
+          "elapsedSeconds": 150.25755500793457,
+          "rssBytes": null,
+          "diskFreeBytes": 2275397632
+        },
+        {
+          "elapsedSeconds": 155.26113200187683,
+          "rssBytes": null,
+          "diskFreeBytes": 2275389440
+        },
+        {
+          "elapsedSeconds": 160.2710509300232,
+          "rssBytes": null,
+          "diskFreeBytes": 2275348480
+        },
+        {
+          "elapsedSeconds": 165.28095698356628,
+          "rssBytes": null,
+          "diskFreeBytes": 2275483648
+        },
+        {
+          "elapsedSeconds": 170.2908799648285,
+          "rssBytes": null,
+          "diskFreeBytes": 2275389440
+        },
+        {
+          "elapsedSeconds": 175.30080103874207,
+          "rssBytes": null,
+          "diskFreeBytes": 2275381248
+        },
+        {
+          "elapsedSeconds": 180.31071519851685,
+          "rssBytes": null,
+          "diskFreeBytes": 2275213312
+        },
+        {
+          "elapsedSeconds": 185.31473994255066,
+          "rssBytes": null,
+          "diskFreeBytes": 2275016704
+        },
+        {
+          "elapsedSeconds": 190.32466101646423,
+          "rssBytes": null,
+          "diskFreeBytes": 2275004416
+        },
+        {
+          "elapsedSeconds": 195.33455300331116,
+          "rssBytes": null,
+          "diskFreeBytes": 2275115008
+        },
+        {
+          "elapsedSeconds": 200.34448409080505,
+          "rssBytes": null,
+          "diskFreeBytes": 2275078144
+        },
+        {
+          "elapsedSeconds": 205.34963512420654,
+          "rssBytes": null,
+          "diskFreeBytes": 2274852864
+        },
+        {
+          "elapsedSeconds": 210.35955905914307,
+          "rssBytes": null,
+          "diskFreeBytes": 2274807808
+        },
+        {
+          "elapsedSeconds": 215.3695411682129,
+          "rssBytes": null,
+          "diskFreeBytes": 2274426880
+        },
+        {
+          "elapsedSeconds": 220.37948298454285,
+          "rssBytes": null,
+          "diskFreeBytes": 2273865728
+        },
+        {
+          "elapsedSeconds": 225.38940596580505,
+          "rssBytes": null,
+          "diskFreeBytes": 2273800192
+        },
+        {
+          "elapsedSeconds": 230.391539812088,
+          "rssBytes": null,
+          "diskFreeBytes": 2273296384
+        },
+        {
+          "elapsedSeconds": 235.3940110206604,
+          "rssBytes": null,
+          "diskFreeBytes": 2273083392
+        },
+        {
+          "elapsedSeconds": 240.40396308898926,
+          "rssBytes": null,
+          "diskFreeBytes": 2273026048
+        },
+        {
+          "elapsedSeconds": 245.41389989852905,
+          "rssBytes": null,
+          "diskFreeBytes": 2272944128
+        },
+        {
+          "elapsedSeconds": 250.41808104515076,
+          "rssBytes": null,
+          "diskFreeBytes": 2272854016
+        },
+        {
+          "elapsedSeconds": 255.4279968738556,
+          "rssBytes": null,
+          "diskFreeBytes": 2272829440
+        },
+        {
+          "elapsedSeconds": 260.4379360675812,
+          "rssBytes": null,
+          "diskFreeBytes": 2272538624
+        },
+        {
+          "elapsedSeconds": 265.4478449821472,
+          "rssBytes": null,
+          "diskFreeBytes": 2272325632
+        },
+        {
+          "elapsedSeconds": 270.45494508743286,
+          "rssBytes": null,
+          "diskFreeBytes": 2272305152
+        },
+        {
+          "elapsedSeconds": 275.4648609161377,
+          "rssBytes": null,
+          "diskFreeBytes": 2270171136
+        },
+        {
+          "elapsedSeconds": 280.47481203079224,
+          "rssBytes": null,
+          "diskFreeBytes": 2270081024
+        },
+        {
+          "elapsedSeconds": 285.48480105400085,
+          "rssBytes": null,
+          "diskFreeBytes": 2270453760
+        },
+        {
+          "elapsedSeconds": 290.4902629852295,
+          "rssBytes": null,
+          "diskFreeBytes": 2270318592
+        },
+        {
+          "elapsedSeconds": 295.5001859664917,
+          "rssBytes": null,
+          "diskFreeBytes": 2270191616
+        },
+        {
+          "elapsedSeconds": 300.50263595581055,
+          "rssBytes": null,
+          "diskFreeBytes": 2270035968
+        },
+        {
+          "elapsedSeconds": 305.5125370025635,
+          "rssBytes": null,
+          "diskFreeBytes": 2269978624
+        },
+        {
+          "elapsedSeconds": 310.52244806289673,
+          "rssBytes": null,
+          "diskFreeBytes": 2269933568
+        },
+        {
+          "elapsedSeconds": 315.5261821746826,
+          "rssBytes": null,
+          "diskFreeBytes": 2270056448
+        },
+        {
+          "elapsedSeconds": 320.5361120700836,
+          "rssBytes": null,
+          "diskFreeBytes": 2269765632
+        },
+        {
+          "elapsedSeconds": 325.5460829734802,
+          "rssBytes": null,
+          "diskFreeBytes": 2269728768
+        },
+        {
+          "elapsedSeconds": 330.54731488227844,
+          "rssBytes": null,
+          "diskFreeBytes": 2269708288
+        },
+        {
+          "elapsedSeconds": 335.5549809932709,
+          "rssBytes": null,
+          "diskFreeBytes": 2269446144
+        },
+        {
+          "elapsedSeconds": 340.5648958683014,
+          "rssBytes": null,
+          "diskFreeBytes": 2269229056
+        },
+        {
+          "elapsedSeconds": 345.5748300552368,
+          "rssBytes": null,
+          "diskFreeBytes": 2269470720
+        },
+        {
+          "elapsedSeconds": 350.58473801612854,
+          "rssBytes": null,
+          "diskFreeBytes": 2269274112
+        },
+        {
+          "elapsedSeconds": 355.5866029262543,
+          "rssBytes": null,
+          "diskFreeBytes": 2269188096
+        },
+        {
+          "elapsedSeconds": 360.5965349674225,
+          "rssBytes": null,
+          "diskFreeBytes": 2269143040
+        },
+        {
+          "elapsedSeconds": 365.60169219970703,
+          "rssBytes": null,
+          "diskFreeBytes": 2269106176
+        },
+        {
+          "elapsedSeconds": 370.6116199493408,
+          "rssBytes": null,
+          "diskFreeBytes": 2268995584
+        },
+        {
+          "elapsedSeconds": 375.62157702445984,
+          "rssBytes": null,
+          "diskFreeBytes": 2268925952
+        },
+        {
+          "elapsedSeconds": 380.6315162181854,
+          "rssBytes": null,
+          "diskFreeBytes": 2268884992
+        },
+        {
+          "elapsedSeconds": 385.64147901535034,
+          "rssBytes": null,
+          "diskFreeBytes": 2268704768
+        },
+        {
+          "elapsedSeconds": 390.64711117744446,
+          "rssBytes": null,
+          "diskFreeBytes": 2268651520
+        },
+        {
+          "elapsedSeconds": 395.6570529937744,
+          "rssBytes": null,
+          "diskFreeBytes": 2268553216
+        },
+        {
+          "elapsedSeconds": 400.6669569015503,
+          "rssBytes": null,
+          "diskFreeBytes": 2268499968
+        },
+        {
+          "elapsedSeconds": 405.6768717765808,
+          "rssBytes": null,
+          "diskFreeBytes": 2268631040
+        },
+        {
+          "elapsedSeconds": 410.6867780685425,
+          "rssBytes": null,
+          "diskFreeBytes": 2268585984
+        },
+        {
+          "elapsedSeconds": 415.6967191696167,
+          "rssBytes": null,
+          "diskFreeBytes": 2268217344
+        },
+        {
+          "elapsedSeconds": 420.700453042984,
+          "rssBytes": null,
+          "diskFreeBytes": 2268164096
+        },
+        {
+          "elapsedSeconds": 425.7103590965271,
+          "rssBytes": null,
+          "diskFreeBytes": 2268098560
+        },
+        {
+          "elapsedSeconds": 430.72029399871826,
+          "rssBytes": null,
+          "diskFreeBytes": 2268045312
+        },
+        {
+          "elapsedSeconds": 435.73025703430176,
+          "rssBytes": null,
+          "diskFreeBytes": 2268213248
+        },
+        {
+          "elapsedSeconds": 440.74019408226013,
+          "rssBytes": null,
+          "diskFreeBytes": 2268135424
+        },
+        {
+          "elapsedSeconds": 445.7501218318939,
+          "rssBytes": null,
+          "diskFreeBytes": 2268073984
+        },
+        {
+          "elapsedSeconds": 450.76006507873535,
+          "rssBytes": null,
+          "diskFreeBytes": 2267721728
+        },
+        {
+          "elapsedSeconds": 455.7699818611145,
+          "rssBytes": null,
+          "diskFreeBytes": 2267623424
+        },
+        {
+          "elapsedSeconds": 460.77993392944336,
+          "rssBytes": null,
+          "diskFreeBytes": 2267389952
+        },
+        {
+          "elapsedSeconds": 465.78719782829285,
+          "rssBytes": null,
+          "diskFreeBytes": 2267373568
+        },
+        {
+          "elapsedSeconds": 470.7970988750458,
+          "rssBytes": null,
+          "diskFreeBytes": 2267365376
+        },
+        {
+          "elapsedSeconds": 475.7978620529175,
+          "rssBytes": null,
+          "diskFreeBytes": 2267344896
+        },
+        {
+          "elapsedSeconds": 480.80779790878296,
+          "rssBytes": null,
+          "diskFreeBytes": 2267332608
+        },
+        {
+          "elapsedSeconds": 485.8177070617676,
+          "rssBytes": null,
+          "diskFreeBytes": 2267271168
+        },
+        {
+          "elapsedSeconds": 490.82766580581665,
+          "rssBytes": null,
+          "diskFreeBytes": 2266939392
+        },
+        {
+          "elapsedSeconds": 495.82762002944946,
+          "rssBytes": null,
+          "diskFreeBytes": 2267119616
+        },
+        {
+          "elapsedSeconds": 500.83000111579895,
+          "rssBytes": null,
+          "diskFreeBytes": 2267041792
+        },
+        {
+          "elapsedSeconds": 505.838711977005,
+          "rssBytes": null,
+          "diskFreeBytes": 2266910720
+        },
+        {
+          "elapsedSeconds": 510.84863686561584,
+          "rssBytes": null,
+          "diskFreeBytes": 2266693632
+        },
+        {
+          "elapsedSeconds": 515.8585939407349,
+          "rssBytes": null,
+          "diskFreeBytes": 2266669056
+        },
+        {
+          "elapsedSeconds": 520.8685109615326,
+          "rssBytes": null,
+          "diskFreeBytes": 2266669056
+        },
+        {
+          "elapsedSeconds": 525.8690831661224,
+          "rssBytes": null,
+          "diskFreeBytes": 2240323584
+        }
+      ]
+    },
+    "diagnostics": {
+      "converged": true,
+      "stopped": false,
+      "stopReason": "converged",
+      "maxIterations": 20000,
+      "iterations": 3136,
+      "cells": 24000,
+      "scalarPreconditioner": "ilu0",
+      "solveSeconds": 524.647583292,
+      "performance": {
+        "sstUpdates": 3136,
+        "sstUpdateSeconds": 306.3012422570003,
+        "sstTransportSeconds": 295.8693865570002,
+        "sstGradientSeconds": 7.3141686140000175,
+        "wallDistanceSeconds": 0.006760625,
+        "momentumLinearSeconds": 22.965713779999923,
+        "pressureLinearSeconds": 169.7006365370007,
+        "momentumIterations": 40194,
+        "pressureIterations": 351039,
+        "scalarSolves": {
+          "calls": 10262,
+          "patternBuilds": 10262,
+          "ilu0Builds": 10230,
+          "ilu0Reuses": 0,
+          "linearIterations": 80530,
+          "totalSeconds": 209.49672593700018,
+          "setupSeconds": 44.696880846999996,
+          "linearSeconds": 141.1976929919997,
+          "faceFluxSeconds": 16.406479205000004
+        },
+        "scalarEvaluations": {
+          "calls": 16534,
+          "patternBuilds": 3,
+          "ilu0Builds": 0,
+          "ilu0Reuses": 0,
+          "linearIterations": 0,
+          "totalSeconds": 41.343491197999896,
+          "setupSeconds": 23.190035188999985,
+          "linearSeconds": 0,
+          "faceFluxSeconds": 13.061774517999993
+        },
+        "kSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5099,
+          "ilu0Reuses": 0,
+          "linearIterations": 22153,
+          "totalSeconds": 58.44000005600003,
+          "setupSeconds": 22.39037187499998,
+          "linearSeconds": 25.741181923999985,
+          "faceFluxSeconds": 8.19666330300001
+        },
+        "omegaSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5131,
+          "ilu0Reuses": 0,
+          "linearIterations": 58377,
+          "totalSeconds": 151.0567258809999,
+          "setupSeconds": 22.306508972000024,
+          "linearSeconds": 115.4565110679999,
+          "faceFluxSeconds": 8.209815901999994
+        }
+      }
+    },
+    "metadata": {
+      "case": "flatplate",
+      "flatPlateLeadingEdge": 0,
+      "flatPlateTop": "pressure-farfield",
+      "model": "SST-2003m",
+      "scope": "coupled-steady-SST-2003m",
+      "converged": true,
+      "nu": 2e-07,
+      "speed": 1,
+      "inletK": 2.25e-07,
+      "inletOmega": 125,
+      "initialK": 2.25e-07,
+      "initialOmega": 125,
+      "tolerance": 1e-07,
+      "stopped": false,
+      "scalarRelativeTolerance": 1e-09,
+      "scalarAbsoluteTolerance": 1e-12,
+      "scalarCellTolerance": 1e-09,
+      "convection": "upwind",
+      "viscousStress": "symmetric",
+      "pressureConvention": "p/rho (SST-2003m omits isotropic k stress)",
+      "pressureDiscretization": "shared-face-gauss",
+      "iterations": 3136,
+      "cells": 24000,
+      "turbulenceUpdatesPerIteration": 1,
+      "turbulenceCompletionUpdates": 500,
+      "scalarCorrectionsPerUpdate": 1,
+      "scalarPreconditioner": "ilu0",
+      "solveSeconds": 524.647583292,
+      "performance": {
+        "sstUpdates": 3136,
+        "sstUpdateSeconds": 306.3012422570003,
+        "sstTransportSeconds": 295.8693865570002,
+        "sstGradientSeconds": 7.3141686140000175,
+        "wallDistanceSeconds": 0.006760625,
+        "momentumLinearSeconds": 22.965713779999923,
+        "pressureLinearSeconds": 169.7006365370007,
+        "momentumIterations": 40194,
+        "pressureIterations": 351039,
+        "scalarSolves": {
+          "calls": 10262,
+          "patternBuilds": 10262,
+          "ilu0Builds": 10230,
+          "ilu0Reuses": 0,
+          "linearIterations": 80530,
+          "totalSeconds": 209.49672593700018,
+          "setupSeconds": 44.696880846999996,
+          "linearSeconds": 141.1976929919997,
+          "faceFluxSeconds": 16.406479205000004
+        },
+        "scalarEvaluations": {
+          "calls": 16534,
+          "patternBuilds": 3,
+          "ilu0Builds": 0,
+          "ilu0Reuses": 0,
+          "linearIterations": 0,
+          "totalSeconds": 41.343491197999896,
+          "setupSeconds": 23.190035188999985,
+          "linearSeconds": 0,
+          "faceFluxSeconds": 13.061774517999993
+        },
+        "kSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5099,
+          "ilu0Reuses": 0,
+          "linearIterations": 22153,
+          "totalSeconds": 58.44000005600003,
+          "setupSeconds": 22.39037187499998,
+          "linearSeconds": 25.741181923999985,
+          "faceFluxSeconds": 8.19666330300001
+        },
+        "omegaSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5131,
+          "ilu0Reuses": 0,
+          "linearIterations": 58377,
+          "totalSeconds": 151.0567258809999,
+          "setupSeconds": 22.306508972000024,
+          "linearSeconds": 115.4565110679999,
+          "faceFluxSeconds": 8.209815901999994
+        }
+      },
+      "momentumResidual": 5.5471054608004265e-08,
+      "forceX": 0,
+      "forceY": 0,
+      "pressureForceX": 0,
+      "pressureForceY": 0,
+      "discreteForceX": 0,
+      "discreteForceY": 0,
+      "reconstructedForceX": 0,
+      "reconstructedForceY": 0,
+      "wallForceX": 0.0026843150915939525,
+      "wallForceY": -0.000478215432626965,
+      "wallViscousForceX": 0.0026843150915939525,
+      "wallViscousForceY": 1.995852238615524e-07,
+      "globalRelativeImbalance": 4.2263414989918147e-13
+    },
+    "audit": {
+      "valid": true,
+      "diagnosticOnly": false,
+      "declaredConverged": true,
+      "stopped": false,
+      "failedConvergenceChecks": [],
+      "scope": "coupled-steady-SST-2003m",
+      "case": "flatplate",
+      "physicalInputs": {
+        "nu": 2e-07,
+        "speed": 1,
+        "inletK": 2.25e-07,
+        "inletOmega": 125
+      },
+      "declaredInitialTurbulence": {
+        "initialK": 2.25e-07,
+        "initialOmega": 125
+      },
+      "bounds": [
+        -0.5,
+        0.0,
+        2.0,
+        1.0
+      ],
+      "plateReynolds": 10000000.0,
+      "scalarCorrectionsPerUpdate": 1,
+      "scalarPreconditioner": "ilu0",
+      "flatPlateTop": "pressure-farfield",
+      "boundarySummary": {
+        "inlet": {
+          "faces": 60,
+          "length": 1.0,
+          "netOutwardFlux": -1.0,
+          "inwardFlux": 1.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 60
+        },
+        "outlet": {
+          "faces": 60,
+          "length": 1.0,
+          "netOutwardFlux": 0.9972408393264852,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.9972408393264852,
+          "inflowFaces": 0
+        },
+        "wall": {
+          "faces": 320,
+          "length": 2.0,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "slip": {
+          "faces": 80,
+          "length": 0.5,
+          "netOutwardFlux": 0.0,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0,
+          "inflowFaces": 0
+        },
+        "farfield": {
+          "faces": 400,
+          "length": 2.5,
+          "netOutwardFlux": 0.0027591606730921654,
+          "inwardFlux": 0.0,
+          "outwardFlux": 0.0027591606730921654,
+          "inflowFaces": 0
+        }
+      },
+      "plateWallSamples": [
+        {
+          "face": 80,
+          "x": 0.0031250000000000305,
+          "xFromLeadingEdge": 0.0031250000000000305,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.004049300134212582,
+          "Cf": 0.008098600268425163,
+          "yPlus": 1.0899866141805206
+        },
+        {
+          "face": 81,
+          "x": 0.009375000000000001,
+          "xFromLeadingEdge": 0.009375000000000001,
+          "length": 0.006249999999999936,
+          "kinematicShear": 0.0023833452833306006,
+          "Cf": 0.004766690566661201,
+          "yPlus": 0.8362279184687578
+        },
+        {
+          "face": 82,
+          "x": 0.015624999999999972,
+          "xFromLeadingEdge": 0.015624999999999972,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.002266632188502987,
+          "Cf": 0.004533264377005974,
+          "yPlus": 0.8154957584577208
+        },
+        {
+          "face": 83,
+          "x": 0.021874999999999978,
+          "xFromLeadingEdge": 0.021874999999999978,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.002205283289914499,
+          "Cf": 0.004410566579828998,
+          "yPlus": 0.8043839082763579
+        },
+        {
+          "face": 84,
+          "x": 0.028124999999999983,
+          "xFromLeadingEdge": 0.028124999999999983,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.002147766174238679,
+          "Cf": 0.004295532348477358,
+          "yPlus": 0.7938248312195653
+        },
+        {
+          "face": 85,
+          "x": 0.03437499999999999,
+          "xFromLeadingEdge": 0.03437499999999999,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.002094714327273502,
+          "Cf": 0.004189428654547004,
+          "yPlus": 0.7839594186306934
+        },
+        {
+          "face": 86,
+          "x": 0.040624999999999994,
+          "xFromLeadingEdge": 0.040624999999999994,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0020478541474196837,
+          "Cf": 0.004095708294839367,
+          "yPlus": 0.7751409691197415
+        },
+        {
+          "face": 87,
+          "x": 0.046875,
+          "xFromLeadingEdge": 0.046875,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.002006979715404924,
+          "Cf": 0.004013959430809848,
+          "yPlus": 0.7673662107998953
+        },
+        {
+          "face": 88,
+          "x": 0.053125000000000006,
+          "xFromLeadingEdge": 0.053125000000000006,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.001971100727421474,
+          "Cf": 0.003942201454842948,
+          "yPlus": 0.7604761349474704
+        },
+        {
+          "face": 89,
+          "x": 0.05937500000000001,
+          "xFromLeadingEdge": 0.05937500000000001,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0019391392685154934,
+          "Cf": 0.0038782785370309867,
+          "yPlus": 0.754285364542156
+        },
+        {
+          "face": 90,
+          "x": 0.06562500000000002,
+          "xFromLeadingEdge": 0.06562500000000002,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0019101941135470917,
+          "Cf": 0.0038203882270941834,
+          "yPlus": 0.7486346630125876
+        },
+        {
+          "face": 91,
+          "x": 0.07187500000000002,
+          "xFromLeadingEdge": 0.07187500000000002,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0018837949845657205,
+          "Cf": 0.003767589969131441,
+          "yPlus": 0.7434435513628503
+        },
+        {
+          "face": 92,
+          "x": 0.07812500000000003,
+          "xFromLeadingEdge": 0.07812500000000003,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0018597904085773792,
+          "Cf": 0.0037195808171547585,
+          "yPlus": 0.738691637256538
+        },
+        {
+          "face": 93,
+          "x": 0.084375,
+          "xFromLeadingEdge": 0.084375,
+          "length": 0.006249999999999936,
+          "kinematicShear": 0.0018377549888809266,
+          "Cf": 0.0036755099777618532,
+          "yPlus": 0.7343024644476986
+        },
+        {
+          "face": 94,
+          "x": 0.09062499999999997,
+          "xFromLeadingEdge": 0.09062499999999997,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0018172641040809002,
+          "Cf": 0.0036345282081618004,
+          "yPlus": 0.7301972695945321
+        },
+        {
+          "face": 95,
+          "x": 0.09687499999999998,
+          "xFromLeadingEdge": 0.09687499999999998,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017982821268575308,
+          "Cf": 0.0035965642537150616,
+          "yPlus": 0.7263736721075231
+        },
+        {
+          "face": 96,
+          "x": 0.10312499999999998,
+          "xFromLeadingEdge": 0.10312499999999998,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017807270946925467,
+          "Cf": 0.0035614541893850935,
+          "yPlus": 0.7228195060936001
+        },
+        {
+          "face": 97,
+          "x": 0.10937499999999999,
+          "xFromLeadingEdge": 0.10937499999999999,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017643603008567273,
+          "Cf": 0.0035287206017134546,
+          "yPlus": 0.7194900945677608
+        },
+        {
+          "face": 98,
+          "x": 0.11562499999999999,
+          "xFromLeadingEdge": 0.11562499999999999,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017489241729933998,
+          "Cf": 0.0034978483459867996,
+          "yPlus": 0.7163358240273167
+        },
+        {
+          "face": 99,
+          "x": 0.121875,
+          "xFromLeadingEdge": 0.121875,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017343835708415695,
+          "Cf": 0.003468767141683139,
+          "yPlus": 0.713351791190485
+        },
+        {
+          "face": 100,
+          "x": 0.128125,
+          "xFromLeadingEdge": 0.128125,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0017207167302691775,
+          "Cf": 0.003441433460538355,
+          "yPlus": 0.7105356473682428
+        },
+        {
+          "face": 101,
+          "x": 0.13437500000000002,
+          "xFromLeadingEdge": 0.13437500000000002,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.001707867350711513,
+          "Cf": 0.003415734701423026,
+          "yPlus": 0.7078777286174278
+        },
+        {
+          "face": 102,
+          "x": 0.140625,
+          "xFromLeadingEdge": 0.140625,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016957669924578067,
+          "Cf": 0.0033915339849156134,
+          "yPlus": 0.7053655897150832
+        },
+        {
+          "face": 103,
+          "x": 0.14687500000000003,
+          "xFromLeadingEdge": 0.14687500000000003,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.001684300991132631,
+          "Cf": 0.003368601982265262,
+          "yPlus": 0.7029768651409858
+        },
+        {
+          "face": 104,
+          "x": 0.153125,
+          "xFromLeadingEdge": 0.153125,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016733387049959183,
+          "Cf": 0.0033466774099918366,
+          "yPlus": 0.7006854654517423
+        },
+        {
+          "face": 105,
+          "x": 0.15937500000000004,
+          "xFromLeadingEdge": 0.15937500000000004,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016628277144261122,
+          "Cf": 0.0033256554288522244,
+          "yPlus": 0.6984813389583391
+        },
+        {
+          "face": 106,
+          "x": 0.16562500000000002,
+          "xFromLeadingEdge": 0.16562500000000002,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.001652767182706376,
+          "Cf": 0.003305534365412752,
+          "yPlus": 0.6963651381011136
+        },
+        {
+          "face": 107,
+          "x": 0.17187500000000006,
+          "xFromLeadingEdge": 0.17187500000000006,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.00164316597544926,
+          "Cf": 0.00328633195089852,
+          "yPlus": 0.6943395399573467
+        },
+        {
+          "face": 108,
+          "x": 0.17812500000000003,
+          "xFromLeadingEdge": 0.17812500000000003,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016340107301776273,
+          "Cf": 0.0032680214603552546,
+          "yPlus": 0.6924025085589348
+        },
+        {
+          "face": 109,
+          "x": 0.18437500000000007,
+          "xFromLeadingEdge": 0.18437500000000007,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016252716803983977,
+          "Cf": 0.0032505433607967955,
+          "yPlus": 0.690548465612524
+        },
+        {
+          "face": 110,
+          "x": 0.19062500000000004,
+          "xFromLeadingEdge": 0.19062500000000004,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.001616916540841311,
+          "Cf": 0.003233833081682622,
+          "yPlus": 0.6887712049034063
+        },
+        {
+          "face": 111,
+          "x": 0.19687500000000008,
+          "xFromLeadingEdge": 0.19687500000000008,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0016089013778899496,
+          "Cf": 0.0032178027557798992,
+          "yPlus": 0.6870619416774986
+        },
+        {
+          "face": 112,
+          "x": 0.203125,
+          "xFromLeadingEdge": 0.203125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001601181284515823,
+          "Cf": 0.003202362569031646,
+          "yPlus": 0.6854115731164986
+        },
+        {
+          "face": 113,
+          "x": 0.20937499999999992,
+          "xFromLeadingEdge": 0.20937499999999992,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015937255870456005,
+          "Cf": 0.003187451174091201,
+          "yPlus": 0.6838139451508806
+        },
+        {
+          "face": 114,
+          "x": 0.21562499999999996,
+          "xFromLeadingEdge": 0.21562499999999996,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015864737050726176,
+          "Cf": 0.0031729474101452352,
+          "yPlus": 0.6822564022275789
+        },
+        {
+          "face": 115,
+          "x": 0.22187499999999993,
+          "xFromLeadingEdge": 0.22187499999999993,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015794097943110615,
+          "Cf": 0.003158819588622123,
+          "yPlus": 0.6807358050063174
+        },
+        {
+          "face": 116,
+          "x": 0.22812499999999997,
+          "xFromLeadingEdge": 0.22812499999999997,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015725619772928594,
+          "Cf": 0.0031451239545857187,
+          "yPlus": 0.6792584753153217
+        },
+        {
+          "face": 117,
+          "x": 0.23437499999999994,
+          "xFromLeadingEdge": 0.23437499999999994,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015659328368225508,
+          "Cf": 0.0031318656736451017,
+          "yPlus": 0.6778252550544207
+        },
+        {
+          "face": 118,
+          "x": 0.24062499999999998,
+          "xFromLeadingEdge": 0.24062499999999998,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015595164896000007,
+          "Cf": 0.0031190329792000013,
+          "yPlus": 0.6764351486684252
+        },
+        {
+          "face": 119,
+          "x": 0.24687499999999996,
+          "xFromLeadingEdge": 0.24687499999999996,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015533087101078352,
+          "Cf": 0.0031066174202156703,
+          "yPlus": 0.6750875042599461
+        },
+        {
+          "face": 120,
+          "x": 0.253125,
+          "xFromLeadingEdge": 0.253125,
+          "length": 0.0062500000000000056,
+          "kinematicShear": 0.0015473096658386663,
+          "Cf": 0.0030946193316773326,
+          "yPlus": 0.6737826130835686
+        },
+        {
+          "face": 121,
+          "x": 0.25937499999999997,
+          "xFromLeadingEdge": 0.25937499999999997,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0015415092604095606,
+          "Cf": 0.003083018520819121,
+          "yPlus": 0.6725185216165879
+        },
+        {
+          "face": 122,
+          "x": 0.265625,
+          "xFromLeadingEdge": 0.265625,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0015358934575998608,
+          "Cf": 0.0030717869151997215,
+          "yPlus": 0.6712923929483691
+        },
+        {
+          "face": 123,
+          "x": 0.271875,
+          "xFromLeadingEdge": 0.271875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0015304521681774959,
+          "Cf": 0.0030609043363549917,
+          "yPlus": 0.6701022267062278
+        },
+        {
+          "face": 124,
+          "x": 0.278125,
+          "xFromLeadingEdge": 0.278125,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0015251691923640225,
+          "Cf": 0.003050338384728045,
+          "yPlus": 0.6689446622080288
+        },
+        {
+          "face": 125,
+          "x": 0.284375,
+          "xFromLeadingEdge": 0.284375,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001520026715397108,
+          "Cf": 0.003040053430794216,
+          "yPlus": 0.6678159555834883
+        },
+        {
+          "face": 126,
+          "x": 0.290625,
+          "xFromLeadingEdge": 0.290625,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0015150109307685098,
+          "Cf": 0.0030300218615370196,
+          "yPlus": 0.6667132154771984
+        },
+        {
+          "face": 127,
+          "x": 0.296875,
+          "xFromLeadingEdge": 0.296875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.001510110058725554,
+          "Cf": 0.003020220117451108,
+          "yPlus": 0.665633974778506
+        },
+        {
+          "face": 128,
+          "x": 0.30312500000000003,
+          "xFromLeadingEdge": 0.30312500000000003,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0015053183310607863,
+          "Cf": 0.0030106366621215725,
+          "yPlus": 0.6645770746824701
+        },
+        {
+          "face": 129,
+          "x": 0.309375,
+          "xFromLeadingEdge": 0.309375,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0015006329623323898,
+          "Cf": 0.0030012659246647796,
+          "yPlus": 0.6635420061166499
+        },
+        {
+          "face": 130,
+          "x": 0.31562500000000004,
+          "xFromLeadingEdge": 0.31562500000000004,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014960485146976996,
+          "Cf": 0.0029920970293953993,
+          "yPlus": 0.6625276673253122
+        },
+        {
+          "face": 131,
+          "x": 0.321875,
+          "xFromLeadingEdge": 0.321875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.001491563274643685,
+          "Cf": 0.00298312654928737,
+          "yPlus": 0.6615337736781199
+        },
+        {
+          "face": 132,
+          "x": 0.32812500000000006,
+          "xFromLeadingEdge": 0.32812500000000006,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014871787269689213,
+          "Cf": 0.0029743574539378426,
+          "yPlus": 0.6605607472135714
+        },
+        {
+          "face": 133,
+          "x": 0.33437500000000003,
+          "xFromLeadingEdge": 0.33437500000000003,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014828946665105531,
+          "Cf": 0.0029657893330211063,
+          "yPlus": 0.6596086346493949
+        },
+        {
+          "face": 134,
+          "x": 0.34062500000000007,
+          "xFromLeadingEdge": 0.34062500000000007,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014787097418074414,
+          "Cf": 0.0029574194836148827,
+          "yPlus": 0.6586772256804707
+        },
+        {
+          "face": 135,
+          "x": 0.34687500000000004,
+          "xFromLeadingEdge": 0.34687500000000004,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014746215376702655,
+          "Cf": 0.002949243075340531,
+          "yPlus": 0.6577660696002643
+        },
+        {
+          "face": 136,
+          "x": 0.3531250000000001,
+          "xFromLeadingEdge": 0.3531250000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014706269559725644,
+          "Cf": 0.002941253911945129,
+          "yPlus": 0.656874558778764
+        },
+        {
+          "face": 137,
+          "x": 0.359375,
+          "xFromLeadingEdge": 0.359375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0014667211691802725,
+          "Cf": 0.002933442338360545,
+          "yPlus": 0.6560016937360241
+        },
+        {
+          "face": 138,
+          "x": 0.3656249999999999,
+          "xFromLeadingEdge": 0.3656249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001462902662384857,
+          "Cf": 0.002925805324769714,
+          "yPlus": 0.655147209779696
+        },
+        {
+          "face": 139,
+          "x": 0.37187499999999996,
+          "xFromLeadingEdge": 0.37187499999999996,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014591739214751408,
+          "Cf": 0.0029183478429502816,
+          "yPlus": 0.6543117362749379
+        },
+        {
+          "face": 140,
+          "x": 0.37812499999999993,
+          "xFromLeadingEdge": 0.37812499999999993,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014555310776184034,
+          "Cf": 0.0029110621552368068,
+          "yPlus": 0.6534944776340008
+        },
+        {
+          "face": 141,
+          "x": 0.38437499999999997,
+          "xFromLeadingEdge": 0.38437499999999997,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014519679729458313,
+          "Cf": 0.0029039359458916626,
+          "yPlus": 0.6526941182262017
+        },
+        {
+          "face": 142,
+          "x": 0.39062499999999994,
+          "xFromLeadingEdge": 0.39062499999999994,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001448480852922698,
+          "Cf": 0.002896961705845396,
+          "yPlus": 0.651909875402846
+        },
+        {
+          "face": 143,
+          "x": 0.396875,
+          "xFromLeadingEdge": 0.396875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014450643045705964,
+          "Cf": 0.002890128609141193,
+          "yPlus": 0.6511405878641434
+        },
+        {
+          "face": 144,
+          "x": 0.40312499999999996,
+          "xFromLeadingEdge": 0.40312499999999996,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.001441712565436529,
+          "Cf": 0.002883425130873058,
+          "yPlus": 0.6503850089012877
+        },
+        {
+          "face": 145,
+          "x": 0.409375,
+          "xFromLeadingEdge": 0.409375,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014384212974631447,
+          "Cf": 0.0028768425949262893,
+          "yPlus": 0.6496422067365434
+        },
+        {
+          "face": 146,
+          "x": 0.41562499999999997,
+          "xFromLeadingEdge": 0.41562499999999997,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014351878422344977,
+          "Cf": 0.0028703756844689955,
+          "yPlus": 0.648911624253082
+        },
+        {
+          "face": 147,
+          "x": 0.421875,
+          "xFromLeadingEdge": 0.421875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014320097173117674,
+          "Cf": 0.002864019434623535,
+          "yPlus": 0.6481927409374033
+        },
+        {
+          "face": 148,
+          "x": 0.428125,
+          "xFromLeadingEdge": 0.428125,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.001428882823314118,
+          "Cf": 0.002857765646628236,
+          "yPlus": 0.6474846669601254
+        },
+        {
+          "face": 149,
+          "x": 0.434375,
+          "xFromLeadingEdge": 0.434375,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001425801979401606,
+          "Cf": 0.002851603958803212,
+          "yPlus": 0.6467862627313717
+        },
+        {
+          "face": 150,
+          "x": 0.440625,
+          "xFromLeadingEdge": 0.440625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014227644542186726,
+          "Cf": 0.0028455289084373453,
+          "yPlus": 0.6460969394361187
+        },
+        {
+          "face": 151,
+          "x": 0.446875,
+          "xFromLeadingEdge": 0.446875,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014197728452586928,
+          "Cf": 0.0028395456905173856,
+          "yPlus": 0.6454173165705158
+        },
+        {
+          "face": 152,
+          "x": 0.453125,
+          "xFromLeadingEdge": 0.453125,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.0014168291053578658,
+          "Cf": 0.0028336582107157315,
+          "yPlus": 0.6447478691428333
+        },
+        {
+          "face": 153,
+          "x": 0.45937500000000003,
+          "xFromLeadingEdge": 0.45937500000000003,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014139307132774374,
+          "Cf": 0.002827861426554875,
+          "yPlus": 0.6440880546313914
+        },
+        {
+          "face": 154,
+          "x": 0.465625,
+          "xFromLeadingEdge": 0.465625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014110764057289778,
+          "Cf": 0.0028221528114579556,
+          "yPlus": 0.6434376146466853
+        },
+        {
+          "face": 155,
+          "x": 0.47187500000000004,
+          "xFromLeadingEdge": 0.47187500000000004,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.001408266744018514,
+          "Cf": 0.002816533488037028,
+          "yPlus": 0.6427967057494653
+        },
+        {
+          "face": 156,
+          "x": 0.478125,
+          "xFromLeadingEdge": 0.478125,
+          "length": 0.006250000000000033,
+          "kinematicShear": 0.00140550166240456,
+          "Cf": 0.00281100332480912,
+          "yPlus": 0.6421653414586026
+        },
+        {
+          "face": 157,
+          "x": 0.48437500000000006,
+          "xFromLeadingEdge": 0.48437500000000006,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0014027808434658687,
+          "Cf": 0.0028055616869317374,
+          "yPlus": 0.6415434773693642
+        },
+        {
+          "face": 158,
+          "x": 0.49062500000000003,
+          "xFromLeadingEdge": 0.49062500000000003,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.00140010379851196,
+          "Cf": 0.00280020759702392,
+          "yPlus": 0.6409310292796189
+        },
+        {
+          "face": 159,
+          "x": 0.496875,
+          "xFromLeadingEdge": 0.496875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013974698625222875,
+          "Cf": 0.002794939725044575,
+          "yPlus": 0.6403278718495476
+        },
+        {
+          "face": 160,
+          "x": 0.503125,
+          "xFromLeadingEdge": 0.503125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001394878221334589,
+          "Cf": 0.002789756442669178,
+          "yPlus": 0.6397338446577193
+        },
+        {
+          "face": 161,
+          "x": 0.5093750000000001,
+          "xFromLeadingEdge": 0.5093750000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013923279347612158,
+          "Cf": 0.0027846558695224315,
+          "yPlus": 0.6391487573644136
+        },
+        {
+          "face": 162,
+          "x": 0.515625,
+          "xFromLeadingEdge": 0.515625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0013898179362881059,
+          "Cf": 0.0027796358725762117,
+          "yPlus": 0.6385723895301957
+        },
+        {
+          "face": 163,
+          "x": 0.5218749999999999,
+          "xFromLeadingEdge": 0.5218749999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001387347022177044,
+          "Cf": 0.002774694044354088,
+          "yPlus": 0.6380044880025635
+        },
+        {
+          "face": 164,
+          "x": 0.528125,
+          "xFromLeadingEdge": 0.528125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013849141466024722,
+          "Cf": 0.0027698282932049445,
+          "yPlus": 0.6374448347245367
+        },
+        {
+          "face": 165,
+          "x": 0.534375,
+          "xFromLeadingEdge": 0.534375,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013825172363776475,
+          "Cf": 0.002765034472755295,
+          "yPlus": 0.6368929739060529
+        },
+        {
+          "face": 166,
+          "x": 0.5406249999999999,
+          "xFromLeadingEdge": 0.5406249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013801564418824163,
+          "Cf": 0.0027603128837648326,
+          "yPlus": 0.6363489604885058
+        },
+        {
+          "face": 167,
+          "x": 0.546875,
+          "xFromLeadingEdge": 0.546875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013778344870478344,
+          "Cf": 0.002755668974095669,
+          "yPlus": 0.6358134431059349
+        },
+        {
+          "face": 168,
+          "x": 0.5531249999999999,
+          "xFromLeadingEdge": 0.5531249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001375549742478223,
+          "Cf": 0.002751099484956446,
+          "yPlus": 0.6352860669824202
+        },
+        {
+          "face": 169,
+          "x": 0.559375,
+          "xFromLeadingEdge": 0.559375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013732990975708812,
+          "Cf": 0.0027465981951417624,
+          "yPlus": 0.6347661335189061
+        },
+        {
+          "face": 170,
+          "x": 0.565625,
+          "xFromLeadingEdge": 0.565625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001371080916066466,
+          "Cf": 0.002742161832132932,
+          "yPlus": 0.634253282557444
+        },
+        {
+          "face": 171,
+          "x": 0.5718749999999999,
+          "xFromLeadingEdge": 0.5718749999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013688931470365092,
+          "Cf": 0.0027377862940730184,
+          "yPlus": 0.6337470565403146
+        },
+        {
+          "face": 172,
+          "x": 0.578125,
+          "xFromLeadingEdge": 0.578125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013667340921907506,
+          "Cf": 0.002733468184381501,
+          "yPlus": 0.6332470779225561
+        },
+        {
+          "face": 173,
+          "x": 0.5843750000000001,
+          "xFromLeadingEdge": 0.5843750000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013646024795043658,
+          "Cf": 0.0027292049590087316,
+          "yPlus": 0.6327530666007901
+        },
+        {
+          "face": 174,
+          "x": 0.590625,
+          "xFromLeadingEdge": 0.590625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013624973637038024,
+          "Cf": 0.0027249947274076048,
+          "yPlus": 0.6322648172360679
+        },
+        {
+          "face": 175,
+          "x": 0.596875,
+          "xFromLeadingEdge": 0.596875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013604179548704894,
+          "Cf": 0.0027208359097409787,
+          "yPlus": 0.6317821597668843
+        },
+        {
+          "face": 176,
+          "x": 0.6031249999999999,
+          "xFromLeadingEdge": 0.6031249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013583639991316722,
+          "Cf": 0.0027167279982633443,
+          "yPlus": 0.6313050480247274
+        },
+        {
+          "face": 177,
+          "x": 0.609375,
+          "xFromLeadingEdge": 0.609375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013563350955601739,
+          "Cf": 0.0027126701911203478,
+          "yPlus": 0.6308334013567275
+        },
+        {
+          "face": 178,
+          "x": 0.6156250000000001,
+          "xFromLeadingEdge": 0.6156250000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001354329673539366,
+          "Cf": 0.002708659347078732,
+          "yPlus": 0.6303668665117045
+        },
+        {
+          "face": 179,
+          "x": 0.621875,
+          "xFromLeadingEdge": 0.621875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013523460798921154,
+          "Cf": 0.002704692159784231,
+          "yPlus": 0.6299050698337636
+        },
+        {
+          "face": 180,
+          "x": 0.628125,
+          "xFromLeadingEdge": 0.628125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013503831116027211,
+          "Cf": 0.0027007662232054423,
+          "yPlus": 0.6294477413734535
+        },
+        {
+          "face": 181,
+          "x": 0.6343750000000001,
+          "xFromLeadingEdge": 0.6343750000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013484396848388338,
+          "Cf": 0.0026968793696776675,
+          "yPlus": 0.6289946380942492
+        },
+        {
+          "face": 182,
+          "x": 0.640625,
+          "xFromLeadingEdge": 0.640625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013465151701132542,
+          "Cf": 0.0026930303402265083,
+          "yPlus": 0.6285456222131349
+        },
+        {
+          "face": 183,
+          "x": 0.6468750000000001,
+          "xFromLeadingEdge": 0.6468750000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013446084212469216,
+          "Cf": 0.0026892168424938433,
+          "yPlus": 0.6281004347916075
+        },
+        {
+          "face": 184,
+          "x": 0.653125,
+          "xFromLeadingEdge": 0.653125,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013427202516663925,
+          "Cf": 0.002685440503332785,
+          "yPlus": 0.6276592740956141
+        },
+        {
+          "face": 185,
+          "x": 0.659375,
+          "xFromLeadingEdge": 0.659375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013408539573003652,
+          "Cf": 0.0026817079146007304,
+          "yPlus": 0.6272229195049164
+        },
+        {
+          "face": 186,
+          "x": 0.6656250000000001,
+          "xFromLeadingEdge": 0.6656250000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001339009231839131,
+          "Cf": 0.002678018463678262,
+          "yPlus": 0.6267913093652344
+        },
+        {
+          "face": 187,
+          "x": 0.671875,
+          "xFromLeadingEdge": 0.671875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001337184063798291,
+          "Cf": 0.002674368127596582,
+          "yPlus": 0.62636398237462
+        },
+        {
+          "face": 188,
+          "x": 0.6781249999999999,
+          "xFromLeadingEdge": 0.6781249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001335378361215776,
+          "Cf": 0.002670756722431552,
+          "yPlus": 0.6259409257523306
+        },
+        {
+          "face": 189,
+          "x": 0.684375,
+          "xFromLeadingEdge": 0.684375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013335922175386906,
+          "Cf": 0.002667184435077381,
+          "yPlus": 0.6255221700785525
+        },
+        {
+          "face": 190,
+          "x": 0.690625,
+          "xFromLeadingEdge": 0.690625,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013318255410993051,
+          "Cf": 0.0026636510821986103,
+          "yPlus": 0.6251077024841662
+        },
+        {
+          "face": 191,
+          "x": 0.6968749999999999,
+          "xFromLeadingEdge": 0.6968749999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013300782139759983,
+          "Cf": 0.0026601564279519966,
+          "yPlus": 0.6246975038120895
+        },
+        {
+          "face": 192,
+          "x": 0.703125,
+          "xFromLeadingEdge": 0.703125,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013283500961715263,
+          "Cf": 0.0026567001923430526,
+          "yPlus": 0.6242915495795573
+        },
+        {
+          "face": 193,
+          "x": 0.7093749999999999,
+          "xFromLeadingEdge": 0.7093749999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013266410177043583,
+          "Cf": 0.0026532820354087166,
+          "yPlus": 0.6238898081026504
+        },
+        {
+          "face": 194,
+          "x": 0.715625,
+          "xFromLeadingEdge": 0.715625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013249507847478816,
+          "Cf": 0.002649901569495763,
+          "yPlus": 0.6234922419194827
+        },
+        {
+          "face": 195,
+          "x": 0.721875,
+          "xFromLeadingEdge": 0.721875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013232791835440067,
+          "Cf": 0.0026465583670880134,
+          "yPlus": 0.6230988086955065
+        },
+        {
+          "face": 196,
+          "x": 0.7281249999999999,
+          "xFromLeadingEdge": 0.7281249999999999,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013216259815256096,
+          "Cf": 0.002643251963051219,
+          "yPlus": 0.6227094614752081
+        },
+        {
+          "face": 197,
+          "x": 0.734375,
+          "xFromLeadingEdge": 0.734375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013199909276981278,
+          "Cf": 0.0026399818553962556,
+          "yPlus": 0.622324148760555
+        },
+        {
+          "face": 198,
+          "x": 0.7406250000000001,
+          "xFromLeadingEdge": 0.7406250000000001,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.001318373752579199,
+          "Cf": 0.002636747505158398,
+          "yPlus": 0.6219428144858986
+        },
+        {
+          "face": 199,
+          "x": 0.746875,
+          "xFromLeadingEdge": 0.746875,
+          "length": 0.006249999999999978,
+          "kinematicShear": 0.0013167741674655789,
+          "Cf": 0.0026335483349311578,
+          "yPlus": 0.6215653978344094
+        },
+        {
+          "face": 200,
+          "x": 0.7531249999999999,
+          "xFromLeadingEdge": 0.7531249999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0013151918617688321,
+          "Cf": 0.0026303837235376643,
+          "yPlus": 0.6211918325981519
+        },
+        {
+          "face": 201,
+          "x": 0.7593749999999999,
+          "xFromLeadingEdge": 0.7593749999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013136264970163077,
+          "Cf": 0.0026272529940326154,
+          "yPlus": 0.6208220457482627
+        },
+        {
+          "face": 202,
+          "x": 0.7656249999999999,
+          "xFromLeadingEdge": 0.7656249999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0013120777428547866,
+          "Cf": 0.0026241554857095732,
+          "yPlus": 0.6204559659316153
+        },
+        {
+          "face": 203,
+          "x": 0.7718749999999999,
+          "xFromLeadingEdge": 0.7718749999999999,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.001310545286759851,
+          "Cf": 0.002621090573519702,
+          "yPlus": 0.6200935257771508
+        },
+        {
+          "face": 204,
+          "x": 0.778125,
+          "xFromLeadingEdge": 0.778125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0013090287195071898,
+          "Cf": 0.0026180574390143796,
+          "yPlus": 0.6197346348009245
+        },
+        {
+          "face": 205,
+          "x": 0.784375,
+          "xFromLeadingEdge": 0.784375,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0013075275889038408,
+          "Cf": 0.0026150551778076816,
+          "yPlus": 0.6193791920700297
+        },
+        {
+          "face": 206,
+          "x": 0.790625,
+          "xFromLeadingEdge": 0.790625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0013060410762697333,
+          "Cf": 0.0026120821525394667,
+          "yPlus": 0.6190270095086498
+        },
+        {
+          "face": 207,
+          "x": 0.796875,
+          "xFromLeadingEdge": 0.796875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013045698185801683,
+          "Cf": 0.0026091396371603365,
+          "yPlus": 0.6186782437237113
+        },
+        {
+          "face": 208,
+          "x": 0.803125,
+          "xFromLeadingEdge": 0.803125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001303115726341458,
+          "Cf": 0.002606231452682916,
+          "yPlus": 0.6183333537682422
+        },
+        {
+          "face": 209,
+          "x": 0.809375,
+          "xFromLeadingEdge": 0.809375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0013016778980618115,
+          "Cf": 0.002603355796123623,
+          "yPlus": 0.6179921321326333
+        },
+        {
+          "face": 210,
+          "x": 0.8156249999999999,
+          "xFromLeadingEdge": 0.8156249999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001300254371135882,
+          "Cf": 0.002600508742271764,
+          "yPlus": 0.6176541187528255
+        },
+        {
+          "face": 211,
+          "x": 0.8218749999999999,
+          "xFromLeadingEdge": 0.8218749999999999,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012988445375074866,
+          "Cf": 0.002597689075014973,
+          "yPlus": 0.6173191743993923
+        },
+        {
+          "face": 212,
+          "x": 0.828125,
+          "xFromLeadingEdge": 0.828125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012974478939697745,
+          "Cf": 0.002594895787939549,
+          "yPlus": 0.6169871844233366
+        },
+        {
+          "face": 213,
+          "x": 0.8343750000000001,
+          "xFromLeadingEdge": 0.8343750000000001,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012960639027481263,
+          "Cf": 0.0025921278054962527,
+          "yPlus": 0.6166580256616343
+        },
+        {
+          "face": 214,
+          "x": 0.8406250000000001,
+          "xFromLeadingEdge": 0.8406250000000001,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001294692148278544,
+          "Cf": 0.002589384296557088,
+          "yPlus": 0.616331603736855
+        },
+        {
+          "face": 215,
+          "x": 0.846875,
+          "xFromLeadingEdge": 0.846875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001293332315142496,
+          "Cf": 0.002586664630284992,
+          "yPlus": 0.6160078478835933
+        },
+        {
+          "face": 216,
+          "x": 0.853125,
+          "xFromLeadingEdge": 0.853125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012919841502644412,
+          "Cf": 0.0025839683005288825,
+          "yPlus": 0.6156867020069163
+        },
+        {
+          "face": 217,
+          "x": 0.859375,
+          "xFromLeadingEdge": 0.859375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012906474456860927,
+          "Cf": 0.0025812948913721853,
+          "yPlus": 0.6153681206168367
+        },
+        {
+          "face": 218,
+          "x": 0.865625,
+          "xFromLeadingEdge": 0.865625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012893219108741944,
+          "Cf": 0.0025786438217483888,
+          "yPlus": 0.6150520384010685
+        },
+        {
+          "face": 219,
+          "x": 0.871875,
+          "xFromLeadingEdge": 0.871875,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012880076037232468,
+          "Cf": 0.0025760152074464937,
+          "yPlus": 0.6147384730305429
+        },
+        {
+          "face": 220,
+          "x": 0.878125,
+          "xFromLeadingEdge": 0.878125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012867047280692016,
+          "Cf": 0.002573409456138403,
+          "yPlus": 0.6144274770264739
+        },
+        {
+          "face": 221,
+          "x": 0.8843750000000001,
+          "xFromLeadingEdge": 0.8843750000000001,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.001285412770791996,
+          "Cf": 0.002570825541583992,
+          "yPlus": 0.6141189317181863
+        },
+        {
+          "face": 222,
+          "x": 0.8906250000000001,
+          "xFromLeadingEdge": 0.8906250000000001,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001284131137836304,
+          "Cf": 0.002568262275672608,
+          "yPlus": 0.6138126988226065
+        },
+        {
+          "face": 223,
+          "x": 0.8968750000000001,
+          "xFromLeadingEdge": 0.8968750000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012828594611243496,
+          "Cf": 0.002565718922248699,
+          "yPlus": 0.6135086937885682
+        },
+        {
+          "face": 224,
+          "x": 0.9031250000000001,
+          "xFromLeadingEdge": 0.9031250000000001,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012815972931677177,
+          "Cf": 0.0025631945863354355,
+          "yPlus": 0.6132068128744939
+        },
+        {
+          "face": 225,
+          "x": 0.9093749999999999,
+          "xFromLeadingEdge": 0.9093749999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012803442444009826,
+          "Cf": 0.0025606884888019652,
+          "yPlus": 0.6129069659756051
+        },
+        {
+          "face": 226,
+          "x": 0.9156249999999999,
+          "xFromLeadingEdge": 0.9156249999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012790999989451585,
+          "Cf": 0.002558199997890317,
+          "yPlus": 0.6126090804354449
+        },
+        {
+          "face": 227,
+          "x": 0.9218749999999999,
+          "xFromLeadingEdge": 0.9218749999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012778643057703499,
+          "Cf": 0.0025557286115406998,
+          "yPlus": 0.6123130989736874
+        },
+        {
+          "face": 228,
+          "x": 0.9281249999999999,
+          "xFromLeadingEdge": 0.9281249999999999,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012766369845460621,
+          "Cf": 0.0025532739690921243,
+          "yPlus": 0.6120189811276918
+        },
+        {
+          "face": 229,
+          "x": 0.934375,
+          "xFromLeadingEdge": 0.934375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012754179256093006,
+          "Cf": 0.0025508358512186012,
+          "yPlus": 0.6117267032867897
+        },
+        {
+          "face": 230,
+          "x": 0.940625,
+          "xFromLeadingEdge": 0.940625,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012742069860353534,
+          "Cf": 0.0025484139720707067,
+          "yPlus": 0.6114362337979903
+        },
+        {
+          "face": 231,
+          "x": 0.946875,
+          "xFromLeadingEdge": 0.946875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012730040342368218,
+          "Cf": 0.0025460080684736436,
+          "yPlus": 0.6111475436533107
+        },
+        {
+          "face": 232,
+          "x": 0.953125,
+          "xFromLeadingEdge": 0.953125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012718087139027175,
+          "Cf": 0.002543617427805435,
+          "yPlus": 0.6108605498058877
+        },
+        {
+          "face": 233,
+          "x": 0.959375,
+          "xFromLeadingEdge": 0.959375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012706214358359459,
+          "Cf": 0.0025412428716718918,
+          "yPlus": 0.6105753533498522
+        },
+        {
+          "face": 234,
+          "x": 0.965625,
+          "xFromLeadingEdge": 0.965625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012694438176069469,
+          "Cf": 0.0025388876352138937,
+          "yPlus": 0.6102923456332542
+        },
+        {
+          "face": 235,
+          "x": 0.9718749999999999,
+          "xFromLeadingEdge": 0.9718749999999999,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012682761115903618,
+          "Cf": 0.0025365522231807235,
+          "yPlus": 0.6100115903956105
+        },
+        {
+          "face": 236,
+          "x": 0.9781249999999999,
+          "xFromLeadingEdge": 0.9781249999999999,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.0012671172959658169,
+          "Cf": 0.0025342345919316337,
+          "yPlus": 0.6097328449001032
+        },
+        {
+          "face": 237,
+          "x": 0.984375,
+          "xFromLeadingEdge": 0.984375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012659669987468512,
+          "Cf": 0.0025319339974937023,
+          "yPlus": 0.6094560223643044
+        },
+        {
+          "face": 238,
+          "x": 0.9906250000000001,
+          "xFromLeadingEdge": 0.9906250000000001,
+          "length": 0.0062500000000002,
+          "kinematicShear": 0.001264825243450932,
+          "Cf": 0.002529650486901864,
+          "yPlus": 0.6091811310730836
+        },
+        {
+          "face": 239,
+          "x": 0.9968750000000001,
+          "xFromLeadingEdge": 0.9968750000000001,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012636920045057583,
+          "Cf": 0.0025273840090115165,
+          "yPlus": 0.6089081674810308
+        },
+        {
+          "face": 240,
+          "x": 1.003125,
+          "xFromLeadingEdge": 1.003125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001262567231631178,
+          "Cf": 0.002525134463262356,
+          "yPlus": 0.6086371220626647
+        },
+        {
+          "face": 241,
+          "x": 1.009375,
+          "xFromLeadingEdge": 1.009375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012614508789542329,
+          "Cf": 0.0025229017579084657,
+          "yPlus": 0.6083679863200675
+        },
+        {
+          "face": 242,
+          "x": 1.015625,
+          "xFromLeadingEdge": 1.015625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012603428966075302,
+          "Cf": 0.0025206857932150604,
+          "yPlus": 0.608100750758598
+        },
+        {
+          "face": 243,
+          "x": 1.021875,
+          "xFromLeadingEdge": 1.021875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012592432291694202,
+          "Cf": 0.0025184864583388403,
+          "yPlus": 0.6078354045085205
+        },
+        {
+          "face": 244,
+          "x": 1.028125,
+          "xFromLeadingEdge": 1.028125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012581518178112036,
+          "Cf": 0.0025163036356224073,
+          "yPlus": 0.6075719358407717
+        },
+        {
+          "face": 245,
+          "x": 1.034375,
+          "xFromLeadingEdge": 1.034375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012570686013239883,
+          "Cf": 0.0025141372026479766,
+          "yPlus": 0.6073103324134924
+        },
+        {
+          "face": 246,
+          "x": 1.0406250000000001,
+          "xFromLeadingEdge": 1.0406250000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012559935164759399,
+          "Cf": 0.0025119870329518798,
+          "yPlus": 0.6070505813574116
+        },
+        {
+          "face": 247,
+          "x": 1.046875,
+          "xFromLeadingEdge": 1.046875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001254926498204698,
+          "Cf": 0.002509852996409396,
+          "yPlus": 0.6067926693216245
+        },
+        {
+          "face": 248,
+          "x": 1.053125,
+          "xFromLeadingEdge": 1.053125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012538674796585701,
+          "Cf": 0.0025077349593171402,
+          "yPlus": 0.6065365824829285
+        },
+        {
+          "face": 249,
+          "x": 1.0593750000000002,
+          "xFromLeadingEdge": 1.0593750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001252816392091648,
+          "Cf": 0.002505632784183296,
+          "yPlus": 0.6062823065198605
+        },
+        {
+          "face": 250,
+          "x": 1.0656249999999998,
+          "xFromLeadingEdge": 1.0656249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012517731646632191,
+          "Cf": 0.0025035463293264382,
+          "yPlus": 0.606029826563515
+        },
+        {
+          "face": 251,
+          "x": 1.071875,
+          "xFromLeadingEdge": 1.071875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012507377241809188,
+          "Cf": 0.0025014754483618376,
+          "yPlus": 0.6057791271346396
+        },
+        {
+          "face": 252,
+          "x": 1.078125,
+          "xFromLeadingEdge": 1.078125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001249709994822909,
+          "Cf": 0.002499419989645818,
+          "yPlus": 0.6055301920755102
+        },
+        {
+          "face": 253,
+          "x": 1.0843749999999999,
+          "xFromLeadingEdge": 1.0843749999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012486898977843678,
+          "Cf": 0.0024973797955687355,
+          "yPlus": 0.6052830044633213
+        },
+        {
+          "face": 254,
+          "x": 1.090625,
+          "xFromLeadingEdge": 1.090625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012476773509802542,
+          "Cf": 0.0024953547019605084,
+          "yPlus": 0.6050375465370326
+        },
+        {
+          "face": 255,
+          "x": 1.096875,
+          "xFromLeadingEdge": 1.096875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001246672267986122,
+          "Cf": 0.002493344535972244,
+          "yPlus": 0.6047937994392479
+        },
+        {
+          "face": 256,
+          "x": 1.103125,
+          "xFromLeadingEdge": 1.103125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012456745584660323,
+          "Cf": 0.0024913491169320646,
+          "yPlus": 0.6045517433183624
+        },
+        {
+          "face": 257,
+          "x": 1.109375,
+          "xFromLeadingEdge": 1.109375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012446841219622019,
+          "Cf": 0.0024893682439244037,
+          "yPlus": 0.6043113558195105
+        },
+        {
+          "face": 258,
+          "x": 1.115625,
+          "xFromLeadingEdge": 1.115625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012437008626382006,
+          "Cf": 0.002487401725276401,
+          "yPlus": 0.6040726156605996
+        },
+        {
+          "face": 259,
+          "x": 1.121875,
+          "xFromLeadingEdge": 1.121875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012427247045652646,
+          "Cf": 0.002485449409130529,
+          "yPlus": 0.6038355063488127
+        },
+        {
+          "face": 260,
+          "x": 1.1281249999999998,
+          "xFromLeadingEdge": 1.1281249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001241755559682198,
+          "Cf": 0.002483511119364396,
+          "yPlus": 0.6036000084034054
+        },
+        {
+          "face": 261,
+          "x": 1.134375,
+          "xFromLeadingEdge": 1.134375,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0012407933150830395,
+          "Cf": 0.002481586630166079,
+          "yPlus": 0.6033660962595186
+        },
+        {
+          "face": 262,
+          "x": 1.140625,
+          "xFromLeadingEdge": 1.140625,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0012398378417308037,
+          "Cf": 0.0024796756834616074,
+          "yPlus": 0.6031337403764256
+        },
+        {
+          "face": 263,
+          "x": 1.146875,
+          "xFromLeadingEdge": 1.146875,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0012388889719003003,
+          "Cf": 0.0024777779438006006,
+          "yPlus": 0.602902901741886
+        },
+        {
+          "face": 264,
+          "x": 1.1531250000000002,
+          "xFromLeadingEdge": 1.1531250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012379464909171337,
+          "Cf": 0.0024758929818342675,
+          "yPlus": 0.6026735298440126
+        },
+        {
+          "face": 265,
+          "x": 1.159375,
+          "xFromLeadingEdge": 1.159375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001237010289623025,
+          "Cf": 0.00247402057924605,
+          "yPlus": 0.6024455997771248
+        },
+        {
+          "face": 266,
+          "x": 1.165625,
+          "xFromLeadingEdge": 1.165625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.00123608053687368,
+          "Cf": 0.00247216107374736,
+          "yPlus": 0.6022191543116511
+        },
+        {
+          "face": 267,
+          "x": 1.171875,
+          "xFromLeadingEdge": 1.171875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012351577488112207,
+          "Cf": 0.0024703154976224414,
+          "yPlus": 0.6019943209022722
+        },
+        {
+          "face": 268,
+          "x": 1.178125,
+          "xFromLeadingEdge": 1.178125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012342422051837367,
+          "Cf": 0.0024684844103674735,
+          "yPlus": 0.6017711695533257
+        },
+        {
+          "face": 269,
+          "x": 1.184375,
+          "xFromLeadingEdge": 1.184375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001233333383014378,
+          "Cf": 0.002466666766028756,
+          "yPlus": 0.601549574597643
+        },
+        {
+          "face": 270,
+          "x": 1.190625,
+          "xFromLeadingEdge": 1.190625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001232430679636822,
+          "Cf": 0.002464861359273644,
+          "yPlus": 0.6013293907289549
+        },
+        {
+          "face": 271,
+          "x": 1.1968750000000001,
+          "xFromLeadingEdge": 1.1968750000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001231533865985083,
+          "Cf": 0.002463067731970166,
+          "yPlus": 0.6011105635944363
+        },
+        {
+          "face": 272,
+          "x": 1.203125,
+          "xFromLeadingEdge": 1.203125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012306427782353033,
+          "Cf": 0.0024612855564706067,
+          "yPlus": 0.6008930546807232
+        },
+        {
+          "face": 273,
+          "x": 1.209375,
+          "xFromLeadingEdge": 1.209375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012297572514541957,
+          "Cf": 0.0024595145029083915,
+          "yPlus": 0.600676825138866
+        },
+        {
+          "face": 274,
+          "x": 1.2156250000000002,
+          "xFromLeadingEdge": 1.2156250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012288771508235873,
+          "Cf": 0.0024577543016471746,
+          "yPlus": 0.6004618434131312
+        },
+        {
+          "face": 275,
+          "x": 1.2218749999999998,
+          "xFromLeadingEdge": 1.2218749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012280023691682185,
+          "Cf": 0.002456004738336437,
+          "yPlus": 0.6002480846505969
+        },
+        {
+          "face": 276,
+          "x": 1.228125,
+          "xFromLeadingEdge": 1.228125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012271328181291644,
+          "Cf": 0.0024542656362583288,
+          "yPlus": 0.6000355285556914
+        },
+        {
+          "face": 277,
+          "x": 1.234375,
+          "xFromLeadingEdge": 1.234375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012262684230649442,
+          "Cf": 0.0024525368461298883,
+          "yPlus": 0.5998241581516744
+        },
+        {
+          "face": 278,
+          "x": 1.2406249999999999,
+          "xFromLeadingEdge": 1.2406249999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012254091187696254,
+          "Cf": 0.002450818237539251,
+          "yPlus": 0.5996139587392559
+        },
+        {
+          "face": 279,
+          "x": 1.246875,
+          "xFromLeadingEdge": 1.246875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012245548398948614,
+          "Cf": 0.002449109679789723,
+          "yPlus": 0.5994049155567497
+        },
+        {
+          "face": 280,
+          "x": 1.253125,
+          "xFromLeadingEdge": 1.253125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012237055197944935,
+          "Cf": 0.002447411039588987,
+          "yPlus": 0.5991970134973784
+        },
+        {
+          "face": 281,
+          "x": 1.259375,
+          "xFromLeadingEdge": 1.259375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012228610353298699,
+          "Cf": 0.0024457220706597398,
+          "yPlus": 0.5989902235910399
+        },
+        {
+          "face": 282,
+          "x": 1.265625,
+          "xFromLeadingEdge": 1.265625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001222021481415528,
+          "Cf": 0.002444042962831056,
+          "yPlus": 0.5987845702438093
+        },
+        {
+          "face": 283,
+          "x": 1.271875,
+          "xFromLeadingEdge": 1.271875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012211870568896986,
+          "Cf": 0.002442374113779397,
+          "yPlus": 0.598580103358669
+        },
+        {
+          "face": 284,
+          "x": 1.278125,
+          "xFromLeadingEdge": 1.278125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001220357555126295,
+          "Cf": 0.00244071511025259,
+          "yPlus": 0.5983767734944856
+        },
+        {
+          "face": 285,
+          "x": 1.2843749999999998,
+          "xFromLeadingEdge": 1.2843749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012195327521830489,
+          "Cf": 0.0024390655043660977,
+          "yPlus": 0.5981745268894761
+        },
+        {
+          "face": 286,
+          "x": 1.290625,
+          "xFromLeadingEdge": 1.290625,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0012187125800977533,
+          "Cf": 0.0024374251601955066,
+          "yPlus": 0.5979733479696175
+        },
+        {
+          "face": 287,
+          "x": 1.296875,
+          "xFromLeadingEdge": 1.296875,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0012178969046593546,
+          "Cf": 0.002435793809318709,
+          "yPlus": 0.5977732048758777
+        },
+        {
+          "face": 288,
+          "x": 1.303125,
+          "xFromLeadingEdge": 1.303125,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.001217085583760723,
+          "Cf": 0.002434171167521446,
+          "yPlus": 0.5975740637626052
+        },
+        {
+          "face": 289,
+          "x": 1.3093750000000002,
+          "xFromLeadingEdge": 1.3093750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012162784774703641,
+          "Cf": 0.0024325569549407283,
+          "yPlus": 0.5973758912681437
+        },
+        {
+          "face": 290,
+          "x": 1.315625,
+          "xFromLeadingEdge": 1.315625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001215475455627696,
+          "Cf": 0.002430950911255392,
+          "yPlus": 0.5971786563820155
+        },
+        {
+          "face": 291,
+          "x": 1.321875,
+          "xFromLeadingEdge": 1.321875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012146764021120388,
+          "Cf": 0.0024293528042240776,
+          "yPlus": 0.5969823314983712
+        },
+        {
+          "face": 292,
+          "x": 1.328125,
+          "xFromLeadingEdge": 1.328125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012138811736115626,
+          "Cf": 0.0024277623472231252,
+          "yPlus": 0.5967868822867219
+        },
+        {
+          "face": 293,
+          "x": 1.334375,
+          "xFromLeadingEdge": 1.334375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012130896153681055,
+          "Cf": 0.002426179230736211,
+          "yPlus": 0.5965922715530035
+        },
+        {
+          "face": 294,
+          "x": 1.340625,
+          "xFromLeadingEdge": 1.340625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012123017717047305,
+          "Cf": 0.002424603543409461,
+          "yPlus": 0.5963985110205143
+        },
+        {
+          "face": 295,
+          "x": 1.346875,
+          "xFromLeadingEdge": 1.346875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012115176160978494,
+          "Cf": 0.002423035232195699,
+          "yPlus": 0.5962055949918498
+        },
+        {
+          "face": 296,
+          "x": 1.3531250000000001,
+          "xFromLeadingEdge": 1.3531250000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012107371172829606,
+          "Cf": 0.0024214742345659212,
+          "yPlus": 0.5960135165917112
+        },
+        {
+          "face": 297,
+          "x": 1.359375,
+          "xFromLeadingEdge": 1.359375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012099602580656482,
+          "Cf": 0.0024199205161312964,
+          "yPlus": 0.5958222723966566
+        },
+        {
+          "face": 298,
+          "x": 1.365625,
+          "xFromLeadingEdge": 1.365625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012091870217150454,
+          "Cf": 0.0024183740434300907,
+          "yPlus": 0.5956318590895027
+        },
+        {
+          "face": 299,
+          "x": 1.3718750000000002,
+          "xFromLeadingEdge": 1.3718750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012084173811387072,
+          "Cf": 0.0024168347622774145,
+          "yPlus": 0.5954422707925241
+        },
+        {
+          "face": 300,
+          "x": 1.3781249999999998,
+          "xFromLeadingEdge": 1.3781249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012076512995150284,
+          "Cf": 0.0024153025990300567,
+          "yPlus": 0.5952534992193007
+        },
+        {
+          "face": 301,
+          "x": 1.384375,
+          "xFromLeadingEdge": 1.384375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012068887276323137,
+          "Cf": 0.0024137774552646274,
+          "yPlus": 0.5950655330149986
+        },
+        {
+          "face": 302,
+          "x": 1.390625,
+          "xFromLeadingEdge": 1.390625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012061295915792199,
+          "Cf": 0.0024122591831584397,
+          "yPlus": 0.5948783547160412
+        },
+        {
+          "face": 303,
+          "x": 1.3968749999999999,
+          "xFromLeadingEdge": 1.3968749999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012053738322724676,
+          "Cf": 0.002410747664544935,
+          "yPlus": 0.5946919504915271
+        },
+        {
+          "face": 304,
+          "x": 1.403125,
+          "xFromLeadingEdge": 1.403125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012046213851072446,
+          "Cf": 0.002409242770214489,
+          "yPlus": 0.594506305127652
+        },
+        {
+          "face": 305,
+          "x": 1.409375,
+          "xFromLeadingEdge": 1.409375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012038726468432584,
+          "Cf": 0.0024077452936865167,
+          "yPlus": 0.5943215172706718
+        },
+        {
+          "face": 306,
+          "x": 1.415625,
+          "xFromLeadingEdge": 1.415625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012031283868403784,
+          "Cf": 0.002406256773680757,
+          "yPlus": 0.5941377776862157
+        },
+        {
+          "face": 307,
+          "x": 1.421875,
+          "xFromLeadingEdge": 1.421875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012023885571361458,
+          "Cf": 0.0024047771142722916,
+          "yPlus": 0.5939550755008993
+        },
+        {
+          "face": 308,
+          "x": 1.428125,
+          "xFromLeadingEdge": 1.428125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012016526270043266,
+          "Cf": 0.002403305254008653,
+          "yPlus": 0.593773280548326
+        },
+        {
+          "face": 309,
+          "x": 1.434375,
+          "xFromLeadingEdge": 1.434375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0012009204450547045,
+          "Cf": 0.002401840890109409,
+          "yPlus": 0.5935923562473839
+        },
+        {
+          "face": 310,
+          "x": 1.4406249999999998,
+          "xFromLeadingEdge": 1.4406249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0012001920158340512,
+          "Cf": 0.0024003840316681024,
+          "yPlus": 0.5934123045184602
+        },
+        {
+          "face": 311,
+          "x": 1.446875,
+          "xFromLeadingEdge": 1.446875,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011994673173664574,
+          "Cf": 0.002398934634732915,
+          "yPlus": 0.5932331207216271
+        },
+        {
+          "face": 312,
+          "x": 1.453125,
+          "xFromLeadingEdge": 1.453125,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0011987463240280439,
+          "Cf": 0.0023974926480560877,
+          "yPlus": 0.593054799305148
+        },
+        {
+          "face": 313,
+          "x": 1.459375,
+          "xFromLeadingEdge": 1.459375,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011980290181341,
+          "Cf": 0.0023960580362682,
+          "yPlus": 0.592877336671284
+        },
+        {
+          "face": 314,
+          "x": 1.4656250000000002,
+          "xFromLeadingEdge": 1.4656250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011973153829377553,
+          "Cf": 0.0023946307658755106,
+          "yPlus": 0.5927007294463705
+        },
+        {
+          "face": 315,
+          "x": 1.471875,
+          "xFromLeadingEdge": 1.471875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011966054004367602,
+          "Cf": 0.0023932108008735205,
+          "yPlus": 0.5925249739381931
+        },
+        {
+          "face": 316,
+          "x": 1.478125,
+          "xFromLeadingEdge": 1.478125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011958990519093911,
+          "Cf": 0.0023917981038187822,
+          "yPlus": 0.5923500662682862
+        },
+        {
+          "face": 317,
+          "x": 1.484375,
+          "xFromLeadingEdge": 1.484375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011951963181476176,
+          "Cf": 0.002390392636295235,
+          "yPlus": 0.5921760024294754
+        },
+        {
+          "face": 318,
+          "x": 1.490625,
+          "xFromLeadingEdge": 1.490625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011944971794972817,
+          "Cf": 0.0023889943589945634,
+          "yPlus": 0.5920027782957017
+        },
+        {
+          "face": 319,
+          "x": 1.496875,
+          "xFromLeadingEdge": 1.496875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001193801615959159,
+          "Cf": 0.002387603231918318,
+          "yPlus": 0.5918303896469556
+        },
+        {
+          "face": 320,
+          "x": 1.503125,
+          "xFromLeadingEdge": 1.503125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011931096073096862,
+          "Cf": 0.0023862192146193724,
+          "yPlus": 0.5916588321991332
+        },
+        {
+          "face": 321,
+          "x": 1.5093750000000001,
+          "xFromLeadingEdge": 1.5093750000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011924211331963864,
+          "Cf": 0.0023848422663927727,
+          "yPlus": 0.5914881016276716
+        },
+        {
+          "face": 322,
+          "x": 1.515625,
+          "xFromLeadingEdge": 1.515625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011917361732030742,
+          "Cf": 0.0023834723464061483,
+          "yPlus": 0.5913181935837265
+        },
+        {
+          "face": 323,
+          "x": 1.521875,
+          "xFromLeadingEdge": 1.521875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011910547068872948,
+          "Cf": 0.0023821094137745896,
+          "yPlus": 0.5911491037034894
+        },
+        {
+          "face": 324,
+          "x": 1.5281250000000002,
+          "xFromLeadingEdge": 1.5281250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011903767137916984,
+          "Cf": 0.002380753427583397,
+          "yPlus": 0.5909808276110498
+        },
+        {
+          "face": 325,
+          "x": 1.5343749999999998,
+          "xFromLeadingEdge": 1.5343749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.00118970217343223,
+          "Cf": 0.00237940434686446,
+          "yPlus": 0.590813360915506
+        },
+        {
+          "face": 326,
+          "x": 1.540625,
+          "xFromLeadingEdge": 1.540625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011890310652672158,
+          "Cf": 0.0023780621305344316,
+          "yPlus": 0.590646699203326
+        },
+        {
+          "face": 327,
+          "x": 1.546875,
+          "xFromLeadingEdge": 1.546875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001188363368650657,
+          "Cf": 0.002376726737301314,
+          "yPlus": 0.5904808380267721
+        },
+        {
+          "face": 328,
+          "x": 1.5531249999999999,
+          "xFromLeadingEdge": 1.5531249999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011876990627707723,
+          "Cf": 0.0023753981255415445,
+          "yPlus": 0.5903157728886398
+        },
+        {
+          "face": 329,
+          "x": 1.559375,
+          "xFromLeadingEdge": 1.559375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011870381264967398,
+          "Cf": 0.0023740762529934796,
+          "yPlus": 0.5901514992041517
+        },
+        {
+          "face": 330,
+          "x": 1.565625,
+          "xFromLeadingEdge": 1.565625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011863805367839657,
+          "Cf": 0.0023727610735679314,
+          "yPlus": 0.589988011904367
+        },
+        {
+          "face": 331,
+          "x": 1.571875,
+          "xFromLeadingEdge": 1.571875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011857262713545129,
+          "Cf": 0.0023714525427090257,
+          "yPlus": 0.5898253061022479
+        },
+        {
+          "face": 332,
+          "x": 1.578125,
+          "xFromLeadingEdge": 1.578125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011850753097274042,
+          "Cf": 0.0023701506194548083,
+          "yPlus": 0.5896633773493033
+        },
+        {
+          "face": 333,
+          "x": 1.584375,
+          "xFromLeadingEdge": 1.584375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011844276299802872,
+          "Cf": 0.0023688552599605743,
+          "yPlus": 0.589502220830376
+        },
+        {
+          "face": 334,
+          "x": 1.590625,
+          "xFromLeadingEdge": 1.590625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001183783209104771,
+          "Cf": 0.002367566418209542,
+          "yPlus": 0.5893418314516531
+        },
+        {
+          "face": 335,
+          "x": 1.5968749999999998,
+          "xFromLeadingEdge": 1.5968749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011831420232371462,
+          "Cf": 0.0023662840464742925,
+          "yPlus": 0.5891822038977996
+        },
+        {
+          "face": 336,
+          "x": 1.603125,
+          "xFromLeadingEdge": 1.603125,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011825040476460113,
+          "Cf": 0.0023650080952920226,
+          "yPlus": 0.5890233326286436
+        },
+        {
+          "face": 337,
+          "x": 1.609375,
+          "xFromLeadingEdge": 1.609375,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0011818692563941972,
+          "Cf": 0.0023637385127883944,
+          "yPlus": 0.5888652117947193
+        },
+        {
+          "face": 338,
+          "x": 1.615625,
+          "xFromLeadingEdge": 1.615625,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011812376224574475,
+          "Cf": 0.002362475244914895,
+          "yPlus": 0.5887078352664997
+        },
+        {
+          "face": 339,
+          "x": 1.6218750000000002,
+          "xFromLeadingEdge": 1.6218750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011806091164532338,
+          "Cf": 0.0023612182329064675,
+          "yPlus": 0.5885511963172457
+        },
+        {
+          "face": 340,
+          "x": 1.628125,
+          "xFromLeadingEdge": 1.628125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011799837113280144,
+          "Cf": 0.002359967422656029,
+          "yPlus": 0.5883952887909352
+        },
+        {
+          "face": 341,
+          "x": 1.634375,
+          "xFromLeadingEdge": 1.634375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001179361387423544,
+          "Cf": 0.002358722774847088,
+          "yPlus": 0.5882401083665832
+        },
+        {
+          "face": 342,
+          "x": 1.640625,
+          "xFromLeadingEdge": 1.640625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001178742123253753,
+          "Cf": 0.002357484246507506,
+          "yPlus": 0.5880856502599776
+        },
+        {
+          "face": 343,
+          "x": 1.646875,
+          "xFromLeadingEdge": 1.646875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011781258907835389,
+          "Cf": 0.0023562517815670777,
+          "yPlus": 0.5879319080450891
+        },
+        {
+          "face": 344,
+          "x": 1.653125,
+          "xFromLeadingEdge": 1.653125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011775126596347196,
+          "Cf": 0.002355025319269439,
+          "yPlus": 0.5877788747017373
+        },
+        {
+          "face": 345,
+          "x": 1.659375,
+          "xFromLeadingEdge": 1.659375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011769023948267877,
+          "Cf": 0.0023538047896535753,
+          "yPlus": 0.5876265420508766
+        },
+        {
+          "face": 346,
+          "x": 1.6656250000000001,
+          "xFromLeadingEdge": 1.6656250000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011762950576549636,
+          "Cf": 0.0023525901153099273,
+          "yPlus": 0.5874749009724486
+        },
+        {
+          "face": 347,
+          "x": 1.671875,
+          "xFromLeadingEdge": 1.671875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011756905848611938,
+          "Cf": 0.0023513811697223877,
+          "yPlus": 0.5873239362016367
+        },
+        {
+          "face": 348,
+          "x": 1.678125,
+          "xFromLeadingEdge": 1.678125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011750889296334014,
+          "Cf": 0.002350177859266803,
+          "yPlus": 0.5871736365644528
+        },
+        {
+          "face": 349,
+          "x": 1.6843750000000002,
+          "xFromLeadingEdge": 1.6843750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011744901378556516,
+          "Cf": 0.0023489802757113033,
+          "yPlus": 0.5870240140384907
+        },
+        {
+          "face": 350,
+          "x": 1.6906249999999998,
+          "xFromLeadingEdge": 1.6906249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011738941988263798,
+          "Cf": 0.0023477883976527596,
+          "yPlus": 0.5868750664665718
+        },
+        {
+          "face": 351,
+          "x": 1.696875,
+          "xFromLeadingEdge": 1.696875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011733009812914229,
+          "Cf": 0.0023466019625828457,
+          "yPlus": 0.5867267615449258
+        },
+        {
+          "face": 352,
+          "x": 1.703125,
+          "xFromLeadingEdge": 1.703125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011727103915634245,
+          "Cf": 0.002345420783126849,
+          "yPlus": 0.5865790763302148
+        },
+        {
+          "face": 353,
+          "x": 1.7093749999999999,
+          "xFromLeadingEdge": 1.7093749999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001172122501186133,
+          "Cf": 0.002344245002372266,
+          "yPlus": 0.5864320291878876
+        },
+        {
+          "face": 354,
+          "x": 1.715625,
+          "xFromLeadingEdge": 1.715625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011715375902471201,
+          "Cf": 0.0023430751804942402,
+          "yPlus": 0.5862856906817377
+        },
+        {
+          "face": 355,
+          "x": 1.721875,
+          "xFromLeadingEdge": 1.721875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011709558216793563,
+          "Cf": 0.0023419116433587126,
+          "yPlus": 0.586140102121844
+        },
+        {
+          "face": 356,
+          "x": 1.728125,
+          "xFromLeadingEdge": 1.728125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011703770159739225,
+          "Cf": 0.002340754031947845,
+          "yPlus": 0.5859952191280776
+        },
+        {
+          "face": 357,
+          "x": 1.734375,
+          "xFromLeadingEdge": 1.734375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011698009373679137,
+          "Cf": 0.0023396018747358274,
+          "yPlus": 0.5858509831873984
+        },
+        {
+          "face": 358,
+          "x": 1.740625,
+          "xFromLeadingEdge": 1.740625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011692274745930102,
+          "Cf": 0.0023384549491860204,
+          "yPlus": 0.5857073669087188
+        },
+        {
+          "face": 359,
+          "x": 1.746875,
+          "xFromLeadingEdge": 1.746875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011686565665987882,
+          "Cf": 0.0023373131331975764,
+          "yPlus": 0.5855643554530842
+        },
+        {
+          "face": 360,
+          "x": 1.7531249999999998,
+          "xFromLeadingEdge": 1.7531249999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011680881561331687,
+          "Cf": 0.0023361763122663375,
+          "yPlus": 0.5854219349169609
+        },
+        {
+          "face": 361,
+          "x": 1.759375,
+          "xFromLeadingEdge": 1.759375,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011675221942861714,
+          "Cf": 0.002335044388572343,
+          "yPlus": 0.5852800934724156
+        },
+        {
+          "face": 362,
+          "x": 1.765625,
+          "xFromLeadingEdge": 1.765625,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0011669586422450586,
+          "Cf": 0.0023339172844901173,
+          "yPlus": 0.5851388218097933
+        },
+        {
+          "face": 363,
+          "x": 1.771875,
+          "xFromLeadingEdge": 1.771875,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011663974680923583,
+          "Cf": 0.0023327949361847166,
+          "yPlus": 0.5849981123378978
+        },
+        {
+          "face": 364,
+          "x": 1.7781250000000002,
+          "xFromLeadingEdge": 1.7781250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011658386450099196,
+          "Cf": 0.002331677290019839,
+          "yPlus": 0.5848579587356623
+        },
+        {
+          "face": 365,
+          "x": 1.784375,
+          "xFromLeadingEdge": 1.784375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011652821504698422,
+          "Cf": 0.0023305643009396844,
+          "yPlus": 0.5847183557507482
+        },
+        {
+          "face": 366,
+          "x": 1.790625,
+          "xFromLeadingEdge": 1.790625,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011647279654620377,
+          "Cf": 0.0023294559309240755,
+          "yPlus": 0.5845792990070324
+        },
+        {
+          "face": 367,
+          "x": 1.796875,
+          "xFromLeadingEdge": 1.796875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011641760737272004,
+          "Cf": 0.002328352147454401,
+          "yPlus": 0.5844407848131626
+        },
+        {
+          "face": 368,
+          "x": 1.803125,
+          "xFromLeadingEdge": 1.803125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011636264609996357,
+          "Cf": 0.0023272529219992713,
+          "yPlus": 0.5843028099733032
+        },
+        {
+          "face": 369,
+          "x": 1.809375,
+          "xFromLeadingEdge": 1.809375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001163079114120279,
+          "Cf": 0.002326158228240558,
+          "yPlus": 0.5841653715650061
+        },
+        {
+          "face": 370,
+          "x": 1.815625,
+          "xFromLeadingEdge": 1.815625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011625340195145842,
+          "Cf": 0.0023250680390291684,
+          "yPlus": 0.5840284665572251
+        },
+        {
+          "face": 371,
+          "x": 1.8218750000000001,
+          "xFromLeadingEdge": 1.8218750000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011619911607062153,
+          "Cf": 0.0023239823214124306,
+          "yPlus": 0.5838920911855394
+        },
+        {
+          "face": 372,
+          "x": 1.828125,
+          "xFromLeadingEdge": 1.828125,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001161450515104643,
+          "Cf": 0.002322901030209286,
+          "yPlus": 0.5837562401440362
+        },
+        {
+          "face": 373,
+          "x": 1.834375,
+          "xFromLeadingEdge": 1.834375,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011609120480891419,
+          "Cf": 0.0023218240961782838,
+          "yPlus": 0.5836209050964918
+        },
+        {
+          "face": 374,
+          "x": 1.8406250000000002,
+          "xFromLeadingEdge": 1.8406250000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011603758513551517,
+          "Cf": 0.0023207517027103034,
+          "yPlus": 0.5834861094561239
+        },
+        {
+          "face": 375,
+          "x": 1.8468749999999998,
+          "xFromLeadingEdge": 1.8468749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.001159842053861175,
+          "Cf": 0.00231968410772235,
+          "yPlus": 0.5833518860272151
+        },
+        {
+          "face": 376,
+          "x": 1.853125,
+          "xFromLeadingEdge": 1.853125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011593105769257008,
+          "Cf": 0.0023186211538514015,
+          "yPlus": 0.5832182154135522
+        },
+        {
+          "face": 377,
+          "x": 1.859375,
+          "xFromLeadingEdge": 1.859375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011587813418924878,
+          "Cf": 0.0023175626837849757,
+          "yPlus": 0.5830850782058843
+        },
+        {
+          "face": 378,
+          "x": 1.8656249999999999,
+          "xFromLeadingEdge": 1.8656249999999999,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011582543660486027,
+          "Cf": 0.0023165087320972054,
+          "yPlus": 0.5829524791199889
+        },
+        {
+          "face": 379,
+          "x": 1.871875,
+          "xFromLeadingEdge": 1.871875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011577296481970426,
+          "Cf": 0.0023154592963940852,
+          "yPlus": 0.5828204182218594
+        },
+        {
+          "face": 380,
+          "x": 1.878125,
+          "xFromLeadingEdge": 1.878125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011572071846322385,
+          "Cf": 0.002314414369264477,
+          "yPlus": 0.5826888949444878
+        },
+        {
+          "face": 381,
+          "x": 1.884375,
+          "xFromLeadingEdge": 1.884375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011566869743104625,
+          "Cf": 0.002313373948620925,
+          "yPlus": 0.5825579093891745
+        },
+        {
+          "face": 382,
+          "x": 1.890625,
+          "xFromLeadingEdge": 1.890625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011561690204244315,
+          "Cf": 0.002312338040848863,
+          "yPlus": 0.5824274627228897
+        },
+        {
+          "face": 383,
+          "x": 1.896875,
+          "xFromLeadingEdge": 1.896875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011556533344491088,
+          "Cf": 0.0023113066688982176,
+          "yPlus": 0.5822975581987375
+        },
+        {
+          "face": 384,
+          "x": 1.903125,
+          "xFromLeadingEdge": 1.903125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011551399406480593,
+          "Cf": 0.0023102798812961187,
+          "yPlus": 0.5821682022938215
+        },
+        {
+          "face": 385,
+          "x": 1.9093749999999998,
+          "xFromLeadingEdge": 1.9093749999999998,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011546288806353394,
+          "Cf": 0.0023092577612706788,
+          "yPlus": 0.5820394058625872
+        },
+        {
+          "face": 386,
+          "x": 1.915625,
+          "xFromLeadingEdge": 1.915625,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011541202183718584,
+          "Cf": 0.0023082404367437167,
+          "yPlus": 0.5819111854011755
+        },
+        {
+          "face": 387,
+          "x": 1.921875,
+          "xFromLeadingEdge": 1.921875,
+          "length": 0.006249999999999645,
+          "kinematicShear": 0.0011536140445906787,
+          "Cf": 0.0023072280891813573,
+          "yPlus": 0.5817835641693753
+        },
+        {
+          "face": 388,
+          "x": 1.928125,
+          "xFromLeadingEdge": 1.928125,
+          "length": 0.006250000000000311,
+          "kinematicShear": 0.0011531104838927195,
+          "Cf": 0.002306220967785439,
+          "yPlus": 0.5816565739874637
+        },
+        {
+          "face": 389,
+          "x": 1.9343750000000002,
+          "xFromLeadingEdge": 1.9343750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011526096908723803,
+          "Cf": 0.0023052193817447606,
+          "yPlus": 0.5815302542678842
+        },
+        {
+          "face": 390,
+          "x": 1.940625,
+          "xFromLeadingEdge": 1.940625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011521118782437455,
+          "Cf": 0.002304223756487491,
+          "yPlus": 0.5814046591199332
+        },
+        {
+          "face": 391,
+          "x": 1.946875,
+          "xFromLeadingEdge": 1.946875,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011516172050527514,
+          "Cf": 0.002303234410105503,
+          "yPlus": 0.5812798291525703
+        },
+        {
+          "face": 392,
+          "x": 1.953125,
+          "xFromLeadingEdge": 1.953125,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011511261020143943,
+          "Cf": 0.0023022522040287885,
+          "yPlus": 0.5811558735839559
+        },
+        {
+          "face": 393,
+          "x": 1.959375,
+          "xFromLeadingEdge": 1.959375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011506378507704289,
+          "Cf": 0.0023012757015408577,
+          "yPlus": 0.581032611600617
+        },
+        {
+          "face": 394,
+          "x": 1.965625,
+          "xFromLeadingEdge": 1.965625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.001150155025002811,
+          "Cf": 0.002300310050005622,
+          "yPlus": 0.5809106935913209
+        },
+        {
+          "face": 395,
+          "x": 1.971875,
+          "xFromLeadingEdge": 1.971875,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011496658411132656,
+          "Cf": 0.0022993316822265313,
+          "yPlus": 0.5807871439963354
+        },
+        {
+          "face": 396,
+          "x": 1.9781250000000001,
+          "xFromLeadingEdge": 1.9781250000000001,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011492029314724619,
+          "Cf": 0.0022984058629449237,
+          "yPlus": 0.5806702060883091
+        },
+        {
+          "face": 397,
+          "x": 1.984375,
+          "xFromLeadingEdge": 1.984375,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011486248532336036,
+          "Cf": 0.002297249706467207,
+          "yPlus": 0.5805241417925676
+        },
+        {
+          "face": 398,
+          "x": 1.990625,
+          "xFromLeadingEdge": 1.990625,
+          "length": 0.006250000000000089,
+          "kinematicShear": 0.0011483390729857177,
+          "Cf": 0.0022966781459714354,
+          "yPlus": 0.5804519194942371
+        },
+        {
+          "face": 399,
+          "x": 1.9968750000000002,
+          "xFromLeadingEdge": 1.9968750000000002,
+          "length": 0.006249999999999867,
+          "kinematicShear": 0.0011468319951577616,
+          "Cf": 0.002293663990315523,
+          "yPlus": 0.5800709024914843
+        }
+      ],
+      "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+      "cells": 24000,
+      "iterations": 3136,
+      "scalar": {
+        "k": {
+          "worstCellIndex": 1282,
+          "worstCentre": [
+            0.015624999999999972,
+            3.9747756195910845e-05
+          ],
+          "worstSignedResidual": 4.701193763742843e-15,
+          "worstDiagonal": 0.0004942236619359172,
+          "residualNorm": 3.1521346624597104e-14,
+          "normTarget": 1.0157449140339397e-12,
+          "maxCellResidual": 9.51227981543388e-12,
+          "maxFaceFlux": 5.27439167038735e-06,
+          "globalBalance": 1.5420885551991732e-12,
+          "normRoundoffBudget": 2.322352781992018e-17,
+          "reportedTransportBalance": {
+            "residualNorm": 3.1521346258432314e-14,
+            "maxCellResidual": 9.512279976108782e-12,
+            "originalEquationCellDifference": 1.6067490160090585e-19
+          }
+        },
+        "omega": {
+          "worstCellIndex": 191,
+          "worstCentre": [
+            0.6968749999999999,
+            3.4257934624264215e-06
+          ],
+          "worstSignedResidual": -4.233197126168875e-12,
+          "worstDiagonal": 0.004274687571999164,
+          "residualNorm": 2.315171640228362e-11,
+          "normTarget": 8.900577476899299e-05,
+          "maxCellResidual": 9.902939232092498e-10,
+          "maxFaceFlux": 4547.505214697107,
+          "globalBalance": -1.1843606385333535e-10,
+          "normRoundoffBudget": 2.0022994207594453e-08,
+          "reportedTransportBalance": {
+            "residualNorm": 2.1301484498504268e-11,
+            "maxCellResidual": 7.396790665724088e-10,
+            "originalEquationCellDifference": 2.5061485663684107e-10
+          }
+        }
+      },
+      "momentum": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "face-values",
+          "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-h5qu2f9y/face-viscosity.csv",
+          "sha256": "e44761ada858a39d041de113d51353467912204d7b0c48ff4ea68207a818f9c5"
+        },
+        "convection": "upwind",
+        "pressureDiscretization": null,
+        "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 48460,
+        "maxFaceDeviation": {
+          "pressure": 2.9408983928669308e-18,
+          "advectionX": 0.0,
+          "advectionY": 0.0,
+          "diffusionX": 5.082197683525802e-21,
+          "diffusionY": 8.470329472543003e-22
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": -0.00011749667033511702,
+            "expected": -0.00011749667033511996,
+            "absolute": 2.9408983928669308e-18,
+            "relative": 2.9408983928669308e-18
+          },
+          "advectionX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "advectionY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "diffusionX": {
+            "actual": -1.4160848240138855e-05,
+            "expected": -1.416084824013885e-05,
+            "absolute": 5.082197683525802e-21,
+            "relative": 5.082197683525802e-21
+          },
+          "diffusionY": {
+            "actual": -1.842785671744776e-06,
+            "expected": -1.842785671744775e-06,
+            "absolute": 8.470329472543003e-22,
+            "relative": 8.470329472543003e-22
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 5.5471054591367214e-08,
+          "worstCellIndex": 882,
+          "worstNormalizedX": 5.5471028479741233e-08,
+          "worstNormalizedY": 5.382265488014693e-11,
+          "worstCentre": {
+            "x": 0.015624999999999972,
+            "y": 2.3326877008614392e-05
+          },
+          "l2": 1.5233323016714e-10,
+          "maxCellVector": 2.3433726072431695e-11,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 5.5471054608004265e-08,
+            "expected": 5.5471054591367214e-08,
+            "absolute": 1.6637050573054544e-17,
+            "relative": 1.6637050573054544e-17
+          },
+          "pressureForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "pressureForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "discreteForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "reconstructedForceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceX": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "forceY": {
+            "actual": 0.0,
+            "expected": 0.0,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallForceX": {
+            "actual": 0.0026843150915939525,
+            "expected": 0.0026843150915939517,
+            "absolute": 8.673617379884035e-19,
+            "relative": 8.673617379884035e-19
+          },
+          "wallForceY": {
+            "actual": -0.000478215432626965,
+            "expected": -0.000478215432626965,
+            "absolute": 0.0,
+            "relative": 0.0
+          },
+          "wallViscousForceX": {
+            "actual": 0.0026843150915939525,
+            "expected": 0.0026843150915939517,
+            "absolute": 8.673617379884035e-19,
+            "relative": 8.673617379884035e-19
+          },
+          "wallViscousForceY": {
+            "actual": 1.995852238615524e-07,
+            "expected": 1.995852238615524e-07,
+            "absolute": 0.0,
+            "relative": 0.0
+          }
+        },
+        "sourceForcing": {
+          "case": "flatplate",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "discreteForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "globalBoundaryMomentum": {
+          "x": 5.973099514999802e-09,
+          "y": -1.1752210286744905e-09,
+          "magnitude": 6.087615484106203e-09,
+          "boundaryTermScale": 2.0043958997125713,
+          "relativeToBoundary": 3.0371322776000302e-09,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 5.973099514999802e-09,
+          "boundaryMinusSourceY": -1.1752210286744905e-09,
+          "magnitude": 6.087615484106203e-09,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 5.973099407979893e-09,
+          "y": -1.1752210279043018e-09
+        },
+        "expectedCellResidualSum": {
+          "x": 5.973099514999802e-09,
+          "y": -1.1752210286744905e-09
+        },
+        "cellBoundaryConservationDifference": {
+          "x": -1.0701990965933902e-16,
+          "y": 7.701886955287366e-19,
+          "magnitude": 1.070226810265927e-16
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "reconstructed-newtonian-traction",
+        "reconstructedForce": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "wallForce": {
+          "x": 0.0026843150915939517,
+          "y": -0.000478215432626965
+        },
+        "wallViscousForce": {
+          "x": 0.0026843150915939517,
+          "y": 1.995852238615524e-07
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "continuity": {
+        "maxCellImbalance": 1.0099560077136971e-14,
+        "l2CellImbalance": 9.540461707352576e-14,
+        "maxScaledCellImbalance": 0.003833691700855982,
+        "nativeDefinitionContinuity": 4.018951671148403e-12,
+        "boundaryFluxSum": -4.2263414989918147e-13,
+        "referenceThroughput": 1.0,
+        "globalRelativeImbalance": 4.2263414989918147e-13,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 1.5811488300841898e-09
+      },
+      "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+      "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/flow"
+    },
+    "history": {
+      "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.history.csv",
+      "sha256": "0dcddaa5a0c6e79441bd76a41d3b5b2b617f23733a32897e68c49e38582b099f"
+    },
+    "fieldFiles": [
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.json",
+        "sha256": "a76c06dd13040044930244ce83acde3ef6047bb8c3cd81913c1f306dfc72706a"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.cells.csv",
+        "sha256": "5b154aa3d0fea6ef7ac0e8fcaf324c485c3b6d03bd54836f994976bfa10338da"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.faces.csv",
+        "sha256": "ce923e64d1d9d58a1314857e4d922e49a65e05763097a08d7f653270bc1245e7"
+      }
+    ],
+    "files": [
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/audit.json",
+        "sha256": "955457b48372e1550811d72b61c4c31d134bcc5c780385f8d815e11fd7236828"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/audit.status",
+        "sha256": "9fc06401eaf520715aad732ec584d01d26e7450aa1f83f762e1cf595cc87cb78"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/audit.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/audit.stdout",
+        "sha256": "955457b48372e1550811d72b61c4c31d134bcc5c780385f8d815e11fd7236828"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/compile.status",
+        "sha256": "9fc06401eaf520715aad732ec584d01d26e7450aa1f83f762e1cf595cc87cb78"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/compile.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.cells.csv",
+        "sha256": "5b154aa3d0fea6ef7ac0e8fcaf324c485c3b6d03bd54836f994976bfa10338da"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.diagnostics.json",
+        "sha256": "4093601775f34605cd1da323c2d3fe44c7439f2a774b3d290af73e33e893873d"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.faces.csv",
+        "sha256": "ce923e64d1d9d58a1314857e4d922e49a65e05763097a08d7f653270bc1245e7"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.history.csv",
+        "sha256": "0dcddaa5a0c6e79441bd76a41d3b5b2b617f23733a32897e68c49e38582b099f"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/flow.json",
+        "sha256": "a76c06dd13040044930244ce83acde3ef6047bb8c3cd81913c1f306dfc72706a"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/generate_midpoint.cpp",
+        "sha256": "fa43f1cc29ef68e54d9e5bbf7c1506c7dba4e960cb553d0ce42a9476f0fa83c0"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/hashes-geometry.sha256",
+        "sha256": "46889f6267e6bb98dda9efad6d1ee24ff1ad53a0e6320e0dc3f29d7d0842bf57"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/hashes-post-run.sha256",
+        "sha256": "acc8280a1443273cabe411ce6a3289f576c4741e27ea8cfa5f43222a7efa349a"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/hashes-pre-run.sha256",
+        "sha256": "198c83720511da64802da00b8c58ed9dae4ddd0aa187b82b07e5724044e0fb3e"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.geometry.json",
+        "sha256": "c82dbc156027356d544df61fe8eb357c32068d7eaac68e492b3180a451cd9e54"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.quality.json",
+        "sha256": "ef1f2a7fc84603786fe840c5125225b8d3bf8c15bce362508dc646da9c62a1ad"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/refinement-independent.json",
+        "sha256": "12729cf7ff24c9050a3c28dbacbc3082f24cb1639a44fe3d607fcfb9f64b7931"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/run_monitor.py",
+        "sha256": "71a548bec16549e6d6fbcd34d23800dcb1a1c848743b119c1056b03ad5c77f20"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/runtime.json",
+        "sha256": "d2cebd62846fa19ca63bd04ae5cb99dda80314a6ccdc8be28b09f912e414d30f"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/stderr.log",
+        "sha256": "83beee93354692cc30907bf9a573dc6becafcf41e9cf9019537ce80d5aca106e"
+      },
+      {
+        "path": "outputs/native-flow/sst-normal-refinement/midpoint/stdout.log",
+        "sha256": "b7a2847f23d100bb5a8858407355bf725764358c296f92ff6242f722a486c985"
+      }
+    ]
+  },
+  "sources": {
+    "generate_midpoint.cpp": {
+      "path": "outputs/native-flow/sst-normal-refinement/midpoint/generate_midpoint.cpp",
+      "sha256": "fa43f1cc29ef68e54d9e5bbf7c1506c7dba4e960cb553d0ce42a9476f0fa83c0",
+      "text": "#include \"cartmesh2d/grid/RectilinearMesh2D.hpp\"\n#include \"cartmesh2d/io/MeshIO2D.hpp\"\n#include \"cartmesh2d/quality/SolverQuality2D.hpp\"\n#include <algorithm>\n#include <fstream>\n#include <iomanip>\n#include <iostream>\n#include <map>\n#include <numeric>\n#include <sstream>\n#include <stdexcept>\n#include <vector>\n\nusing namespace cartmesh2d;\n\nstatic std::string polygonKey(const TopologyMesh2D& t, const TopologyCell2D& c) {\n    std::vector<std::pair<double,double>> p;\n    for (auto id:c.vertices) p.push_back({t.vertices.at(id).point.x,t.vertices.at(id).point.y});\n    std::sort(p.begin(),p.end()); std::ostringstream out; out << std::hexfloat;\n    for (auto [x,y]:p) out<<x<<','<<y<<';';\n    return out.str();\n}\nstatic std::array<double,4> bounds(const TopologyMesh2D& t,const TopologyCell2D& c) {\n    double xmin=1e300,xmax=-1e300,ymin=1e300,ymax=-1e300;\n    for(auto id:c.vertices){auto p=t.vertices.at(id).point;xmin=std::min(xmin,p.x);xmax=std::max(xmax,p.x);ymin=std::min(ymin,p.y);ymax=std::max(ymax,p.y);}\n    return {xmin,xmax,ymin,ymax};\n}\nint main(int argc,char** argv){try{\n    if(argc!=3) throw std::runtime_error(\"usage: generate_midpoint original.cm2d output-prefix\");\n    auto read=readCm2dTopology(argv[1]); if(!read.valid()) throw std::runtime_error(read.error);\n    const auto& base=read.topology; std::vector<double>x,y;\n    for(auto&v:base.vertices){x.push_back(v.point.x);y.push_back(v.point.y);}\n    auto unique=[](std::vector<double>& a){std::sort(a.begin(),a.end());a.erase(std::unique(a.begin(),a.end()),a.end());}; unique(x);unique(y);\n    if(x.size()!=401||y.size()!=33) throw std::runtime_error(\"unexpected baseline axes\");\n    std::vector<double> refined; refined.reserve(61); for(std::size_t j=0;j+1<y.size();++j){ refined.push_back(y[j]); if(j>=4) refined.push_back(std::midpoint(y[j],y[j+1])); } refined.push_back(y.back());\n    if(refined.size()!=61) throw std::runtime_error(\"unexpected refined y count\");\n    const auto t=makeRectilinearMesh2D(x,refined); if(t.cells.size()!=24000) throw std::runtime_error(\"unexpected refined cells\");\n    std::map<std::string,std::size_t> baseFirst,refFirst; for(auto&c:base.cells){auto b=bounds(base,c);if(b[2]<y[4])++baseFirst[polygonKey(base,c)];}\n    for(auto&c:t.cells){auto b=bounds(t,c);if(b[2]<y[4])++refFirst[polygonKey(t,c)];}\n    if(baseFirst!=refFirst||baseFirst.size()!=1600) throw std::runtime_error(\"first four strip polygon set mismatch\");\n    for(std::size_t j=4;j+1<y.size();++j){double m=std::midpoint(y[j],y[j+1]);bool found=false;for(double v:refined)if(v==m)found=true;if(!found)throw std::runtime_error(\"missing midpoint\");}\n    double baseArea=0,refArea=0;for(auto&c:base.cells)baseArea+=c.geometryArea;for(auto&c:t.cells)refArea+=c.geometryArea;if(std::abs(baseArea-refArea)>1e-13*std::max(1.0,std::abs(baseArea)))throw std::runtime_error(\"domain area changed\");\n    std::size_t parents=0; double maxCoverageError=0; for(auto&pc:base.cells){auto pb=bounds(base,pc);double sum=0;std::size_t n=0;for(auto&cc:t.cells){auto b=bounds(t,cc);if(b[0]==pb[0]&&b[1]==pb[1]&&b[2]>=pb[2]&&b[3]<=pb[3]){sum+=cc.geometryArea;++n;}}if(n!=1&&n!=2)throw std::runtime_error(\"parent partition child count mismatch\");maxCoverageError=std::max(maxCoverageError,std::abs(sum-pc.geometryArea));++parents;}\n    auto q=evaluateSolverQuality2D(t); if(!q.valid()) throw std::runtime_error(\"refined Solver quality failed\");\n    std::string err;std::string p=argv[2];if(!writeCm2dTopology(t,p+\".cm2d\",&err)||!writeLegacyVtk2D(t,p+\".vtk\",&err))throw std::runtime_error(err);std::ofstream qo(p+\".quality.json\");qo<<solverQualityReportToJson(q);\n    std::ofstream ro(p+\".geometry.json\");ro<<std::setprecision(17)<<\"{\\\"baselineCells\\\":\"<<base.cells.size()<<\",\\\"refinedCells\\\":\"<<t.cells.size()<<\",\\\"xCount\\\":\"<<x.size()<<\",\\\"baselineYCount\\\":33,\\\"refinedYCount\\\":\"<<refined.size()<<\",\\\"firstFourStripPolygonSetIdentical\\\":true,\\\"insertedMidpointsProper\\\":true,\\\"domainAreaIdentical\\\":true,\\\"domainAreaAbsDifference\\\":\"<<std::abs(baseArea-refArea)<<\",\\\"parentPartitionCoverage\\\":true,\\\"parentsChecked\\\":\"<<parents<<\",\\\"maxCoverageError\\\":\"<<maxCoverageError<<\",\\\"qualityValid\\\":true}\\n\";\n    std::cout<<\"baselineCells=\"<<base.cells.size()<<\" refinedCells=\"<<t.cells.size()<<\" x=\"<<x.size()<<\" y=\"<<refined.size()<<\" parents=\"<<parents<<\"\\n\";return 0;\n}catch(const std::exception&e){std::cerr<<e.what()<<'\\n';return 1;}}\n"
+    },
+    "run_monitor.py": {
+      "path": "outputs/native-flow/sst-normal-refinement/midpoint/run_monitor.py",
+      "sha256": "71a548bec16549e6d6fbcd34d23800dcb1a1c848743b119c1056b03ad5c77f20",
+      "text": "import json, resource, shutil, subprocess, sys, time\nfrom pathlib import Path\ntry:\n    import psutil\nexcept Exception:\n    psutil=None\nroot=Path(__file__).resolve().parent; mesh=Path(sys.argv[1]).resolve(); prefix=root/'flow'\ncmd=[str(Path.cwd()/'build/cartmesh2d_sst_rans_probe'),str(mesh),str(prefix),'flatplate-sweep','--nu','2e-7','--speed','1','--inlet-k','2.25e-7','--inlet-omega','125','--leading-edge','0','--max-iterations','20000','--completion-updates','500','--max-seconds','540','--scalar-preconditioner','ilu0']\nstart=time.time(); samples=[]; timeout=False; rss_limit=512*1024*1024; disk_floor=int(1.5*1024**3)\nwith (root/'stdout.log').open('wb') as out,(root/'stderr.log').open('wb') as err:\n    p=subprocess.Popen(cmd,stdout=out,stderr=err); proc=psutil.Process(p.pid) if psutil else None\n    while True:\n        rc=p.poll(); elapsed=time.time()-start; rss=None\n        if proc:\n            try:rss=proc.memory_info().rss\n            except psutil.Error:rss=None\n        free=shutil.disk_usage(root).free; samples.append({'elapsedSeconds':elapsed,'rssBytes':rss,'diskFreeBytes':free})\n        if free<disk_floor or (rss is not None and rss>rss_limit):p.kill();p.wait();rc=p.returncode;break\n        if rc is not None:break\n        if elapsed>=600:timeout=True;p.kill();p.wait();rc=p.returncode;break\n        time.sleep(5)\nend=time.time(); child_rss=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss\nresult={'command':cmd,'startedAtEpoch':start,'endedAtEpoch':end,'runtimeSeconds':end-start,'exitCode':rc,'timeout':timeout,'peakRssBytes':child_rss,'peakRssSource':'resource.RUSAGE_CHILDREN.ru_maxrss','liveRssGuardActive':psutil is not None,'rssLimitBytes':rss_limit,'diskFloorBytes':disk_floor,'samples':samples}\n(root/'runtime.json').write_text(json.dumps(result,indent=2)+'\\n');sys.exit(124 if timeout else (rc if rc is not None else 1))\n"
+    },
+    "tools/verification/verify_rectilinear_refinement.py": {
+      "path": "tools/verification/verify_rectilinear_refinement.py",
+      "sha256": "b6f194ed548378f99f7686ddfa039e78535ccff187a8663f743e777e24570355"
+    },
+    "tests/rectilinear_refinement_verifier_test.py": {
+      "path": "tests/rectilinear_refinement_verifier_test.py",
+      "sha256": "ed8541b34cf1aa07153655ffafae24d4a33193c31d99f217594c12483edf9fc4"
+    },
+    "tools/visualization/render_sst_normal_refinement.py": {
+      "path": "tools/visualization/render_sst_normal_refinement.py",
+      "sha256": "ed742e3d02f529b67ce530f0453876ae07ecbe95d6341ac944e59f0268f2af99"
+    },
+    "tools/visualization/render_sst_flatplate_analysis.py": {
+      "path": "tools/visualization/render_sst_flatplate_analysis.py",
+      "sha256": "b549fdfa167429b2dfb47b70cdaa9a82756a4a3be2595f20f779157e2b3286ca"
+    }
+  },
+  "validation": {
+    "configure.log": {
+      "path": "outputs/native-flow/sst-normal-refinement/configure.log",
+      "sha256": "c3d7aea9f222b4267365529d0d4490038352ab008588935606fa48ba064c933d"
+    },
+    "build.log": {
+      "path": "outputs/native-flow/sst-normal-refinement/build.log",
+      "sha256": "4bd0f899651b5b6f6b01d792e4ea603462e86329ec0bf5e5af2cd2d70f89e490"
+    },
+    "ctest.log": {
+      "path": "outputs/native-flow/sst-normal-refinement/ctest.log",
+      "sha256": "1f127b35f874a6d12ac64216e405ea1403ca7570abe3b11fec57e5a80989cc09"
+    },
+    "frontend.log": {
+      "path": "outputs/native-flow/sst-normal-refinement/frontend.log",
+      "sha256": "a2bf0373588bb90afa0a5e15f508d1095b1cd01fd2b1930d57b9b650a08266af"
+    },
+    "results": {
+      "ctestPassed": 131,
+      "ctestFailed": 0,
+      "ctestSeconds": 12.85,
+      "frontendPassed": 140,
+      "frontendFailed": 0
+    },
+    "notRun": [
+      "OpenFOAM",
+      "Linux",
+      "Windows",
+      "App packaging"
+    ],
+    "toolchain": "macOS ARM64 system clang++ Release"
+  },
+  "remainingDiskGiB": 2.0096511840820312,
+  "limits": [
+    "Geometry checks do not certify flow or physical accuracy",
+    "Unconverged fields cannot establish grid sensitivity",
+    "Peak RSS from a single child; live RSS guard unavailable without psutil",
+    "Times are observations, not controlled speedup measurements"
+  ],
+  "physicalComparison": {
+    "from": "fine",
+    "to": "normal-refined",
+    "stations": [
+      {
+        "x": 0.97008,
+        "CfA": 0.0025417802016475025,
+        "CfB": 0.00253722295351665,
+        "signedRelativeCfChange": -0.001792935568503684,
+        "profileCommonY": [
+          3.4257934624264215e-06,
+          3.7741911478664935e-06,
+          4.158020317589342e-06,
+          4.580884296562224e-06,
+          5.0467528621063535e-06,
+          5.559999511511937e-06,
+          6.125442519709719e-06,
+          6.74839017244169e-06,
+          7.434690599572508e-06,
+          8.190786676368544e-06,
+          9.023776508148712e-06,
+          9.941480066127007e-06,
+          1.0952512600013063e-05,
+          1.2066365516556114e-05,
+          1.3293495483306797e-05,
+          1.4645422594088252e-05,
+          1.6134838517737702e-05,
+          1.7775725645401157e-05,
+          1.9583488354916373e-05,
+          2.1575097624572396e-05,
+          2.3769250353855935e-05,
+          2.6186544886861335e-05,
+          2.8849674386149115e-05,
+          3.1783639872414905e-05,
+          3.501598492995003e-05,
+          3.8577054281270004e-05,
+          4.250027865836689e-05,
+          4.6822488644909854e-05,
+          5.158426043569277e-05,
+          5.6830296759261495e-05,
+          6.260984653975981e-05,
+          6.897716723771008e-05,
+          7.599203421010777e-05,
+          8.372030187161827e-05,
+          9.223452192496524e-05,
+          0.0001016146244643546,
+          0.00011194866834602182,
+          0.00012333366787025684,
+          0.0001358765035356614,
+          0.00014969492541564976,
+          0.00016491865857672525,
+          0.0001816906209160184,
+          0.00020016826485094375,
+          0.0002205250554565368,
+          0.00024295209892698092,
+          0.0002676599366490531,
+          0.0002948805217299523,
+          0.0003248693965348305,
+          0.0003579080916763883,
+          0.0003943067689778531,
+          0.0004344071332210428,
+          0.00047858564001452354,
+          0.000527257029896802,
+          0.0005808782218521233,
+          0.0006399526027905715,
+          0.0007050347532613911,
+          0.0007767356537637534,
+          0.0008557284205309609,
+          0.0009427546246346702,
+          0.0010386312537318616,
+          0.0011442583818102741,
+          0.00126062761893461,
+          0.0013888314203183557,
+          0.0015300733421132115,
+          0.0016856793401958388,
+          0.0018571102180230188,
+          0.002045975340413689,
+          0.00225404774200054,
+          0.0024832807721868345,
+          0.0027358264328685945,
+          0.0030140555810736006,
+          0.00332058018617633,
+          0.0036582778506358236,
+          0.004030318824453163,
+          0.004440195766955852,
+          0.0048917565353077605,
+          0.005389240307557841,
+          0.005937317379344779,
+          0.0065411330078624765,
+          0.007206355714686387,
+          0.0079392305009195,
+          0.008746637474233208,
+          0.009636156438183793,
+          0.010616138050158678,
+          0.011695782215971265,
+          0.012885224457059974,
+          0.014195631061092647,
+          0.0156393039092342,
+          0.017229795964178993,
+          0.01898203850313025,
+          0.020912481290168795,
+          0.023039247003926462,
+          0.02538230137030523,
+          0.02796364059742062,
+          0.03080749787237699,
+          0.033940570858433154,
+          0.03739227232826365,
+          0.04119500628621942,
+          0.0453844721717789,
+          0.05
+        ],
+        "profileDifferenceOverU": [
+          -3.903047713332483e-05,
+          -4.298395985310663e-05,
+          -4.733950540712281e-05,
+          -5.2138002938975636e-05,
+          -5.7424499952420105e-05,
+          -6.324862520987184e-05,
+          -6.966505463910921e-05,
+          -7.673402462176487e-05,
+          -8.452189748266864e-05,
+          -9.310178448833362e-05,
+          -0.00010255423220346949,
+          -0.00011296797864890351,
+          -0.0001244407863594671,
+          -0.00013636014348916703,
+          -0.00014798139352316386,
+          -0.0001607845059952151,
+          -0.0001748896744144801,
+          -0.0001904293157767023,
+          -0.00020754931367314433,
+          -0.00022641038782161838,
+          -0.0002385047299159615,
+          -0.00021393974159711338,
+          -0.0001868765334740452,
+          -0.00015706104061050108,
+          -0.00012421336007484296,
+          -8.802512325750689e-05,
+          0.0003917264620495464,
+          0.001126385771365923,
+          0.001935758750890415,
+          0.0021118026872794515,
+          -0.0028142893057742646,
+          0.0019426621497832808,
+          0.003259371563280322,
+          0.0041621364653987025,
+          0.0012543623637107926,
+          0.0020867428688848277,
+          0.0038180084135539527,
+          0.004265476572052729,
+          0.0023002729035251357,
+          0.002406529242887534,
+          0.003700391606370146,
+          0.003966546970380347,
+          0.0021080634504287987,
+          0.002730361591586239,
+          0.0034291614841264195,
+          0.0035960630985303332,
+          0.0014449604911034308,
+          0.002966675371924188,
+          0.0030814863274014614,
+          0.002912291188460814,
+          0.001319628645164883,
+          0.002646511111891958,
+          0.0027378357666646425,
+          0.0018856228727207602,
+          0.0016698317671894891,
+          0.0023413151475795146,
+          0.0024251001626497404,
+          0.0008926923873137094,
+          0.0019916383581641828,
+          0.0020652092140694966,
+          0.0017835321637091894,
+          0.0008229039506363334,
+          0.00173890201280269,
+          0.0018098480229239433,
+          0.0008109822227270191,
+          0.0011815051479470151,
+          0.0014840191043129503,
+          0.0015083115773913969,
+          0.00013606566349089189,
+          0.0011342418192380466,
+          0.0011645128021336992,
+          0.0004850629583657007,
+          0.0002486302608729618,
+          0.0004911318264643194,
+          0.00035219424962307233,
+          -0.0009313938469671657,
+          -0.0005270839174931208,
+          -0.0007509699693540872,
+          -0.0012413701656308618,
+          -0.0014534283643636847,
+          -0.0007527853876028168,
+          -0.00029743208440791147,
+          -0.0019278635462881555,
+          0.0043083000105673674,
+          0.007408834650032503,
+          0.00822056721098341,
+          0.0029387740539236207,
+          0.0043840328202486845,
+          0.0028936958479076624,
+          0.0008750109880943935,
+          0.00023295296798186982,
+          0.0001583478757531953,
+          7.38435203351262e-05,
+          -2.289278981937315e-07,
+          6.7603102620328315e-06,
+          1.4983534799117848e-05,
+          2.326630495064208e-05,
+          1.963412581984514e-05,
+          9.547168587031862e-06,
+          -1.2843708678822452e-06
+        ],
+        "maxAbsoluteVelocityChangeOverU": 0.00822056721098341
+      },
+      {
+        "x": 1.90334,
+        "CfA": 0.002315113387014749,
+        "CfB": 0.0023102447203672436,
+        "signedRelativeCfChange": -0.002102992741009224,
+        "profileCommonY": [
+          3.4257934624264215e-06,
+          3.7741911478664935e-06,
+          4.158020317589342e-06,
+          4.580884296562224e-06,
+          5.0467528621063535e-06,
+          5.559999511511937e-06,
+          6.125442519709719e-06,
+          6.74839017244169e-06,
+          7.434690599572508e-06,
+          8.190786676368544e-06,
+          9.023776508148712e-06,
+          9.941480066127007e-06,
+          1.0952512600013063e-05,
+          1.2066365516556114e-05,
+          1.3293495483306797e-05,
+          1.4645422594088252e-05,
+          1.6134838517737702e-05,
+          1.7775725645401157e-05,
+          1.9583488354916373e-05,
+          2.1575097624572396e-05,
+          2.3769250353855935e-05,
+          2.6186544886861335e-05,
+          2.8849674386149115e-05,
+          3.1783639872414905e-05,
+          3.501598492995003e-05,
+          3.8577054281270004e-05,
+          4.250027865836689e-05,
+          4.6822488644909854e-05,
+          5.158426043569277e-05,
+          5.6830296759261495e-05,
+          6.260984653975981e-05,
+          6.897716723771008e-05,
+          7.599203421010777e-05,
+          8.372030187161827e-05,
+          9.223452192496524e-05,
+          0.0001016146244643546,
+          0.00011194866834602182,
+          0.00012333366787025684,
+          0.0001358765035356614,
+          0.00014969492541564976,
+          0.00016491865857672525,
+          0.0001816906209160184,
+          0.00020016826485094375,
+          0.0002205250554565368,
+          0.00024295209892698092,
+          0.0002676599366490531,
+          0.0002948805217299523,
+          0.0003248693965348305,
+          0.0003579080916763883,
+          0.0003943067689778531,
+          0.0004344071332210428,
+          0.00047858564001452354,
+          0.000527257029896802,
+          0.0005808782218521233,
+          0.0006399526027905715,
+          0.0007050347532613911,
+          0.0007767356537637534,
+          0.0008557284205309609,
+          0.0009427546246346702,
+          0.0010386312537318616,
+          0.0011442583818102741,
+          0.00126062761893461,
+          0.0013888314203183557,
+          0.0015300733421132115,
+          0.0016856793401958388,
+          0.0018571102180230188,
+          0.002045975340413689,
+          0.00225404774200054,
+          0.0024832807721868345,
+          0.0027358264328685945,
+          0.0030140555810736006,
+          0.00332058018617633,
+          0.0036582778506358236,
+          0.004030318824453163,
+          0.004440195766955852,
+          0.0048917565353077605,
+          0.005389240307557841,
+          0.005937317379344779,
+          0.0065411330078624765,
+          0.007206355714686387,
+          0.0079392305009195,
+          0.008746637474233208,
+          0.009636156438183793,
+          0.010616138050158678,
+          0.011695782215971265,
+          0.012885224457059974,
+          0.014195631061092647,
+          0.0156393039092342,
+          0.017229795964178993,
+          0.01898203850313025,
+          0.020912481290168795,
+          0.023039247003926462,
+          0.02538230137030523,
+          0.02796364059742062,
+          0.03080749787237699,
+          0.033940570858433154,
+          0.03739227232826365,
+          0.04119500628621942,
+          0.0453844721717789,
+          0.05
+        ],
+        "profileDifferenceOverU": [
+          -4.1697615929391085e-05,
+          -4.592461474356088e-05,
+          -5.058149253886479e-05,
+          -5.571196731632422e-05,
+          -6.136420312732177e-05,
+          -6.759126222983386e-05,
+          -7.445160322812339e-05,
+          -8.20096298724815e-05,
+          -9.033629567102575e-05,
+          -9.950976998953504e-05,
+          -0.00010961617189259032,
+          -0.0001207503786151004,
+          -0.00013301691625418333,
+          -0.0001458886432415124,
+          -0.00015872251264455184,
+          -0.00017286156592519197,
+          -0.00018843853818471812,
+          -0.0002055996634706403,
+          -0.00022450604759800818,
+          -0.00024533518058403314,
+          -0.00025979482325244607,
+          -0.0002386955374848454,
+          -0.0002154504882886099,
+          -0.0001898414549739713,
+          -0.00016162802415817246,
+          -0.000130545332803933,
+          0.000351316878705904,
+          0.0010919260675068265,
+          0.0019078540196902916,
+          0.002139157724122709,
+          -0.002382366560145066,
+          0.0021928655061818625,
+          0.003472122988841697,
+          0.004357694838201809,
+          0.001580169055768632,
+          0.0024181507063298358,
+          0.0041127988672765015,
+          0.0045635502173787534,
+          0.002657630989483517,
+          0.0027631393374540902,
+          0.004020827071908095,
+          0.004275040240152628,
+          0.00246611011899045,
+          0.003067346916180158,
+          0.0037460585997466933,
+          0.003909171984283755,
+          0.00182845107544638,
+          0.0032988731814063144,
+          0.0034088829198130055,
+          0.0032445488361070307,
+          0.0017051879185217,
+          0.0029834558799768374,
+          0.003069236524713248,
+          0.0022451356054888905,
+          0.002034556101564111,
+          0.002679336804230492,
+          0.0027572584685047197,
+          0.0012772830699308013,
+          0.002336027896844617,
+          0.002405281492582456,
+          0.0021314210393006405,
+          0.0012041107531440831,
+          0.0020928441699986644,
+          0.002163560271275844,
+          0.0011962506870948353,
+          0.0015696993976600515,
+          0.0018763705989627288,
+          0.001912101288775503,
+          0.000579546215049298,
+          0.0016088030147753951,
+          0.0016750827642171284,
+          0.0010246197123979783,
+          0.0009419613531468363,
+          0.0013995859079088957,
+          0.0014578423257486373,
+          0.0001282691506223621,
+          0.00106743417455879,
+          0.0010666350897898802,
+          0.000598402255620023,
+          3.90006449925151e-05,
+          0.0003205639006741423,
+          0.00014073275904435967,
+          -0.0008696460354901125,
+          -0.0006089150670105514,
+          -0.0007024521508988135,
+          -0.0009439166466564952,
+          -0.0010736339042962673,
+          6.423172713387881e-05,
+          0.0008054996452737662,
+          -0.0007540980497330318,
+          0.00563672866094711,
+          0.008025024553905413,
+          0.008616350932550754,
+          0.0019199406392556018,
+          0.002326369063274769,
+          0.0014883321721628207,
+          0.0005069525416339093,
+          9.133502676061944e-05,
+          5.7962084182516804e-05,
+          2.1563138422386885e-05
+        ],
+        "maxAbsoluteVelocityChangeOverU": 0.008616350932550754
+      }
+    ],
+    "signedRelativeCdChange": -0.001352459881245327,
+    "interpretation": "Sensitivity observation, not a convergence order or error estimate"
+  },
+  "analysis": {
+    "path": "outputs/native-flow/sst-normal-refinement/analysis.json",
+    "sha256": "baaccdb9dfad0136f2f9f7e4d8cec3a344ded1e56ef3011fdaf1c51d959022f1"
+  },
+  "physicalCases": [
+    {
+      "name": "fine",
+      "cells": 12800,
+      "CdSkinFriction": 0.0026879504367223936,
+      "stationCf": [
+        {
+          "x": 0.97008,
+          "Cf": 0.0025417802016475025,
+          "delta99FirstCrossing": 0.013450980740280477
+        },
+        {
+          "x": 1.90334,
+          "Cf": 0.002315113387014749,
+          "delta99FirstCrossing": 0.025485124719044485
+        }
+      ]
+    },
+    {
+      "name": "normal-refined",
+      "cells": 24000,
+      "CdSkinFriction": 0.002684315091593951,
+      "stationCf": [
+        {
+          "x": 0.97008,
+          "Cf": 0.00253722295351665,
+          "delta99FirstCrossing": 0.012547318023729721
+        },
+        {
+          "x": 1.90334,
+          "Cf": 0.0023102447203672436,
+          "delta99FirstCrossing": 0.023409217752747593
+        }
+      ]
+    }
+  ],
+  "referenceContext": {
+    "scope": "Context only: SST/SST-V/SST-Vm, not a matched SST-2003m verification target",
+    "sourcePage": "https://tmbwg.github.io/turbmodels/flatplate_sst.html",
+    "files": [
+      {
+        "path": "outputs/native-flow/sst-physical-check/reference/cf_plate_sstv.dat",
+        "sha256": "a56bd2d16818456af015b13839f0a991b4b85bfa6c18242e7c331a2c7a4d40e8",
+        "url": "https://tmbwg.github.io/turbmodels/FlatPlate/SST/cf_plate_sstv.dat"
+      },
+      {
+        "path": "outputs/native-flow/sst-physical-check/reference/flatplate_u_sstv.dat",
+        "sha256": "4e1e17a24ffb64708ce805e978cf83a3b4391585e0ded7d14dd9be6e059b1d5f",
+        "url": "https://tmbwg.github.io/turbmodels/FlatPlate/SST/flatplate_u_sstv.dat"
+      },
+      {
+        "path": "outputs/native-flow/sst-physical-check/reference/cf_incomp_results_sstv.dat",
+        "sha256": "65bbdbae974af5297db4387d67f2f9ac8d3c46750815d684e108a52e850647b9",
+        "url": "https://tmbwg.github.io/turbmodels/FlatPlate_validation/cf_incomp_results_sstv.dat"
+      }
+    ]
+  },
+  "physicalReferenceComparisons": [
+    {
+      "name": "fine",
+      "referenceComparison": {
+        "qualified": false,
+        "reason": "Different SST model variants, compressibility, numerical grids and incompletely matched boundary setup; descriptive differences only",
+        "stations": [
+          {
+            "x": 0.97008,
+            "cf": {
+              "CFL3D": {
+                "reference": 0.002690855173613494,
+                "signedRelativeDifference": -0.05540059287761734
+              },
+              "FUN3D": {
+                "reference": 0.002690548063943665,
+                "signedRelativeDifference": -0.0552927726100928
+              }
+            },
+            "profileSamples": [
+              {
+                "y": 3.4257934624264215e-06,
+                "nativeUOverU": 0.021769034994322315,
+                "referenceUOverU": 0.02292302373289331
+              },
+              {
+                "y": 1.1682730055844877e-05,
+                "nativeUOverU": 0.07422734800999738,
+                "referenceUOverU": 0.07815022281493902
+              },
+              {
+                "y": 2.3326877008614392e-05,
+                "nativeUOverU": 0.14762200607568196,
+                "referenceUOverU": 0.15455212649170255
+              },
+              {
+                "y": 3.9747756195910845e-05,
+                "nativeUOverU": 0.24082075615151793,
+                "referenceUOverU": 0.24469095517415393
+              },
+              {
+                "y": 6.290490754220604e-05,
+                "nativeUOverU": 0.3294428282674993,
+                "referenceUOverU": 0.3250863352486793
+              },
+              {
+                "y": 9.55617252654665e-05,
+                "nativeUOverU": 0.39964998306425426,
+                "referenceUOverU": 0.3905125742981496
+              },
+              {
+                "y": 0.00014161521983663177,
+                "nativeUOverU": 0.4559330923858255,
+                "referenceUOverU": 0.44395074072667035
+              },
+              {
+                "y": 0.00020656105688019892,
+                "nativeUOverU": 0.5035137098111153,
+                "referenceUOverU": 0.4901993129828401
+              },
+              {
+                "y": 0.00029814936713907993,
+                "nativeUOverU": 0.545862384581863,
+                "referenceUOverU": 0.5318566621363701
+              },
+              {
+                "y": 0.0004273095867610076,
+                "nativeUOverU": 0.5848191522549413,
+                "referenceUOverU": 0.5705190288115831
+              },
+              {
+                "y": 0.0006094546911485726,
+                "nativeUOverU": 0.6215803608896598,
+                "referenceUOverU": 0.6072525067402078
+              },
+              {
+                "y": 0.000866320459490178,
+                "nativeUOverU": 0.6569875582510577,
+                "referenceUOverU": 0.6427985171699937
+              },
+              {
+                "y": 0.0012285592534867062,
+                "nativeUOverU": 0.6917080575574402,
+                "referenceUOverU": 0.6777520694672302
+              },
+              {
+                "y": 0.0017393978316407018,
+                "nativeUOverU": 0.7263709183111708,
+                "referenceUOverU": 0.7126870588831825
+              },
+              {
+                "y": 0.0024597956941978987,
+                "nativeUOverU": 0.7617088020824974,
+                "referenceUOverU": 0.748269035359615
+              },
+              {
+                "y": 0.0034757195154808914,
+                "nativeUOverU": 0.7987771889564542,
+                "referenceUOverU": 0.7853954500561681
+              },
+              {
+                "y": 0.0049084017377553826,
+                "nativeUOverU": 0.8398991690340141,
+                "referenceUOverU": 0.8256178753996589
+              },
+              {
+                "y": 0.006928807507382094,
+                "nativeUOverU": 0.8892075590235318,
+                "referenceUOverU": 0.8728370639542881
+              },
+              {
+                "y": 0.0097780363248238,
+                "nativeUOverU": 0.9499471787213929,
+                "referenceUOverU": 0.9346832070182575
+              },
+              {
+                "y": 0.013796092982640687,
+                "nativeUOverU": 0.9937633890962638,
+                "referenceUOverU": 0.9959414211123799
+              },
+              {
+                "y": 0.019462461091300655,
+                "nativeUOverU": 1.0009403946474313,
+                "referenceUOverU": 0.99855
+              },
+              {
+                "y": 0.027453320921605698,
+                "nativeUOverU": 1.0012266165756945,
+                "referenceUOverU": 0.9985478800366879
+              },
+              {
+                "y": 0.03872223949574391,
+                "nativeUOverU": 1.0011939931346803,
+                "referenceUOverU": 0.9985446056896297
+              }
+            ],
+            "maxAbsoluteVelocityDifferenceOverU": 0.016370495069243707
+          },
+          {
+            "x": 1.90334,
+            "cf": {
+              "CFL3D": {
+                "reference": 0.0024518955745832225,
+                "signedRelativeDifference": -0.05578630223341552
+              },
+              "FUN3D": {
+                "reference": 0.0024499438382359633,
+                "signedRelativeDifference": -0.05503409878909571
+              }
+            },
+            "profileSamples": [
+              {
+                "y": 3.4257934624264215e-06,
+                "nativeUOverU": 0.019827750765027543,
+                "referenceUOverU": 0.020887221320635634
+              },
+              {
+                "y": 1.1682730055844877e-05,
+                "nativeUOverU": 0.06760999775560335,
+                "referenceUOverU": 0.07121360410021489
+              },
+              {
+                "y": 2.3326877008614392e-05,
+                "nativeUOverU": 0.1345699611407193,
+                "referenceUOverU": 0.14109766754500197
+              },
+              {
+                "y": 3.9747756195910845e-05,
+                "nativeUOverU": 0.22102564891670293,
+                "referenceUOverU": 0.22553060366407443
+              },
+              {
+                "y": 6.290490754220604e-05,
+                "nativeUOverU": 0.30558692209242655,
+                "referenceUOverU": 0.30277530305888495
+              },
+              {
+                "y": 9.55617252654665e-05,
+                "nativeUOverU": 0.3734417775198864,
+                "referenceUOverU": 0.3661405493577027
+              },
+              {
+                "y": 0.00014161521983663177,
+                "nativeUOverU": 0.42791622840608545,
+                "referenceUOverU": 0.4178616923570528
+              },
+              {
+                "y": 0.00020656105688019892,
+                "nativeUOverU": 0.47378373129283996,
+                "referenceUOverU": 0.4624253182943264
+              },
+              {
+                "y": 0.00029814936713907993,
+                "nativeUOverU": 0.5144237378602864,
+                "referenceUOverU": 0.5024125344572238
+              },
+              {
+                "y": 0.0004273095867610076,
+                "nativeUOverU": 0.5516560149665504,
+                "referenceUOverU": 0.5393763874960695
+              },
+              {
+                "y": 0.0006094546911485726,
+                "nativeUOverU": 0.5866189922852656,
+                "referenceUOverU": 0.5743287093851153
+              },
+              {
+                "y": 0.000866320459490178,
+                "nativeUOverU": 0.6200787364419718,
+                "referenceUOverU": 0.6079460721866204
+              },
+              {
+                "y": 0.0012285592534867062,
+                "nativeUOverU": 0.6525896433657785,
+                "referenceUOverU": 0.6407207874679786
+              },
+              {
+                "y": 0.0017393978316407018,
+                "nativeUOverU": 0.684597678859799,
+                "referenceUOverU": 0.6730624694993322
+              },
+              {
+                "y": 0.0024597956941978987,
+                "nativeUOverU": 0.7165206707141395,
+                "referenceUOverU": 0.7053614027630504
+              },
+              {
+                "y": 0.0034757195154808914,
+                "nativeUOverU": 0.7488324755493178,
+                "referenceUOverU": 0.7380226369510026
+              },
+              {
+                "y": 0.0049084017377553826,
+                "nativeUOverU": 0.782183498419048,
+                "referenceUOverU": 0.7716525318725678
+              },
+              {
+                "y": 0.006928807507382094,
+                "nativeUOverU": 0.8177126865648281,
+                "referenceUOverU": 0.8071593145779631
+              },
+              {
+                "y": 0.0097780363248238,
+                "nativeUOverU": 0.8578583279029909,
+                "referenceUOverU": 0.8461722082269972
+              },
+              {
+                "y": 0.013796092982640687,
+                "nativeUOverU": 0.9066449555730709,
+                "referenceUOverU": 0.8932405664628581
+              },
+              {
+                "y": 0.019462461091300655,
+                "nativeUOverU": 0.9659535298819855,
+                "referenceUOverU": 0.9549151268289308
+              },
+              {
+                "y": 0.027453320921605698,
+                "nativeUOverU": 0.9978583454259768,
+                "referenceUOverU": 1.0000588003668798
+              },
+              {
+                "y": 0.03872223949574391,
+                "nativeUOverU": 1.0012010022008428,
+                "referenceUOverU": 1.00004
+              }
+            ],
+            "maxAbsoluteVelocityDifferenceOverU": 0.0134043891102128
+          }
+        ]
+      }
+    },
+    {
+      "name": "normal-refined",
+      "referenceComparison": {
+        "qualified": false,
+        "reason": "Different SST model variants, compressibility, numerical grids and incompletely matched boundary setup; descriptive differences only",
+        "stations": [
+          {
+            "x": 0.97008,
+            "cf": {
+              "CFL3D": {
+                "reference": 0.002690855173613494,
+                "signedRelativeDifference": -0.05709419875263455
+              },
+              "FUN3D": {
+                "reference": 0.002690548063943665,
+                "signedRelativeDifference": -0.05698657179990274
+              }
+            },
+            "profileSamples": [
+              {
+                "y": 3.4257934624264215e-06,
+                "nativeUOverU": 0.02173000451718899,
+                "referenceUOverU": 0.02292302373289331
+              },
+              {
+                "y": 1.1682730055844877e-05,
+                "nativeUOverU": 0.07409462099725364,
+                "referenceUOverU": 0.07815022281493902
+              },
+              {
+                "y": 2.3326877008614392e-05,
+                "nativeUOverU": 0.14737900586707692,
+                "referenceUOverU": 0.15455212649170255
+              },
+              {
+                "y": 3.9747756195910845e-05,
+                "nativeUOverU": 0.24074462791482734,
+                "referenceUOverU": 0.24469095517415393
+              },
+              {
+                "y": 5.6130269551817925e-05,
+                "nativeUOverU": 0.3062248478118046,
+                "referenceUOverU": 0.30577629139413515
+              },
+              {
+                "y": 6.967954553259415e-05,
+                "nativeUOverU": 0.346529250572818,
+                "referenceUOverU": 0.341934681816926
+              },
+              {
+                "y": 8.600795439422438e-05,
+                "nativeUOverU": 0.38354020425179886,
+                "referenceUOverU": 0.37491512568770996
+              },
+              {
+                "y": 0.00010511549613670862,
+                "nativeUOverU": 0.4148753237441615,
+                "referenceUOverU": 0.4041002523305249
+              },
+              {
+                "y": 0.00012814224342229126,
+                "nativeUOverU": 0.44392190577733853,
+                "referenceUOverU": 0.4309628182441562
+              },
+              {
+                "y": 0.0001550881962509723,
+                "nativeUOverU": 0.46934805537055935,
+                "referenceUOverU": 0.4554673710313718
+              },
+              {
+                "y": 0.00018756111477275585,
+                "nativeUOverU": 0.4936536789446853,
+                "referenceUOverU": 0.47875059463121294
+              },
+              {
+                "y": 0.00022556099898764196,
+                "nativeUOverU": 0.5156106024367804,
+                "referenceUOverU": 0.5004356605961949
+              },
+              {
+                "y": 0.00027135515411708247,
+                "nativeUOverU": 0.5370942796562321,
+                "referenceUOverU": 0.5214135519732621
+              },
+              {
+                "y": 0.00032494358016107745,
+                "nativeUOverU": 0.5569156831700087,
+                "referenceUOverU": 0.541262391052295
+              },
+              {
+                "y": 0.0003895236899720412,
+                "nativeUOverU": 0.5766090695751712,
+                "referenceUOverU": 0.5607346412582751
+              },
+              {
+                "y": 0.0004650954835499739,
+                "nativeUOverU": 0.5950664426024693,
+                "referenceUOverU": 0.5793893013617648
+              },
+              {
+                "y": 0.0005561680357437564,
+                "nativeUOverU": 0.613617931075972,
+                "referenceUOverU": 0.5978886914851566
+              },
+              {
+                "y": 0.0006627413465533887,
+                "nativeUOverU": 0.6312174573683554,
+                "referenceUOverU": 0.615789951257188
+              },
+              {
+                "y": 0.0007911742307241914,
+                "nativeUOverU": 0.6490711343752731,
+                "referenceUOverU": 0.633681967005095
+              },
+              {
+                "y": 0.0009414666882561645,
+                "nativeUOverU": 0.6661809558561079,
+                "referenceUOverU": 0.6511321102535326
+              },
+              {
+                "y": 0.0011225860852544286,
+                "nativeUOverU": 0.6836801873360874,
+                "referenceUOverU": 0.6687329568633019
+              },
+              {
+                "y": 0.0013345324217189838,
+                "nativeUOverU": 0.7006104755684937,
+                "referenceUOverU": 0.6860409136572726
+              },
+              {
+                "y": 0.0015899517107959816,
+                "nativeUOverU": 0.7180702034029248,
+                "referenceUOverU": 0.7036166789612883
+              },
+              {
+                "y": 0.001888843952485422,
+                "nativeUOverU": 0.7351387951356189,
+                "referenceUOverU": 0.7210522512777825
+              },
+              {
+                "y": 0.0022490428837640204,
+                "nativeUOverU": 0.7529153988836778,
+                "referenceUOverU": 0.7389569223571375
+              },
+              {
+                "y": 0.002670548504631777,
+                "nativeUOverU": 0.7705257572096679,
+                "referenceUOverU": 0.7568995619195936
+              },
+              {
+                "y": 0.003178510415273273,
+                "nativeUOverU": 0.7891152162663985,
+                "referenceUOverU": 0.775567231398542
+              },
+              {
+                "y": 0.0037729286156885098,
+                "nativeUOverU": 0.8078863003757581,
+                "referenceUOverU": 0.794603300022219
+              },
+              {
+                "y": 0.004489269726825755,
+                "nativeUOverU": 0.8282044694898834,
+                "referenceUOverU": 0.8147912949521955
+              },
+              {
+                "y": 0.0053275337486850104,
+                "nativeUOverU": 0.8496262889067986,
+                "referenceUOverU": 0.8359487481603975
+              },
+              {
+                "y": 0.006337736633498367,
+                "nativeUOverU": 0.8738678223488272,
+                "referenceUOverU": 0.8596033529820051
+              },
+              {
+                "y": 0.007519878381265822,
+                "nativeUOverU": 0.9008186706783151,
+                "referenceUOverU": 0.8857994922744019
+              },
+              {
+                "y": 0.008944492789986675,
+                "nativeUOverU": 0.9319919203020197,
+                "referenceUOverU": 0.9168196310212396
+              },
+              {
+                "y": 0.010611579859660925,
+                "nativeUOverU": 0.9633320360234741,
+                "referenceUOverU": 0.9509274709053316
+              },
+              {
+                "y": 0.012620608188569367,
+                "nativeUOverU": 0.9910096920709922,
+                "referenceUOverU": 0.9826810243261902
+              },
+              {
+                "y": 0.014971577776712007,
+                "nativeUOverU": 1.0002619662393955,
+                "referenceUOverU": 0.9985575664421893
+              },
+              {
+                "y": 0.01780476183104199,
+                "nativeUOverU": 1.0011956937632025,
+                "referenceUOverU": 0.99855
+              },
+              {
+                "y": 0.021120160351559315,
+                "nativeUOverU": 1.001227262918264,
+                "referenceUOverU": 0.9985494808756384
+              },
+              {
+                "y": 0.02511559026671184,
+                "nativeUOverU": 1.0012264203556012,
+                "referenceUOverU": 0.998548
+              },
+              {
+                "y": 0.029791051576499555,
+                "nativeUOverU": 1.001223941354707,
+                "referenceUOverU": 0.998547
+              },
+              {
+                "y": 0.03542551086356866,
+                "nativeUOverU": 1.0012224181259037,
+                "referenceUOverU": 0.998545
+              },
+              {
+                "y": 0.04201896812791916,
+                "nativeUOverU": 1.001218031652473,
+                "referenceUOverU": 0.998543
+              },
+              {
+                "y": 0.04996482930727297,
+                "nativeUOverU": 1.0012153213330335,
+                "referenceUOverU": 0.998541
+              }
+            ],
+            "maxAbsoluteVelocityDifferenceOverU": 0.015874428316896116
+          },
+          {
+            "x": 1.90334,
+            "cf": {
+              "CFL3D": {
+                "reference": 0.0024518955745832225,
+                "signedRelativeDifference": -0.057771976785780055
+              },
+              "FUN3D": {
+                "reference": 0.0024499438382359633,
+                "signedRelativeDifference": -0.05702135521984353
+              }
+            },
+            "profileSamples": [
+              {
+                "y": 3.4257934624264215e-06,
+                "nativeUOverU": 0.019786053149098152,
+                "referenceUOverU": 0.020887221320635634
+              },
+              {
+                "y": 1.1682730055844877e-05,
+                "nativeUOverU": 0.06746812134214558,
+                "referenceUOverU": 0.07121360410021489
+              },
+              {
+                "y": 2.3326877008614392e-05,
+                "nativeUOverU": 0.13430630507445335,
+                "referenceUOverU": 0.14109766754500197
+              },
+              {
+                "y": 3.9747756195910845e-05,
+                "nativeUOverU": 0.22090532202187102,
+                "referenceUOverU": 0.22553060366407443
+              },
+              {
+                "y": 5.6130269551817925e-05,
+                "nativeUOverU": 0.28353528393649197,
+                "referenceUOverU": 0.2841636706868945
+              },
+              {
+                "y": 6.967954553259415e-05,
+                "nativeUOverU": 0.3224121560503678,
+                "referenceUOverU": 0.31905783469248067
+              },
+              {
+                "y": 8.600795439422438e-05,
+                "nativeUOverU": 0.35821063428486566,
+                "referenceUOverU": 0.3510092490904532
+              },
+              {
+                "y": 0.00010511549613670862,
+                "nativeUOverU": 0.3885847329634145,
+                "referenceUOverU": 0.37932447593636875
+              },
+              {
+                "y": 0.00012814224342229126,
+                "nativeUOverU": 0.4167336262028407,
+                "referenceUOverU": 0.40531915168029437
+              },
+              {
+                "y": 0.0001550881962509723,
+                "nativeUOverU": 0.4413032418505528,
+                "referenceUOverU": 0.4289735709711693
+              },
+              {
+                "y": 0.00018756111477275585,
+                "nativeUOverU": 0.4647291863559327,
+                "referenceUOverU": 0.4514087134810697
+              },
+              {
+                "y": 0.00022556099898764196,
+                "nativeUOverU": 0.485845725221893,
+                "referenceUOverU": 0.47226497642912024
+              },
+              {
+                "y": 0.00027135515411708247,
+                "nativeUOverU": 0.5064680471350003,
+                "referenceUOverU": 0.49240278155890965
+              },
+              {
+                "y": 0.00032494358016107745,
+                "nativeUOverU": 0.5254513199096039,
+                "referenceUOverU": 0.5114203683161643
+              },
+              {
+                "y": 0.0003895236899720412,
+                "nativeUOverU": 0.5442733876674322,
+                "referenceUOverU": 0.5300371401412257
+              },
+              {
+                "y": 0.0004650954835499739,
+                "nativeUOverU": 0.5618687446561267,
+                "referenceUOverU": 0.5478329580092767
+              },
+              {
+                "y": 0.0005561680357437564,
+                "nativeUOverU": 0.5795107436741131,
+                "referenceUOverU": 0.5654375267751679
+              },
+              {
+                "y": 0.0006627413465533887,
+                "nativeUOverU": 0.5961935709262074,
+                "referenceUOverU": 0.5824247592707049
+              },
+              {
+                "y": 0.0007911742307241914,
+                "nativeUOverU": 0.6130630187143774,
+                "referenceUOverU": 0.599347967865163
+              },
+              {
+                "y": 0.0009414666882561645,
+                "nativeUOverU": 0.6291582029160059,
+                "referenceUOverU": 0.6157890444020117
+              },
+              {
+                "y": 0.0011225860852544286,
+                "nativeUOverU": 0.6455444825199848,
+                "referenceUOverU": 0.6322966310322315
+              },
+              {
+                "y": 0.0013345324217189838,
+                "nativeUOverU": 0.6612953499520864,
+                "referenceUOverU": 0.6484377546780138
+              },
+              {
+                "y": 0.0015899517107959816,
+                "nativeUOverU": 0.6774272493937449,
+                "referenceUOverU": 0.6647152611250947
+              },
+              {
+                "y": 0.001888843952485422,
+                "nativeUOverU": 0.6930413327168476,
+                "referenceUOverU": 0.6807241740578852
+              },
+              {
+                "y": 0.0022490428837640204,
+                "nativeUOverU": 0.7091291893825681,
+                "referenceUOverU": 0.6969866405551387
+              },
+              {
+                "y": 0.002670548504631777,
+                "nativeUOverU": 0.7248169884863013,
+                "referenceUOverU": 0.7130636055588931
+              },
+              {
+                "y": 0.003178510415273273,
+                "nativeUOverU": 0.7410938975934499,
+                "referenceUOverU": 0.729504619172737
+              },
+              {
+                "y": 0.0037729286156885098,
+                "nativeUOverU": 0.7571141286524448,
+                "referenceUOverU": 0.7459068052971994
+              },
+              {
+                "y": 0.004489269726825755,
+                "nativeUOverU": 0.7738914547120394,
+                "referenceUOverU": 0.7628180093560257
+              },
+              {
+                "y": 0.0053275337486850104,
+                "nativeUOverU": 0.7906215321373535,
+                "referenceUOverU": 0.7798727320807978
+              },
+              {
+                "y": 0.006337736633498367,
+                "nativeUOverU": 0.8083846533558218,
+                "referenceUOverU": 0.7977226059158642
+              },
+              {
+                "y": 0.007519878381265822,
+                "nativeUOverU": 0.8264548415331782,
+                "referenceUOverU": 0.8160141189689443
+              },
+              {
+                "y": 0.008944492789986675,
+                "nativeUOverU": 0.8462103624464112,
+                "referenceUOverU": 0.8355729911633434
+              },
+              {
+                "y": 0.010611579859660925,
+                "nativeUOverU": 0.8673705654990456,
+                "referenceUOverU": 0.8564022823179994
+              },
+              {
+                "y": 0.012620608188569367,
+                "nativeUOverU": 0.8915898232355249,
+                "referenceUOverU": 0.8799427293658592
+              },
+              {
+                "y": 0.014971577776712007,
+                "nativeUOverU": 0.9187015150325295,
+                "referenceUOverU": 0.9064332489802326
+              },
+              {
+                "y": 0.01780476183104199,
+                "nativeUOverU": 0.9496762416315794,
+                "referenceUOverU": 0.9381392339815579
+              },
+              {
+                "y": 0.021120160351559315,
+                "nativeUOverU": 0.9792310360691078,
+                "referenceUOverU": 0.969240260728052
+              },
+              {
+                "y": 0.02511559026671184,
+                "nativeUOverU": 0.9980276991070681,
+                "referenceUOverU": 0.9974803214750843
+              },
+              {
+                "y": 0.029791051576499555,
+                "nativeUOverU": 1.0011500265837718,
+                "referenceUOverU": 1.00005
+              },
+              {
+                "y": 0.03542551086356866,
+                "nativeUOverU": 1.0013142452533508,
+                "referenceUOverU": 1.000045232973885
+              },
+              {
+                "y": 0.04201896812791916,
+                "nativeUOverU": 1.0013115845831593,
+                "referenceUOverU": 1.00004
+              },
+              {
+                "y": 0.04996482930727297,
+                "nativeUOverU": 1.0013118975570559,
+                "referenceUOverU": 1.00003
+              }
+            ],
+            "maxAbsoluteVelocityDifferenceOverU": 0.014236247526206447
+          }
+        ]
+      }
+    }
+  ]
+}
