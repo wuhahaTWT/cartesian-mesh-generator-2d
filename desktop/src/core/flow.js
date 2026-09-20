@@ -1,6 +1,11 @@
 'use strict';
+const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./flow-boundaries');
 
 const FLOW_CASES = Object.freeze({
+  custom: {
+    id: 'custom', label: '命名边界',
+    scope: '按最终网格逐面指定速度入口、压力出口或静止／移动壁面。参考速度仅用于归一化；入口速度由各边界单独设置。暂不支持滑移或出口回流。'
+  },
   external: {
     id: 'external', label: '外流',
     scope: '矩形域：左侧恒速入口、右侧压力出口、上下滑移，物面无滑移。'
@@ -92,6 +97,10 @@ function validateFlowRequest(request = {}) {
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, convection,
     pressurePreconditioner, outletBackflow, viscousStress, mode, resume: Boolean(request.resume) };
+  if (flowCase.id === 'custom') {
+    if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
+    normalized.boundaryDefinition = normalizeBoundaryDefinition(request.boundaryDefinition);
+  }
   if (mode === 'transient') {
     normalized.dt = finite(request.dt, '时间步长');
     normalized.steps = finite(request.steps, '本次时间步数');
@@ -103,7 +112,7 @@ function validateFlowRequest(request = {}) {
   return normalized;
 }
 
-function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null) {
+function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null, boundaryPath = null) {
   if (typeof meshPath !== 'string' || !meshPath.endsWith('.solver.cm2d'))
     throw new Error('流动求解只能读取本次最终 solver.cm2d。');
   const validated = validateFlowRequest(request);
@@ -111,6 +120,10 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
   const temporalArgs = validated.mode === 'transient'
     ? ['--time-step', String(validated.dt), '--steps', String(validated.steps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
+  if (validated.case === 'custom') {
+    if (typeof boundaryPath !== 'string' || !boundaryPath) throw new Error('缺少命名边界输入路径。');
+    temporalArgs.push('--boundary', boundaryPath);
+  }
   return {
     executable: 'cartmesh2d_flow_cli',
     request: validated,
@@ -162,7 +175,8 @@ function parseFlowProgress(line) {
 
 const near = (a, b) => Math.abs(a - b) <= 1e-12 + 1e-9 * Math.max(Math.abs(a), Math.abs(b));
 function flowOutputSuffixes(request) {
-  return request?.mode === 'transient' ? [...FLOW_OUTPUT_SUFFIXES, '.checkpoint', '.time-history.csv'] : [...FLOW_OUTPUT_SUFFIXES];
+  return [...FLOW_OUTPUT_SUFFIXES, ...(request?.mode === 'transient' ? ['.checkpoint', '.time-history.csv'] : []),
+    ...(request?.case === 'custom' ? ['.boundaries'] : [])];
 }
 
 function validateTimeHistory(text, summary, startTime = 0) {
@@ -201,6 +215,14 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   if (!summary || summary.format !== 'cartmesh2d-flow-summary-v1')
     throw new Error('流动摘要格式无效。');
   if (!Object.hasOwn(FLOW_CASES, summary.case)) throw new Error('流动摘要工况无效。');
+  if (summary.case === 'custom') {
+    const entries = conditions(summary.boundaryConditions);
+    const reference = entries.some(b=>b.type==='pressure-outlet')
+      ? 'explicit pressure outlet faces, prescribed kinematic pressure' : 'cell 0, kinematic pressure zero';
+    if (summary.boundaryFileSuffix !== '.boundaries' || summary.referenceSpeedRole !== 'normalization-only' ||
+        summary.outletBackflow !== 'reject' || summary.pressureReference !== reference)
+      throw new Error('命名边界结果的压力基准或输入信息不匹配。');
+  }
   const transient = summary.temporalDiscretization !== undefined;
   if (summary.status !== 'converged' && summary.status !== (transient ? 'time_step_not_converged' : 'iteration_limit'))
     throw new Error('流动摘要状态无效。');
@@ -309,6 +331,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
 
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
+    if (request.case === 'custom' && !sameConditions(request.boundaryDefinition.records, summary.boundaryConditions))
+      throw new Error('求解结果的命名边界与请求不一致。');
     if ((request.mode === 'transient') !== transient || (transient && (!near(normalizedSummary.dt,request.dt) || normalizedSummary.requestedSteps !== request.steps)))
       throw new Error('原生求解时间模式或步长与请求不一致。');
     if (pressureDiscretizationInferred)

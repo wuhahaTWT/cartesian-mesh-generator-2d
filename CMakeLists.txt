@@ -115,7 +115,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 target_compile_features(cartmesh2d_fv PUBLIC cxx_std_20)
 add_executable(cartmesh2d_fv_cli apps/cartmesh2d_fv_cli.cpp)
@@ -254,6 +254,10 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_flow_face_tests tests/flow_face_test.cpp)
     target_link_libraries(cartmesh2d_flow_face_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_flow_face COMMAND cartmesh2d_flow_face_tests)
+    add_executable(cartmesh2d_flow_boundary_tests tests/flow_boundary_test.cpp)
+    target_link_libraries(cartmesh2d_flow_boundary_tests PRIVATE cartmesh2d_fv)
+    add_test(NAME cartmesh2d_flow_boundary COMMAND cartmesh2d_flow_boundary_tests)
+    set_tests_properties(cartmesh2d_flow_boundary PROPERTIES TIMEOUT 60)
     add_test(NAME cartmesh2d_transient_flow_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
@@ -287,6 +291,11 @@ if(CARTMESH2D_BUILD_TESTS)
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
             --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
     set_tests_properties(cartmesh2d_duct_flow_cli PROPERTIES TIMEOUT 90)
+    add_test(NAME cartmesh2d_custom_flow_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/custom_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
+            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
+    set_tests_properties(cartmesh2d_custom_flow_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_flow_verifier
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_verifier_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)

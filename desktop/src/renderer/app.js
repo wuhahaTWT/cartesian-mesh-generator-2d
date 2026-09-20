@@ -13,6 +13,7 @@ const state = {
   result: null,
   flow: null,
   flowRestart: null,
+  flowBoundaryDefinition: null,
   flowHistory: [],
   thermal: null,
   thermalRestart: null,
@@ -88,6 +89,7 @@ function validInputs() {
 }
 function validFlowInputs() {
   for (const input of document.querySelectorAll('#flowBlock input[type=number]')) {
+    if (input.dataset.varying === 'true' && !input.value.trim()) continue;
     if (!input.disabled && input.getClientRects().length && (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity(); input.focus();
       status('工况参数需要调整', '请填写有效数值，并检查范围。');
@@ -100,7 +102,7 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
   state.flowHistory=[];
   $('flowTimeline').hidden=true;
-  if (hidePanel) {state.flowRestart=null;updateFlowMode();}
+  if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();}
   view.setFlowFields(null);
   $('flowResult').hidden = true;
   $('flowResult').replaceChildren();
@@ -764,11 +766,68 @@ async function generate() {
 
 function updateFlowScope() {
   const selected = state.catalog?.flowCases?.[$('flowCase').value];
+  const custom=$('flowCase').value==='custom';
   const expectedRegion = $('flowCase').value === 'external' ? 'exterior' : 'interior';
-  const mismatch = state.job && state.job.fluidRegion !== expectedRegion
+  const mismatch = !custom && state.job && state.job.fluidRegion !== expectedRegion
     ? ` 当前最终网格是${state.job.fluidRegion === 'interior' ? '内流' : '外流'}语义，与此工况不匹配。`
     : '';
   $('flowScope').textContent = (selected?.scope || '') + mismatch;
+  $('flowBoundarySettings').hidden=!custom;
+  if (custom) $('flowOutletBackflow').value='reject';
+  else view.setBoundaryHighlight([]);
+  updateFlowMode();
+}
+
+function renderFlowBoundaries() {
+  const container=$('flowBoundaryPatches');container.replaceChildren();
+  const definition=state.flowBoundaryDefinition;
+  $('flowBoundaryInfo').textContent=definition
+    ? `${definition.records.length} 个边界面，绑定 ${definition.cells.toLocaleString()} 个单元。点击“显示位置”核对边界。`
+    : '边界绑定本次最终网格。重新生成网格后需要重新配置。';
+  if (!definition) return;
+  const groups=new Map();
+  for(const b of definition.records){if(!groups.has(b.name))groups.set(b.name,[]);groups.get(b.name).push(b);}
+  const edited=()=>{clearFlowBinding();clearThermalBinding();};
+  for(const [name,records] of groups){
+    const card=document.createElement('details');card.className='flow-boundary-patch';card.open=records[0].type!=='wall';
+    const heading=document.createElement('summary');heading.textContent=`${name} · ${records.length} 个面`;card.append(heading);
+    const label=document.createElement('label');label.className='field';label.textContent='边界名称';
+    const nameInput=document.createElement('input');nameInput.value=name;nameInput.maxLength=128;
+    nameInput.addEventListener('change',()=>{records.forEach(b=>b.name=nameInput.value);edited();renderFlowBoundaries();updateFlowMode();});
+    label.append(nameInput);card.append(label);
+    const type=document.createElement('select');type.setAttribute('aria-label',`${name} 边界类型`);
+    for(const [value,text] of [['velocity-inlet','速度入口'],['pressure-outlet','压力出口'],['wall','静止壁面'],['moving-wall','移动壁面']]){
+      const option=document.createElement('option');option.value=value;option.textContent=text;type.append(option);
+    }
+    type.value=records[0].type;
+    type.addEventListener('change',()=>{
+      for(const b of records){b.type=type.value;if(type.value!=='pressure-outlet')b.p=0;if(['wall','pressure-outlet'].includes(type.value))b.u=b.v=0;}
+      edited();renderFlowBoundaries();updateFlowMode();
+    });card.append(type);
+    const numeric=type.value==='pressure-outlet' ? [['p','出口运动学压力']] : type.value==='wall' ? [] : [['u','速度 x'],['v','速度 y']];
+    for(const [key,caption] of numeric){
+      const field=document.createElement('label');field.className='field';field.textContent=caption;
+      const input=document.createElement('input');input.type='number';input.step='any';input.dataset.boundaryKey=key;input.dataset.patchName=name;
+      const uniform=records.every(b=>b[key]===records[0][key]);input.value=uniform?String(records[0][key]):'';
+      input.dataset.varying=String(!uniform);input.placeholder=uniform?'':'保持逐面分布';
+      input.addEventListener('input',()=>{if(!input.value.trim()&&input.dataset.varying==='true')return;
+        records.forEach(b=>b[key]=Number(input.value));input.dataset.varying='false';edited();});
+      field.append(input);card.append(field);
+    }
+    const show=document.createElement('button');show.textContent='显示位置';show.type='button';
+    show.addEventListener('click',()=>view.setBoundaryHighlight(records.map(b=>b.face)));card.append(show);
+    container.append(card);
+  }
+}
+async function prepareFlowBoundaries(source) {
+  if(state.busy||!state.result)return;
+  setBusy(true);
+  try{
+    const definition=await window.cartmesh.prepareFlowBoundaries({source,speed:Number($('flowSpeed').value)});
+    if(definition){state.flowBoundaryDefinition=definition;clearFlowBinding();clearThermalBinding();renderFlowBoundaries();
+      status('命名边界已载入','按名称编辑条件，点击“显示位置”核对，然后启动计算。');}
+  }catch(error){status('边界配置未载入',error.message);}
+  finally{setBusy(false);}
 }
 
 function flowConvectionLabel(summary) {
@@ -845,6 +904,9 @@ function updateFlowMode() {
     const element=$(id); if (element) element.disabled = state.busy || Boolean(resuming || thermalResuming);
   }
   $('flowPressurePreconditioner').disabled = state.busy;
+  if ($('flowCase').value==='custom') $('flowOutletBackflow').disabled=true;
+  for(const control of document.querySelectorAll('#flowBoundarySettings input, #flowBoundarySettings select, #flowBoundarySettings button'))
+    control.disabled=Boolean(state.busy||resuming||thermalResuming||!state.result);
   $('flowRestartInfo').textContent = restart
     ? `可续算：t=${Number(restart.time).toPrecision(6)} s · ${restart.fileName}。启动时原生核对完整网格与状态。`
     : '每个完成的时间步都会保存；取消后可继续。';
@@ -866,6 +928,9 @@ function applySharedFlowControls(request) {
   if (changed) { clearFlowBinding(); clearThermalBinding(); }
   for (const [key, id] of Object.entries(fields)) {
     const element=$(id); if (element) element.value = key==='outletBackflow' ? (request[key] ?? 'reject') : request[key];
+  }
+  if(request.case==='custom'&&request.boundaryDefinition){
+    state.flowBoundaryDefinition=structuredClone(request.boundaryDefinition);renderFlowBoundaries();
   }
 }
 function applyRestartControls() {
@@ -950,7 +1015,7 @@ function updateThermalMode() {
   $('pickThermalCheckpoint').disabled=state.busy||!state.result;
   for (const input of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
     input.disabled = Boolean(state.busy || resuming);
-  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden);
+  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom');
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
   $('thermalRestartInfo').textContent = restart
     ? `联合续算状态：t=${Number(restart.time).toPrecision(6)} s。物性、源项与边界锁定；可调整时间步和迭代控制。`
@@ -1069,6 +1134,7 @@ async function runFlow() {
     pressurePreconditioner:$('flowPressurePreconditioner').value,
     outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),resume:transient && $('flowResume').checked };
+  if(request.case==='custom')request.boundaryDefinition=state.flowBoundaryDefinition;
   clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
   try {
@@ -1165,6 +1231,8 @@ $('pickFlowCheckpoint').addEventListener('click',async()=>{
   finally {setBusy(false);applyRestartControls();}
 });
 $('flowCase').addEventListener('change', () => { clearFlowBinding(); clearThermalBinding(); updateFlowScope(); });
+$('generateFlowBoundaries').addEventListener('click',()=>prepareFlowBoundaries($('flowBoundaryPreset').value));
+$('importFlowBoundaries').addEventListener('click',()=>prepareFlowBoundaries('import'));
 for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations']) {
   $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 }
@@ -1258,7 +1326,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

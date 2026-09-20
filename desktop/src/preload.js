@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  prepareFlowBoundaries: request => ipcRenderer.invoke('prepare-flow-boundaries', request),
   runThermal: request => ipcRenderer.invoke('run-thermal', request),
   thermalState: () => ipcRenderer.invoke('thermal-state'),
   pickThermalCheckpoint: () => ipcRenderer.invoke('pick-thermal-checkpoint'),

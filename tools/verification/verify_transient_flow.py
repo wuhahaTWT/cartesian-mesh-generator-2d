@@ -188,16 +188,19 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
         fail("transient faces.csv lacks complete face momentum columns")
     fluxes = native.face_fluxes(faces)
     case = summary.get("case")
-    if case not in ("taylor-green", "cavity", "channel", "duct", "external"):
+    if case not in ("taylor-green", "cavity", "channel", "duct", "external", "custom"):
         fail(f"unsupported transient case {case!r}")
-    cont = native.continuity(mesh, measured, fluxes, native.finite(summary.get("speed"), "summary speed"), case, 1e-10, 1e-7)
+    if case == 'custom':
+        native.audit_explicit_boundaries(prefix, mesh, measured, summary)
+    cont = native.continuity(mesh, measured, fluxes, native.finite(summary.get("speed"), "summary speed"),
+                             'cavity' if native.closed_flow_case(case, summary) else case, 1e-10, 1e-7)
     if not cont["cellValid"] or not cont["globalValid"]:
         fail("independent face-flux continuity failed")
     for name, key in (("continuity", "nativeDefinitionContinuity"), ("globalImbalance", "boundaryFluxSum"),
                       ("globalRelativeImbalance", "globalRelativeImbalance")):
         if not native.close(native.finite(summary.get(name), f"summary {name}"), cont[key], 1e-14, 1e-9):
             fail(f"summary {name} differs from independent continuity")
-    expected_reference = "cell 0, kinematic pressure zero" if case in ("cavity", "taylor-green") else "right outlet faces, kinematic pressure zero"
+    expected_reference = native.pressure_reference(case, summary)
     if summary.get("pressureReference") != expected_reference:
         fail("pressure reference disagrees with boundary conditions")
     # Recompute CFL from the exported final face fluxes and measured cell areas.
@@ -264,7 +267,8 @@ def verify(mesh_path: Path, prefix: Path, output: Path) -> dict:
         errors['relativeEnergy'] = errors['energy'] / exact_energy if exact_energy > 0 else None
         decay = taylor_green_decay(history, nu, speed)
     result = {"valid": True, "scope": "discrete transient balance and artifact consistency; analytic errors are diagnostics, not engineering qualification",
-              "sha256": {str(path): native.sha256_file(path) for path in (mesh_path, cells_path, faces_path, summary_path, history_path, residual_path)},
+              "sha256": {str(path): native.sha256_file(path) for path in (mesh_path, cells_path, faces_path, summary_path, history_path, residual_path,
+                        *((Path(str(prefix)+'.boundaries'),) if case == 'custom' else ()))},
               "controls": {k: summary[k] for k in ("nu", "speed", "tolerance", "convection", "viscousStress", "temporalFaceInterpolation", "velocityRelaxation")}, "case": case, "time": final_time,
               "dt": dt, "history": history, "independentContinuity": cont,
               "temporalIntegral": {"maxAbsX": max(abs(c["temporalX"]) for c in cells.values()),

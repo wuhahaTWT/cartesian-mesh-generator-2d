@@ -14,11 +14,28 @@ enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 
+enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall };
+
+// Explicit conditions refer to boundary face IDs in the final FvMesh2D only.
+// Velocity and kinematic pressure are physical values, not multiples of speed.
+// Wall velocity is a constant trace on each face (values may vary by face).
+struct FlowBoundaryCondition2D {
+    std::size_t face = 0;
+    FlowBoundaryKind2D kind = FlowBoundaryKind2D::Wall;
+    Vector2D velocity{};
+    double pressure = 0;
+    std::string name;
+};
+
 struct FlowControls2D {
     // duct: planar vertical x-extrema are the inlet/outlet; all remaining
     // boundaries are stationary no-slip walls, including curved walls/holes.
     // It must be selected explicitly and is not a general patch-BC interface.
     std::string scenario = "external";
+    // scenario="custom": exactly one entry per boundary face, no internal
+    // faces. Supports arbitrary orientations; moving walls must be tangential.
+    // Named groups may have spatially varying values but one physical kind.
+    std::vector<FlowBoundaryCondition2D> boundaryConditions;
     double nu = .01;
     double speed = 1;
     double tolerance = 1e-6;
@@ -52,6 +69,10 @@ struct FlowControls2D {
     // need a hard timeout. Callback exceptions propagate. Empty is unchanged.
     std::function<bool()> stopRequested;
 };
+
+// Validates coverage, ownership, names, physical types and impermeability.
+// Does not infer or repair missing conditions. The mesh must be validated first.
+void validateFlowBoundaryConditions2D(const FvMesh2D&, const FlowControls2D&);
 
 // Accepted state at a physical time, including the conservative face flux.
 struct FlowState2D {

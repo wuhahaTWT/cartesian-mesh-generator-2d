@@ -279,6 +279,15 @@ class Viewport {
       }
     }
     this.drawBoundaries(ctx, cache, theme);
+    if (this.boundaryHighlight?.length) {
+      ctx.strokeStyle='#00bcd4';ctx.lineWidth=4/this.scale;ctx.beginPath();
+      for (const id of this.boundaryHighlight) {
+        const edge=mesh.edges[id];if(!edge||edge.neighbour>=0)continue;
+        const a=mesh.vertices[edge.a],b=mesh.vertices[edge.b];
+        ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
+      }
+      ctx.stroke();
+    }
     ctx.restore();
     this.drawRegions(ctx, project, theme);
   }
@@ -377,6 +386,10 @@ class Viewport {
   // Hand-placed regions are stated in body spans about the body centre, which is the
   // frame the panel edits in; drawing them in the same frame is what makes the numbers
   // checkable by eye.
+  setBoundaryHighlight(faces) {
+    this.boundaryHighlight=faces;this.draw();
+  }
+
   drawRegions(ctx, project, theme) {
     if (!this.showRegions || !this.frame || !this.regions.length) return;
     // refine() clips a region to the domain, so the overlay clips too: a rectangle

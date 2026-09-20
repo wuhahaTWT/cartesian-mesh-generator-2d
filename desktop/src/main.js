@@ -21,6 +21,7 @@ const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
+const { parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -233,6 +234,30 @@ app.whenReady().then(async () => {
 
   const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
   ipcMain.handle('flow-state', () => flowState());
+  ipcMain.handle('prepare-flow-boundaries', (_event, request) => exclusive(async () => {
+    if (!currentResult) throw new Error('请先生成最终网格。');
+    const speed=Number(request?.speed);
+    if (!(Number.isFinite(speed) && speed>0)) throw new Error('参考速度必须大于零。');
+    const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
+    let text;
+    if (request.source==='import') {
+      const picked=await dialog.showOpenDialog(mainWindow,{title:'导入与当前最终网格对应的命名边界',
+        properties:['openFile'],filters:[{name:'命名流动边界',extensions:['boundaries']}]});
+      if (picked.canceled) return null;
+      if ((await fs.stat(picked.filePaths[0])).size>32*1024*1024) throw new Error('边界文件超过32MB。');
+      text=await fs.readFile(picked.filePaths[0],'utf8');
+    } else {
+      if (!['channel','duct','cavity'].includes(request.source)) throw new Error('请选择支持的边界预设。');
+      const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'boundary-input-'));
+      const target=path.join(directory,'input.boundaries');
+      try {
+        await runProcess(executable('cartmesh2d_flow_cli'),['--mesh',currentResult.cm2dPath,'--case',request.source,
+          '--speed',String(speed),'--export-boundaries',target],()=>{},operation.signal,30000);
+        text=await fs.readFile(target,'utf8');
+      } finally { await fs.rm(directory,{recursive:true,force:true}); }
+    }
+    return validateBoundaryMesh(parseBoundaryDefinition(text),mesh,speed);
+  }));
   ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先生成与重启文件对应的最终网格。');
     const picked = await dialog.showOpenDialog(mainWindow, { title: '选择非定常重启状态',
@@ -249,7 +274,8 @@ app.whenReady().then(async () => {
       || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
     const selectedRestart = request?.resume ? currentResult.flowRestart : null;
     // Validate before creating outputs; paths come only from this main process.
-    buildFlowInvocation(currentResult.cm2dPath, 'pending', request, selectedRestart?.path);
+    buildFlowInvocation(currentResult.cm2dPath, 'pending', request, selectedRestart?.path, 'pending.boundaries');
+    const boundaryDefinition=request.case==='custom' ? validateBoundaryMesh(request.boundaryDefinition,mesh,Number(request.speed)) : null;
     const incompleteDirectory = await fs.mkdtemp(path.join(currentResult.outputDirectory, 'flow-incomplete-'));
     const pendingPrefix = path.join(incompleteDirectory, 'flow');
     let restartPath = null, startTime = 0;
@@ -262,13 +288,17 @@ app.whenReady().then(async () => {
         for (const key of ['case', 'nu', 'speed', 'convection', 'outletBackflow'])
           if (metadata[key] !== (['nu','speed'].includes(key) ? Number(request[key]) : request[key]))
             throw new Error('续算必须保持原工况、物性和对流格式；可调整时间步与步数。');
+        if (boundaryDefinition && !sameConditions(metadata.boundaryDefinition?.records,boundaryDefinition.records))
+          throw new Error('续算必须保持原命名边界的名称、类型和数值。');
       } catch (error) {
         // No solver has started and the selected source remains untouched.
         await fs.rm(incompleteDirectory, { recursive: true, force: true });
         throw error;
       }
     }
-    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request, restartPath);
+    const boundaryPath=boundaryDefinition ? path.join(incompleteDirectory,'input.boundaries') : null;
+    if (boundaryPath) await fs.writeFile(boundaryPath,serializeBoundaryDefinition(boundaryDefinition));
+    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request, restartPath, boundaryPath);
     const transient = invocation.request.mode === 'transient';
     const previousFlow = currentResult.flow;
     const previousRestart = currentResult.flowRestart;
@@ -307,9 +337,14 @@ app.whenReady().then(async () => {
         vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
         cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv` };
       if (transient) Object.assign(outputFiles, { checkpoint: `${pendingPrefix}.checkpoint`, timeHistory: `${pendingPrefix}.time-history.csv` });
+      if (boundaryDefinition) outputFiles.boundaries=`${pendingPrefix}.boundaries`;
       const [summary, fields] = await Promise.all([readJson(outputFiles.summary), readJson(outputFiles.fields),
         ...Object.values(outputFiles).map(file => fs.stat(file))]);
       const validated = validateFlowOutput(summary, fields, mesh.cells.length, invocation.request, startTime);
+      if (boundaryDefinition) {
+        const exported=validateBoundaryMesh(parseBoundaryDefinition(await fs.readFile(outputFiles.boundaries,'utf8')),mesh,invocation.request.speed);
+        if (!sameConditions(exported.records,boundaryDefinition.records)) throw new Error('导出边界与输入不一致。');
+      }
       if ((processResult.code === 0) !== validated.summary.converged)
         throw new Error('原生求解器退出码与收敛状态不一致。');
       let history = null, checkpointMetadata = null;
@@ -323,7 +358,7 @@ app.whenReady().then(async () => {
       }
       operation.signal.throwIfAborted();
       // Preserve the earlier complete result even if copying the new set fails.
-      const allSuffixes = flowOutputSuffixes({ mode: 'transient' });
+      const allSuffixes = flowOutputSuffixes({ mode: 'transient', case:'custom' });
       for (const suffix of allSuffixes) {
         const destination = `${currentResult.prefix}.flow${suffix}`;
         const backup = path.join(incompleteDirectory, `previous${suffix}`);
@@ -347,7 +382,7 @@ app.whenReady().then(async () => {
       return payload;
     } catch (error) {
       if (commitStarted) {
-        for (const suffix of flowOutputSuffixes({ mode: 'transient' }))
+        for (const suffix of flowOutputSuffixes({ mode: 'transient', case:'custom' }))
           await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }).catch(() => {});
       }
       const restored = await Promise.allSettled(backups.map(entry => fs.copyFile(entry.backup, entry.destination)));
@@ -773,6 +808,18 @@ async function runSmoke() {
       document.getElementById('flowConvection').dispatchEvent(new Event('change'));
       document.getElementById('flowPressurePreconditioner').value = ${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')};
       document.getElementById('flowPressurePreconditioner').dispatchEvent(new Event('change'));
+      if (${JSON.stringify(argument('flow') === 'custom')}) {
+        await smoke.prepareFlowBoundaries(${JSON.stringify(argument('flow-boundary-preset') || 'duct')});
+        if (!smoke.state.flowBoundaryDefinition) throw new Error('Custom boundary editor did not receive definition');
+        const pressure=document.querySelector('[data-boundary-key="p"]');
+        if (${JSON.stringify(argument('flow-outlet-pressure') !== null)}) {
+          if (!pressure) throw new Error('No explicit pressure patch in editor');
+          pressure.value=${JSON.stringify(argument('flow-outlet-pressure') || '0')};
+          pressure.dispatchEvent(new Event('input'));
+        }
+        document.querySelector('#flowBoundaryPatches button').click();
+        if (!smoke.view.boundaryHighlight.length) throw new Error('Patch location was not highlighted');
+      }
       if (${JSON.stringify(Boolean(argument('flow-dt')))}) {
         document.getElementById('flowMode').value='transient';
         document.getElementById('flowMode').dispatchEvent(new Event('change'));
@@ -1046,6 +1093,11 @@ async function runSmoke() {
       throw new Error('Window geometry is not constrained to the viewport');
     if (shot) {
       await mainWindow.webContents.executeJavaScript("document.querySelector('.panel').scrollTop=0");
+      if (argument('flow-boundary-shot')) {
+        mainWindow.setSize(1100,800);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript("document.getElementById('flowBoundarySettings').scrollIntoView({block:'start'});");
+      }
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());
       console.log(`screenshot=${shot}`);

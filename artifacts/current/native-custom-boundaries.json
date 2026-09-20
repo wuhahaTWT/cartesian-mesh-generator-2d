@@ -1,0 +1,88 @@
+{
+  "format": "cartmesh2d-custom-boundary-evidence-v1",
+  "scope": "Explicit boundary configuration, orientation/gauge invariance and independent discrete conservation; no new physical reference accuracy qualification.",
+  "version": "0.4.13",
+  "tests": {
+    "ctest": {
+      "passed": 135,
+      "failed": 0
+    },
+    "frontend": {
+      "passed": 146,
+      "failed": 0
+    },
+    "extraClosedDomainCli": "passed"
+  },
+  "nativeRegression": {
+    "realNozzleCells": 216,
+    "rotationRadians": 0.63,
+    "pressureOffset": 7.25,
+    "continuousVsRestart": "byte-identical checkpoint",
+    "closedMovingWall": "steady and transient audited",
+    "invalidInputs": "missing/duplicate/internal/out-of-range/geometry-mismatch/changed restart/tampered metadata rejected"
+  },
+  "appSteady": {
+    "cells": 5496,
+    "iterations": 482,
+    "nu": 0.1,
+    "speed": 1,
+    "continuity": 1.2836028536374518e-12,
+    "momentumResidual": 3.308803099992714e-07,
+    "pressureReference": "explicit pressure outlet faces, prescribed kinematic pressure"
+  },
+  "appTransient": {
+    "cells": 2784,
+    "acceptedTime": 0.12000000000000001,
+    "dt": 0.02,
+    "nu": 0.1,
+    "speed": 1,
+    "maxCourant": 1.4449722169208081,
+    "continuity": 3.6674743014088515e-13,
+    "momentumResidual": 7.119315458743708e-08
+  },
+  "failureProtection": {
+    "cancellationChecked": true,
+    "failureChecked": true
+  },
+  "independentAudits": {
+    "steadyValid": true,
+    "transientZipValid": true,
+    "transientFaceMaxDeviation": {
+      "pressure": 1.0658141036401503e-14,
+      "advectionX": 0.0,
+      "advectionY": 0.0,
+      "diffusionX": 4.0245584642661925e-16,
+      "diffusionY": 7.632783294297951e-17
+    }
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "980a6bc8571513f8099206a2592557d6cc9ab05acef9d7230fb7aae11ecd3f48",
+    "src/fv/Incompressible2D.cpp": "cdf6dc1f7eaa421dfc6d456a5af4a045bf2b5b9dd750631b8c845fc5bdadcc1f",
+    "include/cartmesh2d/fv/FlowBoundaryIO2D.hpp": "538da7466c8ee2dfb209b1d94eaa0d4cc2336b64f0e564df4db242801b5bbdb9",
+    "src/fv/FlowBoundaryIO2D.cpp": "603b23d0d9b908325d386b7f527abd3bad7bbddade3b55908e2214adaca996a5",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "ba3221f0d1f1c8fd9b300171e6a583ab9d251930e8efab2324a165631391b0db",
+    "apps/cartmesh2d_flow_cli.cpp": "75552c0221bd0213499de370d44e3e73a1fc25ae7f34037b74bf0eede3d18c9d",
+    "tools/verification/verify_native_flow.py": "0f3f7d9bcbb1ada89c3136c62a5d071da9335df588d66c8837094df309d9c18d",
+    "tools/verification/verify_transient_flow.py": "8a93e97a5a66b4a9d8e7ef31212d6cb21dfa5ed8a96470f55279d935a7c0fb4d"
+  },
+  "flowCliSha256": "b05f0c3bb4921a28bbc3e03e8da2823cf0a8fa219ae39a50b3b2ce9d07134da1",
+  "artifactSha256": {
+    "outputs/native-flow/custom/packaged-final.zip": "1e07b4fc2d24029b8089892bee6dbbee7f8b7c9cfdb7da31e08bda635f90d526",
+    "outputs/native-flow/custom/packaged-final.png": "93af86da546009b7e5d486e326e9ae96c2d69225c9fcc7b810a1d132dfe567a6",
+    "outputs/native-flow/custom/app-steady-audit.json": "684b18a70e9c70b1483b1af212fc97a3165fe47619c916267941d3ea2cdc55a7",
+    "outputs/native-flow/custom/packaged-final-export-audit.json": "73c55e688a1afbb8dddd4eda0733e90374620196ab215717b8c4622000309f78"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Linux",
+    "Windows",
+    "compressible flow"
+  ],
+  "limitations": [
+    "Custom symmetry/slip, pressure inlet and backflow are not implemented",
+    "Custom coupled thermal/SST is not exposed",
+    "No new physical reference or mesh-independence qualification"
+  ],
+  "outputRoot": "outputs/native-flow/custom",
+  "freeDiskBytes": 32808960000
+}

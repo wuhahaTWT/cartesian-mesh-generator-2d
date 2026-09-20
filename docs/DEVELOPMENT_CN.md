@@ -181,13 +181,26 @@ MPLCONFIGDIR=/tmp/cartmesh-flow-mpl python3 tools/visualization/render_native_fl
 
 `external` 为左侧恒速入口、右侧运动学压力0、上下滑移及物面无滑移；`channel` 为无孔矩形内域、左侧抛物线入口、右侧压力0及上下无滑移，speed 是抛物线峰值；`cavity` 为无孔矩形腔、顶盖水平移动、其他壁面静止，speed 是顶盖速度，固定 cell 0 的压力为0。只接受一个连通流体区域；边界位置/方向或内域形状不符、出口回流、数值范围错误均明确失败。它不是任意喷管/多孔腔的自动边界配置器。
 
-`duct`（桌面0.4.12）用于有左右竖直开口的曲壁内流：最左侧端面均匀速度`speed`，最右侧运动学压力0，其余边界（含孔洞）无滑移。端口按最终边界的真实坐标极值和法向识别；曲壁不能套用旧矩形`channel`。旋转后的非竖直端口、没有开口的圆环不支持此预设，会明确失败；任意方向命名边界仍待实现。稳态、非定常、检查点续算和被动热输运共用同一边界定义，App同步提供该选项；几何物面标签不等于每个面的流动边界类型。
+`duct`（桌面0.4.12）用于有左右竖直开口的曲壁内流：最左侧端面均匀速度`speed`，最右侧运动学压力0，其余边界（含孔洞）无滑移。端口按最终边界的真实坐标极值和法向识别；曲壁不能套用旧矩形`channel`。旋转后的非竖直端口、没有开口的圆环不支持此预设，会明确失败；任意方向的条件使用下面的显式命名边界。稳态、非定常、检查点续算和被动热输运共用同一边界定义，App同步提供该选项；几何物面标签不等于每个面的流动边界类型。
 
 ```sh
 build/cartmesh2d_cli examples/complex/nozzle_profile.xy outputs/duct/mesh 5 0.03333333333333333 0.1 interior outputs/duct/openfoam 5 0
 build/cartmesh2d_flow_cli --mesh outputs/duct/mesh.solver.cm2d --output outputs/duct/flow --case duct --nu 0.1 --speed 1 --convection limited-linear --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-9
 python3 tools/verification/verify_duct_flow.py --output outputs/duct-study
 ```
+
+`custom`（桌面0.4.13）读取显式命名边界：速度入口、指定运动学压力出口、静止／切向移动壁面。每个最终边界面恰好一条记录，内部面、重复、缺失、同名混合类型、壁面穿透或错误网格均拒绝；任意面方向可用。同组允许逐面不同值，`speed`只控制归一化，不覆盖实际入口速度。闭域只允许壁面，固定cell 0压力；开放域需要入口与出口，当前只支持回流拒绝。暂不支持自定义滑移、压力驱动入口、时间变化边界或联合温度/SST。外流原有预设继续支持上下滑移。
+
+```sh
+# 由已验证的 duct/channel/cavity 转出模板，不启动求解。
+build/cartmesh2d_flow_cli --mesh outputs/duct/mesh.solver.cm2d --case duct --speed 1 --export-boundaries outputs/duct/input.boundaries
+# 编辑命名边界后求解；入口值为各面的物理速度，p为运动学压力。
+build/cartmesh2d_flow_cli --mesh outputs/duct/mesh.solver.cm2d --case custom --boundary outputs/duct/input.boundaries --output outputs/duct/custom --nu .1 --speed 1 --pressure-preconditioner aggregation
+```
+
+文件格式为`CARTMESH2D_FLOW_BOUNDARIES 1`、`COUNTS cells faces boundaryFaces`、逐行`BOUNDARY face owner centreX centreY Sx Sy type "name" u v p`、`END`。坐标、外向面积矢量和owner与最终网格绑定，不允许只靠相同面数量认作同一网格。可保留类型字符串`velocity-inlet`、`pressure-outlet`、`wall`、`moving-wall`；非适用的速度／压力项必须为0。输出`PREFIX.boundaries`是实际输入快照，摘要中的条件须与之相同；独立稳态/非定常审核从CM2D重新求外法向、重建逐面动量和守恒，不以摘要自报收敛替代。
+
+App选择“命名边界”，从预设生成或导入`.boundaries`，按组编辑名称、类型、速度分量和出口压力，点击“显示位置”高亮对应面。原本逐面变化的值在编辑器留空保持，填写则统一该组；从模板转换抛物线入口不会自动变为均匀入口。修改网格需重新配置。非定常检查点v4记录完整边界身份、数值及网格，续算锁定这些条件；原预设继续使用v2。ZIP携带边界输入与最后接受状态。运动学压力乘密度得到Pa；二维力仍按单位厚度和密度归一化。
 
 喷管study串行生成三档真实网格，独立复核几何、共享面通量/动量、壁面力，记录压降、最大速度和壁面力的网格变化；每个子进程默认180秒，失败保留日志。`--verify-only`只允许与已记录成功命令完全相同的参数，重审已有原始场。守恒通过不等于参考精度认证；无参考的喷管始终保留`not-qualified`状态。App的原生导出可独立重新读取，OpenFOAM边界条件仍需单独设置。
 

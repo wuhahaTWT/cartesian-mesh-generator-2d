@@ -1,6 +1,7 @@
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/TaylorGreen2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
     double acceptedTime=0;
     bool transientOutputStarted=false;
     try {
-        std::string path,viscosityPath;
+        std::string path,viscosityPath,boundaryPath,boundaryExportPath;
         fv::FlowControls2D controls;
         bool explicitVelocityRelaxation=false;
         double timeStep=0;
@@ -90,7 +91,9 @@ int main(int argc, char** argv) {
             if (a == "--help") {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
-            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|cavity|manufactured|counterflow\n"
+            "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
+            "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/wall conditions.\n"
+            "--export-boundaries FILE: export channel/duct/cavity preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
             "--manufactured-viscosity-slope 0: verification nu(x)=nu*(1+slope*x), steady only.\n"
@@ -109,6 +112,8 @@ int main(int argc, char** argv) {
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "duct: uniform left inlet, right p=0, arbitrary no-slip walls; both openings must be vertical x-extrema.\n"
+            "custom: arbitrary face orientation and prescribed pressure; speed is a reference scale only.\n"
+            "Custom outlets currently require backflow rejection; custom slip is not implemented.\n"
             "Other presets require fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
@@ -123,6 +128,10 @@ int main(int argc, char** argv) {
                 prefix = v;
             } else if (a == "--case") {
                 controls.scenario = v;
+            } else if (a == "--boundary") {
+                boundaryPath = v;
+            } else if (a == "--export-boundaries") {
+                boundaryExportPath = v;
             } else if (a == "--nu") {
                 controls.nu = number(v);
             } else if (a == "--face-viscosity") {
@@ -179,9 +188,11 @@ int main(int argc, char** argv) {
                 throw std::invalid_argument("unknown option " + a);
             }
         }
-        if (path.empty() || prefix.empty()) {
+        if (path.empty() || (prefix.empty() && boundaryExportPath.empty())) {
             throw std::invalid_argument("--mesh and --output required");
         }
+        if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || !restart.empty()))
+            throw std::invalid_argument("boundary template export does not run time steps or restart");
         if (!path.ends_with(".solver.cm2d") || path.ends_with(".failed.solver.cm2d")) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
@@ -197,6 +208,24 @@ int main(int argc, char** argv) {
             throw std::runtime_error(read.error);
         }
         const auto mesh = fv::makeFvMesh2D(read.topology);
+        if (controls.scenario == "custom") {
+            if (boundaryPath.empty()) throw std::invalid_argument("custom case requires --boundary FILE");
+            std::ifstream input(boundaryPath);
+            if (!input) throw std::runtime_error("cannot open explicit boundary file");
+            controls.boundaryConditions = fv::readFlowBoundaryConditions2D(input, mesh, controls);
+        } else if (!boundaryPath.empty()) {
+            throw std::invalid_argument("--boundary requires --case custom");
+        }
+        if (!boundaryExportPath.empty()) {
+            controls.boundaryConditions = fv::explicitFlowBoundaryPreset2D(mesh, controls);
+            controls.scenario = "custom";
+            const auto parent = std::filesystem::path(boundaryExportPath).parent_path();
+            if (!parent.empty()) std::filesystem::create_directories(parent);
+            std::ofstream output(boundaryExportPath);
+            fv::writeFlowBoundaryConditions2D(output, mesh, controls);
+            std::cout << "boundary_file=" << boundaryExportPath << '\n';
+            return 0;
+        }
         if(!viscosityPath.empty()) {
             if(controls.scenario=="manufactured" || controls.scenario=="taylor-green" || controls.scenario=="counterflow")
                 throw std::invalid_argument("face-viscosity file requires a physical flow case");
@@ -212,6 +241,10 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now() - readStart).count();
         const auto parent = std::filesystem::path(prefix).parent_path();
         if (!parent.empty()) std::filesystem::create_directories(parent);
+        if (controls.scenario == "custom") {
+            auto boundarySnapshot = out(prefix, ".boundaries");
+            fv::writeFlowBoundaryConditions2D(boundarySnapshot, mesh, controls);
+        }
         fv::FlowResult2D r;
         std::size_t totalInnerIterations=0;
         fv::FlowPerformance2D totalPerformance;
@@ -350,6 +383,9 @@ int main(int argc, char** argv) {
         }
 
         auto summary = out(prefix, ".json");
+        const bool custom = controls.scenario == "custom";
+        const bool customClosed = custom && std::none_of(controls.boundaryConditions.begin(), controls.boundaryConditions.end(),
+            [](const auto& b) { return b.kind == fv::FlowBoundaryKind2D::PressureOutlet; });
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" :
             (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" : "jacobi");
@@ -359,6 +395,18 @@ int main(int argc, char** argv) {
         const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
             ? "limited-linear" : "upwind";
         summary << "{\n";
+        if (custom) {
+            summary << "\"boundaryFileSuffix\":\".boundaries\",\n\"referenceSpeedRole\":\"normalization-only\",\n\"boundaryConditions\":[";
+            bool comma = false;
+            for (const auto& b : controls.boundaryConditions) {
+                if (comma) summary << ',';
+                comma = true;
+                summary << "{\"face\":" << b.face << ",\"type\":" << std::quoted(fv::flowBoundaryKindName2D(b.kind))
+                        << ",\"name\":" << std::quoted(b.name) << ",\"u\":" << b.velocity.x
+                        << ",\"v\":" << b.velocity.y << ",\"p\":" << b.pressure << '}';
+            }
+            summary << "],\n";
+        }
         if (timeStep>0) summary << "\"temporalDiscretization\":\"backward-euler\",\n"
             << "\"temporalFaceInterpolation\":\"old-and-iteration-flux-defect-skew-corrected-v2\",\n"
             << "\"time\":" << r.time << ",\n\"dt\":" << timeStep
@@ -413,9 +461,10 @@ int main(int argc, char** argv) {
                 << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                 << ",\n\"units\":{\"velocity\":\"m/s\",\"p\":\"m2/s2 (kinematic)\",\"nu\":\"m2/s\",\"faceFlux\":\"m2/s per unit depth\",\"force\":\"m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes\"},\n"
                 << "\"pressureReference\":\""
-                << ((controls.scenario == "cavity" || controls.scenario=="taylor-green" || manufactured)
+                << ((controls.scenario == "cavity" || controls.scenario=="taylor-green" || manufactured || customClosed)
                         ? "cell 0, kinematic pressure zero"
-                        : "right outlet faces, kinematic pressure zero")
+                        : custom ? "explicit pressure outlet faces, prescribed kinematic pressure"
+                                 : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
                 << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; "
                 << convection << " momentum convection; corrected diffusion\",\n"

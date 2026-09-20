@@ -1,7 +1,9 @@
 #pragma once
 
 #include "cartmesh2d/fv/Incompressible2D.hpp"
+#include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iomanip>
@@ -84,6 +86,17 @@ inline OutletBackflow2D outletBackflowValue(const std::string& value) {
     return OutletBackflow2D::Reject;
 }
 
+inline const char* boundaryKindName(FlowBoundaryKind2D kind) {
+    return flowBoundaryKindName2D(kind);
+}
+
+inline std::vector<const FlowBoundaryCondition2D*> orderedBoundaries(const FlowControls2D& controls) {
+    std::vector<const FlowBoundaryCondition2D*> result;
+    for (const auto& condition : controls.boundaryConditions) result.push_back(&condition);
+    std::sort(result.begin(), result.end(), [](auto a, auto b) { return a->face < b->face; });
+    return result;
+}
+
 inline void configuration(std::istream& in, const FlowControls2D& controls, bool hasOutletBackflow) {
     if(controls.scenario=="flatplate" || controls.flatPlateLeadingEdge!=0 ||
        controls.flatPlateTop!=FlatPlateTop2D::PressureFarfield)
@@ -114,6 +127,7 @@ inline void writeDouble(std::ostream& out, double value, const char* what) {
 
 inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
                                   const FlowControls2D& controls, const FlowState2D& state) {
+    const bool explicitBoundary = controls.scenario == "custom";
     if(controls.scenario=="flatplate" || controls.flatPlateLeadingEdge!=0 ||
        controls.flatPlateTop!=FlatPlateTop2D::PressureFarfield)
         flow_checkpoint_detail::fail("flat plate checkpoint configuration is not implemented");
@@ -125,6 +139,8 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
     } restore{out,out.flags(),out.precision()};
     out << std::defaultfloat << std::dec << std::noshowpos << std::noshowbase << std::setprecision(17);
     validateFvMesh2D(mesh);
+    if (explicitBoundary || !controls.boundaryConditions.empty())
+        validateFlowBoundaryConditions2D(mesh, controls);
     flow_checkpoint_detail::finite(controls.nu, "configuration nu");
     flow_checkpoint_detail::positive(controls.nu, "configuration nu");
     flow_checkpoint_detail::finite(controls.speed, "configuration speed");
@@ -143,7 +159,7 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
     for (const auto* values : {&state.u, &state.v, &state.p, &state.flux})
         for (const double value : *values) flow_checkpoint_detail::finite(value, "state value");
 
-    out << "CARTMESH2D_FLOW_CHECKPOINT " << (controls.faceViscosity.empty() ? 2 : 3) << "\n"
+    out << "CARTMESH2D_FLOW_CHECKPOINT " << (explicitBoundary ? 4 : controls.faceViscosity.empty() ? 2 : 3) << "\n"
         << "DISCRETIZATION Euler-RC-v2\n"
         << "CONFIG " << std::quoted(controls.scenario) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.nu, "configuration nu"); out << ' ';
@@ -153,10 +169,21 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
     flow_checkpoint_detail::writeDouble(out, controls.manufacturedPressureSlope, "configuration pressure slope");
     out << ' ' << flow_checkpoint_detail::outletBackflowName(controls.outletBackflow);
     out << '\n';
-    if (!controls.faceViscosity.empty()) {
+    if (!controls.faceViscosity.empty() || explicitBoundary) {
         out << "FACE_VISCOSITY " << controls.faceViscosity.size();
         for (const double value : controls.faceViscosity) out << ' ', flow_checkpoint_detail::writeDouble(out, value, "face viscosity");
         out << '\n';
+    }
+    if (explicitBoundary) {
+        out << "BOUNDARIES " << controls.boundaryConditions.size() << '\n';
+        for (const auto* condition : flow_checkpoint_detail::orderedBoundaries(controls)) {
+            out << "BOUNDARY " << condition->face << ' '
+                << flow_checkpoint_detail::boundaryKindName(condition->kind) << ' '
+                << std::quoted(condition->name) << ' ';
+            flow_checkpoint_detail::writeDouble(out, condition->velocity.x, "boundary velocity x"); out << ' ';
+            flow_checkpoint_detail::writeDouble(out, condition->velocity.y, "boundary velocity y"); out << ' ';
+            flow_checkpoint_detail::writeDouble(out, condition->pressure, "boundary pressure"); out << '\n';
+        }
     }
     out << "CELLS " << mesh.cells.size() << '\n';
     for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
@@ -197,12 +224,17 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
 inline FlowState2D readFlowCheckpoint2D(std::istream& in, const FvMesh2D& mesh,
                                         const FlowControls2D& controls) {
     validateFvMesh2D(mesh);
+    if (controls.scenario == "custom" || !controls.boundaryConditions.empty())
+        validateFlowBoundaryConditions2D(mesh, controls);
     flow_checkpoint_detail::token(in, "CARTMESH2D_FLOW_CHECKPOINT");
     std::string version;
-    if (!(in >> version) || (version != "1" && version != "2" && version != "3"))
+    if (!(in >> version) || (version != "1" && version != "2" && version != "3" && version != "4"))
         flow_checkpoint_detail::fail("unsupported checkpoint version");
-    const bool hasOutletBackflow = version == "2" || version == "3";
-    const bool hasFaceViscosity = version == "3";
+    const bool hasOutletBackflow = version != "1";
+    const bool explicitBoundary = version == "4";
+    const bool hasFaceViscosity = version == "3" || explicitBoundary;
+    if (explicitBoundary != (controls.scenario == "custom"))
+        flow_checkpoint_detail::fail("checkpoint boundary configuration format differs from caller");
     if (!hasFaceViscosity && !controls.faceViscosity.empty())
         flow_checkpoint_detail::fail("legacy checkpoint has no face viscosity field");
     if (controls.manufacturedViscositySlope != 0)
@@ -213,14 +245,33 @@ inline FlowState2D readFlowCheckpoint2D(std::istream& in, const FvMesh2D& mesh,
     flow_checkpoint_detail::configuration(in, controls, hasOutletBackflow);
     if (hasFaceViscosity) {
         flow_checkpoint_detail::token(in, "FACE_VISCOSITY");
-        flow_checkpoint_detail::count(in, mesh.faces.size(), "face viscosity");
-        if (controls.faceViscosity.size() != mesh.faces.size())
+        const auto count = explicitBoundary ? controls.faceViscosity.size() : mesh.faces.size();
+        flow_checkpoint_detail::count(in, count, "face viscosity");
+        if (count != mesh.faces.size() && !(explicitBoundary && count == 0))
             flow_checkpoint_detail::fail("caller face viscosity field is missing or has invalid size");
-        for (std::size_t i = 0; i < mesh.faces.size(); ++i) {
+        if (!explicitBoundary && controls.faceViscosity.size() != mesh.faces.size())
+            flow_checkpoint_detail::fail("caller face viscosity field is missing or has invalid size");
+        for (std::size_t i = 0; i < count; ++i) {
             double value = 0;
             if (!(in >> value)) flow_checkpoint_detail::fail("truncated face viscosity");
             flow_checkpoint_detail::positive(value, "face viscosity");
             flow_checkpoint_detail::exact(value, controls.faceViscosity[i], "face viscosity");
+        }
+    }
+    if (explicitBoundary) {
+        flow_checkpoint_detail::token(in, "BOUNDARIES");
+        flow_checkpoint_detail::count(in, controls.boundaryConditions.size(), "boundary");
+        for (const auto* expected : flow_checkpoint_detail::orderedBoundaries(controls)) {
+            flow_checkpoint_detail::token(in, "BOUNDARY");
+            std::size_t face = 0; std::string kind, name; double u = 0, v = 0, p = 0;
+            if (!(in >> face >> kind >> std::quoted(name) >> u >> v >> p))
+                flow_checkpoint_detail::fail("truncated explicit boundary");
+            if (face != expected->face || kind != flow_checkpoint_detail::boundaryKindName(expected->kind) ||
+                name != expected->name)
+                flow_checkpoint_detail::fail("explicit boundary identity differs from caller");
+            flow_checkpoint_detail::exact(u, expected->velocity.x, "boundary velocity x");
+            flow_checkpoint_detail::exact(v, expected->velocity.y, "boundary velocity y");
+            flow_checkpoint_detail::exact(p, expected->pressure, "boundary pressure");
         }
     }
     flow_checkpoint_detail::token(in, "CELLS");

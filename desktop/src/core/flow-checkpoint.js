@@ -4,8 +4,9 @@ const fs = require('node:fs');
 const fsp = fs.promises;
 const path = require('node:path');
 const readline = require('node:readline');
+const { quotedTokens, condition, normalizeBoundaryDefinition } = require('./flow-boundaries');
 
-const SUPPORTED_CASES = new Set(['external', 'channel', 'duct', 'cavity']);
+const SUPPORTED_CASES = new Set(['external', 'channel', 'duct', 'cavity', 'custom']);
 const SUPPORTED_CONVECTION = new Set(['upwind', 'limited-linear']);
 const SUPPORTED_STRESS = new Set(['symmetric']);
 const SUPPORTED_OUTLET_BACKFLOW = new Set(['reject', 'normal-inlet']);
@@ -55,6 +56,8 @@ function parseConfig(line, version) {
   if (version === 1 && match[7] !== undefined) invalid('legacy v1 CONFIG has unexpected outlet backflow mode');
   if (version >= 2 && match[7] === undefined) invalid('missing outlet backflow mode');
   if (!SUPPORTED_OUTLET_BACKFLOW.has(outletBackflow)) invalid(`unsupported outlet backflow mode '${outletBackflow}'`);
+  if ((version === 4) !== (scenario === 'custom') || (scenario === 'custom' && outletBackflow !== 'reject'))
+    invalid('explicit boundaries require v4 and reject backflow');
   return { case: scenario, nu, speed, convection, viscousStress, outletBackflow };
 }
 
@@ -75,13 +78,15 @@ async function readCheckpointMetadata(filePath) {
   let cells = false;
   let faces = false;
   let time;
+  let viscosity = false, boundaryCount, cellCount, faceCount;
+  const boundaries = new Map();
   try {
     for await (const rawLine of input) {
       const line = rawLine.trim();
       if (line === '') continue;
       if (!metadata) {
-        if (line !== 'CARTMESH2D_FLOW_CHECKPOINT 1' && line !== 'CARTMESH2D_FLOW_CHECKPOINT 2') invalid('unsupported header');
-        version = line.endsWith(' 2') ? 2 : 1;
+        if (!/^CARTMESH2D_FLOW_CHECKPOINT [124]$/.test(line)) invalid('unsupported header');
+        version = Number(line.at(-1));
         metadata = {};
         continue;
       }
@@ -95,11 +100,31 @@ async function readCheckpointMetadata(filePath) {
         metadata.config = true;
         continue;
       }
+      if (version === 4 && !viscosity) {
+        if (line !== 'FACE_VISCOSITY 0') invalid('desktop custom flow requires constant viscosity');
+        viscosity = true;
+        continue;
+      }
+      if (version === 4 && boundaryCount === undefined) {
+        const parts=fields(line);
+        if (parts.length!==2 || parts[0]!=='BOUNDARIES') invalid('missing BOUNDARIES');
+        boundaryCount=countToken(parts[1],'boundaries');
+        continue;
+      }
+      if (version === 4 && boundaries.size < boundaryCount) {
+        const parts=quotedTokens(line);
+        if (parts.length!==7 || parts[0]!=='BOUNDARY') invalid('malformed BOUNDARY');
+        const record=condition({face:Number(parts[1]),type:parts[2],name:parts[3],
+          u:numberToken(parts[4],'u'),v:numberToken(parts[5],'v'),p:numberToken(parts[6],'p')});
+        if (boundaries.has(record.face)) invalid('duplicate boundary face');
+        boundaries.set(record.face,record);
+        continue;
+      }
       if (!cells) {
         const parts = fields(line);
         if (parts[0] === 'CELLS') {
           if (parts.length !== 2) invalid('CELLS metadata is malformed');
-          countToken(parts[1], 'cells');
+          cellCount=countToken(parts[1], 'cells');
           cells = true;
         } else {
           invalid('CELLS metadata is missing');
@@ -110,10 +135,20 @@ async function readCheckpointMetadata(filePath) {
         const parts = fields(line);
         if (parts[0] === 'FACES') {
           if (parts.length !== 2) invalid('FACES metadata is malformed');
-          countToken(parts[1], 'faces');
+          faceCount=countToken(parts[1], 'faces');
           faces = true;
         }
         continue;
+      }
+      if (version === 4 && line.startsWith('FACE ')) {
+        const parts=fields(line), face=Number(parts[1]);
+        if (boundaries.has(face)) {
+          if (parts.length!==13 || parts[3]!=='-') invalid('custom face geometry is malformed');
+          const b=boundaries.get(face);
+          if (b.owner !== undefined) invalid('duplicate custom face geometry');
+          Object.assign(b,{owner:Number(parts[2]),x:numberToken(parts[5],'face x'),y:numberToken(parts[6],'face y'),
+            sx:numberToken(parts[7],'face sx'),sy:numberToken(parts[8],'face sy')});
+        }
       }
       if (line.startsWith('TIME ')) {
         const parts = fields(line);
@@ -134,6 +169,7 @@ async function readCheckpointMetadata(filePath) {
     invalid('truncated metadata');
   if (time === undefined) invalid('missing TIME');
   return {
+    ...(version === 4 ? {boundaryDefinition:normalizeBoundaryDefinition({cells:cellCount,faces:faceCount,records:[...boundaries.values()]})} : {}),
     case: metadata.case,
     nu: metadata.nu,
     speed: metadata.speed,

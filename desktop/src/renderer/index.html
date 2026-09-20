@@ -209,9 +209,26 @@
           <option value="channel">矩形通道</option>
           <option value="duct">曲壁通道／喷管</option>
           <option value="cavity">顶盖方腔</option>
+          <option value="custom">命名边界（逐面配置）</option>
         </select>
       </label>
       <p class="note flow-scope" id="flowScope"></p>
+      <div id="flowBoundarySettings" hidden>
+        <label class="field">初始边界分组
+          <select id="flowBoundaryPreset">
+            <option value="duct">曲壁通道：均匀入口</option>
+            <option value="channel">矩形通道：抛物线入口</option>
+            <option value="cavity">顶盖方腔：移动壁面</option>
+          </select>
+        </label>
+        <div class="pair">
+          <button id="generateFlowBoundaries">从预设生成</button>
+          <button id="importFlowBoundaries">导入边界…</button>
+        </div>
+        <p class="note" id="flowBoundaryInfo">边界绑定本次最终网格。重新生成网格后需要重新配置。</p>
+        <div id="flowBoundaryPatches"></div>
+        <p class="note">速度分量单位 m/s；出口运动学压力单位 m²/s²（Pa = ρ × 运动学压力）。不同面原有不同数值时，留空保持原分布，填写数值则统一该组。当前命名边界只计算流动，温度联算仍使用原预设。</p>
+      </div>
       <div class="pair">
         <label class="field">运动黏度 ν<span class="unit"><input id="flowNu" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>
         <label class="field">参考速度<span class="unit"><input id="flowSpeed" type="number" min="0.000000000001" step="any" value="1"><i>m/s</i></span></label>

@@ -3,11 +3,13 @@
 #include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include "cartmesh2d/fv/detail/FlowMaterial2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
+#include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <stdexcept>
 
@@ -37,6 +39,8 @@ struct Boundary {
     std::vector<Role> role;
     Vec u;
     Vec v;
+    Vec p; // populated only for explicit conditions; preset pressure remains zero
+    double initialU = 0, initialV = 0, initialP = 0;
     std::vector<bool> fixedU;
     std::vector<bool> fixedV;
     std::vector<bool> fixedP;
@@ -65,8 +69,9 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         if (!f.neighbour) {
             // Curved duct extrema may occur at vertices, not face centres.
             // For a 2-D edge, rotating its area vector gives its tangent.
-            const double dx = c.scenario == "duct" ? .5 * std::abs(f.areaVector.y) : 0;
-            const double dy = c.scenario == "duct" ? .5 * std::abs(f.areaVector.x) : 0;
+            const bool vertexBounds = c.scenario == "duct" || c.scenario == "custom";
+            const double dx = vertexBounds ? .5 * std::abs(f.areaVector.y) : 0;
+            const double dy = vertexBounds ? .5 * std::abs(f.areaVector.x) : 0;
             b.xmin = std::min(b.xmin, f.centre.x - dx);
             b.xmax = std::max(b.xmax, f.centre.x + dx);
             b.ymin = std::min(b.ymin, f.centre.y - dy);
@@ -78,6 +83,85 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     ensure(width > 0 && height > 0, "Flow empty domain");
     const double eps = TolerancePolicy{}.scale(std::max(width, height));
     const auto equal = [&](double a, double d) { return std::abs(a - d) <= eps; };
+    if (c.scenario == "custom") {
+        ensure(std::isfinite(c.speed) && c.speed > 0, "Custom boundary reference speed must be positive");
+        ensure(c.outletBackflow == OutletBackflow2D::Reject,
+               "Custom pressure outlets currently require explicit backflow rejection");
+        std::vector<bool> seen(nf, false);
+        std::map<std::string, FlowBoundaryKind2D> namedKinds;
+        b.p.resize(nf);
+        std::size_t inletCount = 0, outletCount = 0;
+        double inletLength = 0, outletLength = 0;
+        for (const auto& condition : c.boundaryConditions) {
+            const auto id = condition.face;
+            ensure(id < nf, "Custom boundary face ID is out of range");
+            const auto& face = m.faces[id];
+            ensure(!face.neighbour, "Custom boundary condition refers to an internal face");
+            ensure(!seen[id], "Duplicate custom boundary face");
+            seen[id] = true;
+            ensure(!condition.name.empty() && condition.name.size() <= 128 &&
+                   std::none_of(condition.name.begin(), condition.name.end(), [](unsigned char ch) {
+                       return ch < 32 || ch == 127 || ch == ',' || ch == '"';
+                   }), "Invalid custom boundary name");
+            const auto [it, inserted] = namedKinds.emplace(condition.name, condition.kind);
+            ensure(inserted || it->second == condition.kind,
+                   "One named boundary cannot mix physical condition types");
+            ensure(std::isfinite(condition.velocity.x) && std::isfinite(condition.velocity.y) &&
+                   std::isfinite(condition.pressure), "Non-finite custom boundary value");
+            const double length = std::hypot(face.areaVector.x, face.areaVector.y);
+            const double q = finite(dot(condition.velocity, face.areaVector));
+            switch (condition.kind) {
+            case FlowBoundaryKind2D::VelocityInlet:
+                ensure(condition.pressure == 0 && q < 0,
+                       "Velocity inlet must point into the fluid and cannot prescribe pressure");
+                b.role[id] = Role::Inlet;
+                b.fixedU[id] = b.fixedV[id] = true;
+                b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
+                b.initialU += condition.velocity.x * length;
+                b.initialV += condition.velocity.y * length;
+                inletLength += length;
+                ++inletCount;
+                break;
+            case FlowBoundaryKind2D::PressureOutlet:
+                ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
+                       "Pressure outlet cannot also prescribe velocity");
+                b.role[id] = Role::Outlet;
+                b.fixedP[id] = true; b.p[id] = condition.pressure;
+                b.initialP += condition.pressure * length;
+                outletLength += length;
+                ++outletCount;
+                break;
+            case FlowBoundaryKind2D::Wall:
+            case FlowBoundaryKind2D::MovingWall:
+                ensure(condition.pressure == 0, "Wall cannot prescribe pressure");
+                if (condition.kind == FlowBoundaryKind2D::Wall)
+                    ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
+                           "Stationary wall velocity must be zero");
+                ensure(std::abs(q) <= TolerancePolicy{}.scale(std::max(c.speed,
+                           std::hypot(condition.velocity.x, condition.velocity.y))) * length,
+                       "Moving wall velocity must be tangential to its face");
+                b.role[id] = condition.kind == FlowBoundaryKind2D::Wall ? Role::Wall : Role::Lid;
+                b.fixedU[id] = b.fixedV[id] = true;
+                b.constantU[id] = b.constantV[id] = true;
+                b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
+                break;
+            default:
+                throw std::runtime_error("Unknown custom boundary condition type");
+            }
+        }
+        for (std::size_t id = 0; id < nf; ++id)
+            ensure(m.faces[id].neighbour || seen[id], "Missing custom boundary face");
+        ensure((inletCount > 0 && outletCount > 0) || (inletCount == 0 && outletCount == 0),
+               "Custom open flow needs velocity inlet and pressure outlet; closed flow needs only walls");
+        b.closed = outletCount == 0;
+        if (!b.closed) {
+            b.initialU = finite(b.initialU / inletLength);
+            b.initialV = finite(b.initialV / inletLength);
+            b.initialP = finite(b.initialP / outletLength);
+        }
+        return b;
+    }
+    ensure(c.boundaryConditions.empty(), "Explicit boundary conditions require the custom scenario");
     if(c.scenario=="flatplate")
         ensure(c.flatPlateLeadingEdge>=b.xmin && c.flatPlateLeadingEdge<b.xmax,
                "Flat plate leading edge must lie within the bottom boundary");
@@ -346,7 +430,7 @@ static FlowResult2D solveFlow(
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
-    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "duct" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow" || c.scenario == "flatplate") &&
+    ensure((c.scenario == "external" || c.scenario == "channel" || c.scenario == "duct" || c.scenario == "custom" || c.scenario == "cavity" || c.scenario == "manufactured" || c.scenario == "taylor-green" || c.scenario == "counterflow" || c.scenario == "flatplate") &&
                std::isfinite(c.nu) && c.nu > 0 && std::isfinite(c.speed) && c.speed > 0 &&
                std::isfinite(c.tolerance) && c.tolerance > 0 && c.maxIterations > 0,
            "Invalid flow controls");
@@ -493,6 +577,7 @@ static FlowResult2D solveFlow(
             r.sourceIntegrals.push_back({finite(cell.area*8*pi*pi*c.nu*c.speed*std::cos(2*pi*cell.centre.y)),0});
     }
     Vec zeros(nf);
+    const auto& pressureBoundary = c.scenario == "custom" ? b.p : zeros;
     Vec ra(n);
     Vec pc(n);
     Vec df(nf);
@@ -506,6 +591,9 @@ static FlowResult2D solveFlow(
                                  ? 4 * c.speed * (y - b.ymin) * (b.ymax - y) / (h * h)
                                  : c.speed);
         if (c.scenario == "counterflow") r.u[i] = counterflowSpeed(y,c.speed);
+        if (c.scenario == "custom") {
+            r.u[i] = b.initialU; r.v[i] = b.initialV; r.p[i] = b.initialP;
+        }
     }
     for (std::size_t id = 0; id < nf; ++id) {
         const auto& f = m.faces[id];
@@ -515,6 +603,10 @@ static FlowResult2D solveFlow(
                 : (b.role[id] == Role::Inlet
                        ? b.u[id] * f.areaVector.x
                        : ((b.role[id] == Role::Outlet || b.role[id] == Role::Farfield) ? r.u[f.owner] * f.areaVector.x : 0.));
+        if (c.scenario == "custom")
+            r.flux[id] = f.neighbour ? interpolate(f, r.u)*f.areaVector.x + interpolate(f, r.v)*f.areaVector.y
+                : b.role[id] == Role::Inlet ? b.u[id]*f.areaVector.x + b.v[id]*f.areaVector.y
+                : b.role[id] == Role::Outlet ? r.u[f.owner]*f.areaVector.x + r.v[f.owner]*f.areaVector.y : 0;
     }
 
     Vec oldFluxDefect(nf);
@@ -563,11 +655,11 @@ static FlowResult2D solveFlow(
             ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
             validateViscosity(m,c);
         }
-        gp=flowGradient(m,r.p,zeros,b.fixedP,true);
+        gp=flowGradient(m,r.p,pressureBoundary,b.fixedP,true);
         gu=flowGradient(m,r.u,b.u,b.fixedU);
         gv=flowGradient(m,r.v,b.v,b.fixedV);
         forceGradient=detail::conservativePressureGradient(m,
-            detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP));
+            detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP));
         stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
             ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu,c.faceViscosity)
             : std::vector<Vector2D>{};
@@ -624,7 +716,10 @@ static FlowResult2D solveFlow(
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
                         +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 }
-            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Farfield){predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(-f.transmissibility*r.p[i]+dot(gp[i],f.correction));
+            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Farfield){
+                const double pressureDifference = c.scenario == "custom"
+                    ? f.transmissibility*(b.p[id]-r.p[i]) : -f.transmissibility*r.p[i];
+                predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(pressureDifference+dot(gp[i],f.correction));
                 if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
                     +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
@@ -710,7 +805,7 @@ static FlowResult2D solveFlow(
             r.maxCourant=std::max(r.maxCourant,finite(.5*timeStep*absoluteFlux[i]/m.cells[i].area));
         }
     }
-    const auto pf=detail::pressureFaceValues(m,r.p,gp,zeros,b.fixedP);
+    const auto pf=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
     const auto lu=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
     const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
@@ -788,13 +883,14 @@ FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D
     validateFvMesh2D(m);
     ensure(c.flatPlateLeadingEdge==0 && c.flatPlateTop==FlatPlateTop2D::PressureFarfield,
            "Flat plate controls are not supported by transient initialization");
-    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="duct" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
+    ensure((c.scenario=="external" || c.scenario=="channel" || c.scenario=="duct" || c.scenario=="custom" || c.scenario=="cavity" || c.scenario=="taylor-green") &&
            std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,
            "Invalid transient initial-state controls");
     validateViscosity(m,c);
     const auto b=boundaries(m,c); (void)b;
     FlowState2D s;
     s.u.resize(m.cells.size());s.v.resize(m.cells.size());s.p.resize(m.cells.size());s.flux.resize(m.faces.size());
+    if (c.scenario == "custom") std::fill(s.p.begin(), s.p.end(), b.initialP);
     if (c.scenario=="taylor-green") {
         ensure(std::isfinite(c.nu) && c.nu>0 && std::isfinite(c.speed) && c.speed>0,"Invalid vortex controls");
         const double gauge=taylorGreen2D(m.cells.front().centre,0,c.speed,c.nu).pressure;
@@ -812,5 +908,32 @@ FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D
         }
     }
     return s;
+}
+
+void validateFlowBoundaryConditions2D(const FvMesh2D& mesh, const FlowControls2D& controls) {
+    (void)boundaries(mesh, controls);
+}
+
+std::vector<FlowBoundaryCondition2D> explicitFlowBoundaryPreset2D(
+    const FvMesh2D& mesh, const FlowControls2D& controls) {
+    validateFvMesh2D(mesh);
+    if (controls.scenario == "custom") {
+        validateFlowBoundaryConditions2D(mesh, controls);
+        return controls.boundaryConditions;
+    }
+    ensure(controls.scenario == "duct" || controls.scenario == "channel" || controls.scenario == "cavity",
+           "Explicit boundary template currently supports duct, channel and cavity only");
+    const auto b=boundaries(mesh, controls);
+    std::vector<FlowBoundaryCondition2D> result;
+    for (std::size_t id=0;id<mesh.faces.size();++id) {
+        if (mesh.faces[id].neighbour) continue;
+        FlowBoundaryCondition2D value{id,FlowBoundaryKind2D::Wall,{b.u[id],b.v[id]},0,"wall"};
+        if (b.role[id]==Role::Inlet) {value.kind=FlowBoundaryKind2D::VelocityInlet;value.name="inlet";}
+        else if (b.role[id]==Role::Outlet) {value.kind=FlowBoundaryKind2D::PressureOutlet;value.name="outlet";}
+        else if (b.role[id]==Role::Lid) {value.kind=FlowBoundaryKind2D::MovingWall;value.name="lid";}
+        else ensure(b.role[id]==Role::Wall,"Unsupported condition in explicit boundary template");
+        result.push_back(std::move(value));
+    }
+    return result;
 }
 }

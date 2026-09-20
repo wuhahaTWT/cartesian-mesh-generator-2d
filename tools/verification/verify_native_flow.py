@@ -563,11 +563,73 @@ def outlet_backflow_mode(payload: dict[str, Any]) -> str:
     return mode
 
 
+def audit_explicit_boundaries(prefix: Path, mesh: Mesh, measured: Measurement,
+                              payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Read the separate input snapshot and bind every record to CM2D geometry."""
+    if payload.get('boundaryFileSuffix') != '.boundaries' or payload.get('referenceSpeedRole') != 'normalization-only':
+        raise VerificationError('custom boundary input metadata is missing or unsupported')
+    path = Path(str(prefix) + '.boundaries')
+    lines = [shlex.split(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+    nb = sum(edge.neighbour < 0 for edge in mesh.edges)
+    if (len(lines) != nb + 3 or lines[0] != ['CARTMESH2D_FLOW_BOUNDARIES', '1'] or
+            lines[1] != ['COUNTS', str(len(mesh.cells)), str(len(mesh.edges)), str(nb)] or
+            lines[-1] != ['END']):
+        raise VerificationError('custom boundary file header/counts/termination differ from mesh')
+    geometries = face_geometry(mesh, measured)
+    xs, ys = zip(*(g.centre for g in geometries))
+    position_tolerance = 1e-12 + 1e-10 * max(max(xs)-min(xs), max(ys)-min(ys))
+    records = []
+    for tokens in lines[2:-1]:
+        if len(tokens) != 12 or tokens[0] != 'BOUNDARY':
+            raise VerificationError('malformed custom boundary record')
+        face, owner = integer(tokens[1], 'boundary face'), integer(tokens[2], 'boundary owner')
+        if not 0 <= face < len(mesh.edges) or mesh.edges[face].neighbour >= 0 or mesh.edges[face].owner != owner:
+            raise VerificationError('custom boundary face/owner differs from mesh')
+        geom = geometries[face]
+        values = [finite(value, 'boundary geometry') for value in tokens[3:7]]
+        vector_tolerance = 1e-12 + 1e-10 * math.hypot(*geom.area_vector)
+        if any(abs(a-b) > tolerance for a, b, tolerance in zip(values, (*geom.centre, *geom.area_vector),
+                (position_tolerance, position_tolerance, vector_tolerance, vector_tolerance))):
+            raise VerificationError('custom boundary geometry differs from final CM2D')
+        records.append(dict(face=face, type=tokens[7], name=tokens[8],
+                            **{k: finite(v, 'boundary '+k) for k, v in zip(('u','v','p'), tokens[9:])}))
+    # Independently validate coverage and physical roles before using either
+    # the input or summary in momentum reconstruction.
+    flow_boundaries(mesh, measured, 'custom', finite(payload.get('speed'), 'custom speed'),
+                    outlet_backflow_mode(payload), explicit_boundaries=records)
+    metadata = payload.get('boundaryConditions')
+    if not isinstance(metadata, list) or len(metadata) != nb:
+        raise VerificationError('custom summary boundary count differs from input')
+    for entry in metadata:
+        if not isinstance(entry, dict) or set(entry) != {'face','type','name','u','v','p'}:
+            raise VerificationError('custom summary boundary record is malformed')
+        integer(entry['face'], 'summary boundary face')
+        for key in ('u','v','p'):
+            finite(entry[key], 'summary boundary '+key)
+    records.sort(key=lambda entry: entry['face'])
+    if sorted(metadata, key=lambda entry: entry['face']) != records:
+        raise VerificationError('custom summary boundary values differ from input snapshot')
+    return records
+
+
+def closed_flow_case(case: str, payload: dict[str, Any]) -> bool:
+    return case in ('cavity', 'manufactured', 'taylor-green') or (
+        case == 'custom' and not any(b['type'] == 'pressure-outlet' for b in payload['boundaryConditions']))
+
+
+def pressure_reference(case: str, payload: dict[str, Any]) -> str:
+    if closed_flow_case(case, payload):
+        return 'cell 0, kinematic pressure zero'
+    return ('explicit pressure outlet faces, prescribed kinematic pressure' if case == 'custom'
+            else 'right outlet faces, kinematic pressure zero')
+
+
 def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                     outlet_backflow: str = "reject",
                     fluxes: list[float] | None = None,
                     flat_plate_leading_edge: float | None = None,
-                    flat_plate_top: str = "pressure-farfield") -> dict[str, Any]:
+                    flat_plate_top: str = "pressure-farfield",
+                    explicit_boundaries: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Mirror the solver's explicit role/fixed-value classification."""
     outlet_backflow_mode({"outletBackflow": outlet_backflow})
     if outlet_backflow == "normal-inlet" and fluxes is None:
@@ -591,6 +653,51 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
     bc_u = [0.0] * len(mesh.edges)
     bc_v = [0.0] * len(mesh.edges)
     bc_p = [0.0] * len(mesh.edges)
+    result = {"roles": roles, "fixedU": fixed_u, "fixedV": fixed_v, "fixedP": fixed_p,
+              "constantU": constant_u, "constantV": constant_v, "u": bc_u, "v": bc_v, "p": bc_p}
+    if case == 'custom':
+        if outlet_backflow != 'reject' or not isinstance(explicit_boundaries, list):
+            raise VerificationError('custom requires explicit boundaries and reject backflow')
+        geometries = face_geometry(mesh, measured)
+        seen, names = set(), {}
+        for entry in explicit_boundaries:
+            face = integer(entry.get('face'), 'custom face')
+            if not 0 <= face < len(mesh.edges) or face in seen or mesh.edges[face].neighbour >= 0:
+                raise VerificationError('custom duplicate, internal or out-of-range face')
+            seen.add(face)
+            kind, name = entry.get('type'), entry.get('name')
+            if (not isinstance(name, str) or not name or len(name.encode('utf-8')) > 128 or
+                    any(ord(c) < 32 or ord(c) == 127 or c in ',"' for c in name) or
+                    (name in names and names[name] != kind)):
+                raise VerificationError('custom invalid name or inconsistent named patch type')
+            names[name] = kind
+            u, v, p = [finite(entry.get(k), 'custom '+k) for k in ('u','v','p')]
+            sx, sy = geometries[face].area_vector
+            q = u*sx + v*sy
+            if kind == 'velocity-inlet':
+                if p != 0 or not q < 0:
+                    raise VerificationError('custom velocity inlet must point inward and omit pressure')
+                roles[face] = 'inlet'
+                fixed_u[face] = fixed_v[face] = True
+            elif kind == 'pressure-outlet':
+                if u != 0 or v != 0:
+                    raise VerificationError('custom pressure outlet cannot prescribe velocity')
+                roles[face] = 'outlet'
+                fixed_p[face] = True
+            elif kind in ('wall', 'moving-wall'):
+                tolerance = (1e-12 + 1e-10*max(speed, math.hypot(u,v))) * math.hypot(sx,sy)
+                if p != 0 or (kind == 'wall' and (u != 0 or v != 0)) or abs(q) > tolerance:
+                    raise VerificationError('custom wall has pressure or penetrating velocity')
+                roles[face] = 'wall' if kind == 'wall' else 'lid'
+                fixed_u[face] = fixed_v[face] = constant_u[face] = constant_v[face] = True
+            else:
+                raise VerificationError('custom unsupported boundary type')
+            bc_u[face], bc_v[face], bc_p[face] = u, v, p
+        if seen != {e.id for e in mesh.edges if e.neighbour < 0}:
+            raise VerificationError('custom missing boundary faces')
+        if ('inlet' in roles) != ('outlet' in roles):
+            raise VerificationError('custom requires both inlet and outlet, or only walls')
+        return result
     height = ymax - ymin
     for edge in mesh.edges:
         if edge.neighbour >= 0:
@@ -932,7 +1039,8 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     fluxes = face_fluxes(face_records)
     outlet_backflow = outlet_backflow_mode(payload)
     boundaries = flow_boundaries(mesh, measured, case, speed, outlet_backflow, fluxes,
-                                payload.get('flatPlateLeadingEdge'), payload.get('flatPlateTop', 'pressure-farfield'))
+                                payload.get('flatPlateLeadingEdge'), payload.get('flatPlateTop', 'pressure-farfield'),
+                                payload.get('boundaryConditions'))
     backflow_faces = [edge.id for edge in mesh.edges
                       if boundaries["roles"][edge.id] == "outlet" and fluxes[edge.id] < 0.0]
     outlet_inflow = math.fsum(-fluxes[i] for i in backflow_faces)
@@ -1639,6 +1747,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
             VerificationError(f"native JSON contains non-finite token {token}")))
     if not isinstance(payload, dict):
         raise VerificationError("native JSON root is not an object")
+    if case == 'custom':
+        audit_explicit_boundaries(prefix, mesh, measured, payload)
     expected_viscosity_slope = getattr(args, 'manufactured_viscosity_slope', None)
     if expected_viscosity_slope is not None:
         actual_slope = finite(payload.get('manufacturedViscositySlope',0.), 'viscosity slope')
@@ -1733,7 +1843,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
             finite(payload.get(field), f"native {field}")
     except VerificationError as exc:
         issues.append(str(exc))
-    independent = continuity(mesh, measured, fluxes, speed, case,
+    independent = continuity(mesh, measured, fluxes, speed, 'cavity' if closed_flow_case(case, payload) else case,
                              args.continuity_absolute_tolerance, args.continuity_relative_tolerance)
     if not independent["cellValid"]:
         issues.append("independent per-cell face-flux continuity failed")
@@ -1752,8 +1862,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         domain_height = measured.bounds[3] - measured.bounds[1]
         if not close(finite(payload.get("domainHeight"), "native domainHeight"), domain_height, 1e-12, 1e-10):
             issues.append("native domain height differs from final CM2D bounds")
-        expected_pressure_reference = ("cell 0, kinematic pressure zero" if case in ("cavity", "manufactured")
-                                       else "right outlet faces, kinematic pressure zero")
+        expected_pressure_reference = pressure_reference(case, payload)
         if payload.get("pressureReference") != expected_pressure_reference:
             issues.append("native pressure reference differs from case boundary conditions")
         for native_name, csv_name in (("momentumResidual", "momentumResidual"),
@@ -1768,7 +1877,7 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
     if payload.get('viscosityModel') == 'face-values' and case in ('channel','cavity','external'):
         benchmark = {'valid':True, 'status':'not-applicable',
                      'scope':'Prescribed variable viscosity: constant-property reference is inapplicable; only geometry/conservation/constitutive audit is performed, no accuracy qualification.'}
-    elif case == "duct":
+    elif case in ("duct", "custom"):
         benchmark = {'valid': True, 'status': 'not-qualified',
                      'scope': 'Arbitrary duct: geometry, constitutive and conservation audits only; no physical reference or accuracy qualification.'}
     elif case == "channel":
@@ -1860,7 +1969,8 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
         "momentumAudit": momentum_audit,
         "benchmark": benchmark, "native": payload,
         "artifactSha256": {str(path): sha256_file(path) for path in
-                           (cells_path, faces_path, residual_path, json_path)},
+                           (cells_path, faces_path, residual_path, json_path,
+                            *((Path(str(prefix)+'.boundaries'),) if case == 'custom' else ()))},
     }
 
 

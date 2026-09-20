@@ -39,6 +39,7 @@ ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
 ${duct ? '本次曲壁通道／喷管工况：最左侧竖直端面为均匀速度入口，最右侧竖直端面为运动学 p=0 出口，其余曲壁及障碍物无滑移。CM2D 的几何物面标签并不全是流动壁面；这些入口/出口条件由原生求解器的 duct 工况指定，使用 OpenFOAM 时仍需分别设置。\n' : ''}
+${flow?.summary?.case === 'custom' ? '本次使用命名边界。*.flow.boundaries 保存实际输入，绑定最终网格面的位置、外法向与 owner；摘要含同一组逐面条件。参考速度仅用于归一化，实际入口速度在各边界记录中；出口压力为运动学压力。续算必须保持原名称、类型和数值。当前不支持自定义滑移或出口回流；OpenFOAM 边界仍须另外设置。\n' : ''}
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
 ${thermal ? `## 温度结果
 
