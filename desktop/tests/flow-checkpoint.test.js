@@ -43,6 +43,11 @@ test('reads native checkpoint metadata without loading state vectors', async () 
   });
 });
 
+test('restores the face-frame momentum scheme without changing the legacy scheme', async () => {
+  const result = await withFile(SERIALIZED.replace('limited-linear', 'face-limited-linear'), readCheckpointMetadata);
+  assert.equal(result.convection, 'face-limited-linear');
+});
+
 test('reads v2 outlet backflow mode and preserves legacy v1 default', async () => {
   const v2 = SERIALIZED.replace('CARTMESH2D_FLOW_CHECKPOINT 1', 'CARTMESH2D_FLOW_CHECKPOINT 2')
     .replace('symmetric 0', 'symmetric 0 normal-inlet');

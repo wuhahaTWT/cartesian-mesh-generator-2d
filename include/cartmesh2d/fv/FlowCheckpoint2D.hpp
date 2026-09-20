@@ -56,6 +56,7 @@ inline const char* convectionName(ConvectionScheme2D value) {
     switch (value) {
     case ConvectionScheme2D::Upwind: return "upwind";
     case ConvectionScheme2D::LimitedLinearUpwind: return "limited-linear";
+    case ConvectionScheme2D::FaceLimitedLinearUpwind: return "face-limited-linear";
     }
     fail("invalid convection scheme");
     return "";

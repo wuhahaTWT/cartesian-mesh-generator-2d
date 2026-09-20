@@ -61,6 +61,15 @@ test('curved duct can run steady and transient and is retained in output metadat
     flow: { summary: { ...summary, case: 'duct' } } }), /几何物面标签并不全是流动壁面/);
 });
 
+test('face-frame momentum scheme survives invocation, result validation and export', () => {
+  const invocation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
+    { case: 'duct', nu: .1, speed: 1, maxIterations: 200, convection: 'face-limited-linear' });
+  assert.equal(invocation.args[invocation.args.indexOf('--convection')+1], 'face-limited-linear');
+  const result = validateFlowOutput({ ...summary, convection: 'face-limited-linear' }, fields, 2);
+  assert.equal(result.summary.convection, invocation.request.convection);
+  assert.match(exportGuide({ result: { counts: { cells: 2 } }, flow: result }), /面方向限制/);
+});
+
 test('optional outlet backflow diagnostics validate without inventing legacy values', () => {
   const accepted = validateFlowOutput({ ...summary, outletBackflowFaces: 2, outletInflow: 0.25 }, fields, 2);
   assert.equal(accepted.summary.outletBackflowFaces, 2);

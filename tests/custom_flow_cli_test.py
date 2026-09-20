@@ -27,7 +27,7 @@ def read_cells(prefix):
         return list(csv.DictReader(stream))
 
 
-def main(cli, mesh_cli):
+def main(cli, mesh_cli, convection):
     with tempfile.TemporaryDirectory(prefix='cartmesh-custom-') as name:
         root = Path(name)
         mesh_path = root/'nozzle.solver.cm2d'
@@ -39,7 +39,7 @@ def main(cli, mesh_cli):
         def solve(output, extra=(), mesh=mesh_path, bc=bc_path, success=True):
             return run([cli, '--mesh', mesh, '--output', output, '--case', 'custom', '--boundary', bc,
                         '--nu', .1, '--speed', 1, '--tolerance', 1e-9, '--max-iterations', 500,
-                        '--pressure-preconditioner', 'aggregation', *extra], success)
+                        '--pressure-preconditioner', 'aggregation', '--convection', convection, *extra], success)
 
         def verify(output, mesh=mesh_path):
             result = audit.verify_case(mesh, output, 'custom', .1, 1, audit.argument_parser().parse_args([]))
@@ -160,5 +160,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cli', type=Path, required=True)
     parser.add_argument('--mesh-cli', type=Path, required=True)
+    parser.add_argument('--convection', choices=['upwind','face-limited-linear'], default='upwind')
     args=parser.parse_args()
-    main(args.cli.resolve(),args.mesh_cli.resolve())
+    main(args.cli.resolve(),args.mesh_cli.resolve(),args.convection)

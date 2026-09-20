@@ -291,11 +291,24 @@ if(CARTMESH2D_BUILD_TESTS)
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
             --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
     set_tests_properties(cartmesh2d_duct_flow_cli PROPERTIES TIMEOUT 90)
+    add_test(NAME cartmesh2d_frame_limited_duct_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/duct_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
+            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+            --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>
+            --convection face-limited-linear)
+    set_tests_properties(cartmesh2d_frame_limited_duct_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_custom_flow_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/custom_flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
     set_tests_properties(cartmesh2d_custom_flow_cli PROPERTIES TIMEOUT 90)
+    add_test(NAME cartmesh2d_frame_limited_flow_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/custom_flow_cli_test.py
+            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
+            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+            --convection face-limited-linear)
+    set_tests_properties(cartmesh2d_frame_limited_flow_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_flow_verifier
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_verifier_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)

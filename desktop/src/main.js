@@ -877,7 +877,7 @@ async function runSmoke() {
         throw new Error('Native flow result did not reach the renderer');
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
-      for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:'limited-linear',flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
+      for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();
       if(!smoke.state.thermal || smoke.state.thermal.summary.time!==.1)throw new Error('Thermal result did not reach renderer');
       if(smoke.state.thermal.summary.outletBackflow!==${JSON.stringify(argument('outlet-backflow') || 'reject')})

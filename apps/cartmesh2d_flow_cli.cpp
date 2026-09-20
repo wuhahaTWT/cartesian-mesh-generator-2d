@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
-            "--convection upwind|limited-linear (default upwind); bounded face reconstruction.\n"
+            "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
             "--outlet-backflow reject|normal-inlet (default reject).\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
@@ -162,9 +162,9 @@ int main(int argc, char** argv) {
                 if (v != "symmetric" && v != "laplacian") throw std::invalid_argument("viscous-stress must be symmetric or laplacian");
                 controls.viscousStress=v=="symmetric"?fv::ViscousStress2D::Symmetric:fv::ViscousStress2D::Laplacian;
             } else if (a == "--convection") {
-                if (v != "upwind" && v != "limited-linear")
-                    throw std::invalid_argument("convection must be upwind or limited-linear");
-                controls.convection = v == "limited-linear"
+                if (v != "upwind" && v != "limited-linear" && v != "face-limited-linear")
+                    throw std::invalid_argument("convection must be upwind, limited-linear or face-limited-linear");
+                controls.convection = v == "face-limited-linear" ? fv::ConvectionScheme2D::FaceLimitedLinearUpwind : v == "limited-linear"
                     ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
             } else if (a == "--outlet-backflow") {
                 if (v != "reject" && v != "normal-inlet")
@@ -392,8 +392,7 @@ int main(int argc, char** argv) {
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const bool counterflowCase=controls.scenario == "counterflow";
-        const char* convection = controls.convection == fv::ConvectionScheme2D::LimitedLinearUpwind
-            ? "limited-linear" : "upwind";
+        const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
         if (custom) {
             summary << "\"boundaryFileSuffix\":\".boundaries\",\n\"referenceSpeedRole\":\"normalization-only\",\n\"boundaryConditions\":[";

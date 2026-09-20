@@ -567,6 +567,70 @@ void wallTraceAndSlipStress(const FvMesh2D& mesh) {
     }
 }
 
+
+void frameLimitedVectorReconstruction() {
+    using cartmesh2d::fv::detail::faceFrameVelocityValues;
+    for (const double shear:{0.,.31}) {
+        auto mesh=rectangularMesh(3,3,shear);
+        std::vector<double> u(mesh.cells.size()),v(u.size()),bu(mesh.faces.size()),bv(bu.size()),flux(bu.size());
+        std::vector<Vector2D> gu(u.size()),gv(u.size());
+        std::vector<bool> fixed(bu.size(),true);
+        for(std::size_t i=0;i<u.size();++i) {
+            const auto p=mesh.cells[i].centre;
+            u[i]=std::sin(p.x)+.3*std::cos(p.y);v[i]=.4*std::cos(2*p.x)-std::sin(p.y);
+            // Deliberately steep gradients activate the nonlinear limiter.
+            gu[i]={3*std::cos(p.x),-.9*std::sin(p.y)};
+            gv[i]={-2.4*std::sin(2*p.x),-3*std::cos(p.y)};
+        }
+        for(std::size_t id=0;id<bu.size();++id) {
+            const auto p=mesh.faces[id].centre;
+            bu[id]=std::sin(p.x)+.3*std::cos(p.y);bv[id]=.4*std::cos(2*p.x)-std::sin(p.y);
+            flux[id]=id%2 ? -1 : 1;
+        }
+        const auto values=faceFrameVelocityValues(mesh,flux,u,v,gu,gv,bu,bv,fixed,fixed);
+        const auto lu=faceReconstructionLimiter(mesh,u,gu,bu,fixed),lv=faceReconstructionLimiter(mesh,v,gv,bv,fixed);
+        for(std::size_t id=0;id<values.size();++id) {
+            const auto& f=mesh.faces[id];const auto up=f.neighbour&&flux[id]<0?*f.neighbour:f.owner;
+            const double length=std::hypot(f.areaVector.x,f.areaVector.y);
+            const Vector2D normal=f.areaVector*(1/length),tangent{-normal.y,normal.x};
+            for(const auto axis:{normal,tangent}) {
+                const auto project=[&](double a,double b){return a*axis.x+b*axis.y;};
+                double lo=project(u[up],v[up]),hi=lo;
+                for(const auto fid:mesh.cells[up].faces) {
+                    const auto& face=mesh.faces[fid];const auto j=face.neighbour?(face.owner==up?*face.neighbour:face.owner):up;
+                    const double sample=face.neighbour?project(u[j],v[j]):project(bu[fid],bv[fid]);
+                    lo=std::min(lo,sample);hi=std::max(hi,sample);
+                }
+                const double actual=project(values[id].x,values[id].y);
+                check(actual>=lo-1e-12&&actual<=hi+1e-12,"frame limiter bounds normal and tangent projections");
+            }
+            if(shear==0) {
+                near(values[id].x,upwindFaceValue(mesh,id,flux[id],u,gu,lu),1e-12,"Cartesian frame agrees with old component limiter u");
+                near(values[id].y,upwindFaceValue(mesh,id,flux[id],v,gv,lv),1e-12,"Cartesian frame agrees with old component limiter v");
+            }
+        }
+        const double angle=.63,c=std::cos(angle),sn=std::sin(angle);
+        const auto rotate=[&](Vector2D a){return Vector2D{c*a.x-sn*a.y,sn*a.x+c*a.y};};
+        auto rotated=mesh;
+        for(auto& cell:rotated.cells){const auto p=rotate({cell.centre.x,cell.centre.y});cell.centre={p.x,p.y};}
+        for(auto& f:rotated.faces){const auto p=rotate({f.centre.x,f.centre.y});f.centre={p.x,p.y};f.areaVector=rotate(f.areaVector);f.correction=rotate(f.correction);}
+        for(std::size_t i=0;i<u.size();++i) {
+            const auto velocity=rotate({u[i],v[i]});u[i]=velocity.x;v[i]=velocity.y;
+            const auto a=rotate({c*gu[i].x-sn*gv[i].x,c*gu[i].y-sn*gv[i].y});
+            const auto b=rotate({sn*gu[i].x+c*gv[i].x,sn*gu[i].y+c*gv[i].y});gu[i]=a;gv[i]=b;
+        }
+        for(std::size_t id=0;id<bu.size();++id){const auto a=rotate({bu[id],bv[id]});bu[id]=a.x;bv[id]=a.y;}
+        const auto transformed=faceFrameVelocityValues(rotated,flux,u,v,gu,gv,bu,bv,fixed,fixed);
+        for(std::size_t id=0;id<values.size();++id){const auto expected=rotate(values[id]);
+            near(transformed[id].x,expected.x,2e-12,"frame limiter rotation u");near(transformed[id].y,expected.y,2e-12,"frame limiter rotation v");}
+        std::fill(u.begin(),u.end(),1.5);std::fill(v.begin(),v.end(),-2);
+        std::fill(bu.begin(),bu.end(),1.5);std::fill(bv.begin(),bv.end(),-2);
+        std::fill(gu.begin(),gu.end(),Vector2D{});std::fill(gv.begin(),gv.end(),Vector2D{});
+        for(const auto value:faceFrameVelocityValues(mesh,flux,u,v,gu,gv,bu,bv,fixed,fixed)){
+            near(value.x,1.5,1e-14,"frame limiter preserves constant u");near(value.y,-2,1e-14,"frame limiter preserves constant v");}
+    }
+}
+
 } // namespace
 
 int main() {
@@ -588,6 +652,7 @@ int main() {
 
         checkerboardPressureKeepsDirectDifference(rectangularMesh(2, 1));
         limiterAndUpwindSelection();
+        frameLimitedVectorReconstruction();
         exponentialFaceRefinement();
         affineSymmetricStress(skew, "skew mesh");
         wallTraceAndSlipStress(rectangularMesh(3, 3));

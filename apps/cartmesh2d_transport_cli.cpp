@@ -46,9 +46,10 @@ fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     require(bool(config>>token>>std::quoted(c.scenario)>>c.nu>>c.speed>>scheme>>stress>>c.manufacturedPressureSlope)
         && (!v2 || bool(config>>backflow)) && token=="CONFIG",
         "invalid flow checkpoint configuration");
-    require(scheme=="upwind"||scheme=="limited-linear","invalid carrier convection");
+    require(scheme=="upwind"||scheme=="limited-linear"||scheme=="face-limited-linear","invalid carrier convection");
     require(stress=="symmetric"||stress=="laplacian","invalid carrier stress");
-    c.convection=scheme=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+    c.convection=scheme=="upwind"?fv::ConvectionScheme2D::Upwind:
+        scheme=="face-limited-linear"?fv::ConvectionScheme2D::FaceLimitedLinearUpwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
     c.viscousStress=stress=="symmetric"?fv::ViscousStress2D::Symmetric:fv::ViscousStress2D::Laplacian;
     if (v2) {
         require(backflow=="reject"||backflow=="normal-inlet","invalid carrier outlet backflow model");
@@ -138,7 +139,7 @@ int main(int argc,char**argv) {
                     "Evolving flow: --evolve-flow external|channel|duct|cavity --boundary BC.csv --dt DT --steps N\n"
                     "  --flow-nu .01 --flow-speed 1 --flow-tolerance 1e-8 --flow-max-iterations 1500\n"
                     "  --flow-velocity-relaxation 0.6: evolving carrier only; (0,1], larger may be unstable.\n"
-                    "  --flow-convection upwind|limited-linear --pressure-preconditioner ic0|aggregation\n"
+                    "  --flow-convection upwind|limited-linear|face-limited-linear --pressure-preconditioner ic0|aggregation\n"
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
@@ -164,8 +165,9 @@ int main(int argc,char**argv) {
                 const double n=number(value);require(n>=1&&n<=100000&&n==std::floor(n),"invalid flow iteration count");
                 flowControls.maxIterations=static_cast<std::size_t>(n);
             } else if(arg=="--flow-convection") {
-                require(value=="upwind"||value=="limited-linear","unknown flow convection");
-                flowControls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
+                require(value=="upwind"||value=="limited-linear"||value=="face-limited-linear","unknown flow convection");
+                flowControls.convection=value=="upwind"?fv::ConvectionScheme2D::Upwind:
+                    value=="face-limited-linear"?fv::ConvectionScheme2D::FaceLimitedLinearUpwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
             } else if(arg=="--outlet-backflow") {
                 require(value=="reject"||value=="normal-inlet","unknown outlet backflow model");
                 flowControls.outletBackflow=value=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
@@ -362,7 +364,7 @@ int main(int argc,char**argv) {
             <<",\n\"flowVelocityRelaxation\":"<<flowControls.velocityRelaxation
             <<",\n\"flowTolerance\":";
         if(evolving) json<<flowControls.tolerance; else json<<"null";
-        json<<",\n\"flowConvection\":"<<quote(flowControls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
+        json<<",\n\"flowConvection\":"<<quote(fv::flow_checkpoint_detail::convectionName(flowControls.convection))
             <<",\n\"outletBackflow\":"<<quote(flowControls.outletBackflow==fv::OutletBackflow2D::NormalInlet?"normal-inlet":"reject")
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")

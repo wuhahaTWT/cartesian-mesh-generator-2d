@@ -7,7 +7,7 @@
 
 namespace cartmesh2d::fv {
 
-enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind };
+enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind, FaceLimitedLinearUpwind };
 
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation };
 enum class ViscousStress2D { Laplacian, Symmetric };

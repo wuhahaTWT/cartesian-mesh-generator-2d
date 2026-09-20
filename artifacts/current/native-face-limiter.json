@@ -1,0 +1,899 @@
+{
+  "format": "cartmesh2d-face-frame-evidence-v1",
+  "version": "0.4.14",
+  "scope": "Coordinate-consistent face-frame velocity reconstruction; Poiseuille analytic accuracy and actual Mac App input/output, not universal CFD qualification.",
+  "study": {
+    "cases": [
+      {
+        "angle": 0,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.boundaries": "e50a1b1d8204b23c23be1ad0df470b45bb986ba6dad6d563d0d32f51de1b0454",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.cells.csv": "25162e7a463386c00e611b7ade0684dd975b78a7d57b7bf1b46742c5dc0946f8",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.faces.csv": "c76a8eda7368842a554d352dffe08d7e18c3a6394cbde0f7971d6a41be08dbd9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.json": "342a482aa4fdc5c4bb5d21dba73cf8fa30979d6b30f029c8243dc186acb83e8f",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.residuals.csv": "53262a37e9f9ae76c772eb9dc536bd4f1ad615ce882bc05a14d16f06a3189ac9"
+        },
+        "cells": 780,
+        "h": 0.0716114874039433,
+        "independentValid": true,
+        "iterations": 205,
+        "label": "l5-axis",
+        "level": 5,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.solver.cm2d",
+        "meshSha256": "1eab2ad63b6a187ffc8b057ea7378498043b74a9e58754aa3414fb9791f7151e",
+        "metrics": {
+          "fittedPressureGradient": -0.798111837922128,
+          "flowRate": 0.6671732494212963,
+          "flowRateRelativeError": 0.0007598741319445046,
+          "pressureGradientRelativeError": 0.0023602025973400165,
+          "pressureL2Relative": 0.0013402580428790558,
+          "transverseVelocityL2": 6.395092869724059e-05,
+          "velocityL2": 0.0005801254069924988,
+          "viscousWallForce": 3.1918675512526202,
+          "viscousWallForceRelativeError": 0.0025413902335562344
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis"
+      },
+      {
+        "angle": 0.63,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.boundaries": "a70267ffb9e90b55d822417f3df64d528c06b42874bbde161a8cafa62ecb9b35",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.cells.csv": "16ebeb48383ac1d69458df8d79d8755efe0dbb5da3b55e44138df27563db4cda",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.faces.csv": "23e9f7696ed110017303bd916ca04fabf6760838ca16671431af78e0d76c3436",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.json": "926ccbba74f88c76289ee78e9c23d023c9e93b0af480958daec91c1194c11f32",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.residuals.csv": "fb0b30bea1c7c5eda4f36bb65884d75616c9da6fc28890db31cef31dbc1b72ce"
+        },
+        "cells": 780,
+        "h": 0.0716114874039433,
+        "independentValid": true,
+        "iterations": 206,
+        "label": "l5-rotated",
+        "level": 5,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.solver.cm2d",
+        "meshSha256": "2b308a272586939fec787235bba4ca7c69738527d34787cdae9eaa9fce0db548",
+        "metrics": {
+          "fittedPressureGradient": -0.7981118353114056,
+          "flowRate": 0.6671732494212963,
+          "flowRateRelativeError": 0.0007598741319445046,
+          "pressureGradientRelativeError": 0.0023602058607430365,
+          "pressureL2Relative": 0.001340260377719089,
+          "transverseVelocityL2": 6.395092587189511e-05,
+          "velocityL2": 0.0005801246239409043,
+          "viscousWallForce": 3.1918675410720674,
+          "viscousWallForceRelativeError": 0.0025413934149789985
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated",
+        "rotationMaxAbs": {
+          "p": 1.0008940787287202e-08,
+          "u": 2.731243675668793e-09,
+          "v": 2.845562219105186e-10
+        }
+      },
+      {
+        "angle": 0,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.boundaries": "fbdc1451b4ec4fcb68e8f20b3b6f1900b0ecb85a0af74d73a06e2b80fa3e1588",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.cells.csv": "8aa5d4cf2e87c89391de4effefe4a71f255bddaa1ab46e6bfd57c09dd8fac1c9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.faces.csv": "38ba48c6dd3d3524c35722599b0938156298cf6e75616febf83edfad678e9ff6",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.json": "4dd8cfb9232f2120c01dbac75f55f42031ce196f0aba5a2b10ce01fb6fd6dbbe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.residuals.csv": "2282be465aee21b07764f9691f1be2a39b3cc17c7a305f6da9827960d0eec4bf"
+        },
+        "cells": 3596,
+        "h": 0.033351867298253506,
+        "independentValid": true,
+        "iterations": 857,
+        "label": "l6-axis",
+        "level": 6,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.solver.cm2d",
+        "meshSha256": "dcb8de79aa301775c35013dfe542f38f373763a96adc9844b28803253435324f",
+        "metrics": {
+          "fittedPressureGradient": -0.79961465363626,
+          "flowRate": 0.666769295779805,
+          "flowRateRelativeError": 0.00015394366970761242,
+          "pressureGradientRelativeError": 0.000481682954674989,
+          "pressureL2Relative": 0.0002732105318591701,
+          "transverseVelocityL2": 1.4666840501299773e-05,
+          "velocityL2": 0.00012852105018051375,
+          "viscousWallForce": 3.198248289454587,
+          "viscousWallForceRelativeError": 0.000547409545441635
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis"
+      },
+      {
+        "angle": 0.63,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.boundaries": "7776d2b3f720452456486f40449616a6218e445b036ba1a447ca2988d7da04e1",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.cells.csv": "dc2edd97ab78892b1ac7e4db75f011c0e51744d3f2e2fa2602e5f89dcaccdad6",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.faces.csv": "85199a1e4d354e6e1dc18b850d10fdc8da1cc0b227532527b96abe8697ca0073",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.json": "275ac72e75d0623318803bb612dcbb25b977816c32818854728768d7e4ecff99",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.residuals.csv": "1de879f5509531e3a48a81d2454b5f4bfa5114432a9e36f0cf8b827284888fd1"
+        },
+        "cells": 3596,
+        "h": 0.033351867298253506,
+        "independentValid": true,
+        "iterations": 861,
+        "label": "l6-rotated",
+        "level": 6,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.solver.cm2d",
+        "meshSha256": "eaed02fb9bab691ed321ba6b5a4f19d2372a32e7e3838e9cbb4555e3cf307cdf",
+        "metrics": {
+          "fittedPressureGradient": -0.799614642609266,
+          "flowRate": 0.666769295779805,
+          "flowRateRelativeError": 0.00015394366970761242,
+          "pressureGradientRelativeError": 0.0004816967384176085,
+          "pressureL2Relative": 0.000273220111804631,
+          "transverseVelocityL2": 1.4666831666186004e-05,
+          "velocityL2": 0.00012851792651151644,
+          "viscousWallForce": 3.1982482468235274,
+          "viscousWallForceRelativeError": 0.0005474228676477511
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated",
+        "rotationMaxAbs": {
+          "p": 4.1696880170860595e-08,
+          "u": 1.1382373377166743e-08,
+          "v": 1.3543702706333965e-09
+        }
+      },
+      {
+        "angle": 0,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.boundaries": "433e0c5e8d00ac75cbecb85ada13588509dfabeb48fcf62b4a2614c62bb1e98f",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.cells.csv": "b7569ae27414ad17aa017ae835cab3ba98ef0326b2a9c8415d86ca78240d3204",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.faces.csv": "2279b926aaaa462f1205e817dd8212ae932584c263133d4ce57b2253e8be93b0",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.json": "3f2a624cfe9b9bf621b5076118e08f772ede1aa8ff24658bddd5e4582ebc77b4",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.residuals.csv": "ea7769947409f401b6922458e787617f200e7ab6733b0370a384b7061e81153f"
+        },
+        "cells": 15372,
+        "h": 0.016131130616527576,
+        "independentValid": true,
+        "iterations": 3362,
+        "label": "l7-axis",
+        "level": 7,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.solver.cm2d",
+        "meshSha256": "416ef9373bf97e740f09f5ae330e12892e9e76fe3cd846bc5b004135be33d6b9",
+        "metrics": {
+          "fittedPressureGradient": -0.7999143298389617,
+          "flowRate": 0.6666896109462818,
+          "flowRateRelativeError": 3.441641942270035e-05,
+          "pressureGradientRelativeError": 0.00010708770129791434,
+          "pressureL2Relative": 6.06542928832799e-05,
+          "transverseVelocityL2": 3.4704337077402905e-06,
+          "velocityL2": 2.968042079050744e-05,
+          "viscousWallForce": 3.199586672721818,
+          "viscousWallForceRelativeError": 0.00012916477443197794
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis"
+      },
+      {
+        "angle": 0.63,
+        "artifactSha256": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.boundaries": "9ed065443212747b2dffaeb2b931263a529a309aeedd09fb41df000a5cadad4d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.cells.csv": "9775fec822f1a76b8b390defc3df72dea7e8807cb227dd67d9793a033ea6cf21",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.faces.csv": "85507990e2db1b2fcf42cebe73e20d8627424b8364e188b2b90c5b5385b761bf",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.json": "7fe319175e9ebdf09b672e95ec9c906c01b5ccb9315321cc94f29f3e7220656b",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.residuals.csv": "db4754a50e722669f2707c291e16cb7b4ab3c010c1e846161a843812c1de1e52"
+        },
+        "cells": 15372,
+        "h": 0.016131130616527576,
+        "independentValid": true,
+        "iterations": 3388,
+        "label": "l7-rotated",
+        "level": 7,
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.solver.cm2d",
+        "meshSha256": "f39be18164f4e63c28f7edc2310931848774096283d269223456da57b3a9d31d",
+        "metrics": {
+          "fittedPressureGradient": -0.7999142492450714,
+          "flowRate": 0.6666896109462818,
+          "flowRateRelativeError": 3.441641942270035e-05,
+          "pressureGradientRelativeError": 0.00010718844366083835,
+          "pressureL2Relative": 6.072209742017865e-05,
+          "transverseVelocityL2": 3.470323205922003e-06,
+          "velocityL2": 2.9657775066174203e-05,
+          "viscousWallForce": 3.1995863628813357,
+          "viscousWallForceRelativeError": 0.00012926159958265293
+        },
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated",
+        "rotationMaxAbs": {
+          "p": 3.015570326780903e-07,
+          "u": 7.979297256266449e-08,
+          "v": 1.020519828136278e-08
+        }
+      }
+    ],
+    "controls": {
+      "convection": "face-limited-linear",
+      "maxIterations": 6000,
+      "tightTolerance": 1e-10,
+      "timeoutSeconds": 240,
+      "tolerance": 1e-08
+    },
+    "definition": {
+      "height": 1,
+      "length": 4,
+      "nu": 0.1,
+      "peakReynolds": 10,
+      "peakSpeed": 1,
+      "pressure": ".25+.8*(4-x)",
+      "pressureOutlet": 0.25,
+      "velocity": "4*y*(1-y)",
+      "volumeFlux": 0.6666666666666666,
+      "wallViscousForce": 3.2
+    },
+    "issues": [],
+    "iterationSensitivity": {
+      "maxAbs": {
+        "p": 2.9574975402013592e-06,
+        "u": 8.062175452794307e-07,
+        "v": 9.937107694250716e-08
+      },
+      "metrics": {
+        "fittedPressureGradient": -0.7999135456970703,
+        "flowRate": 0.6666896109462818,
+        "flowRateRelativeError": 3.441641942270035e-05,
+        "pressureGradientRelativeError": 0.00010806787866218803,
+        "pressureL2Relative": 6.132498799600633e-05,
+        "transverseVelocityL2": 3.469661895687024e-06,
+        "velocityL2": 2.945854692782955e-05,
+        "viscousWallForce": 3.199583621733042,
+        "viscousWallForceRelativeError": 0.000130118208424429
+      }
+    },
+    "predeclaredTargets": {
+      "fineFlowRateRelativeError": 0.005,
+      "finePressureGradientRelativeError": 0.02,
+      "fineVelocityL2": 0.02,
+      "fineWallForceRelativeError": 0.02,
+      "iterativeVelocityChangeMaxAbs": 1e-06,
+      "rotationMaxAbs": 1e-06
+    },
+    "reference": "https://ocw.mit.edu/courses/2-25-advanced-fluid-mechanics-fall-2013/1a114d602956fa0dd328155f9b45f93d_MIT2_25F13_Couet_and_Pois.pdf",
+    "refinement": {
+      "flowRateRelativeError": [
+        {
+          "coarse": 780,
+          "fine": 3596,
+          "observedOrder": 2.0893585182207466
+        },
+        {
+          "coarse": 3596,
+          "fine": 15372,
+          "observedOrder": 2.0624033063829357
+        }
+      ],
+      "pressureGradientRelativeError": [
+        {
+          "coarse": 780,
+          "fine": 3596,
+          "observedOrder": 2.0797406220473653
+        },
+        {
+          "coarse": 3596,
+          "fine": 15372,
+          "observedOrder": 2.0700922949885587
+        }
+      ],
+      "velocityL2": [
+        {
+          "coarse": 780,
+          "fine": 3596,
+          "observedOrder": 1.9723455986099818
+        },
+        {
+          "coarse": 3596,
+          "fine": 15372,
+          "observedOrder": 2.0177315717064426
+        }
+      ],
+      "viscousWallForceRelativeError": [
+        {
+          "coarse": 780,
+          "fine": 3596,
+          "observedOrder": 2.0091420685896795
+        },
+        {
+          "coarse": 3596,
+          "fine": 15372,
+          "observedOrder": 1.9881364621417075
+        }
+      ]
+    },
+    "runs": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/original",
+          "5",
+          "0.03333333333333333",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/foam",
+          "5",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/original 5 0.03333333333333333 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/foam 5 0",
+        "returncode": 0,
+        "seconds": 0.02739787500104285,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-mesh.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-mesh.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/original.solver.cm2d",
+          "--case",
+          "channel",
+          "--speed",
+          "1",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/template.boundaries"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/original.solver.cm2d --case channel --speed 1 --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/template.boundaries",
+        "returncode": 0,
+        "seconds": 0.007267999999385211,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-boundaries.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-boundaries.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/axis --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 0.253399666000405,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-axis.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-axis.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l5/rotated --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 0.25280320899946673,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-rotated.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l5-rotated.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/original",
+          "6",
+          "0.016129032258064516",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/foam",
+          "6",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/original 6 0.016129032258064516 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/foam 6 0",
+        "returncode": 0,
+        "seconds": 0.11321487500026706,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-mesh.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-mesh.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/original.solver.cm2d",
+          "--case",
+          "channel",
+          "--speed",
+          "1",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/template.boundaries"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/original.solver.cm2d --case channel --speed 1 --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/template.boundaries",
+        "returncode": 0,
+        "seconds": 0.0230390830001852,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-boundaries.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-boundaries.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/axis --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 4.810754833999454,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-axis.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-axis.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l6/rotated --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 4.67333566599882,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-rotated.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l6-rotated.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/original",
+          "7",
+          "0.007936507936507936",
+          "0.1",
+          "interior",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/foam",
+          "7",
+          "0"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/channel.xy /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/original 7 0.007936507936507936 0.1 interior /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/foam 7 0",
+        "returncode": 0,
+        "seconds": 0.42406083299829334,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-mesh.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-mesh.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/original.solver.cm2d",
+          "--case",
+          "channel",
+          "--speed",
+          "1",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/template.boundaries"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/original.solver.cm2d --case channel --speed 1 --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/template.boundaries",
+        "returncode": 0,
+        "seconds": 0.0605724580000242,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-boundaries.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-boundaries.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 83.79530449999947,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-axis.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-axis.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-08"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/rotated --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-08",
+        "returncode": 0,
+        "seconds": 83.81454333399961,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-rotated.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-rotated.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/tight",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "6000",
+          "--tolerance",
+          "1e-10"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/axis.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/l7/tight --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --max-iterations 6000 --tolerance 1e-10",
+        "returncode": 0,
+        "seconds": 94.72862520800118,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-tight.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-frame/logs/l7-tight.stdout.log",
+        "timedOut": false
+      }
+    ],
+    "scope": "Named-boundary fully developed laminar channel; reference accuracy and coordinate invariance for this case only.",
+    "sourceSha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "5ccd920522b2493e087d8a307c95743db5f7dc18d06a77e977e98f13a37dcb44",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_named_channel.py": "2ffe10b10630791039b063cd9cca5509c09ad25d029f86aa9fdc63e008993a91"
+    },
+    "valid": true
+  },
+  "tests": {
+    "ctest": {
+      "passed": 137,
+      "failed": 0
+    },
+    "frontend": {
+      "passed": 149,
+      "failed": 0
+    }
+  },
+  "app": {
+    "app-custom": {
+      "case": "custom",
+      "cells": 2784,
+      "iterations": 49,
+      "convection": "face-limited-linear",
+      "momentumResidual": 6.947691105689768e-08,
+      "continuity": 4.73592221954316e-13,
+      "acceptedTime": 0.12000000000000001,
+      "maxCourant": 1.4424342350419839,
+      "forceX": 22.37317685067124,
+      "forceY": -1.2410350525016156e-12,
+      "independentExportValid": true,
+      "failureAndCancelResumeChecked": true
+    },
+    "app-external-fine": {
+      "case": "external",
+      "cells": 5168,
+      "iterations": 278,
+      "convection": "face-limited-linear",
+      "momentumResidual": 3.1837283212850116e-07,
+      "continuity": 5.276202755123363e-14,
+      "acceptedTime": null,
+      "maxCourant": null,
+      "forceX": 2.096847594111793,
+      "forceY": -1.7821681630447728e-14,
+      "independentExportValid": true,
+      "thermal": {
+        "time": 0.3,
+        "flowConvection": "face-limited-linear",
+        "convection": "upwind",
+        "minValue": 299.9999999999994,
+        "maxValue": 346.9113958044492,
+        "maxCourant": 0.4384496227269779,
+        "independentExportValid": true,
+        "failureAndCancelResumeChecked": true
+      }
+    }
+  },
+  "executables": {
+    "cartmesh2d_transport_cli": "c01b4bdfa17a1ee86f23e45a7f3e2257afbc99f03dbe0575fed7069b29705557",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "33466cca37c49412597b17c2277c8e55c134636baa631defb3083919d4dd934f",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "files": {
+    "outputs/native-flow/face-limiter/app-custom.zip": "5af86facf5c54b4e0e1818c72e630cd48761d75319f384e376886b67b83ce8ea",
+    "outputs/native-flow/face-limiter/app-custom.png": "0eb32f233fa8d16411d1e04e27b72b1eae2dc44683a86e070eb24ab6a50d177f",
+    "outputs/native-flow/face-limiter/app-custom.png.json": "65558c020a4305c9215b956d9c5cf0d3b57b96b65b3ffb2309d31c80483041ed",
+    "outputs/native-flow/face-limiter/app-custom-export-audit.json": "92e0f2d7a22f63bb573e29404992f36e61690be671f5b7a9daf1dc841645ae4e",
+    "outputs/native-flow/face-limiter/app-external-fine.zip": "7898a746b42565f210897519e054bfda2aeee00a4f3ae917b50f68115ddb8ce0",
+    "outputs/native-flow/face-limiter/app-external-fine.png": "e7999a4ebb803387eee4bc94c1bfa32f06987d5b35f055208f9dbbb25c7a3877",
+    "outputs/native-flow/face-limiter/app-external-fine.png.json": "fe79038da6eb5fa99a858ca411454524d9c9e7b5f6f1cdeffcb98363b0f780f1",
+    "outputs/native-flow/face-limiter/app-external-fine-export-audit.json": "38ee7135e37483520d128c4091c684075f39339731fc7b195e833f5dccab2462"
+  },
+  "knownFailure": {
+    "cells": 2504,
+    "case": "external circular obstacle",
+    "convection": [
+      "upwind",
+      "limited-linear",
+      "face-limited-linear"
+    ],
+    "result": "All three hit outlet-backflow rejection during steady startup, same first velocity change 28.5593. Existing issue; input and logs retained.",
+    "evidence": "outputs/native-flow/face-limiter/external-diagnose/summary.json"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Linux",
+    "Windows",
+    "compressible flow"
+  ],
+  "algorithmSourceSha256": {
+    "src/fv/Incompressible2D.cpp": "dd35a1983943123738d5dd9e89851d49b8a44156fa478657a81ae6248492e835",
+    "include/cartmesh2d/fv/detail/FlowFaceOperators2D.hpp": "d6dc1062f0d459b888af8feb5533feb8f6d82ab9964e01220904dcd777cae5b9",
+    "tools/verification/verify_native_flow.py": "eb440473e5540734a6980e173eda58709d6d968ed9f46d4c6e8f8bbd3e75e59f",
+    "tools/verification/verify_named_channel.py": "2ffe10b10630791039b063cd9cca5509c09ad25d029f86aa9fdc63e008993a91"
+  },
+  "diagnosis": {
+    "runs": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.solver.cm2d",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/upwind-axis",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "upwind",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "4000",
+          "--tolerance",
+          "1e-10"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.solver.cm2d --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.boundaries --case custom --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/upwind-axis --nu .1 --speed 1 --convection upwind --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-10",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/named-channel-diagnose/logs/upwind-axis.stdout.log",
+        "stderr": "outputs/native-flow/named-channel-diagnose/logs/upwind-axis.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.solver.cm2d",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/upwind-rotated",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "upwind",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "4000",
+          "--tolerance",
+          "1e-10"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.solver.cm2d --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.boundaries --case custom --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/upwind-rotated --nu .1 --speed 1 --convection upwind --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-10",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/named-channel-diagnose/logs/upwind-rotated.stdout.log",
+        "stderr": "outputs/native-flow/named-channel-diagnose/logs/upwind-rotated.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.solver.cm2d",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/limited-linear-axis",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "4000",
+          "--tolerance",
+          "1e-10"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.solver.cm2d --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/axis.boundaries --case custom --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/limited-linear-axis --nu .1 --speed 1 --convection limited-linear --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-10",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/named-channel-diagnose/logs/limited-linear-axis.stdout.log",
+        "stderr": "outputs/native-flow/named-channel-diagnose/logs/limited-linear-axis.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.solver.cm2d",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/limited-linear-rotated",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--max-iterations",
+          "4000",
+          "--tolerance",
+          "1e-10"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.solver.cm2d --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel/l5/rotated.boundaries --case custom --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/named-channel-diagnose/limited-linear-rotated --nu .1 --speed 1 --convection limited-linear --pressure-preconditioner aggregation --max-iterations 4000 --tolerance 1e-10",
+        "returncode": 0,
+        "stdout": "outputs/native-flow/named-channel-diagnose/logs/limited-linear-rotated.stdout.log",
+        "stderr": "outputs/native-flow/named-channel-diagnose/logs/limited-linear-rotated.stderr.log",
+        "timedOut": false,
+        "status": "passed"
+      }
+    ],
+    "cases": [
+      {
+        "scheme": "upwind",
+        "maxRotationDifference": {
+          "u": 4.747202630994707e-11,
+          "v": 4.635484044399333e-12,
+          "p": 1.5733681024698853e-10
+        }
+      },
+      {
+        "scheme": "limited-linear",
+        "maxRotationDifference": {
+          "u": 9.821971475421076e-06,
+          "v": 1.090547033366575e-05,
+          "p": 4.1165629209416466e-05
+        }
+      }
+    ],
+    "sourceCliSha256": "b05f0c3bb4921a28bbc3e03e8da2823cf0a8fa219ae39a50b3b2ce9d07134da1"
+  },
+  "resource": {
+    "perSolveTimeoutSeconds": 240,
+    "maxObservedSolveSeconds": 94.72862520800118,
+    "freeDiskBytes": 31662080000,
+    "retention": "Early redundant App run hash-verified and losslessly compressed; failed physics runs retained."
+  }
+}

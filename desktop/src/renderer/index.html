@@ -237,6 +237,7 @@
         <select id="flowConvection">
           <option value="upwind" selected>一阶迎风（默认，稳健）</option>
           <option value="limited-linear">线性迎风（限制重构）</option>
+          <option value="face-limited-linear">线性迎风（面方向限制）</option>
         </select>
       </label>
       <p class="note">线性迎风使用有界限制重构，可减少数值扩散，但不保证所有工况都更准确；这里不代表通用二阶格式或新的工程合格结论。</p>

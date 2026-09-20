@@ -356,6 +356,7 @@ void momentum(System& a,
                 const std::vector<Vector2D>& gp,
                 const std::vector<Vector2D>& source,
                 const std::vector<Vector2D>& stressCorrection,
+                const std::vector<Vector2D>& faceVelocity,
                 bool y,
                 const Vec* previous = nullptr,
                 double timeStep = 0) {
@@ -364,6 +365,10 @@ void momentum(System& a,
     const auto& fixed = y ? b.fixedV : b.fixedU;
     const auto limiter = c.convection == ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m, field, gradField, bc, fixed) : Vec{};
+    const auto advectiveValue=[&](std::size_t id,double q) {
+        return faceVelocity.empty() ? detail::upwindFaceValue(m,id,q,field,gradField,limiter)
+                                    : y ? faceVelocity[id].y : faceVelocity[id].x;
+    };
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
         a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
         if (!source.empty()) a.rhs[i] += y ? source[i].y : source[i].x;
@@ -393,7 +398,7 @@ void momentum(System& a,
             const double correction =
                 viscosity * dot(interpolateGradient(f, gradField), f.correction);
             const double upwind = q >= 0 ? field[i] : field[j];
-            const double deferred = q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-upwind);
+            const double deferred = q * (advectiveValue(id,q)-upwind);
             a.rhs[i] += correction-deferred;
             a.rhs[j] -= correction-deferred;
         } else {
@@ -413,7 +418,7 @@ void momentum(System& a,
                 ensure(q >= -1e-12 * c.speed * std::hypot(f.areaVector.x, f.areaVector.y),
                        "Flow outlet backflow unsupported in this laminar prototype");
                 a.diag[i] += q;
-                a.rhs[i] -= q * (detail::upwindFaceValue(m, id, q, field, gradField, limiter)-field[i]);
+                a.rhs[i] -= q * (advectiveValue(id,q)-field[i]);
             }
         }
     }
@@ -452,7 +457,8 @@ static FlowResult2D solveFlow(
                c.pressurePreconditioner == PressurePreconditioner2D::Aggregation,
            "Invalid pressure preconditioner");
     ensure(c.convection == ConvectionScheme2D::Upwind ||
-               c.convection == ConvectionScheme2D::LimitedLinearUpwind,
+               c.convection == ConvectionScheme2D::LimitedLinearUpwind ||
+               c.convection == ConvectionScheme2D::FaceLimitedLinearUpwind,
            "Invalid convection scheme");
     ensure(c.viscousStress == ViscousStress2D::Symmetric ||
                c.viscousStress == ViscousStress2D::Laplacian,
@@ -663,8 +669,10 @@ static FlowResult2D solveFlow(
         stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
             ? detail::symmetricViscousCorrection(m,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV,b.constantU,b.constantV,c.nu,c.faceViscosity)
             : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,false,previous?&previous->u:nullptr,timeStep);
-        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,true,previous?&previous->v:nullptr,timeStep);
+        const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
+            ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
+        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,false,previous?&previous->u:nullptr,timeStep);
+        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,true,previous?&previous->v:nullptr,timeStep);
     };
     const auto takeRelaxed = [&](System& destination,System& source,const Vec& field) {
         destination.diag.swap(source.diag);
@@ -810,6 +818,8 @@ static FlowResult2D solveFlow(
         ? detail::faceReconstructionLimiter(m,r.u,gu,b.u,b.fixedU) : Vec{};
     const auto lv=c.convection==ConvectionScheme2D::LimitedLinearUpwind
         ? detail::faceReconstructionLimiter(m,r.v,gv,b.v,b.fixedV) : Vec{};
+    const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
+        ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
     r.faceMomentum.resize(nf);
     for(std::size_t id=0;id<nf;++id) {
         const auto& f=m.faces[id]; const auto i=f.owner;
@@ -819,11 +829,12 @@ static FlowResult2D solveFlow(
             r.outletInflow=finite(r.outletInflow-r.flux[id]);
         }
         auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
-                           const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter) {
+                           const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter,bool y) {
             const bool normalInflow = !f.neighbour && !fixed[id] && r.flux[id]<0 &&
                 (b.role[id]==Role::Farfield || (b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::NormalInlet));
             const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
-                : normalInflow ? value[i] : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
+                : normalInflow ? value[i] : !faceVelocity.empty() ? (y?faceVelocity[id].y:faceVelocity[id].x)
+                : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);
             double diffusion=0;
             if(f.neighbour || fixed[id]) {
                 const double other=f.neighbour ? value[*f.neighbour] : bc[id];
@@ -831,8 +842,8 @@ static FlowResult2D solveFlow(
             }
             return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
         };
-        auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu);
-        auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv);
+        auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu,false);
+        auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv,true);
         if (!stressCorrection.empty()) {dx+=stressCorrection[id].x;dy+=stressCorrection[id].y;}
         fm.advection={ax,ay}; fm.diffusion={dx,dy};
         fm.wall=!f.neighbour && (b.role[id]==Role::Wall || b.role[id]==Role::Lid);

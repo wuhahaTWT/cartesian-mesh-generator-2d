@@ -903,6 +903,37 @@ def _interpolated_gradient(edge: Edge, gradients: list[tuple[float, float]], wei
             (1.0 - weight) * owner[1] + weight * neighbour[1])
 
 
+def face_frame_velocity(mesh, measured, geometries, edge, flux, u, v, gu, gv, boundaries):
+    """Reconstruct in the geometric face frame using only input fields/stencils."""
+    up = edge.neighbour if edge.neighbour >= 0 and flux < 0 else edge.owner
+    geom = geometries[edge.id]
+    length = math.hypot(*geom.area_vector)
+    nx, ny = (value/length for value in geom.area_vector)
+    result = [u[up],v[up]]
+    for ax, ay in ((nx,ny),(-ny,nx)):
+        samples = [0.]
+        for fid in mesh.cells[up].edges:
+            face = mesh.edges[fid]
+            if face.neighbour >= 0:
+                other = face.neighbour if face.owner == up else face.owner
+                du,dv = u[other]-u[up],v[other]-v[up]
+            elif boundaries['fixedU'][fid] or boundaries['fixedV'][fid]:
+                du = boundaries['u'][fid]-u[up] if boundaries['fixedU'][fid] else 0.
+                dv = boundaries['v'][fid]-v[up] if boundaries['fixedV'][fid] else 0.
+            else:
+                continue
+            samples.append(ax*du+ay*dv)
+        lo,hi = min(samples),max(samples)
+        # Project the gradient tensor into this velocity direction first.
+        gx,gy = ax*gu[up][0]+ay*gv[up][0],ax*gu[up][1]+ay*gv[up][1]
+        changes = [gx*(geometries[fid].centre[0]-measured.centroids[up][0]) +
+                   gy*(geometries[fid].centre[1]-measured.centroids[up][1]) for fid in mesh.cells[up].edges]
+        phi = max(0.,min([1.]+[hi/d if d>0 else lo/d for d in changes if d!=0]))
+        increment = phi*(gx*(geom.centre[0]-measured.centroids[up][0])+gy*(geom.centre[1]-measured.centroids[up][1]))
+        result[0] += ax*increment;result[1] += ay*increment
+    return result
+
+
 def _viscous_face_gradient(mesh: Mesh, measured: Measurement, edge: Edge, geometry: FaceGeometry,
                            values: list[float], gradients: list[tuple[float, float]],
                            boundary: list[float], fixed: list[bool],
@@ -1091,7 +1122,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             d = (geom.centre[0] - measured.centroids[i][0], geom.centre[1] - measured.centroids[i][1])
             pressure_faces.append(p[i] + gp[i][0] * d[0] + gp[i][1] * d[1])
     convection = payload.get("convection")
-    if convection not in ("upwind", "limited-linear"):
+    if convection not in ("upwind", "limited-linear", "face-limited-linear"):
         raise VerificationError(f"native convection is unsupported: {convection!r}")
     lu = (face_limiter(mesh, measured, u, gu, boundaries["u"], boundaries["fixedU"])
           if convection == "limited-linear" else None)
@@ -1128,6 +1159,14 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                                        boundaries["fixedU"], boundaries["u"], normal_inlet)
         av_v = flux * _advective_value(mesh, measured, edge, geom, flux, v, gv, lv,
                                        boundaries["fixedV"], boundaries["v"], normal_inlet)
+        if convection == 'face-limited-linear':
+            vector = face_frame_velocity(mesh, measured, geometries, edge, flux, u, v, gu, gv, boundaries)
+            for component, values, fixed, bc in ((0,u,boundaries['fixedU'],boundaries['u']),
+                                                 (1,v,boundaries['fixedV'],boundaries['v'])):
+                if edge.neighbour < 0:
+                    if fixed[edge.id]: vector[component] = bc[edge.id]
+                    elif flux < 0 and normal_inlet: vector[component] = values[i]
+            av_u,av_v = flux*vector[0],flux*vector[1]
         if edge.neighbour >= 0 or boundaries["fixedU"][edge.id]:
             gi = _interpolated_gradient(edge, gu, geom.neighbour_weight)
             dx = -face_nu * (geom.transmissibility * (other_u - u[i]) +
@@ -1917,8 +1956,9 @@ def verify_case(mesh_path: Path, prefix: Path, case: str, nu: float, speed: floa
                     "pressureDiscretization is not shared-face-gauss")
             # Metadata is part of the schema contract; the field-value audit
             # must not silently accept a different convection operator.
-            if payload.get("convection") not in ("upwind", "limited-linear"):
+            if payload.get("convection") not in ("upwind", "limited-linear", "face-limited-linear"):
                 momentum_audit["valid"] = False
+                momentum_audit.setdefault('issues', []).append('unsupported momentum convection metadata')
             face_tol = 5e-10
             summary_tol = 5e-10
             if any(value > face_tol for value in momentum_audit["maxFaceDeviation"].values()):
@@ -2087,7 +2127,7 @@ def argument_parser() -> argparse.ArgumentParser:
                         help="native pressure preconditioner; aggregation remains experimental")
     parser.add_argument("--viscous-stress", choices=("symmetric", "laplacian"), default="symmetric",
                         help="native viscous stress mode for generated runs; legacy metadata remains laplacian")
-    parser.add_argument("--convection", choices=("upwind", "limited-linear"), default="upwind",
+    parser.add_argument("--convection", choices=("upwind", "limited-linear", "face-limited-linear"), default="upwind",
                         help="native convection mode for generated runs")
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--max-iterations", type=int, default=1500)

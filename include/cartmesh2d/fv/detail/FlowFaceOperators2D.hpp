@@ -251,4 +251,55 @@ inline double upwindFaceValue(
     return field[up]+limiter[up]*(gradient[up].x*d.x+gradient[up].y*d.y);
 }
 
+// Limit momentum in the normal/tangent frame of each target face. Limiting
+// global Cartesian components separately is nonlinear and depends on the
+// coordinate frame. Here both scalar bounds and gradient increments are
+// projected into a frame carried by the mesh. The projected reconstructions
+// remain inside the upwind cell's neighbour/Dirichlet stencil bounds.
+// This is a local Barth-Jespersen construction, not a maximum-principle claim
+// for the coupled solution or a reuse of a shallow-water solver's algorithm.
+inline std::vector<Vector2D> faceFrameVelocityValues(
+    const FvMesh2D& mesh, const std::vector<double>& flux,
+    const std::vector<double>& u, const std::vector<double>& v,
+    const std::vector<Vector2D>& gu, const std::vector<Vector2D>& gv,
+    const std::vector<double>& bu, const std::vector<double>& bv,
+    const std::vector<bool>& fixedU, const std::vector<bool>& fixedV) {
+    std::vector<Vector2D> result(mesh.faces.size());
+    for (std::size_t id=0;id<mesh.faces.size();++id) {
+        const auto& target=mesh.faces[id];
+        const auto up=target.neighbour && flux[id]<0 ? *target.neighbour : target.owner;
+        const double length=std::hypot(target.areaVector.x,target.areaVector.y);
+        const Vector2D normal=target.areaVector*(1/length), tangent{-normal.y,normal.x};
+        const auto displacement=target.centre-mesh.cells[up].centre;
+        const auto increment=[&](Vector2D d) {return Vector2D{gu[up].x*d.x+gu[up].y*d.y,
+                                                             gv[up].x*d.x+gv[up].y*d.y};};
+        const auto project=[](Vector2D a,Vector2D b) {return a.x*b.x+a.y*b.y;};
+        const auto limited=[&](Vector2D axis) {
+            double lo=0,hi=0;
+            for (const auto fid:mesh.cells[up].faces) {
+                const auto& f=mesh.faces[fid];
+                Vector2D delta{};
+                if (f.neighbour) {
+                    const auto other=f.owner==up ? *f.neighbour : f.owner;
+                    delta={u[other]-u[up],v[other]-v[up]};
+                } else if (fixedU[fid] || fixedV[fid]) {
+                    delta={fixedU[fid]?bu[fid]-u[up]:0, fixedV[fid]?bv[fid]-v[up]:0};
+                } else continue;
+                const double sample=project(delta,axis);
+                lo=std::min(lo,sample);hi=std::max(hi,sample);
+            }
+            double phi=1;
+            for (const auto fid:mesh.cells[up].faces) {
+                const double change=project(increment(mesh.faces[fid].centre-mesh.cells[up].centre),axis);
+                if (change>0) phi=std::min(phi,hi/change);
+                else if (change<0) phi=std::min(phi,lo/change);
+            }
+            return std::clamp(phi,0.,1.)*project(increment(displacement),axis);
+        };
+        const double dn=limited(normal),dt=limited(tangent);
+        result[id]={u[up]+normal.x*dn+tangent.x*dt,v[up]+normal.y*dn+tangent.y*dt};
+    }
+    return result;
+}
+
 } // namespace cartmesh2d::fv::detail

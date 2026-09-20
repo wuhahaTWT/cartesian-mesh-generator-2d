@@ -7,7 +7,7 @@ const readline = require('node:readline');
 const { quotedTokens, condition, normalizeBoundaryDefinition } = require('./flow-boundaries');
 
 const SUPPORTED_CASES = new Set(['external', 'channel', 'duct', 'cavity', 'custom']);
-const SUPPORTED_CONVECTION = new Set(['upwind', 'limited-linear']);
+const SUPPORTED_CONVECTION = new Set(['upwind', 'limited-linear', 'face-limited-linear']);
 const SUPPORTED_STRESS = new Set(['symmetric']);
 const SUPPORTED_OUTLET_BACKFLOW = new Set(['reject', 'normal-inlet']);
 

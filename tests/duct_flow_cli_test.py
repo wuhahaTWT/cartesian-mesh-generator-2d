@@ -21,7 +21,7 @@ def run(command, success=True):
     return result
 
 
-def main(cli, mesh_cli, transport_cli):
+def main(cli, mesh_cli, transport_cli, convection):
     with tempfile.TemporaryDirectory(prefix='cartmesh-duct-') as name:
         root = Path(name)
         prefix = root / 'nozzle'
@@ -45,7 +45,7 @@ def main(cli, mesh_cli, transport_cli):
         def flow(output, extra=(), case='duct', success=True):
             return run([cli, '--mesh', mesh_path, '--output', output, '--case', case,
                         '--nu', .1, '--speed', 1, '--tolerance', 1e-8,
-                        '--max-iterations', 400, '--pressure-preconditioner', 'aggregation',
+                        '--max-iterations', 400, '--pressure-preconditioner', 'aggregation', '--convection', convection,
                         *extra], success)
 
         output = root / 'steady'
@@ -84,12 +84,24 @@ def main(cli, mesh_cli, transport_cli):
         heat = root / 'thermal'
         run([transport_cli, '--mesh', mesh_path, '--output', heat, '--boundary', boundary,
              '--evolve-flow', 'duct', '--flow-nu', .1, '--flow-speed', 1,
-             '--pressure-preconditioner', 'aggregation', '--diffusivity', .1,
+             '--pressure-preconditioner', 'aggregation', '--flow-convection', convection, '--diffusivity', .1,
              '--initial', 300, '--dt', .02, '--steps', 2])
         thermal = json.loads(Path(str(heat)+'.json').read_text())
         assert thermal['flowCase'] == 'duct' and thermal['evolvingFlow']
+        assert thermal['flowConvection'] == convection
         assert abs(thermal['minValue']-300) < 1e-9 and abs(thermal['maxValue']-300) < 1e-9
         assert scalar.verify(heat)['valid']
+        assert Path(str(whole)+'.checkpoint').read_bytes() == Path(str(heat)+'.carrier.checkpoint').read_bytes()
+        resumed_heat = root / 'resumed-thermal'
+        run([transport_cli, '--mesh', mesh_path, '--output', resumed_heat, '--boundary', boundary,
+             '--evolve-flow', 'duct', '--flow-nu', .1, '--flow-speed', 1,
+             '--pressure-preconditioner', 'aggregation', '--flow-convection', convection, '--diffusivity', .1,
+             '--initial', 300, '--dt', .02, '--steps', 1, '--restart', str(heat)+'.thermal.checkpoint'])
+        assert scalar.verify(resumed_heat)['valid']
+        frozen = root / 'frozen'
+        run([transport_cli, '--mesh', mesh_path, '--output', frozen, '--boundary', boundary,
+             '--flow-checkpoint', str(heat)+'.carrier.checkpoint', '--diffusivity', .1, '--initial', 300])
+        assert scalar.verify(frozen)['valid']
 
         # Rotate the actual mesh. Horizontal openings must fail explicitly;
         # selecting duct must not quietly turn a curved tip into an inlet.
@@ -110,5 +122,6 @@ if __name__ == '__main__':
     parser.add_argument('--cli', type=Path, required=True)
     parser.add_argument('--mesh-cli', type=Path, required=True)
     parser.add_argument('--transport-cli', type=Path, required=True)
+    parser.add_argument('--convection', choices=['upwind', 'face-limited-linear'], default='upwind')
     args = parser.parse_args()
-    main(args.cli.resolve(), args.mesh_cli.resolve(), args.transport_cli.resolve())
+    main(args.cli.resolve(), args.mesh_cli.resolve(), args.transport_cli.resolve(), args.convection)

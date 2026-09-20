@@ -75,6 +75,14 @@ test('thermal request validation rejects coercion and preserves the physical con
   } })), /wall 回流温度.*必须是有限数/);
 });
 
+test('thermal carrier accepts face-frame velocity reconstruction independently of scalar scheme', () => {
+  const invocation = buildThermalInvocation('/tmp/final.solver.cm2d', '/tmp/out', '/tmp/bc.csv',
+    request({convection: 'face-limited-linear'}));
+  assert.equal(invocation.args[invocation.args.indexOf('--flow-convection')+1], 'face-limited-linear');
+  assert.equal(invocation.args[invocation.args.indexOf('--convection')+1], 'upwind');
+  assert.throws(() => validateThermalRequest(request({scalarConvection: 'face-limited-linear'})), /未知温度对流格式/);
+});
+
 test('thermal boundary CSV groups rectangle domain and embedded external wall', () => {
   const rectangle = parseCm2d(RECTANGLE);
   const domainRows = thermalBoundaryCsv(rectangle, request()).trim().split('\n');

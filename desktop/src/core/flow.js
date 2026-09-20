@@ -31,6 +31,10 @@ const FLOW_CONVECTION_SCHEMES = Object.freeze({
   'limited-linear': {
     id: 'limited-linear', label: '线性迎风（限制重构）',
     description: '减少数值扩散，但不保证所有工况都更准确。'
+  },
+  'face-limited-linear': {
+    id: 'face-limited-linear', label: '线性迎风（面方向限制）',
+    description: '沿网格面的法向、切向限制速度，减少旋转工况的坐标方向影响。'
   }
 });
 const FLOW_PRESSURE_PRECONDITIONERS = Object.freeze({
@@ -74,7 +78,7 @@ function validateFlowRequest(request = {}) {
   const flowCase = Object.hasOwn(FLOW_CASES, request.case) ? FLOW_CASES[request.case] : null;
   if (!flowCase) throw new Error('未知流动工况。');
   const convection = request.convection === undefined ? 'upwind' : request.convection;
-  if (!knownConvection(convection)) throw new Error('未知对流格式。请选择 upwind 或 limited-linear。');
+  if (!knownConvection(convection)) throw new Error('未知对流格式。请选择 upwind、limited-linear 或 face-limited-linear。');
   const pressurePreconditioner = request.pressurePreconditioner === undefined
     ? 'ic0' : request.pressurePreconditioner;
   if (!knownPressurePreconditioner(pressurePreconditioner))

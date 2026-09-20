@@ -6,7 +6,8 @@ function exportGuide({ result, rasterImport, flow, thermal }) {
   const cells = Number(result.counts.cells).toLocaleString('en-US');
   const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
   const convection = flow?.summary?.convection || 'upwind';
-  const convectionLabel = convection === 'limited-linear' ? '线性迎风（限制重构）' : '一阶迎风';
+  const convectionLabel = convection === 'face-limited-linear' ? '线性迎风（面方向限制）'
+    : convection === 'limited-linear' ? '线性迎风（限制重构）' : '一阶迎风';
   const convectionNote = flow && (flow.summary.convectionInferred || flow.summary.convection === undefined)
     ? '（旧摘要缺少格式字段，按一阶迎风推断）' : '';
   const pressureDiscretization = flow?.summary?.pressureDiscretization === 'shared-face-gauss'
@@ -19,7 +20,9 @@ function exportGuide({ result, rasterImport, flow, thermal }) {
       ? '标准（IC0）' : '旧结果未记录';
   const viscousStress = flow?.summary?.viscousStress === 'symmetric'
     ? '共享面牛顿应力' : '旧结果未记录';
-  const convectionQualification = convection === 'limited-linear'
+  const convectionQualification = convection === 'face-limited-linear'
+    ? '速度沿面法向、切向进行局部有界重构；这不保证整个耦合解无振荡或所有工况都更准确。'
+    : convection === 'limited-linear'
     ? '有界限制重构可减少数值扩散，但不保证所有工况都更准确，也不代表通用二阶或新的工程合格结论。'
     : '一阶迎风为默认稳健格式。';
   return `# 先看这里
