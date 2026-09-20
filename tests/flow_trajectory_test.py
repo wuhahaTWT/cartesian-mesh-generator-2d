@@ -39,6 +39,19 @@ def main(cli,mesh_cli):
         path=root/'trajectory.json';path.write_text(json.dumps(manifest));output=root/'result'
         def verify():return trajectory.verify(path,initial,output)
         assert verify()['acceptedSteps']==3
+        stopped=json.loads(json.dumps(manifest));stopped.update(complete=False,targetTime=.02,stopReason='Retained bounded-stop fixture')
+        stopped['runs'].append(dict(valid=False,returnCode=None,targetTime=.02,reason='Unverified trailing attempt'))
+        stopped_path=root/'stopped.json';stopped_path.write_text(json.dumps(stopped))
+        try:trajectory.verify(stopped_path,initial,root/'stopped-result')
+        except ValueError as e:assert 'completed' in str(e),str(e)
+        else:raise AssertionError('stopped trajectory mislabeled as completed')
+        prefix=trajectory.verify(stopped_path,initial,root/'stopped-result',completed_prefix=True)
+        assert prefix['valid'] and not prefix['complete'] and prefix['endTime']==.015 and prefix['requestedEndTime']==.02
+        assert prefix['unauditedTail'][0]['targetTime']==.02 and prefix['acceptedSteps']==3
+        del stopped['stopReason'];stopped['complete']=None;stopped_path.write_text(json.dumps(stopped))
+        try:trajectory.verify(stopped_path,initial,root/'stopped-result',completed_prefix=True)
+        except ValueError as e:assert 'explicitly stopped' in str(e),str(e)
+        else:raise AssertionError('actively changing run accepted as a stopped prefix')
         # A separately retained study must connect to the actual parent endpoint,
         # not merely carry a self-consistent hash for an unrelated parent file.
         parent=json.loads(json.dumps(manifest));parent['targetTime']=.01;parent['runs']=parent['runs'][:1]

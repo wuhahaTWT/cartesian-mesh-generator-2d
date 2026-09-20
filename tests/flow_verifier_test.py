@@ -189,6 +189,19 @@ class OutletBackflowVerifierTests(unittest.TestCase):
         other=verifier.external_checks(circle_boundary_fixture(stretch=.7),None,[dict(x=1.1,y=0.,u=5.,speed=5.)],payload,.05,1.,args)
         self.assertFalse(other['valid'])
 
+    def test_force_coefficients_are_not_normalized_twice_or_mixed_with_dimensional_force(self):
+        args=SimpleNamespace(external_lift_drag_ratio=.3,max_speed_ratio=4.)
+        cells=[dict(x=1.1,y=0.,u=2.,speed=2.)]
+        for payload in (dict(forceX=4.09,forceY=.2),dict(cd=2.045,cl=.1),
+                        dict(forceX=4.09,cl=.1),dict(forceX=4.09,forceY=.2,cd=2.045,cl=.1)):
+            result=verifier.external_checks(circle_boundary_fixture(),None,cells,payload,.1,2.,args)
+            self.assertTrue(result['valid'],result['issues'])
+            self.assertAlmostEqual(result['derivedBodyCoefficients']['drag'],2.045)
+            self.assertAlmostEqual(result['derivedBodyCoefficients']['lift'],.1)
+            self.assertAlmostEqual(result['symmetricCircleLiftCheck']['observedLiftDragRatio'],.2/4.09)
+        result=verifier.external_checks(circle_boundary_fixture(),None,cells,dict(forceX=4.09,forceY=.2,cd=1.),.1,2.,args)
+        self.assertFalse(result['valid']);self.assertIn('reported force and coefficient disagree: dragCoefficient',result['issues'])
+
 
 class PressureBoundaryStencilTests(unittest.TestCase):
     def setUp(self):

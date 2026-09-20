@@ -2,7 +2,7 @@
 
 ## 分支与里程碑
 
-`mesher-v0.3.0` 是固定标签（`664ac7c`）；`codex/mesh-maintenance` 是可继续修改的网格维护线；`codex/cfd-development` 是包含网格核心的 CFD 开发线；`main` 是已验收的集成线。不要移动已有里程碑标签去“更新版本”，后续里程碑另建标签。
+`mesher-v0.3.0` 是固定标签（`691c97e`）；`codex/mesh-maintenance` 是可继续修改的网格维护线；`codex/cfd-development` 是包含网格核心的 CFD 开发线；`main` 是已验收的集成线。不要移动已有里程碑标签去“更新版本”，后续里程碑另建标签。
 
 纯网格修复先在维护分支保留最小回归，验证后合并到 CFD 开发线；合并冲突需人工核对，随后重跑受影响的网格和求解器检查，再集成到 main。跨分支改动不会自动同步。切换分支前处理当前工作区改动，切换后重新构建原生工具及 desktop runtime，避免旧运行包与当前源码混用。继续遵守唯一根目录和固定文档入口规则。
 
@@ -932,3 +932,12 @@ MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified 
 `verify_native_flow.circular_obstacle_reference`在最终嵌入边界上检查闭合单环、圆半径和等角折线，剔除共线分割点；只有匹配圆柱才应用圆柱对称升力检查/参考对照。其他几何保持not-qualified，仍须通过同一离散守恒/动量等检查；不把翼型当成圆柱校验。对应回归在`tests/flow_verifier_test.py`。
 
 `cell-budget.refineFailedQuality`只在尚无有效候选且原生明确Solver质量拒绝时细化一个树层级；`budget-runner`仍最多三次，保留安全深度/估计数量上限、所有失败原因和最接近数量目标的有效结果。main保存每个失败目录的`generation-failure.json`，全部失败时再写`selection-failure.json`；不因重试而删除坏网格证据。原质量门不变。实际App可用`--smoke=thick_airfoil --target-cells=2000 --flow=external --flow-nu=.05 --flow-tolerance=1e-8 --flow-convection=face-limited-linear --flow-pressure-preconditioner=aggregation`重现三档流程。
+
+`verify_flow_trajectory.py --completed-prefix`仅允许复核显式`complete:false`且已记录停止原因的连续有效前缀；拒绝仍在进行中的研究，也不把尾部失败尝试或未达到的目标时间标记为完成。默认仍要求完整成功序列。绘图始终使用最后一个已审核的最终场。
+
+`tools/verification/verify_wake_time_refinement.py`从已审核轨迹中选择同一个完整接受状态，按三档等比固定步数推进相同时间窗，绑定可执行文件/网格/原始检查点哈希并分别复算最终场与历史。比较相邻速度和压力场差及其观测阶，`accuracyQualification`保持`not-qualified`。原始状态积累的误差、空间误差和长期频率仍未排除；工具不会自行增加预算或重写失败案例。
+
+
+`tools/verification/verify_external_spatial.py`保持同一32段单位圆和10Lref外域，把壁面及背景尺寸同时减半做三档稳态Re20对照，并在最细网格加严100倍容差。所有候选须完成原生Solver质量门及独立动量/通量审核；失败保留，不追加计算预算。`render_external_spatial.py`重算最终场审核后绘制实际网格、速度及积分载荷变化。固定折线几何与有限外域误差仍在，三档结果不自动赋予连续圆柱精度资格。
+
+外流独立读取器把力与已无量纲化的Cd/Cl分开处理：力按`0.5 Uref² D`归一化，已有系数不再次归一化，混合字段先还原为同一量纲；同时提供力与系数却相互矛盾时明确失败。回归使用非单位速度防止U=1、D=2掩盖单位错误；不改变原生求解出的力。

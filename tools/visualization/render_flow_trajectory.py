@@ -13,7 +13,14 @@ def main(args):
     checked=json.loads(args.verified.read_text());source=Path(checked['source']);history=Path(checked['historyFile'])
     if checked.get('valid') is not True or n.sha256_file(source)!=checked['sourceSha256'] or n.sha256_file(history)!=checked['historySha256']:
         raise ValueError('Source trajectory/history differs from the verified record')
-    original=json.loads(source.read_text());run=original['runs'][-1];command=run['command']
+    original=json.loads(source.read_text())
+    # A budget-stopped study may contain a later, unaudited attempt. Render the
+    # final verified segment, never that candidate field.
+    label=checked['segments'][-1]['label']
+    candidates=[r for r in original['runs'] if r.get('valid') is True and r.get('time')==checked['endTime'] and
+        Path(r['command'][r['command'].index('--output')+1]).parent.name==label]
+    if len(candidates)!=1:raise ValueError('Cannot identify the final verified segment')
+    run=candidates[0];command=run['command']
     prefix=Path(command[command.index('--output')+1]);mesh_path=Path(original['mesh'])
     if n.sha256_file(mesh_path)!=checked['meshSha256']:raise ValueError('Final mesh changed')
     final=transient.verify(mesh_path,prefix,Path(str(prefix)+'.plot-audit.json'))
@@ -39,10 +46,12 @@ def main(args):
         if cmap=='RdBu_r':collection.set_clim(-max(map(abs,omega)),max(map(abs,omega)))
         ax.add_collection(collection);ax.set(xlim=(-2,12),ylim=(-4,4),aspect='equal',title=title,xlabel='x [m]',ylabel='y [m]')
         fig.colorbar(collection,ax=ax,label='Speed [m/s]' if cmap=='viridis' else 'Vorticity [1/s]',shrink=.8)
-    axes[1,0].plot(times,fx);axes[1,0].set(title='Streamwise force, including startup impulse',xlabel='Physical time [s]',ylabel='Fx / density / depth [m³/s²]',yscale='log')
-    axes[1,1].plot(times,fy);axes[1,1].set(title='Transverse force: weak perturbation evolution',xlabel='Physical time [s]',ylabel='Fy / density / depth [m³/s²]')
+    axes[1,0].plot(times,fx);axes[1,0].set(title='Streamwise force'+(', including startup impulse' if checked['startTime']==0 else ''),xlabel='Physical time [s]',ylabel='Fx / density / depth [m³/s²]',yscale='log')
+    axes[1,1].plot(times,fy);axes[1,1].set(title='Transverse force history',xlabel='Physical time [s]',ylabel='Fy / density / depth [m³/s²]')
     for ax in axes[1]:ax.grid(alpha=.25)
-    fig.suptitle(f"Native Re100 cylinder: {len(mesh.cells):,} Cut-cell cells, {checked['acceptedSteps']:,} accepted steps to t={checked['endTime']:g} s",fontsize=16)
+    title=f"Native Re100 cylinder: {len(mesh.cells):,} Cut-cell cells, {checked['acceptedSteps']:,} accepted steps to t={checked['endTime']:g} s"
+    if checked.get('complete') is False:title+=f"\nStopped before requested t={checked['requestedEndTime']:g} s; trailing attempt not audited"
+    fig.suptitle(title,fontsize=16)
     fig.supxlabel('Every retained segment-final state and restart chain audited. Monitor curves are recorded data. No mesh/time independence or saturated shedding qualification.',fontsize=10)
     args.output.parent.mkdir(parents=True,exist_ok=True);fig.savefig(str(args.output)+'.png',dpi=145);plt.close(fig)
     peaks=[dict(time=times[i],forceY=fy[i]) for i in range(1,len(fy)-1) if times[i]>5 and fy[i]>0 and fy[i]>fy[i-1] and fy[i]>=fy[i+1]]

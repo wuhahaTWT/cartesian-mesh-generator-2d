@@ -81,12 +81,18 @@ def materialize(root,name,destination):
     return destination/name
 
 
-def verify(trajectory,initial,output):
+def verify(trajectory,initial,output,completed_prefix=False):
     report=json.loads(trajectory.read_text());root=trajectory.resolve().parent
-    if report.get('format')!='cartmesh2d-bounded-trajectory-v1' or report.get('complete') is not True:
-        fail('a completed bounded trajectory is required')
+    if report.get('format')!='cartmesh2d-bounded-trajectory-v1':fail('unknown bounded trajectory format')
+    if report.get('complete') is not True and not (completed_prefix and report.get('complete') is False and report.get('stopReason')):
+        fail('a completed trajectory or explicitly stopped completed-prefix audit is required')
     if not isinstance(report.get('runs'),list) or not report['runs'] or not 0<=native.finite(report['initialTime'],'initial time')<native.finite(report['targetTime'],'target time'):
         fail('invalid run list or time interval')
+    runs=report['runs'];tail=[]
+    if report.get('complete') is False:
+        first_failed=next((i for i,r in enumerate(runs) if r.get('valid') is not True or r.get('returnCode')!=0),len(runs))
+        tail=runs[first_failed:];runs=runs[:first_failed]
+        if not runs or len(tail)>1:fail('no completed prefix or more than one unaudited trailing attempt')
     mesh=Path(report['mesh']);binary=Path(report['binary'])
     if native.sha256_file(mesh)!=report['meshSha256'] or native.sha256_file(binary)!=report['binarySha256']:
         fail('mesh or retained executable has changed')
@@ -112,7 +118,7 @@ def verify(trajectory,initial,output):
             previous=initial_sha
             for r in first['history']:rows.append(dict(segment='initial',**r))
             segments.append(dict(label='initial',time=time,finalStateAudited=True,initialCondition=first['initialVortex']))
-        for index,run in enumerate(report['runs']):
+        for index,run in enumerate(runs):
             target=native.finite(run['targetTime'],'target time')
             if not run.get('valid') or run.get('returnCode')!=0 or not target>time:
                 fail('failed or unordered segment')
@@ -161,7 +167,8 @@ def verify(trajectory,initial,output):
                 independentContinuity=audited['independentContinuity']['nativeDefinitionContinuity'],
                 independentMomentumResidual=audited['momentumAudit']['cellResidual']['maxNormalized']))
             if directory!=root/name:shutil.rmtree(directory.parent)
-        if time!=report['targetTime']:fail('final target not reached')
+        if time>report['targetTime'] or (report.get('complete') is True and time!=report['targetTime']):
+            fail('final time does not match recorded target')
     for a,b in zip(rows,rows[1:]):
         if not math.isclose(a['time']+b['dt'],b['time'],rel_tol=1e-12,abs_tol=1e-14):fail('gap/overlap in physical time')
     output.parent.mkdir(parents=True,exist_ok=True)
@@ -172,6 +179,8 @@ def verify(trajectory,initial,output):
     result=dict(valid=True,scope='Each segment-final field independently audited; restart bytes identical. Intermediate monitor rows are recorded, not all reconstructed. No mesh/time independence or shedding qualification.',
         source=str(trajectory),sourceSha256=native.sha256_file(trajectory),meshSha256=report['meshSha256'],binarySha256=report['binarySha256'],
         startTime=rows[0]['time']-rows[0]['dt'],endTime=time,acceptedSteps=len(rows),controls=controls,segments=segments,
+        complete=report['complete'],requestedEndTime=report['targetTime'],stopReason=report.get('stopReason'),
+        unauditedTail=[{k:r[k] for k in ('targetTime','time','returnCode','reason','auditError') if k in r} for r in tail],
         historyFile=str(csv_path),historySha256=native.sha256_file(csv_path),finalForceX=rows[-1]['forceX'],finalForceY=rows[-1]['forceY'],
         initialRunPrefix=str(initial) if initial else None,
         parentTrajectory=report.get('parentTrajectory'),parentTrajectorySha256=report.get('parentTrajectorySha256'))
@@ -180,11 +189,12 @@ def verify(trajectory,initial,output):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--trajectory',type=Path,required=True)
+    p.add_argument('--completed-prefix',action='store_true',help='Audit only completed segments of an explicitly stopped run; retain the unachieved target and failure in the report')
     p.add_argument('--initial',type=Path);p.add_argument('--output',type=Path,required=True)
     a=p.parse_args()
-    try:r=verify(a.trajectory,a.initial,a.output)
+    try:r=verify(a.trajectory,a.initial,a.output,a.completed_prefix)
     except (ValueError,OSError,KeyError,TypeError,tarfile.TarError) as error:
         failure=dict(valid=False,issues=[str(error)])
         a.output.parent.mkdir(parents=True,exist_ok=True);Path(str(a.output)+'.json').write_text(json.dumps(failure,indent=2)+'\n')
         print(json.dumps(failure));raise SystemExit(1)
-    print(json.dumps({k:r[k] for k in ('valid','startTime','endTime','acceptedSteps')}))
+    print(json.dumps({k:r[k] for k in ('valid','complete','startTime','endTime','requestedEndTime','acceptedSteps')}))

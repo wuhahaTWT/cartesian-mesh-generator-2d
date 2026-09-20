@@ -1,0 +1,225 @@
+{
+  "valid": true,
+  "scope": "Each segment-final field independently audited; restart bytes identical. Intermediate monitor rows are recorded, not all reconstructed. No mesh/time independence or shedding qualification.",
+  "source": "outputs/native-flow/long-wake-growth/trajectory.json",
+  "sourceSha256": "a16d390016e81500667a83ef05e9bf2e7894dc616d9dad6eb198ecba2786154f",
+  "meshSha256": "9f263306e43a6e358a82cd44f99b4474a5f99903e1cf0b6f623d701fa05d2955",
+  "binarySha256": "94b0b462692348a23eb82b3cb93e3afd08ee52889814b31bb19e2ae4e7a403eb",
+  "startTime": 50.0,
+  "endTime": 300.0,
+  "acceptedSteps": 5003,
+  "controls": {
+    "nu": 0.02,
+    "speed": 1,
+    "tolerance": 1e-08,
+    "convection": "face-limited-linear",
+    "viscousStress": "symmetric",
+    "temporalFaceInterpolation": "old-and-iteration-flux-defect-skew-corrected-v2",
+    "velocityRelaxation": 0.6
+  },
+  "segments": [
+    {
+      "label": "to-0075",
+      "startTime": 50,
+      "time": 75.0,
+      "steps": 501,
+      "elapsedSeconds": 288.92379958299716,
+      "restartSha256": "04895e62c30669b7ae226860ba3a6732705c43b014415652cf3a3b175ecbb0ec",
+      "checkpointSha256": "2c518c1cf3787612a49f0ecceab929c8721ae29af615a481c09c1c186797555c",
+      "independentContinuity": 2.2412980408478267e-13,
+      "independentMomentumResidual": 1.1073317455489664e-09
+    },
+    {
+      "label": "to-0100",
+      "startTime": 75,
+      "time": 100.0,
+      "steps": 501,
+      "elapsedSeconds": 284.0914879580014,
+      "restartSha256": "2c518c1cf3787612a49f0ecceab929c8721ae29af615a481c09c1c186797555c",
+      "checkpointSha256": "5aa1d559641894ab86cab0fa72ab73ebc648a8411cf2db30fc5288d23c828f2e",
+      "independentContinuity": 2.4034064538892276e-13,
+      "independentMomentumResidual": 1.0769492554810936e-09
+    },
+    {
+      "label": "to-0125",
+      "startTime": 100,
+      "time": 125.0,
+      "steps": 501,
+      "elapsedSeconds": 311.18993637499807,
+      "restartSha256": "5aa1d559641894ab86cab0fa72ab73ebc648a8411cf2db30fc5288d23c828f2e",
+      "checkpointSha256": "d14cff135f7fc52ec62ff510b64a4cc1b20655ebb0ca04dd993a631f13004a21",
+      "independentContinuity": 2.440527186355197e-13,
+      "independentMomentumResidual": 1.0721832521806629e-09
+    },
+    {
+      "label": "to-0150",
+      "startTime": 125,
+      "time": 150.0,
+      "steps": 500,
+      "elapsedSeconds": 390.2008282500028,
+      "restartSha256": "d14cff135f7fc52ec62ff510b64a4cc1b20655ebb0ca04dd993a631f13004a21",
+      "checkpointSha256": "031a5ec45a1bebacd4bb4d2989c8ae8bcd7ae8cc015bb3117569ce0793783baa",
+      "independentContinuity": 2.2026624959745886e-13,
+      "independentMomentumResidual": 6.723190969285177e-10
+    },
+    {
+      "label": "to-0175",
+      "startTime": 150,
+      "time": 175.0,
+      "steps": 500,
+      "elapsedSeconds": 430.81011729199963,
+      "restartSha256": "031a5ec45a1bebacd4bb4d2989c8ae8bcd7ae8cc015bb3117569ce0793783baa",
+      "checkpointSha256": "8ac2b01cd76a6476633c18cc70d9424253f9f177517a19ca4fcf87db29d9da96",
+      "independentContinuity": 1.8086494610035185e-13,
+      "independentMomentumResidual": 5.735008672171734e-10
+    },
+    {
+      "label": "to-0200",
+      "startTime": 175,
+      "time": 200.0,
+      "steps": 500,
+      "elapsedSeconds": 441.42205104099776,
+      "restartSha256": "8ac2b01cd76a6476633c18cc70d9424253f9f177517a19ca4fcf87db29d9da96",
+      "checkpointSha256": "dffd4c93c622e437026938deeba544e9d16bc144fbfeaf2028c76800a290f994",
+      "independentContinuity": 2.6553208830036184e-13,
+      "independentMomentumResidual": 8.66506112720116e-10
+    },
+    {
+      "label": "to-0225",
+      "startTime": 200,
+      "time": 225.0,
+      "steps": 500,
+      "elapsedSeconds": 441.96661741700154,
+      "restartSha256": "dffd4c93c622e437026938deeba544e9d16bc144fbfeaf2028c76800a290f994",
+      "checkpointSha256": "46dd3b94b7a53804c1d124a024543c7b19045c27f627c96ff7e3eb5d317cdb6b",
+      "independentContinuity": 2.8209212383451926e-13,
+      "independentMomentumResidual": 8.756075541906819e-10
+    },
+    {
+      "label": "to-0250",
+      "startTime": 225,
+      "time": 250.0,
+      "steps": 500,
+      "elapsedSeconds": 440.1689274170021,
+      "restartSha256": "46dd3b94b7a53804c1d124a024543c7b19045c27f627c96ff7e3eb5d317cdb6b",
+      "checkpointSha256": "eccdcdee016ec3c61c9949e66220c9225dad7490aac85644381a235ecf846b5a",
+      "independentContinuity": 2.655240669704833e-13,
+      "independentMomentumResidual": 9.289813974439861e-10
+    },
+    {
+      "label": "to-0275",
+      "startTime": 250,
+      "time": 275.0,
+      "steps": 500,
+      "elapsedSeconds": 451.36775950000083,
+      "restartSha256": "eccdcdee016ec3c61c9949e66220c9225dad7490aac85644381a235ecf846b5a",
+      "checkpointSha256": "0bd30449fee6c5a7e4f04413d8cf2d9fd95e4d586739bdf5cb2c0bf072012f3e",
+      "independentContinuity": 2.5159903830141226e-13,
+      "independentMomentumResidual": 9.317844723047245e-10
+    },
+    {
+      "label": "to-0300",
+      "startTime": 275,
+      "time": 300.0,
+      "steps": 500,
+      "elapsedSeconds": 458.51484466700276,
+      "restartSha256": "0bd30449fee6c5a7e4f04413d8cf2d9fd95e4d586739bdf5cb2c0bf072012f3e",
+      "checkpointSha256": "83a0ad27ded81c5df508a6a8f06ab5284a78038591f5f94e399eb7140616174a",
+      "independentContinuity": 2.323518572579582e-13,
+      "independentMomentumResidual": 9.292491994300147e-10
+    }
+  ],
+  "complete": true,
+  "requestedEndTime": 300,
+  "stopReason": null,
+  "unauditedTail": [],
+  "historyFile": "outputs/native-flow/long-wake-growth/verified.time-history.csv",
+  "historySha256": "9e4099edab56d0faab5acfd68ebe54059dd783423c222a6748bcf1e087fc16b3",
+  "finalForceX": 1.2527977661792746,
+  "finalForceY": -0.12017093841834778,
+  "initialRunPrefix": null,
+  "parentTrajectory": "outputs/native-flow/long-wake/trajectory.json",
+  "parentTrajectorySha256": "e0ec76663353e81a5bbed67222717bf0305d7a6a6c2d8f052d63291944ec6fe9",
+  "vorticityDefinition": "Least-squares gradient of exported final cell velocity; dv/dx-du/dy",
+  "vorticityRange": [
+    -8.276774945015228,
+    8.623138943796429
+  ],
+  "positiveLocalMonitorPeaks": [
+    {
+      "time": 53.799999999999784,
+      "forceY": 0.00022098809738891907
+    },
+    {
+      "time": 69.54999999999889,
+      "forceY": 0.00045429241562815973
+    },
+    {
+      "time": 85.34999999999941,
+      "forceY": 0.0009416661533877442
+    },
+    {
+      "time": 101.24999999999993,
+      "forceY": 0.0020390750909324382
+    },
+    {
+      "time": 117.29999999999902,
+      "forceY": 0.004447281845933609
+    },
+    {
+      "time": 133.40000000000106,
+      "forceY": 0.009758610332754665
+    },
+    {
+      "time": 149.30000000000467,
+      "forceY": 0.021259354316977515
+    },
+    {
+      "time": 164.40000000000327,
+      "forceY": 0.04156775750274217
+    },
+    {
+      "time": 178.40000000000077,
+      "forceY": 0.07558241733116457
+    },
+    {
+      "time": 191.60000000000377,
+      "forceY": 0.10661744913772778
+    },
+    {
+      "time": 204.450000000001,
+      "forceY": 0.1283470968385522
+    },
+    {
+      "time": 217.1000000000039,
+      "forceY": 0.14118618156404905
+    },
+    {
+      "time": 229.70000000000107,
+      "forceY": 0.14809917456784807
+    },
+    {
+      "time": 242.25000000000392,
+      "forceY": 0.15154040486293296
+    },
+    {
+      "time": 254.8000000000011,
+      "forceY": 0.1531911356536982
+    },
+    {
+      "time": 267.35000000000394,
+      "forceY": 0.15396431594563542
+    },
+    {
+      "time": 279.8500000000011,
+      "forceY": 0.15432341964265806
+    },
+    {
+      "time": 292.40000000000396,
+      "forceY": 0.1544975045655287
+    }
+  ],
+  "plotSourceSha256": "98879f75940fd7675d052dfb07e3692c2d2a2901ece0415f3ec9012ff409801f",
+  "verifiedRecordSha256": "f07d921d34af743ed5b3f45eae1dfd9bfa3157b988c0c04d5b79524ae223df2f",
+  "finalFieldAuditSha256": "cc3b6df53fd291f834ef9b0ef6ab10f5fecd3fa22c048857018b01f0abc343ea"
+}

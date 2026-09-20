@@ -1809,16 +1809,24 @@ def external_checks(mesh: Mesh, measured: Measurement, cells: list[dict[str, flo
     obstacle_xmax = max(xs)
     re = speed * diameter / nu
     forces = force_values(payload)
-    drag = forces.get("dragCoefficient", forces.get("dragForce"))
-    lift = forces.get("liftCoefficient", forces.get("liftForce"))
-    drag_coefficient = 2.0 * drag / (speed * speed * diameter) if drag is not None else None
-    lift_coefficient = 2.0 * lift / (speed * speed * diameter) if lift is not None else None
+    force_scale = 0.5 * speed * speed * diameter
+    # Coefficients are already nondimensional. Do not normalize them twice,
+    # or compare a dimensional force component against a coefficient.
+    drag = forces.get("dragForce")
+    lift = forces.get("liftForce")
+    if drag is None and "dragCoefficient" in forces: drag = forces["dragCoefficient"] * force_scale
+    if lift is None and "liftCoefficient" in forces: lift = forces["liftCoefficient"] * force_scale
+    drag_coefficient = drag / force_scale if drag is not None else None
+    lift_coefficient = lift / force_scale if lift is not None else None
     reference_drag = 2.045  # Dennis & Chang (1970), open circular cylinder, Re=20.
     geometry_reference = circular_obstacle_reference(mesh)
     circle = geometry_reference["circleReferenceApplicable"]
     wake = [row["u"] / speed for row in cells if row["x"] > obstacle_xmax and min(ys) < row["y"] < max(ys)]
     max_speed = max(row["speed"] for row in cells) / speed
     issues: list[str] = []
+    for name,derived in (("dragCoefficient",drag_coefficient),("liftCoefficient",lift_coefficient)):
+        if name in forces and derived is not None and not math.isclose(forces[name],derived,rel_tol=1e-10,abs_tol=1e-12):
+            issues.append("reported force and coefficient disagree: " + name)
     if drag is None or lift is None:
         issues.append("native JSON does not expose both drag and lift force/coefficient")
     elif not (drag > 0.0):
