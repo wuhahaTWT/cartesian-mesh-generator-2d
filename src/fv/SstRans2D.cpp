@@ -33,6 +33,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
     SstRansResult2D result;result.resolvedWalls.resize(nf);result.velocityBoundary.resize(nf);
     using Clock=std::chrono::steady_clock;
     const auto elapsed=[](Clock::time_point t){return std::chrono::duration<double>(Clock::now()-t).count();};
+    ScalarTransportWorkspace2D scalarWorkspace;
     auto update=[&](const FlowResult2D& flow,const std::vector<detail::MaterialBoundary2D>& bc) {
         const auto updateStart=c.flow.profile?Clock::now():Clock::time_point{};
         p.volumeFlux=flow.flux;
@@ -66,7 +67,7 @@ SstRansResult2D solveSstRans2D(const FvMesh2D& mesh,const SstRansControls2D& c,
                                      :c.turbulenceUpdatesPerIteration;
         transport.maxIterations=std::min(transport.maxIterations,updates);
         const auto transportStart=c.flow.profile?Clock::now():Clock::time_point{};
-        auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport);
+        auto next=solveSst2003mTransport2D(mesh,p,velocity,result.velocityBoundary,transport,{}, {},0,&scalarWorkspace);
         if(c.flow.profile) {
             result.performance.transportSeconds+=elapsed(transportStart);
             result.performance.scalarSolves.add(next.scalarSolves);

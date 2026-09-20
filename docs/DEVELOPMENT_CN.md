@@ -449,6 +449,21 @@ python3 tools/verification/verify_sst_rans.py --mesh /path/mesh.cm2d --prefix ou
 
 独立`verify_native_flow.polygon`使用原输入float的精确Fraction多边形矩，统一覆盖所有有效单元，避免相邻单元落在精度切换阈值两侧产生一个ULP中心错位。初始非有限/正面积检查保持；面积/中心仅在最终输出舍入，原生FVM不调用此Python参考。实际cell4001（长宽比小于32）的十六进制反例及顶点轮换回归保留在flow_verifier_test；参考精度修复不代表SST已收敛。
 
+### 标量稀疏工作区复用
+
+`ScalarTransportWorkspace2D`显式拥有稀疏图、矩阵与Krylov数组，可移动、不可复制；只在空闲时移动，不可并行共享或在调用中销毁。同一工作区的递归调用显式拒绝，异常退栈释放使用状态。三个标量solve/evaluate入口和三个SST输运入口的最后一个可选参数接收工作区指针；省略保留单次局部生命周期。`solveSstRans2D`在一次完整求解内持有同一工作区，供k/omega及后续SIMPLE调用顺序使用。
+
+只按实际单元数和完整有序内部owner/neighbour连接精确比较是否可复用，不使用对象地址、哈希或单纯网格数量。连接变化重建，图对象与矩阵存放在稳定地址。每次仍验证当前网格、边界、物性和载流守恒，清零全部diag/off/rhs、失效旧分解，并重新组装数值系数；几何变化但连接相同不复用任何几何/材料系数。评估路径通常不需要CSR/Krylov，只有原有近表示精度检查需要时才构造CSR。缓存不改变非线性或线性收敛门。
+
+profile新增`patternReuses`；`patternBuilds`和`patternReuses`是本次实际CSR请求计数，普通评估可能二者均零。ILU构建/复用计数取每次调用前后差值，不能把长寿命矩阵的累计数重复累加到SST总计。每次系数重装仍重做ILU，当前优化不是旧分解近似复用。
+
+```cpp
+ScalarTransportWorkspace2D workspace;
+auto first = solveScalarTransport2D(mesh, problem, controls, {}, 0, &workspace);
+// 更新 problem 后仍使用当前系数重装，工作区只保留结构和存储。
+auto second = solveScalarTransport2D(mesh, updatedProblem, controls, {}, 0, &workspace);
+```
+
 ### 标量ILU(0)与SST有界诊断
 
 `ScalarTransportControls2D::preconditioner`新增`ScalarPreconditioner2D::{Jacobi,ILU0}`，默认Jacobi保持。ILU(0)用于非对称标量BiCGStab，按原CSR图自然序做零填充Doolittle分解及前/后代入；标准方法参考[Netlib Templates §3.4](https://www.netlib.org/templates/templates.pdf)，本实现没有复制库源码。它不是压力IC0，也不改变压力预条件选择。要求有限系数和正原对角/消元主元；不满足就失败，不做shift、重排序或隐式fallback，因而不是任意矩阵通用求解器。

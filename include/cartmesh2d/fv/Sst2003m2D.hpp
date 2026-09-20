@@ -66,7 +66,7 @@ struct Sst2003mGradients2D {
     const FvMesh2D&, const FrozenSst2003mProblem2D&,
     const ScalarTransportControls2D& = {},
     const std::vector<double>& previousK = {},
-    const std::vector<double>& previousOmega = {}, double timeStep = 0);
+    const std::vector<double>& previousOmega = {}, double timeStep = 0, ScalarTransportWorkspace2D* workspace = nullptr);
 
 // Set k_wall=0 and omega_wall=60*nu/(beta1*d_normal^2), beta1=.075,
 // with each wall face's own owner-to-face normal spacing. Low-Re resolved-wall
@@ -111,7 +111,7 @@ struct SstTransportResult2D {
     const std::vector<SstVelocityBoundary2D>& velocityBoundary,
     const ScalarTransportControls2D& = {},
     const std::vector<double>& previousK = {},
-    const std::vector<double>& previousOmega = {}, double timeStep = 0);
+    const std::vector<double>& previousOmega = {}, double timeStep = 0, ScalarTransportWorkspace2D* workspace = nullptr);
 // Nonlinear SST transport on a FIXED, conservative velocity/flux field. Each
 // iteration reconstructs k/omega gradients and updates the closure; acceptance
 // evaluates the original nonlinear equations with current coefficients.
@@ -122,5 +122,5 @@ struct SstTransportResult2D {
     const std::vector<SstVelocityBoundary2D>& velocityBoundary,
     const SstTransportControls2D& = {},
     const std::vector<double>& previousK = {},
-    const std::vector<double>& previousOmega = {}, double timeStep = 0);
+    const std::vector<double>& previousOmega = {}, double timeStep = 0, ScalarTransportWorkspace2D* workspace = nullptr);
 }

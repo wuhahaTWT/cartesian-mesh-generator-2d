@@ -8,6 +8,46 @@
 #include <stdexcept>
 
 namespace cartmesh2d::fv {
+struct ScalarTransportWorkspace2D::Impl {
+    struct Storage {
+        std::vector<std::pair<std::size_t,std::size_t>> connections;
+        detail::SparsePattern2D pattern;
+        detail::SparseSystem2D matrix;
+        std::unique_ptr<detail::LinearWorkspace2D> krylov;
+        Storage(std::size_t n,const std::vector<std::pair<std::size_t,std::size_t>>& edges)
+            :connections(edges),pattern(n,edges),matrix(pattern) {}
+    };
+    std::unique_ptr<Storage> storage;
+    bool active=false;
+};
+ScalarTransportWorkspace2D::ScalarTransportWorkspace2D()=default;
+ScalarTransportWorkspace2D::~ScalarTransportWorkspace2D()=default;
+ScalarTransportWorkspace2D::ScalarTransportWorkspace2D(ScalarTransportWorkspace2D&&) noexcept=default;
+ScalarTransportWorkspace2D& ScalarTransportWorkspace2D::operator=(ScalarTransportWorkspace2D&&) noexcept=default;
+struct ScalarTransportWorkspaceAccess2D {
+    struct Lease {
+        ScalarTransportWorkspace2D::Impl& state;
+        explicit Lease(ScalarTransportWorkspace2D& w):state(get(w)) {
+            if(state.active)throw std::runtime_error("Scalar transport workspace is already in use");
+            state.active=true;
+        }
+        ~Lease(){state.active=false;}
+        Lease(const Lease&)=delete;
+        Lease& operator=(const Lease&)=delete;
+        static ScalarTransportWorkspace2D::Impl& get(ScalarTransportWorkspace2D& w) {
+            if(!w.impl_)w.impl_=std::make_unique<ScalarTransportWorkspace2D::Impl>();
+            return *w.impl_;
+        }
+        bool prepare(std::size_t n,const std::vector<std::pair<std::size_t,std::size_t>>& edges) {
+            const bool reused=state.storage && state.storage->matrix.diag.size()==n && state.storage->connections==edges;
+            if(!reused)state.storage=std::make_unique<ScalarTransportWorkspace2D::Impl::Storage>(n,edges);
+            // Invalidate all factors and reset numeric coefficients, even after
+            // a failed preceding call. No stale material/source/boundary data.
+            state.storage->matrix.reset();
+            return reused;
+        }
+    };
+};
 namespace {
 using Values = std::vector<double>;
 void require(bool ok, const char* message) {
@@ -58,10 +98,12 @@ namespace {
 ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p, const ScalarTransportControls2D& c,
     const Values& previous, double timeStep, const Values* supplied,
-    const Values* initial=nullptr) {
+    const Values* initial=nullptr, ScalarTransportWorkspace2D* reusable=nullptr) {
     using Clock=std::chrono::steady_clock;
     const auto start=c.profile?Clock::now():Clock::time_point{};
     const auto seconds=[](Clock::time_point t){return std::chrono::duration<double>(Clock::now()-t).count();};
+    ScalarTransportWorkspace2D localWorkspace;
+    ScalarTransportWorkspaceAccess2D::Lease lease(reusable?*reusable:localWorkspace);
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
     require(c.preconditioner==ScalarPreconditioner2D::Jacobi || c.preconditioner==ScalarPreconditioner2D::ILU0,
@@ -153,14 +195,22 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     // Evaluation needs the original diagonal/RHS and face balances, but no
     // Krylov workspace. Materialize CSR only for solves or the additional tight
     // rounded-field audit below. Never reuse an older coefficient matrix.
-    std::optional<detail::SparsePattern2D> pattern;
-    std::optional<detail::SparseSystem2D> matrix;
-    std::optional<detail::LinearWorkspace2D> workspace;
+    detail::SparseSystem2D* matrix=nullptr;
+    detail::LinearWorkspace2D* workspace=nullptr;
+    std::size_t priorBuilds=0,priorReuses=0;
     const auto createSparse=[&] {
-        pattern.emplace(n,connections);matrix.emplace(*pattern);
-        if(c.profile)++r.performance.patternBuilds;
+        const bool reused=lease.prepare(n,connections);
+        matrix=&lease.state.storage->matrix;
+        if(!supplied && !lease.state.storage->krylov)
+            lease.state.storage->krylov=std::make_unique<detail::LinearWorkspace2D>(n);
+        workspace=lease.state.storage->krylov.get();
+        priorBuilds=matrix->ilu0Builds();priorReuses=matrix->ilu0Reuses();
+        if(c.profile) {
+            if(reused)++r.performance.patternReuses;
+            else ++r.performance.patternBuilds;
+        }
     };
-    if(!supplied) {createSparse();workspace.emplace(n);}
+    if(!supplied)createSparse();
     Values evaluationRhs(supplied?n:0),evaluationDiagonal(supplied?n:0);
     auto& rhs=supplied?evaluationRhs:matrix->rhs;
     auto& diag=supplied?evaluationDiagonal:matrix->diag;
@@ -318,23 +368,23 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
     r.maxValue=*std::max_element(r.values.begin(),r.values.end());
     if(c.profile) {
         r.performance.totalSeconds=seconds(start);
-        if(matrix) {r.performance.ilu0Builds=matrix->ilu0Builds();r.performance.ilu0Reuses=matrix->ilu0Reuses();}
+        if(matrix) {r.performance.ilu0Builds=matrix->ilu0Builds()-priorBuilds;r.performance.ilu0Reuses=matrix->ilu0Reuses()-priorReuses;}
     }
     return r;
 }
 }
 ScalarTransportResult2D solveScalarTransport2D(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p,const ScalarTransportControls2D& c,
-    const Values& previous,double timeStep) {
-    return scalarTransport(mesh,p,c,previous,timeStep,nullptr);
+    const Values& previous,double timeStep,ScalarTransportWorkspace2D* workspace) {
+    return scalarTransport(mesh,p,c,previous,timeStep,nullptr,nullptr,workspace);
 }
 ScalarTransportResult2D evaluateScalarTransport2D(const FvMesh2D& mesh,
     const ScalarTransportProblem2D& p,const Values& values,const ScalarTransportControls2D& c,
-    const Values& previous,double timeStep) {
-    return scalarTransport(mesh,p,c,previous,timeStep,&values);
+    const Values& previous,double timeStep,ScalarTransportWorkspace2D* workspace) {
+    return scalarTransport(mesh,p,c,previous,timeStep,&values,nullptr,workspace);
 }
 ScalarTransportResult2D solveSteadyScalarTransportFromInitial2D(const FvMesh2D& mesh,
-    const ScalarTransportProblem2D& p,const Values& initial,const ScalarTransportControls2D& c) {
-    return scalarTransport(mesh,p,c,{},0,nullptr,&initial);
+    const ScalarTransportProblem2D& p,const Values& initial,const ScalarTransportControls2D& c,ScalarTransportWorkspace2D* workspace) {
+    return scalarTransport(mesh,p,c,{},0,nullptr,&initial,workspace);
 }
 }

@@ -29,6 +29,7 @@ void writePerformance(std::ostream& meta,const SstRansResult2D& r) {
             <<",\"momentumIterations\":"<<r.flow.performance.momentumIterations<<",\"pressureIterations\":"<<r.flow.performance.pressureIterations;
         const auto scalarProfile=[&](const char* label,const ScalarTransportPerformance2D& p) {
             meta<<",\""<<label<<"\":{\"calls\":"<<p.calls<<",\"patternBuilds\":"<<p.patternBuilds
+                <<",\"patternReuses\":"<<p.patternReuses
                 <<",\"ilu0Builds\":"<<p.ilu0Builds<<",\"ilu0Reuses\":"<<p.ilu0Reuses
                 <<",\"linearIterations\":"<<p.linearIterations<<",\"totalSeconds\":"<<p.totalSeconds
                 <<",\"setupSeconds\":"<<p.setupSeconds<<",\"linearSeconds\":"<<p.linearSeconds

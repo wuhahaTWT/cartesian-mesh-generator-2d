@@ -118,6 +118,10 @@ void ransContract(const FvMesh2D& m) {
             sp.kSolves.patternBuilds+sp.omegaSolves.patternBuilds==sp.scalarSolves.patternBuilds &&
             sp.kSolves.ilu0Builds+sp.omegaSolves.ilu0Builds==sp.scalarSolves.ilu0Builds,
             "SST k/omega counters do not partition scalar solves");
+    require(sp.scalarSolves.patternBuilds+sp.scalarEvaluations.patternBuilds==1 &&
+            sp.scalarSolves.patternBuilds+sp.scalarSolves.patternReuses==sp.scalarSolves.calls &&
+            sp.kSolves.patternReuses+sp.omegaSolves.patternReuses==sp.scalarSolves.patternReuses,
+            "SST must reuse one explicit sparse workspace without dropping per-call counts");
     for(const auto& h:observed.flow.history) {
         require(h.momentumWorstCell<m.cells.size() && h.momentumPredictorWorstCell<m.cells.size(),
                 "momentum diagnostic cell index invalid");

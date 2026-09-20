@@ -87,7 +87,7 @@ namespace {
 FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& p, const ScalarTransportControls2D& controls,
     const std::vector<double>& previousK, const std::vector<double>& previousOmega, double dt,bool evaluateOnly,
-    bool correctionOnly=false) {
+    bool correctionOnly=false, ScalarTransportWorkspace2D* workspace=nullptr) {
     validateFvMesh2D(mesh);
     const auto n=mesh.cells.size(),nf=mesh.faces.size();
     require(n>0&&p.k.size()==n&&p.omega.size()==n&&p.wallDistance.size()==n&&
@@ -127,18 +127,18 @@ FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
         wp.faceDiffusivity.push_back((1-weight)*co.diffusivityOmega+weight*cn.diffusivityOmega);
     }
     if(evaluateOnly) {
-        result.k=evaluateScalarTransport2D(mesh,kp,p.k,controls,previousK,dt);
-        result.omega=evaluateScalarTransport2D(mesh,wp,p.omega,controls,previousOmega,dt);
+        result.k=evaluateScalarTransport2D(mesh,kp,p.k,controls,previousK,dt,workspace);
+        result.omega=evaluateScalarTransport2D(mesh,wp,p.omega,controls,previousOmega,dt,workspace);
         return result;
     }
     if(correctionOnly)require(previousK.empty() && previousOmega.empty() && dt==0,
                          "SST steady initial guess with time history");
-    result.k=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,kp,p.k,controls)
-                      :solveScalarTransport2D(mesh,kp,controls,previousK,dt);
+    result.k=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,kp,p.k,controls,workspace)
+                      :solveScalarTransport2D(mesh,kp,controls,previousK,dt,workspace);
     if(!correctionOnly)converged(result.k,"k");
     require(result.k.minValue>=0,"SST-2003m negative k after transport; no clipping applied");
-    result.omega=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,wp,p.omega,controls)
-                          :solveScalarTransport2D(mesh,wp,controls,previousOmega,dt);
+    result.omega=correctionOnly?solveSteadyScalarTransportFromInitial2D(mesh,wp,p.omega,controls,workspace)
+                          :solveScalarTransport2D(mesh,wp,controls,previousOmega,dt,workspace);
     if(!correctionOnly)converged(result.omega,"omega");
     require(result.omega.minValue>0,"SST-2003m nonpositive omega after transport; no clipping applied");
     return result;
@@ -146,8 +146,8 @@ FrozenSst2003mResult2D sstTransport(const FvMesh2D& mesh,
 }
 FrozenSst2003mResult2D solveFrozenSst2003mTransport2D(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& p,const ScalarTransportControls2D& controls,
-    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
-    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,false);
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt,ScalarTransportWorkspace2D* workspace) {
+    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,false,false,workspace);
 }
 
 Sst2003mGradients2D reconstructSst2003mGradients2D(const FvMesh2D& mesh,
@@ -215,17 +215,17 @@ void setSst2003mResolvedWalls2D(const FvMesh2D& mesh,FrozenSst2003mProblem2D& p,
 FrozenSst2003mResult2D evaluateSst2003mTransport2D(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& initial,const std::vector<Vector2D>& velocity,
     const std::vector<SstVelocityBoundary2D>& velocityBC,const ScalarTransportControls2D& controls,
-    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt,ScalarTransportWorkspace2D* workspace) {
     auto p=initial;
     auto g=reconstructSst2003mGradients2D(mesh,p,velocity,velocityBC);
     p.gradientK=std::move(g.k);p.gradientOmega=std::move(g.omega);p.strainMagnitude=std::move(g.strainMagnitude);
-    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,true);
+    return sstTransport(mesh,p,controls,previousK,previousOmega,dt,true,false,workspace);
 }
 
 SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     const FrozenSst2003mProblem2D& initial,const std::vector<Vector2D>& velocity,
     const std::vector<SstVelocityBoundary2D>& velocityBC,const SstTransportControls2D& controls,
-    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt) {
+    const std::vector<double>& previousK,const std::vector<double>& previousOmega,double dt,ScalarTransportWorkspace2D* workspace) {
     require(controls.maxIterations>0&&std::isfinite(controls.relaxation)&&controls.relaxation>0&&controls.relaxation<=1,
         "SST invalid nonlinear iteration controls");
     const bool correctionOnly=controls.scalarCorrectionsPerUpdate>0;
@@ -248,7 +248,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
     };
     // Includes complete scalar/input validation and allows an already converged
     // initial state to return without inventing a nonlinear update.
-    result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
+    result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true,false,workspace);
     record(result.fields,true);
     for(std::size_t it=0;it<=controls.maxIterations;++it) {
         const auto& k=result.fields.k.history.back();const auto& w=result.fields.omega.history.back();
@@ -258,7 +258,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
         // A bounded correction is only an iterate. Reconstruct and evaluate all
         // ORIGINAL nonlinear equations below; never propagate its convergence
         // flag as the nonlinear/RANS acceptance. Linear failures still throw.
-        const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false,correctionOnly);
+        const auto candidate=sstTransport(mesh,p,inner,previousK,previousOmega,dt,false,correctionOnly,workspace);
         record(candidate,false);
         for(std::size_t i=0;i<p.k.size();++i) {
             p.k[i]=checked(p.k[i]+controls.relaxation*(candidate.k.values[i]-p.k[i]));
@@ -266,7 +266,7 @@ SstTransportResult2D solveSst2003mTransport2D(const FvMesh2D& mesh,
             nonnegative(p.k[i]);positive(p.omega[i]);
         }
         reconstruct();
-        result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true);
+        result.fields=sstTransport(mesh,p,controls.transport,previousK,previousOmega,dt,true,false,workspace);
         record(result.fields,true);
     }
     return result;

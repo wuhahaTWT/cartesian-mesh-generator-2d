@@ -1,0 +1,4069 @@
+{
+  "scope": "Explicit sparse storage reuse in native SST; unchanged equations and original stopping gates; physical accuracy unchanged",
+  "baseCommit": "65319e3",
+  "host": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "mesh": {
+    "path": "outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+    "sha256": "d8422e73682fd4df27f7d1abe23b05aec3becb9e3bcc34071a33c5b895a456fc",
+    "bytes": 4549429
+  },
+  "beforeBinary": {
+    "path": "outputs/native-flow/sst-workspace/before-probe",
+    "sha256": "6a8d1ed3f29e2790b0c3180d51fc84bc69b176a018f3a290f266c4985e58becf",
+    "bytes": 373160
+  },
+  "afterBinary": {
+    "path": "build/cartmesh2d_sst_rans_probe",
+    "sha256": "990037e9aa2fbe25e29dcdacb683efb280e8e2c6953d375c23405d21a426cb49",
+    "bytes": 371224
+  },
+  "sourceFiles": [
+    {
+      "path": "include/cartmesh2d/fv/ScalarTransport2D.hpp",
+      "sha256": "9a3e198f85cec39ac97d4b63e0a3f75aa96f6577878573679fbe870b82594333",
+      "bytes": 6833
+    },
+    {
+      "path": "include/cartmesh2d/fv/Sst2003m2D.hpp",
+      "sha256": "216ff0ca774b78c9507b54a81a2d8d580a02209b1d6887a5df76f25d7d7eb337",
+      "bytes": 6801
+    },
+    {
+      "path": "src/fv/ScalarTransport2D.cpp",
+      "sha256": "34b9afaa9c95a34cac7ca3c79c4a1eff4ac75b99682d77077a574574ad34c772",
+      "bytes": 21739
+    },
+    {
+      "path": "src/fv/Sst2003m2D.cpp",
+      "sha256": "940b790908c940cd2d743d3ac67d17cfa83ec8b1d9961cd6c892765dff0ddaca",
+      "bytes": 15955
+    },
+    {
+      "path": "src/fv/SstRans2D.cpp",
+      "sha256": "21dc6da0b4fb22bdd37fd27c2def92646e82fa81eccd2019326aa063e9a10d7b",
+      "bytes": 6774
+    },
+    {
+      "path": "tests/sst_rans_probe.cpp",
+      "sha256": "12660d01425e15d4def39fe2ecae8129a6fc564b6282cf4aeca7c79bbfece750",
+      "bytes": 15788
+    },
+    {
+      "path": "tests/sst_rans_test.cpp",
+      "sha256": "31ea1c23a9d756a2e77f2c8bc5dc595ebf1617f434d582ad53955c7ed11a9a50",
+      "bytes": 15254
+    },
+    {
+      "path": "tests/scalar_workspace_test.cpp",
+      "sha256": "7d9670468b0a1d5324968ffa41ed096b5c3d3d584c409380125df6a5eb7810b5",
+      "bytes": 14784
+    }
+  ],
+  "runs": {
+    "before-1": {
+      "runtime": {
+        "label": "before-1",
+        "binary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-probe",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-1/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.07723608298693,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 105381888,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0013157500070519745,
+            "diskFreeBytes": 2154651648
+          },
+          {
+            "elapsedSeconds": 2.0114499169867486,
+            "diskFreeBytes": 2154512384
+          },
+          {
+            "elapsedSeconds": 4.021558417007327,
+            "diskFreeBytes": 2154446848
+          },
+          {
+            "elapsedSeconds": 6.031650416960474,
+            "diskFreeBytes": 2154356736
+          },
+          {
+            "elapsedSeconds": 8.03474712499883,
+            "diskFreeBytes": 2154008576
+          },
+          {
+            "elapsedSeconds": 10.044821707997471,
+            "diskFreeBytes": 2154029056
+          },
+          {
+            "elapsedSeconds": 12.054898875008803,
+            "diskFreeBytes": 2154024960
+          },
+          {
+            "elapsedSeconds": 14.055553624988534,
+            "diskFreeBytes": 2154008576
+          },
+          {
+            "elapsedSeconds": 16.065642417001072,
+            "diskFreeBytes": 2154061824
+          },
+          {
+            "elapsedSeconds": 18.075736666971352,
+            "diskFreeBytes": 2154033152
+          },
+          {
+            "elapsedSeconds": 20.076538499968592,
+            "diskFreeBytes": 2128412672
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/audit.json",
+          "sha256": "3e0d50a0d3d78c9b1b4fa9de6488490b34181d02378d5c4aa1a713d9816ce220",
+          "bytes": 91090
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.diagnostics.json",
+          "sha256": "3f562f96a263eb83fc189530b9e611d3acee5c6ca183176751586d6e126b59f1",
+          "bytes": 1496
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.json",
+          "sha256": "8f7afea3870568562fe48cda9a821761653b2e6c18ba2b0bba6ecabcc942f238",
+          "bytes": 2479
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/runtime.json",
+          "sha256": "90eb6371b20a69cc7da44fdee23a0485fcd92d594c80487b377d88803ad16e22",
+          "bytes": 2094
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-1/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.747672625,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.562631007,
+          "sstTransportSeconds": 10.214107422999996,
+          "sstGradientSeconds": 0.24322562699999992,
+          "wallDistanceSeconds": 0.006779541,
+          "momentumLinearSeconds": 1.4655322100000003,
+          "pressureLinearSeconds": 4.86873946,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 8.165685208000001,
+            "setupSeconds": 0.8659062550000002,
+            "linearSeconds": 6.846007177,
+            "faceFluxSeconds": 0.3169492410000001
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 0.9927170909999998,
+            "setupSeconds": 0.5606647070000002,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.312983878
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.273426995,
+            "setupSeconds": 0.43421079300000004,
+            "linearSeconds": 0.64131467,
+            "faceFluxSeconds": 0.15852165600000004
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.892258213000001,
+            "setupSeconds": 0.4316954619999999,
+            "linearSeconds": 6.204692506999999,
+            "faceFluxSeconds": 0.158427585
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-sasjfv04/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-1/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "after-1": {
+      "runtime": {
+        "label": "after-1",
+        "binary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-1/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.083520749991294,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 109363200,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0013029159745201468,
+            "diskFreeBytes": 2127872000
+          },
+          {
+            "elapsedSeconds": 2.0016923749935813,
+            "diskFreeBytes": 2127831040
+          },
+          {
+            "elapsedSeconds": 4.0117803330067545,
+            "diskFreeBytes": 2127982592
+          },
+          {
+            "elapsedSeconds": 6.021910874987952,
+            "diskFreeBytes": 2127982592
+          },
+          {
+            "elapsedSeconds": 8.02272270800313,
+            "diskFreeBytes": 2127740928
+          },
+          {
+            "elapsedSeconds": 10.032766541000456,
+            "diskFreeBytes": 2128175104
+          },
+          {
+            "elapsedSeconds": 12.042844249983318,
+            "diskFreeBytes": 2128093184
+          },
+          {
+            "elapsedSeconds": 14.052933041006327,
+            "diskFreeBytes": 2127945728
+          },
+          {
+            "elapsedSeconds": 16.06302716600476,
+            "diskFreeBytes": 2127867904
+          },
+          {
+            "elapsedSeconds": 18.073137832980137,
+            "diskFreeBytes": 2108162048
+          },
+          {
+            "elapsedSeconds": 20.083262707979884,
+            "diskFreeBytes": 2102075392
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/audit.json",
+          "sha256": "8cdf7d321e97519dfe0a1b5f9c73147624746afbea355872be66cf4a574b3b52",
+          "bytes": 91089
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.diagnostics.json",
+          "sha256": "5aa943924e9b845b9c6e5709159645c9b5400a5867ec4b13cce147655fd424d1",
+          "bytes": 1583
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.unconverged.json",
+          "sha256": "5e2779bf10231449e7827b020a8fdc1f6e025a7c0f7a678b639c234d2a86aabc",
+          "bytes": 2566
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/runtime.json",
+          "sha256": "e6652a221ab7aa42097f4dce7d20a2f55e6019cb5ac098093f1eca305ba530ad",
+          "bytes": 2063
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-1/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.526597209,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.253028379,
+          "sstTransportSeconds": 9.888014250000001,
+          "sstGradientSeconds": 0.25811854,
+          "wallDistanceSeconds": 0.006892042,
+          "momentumLinearSeconds": 1.4765133729999993,
+          "pressureLinearSeconds": 4.918673038999998,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 1,
+            "patternReuses": 199,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 7.762044712000003,
+            "setupSeconds": 0.36064874999999996,
+            "linearSeconds": 6.912926457000001,
+            "faceFluxSeconds": 0.34678199900000006
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "patternReuses": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.034668992,
+            "setupSeconds": 0.5707774939999999,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.34307220899999985
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 1,
+            "patternReuses": 99,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.0423837100000002,
+            "setupSeconds": 0.18233583100000003,
+            "linearSeconds": 0.6461370089999999,
+            "faceFluxSeconds": 0.173312711
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 0,
+            "patternReuses": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.7196610020000005,
+            "setupSeconds": 0.178312919,
+            "linearSeconds": 6.266789447999997,
+            "faceFluxSeconds": 0.17346928799999997
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-ar0ivk3g/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-1/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "after-2": {
+      "runtime": {
+        "label": "after-2",
+        "binary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-2/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.087218666973058,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 109379584,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0014321249909698963,
+            "diskFreeBytes": 2100908032
+          },
+          {
+            "elapsedSeconds": 2.0018575419671834,
+            "diskFreeBytes": 2101153792
+          },
+          {
+            "elapsedSeconds": 4.011955291964114,
+            "diskFreeBytes": 2101125120
+          },
+          {
+            "elapsedSeconds": 6.022035874950234,
+            "diskFreeBytes": 2101055488
+          },
+          {
+            "elapsedSeconds": 8.025912707962561,
+            "diskFreeBytes": 2100539392
+          },
+          {
+            "elapsedSeconds": 10.0360832499573,
+            "diskFreeBytes": 2099912704
+          },
+          {
+            "elapsedSeconds": 12.046189999964554,
+            "diskFreeBytes": 2099539968
+          },
+          {
+            "elapsedSeconds": 14.056265958002768,
+            "diskFreeBytes": 2095767552
+          },
+          {
+            "elapsedSeconds": 16.066340791992843,
+            "diskFreeBytes": 2092978176
+          },
+          {
+            "elapsedSeconds": 18.076414666953497,
+            "diskFreeBytes": 2072059904
+          },
+          {
+            "elapsedSeconds": 20.086622125003487,
+            "diskFreeBytes": 2066198528
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/audit.json",
+          "sha256": "5d2ecfbf24a48f39174d99b855c602942be5dfbdc6670188c99f11ab6917af2d",
+          "bytes": 91089
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.diagnostics.json",
+          "sha256": "db03b61afe126f6454d89df19520f2448ceaf2f15e3e19e6c86676c8c4913489",
+          "bytes": 1588
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.unconverged.json",
+          "sha256": "b6479fc12226417fd273190c3e9dfc5155c545be26984b87d8df4b8600abe428",
+          "bytes": 2571
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/runtime.json",
+          "sha256": "9a6823296ebb2a4d2e1a4c6b2971268e0810f377d5bc4a4dbcdb479e7d2190b8",
+          "bytes": 2062
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-2/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.541252291,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.27312434,
+          "sstTransportSeconds": 9.908147662000003,
+          "sstGradientSeconds": 0.257780831,
+          "wallDistanceSeconds": 0.006886125,
+          "momentumLinearSeconds": 1.472031175,
+          "pressureLinearSeconds": 4.918954196999996,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 1,
+            "patternReuses": 199,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 7.763024918999998,
+            "setupSeconds": 0.361887464,
+            "linearSeconds": 6.913866462,
+            "faceFluxSeconds": 0.347096203
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "patternReuses": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 1.0379098710000003,
+            "setupSeconds": 0.5730641309999999,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.3432120330000001
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 1,
+            "patternReuses": 99,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.042930128,
+            "setupSeconds": 0.18309833899999994,
+            "linearSeconds": 0.6463761250000003,
+            "faceFluxSeconds": 0.17312491199999996
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 0,
+            "patternReuses": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.720094791000002,
+            "setupSeconds": 0.17878912500000008,
+            "linearSeconds": 6.267490337,
+            "faceFluxSeconds": 0.17397129099999994
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-0rrryzml/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-2/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "before-2": {
+      "runtime": {
+        "label": "before-2",
+        "binary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-probe",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-2/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "100",
+          "--max-seconds",
+          "90",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 20.096419290988706,
+        "exitCode": 1,
+        "timeout": false,
+        "peakRssBytes": 105299968,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.0015017910045571625,
+            "diskFreeBytes": 2047606784
+          },
+          {
+            "elapsedSeconds": 2.011588166002184,
+            "diskFreeBytes": 2046201856
+          },
+          {
+            "elapsedSeconds": 4.018354583007749,
+            "diskFreeBytes": 2046140416
+          },
+          {
+            "elapsedSeconds": 6.0284322499646805,
+            "diskFreeBytes": 2045149184
+          },
+          {
+            "elapsedSeconds": 8.038540041015949,
+            "diskFreeBytes": 2044940288
+          },
+          {
+            "elapsedSeconds": 10.04558029101463,
+            "diskFreeBytes": 2044940288
+          },
+          {
+            "elapsedSeconds": 12.055664415995125,
+            "diskFreeBytes": 2044096512
+          },
+          {
+            "elapsedSeconds": 14.06575279100798,
+            "diskFreeBytes": 2043617280
+          },
+          {
+            "elapsedSeconds": 16.075838415999897,
+            "diskFreeBytes": 2043609088
+          },
+          {
+            "elapsedSeconds": 18.085919958015438,
+            "diskFreeBytes": 2034434048
+          },
+          {
+            "elapsedSeconds": 20.096077875001356,
+            "diskFreeBytes": 2008354816
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/audit.json",
+          "sha256": "6aab285a001d668f320e32f8785cd012995e2366698e6d5f64a25d48643496d1",
+          "bytes": 91090
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.diagnostics.json",
+          "sha256": "3e79506b5aa59e965672a69b6264e670e8d862cfe464a71997085d9d75441e80",
+          "bytes": 1497
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.unconverged.json",
+          "sha256": "c9cfb3fc71f56a59342afd8f1aacc6278b5e6b368a35763511e4a6a746cf6af3",
+          "bytes": 2480
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/runtime.json",
+          "sha256": "cb023a659d815906f715a1b19ecdac5fde2b6a4bbdad695561ad32c3d3cf3840",
+          "bytes": 2094
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/stderr.log",
+          "sha256": "6d571484c23d8fcdd647eee15196407dd7506bbbdbba1f7d442d8ebbd0d3df26",
+          "bytes": 353
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/before-2/stdout.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "diagnostics": {
+        "converged": false,
+        "stopped": false,
+        "stopReason": "iteration-limit",
+        "maxIterations": 100,
+        "iterations": 100,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 17.826112917,
+        "performance": {
+          "sstUpdates": 100,
+          "sstUpdateSeconds": 10.607717462000002,
+          "sstTransportSeconds": 10.258969959,
+          "sstGradientSeconds": 0.24355749599999998,
+          "wallDistanceSeconds": 0.0069145,
+          "momentumLinearSeconds": 1.466588089,
+          "pressureLinearSeconds": 4.901526588999995,
+          "momentumIterations": 2836,
+          "pressureIterations": 4233,
+          "scalarSolves": {
+            "calls": 200,
+            "patternBuilds": 200,
+            "ilu0Builds": 200,
+            "ilu0Reuses": 0,
+            "linearIterations": 3710,
+            "totalSeconds": 8.209918878000002,
+            "setupSeconds": 0.8668518369999997,
+            "linearSeconds": 6.8894429970000015,
+            "faceFluxSeconds": 0.3178435519999999
+          },
+          "scalarEvaluations": {
+            "calls": 400,
+            "patternBuilds": 0,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 0.9940505530000002,
+            "setupSeconds": 0.561349048,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 0.3135436729999998
+          },
+          "kSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 569,
+            "totalSeconds": 1.2790183339999999,
+            "setupSeconds": 0.4342009180000001,
+            "linearSeconds": 0.6465133770000002,
+            "faceFluxSeconds": 0.15877738000000002
+          },
+          "omegaSolves": {
+            "calls": 100,
+            "patternBuilds": 100,
+            "ilu0Builds": 100,
+            "ilu0Reuses": 0,
+            "linearIterations": 3141,
+            "totalSeconds": 6.930900544000001,
+            "setupSeconds": 0.4326509189999998,
+            "linearSeconds": 6.242929620000001,
+            "faceFluxSeconds": 0.159066172
+          }
+        }
+      },
+      "audit": {
+        "valid": false,
+        "diagnosticOnly": true,
+        "declaredConverged": false,
+        "stopped": false,
+        "failedConvergenceChecks": [
+          "k independent residual exceeds scalar stopping gates",
+          "omega independent residual exceeds scalar stopping gates",
+          "independent momentum residual exceeds configured tolerance",
+          "reported momentum residual exceeds configured tolerance",
+          "reported coupled convergence metrics exceed configured gates",
+          "reported scalar cell residual exceeds configured tolerance"
+        ],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9996329932537024,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9996329932537024,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.00036700674635068266,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.00036700674635068266,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 100,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": -5.2932649134496774e-08,
+            "worstDiagonal": 0.00044524491827294837,
+            "residualNorm": 1.0483606608716352e-06,
+            "normTarget": 1.0342051394571026e-12,
+            "maxCellResidual": 0.00011888434199275349,
+            "maxFaceFlux": 8.069768838734991e-07,
+            "globalBalance": -8.049287451623823e-05,
+            "normRoundoffBudget": 3.553177557496859e-18,
+            "reportedTransportBalance": {
+              "residualNorm": 1.0483606608716367e-06,
+              "maxCellResidual": 0.00011888434199275353,
+              "originalEquationCellDifference": 4.0657581468206416e-20
+            }
+          },
+          "omega": {
+            "worstCellIndex": 1682,
+            "worstCentre": [
+              0.015624999999999972,
+              5.6130269551817925e-05
+            ],
+            "worstSignedResidual": 0.017419145093191604,
+            "worstDiagonal": 0.00033329514514572774,
+            "residualNorm": 0.5060682420528362,
+            "normTarget": 8.901321036975876e-05,
+            "maxCellResidual": 52.26342281576101,
+            "maxFaceFlux": 4547.472801382231,
+            "globalBalance": -10.726095915115131,
+            "normRoundoffBudget": 2.0022851489425843e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 0.5060682420506862,
+              "maxCellResidual": 52.26342281575934,
+              "originalEquationCellDifference": 1.6697754290362354e-12
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-0h68rtjj/face-viscosity.csv",
+            "sha256": "3e55e517a5e6e21eb60e26849b03ac9004a004889eea131cf1cebf0b0b1fbc20"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 8.673617379884035e-19,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 1.3552527156068805e-20,
+            "diffusionY": 1.5881867761018131e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.003921679761139821,
+              "expected": 0.00392167976113982,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.6897427246702556e-05,
+              "expected": -1.689742724670257e-05,
+              "absolute": 1.3552527156068805e-20,
+              "relative": 1.3552527156068805e-20
+            },
+            "diffusionY": {
+              "actual": -2.4342406772024564e-07,
+              "expected": -2.434240677202455e-07,
+              "absolute": 1.5881867761018131e-22,
+              "relative": 1.5881867761018131e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 0.0014719556254257202,
+            "worstCellIndex": 1282,
+            "worstNormalizedX": -0.001471955624100237,
+            "worstNormalizedY": 6.246682481094755e-08,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 3.9747756195910845e-05
+            },
+            "l2": 9.089529283512644e-05,
+            "maxCellVector": 1.4482950887288464e-06,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 0.0014719556254257284,
+              "expected": 0.0014719556254257202,
+              "absolute": 8.239936510889834e-18,
+              "relative": 8.239936510889834e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallForceY": {
+              "actual": -8.514648290047449e-05,
+              "expected": -8.514648290047446e-05,
+              "absolute": 2.710505431213761e-20,
+              "relative": 2.710505431213761e-20
+            },
+            "wallViscousForceX": {
+              "actual": 0.003163851259949258,
+              "expected": 0.0031638512599492575,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "wallViscousForceY": {
+              "actual": 2.0218435505787535e-07,
+              "expected": 2.0218435505787538e-07,
+              "absolute": 2.6469779601696886e-23,
+              "relative": 2.6469779601696886e-23
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "boundaryTermScale": 2.0040806076866633,
+            "relativeToBoundary": 0.001301844990679603,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 0.0025228947440777416,
+            "boundaryMinusSourceY": -0.0006647519175548999,
+            "magnitude": 0.0026090023000350173,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 0.0025228947440777247,
+            "y": -0.0006647519175549006
+          },
+          "expectedCellResidualSum": {
+            "x": 0.0025228947440777416,
+            "y": -0.0006647519175548999
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.691355389077387e-17,
+            "y": -7.589415207398531e-19,
+            "magnitude": 1.693057286236986e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.0031638512599492575,
+            "y": -8.514648290047446e-05
+          },
+          "wallViscousForce": {
+            "x": 0.0031638512599492575,
+            "y": 2.0218435505787538e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.0030530280067534e-14,
+          "l2CellImbalance": 7.560196428922093e-14,
+          "maxScaledCellImbalance": 0.020995521746780564,
+          "nativeDefinitionContinuity": 2.1849893168075453e-11,
+          "boundaryFluxSum": 5.306866057708248e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 5.306866057708248e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/before-2/flow.unconverged"
+      },
+      "completedFixed100": true
+    },
+    "after-full": {
+      "runtime": {
+        "label": "after-full",
+        "binary": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_sst_rans_probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-full/flow",
+          "flatplate-sweep",
+          "--nu",
+          "2e-7",
+          "--speed",
+          "1",
+          "--inlet-k",
+          "2.25e-7",
+          "--inlet-omega",
+          "125",
+          "--leading-edge",
+          "0",
+          "--max-iterations",
+          "20000",
+          "--max-seconds",
+          "540",
+          "--completion-updates",
+          "500",
+          "--scalar-preconditioner",
+          "ilu0",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "runtimeSeconds": 429.9165789159597,
+        "exitCode": 0,
+        "timeout": false,
+        "peakRssBytes": 108445696,
+        "peakRssSource": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "liveRssGuardActive": false,
+        "diskFloorBytes": 1610612736,
+        "samples": [
+          {
+            "elapsedSeconds": 0.001286707993131131,
+            "diskFreeBytes": 2002419712
+          },
+          {
+            "elapsedSeconds": 2.011431624996476,
+            "diskFreeBytes": 2002415616
+          },
+          {
+            "elapsedSeconds": 4.021540540968999,
+            "diskFreeBytes": 2045411328
+          },
+          {
+            "elapsedSeconds": 6.0292928330018185,
+            "diskFreeBytes": 2045558784
+          },
+          {
+            "elapsedSeconds": 8.039362540992443,
+            "diskFreeBytes": 2045526016
+          },
+          {
+            "elapsedSeconds": 10.04949691600632,
+            "diskFreeBytes": 2045267968
+          },
+          {
+            "elapsedSeconds": 12.054991832992528,
+            "diskFreeBytes": 2044551168
+          },
+          {
+            "elapsedSeconds": 14.065089207957499,
+            "diskFreeBytes": 2044289024
+          },
+          {
+            "elapsedSeconds": 16.07517491595354,
+            "diskFreeBytes": 2044289024
+          },
+          {
+            "elapsedSeconds": 18.08349695795914,
+            "diskFreeBytes": 2047377408
+          },
+          {
+            "elapsedSeconds": 20.09014612500323,
+            "diskFreeBytes": 2046623744
+          },
+          {
+            "elapsedSeconds": 22.100251540949102,
+            "diskFreeBytes": 2046652416
+          },
+          {
+            "elapsedSeconds": 24.11035258299671,
+            "diskFreeBytes": 2046275584
+          },
+          {
+            "elapsedSeconds": 26.120452624978498,
+            "diskFreeBytes": 2046185472
+          },
+          {
+            "elapsedSeconds": 28.130552207992878,
+            "diskFreeBytes": 2045984768
+          },
+          {
+            "elapsedSeconds": 30.140669957967475,
+            "diskFreeBytes": 2045927424
+          },
+          {
+            "elapsedSeconds": 32.15076724998653,
+            "diskFreeBytes": 2045894656
+          },
+          {
+            "elapsedSeconds": 34.16090149997035,
+            "diskFreeBytes": 2045874176
+          },
+          {
+            "elapsedSeconds": 36.169645290996414,
+            "diskFreeBytes": 2045870080
+          },
+          {
+            "elapsedSeconds": 38.179739582992624,
+            "diskFreeBytes": 2045870080
+          },
+          {
+            "elapsedSeconds": 40.18982558295829,
+            "diskFreeBytes": 2046160896
+          },
+          {
+            "elapsedSeconds": 42.199918665981386,
+            "diskFreeBytes": 2046038016
+          },
+          {
+            "elapsedSeconds": 44.210020915954374,
+            "diskFreeBytes": 2046009344
+          },
+          {
+            "elapsedSeconds": 46.22010570799466,
+            "diskFreeBytes": 2045980672
+          },
+          {
+            "elapsedSeconds": 48.23022766597569,
+            "diskFreeBytes": 2045947904
+          },
+          {
+            "elapsedSeconds": 50.240324790996965,
+            "diskFreeBytes": 2045947904
+          },
+          {
+            "elapsedSeconds": 52.250393541005906,
+            "diskFreeBytes": 2045931520
+          },
+          {
+            "elapsedSeconds": 54.26049333298579,
+            "diskFreeBytes": 2045927424
+          },
+          {
+            "elapsedSeconds": 56.27061245799996,
+            "diskFreeBytes": 2045923328
+          },
+          {
+            "elapsedSeconds": 58.273866415955126,
+            "diskFreeBytes": 2045923328
+          },
+          {
+            "elapsedSeconds": 60.2839502079878,
+            "diskFreeBytes": 2045747200
+          },
+          {
+            "elapsedSeconds": 62.29407670797082,
+            "diskFreeBytes": 2045739008
+          },
+          {
+            "elapsedSeconds": 64.30420899996534,
+            "diskFreeBytes": 2045734912
+          },
+          {
+            "elapsedSeconds": 66.30535416596103,
+            "diskFreeBytes": 2045714432
+          },
+          {
+            "elapsedSeconds": 68.31550287496066,
+            "diskFreeBytes": 2045698048
+          },
+          {
+            "elapsedSeconds": 70.32561012497172,
+            "diskFreeBytes": 2045710336
+          },
+          {
+            "elapsedSeconds": 72.33562049997272,
+            "diskFreeBytes": 2045710336
+          },
+          {
+            "elapsedSeconds": 74.34571766597219,
+            "diskFreeBytes": 2045661184
+          },
+          {
+            "elapsedSeconds": 76.35584762500366,
+            "diskFreeBytes": 2045661184
+          },
+          {
+            "elapsedSeconds": 78.35600549995434,
+            "diskFreeBytes": 2045546496
+          },
+          {
+            "elapsedSeconds": 80.36611066595651,
+            "diskFreeBytes": 2045505536
+          },
+          {
+            "elapsedSeconds": 82.37623333296506,
+            "diskFreeBytes": 2045472768
+          },
+          {
+            "elapsedSeconds": 84.38636854098877,
+            "diskFreeBytes": 2045464576
+          },
+          {
+            "elapsedSeconds": 86.39647212496493,
+            "diskFreeBytes": 2045464576
+          },
+          {
+            "elapsedSeconds": 88.40658174996497,
+            "diskFreeBytes": 2045444096
+          },
+          {
+            "elapsedSeconds": 90.41665487497812,
+            "diskFreeBytes": 2045431808
+          },
+          {
+            "elapsedSeconds": 92.42677729099523,
+            "diskFreeBytes": 2045288448
+          },
+          {
+            "elapsedSeconds": 94.43686258298112,
+            "diskFreeBytes": 2045042688
+          },
+          {
+            "elapsedSeconds": 96.4469432909973,
+            "diskFreeBytes": 2044764160
+          },
+          {
+            "elapsedSeconds": 98.45275158295408,
+            "diskFreeBytes": 2044641280
+          },
+          {
+            "elapsedSeconds": 100.46286029095063,
+            "diskFreeBytes": 2044854272
+          },
+          {
+            "elapsedSeconds": 102.47293579095276,
+            "diskFreeBytes": 2044755968
+          },
+          {
+            "elapsedSeconds": 104.483022624976,
+            "diskFreeBytes": 2044723200
+          },
+          {
+            "elapsedSeconds": 106.493147665984,
+            "diskFreeBytes": 2044719104
+          },
+          {
+            "elapsedSeconds": 108.50324462499702,
+            "diskFreeBytes": 2044518400
+          },
+          {
+            "elapsedSeconds": 110.50784708297579,
+            "diskFreeBytes": 2044510208
+          },
+          {
+            "elapsedSeconds": 112.51795216597384,
+            "diskFreeBytes": 2044555264
+          },
+          {
+            "elapsedSeconds": 114.52804112498416,
+            "diskFreeBytes": 2041974784
+          },
+          {
+            "elapsedSeconds": 116.53813512495253,
+            "diskFreeBytes": 2041962496
+          },
+          {
+            "elapsedSeconds": 118.54296374996193,
+            "diskFreeBytes": 2041823232
+          },
+          {
+            "elapsedSeconds": 120.5530906249769,
+            "diskFreeBytes": 2041810944
+          },
+          {
+            "elapsedSeconds": 122.56317099998705,
+            "diskFreeBytes": 2041786368
+          },
+          {
+            "elapsedSeconds": 124.57329774997197,
+            "diskFreeBytes": 2041774080
+          },
+          {
+            "elapsedSeconds": 126.5834177499637,
+            "diskFreeBytes": 2041774080
+          },
+          {
+            "elapsedSeconds": 128.5908602499985,
+            "diskFreeBytes": 2043764736
+          },
+          {
+            "elapsedSeconds": 130.60089737497037,
+            "diskFreeBytes": 2043756544
+          },
+          {
+            "elapsedSeconds": 132.61097774998052,
+            "diskFreeBytes": 2043752448
+          },
+          {
+            "elapsedSeconds": 134.62108812498627,
+            "diskFreeBytes": 2043621376
+          },
+          {
+            "elapsedSeconds": 136.63115462497808,
+            "diskFreeBytes": 2043621376
+          },
+          {
+            "elapsedSeconds": 138.64124795800308,
+            "diskFreeBytes": 2043592704
+          },
+          {
+            "elapsedSeconds": 140.65134229097748,
+            "diskFreeBytes": 2043588608
+          },
+          {
+            "elapsedSeconds": 142.6614786660066,
+            "diskFreeBytes": 2043510784
+          },
+          {
+            "elapsedSeconds": 144.66341424995335,
+            "diskFreeBytes": 2043404288
+          },
+          {
+            "elapsedSeconds": 146.67228916595923,
+            "diskFreeBytes": 2042216448
+          },
+          {
+            "elapsedSeconds": 148.68241983297048,
+            "diskFreeBytes": 2042150912
+          },
+          {
+            "elapsedSeconds": 150.69252033298835,
+            "diskFreeBytes": 2042011648
+          },
+          {
+            "elapsedSeconds": 152.69640824996168,
+            "diskFreeBytes": 2042007552
+          },
+          {
+            "elapsedSeconds": 154.70655299996724,
+            "diskFreeBytes": 2042183680
+          },
+          {
+            "elapsedSeconds": 156.71665987500455,
+            "diskFreeBytes": 2042146816
+          },
+          {
+            "elapsedSeconds": 158.72676920797676,
+            "diskFreeBytes": 2042146816
+          },
+          {
+            "elapsedSeconds": 160.73686841595918,
+            "diskFreeBytes": 2042200064
+          },
+          {
+            "elapsedSeconds": 162.7469844580046,
+            "diskFreeBytes": 2041966592
+          },
+          {
+            "elapsedSeconds": 164.75710362498648,
+            "diskFreeBytes": 2041966592
+          },
+          {
+            "elapsedSeconds": 166.76718737499323,
+            "diskFreeBytes": 2041962496
+          },
+          {
+            "elapsedSeconds": 168.7773012079997,
+            "diskFreeBytes": 2041942016
+          },
+          {
+            "elapsedSeconds": 170.78065012500156,
+            "diskFreeBytes": 2041925632
+          },
+          {
+            "elapsedSeconds": 172.79076012497535,
+            "diskFreeBytes": 2041597952
+          },
+          {
+            "elapsedSeconds": 174.80084420798812,
+            "diskFreeBytes": 2041499648
+          },
+          {
+            "elapsedSeconds": 176.81094491598196,
+            "diskFreeBytes": 2041425920
+          },
+          {
+            "elapsedSeconds": 178.82104083296144,
+            "diskFreeBytes": 2041315328
+          },
+          {
+            "elapsedSeconds": 180.83115404099226,
+            "diskFreeBytes": 2041315328
+          },
+          {
+            "elapsedSeconds": 182.83740304096136,
+            "diskFreeBytes": 2041311232
+          },
+          {
+            "elapsedSeconds": 184.84082270797808,
+            "diskFreeBytes": 2041303040
+          },
+          {
+            "elapsedSeconds": 186.85095674998593,
+            "diskFreeBytes": 2041257984
+          },
+          {
+            "elapsedSeconds": 188.86105141596636,
+            "diskFreeBytes": 2041077760
+          },
+          {
+            "elapsedSeconds": 190.87116699997569,
+            "diskFreeBytes": 2041262080
+          },
+          {
+            "elapsedSeconds": 192.88126291596564,
+            "diskFreeBytes": 2041077760
+          },
+          {
+            "elapsedSeconds": 194.89078299998073,
+            "diskFreeBytes": 2040913920
+          },
+          {
+            "elapsedSeconds": 196.90086237498326,
+            "diskFreeBytes": 2040872960
+          },
+          {
+            "elapsedSeconds": 198.9109724999871,
+            "diskFreeBytes": 2040868864
+          },
+          {
+            "elapsedSeconds": 200.91676112497225,
+            "diskFreeBytes": 2040856576
+          },
+          {
+            "elapsedSeconds": 202.9240937079885,
+            "diskFreeBytes": 2040856576
+          },
+          {
+            "elapsedSeconds": 204.93424387497362,
+            "diskFreeBytes": 2040827904
+          },
+          {
+            "elapsedSeconds": 206.94435183296446,
+            "diskFreeBytes": 2040827904
+          },
+          {
+            "elapsedSeconds": 208.94887612498133,
+            "diskFreeBytes": 2040823808
+          },
+          {
+            "elapsedSeconds": 210.95310724998126,
+            "diskFreeBytes": 2040672256
+          },
+          {
+            "elapsedSeconds": 212.9632028749911,
+            "diskFreeBytes": 2040471552
+          },
+          {
+            "elapsedSeconds": 214.97333612496732,
+            "diskFreeBytes": 2040471552
+          },
+          {
+            "elapsedSeconds": 216.983429874992,
+            "diskFreeBytes": 2040471552
+          },
+          {
+            "elapsedSeconds": 218.9935488749761,
+            "diskFreeBytes": 2040471552
+          },
+          {
+            "elapsedSeconds": 220.99504424998304,
+            "diskFreeBytes": 2040684544
+          },
+          {
+            "elapsedSeconds": 223.00516441598302,
+            "diskFreeBytes": 2040680448
+          },
+          {
+            "elapsedSeconds": 225.0063109579496,
+            "diskFreeBytes": 2040627200
+          },
+          {
+            "elapsedSeconds": 227.01640212495113,
+            "diskFreeBytes": 2040569856
+          },
+          {
+            "elapsedSeconds": 229.0264992909506,
+            "diskFreeBytes": 2044399616
+          },
+          {
+            "elapsedSeconds": 231.03661958297016,
+            "diskFreeBytes": 2043998208
+          },
+          {
+            "elapsedSeconds": 233.04674970795168,
+            "diskFreeBytes": 2043846656
+          },
+          {
+            "elapsedSeconds": 235.0568583330023,
+            "diskFreeBytes": 2043826176
+          },
+          {
+            "elapsedSeconds": 237.0669932909659,
+            "diskFreeBytes": 2043822080
+          },
+          {
+            "elapsedSeconds": 239.07398554100655,
+            "diskFreeBytes": 2043822080
+          },
+          {
+            "elapsedSeconds": 241.08409212500555,
+            "diskFreeBytes": 2043772928
+          },
+          {
+            "elapsedSeconds": 243.09151754097547,
+            "diskFreeBytes": 2043764736
+          },
+          {
+            "elapsedSeconds": 245.10159166599624,
+            "diskFreeBytes": 2043351040
+          },
+          {
+            "elapsedSeconds": 247.1071902079857,
+            "diskFreeBytes": 2043850752
+          },
+          {
+            "elapsedSeconds": 249.10787679097848,
+            "diskFreeBytes": 2043764736
+          },
+          {
+            "elapsedSeconds": 251.11795574997086,
+            "diskFreeBytes": 2043822080
+          },
+          {
+            "elapsedSeconds": 253.1231361249811,
+            "diskFreeBytes": 2043629568
+          },
+          {
+            "elapsedSeconds": 255.1332418329548,
+            "diskFreeBytes": 2043621376
+          },
+          {
+            "elapsedSeconds": 257.13849554100307,
+            "diskFreeBytes": 2043604992
+          },
+          {
+            "elapsedSeconds": 259.1404716660036,
+            "diskFreeBytes": 2043510784
+          },
+          {
+            "elapsedSeconds": 261.14476983295754,
+            "diskFreeBytes": 2043473920
+          },
+          {
+            "elapsedSeconds": 263.1541543749627,
+            "diskFreeBytes": 2043498496
+          },
+          {
+            "elapsedSeconds": 265.1642792499624,
+            "diskFreeBytes": 2043396096
+          },
+          {
+            "elapsedSeconds": 267.1743856249959,
+            "diskFreeBytes": 2043392000
+          },
+          {
+            "elapsedSeconds": 269.18448770797113,
+            "diskFreeBytes": 2043392000
+          },
+          {
+            "elapsedSeconds": 271.19416633294895,
+            "diskFreeBytes": 2043392000
+          },
+          {
+            "elapsedSeconds": 273.20428937498946,
+            "diskFreeBytes": 2043387904
+          },
+          {
+            "elapsedSeconds": 275.2143847499974,
+            "diskFreeBytes": 2043219968
+          },
+          {
+            "elapsedSeconds": 277.2244642499718,
+            "diskFreeBytes": 2043219968
+          },
+          {
+            "elapsedSeconds": 279.2345938749495,
+            "diskFreeBytes": 2043211776
+          },
+          {
+            "elapsedSeconds": 281.2371067079948,
+            "diskFreeBytes": 2043211776
+          },
+          {
+            "elapsedSeconds": 283.2402979579638,
+            "diskFreeBytes": 2043207680
+          },
+          {
+            "elapsedSeconds": 285.2503831249778,
+            "diskFreeBytes": 2043080704
+          },
+          {
+            "elapsedSeconds": 287.2549106249935,
+            "diskFreeBytes": 2043072512
+          },
+          {
+            "elapsedSeconds": 289.2649985830067,
+            "diskFreeBytes": 2043084800
+          },
+          {
+            "elapsedSeconds": 291.27511291595874,
+            "diskFreeBytes": 2043076608
+          },
+          {
+            "elapsedSeconds": 293.28520604094956,
+            "diskFreeBytes": 2043076608
+          },
+          {
+            "elapsedSeconds": 295.2953037080006,
+            "diskFreeBytes": 2043060224
+          },
+          {
+            "elapsedSeconds": 297.305397832999,
+            "diskFreeBytes": 2043027456
+          },
+          {
+            "elapsedSeconds": 299.31551766599296,
+            "diskFreeBytes": 2043076608
+          },
+          {
+            "elapsedSeconds": 301.3236001249752,
+            "diskFreeBytes": 2043064320
+          },
+          {
+            "elapsedSeconds": 303.3336825830047,
+            "diskFreeBytes": 2043015168
+          },
+          {
+            "elapsedSeconds": 305.3411383329658,
+            "diskFreeBytes": 2043015168
+          },
+          {
+            "elapsedSeconds": 307.34465954097686,
+            "diskFreeBytes": 2043011072
+          },
+          {
+            "elapsedSeconds": 309.3504386249697,
+            "diskFreeBytes": 2042859520
+          },
+          {
+            "elapsedSeconds": 311.36054208298447,
+            "diskFreeBytes": 2042929152
+          },
+          {
+            "elapsedSeconds": 313.37066854099976,
+            "diskFreeBytes": 2042880000
+          },
+          {
+            "elapsedSeconds": 315.3807581659639,
+            "diskFreeBytes": 2042806272
+          },
+          {
+            "elapsedSeconds": 317.3908934579813,
+            "diskFreeBytes": 2042793984
+          },
+          {
+            "elapsedSeconds": 319.40103070798796,
+            "diskFreeBytes": 2042753024
+          },
+          {
+            "elapsedSeconds": 321.411110624962,
+            "diskFreeBytes": 2042748928
+          },
+          {
+            "elapsedSeconds": 323.42120637500193,
+            "diskFreeBytes": 2042605568
+          },
+          {
+            "elapsedSeconds": 325.4312713329564,
+            "diskFreeBytes": 2042605568
+          },
+          {
+            "elapsedSeconds": 327.44135904096765,
+            "diskFreeBytes": 2042605568
+          },
+          {
+            "elapsedSeconds": 329.4514877499896,
+            "diskFreeBytes": 2043432960
+          },
+          {
+            "elapsedSeconds": 331.4616265409859,
+            "diskFreeBytes": 2043432960
+          },
+          {
+            "elapsedSeconds": 333.4717323749792,
+            "diskFreeBytes": 2043068416
+          },
+          {
+            "elapsedSeconds": 335.48182874999475,
+            "diskFreeBytes": 2043109376
+          },
+          {
+            "elapsedSeconds": 337.48984024999663,
+            "diskFreeBytes": 2043027456
+          },
+          {
+            "elapsedSeconds": 339.4999523329898,
+            "diskFreeBytes": 2042945536
+          },
+          {
+            "elapsedSeconds": 341.5100827079732,
+            "diskFreeBytes": 2042785792
+          },
+          {
+            "elapsedSeconds": 343.5201885830029,
+            "diskFreeBytes": 2042699776
+          },
+          {
+            "elapsedSeconds": 345.5302981249988,
+            "diskFreeBytes": 2042499072
+          },
+          {
+            "elapsedSeconds": 347.54046316596214,
+            "diskFreeBytes": 2042368000
+          },
+          {
+            "elapsedSeconds": 349.55056470795535,
+            "diskFreeBytes": 2042351616
+          },
+          {
+            "elapsedSeconds": 351.55637424997985,
+            "diskFreeBytes": 2042343424
+          },
+          {
+            "elapsedSeconds": 353.5651891659945,
+            "diskFreeBytes": 2042220544
+          },
+          {
+            "elapsedSeconds": 355.5753058329574,
+            "diskFreeBytes": 2042195968
+          },
+          {
+            "elapsedSeconds": 357.585421540949,
+            "diskFreeBytes": 2042195968
+          },
+          {
+            "elapsedSeconds": 359.5912304579979,
+            "diskFreeBytes": 2042195968
+          },
+          {
+            "elapsedSeconds": 361.60134787496645,
+            "diskFreeBytes": 2042294272
+          },
+          {
+            "elapsedSeconds": 363.61144266597694,
+            "diskFreeBytes": 2045919232
+          },
+          {
+            "elapsedSeconds": 365.6167077079881,
+            "diskFreeBytes": 2045947904
+          },
+          {
+            "elapsedSeconds": 367.62682704097824,
+            "diskFreeBytes": 2045943808
+          },
+          {
+            "elapsedSeconds": 369.6369291250012,
+            "diskFreeBytes": 2045923328
+          },
+          {
+            "elapsedSeconds": 371.64703641599044,
+            "diskFreeBytes": 2045726720
+          },
+          {
+            "elapsedSeconds": 373.6571196659934,
+            "diskFreeBytes": 2045640704
+          },
+          {
+            "elapsedSeconds": 375.66721366596175,
+            "diskFreeBytes": 2045669376
+          },
+          {
+            "elapsedSeconds": 377.6773329579737,
+            "diskFreeBytes": 2045669376
+          },
+          {
+            "elapsedSeconds": 379.6874404999544,
+            "diskFreeBytes": 2045648896
+          },
+          {
+            "elapsedSeconds": 381.69754024996655,
+            "diskFreeBytes": 2045636608
+          },
+          {
+            "elapsedSeconds": 383.7076262909686,
+            "diskFreeBytes": 2045624320
+          },
+          {
+            "elapsedSeconds": 385.7177389579592,
+            "diskFreeBytes": 2045444096
+          },
+          {
+            "elapsedSeconds": 387.72784074995434,
+            "diskFreeBytes": 2045399040
+          },
+          {
+            "elapsedSeconds": 389.73795899999095,
+            "diskFreeBytes": 2045227008
+          },
+          {
+            "elapsedSeconds": 391.74806804099353,
+            "diskFreeBytes": 2045186048
+          },
+          {
+            "elapsedSeconds": 393.75818129099207,
+            "diskFreeBytes": 2045329408
+          },
+          {
+            "elapsedSeconds": 395.7652353749727,
+            "diskFreeBytes": 2045157376
+          },
+          {
+            "elapsedSeconds": 397.7753793330048,
+            "diskFreeBytes": 2045132800
+          },
+          {
+            "elapsedSeconds": 399.7855070409714,
+            "diskFreeBytes": 2045001728
+          },
+          {
+            "elapsedSeconds": 401.79559749999316,
+            "diskFreeBytes": 2045075456
+          },
+          {
+            "elapsedSeconds": 403.80572833295446,
+            "diskFreeBytes": 2044858368
+          },
+          {
+            "elapsedSeconds": 405.81582354096463,
+            "diskFreeBytes": 2044829696
+          },
+          {
+            "elapsedSeconds": 407.8259240829502,
+            "diskFreeBytes": 2044731392
+          },
+          {
+            "elapsedSeconds": 409.83309508295497,
+            "diskFreeBytes": 2044661760
+          },
+          {
+            "elapsedSeconds": 411.83829279098427,
+            "diskFreeBytes": 2044657664
+          },
+          {
+            "elapsedSeconds": 413.8484090829734,
+            "diskFreeBytes": 2044628992
+          },
+          {
+            "elapsedSeconds": 415.85746695799753,
+            "diskFreeBytes": 2044596224
+          },
+          {
+            "elapsedSeconds": 417.8675672909594,
+            "diskFreeBytes": 2044596224
+          },
+          {
+            "elapsedSeconds": 419.8776614579838,
+            "diskFreeBytes": 2044588032
+          },
+          {
+            "elapsedSeconds": 421.88775299995905,
+            "diskFreeBytes": 2044436480
+          },
+          {
+            "elapsedSeconds": 423.89786208298756,
+            "diskFreeBytes": 2044416000
+          },
+          {
+            "elapsedSeconds": 425.90349941595923,
+            "diskFreeBytes": 2044411904
+          },
+          {
+            "elapsedSeconds": 427.90443954098737,
+            "diskFreeBytes": 2037469184
+          },
+          {
+            "elapsedSeconds": 429.91512187500484,
+            "diskFreeBytes": 2017951744
+          }
+        ]
+      },
+      "files": [
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/audit.json",
+          "sha256": "48a3d19fad93f1266b40e27568326630dd91d1f74c031e6d5702c2bb80f563a9",
+          "bytes": 90549
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/audit.status",
+          "sha256": "9fc06401eaf520715aad732ec584d01d26e7450aa1f83f762e1cf595cc87cb78",
+          "bytes": 11
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/audit.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/audit.stdout",
+          "sha256": "48a3d19fad93f1266b40e27568326630dd91d1f74c031e6d5702c2bb80f563a9",
+          "bytes": 90549
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.cells.csv",
+          "sha256": "e86a66f2d8995eda0720ce9a734a406f1c2ebd9a622ae2a26b6998aee9aec376",
+          "bytes": 12237405
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.diagnostics.json",
+          "sha256": "a9792731f523213510e81bf1d42bd755405464770b3bc9935bd256e6bad46401",
+          "bytes": 1595
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.faces.csv",
+          "sha256": "692b7da834f6631ae54f202864d7d5875a4b49e768b2182b9453244febda3037",
+          "bytes": 13198202
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.history.csv",
+          "sha256": "3786051a1c1f39d9443f3d2f763d6b2e5b57a3f70a0b01305fd000bcae0a3746",
+          "bytes": 916490
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.json",
+          "sha256": "58b009d2616e47d477d514121a95572ed642868dfbbb28cc7543f3b7a87a04c0",
+          "bytes": 2582
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/runtime.json",
+          "sha256": "59eb59ccb6e20f36039c18adf37b89bf13bdab029b7d80dc502f7ffdb2fd281d",
+          "bytes": 20528
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/stderr.log",
+          "sha256": "4dbbbeb43057852254f40e2f305a9a2e4087b2d54c6ca15b7695b8d3e6172d40",
+          "bytes": 4309
+        },
+        {
+          "path": "outputs/native-flow/sst-workspace/after-full/stdout.log",
+          "sha256": "81e2625f82e531e6c0ba7c5845b56fcaac7b9b106a02615d20c6ddf0a5bef068",
+          "bytes": 52
+        }
+      ],
+      "diagnostics": {
+        "converged": true,
+        "stopped": false,
+        "stopReason": "converged",
+        "maxIterations": 20000,
+        "iterations": 3136,
+        "cells": 24000,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "solveSeconds": 427.637958458,
+        "performance": {
+          "sstUpdates": 3136,
+          "sstUpdateSeconds": 286.8286708059993,
+          "sstTransportSeconds": 275.56707820300005,
+          "sstGradientSeconds": 8.108893378000014,
+          "wallDistanceSeconds": 0.006826875,
+          "momentumLinearSeconds": 23.02268405200005,
+          "pressureLinearSeconds": 90.27324072699997,
+          "momentumIterations": 40213,
+          "pressureIterations": 74604,
+          "scalarSolves": {
+            "calls": 10262,
+            "patternBuilds": 1,
+            "patternReuses": 10261,
+            "ilu0Builds": 10230,
+            "ilu0Reuses": 0,
+            "linearIterations": 80854,
+            "totalSeconds": 185.50545935200003,
+            "setupSeconds": 18.39137845700003,
+            "linearSeconds": 142.05435259900017,
+            "faceFluxSeconds": 17.763356431999995
+          },
+          "scalarEvaluations": {
+            "calls": 16534,
+            "patternBuilds": 0,
+            "patternReuses": 3,
+            "ilu0Builds": 0,
+            "ilu0Reuses": 0,
+            "linearIterations": 0,
+            "totalSeconds": 42.928799101,
+            "setupSeconds": 23.567185661999996,
+            "linearSeconds": 0,
+            "faceFluxSeconds": 14.215251263000022
+          },
+          "kSolves": {
+            "calls": 5131,
+            "patternBuilds": 1,
+            "patternReuses": 5130,
+            "ilu0Builds": 5099,
+            "ilu0Reuses": 0,
+            "linearIterations": 22133,
+            "totalSeconds": 45.82813447999991,
+            "setupSeconds": 9.221975426000004,
+            "linearSeconds": 25.587158817000013,
+            "faceFluxSeconds": 8.868130586000014
+          },
+          "omegaSolves": {
+            "calls": 5131,
+            "patternBuilds": 0,
+            "patternReuses": 5131,
+            "ilu0Builds": 5131,
+            "ilu0Reuses": 0,
+            "linearIterations": 58721,
+            "totalSeconds": 139.6773248720001,
+            "setupSeconds": 9.169403031000005,
+            "linearSeconds": 116.46719378200015,
+            "faceFluxSeconds": 8.895225846
+          }
+        }
+      },
+      "audit": {
+        "valid": true,
+        "diagnosticOnly": false,
+        "declaredConverged": true,
+        "stopped": false,
+        "failedConvergenceChecks": [],
+        "scope": "coupled-steady-SST-2003m",
+        "case": "flatplate",
+        "physicalInputs": {
+          "nu": 2e-07,
+          "speed": 1,
+          "inletK": 2.25e-07,
+          "inletOmega": 125
+        },
+        "declaredInitialTurbulence": {
+          "initialK": 2.25e-07,
+          "initialOmega": 125
+        },
+        "bounds": [
+          -0.5,
+          0.0,
+          2.0,
+          1.0
+        ],
+        "plateReynolds": 10000000.0,
+        "scalarCorrectionsPerUpdate": 1,
+        "pressurePreconditioner": "aggregation",
+        "scalarPreconditioner": "ilu0",
+        "flatPlateTop": "pressure-farfield",
+        "boundarySummary": {
+          "inlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": -1.0,
+            "inwardFlux": 1.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 60
+          },
+          "outlet": {
+            "faces": 60,
+            "length": 1.0,
+            "netOutwardFlux": 0.9972408393262914,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.9972408393262914,
+            "inflowFaces": 0
+          },
+          "wall": {
+            "faces": 320,
+            "length": 2.0,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "slip": {
+            "faces": 80,
+            "length": 0.5,
+            "netOutwardFlux": 0.0,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.0,
+            "inflowFaces": 0
+          },
+          "farfield": {
+            "faces": 400,
+            "length": 2.5,
+            "netOutwardFlux": 0.002759160673730171,
+            "inwardFlux": 0.0,
+            "outwardFlux": 0.002759160673730171,
+            "inflowFaces": 0
+          }
+        },
+        "wallSampleScope": "Current discrete wall traction and owner-centre y+; not an accuracy qualification",
+        "cells": 24000,
+        "iterations": 3136,
+        "scalar": {
+          "k": {
+            "worstCellIndex": 1282,
+            "worstCentre": [
+              0.015624999999999972,
+              3.9747756195910845e-05
+            ],
+            "worstSignedResidual": 4.704023303772926e-15,
+            "worstDiagonal": 0.0004942236619003491,
+            "residualNorm": 3.152875696935736e-14,
+            "normTarget": 1.0157449140338329e-12,
+            "maxCellResidual": 9.518005037811006e-12,
+            "maxFaceFlux": 5.274391671586805e-06,
+            "globalBalance": 1.5423010303139862e-12,
+            "normRoundoffBudget": 2.3223527825201466e-17,
+            "reportedTransportBalance": {
+              "residualNorm": 3.1528756546579945e-14,
+              "maxCellResidual": 9.518005305602509e-12,
+              "originalEquationCellDifference": 2.6779150320670546e-19
+            }
+          },
+          "omega": {
+            "worstCellIndex": 229,
+            "worstCentre": [
+              0.934375,
+              3.4257934624264215e-06
+            ],
+            "worstSignedResidual": -3.892774991243186e-12,
+            "worstDiagonal": 0.004274641827123485,
+            "residualNorm": 2.2476711363258632e-11,
+            "normTarget": 8.900577476899091e-05,
+            "maxCellResidual": 9.106669397521741e-10,
+            "maxFaceFlux": 4547.505214697115,
+            "globalBalance": -1.17463659838387e-10,
+            "normRoundoffBudget": 2.002299420759449e-08,
+            "reportedTransportBalance": {
+              "residualNorm": 2.086078340839076e-11,
+              "maxCellResidual": 7.244974555624704e-10,
+              "originalEquationCellDifference": 1.8616948418970377e-10
+            }
+          }
+        },
+        "momentum": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "face-values",
+            "file": "/var/folders/yz/nxsb2szj7m75rgtxln6mxh4r0000gp/T/sst-rans-audit-jxmfuige/face-viscosity.csv",
+            "sha256": "0c9a43e05b21274635fb13718ef456cc2d4220e657061df59fbddd1ff9d9d643"
+          },
+          "convection": "upwind",
+          "pressureDiscretization": null,
+          "pressureBoundaryReconstruction": "one-sided-linear-2ring",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 48460,
+          "maxFaceDeviation": {
+            "pressure": 2.9408983928669308e-18,
+            "advectionX": 0.0,
+            "advectionY": 0.0,
+            "diffusionX": 5.082197683525802e-21,
+            "diffusionY": 8.470329472543003e-22
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": -0.0001174966704581793,
+              "expected": -0.00011749667045818225,
+              "absolute": 2.9408983928669308e-18,
+              "relative": 2.9408983928669308e-18
+            },
+            "advectionX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "advectionY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "diffusionX": {
+              "actual": -1.3780870802238084e-05,
+              "expected": -1.378087080223808e-05,
+              "absolute": 5.082197683525802e-21,
+              "relative": 5.082197683525802e-21
+            },
+            "diffusionY": {
+              "actual": -1.2159441461480674e-06,
+              "expected": -1.2159441461480666e-06,
+              "absolute": 8.470329472543003e-22,
+              "relative": 8.470329472543003e-22
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 5.5474513864456725e-08,
+            "worstCellIndex": 882,
+            "worstNormalizedX": 5.547448753945442e-08,
+            "worstNormalizedY": 5.4043803689831795e-11,
+            "worstCentre": {
+              "x": 0.015624999999999972,
+              "y": 2.3326877008614392e-05
+            },
+            "l2": 1.523017691528103e-10,
+            "maxCellVector": 2.3435187439990243e-11,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 5.5474513865514285e-08,
+              "expected": 5.5474513864456725e-08,
+              "absolute": 1.0575603393163965e-18,
+              "relative": 1.0575603393163965e-18
+            },
+            "pressureForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "pressureForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "discreteForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "reconstructedForceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceX": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "forceY": {
+              "actual": 0.0,
+              "expected": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceX": {
+              "actual": 0.002684315091458152,
+              "expected": 0.002684315091458152,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallForceY": {
+              "actual": -0.0004782154333720321,
+              "expected": -0.0004782154333720321,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceX": {
+              "actual": 0.002684315091458152,
+              "expected": 0.002684315091458152,
+              "absolute": 0.0,
+              "relative": 0.0
+            },
+            "wallViscousForceY": {
+              "actual": 1.9958522407109038e-07,
+              "expected": 1.9958522407109038e-07,
+              "absolute": 0.0,
+              "relative": 0.0
+            }
+          },
+          "sourceForcing": {
+            "case": "flatplate",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "discreteForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "globalBoundaryMomentum": {
+            "x": 5.98350230474054e-09,
+            "y": -1.1653739929442727e-09,
+            "magnitude": 6.095932773109151e-09,
+            "boundaryTermScale": 2.0043958996971782,
+            "relativeToBoundary": 3.041281801679058e-09,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 5.98350230474054e-09,
+            "boundaryMinusSourceY": -1.1653739929442727e-09,
+            "magnitude": 6.095932773109151e-09,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 5.983502509490329e-09,
+            "y": -1.1653739919674992e-09
+          },
+          "expectedCellResidualSum": {
+            "x": 5.98350230474054e-09,
+            "y": -1.1653739929442727e-09
+          },
+          "cellBoundaryConservationDifference": {
+            "x": 2.0474978860068072e-16,
+            "y": 9.76773537996252e-19,
+            "magnitude": 2.0475211847150196e-16
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "reconstructed-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "wallForce": {
+            "x": 0.002684315091458152,
+            "y": -0.0004782154333720321
+          },
+          "wallViscousForce": {
+            "x": 0.002684315091458152,
+            "y": 1.9958522407109038e-07
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "continuity": {
+          "maxCellImbalance": 1.2052834147131385e-14,
+          "l2CellImbalance": 7.594733414896617e-14,
+          "maxScaledCellImbalance": 0.043678295179249225,
+          "nativeDefinitionContinuity": 4.5455697407310327e-11,
+          "boundaryFluxSum": 2.1566082253343666e-14,
+          "referenceThroughput": 1.0,
+          "globalRelativeImbalance": 2.1566082253343666e-14,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 1.5811488300841898e-09
+        },
+        "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d",
+        "prefix": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/sst-workspace/after-full/flow"
+      },
+      "completedFixed100": false
+    }
+  },
+  "fixedWorkMeans": {
+    "before": {
+      "samples": 2,
+      "nativeSeconds": 17.786892770999998,
+      "scalarSetupSeconds": 0.8663790459999999
+    },
+    "after": {
+      "samples": 2,
+      "nativeSeconds": 17.533924749999997,
+      "scalarSetupSeconds": 0.361268107
+    }
+  },
+  "fixedWorkByteComparisons": {
+    "after-1": {
+      ".cells.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "identical": true
+      },
+      ".faces.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "identical": true
+      },
+      ".history.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "identical": true
+      }
+    },
+    "after-2": {
+      ".cells.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "identical": true
+      },
+      ".faces.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "identical": true
+      },
+      ".history.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-2/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "identical": true
+      }
+    },
+    "before-2": {
+      ".cells.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.unconverged.cells.csv",
+          "sha256": "c2e64673dc62cf446eab813e6b657a1ba67e87c9ffab1b9ad2102e05c16e4f85",
+          "bytes": 12338949
+        },
+        "identical": true
+      },
+      ".faces.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.unconverged.faces.csv",
+          "sha256": "6339981dd0344488b75819e77d98808570764822ae40d1f9dd00b7b8370f086c",
+          "bytes": 13185110
+        },
+        "identical": true
+      },
+      ".history.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-workspace/before-1/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/before-2/flow.history.csv",
+          "sha256": "6fcbd548985ad3f079e5b0618b9d475a337ee926c4c37e9f5c5a1589be64cd94",
+          "bytes": 28488
+        },
+        "identical": true
+      }
+    }
+  },
+  "timeScope": "Native solve time; ABBA serial fixed-work runs. Full comparison is one previously recorded before run and one new after run. Process times include polling and I/O.",
+  "thresholdsChanged": false,
+  "rawRoot": "outputs/native-flow/sst-workspace",
+  "fullComparison": {
+    "baselineDiagnostics": {
+      "converged": true,
+      "stopped": false,
+      "stopReason": "converged",
+      "maxIterations": 20000,
+      "iterations": 3136,
+      "cells": 24000,
+      "pressurePreconditioner": "aggregation",
+      "scalarPreconditioner": "ilu0",
+      "solveSeconds": 448.889887708,
+      "performance": {
+        "sstUpdates": 3136,
+        "sstUpdateSeconds": 309.07369970300067,
+        "sstTransportSeconds": 298.2306383149999,
+        "sstGradientSeconds": 7.712332080000014,
+        "wallDistanceSeconds": 0.00690625,
+        "momentumLinearSeconds": 22.967157841000027,
+        "pressureLinearSeconds": 90.33661547799996,
+        "momentumIterations": 40213,
+        "pressureIterations": 74604,
+        "scalarSolves": {
+          "calls": 10262,
+          "patternBuilds": 10262,
+          "ilu0Builds": 10230,
+          "ilu0Reuses": 0,
+          "linearIterations": 80854,
+          "totalSeconds": 210.43734644599988,
+          "setupSeconds": 44.741620844999964,
+          "linearSeconds": 141.93790648399983,
+          "faceFluxSeconds": 16.44730670299996
+        },
+        "scalarEvaluations": {
+          "calls": 16534,
+          "patternBuilds": 3,
+          "ilu0Builds": 0,
+          "ilu0Reuses": 0,
+          "linearIterations": 0,
+          "totalSeconds": 41.75332886199992,
+          "setupSeconds": 23.514045194,
+          "linearSeconds": 0,
+          "faceFluxSeconds": 13.101833862000014
+        },
+        "kSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5099,
+          "ilu0Reuses": 0,
+          "linearIterations": 22133,
+          "totalSeconds": 58.42007800799998,
+          "setupSeconds": 22.398744117000007,
+          "linearSeconds": 25.670507137000005,
+          "faceFluxSeconds": 8.215997907000016
+        },
+        "omegaSolves": {
+          "calls": 5131,
+          "patternBuilds": 5131,
+          "ilu0Builds": 5131,
+          "ilu0Reuses": 0,
+          "linearIterations": 58721,
+          "totalSeconds": 152.01726843800006,
+          "setupSeconds": 22.342876728,
+          "linearSeconds": 116.26739934699984,
+          "faceFluxSeconds": 8.23130879600001
+        }
+      }
+    },
+    "baselineAudit": {
+      "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/audit.json",
+      "sha256": "f961e6b08d586c06c961f73cf7e5f88676fe6c0a1a8aa7c8fd1864a7471ecd93",
+      "bytes": 90565
+    },
+    "byteComparison": {
+      ".cells.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.cells.csv",
+          "sha256": "e86a66f2d8995eda0720ce9a734a406f1c2ebd9a622ae2a26b6998aee9aec376",
+          "bytes": 12237405
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.cells.csv",
+          "sha256": "e86a66f2d8995eda0720ce9a734a406f1c2ebd9a622ae2a26b6998aee9aec376",
+          "bytes": 12237405
+        },
+        "identical": true
+      },
+      ".faces.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.faces.csv",
+          "sha256": "692b7da834f6631ae54f202864d7d5875a4b49e768b2182b9453244febda3037",
+          "bytes": 13198202
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.faces.csv",
+          "sha256": "692b7da834f6631ae54f202864d7d5875a4b49e768b2182b9453244febda3037",
+          "bytes": 13198202
+        },
+        "identical": true
+      },
+      ".history.csv": {
+        "before": {
+          "path": "outputs/native-flow/sst-pressure-comparison/aggregation-full/flow.history.csv",
+          "sha256": "3786051a1c1f39d9443f3d2f763d6b2e5b57a3f70a0b01305fd000bcae0a3746",
+          "bytes": 916490
+        },
+        "after": {
+          "path": "outputs/native-flow/sst-workspace/after-full/flow.history.csv",
+          "sha256": "3786051a1c1f39d9443f3d2f763d6b2e5b57a3f70a0b01305fd000bcae0a3746",
+          "bytes": 916490
+        },
+        "identical": true
+      }
+    }
+  },
+  "matchingFullRunControls": {
+    "case": "flatplate",
+    "flatPlateLeadingEdge": 0,
+    "flatPlateTop": "pressure-farfield",
+    "model": "SST-2003m",
+    "scope": "coupled-steady-SST-2003m",
+    "nu": 2e-07,
+    "speed": 1,
+    "inletK": 2.25e-07,
+    "inletOmega": 125,
+    "initialK": 2.25e-07,
+    "initialOmega": 125,
+    "tolerance": 1e-07,
+    "scalarRelativeTolerance": 1e-09,
+    "scalarAbsoluteTolerance": 1e-12,
+    "scalarCellTolerance": 1e-09,
+    "convection": "upwind",
+    "viscousStress": "symmetric",
+    "turbulenceUpdatesPerIteration": 1,
+    "turbulenceCompletionUpdates": 500,
+    "scalarCorrectionsPerUpdate": 1,
+    "scalarPreconditioner": "ilu0",
+    "pressurePreconditioner": "aggregation",
+    "cells": 24000
+  },
+  "baselineEvidence": {
+    "path": "artifacts/current/native-sst-pressure-comparison.json",
+    "sha256": "cbbeae858fd5dd89db44a5759307150df7ba5c5c070ede70bcf1109156b64acc",
+    "bytes": 172443
+  },
+  "runHashRecords": [
+    {
+      "path": "outputs/native-flow/sst-workspace/hashes-full-pre-run.sha256",
+      "sha256": "8b278f8af7fbe7b043e6c43d759cdea8d2d70e3594849f401544d5bd2e5840ac",
+      "bytes": 540
+    },
+    {
+      "path": "outputs/native-flow/sst-workspace/hashes-post-full.sha256",
+      "sha256": "b644328cdb47a08ef05df8efcbb5547b1c1bc538e24daf2dc1f9322ad687c795",
+      "bytes": 747
+    },
+    {
+      "path": "outputs/native-flow/sst-workspace/hashes-pre-runs.sha256",
+      "sha256": "1b2cea1e82c836c0b1d4bc7bcf6f6f5b466f469bf676bacac2e27dc2653d1fa4",
+      "bytes": 540
+    },
+    {
+      "path": "outputs/native-flow/sst-workspace/hashes-summary.sha256",
+      "sha256": "56cbd04edef7a1a3f9765e027d709c53b189ef87e5707327f5f2b89ac752e8bd",
+      "bytes": 224
+    }
+  ],
+  "reproductionSources": {
+    "run_one.py": {
+      "file": {
+        "path": "outputs/native-flow/sst-workspace/run_one.py",
+        "sha256": "e89d44bcbb718ca6774b1e8470140b1934244a8b2cb3bc7f085d2fb6f8cf4f68",
+        "bytes": 1804
+      },
+      "source": "import json, resource, shutil, subprocess, sys, time\nfrom pathlib import Path\nif len(sys.argv) not in (4,5): raise SystemExit('usage: run_one.py binary output-dir label [full]')\nbinary=Path(sys.argv[1]).resolve(); root=Path(sys.argv[2]).resolve(); label=sys.argv[3]; root.mkdir(parents=True,exist_ok=True)\nfull=len(sys.argv)==5 and sys.argv[4]=='full'\nmesh=Path('outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d').resolve(); prefix=root/'flow'\ncmd=[str(binary),str(mesh),str(prefix),'flatplate-sweep','--nu','2e-7','--speed','1','--inlet-k','2.25e-7','--inlet-omega','125','--leading-edge','0','--max-iterations',('20000' if full else '100'),'--max-seconds',('540' if full else '90'),'--completion-updates','500','--scalar-preconditioner','ilu0','--pressure-preconditioner','aggregation']\nstart=time.monotonic(); samples=[]; timeout=False; floor=int(1.5*1024**3)\nwith (root/'stdout.log').open('wb') as out,(root/'stderr.log').open('wb') as err:\n p=subprocess.Popen(cmd,stdout=out,stderr=err)\nwhile True:\n  rc=p.poll(); elapsed=time.monotonic()-start; free=shutil.disk_usage(root).free;samples.append({'elapsedSeconds':elapsed,'diskFreeBytes':free})\n  if free<floor:p.kill();p.wait();rc=p.returncode;break\n  if rc is not None:break\n  if elapsed>=(600 if full else 120):timeout=True;p.kill();p.wait();rc=p.returncode;break\n  time.sleep(2)\nend=time.monotonic(); child=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss\n(root/'runtime.json').write_text(json.dumps({'label':label,'binary':str(binary),'command':cmd,'runtimeSeconds':end-start,'exitCode':rc,'timeout':timeout,'peakRssBytes':child,'peakRssSource':'resource.RUSAGE_CHILDREN.ru_maxrss','liveRssGuardActive':False,'diskFloorBytes':floor,'samples':samples},indent=2)+'\\n')\nsys.exit(124 if timeout else (rc if rc is not None else 1))\n"
+    },
+    "summarize.py": {
+      "file": {
+        "path": "outputs/native-flow/sst-workspace/summarize.py",
+        "sha256": "5a98370c793a40ab3651af3cb31e79d9809b215d039ccab5372fc9e65ea65887",
+        "bytes": 5489
+      },
+      "source": "import csv,hashlib,json,platform,statistics\nfrom pathlib import Path\nroot=Path('outputs/native-flow/sst-workspace')\ndef record(p):\n p=Path(p);return {'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}\ndef read(p):return json.loads(Path(p).read_text())\nruns={}\nfor name in ['before-1','after-1','after-2','before-2','after-full']:\n folder=root/name\n if not (folder/'runtime.json').exists():continue\n entry={'runtime':read(folder/'runtime.json'),'files':[record(p) for p in sorted(folder.iterdir()) if p.is_file()]}\n if (folder/'flow.diagnostics.json').exists():entry['diagnostics']=read(folder/'flow.diagnostics.json')\n if (folder/'audit.json').exists():entry['audit']={k:v for k,v in read(folder/'audit.json').items() if k!='plateWallSamples'}\n entry['completedFixed100']=name!='after-full' and entry.get('diagnostics',{}).get('iterations')==100 and entry['diagnostics']['stopReason']=='iteration-limit'\n runs[name]=entry\nmeans={}\nfor method in ['before','after']:\n samples=[e for n,e in runs.items() if n.startswith(method+'-') and e['completedFixed100']]\n if samples:means[method]={'samples':len(samples),'nativeSeconds':statistics.mean(e['diagnostics']['solveSeconds'] for e in samples),\n  'scalarSetupSeconds':statistics.mean(e['diagnostics']['performance']['scalarSolves']['setupSeconds'] for e in samples)}\ndef equal_csv(a,b):\n out={}\n for suffix in ['.cells.csv','.faces.csv','.history.csv']:\n  # History is written at the unsuffixed run prefix even for diagnostic fields.\n  aa=Path(str(a).removesuffix('.unconverged')+suffix) if suffix=='.history.csv' else Path(str(a)+suffix)\n  bb=Path(str(b).removesuffix('.unconverged')+suffix) if suffix=='.history.csv' else Path(str(b)+suffix)\n  out[suffix]={'before':record(aa),'after':record(bb),'identical':aa.read_bytes()==bb.read_bytes()}\n return out\ncomparisons={}\nfor n in ['after-1','after-2','before-2']:\n if runs.get(n,{}).get('completedFixed100'):\n  comparisons[n]=equal_csv(root/'before-1/flow.unconverged',root/n/'flow.unconverged')\nassert all(v['identical'] for c in comparisons.values() for v in c.values()), 'fixed-work numerical fields changed'\nsources=['include/cartmesh2d/fv/ScalarTransport2D.hpp','include/cartmesh2d/fv/Sst2003m2D.hpp','src/fv/ScalarTransport2D.cpp','src/fv/Sst2003m2D.cpp','src/fv/SstRans2D.cpp','tests/sst_rans_probe.cpp','tests/sst_rans_test.cpp','tests/scalar_workspace_test.cpp']\nstudy={'scope':'Explicit sparse storage reuse in native SST; unchanged equations and original stopping gates; physical accuracy unchanged',\n 'baseCommit':'65319e3','host':platform.platform(),'mesh':record('outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d'),\n 'beforeBinary':record(root/'before-probe'),'afterBinary':record('build/cartmesh2d_sst_rans_probe'),\n 'sourceFiles':[record(p) for p in sources],'runs':runs,'fixedWorkMeans':means,'fixedWorkByteComparisons':comparisons,\n 'timeScope':'Native solve time; ABBA serial fixed-work runs. Full comparison is one previously recorded before run and one new after run. Process times include polling and I/O.',\n 'thresholdsChanged':False,'rawRoot':str(root)}\nif runs.get('after-full',{}).get('audit',{}).get('valid'):\n baseline=Path('outputs/native-flow/sst-pressure-comparison/aggregation-full')\n study['fullComparison']={'baselineDiagnostics':read(baseline/'flow.diagnostics.json'),'baselineAudit':record(baseline/'audit.json'),\n  'byteComparison':equal_csv(baseline/'flow',root/'after-full/flow')}\n assert all(v['identical'] for v in study['fullComparison']['byteComparison'].values()), 'full numerical fields changed'\n old=read(baseline/'flow.json');new=read(root/'after-full/flow.json')\n keys=['case','flatPlateLeadingEdge','flatPlateTop','model','scope','nu','speed','inletK','inletOmega','initialK','initialOmega','tolerance','scalarRelativeTolerance','scalarAbsoluteTolerance','scalarCellTolerance','convection','viscousStress','turbulenceUpdatesPerIteration','turbulenceCompletionUpdates','scalarCorrectionsPerUpdate','scalarPreconditioner','pressurePreconditioner','cells']\n assert all(old[k]==new[k] for k in keys)\n study['matchingFullRunControls']={k:old[k] for k in keys}\nprior=read('artifacts/current/native-sst-pressure-comparison.json')\nassert study['beforeBinary']['sha256']==prior['binary']['sha256'], 'before binary does not match published baseline'\nstudy['baselineEvidence']=record('artifacts/current/native-sst-pressure-comparison.json')\nfor line in (root/'hashes-full-pre-run.sha256').read_text().splitlines():\n digest,path=line.split(None,1)\n if path in ['build/cartmesh2d_sst_rans_probe','outputs/native-flow/sst-workspace/before-probe','outputs/native-flow/sst-normal-refinement/midpoint/mesh.cm2d']:\n  assert record(path)['sha256']==digest, 'timed executable/input changed'\nstudy['runHashRecords']=[record(p) for p in sorted(root.glob('hashes-*.sha256'))]\nfor name in ['run_one.py','summarize.py','plot.py']:\n p=root/name\n if p.exists():study.setdefault('reproductionSources',{})[name]={'file':record(p),'source':p.read_text()}\nfor name in ['build.log','ctest.log','frontend.log']:\n p=root/name\n if p.exists():study.setdefault('validationLogs',[]).append(record(p))\nPath('artifacts/current/native-sst-workspace.json').write_text(json.dumps(study,indent=2,allow_nan=False)+'\\n')\nprint(json.dumps({'means':means,'fullAccepted':runs.get('after-full',{}).get('audit',{}).get('valid',False),'fixedWorkBytesIdentical':all(v['identical'] for c in comparisons.values() for v in c.values())},indent=2))\n"
+    },
+    "plot.py": {
+      "file": {
+        "path": "outputs/native-flow/sst-workspace/plot.py",
+        "sha256": "bd500db115907b27f11b36c3b771ae0308dada570177ebb9554c4f0187da9244",
+        "bytes": 3874
+      },
+      "source": "import csv,hashlib,json,sys\nfrom pathlib import Path\nimport matplotlib\nmatplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nfrom matplotlib.collections import PolyCollection\nsys.path.insert(0,str(Path('tools/verification').resolve()))\nimport verify_native_flow as native\nstudy=json.loads(Path('artifacts/current/native-sst-workspace.json').read_text())\ndef checked(record):\n p=Path(record['path']);assert hashlib.sha256(p.read_bytes()).hexdigest()==record['sha256'];return p\nfor r in study['runs'].values():\n for f in r['files']:checked(f)\nmesh=native.read_cm2d(checked(study['mesh']))\nfig,axes=plt.subplots(2,2,figsize=(12,8),layout='constrained')\npolygons=[]\nfor c in mesh.cells:\n points=[mesh.vertices[i] for i in c.vertices]\n if min(x for x,y in points)<1 and max(x for x,y in points)>.95 and min(y for x,y in points)<.003:polygons.append(points)\naxes[0,0].add_collection(PolyCollection(polygons,facecolors='#f1f5f7',edgecolors='#688291',linewidths=.6))\naxes[0,0].set(xlim=(.95,1),ylim=(0,.003),xlabel='x [m]',ylabel='y [m]',title='Actual 24,000-cell mesh (vertical zoom)')\nmeans=study['fixedWorkMeans']\nfor i,key in enumerate(['before','after']):\n total=means[key]['nativeSeconds'];setup=means[key]['scalarSetupSeconds']\n axes[0,1].bar(i,setup,color='#9b7a4c',label='Scalar solve setup' if i==0 else None)\n axes[0,1].bar(i,total-setup,bottom=setup,color='#c7d2d9',label='Other work' if i==0 else None)\n axes[0,1].text(i,total+.3,f'{total:.2f} s',ha='center')\naxes[0,1].set(xticks=[0,1],xticklabels=['Before','Workspace reuse'],ylabel='Native solve time [s]',title='100 steps: ABBA mean timings')\naxes[0,1].set_ylim(0,max(v['nativeSeconds'] for v in means.values())*1.15)\naxes[0,1].legend(fontsize=9);axes[0,1].grid(axis='y',alpha=.15)\nfull=study['runs'].get('after-full')\nif full and 'diagnostics' in full:\n hist=next(f for f in full['files'] if f['path'].endswith('.history.csv'))\n with checked(hist).open() as f:rows=list(csv.DictReader(f))\n for key,label,color in [('momentumResidual','Momentum','#367c92'),('kCellResidual','k local','#a58142'),('omegaCellResidual','omega local','#8b6998')]:\n  axes[1,0].semilogy([int(r['iteration']) for r in rows],[float(r[key]) for r in rows],label=label,color=color)\n axes[1,0].axhline(1e-7,ls=':',color='#367c92',lw=1);axes[1,0].axhline(1e-9,ls=':',color='#666',lw=1)\n axes[1,0].set(xlabel='SIMPLE iteration',ylabel='Residual (different original definitions)',title='Full-run convergence history')\n axes[1,0].legend(fontsize=9);axes[1,0].grid(alpha=.15)\nelse:axes[1,0].axis('off')\naxes[1,1].axis('off')\nlines=['Same numerical equations and stopping limits.','Sparse structure/storage reused; coefficients rebuilt.','No stale factors or hidden fallback.','']\nif full and 'diagnostics' in full:\n d=full['diagnostics'];s=d['performance']['scalarSolves']\n lines += [f\"Full run: {d['stopReason']}; {d['iterations']:,} steps\",f\"Native time: {d['solveSeconds']:.2f} s\",'Independent equation audit: '+('PASS' if full.get('audit',{}).get('valid') else 'NOT ACCEPTED'),'',f\"Scalar graph builds: {s['patternBuilds']:,}\",f\"Scalar graph reuses: {s.get('patternReuses',0):,}\"]\n if 'fullComparison' in study:\n  same=all(v['identical'] for v in study['fullComparison']['byteComparison'].values())\n  b=study['fullComparison']['baselineDiagnostics']\n  lines += [f\"Earlier full run: {b['solveSeconds']:.2f} s\",'', 'Cells / faces / history byte-identical: '+('YES' if same else 'NO')]\nlines += ['','Physical accuracy is unchanged by this optimization.']\naxes[1,1].text(.02,.98,'\\n'.join(lines),va='top',fontsize=10.5,linespacing=1.45)\nfig.suptitle('SST-2003m | Re_plate = 10 million | Explicit sparse workspace reuse',fontsize=15)\nfig.supxlabel('Local serial macOS observations. Fixed-work timing is not convergence; full-run timing has one observation per version.',fontsize=10)\nfig.savefig('artifacts/current/native-sst-workspace.png',dpi=150)\n"
+    }
+  },
+  "validationLogs": [
+    {
+      "path": "outputs/native-flow/sst-workspace/build.log",
+      "sha256": "9e3f5cb3880374a3579686d91da82c4d08acf28f0be1090345c4b5b36631556b",
+      "bytes": 4264
+    },
+    {
+      "path": "outputs/native-flow/sst-workspace/ctest.log",
+      "sha256": "1a6921d7eeb085a6a0b74ca8b09be39c4323a0a4db5e5e8cbbdd70dc46f8a1a6",
+      "bytes": 20321
+    },
+    {
+      "path": "outputs/native-flow/sst-workspace/frontend.log",
+      "sha256": "abbdb5a0d796a5e61603c67b6144dc3a1b542a2fd502cca0c905e0014371103f",
+      "bytes": 11724
+    }
+  ]
+}
