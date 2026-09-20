@@ -1,0 +1,54 @@
+{
+  "source_commit": "2e13c5ea5086d1bb9fbdcbbc072ffb3c0edc9656",
+  "scope": "Selected archive; unselected original data retained; no deletion performed",
+  "output_files_selected": 11629,
+  "output_files_not_selected": 10029,
+  "output_bytes_selected": 2964494245,
+  "packages": [
+    {
+      "file": "01-source-and-reports.tar.gz",
+      "sha256": "a70b54197b29b96ceac9f779d8eb39074fbd7adc65a6903f1fd815c9c794c987",
+      "bytes": 39980611,
+      "files": 594,
+      "logical_bytes": 52981323,
+      "unique_contents": 593,
+      "local_verified": true,
+      "cloud_verified": true
+    },
+    {
+      "file": "02-logs-and-configs.tar.gz",
+      "sha256": "9018e259097cca65021f7523330fb4fd2822cfbcc434e6acf3a5858df8565458",
+      "bytes": 86949238,
+      "files": 9733,
+      "logical_bytes": 652924528,
+      "unique_contents": 6365,
+      "local_verified": true,
+      "cloud_verified": true
+    },
+    {
+      "file": "03-high-density-and-sst.tar.gz",
+      "sha256": "8e4a12f13ef68b5ab20dbb0912cee0e3bfb6827b7665409f526afc2e1df4c66c",
+      "bytes": 290486058,
+      "files": 886,
+      "logical_bytes": 1410794018,
+      "unique_contents": 613,
+      "local_verified": true,
+      "cloud_verified": true
+    },
+    {
+      "file": "04-reference-cases.tar.gz",
+      "sha256": "83bd02af22b71a32866da88a911dbfce5412ef267a762ef8369fefb44ec687d2",
+      "bytes": 132447916,
+      "files": 1010,
+      "logical_bytes": 900775699,
+      "unique_contents": 449,
+      "local_verified": true,
+      "cloud_verified": true
+    }
+  ],
+  "cloud_verified": true,
+  "cloud_verification_method": "Downloaded each complete package from the existing private Seafile library over HTTPS and matched SHA256 and byte count; streamed without retaining another local copy.",
+  "source_data_deleted": false,
+  "archive_folder_name": "cartmesh2d-2e13c5e-selected",
+  "cloud_verified_at_utc": "2026-09-20T12:41:59Z"
+}
