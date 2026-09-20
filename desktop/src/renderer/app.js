@@ -881,6 +881,15 @@ function renderFlowResult(summary) {
     rows.push(['回流出口面数', String(summary.outletBackflowFaces)]);
   if (summary.outletInflow !== undefined)
     rows.push(['出口流入量（m²/s）', summary.outletInflow]);
+  if (summary.namedWallLoads) {
+    rows.push(['壁面载荷', '流体作用于壁面；力÷ρ÷单位厚度'],
+      ['力矩基准', '原点 (0,0)，逆时针为正']);
+    for (const load of summary.namedWallLoads) {
+      rows.push([`${load.name} · Fx（m³/s²）`,load.forceX],
+        [`${load.name} · Fy（m³/s²）`,load.forceY],
+        [`${load.name} · 力矩（m⁴/s²）`,load.torque]);
+    }
+  }
   for (const [label, value] of rows) {
     const item = document.createElement('div');
     const caption = document.createElement('span'); caption.textContent = label;

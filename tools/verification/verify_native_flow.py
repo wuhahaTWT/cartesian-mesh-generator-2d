@@ -1049,6 +1049,45 @@ def prescribed_face_viscosity(mesh, geometry, records, nu, payload):
     return values,source
 
 
+def audit_named_wall_loads(mesh, measured, faces, payload):
+    """Integrate exported traction on actual edges; momentum auditing separately
+    reconstructs that traction from cell fields. Legacy results may omit loads.
+    """
+    keys = ('namedWallLoads', 'wallLoadReference', 'wallLoadDefinition')
+    if not any(k in payload for k in keys):
+        return {'status': 'unavailable'}
+    definition = 'fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise'
+    if (payload.get('case') != 'custom' or payload.get('wallLoadReference') != [0,0]
+            or payload.get('wallLoadDefinition') != definition or not isinstance(payload.get('namedWallLoads'), list)):
+        raise VerificationError('invalid named wall load definition/reference')
+    groups = {}
+    geometry = face_geometry(mesh, measured)
+    for bc in payload['boundaryConditions']:
+        if bc['type'] not in ('wall','moving-wall'): continue
+        edge = mesh.edges[bc['face']]; f = geometry[edge.id]; row = faces[edge.id]
+        x,y = f.centre; sx,sy = f.area_vector
+        px,py = row['pressure']*sx,row['pressure']*sy
+        vx,vy = row['diffusionX'],row['diffusionY']
+        groups.setdefault(bc['name'], []).append(dict(length=math.hypot(sx,sy),
+            pressureForceX=px,pressureForceY=py,viscousForceX=vx,viscousForceY=vy,
+            forceX=px+vx,forceY=py+vy,pressureTorque=x*py-y*px,viscousTorque=x*vy-y*vx,
+            torque=x*(py+vy)-y*(px+vx)))
+    seen = set()
+    for actual in payload['namedWallLoads']:
+        if not isinstance(actual,dict) or actual.get('name') not in groups or actual['name'] in seen:
+            raise VerificationError('missing, duplicate or unknown named wall load')
+        name=actual['name'];seen.add(name);samples=groups[name]
+        if set(actual) != {'name','faces',*samples[0]} or integer(actual['faces'],'wall face count') != len(samples):
+            raise VerificationError('named wall load count/fields disagree with boundary input')
+        for key in samples[0]:
+            expected=math.fsum(s[key] for s in samples)
+            if not close(finite(actual[key],'wall load '+key),expected,5e-10,1e-10):
+                raise VerificationError('named wall load differs from face integration: '+name+' '+key)
+    if seen != set(groups):
+        raise VerificationError('named wall load does not cover every no-slip patch')
+    return {'status':'verified','patches':len(groups),'reference':[0,0]}
+
+
 def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[dict[str, float]],
                                face_records: list[dict[str, float]], nu: float, speed: float,
                                case: str, payload: dict[str, Any],
@@ -1319,6 +1358,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                          if case in ("manufactured", "counterflow") else "zero/unforced non-manufactured case")
     return {
         "status": "available", "valid": True, "viscosityInput": viscosity_source, "convection": convection,
+        "namedWallLoads": audit_named_wall_loads(mesh, measured, face_records, payload),
         "pressureDiscretization": payload.get("pressureDiscretization"),
         "pressureBoundaryReconstruction": pressure_boundary_reconstruction,
         "outletBackflow": outlet_backflow,

@@ -96,6 +96,22 @@ def main(cli, mesh_cli, convection):
             u,v = rotate(float(a['u']),float(a['v']))
             assert math.hypot(u-float(b['u']),v-float(b['v'])) < 1e-8
             assert abs(float(a['p'])-float(b['p'])) < 1e-7
+        base_loads=json.loads(Path(str(base)+'.json').read_text())['namedWallLoads']
+        rotated_loads=json.loads(Path(str(rotated)+'.json').read_text())['namedWallLoads']
+        for a,b in zip(base_loads,rotated_loads):
+            assert a['name']==b['name'] and a['faces']==b['faces']
+            fx,fy=rotate(a['forceX'],a['forceY'])
+            assert math.hypot(fx-b['forceX'],fy-b['forceY'])<1e-7
+            assert abs(a['torque']-b['torque'])<1e-7
+        # Reject forged physical patch loads even if global totals were left intact.
+        path=Path(str(base)+'.json');saved=path.read_text()
+        for mutate in (lambda p:p['namedWallLoads'].pop(),
+                       lambda p:p['namedWallLoads'][0].update(torque=123.45),
+                       lambda p:p.update(wallLoadReference=[1,0])):
+            payload=json.loads(saved);mutate(payload);path.write_text(json.dumps(payload))
+            rejected=audit.verify_case(mesh_path,base,'custom',.1,1,audit.argument_parser().parse_args([]))
+            assert not rejected['valid'] and any('wall load' in i for i in rejected['issues']),rejected
+        path.write_text(saved)
         rejection = solve(root/'wrong-mesh', mesh=rotated_mesh, success=False)
         assert 'geometry differs' in rejection.stderr, rejection.stderr
 

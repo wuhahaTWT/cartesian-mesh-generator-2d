@@ -868,6 +868,30 @@ static FlowResult2D solveFlow(
     finite(r.wallViscousForceX);finite(r.wallViscousForceY);
     finite(r.globalImbalance);finite(r.forceX);finite(r.forceY);
     finite(r.pressureForceX);finite(r.pressureForceY);finite(r.discreteForceX);finite(r.discreteForceY);
+    if (c.scenario == "custom") {
+        std::map<std::string, FlowWallLoad2D> loads;
+        // Sort face IDs so input record ordering cannot change reductions.
+        auto conditions = c.boundaryConditions;
+        std::sort(conditions.begin(), conditions.end(), [](const auto& a, const auto& b) { return a.face < b.face; });
+        for (const auto& condition : conditions) {
+            const auto id = condition.face;
+            const auto& momentum = r.faceMomentum[id];
+            if (!momentum.wall) continue;
+            const auto& face = m.faces[id];
+            auto& load = loads[condition.name];
+            load.name = condition.name;
+            ++load.faces;
+            load.length = finite(load.length + std::hypot(face.areaVector.x, face.areaVector.y));
+            const auto pressure = face.areaVector * momentum.pressure;
+            load.pressure.x = finite(load.pressure.x + pressure.x);
+            load.pressure.y = finite(load.pressure.y + pressure.y);
+            load.viscous.x = finite(load.viscous.x + momentum.diffusion.x);
+            load.viscous.y = finite(load.viscous.y + momentum.diffusion.y);
+            load.pressureTorque = finite(load.pressureTorque + face.centre.x*pressure.y - face.centre.y*pressure.x);
+            load.viscousTorque = finite(load.viscousTorque + face.centre.x*momentum.diffusion.y - face.centre.y*momentum.diffusion.x);
+        }
+        for (auto& entry : loads) r.namedWallLoads.push_back(std::move(entry.second));
+    }
     if (c.profile) {
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }

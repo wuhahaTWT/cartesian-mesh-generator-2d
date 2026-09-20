@@ -1,0 +1,74 @@
+{
+  "format": "cartmesh2d-named-wall-loads-v1",
+  "version": "0.4.16",
+  "scope": "Named no-slip patch force and torque integration and App display; numerical load integrity, not universal physical accuracy qualification.",
+  "definition": "fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise",
+  "reference": [
+    0,
+    0
+  ],
+  "units": {
+    "force": "m3/s2",
+    "torque": "m4/s2",
+    "length": "m"
+  },
+  "app": {
+    "cells": 2784,
+    "acceptedTime": 0.14,
+    "namedWallLoads": [
+      {
+        "faces": 576,
+        "forceX": 21.279249077262396,
+        "forceY": -8.824137167490198e-14,
+        "length": 12.173149452924086,
+        "name": "wall",
+        "pressureForceX": 7.584528966918802,
+        "pressureForceY": 2.724871109999194e-13,
+        "pressureTorque": 8.918343960621027e-13,
+        "torque": 2.9449734598299536e-13,
+        "viscousForceX": 13.694720110343594,
+        "viscousForceY": -3.607284826748214e-13,
+        "viscousTorque": -5.973370500791073e-13
+      }
+    ],
+    "failureCancelResumeChecked": true,
+    "independentExportValid": true
+  },
+  "tests": {
+    "ctest": 138,
+    "frontend": 151,
+    "rotationAngle": 0.63,
+    "rotatedForceAndTorque": true,
+    "tamperedLoadsRejected": true
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "a327494a31c9ac11ee363b6ce6cc2de1647449df73d66bcf9679efc5cf3d4da1",
+    "src/fv/Incompressible2D.cpp": "09894e7bfd926805647acdc6256b4d4378090c31426955489d63cc86cdfab58a",
+    "apps/cartmesh2d_flow_cli.cpp": "a5629feca39bbc9c153d7bfccf5def290b59246c1187fecc0777f7afe3f4d87f",
+    "tools/verification/verify_native_flow.py": "732ee11aa5f527ebe25ac80441d37c6eb9ab82996b264cd15b6596af7bd70c25",
+    "desktop/src/core/wall-loads.js": "e97320957e6283985d19d6f0fca074d06a25aa86a4ec0dd596d123f33e239568",
+    "desktop/src/core/flow.js": "4bed63845bb83862d5c5f495de31edd4631d99cc6b866bcdfeea1902ed8a0ab5",
+    "desktop/src/renderer/app.js": "f18511b6ed8f54b0009b172fd312b6e1a0dc53c7e6df7117b4cb4e56a3bc1113",
+    "tests/custom_flow_cli_test.py": "e52f7e345450965cae322ad5fd59415ba513994ad555370029b3eeddeb2553a3",
+    "desktop/tests/wall-loads.test.js": "e39bc18307cde7c6030ef1336fc8068134b0b87ad548bed399a325bc104cab1a"
+  },
+  "executables": {
+    "cartmesh2d_transport_cli": "cd3c8487aa673655e69c058144efe70e3713ede62df49f6d1ddf2406bdf359a3",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "e6ce9419144d3c9139fe1984421a3ab898fd418c18d3c695c24ed9ac9e6ae7b4",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "files": {
+    "outputs/native-flow/wall-loads/app.png": "8ec420b5fb4ecbf67e8c3c12d7f9b9f95519d36cd4eaa744a7cd9b560f80f245",
+    "outputs/native-flow/wall-loads/app.png.json": "d8a3d22561f1c159b887c0b394d0bcc3599ce227073970ae295b281fda3c9e7a",
+    "outputs/native-flow/wall-loads/app.zip": "8e07f7aeb2411fcf9e127bf38a969637a4795ef3d84b09a112df9b2952a0c9e8",
+    "outputs/native-flow/wall-loads/app-export-audit.json": "735147e70c787d43a5855c27dcad88832c084b3309ccc04cab59d31c243771e5"
+  },
+  "notRun": [
+    "OpenFOAM/checkMesh",
+    "Linux",
+    "Windows",
+    "compressible flow"
+  ]
+}

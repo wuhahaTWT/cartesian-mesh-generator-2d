@@ -861,3 +861,9 @@ git log --all --oneline -- src/quality/SolverTopology2D.cpp
 
 Git 历史和标签没有清除。最近前端临时保存 `f43a51f` 涉及的十个文件已经进入新版，没有第三套更新前端需要保留。
 本次盘点覆盖全部目录条目和项目文件用途，不等于对每条数值算法重新进行完整证明。
+
+### 命名壁面载荷
+
+`FlowResult2D::namedWallLoads`按custom边界名称积分无滑移静止/移动壁面；`FaceMomentum2D`中的实际压力及黏性通量进入力和力矩，入口/出口不计入。CLI摘要`namedWallLoads`保留压力/黏性分项、总量、面数和长度，`wallLoadReference=[0,0]`。力的单位m³/s²、力矩m⁴/s²，均除以密度和单位厚度，正力矩为逆时针；其他基准O处力矩为M_O=M_0-(O_x F_y-O_y F_x)。开放壁面分组的压力载荷随压力基准改变，不把单组载荷冒称全域守恒。
+
+`verify_native_flow.py::audit_named_wall_loads`从真实CM2D面中心/外法向与CSV重新积分，原方程审核另行重建各面通量；非定常共享同一审核。`desktop/src/core/wall-loads.js`检查名称覆盖、单位基准语义、分项加和与全壁面合力，App显示各组，旧无载荷字段的结果兼容但不补造数据。

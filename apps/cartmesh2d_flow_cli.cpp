@@ -405,6 +405,21 @@ int main(int argc, char** argv) {
                         << ",\"v\":" << b.velocity.y << ",\"p\":" << b.pressure << '}';
             }
             summary << "],\n";
+            summary << "\"wallLoadReference\":[0,0],\n\"wallLoadDefinition\":\"fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise\",\n\"namedWallLoads\":[";
+            comma = false;
+            for (const auto& load : r.namedWallLoads) {
+                if (comma) summary << ',';
+                comma = true;
+                summary << "{\"name\":" << std::quoted(load.name) << ",\"faces\":" << load.faces
+                    << ",\"length\":" << load.length
+                    << ",\"pressureForceX\":" << load.pressure.x << ",\"pressureForceY\":" << load.pressure.y
+                    << ",\"viscousForceX\":" << load.viscous.x << ",\"viscousForceY\":" << load.viscous.y
+                    << ",\"forceX\":" << load.pressure.x+load.viscous.x
+                    << ",\"forceY\":" << load.pressure.y+load.viscous.y
+                    << ",\"pressureTorque\":" << load.pressureTorque << ",\"viscousTorque\":" << load.viscousTorque
+                    << ",\"torque\":" << load.pressureTorque+load.viscousTorque << '}';
+            }
+            summary << "],\n";
         }
         if (timeStep>0) summary << "\"temporalDiscretization\":\"backward-euler\",\n"
             << "\"temporalFaceInterpolation\":\"old-and-iteration-flux-defect-skew-corrected-v2\",\n"

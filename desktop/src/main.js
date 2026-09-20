@@ -1093,6 +1093,17 @@ async function runSmoke() {
       throw new Error('Window geometry is not constrained to the viewport');
     if (shot) {
       await mainWindow.webContents.executeJavaScript("document.querySelector('.panel').scrollTop=0");
+      if (argument('flow-load-shot')) {
+        mainWindow.setSize(1320,900);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript(`(() => {
+          const result=document.getElementById('flowResult');
+          const loads=window.__smoke.state.flow?.summary.namedWallLoads;
+          if (!loads?.length || !result.innerText.includes('力矩')) throw new Error('Wall loads did not reach the actual App');
+          for (const load of loads) if (!result.innerText.includes(load.name)) throw new Error('Missing named wall load in App');
+          result.scrollIntoView({block:'end'});
+        })()`);
+      }
       if (argument('flow-boundary-shot')) {
         mainWindow.setSize(1100,800);
         await new Promise(resolve=>setTimeout(resolve,200));

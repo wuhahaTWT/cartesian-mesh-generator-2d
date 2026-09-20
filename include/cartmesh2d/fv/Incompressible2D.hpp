@@ -125,6 +125,16 @@ struct FaceMomentum2D {
     Vector2D diffusion{}; // same viscous flux as momentum, selected by viscousStress
 };
 
+// Custom no-slip patches only. Fluid-on-boundary loads divided by density
+// and unit depth; torque is about the fixed Cartesian origin (0,0).
+struct FlowWallLoad2D {
+    std::string name;
+    std::size_t faces = 0;
+    double length = 0;
+    Vector2D pressure{}, viscous{};
+    double pressureTorque = 0, viscousTorque = 0;
+};
+
 struct FlowResult2D {
     double time = 0;
     double timeStep = 0; // zero for the steady solver
@@ -138,6 +148,7 @@ struct FlowResult2D {
     std::vector<double> p;
     std::vector<double> flux;
     std::vector<FaceMomentum2D> faceMomentum;
+    std::vector<FlowWallLoad2D> namedWallLoads;
     std::vector<Vector2D> sourceIntegrals; // populated only for manufactured verification
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;

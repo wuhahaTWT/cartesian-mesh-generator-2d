@@ -1,4 +1,5 @@
 'use strict';
+const { validateWallLoads } = require('./wall-loads');
 const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./flow-boundaries');
 
 const FLOW_CASES = Object.freeze({
@@ -332,6 +333,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         || Math.abs(normalizedSummary.forceY - normalizedSummary.discreteForceY) > forceTolerance)
       throw new Error('总力与共享面离散力不一致。');
   }
+
+  validateWallLoads(normalizedSummary);
 
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
