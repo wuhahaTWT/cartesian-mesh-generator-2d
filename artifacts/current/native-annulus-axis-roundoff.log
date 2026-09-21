@@ -1,0 +1,11 @@
+source global topology audit failed
+topology_audit duplicateVertices=0 duplicateEdges=0 orphanInternalEdges=0 nonManifoldEdges=0 unclassifiedBoundaryEdges=8 openCellLoops=0 areaMismatches=0
+topology_counts vertices=8348 edges=14356 cells=6008 issues=8
+topology_issue[0] code=UnclassifiedBoundaryEdge object=1 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=672 source=2814 a=(-1,0) b=(-0.99531250000000004,0) embedded_fragments=4
+topology_issue[1] code=UnclassifiedBoundaryEdge object=3 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=3004 source=8276 a=(-1,1.2246467991473532e-16) b=(-0.99531250000000004,0) embedded_fragments=4
+topology_issue[2] code=UnclassifiedBoundaryEdge object=3497 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=1498 source=3775 a=(-0.5078125,0) b=(-0.5,0) embedded_fragments=7
+topology_issue[3] code=UnclassifiedBoundaryEdge object=3498 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=3479 source=9237 a=(-0.5078125,0) b=(-0.5,6.123233995736766e-17) embedded_fragments=7
+topology_issue[4] code=UnclassifiedBoundaryEdge object=7152 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=34 source=1533 a=(-1.8369701987210297e-16,-1) b=(0,-0.99531250000000004) embedded_fragments=4
+topology_issue[5] code=UnclassifiedBoundaryEdge object=7153 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=1311 source=3455 a=(-9.1848509936051484e-17,-0.5) b=(0,-0.5078125) embedded_fragments=7
+topology_issue[6] code=UnclassifiedBoundaryEdge object=7154 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=1502 source=4264 a=(0,-1) b=(0,-0.99531250000000004) embedded_fragments=4
+topology_issue[7] code=UnclassifiedBoundaryEdge object=7204 message=single-owner edge is neither an owner embedded fragment nor domain boundary owner=2019 source=6186 a=(0,-0.5078125) b=(0,-0.5) embedded_fragments=7

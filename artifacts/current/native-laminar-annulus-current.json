@@ -2003,5 +2003,206 @@
     "independentEquationAudit": "not run: changed reconstruction policy requires matching independent implementation",
     "evidence": "outputs/laminar-performance/annulus-conditioned-one/study.json",
     "patch": "outputs/laminar-performance/annulus-conditioned-one/research.patch"
+  },
+  "analyticGradientDiagnosis": {
+    "scope": "Read-only operator diagnosis on analytic circular Couette values sampled at independently measured cell centroids. Uses retained production reconstruction policy16/max6rings, not solver iterations. Compare actual polygon wall velocity prescription with analytic face-centre values to separate boundary-data discrepancy. This is not a new PDE solve, exact polygon-boundary solution, or physical-accuracy qualification.",
+    "normalizations": {
+      "velocityGradient": 1.0,
+      "pressureGradient": 0.5
+    },
+    "interpretation": "At fixed retained256-sided walls, subdivided Cut-cell boundary-face centres sample the circular analytic velocity away from each original chord midpoint. Its normal component relative to the chord reaches0.006001, whereas prescribed impermeable polygon-wall normal speed is zero. Same-polygon polar faces use each whole chord midpoint and have near-zero corresponding normal mismatch. The diagnostic analytic-wall replacement deliberately does NOT define an admissible no-penetration polygon-wall solve and is not adopted. This explains a boundary sampling inconsistency in comparisons to the circular analytic reference, without proving it is the sole source of pressure error.",
+    "evidence": "outputs/laminar-performance/annulus-current/analytic-gradient-diagnosis.json",
+    "sourceSha256": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/dense-cutcell/diagnose-annulus-analytic-gradient.py": "d5ef2691fa9ca495db6246c68397350d1db923833f836e091cf853ed48eb3f18",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/verify_native_flow.py": "1fc62cf710cca3389fb0957451509cad8e0b0cac0dafd63c2905dd72bfc39849"
+    },
+    "cases": [
+      {
+        "case": "cut-l5",
+        "cells": 484,
+        "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+        "maximumWallNormalVelocityDifference": 0.01986231631275643,
+        "maximumWallTangentialVelocityDifference": 0.0010047549460665004,
+        "allCellGradientRms": {
+          "pressureGradient": 0.04912279664976473,
+          "velocityGradientPrescribedWall": 0.10148115673144564,
+          "velocityGradientAnalyticWall": 0.02332966187038991
+        },
+        "wallGradientRms": {
+          "pressureGradient": 0.11946247834475102,
+          "velocityGradientPrescribedWall": 0.2483501247053907,
+          "velocityGradientAnalyticWall": 0.045835724539935896
+        }
+      },
+      {
+        "case": "cut-l6",
+        "cells": 1672,
+        "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+        "maximumWallNormalVelocityDifference": 0.01207123866442908,
+        "maximumWallTangentialVelocityDifference": 0.0002510449115007789,
+        "allCellGradientRms": {
+          "pressureGradient": 0.02115397968296218,
+          "velocityGradientPrescribedWall": 0.05864616938649246,
+          "velocityGradientAnalyticWall": 0.012645122554944294
+        },
+        "wallGradientRms": {
+          "pressureGradient": 0.062411465098769665,
+          "velocityGradientPrescribedWall": 0.17891325513396103,
+          "velocityGradientAnalyticWall": 0.023712545205599036
+        }
+      },
+      {
+        "case": "cut-l7",
+        "cells": 6208,
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "maximumWallNormalVelocityDifference": 0.006001081708842731,
+        "maximumWallTangentialVelocityDifference": 6.275224753970321e-05,
+        "allCellGradientRms": {
+          "pressureGradient": 0.007939821168480191,
+          "velocityGradientPrescribedWall": 0.06799267436027068,
+          "velocityGradientAnalyticWall": 0.004535539959615839
+        },
+        "wallGradientRms": {
+          "pressureGradient": 0.03570342254328006,
+          "velocityGradientPrescribedWall": 0.320569290669538,
+          "velocityGradientAnalyticWall": 0.013905213272060095
+        }
+      },
+      {
+        "case": "cut-alpha.5",
+        "cells": 6055,
+        "meshSha256": "84a903886daa33b5a4a57a4f58c1273cd12084d908055259a7a710048369ab03",
+        "maximumWallNormalVelocityDifference": 0.006001081708842731,
+        "maximumWallTangentialVelocityDifference": 6.275224753970321e-05,
+        "allCellGradientRms": {
+          "pressureGradient": 0.009226921680435941,
+          "velocityGradientPrescribedWall": 0.03492965632937561,
+          "velocityGradientAnalyticWall": 0.00404448853705257
+        },
+        "wallGradientRms": {
+          "pressureGradient": 0.035453145299918554,
+          "velocityGradientPrescribedWall": 0.13707040300710438,
+          "velocityGradientAnalyticWall": 0.012927534442105844
+        }
+      },
+      {
+        "case": "same-polygon-polar",
+        "cells": 8192,
+        "meshSha256": "d4a35bb54982249276c05cbe9db6c71ec060cf2cbdad8fcd1bbd2a4106a7db4c",
+        "maximumWallNormalVelocityDifference": 1.9809898350615224e-15,
+        "maximumWallTangentialVelocityDifference": 6.275224753973183e-05,
+        "allCellGradientRms": {
+          "pressureGradient": 0.010888116007288775,
+          "velocityGradientPrescribedWall": 0.002181055989613062,
+          "velocityGradientAnalyticWall": 0.0014270972491575787
+        },
+        "wallGradientRms": {
+          "pressureGradient": 0.04345112114074828,
+          "velocityGradientPrescribedWall": 0.008680585591497732,
+          "velocityGradientAnalyticWall": 0.005641470328818175
+        }
+      }
+    ]
+  },
+  "finerAnalyticGeometryControl": {
+    "scope": "One bounded analytic-circle geometry sensitivity control: independently generated1024segments/ring vs retained256segments/ring, same level7 background and alpha.1, original solver controls/gates. NOT original polygon qualification, no original XY modified, not an adopted product change.",
+    "status": "FAILED BEFORE CFD",
+    "failure": "generation failed; no fallback/quality relaxation",
+    "generation": {
+      "command": [
+        "build/cartmesh2d_cli",
+        "outputs/laminar-performance/annulus-facet-control/analytic-1024.xy",
+        "outputs/laminar-performance/annulus-facet-control/mesh",
+        "7",
+        ".15",
+        ".1",
+        "interior",
+        "outputs/laminar-performance/annulus-facet-control/foam",
+        "7"
+      ],
+      "commandText": "build/cartmesh2d_cli outputs/laminar-performance/annulus-facet-control/analytic-1024.xy outputs/laminar-performance/annulus-facet-control/mesh 7 .15 .1 interior outputs/laminar-performance/annulus-facet-control/foam 7",
+      "returncode": 1,
+      "stdout": "outputs/laminar-performance/annulus-facet-control/generation.stdout.log",
+      "stderr": "outputs/laminar-performance/annulus-facet-control/generation.stderr.log",
+      "timedOut": false,
+      "status": "failed",
+      "wallSeconds": 92.39466991600057
+    },
+    "input": "artifacts/current/annulus-1024-axis-roundoff.xy",
+    "inputSha256": "aba995595e35e791e36b9134f69a7bfed3ec6a4f47ee982d0b5288e66c53b5d1",
+    "failureLog": "artifacts/current/native-annulus-axis-roundoff.log",
+    "failureLogSha256": "4b44fbd1e95c35dd37d8628682a855baa5d28553f14d9fad0ae08ed56e5da2a9",
+    "originalInputUnchanged": true,
+    "interpretation": "Eight unclassified edges at coordinate axes; retained failure involves near-zero trigonometric coordinates. Original topology gate refused export. Not an accuracy pass and not a mesher repair."
+  },
+  "exactAxisAnalyticGeometryControl": {
+    "scope": "One additional explicitly bounded analytic-circle control after unclassified-edge failure of trigonometric-axis coordinates: only8cardinal points use exact symbolic coordinates; prior failing input/log retained, original user polygon untouched. No more retries. independently generated1024segments/ring vs retained256segments/ring, same level7 background and alpha.1, original solver controls/gates. NOT original polygon qualification, no original XY modified, not an adopted product change.",
+    "status": "FAILED BEFORE CFD",
+    "failure": "generation failed; no fallback/quality relaxation",
+    "generation": {
+      "command": [
+        "build/cartmesh2d_cli",
+        "outputs/laminar-performance/annulus-facet-control-exact-axes/analytic-1024.xy",
+        "outputs/laminar-performance/annulus-facet-control-exact-axes/mesh",
+        "7",
+        ".15",
+        ".1",
+        "interior",
+        "outputs/laminar-performance/annulus-facet-control-exact-axes/foam",
+        "7"
+      ],
+      "commandText": "build/cartmesh2d_cli outputs/laminar-performance/annulus-facet-control-exact-axes/analytic-1024.xy outputs/laminar-performance/annulus-facet-control-exact-axes/mesh 7 .15 .1 interior outputs/laminar-performance/annulus-facet-control-exact-axes/foam 7",
+      "returncode": 1,
+      "stdout": "outputs/laminar-performance/annulus-facet-control-exact-axes/generation.stdout.log",
+      "stderr": "outputs/laminar-performance/annulus-facet-control-exact-axes/generation.stderr.log",
+      "timedOut": false,
+      "status": "failed",
+      "wallSeconds": 149.70264708300238
+    },
+    "input": "artifacts/current/annulus-1024-exact-axes.xy",
+    "inputSha256": "37b1cfa857bbbfc8db30d57513e69046ea63733420982c919116b96db05dc6af",
+    "changedVerticesVsRoundoffControl": 6,
+    "maximumVertexDisplacement": 1.8369701987210297e-16,
+    "solverQuality": {
+      "valid": false,
+      "issueCount": 68,
+      "metrics": {
+        "max_non_orthogonality_deg": 80.35316242370097,
+        "max_internal_skewness": 1.2295736157143575,
+        "max_boundary_skewness": 4.350899095184213,
+        "max_concavity_deg": 8.537736277958174e-07,
+        "max_cell_aspect": 602.7035352513858,
+        "min_interior_angle_deg": 0.19059456116873624,
+        "min_face_length": 6.455285734172116e-06,
+        "min_face_weight": 0.0020946864884919,
+        "min_volume_ratio": 0.002099083410154159,
+        "min_compactness": 0.005206611195962924
+      },
+      "policy": {
+        "max_non_orthogonality_deg": 70,
+        "max_internal_skewness": 4,
+        "max_boundary_skewness": 4,
+        "max_concavity_deg": 80,
+        "max_cell_aspect": 1000,
+        "min_interior_angle_deg": 0.5,
+        "min_face_length": 1.01e-10,
+        "min_face_weight": 0.05,
+        "min_volume_ratio": 0.01
+      },
+      "report": "artifacts/current/native-annulus-exact-axes-quality.json"
+    },
+    "originalInputUnchanged": true,
+    "interpretation": "Exact symbolic axes remove the earlier unclassified-edge failure, but existing Solver quality rejects68 issues; no OpenFOAM final mesh and no CFD solve. Geometry robustness and finer-facet quality remain unresolved. No further retry/adoption.",
+    "reproductionCommand": [
+      "build/cartmesh2d_cli",
+      "artifacts/current/annulus-1024-exact-axes.xy",
+      "outputs/annulus-exact-axis-repro/mesh",
+      "7",
+      ".15",
+      ".1",
+      "interior",
+      "outputs/annulus-exact-axis-repro/foam",
+      "7"
+    ]
   }
 }
