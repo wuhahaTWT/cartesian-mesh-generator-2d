@@ -177,13 +177,16 @@
       "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35665293718",
       "conclusion": "success",
       "standardCheckMesh": "15 H4 cases, OpenFOAM v2606; workflow step passed",
-      "extendedCheckMesh": "not run"
+      "extendedCheckMesh": "not run",
+      "actualMeshOkCount": 15,
+      "log": "outputs/laminar-performance/dense-cutcell/native-f4708ce.log"
     },
     "desktop": {
       "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35665297332",
       "linux": "native/frontend/package/packaged smoke PASS",
       "macos14arm64": "native/frontend/package/packaged smoke PASS",
-      "windows2022x64": "build PASS; native154/156; packaging not reached"
+      "windows2022x64": "build PASS; native154/156; packaging not reached",
+      "packagedSmokeScope": "PNG/JPG/hybrid mesh generation, Chinese/spaced paths, independent exported reader and layout. Packaged CI smoke does not execute CFD; local macOS separately verifies CFD."
     },
     "windowsFailureLog": "outputs/laminar-performance/dense-cutcell/windows-f4708ce.log",
     "windowsFixes": [
@@ -191,12 +194,19 @@
       "Windows TerminateProcess does not call SIGTERM handler. Test now checks actual hard-stop checkpoint restart and independent conservation/uniform field; POSIX graceful status check retained. Recovery check also runs on POSIX."
     ],
     "localTargetedTests": "trajectory and Euler PASS; final Euler recovery test 2.32s",
-    "windowsRerun": "pending",
+    "windowsRerun": {
+      "commit": "4d308258a0109921ea7207b97aacae6478cb0dbc",
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35666270612",
+      "native": "156/156 PASS",
+      "frontend": "183/184; CRLF-dependent renderer source extraction failed",
+      "fix": "Normalize checkout CRLF before extracting test functions, assert extraction bounds and exercise LF/CRLF; local184/184 PASS. Product unchanged.",
+      "nextRun": "pending"
+    },
     "limitations": [
       "Native CI checkMesh covers H4 cases, not dense nozzle or fine annulus.",
       "Standard checkMesh is separate from allGeometry/allTopology and CFD physical accuracy.",
       "Windows Euler hard stop retains saved checkpoint; no guarantee of fresh cancelled summary or final fields."
     ],
-    "retrieval": "GitHub job/step metadata read; Windows full failure log saved. Other detailed logs temporarily unavailable due network EOF."
+    "retrieval": "Native full log saved and fifteen Mesh OK outputs checked; macOS/Linux packaged smoke summaries downloaded and read; Windows failure logs retained."
   }
 }

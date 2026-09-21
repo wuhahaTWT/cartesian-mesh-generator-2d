@@ -1,0 +1,457 @@
+{
+  "scope": "Actual retained current dense nozzle and fine annulus exported polyMesh; standard and allGeometry/allTopology recorded separately, no mesh edits. This is mesh acceptance, not OpenFOAM flow solve or physical error qualification.",
+  "image": [
+    "opencfd/openfoam-run@sha256:4229997e74defb81548222d511b8e3b95b98305e5df41b8e88b031813fe47eeb"
+  ],
+  "cases": [
+    {
+      "name": "nozzle102017",
+      "source": "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch-foam",
+      "polyMeshUncompressedSha256": {
+        "boundary": "8f21da8e405df7c44d0ea62a2c13bc6d2868bb21a1928268552908c0a5bf2551",
+        "faces": "a1f0b40064c7ba5d49c8ab7e423e93b728ae7d9ff7334c5525ebaa4e62afe7e2",
+        "neighbour": "44f9e943ca2b69dae06f6f3438db47f5d8103e16b301dc62391648f225b36143",
+        "owner": "2ef9e7371e2d03acce2b8581cfc0324e2fef81abae17618120ec3d1a64ae0fef",
+        "points": "2f1df86d970eb83785abae5d2d464c1a7d1dfbe18a4705bc592f517695b92c65"
+      },
+      "runs": [
+        {
+          "command": [
+            "/Applications/Docker.app/Contents/Resources/bin/docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/nozzle102017:/home/openfoam/workingDir/case",
+            "-w",
+            "/home/openfoam/workingDir",
+            "opencfd/openfoam-run:2606",
+            "checkMesh",
+            "-case",
+            "/home/openfoam/workingDir/case"
+          ],
+          "commandText": "/Applications/Docker.app/Contents/Resources/bin/docker run --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/nozzle102017:/home/openfoam/workingDir/case -w /home/openfoam/workingDir opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case",
+          "returncode": 0,
+          "stdout": "outputs/laminar-performance/external-checkmesh/nozzle102017-standard.stdout.log",
+          "stderr": "outputs/laminar-performance/external-checkmesh/nozzle102017-standard.stderr.log",
+          "timedOut": false,
+          "wallSeconds": 1.7196680000051856,
+          "mode": "standard",
+          "meshOk": true,
+          "processStatus": "passed",
+          "meshStatus": "PASS",
+          "stdoutSha256": "43b9f5fc7206c479d09ee36cc93c490721a029c7c9a14a4366e89850e6ad8e4c",
+          "diagnostics": [
+            "Mesh non-orthogonality Max: 69.05067375 average: 7.463996549",
+            "Max skewness = 3.998971083 OK.",
+            "Mesh OK."
+          ]
+        },
+        {
+          "command": [
+            "/Applications/Docker.app/Contents/Resources/bin/docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/nozzle102017:/home/openfoam/workingDir/case",
+            "-w",
+            "/home/openfoam/workingDir",
+            "opencfd/openfoam-run:2606",
+            "checkMesh",
+            "-case",
+            "/home/openfoam/workingDir/case",
+            "-allGeometry",
+            "-allTopology"
+          ],
+          "commandText": "/Applications/Docker.app/Contents/Resources/bin/docker run --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/nozzle102017:/home/openfoam/workingDir/case -w /home/openfoam/workingDir opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case -allGeometry -allTopology",
+          "returncode": 0,
+          "stdout": "outputs/laminar-performance/external-checkmesh/nozzle102017-extended.stdout.log",
+          "stderr": "outputs/laminar-performance/external-checkmesh/nozzle102017-extended.stderr.log",
+          "timedOut": false,
+          "wallSeconds": 1.9913717080053175,
+          "mode": "extended",
+          "meshOk": false,
+          "processStatus": "passed",
+          "meshStatus": "FAIL",
+          "stdoutSha256": "b054789baa3bffdef7924cea8b44b33cf07c1f0abfe9c5d38a19b4be0904ff1d",
+          "diagnostics": [
+            "Mesh non-orthogonality Max: 69.05067375 average: 7.463996549",
+            "Max skewness = 3.998971083 OK.",
+            "*Edges too small, min/max edge length = 6.145566667e-06 0.05, number too small: 16",
+            "Cell determinant (wellposedness) : minimum: 0.008505104864 average: 0.3159103689",
+            "***Concave cells (using face planes) found, number of cells: 4301",
+            "Face interpolation weight : minimum: 0.06262028913 average: 0.4893133674",
+            "Face volume ratio : minimum: 0.0157770473 average: 0.9542280873",
+            "Failed 1 mesh checks."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "annulus6208",
+      "source": "outputs/laminar-performance/annulus-current/l7-foam",
+      "polyMeshUncompressedSha256": {
+        "boundary": "6895f44720461ae0e307cd6e308a030a1e2cb3c651e3799ca650adfe21a35af2",
+        "faces": "da87a0ae1495bd542ace11e71e357f25cdbc05cc3dd75a0ae403acfd1e03dc40",
+        "neighbour": "4dd6a62b3d73ea05426f1aa741d62807379ff9e32ff9e5114366f89e0be98f20",
+        "owner": "f1f8cd4a71517362b411d7377d1a32be72b2d00a130a1d44b139600933387576",
+        "points": "b0b0a5ef95092b3a5579d3f367080a858c807461a34587cf41b08d71849ac177"
+      },
+      "runs": [
+        {
+          "command": [
+            "/Applications/Docker.app/Contents/Resources/bin/docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/annulus6208:/home/openfoam/workingDir/case",
+            "-w",
+            "/home/openfoam/workingDir",
+            "opencfd/openfoam-run:2606",
+            "checkMesh",
+            "-case",
+            "/home/openfoam/workingDir/case"
+          ],
+          "commandText": "/Applications/Docker.app/Contents/Resources/bin/docker run --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/annulus6208:/home/openfoam/workingDir/case -w /home/openfoam/workingDir opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case",
+          "returncode": 0,
+          "stdout": "outputs/laminar-performance/external-checkmesh/annulus6208-standard.stdout.log",
+          "stderr": "outputs/laminar-performance/external-checkmesh/annulus6208-standard.stderr.log",
+          "timedOut": false,
+          "wallSeconds": 0.42044508300023153,
+          "mode": "standard",
+          "meshOk": true,
+          "processStatus": "passed",
+          "meshStatus": "PASS",
+          "stdoutSha256": "07608902f49819a8d5f375bccaae91c691c9d9e593d454c2515ad2836fd1bc62",
+          "diagnostics": [
+            "Mesh non-orthogonality Max: 69.12914639 average: 7.48165764",
+            "Max skewness = 3.896372974 OK.",
+            "Mesh OK."
+          ]
+        },
+        {
+          "command": [
+            "/Applications/Docker.app/Contents/Resources/bin/docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "-v",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/annulus6208:/home/openfoam/workingDir/case",
+            "-w",
+            "/home/openfoam/workingDir",
+            "opencfd/openfoam-run:2606",
+            "checkMesh",
+            "-case",
+            "/home/openfoam/workingDir/case",
+            "-allGeometry",
+            "-allTopology"
+          ],
+          "commandText": "/Applications/Docker.app/Contents/Resources/bin/docker run --rm --network none -v /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/external-checkmesh/annulus6208:/home/openfoam/workingDir/case -w /home/openfoam/workingDir opencfd/openfoam-run:2606 checkMesh -case /home/openfoam/workingDir/case -allGeometry -allTopology",
+          "returncode": 0,
+          "stdout": "outputs/laminar-performance/external-checkmesh/annulus6208-extended.stdout.log",
+          "stderr": "outputs/laminar-performance/external-checkmesh/annulus6208-extended.stderr.log",
+          "timedOut": false,
+          "wallSeconds": 0.5138790830096696,
+          "mode": "extended",
+          "meshOk": false,
+          "processStatus": "passed",
+          "meshStatus": "FAIL",
+          "stdoutSha256": "60e20cc9f25537e68759a9b5305f74c2cf0b22acb148294827e18335f26e8247",
+          "diagnostics": [
+            "Mesh non-orthogonality Max: 69.12914639 average: 7.48165764",
+            "Max skewness = 3.896372974 OK.",
+            "Cell determinant (wellposedness) : minimum: 0.002012903224 average: 0.4615365633",
+            "***Concave cells (using face planes) found, number of cells: 84",
+            "Face interpolation weight : minimum: 0.05436585618 average: 0.4819339381",
+            "Face volume ratio : minimum: 0.01169846026 average: 0.9416827849",
+            "Failed 1 mesh checks."
+          ]
+        }
+      ]
+    }
+  ],
+  "independentConcavityDiagnosis": {
+    "scope": "Independent 2D polygon signed-turn diagnosis and unchanged annulus pressure-error partition. No rejected cells deleted and no mesh/physical thresholds changed. Concavity association is descriptive, not proof of pressure-error causality.",
+    "cases": [
+      {
+        "case": "nozzle102017",
+        "cells": 102017,
+        "meshSha256": "b9b9d6abfd15cd48da511ae4aa73322e1fdf5b949a00811891146cae7b4ffc2d",
+        "openFoamConcaveCells": 4301,
+        "negativeTurnBelow1e10Diagnostic": 0,
+        "overlap": 0,
+        "openFoamConcaveAtWall": 0,
+        "worstTurns": [
+          {
+            "cell": 1903,
+            "minimumNormalizedTurn": -7.294822737363829e-14,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 31069,
+            "minimumNormalizedTurn": -7.294822737363829e-14,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 0,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 6
+          },
+          {
+            "cell": 1,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 6
+          },
+          {
+            "cell": 2,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 3,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 5,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 8,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 6
+          },
+          {
+            "cell": 10,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 11,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 6
+          },
+          {
+            "cell": 12,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 13,
+            "minimumNormalizedTurn": 0.0,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          }
+        ],
+        "note": "1e-10 normalized-turn classification is explanatory roundoff separation only; original external FAIL remains unchanged."
+      },
+      {
+        "case": "annulus6208",
+        "cells": 6208,
+        "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "openFoamConcaveCells": 84,
+        "negativeTurnBelow1e10Diagnostic": 24,
+        "overlap": 24,
+        "openFoamConcaveAtWall": 80,
+        "worstTurns": [
+          {
+            "cell": 3598,
+            "minimumNormalizedTurn": -0.024541228522997408,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 4893,
+            "minimumNormalizedTurn": -0.024541228522983145,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 4678,
+            "minimumNormalizedTurn": -0.02454122852296567,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 4047,
+            "minimumNormalizedTurn": -0.02454122852295969,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 4659,
+            "minimumNormalizedTurn": -0.024541228522958397,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 4130,
+            "minimumNormalizedTurn": -0.024541228522957537,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 1535,
+            "minimumNormalizedTurn": -0.024541228522946188,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 1508,
+            "minimumNormalizedTurn": -0.024541228522940106,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 2614,
+            "minimumNormalizedTurn": -0.024541228522931686,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          },
+          {
+            "cell": 2579,
+            "minimumNormalizedTurn": -0.024541228522925184,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 2097,
+            "minimumNormalizedTurn": -0.024541228522922367,
+            "openFoamConcave": true,
+            "vertexCount": 5
+          },
+          {
+            "cell": 1324,
+            "minimumNormalizedTurn": -0.024541228522922065,
+            "openFoamConcave": true,
+            "vertexCount": 4
+          }
+        ],
+        "note": "1e-10 normalized-turn classification is explanatory roundoff separation only; original external FAIL remains unchanged.",
+        "pressureSquaredErrorFractions": {
+          "openFoamConcave": 0.4237813315001226,
+          "negativeTurn": 0.37771279134663766,
+          "wall": 0.8604573086970637,
+          "wallButNotOpenFoamConcave": 0.43668724833425615
+        },
+        "topPressureContributors": [
+          {
+            "cell": 4838,
+            "minimumNormalizedTurn": -0.024541228522860396,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04670355165943004,
+            "touchesWall": true
+          },
+          {
+            "cell": 2579,
+            "minimumNormalizedTurn": -0.024541228522925184,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04666064797934614,
+            "touchesWall": true
+          },
+          {
+            "cell": 1309,
+            "minimumNormalizedTurn": -0.0245412285229074,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04665535932235734,
+            "touchesWall": true
+          },
+          {
+            "cell": 1508,
+            "minimumNormalizedTurn": -0.024541228522940106,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.046642241473956104,
+            "touchesWall": true
+          },
+          {
+            "cell": 2097,
+            "minimumNormalizedTurn": -0.024541228522922367,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.046351941801372545,
+            "touchesWall": true
+          },
+          {
+            "cell": 4659,
+            "minimumNormalizedTurn": -0.024541228522958397,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04632326282893928,
+            "touchesWall": true
+          },
+          {
+            "cell": 4047,
+            "minimumNormalizedTurn": -0.02454122852295969,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04628145444345377,
+            "touchesWall": true
+          },
+          {
+            "cell": 3626,
+            "minimumNormalizedTurn": -0.024541228522889667,
+            "openFoamConcave": true,
+            "vertexCount": 5,
+            "squaredErrorFraction": 0.04628068871519451,
+            "touchesWall": true
+          },
+          {
+            "cell": 3711,
+            "minimumNormalizedTurn": -8.226060918843821e-15,
+            "openFoamConcave": true,
+            "vertexCount": 4,
+            "squaredErrorFraction": 0.030007632850456826,
+            "touchesWall": true
+          },
+          {
+            "cell": 2186,
+            "minimumNormalizedTurn": 0.47280905024278147,
+            "openFoamConcave": false,
+            "vertexCount": 3,
+            "squaredErrorFraction": 0.01907610036121255,
+            "touchesWall": true
+          },
+          {
+            "cell": 5024,
+            "minimumNormalizedTurn": 0.25066074877884525,
+            "openFoamConcave": false,
+            "vertexCount": 4,
+            "squaredErrorFraction": 0.013126806716242721,
+            "touchesWall": true
+          },
+          {
+            "cell": 2385,
+            "minimumNormalizedTurn": 0.25066074877885214,
+            "openFoamConcave": false,
+            "vertexCount": 4,
+            "squaredErrorFraction": 0.013078094412718871,
+            "touchesWall": true
+          }
+        ]
+      }
+    ]
+  },
+  "interpretation": "Nozzle all4301 OpenFOAM concavity flags have only tiny 2D negative normalized turns (worst about-7.3e-14), with none on a physical wall; this suggests near-collinear numerical sensitivity, not a passed extended check. Annulus24 genuinely reentrant polygons account for37.77% of squared pressure error, while wall cells outside OpenFOAM flagged set still account for43.67%; association does not prove sole cause."
+}

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const source = fs.readFileSync(path.join(__dirname, '../src/renderer/app.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../src/renderer/app.js'), 'utf8').replace(/\r\n/g, '\n');
 const functionSource = name => {
   const start = source.indexOf(`function ${name}(`);
   const next = source.indexOf('\nfunction ', start + 1);
@@ -45,19 +45,25 @@ test('flow resume replaces shared physics and invalidates incompatible displayed
   assert.deepEqual(counts, {flow:1, thermal:1}, 'unchanged physics preserves current results');
 });
 test('thermal export uses saved backend fields when renderer has been cleared', async () => {
-  let call;
-  const context = { document:{fonts:{load:async()=>{},ready:Promise.resolve()}}, window:{
-    cartmesh:{exportPreviewData:async()=>({mesh:{id:'saved'},thermal:{id:'saved-temperature'}})},
-    CartMeshExport:{renderThermal:(mesh,thermal)=>{call={mesh,thermal};return 'png';}}
-  }};
-  vm.createContext(context);
-  const start = source.indexOf('window.__exportThermalPreview =');
-  vm.runInContext(source.slice(start, source.indexOf('\n\nlet previewSequence', start)), context);
-  assert.equal(await context.window.__exportThermalPreview(), 'png');
-  assert.equal(call.mesh.id, 'saved');
-  assert.equal(call.thermal.id, 'saved-temperature');
-  context.window.cartmesh.exportPreviewData = async()=>({mesh:{},thermal:null});
-  assert.equal(await context.window.__exportThermalPreview(), null);
+  for (const lineEnding of ['\n', '\r\n']) {
+    let call;
+    const context = { document:{fonts:{load:async()=>{},ready:Promise.resolve()}}, window:{
+      cartmesh:{exportPreviewData:async()=>({mesh:{id:'saved'},thermal:{id:'saved-temperature'}})},
+      CartMeshExport:{renderThermal:(mesh,thermal)=>{call={mesh,thermal};return 'png';}}
+    }};
+    vm.createContext(context);
+    // Git may check out CRLF on Windows; delimit by lines, not host bytes.
+    const input = source.replace(/\n/g, lineEnding).replace(/\r\n/g, '\n');
+    const start = input.indexOf('window.__exportThermalPreview =');
+    const end = input.indexOf('\n\nlet previewSequence', start);
+    assert.ok(start >= 0 && end > start, 'preview function bounds found');
+    vm.runInContext(input.slice(start, end), context);
+    assert.equal(await context.window.__exportThermalPreview(), 'png');
+    assert.equal(call.mesh.id, 'saved');
+    assert.equal(call.thermal.id, 'saved-temperature');
+    context.window.cartmesh.exportPreviewData = async()=>({mesh:{},thermal:null});
+    assert.equal(await context.window.__exportThermalPreview(), null);
+  }
 });
 
 test('thermal resume deselects flow resume, restores thermal physics and preserves editable time controls', () => {

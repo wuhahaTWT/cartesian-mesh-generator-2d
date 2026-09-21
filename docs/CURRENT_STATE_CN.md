@@ -96,6 +96,14 @@
 
 `f4708ce`原生CI通过，15个H4代表例通过OpenFOAM v2606标准`checkMesh`；这不包含十万格喷管、细圆环，也不等于`allGeometry/allTopology`或CFD精度认证。相同提交的Linux及macOS14 arm64完成原生/前端测试、打包和真实包启动检查。Windows2022 x64已编译成功，原生154/156；两个失败定位为tar测试清单使用主机分隔符，以及把Windows强制终止误当POSIX SIGTERM。已改为POSIX归档键，并在所有平台增加取消后检查点恢复与独立守恒/均匀场审核；POSIX取消状态检查保留。Windows强制终止只保证已保存检查点，不保证新取消摘要或最终场。本地相关测试通过，Windows复跑待返回；未改求解器或质量门。[外部状态与失败范围](../artifacts/current/native-ci-local-recheck.json)。
 
+`4d30825`复跑中Windows原生156/156通过，前端183/184：原测试按LF空行截取函数，在CRLF检出上误读后续Viewport代码。已统一测试源码换行，并增加LF/CRLF两种输入和截取边界断言；本地前端184/184通过，下一轮Windows打包待返回。两次修复均只涉及测试契约，产品二进制仍为已实测0.4.38。
+
+本机已对保留的102,017格喷管与6,208格圆环实际导出polyMesh运行缓存OpenFOAM v2606：标准`checkMesh`两例PASS，`-allGeometry -allTopology`两例FAIL。喷管4,301个凹单元提示，另有16个短边点；圆环84个凹单元。独立二维转角检查显示喷管提示全部是内部近共线边的微小负转角（最小约-7.3e-14），但不能据此撤销外部FAIL。圆环24个明显凹多边形贡献37.77%的压力平方误差，未被标记的邻壁单元仍贡献43.67%，不能认定凹单元是唯一原因。[标准/扩展原始日志与网格SHA](../artifacts/current/native-current-checkmesh.json) · [实际圆环误差定位](../artifacts/current/native-annulus-error-localization.png)。
+
+有界研究以稳定一次校正/.2松弛重试更严格梯度方向条件4及内部单元扩展，512轮收敛但压力L2仍2.7447%，超过原.5%门；未采用。已恢复原源码，重建flow程序SHA与0.4.38包内一致。研究补丁/输入/结果保留，不把原独立方程审核器用于不同重构政策的通过声明。
+
+本轮安装包逐版核验源码提交、保留功能证据和ZIP CRC后，仅清除0.4.31—0.4.36的ZIP及blockmap，共658.99MiB；保留0.4.30背景里程碑、0.4.37回退和0.4.38当前包，此前0.4.11/0.4.13—0.4.28旧包、输入、失败案例及旧归档均未动。删除的历史二进制不承诺能由源码精确恢复；逐文件SHA与依据在`outputs/laminar-performance/dense-cutcell/package-retention.json`。已完成场与检查点继续无损gzip并SHA回读，最新恢复索引`final-payload-compressed.json`与`annulus-final-compressed.json`。
+
 ### 本轮收尾：压力校正次数、细圆环与旧CI失败
 
 0.4.37新增独立层流显式压力校正次数1—4，默认4不变；CLI `--pressure-corrections`、桌面输入/结果/导出、工况v5均接通。v1—v4恢复历史4次，v4原线性精度和松弛保持，旧格式伪装新字段拒绝。材料反馈及桌面温度联算要求4。原最终动量、连续性、严格线性及物理精度门没有改动。非正交通道1/2/3次与4次收敛解比较、闭域及逐时间步独立方程通过。完整CTest156/156（串行110.53秒），前端184/184。

@@ -1984,5 +1984,24 @@
     },
     "sourceReport": "outputs/laminar-performance/annulus-polar-control/study.json",
     "interpretation": "With identical original polygon geometry and same solver controls, independently built polar cells give much smaller pressure error. Cell count/distribution and boundary-face subdivision differ, so this isolates a mesh/discretization sensitivity, not one proven faulty operator. This reference is NOT Cut-cell output and does not make the existing Cut-cell refinement qualify."
+  },
+  "stableCondition4Research": {
+    "scope": "Condition-target4 with stable one-correction converges but pressure L2 remains2.7447%, above unchanged0.5% gate. No meaningful precision repair; not adopted. Original header restored byte-for-byte.",
+    "metrics": {
+      "cells": 6208,
+      "velocityL2": 0.0011302921781977137,
+      "radialVelocityL2": 0.0006848085475081611,
+      "pressureL2": 0.027446864770105647,
+      "rotorTorque": -0.41957432532716366,
+      "housingTorque": 0.4182028053890786,
+      "rotorTorqueError": 0.0016599180539767545,
+      "housingTorqueError": 0.0016143446114531155,
+      "torqueImbalance": 0.00327426266542987,
+      "iterations": 512
+    },
+    "adopted": false,
+    "independentEquationAudit": "not run: changed reconstruction policy requires matching independent implementation",
+    "evidence": "outputs/laminar-performance/annulus-conditioned-one/study.json",
+    "patch": "outputs/laminar-performance/annulus-conditioned-one/research.patch"
   }
 }
