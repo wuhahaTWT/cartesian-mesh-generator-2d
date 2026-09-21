@@ -1,0 +1,189 @@
+{
+  "platform": "darwin",
+  "cases": [
+    {
+      "case": "png",
+      "cells": 5210,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 200,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 5210,
+        "exportedCells": 5210,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "32602eb026ba7403c47fecbccc0542aee0a42b84bf790392936613d141684135"
+    },
+    {
+      "case": "jpg",
+      "cells": 5210,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 200,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 5210,
+        "exportedCells": 5210,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "e8fa6a0f3194b18f3901584337be1dd2fd5910c504821c90fd99e546c4c1e430"
+    },
+    {
+      "case": "hybrid",
+      "cells": 6076,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 200,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 6076,
+        "exportedCells": 6076,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "1d3c58d07323caf526d18a090bd10919d879230bdf0535c1aa250b4444845c9e"
+    },
+    {
+      "case": "background-uniform",
+      "cells": 16384,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 211.609375,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 16384,
+        "exportedCells": 0,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "6437467af6a76fe99913c4f5a672346e1ea3508de6c85b3933896e9ebcf1acaf",
+      "reader": {
+        "cells": 16384,
+        "counts": [
+          13060,
+          3064,
+          260
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false,
+        "valid": true,
+        "cell_count": 16384
+      },
+      "guards": {
+        "rejected": [
+          "runFlow",
+          "runThermal",
+          "runEuler"
+        ],
+        "displayMode": "classification",
+        "panelsHidden": true,
+        "legend": "外部 13,060　\n内部 3,064　\n相交 260　"
+      }
+    },
+    {
+      "case": "background-adaptive",
+      "cells": 1168,
+      "independentReader": true,
+      "layout": {
+        "bottomReachable": true,
+        "pageHeight": 560,
+        "windowHeight": 560,
+        "geometry": {
+          "bodyHeight": 560,
+          "innerHeight": 560,
+          "canvasHeight": 200,
+          "shellBottom": 560
+        },
+        "wallpaper": {
+          "image": "none",
+          "canvasBackground": "rgb(251, 252, 248)",
+          "welcomeHidden": true
+        },
+        "previewCells": 1168,
+        "exportedCells": 0,
+        "sidebarCollapsed": false,
+        "sidebarExpanded": true
+      },
+      "sha256": "e600d3288007a4baa5e212e3bf06dbf3da037edac40d0abc199d84fe19364809",
+      "reader": {
+        "cells": 1168,
+        "counts": [
+          556,
+          352,
+          260
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false,
+        "valid": true,
+        "cell_count": 1168
+      },
+      "guards": {
+        "rejected": [
+          "runFlow",
+          "runThermal",
+          "runEuler"
+        ],
+        "displayMode": "classification",
+        "panelsHidden": true,
+        "legend": "外部 556　\n内部 352　\n相交 260　"
+      }
+    }
+  ],
+  "externalCheckMesh": "not_run",
+  "cfd": "not_run",
+  "scope": "Actual local packaged0.4.38, PNG/JPG/hybrid plus full Cartesian uniform/adaptive. Background independent coverage/classification/balance and solid-cell retention; all three solver entrypoints reject. This packaged smoke does not execute CFD.",
+  "version": "0.4.38",
+  "appSha256": "b901c246042d1eb71ab0d098ca0331726b41eec8339ccc3ba8a0a46f9040577b",
+  "crossPlatformRun": "pending"
+}

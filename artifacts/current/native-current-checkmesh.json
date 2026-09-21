@@ -453,5 +453,19 @@
       }
     ]
   },
-  "interpretation": "Nozzle all4301 OpenFOAM concavity flags have only tiny 2D negative normalized turns (worst about-7.3e-14), with none on a physical wall; this suggests near-collinear numerical sensitivity, not a passed extended check. Annulus24 genuinely reentrant polygons account for37.77% of squared pressure error, while wall cells outside OpenFOAM flagged set still account for43.67%; association does not prove sole cause."
+  "interpretation": "Nozzle all4301 OpenFOAM concavity flags have only tiny 2D negative normalized turns (worst about-7.3e-14), with none on a physical wall; this suggests near-collinear numerical sensitivity, not a passed extended check. Annulus24 genuinely reentrant polygons account for37.77% of squared pressure error, while wall cells outside OpenFOAM flagged set still account for43.67%; association does not prove sole cause.",
+  "independentCellIdBinding": [
+    {
+      "case": "nozzle102017",
+      "cells": 102017,
+      "exactCellIdAndPolygonVerticesMatch": true,
+      "cm2dSha256": "b9b9d6abfd15cd48da511ae4aa73322e1fdf5b949a00811891146cae7b4ffc2d"
+    },
+    {
+      "case": "annulus6208",
+      "cells": 6208,
+      "exactCellIdAndPolygonVerticesMatch": true,
+      "cm2dSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b"
+    }
+  ]
 }

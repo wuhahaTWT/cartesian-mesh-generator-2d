@@ -10,6 +10,8 @@ import subprocess
 import sys
 import zipfile
 
+from check_background_grid import audit as audit_background
+
 ROOT = Path(__file__).resolve().parents[2]
 
 def main():
@@ -28,13 +30,18 @@ def main():
     env = dict(os.environ, TEMP=str(temporary), TMP=str(temporary), TMPDIR=str(temporary))
     for name, image, method in [('png', 'raster-input-L.png', 'cutcell'),
                                 ('jpg', 'raster-input-L.jpg', 'cutcell'),
-                                ('hybrid', None, 'hybrid')]:
+                                ('hybrid', None, 'hybrid'),
+                                ('background-uniform', None, 'background'),
+                                ('background-adaptive', None, 'background')]:
         target = workspace / name; target.mkdir(exist_ok=True)
         screenshot = target / 'app.png'
         archive = target / 'result.zip'
         command = [str(args.app.resolve()), *args.electron_arg, '--smoke=circle',
                    '--method=' + method, '--out=' + str(target / 'cases'),
                    '--export=' + str(archive), '--shot=' + str(screenshot)]
+        if method == 'background':
+            command += ['--background-mode=' + name.split('-')[1],
+                        '--background-level=7', '--background-minimum-level=4', '--background-padding=.5']
         if image:
             source = target / ('输入 图片' + Path(image).suffix)
             shutil.copyfile(ROOT / 'artifacts/current' / image, source)
@@ -51,12 +58,27 @@ def main():
         preview = next(unpacked.rglob('mesh-preview.png'))
         assert preview.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n'
         assert next(unpacked.rglob('README_CN.md')).read_text(encoding='utf-8')
-        case = next(unpacked.rglob('polyMesh')).parent.parent
         reader_path = target / 'reader.json'
-        subprocess.run([sys.executable, str(ROOT / 'tools/verification/check_openfoam2d.py'),
-                        str(case), '--report', str(reader_path)], check=True, stdout=subprocess.DEVNULL)
-        reader = json.loads(reader_path.read_text(encoding='utf-8'))
-        assert reader['valid'] and reader['cell_count'] == ui['layout']['exportedCells']
+        if method == 'background':
+            assert not list(unpacked.rglob('polyMesh')), 'background must not export a fluid case'
+            assert not list(unpacked.rglob('*.solver.cm2d')), 'background must not masquerade as solver mesh'
+            grid = next(unpacked.rglob('*.background.json'))
+            assert next(unpacked.rglob('*.background.vtk')).is_file()
+            reader = audit_background(grid)
+            assert reader['full_domain_coverage'] and reader['classification_checked'] and reader['balanced']
+            assert reader['counts'][1] > 0 and reader['counts'][2] > 0, 'solid and intersected cells retained'
+            assert reader['solver_ready'] is False
+            assert ui['background']['panelsHidden']
+            assert set(ui['background']['rejected']) == {'runFlow', 'runThermal', 'runEuler'}
+            reader.update(valid=True, cell_count=reader['cells'])
+            reader_path.write_text(json.dumps(reader, indent=2), encoding='utf-8')
+        else:
+            case = next(unpacked.rglob('polyMesh')).parent.parent
+            subprocess.run([sys.executable, str(ROOT / 'tools/verification/check_openfoam2d.py'),
+                            str(case), '--report', str(reader_path)], check=True, stdout=subprocess.DEVNULL)
+            reader = json.loads(reader_path.read_text(encoding='utf-8'))
+        assert reader['valid'] and reader['cell_count'] == ui['layout']['previewCells']
+        assert ui['layout']['exportedCells'] == (0 if method == 'background' else reader['cell_count'])
         if image:
             imported = json.loads(next(unpacked.rglob('image-import.json')).read_text(encoding='utf-8'))
             assert imported['physicalWidth'] == .2 and imported['outputUnits'] == 'm'

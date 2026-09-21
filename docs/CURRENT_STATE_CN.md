@@ -94,6 +94,8 @@
 
 ### 最新外部验收与 Windows 收尾
 
+跨平台打包验收脚本补入本轮新背景模式；本地0.4.38五类真实App（PNG/JPG/Cut-cell、混合、均匀背景16,384格、自适应背景1,168格）全部通过。背景独立覆盖/分类/2:1、内部保留、JSON/VTK/PNG/ZIP和三个求解入口拒绝均检查；背景导出OpenFOAM单元按设计为0，预览/背景JSON单元一致。Windows/Linux补充验收待CI返回。[实际本地结果](../artifacts/current/background-platform-smoke.json)。
+
 `f4708ce`原生CI通过，15个H4代表例通过OpenFOAM v2606标准`checkMesh`；这不包含十万格喷管、细圆环，也不等于`allGeometry/allTopology`或CFD精度认证。相同提交的Linux及macOS14 arm64完成原生/前端测试、打包和真实包启动检查。Windows2022 x64已编译成功，原生154/156；两个失败定位为tar测试清单使用主机分隔符，以及把Windows强制终止误当POSIX SIGTERM。已改为POSIX归档键，并在所有平台增加取消后检查点恢复与独立守恒/均匀场审核；POSIX取消状态检查保留。Windows强制终止只保证已保存检查点，不保证新取消摘要或最终场。本地相关测试通过，Windows复跑待返回；未改求解器或质量门。[外部状态与失败范围](../artifacts/current/native-ci-local-recheck.json)。
 
 `4d30825`复跑中Windows原生156/156通过，前端183/184：原测试按LF空行截取函数，在CRLF检出上误读后续Viewport代码。已统一测试源码换行，并增加LF/CRLF两种输入和截取边界断言；本地前端184/184通过，下一轮Windows打包待返回。两次修复均只涉及测试契约，产品二进制仍为已实测0.4.38。
