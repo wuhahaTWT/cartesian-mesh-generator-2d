@@ -616,7 +616,16 @@ profile分别记录 `pressureHierarchyBuilds`（完整分组）、`pressureHiera
 
 开发分支CLI/核心提供一阶后向欧拉。桌面0.4.4起提供固定时间步、物理量监测、取消保留与checkpoint续算；0.4.18增加CFL控制的自动步长及失败重试，本地macOS已打包实测；不支持二阶时间格式、时间误差估计、瞬态湍流或移动网格。
 
-稳态层流可用 `--initial-guess CSV` 指定**迭代起点**。CSV头必须为`cell,x,y,u,v,p`，按目标网格单元编号覆盖所有单元，坐标必须与目标单元中心一致；拒绝缺行、错序、非有限数、错坐标、非定常与边界模板导出组合。它不是检查点或物理初始条件；目标面的通量重新构造，指定边界条件和全部严格停止门仍生效。API对应`solveIncompressibleFromGuess2D`。默认不读取初值，桌面尚未提供此选项。
+稳态层流可用 `--initial-guess CSV` 指定**迭代起点**。CSV头必须为`cell,x,y,u,v,p`，按目标网格单元编号覆盖所有单元，坐标必须与目标单元中心一致；拒绝缺行、错序、非有限数、错坐标、非定常与边界模板导出组合。它不是检查点或物理初始条件；默认重新构造目标面的通量，指定边界条件和全部严格停止门仍生效。API对应`solveIncompressibleFromGuess2D`。默认不读取初值，桌面尚未提供此选项。
+
+同网格分段稳态计算可同时指定`--initial-flux CSV`，保留修正后的面通量；必须与单元初值一起使用。头为`face,owner,neighbour,x,y,flux`，每个目标面的编号、owner/neighbour（边界为-1）和中心坐标必须吻合。指定入口/不透壁面的通量不允许被初值更改。API初值结构的`flux`为空时仍走原重新构造路径；有限但未收敛的场可以作为迭代起点，不能作为已接受结果。Anderson历史、线性强迫序列与预条件器不保存，因此不承诺分段后轮数或字节完全一致；严格线性、动量、连续性和场变化等验收仍全部执行。
+
+从同一原始求解网格和原生稳态输出提取两个初值CSV（支持源CSV的`.gz`）：
+```sh
+python3 tools/verification/extract_steady_iterate.py --mesh FINAL.solver.cm2d --source-prefix outputs/partial --output outputs/iterate
+build/cartmesh2d_flow_cli --mesh FINAL.solver.cm2d --case duct --output outputs/continued-steady --initial-guess outputs/iterate.cells.csv --initial-flux outputs/iterate.flux.csv --nu .1 --speed 1 --tolerance 1e-10 --max-iterations 3000
+```
+示例为duct；实际使用须保留原物性、工况和命名边界。提取器核对原网格单元中心及面编号/连接、有限数、完整覆盖，记录输入/输出哈希，不覆盖旧证据，不授予收敛资格。它不是跨网格通量映射器；源面CSV本身没有几何坐标，必须提供生成该场的原始网格。
 
 规则网格参考研究可用下列工具从已收敛粗场生成细网格初值：
 ```sh

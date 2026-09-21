@@ -512,7 +512,8 @@ static FlowResult2D solveFlow(
     if(guess) {
         ensure(!previous && !material,"Steady initial guess cannot initialize time or material coupling");
         ensure(guess->u.size()==n && guess->v.size()==n && guess->p.size()==n,"Initial guess size differs from mesh");
-        for(const auto* field:{&guess->u,&guess->v,&guess->p})for(double value:*field)finite(value);
+        ensure(guess->flux.empty() || guess->flux.size()==nf,"Initial face flux size differs from mesh");
+        for(const auto* field:{&guess->u,&guess->v,&guess->p,&guess->flux})for(double value:*field)finite(value);
     }
     if (previous) {
         ensure(std::isfinite(timeStep) && timeStep>0 && std::isfinite(previous->time) && previous->time>=0 &&
@@ -675,6 +676,21 @@ static FlowResult2D solveFlow(
             : (b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield)
                 ? r.u[f.owner]*f.areaVector.x+r.v[f.owner]*f.areaVector.y : 0.;
         finite(r.flux[id]);
+    }
+
+    if(guess && !guess->flux.empty()) {
+        r.flux=guess->flux;
+        for(std::size_t id=0;id<nf;++id) {
+            const auto& face=m.faces[id];
+            if(face.neighbour || b.role[id]==Role::Outlet ||
+               b.role[id]==Role::Opening || b.role[id]==Role::Farfield) continue;
+            const double expected=b.role[id]==Role::Inlet
+                ? b.u[id]*face.areaVector.x+b.v[id]*face.areaVector.y : 0.;
+            const double scale=c.speed*std::hypot(face.areaVector.x,face.areaVector.y)+std::abs(expected);
+            ensure(std::abs(r.flux[id]-expected)<=64*std::numeric_limits<double>::epsilon()*scale,
+                   "Initial face flux violates prescribed boundary flux");
+            r.flux[id]=expected;
+        }
     }
 
     Vec oldFluxDefect(nf);

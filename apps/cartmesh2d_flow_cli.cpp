@@ -86,6 +86,35 @@ fv::FlowInitialGuess2D initialGuessCsv(const std::string& path,const fv::FvMesh2
     return result;
 }
 
+std::vector<double> initialFluxCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open initial flux CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    if(line!="face,owner,neighbour,x,y,flux")throw std::runtime_error("initial flux header must be face,owner,neighbour,x,y,flux");
+    std::vector<double> result;result.reserve(mesh.faces.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        std::istringstream row(line);std::string token;std::vector<double> values;
+        while(std::getline(row,token,',')) {
+            if(values.size()==6)throw std::runtime_error("initial flux row has extra fields");
+            values.push_back(number(token));
+        }
+        const auto i=result.size();
+        if(values.size()!=6 || line.back()==',' || i>=mesh.faces.size() || values[0]!=static_cast<double>(i))
+            throw std::runtime_error("initial flux row or face order invalid");
+        const auto& face=mesh.faces[i];
+        if(values[1]!=static_cast<double>(face.owner) ||
+           values[2]!=(face.neighbour?static_cast<double>(*face.neighbour):-1.))
+            throw std::runtime_error("initial flux connectivity differs from target mesh");
+        const double scale=std::max({std::abs(face.centre.x),std::abs(face.centre.y),std::hypot(face.areaVector.x,face.areaVector.y)});
+        if(std::abs(values[3]-face.centre.x)>32*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(values[4]-face.centre.y)>32*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("initial flux coordinates differ from target mesh");
+        result.push_back(values[5]);
+    }
+    if(!input.eof() || result.size()!=mesh.faces.size())throw std::runtime_error("initial flux does not cover target mesh");
+    return result;
+}
+
 std::ofstream out(const std::string& p, const char* ext) {
     std::ofstream s(p + ext);
     s.exceptions(std::ios::badbit | std::ios::failbit);
@@ -109,7 +138,7 @@ int main(int argc, char** argv) {
     double acceptedTime=0;
     bool transientOutputStarted=false;
     try {
-        std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath;
+        std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
         fv::FlowControls2D controls;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
@@ -139,6 +168,7 @@ int main(int argc, char** argv) {
             "--time-step MAX_DT --end-time T: adaptive backward Euler to absolute physical time T.\n"
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
+            "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
@@ -198,6 +228,8 @@ int main(int argc, char** argv) {
                 controls.tolerance = number(v);
             } else if (a == "--initial-guess") {
                 guessPath=v;
+            } else if (a == "--initial-flux") {
+                fluxPath=v;
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
@@ -285,6 +317,7 @@ int main(int argc, char** argv) {
             fv::validateFlowTimeStepControls2D(adaptiveControls);
         } else if (adaptiveOptions || (timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
+        if(!fluxPath.empty() && guessPath.empty())throw std::invalid_argument("initial-flux requires initial-guess");
         if(!guessPath.empty() && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("initial-guess requires an actual steady solve");
         if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
@@ -336,6 +369,7 @@ int main(int argc, char** argv) {
         }
         fv::FlowInitialGuess2D guess;
         if(!guessPath.empty())guess=initialGuessCsv(guessPath,mesh);
+        if(!fluxPath.empty())guess.flux=initialFluxCsv(fluxPath,mesh);
         const double readSeconds = std::chrono::duration<double>(
             std::chrono::steady_clock::now() - readStart).count();
         const auto parent = std::filesystem::path(prefix).parent_path();
@@ -540,7 +574,7 @@ int main(int argc, char** argv) {
         const bool counterflowCase=controls.scenario == "counterflow";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
-        if(!guessPath.empty())summary << "\"steadyInitialization\":\"target-cell-initial-guess\",\n";
+        if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
                                 << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"

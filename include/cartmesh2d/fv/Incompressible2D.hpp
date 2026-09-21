@@ -205,8 +205,10 @@ struct FlowResult2D {
     const std::function<void(const FlowIteration2D&)>& progress = {});
 
 // Optional steady initial iterate, not a physical initial condition or restart.
-// Fluxes are rebuilt on the target mesh and every original acceptance gate applies.
-struct FlowInitialGuess2D { std::vector<double> u, v, p; };
+// An empty flux vector requests target-mesh reconstruction. Optional face
+// iterates preserve same-mesh work; prescribed boundary fluxes are validated.
+// Every original acceptance gate applies, including to unconverged iterates.
+struct FlowInitialGuess2D { std::vector<double> u, v, p, flux; };
 [[nodiscard]] FlowResult2D solveIncompressibleFromGuess2D(
     const FvMesh2D&, const FlowControls2D&, const FlowInitialGuess2D&,
     const std::function<void(const FlowIteration2D&)>& progress = {});

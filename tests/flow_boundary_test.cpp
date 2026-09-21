@@ -110,6 +110,26 @@ void steadyRelaxationIndependence() {
         else if(face.areaVector.y>0)b={b.face,FlowBoundaryKind2D::Symmetry,{},0,"symmetry"};
     }
     const auto baseline=solveIncompressible2D(mesh,control);
+    auto shortRun=control;shortRun.maxIterations=30;
+    const auto partial=solveIncompressible2D(mesh,shortRun);
+    require(!partial.converged,"continuation fixture unexpectedly converged");
+    FlowInitialGuess2D guess{partial.u,partial.v,partial.p,partial.flux};
+    shortRun.maxIterations=1;
+    const auto resumed=solveIncompressibleFromGuess2D(mesh,shortRun,guess);
+    shortRun.maxIterations=31;
+    const auto uninterrupted=solveIncompressible2D(mesh,shortRun);
+    double difference=0;
+    for(const auto fields:{std::make_pair(&resumed.u,&uninterrupted.u),std::make_pair(&resumed.v,&uninterrupted.v),std::make_pair(&resumed.p,&uninterrupted.p),std::make_pair(&resumed.flux,&uninterrupted.flux)})
+        for(std::size_t i=0;i<fields.first->size();++i)difference=std::max(difference,std::abs((*fields.first)[i]-(*fields.second)[i]));
+    require(difference<2e-10,"cell and face initial iterate lost a SIMPLE step");
+    require(!resumed.converged,"finite partial iterate bypassed convergence gates");
+    auto invalid=guess;invalid.flux.pop_back();
+    rejects([&]{(void)solveIncompressibleFromGuess2D(mesh,shortRun,invalid);});
+    invalid=guess;invalid.flux[0]=std::numeric_limits<double>::quiet_NaN();
+    rejects([&]{(void)solveIncompressibleFromGuess2D(mesh,shortRun,invalid);});
+    invalid=guess;
+    for(const auto& b:control.boundaryConditions)if(b.kind==FlowBoundaryKind2D::Symmetry) {invalid.flux[b.face]=.1;break;}
+    rejects([&]{(void)solveIncompressibleFromGuess2D(mesh,shortRun,invalid);});
     for(double alpha:{.8,.9}) {
         auto changed=control;changed.velocityRelaxation=alpha;
         compare(baseline,solveIncompressible2D(mesh,changed));
