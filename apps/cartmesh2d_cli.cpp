@@ -1,4 +1,5 @@
 #include "cartmesh2d/io/MeshIO2D.hpp"
+#include "cartmesh2d/io/BackgroundGridIO2D.hpp"
 #include "cartmesh2d/io/OpenFoam2D.hpp"
 #include "cartmesh2d/geometry/BoundarySimplification2D.hpp"
 #include "cartmesh2d/quality/Quality2D.hpp"
@@ -206,6 +207,7 @@ bool parseSizingOptions(int argc, char** argv, int first,
                         std::vector<BoxRefinementRegion2D>& boxRegions,
                         std::optional<SizeFieldPolicy2D>& sizeField,
                         bool& sizeFieldOnly,
+                        std::string& backgroundMode,
                         std::string& error) {
     // The size-field options describe intent (wall resolution, growth, far field)
     // and are compiled onto the primitives above.  They stay opt-in so every
@@ -217,6 +219,18 @@ bool parseSizingOptions(int argc, char** argv, int first,
     int index=first;
     while (index<argc) {
         const std::string option=argv[index++];
+        if (option=="--background-grid") {
+            if(index==argc || !backgroundMode.empty()) {
+                error="--background-grid requires one uniform|adaptive mode";
+                return false;
+            }
+            backgroundMode=argv[index++];
+            if(backgroundMode!="uniform" && backgroundMode!="adaptive") {
+                error="--background-grid requires uniform|adaptive";
+                return false;
+            }
+            continue;
+        }
         if (option=="--distance-band") {
             if (index+2>argc) {
                 error="--distance-band requires <distance> <target-level>";
@@ -539,6 +553,9 @@ void usage(std::ostream& out = std::cerr) {    out << "usage: cartmesh2d_cli <bo
                  "multiple loops: separate x-y vertex blocks with a blank line; nesting uses even-odd semantics\n"
                  "a downstream --refine-box is the deterministic rectangular wake sizing primitive\n"
                  "default CFD semantics: boundary.xy is a SOLID wall and fluid is EXTERIOR\n"
+                 "--background-grid uniform|adaptive: retain all full cells, including solid interior;\n"
+                 "  writes .background.json/.background.vtk, not a fluid solver mesh; no OpenFOAM.\n"
+                 "  uniform uses max-level everywhere (maximum 10); adaptive maximum level 12.\n"
                  "\n"
                  "size field (opt-in; takes over the domain and the tree depth):\n"
                  "  --size-field                          enable with defaults\n"
@@ -620,10 +637,17 @@ int main(int argc, char** argv) {
     std::string sizingError;
     std::optional<SizeFieldPolicy2D> sizeFieldPolicy;
     bool sizeFieldOnly=false;
+    std::string backgroundMode;
     if (!parseSizingOptions(argc,argv,sizingOptionStart,distanceBands,boxRegions,
-                            sizeFieldPolicy,sizeFieldOnly,sizingError)) {
+                            sizeFieldPolicy,sizeFieldOnly,backgroundMode,sizingError)) {
         std::cerr<<sizingError<<'\n';
         usage();
+        return EXIT_FAILURE;
+    }
+    if(!backgroundMode.empty() && (openFoamCase || fluidRegion!=FluidRegion2D::Exterior ||
+                                  boundarySimplifyCellFraction!=0 || sizeFieldOnly)) {
+        std::cerr<<"background grid is a complete domain, not an interior/exterior fluid mesh; "
+                    "OpenFOAM, boundary simplification and size-field-only are not supported\n";
         return EXIT_FAILURE;
     }
     if (maxLevel == 0 || maxLevel > 28 || minimumLevel > maxLevel || !(paddingFraction > 0.0) ||
@@ -785,6 +809,10 @@ int main(int argc, char** argv) {
                  <<"boundary_simplified_area="<<simplificationReport->simplifiedArea<<'\n';
     }
 
+    if(!backgroundMode.empty() && maxLevel>(backgroundMode=="uniform"?10u:12u)) {
+        std::cerr<<"background grid exceeds its resource ceiling (uniform 10 / adaptive 12)\n";
+        return EXIT_FAILURE;
+    }
     const auto refinementStart = std::chrono::steady_clock::now();
     Quadtree2D tree(domain, maxLevel, boundary);
     QuadtreeRefinementPolicy2D refinement;
@@ -796,6 +824,7 @@ int main(int argc, char** argv) {
         refinement.distanceBands=distanceBands;
         refinement.boxRegions=boxRegions;
     }
+    if(backgroundMode=="uniform")refinement.minimumLevel=maxLevel;
     try {
         tree.refine(boundary, refinement);
     } catch (const std::invalid_argument& exception) {
@@ -809,6 +838,30 @@ int main(int argc, char** argv) {
     if (balance.violationsAfter != 0 || !tree.deterministicOrderingValid()) {
         std::cerr << "Quadtree balance/determinism gate failed\n";
         return EXIT_FAILURE;
+    }
+
+    if(!backgroundMode.empty()) {
+        const auto writeStart=std::chrono::steady_clock::now();
+        if(!writeBackgroundGrid2D(tree,boundary,outputPrefix,backgroundMode=="uniform",&error) ||
+           !writeSizingFieldReport(outputPrefix.string()+".sizing.json",domain,refinement,tree,balance,error)) {
+            std::cerr<<error<<'\n';
+            return EXIT_FAILURE;
+        }
+        std::size_t inside=0,outside=0,intersected=0;
+        for(const auto& leaf:tree.leaves()) {
+            if(leaf.classification==CellClass::Inside)++inside;
+            else if(leaf.classification==CellClass::Outside)++outside;
+            else ++intersected;
+        }
+        std::cout<<std::setprecision(17)<<"mesh_mode=background-"<<backgroundMode
+                 <<"\nsolver_ready=false\nretains_solid_interior=true\nleaf_count="<<tree.leaves().size()
+                 <<"\ninside_cells="<<inside<<"\noutside_cells="<<outside<<"\nintersected_cells="<<intersected
+                 <<"\nbackground_area="<<tree.totalLeafArea()<<"\ndomain_area="<<domain.width()*domain.height()
+                 <<"\nrefinement_seconds="<<refinementSeconds<<"\nbalance_seconds="<<balanceSeconds
+                 <<"\nwrite_seconds="<<elapsedSeconds(writeStart)<<"\ntotal_seconds="<<elapsedSeconds(totalStart)
+                 <<"\nbackground_json="<<outputPrefix.string()<<".background.json"
+                 <<"\nvtk="<<outputPrefix.string()<<".background.vtk\n";
+        return EXIT_SUCCESS;
     }
 
     const auto cutCellStart = std::chrono::steady_clock::now();

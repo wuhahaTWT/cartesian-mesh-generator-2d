@@ -39,6 +39,7 @@ add_library(cartmesh2d
     src/quality/PatchLocalQuality2D.cpp
     src/quality/SolverTopology2D.cpp
     src/io/MeshIO2D.cpp
+    src/io/BackgroundGridIO2D.cpp
     src/io/BoundaryMetadata2D.cpp
     src/io/OpenFoam2D.cpp
     src/io/Dxf2D.cpp
@@ -206,6 +207,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_workspace_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_workspace COMMAND cartmesh2d_scalar_workspace_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_background_grid
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/test_background_grid.py
+                $<TARGET_FILE:cartmesh2d_cli>)
+    set_tests_properties(cartmesh2d_background_grid PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_sst_flatplate_analysis COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_flatplate_analysis_test.py)
     add_test(NAME cartmesh2d_rectilinear_refinement_verifier COMMAND ${Python3_EXECUTABLE}

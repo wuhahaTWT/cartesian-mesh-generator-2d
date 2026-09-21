@@ -14,6 +14,7 @@
 - 核心保持 Point2D、Segment2D、AABB2D、Polygon2D、Quadtree、CutPolygon、Edge2D。
 - 闭合 BoundaryLoop 默认是固体；Domain2D 是外域；流体是 `domain - solid interior`。
 - Inside 是固体，不进入流体网格；Outside 是流体；Intersected 必须保留真实外侧 polygon。
+- 纯笛卡尔背景模式是独立的几何网格产品：保留 Inside/Outside/Intersected 的完整单元并分类，但不标记为流体求解网格。不得将其直接接入现有绕流CFD或以保留内部格子改变Cut-cell的流体语义。
 - 外流须同时具有 EmbeddedBoundary 与 DomainBoundary，并满足 `fluid_area = domain_area - solid_area`（容差内）。
 - 内流只允许显式 `FluidRegion2D::Interior`。不得以单元中心采样或删除相交格子代替 Cut-cell。
 - 自交、零面积、重复边、孤立边、非流形、分类冲突必须显式失败；现有漏检属于待修缺陷，不能作为放宽规则的依据。

@@ -1,0 +1,207 @@
+{
+  "scope": "Complete background grid generation, not CFD solver performance",
+  "binary_sha256": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799",
+  "geometry_sha256": "babcc2f63b07bfb3e44a4a6b8747cbbdb7600de6dd404fdac786ce3185ac719f",
+  "runs": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-7-0",
+        "7",
+        "0.5",
+        "0.1",
+        "exterior",
+        "-",
+        "0",
+        "--background-grid",
+        "uniform"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.0933530000038445,
+      "native": {
+        "mesh_mode": "background-uniform",
+        "solver_ready": "false",
+        "retains_solid_interior": "true",
+        "leaf_count": "16384",
+        "inside_cells": "3064",
+        "outside_cells": "13060",
+        "intersected_cells": "260",
+        "background_area": "16",
+        "domain_area": "16",
+        "refinement_seconds": "0.0048816659999999998",
+        "balance_seconds": "0.0025723339999999999",
+        "write_seconds": "0.079008750000000003",
+        "total_seconds": "0.086641750000000003",
+        "background_json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-7-0.background.json",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-7-0.background.vtk"
+      },
+      "maximum_rss_bytes": 8552448,
+      "audit": {
+        "cells": 16384,
+        "counts": [
+          13060,
+          3064,
+          260
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "json_sha256": "5ca79fd20b074db3cffe93e089a9a1f3c861294df051c37ed88c3104c2f02a17"
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-8-0",
+        "8",
+        "0.5",
+        "0.1",
+        "exterior",
+        "-",
+        "0",
+        "--background-grid",
+        "uniform"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.3849455410090741,
+      "native": {
+        "mesh_mode": "background-uniform",
+        "solver_ready": "false",
+        "retains_solid_interior": "true",
+        "leaf_count": "65536",
+        "inside_cells": "12540",
+        "outside_cells": "52480",
+        "intersected_cells": "516",
+        "background_area": "16",
+        "domain_area": "16",
+        "refinement_seconds": "0.019372582999999999",
+        "balance_seconds": "0.011062166999999999",
+        "write_seconds": "0.347011083",
+        "total_seconds": "0.377581208",
+        "background_json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-8-0.background.json",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-8-0.background.vtk"
+      },
+      "maximum_rss_bytes": 28327936,
+      "audit": {
+        "cells": 65536,
+        "counts": [
+          52480,
+          12540,
+          516
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "json_sha256": "1d962a1274be7a9e0197ec5cb9cab7d7529fb2b27655a8d438b377c730fc28c0"
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-9-0",
+        "9",
+        "0.5",
+        "0.1",
+        "exterior",
+        "-",
+        "0",
+        "--background-grid",
+        "uniform"
+      ],
+      "returncode": 0,
+      "wall_seconds": 1.4625896249926882,
+      "native": {
+        "mesh_mode": "background-uniform",
+        "solver_ready": "false",
+        "retains_solid_interior": "true",
+        "leaf_count": "262144",
+        "inside_cells": "50632",
+        "outside_cells": "210484",
+        "intersected_cells": "1028",
+        "background_area": "16",
+        "domain_area": "16",
+        "refinement_seconds": "0.074721666000000006",
+        "balance_seconds": "0.048804124999999997",
+        "write_seconds": "1.3288709160000001",
+        "total_seconds": "1.4528946250000001",
+        "background_json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-9-0.background.json",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/uniform-9-0.background.vtk"
+      },
+      "maximum_rss_bytes": 102612992,
+      "audit": {
+        "cells": 262144,
+        "counts": [
+          210484,
+          50632,
+          1028
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "json_sha256": "2161e4bb8b8358efcf38372a2cb45e7d45b3bbf4cf406d655c83a9b3c7cf841f"
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/examples/acceptance/circle.xy",
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/adaptive-10-7",
+        "10",
+        "0.5",
+        "0.1",
+        "exterior",
+        "-",
+        "7",
+        "--background-grid",
+        "adaptive"
+      ],
+      "returncode": 0,
+      "wall_seconds": 0.15682800000649877,
+      "native": {
+        "mesh_mode": "background-adaptive",
+        "solver_ready": "false",
+        "retains_solid_interior": "true",
+        "leaf_count": "23632",
+        "inside_cells": "5756",
+        "outside_cells": "15824",
+        "intersected_cells": "2052",
+        "background_area": "16",
+        "domain_area": "16",
+        "refinement_seconds": "0.0075420829999999998",
+        "balance_seconds": "0.016149875000000001",
+        "write_seconds": "0.123771833",
+        "total_seconds": "0.14808625",
+        "background_json": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/adaptive-10-7.background.json",
+        "vtk": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/adaptive-10-7.background.vtk"
+      },
+      "maximum_rss_bytes": 19972096,
+      "audit": {
+        "cells": 23632,
+        "counts": [
+          15824,
+          5756,
+          2052
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "json_sha256": "292e1dd00eef03486724563c383f9259629fb2e4f27fad42794c462c66286733"
+    }
+  ]
+}
