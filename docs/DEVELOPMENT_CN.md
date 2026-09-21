@@ -170,6 +170,28 @@ python3 tools/verification/verify_thermal_flow.py --generate outputs/thermal-ver
 
 温度/浓度采用同类输运方程的官方参考：[OpenFOAM scalarTransport方程说明](https://api.openfoam.com/2606/classFoam_1_1functionObjects_1_1scalarTransport.html)。本仓库自行实现FVM装配，复用自己的稀疏求解与面算子，没有复制或链接OpenFOAM代码，不声称原创输运方程。大输出仍在outputs，不加入日常源码历史。
 
+### 实验性理想气体 Euler
+
+独立入口 `apps/cartmesh2d_euler_cli.cpp`，核心 `fv/Euler2D.hpp` / `src/fv/Euler2D.cpp`，续算 `fv/EulerCheckpoint2D.hpp`。仅原生二维：每个真实面共享 Rusanov 质量、动量、总能量通量，前向欧拉，理想气体 `p=(gamma−1)(rhoE−rho|U|²/2)`。密度/压力必须为正；按真实面积与各面声学波速之和选择时间步，失败候选仅缩步重试，不裁剪状态。
+
+```sh
+cmake --build build --target cartmesh2d_euler_cli cartmesh2d_euler_tests --parallel 2
+# 矩形内流网格的 Sod 冲击管；示例为量纲一致的 rho=1、p=1、R=1 参考。
+./build/cartmesh2d_euler_cli --mesh outputs/tube.solver.cm2d --output outputs/euler-tube --case sod --gas-r 1 --end-time .2
+# 实際物理时长须按域长/声速选择；上面的 .2 只对应单位长度参考，不是任意 SI 工况。
+python3 tools/verification/verify_euler.py --mesh outputs/tube.solver.cm2d --prefix outputs/euler-tube
+```
+
+`--case external` 在 EmbeddedBoundary 施加滑移壁面、DomainBoundary 施加特征远场；`uniform` 全边界为远场；`sod` 只允许轴对齐矩形，左右透射、上下滑移；`vortex` 是宽高至少20的周期矩形解析涡参考，固定环境rho=p=1、u=v=1。`--density/--u/--v/--pressure/--gamma/--gas-r` 定义密度、速度、绝对压力和气体，Euler 压力不是不可压求解器的运动学压力。当前一阶初始化按单元中心采样，不是高阶体平均积分。
+
+自定义边界先用 `--export-boundaries FILE` 导出再编辑物理列，以 `--case custom --boundary FILE` 使用。文件绑定单元/面数量和每个边界的 owner、中心、面积向量；必须完整覆盖实际边界。四种类型为 `slip-wall`、`transmissive`、`farfield`、`periodic`，周期配对须互反、等长反向且同组平移一致。透射并不是通用指定静压出口，滑移壁面没有黏性作用。
+
+`--end-time` 指绝对目标时间；`--max-step/--min-step/--cfl` 控制显式步，声学 CFL 定义为 `dt*sum(length*(|un|+a))/area`，最大允许.45。默认180秒、100000接受步；预算耗尽或SIGTERM取消明确非零退出并保存已接受状态，不伪报到达时间或稳态收敛。默认每25步原子保存检查点，正常退出/可控失败时再次保存；SIGKILL/断电只能保留最近持久化状态。`--restart FILE` 核对完整 Fv 网格、气体、边界与工况，允许改变数值步长和最终时间。
+
+输出CSV含最后接受步的新旧守恒状态、实际面通量和波速，便于独立重算四个守恒方程；JSON/VTK包括密度、绝对压力、温度、Mach数和速度。`verify_euler.py` 从CM2D多边形重建几何、外法线、通量、EOS、CFL及逐格/全域守恒，并检查每条时间记录；它并未独立重演整条计算轨迹。`tests/euler_test.cpp` 覆盖非正交均匀流、周期守恒、旋转冲击管、强爆炸/膨胀正值和续算；CLI测试覆盖精确Sod细化、取消、预算续算、边端点反转及篡改检出。
+
+方法与解析参考：[Clawpack Euler Riemann chapter](https://www.clawpack.org/riemann_book/html/Euler.html)。当前仅一阶无黏 Euler，等熵涡的精度失败保留在 CURRENT_STATE；App、MUSCL/高阶时间推进、可压黏性及导热都未完成，不能把现有被动温度输运当成可压总能量方程。
+
 ### 原生层流求解
 
 ```sh
