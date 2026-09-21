@@ -49,6 +49,7 @@ struct FlowControls2D {
     double tolerance = 1e-6;
     std::size_t maxIterations = 1500;
     double velocityRelaxation = .6;
+    std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;

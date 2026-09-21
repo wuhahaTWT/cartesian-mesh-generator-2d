@@ -231,25 +231,26 @@ test('steady acceleration is explicit, unavailable in time marching, and bound t
 });
 
 test('linear efficiency controls bind requests and enforce strict final certification',()=>{
-  const request={case:'external',nu:.01,speed:1,maxIterations:30,linearPolicy:'adaptive',velocityRelaxation:.8};
+  const request={case:'external',nu:.01,speed:1,maxIterations:30,linearPolicy:'adaptive',velocityRelaxation:.8,pressureCorrectionPasses:1};
   for(const mode of ['steady','transient','adaptive']) {
     const q={...request,mode,dt:.02,steps:1,endTime:.1};
     const invoke=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',q);
     assert.equal(invoke.args[invoke.args.indexOf('--linear-policy')+1],'adaptive');
     assert.equal(invoke.args[invoke.args.indexOf('--velocity-relaxation')+1],'0.8');
+    assert.equal(invoke.args[invoke.args.indexOf('--pressure-corrections')+1],'1');
   }
   const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
     forceDefinition:'shared-face-newtonian-traction',forceX:2,forceY:-3,pressureForceX:1,pressureForceY:-1,
     discreteForceX:2,discreteForceY:-3,wallForceX:2,wallForceY:-3,wallViscousForceX:1,wallViscousForceY:-2,
-    adaptiveLinear:true,strictLinearFinal:true,velocityRelaxation:.8};
+    adaptiveLinear:true,strictLinearFinal:true,velocityRelaxation:.8,pressureCorrectionPasses:1};
   const validated=validateFlowOutput(current,fields,2,request);
   assert.equal(validated.summary.linearPolicy,'adaptive');assert.equal(validated.summary.velocityRelaxation,.8);
   for(const patch of [{adaptiveLinear:false},{adaptiveLinear:undefined},{adaptiveLinear:'true'},
     {strictLinearFinal:false},{strictLinearFinal:undefined},{velocityRelaxation:.6},{velocityRelaxation:undefined},
-    {velocityRelaxation:0},{velocityRelaxation:1.1}])
+    {velocityRelaxation:0},{velocityRelaxation:1.1},{pressureCorrectionPasses:4},{pressureCorrectionPasses:undefined},{pressureCorrectionPasses:0},{pressureCorrectionPasses:1.5}])
     assert.throws(()=>validateFlowOutput({...current,...patch},fields,2,request));
   assert.equal(validateFlowOutput({...current,converged:false,status:'iteration_limit',strictLinearFinal:false},fields,2,request).summary.converged,false);
-  for(const patch of [{linearPolicy:'unknown'},{velocityRelaxation:0},{velocityRelaxation:1.1},{velocityRelaxation:NaN}])
+  for(const patch of [{linearPolicy:'unknown'},{velocityRelaxation:0},{velocityRelaxation:1.1},{velocityRelaxation:NaN},{pressureCorrectionPasses:0},{pressureCorrectionPasses:5},{pressureCorrectionPasses:1.5}])
     assert.throws(()=>validateFlowRequest({...request,...patch}));
 });
 

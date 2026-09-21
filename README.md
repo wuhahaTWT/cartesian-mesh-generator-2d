@@ -12,7 +12,7 @@
 
 纯笛卡尔模式在App选择“纯笛卡尔背景网格”，支持全域均匀或四叉树局部加密、内部/外部/相交分类、JSON/VTK/PNG与ZIP导出。它保留完整计算域，分类不等于已经施加固壁条件；当前不接入CFD求解。[实际背景网格](artifacts/current/background-desktop-packaged.png)
 
-独立层流可选择自适应线性精度、速度松弛和稳态Anderson加速；macOS另有系统稀疏Cholesky压力预条件。全部保留原严格收敛门，默认设置不变，提速效果以相同输入和精度对照为准。[设置与适用范围](docs/DEVELOPMENT_CN.md#原生层流求解) · [桌面操作](docs/DESKTOP_APP_CN.md)
+独立层流可选择自适应线性精度、速度松弛、压力校正次数和稳态Anderson加速；macOS另有系统稀疏Cholesky压力预条件。全部保留原严格收敛门，默认设置不变，提速效果以相同输入和精度对照为准。[设置与适用范围](docs/DEVELOPMENT_CN.md#原生层流求解) · [桌面操作](docs/DESKTOP_APP_CN.md)
 
 以下版本记录保留各自当时的验证范围，不替代当前验收。
 

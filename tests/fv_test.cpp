@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/Diffusion2D.hpp"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <map>

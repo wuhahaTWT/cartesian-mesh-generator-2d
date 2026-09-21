@@ -178,6 +178,7 @@ int main(int argc, char** argv) {
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
+            "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
@@ -239,6 +240,11 @@ int main(int argc, char** argv) {
                 guessPath=v;
             } else if (a == "--initial-flux") {
                 fluxPath=v;
+            } else if (a == "--pressure-corrections") {
+                const double passes=number(v);
+                if(passes<1 || passes>4 || std::floor(passes)!=passes)
+                    throw std::invalid_argument("pressure-corrections must be an integer in [1,4]");
+                controls.pressureCorrectionPasses=static_cast<std::size_t>(passes);
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
@@ -589,6 +595,7 @@ int main(int argc, char** argv) {
         summary << "{\n";
         if(!guessPath.empty())summary << "\"steadyInitialization\":" << std::quoted(fluxPath.empty()?"target-cell-initial-guess":"target-cell-and-face-initial-guess") << ",\n";
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
+                                << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
                                 << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
@@ -691,6 +698,7 @@ int main(int argc, char** argv) {
                 << ",\n\"attemptCount\":" << attemptCount << ",\n\"rejectedSteps\":" << rejectedSteps;
             else summary << ",\n\"requestedSteps\":" << requestedSteps;
             summary << ",\n\"completedSteps\":" << completedSteps << ",\n\"maxCourant\":" << r.maxCourant
+                << ",\n\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses
                 << ",\n\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         }
         if (manufactured && controls.manufacturedViscositySlope==0) summary << "\"manufacturedDefinition\":\"psi=(speed/pi)*sin(pi*x)^2*sin(pi*y)^2; p=speed^2*(cos(pi*x)*cos(pi*y)+slope*(x+y)); source=advection+grad(p)-nu*laplacian(U); centroid quadrature\",\n"
@@ -795,6 +803,7 @@ int main(int argc, char** argv) {
                         << ",\n\"momentumSolves\":" << p.momentumSolves
                         << ",\n\"momentumIterations\":" << p.momentumIterations
                         << ",\n\"maxMomentumIterations\":" << p.maxMomentumIterations
+                        << ",\n\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses
                         << ",\n\"pressureSolves\":" << p.pressureSolves
                         << ",\n\"pressureCorrectionPassesSkipped\":" << p.pressureCorrectionPassesSkipped
                         << ",\n\"pressureFactorizations\":" << p.pressureFactorizations

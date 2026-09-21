@@ -921,6 +921,7 @@ function renderFlowResult(summary) {
     ['压力求解', pressurePreconditionerText],
     ['线性迭代精度',summary.linearPolicy==='adaptive'?(summary.converged?'自适应 · 严格复核通过':'自适应 · 尚未收敛'):'固定精度'],
     ['速度松弛系数',summary.velocityRelaxation ?? .6],
+    ['压力校正次数',summary.pressureCorrectionPasses ?? 4],
     ['稳态加速', summary.steadyAcceleration==='anderson'
       ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
     ['出口回流', flowOutletBackflowLabel(summary)],
@@ -994,6 +995,7 @@ function updateFlowMode() {
   $('flowSteadyAcceleration').disabled=state.busy||transient;
   $('flowLinearPolicy').disabled=state.busy;
   $('flowVelocityRelaxation').disabled=state.busy;
+  $('flowPressureCorrections').disabled=state.busy;
   if ($('flowCase').value==='custom') $('flowOutletBackflow').disabled=true;
   for(const control of document.querySelectorAll('#flowBoundarySettings input, #flowBoundarySettings select, #flowBoundarySettings button'))
     control.disabled=Boolean(state.busy||resuming||thermalResuming||!state.result);
@@ -1150,6 +1152,9 @@ function thermalRequest() {
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
 }
 function validThermalInputs() {
+  if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
+    status('温度联算的迭代设置需要调整','请恢复固定线性精度、0.6速度松弛和4次压力校正。');return false;
+  }
   if($('flowPressurePreconditioner').value==='cholesky') {
     status('温度联算的压力求解设置需要调整','系统稀疏 Cholesky 暂仅用于独立层流；请选择 IC0 或多重网格。');return false;
   }
@@ -1231,7 +1236,7 @@ function flowRequest() {
     tolerance:Number($('flowTolerance').value),
     pressurePreconditioner:$('flowPressurePreconditioner').value,
     steadyAcceleration:transient?'none':$('flowSteadyAcceleration').value,
-    linearPolicy:$('flowLinearPolicy').value,velocityRelaxation:Number($('flowVelocityRelaxation').value),
+    linearPolicy:$('flowLinearPolicy').value,velocityRelaxation:Number($('flowVelocityRelaxation').value),pressureCorrectionPasses:Number($('flowPressureCorrections').value),
     outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),
     endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
@@ -1248,7 +1253,7 @@ function applyFlowCase(request) {
   clearFlowBinding(); clearThermalBinding();
   state.flowBoundaryDefinition = request.boundaryDefinition ? structuredClone(request.boundaryDefinition) : null;
   applySharedFlowControls(request);
-  const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',steadyAcceleration:'flowSteadyAcceleration',linearPolicy:'flowLinearPolicy',velocityRelaxation:'flowVelocityRelaxation',
+  const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',steadyAcceleration:'flowSteadyAcceleration',linearPolicy:'flowLinearPolicy',velocityRelaxation:'flowVelocityRelaxation',pressureCorrectionPasses:'flowPressureCorrections',
     dt:'flowDt',steps:'flowSteps',endTime:'flowEndTime',minDt:'flowMinDt',maxCourant:'flowMaxCourant',
     maxRetries:'flowMaxRetries',maxSteps:'flowMaxSteps'};
   for (const [key,id] of Object.entries(fields)) if (request[key] !== undefined) $(id).value=request[key];
@@ -1488,6 +1493,7 @@ $('flowPressurePreconditioner').addEventListener('change', () => { if (state.flo
 $('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('flowLinearPolicy').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('flowVelocityRelaxation').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
+$('flowPressureCorrections').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 

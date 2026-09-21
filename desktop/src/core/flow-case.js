@@ -5,7 +5,7 @@ const { parseCm2d } = require('./cm2d');
 const { validateFlowRequest } = require('./flow');
 const { validateBoundaryMesh } = require('./flow-boundaries');
 
-const FORMAT = 'cartmesh2d-flow-case-v4';
+const FORMAT = 'cartmesh2d-flow-case-v5';
 const MAX_BYTES = 32 * 1024 * 1024;
 const fail = message => { throw new Error(`流动工况：${message}`); };
 function keys(value, allowed) {
@@ -39,8 +39,12 @@ function parseFlowCaseDocument(text, meshSource) {
   let document;
   try { document = JSON.parse(text); } catch { fail('不是有效的JSON文件。'); }
   keys(document, ['format', 'mesh', 'request']);
-  if (![FORMAT, 'cartmesh2d-flow-case-v3', 'cartmesh2d-flow-case-v2', 'cartmesh2d-flow-case-v1'].includes(document.format)) fail('不支持的文件版本。');
+  if (![FORMAT, 'cartmesh2d-flow-case-v4', 'cartmesh2d-flow-case-v3', 'cartmesh2d-flow-case-v2', 'cartmesh2d-flow-case-v1'].includes(document.format)) fail('不支持的文件版本。');
   if (document.format!==FORMAT) {
+    if (!document.request || Object.hasOwn(document.request,'pressureCorrectionPasses')) fail('旧版工况不支持压力校正次数。');
+    document.request={...document.request,pressureCorrectionPasses:4};
+  }
+  if (['cartmesh2d-flow-case-v1','cartmesh2d-flow-case-v2','cartmesh2d-flow-case-v3'].includes(document.format)) {
     if (!document.request || Object.hasOwn(document.request,'linearPolicy') || Object.hasOwn(document.request,'velocityRelaxation'))
       fail('旧版工况不支持线性精度或速度松弛设置。');
     document.request={...document.request,linearPolicy:'strict',velocityRelaxation:.6};

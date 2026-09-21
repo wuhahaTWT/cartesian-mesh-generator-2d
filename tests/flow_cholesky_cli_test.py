@@ -14,6 +14,15 @@ with tempfile.TemporaryDirectory(prefix='cm2d-cholesky-') as directory:
  def run(method,label,extra=()):
   prefix=root/label;command=[cli,'--mesh',str(mesh),'--case','custom','--boundary',str(bc),'--output',str(prefix),'--nu','.1','--speed','1','--tolerance','1e-10','--max-iterations','5000','--pressure-preconditioner',method,'--convection','face-limited-linear','--linear-policy','adaptive','--profile']
   return prefix,subprocess.run(command+list(extra),capture_output=True,text=True,timeout=30)
+ for count in ['0','5','1.5','nan']:
+  prefix,r=run('aggregation','invalid-'+count,('--pressure-corrections',count));assert r.returncode!=0 and not prefix.with_suffix('.json').exists()
+ for mode,extra in [('steady',()),('transient',('--time-step','.02','--steps','2'))]:
+  prefix,r=run('aggregation','single-'+mode,extra+('--pressure-corrections','1'));assert r.returncode==0,r.stderr
+  summary=json.loads(prefix.with_suffix('.json').read_text());assert summary['converged'] and summary['strictLinearFinal'] and summary['pressureCorrectionPasses']==1
+  profile=json.loads(prefix.with_suffix('.performance.json').read_text());assert profile['pressureCorrectionPasses']==1 and profile['pressureCorrectionPassesSkipped']==0
+  if mode=='steady':audit=native.verify_case(mesh,prefix,'custom',.1,1,native.argument_parser().parse_args(['--max-iterations','5000']))
+  else:audit=transient.verify(mesh,prefix,root/(mode+'-single-audit.json'));assert summary['strictAcceptedSteps']==2
+  assert audit['valid'],audit
  if sys.platform!='darwin':
   prefix,r=run('cholesky','unsupported');assert r.returncode!=0 and 'only on macOS' in r.stderr;assert not prefix.with_suffix('.json').exists()
  else:

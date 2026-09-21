@@ -1,0 +1,174 @@
+{
+  "format": "cartmesh2d-ci-local-recheck-v1",
+  "scope": "Current local system clang build and complete H4 workflow generation/readers/assertions, not a new GitHub CI run and not actual external checkMesh.",
+  "priorFailures": {
+    "windowsRun": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35526013461",
+    "windowsCause": "tests/fv_test.cpp uses std::minmax without direct <algorithm>; include added, local foundation compilation/test passes; Windows toolchain not rerun.",
+    "nativeRun": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35526013501",
+    "nativeCause": "Post-repair Q3-3 counters equal across two valid construction paths, while old CI required strict cross-path improvement."
+  },
+  "change": "Permit equality only for two cross-path downstream diagnostic counters. Own-stage Q4-1 improvement remains strict; all final Solver quality, area and topology assertions unchanged.",
+  "q33Counters": {
+    "q33_hard_volume_ratio_count_after": 102,
+    "q33_hard_face_weight_count_after": 46
+  },
+  "q41Counters": {
+    "q33_hard_volume_ratio_count_after": 102,
+    "q33_hard_face_weight_count_after": 46,
+    "q41_accepted_construction_count": 8,
+    "q41_hard_volume_ratio_count_before": 272,
+    "q41_hard_volume_ratio_count_after": 259,
+    "q41_hard_face_weight_count_before": 272,
+    "q41_hard_face_weight_count_after": 259,
+    "q41_hard_short_face_count_before": 4,
+    "q41_hard_short_face_count_after": 4,
+    "q41_construction_selection_declined": false
+  },
+  "run": {
+    "command": [
+      "bash",
+      "outputs/laminar-performance/dense-cutcell/current-h4-acceptance.sh"
+    ],
+    "timeoutSeconds": 180,
+    "scope": "Exact current CI H4 generation + independent readers + unchanged final Solver gates. External OpenFOAM step unavailable, not run. Cross-path Q3-3 counters permit equal values; strict Q4-1 own-stage improvement retained.",
+    "sha256": {
+      "outputs/laminar-performance/dense-cutcell/current-h4-acceptance.sh": "b9aa67cf88c69410ec59db4d22a45d07c1235ff8f05eb13c1ecb12dd0bc70269",
+      ".github/workflows/cartmesh2d-ci.yml": "e14a226395b4bc53be3e92765730162f84fa37f93e5452e87e766929b60b279a",
+      "build/cartmesh2d_hybrid_cli": "6d7c9846bb511cdb53cf9945f24cba8e8e43646974ce1dec5b1229740027b63d"
+    },
+    "commandText": "bash outputs/laminar-performance/dense-cutcell/current-h4-acceptance.sh",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/dense-cutcell/current-h4-acceptance.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/current-h4-acceptance.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 16.09589033400698
+  },
+  "cases": {
+    "circle.hybrid.json": {
+      "cells": 728,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.0658141036401503e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "5f96706d41689a5f493b85271cf7388d71358cfd347f5b0c0ac965385d3dfc50"
+    },
+    "concave_l.hybrid.json": {
+      "cells": 5457,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -8.171241461241152e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "863b6692e29216dcf6d642d4b74b5b6a66d6eeb12cd5fc31bc2208f55b38a92c"
+    },
+    "narrow_gap.hybrid.json": {
+      "cells": 3196,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "b909b91ea05ce855c420c2b2512d4d033c5d68b13dbb0a9275d44d184bbdbd33"
+    },
+    "q32_narrow_gap.hybrid.json": {
+      "cells": 3168,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "624d9f7aed31035ff27bbfe0e770257f2cded0118c0defe45d6474ece49fc036"
+    },
+    "q33_narrow_gap.hybrid.json": {
+      "cells": 3168,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "d2bbe50ad9c43e4f7b4e20ad7c66bbcdd2b2602813fe45ff4bf946f0dfaa5c5e"
+    },
+    "q3_narrow_gap.hybrid.json": {
+      "cells": 3168,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "f8d979fac1a66cf86bfa62a6d350f7646eb946f87fd8831aa78541422da47da6"
+    },
+    "q41_narrow_gap.hybrid.json": {
+      "cells": 3168,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "43d60f773145a8e0357251385f13486c8f29948a97ba864a860c3bfbbc6364bf"
+    },
+    "q41_sharp_trailing_edge.hybrid.json": {
+      "cells": 3401,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": 3.197442310920451e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "958306e3b6f7d18fd946d7c8c1fba13740d7745eec467ee16ca8afa09880cab0"
+    },
+    "q51_circle.hybrid.json": {
+      "cells": 856,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.0658141036401503e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "53aaa22babb743698840f670019133476af3595bb5adf83f9ecdaf9da63f2408"
+    },
+    "q51_superellipse.hybrid.json": {
+      "cells": 986,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": 2.4868995751603507e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "e3f048296ed760f6ee569d71acbc9e42fa94d367fd55138690e32d07e5ff081a"
+    },
+    "q52_concave_l.hybrid.json": {
+      "cells": 5457,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -8.171241461241152e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "cc6df669310eaa0f3dce3b24a90a8bdac39e62a9da3e0d7d4f0f382ebc271ca0"
+    },
+    "q52_narrow_gap.hybrid.json": {
+      "cells": 3196,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": -1.829647544582258e-13,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "5a87174b52a54496df39cde615d0360e0d745056f25bcf89b990b9a31abd587b"
+    },
+    "q52_sharp_trailing_edge.hybrid.json": {
+      "cells": 3393,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": 2.1316282072803006e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "64c39e78d4d740f6be757853b9dd22d5c9ea65f6a42f892abbd43b284dbb1f5f"
+    },
+    "sharp_trailing_edge.hybrid.json": {
+      "cells": 3393,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": 2.1316282072803006e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "de6b84e58ba02fdc227c53025af1bdec63bff3ef8f3b84f0ea61716ed74f64b4"
+    },
+    "superellipse.hybrid.json": {
+      "cells": 795,
+      "solverQualityValid": true,
+      "solverQualityIssues": 0,
+      "areaError": 3.019806626980426e-14,
+      "independentOpenFoamReaderValid": true,
+      "summarySha256": "4bcf8709f7690f8bd3e0945d7aa6e9b254e87ff6703c825dc48c92453a7b4a67"
+    }
+  },
+  "nativeRegression": "156/156,110.53s",
+  "frontendRegression": "184/184",
+  "externalCheckMesh": "not run: unavailable locally",
+  "actualWindowsBuild": "not run",
+  "actualLinuxBuild": "not run"
+}

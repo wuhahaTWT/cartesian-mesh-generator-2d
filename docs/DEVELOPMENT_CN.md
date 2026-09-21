@@ -640,6 +640,8 @@ CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-veloc
 
 层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。adaptive线性支持固定/自动物理时间步，每个接受步都须严格复核，强迫序列每步重置；摘要`strictAcceptedSteps`只统计本次调用的接受步，`adaptiveLinearAttemptIterations`包含被拒候选步。engineering仍拒绝非定常，两者均拒绝材料耦合。桌面0.4.35已接通独立层流的strict/adaptive与速度松弛系数，稳态及固定/自动物理时间推进均可用；温度联算保持strict/.6并拒绝其它值。结果核对实际模式/松弛值，adaptive收敛必须有strictLinearFinal，时间推进还须strictAcceptedSteps等于本次completedSteps。工况v4保存这两项，v1—v3只恢复历史strict/.6；伪装在旧格式中的新选项明确拒绝。桌面默认仍为strict/.6，不自动切到性能试验参数。
 
+层流CLI/桌面0.4.37新增可选 `--pressure-corrections 1..4`，默认4；对应 `FlowControls2D::pressureCorrectionPasses`。这是每次SIMPLE内迭代的非正交压力校正遍数上限，零更新后的完全相同重复仍可跳过；摘要和性能JSON记录实际设置。减少遍数可能避免某些畸变网格的校正放大，也可能减慢收敛，不改变最终动量/连续性/严格线性门或物理时间步。支持稳态与既有时间推进；材料反馈及桌面温度联算要求4。工况v5保存此项，v1—v4恢复历史4次并拒绝伪装的新字段；v4的线性精度/松弛设置保持不变。非正交通道1/2/3次与默认4次的收敛解独立比较，闭域及逐时间步方程另行审核。细圆环的一次校正仅恢复收敛，压力物理误差与力矩细化未通过，见当前状态。
+
 macOS可选 `--pressure-preconditioner cholesky` 使用系统Accelerate稀疏Cholesky作为原PCG预条件；原矩阵真实残差门与全部非线性/守恒门保持。稀疏结构首次分解，相同系数复用，系数改变只重做数值分解；副本写入不修改共享因子，失败清除缓存，不加对角偏移或隐式降级。压力性能JSON分别记录 `pressureCholeskyBuilds/Refactors/Reuses`。默认压力方法不变；其它操作系统明确拒绝本选项，桌面禁用对应选项；材料反馈及桌面温度联算拒绝。
 
 确定性要求：流动CLI在任何Accelerate调用前固定本进程 `VECLIB_MAXIMUM_THREADS=1`，因此App保存后重算可逐字节核对。直接调用C++ API的宿主须在首次使用任何Accelerate功能前设置该环境变量，因子构造会检查；不能在系统库已缓存多线程设置后再修改它来声称确定性。Apple说明默认多线程的求和顺序可能变化，见[官方Sparse Solvers文档](https://developer.apple.com/documentation/accelerate/sparse-solvers-library)。初期默认多线程研究的数据不替代最终单线程交付性能。跨系统或不同编译器的逐字节一致性未验证。

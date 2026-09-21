@@ -1,0 +1,1446 @@
+{
+  "format": "cartmesh2d-annulus-current-v1",
+  "scope": "Current native2D Cut-cell generation and existing circular Couette wall preset; original polygon inputs unchanged. Explicit optional one pressure correction/.2 velocity relaxation/adaptive linear/Anderson; default remains four corrections. No physical gates relaxed.",
+  "cases": [
+    {
+      "command": [
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/laminar-performance/annulus-current/l5.solver.cm2d",
+        "--case",
+        "custom",
+        "--boundary",
+        "outputs/laminar-performance/annulus-current/l5.boundaries",
+        "--output",
+        "outputs/laminar-performance/annulus-current/l5-production-one",
+        "--nu",
+        ".1",
+        "--speed",
+        ".5",
+        "--convection",
+        "face-limited-linear",
+        "--pressure-preconditioner",
+        "cholesky",
+        "--max-iterations",
+        "6000",
+        "--tolerance",
+        "1e-9",
+        "--velocity-relaxation",
+        ".2",
+        "--profile",
+        "--pressure-corrections",
+        "1",
+        "--linear-policy",
+        "adaptive",
+        "--steady-acceleration",
+        "anderson"
+      ],
+      "timeoutSeconds": 180,
+      "scope": "Existing annulus retained fine mesh; Explicit production CLI controls, original nonlinear and conservation gates. Explicit bounded diagnostic after accelerated .8 run diverged; no quality relaxation.",
+      "inputHashes": {
+        "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+        "outputs/laminar-performance/annulus-current/l5.solver.cm2d": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+        "outputs/laminar-performance/annulus-current/l5.boundaries": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da"
+      },
+      "commandText": "build/cartmesh2d_flow_cli --mesh outputs/laminar-performance/annulus-current/l5.solver.cm2d --case custom --boundary outputs/laminar-performance/annulus-current/l5.boundaries --output outputs/laminar-performance/annulus-current/l5-production-one --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner cholesky --max-iterations 6000 --tolerance 1e-9 --velocity-relaxation .2 --profile --pressure-corrections 1 --linear-policy adaptive --steady-acceleration anderson",
+      "returncode": 0,
+      "stdout": "outputs/laminar-performance/annulus-current/l5-production-one.stdout.log",
+      "stderr": "outputs/laminar-performance/annulus-current/l5-production-one.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 0.10318162500334438,
+      "metrics": {
+        "cells": 484,
+        "velocityL2": 0.009203475041648115,
+        "radialVelocityL2": 0.004532268190293262,
+        "pressureL2": 0.033316144826468906,
+        "rotorTorque": -0.413545990630376,
+        "housingTorque": 0.4129227938131659,
+        "rotorTorqueError": 0.0127316709301153,
+        "housingTorqueError": 0.014219443739787216,
+        "torqueImbalance": 0.0014877728096719172,
+        "iterations": 86
+      },
+      "summary": {
+        "cells": 484,
+        "converged": true,
+        "iterations": 86,
+        "tolerance": 1e-09,
+        "velocityRelaxation": 0.2,
+        "pressureCorrectionPasses": 1,
+        "strictLinearFinal": true,
+        "momentumResidual": 4.2279560590424783e-10
+      },
+      "independentAudit": {
+        "valid": true,
+        "issues": [],
+        "artifactSha256": {
+          "outputs/laminar-performance/annulus-current/l5-production-one.cells.csv": "9ae1a778d8bef23505bd0df52c373d2b03ed986e63da5c66408983fc909708da",
+          "outputs/laminar-performance/annulus-current/l5-production-one.faces.csv": "fd1590ca0d46866e740b64980e26aa9cc1ce8f370357f02b0647fba3ea14c3d4",
+          "outputs/laminar-performance/annulus-current/l5-production-one.residuals.csv": "71c44f824b4124f3192668b1cabb4e7a6ff5dec309e81e17f5abb5aa97cedcc3",
+          "outputs/laminar-performance/annulus-current/l5-production-one.json": "308673032a49dabc82f62c82ec3e9cc7a074190ea00c2b5291403586f5c9f83a",
+          "outputs/laminar-performance/annulus-current/l5-production-one.boundaries": "ca24ba77e1cfc3801d2c9533627c131235eb273160e7fcb3a81d2183611335da"
+        },
+        "momentumAudit": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "uniform"
+          },
+          "convection": "face-limited-linear",
+          "namedBoundaryFluxes": {
+            "status": "verified",
+            "patches": 2,
+            "definition": "m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux"
+          },
+          "namedWallLoads": {
+            "status": "verified",
+            "patches": 2,
+            "reference": [
+              0,
+              0
+            ]
+          },
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 1076,
+          "maxFaceDeviation": {
+            "pressure": 1.8735013540549517e-16,
+            "advectionX": 1.734723475976807e-18,
+            "advectionY": 1.734723475976807e-18,
+            "diffusionX": 6.179952383167375e-17,
+            "diffusionY": 4.0766001685454967e-17
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.05331433371822683,
+              "expected": 0.05331433371822702,
+              "absolute": 1.8735013540549517e-16,
+              "relative": 1.8735013540549517e-16
+            },
+            "advectionX": {
+              "actual": -0.009837259290904267,
+              "expected": -0.009837259290904269,
+              "absolute": 1.734723475976807e-18,
+              "relative": 1.734723475976807e-18
+            },
+            "advectionY": {
+              "actual": 0.008921851838026391,
+              "expected": 0.008921851838026393,
+              "absolute": 1.734723475976807e-18,
+              "relative": 1.734723475976807e-18
+            },
+            "diffusionX": {
+              "actual": -0.000926127206657585,
+              "expected": -0.0009261272066576468,
+              "absolute": 6.179952383167375e-17,
+              "relative": 6.179952383167375e-17
+            },
+            "diffusionY": {
+              "actual": 0.004094975611853524,
+              "expected": 0.004094975611853565,
+              "absolute": 4.0766001685454967e-17,
+              "relative": 4.0766001685454967e-17
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 4.227956636670534e-10,
+            "worstCellIndex": 167,
+            "worstNormalizedX": 3.590590161011084e-10,
+            "worstNormalizedY": 2.2323260553102026e-10,
+            "worstCentre": {
+              "x": 0.28437500000000004,
+              "y": -0.528125
+            },
+            "l2": 1.770520655245423e-09,
+            "maxCellVector": 1.9016731520423775e-10,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 4.2279560590424783e-10,
+              "expected": 4.227956636670534e-10,
+              "absolute": 5.77628055663168e-17,
+              "relative": 5.77628055663168e-17
+            },
+            "pressureForceX": {
+              "actual": 1.6646298055256192e-15,
+              "expected": 1.665768217806729e-15,
+              "absolute": 1.1384122811097797e-18,
+              "relative": 1.1384122811097797e-18
+            },
+            "pressureForceY": {
+              "actual": 2.396003791964134e-15,
+              "expected": 2.394945000780066e-15,
+              "absolute": 1.0587911840678754e-18,
+              "relative": 1.0587911840678754e-18
+            },
+            "discreteForceX": {
+              "actual": 1.7678458523462393e-15,
+              "expected": 1.8240617349896127e-15,
+              "absolute": 5.62158826433734e-17,
+              "relative": 5.62158826433734e-17
+            },
+            "discreteForceY": {
+              "actual": 2.3097843082631186e-15,
+              "expected": 2.334070436926794e-15,
+              "absolute": 2.42861286636753e-17,
+              "relative": 2.42861286636753e-17
+            },
+            "reconstructedForceX": {
+              "actual": 1.727621951747027e-15,
+              "expected": 1.720520427517247e-15,
+              "absolute": 7.101524229780054e-18,
+              "relative": 7.101524229780054e-18
+            },
+            "reconstructedForceY": {
+              "actual": 2.2620794126737565e-15,
+              "expected": 2.2169766022983595e-15,
+              "absolute": 4.5102810375396984e-17,
+              "relative": 4.5102810375396984e-17
+            },
+            "forceX": {
+              "actual": 1.7678458523462393e-15,
+              "expected": 1.8240617349896127e-15,
+              "absolute": 5.62158826433734e-17,
+              "relative": 5.62158826433734e-17
+            },
+            "forceY": {
+              "actual": 2.3097843082631186e-15,
+              "expected": 2.334070436926794e-15,
+              "absolute": 2.42861286636753e-17,
+              "relative": 2.42861286636753e-17
+            },
+            "wallForceX": {
+              "actual": -5.341322002749838e-16,
+              "expected": -5.056718932472393e-16,
+              "absolute": 2.846030702774449e-17,
+              "relative": 2.846030702774449e-17
+            },
+            "wallForceY": {
+              "actual": 1.7685505837583548e-15,
+              "expected": 1.79283671242203e-15,
+              "absolute": 2.42861286636753e-17,
+              "relative": 2.42861286636753e-17
+            },
+            "wallViscousForceX": {
+              "actual": 4.0410925473965964e-16,
+              "expected": 3.82709814360227e-16,
+              "absolute": 2.1399440379432644e-17,
+              "relative": 2.1399440379432644e-17
+            },
+            "wallViscousForceY": {
+              "actual": -8.560860353945543e-16,
+              "expected": -8.925152283900673e-16,
+              "absolute": 3.642919299551295e-17,
+              "relative": 3.642919299551295e-17
+            }
+          },
+          "sourceForcing": {
+            "case": "custom",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 1.665768217806729e-15,
+            "y": 2.394945000780066e-15
+          },
+          "discreteForce": {
+            "x": 1.8240617349896127e-15,
+            "y": 2.334070436926794e-15
+          },
+          "globalBoundaryMomentum": {
+            "x": -5.056718932472393e-16,
+            "y": 1.79283671242203e-15,
+            "magnitude": 1.8627848885548973e-15,
+            "boundaryTermScale": 1.9182750671147666,
+            "relativeToBoundary": 9.710728771326153e-16,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": -5.056718932472393e-16,
+            "boundaryMinusSourceY": 1.79283671242203e-15,
+            "magnitude": 1.8627848885548973e-15,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": -5.201290515909757e-16,
+            "y": 1.7232309329484607e-15
+          },
+          "expectedCellResidualSum": {
+            "x": -5.056718932472393e-16,
+            "y": 1.79283671242203e-15
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -1.4457158343736398e-17,
+            "y": -6.960577947356938e-17,
+            "magnitude": 7.109130722879584e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "shared-face-newtonian-traction",
+          "reconstructedForce": {
+            "x": 1.720520427517247e-15,
+            "y": 2.2169766022983595e-15
+          },
+          "wallForce": {
+            "x": -5.056718932472393e-16,
+            "y": 1.79283671242203e-15
+          },
+          "wallViscousForce": {
+            "x": 3.82709814360227e-16,
+            "y": -8.925152283900673e-16
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "independentContinuity": {
+          "maxCellImbalance": 6.938893903907228e-18,
+          "l2CellImbalance": 3.4790178070127944e-17,
+          "maxScaledCellImbalance": 2.6567443403648003e-09,
+          "nativeDefinitionContinuity": 2.7625147338297273e-16,
+          "boundaryFluxSum": 0.0,
+          "referenceThroughput": 0.7668786357549437,
+          "globalRelativeImbalance": 0.0,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 7.678786357549436e-08
+        }
+      }
+    },
+    {
+      "command": [
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/laminar-performance/annulus-current/l6.solver.cm2d",
+        "--case",
+        "custom",
+        "--boundary",
+        "outputs/laminar-performance/annulus-current/l6.boundaries",
+        "--output",
+        "outputs/laminar-performance/annulus-current/l6-production-one",
+        "--nu",
+        ".1",
+        "--speed",
+        ".5",
+        "--convection",
+        "face-limited-linear",
+        "--pressure-preconditioner",
+        "cholesky",
+        "--max-iterations",
+        "6000",
+        "--tolerance",
+        "1e-9",
+        "--velocity-relaxation",
+        ".2",
+        "--profile",
+        "--pressure-corrections",
+        "1",
+        "--linear-policy",
+        "adaptive",
+        "--steady-acceleration",
+        "anderson"
+      ],
+      "timeoutSeconds": 180,
+      "scope": "Existing annulus retained fine mesh; Explicit production CLI controls, original nonlinear and conservation gates. Explicit bounded diagnostic after accelerated .8 run diverged; no quality relaxation.",
+      "inputHashes": {
+        "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+        "outputs/laminar-performance/annulus-current/l6.solver.cm2d": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+        "outputs/laminar-performance/annulus-current/l6.boundaries": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273"
+      },
+      "commandText": "build/cartmesh2d_flow_cli --mesh outputs/laminar-performance/annulus-current/l6.solver.cm2d --case custom --boundary outputs/laminar-performance/annulus-current/l6.boundaries --output outputs/laminar-performance/annulus-current/l6-production-one --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner cholesky --max-iterations 6000 --tolerance 1e-9 --velocity-relaxation .2 --profile --pressure-corrections 1 --linear-policy adaptive --steady-acceleration anderson",
+      "returncode": 0,
+      "stdout": "outputs/laminar-performance/annulus-current/l6-production-one.stdout.log",
+      "stderr": "outputs/laminar-performance/annulus-current/l6-production-one.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 0.6015821670007426,
+      "metrics": {
+        "cells": 1672,
+        "velocityL2": 0.0022686907417656904,
+        "radialVelocityL2": 0.0013702509713638953,
+        "pressureL2": 0.020671276823234278,
+        "rotorTorque": -0.4193202665997732,
+        "housingTorque": 0.4176646748022236,
+        "rotorTorqueError": 0.00105339751947928,
+        "housingTorqueError": 0.002899036755356935,
+        "torqueImbalance": 0.003952434274836215,
+        "iterations": 189
+      },
+      "summary": {
+        "cells": 1672,
+        "converged": true,
+        "iterations": 189,
+        "tolerance": 1e-09,
+        "velocityRelaxation": 0.2,
+        "pressureCorrectionPasses": 1,
+        "strictLinearFinal": true,
+        "momentumResidual": 8.316454843014327e-10
+      },
+      "independentAudit": {
+        "valid": true,
+        "issues": [],
+        "artifactSha256": {
+          "outputs/laminar-performance/annulus-current/l6-production-one.cells.csv": "69d00a984ca4bf31c118d5cee451c97ad16f724102ada99024b76f136d96ea3d",
+          "outputs/laminar-performance/annulus-current/l6-production-one.faces.csv": "2e9bff0fcafc55d82d40f5f32a7f43d978b8cc2f7804acf453ecc50373fb8f85",
+          "outputs/laminar-performance/annulus-current/l6-production-one.residuals.csv": "21bf7fc513c22099cc1e9e48c09248b6823abe353bdd52f14002d8551aa4e137",
+          "outputs/laminar-performance/annulus-current/l6-production-one.json": "19970dee7e7dc2700f6e17c63b3fb5109d2bf17146a812391c902d1edbd54386",
+          "outputs/laminar-performance/annulus-current/l6-production-one.boundaries": "d956a995368a732dbb187bdd566c8a6d4ae166e83739aab4bee0b654b4cf0273"
+        },
+        "momentumAudit": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "uniform"
+          },
+          "convection": "face-limited-linear",
+          "namedBoundaryFluxes": {
+            "status": "verified",
+            "patches": 2,
+            "definition": "m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux"
+          },
+          "namedWallLoads": {
+            "status": "verified",
+            "patches": 2,
+            "reference": [
+              0,
+              0
+            ]
+          },
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 3600,
+          "maxFaceDeviation": {
+            "pressure": 4.718447854656915e-16,
+            "advectionX": 1.734723475976807e-18,
+            "advectionY": 8.673617379884035e-19,
+            "diffusionX": 4.683753385137379e-17,
+            "diffusionY": 2.42861286636753e-17
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": -0.1344422796236537,
+              "expected": -0.13444227962365418,
+              "absolute": 4.718447854656915e-16,
+              "relative": 4.718447854656915e-16
+            },
+            "advectionX": {
+              "actual": -0.006638177628887441,
+              "expected": -0.0066381776288874424,
+              "absolute": 1.734723475976807e-18,
+              "relative": 1.734723475976807e-18
+            },
+            "advectionY": {
+              "actual": 0.006723265224882988,
+              "expected": 0.006723265224882987,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "diffusionX": {
+              "actual": 0.01068401856187702,
+              "expected": 0.010684018561876974,
+              "absolute": 4.683753385137379e-17,
+              "relative": 4.683753385137379e-17
+            },
+            "diffusionY": {
+              "actual": 0.011202720929037877,
+              "expected": 0.011202720929037853,
+              "absolute": 2.42861286636753e-17,
+              "relative": 2.42861286636753e-17
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 8.316455057041245e-10,
+            "worstCellIndex": 604,
+            "worstNormalizedX": -6.818299400990365e-11,
+            "worstNormalizedY": -8.288457796753956e-10,
+            "worstCentre": {
+              "x": 0.46718750000000003,
+              "y": -0.5890625
+            },
+            "l2": 5.789480793008568e-09,
+            "maxCellVector": 3.417730193367828e-10,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 8.316454843014327e-10,
+              "expected": 8.316455057041245e-10,
+              "absolute": 2.1402691819625437e-17,
+              "relative": 2.1402691819625437e-17
+            },
+            "pressureForceX": {
+              "actual": 0.0005101687837826401,
+              "expected": 0.0005101687837826396,
+              "absolute": 5.421010862427522e-19,
+              "relative": 5.421010862427522e-19
+            },
+            "pressureForceY": {
+              "actual": -9.461413375470494e-05,
+              "expected": -9.461413375470516e-05,
+              "absolute": 2.168404344971009e-19,
+              "relative": 2.168404344971009e-19
+            },
+            "discreteForceX": {
+              "actual": 0.0003224761292991523,
+              "expected": 0.0003224761292990922,
+              "absolute": 6.011901046432122e-17,
+              "relative": 6.011901046432122e-17
+            },
+            "discreteForceY": {
+              "actual": 1.8909375124121983e-05,
+              "expected": 1.8909375124095094e-05,
+              "absolute": 2.688821387764051e-17,
+              "relative": 2.688821387764051e-17
+            },
+            "reconstructedForceX": {
+              "actual": 0.00033299929950298144,
+              "expected": 0.00033299929950296155,
+              "absolute": 1.9895109865109006e-17,
+              "relative": 1.9895109865109006e-17
+            },
+            "reconstructedForceY": {
+              "actual": 1.5158949152737234e-05,
+              "expected": 1.5158949152747642e-05,
+              "absolute": 1.0408340855860843e-17,
+              "relative": 1.0408340855860843e-17
+            },
+            "forceX": {
+              "actual": 0.0003224761292991523,
+              "expected": 0.0003224761292990922,
+              "absolute": 6.011901046432122e-17,
+              "relative": 6.011901046432122e-17
+            },
+            "forceY": {
+              "actual": 1.8909375124121983e-05,
+              "expected": 1.8909375124095094e-05,
+              "absolute": 2.688821387764051e-17,
+              "relative": 2.688821387764051e-17
+            },
+            "wallForceX": {
+              "actual": 1.9826262497252365e-10,
+              "expected": 1.9826252003530588e-10,
+              "absolute": 1.0493721776944076e-16,
+              "relative": 1.0493721776944076e-16
+            },
+            "wallForceY": {
+              "actual": -3.641177515750771e-10,
+              "expected": -3.6411777846329096e-10,
+              "absolute": 2.688821387764051e-17,
+              "relative": 2.688821387764051e-17
+            },
+            "wallViscousForceX": {
+              "actual": 0.002329416443262923,
+              "expected": 0.0023294164432628027,
+              "absolute": 1.201296007113939e-16,
+              "relative": 1.201296007113939e-16
+            },
+            "wallViscousForceY": {
+              "actual": 9.979783250587239e-05,
+              "expected": 9.979783250585591e-05,
+              "absolute": 1.6479873021779667e-17,
+              "relative": 1.6479873021779667e-17
+            }
+          },
+          "sourceForcing": {
+            "case": "custom",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": 0.0005101687837826396,
+            "y": -9.461413375470516e-05
+          },
+          "discreteForce": {
+            "x": 0.0003224761292990922,
+            "y": 1.8909375124095094e-05
+          },
+          "globalBoundaryMomentum": {
+            "x": 1.9826252003530588e-10,
+            "y": -3.6411777846329096e-10,
+            "magnitude": 4.145959279151115e-10,
+            "boundaryTermScale": 1.917050696737903,
+            "relativeToBoundary": 2.1626758677827212e-10,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 1.9826252003530588e-10,
+            "boundaryMinusSourceY": -3.6411777846329096e-10,
+            "magnitude": 4.145959279151115e-10,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 1.9826249857233803e-10,
+            "y": -3.6411780120443153e-10
+          },
+          "expectedCellResidualSum": {
+            "x": 1.9826252003530588e-10,
+            "y": -3.6411777846329096e-10
+          },
+          "cellBoundaryConservationDifference": {
+            "x": -2.1462967850476716e-17,
+            "y": -2.2741140567883456e-17,
+            "magnitude": 3.127008895540324e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "shared-face-newtonian-traction",
+          "reconstructedForce": {
+            "x": 0.00033299929950296155,
+            "y": 1.5158949152747642e-05
+          },
+          "wallForce": {
+            "x": 1.9826252003530588e-10,
+            "y": -3.6411777846329096e-10
+          },
+          "wallViscousForce": {
+            "x": 0.0023294164432628027,
+            "y": 9.979783250585591e-05
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "independentContinuity": {
+          "maxCellImbalance": 3.5101045334218206e-17,
+          "l2CellImbalance": 5.0551940671760586e-17,
+          "maxScaledCellImbalance": 2.996873967197672e-08,
+          "nativeDefinitionContinuity": 3.2766274444823477e-15,
+          "boundaryFluxSum": 0.0,
+          "referenceThroughput": 0.7673409228817503,
+          "globalRelativeImbalance": 0.0,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 7.683409228817502e-08
+        }
+      }
+    },
+    {
+      "command": [
+        "build/cartmesh2d_flow_cli",
+        "--mesh",
+        "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+        "--case",
+        "custom",
+        "--boundary",
+        "outputs/laminar-performance/annulus-current/l7.boundaries",
+        "--output",
+        "outputs/laminar-performance/annulus-current/l7-production-one",
+        "--nu",
+        ".1",
+        "--speed",
+        ".5",
+        "--convection",
+        "face-limited-linear",
+        "--pressure-preconditioner",
+        "cholesky",
+        "--max-iterations",
+        "6000",
+        "--tolerance",
+        "1e-9",
+        "--velocity-relaxation",
+        ".2",
+        "--profile",
+        "--pressure-corrections",
+        "1",
+        "--linear-policy",
+        "adaptive",
+        "--steady-acceleration",
+        "anderson"
+      ],
+      "timeoutSeconds": 180,
+      "scope": "Existing annulus retained fine mesh; Explicit production CLI controls, original nonlinear and conservation gates. Explicit bounded diagnostic after accelerated .8 run diverged; no quality relaxation.",
+      "inputHashes": {
+        "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+        "outputs/laminar-performance/annulus-current/l7.solver.cm2d": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+        "outputs/laminar-performance/annulus-current/l7.boundaries": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+      },
+      "commandText": "build/cartmesh2d_flow_cli --mesh outputs/laminar-performance/annulus-current/l7.solver.cm2d --case custom --boundary outputs/laminar-performance/annulus-current/l7.boundaries --output outputs/laminar-performance/annulus-current/l7-production-one --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner cholesky --max-iterations 6000 --tolerance 1e-9 --velocity-relaxation .2 --profile --pressure-corrections 1 --linear-policy adaptive --steady-acceleration anderson",
+      "returncode": 0,
+      "stdout": "outputs/laminar-performance/annulus-current/l7-production-one.stdout.log",
+      "stderr": "outputs/laminar-performance/annulus-current/l7-production-one.stderr.log",
+      "timedOut": false,
+      "status": "passed",
+      "wallSeconds": 5.0789288750092965,
+      "metrics": {
+        "cells": 6208,
+        "velocityL2": 0.0011436344637915736,
+        "radialVelocityL2": 0.0006935697688579843,
+        "pressureL2": 0.02775794658807613,
+        "rotorTorque": -0.41967687507905355,
+        "housingTorque": 0.4181990922160986,
+        "rotorTorqueError": 0.0019047375528686084,
+        "housingTorqueError": 0.001623209158968034,
+        "torqueImbalance": 0.0035279467118366423,
+        "iterations": 518
+      },
+      "summary": {
+        "cells": 6208,
+        "converged": true,
+        "iterations": 518,
+        "tolerance": 1e-09,
+        "velocityRelaxation": 0.2,
+        "pressureCorrectionPasses": 1,
+        "strictLinearFinal": true,
+        "momentumResidual": 3.1630083813349756e-10
+      },
+      "independentAudit": {
+        "valid": true,
+        "issues": [],
+        "artifactSha256": {
+          "outputs/laminar-performance/annulus-current/l7-production-one.cells.csv": "5ffe6d7b62c28c39c44e81f8fc75921e2ec2a3ff39f1bf5a4d108d521663871b",
+          "outputs/laminar-performance/annulus-current/l7-production-one.faces.csv": "9a9491abaeecc2673930230702cb18b97b4fa79ac06f387768820f4bc90d690b",
+          "outputs/laminar-performance/annulus-current/l7-production-one.residuals.csv": "a97733671f89ba6ed3de74178d14aba7b796cb441cecd7aae4e01e7728ba3e61",
+          "outputs/laminar-performance/annulus-current/l7-production-one.json": "cf63fed2cd3a650f98a796a4e09336671949ce162d0983456686668a25df2554",
+          "outputs/laminar-performance/annulus-current/l7-production-one.boundaries": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+        },
+        "momentumAudit": {
+          "status": "available",
+          "valid": true,
+          "viscosityInput": {
+            "model": "uniform"
+          },
+          "convection": "face-limited-linear",
+          "namedBoundaryFluxes": {
+            "status": "verified",
+            "patches": 2,
+            "definition": "m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux"
+          },
+          "namedWallLoads": {
+            "status": "verified",
+            "patches": 2,
+            "reference": [
+              0,
+              0
+            ]
+          },
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "outletBackflow": "reject",
+          "outletBackflowAudit": {
+            "faceIds": [],
+            "faceCount": 0,
+            "inwardVolumeFlux": 0.0
+          },
+          "faceCount": 12910,
+          "maxFaceDeviation": {
+            "pressure": 4.9960036108132044e-15,
+            "advectionX": 8.673617379884035e-19,
+            "advectionY": 1.3010426069826053e-18,
+            "diffusionX": 1.0692943926138287e-16,
+            "diffusionY": 3.0314292742694704e-16
+          },
+          "faceConsistencyTolerance": {
+            "absolute": 5e-10,
+            "relative": 0.0,
+            "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+          },
+          "faceDeviation": {
+            "pressure": {
+              "actual": 0.5151034228051121,
+              "expected": 0.5151034228051171,
+              "absolute": 4.9960036108132044e-15,
+              "relative": 4.9960036108132044e-15
+            },
+            "advectionX": {
+              "actual": 0.0041536891393475365,
+              "expected": 0.004153689139347537,
+              "absolute": 8.673617379884035e-19,
+              "relative": 8.673617379884035e-19
+            },
+            "advectionY": {
+              "actual": 0.0020026122571183058,
+              "expected": 0.002002612257118307,
+              "absolute": 1.3010426069826053e-18,
+              "relative": 1.3010426069826053e-18
+            },
+            "diffusionX": {
+              "actual": 0.00019751248415510623,
+              "expected": 0.00019751248415521316,
+              "absolute": 1.0692943926138287e-16,
+              "relative": 1.0692943926138287e-16
+            },
+            "diffusionY": {
+              "actual": 0.00031952942934698845,
+              "expected": 0.0003195294293466853,
+              "absolute": 3.0314292742694704e-16,
+              "relative": 3.0314292742694704e-16
+            }
+          },
+          "cellResidual": {
+            "maxNormalized": 3.163008627841961e-10,
+            "worstCellIndex": 5136,
+            "worstNormalizedX": -1.9109666673862433e-10,
+            "worstNormalizedY": 2.5204820919699866e-10,
+            "worstCentre": {
+              "x": 0.59921875,
+              "y": 0.43671875000000004
+            },
+            "l2": 4.750740411853864e-09,
+            "maxCellVector": 1.2833380052115466e-10,
+            "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+          },
+          "summaryDeviation": {
+            "momentumResidual": {
+              "actual": 3.1630083813349756e-10,
+              "expected": 3.163008627841961e-10,
+              "absolute": 2.4650698540791907e-17,
+              "relative": 2.4650698540791907e-17
+            },
+            "pressureForceX": {
+              "actual": -0.00013603084282621532,
+              "expected": -0.0001360308428262157,
+              "absolute": 3.7947076036992655e-19,
+              "relative": 3.7947076036992655e-19
+            },
+            "pressureForceY": {
+              "actual": -0.0005000052964117997,
+              "expected": -0.0005000052964117993,
+              "absolute": 4.336808689942018e-19,
+              "relative": 4.336808689942018e-19
+            },
+            "discreteForceX": {
+              "actual": -0.00011759253768445606,
+              "expected": -0.0001175925376845125,
+              "absolute": 5.64327230778705e-17,
+              "relative": 5.64327230778705e-17
+            },
+            "discreteForceY": {
+              "actual": -0.0003697395522735442,
+              "expected": -0.0003697395522735867,
+              "absolute": 4.2500725161431774e-17,
+              "relative": 4.2500725161431774e-17
+            },
+            "reconstructedForceX": {
+              "actual": -0.00019679484234051526,
+              "expected": -0.00019679484234051003,
+              "absolute": 5.231275482242559e-18,
+              "relative": 5.231275482242559e-18
+            },
+            "reconstructedForceY": {
+              "actual": -0.0003912015963808389,
+              "expected": -0.000391201596380822,
+              "absolute": 1.691355389077387e-17,
+              "relative": 1.691355389077387e-17
+            },
+            "forceX": {
+              "actual": -0.00011759253768445606,
+              "expected": -0.0001175925376845125,
+              "absolute": 5.64327230778705e-17,
+              "relative": 5.64327230778705e-17
+            },
+            "forceY": {
+              "actual": -0.0003697395522735442,
+              "expected": -0.0003697395522735867,
+              "absolute": 4.2500725161431774e-17,
+              "relative": 4.2500725161431774e-17
+            },
+            "wallForceX": {
+              "actual": 1.871670111784499e-10,
+              "expected": 1.8716716043920773e-10,
+              "absolute": 1.492607578333638e-16,
+              "relative": 1.492607578333638e-16
+            },
+            "wallForceY": {
+              "actual": 3.294890358815361e-11,
+              "expected": 3.2948944354155296e-11,
+              "absolute": 4.0766001685454967e-17,
+              "relative": 4.0766001685454967e-17
+            },
+            "wallViscousForceX": {
+              "actual": -0.0018223718073806005,
+              "expected": -0.001822371807380487,
+              "absolute": 1.1340754724198376e-16,
+              "relative": 1.1340754724198376e-16
+            },
+            "wallViscousForceY": {
+              "actual": -0.0011242024659965765,
+              "expected": -0.0011242024659965716,
+              "absolute": 4.9873299934333204e-18,
+              "relative": 4.9873299934333204e-18
+            }
+          },
+          "sourceForcing": {
+            "case": "custom",
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "definition": "zero/unforced non-manufactured case"
+          },
+          "temporal": {
+            "enabled": false,
+            "dt": null,
+            "integralX": 0.0,
+            "integralY": 0.0,
+            "maxAbsX": 0.0,
+            "maxAbsY": 0.0
+          },
+          "pressureForce": {
+            "x": -0.0001360308428262157,
+            "y": -0.0005000052964117993
+          },
+          "discreteForce": {
+            "x": -0.0001175925376845125,
+            "y": -0.0003697395522735867
+          },
+          "globalBoundaryMomentum": {
+            "x": 1.8716716043920773e-10,
+            "y": 3.2948944354155296e-11,
+            "magnitude": 1.9004520220444753e-10,
+            "boundaryTermScale": 2.168041194920239,
+            "relativeToBoundary": 8.765756049734062e-11,
+            "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+          },
+          "globalSourceBalance": {
+            "boundaryMinusSourceX": 1.8716716043920773e-10,
+            "boundaryMinusSourceY": 3.2948944354155296e-11,
+            "magnitude": 1.9004520220444753e-10,
+            "sourceIntegralX": 0.0,
+            "sourceIntegralY": 0.0,
+            "definition": "global boundary momentum minus independent volume source integral"
+          },
+          "cellResidualSum": {
+            "x": 1.871671775597553e-10,
+            "y": 3.294895878590265e-11
+          },
+          "expectedCellResidualSum": {
+            "x": 1.8716716043920773e-10,
+            "y": 3.2948944354155296e-11
+          },
+          "cellBoundaryConservationDifference": {
+            "x": 1.712054756725914e-17,
+            "y": 1.443174735531877e-17,
+            "magnitude": 2.239170562352348e-17
+          },
+          "viscousStress": "symmetric",
+          "forceDefinition": "shared-face-newtonian-traction",
+          "reconstructedForce": {
+            "x": -0.00019679484234051003,
+            "y": -0.000391201596380822
+          },
+          "wallForce": {
+            "x": 1.8716716043920773e-10,
+            "y": 3.2948944354155296e-11
+          },
+          "wallViscousForce": {
+            "x": -0.001822371807380487,
+            "y": -0.0011242024659965716
+          },
+          "wallFaceFlags": "checked",
+          "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+        },
+        "independentContinuity": {
+          "maxCellImbalance": 1.8919327909872052e-17,
+          "l2CellImbalance": 4.2115888726877576e-17,
+          "maxScaledCellImbalance": 2.3124371791061842e-08,
+          "nativeDefinitionContinuity": 2.6344339811569167e-15,
+          "boundaryFluxSum": 0.0,
+          "referenceThroughput": 0.7674565033602198,
+          "globalRelativeImbalance": 0.0,
+          "cellValid": true,
+          "globalValid": true,
+          "globalLimit": 7.684565033602197e-08
+        }
+      }
+    }
+  ],
+  "tight": {
+    "command": [
+      "build/cartmesh2d_flow_cli",
+      "--mesh",
+      "outputs/laminar-performance/annulus-current/l7.solver.cm2d",
+      "--case",
+      "custom",
+      "--boundary",
+      "outputs/laminar-performance/annulus-current/l7.boundaries",
+      "--output",
+      "outputs/laminar-performance/annulus-current/l7-production-one-tight",
+      "--nu",
+      ".1",
+      "--speed",
+      ".5",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "cholesky",
+      "--max-iterations",
+      "6000",
+      "--tolerance",
+      "1e-9",
+      "--velocity-relaxation",
+      ".2",
+      "--profile",
+      "--pressure-corrections",
+      "1",
+      "--linear-policy",
+      "adaptive",
+      "--steady-acceleration",
+      "anderson",
+      "--tolerance",
+      "1e-11"
+    ],
+    "timeoutSeconds": 180,
+    "scope": "Existing annulus retained fine mesh; Explicit production CLI controls, original nonlinear and conservation gates. Explicit bounded diagnostic after accelerated .8 run diverged; no quality relaxation.",
+    "inputHashes": {
+      "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+      "outputs/laminar-performance/annulus-current/l7.solver.cm2d": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+      "outputs/laminar-performance/annulus-current/l7.boundaries": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+    },
+    "commandText": "build/cartmesh2d_flow_cli --mesh outputs/laminar-performance/annulus-current/l7.solver.cm2d --case custom --boundary outputs/laminar-performance/annulus-current/l7.boundaries --output outputs/laminar-performance/annulus-current/l7-production-one-tight --nu .1 --speed .5 --convection face-limited-linear --pressure-preconditioner cholesky --max-iterations 6000 --tolerance 1e-9 --velocity-relaxation .2 --profile --pressure-corrections 1 --linear-policy adaptive --steady-acceleration anderson --tolerance 1e-11",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/annulus-current/l7-production-one-tight.stdout.log",
+    "stderr": "outputs/laminar-performance/annulus-current/l7-production-one-tight.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 7.3756545829965034,
+    "metrics": {
+      "cells": 6208,
+      "velocityL2": 0.0011436727973901,
+      "radialVelocityL2": 0.0006935697802019712,
+      "pressureL2": 0.027757945707268854,
+      "rotorTorque": -0.4196769257764847,
+      "housingTorque": 0.41819894728433543,
+      "rotorTorqueError": 0.0019048585840701331,
+      "housingTorqueError": 0.0016235551580657706,
+      "torqueImbalance": 0.0035284137421359037,
+      "iterations": 795
+    },
+    "summary": {
+      "cells": 6208,
+      "converged": true,
+      "iterations": 795,
+      "tolerance": 1e-11,
+      "velocityRelaxation": 0.2,
+      "pressureCorrectionPasses": 1,
+      "strictLinearFinal": true,
+      "momentumResidual": 9.918867124285228e-12
+    },
+    "independentAudit": {
+      "valid": true,
+      "issues": [],
+      "artifactSha256": {
+        "outputs/laminar-performance/annulus-current/l7-production-one-tight.cells.csv": "fda727d111086654d83052630680b1141ec2b52336644bed86c886868114f9ca",
+        "outputs/laminar-performance/annulus-current/l7-production-one-tight.faces.csv": "dd030c21b28aa40a7b0731254de84ca911d479618b1e09daade14a222784810b",
+        "outputs/laminar-performance/annulus-current/l7-production-one-tight.residuals.csv": "3f48b10136dd8e8546d011867cb130508b27aa68d22a8b72b774fcdcb73b76da",
+        "outputs/laminar-performance/annulus-current/l7-production-one-tight.json": "657fc35322425cbc42fc1f41621f40ebcbbb9a3872452a4f1adabfa588b47d65",
+        "outputs/laminar-performance/annulus-current/l7-production-one-tight.boundaries": "d42d643094aff161714e0c1c86a89dca052e0dcefe102e0a1e66804a28ed6dad"
+      },
+      "momentumAudit": {
+        "status": "available",
+        "valid": true,
+        "viscosityInput": {
+          "model": "uniform"
+        },
+        "convection": "face-limited-linear",
+        "namedBoundaryFluxes": {
+          "status": "verified",
+          "patches": 2,
+          "definition": "m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux"
+        },
+        "namedWallLoads": {
+          "status": "verified",
+          "patches": 2,
+          "reference": [
+            0,
+            0
+          ]
+        },
+        "pressureDiscretization": "shared-face-gauss",
+        "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+        "outletBackflow": "reject",
+        "outletBackflowAudit": {
+          "faceIds": [],
+          "faceCount": 0,
+          "inwardVolumeFlux": 0.0
+        },
+        "faceCount": 12910,
+        "maxFaceDeviation": {
+          "pressure": 4.9960036108132044e-15,
+          "advectionX": 8.673617379884035e-19,
+          "advectionY": 1.3010426069826053e-18,
+          "diffusionX": 1.0698364937000715e-16,
+          "diffusionY": 2.983724378680108e-16
+        },
+        "faceConsistencyTolerance": {
+          "absolute": 5e-10,
+          "relative": 0.0,
+          "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+        },
+        "faceDeviation": {
+          "pressure": {
+            "actual": 0.5151034331353872,
+            "expected": 0.5151034331353922,
+            "absolute": 4.9960036108132044e-15,
+            "relative": 4.9960036108132044e-15
+          },
+          "advectionX": {
+            "actual": -0.004366293201091275,
+            "expected": -0.004366293201091274,
+            "absolute": 8.673617379884035e-19,
+            "relative": 8.673617379884035e-19
+          },
+          "advectionY": {
+            "actual": 0.0020026122461750647,
+            "expected": 0.002002612246175066,
+            "absolute": 1.3010426069826053e-18,
+            "relative": 1.3010426069826053e-18
+          },
+          "diffusionX": {
+            "actual": 0.00019751211139553345,
+            "expected": 0.00019751211139564044,
+            "absolute": 1.0698364937000715e-16,
+            "relative": 1.0698364937000715e-16
+          },
+          "diffusionY": {
+            "actual": 0.010265696287718281,
+            "expected": 0.01026569628771858,
+            "absolute": 2.983724378680108e-16,
+            "relative": 2.983724378680108e-16
+          }
+        },
+        "cellResidual": {
+          "maxNormalized": 9.918868597234599e-12,
+          "worstCellIndex": 2213,
+          "worstNormalizedX": -8.589824090460906e-12,
+          "worstNormalizedY": -4.959725430318107e-12,
+          "worstCentre": {
+            "x": 0.37578125,
+            "y": -0.63984375
+          },
+          "l2": 1.9366635554480657e-10,
+          "maxCellVector": 4.02310495533547e-12,
+          "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+        },
+        "summaryDeviation": {
+          "momentumResidual": {
+            "actual": 9.918867124285228e-12,
+            "expected": 9.918868597234599e-12,
+            "absolute": 1.4729493708375397e-18,
+            "relative": 1.4729493708375397e-18
+          },
+          "pressureForceX": {
+            "actual": -0.00013603008388859424,
+            "expected": -0.00013603008388859457,
+            "absolute": 3.2526065174565133e-19,
+            "relative": 3.2526065174565133e-19
+          },
+          "pressureForceY": {
+            "actual": -0.000500005551149411,
+            "expected": -0.0005000055511494106,
+            "absolute": 4.336808689942018e-19,
+            "relative": 4.336808689942018e-19
+          },
+          "discreteForceX": {
+            "actual": -0.0001175919885421216,
+            "expected": -0.00011759198854217979,
+            "absolute": 5.819455160815945e-17,
+            "relative": 5.819455160815945e-17
+          },
+          "discreteForceY": {
+            "actual": -0.0003697397784028335,
+            "expected": -0.0003697397784028168,
+            "absolute": 1.6696713456276768e-17,
+            "relative": 1.6696713456276768e-17
+          },
+          "reconstructedForceX": {
+            "actual": -0.00019679426681919716,
+            "expected": -0.0001967942668192012,
+            "absolute": 4.038653092508504e-18,
+            "relative": 4.038653092508504e-18
+          },
+          "reconstructedForceY": {
+            "actual": -0.00039120180926993696,
+            "expected": -0.00039120180926993544,
+            "absolute": 1.5178830414797062e-18,
+            "relative": 1.5178830414797062e-18
+          },
+          "forceX": {
+            "actual": -0.0001175919885421216,
+            "expected": -0.00011759198854217979,
+            "absolute": 5.819455160815945e-17,
+            "relative": 5.819455160815945e-17
+          },
+          "forceY": {
+            "actual": -0.0003697397784028335,
+            "expected": -0.0003697397784028168,
+            "absolute": 1.6696713456276768e-17,
+            "relative": 1.6696713456276768e-17
+          },
+          "wallForceX": {
+            "actual": 4.177577439523888e-12,
+            "expected": 4.177735634785249e-12,
+            "absolute": 1.5819526136100215e-16,
+            "relative": 1.5819526136100215e-16
+          },
+          "wallForceY": {
+            "actual": -6.486313222642259e-13,
+            "expected": -6.487048311715204e-13,
+            "absolute": 7.35089072945172e-17,
+            "relative": 7.35089072945172e-17
+          },
+          "wallViscousForceX": {
+            "actual": -0.0018223723118850185,
+            "expected": -0.0018223723118849001,
+            "absolute": 1.1839487723541708e-16,
+            "relative": 1.1839487723541708e-16
+          },
+          "wallViscousForceY": {
+            "actual": -0.0011242024045675823,
+            "expected": -0.0011242024045677664,
+            "absolute": 1.8409752888803865e-16,
+            "relative": 1.8409752888803865e-16
+          }
+        },
+        "sourceForcing": {
+          "case": "custom",
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "definition": "zero/unforced non-manufactured case"
+        },
+        "temporal": {
+          "enabled": false,
+          "dt": null,
+          "integralX": 0.0,
+          "integralY": 0.0,
+          "maxAbsX": 0.0,
+          "maxAbsY": 0.0
+        },
+        "pressureForce": {
+          "x": -0.00013603008388859457,
+          "y": -0.0005000055511494106
+        },
+        "discreteForce": {
+          "x": -0.00011759198854217979,
+          "y": -0.0003697397784028168
+        },
+        "globalBoundaryMomentum": {
+          "x": 4.177735634785249e-12,
+          "y": -6.487048311715204e-13,
+          "magnitude": 4.227800017992783e-12,
+          "boundaryTermScale": 2.168041096078381,
+          "relativeToBoundary": 1.950055294449979e-12,
+          "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+        },
+        "globalSourceBalance": {
+          "boundaryMinusSourceX": 4.177735634785249e-12,
+          "boundaryMinusSourceY": -6.487048311715204e-13,
+          "magnitude": 4.227800017992783e-12,
+          "sourceIntegralX": 0.0,
+          "sourceIntegralY": 0.0,
+          "definition": "global boundary momentum minus independent volume source integral"
+        },
+        "cellResidualSum": {
+          "x": 4.177738919896656e-12,
+          "y": -6.485792212676403e-13
+        },
+        "expectedCellResidualSum": {
+          "x": 4.177735634785249e-12,
+          "y": -6.487048311715204e-13
+        },
+        "cellBoundaryConservationDifference": {
+          "x": 3.285111406807397e-18,
+          "y": 1.2560990388012921e-16,
+          "magnitude": 1.2565285476156295e-16
+        },
+        "viscousStress": "symmetric",
+        "forceDefinition": "shared-face-newtonian-traction",
+        "reconstructedForce": {
+          "x": -0.0001967942668192012,
+          "y": -0.00039120180926993544
+        },
+        "wallForce": {
+          "x": 4.177735634785249e-12,
+          "y": -6.487048311715204e-13
+        },
+        "wallViscousForce": {
+          "x": -0.0018223723118849001,
+          "y": -0.0011242024045677664
+        },
+        "wallFaceFlags": "checked",
+        "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+      },
+      "independentContinuity": {
+        "maxCellImbalance": 5.619289755731671e-14,
+        "l2CellImbalance": 7.356956255229924e-14,
+        "maxScaledCellImbalance": 0.00012804515885922083,
+        "nativeDefinitionContinuity": 1.658330690685856e-11,
+        "boundaryFluxSum": 0.0,
+        "referenceThroughput": 0.7674565033602198,
+        "globalRelativeImbalance": 0.0,
+        "cellValid": true,
+        "globalValid": true,
+        "globalLimit": 7.684565033602197e-08
+      }
+    }
+  },
+  "maximumTightDifference": {
+    "u": 5.2758002494490697e-08,
+    "v": 5.276590339664544e-08,
+    "p": 1.4258221325835763e-08
+  },
+  "predeclaredLimits": {
+    "fineVelocityL2": 0.005,
+    "finePressureL2": 0.005,
+    "fineTorqueRelative": 0.01,
+    "torqueImbalance": 0.005,
+    "tighterVelocityMaxChange": 1e-06
+  },
+  "checks": {
+    "fineVelocity": true,
+    "finePressure": false,
+    "rotorTorque": true,
+    "housingTorque": true,
+    "torqueImbalance": true,
+    "iterationSensitivity": true,
+    "allFourErrorsDecrease": false
+  },
+  "observedOrders": {
+    "velocityL2": [
+      2.020318735430841,
+      0.9882339585708383
+    ],
+    "pressureL2": [
+      0.6885939651958517,
+      -0.425273343681921
+    ],
+    "rotorTorqueError": [
+      3.5952999013758435,
+      -0.854542260126671
+    ],
+    "housingTorqueError": [
+      2.2942194984834234,
+      0.8367247140380973
+    ]
+  },
+  "qualified": false,
+  "geometry": [
+    {
+      "valid": true,
+      "cells": 484,
+      "area": 2.3524113679094545,
+      "originalPolygonArea": 2.352411367909454,
+      "originalBoundarySegmentsPreserved": true,
+      "meshSha256": "c2fd388bf2b6543aee12492216ccf28273bc62ee14c5154b8382ddff8e64f362",
+      "directionalConnectivity": {
+        "scope": "uncoupled_planar_uniform_extrusion_empty_front_back",
+        "valid": true,
+        "threshold": 0.001,
+        "minimum": 0.0036199266459538866,
+        "input_issue_count": 0,
+        "failed_cell_ids": []
+      }
+    },
+    {
+      "valid": true,
+      "cells": 1672,
+      "area": 2.3552483677160647,
+      "originalPolygonArea": 2.355248367716065,
+      "originalBoundarySegmentsPreserved": true,
+      "meshSha256": "f22b4feeae9b3c7dbf1c42781e568e040ad285a6ab4082c7f6e89b5cf6116f3c",
+      "directionalConnectivity": {
+        "scope": "uncoupled_planar_uniform_extrusion_empty_front_back",
+        "valid": true,
+        "threshold": 0.001,
+        "minimum": 0.003484056065367472,
+        "input_issue_count": 0,
+        "failed_cell_ids": []
+      }
+    },
+    {
+      "valid": true,
+      "cells": 6208,
+      "area": 2.35595793819958,
+      "originalPolygonArea": 2.3559579381995794,
+      "originalBoundarySegmentsPreserved": true,
+      "meshSha256": "227857034598eaba83b8d19ca81c4e5b6d8cb491512308f7e6999e738bd4b36b",
+      "directionalConnectivity": {
+        "scope": "uncoupled_planar_uniform_extrusion_empty_front_back",
+        "valid": true,
+        "threshold": 0.001,
+        "minimum": 0.002012903224038193,
+        "input_issue_count": 0,
+        "failed_cell_ids": []
+      }
+    }
+  ],
+  "fineMeshGeneration": {
+    "command": [
+      "build/cartmesh2d_cli",
+      "outputs/native-flow/couette-probe/l7/annulus.xy",
+      "outputs/laminar-performance/annulus-current/l7",
+      "7",
+      ".15",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/annulus-current/l7-foam",
+      "7"
+    ],
+    "timeoutSeconds": 180,
+    "scope": "Rerun retained original256-facet concentric annulus fine-mesh input that previously exceeded180s. Native2D current solver-quality repair, same level7/minimum7/padding.15/small-alpha.1. Original XY untouched; no new physical flow model or relaxed quality.",
+    "inputHashes": {
+      "outputs/native-flow/couette-probe/l7/annulus.xy": "6dd56bb5341a86ef4f113b37ee514bd51555e6eb32da28f058cc9060a38cd318",
+      "build/cartmesh2d_cli": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f"
+    },
+    "commandText": "build/cartmesh2d_cli outputs/native-flow/couette-probe/l7/annulus.xy outputs/laminar-performance/annulus-current/l7 7 .15 .1 interior outputs/laminar-performance/annulus-current/l7-foam 7",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/annulus-current/l7.stdout.log",
+    "stderr": "outputs/laminar-performance/annulus-current/l7.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 17.102353875001427
+  },
+  "failedDefaultFineStudy": "outputs/laminar-performance/annulus-current/study.json",
+  "failedProbes": [
+    "outputs/laminar-performance/annulus-current/l7-interior-condition06.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-condition4-06.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-one-correction06.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-aggregation06.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-one-correction02.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-strict02.measurement.json",
+    "outputs/laminar-performance/annulus-current/l7-strict06.measurement.json"
+  ],
+  "externalCheckMesh": "not run: unavailable locally",
+  "reference": "https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html",
+  "pressureGauge": "cell 0, unchanged original definition",
+  "interpretation": "Convergence and independent discrete-equation verification pass. Fine pressure threshold and nonmonotonic pressure/rotor torque refinement fail. Tight solve confirms this is not removed by iteration tolerance."
+}

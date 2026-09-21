@@ -117,6 +117,14 @@ void steadyRelaxationIndependence() {
     compare(baseline,directResult);
     require(directResult.performance.pressureCholeskyBuilds>0,"Warped channel did not use Cholesky");
 #endif
+    for(std::size_t passes:{1u,2u,3u}) {
+        auto changed=control;changed.pressureCorrectionPasses=passes;
+        compare(baseline,solveIncompressible2D(mesh,changed));
+    }
+    for(std::size_t passes:{0u,5u}) {
+        auto invalid=control;invalid.pressureCorrectionPasses=passes;
+        rejects([&]{(void)solveIncompressible2D(mesh,invalid);});
+    }
     auto shortRun=control;shortRun.maxIterations=30;
     const auto partial=solveIncompressible2D(mesh,shortRun);
     require(!partial.converged,"continuation fixture unexpectedly converged");
@@ -157,6 +165,8 @@ void steadyRelaxationIndependence() {
     auto closedDirect=closed;closedDirect.pressurePreconditioner=PressurePreconditioner2D::SystemCholesky;
     compare(original,solveIncompressible2D(cavity,closedDirect));
 #endif
+    auto single=closed;single.pressureCorrectionPasses=1;
+    compare(original,solveIncompressible2D(cavity,single));
     closed.steadyAcceleration=SteadyAcceleration2D::Anderson;
     compare(original,solveIncompressible2D(cavity,closed));
 }

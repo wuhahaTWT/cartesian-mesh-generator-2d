@@ -301,6 +301,10 @@
         <input id="flowVelocityRelaxation" type="number" min="0" max="1" step="any" value="0.6">
       </label>
       <p class="note">自适应精度可减少部分线性求解工作，最终收敛要求不变。松弛默认0.6；较大值可能更快，也可能不稳定。这两项用于独立层流的稳态或时间步内迭代，不改变物理时间步；温度联算保持默认设置。</p>
+      <label class="field">压力校正次数
+        <input id="flowPressureCorrections" type="number" min="1" max="4" step="1" value="4">
+      </label>
+      <p class="note">默认4次非正交校正。困难网格可尝试1次并降低速度松弛；可能改善迭代稳定性，也可能减慢收敛。最终守恒和残差门不变，不代表物理精度已合格；温度联算使用4次。</p>
       <label class="field">稳态迭代加速
         <select id="flowSteadyAcceleration">
           <option value="none" selected>关闭（默认）</option>

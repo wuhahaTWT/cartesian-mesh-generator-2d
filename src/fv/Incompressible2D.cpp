@@ -485,6 +485,10 @@ static FlowResult2D solveFlow(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
+    ensure(c.pressureCorrectionPasses>=1 && c.pressureCorrectionPasses<=4,
+           "Pressure corrections must be in [1,4]");
+    ensure(!material || c.pressureCorrectionPasses==4,
+           "Variable pressure corrections support constant-property laminar flow only");
     ensure(c.convergence==FlowConvergence2D::Strict ||
            (c.convergence==FlowConvergence2D::Engineering && !previous && !material),
            "Engineering convergence requires steady laminar flow");
@@ -925,7 +929,7 @@ static FlowResult2D solveFlow(
         }
         if (b.closed) ap.pin(0);
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
-        for(int pass=0;pass<4;++pass){
+        for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
             std::fill(ap.rhs.begin(),ap.rhs.end(),0.);
             const auto gc=flowGradient(m,pc,zeros,b.fixedP,true);
             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
@@ -940,7 +944,7 @@ static FlowResult2D solveFlow(
                 // and matrix, and therefore return zero again. Keep this
                 // pass's correction for the accepted flux and omit only those
                 // identical repeats; no geometric approximation or new stop.
-                if (c.profile) r.performance.pressureCorrectionPassesSkipped+=3-pass;
+                if (c.profile) r.performance.pressureCorrectionPassesSkipped+=c.pressureCorrectionPasses-1-pass;
                 break;
             }
         }
