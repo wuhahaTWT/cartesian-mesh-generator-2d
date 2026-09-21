@@ -14,6 +14,7 @@ enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 enum class SteadyAcceleration2D { None, Anderson };
+enum class FlowConvergence2D { Strict, Engineering };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -51,6 +52,11 @@ struct FlowControls2D {
     double pressureRelaxation = .25;
     // Optional safeguarded fixed-point extrapolation. Steady laminar only.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
+    // Explicit opt-ins preserve existing API/checkpoint and verification cases.
+    // Engineering stopping is steady laminar only; it also requires a 50-step
+    // window of field/physical-monitor stability and a strict final linear step.
+    FlowConvergence2D convergence = FlowConvergence2D::Strict;
+    bool adaptiveLinear = false;
     bool profile = false;
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
@@ -126,6 +132,10 @@ struct FlowIteration2D {
     std::size_t momentumPredictorWorstCell = 0;
     // profile only: true PCG residual norm / (speed * shortest face length).
     double pressureLinearResidual = 0;
+    double linearRelativeTolerance = 1e-11;
+    bool strictLinearStep = true;
+    double globalRelativeImbalance = 0;
+    std::vector<double> monitors;
 };
 
 struct FaceMomentum2D {
@@ -146,6 +156,8 @@ struct FlowWallLoad2D {
 };
 
 struct FlowResult2D {
+    double convergenceReference = 0;
+    std::vector<std::string> monitorNames;
     double time = 0;
     double timeStep = 0; // zero for the steady solver
     double maxCourant = 0;

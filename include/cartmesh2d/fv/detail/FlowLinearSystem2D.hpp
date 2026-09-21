@@ -326,7 +326,8 @@ struct SparseSystem2D {
     std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, bool ic0 = true) const {
         return solvePressure(x,w,ic0?LinearPressureMethod2D::IC0:LinearPressureMethod2D::Jacobi);
     }
-    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method) const {
+    std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11) const {
+        linearEnsure(std::isfinite(relativeTolerance) && relativeTolerance>0 && relativeTolerance<=1e-2,"Invalid pressure linear relative tolerance");
         linearEnsure(method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0 ||
                      method==LinearPressureMethod2D::Aggregation, "Flow pressure preconditioner invalid");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
@@ -338,7 +339,7 @@ struct SparseSystem2D {
         auto& ax = w.ax;
         apply(x, ax);
         for (std::size_t i = 0; i < x.size(); ++i) residual[i] = rhs[i] - ax[i];
-        const double stop = linearFinite(1e-13 + 1e-11 * linearNorm(rhs));
+        const double stop = linearFinite(1e-13 + relativeTolerance * linearNorm(rhs));
         if (linearNorm(residual) <= stop) return 0;
         if (method == LinearPressureMethod2D::IC0) factorIC0();
         else if (method == LinearPressureMethod2D::Aggregation) {
@@ -401,8 +402,8 @@ struct SparseSystem2D {
     std::size_t solve(LinearVector2D& x, LinearWorkspace2D& w,
                       double diagonalScaledStop = std::numeric_limits<double>::infinity(),
                       double residualNormStop = std::numeric_limits<double>::infinity(),
-                      LinearSolveMethod2D method=LinearSolveMethod2D::Jacobi) const {
-        return solveImpl(x,w,diagonalScaledStop,residualNormStop,nullptr,method);
+                      LinearSolveMethod2D method=LinearSolveMethod2D::Jacobi, double relativeTolerance=1e-11) const {
+        return solveImpl(x,w,diagonalScaledStop,residualNormStop,nullptr,method,relativeTolerance);
     }
 
     // The original gates apply to high+low, not to high alone. A transport
@@ -433,7 +434,8 @@ private:
 
     std::size_t solveImpl(LinearVector2D& x,LinearWorkspace2D& w,
                          double diagonalScaledStop,double residualNormStop,
-                         LinearVector2D* tail,LinearSolveMethod2D method) const {
+                         LinearVector2D* tail,LinearSolveMethod2D method,double relativeTolerance=1e-11) const {
+        linearEnsure(std::isfinite(relativeTolerance) && relativeTolerance>0 && relativeTolerance<=1e-2,"Invalid momentum linear relative tolerance");
         linearEnsure(method==LinearSolveMethod2D::Jacobi || method==LinearSolveMethod2D::ILU0,
                      "Flow linear preconditioner invalid");
         linearEnsure(diagonalScaledStop > 0 && !std::isnan(diagonalScaledStop), "Invalid momentum diagonal-scaled residual tolerance");
@@ -449,7 +451,7 @@ private:
         r0 = r;
         std::fill(p.begin(), p.end(), 0.);
         std::fill(v.begin(), v.end(), 0.);
-        const double stop = std::min(linearFinite(1e-13 + 1e-11 * linearNorm(rhs)),residualNormStop);
+        const double stop = std::min(linearFinite(1e-13 + relativeTolerance * linearNorm(rhs)),residualNormStop);
         const auto smallResidual = [&](const LinearVector2D& residual) {
             if (linearNorm(residual)>stop) return false;
             // In addition to the existing global norm, constrain every row in

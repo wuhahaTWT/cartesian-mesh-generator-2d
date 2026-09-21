@@ -179,12 +179,6 @@ class ThermalScaleArtifactTests(unittest.TestCase):
             text=True, capture_output=True, timeout=10)
         self.assertNotEqual(frozen.returncode, 0)
         self.assertIn('requires evolving flow',frozen.stderr)
-        steady=subprocess.run([
-            str(self.flow_cli),'--mesh',self.mesh,'--output',self.root/'steady-relaxation',
-            '--case','manufactured','--velocity-relaxation','.8'],
-            text=True,capture_output=True,timeout=10)
-        self.assertNotEqual(steady.returncode,0)
-        self.assertIn('requires transient flow',steady.stderr)
 
     def test_valid_relaxation_evolution_matches_standalone_carrier(self):
         thermal = self.root / "thermal-alpha08"

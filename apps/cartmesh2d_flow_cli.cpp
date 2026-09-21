@@ -1,5 +1,6 @@
 #include "cartmesh2d/fv/ManufacturedFlow2D.hpp"
 #include "cartmesh2d/fv/Incompressible2D.hpp"
+#include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowTimeStep2D.hpp"
@@ -81,7 +82,6 @@ int main(int argc, char** argv) {
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath;
         fv::FlowControls2D controls;
-        bool explicitVelocityRelaxation=false;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
         fv::FlowTimeStepControls2D adaptiveControls;
@@ -109,7 +109,9 @@ int main(int argc, char** argv) {
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
             "--time-step MAX_DT --end-time T: adaptive backward Euler to absolute physical time T.\n"
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
-            "--velocity-relaxation 0.6: transient inner iterations only; (0,1], larger may be unstable.\n"
+            "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
+            "--linear-policy strict|adaptive; --convergence strict|engineering (steady laminar only).\n"
+            "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
@@ -156,13 +158,18 @@ int main(int argc, char** argv) {
                 controls.manufacturedViscositySlope=number(v);
             } else if (a == "--speed") {
                 controls.speed = number(v);
+            } else if (a == "--linear-policy") {
+                if(v!="strict" && v!="adaptive")throw std::invalid_argument("linear-policy must be strict or adaptive");
+                controls.adaptiveLinear=v=="adaptive";
+            } else if (a == "--convergence") {
+                if(v!="strict" && v!="engineering")throw std::invalid_argument("convergence must be strict or engineering");
+                controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
                     throw std::invalid_argument("velocity-relaxation must be in (0,1]");
-                explicitVelocityRelaxation=true;
             } else if (a == "--steady-acceleration") {
                 if(v=="none")controls.steadyAcceleration=fv::SteadyAcceleration2D::None;
                 else if(v=="anderson")controls.steadyAcceleration=fv::SteadyAcceleration2D::Anderson;
@@ -246,8 +253,8 @@ int main(int argc, char** argv) {
             fv::validateFlowTimeStepControls2D(adaptiveControls);
         } else if (adaptiveOptions || (timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
-        if (explicitVelocityRelaxation && timeStep==0)
-            throw std::invalid_argument("velocity-relaxation option requires transient flow");
+        if((controls.adaptiveLinear || controls.convergence!=fv::FlowConvergence2D::Strict) && timeStep>0)
+            throw std::invalid_argument("Adaptive linear/engineering convergence requires steady laminar flow");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {
@@ -498,6 +505,31 @@ int main(int argc, char** argv) {
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
                                 << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
                                 << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
+        if(timeStep==0) {
+            summary << "\"convergenceMode\":" << std::quoted(controls.convergence==fv::FlowConvergence2D::Engineering?"engineering":"strict")
+                    << ",\n\"adaptiveLinear\":" << (controls.adaptiveLinear?"true":"false")
+                    << ",\n\"strictLinearFinal\":" << (last.strictLinearStep?"true":"false")
+                    << ",\n\"adaptiveLinearSteps\":" << std::count_if(r.history.begin(),r.history.end(),[](const auto& h){return h.linearRelativeTolerance>1e-11;}) << ",\n";
+            if(controls.convergence==fv::FlowConvergence2D::Engineering) {
+                const auto w=fv::detail::engineeringWindow2D(r.history,r.convergenceReference,controls.tolerance);
+                summary << "\"engineeringConvergence\":{\"definition\":\"max-cell-reduction-monitor-window-v1\",\"windowLength\":50,\"stabilityTolerance\":0.001,\"residualRatioTolerance\":0.001,\"absoluteFallback\":0.00001,\"referenceResidual\":" << r.convergenceReference
+                    << ",\"residualMax\":" << w.residualMax << ",\"velocityPath\":" << w.velocityPath
+                    << ",\"pressurePath\":" << w.pressurePath << ",\"monitorRange\":" << w.monitorRange << ",\"monitorNames\":[";
+                for(std::size_t j=0;j<r.monitorNames.size();++j){if(j)summary<<',';summary<<std::quoted(r.monitorNames[j]);}
+                summary << "],\"window\":[";
+                const auto start=r.history.size()>50?r.history.size()-50:0;
+                for(std::size_t i=start;i<r.history.size();++i) {
+                    if(i>start)summary<<',';
+                    const auto& h=r.history[i];
+                    summary << "{\"iteration\":"<<h.iteration<<",\"momentumResidual\":"<<h.momentumResidual
+                        <<",\"continuity\":"<<h.continuity<<",\"velocityChange\":"<<h.velocityChange
+                        <<",\"pressureChange\":"<<h.pressureChange<<",\"globalRelativeImbalance\":"<<h.globalRelativeImbalance<<",\"monitors\":[";
+                    for(std::size_t j=0;j<h.monitors.size();++j){if(j)summary<<',';summary<<h.monitors[j];}
+                    summary << "]}";
+                }
+                summary << "]},\n";
+            }
+        }
         if (vortexOptions) summary << "\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
             << initialVortex.centre.x << ',' << initialVortex.centre.y << "],\"radius\":" << initialVortex.radius
             << ",\"peakSpeed\":" << initialVortex.peakSpeed << ",\"checkpointSuffix\":\".initial.checkpoint\"},\n";
