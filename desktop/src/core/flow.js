@@ -49,6 +49,10 @@ const FLOW_PRESSURE_PRECONDITIONERS = Object.freeze({
   aggregation: {
     id: 'aggregation', label: '多重网格（试验）',
     description: '试验性聚合多重网格；不保证更快。'
+  },
+  cholesky: {
+    id:'cholesky',label:'系统稀疏 Cholesky（macOS）',
+    description:'macOS系统稀疏分解预条件；可加速部分大网格，可能增加内存，原真实残差门不变。'
   }
 });
 const FLOW_OUTLET_BACKFLOW_MODES = Object.freeze({
@@ -86,7 +90,9 @@ function validateFlowRequest(request = {}) {
   const pressurePreconditioner = request.pressurePreconditioner === undefined
     ? 'ic0' : request.pressurePreconditioner;
   if (!knownPressurePreconditioner(pressurePreconditioner))
-    throw new Error('未知压力预条件器。请选择 ic0 或 aggregation。');
+    throw new Error('未知压力预条件器。请选择 ic0、aggregation 或 macOS cholesky。');
+  if (pressurePreconditioner==='cholesky' && process.platform!=='darwin')
+    throw new Error('系统稀疏 Cholesky 仅支持 macOS；请选择 IC0 或多重网格。');
   const outletBackflow = request.outletBackflow === undefined ? 'reject' : request.outletBackflow;
   if (!knownOutletBackflow(outletBackflow))
     throw new Error('未知出口回流处理。请选择一种已支持的处理方式。');

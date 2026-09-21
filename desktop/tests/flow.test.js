@@ -252,3 +252,14 @@ test('linear efficiency controls bind requests and enforce strict final certific
   for(const patch of [{linearPolicy:'unknown'},{velocityRelaxation:0},{velocityRelaxation:1.1},{velocityRelaxation:NaN}])
     assert.throws(()=>validateFlowRequest({...request,...patch}));
 });
+
+test('system Cholesky is explicit, platform-bound for new solves, and retained in exported results',()=>{
+  const request={case:'external',nu:.01,speed:1,maxIterations:30,pressurePreconditioner:'cholesky'};
+  if(process.platform==='darwin') {
+    const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request);
+    assert.equal(invocation.args[invocation.args.indexOf('--pressure-preconditioner')+1],'cholesky');
+  } else assert.throws(()=>validateFlowRequest(request),/macOS/);
+  const result=validateFlowOutput({...summary,pressurePreconditioner:'cholesky'},fields,2);
+  assert.equal(result.summary.pressurePreconditioner,'cholesky');
+  assert.match(exportGuide({result:{counts:{cells:2}},flow:result}),/系统稀疏 Cholesky/);
+});

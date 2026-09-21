@@ -9,6 +9,7 @@
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -134,6 +135,14 @@ void progress(const fv::FlowIteration2D& h) {
 }
 
 int main(int argc, char** argv) {
+#ifdef __APPLE__
+    // Sparse Solvers caches its thread setting. Establish it before any
+    // Accelerate call; deterministic field replay is part of the CLI contract.
+    if (setenv("VECLIB_MAXIMUM_THREADS", "1", 1) != 0) {
+        std::cerr << "Cannot configure deterministic system sparse solver\n";
+        return 1;
+    }
+#endif
     std::string prefix;
     double acceptedTime=0;
     bool transientOutputStarted=false;
@@ -180,7 +189,7 @@ int main(int argc, char** argv) {
             "optional compact interior vortex at t=0, signed peak speed (positive CCW); all four required, no restart.\n"
             "Fixed-step mode reports CFL. Adaptive mode retries unaccepted steps without advancing the saved state.\n"
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
-            "--pressure-preconditioner ic0|jacobi|aggregation (default ic0); aggregation experimental; same true-residual tolerance.\n"
+            "--pressure-preconditioner ic0|jacobi|aggregation|cholesky (default ic0); cholesky requires macOS; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
             "--outlet-backflow reject|normal-inlet (default reject).\n"
@@ -285,10 +294,10 @@ int main(int argc, char** argv) {
                 controls.outletBackflow = v == "normal-inlet"
                     ? fv::OutletBackflow2D::NormalInlet : fv::OutletBackflow2D::Reject;
             } else if (a == "--pressure-preconditioner") {
-                if (v != "ic0" && v != "jacobi" && v != "aggregation") {
-                    throw std::invalid_argument("pressure preconditioner must be ic0, jacobi or aggregation");
+                if (v != "ic0" && v != "jacobi" && v != "aggregation" && v != "cholesky") {
+                    throw std::invalid_argument("pressure preconditioner must be ic0, jacobi, aggregation or cholesky");
                 }
-                controls.pressurePreconditioner = v == "aggregation" ? fv::PressurePreconditioner2D::Aggregation : v == "ic0"
+                controls.pressurePreconditioner = v == "cholesky" ? fv::PressurePreconditioner2D::SystemCholesky : v == "aggregation" ? fv::PressurePreconditioner2D::Aggregation : v == "ic0"
                     ? fv::PressurePreconditioner2D::IncompleteCholesky0
                     : fv::PressurePreconditioner2D::Jacobi;
             } else if (a == "--max-iterations") {
@@ -447,6 +456,9 @@ int main(int argc, char** argv) {
                         totalPerformance.pressureCorrectionPassesSkipped+=p.pressureCorrectionPassesSkipped;
                         totalPerformance.pressureFactorizations+=p.pressureFactorizations;
                         totalPerformance.pressureFactorReuses+=p.pressureFactorReuses;
+                        totalPerformance.pressureCholeskyBuilds+=p.pressureCholeskyBuilds;
+                        totalPerformance.pressureCholeskyRefactors+=p.pressureCholeskyRefactors;
+                        totalPerformance.pressureCholeskyReuses+=p.pressureCholeskyReuses;
                         totalPerformance.pressureHierarchyBuilds+=p.pressureHierarchyBuilds;
                         totalPerformance.pressureHierarchyReuses+=p.pressureHierarchyReuses;
                         totalPerformance.pressureHierarchyRefreshes+=p.pressureHierarchyRefreshes;
@@ -568,7 +580,8 @@ int main(int argc, char** argv) {
             [](const auto& b) { return b.kind == fv::FlowBoundaryKind2D::PressureOutlet || b.kind == fv::FlowBoundaryKind2D::PressureOpening; });
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" :
-            (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" : "jacobi");
+            (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" :
+             controls.pressurePreconditioner == fv::PressurePreconditioner2D::SystemCholesky ? "cholesky" : "jacobi");
         const bool symmetric=controls.viscousStress==fv::ViscousStress2D::Symmetric;
         const bool manufactured=controls.scenario == "manufactured";
         const bool counterflowCase=controls.scenario == "counterflow";
@@ -786,6 +799,9 @@ int main(int argc, char** argv) {
                         << ",\n\"pressureCorrectionPassesSkipped\":" << p.pressureCorrectionPassesSkipped
                         << ",\n\"pressureFactorizations\":" << p.pressureFactorizations
                         << ",\n\"pressureFactorReuses\":" << p.pressureFactorReuses
+                        << ",\n\"pressureCholeskyBuilds\":" << p.pressureCholeskyBuilds
+                        << ",\n\"pressureCholeskyRefactors\":" << p.pressureCholeskyRefactors
+                        << ",\n\"pressureCholeskyReuses\":" << p.pressureCholeskyReuses
                         << ",\n\"pressureHierarchyBuilds\":" << p.pressureHierarchyBuilds
                         << ",\n\"pressureHierarchyReuses\":" << p.pressureHierarchyReuses
                         << ",\n\"pressureHierarchyRefreshes\":" << p.pressureHierarchyRefreshes

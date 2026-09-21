@@ -68,3 +68,10 @@ test('legacy case files retain the exact old default while v2 preserves tighter 
   legacy.request.tolerance=1e-9;
   assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(legacy),mesh),/旧版工况/);
 });
+
+test('saved system Cholesky cases retain their backend or fail explicitly on unsupported platforms',()=>{
+  if(process.platform==='darwin') {
+    const saved=createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh);
+    assert.deepEqual(parseFlowCaseDocument(serializeFlowCase(saved),mesh),saved);
+  } else assert.throws(()=>createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh),/macOS/);
+});

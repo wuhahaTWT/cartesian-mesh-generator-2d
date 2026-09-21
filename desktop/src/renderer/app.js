@@ -1150,6 +1150,9 @@ function thermalRequest() {
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
 }
 function validThermalInputs() {
+  if($('flowPressurePreconditioner').value==='cholesky') {
+    status('温度联算的压力求解设置需要调整','系统稀疏 Cholesky 暂仅用于独立层流；请选择 IC0 或多重网格。');return false;
+  }
   for (const input of document.querySelectorAll('#flowBlock input[type=number], #thermalBlock input[type=number]')) {
     if (!input.disabled && (!input.value.trim() || !input.checkValidity())) {
       const details = input.closest('details'); if (details) details.open = true;
@@ -1572,6 +1575,7 @@ window.addEventListener('resize', () => view.requestDraw());
 
 (async () => {
   state.catalog = await window.cartmesh.catalog();
+  $('flowPressurePreconditioner').querySelector('option[value="cholesky"]').disabled=window.cartmesh.platform!=='darwin';
   renderMethods();
   renderPresets();
   renderSamples();

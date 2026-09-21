@@ -29,7 +29,8 @@ function exportGuide({ result, rasterImport, flow, thermal, euler, background })
     || flow?.summary?.pressurePreconditioner === undefined ? '旧结果未记录'
     : flow?.summary?.pressurePreconditioner === 'aggregation'
     ? '多重网格（试验）' : flow?.summary?.pressurePreconditioner === 'ic0'
-      ? '标准（IC0）' : '旧结果未记录';
+      ? '标准（IC0）' : flow?.summary?.pressurePreconditioner==='cholesky'
+        ? '系统稀疏 Cholesky（macOS，原真实残差门）' : '旧结果未记录';
   const viscousStress = flow?.summary?.viscousStress === 'symmetric'
     ? '共享面牛顿应力' : '旧结果未记录';
   const convectionQualification = convection === 'face-limited-linear'

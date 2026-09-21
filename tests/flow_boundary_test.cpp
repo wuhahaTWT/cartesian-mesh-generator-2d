@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include <algorithm>
@@ -110,6 +111,12 @@ void steadyRelaxationIndependence() {
         else if(face.areaVector.y>0)b={b.face,FlowBoundaryKind2D::Symmetry,{},0,"symmetry"};
     }
     const auto baseline=solveIncompressible2D(mesh,control);
+#ifdef __APPLE__
+    auto direct=control;direct.pressurePreconditioner=PressurePreconditioner2D::SystemCholesky;direct.profile=true;
+    const auto directResult=solveIncompressible2D(mesh,direct);
+    compare(baseline,directResult);
+    require(directResult.performance.pressureCholeskyBuilds>0,"Warped channel did not use Cholesky");
+#endif
     auto shortRun=control;shortRun.maxIterations=30;
     const auto partial=solveIncompressible2D(mesh,shortRun);
     require(!partial.converged,"continuation fixture unexpectedly converged");
@@ -146,6 +153,10 @@ void steadyRelaxationIndependence() {
     rejects([&]{(void)advanceIncompressible2D(mesh,accelerated,initialIncompressibleState2D(mesh,control),.02);});
     const auto cavity=rectangle(10,10,1);auto closed=conditions(cavity,true);
     const auto original=solveIncompressible2D(cavity,closed);
+#ifdef __APPLE__
+    auto closedDirect=closed;closedDirect.pressurePreconditioner=PressurePreconditioner2D::SystemCholesky;
+    compare(original,solveIncompressible2D(cavity,closedDirect));
+#endif
     closed.steadyAcceleration=SteadyAcceleration2D::Anderson;
     compare(original,solveIncompressible2D(cavity,closed));
 }
@@ -264,6 +275,9 @@ void symmetryBoundaries() {
 }
 
 int main() {
+#ifdef __APPLE__
+    setenv("VECLIB_MAXIMUM_THREADS", "1", 1);
+#endif
     try {
         steadyRelaxationIndependence();
         pressureOpenings();

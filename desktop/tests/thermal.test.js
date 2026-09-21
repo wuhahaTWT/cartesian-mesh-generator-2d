@@ -230,3 +230,7 @@ test('thermal frontend cannot silently discard standalone flow acceleration cont
   assert.throws(()=>validateThermalRequest(request({linearPolicy:'adaptive'})),/独立层流/);
   assert.throws(()=>validateThermalRequest(request({velocityRelaxation:.8})),/独立层流/);
 });
+
+test('thermal coupling explicitly refuses the standalone system pressure backend',()=>{
+  assert.throws(()=>validateThermalRequest(request({pressurePreconditioner:'cholesky'})),/独立层流|macOS/);
+});

@@ -12,6 +12,7 @@ function validateThermalRequest(input) {
   requireValue(input && typeof input === 'object','缺少配置。');
   requireValue(input.case!=='custom','命名边界的温度配置尚未支持。');
   const flow = validateFlowRequest({ ...input, mode:'transient' });
+  requireValue(flow.pressurePreconditioner!=='cholesky','系统稀疏 Cholesky 暂仅支持独立层流；温度联算请选择 IC0 或多重网格。');
   requireValue(flow.linearPolicy==='strict' && flow.velocityRelaxation===.6,
     '桌面温度联算仍使用固定线性精度和默认速度松弛；这些加速设置仅用于独立层流。');
   // Preserve the tighter historical coupled-flow default even when standalone

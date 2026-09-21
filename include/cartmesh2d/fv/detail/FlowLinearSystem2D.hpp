@@ -9,13 +9,15 @@
 #include <utility>
 #include <vector>
 #include <optional>
+#include <memory>
 
 #include "cartmesh2d/fv/detail/FlowAggregation2D.hpp"
+#include "cartmesh2d/fv/detail/FlowCholesky2D.hpp"
 
 namespace cartmesh2d::fv::detail {
 
 using LinearVector2D = std::vector<double>;
-enum class LinearPressureMethod2D { Jacobi, IC0, Aggregation };
+enum class LinearPressureMethod2D { Jacobi, IC0, Aggregation, SystemCholesky };
 enum class LinearSolveMethod2D { Jacobi, ILU0 };
 
 inline void linearEnsure(bool ok, const char* message) {
@@ -146,6 +148,9 @@ struct SparseSystem2D {
 
     std::size_t ic0Builds() const { return factorBuilds_; }
     std::size_t ic0Reuses() const { return factorReuses_; }
+    std::size_t choleskyBuilds() const { return choleskyBuilds_; }
+    std::size_t choleskyRefactors() const { return choleskyRefactors_; }
+    std::size_t choleskyReuses() const { return choleskyReuses_; }
     std::size_t hierarchyBuilds() const { return hierarchyBuilds_; }
     std::size_t hierarchyReuses() const { return hierarchyReuses_; }
     std::size_t hierarchyRefreshes() const { return hierarchyRefreshes_; }
@@ -301,6 +306,10 @@ struct SparseSystem2D {
     }
 
     void precondition(LinearWorkspace2D& w, LinearPressureMethod2D method) const {
+        if (method == LinearPressureMethod2D::SystemCholesky) {
+            linearEnsure(static_cast<bool>(cholesky_),"System Cholesky factor unavailable");
+            cholesky_->apply(w.r,w.z);return;
+        }
         if (method == LinearPressureMethod2D::Aggregation) {
             linearEnsure(hierarchyReady_ && hierarchy_.has_value(), "Flow aggregation hierarchy unavailable");
             hierarchy_->apply(w.r,w.z);
@@ -329,7 +338,9 @@ struct SparseSystem2D {
     std::size_t solvePressure(LinearVector2D& x, LinearWorkspace2D& w, LinearPressureMethod2D method, double relativeTolerance=1e-11) const {
         linearEnsure(std::isfinite(relativeTolerance) && relativeTolerance>0 && relativeTolerance<=1e-2,"Invalid pressure linear relative tolerance");
         linearEnsure(method==LinearPressureMethod2D::Jacobi || method==LinearPressureMethod2D::IC0 ||
-                     method==LinearPressureMethod2D::Aggregation, "Flow pressure preconditioner invalid");
+                     method==LinearPressureMethod2D::Aggregation || method==LinearPressureMethod2D::SystemCholesky, "Flow pressure preconditioner invalid");
+        linearEnsure(method!=LinearPressureMethod2D::SystemCholesky || systemCholeskyAvailable2D(),
+                     "System sparse Cholesky is available only on macOS");
         linearEnsure(x.size() == diag.size() && w.r.size() == diag.size(), "Flow linear workspace size invalid");
         for (double d : diag)
             linearEnsure(d > 0 && std::isfinite(d), "Flow pressure matrix diagonal invalid");
@@ -342,6 +353,19 @@ struct SparseSystem2D {
         const double stop = linearFinite(1e-13 + relativeTolerance * linearNorm(rhs));
         if (linearNorm(residual) <= stop) return 0;
         if (method == LinearPressureMethod2D::IC0) factorIC0();
+        else if (method == LinearPressureMethod2D::SystemCholesky) {
+            try {
+                if(cholesky_ && cholesky_->matches(diag,off))++choleskyReuses_;
+                else if(cholesky_ && cholesky_.use_count()==1) {
+                    cholesky_->refresh(diag,off);++choleskyRefactors_;
+                } else {
+                    // Copies may share an immutable factor; never refactor a
+                    // cache still owned by a different matrix instance.
+                    cholesky_=std::make_shared<SystemCholesky2D>(pattern.rows,pattern.columns,diag,off);
+                    ++choleskyBuilds_;
+                }
+            } catch(...) {cholesky_.reset();throw;}
+        }
         else if (method == LinearPressureMethod2D::Aggregation) {
             hierarchyReady_=false;
             try {
@@ -582,6 +606,8 @@ private:
     mutable LinearVector2D factorDiagonal_, factorLower_;
     mutable LinearVector2D factorMatrixDiagonal_, factorMatrixOff_;
     mutable std::optional<AggregationHierarchy2D> hierarchy_;
+    mutable std::shared_ptr<SystemCholesky2D> cholesky_;
+    mutable std::size_t choleskyBuilds_=0,choleskyRefactors_=0,choleskyReuses_=0;
     mutable bool hierarchyReady_ = false;
     mutable std::size_t hierarchyBuilds_ = 0, hierarchyReuses_ = 0;
     mutable std::size_t hierarchyRefreshes_ = 0, refreshesSinceBuild_ = 0;

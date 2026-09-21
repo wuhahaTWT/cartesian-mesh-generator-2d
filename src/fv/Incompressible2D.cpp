@@ -494,8 +494,13 @@ static FlowResult2D solveFlow(
            "Anderson acceleration requires steady laminar flow");
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
                c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ||
-               c.pressurePreconditioner == PressurePreconditioner2D::Aggregation,
+               c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ||
+               c.pressurePreconditioner == PressurePreconditioner2D::SystemCholesky,
            "Invalid pressure preconditioner");
+    ensure(c.pressurePreconditioner!=PressurePreconditioner2D::SystemCholesky || detail::systemCholeskyAvailable2D(),
+           "System sparse Cholesky is available only on macOS");
+    ensure(c.pressurePreconditioner!=PressurePreconditioner2D::SystemCholesky || !material,
+           "System sparse Cholesky currently supports constant-property laminar flow only");
     ensure(c.convection == ConvectionScheme2D::Upwind ||
                c.convection == ConvectionScheme2D::LimitedLinearUpwind ||
                c.convection == ConvectionScheme2D::FaceLimitedLinearUpwind,
@@ -580,7 +585,9 @@ static FlowResult2D solveFlow(
         const auto oldBuilds = system.ic0Builds(), oldReuses = system.ic0Reuses();
         const auto oldHierarchies=system.hierarchyBuilds(), oldHierarchyReuses=system.hierarchyReuses();
         const auto oldHierarchyRefreshes=system.hierarchyRefreshes();
+        const auto oldCholeskyBuilds=system.choleskyBuilds(),oldCholeskyRefactors=system.choleskyRefactors(),oldCholeskyReuses=system.choleskyReuses();
         const auto iterations = pressure ? system.solvePressure(field, workspace,
+            c.pressurePreconditioner == PressurePreconditioner2D::SystemCholesky ? detail::LinearPressureMethod2D::SystemCholesky :
             c.pressurePreconditioner == PressurePreconditioner2D::Aggregation ? detail::LinearPressureMethod2D::Aggregation :
             (c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ? detail::LinearPressureMethod2D::IC0 : detail::LinearPressureMethod2D::Jacobi),linearRelativeTolerance)
             : system.solve(field, workspace, momentumRowStop,std::numeric_limits<double>::infinity(),detail::LinearSolveMethod2D::Jacobi,linearRelativeTolerance);
@@ -600,6 +607,9 @@ static FlowResult2D solveFlow(
             if (pressure) {
                 p.pressureFactorizations += system.ic0Builds() - oldBuilds;
                 p.pressureFactorReuses += system.ic0Reuses() - oldReuses;
+                p.pressureCholeskyBuilds+=system.choleskyBuilds()-oldCholeskyBuilds;
+                p.pressureCholeskyRefactors+=system.choleskyRefactors()-oldCholeskyRefactors;
+                p.pressureCholeskyReuses+=system.choleskyReuses()-oldCholeskyReuses;
                 p.pressureHierarchyBuilds += system.hierarchyBuilds() - oldHierarchies;
                 p.pressureHierarchyReuses += system.hierarchyReuses() - oldHierarchyReuses;
                 p.pressureHierarchyRefreshes += system.hierarchyRefreshes() - oldHierarchyRefreshes;

@@ -287,9 +287,10 @@
         <select id="flowPressurePreconditioner">
           <option value="ic0" selected>标准（IC0）</option>
           <option value="aggregation">多重网格（试验）</option>
+          <option value="cholesky">系统稀疏 Cholesky（macOS）</option>
         </select>
       </label>
-      <p class="note">大网格可尝试；内存占用可能增加。</p>
+      <p class="note">大网格可尝试多重网格或系统稀疏 Cholesky，内存可能增加，原收敛门不变。系统 Cholesky 仅用于 macOS 独立层流；温度联算请选择 IC0 或多重网格。</p>
       <label class="field">线性迭代精度
         <select id="flowLinearPolicy">
           <option value="strict" selected>固定精度（默认）</option>
