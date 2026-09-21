@@ -170,5 +170,33 @@
   "frontendRegression": "184/184",
   "externalCheckMesh": "not run: unavailable locally",
   "actualWindowsBuild": "not run",
-  "actualLinuxBuild": "not run"
+  "actualLinuxBuild": "not run",
+  "externalFollowup": {
+    "commit": "f4708ce94e1bc52fb0ff9f913e94a84c6bbf1573",
+    "native": {
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35665293718",
+      "conclusion": "success",
+      "standardCheckMesh": "15 H4 cases, OpenFOAM v2606; workflow step passed",
+      "extendedCheckMesh": "not run"
+    },
+    "desktop": {
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35665297332",
+      "linux": "native/frontend/package/packaged smoke PASS",
+      "macos14arm64": "native/frontend/package/packaged smoke PASS",
+      "windows2022x64": "build PASS; native154/156; packaging not reached"
+    },
+    "windowsFailureLog": "outputs/laminar-performance/dense-cutcell/windows-f4708ce.log",
+    "windowsFixes": [
+      "Archive fixture keys now use POSIX member paths on every host. Archive verifier remains unchanged.",
+      "Windows TerminateProcess does not call SIGTERM handler. Test now checks actual hard-stop checkpoint restart and independent conservation/uniform field; POSIX graceful status check retained. Recovery check also runs on POSIX."
+    ],
+    "localTargetedTests": "trajectory and Euler PASS; final Euler recovery test 2.32s",
+    "windowsRerun": "pending",
+    "limitations": [
+      "Native CI checkMesh covers H4 cases, not dense nozzle or fine annulus.",
+      "Standard checkMesh is separate from allGeometry/allTopology and CFD physical accuracy.",
+      "Windows Euler hard stop retains saved checkpoint; no guarantee of fresh cancelled summary or final fields."
+    ],
+    "retrieval": "GitHub job/step metadata read; Windows full failure log saved. Other detailed logs temporarily unavailable due network EOF."
+  }
 }

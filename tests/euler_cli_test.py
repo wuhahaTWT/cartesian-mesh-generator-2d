@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory(prefix='cm2d-euler-') as directory:
     run(mesh,'bad-custom',['--case','custom','--boundary',boundary],1)
     boundary.write_text(original)
     cancelled=root/'cancelled'
-    process=subprocess.Popen([args.cli,'--mesh',str(mesh),'--output',str(cancelled),'--case','uniform','--end-time','100'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    process=subprocess.Popen([args.cli,'--mesh',str(mesh),'--output',str(cancelled),'--case','uniform','--gas-r','1','--end-time','100'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     deadline=time.monotonic()+5;accepted=False
     try:
         while process.poll() is None and time.monotonic()<deadline:
@@ -62,9 +62,28 @@ with tempfile.TemporaryDirectory(prefix='cm2d-euler-') as directory:
                 if match and float(match[1])>0:accepted=True;break
             time.sleep(.005)
         assert accepted,'no accepted state before cancellation'
-        process.terminate();assert process.wait(timeout=5)==2
-        assert json.loads(Path(str(cancelled)+'.json').read_text())['status']=='cancelled'
-        assert euler.audit(mesh,cancelled)['valid']
+        process.terminate();code=process.wait(timeout=5)
+        if sys.platform=='win32':
+            # TerminateProcess cannot invoke the C++ SIGTERM handler. Windows
+            # preserves the last atomic checkpoint, not a fresh final summary.
+            assert code!=0
+        else:
+            assert code==2
+            assert json.loads(Path(str(cancelled)+'.json').read_text())['status']=='cancelled'
+            assert euler.audit(mesh,cancelled)['valid']
+        # Exercise the accepted-checkpoint recovery on every platform, including
+        # the hard-stop path actually used by the Windows desktop.
+        match=re.search(r'^STATE (\S+) (\d+)$',checkpoint.read_text(),re.M)
+        assert match and float(match[1])>0
+        restart_time=float(match[1])
+        resumed_cancel=run(mesh,'cancel-resumed',['--case','uniform',
+            '--restart',checkpoint,'--end-time',str(restart_time+.01)])
+        assert euler.audit(mesh,resumed_cancel)['valid']
+        state=json.loads(Path(str(resumed_cancel)+'.json').read_text())
+        assert state['targetReached']
+        rows=list(csv.DictReader(Path(str(resumed_cancel)+'.cells.csv').open()))
+        assert max(max(abs(float(r['rho'])-1),abs(float(r['p'])-1),
+            abs(float(r['u'])),abs(float(r['v']))) for r in rows)<1e-12
     finally:
         if process.poll() is None:process.kill();process.wait()
     mesh=root/'periodic.solver.cm2d';euler.rectangle(mesh,32,32,20,20)

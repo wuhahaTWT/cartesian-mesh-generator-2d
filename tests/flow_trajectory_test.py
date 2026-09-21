@@ -71,7 +71,7 @@ def main(cli,mesh_cli):
         except ValueError as e:assert 'recorded restart origin' in str(e),str(e)
         else:raise AssertionError('unrelated initial state accepted')
         manifest['initialCheckpointSha256']=actual_origin;path.write_text(json.dumps(manifest))
-        first=root/'first';archive=root/'first.tar.gz';files={str(p.relative_to(root)):n.sha256_file(p) for p in first.iterdir()}
+        first=root/'first';archive=root/'first.tar.gz';files={p.relative_to(root).as_posix():n.sha256_file(p) for p in first.iterdir()}
         with tarfile.open(archive,'w:gz') as tar:tar.add(first,arcname='first')
         (root/'first.manifest.json').write_text(json.dumps(dict(verified=True,sha256=n.sha256_file(archive),files=files)))
         shutil.rmtree(first);assert verify()['valid']

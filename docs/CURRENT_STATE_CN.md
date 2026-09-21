@@ -92,6 +92,10 @@
 
 完整CTest156/156（串行102.07秒）、前端184/184；实际0.4.38 App稳态/非定常一次校正及默认4次路径，保存重读重算、失败保留、取消续算至t=.07、ZIP内容与独立方程均通过，相关场/历史/检查点与0.4.37逐字节相同。六个程序与build/runtime一致，性能基准CLI SHA也与包内相同；仅系统动态库。未签名本地arm64包最低macOS27.0。[实际App](../artifacts/current/native-laminar-desktop-gradient-cache-steady.png) · [包SHA与完整桌面证据](../artifacts/current/native-laminar-desktop-gradient-cache.json)。跨平台及外部checkMesh结果单列，不能由本地通过替代。
 
+### 最新外部验收与 Windows 收尾
+
+`f4708ce`原生CI通过，15个H4代表例通过OpenFOAM v2606标准`checkMesh`；这不包含十万格喷管、细圆环，也不等于`allGeometry/allTopology`或CFD精度认证。相同提交的Linux及macOS14 arm64完成原生/前端测试、打包和真实包启动检查。Windows2022 x64已编译成功，原生154/156；两个失败定位为tar测试清单使用主机分隔符，以及把Windows强制终止误当POSIX SIGTERM。已改为POSIX归档键，并在所有平台增加取消后检查点恢复与独立守恒/均匀场审核；POSIX取消状态检查保留。Windows强制终止只保证已保存检查点，不保证新取消摘要或最终场。本地相关测试通过，Windows复跑待返回；未改求解器或质量门。[外部状态与失败范围](../artifacts/current/native-ci-local-recheck.json)。
+
 ### 本轮收尾：压力校正次数、细圆环与旧CI失败
 
 0.4.37新增独立层流显式压力校正次数1—4，默认4不变；CLI `--pressure-corrections`、桌面输入/结果/导出、工况v5均接通。v1—v4恢复历史4次，v4原线性精度和松弛保持，旧格式伪装新字段拒绝。材料反馈及桌面温度联算要求4。原最终动量、连续性、严格线性及物理精度门没有改动。非正交通道1/2/3次与4次收敛解比较、闭域及逐时间步独立方程通过。完整CTest156/156（串行110.53秒），前端184/184。
