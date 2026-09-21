@@ -119,3 +119,17 @@ test('pressure-driven template creates editable static pressures without prescri
  assert.equal(d.records[3].u,0);validateBoundaryMesh(d,mesh,1);
  assert.throws(()=>pressureDrivenBoundaryDefinition(d),/模板/);
 });
+
+
+test('half-channel template binds a no-penetration free-slip top and retains bottom no-slip', async()=>{
+ const d=pressureDrivenBoundaryDefinition(copy(),true);
+ assert.equal(d.records[2].type,'symmetry');assert.equal(d.records[2].name,'symmetry');
+ assert.equal(d.records[0].type,'wall');validateBoundaryMesh(d,mesh,1);
+ assert.deepEqual(parseBoundaryDefinition(serializeBoundaryDefinition(d)),d);
+ const text=checkpoint().replace('BOUNDARY 2 wall "曲壁" 0 0 0','BOUNDARY 2 symmetry "top" 0 0 0');
+ const restored=await metadata(text);validateBoundaryMesh(restored.boundaryDefinition,mesh,1);
+ for(const key of ['u','v','p']){
+  const bad=structuredClone(d);bad.records[2][key]=.1;
+  assert.throws(()=>serializeBoundaryDefinition(bad),/边界/);
+ }
+});

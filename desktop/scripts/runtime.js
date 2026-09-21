@@ -13,6 +13,7 @@ const TOOL_NAMES = Object.freeze([
 ]);
 
 const SAMPLE_SOURCES = Object.freeze([
+  'acceptance/rectangle.xy',
   'acceptance/circle.xy',
   'complex/naca2412_dense.xy',
   'complex/thick_cambered_airfoil.xy',

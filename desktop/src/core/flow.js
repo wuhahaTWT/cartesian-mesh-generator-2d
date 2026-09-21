@@ -7,7 +7,7 @@ const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./f
 const FLOW_CASES = Object.freeze({
   custom: {
     id: 'custom', label: '命名边界',
-    scope: '按最终网格逐面指定速度入口、压力出口、定压开口或静止／移动壁面。参考速度仅用于归一化。定压开口限水平／竖直方向，允许法向进出；普通压力出口仍拒绝回流。暂不支持自定义滑移。'
+    scope: '按最终网格逐面指定速度入口、压力出口、定压开口、对称面或静止／移动壁面。参考速度仅用于归一化。定压开口限水平／竖直方向，允许法向进出；普通压力出口仍拒绝回流。对称面限水平／竖直方向，不穿透且切向无摩擦。'
   },
   external: {
     id: 'external', label: '外流',

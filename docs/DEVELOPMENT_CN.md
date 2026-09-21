@@ -949,3 +949,11 @@ MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified 
 App选择“命名边界→压差驱动通道：两端静压→从预设生成”，初始左p/rho=1、右=0，可编辑两组压力。两组压力均整体增加常数不会改变速度。参考速度仅归一化，不规定流量。边界文件、工况v2及检查点v4保存新类型；旧程序会拒绝未知类型。命名边界尚未支持温度配置。
 
 `tools/verification/verify_pressure_openings.py --output outputs/native-flow/<fresh-directory>`生成独立矩形网格并审核压差通道，默认256/1,024/4,096格、tol1e-10、最多10,000轮；每命令180秒、总900秒、50MiB、至少5GiB剩余空间，所有失败保留。`tools/visualization/render_pressure_openings.py <directory> <png>`先校验文件哈希与细档离散方程再作图。公式L=4、H=1、nu=.1、Δ(p/rho)=4.8给出u=6y(1−y)、Q=1；这是特定Poiseuille参考，不是曲壁网格或通用精度认证。运行`ctest --test-dir build -R 'flow_boundary|pressure_opening' --output-on-failure`可复现三种格式、等压静止、坐标/压力变换、普通出口拒绝和续算检查。
+
+### 命名对称边界（0.4.25）
+
+`custom`新增`symmetry`，配置u/v/p均为0占位；仅水平/竖直边，法向速度为零、切向速度零法向梯度，不提供无滑移摩擦。它不会计入`namedWallLoads`，但其压力仍参与共享面动量守恒。斜面或非零配置值明确失败。边界文件、工况v2及检查点v4保存该类型；旧程序拒绝未知类型。
+
+App复用`examples/acceptance/rectangle.xy`作为2×1m矩形内流示例，选择“命名边界→压差驱动半通道：顶部对称”。该模板先通过原生矩形通道几何门，再将上下壁中的顶部独立分组为对称面、底部保持无滑移。用户可以编辑任意已有命名组为轴对齐对称类型，不能用倾斜曲壁近似对称平面。
+
+`tools/verification/verify_symmetry_flow.py --output outputs/native-flow/<fresh-directory>`在独立64/256/1,024格矩形上验证L=4、H=1、nu=.1、压差1.2的u=1.5y(2−y)、Q=1；另将两侧都设为自由滑移，从静止用dt=.02推进三步，核对u=.3t以及1+2步与3步检查点逐字节一致。每命令180秒、全研究600秒、30MiB、磁盘至少5GiB；测试三种格式入口为`cartmesh2d_symmetry_flow_cli`。作图复用`render_pressure_openings.py`，自动识别半通道参考，并先重新审核源文件与离散方程。

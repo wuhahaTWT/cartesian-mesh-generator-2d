@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
-            "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/wall conditions.\n"
+            "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
@@ -126,7 +126,8 @@ int main(int argc, char** argv) {
             "duct: uniform left inlet, right p=0, arbitrary no-slip walls; both openings must be vertical x-extrema.\n"
             "custom: velocity inlets, pressure outlets and walls allow arbitrary orientation; speed is a reference scale only.\n"
             "pressure-opening: axis-aligned static p/rho; normal velocity free, incoming tangential velocity zero.\n"
-            "Ordinary pressure-outlet retains backflow rejection; custom slip is not implemented.\n"
+            "symmetry: axis-aligned impermeable free-slip face, no prescribed velocity or pressure.\n"
+            "Ordinary pressure-outlet retains backflow rejection.\n"
             "Other presets require fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;

@@ -111,6 +111,13 @@ const SAMPLES = Object.freeze([
     smallAlpha: .05
   },
   {
+    id: 'rectangle', label: '矩形通道（内流）', file: 'rectangle.xy', fluidRegion: 'interior',
+    note: '2×1m矩形。支持速度入口或两端静压；选择“半通道”边界模板时，顶部为对称面、底部无滑移。',
+    sizeField: { farFieldSpans: .25, wallCellsPerSpan: 16, cellsPerLevel: 3 },
+    interiorSizeField: { farFieldSpans: .25, wallCellsPerSpan: 16, cellsPerLevel: 3, farLevel: 4 },
+    interiorSmallAlpha: .1, smallAlpha: .1
+  },
+  {
     id: 'nozzle',
     label: '喷管型线',
     file: 'nozzle_profile.xy',

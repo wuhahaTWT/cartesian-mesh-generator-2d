@@ -694,6 +694,12 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                             fixed_v[face] = constant_v[face] = True
                         else:
                             fixed_u[face] = constant_u[face] = True
+            elif kind == 'symmetry':
+                if u != 0 or v != 0 or p != 0 or min(abs(sx), abs(sy)) > (1e-12+1e-10)*math.hypot(sx,sy):
+                    raise VerificationError('custom symmetry requires axis alignment and no prescribed values')
+                roles[face] = 'slip'
+                if abs(sx) > abs(sy): fixed_u[face] = constant_u[face] = True
+                else: fixed_v[face] = constant_v[face] = True
             elif kind in ('wall', 'moving-wall', 'smooth-moving-wall'):
                 tolerance = (1e-12 + 1e-10*max(speed, math.hypot(u,v))) * math.hypot(sx,sy)
                 if p != 0 or (kind == 'wall' and (u != 0 or v != 0)) or abs(q) > tolerance:

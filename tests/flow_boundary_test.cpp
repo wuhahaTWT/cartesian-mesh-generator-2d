@@ -149,9 +149,57 @@ void pressureOpenings() {
     }
 }
 
+void symmetryBoundaries() {
+    double previous=0;
+    for(int n:{8,16}) {
+        const auto mesh=rectangle(4*n,n);auto c=conditions(mesh);
+        c.nu=.1;c.maxIterations=10000;c.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
+        for(auto& b:c.boundaryConditions) {
+            const auto& f=mesh.faces[b.face];
+            if(b.kind==FlowBoundaryKind2D::VelocityInlet || b.kind==FlowBoundaryKind2D::PressureOutlet)
+                b={b.face,FlowBoundaryKind2D::PressureOpening,{},f.areaVector.x<0?1.2:0,b.name};
+            else if(f.areaVector.y>0)b={b.face,FlowBoundaryKind2D::Symmetry,{},0,"symmetry"};
+        }
+        const auto result=solveIncompressible2D(mesh,c);require(result.converged,"half-channel did not converge");
+        double error=0;
+        for(std::size_t i=0;i<mesh.cells.size();++i) {
+            const auto y=mesh.cells[i].centre.y;
+            error+=mesh.cells[i].area*std::pow(result.u[i]-1.5*y*(2-y),2);
+        }
+        error=std::sqrt(error/4);std::cout<<"half-channel n="<<n<<" velocity L2="<<error<<'\n';
+        require(error<.01,"half-channel analytic velocity failed");
+        if(previous>0)require(previous/error>3.8,"half-channel spatial order failed");previous=error;
+        for(const auto& b:c.boundaryConditions)if(b.kind==FlowBoundaryKind2D::Symmetry)
+            require(result.flux[b.face]==0,"symmetry allows penetration");
+        if(n!=8)continue;
+        compare(result,solveIncompressible2D(rotated(mesh,std::acos(-1.)/2),c),std::acos(-1.)/2);
+        rejects([&]{validateFlowBoundaryConditions2D(rotated(mesh,.3),c);});
+        auto bad=c;
+        for(auto& b:bad.boundaryConditions)if(b.kind==FlowBoundaryKind2D::Symmetry){b.pressure=1;break;}
+        rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
+        // With both walls frictionless, the pressure gradient gives exactly
+        // uniform acceleration dU/dt=Delta(p/rho)/L, not a steady balance.
+        auto plug=c;
+        for(auto& b:plug.boundaryConditions)if(b.kind==FlowBoundaryKind2D::Wall)
+            b={b.face,FlowBoundaryKind2D::Symmetry,{},0,"bottom-symmetry"};
+        auto state=initialIncompressibleState2D(mesh,plug);
+        for(int step=0;step<3;++step){
+            const auto next=advanceIncompressible2D(mesh,plug,state,.02);
+            require(next.converged,"frictionless acceleration step failed");
+            for(std::size_t i=0;i<next.u.size();++i)
+                require(std::abs(next.u[i]-.3*next.time)<2e-8 && std::abs(next.v[i])<2e-8,"free-slip acceleration reference failed");
+            state={next.time,next.u,next.v,next.p,next.flux};
+        }
+        std::ostringstream checkpoint;writeFlowCheckpoint2D(checkpoint,mesh,plug,state);
+        std::istringstream input(checkpoint.str());const auto loaded=readFlowCheckpoint2D(input,mesh,plug);
+        require(loaded.u==state.u && loaded.flux==state.flux,"symmetry checkpoint changed state");
+    }
+}
+
 int main() {
     try {
         pressureOpenings();
+        symmetryBoundaries();
         const auto mesh=rectangle();const auto control=conditions(mesh);
         const auto baseline=solveIncompressible2D(mesh,control);
         std::ostringstream boundaryFile;writeFlowBoundaryConditions2D(boundaryFile,mesh,control);

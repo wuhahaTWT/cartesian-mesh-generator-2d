@@ -140,6 +140,17 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                 outletLength += length;
                 ++outletCount;
                 break;
+            case FlowBoundaryKind2D::Symmetry:
+                ensure(condition.velocity.x == 0 && condition.velocity.y == 0 && condition.pressure == 0,
+                       "Symmetry cannot prescribe velocity or pressure");
+                ensure(std::min(std::abs(face.areaVector.x), std::abs(face.areaVector.y)) <=
+                           TolerancePolicy{}.scale(1.) * length,
+                       "Symmetry face must be axis aligned");
+                b.role[id] = Role::Slip;
+                if (std::abs(face.areaVector.x) > std::abs(face.areaVector.y))
+                    b.fixedU[id] = b.constantU[id] = true;
+                else b.fixedV[id] = b.constantV[id] = true;
+                break;
             case FlowBoundaryKind2D::Wall:
             case FlowBoundaryKind2D::MovingWall:
             case FlowBoundaryKind2D::SmoothMovingWall:

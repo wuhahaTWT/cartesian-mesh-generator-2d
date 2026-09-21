@@ -288,17 +288,17 @@ app.whenReady().then(async () => {
       if ((await fs.stat(picked.filePaths[0])).size>32*1024*1024) throw new Error('边界文件超过32MB。');
       text=await fs.readFile(picked.filePaths[0],'utf8');
     } else {
-      if (!['channel','duct','pressure-duct','cavity','annulus'].includes(request.source)) throw new Error('请选择支持的边界预设。');
+      if (!['channel','duct','pressure-duct','pressure-half-channel','cavity','annulus'].includes(request.source)) throw new Error('请选择支持的边界预设。');
       const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'boundary-input-'));
       const target=path.join(directory,'input.boundaries');
       try {
-        await runProcess(executable('cartmesh2d_flow_cli'),['--mesh',currentResult.cm2dPath,'--case',request.source==='pressure-duct'?'duct':request.source,
+        await runProcess(executable('cartmesh2d_flow_cli'),['--mesh',currentResult.cm2dPath,'--case',request.source==='pressure-half-channel'?'channel':request.source==='pressure-duct'?'duct':request.source,
           '--speed',String(speed),'--export-boundaries',target],()=>{},operation.signal,30000);
         text=await fs.readFile(target,'utf8');
       } finally { await fs.rm(directory,{recursive:true,force:true}); }
     }
     const definition=parseBoundaryDefinition(text);
-    return validateBoundaryMesh(request.source==='pressure-duct' ? pressureDrivenBoundaryDefinition(definition) : definition,mesh,speed);
+    return validateBoundaryMesh(['pressure-duct','pressure-half-channel'].includes(request.source) ? pressureDrivenBoundaryDefinition(definition,request.source==='pressure-half-channel') : definition,mesh,speed);
   }));
   ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先生成与重启文件对应的最终网格。');
