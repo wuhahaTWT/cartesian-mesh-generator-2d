@@ -2,6 +2,7 @@
 const {normalizeInitialVortex,validateInitialVortexOutput}=require('./initial-vortex');
 const { validateAdaptiveSummary, validateAttemptHistory } = require('./adaptive-flow');
 const { validateWallLoads } = require('./wall-loads');
+const { validateBoundaryFluxes } = require('./boundary-flux');
 const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./flow-boundaries');
 
 const FLOW_CASES = Object.freeze({
@@ -379,6 +380,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   }
 
   validateWallLoads(normalizedSummary);
+  validateBoundaryFluxes(normalizedSummary);
   validateInitialVortexOutput(summary,null,startTime);
 
   if (expectedRequest) {

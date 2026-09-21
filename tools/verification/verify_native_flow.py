@@ -1066,6 +1066,34 @@ def prescribed_face_viscosity(mesh, geometry, records, nu, payload):
     return values,source
 
 
+def audit_named_boundary_fluxes(mesh, measured, faces, payload):
+    """Independently sum signed corrected face flux and geometric patch length."""
+    keys=('namedBoundaryFluxes','boundaryFluxDefinition')
+    if not any(k in payload for k in keys):return {'status':'unavailable'}
+    definition='m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux'
+    if payload.get('case')!='custom' or payload.get('boundaryFluxDefinition')!=definition or not isinstance(payload.get('namedBoundaryFluxes'),list):
+        raise VerificationError('invalid named boundary flux definition')
+    geometry=face_geometry(mesh,measured);groups={}
+    for bc in payload['boundaryConditions']:
+        fid=bc['face'];q=faces[fid]['flux'];g=groups.setdefault(bc['name'],dict(type=bc['type'],flux=[],length=[]))
+        g['flux'].append(q);g['length'].append(math.hypot(*geometry[fid].area_vector))
+    seen=set()
+    for row in payload['namedBoundaryFluxes']:
+        if not isinstance(row,dict) or row.get('name') not in groups or row['name'] in seen:
+            raise VerificationError('missing, duplicate or unknown named boundary flux')
+        name=row['name'];seen.add(name);g=groups[name];q=g['flux'];length=math.fsum(g['length']);net=math.fsum(q)
+        expected=dict(length=length,inflow=math.fsum(max(0.,-v) for v in q),outflow=math.fsum(max(0.,v) for v in q),net=net,normalMeanVelocity=net/length)
+        if set(row)!={'name','faces',*expected} or integer(row['faces'],'boundary flux face count')!=len(q):
+            raise VerificationError('named boundary flux fields/count differ from actual patch')
+        for k,value in expected.items():
+            if not close(finite(row[k],'boundary flux '+k),value,1e-12,1e-10):
+                raise VerificationError('named boundary flux differs from actual face integration: '+name+' '+k)
+        if row['inflow']<0 or row['outflow']<0 or (g['type'] in ('wall','moving-wall','smooth-moving-wall','symmetry') and any(v!=0 for v in q)):
+            raise VerificationError('invalid impermeable boundary flux or sign')
+    if seen!=set(groups):raise VerificationError('named boundary flux does not cover every patch')
+    return dict(status='verified',patches=len(groups),definition=definition)
+
+
 def audit_named_wall_loads(mesh, measured, faces, payload):
     """Integrate exported traction on actual edges; momentum auditing separately
     reconstructs that traction from cell fields. Legacy results may omit loads.
@@ -1375,6 +1403,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
                          if case in ("manufactured", "counterflow") else "zero/unforced non-manufactured case")
     return {
         "status": "available", "valid": True, "viscosityInput": viscosity_source, "convection": convection,
+        "namedBoundaryFluxes": audit_named_boundary_fluxes(mesh, measured, face_records, payload),
         "namedWallLoads": audit_named_wall_loads(mesh, measured, face_records, payload),
         "pressureDiscretization": payload.get("pressureDiscretization"),
         "pressureBoundaryReconstruction": pressure_boundary_reconstruction,

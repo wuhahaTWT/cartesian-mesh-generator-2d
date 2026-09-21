@@ -112,6 +112,16 @@ def main(cli, mesh_cli, convection):
             rejected=audit.verify_case(mesh_path,base,'custom',.1,1,audit.argument_parser().parse_args([]))
             assert not rejected['valid'] and any('wall load' in i for i in rejected['issues']),rejected
         path.write_text(saved)
+        assert json.loads(saved)['namedBoundaryFluxes']
+        for mutate in (lambda p:p['namedBoundaryFluxes'].pop(),
+                       lambda p:p['namedBoundaryFluxes'][0].update(net=123),
+                       lambda p:p['namedBoundaryFluxes'][0].update(length=123),
+                       lambda p:p['namedBoundaryFluxes'][0].update(normalMeanVelocity=123),
+                       lambda p:p.update(boundaryFluxDefinition='kg/s')):
+            payload=json.loads(saved);mutate(payload);path.write_text(json.dumps(payload))
+            rejected=audit.verify_case(mesh_path,base,'custom',.1,1,audit.argument_parser().parse_args([]))
+            assert not rejected['valid'] and any('boundary flux' in i for i in rejected['issues']),rejected
+        path.write_text(saved)
         rejection = solve(root/'wrong-mesh', mesh=rotated_mesh, success=False)
         assert 'geometry differs' in rejection.stderr, rejection.stderr
 

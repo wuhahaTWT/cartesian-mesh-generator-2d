@@ -1,0 +1,197 @@
+{
+  "format": "cartmesh2d-boundary-flux-evidence-v1",
+  "appVersion": "0.4.26",
+  "scope": "Actual corrected face volume flux per unit depth for every named boundary; no density is assumed.",
+  "comparison": {
+    "boundarySha256": "01877a65c6254f060a91904b44e820516f08b61e8307fea16189c4e9150c8ddf",
+    "byteIdentical": {
+      ".boundaries": true,
+      ".cells.csv": true,
+      ".faces.csv": true,
+      ".fields.json": true,
+      ".residuals.csv": true,
+      ".vtk": true
+    },
+    "commands": [
+      {
+        "binarySha256": "a2609c7f3b0621e159341836ca98246e9ac89e779cac5d466dfb22be4051d438",
+        "command": [
+          "outputs/native-flow/binaries/flow-0.4.25-symmetry-study",
+          "--mesh",
+          "outputs/native-flow/boundary-flux-compare/mesh.solver.cm2d",
+          "--boundary",
+          "outputs/native-flow/boundary-flux-compare/input.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "outputs/native-flow/boundary-flux-compare/before",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-09",
+          "--max-iterations",
+          "1500",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "outputs/native-flow/binaries/flow-0.4.25-symmetry-study --mesh outputs/native-flow/boundary-flux-compare/mesh.solver.cm2d --boundary outputs/native-flow/boundary-flux-compare/input.boundaries --case custom --output outputs/native-flow/boundary-flux-compare/before --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 1500 --convection face-limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "seconds": 10.372422166998149,
+        "status": "passed",
+        "stderr": "outputs/native-flow/boundary-flux-compare/logs/before.stderr.log",
+        "stdout": "outputs/native-flow/boundary-flux-compare/logs/before.stdout.log",
+        "timedOut": false
+      },
+      {
+        "binarySha256": "3c3eed738dc0b04adb3043c4c34d71948d6c6edec7e98dd930bfd4f6cef19c28",
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/native-flow/boundary-flux-compare/mesh.solver.cm2d",
+          "--boundary",
+          "outputs/native-flow/boundary-flux-compare/input.boundaries",
+          "--case",
+          "custom",
+          "--output",
+          "outputs/native-flow/boundary-flux-compare/after",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--tolerance",
+          "1e-09",
+          "--max-iterations",
+          "1500",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation"
+        ],
+        "commandText": "build/cartmesh2d_flow_cli --mesh outputs/native-flow/boundary-flux-compare/mesh.solver.cm2d --boundary outputs/native-flow/boundary-flux-compare/input.boundaries --case custom --output outputs/native-flow/boundary-flux-compare/after --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 1500 --convection face-limited-linear --pressure-preconditioner aggregation",
+        "returncode": 0,
+        "seconds": 10.017419416999473,
+        "status": "passed",
+        "stderr": "outputs/native-flow/boundary-flux-compare/logs/after.stderr.log",
+        "stdout": "outputs/native-flow/boundary-flux-compare/logs/after.stdout.log",
+        "timedOut": false
+      }
+    ],
+    "meshSha256": "879e681670d60b16c05b56a47261ee73b9aa407a26395a0c2e5cbe7ff206708a",
+    "namedBoundaryFluxes": [
+      {
+        "faces": 84,
+        "inflow": 0.28734833788275094,
+        "length": 1.96,
+        "name": "inlet",
+        "net": -0.28734833788275094,
+        "normalMeanVelocity": -0.14660629483813822,
+        "outflow": 0
+      },
+      {
+        "faces": 84,
+        "inflow": 0,
+        "length": 1.96,
+        "name": "outlet",
+        "net": 0.28734833788272585,
+        "normalMeanVelocity": 0.14660629483812543,
+        "outflow": 0.28734833788272585
+      },
+      {
+        "faces": 576,
+        "inflow": 0,
+        "length": 12.173149452924086,
+        "name": "wall",
+        "net": 0,
+        "normalMeanVelocity": 0,
+        "outflow": 0
+      }
+    ],
+    "summary": {
+      "cells": 2784,
+      "globalImbalance": -2.4977802215876005e-14,
+      "globalRelativeImbalance": 8.692516685469014e-14,
+      "iterations": 1085
+    },
+    "valid": true
+  },
+  "app": {
+    "independentExportAuditValid": true,
+    "zipSha256": "e36d1cee727985409d85c0a6ff184687f0d86f4291cc1b4392dd9a0c8966a09c",
+    "summary": {
+      "cells": 2784,
+      "iterations": 1085,
+      "tolerance": 1e-09,
+      "globalImbalance": -2.4977802215876005e-14,
+      "globalRelativeImbalance": 8.692516685469014e-14,
+      "namedBoundaryFluxes": [
+        {
+          "faces": 84,
+          "inflow": 0.28734833788275094,
+          "length": 1.96,
+          "name": "inlet",
+          "net": -0.28734833788275094,
+          "normalMeanVelocity": -0.14660629483813822,
+          "outflow": 0
+        },
+        {
+          "faces": 84,
+          "inflow": 0,
+          "length": 1.96,
+          "name": "outlet",
+          "net": 0.28734833788272585,
+          "normalMeanVelocity": 0.14660629483812543,
+          "outflow": 0.28734833788272585
+        },
+        {
+          "faces": 576,
+          "inflow": 0,
+          "length": 12.173149452924086,
+          "name": "wall",
+          "net": 0,
+          "normalMeanVelocity": 0,
+          "outflow": 0
+        }
+      ],
+      "boundaryFluxDefinition": "m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux"
+    },
+    "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+    "settingsRoundTrip": true,
+    "repeatedCalculationIdentical": true,
+    "strictConvergenceGate": true
+  },
+  "strictUnconvergedRejection": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D",
+      "--smoke=rectangle",
+      "--out=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/boundary-flux-app/strict-failure",
+      "--target-cells=1000",
+      "--flow=custom",
+      "--flow-boundary-preset=pressure-half-channel",
+      "--flow-max-iterations=1",
+      "--flow-require-converged=true"
+    ],
+    "returncode": 1,
+    "elapsedSeconds": 1.5477773329985212,
+    "expectedRejection": true
+  },
+  "validation": {
+    "ctestPassed": 145,
+    "ctestTotal": 145,
+    "ctestSeconds": 44.27,
+    "frontendPassed": 171,
+    "frontendTotal": 171,
+    "openFoamRun": false,
+    "macOnly": true
+  },
+  "packagedNative": {
+    "cartmesh2d_transport_cli": "5579d217817c4d4b8dac96abc698c9c77ae8efefb17e01a3c6282e9a3803df9b",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "3c3eed738dc0b04adb3043c4c34d71948d6c6edec7e98dd930bfd4f6cef19c28",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  }
+}

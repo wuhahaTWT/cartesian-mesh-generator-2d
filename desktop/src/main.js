@@ -1167,7 +1167,9 @@ async function runSmoke() {
         await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());
         await fs.writeFile(shot + '.json', JSON.stringify(report, null, 2));
       }
-      console.log(JSON.stringify(report, null, 2));
+      if (argument('flow-require-converged')==='true' && !report.flow?.summary?.converged)
+      throw new Error('App acceptance requires a converged flow; diagnostic output is retained.');
+    console.log(JSON.stringify(report, null, 2));
       await mainWindow.webContents.executeJavaScript('window.__rasterSmoke.cancel()');
       await fs.rm(sessionDirectory, { recursive: true, force: true });
       app.exit(0); return;
@@ -1256,6 +1258,8 @@ async function runSmoke() {
       })()`);
       if (!report.flow.smallWindowLayout.separated) throw new Error('Transient monitor overlaps the result summary');
     }
+    if (argument('flow-require-converged')==='true' && !report.flow?.summary?.converged)
+      throw new Error('App acceptance requires a converged flow; diagnostic output is retained.');
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (Math.abs(report.layout.geometry.bodyHeight - report.layout.geometry.innerHeight) > 1 ||
@@ -1284,6 +1288,16 @@ async function runSmoke() {
           if (!loads?.length || !result.innerText.includes('力矩')) throw new Error('Wall loads did not reach the actual App');
           for (const load of loads) if (!result.innerText.includes(load.name)) throw new Error('Missing named wall load in App');
           result.scrollIntoView({block:'end'});
+        })()`);
+      }
+      if (argument('flow-flux-shot')) {
+        mainWindow.setSize(1320,900);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript(`(() => {
+          const result=document.getElementById('flowResult'), summary=window.__smoke.state.flow?.summary;
+          if(!summary?.namedBoundaryFluxes?.length || !result.innerText.includes('净流量'))throw new Error('Boundary flux did not reach App');
+          for(const flux of summary.namedBoundaryFluxes)if(!result.innerText.includes(flux.name+' · 净流量'))throw new Error('Missing named boundary flux in App');
+          [...result.querySelectorAll('div')].find(row=>row.innerText.includes('边界体积流量'))?.scrollIntoView({block:'start'});
         })()`);
       }
       if (argument('flow-boundary-shot')) {

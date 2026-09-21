@@ -886,6 +886,14 @@ function renderFlowResult(summary) {
     rows.push(['回流出口面数', String(summary.outletBackflowFaces)]);
   if (summary.outletInflow !== undefined)
     rows.push(['出口流入量（m²/s）', summary.outletInflow]);
+  if (summary.namedBoundaryFluxes) {
+    rows.push(['边界体积流量', '每单位厚度；净流出为正，净流入为负']);
+    for(const flux of summary.namedBoundaryFluxes) {
+      rows.push([`${flux.name} · 净流量（m²/s）`,flux.net],
+        [`${flux.name} · 流入／流出（m²/s）`,`${flux.inflow.toExponential(3)} / ${flux.outflow.toExponential(3)}`],
+        [`${flux.name} · 平均法向速度（m/s）`,flux.normalMeanVelocity]);
+    }
+  }
   if (summary.namedWallLoads) {
     rows.push(['壁面载荷', '流体作用于壁面；力÷ρ÷单位厚度'],
       ['力矩基准', '原点 (0,0)，逆时针为正']);

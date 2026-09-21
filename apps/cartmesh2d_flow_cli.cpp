@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <string>
 
@@ -496,6 +497,32 @@ int main(int argc, char** argv) {
                 summary << "{\"face\":" << b.face << ",\"type\":" << std::quoted(fv::flowBoundaryKindName2D(b.kind))
                         << ",\"name\":" << std::quoted(b.name) << ",\"u\":" << b.velocity.x
                         << ",\"v\":" << b.velocity.y << ",\"p\":" << b.pressure << '}';
+            }
+            summary << "],\n";
+            struct BoundaryFlux {
+                std::size_t faces = 0;
+                double length = 0, inflow = 0, outflow = 0, net = 0;
+            };
+            std::map<std::string, BoundaryFlux> boundaryFluxes;
+            for (const auto& b : controls.boundaryConditions) {
+                auto& item = boundaryFluxes[b.name];
+                const auto& face = mesh.faces[b.face];
+                const double q = r.flux[b.face];
+                ++item.faces;
+                item.length += std::hypot(face.areaVector.x, face.areaVector.y);
+                item.inflow += std::max(0., -q);
+                item.outflow += std::max(0., q);
+                item.net += q;
+            }
+            summary << "\"boundaryFluxDefinition\":\"m2/s per unit depth; outward positive; inflow/outflow nonnegative; corrected face flux\",\n\"namedBoundaryFluxes\":[";
+            comma = false;
+            for (const auto& [name, item] : boundaryFluxes) {
+                if (comma) summary << ',';
+                comma = true;
+                summary << "{\"name\":" << std::quoted(name) << ",\"faces\":" << item.faces
+                    << ",\"length\":" << item.length << ",\"inflow\":" << item.inflow
+                    << ",\"outflow\":" << item.outflow << ",\"net\":" << item.net
+                    << ",\"normalMeanVelocity\":" << item.net/item.length << '}';
             }
             summary << "],\n";
             summary << "\"wallLoadReference\":[0,0],\n\"wallLoadDefinition\":\"fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise\",\n\"namedWallLoads\":[";

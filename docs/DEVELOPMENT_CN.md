@@ -957,3 +957,11 @@ App选择“命名边界→压差驱动通道：两端静压→从预设生成�
 App复用`examples/acceptance/rectangle.xy`作为2×1m矩形内流示例，选择“命名边界→压差驱动半通道：顶部对称”。该模板先通过原生矩形通道几何门，再将上下壁中的顶部独立分组为对称面、底部保持无滑移。用户可以编辑任意已有命名组为轴对齐对称类型，不能用倾斜曲壁近似对称平面。
 
 `tools/verification/verify_symmetry_flow.py --output outputs/native-flow/<fresh-directory>`在独立64/256/1,024格矩形上验证L=4、H=1、nu=.1、压差1.2的u=1.5y(2−y)、Q=1；另将两侧都设为自由滑移，从静止用dt=.02推进三步，核对u=.3t以及1+2步与3步检查点逐字节一致。每命令180秒、全研究600秒、30MiB、磁盘至少5GiB；测试三种格式入口为`cartmesh2d_symmetry_flow_cli`。作图复用`render_pressure_openings.py`，自动识别半通道参考，并先重新审核源文件与离散方程。
+
+### 命名边界流量（0.4.26）
+
+原生流动CLI在custom摘要添加`namedBoundaryFluxes`和`boundaryFluxDefinition`：每组`faces`、实际边长`length`、非负`inflow`/`outflow`、带符号`net`、`normalMeanVelocity=net/length`。正方向为流体域向外；流量单位是m²/s每单位厚度，法向平均速度m/s。它们直接积分求解器修正后的面通量，局部流入与流出分别保留，不从单元中心速度近似或把净量当作两者之和。壁面/对称面严格不穿透。密度未参与，所以不是质量流量。
+
+独立读取器从最终CM2D几何和faces.csv重算每组数据；前端核对分组、量纲声明、正负号、平均速度和全局汇总。旧记录可以缺少整套字段，审核明确记为unavailable；只保留半套字段或篡改数值会失败。真实新程序均输出并在App结果区域显示，随现有JSON/ZIP一起导出。原求解方程不变，2,784格喷管与0.4.25冻结程序的六种实际场/历史文件逐字节一致。
+
+真实App验收可追加`--flow-require-converged=true`；出现未收敛诊断场时返回非零退出码，避免只凭场被显示便认定计算完成。`--flow-flux-shot=true`检查所有命名组的流量已经进入实际结果界面并定位截图。默认smoke仍可用于验证故意未收敛、取消和失败显示。
