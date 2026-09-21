@@ -2,6 +2,15 @@
 
 更新：2026-09-22。本文件是唯一当前状态入口。历史过程交给 Git；具体数字只适用于下列输入、参数、工具链和证据快照。
 
+## 本轮交付快读
+
+- 当前本机安装包：`desktop/dist/CartMesh2D-0.4.38-arm64-mac.zip`，未签名，原生最低macOS27.0。包内六程序与build/runtime哈希一致；0.4.37精确回退包保留。源码/产品里程碑`f4708ce`，跨平台测试追加见下方，均在`codex/cfd-development`，未合并main。
+- **纯笛卡尔背景网格已补齐**：均匀/四叉树自适应，内部单元保留，分类预览与JSON/VTK/PNG/ZIP；不是浸入边界求解器，背景不直接做绕流CFD。[实际网格](../artifacts/current/background-matched-performance.png)。
+- **十万格不可压层流已有完整提速证据**：102,017格曲壁喷管，同实际粗初值链与tol1e-10，总CFD840.87→411.37秒，约2.04倍；含共同网格生成约1.92倍。缓存前后场与残差字节一致，独立方程通过。任意喷管绝对物理精度未认证。[成本与真实场](../artifacts/current/native-laminar-gradient-cache.png)。102,400格规则通道另有同精度2.43倍；十万格短时间非定常通过，但提速较小。
+- 最终三平台各原生156/156、前端184/184，打包及五类真实App全部通过。macOS另实测CFD保存、重算、失败保留、取消续算和导出；跨平台打包烟雾不等于跨平台CFD交互已逐项实测。
+- **尚未闭环**：细圆环压力L2为2.776%，高于原0.5%门，默认4次校正仍不稳；喷管/圆环标准checkMesh通过，但扩展几何/拓扑检查失败。50万格仅为预算探测，未收敛；曲壁粗细映射仍为研究脚本，不是App自动功能。本轮未把这些问题宣称完成。[圆环定位](../artifacts/current/native-annulus-error-localization.png)。
+- 研究改动均已恢复；下一步先修曲壁近壁压力精度和外部扩展网格缺陷，再考虑新创新点。新的流动形式未扩展，旧归档未发布或删除。
+
 ## 交付定位与唯一工作区
 
 当前交付是**有明确支持范围的原生二维工程验证版**。近期目标的无量纲尺寸、万级至十万级真实网格、有限扰动、桌面导出和实际 CFD 验证已经形成可复核证据；工业级通用精度和鲁棒性仍需持续完善。
@@ -94,17 +103,19 @@
 
 ### 最新外部验收与 Windows 收尾
 
-跨平台打包验收脚本补入本轮新背景模式；本地0.4.38五类真实App（PNG/JPG/Cut-cell、混合、均匀背景16,384格、自适应背景1,168格）全部通过。背景独立覆盖/分类/2:1、内部保留、JSON/VTK/PNG/ZIP和三个求解入口拒绝均检查；背景导出OpenFOAM单元按设计为0，预览/背景JSON单元一致。Windows/Linux补充验收待CI返回。[实际本地结果](../artifacts/current/background-platform-smoke.json)。
+最终[桌面CI](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541)绑定`5c349e5`：Windows2022 x64、Ubuntu22.04 x64、macOS14 arm64均原生156/156、前端184/184、打包与五类真实App通过。已下载原始小型证据ZIP，CRC、摘要、独立读取器逐项核对，三平台均匀/自适应背景为16,384/1,168格，内部保留且不导出流体拓扑。[Windows实图](../artifacts/current/background-platform-windows.png) · [Linux实图](../artifacts/current/background-platform-linux.png)。该烟雾覆盖网格/导出/布局/求解入口拒绝，不执行CFD交互；原生CFD由各平台CTest验证，本地macOS另有完整CFD App验证。中间`9891380`批次被新增背景验收替代并由workflow取消，不算通过；最终批次覆盖全部修复。
 
-`f4708ce`原生CI通过，15个H4代表例通过OpenFOAM v2606标准`checkMesh`；这不包含十万格喷管、细圆环，也不等于`allGeometry/allTopology`或CFD精度认证。相同提交的Linux及macOS14 arm64完成原生/前端测试、打包和真实包启动检查。Windows2022 x64已编译成功，原生154/156；两个失败定位为tar测试清单使用主机分隔符，以及把Windows强制终止误当POSIX SIGTERM。已改为POSIX归档键，并在所有平台增加取消后检查点恢复与独立守恒/均匀场审核；POSIX取消状态检查保留。Windows强制终止只保证已保存检查点，不保证新取消摘要或最终场。本地相关测试通过，Windows复跑待返回；未改求解器或质量门。[外部状态与失败范围](../artifacts/current/native-ci-local-recheck.json)。
+跨平台打包验收脚本补入本轮新背景模式；本地0.4.38五类真实App（PNG/JPG/Cut-cell、混合、均匀背景16,384格、自适应背景1,168格）全部通过。背景独立覆盖/分类/2:1、内部保留、JSON/VTK/PNG/ZIP和三个求解入口拒绝均检查；背景导出OpenFOAM单元按设计为0，预览/背景JSON单元一致。最终`5c349e5`三平台补充验收全部通过。[本地与三平台原始结果](../artifacts/current/background-platform-smoke.json)。
 
-`4d30825`复跑中Windows原生156/156通过，前端183/184：原测试按LF空行截取函数，在CRLF检出上误读后续Viewport代码。已统一测试源码换行，并增加LF/CRLF两种输入和截取边界断言；本地前端184/184通过，下一轮Windows打包待返回。两次修复均只涉及测试契约，产品二进制仍为已实测0.4.38。
+`f4708ce`原生CI通过，15个H4代表例通过OpenFOAM v2606标准`checkMesh`；这不包含十万格喷管、细圆环，也不等于`allGeometry/allTopology`或CFD精度认证。相同提交的Linux及macOS14 arm64完成原生/前端测试、打包和真实包启动检查。Windows2022 x64已编译成功，原生154/156；两个失败定位为tar测试清单使用主机分隔符，以及把Windows强制终止误当POSIX SIGTERM。已改为POSIX归档键，并在所有平台增加取消后检查点恢复与独立守恒/均匀场审核；POSIX取消状态检查保留。Windows强制终止只保证已保存检查点，不保证新取消摘要或最终场。本地相关测试通过，最终Windows复跑也通过；未改求解器或质量门。[外部状态与失败范围](../artifacts/current/native-ci-local-recheck.json)。
+
+中间`4d30825`复跑中Windows原生156/156通过，前端183/184：原测试按LF空行截取函数，在CRLF检出上误读后续Viewport代码。已统一测试源码换行，并增加LF/CRLF两种输入和截取边界断言；本地前端184/184通过，最终批次已通过。两次修复均只涉及测试契约，产品二进制仍为已实测0.4.38。
 
 本机已对保留的102,017格喷管与6,208格圆环实际导出polyMesh运行缓存OpenFOAM v2606：标准`checkMesh`两例PASS，`-allGeometry -allTopology`两例FAIL。喷管4,301个凹单元提示，另有16个短边点；圆环84个凹单元。独立二维转角检查显示喷管提示全部是内部近共线边的微小负转角（最小约-7.3e-14），但不能据此撤销外部FAIL。圆环24个明显凹多边形贡献37.77%的压力平方误差，未被标记的邻壁单元仍贡献43.67%，不能认定凹单元是唯一原因。[标准/扩展原始日志与网格SHA](../artifacts/current/native-current-checkmesh.json) · [实际圆环误差定位](../artifacts/current/native-annulus-error-localization.png)。
 
 有界研究以稳定一次校正/.2松弛重试更严格梯度方向条件4及内部单元扩展，512轮收敛但压力L2仍2.7447%，超过原.5%门；未采用。已恢复原源码，重建flow程序SHA与0.4.38包内一致。研究补丁/输入/结果保留，不把原独立方程审核器用于不同重构政策的通过声明。
 
-本轮安装包逐版核验源码提交、保留功能证据和ZIP CRC后，仅清除0.4.31—0.4.36的ZIP及blockmap，共658.99MiB；保留0.4.30背景里程碑、0.4.37回退和0.4.38当前包，此前0.4.11/0.4.13—0.4.28旧包、输入、失败案例及旧归档均未动。删除的历史二进制不承诺能由源码精确恢复；逐文件SHA与依据在`outputs/laminar-performance/dense-cutcell/package-retention.json`。已完成场与检查点继续无损gzip并SHA回读，最新恢复索引`final-payload-compressed.json`与`annulus-final-compressed.json`。
+本轮安装包逐版核验源码提交、保留功能证据和ZIP CRC后，仅清除0.4.31—0.4.36的ZIP及blockmap，共658.99MiB；保留0.4.30背景里程碑、0.4.37回退和0.4.38当前包，此前0.4.11/0.4.13—0.4.28旧包、输入、失败案例及旧归档均未动。删除的历史二进制不承诺能由源码精确恢复；逐文件SHA与依据在`outputs/laminar-performance/dense-cutcell/package-retention.json`。已完成场与检查点继续无损gzip并SHA回读，最新恢复索引`final-payload-compressed.json`、`annulus-final-compressed.json`、`final-preview-payload-compressed.json`及`dense-cutcell/final-dense-mesh-compressed.json`。最终三平台证据ZIP保留，本轮新增实验输出约1GiB以内；本轮启动的Docker已正常关闭，无活动容器。
 
 ### 本轮收尾：压力校正次数、细圆环与旧CI失败
 

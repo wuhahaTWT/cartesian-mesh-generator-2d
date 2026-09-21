@@ -185,5 +185,546 @@
   "scope": "Actual local packaged0.4.38, PNG/JPG/hybrid plus full Cartesian uniform/adaptive. Background independent coverage/classification/balance and solid-cell retention; all three solver entrypoints reject. This packaged smoke does not execute CFD.",
   "version": "0.4.38",
   "appSha256": "b901c246042d1eb71ab0d098ca0331726b41eec8339ccc3ba8a0a46f9040577b",
-  "crossPlatformRun": "pending"
+  "crossPlatformRun": {
+    "commit": "5c349e5d00fcad78d14e3a5eada0389a6ac59502",
+    "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541",
+    "conclusion": "success",
+    "evidence": [
+      {
+        "platform": "mac",
+        "archive": "outputs/laminar-performance/dense-cutcell/ci-final-mac-evidence.zip",
+        "archiveSha256": "093f03a7b3c0630864a1926a51afdd54e569f967d260c65512df679201520546",
+        "zipCrc": "PASS",
+        "summary": {
+          "platform": "darwin",
+          "cases": [
+            {
+              "case": "png",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 200,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "b27e7ed6ce37f61dc9e3fa5eb327ee7b363acafc9843e51b02a2859ad7fc5815"
+            },
+            {
+              "case": "jpg",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 200,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "3ca81cb1444720589718821c50949f74d1704b40e07e05e02066103d23fc424d"
+            },
+            {
+              "case": "hybrid",
+              "cells": 6076,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 200,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 6076,
+                "exportedCells": 6076,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "5187797c9c19a040c5df94c7b3fbcefb069b2714970b78a3e3ca5d1b13f28781"
+            },
+            {
+              "case": "background-uniform",
+              "cells": 16384,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 211.625,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 16384,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "d7ef2ce4545eae9101d93014d50c9be514c71c317b28a98940be56106c453bb2"
+            },
+            {
+              "case": "background-adaptive",
+              "cells": 1168,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 200,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 1168,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "df79f2e4ae0b1dd96d038cf12d73c680e53d864e555f1e046af1b94b49fb1a8c"
+            }
+          ],
+          "externalCheckMesh": "not_run",
+          "cfd": "not_run"
+        },
+        "backgroundReaders": {
+          "outputs/platform-smoke/中文 路径/background-adaptive/reader.json": {
+            "cells": 1168,
+            "counts": [
+              556,
+              352,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 1168
+          },
+          "outputs/platform-smoke/中文 路径/background-uniform/reader.json": {
+            "cells": 16384,
+            "counts": [
+              13060,
+              3064,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 16384
+          }
+        }
+      },
+      {
+        "platform": "linux",
+        "archive": "outputs/laminar-performance/dense-cutcell/ci-final-linux-evidence.zip",
+        "archiveSha256": "7afc4fdd6cacfbe7f9176854f34282cabcad23ca48e4caec3dbea3c70a790dcf",
+        "zipCrc": "PASS",
+        "summary": {
+          "platform": "linux",
+          "cases": [
+            {
+              "case": "png",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 198,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "786610f9b651590a2a9accc8d8b90ee0e980e063aa85b4070b2a62fa19f8ddc4"
+            },
+            {
+              "case": "jpg",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 198,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "34481230ba59e5c7500efff4c29d319502548d5e603cc47da142bf86aa08beec"
+            },
+            {
+              "case": "hybrid",
+              "cells": 6076,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 198,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 6076,
+                "exportedCells": 6076,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "5e70dbdf438a639fe5ef13d38f322d202785e0a575e74a8f88a11d2e5ba97469"
+            },
+            {
+              "case": "background-uniform",
+              "cells": 16384,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 209.625,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 16384,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "52fe29be24e2912af3884084699e389eac4aa6869fe55d3e01078026cf356e37"
+            },
+            {
+              "case": "background-adaptive",
+              "cells": 1168,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 560,
+                "windowHeight": 560,
+                "geometry": {
+                  "bodyHeight": 560,
+                  "innerHeight": 560,
+                  "canvasHeight": 198,
+                  "shellBottom": 560
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 1168,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "367427f021c8ff47f885196bf852fe075c12a107cc3330fd0025b0da87ef2542"
+            }
+          ],
+          "externalCheckMesh": "not_run",
+          "cfd": "not_run"
+        },
+        "backgroundReaders": {
+          "outputs/platform-smoke/中文 路径/background-adaptive/reader.json": {
+            "cells": 1168,
+            "counts": [
+              556,
+              352,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 1168
+          },
+          "outputs/platform-smoke/中文 路径/background-uniform/reader.json": {
+            "cells": 16384,
+            "counts": [
+              13060,
+              3064,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 16384
+          }
+        }
+      },
+      {
+        "platform": "windows",
+        "archive": "outputs/laminar-performance/dense-cutcell/ci-final-windows-evidence.zip",
+        "archiveSha256": "3361e061421a9b3f290d356c685fb10afc16bcc68930a9e650e0ccc735fe8726",
+        "zipCrc": "PASS",
+        "summary": {
+          "platform": "win32",
+          "cases": [
+            {
+              "case": "png",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 521,
+                "windowHeight": 521,
+                "geometry": {
+                  "bodyHeight": 521,
+                  "innerHeight": 521,
+                  "canvasHeight": 170.703125,
+                  "shellBottom": 521
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "f7fbee279a21c8777a5b2dadedda2647eaa7419933fe7b8e6799068487cac31b"
+            },
+            {
+              "case": "jpg",
+              "cells": 5210,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 521,
+                "windowHeight": 521,
+                "geometry": {
+                  "bodyHeight": 521,
+                  "innerHeight": 521,
+                  "canvasHeight": 170.703125,
+                  "shellBottom": 521
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 5210,
+                "exportedCells": 5210,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "8c1bafa41d1a9b05453fb41f726512c2fcc854e2f344de103f7928ab0215a8fa"
+            },
+            {
+              "case": "hybrid",
+              "cells": 6076,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 521,
+                "windowHeight": 521,
+                "geometry": {
+                  "bodyHeight": 521,
+                  "innerHeight": 521,
+                  "canvasHeight": 170.703125,
+                  "shellBottom": 521
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 6076,
+                "exportedCells": 6076,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "2f83b28df7bad2e29055b8ee001d9e2b0670df89f0975e4feeddb0a85f319c50"
+            },
+            {
+              "case": "background-uniform",
+              "cells": 16384,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 521,
+                "windowHeight": 521,
+                "geometry": {
+                  "bodyHeight": 521,
+                  "innerHeight": 521,
+                  "canvasHeight": 170.703125,
+                  "shellBottom": 521
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 16384,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "ba67ba11e974f8dbc68c87e9ac9aa8b93c202da5cfbf405533a642bd6b23e547"
+            },
+            {
+              "case": "background-adaptive",
+              "cells": 1168,
+              "independentReader": true,
+              "layout": {
+                "bottomReachable": true,
+                "pageHeight": 521,
+                "windowHeight": 521,
+                "geometry": {
+                  "bodyHeight": 521,
+                  "innerHeight": 521,
+                  "canvasHeight": 170.703125,
+                  "shellBottom": 521
+                },
+                "wallpaper": {
+                  "image": "none",
+                  "canvasBackground": "rgb(251, 252, 248)",
+                  "welcomeHidden": true
+                },
+                "previewCells": 1168,
+                "exportedCells": 0,
+                "sidebarCollapsed": false,
+                "sidebarExpanded": true
+              },
+              "sha256": "48350616e99e8c244defb1548e06d0ab4f2d151a07fb4bd07c561de39e03aa21"
+            }
+          ],
+          "externalCheckMesh": "not_run",
+          "cfd": "not_run"
+        },
+        "backgroundReaders": {
+          "outputs/platform-smoke/中文 路径/background-adaptive/reader.json": {
+            "cells": 1168,
+            "counts": [
+              556,
+              352,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 1168
+          },
+          "outputs/platform-smoke/中文 路径/background-uniform/reader.json": {
+            "cells": 16384,
+            "counts": [
+              13060,
+              3064,
+              260
+            ],
+            "full_domain_coverage": true,
+            "classification_checked": true,
+            "balanced": true,
+            "solver_ready": false,
+            "valid": true,
+            "cell_count": 16384
+          }
+        }
+      }
+    ]
+  },
+  "verifiedPlatformScreenshots": [
+    {
+      "platform": "windows",
+      "mode": "uniform",
+      "path": "artifacts/current/background-platform-windows.png",
+      "sourceMember": "outputs/platform-smoke/中文 路径/background-uniform/app.png",
+      "sha256": "3e8fc3804912f40e8520c703103408392404556de5824608c8b69be91f44bffc"
+    },
+    {
+      "platform": "linux",
+      "mode": "adaptive",
+      "path": "artifacts/current/background-platform-linux.png",
+      "sourceMember": "outputs/platform-smoke/中文 路径/background-adaptive/app.png",
+      "sha256": "3fa8df72db7fea797f37e8a5da3dcd1e44f1e6e3d9bcf2649a323bf7d1713f9e"
+    }
+  ]
 }

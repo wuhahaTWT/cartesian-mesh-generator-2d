@@ -1055,3 +1055,10 @@ CLI使用`--steady-acceleration anderson`，省略或`none`保持普通SIMPLE；
 同时将已用于非定常的动量线性每行`abs(b-Au)/aP <= .01*tolerance*Uref*alphaU`约束用于稳态，既有全局线性残差门保留。否则严格稳态停止门可能仍未达到，而线性求解已经返回零更新。保留64格half-channel、upwind、nu=.1、tol1e-11的5000轮停滞，修正后990轮收敛。
 
 `cartmesh2d_steady_acceleration_cli`独立审核三种对流的原动量/连续性、与普通SIMPLE的场差及不支持的选项；`flow_boundary`核对变形半通道、旋转、压力平移与封闭顶盖腔。当前真实对照与原始命令在`outputs/native-flow/anderson-suite-current/`及同名完成归档；`render_steady_acceleration.py --study <directory> --output <png>`先核对各文件哈希和半通道方程再绘图。不要把单次本机运行时间当成其他工况的保证。App验收可加`--flow-steady-acceleration=anderson --flow-acceleration-shot=true --flow-require-converged=true --flow-case-check=true`，实际检查开关、加速计数、工况修改后重载及重复场。
+
+
+### 本轮性能证据复现与压缩恢复
+
+0.4.38曲壁缓存基准使用的当前flow CLI SHA256为`7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c`；旧0.4.37为`7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972`，已确认保留的0.4.37 ZIP中`CartMesh2D.app/Contents/Resources/bin/cartmesh2d_flow_cli`成员精确匹配。现在`desktop/runtime/bin`已经是新版，不能直接当旧二进制。忽略提交的`outputs/laminar-performance/dense-cutcell/benchmark-gradient-cache.py`复现辅助脚本已在启动前核对这两个SHA，可用第三个参数显式选择提取的旧二进制，并须给新的输出标签；已有结果不可覆盖。完整命令、实际粗解/映射成本和字段哈希在提交的`native-laminar-gradient-cache.json`，性能不能外推到不同网格或松弛设置。
+
+已完成实验的大数值文件以同名`.gz`保存，压缩索引记录原路径、原SHA256和字节数；最新索引在`outputs/laminar-performance/`的`final-payload-compressed.json`、`annulus-final-compressed.json`、`final-preview-payload-compressed.json`及两个`final-platform-*/compressed-payloads.json`。使用前仅恢复所需单个文件，先对解压字节核对索引SHA，再写入不存在的原路径，保留`.gz`；不要批量展开全部历史输出。新重复场使用`*.canonical-fields.json`指向逐字节验证过的保留场。打包烟雾检查的`extraction-reference.json`逐文件绑定保留ZIP成员与SHA，移除的只是这次验证产生的重复解压副本；旧归档恢复能力不由这些记录证明。

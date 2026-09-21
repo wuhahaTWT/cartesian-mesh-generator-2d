@@ -2317,5 +2317,13 @@
     "v": 2.0723024463098483e-08,
     "p": 4.9140186808571684e-08
   },
-  "imageReview": "Actual mesh/field and timing plots inspected; multiline labels fixed to prevent overlap."
+  "imageReview": "Actual mesh/field and timing plots inspected; multiline labels fixed to prevent overlap.",
+  "baselineRecovery": {
+    "package": "desktop/dist/CartMesh2D-0.4.37-arm64-mac.zip",
+    "member": "CartMesh2D.app/Contents/Resources/bin/cartmesh2d_flow_cli",
+    "binarySha256": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+    "scope": "Read exact native CLI member from retained0.4.37 ZIP; matches old fresh dense timing. No new performance run. Current runtime must not be used as old baseline. Benchmark helper now checks expected binary SHA before launch; optional third argument selects extracted baseline.",
+    "helperSha256": "e19987f59372bac073c4cb3b69849c8a3851a1c1abed5ca7c3c3d5b80eefbdbc",
+    "wrongCurrentRuntimeRejectedBeforeSolve": true
+  }
 }

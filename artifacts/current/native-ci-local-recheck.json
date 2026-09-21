@@ -200,7 +200,7 @@
       "native": "156/156 PASS",
       "frontend": "183/184; CRLF-dependent renderer source extraction failed",
       "fix": "Normalize checkout CRLF before extracting test functions, assert extraction bounds and exercise LF/CRLF; local184/184 PASS. Product unchanged.",
-      "nextRun": "pending"
+      "nextRun": "Superseded by final5c349e5 batch: all three platforms pass; see finalExternalValidation."
     },
     "limitations": [
       "Native CI checkMesh covers H4 cases, not dense nozzle or fine annulus.",
@@ -208,5 +208,69 @@
       "Windows Euler hard stop retains saved checkpoint; no guarantee of fresh cancelled summary or final fields."
     ],
     "retrieval": "Native full log saved and fifteen Mesh OK outputs checked; macOS/Linux packaged smoke summaries downloaded and read; Windows failure logs retained."
+  },
+  "finalExternalValidation": {
+    "commit": "5c349e5d00fcad78d14e3a5eada0389a6ac59502",
+    "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541",
+    "conclusion": "success",
+    "platforms": [
+      {
+        "name": "desktop (windows-2022, win, x64)",
+        "jobUrl": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541/job/106556862967",
+        "conclusion": "success",
+        "nativeTests": "156/156",
+        "frontendTests": "184/184",
+        "packagedCases": [
+          "png",
+          "jpg",
+          "hybrid",
+          "background-uniform",
+          "background-adaptive"
+        ]
+      },
+      {
+        "name": "desktop (macos-14, mac, arm64)",
+        "jobUrl": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541/job/106556863240",
+        "conclusion": "success",
+        "nativeTests": "156/156",
+        "frontendTests": "184/184",
+        "packagedCases": [
+          "png",
+          "jpg",
+          "hybrid",
+          "background-uniform",
+          "background-adaptive"
+        ]
+      },
+      {
+        "name": "desktop (ubuntu-22.04, linux, x64)",
+        "jobUrl": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541/job/106556863300",
+        "conclusion": "success",
+        "nativeTests": "156/156",
+        "frontendTests": "184/184",
+        "packagedCases": [
+          "png",
+          "jpg",
+          "hybrid",
+          "background-uniform",
+          "background-adaptive"
+        ]
+      }
+    ],
+    "nativeTestSeconds": {
+      "windows": 172.78,
+      "macos14arm64": 115.39,
+      "linux": 136.29
+    },
+    "fullLog": "outputs/laminar-performance/dense-cutcell/ci-final.log",
+    "fullLogSha256": "e6f6b010f227c3f5025b249987d18136f9a12ff73bc8e05b0d9fb2a0c0385d1a",
+    "evidenceRead": "outputs/laminar-performance/dense-cutcell/ci-final-independent-read.json",
+    "packagedCfd": "not run in platform CI; separately verified on local macOS App",
+    "supersededRun": {
+      "conclusion": "cancelled",
+      "headSha": "98913806614e00f4bddeb78fb39caaf8556bd214",
+      "status": "completed",
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667136929"
+    }
   }
 }
