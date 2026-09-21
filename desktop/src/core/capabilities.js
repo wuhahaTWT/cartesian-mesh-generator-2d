@@ -7,9 +7,16 @@
 const SAFE_WALL_LEVEL = 11;
 
 const METHODS = Object.freeze({
+  background: {
+    id: 'background', label: '纯笛卡尔背景网格', executable: 'cartmesh2d_cli',
+    status: 'beta', statusLabel: 'Beta', safeWallLevel: 10,
+    summary: '完整保留物体内外的矩形单元，几何分类；不裁切、不生成流体求解拓扑。',
+    supports: { sizeField: false, boundaryLayer: false, openFoam: false },
+    defaults: { backgroundMode: 'adaptive', maxLevel: 8, minimumLevel: 4, paddingFraction: 0.5 }
+  },
   cutcell: {
     id: 'cutcell',
-    label: '纯 Cut-cell',
+    label: '笛卡尔 Cut-cell',
     executable: 'cartmesh2d_cli',
     status: 'stable',
     statusLabel: '稳定',

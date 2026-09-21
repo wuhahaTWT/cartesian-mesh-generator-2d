@@ -93,6 +93,16 @@ function validateJob(request) {
   };
   if (!job.geometryPath) throw new Error('请先选择几何文件或内置样例。');
 
+  if (method.id === 'background') {
+    job.fluidRegion = 'exterior';
+    job.backgroundMode = request.backgroundMode ?? 'adaptive';
+    if (!['uniform','adaptive'].includes(job.backgroundMode)) throw new Error('未知背景网格模式。');
+    job.maxLevel = number(request.backgroundLevel ?? 8, '背景网格层级', {min:1,max:job.backgroundMode==='uniform'?9:10,integer:true});
+    job.minimumLevel = job.backgroundMode==='uniform' ? job.maxLevel : number(request.backgroundMinimumLevel ?? 4, '全域最低层级', {min:0,max:Math.min(8,job.maxLevel),integer:true});
+    job.paddingFraction = number(request.backgroundPadding ?? 0.5, '域留白 / 体长', {min:0.01,max:100});
+    return {job, method};
+  }
+
   if (request.sizingMode === 'relative') {
     job.relativeSizing = true;
     const { field, budget } = validateSizeField(request, method.safeWallLevel);
@@ -186,6 +196,13 @@ function refineBoxArgs(field, frame) {
 // its solver partition inside `if (openFoamCase)`, so omitting the case would also
 // omit the Solver quality report consumed by the desktop app.
 function buildInvocation(job, paths, options = {}) {
+  if(job.method === 'background') {
+    if(options.dryRun) throw new Error('背景网格直接按层级生成，不使用壁面尺寸场探测。');
+    return { executable:'cartmesh2d_cli', args:[paths.xyPath,paths.prefix,String(job.maxLevel),
+      String(job.paddingFraction),'0.1','exterior','-',String(job.minimumLevel),'--background-grid',job.backgroundMode],
+      cm2dCandidates:[], backgroundPath:`${paths.prefix}.background.json` };
+  }
+
   if (job.method === 'cutcell') {
     return {
       executable: 'cartmesh2d_cli',

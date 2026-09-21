@@ -1,0 +1,48 @@
+{
+  "status": "生成完成",
+  "detail": "手动生成成功；可导出结果包　0.15 s",
+  "counters": "完整单元\n23,632\n外部\n15,824\n内部\n5,756\n相交（未裁切）\n2,052",
+  "gates": "背景网格\n已生成\n详情",
+  "histogram": "每层级单元数\nL7\n15,868\nL8\n1,192\nL9\n2,460\nL10\n4,112",
+  "log": "已读入 1 个闭合环（顶点 32）\n源单位 m，输出单位 m（换算 1）；保留物理尺寸。\n正在生成纯笛卡尔背景网格网格…\nmesh_mode=background-adaptive\nsolver_ready=false\nretains_solid_interior=true\nleaf_count=23632\ninside_cells=5756\noutside_cells=15824\nintersected_cells=2052\nbackground_area=16\ndomain_area=16\nrefinement_seconds=0.0088677919999999993\nbalance_seconds=0.017863875000000001\nwrite_seconds=0.12529837499999999\ntotal_seconds=0.15344604100000001\nbackground_json=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-final-visible/mesh-Y2Bf6J/circle.background.json\nvtk=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-final-visible/mesh-Y2Bf6J/circle.background.vtk\n完整笛卡尔背景网格已生成；内部单元保留，未生成流体求解拓扑。\n",
+  "cellBudget": null,
+  "adaptive": null,
+  "initialVortex": null,
+  "flowCase": null,
+  "bundledChineseFontLoaded": true,
+  "theme": "modern",
+  "interactionChecks": false,
+  "euler": null,
+  "thermal": null,
+  "flow": null,
+  "background": {
+    "rejected": [
+      "runFlow",
+      "runThermal",
+      "runEuler"
+    ],
+    "displayMode": "classification",
+    "panelsHidden": true,
+    "legend": "外部 15,824　\n内部 5,756　\n相交 2,052　"
+  },
+  "layout": {
+    "bottomReachable": true,
+    "pageHeight": 560,
+    "windowHeight": 560,
+    "geometry": {
+      "bodyHeight": 560,
+      "innerHeight": 560,
+      "canvasHeight": 200,
+      "shellBottom": 560
+    },
+    "wallpaper": {
+      "image": "none",
+      "canvasBackground": "rgb(251, 252, 248)",
+      "welcomeHidden": true
+    },
+    "previewCells": 23632,
+    "exportedCells": 0,
+    "sidebarCollapsed": false,
+    "sidebarExpanded": true
+  }
+}

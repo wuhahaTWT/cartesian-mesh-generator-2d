@@ -91,6 +91,14 @@
 
     </section>
 
+    <section class="block" id="backgroundBlock" hidden>
+      <h2>完整笛卡尔背景网格</h2>
+      <label class="field">加密方式<select id="backgroundMode"><option value="adaptive">四叉树局部加密</option><option value="uniform">全域均匀网格</option></select></label>
+      <label class="field">最高层级<input id="backgroundLevel" type="number" min="1" max="10" step="1" value="8"></label>
+      <label class="field">全域最低层级<input id="backgroundMinimumLevel" type="number" min="0" max="8" step="1" value="4"></label>
+      <label class="field">计算域留白 / 体长<input id="backgroundPadding" type="number" min="0.01" max="100" step="any" value="0.5"></label>
+      <p class="note">完整保留模型内部单元，按几何标记外部、内部、相交；相交格不裁切。均匀模式每方向为 2 的层级次方格，最高9级。此模式导出JSON和VTK，未接入流体求解。</p>
+    </section>
     <section class="block" id="resolutionBlock">
       <h2><span>3</span>网格疏密</h2><p class="note">数值越小，格子越细。0.01 表示参考长度的 1%。</p><div class="pair"><button id="manualCoarser" class="ghost">整体粗一些</button><button id="manualFiner" class="ghost">整体细一些</button></div>
       <div class="pair">
@@ -347,6 +355,43 @@
       <button id="runThermal" class="wide" disabled>启动温度与流动推进</button>
     </section>
 
+    <section class="block flow-block" id="eulerBlock" hidden>
+      <h2><span>7</span>可压 Euler（试验）</h2>
+      <p class="note">独立理想气体总能量模型；一阶无黏流动，壁面自由滑移。没有黏性、导热或湍流；光滑涡精度研究尚未通过。</p>
+      <label class="field">工况<select id="eulerCase"><option value="sod">矩形冲击管（Sod）</option><option value="external">物体外流（特征远场）</option><option value="uniform">均匀流（无物面）</option></select></label>
+      <p id="eulerScope" class="note"></p>
+      <div class="pair">
+        <label class="field">密度 ρ（kg/m³）<input id="eulerDensity" type="number" min="0.000000000001" step="any" value="1.225"></label>
+        <label class="field">绝对压力（Pa）<input id="eulerPressure" type="number" min="0.000000000001" step="any" value="101325"></label>
+      </div>
+      <div class="pair">
+        <label class="field">速度 X（m/s）<input id="eulerU" type="number" step="any" value="0"></label>
+        <label class="field">速度 Y（m/s）<input id="eulerV" type="number" step="any" value="0"></label>
+      </div>
+      <div class="pair">
+        <label class="field">比热比 γ<input id="eulerGamma" type="number" min="1.000001" step="any" value="1.4"></label>
+        <label class="field">气体常数 R（J/kg/K）<input id="eulerGasConstant" type="number" min="0.000000000001" step="any" value="287.05"></label>
+      </div>
+      <label class="field" id="eulerSplitField">隔膜位置（长度比例）<input id="eulerSplit" type="number" min="0.000001" max="0.999999" step="any" value="0.5"></label>
+      <div class="pair">
+        <label class="field">目标物理时间（s）<input id="eulerEndTime" type="number" min="0.000000000001" step="any" value="0.0005"></label>
+        <label class="field">声学 CFL 上限<input id="eulerCfl" type="number" min="0.000001" max="0.45" step="any" value="0.4"></label>
+      </div>
+      <details id="eulerAdvanced"><summary>时间步与计算预算</summary>
+        <div class="pair">
+          <label class="field">最大步长（s）<input id="eulerMaximumStep" type="number" min="0.00000000000001" step="any" value="0.001"></label>
+          <label class="field">最小步长（s）<input id="eulerMinimumStep" type="number" min="0.000000000000000001" step="any" value="0.00000000000001"></label>
+        </div>
+        <label class="field">本次最大接受步数<input id="eulerMaximumSteps" type="number" min="1" max="1000000" step="1" value="100000"></label>
+        <label class="field">本次时间预算（s）<input id="eulerMaximumSeconds" type="number" min="1" max="3600" step="1" value="180"></label>
+        <p class="note">按各面速度与声速之和自动缩步；小 Cut-cell 可能显著限制步长。目标时间表示演化终点，不表示达到稳态。</p>
+      </details>
+      <label class="toggle"><input id="eulerResume" type="checkbox" disabled>从已接受的可压状态继续</label>
+      <button id="pickEulerCheckpoint" class="wide">载入可压续算清单…</button>
+      <p class="note" id="eulerRestartInfo">每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。</p>
+      <button id="runEuler" class="wide" disabled>启动可压计算</button>
+    </section>
+
     <label class="toggle"><input id="relativeAllowUnsafe" type="checkbox">允许更高构造深度（高密度可能需要，质量标准不变）</label>
     <button id="generate" class="primary" disabled>生成预览</button>
     <button id="cancel" hidden>取消当前操作</button>
@@ -358,11 +403,17 @@
       <div class="viewtools">
         <select id="displayMode" class="chip select" title="显示样式">
           <option value="level">尺寸配色</option>
+          <option value="classification" id="classificationOption" hidden>背景几何分类</option>
           <option value="light">白底线框</option>
           <option value="dark">暗底线框</option>
           <option id="flowSpeedOption" value="speed" hidden>速度色图</option>
           <option id="flowPressureOption" value="pressure" hidden>压力色图</option>
           <option id="thermalOption" value="temperature" hidden>温度色图（K）</option>
+          <option id="eulerDensityOption" value="euler-rho" hidden>可压密度（kg/m³）</option>
+          <option id="eulerPressureOption" value="euler-p" hidden>可压绝对压力（Pa）</option>
+          <option id="eulerTemperatureOption" value="euler-temperature" hidden>可压温度（K）</option>
+          <option id="eulerMachOption" value="euler-mach" hidden>可压 Mach 数</option>
+          <option id="eulerSpeedOption" value="euler-speed" hidden>可压速度（m/s）</option>
         </select>
         <button id="fitOverview">物体周边</button><button id="fitDomain" class="chip">全域</button>
         <button id="fitWall" class="chip">物面</button>
@@ -389,6 +440,12 @@
       </section>
       <div id="flowResult" class="flow-result" hidden></div>
       <div id="thermalResult" class="flow-result" hidden></div>
+      <div id="eulerResult" class="flow-result" hidden></div>
+      <section id="eulerTimeline" hidden aria-label="可压物理时间监测">
+        <div class="flow-monitor-heading"><b>可压物理时间监测</b><select id="eulerMonitorMetric"><option value="minimumDensity">最小密度（kg/m³）</option><option value="minimumPressure">最小绝对压力（Pa）</option><option value="mass">总质量 / 深度（kg/m）</option><option value="totalEnergy">总能量 / 深度（J/m）</option><option value="acousticCourant">声学 CFL</option></select></div>
+        <svg id="eulerMonitor" viewBox="0 0 720 130" role="img" aria-label="Euler 接受状态随物理时间变化"></svg>
+        <p id="eulerMonitorCaption" class="note"></p>
+      </section>
       <section id="thermalTimeline" hidden aria-label="温度物理时间监测">
         <div class="flow-monitor-heading"><b>温度时间监测</b><select id="thermalMonitorMetric" aria-label="温度监测量"><option value="heatContent">温度积分（K·m²）</option><option value="globalBalance">全域平衡（K·m²/s）</option><option value="scalarResidual">温度残差</option><option value="maxCourant">最大 CFL</option></select></div>
         <svg id="thermalMonitor" viewBox="0 0 720 130" role="img" aria-label="温度监测量随物理时间变化"></svg>

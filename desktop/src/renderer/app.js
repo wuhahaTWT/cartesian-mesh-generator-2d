@@ -15,6 +15,9 @@ const state = {
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
+  euler: null,
+  eulerRestart: null,
+  eulerHistory: [],
   thermal: null,
   thermalRestart: null,
   thermalHistory: [],
@@ -73,11 +76,12 @@ function setBusy(busy) {
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
   updateFlowMode();
+  updateEulerControls();
   updateReady();
 }
 function validInputs() {
   for (const input of document.querySelectorAll('.panel input[type=number]')) {
-    if (!input.closest('#flowBlock, #thermalBlock') && !input.disabled && input.getClientRects().length &&
+    if (!input.closest('#flowBlock, #thermalBlock, #eulerBlock') && !input.disabled && input.getClientRects().length &&
         (!input.value.trim() || !input.checkValidity())) {
       input.reportValidity();
       input.focus();
@@ -118,6 +122,7 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   if (state.mesh) renderLegend(state.mesh, state.levelBasis);
 }
 function clearResult() {
+  clearEulerBinding(true);
   clearFlowBinding({ hidePanel: true });
   clearThermalBinding({ hidePanel: true });
   state.mesh = null; state.result = null; state.wallBounds = null;
@@ -167,6 +172,12 @@ window.__exportThermalPreview = async () => {
   return payload.thermal ? window.CartMeshExport.renderThermal(payload.mesh, payload.thermal) : null;
 };
 
+window.__exportEulerPreview = async () => {
+  await document.fonts.load('13px "CartMesh UI"','可压结果');await document.fonts.ready;
+  const payload=await window.cartmesh.exportPreviewData();
+  return payload.euler ? window.CartMeshExport.renderEuler(payload.mesh,payload.euler) : null;
+};
+
 let previewSequence = 0;
 const view = new window.MeshView.Viewport($('canvas'));
 const { levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP, TEMPERATURE_RAMP } = window.MeshView;
@@ -186,6 +197,10 @@ function importSettings() {
 // One place builds the request both `probe-sizing` and `generate` take, so a probe
 // can never describe a different job from the one that runs.
 function buildRequest() {
+  if(state.method==='background') return {method:'background',geometryPath:state.geometryPath,
+    outputDirectory:state.outputDirectory,automatic:false,fluidRegion:'exterior',
+    backgroundMode:$('backgroundMode').value,backgroundLevel:Number($('backgroundLevel').value),
+    backgroundMinimumLevel:Number($('backgroundMinimumLevel').value),backgroundPadding:Number($('backgroundPadding').value),...importSettings()};
   const base = {
     automatic: $('controlMode').value === 'auto',
     density: $('density').value,
@@ -240,6 +255,13 @@ function buildRequest() {
 // Level = ceil(log2((1 + 2*far) * wallCells)) — the body span cancels, so the whole
 // far-field-versus-wall-resolution trade is arithmetic and can be shown live.
 function updateBudget() {
+  if(state.method==='background') {
+    const uniform=$('backgroundMode').value==='uniform';
+    $('backgroundLevel').max=uniform?'9':'10';
+    $('backgroundMinimumLevel').disabled=uniform||state.busy;
+    $('generate').disabled=!state.geometryPath||state.busy||state.geometryLoading;
+    return;
+  }
   const method = state.catalog.methods[state.method];
   if (!method) return;
   const far = Number($('relativePadding').value);
@@ -273,7 +295,7 @@ function schedulePlan() {
   const sequence = ++planSequence;
   state.budgetSuggestion = null;
   $('planToManual').disabled = true;
-  if (!state.frame || $('controlMode').value !== 'auto') return;
+  if (state.method==='background' || !state.frame || $('controlMode').value !== 'auto') return;
   const request = buildRequest();
   if (request.targetCells == null) {
     $('autoBudgetPreview').textContent = '旧版预设保留兼容行为，不按目标数量调整。';
@@ -364,7 +386,7 @@ function selectMethod(id) {
   const method = state.catalog.methods[id];
   $('sizingBlock').hidden = !method.supports.sizeField;
   $('hybridBlock').hidden = method.supports.sizeField;
-  $('methodNote').textContent = method.supports.sizeField
+  $('methodNote').textContent = id==='background' ? method.summary : method.supports.sizeField
     ? `实测安全壁面层级上限 ${method.safeWallLevel}；越过要显式勾选。支持 OpenFOAM 导出。`
     : `贴体层和余域共用相对尺寸；构造深度由程序推导，当前验证上限 ${method.safeWallLevel}。`;
   $('smallAlphaField').hidden = !method.supports.sizeField;
@@ -375,8 +397,15 @@ function selectMethod(id) {
 }
 
 function updateControlMode() {
-  const automatic = $('controlMode').value === 'auto';
-  $('resolutionBlock').hidden = automatic;
+  const background=state.method==='background';
+  const automatic = !background && $('controlMode').value === 'auto';
+  $('backgroundBlock').hidden=!background;
+  $('fluidRegion').closest('label').hidden=background;
+  $('controlMode').closest('label').hidden=background;
+  $('verifiedPreset').hidden=background||!['circle','naca2412','nozzle'].includes(state.sampleId);
+  $('verifiedPresetNote').hidden=$('verifiedPreset').hidden;
+  $('controlMode').disabled=background||state.busy;
+  $('resolutionBlock').hidden = automatic||background;
   $('sizingBlock').hidden = automatic || state.method !== 'cutcell';
   $('hybridBlock').hidden = automatic || state.method !== 'hybrid';
   $('smallAlphaField').hidden = automatic || state.method !== 'cutcell';
@@ -443,7 +472,7 @@ async function chooseGeometry(path, label, sample) {
   state.geometryPath = path;
   state.geometryLabel = label;
   state.sampleId = sample?.id;
-  $('verifiedPreset').hidden = !['circle','naca2412','nozzle'].includes(state.sampleId);
+  $('verifiedPreset').hidden = state.method==='background'||!['circle','naca2412','nozzle'].includes(state.sampleId);
   $('verifiedPresetNote').hidden = $('verifiedPreset').hidden;
   if (sample) {
     $('sourceUnits').value = 'm';
@@ -543,6 +572,10 @@ async function probeSizing() {
 }
 
 function renderCounters(result) {
+  if(result.background){
+    $('counters').innerHTML=[['完整单元',result.counts.cells],['外部',result.counts.classification[0]],['内部',result.counts.classification[1]],['相交（未裁切）',result.counts.classification[2]]]
+      .map(([label,n])=>`<div><span>${label}</span><b>${fmt(n)}</b></div>`).join('');return;
+  }
   // A run that died before its summary block leaves some counters unknown.  Showing a
   // dash beats showing a confident zero.
   const count = value => (value ? fmt(value) : '—');
@@ -560,6 +593,7 @@ function renderCounters(result) {
 }
 
 function renderGates(result) {
+  if(result.background){$('gates').innerHTML=gateRow('背景网格','已生成','完整域覆盖与记录一致性已核对。物体内部保留；几何轮廓不是数值壁面，未生成流体求解拓扑或OpenFOAM算例。');return;}
   const parts = [];
   parts.push(gateRow('内部拓扑检查', result.gates.topology.pass === null ? '未确认' : result.gates.topology.pass ? 'PASS' : 'FAIL',
     result.gates.topology.pass ? '生成器内部检查通过；外部 checkMesh 需另外执行。' : '本次未完整成功，不能据此确认通过。'));
@@ -622,11 +656,18 @@ function renderHistogram(histogram, mesh, basis) {
 function renderLegend(mesh, basis) {
   const container = $('legend');
   container.replaceChildren();
-  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode);
+  if(mesh.background && view.mode==='classification'){
+    for(const [i,label] of ['外部','内部','相交'].entries()){
+      const entry=document.createElement('span');entry.textContent=`${label} ${fmt(mesh.classificationCounts[i])}　`;
+      entry.style.color=['#79b8d4','#9da9bc','#efac56'][i];container.appendChild(entry);
+    }
+    container.hidden=false;return;
+  }
+  const fieldMode = ['speed', 'pressure', 'temperature'].includes(view.mode) || view.mode.startsWith('euler-');
   const coloured = view.mode === 'level' || fieldMode;
   const ramp = document.createElement('div');
   ramp.className = 'ramp';
-  const palette = view.mode === 'temperature' ? TEMPERATURE_RAMP : view.mode === 'speed' ? SPEED_RAMP : view.mode === 'pressure' ? PRESSURE_RAMP : RAMP;
+  const palette = fieldMode ? view.fieldPalette() : RAMP;
   for (const colour of palette) {
     const swatch = document.createElement('span');
     swatch.style.background = colour;
@@ -638,7 +679,7 @@ function renderLegend(mesh, basis) {
   const fine = document.createElement('span');
   if (fieldMode) {
     const range = view.fieldRange;
-    const unit = view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²';
+    const unit = ({'euler-rho':'kg/m³','euler-p':'Pa','euler-temperature':'K','euler-mach':'Mach','euler-speed':'m/s'})[view.mode] || (view.mode === 'temperature' ? 'K' : view.mode === 'speed' ? 'm/s' : 'm²/s²');
     coarse.textContent = range ? `${range.min.toPrecision(4)} ${unit}` : '最小';
     fine.textContent = range ? `${range.max.toPrecision(4)} ${unit}` : '最大';
   } else {
@@ -686,7 +727,7 @@ async function generate() {
   setBusy(true);
   $('generate').textContent = '正在生成…';
   $('log').textContent = '';
-  status('生成中', '几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
+  status('生成中', state.method==='background'?'几何诊断 → 完整笛卡尔网格 → 分类 → 导出':'几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
   try {
     const payload = await window.cartmesh.generate(buildRequest());
     state.mesh = payload.mesh;
@@ -702,6 +743,9 @@ async function generate() {
       const b = payload.cellBudget;
       $('cellBudgetResult').textContent = `目标约 ${fmt(b.targetCells)}；实际 ${fmt(b.actualCells)} 个单元。${b.reached ? '已达到目标范围（±30%）。' : '未达到目标范围，保留本次最接近目标的可导出结果。'} 共尝试 ${b.attempts} 次。` + (b.stoppedReason ? ` 后续调整停止：${b.stoppedReason}` : '');
     }
+    $('classificationOption').hidden=!payload.background;
+    if(payload.background){$('displayMode').value='classification';view.mode='classification';}
+    else if(view.mode==='classification'){$('displayMode').value='level';view.mode='level';}
     view.setMesh(payload.mesh);
     syncRegions();
     $('empty').hidden = true;
@@ -741,10 +785,13 @@ async function generate() {
         : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
     }
     $('exportResult').hidden = Boolean(payload.incomplete);
-    $('flowBlock').hidden = Boolean(payload.incomplete);
-    $('thermalBlock').hidden = Boolean(payload.incomplete);
-    if (!payload.incomplete) {
+    $('flowBlock').hidden = Boolean(payload.incomplete || payload.background);
+    $('thermalBlock').hidden = Boolean(payload.incomplete || payload.background);
+    $('eulerBlock').hidden = Boolean(payload.incomplete || payload.background);
+    if (!payload.incomplete && !payload.background) {
       $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
+      $('eulerCase').value=payload.job.fluidRegion==='interior'?'sod':'external';
+      updateEulerControls();
       updateFlowScope();
     }
     const seconds = payload.result.timings.total_seconds;
@@ -1227,6 +1274,100 @@ async function loadFlowCase() {
   }catch(error){status('工况读取失败',error.message);log(error.message);return null;}
   finally{setBusy(false);}
 }
+const EULER_CONTROLS={density:'eulerDensity',u:'eulerU',v:'eulerV',pressure:'eulerPressure',gamma:'eulerGamma',gasConstant:'eulerGasConstant',split:'eulerSplit',endTime:'eulerEndTime',maximumStep:'eulerMaximumStep',minimumStep:'eulerMinimumStep',cfl:'eulerCfl',maximumSteps:'eulerMaximumSteps',maximumSeconds:'eulerMaximumSeconds'};
+const EULER_PHYSICAL=['density','u','v','pressure','gamma','gasConstant','split'];
+const EULER_OPTIONS=['eulerDensityOption','eulerPressureOption','eulerTemperatureOption','eulerMachOption','eulerSpeedOption'];
+function eulerRequest() {
+  const request={case:$('eulerCase').value,resume:$('eulerResume').checked};
+  for(const [key,id] of Object.entries(EULER_CONTROLS))request[key]=Number($(id).value);
+  if(request.case!=='sod')request.split=.5;
+  return request;
+}
+function updateEulerControls() {
+  const restart=state.eulerRestart;if(!restart)$('eulerResume').checked=false;
+  const resuming=Boolean(restart&&$('eulerResume').checked),sod=$('eulerCase').value==='sod';
+  $('eulerResume').disabled=Boolean(state.busy||!restart);$('eulerCase').disabled=Boolean(state.busy||resuming);
+  for(const [key,id] of Object.entries(EULER_CONTROLS))$(id).disabled=Boolean(state.busy||(resuming&&EULER_PHYSICAL.includes(key))||(sod&&['u','v'].includes(key)));
+  if(sod){$('eulerU').value=0;$('eulerV').value=0;}
+  $('eulerSplitField').hidden=!sod;
+  $('pickEulerCheckpoint').disabled=Boolean(state.busy||!state.result);
+  $('runEuler').disabled=Boolean(state.busy||!state.result||$('eulerBlock').hidden);
+  if(!state.busy)$('runEuler').textContent=resuming?'继续可压计算':'启动可压计算';
+  $('eulerScope').textContent=sod?'仅限轴对齐矩形。左侧使用下方密度和压力，右侧分别为其0.125倍、0.1倍；初始速度为零，上下自由滑移、左右透射。':$('eulerCase').value==='external'?'下方为初始场与远场状态。实际物面自由滑移，外域施加特征远场；当前不会形成黏性边界层。':'无物面的均匀初始场，所有外边界施加相同特征远场。';
+  $('eulerRestartInfo').textContent=restart?`可续算到 t=${restart.time.toPrecision(6)} s 的已接受状态（${restart.steps}步）。物理参数锁定，目标时间需更晚；取消续算则从初始场重新计算。`:'每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。';
+}
+function applyEulerRestart() {
+  if($('eulerResume').checked&&state.eulerRestart) {
+    const request=state.eulerRestart.request;$('eulerCase').value=request.case;
+    for(const key of EULER_PHYSICAL)$(EULER_CONTROLS[key]).value=request[key];
+  }
+  updateEulerControls();
+}
+function clearEulerBinding(hidePanel=false) {
+  state.euler=null;state.eulerHistory=[];view.setEulerFields(null);
+  $('eulerResult').hidden=true;$('eulerResult').replaceChildren();$('eulerTimeline').hidden=true;
+  for(const id of EULER_OPTIONS)$(id).hidden=true;
+  if($('displayMode').value.startsWith('euler-')){$('displayMode').value='level';view.mode='level';view.draw();}
+  if(hidePanel){state.eulerRestart=null;$('eulerResume').checked=false;$('eulerBlock').hidden=true;}
+  if(state.mesh)renderLegend(state.mesh,state.levelBasis);
+}
+function renderEulerMonitor() {
+  const rows=state.eulerHistory||[];$('eulerTimeline').hidden=!rows.length;const svg=$('eulerMonitor');svg.replaceChildren();if(!rows.length)return;
+  const metric=$('eulerMonitorMetric').value,values=rows.map(r=>r[metric]);let min=Infinity,max=-Infinity;
+  for(const value of values){min=Math.min(min,value);max=Math.max(max,value);}
+  const first=rows[0].time,last=rows.at(-1).time,span=max-min||Math.max(Math.abs(max)*.02,1e-12);
+  const sampled=rows.filter((_r,i)=>i%Math.max(1,Math.ceil(rows.length/1000))===0||i===rows.length-1);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  line.setAttribute('points',sampled.map(r=>`${55+620*(r.time-first)/(last-first||1)},${108-85*(r[metric]-min)/span}`).join(' '));
+  line.setAttribute('fill','none');line.setAttribute('stroke','#61b7dd');line.setAttribute('stroke-width','2');svg.appendChild(line);
+  for(const [x,y,value] of [[6,20,max.toPrecision(4)],[6,110,min.toPrecision(4)],[55,128,first.toPrecision(4)+' s'],[600,128,last.toPrecision(4)+' s']]) {
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x',x);text.setAttribute('y',y);text.setAttribute('fill','currentColor');text.setAttribute('font-size','11');text.textContent=value;svg.appendChild(text);
+  }
+  $('eulerMonitorCaption').textContent=`已接受状态 · 最新 ${values.at(-1).toPrecision(6)} · 运行时每25步更新，完成后读回全部历史；导出 CSV 保留每一步。`;
+}
+function bindEuler(payload) {
+  state.euler=payload;state.eulerHistory=payload.history;view.setEulerFields(payload.fields.cells);
+  for(const id of EULER_OPTIONS)$(id).hidden=false;
+  $('displayMode').value='euler-rho';view.mode='euler-rho';view.draw();renderLegend(state.mesh,state.levelBasis);
+  const container=$('eulerResult');container.replaceChildren();container.hidden=false;
+  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · 一阶无黏模型`;container.appendChild(title);
+  const last=payload.history.at(-1),lines=[`最小密度 ${last.minimumDensity.toPrecision(6)} kg/m³；最小绝对压力 ${last.minimumPressure.toPrecision(6)} Pa`,
+    `最后步声学 CFL ${payload.audit.acousticCourant.toPrecision(4)}；逐格守恒相对误差 ${payload.audit.maximumCellBalanceRelative.toExponential(2)}`,
+    '到达目标时间不代表稳态或精度合格。当前光滑涡精度研究仍有未通过项；没有黏性、导热或湍流。'];
+  for(const line of lines){const p=document.createElement('p');p.className='note';p.textContent=line;container.appendChild(p);}renderEulerMonitor();
+}
+async function refreshEulerState(show=false) {
+  const saved=await window.cartmesh.eulerState();state.eulerRestart=saved.restart||null;
+  if(show&&saved.euler)bindEuler(saved.euler);return saved;
+}
+async function runEuler() {
+  if(state.busy||!state.result||!state.mesh)return;
+  for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))if(!input.disabled&&(!input.value.trim()||!input.checkValidity())){input.reportValidity();status('可压参数需要调整','检查气体、时间和计算预算。');return;}
+  const request=eulerRequest();clearEulerBinding();setBusy(true);$('runEuler').textContent='可压推进中…';status('可压 Euler 推进中','显式声学时间步；取消后保留已接受状态。');
+  try {
+    const payload=await window.cartmesh.runEuler(request);bindEuler(payload);await refreshEulerState();$('eulerResume').checked=true;
+    status('可压时间推进完成',`t=${payload.summary.time.toPrecision(6)} s；可查看密度、绝对压力、温度、Mach数和速度，并导出实际场。`);
+  }catch(error) {
+    const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
+    const saved=await refreshEulerState(true).catch(()=>null);$('eulerResume').checked=Boolean(saved?.restart);
+    status(/取消|cancelled/.test(message)?'可压计算已取消':'可压计算未完成',message.split('\n')[0]+(saved?.euler?' 显示上次完整结果。':''));log(message);
+  }finally{setBusy(false);applyEulerRestart();}
+}
+$('runEuler').addEventListener('click',runEuler);
+$('eulerResume').addEventListener('change',applyEulerRestart);
+$('eulerCase').addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
+$('eulerMonitorMetric').addEventListener('change',renderEulerMonitor);
+for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();});
+$('pickEulerCheckpoint').addEventListener('click',async()=>{
+  if(state.busy||!state.result)return;setBusy(true);
+  try{const selected=await window.cartmesh.pickEulerCheckpoint();if(selected){state.eulerRestart=selected;$('eulerResume').checked=true;applyEulerRestart();status('可压续算清单已载入','原生计算开始前还会核对完整网格与物理边界。');}}
+  catch(error){status('可压续算载入失败',error.message);log(error.message);}finally{setBusy(false);}
+});
+window.cartmesh.onEulerProgress(progress=>{
+  state.eulerHistory.push(progress);if(state.eulerHistory.length>1400)state.eulerHistory=state.eulerHistory.filter((_r,i)=>i%2===0||i===state.eulerHistory.length-1);
+  renderEulerMonitor();status('可压 Euler 推进中',`已接受 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 声学 CFL ${progress.acousticCourant.toPrecision(4)}`);
+});
+
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
   const request=flowRequest(),transient=request.mode!=='steady';
@@ -1430,7 +1571,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {
@@ -1528,3 +1669,5 @@ function renderRegions() {
   });
   syncRegions();
 }
+
+for(const id of ['backgroundMode','backgroundLevel','backgroundMinimumLevel','backgroundPadding']) $(id).addEventListener('change',updateReady);

@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  runEuler: request => ipcRenderer.invoke('run-euler',request),
+  eulerState: () => ipcRenderer.invoke('euler-state'),
+  pickEulerCheckpoint: () => ipcRenderer.invoke('pick-euler-checkpoint'),
+  onEulerProgress: callback => {
+    ipcRenderer.removeAllListeners('euler-progress');
+    ipcRenderer.on('euler-progress',(_event,progress)=>callback(progress));
+  },
   saveFlowCase: request => ipcRenderer.invoke('save-flow-case', request),
   loadFlowCase: () => ipcRenderer.invoke('load-flow-case'),
   prepareFlowBoundaries: request => ipcRenderer.invoke('prepare-flow-boundaries', request),

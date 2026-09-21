@@ -14,12 +14,14 @@ const { planBudget, BUDGET_PRESETS } = require('./core/cell-budget');
 const { runBudget } = require('./core/budget-runner');
 const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
+const { parseBackgroundGrid, requireFluidMesh } = require('./core/background-grid');
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
+const { runEulerJob, importEulerRestart } = require('./core/euler-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
 const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
@@ -48,6 +50,11 @@ async function exportPackage(destination) {
     const thermalPng=await mainWindow.webContents.executeJavaScript('window.__exportThermalPreview()');
     if(typeof thermalPng!=='string'||!thermalPng.startsWith('data:image/png;base64,'))throw new Error('温度结果图片生成失败。');
     await fs.writeFile(path.join(currentResult.outputDirectory,'temperature-preview.png'),Buffer.from(thermalPng.split(',')[1],'base64'));
+  }
+  if (currentResult.euler) {
+    const png=await mainWindow.webContents.executeJavaScript('window.__exportEulerPreview()');
+    if(typeof png!=='string'||!png.startsWith('data:image/png;base64,'))throw new Error('可压结果图片生成失败。');
+    await fs.writeFile(path.join(currentResult.outputDirectory,'euler-preview.png'),Buffer.from(png.split(',')[1],'base64'));
   }
   await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
   const temporary = path.join(sessionDirectory, 'export.zip');
@@ -221,8 +228,8 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('export-preview-data', async () => {
     if (!currentResult) throw new Error('没有可导出的网格。');
-    return { mesh: currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')),
-      result: currentResult.result, thermal: currentResult.thermal || null };
+    return { mesh: currentResult.mesh || (currentResult.background ? parseBackgroundGrid(await fs.readFile(currentResult.backgroundPath,'utf8')) : parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8'))),
+      result: currentResult.result, thermal: currentResult.thermal || null, euler:currentResult.euler || null };
   });
   ipcMain.handle('export-result', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成网格。');
@@ -244,7 +251,7 @@ app.whenReady().then(async () => {
     return path.join(out, 'saved-flow-case.json');
   };
   ipcMain.handle('save-flow-case', (_event, request) => exclusive(async () => {
-    if (!currentResult) throw new Error('请先生成最终网格。');
+    requireFluidMesh(currentResult);
     const document = createFlowCaseDocument(request, await fs.readFile(currentResult.cm2dPath));
     const text = serializeFlowCase(document);
     let file = smokeCasePath();
@@ -263,7 +270,7 @@ app.whenReady().then(async () => {
     return { fileName: path.basename(file), document };
   }));
   ipcMain.handle('load-flow-case', () => exclusive(async () => {
-    if (!currentResult) throw new Error('请先生成与工况对应的最终网格。');
+    requireFluidMesh(currentResult);
     let file = smokeCasePath();
     if (!file) {
       const picked = await dialog.showOpenDialog(mainWindow, { title: '读取流动工况', properties: ['openFile'],
@@ -276,7 +283,7 @@ app.whenReady().then(async () => {
     return { fileName: path.basename(file), document };
   }));
   ipcMain.handle('prepare-flow-boundaries', (_event, request) => exclusive(async () => {
-    if (!currentResult) throw new Error('请先生成最终网格。');
+    requireFluidMesh(currentResult);
     const speed=Number(request?.speed);
     if (!(Number.isFinite(speed) && speed>0)) throw new Error('参考速度必须大于零。');
     const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
@@ -301,7 +308,7 @@ app.whenReady().then(async () => {
     return validateBoundaryMesh(['pressure-duct','pressure-half-channel'].includes(request.source) ? pressureDrivenBoundaryDefinition(definition,request.source==='pressure-half-channel') : definition,mesh,speed);
   }));
   ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
-    if (!currentResult) throw new Error('请先生成与重启文件对应的最终网格。');
+    requireFluidMesh(currentResult);
     const picked = await dialog.showOpenDialog(mainWindow, { title: '选择非定常重启状态',
       properties: ['openFile'], filters: [{ name: '已接受流动状态', extensions: ['checkpoint'] }] });
     if (picked.canceled) return null;
@@ -311,7 +318,7 @@ app.whenReady().then(async () => {
     return metadata;
   }));
   ipcMain.handle('run-flow', (_event, request) => exclusive(async () => {
-    if (!currentResult) throw new Error('请先成功生成最终网格。');
+    requireFluidMesh(currentResult);
     const mesh = currentResult.mesh
       || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
     const selectedRestart = request?.resume ? currentResult.flowRestart : null;
@@ -452,9 +459,25 @@ app.whenReady().then(async () => {
     }
   }));
 
+  ipcMain.handle('euler-state', () => ({euler:currentResult?.euler || null,restart:currentResult?.eulerRestart?.metadata || null}));
+  ipcMain.handle('run-euler', (_event,request) => exclusive(async()=>{
+    requireFluidMesh(currentResult);
+    const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
+    return runEulerJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
+      onProgress:progress=>mainWindow.webContents.send('euler-progress',progress),log:line=>mainWindow.webContents.send('run-line',line)});
+  }));
+  ipcMain.handle('pick-euler-checkpoint',()=>exclusive(async()=>{
+    requireFluidMesh(currentResult);
+    const selected=await dialog.showOpenDialog(mainWindow,{title:'选择 Euler 结果目录中的 desktop-state.json',filters:[{name:'Euler 续算清单',extensions:['json']}],properties:['openFile']});
+    if(selected.canceled)return null;
+    const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
+    currentResult.eulerRestart=await importEulerRestart(selected.filePaths[0],mesh,currentResult.cm2dPath);
+    return currentResult.eulerRestart.metadata;
+  }));
+
   ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
   ipcMain.handle('pick-thermal-checkpoint',()=>exclusive(async()=>{
-    if(!currentResult)throw new Error('请先生成与联合状态对应的最终网格。');
+    requireFluidMesh(currentResult);
     const picked=await dialog.showOpenDialog(mainWindow,{title:'载入导出包中的联合续算状态',properties:['openFile'],filters:[{name:'联合状态',extensions:['checkpoint']}]});
     if(picked.canceled)return null;
     const file=picked.filePaths[0];
@@ -466,7 +489,7 @@ app.whenReady().then(async () => {
     return currentResult.thermalRestart.metadata;
   }));
   ipcMain.handle('run-thermal', (_event,request) => exclusive(async()=>{
-    if(!currentResult)throw new Error('请先成功生成最终网格。');
+    requireFluidMesh(currentResult);
     const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
     log('正在同步推进原生流动与温度；温度不反馈物性或浮力。');
     return runThermalJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
@@ -602,6 +625,27 @@ app.whenReady().then(async () => {
     }
 
     if (operation.signal.aborted) throw new Error('操作已取消');
+    if(job.method === 'background') {
+      if(failure) throw failure;
+      const parsed=parseBackgroundGrid(await fs.readFile(invocation.backgroundPath,'utf8'));
+      const values=parseKeyValues(stdout);
+      const result={requestedMethod:'background',actualMethod:'background',background:true,
+        counts:{cells:parsed.cells.length,vertices:4*parsed.cells.length,faces:0,leaves:parsed.cells.length,
+          cutCells:0,layerCells:0,classification:parsed.classificationCounts},
+        gates:{topology:{pass:null,label:'背景网格'},solver:null},
+        openFoam:{written:false,path:null,cells:0},
+        timings:{total_seconds:Number(values.total_seconds)},raw:values};
+      const payload={job,prefix,outputDirectory:job.outputDirectory,background:true,
+        backgroundPath:invocation.backgroundPath,cm2dPath:null,mesh:parsed,
+        levelBasis:'level',levelHistogram:levelHistogram(parsed),wallBounds:null,
+        incomplete:null,rasterImport:Boolean(rasterImport),result};
+      await fs.writeFile(path.join(job.outputDirectory,'result.json'),JSON.stringify({
+        parameters:{...job,geometryPath:path.basename(job.geometryPath),outputDirectory:undefined},
+        invocation:{executable:invocation.executable,args:invocation.args},result},null,2));
+      currentResult=payload;
+      log('完整笛卡尔背景网格已生成；内部单元保留，未生成流体求解拓扑。');
+      return payload;
+    }
     const reports = await collectReports(job.method, prefix);
     const mesh = await firstReadable(invocation.cm2dCandidates);
     if (failure) {
@@ -650,6 +694,7 @@ app.whenReady().then(async () => {
   }
 
   ipcMain.handle('generate', (_event, request) => exclusive(async () => {
+    if(request.method==='background') return generateOnce({...request,automatic:false,targetCells:undefined});
     operation.automatic = Boolean(request.automatic);
     const sample = SAMPLES.find(item => resourcePath('samples', item.file) === request.geometryPath);
     // Get scale using the same import settings, without trusting renderer geometry.
@@ -754,6 +799,10 @@ async function runSmoke() {
   // Optional physical sizing for repeatable large-mesh smoke runs. These
   // populate the real form after loading the geometry, through its events.
   const sizingInputs = Object.fromEntries([
+    ['backgroundLevel','background-level'],
+    ['backgroundMinimumLevel','background-minimum-level'],
+    ['backgroundPadding','background-padding'],
+    ['backgroundMode','background-mode'],
     ['wallRelativeSize', 'wall-relative-size'],
     ['backgroundRelativeSize', 'background-relative-size'],
     ['referenceLength', 'reference-length'],
@@ -844,7 +893,7 @@ async function runSmoke() {
     for (const [id, value] of Object.entries(sizingInputs)) {
       const input = document.getElementById(id);
       input.value = value;
-      if (!input.checkValidity() || !Number.isFinite(Number(input.value)))
+      if (!input.checkValidity() || (input.type==='number' && !Number.isFinite(Number(input.value))))
         throw new Error('Invalid smoke sizing input: ' + id);
       input.dispatchEvent(new Event('input'));
       input.dispatchEvent(new Event('change'));
@@ -1046,6 +1095,39 @@ async function runSmoke() {
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
     }
+    if (${JSON.stringify(argument('euler') === 'true')}) {
+      const target=Number(${JSON.stringify(argument('euler-end-time')||'.0005')});
+      for(const [id,value] of Object.entries({eulerCase:${JSON.stringify(argument('euler-case')||'sod')},eulerDensity:'1.225',eulerPressure:'101325',
+        eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
+      document.getElementById('eulerCase').dispatchEvent(new Event('change'));
+      await smoke.runEuler();
+      if(!smoke.state.euler||smoke.state.euler.summary.time!==target)throw new Error('Euler result did not reach renderer: '+document.getElementById('statusText').textContent);
+      const first=smoke.state.euler;
+      document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
+      await smoke.runEuler();
+      if(JSON.stringify(first.fields)!==JSON.stringify(smoke.state.euler?.fields)||JSON.stringify(first.history)!==JSON.stringify(smoke.state.euler?.history))throw new Error('Repeated Euler calculation differs');
+      document.getElementById('eulerEndTime').value=String(2*target);await smoke.runEuler();
+      if(smoke.state.euler?.summary.time!==2*target)throw new Error('Euler resume failed');
+      const complete=smoke.state.euler;
+      document.getElementById('eulerMaximumSteps').value='1';document.getElementById('eulerEndTime').value=String(10*target);await smoke.runEuler();
+      if(smoke.state.euler.summary.time!==complete.summary.time||!(smoke.state.eulerRestart.time>complete.summary.time))throw new Error('Failed Euler budget lost prior complete result or accepted state');
+      document.getElementById('eulerMaximumSteps').value='1000000';document.getElementById('eulerEndTime').value='100';
+      const pending=smoke.runEuler(),deadline=Date.now()+30000;
+      while(smoke.state.busy&&!smoke.state.eulerHistory.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));
+      if(!smoke.state.busy||!smoke.state.eulerHistory.length)throw new Error('No live Euler progress observed');
+      await window.cartmesh.cancel();await pending;
+      const cancelledTime=smoke.state.eulerRestart?.time;
+      if(!(cancelledTime>complete.summary.time)||smoke.state.euler.summary.time!==complete.summary.time)throw new Error('Euler cancel lost accepted state or previous result');
+      document.getElementById('eulerMaximumSteps').value='100000';document.getElementById('eulerEndTime').value=String(cancelledTime+target);await smoke.runEuler();
+      if(smoke.state.euler?.summary.time!==cancelledTime+target)throw new Error('Euler cancel/resume time mismatch');
+      for(const mode of ['euler-rho','euler-p','euler-temperature','euler-mach','euler-speed']) {
+        document.getElementById('displayMode').value=mode;document.getElementById('displayMode').dispatchEvent(new Event('change'));
+        if(!smoke.view.fieldRange||!Number.isFinite(smoke.view.fieldRange.min))throw new Error('Euler field map missing: '+mode);
+      }
+      document.getElementById('displayMode').value='euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
+      document.getElementById('eulerBlock').scrollIntoView({block:'start'});
+      smoke.state.eulerSmoke={repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
+    }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();
@@ -1137,6 +1219,10 @@ async function runSmoke() {
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
+      euler:smoke.state.euler?{summary:smoke.state.euler.summary,request:smoke.state.euler.request,files:smoke.state.euler.files,manifest:smoke.state.euler.manifest,
+        fieldCells:smoke.state.euler.fields.cells.length,historyRows:smoke.state.euler.history.length,audit:smoke.state.euler.audit,
+        resultText:document.getElementById('eulerResult').innerText,restart:smoke.state.eulerRestart,checks:smoke.state.eulerSmoke,
+        displayMode:document.getElementById('displayMode').value,monitorVisible:!document.getElementById('eulerTimeline').hidden}:null,
       thermal: smoke.state.thermal ? {summary:smoke.state.thermal.summary,request:smoke.state.thermal.request,files:smoke.state.thermal.files,
         fieldCells:smoke.state.thermal.fields.cells.length,historyRows:smoke.state.thermal.history.length,
         resultText:document.getElementById('thermalResult').innerText,restart:smoke.state.thermalRestart,
@@ -1188,6 +1274,19 @@ async function runSmoke() {
       await fs.writeFile(argument('welcome-shot'), (await mainWindow.webContents.capturePage(undefined, { stayAwake: true })).toPNG());
       await fs.rm(sessionDirectory, { recursive: true, force: true });
       app.exit(0); return;
+    }
+    if(currentResult?.background) {
+      report.background = await mainWindow.webContents.executeJavaScript(`(async()=>{
+        const rejected=[];
+        for(const name of ['runFlow','runThermal','runEuler']) {
+          try {await window.cartmesh[name]({}); throw new Error('Background accepted by '+name);}
+          catch(error){if(!error.message.includes('完整笛卡尔背景网格'))throw error;rejected.push(name);}
+        }
+        return {rejected,displayMode:document.getElementById('displayMode').value,
+          panelsHidden:['flowBlock','thermalBlock','eulerBlock'].every(id=>document.getElementById(id).hidden),
+          legend:document.getElementById('legend').innerText};
+      })()`);
+      if(!report.background.panelsHidden)throw new Error('Background grid exposed flow controls');
     }
     if (argument('export')) report.exported = await exportPackage(argument('export'));
     if (argument('flow-dt')) {

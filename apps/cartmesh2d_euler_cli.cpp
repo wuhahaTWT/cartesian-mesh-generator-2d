@@ -213,7 +213,13 @@ int main(int argc,char** argv) {
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
             history<<'\n';
-            if((state.steps-initialSteps)%checkpointEvery==0){save();history.flush();}
+            if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime) {
+                save();history.flush();
+                std::cout<<std::setprecision(17)<<"{\"type\":\"euler-step\",\"step\":"<<state.steps<<",\"time\":"<<state.time
+                    <<",\"acousticCourant\":"<<last->acousticCourant<<",\"minimumDensity\":"<<last->minimumDensity
+                    <<",\"minimumPressure\":"<<last->minimumPressure<<",\"mass\":"<<last->afterIntegral[0]
+                    <<",\"totalEnergy\":"<<last->afterIntegral[3]<<"}\n"<<std::flush;
+            }
         }
     }catch(const std::exception& e){status=stopped?"cancelled":"failed";failure=e.what();}
     save();history.close();
@@ -253,6 +259,7 @@ int main(int argc,char** argv) {
     summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":\"first-order Rusanov / forward Euler\",\"case\":"<<quote(problem)
         <<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
         <<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"gamma\":"<<gas.gamma<<",\"gasConstant\":"<<gas.gasConstant
+        <<",\"referenceState\":{\"rho\":"<<reference.density<<",\"u\":"<<reference.u<<",\"v\":"<<reference.v<<",\"p\":"<<reference.pressure<<"},\"split\":"<<split
         <<",\"time\":"<<state.time<<",\"requestedEndTime\":"<<endTime<<",\"initialTime\":"<<initialTime<<",\"steps\":"<<state.steps
         <<",\"acceptedSteps\":"<<state.steps-initialSteps<<",\"rejectedCandidates\":"<<rejected<<",\"lastStep\":"<<(last?last->step:0)
         <<",\"cflLimit\":"<<controls.acousticCourant<<",\"maximumStep\":"<<controls.maximumStep<<",\"minimumStep\":"<<controls.minimumStep

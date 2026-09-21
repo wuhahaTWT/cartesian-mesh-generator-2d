@@ -9,7 +9,8 @@ const TOOL_NAMES = Object.freeze([
   'cartmesh2d_hybrid_cli',
   'cartmesh2d_dxf_cli',
   'cartmesh2d_flow_cli',
-  'cartmesh2d_transport_cli'
+  'cartmesh2d_transport_cli',
+  'cartmesh2d_euler_cli'
 ]);
 
 const SAMPLE_SOURCES = Object.freeze([

@@ -1,6 +1,18 @@
 'use strict';
 
-function exportGuide({ result, rasterImport, flow, thermal }) {
+function exportGuide({ result, rasterImport, flow, thermal, euler, background }) {
+  if(background) return `# 完整笛卡尔背景网格
+
+本次 ${result.counts.cells} 个完整单元，保留物体内部。分类为外部、内部、相交；相交单元没有被裁切。
+
+- mesh-preview.png：真实网格预览与几何轮廓。
+- *.background.json：完整计算域、输入轮廓、矩形单元坐标/层级/分类。
+- *.background.vtk：ParaView四边形网格，classification为0外部、1内部、2相交，level为细化层级。
+- *.xy、*.sizing.json、result.json：输入、加密分布和实际参数。
+
+这不是流体求解拓扑。自适应粗细交界可有悬挂节点，物体轮廓仅作为几何叠加；没有OpenFOAM算例或流场结果。需要浸入边界等数值处理后才能用于物体绕流，不能直接输入当前层流求解器。
+`;
+
   const duct = (flow?.summary?.case || thermal?.summary?.flowCase) === 'duct';
   const transient = flow?.summary?.temporalDiscretization === 'backward-euler';
   const cells = Number(result.counts.cells).toLocaleString('en-US');
@@ -61,7 +73,21 @@ ${thermal ? `## 温度结果
 
 D=k/(rho cp)，源项为 Q/(rho cp)，通量为向外 q/(rho cp)。这是单向恒物性热输运，没有浮力、温度反馈、辐射或共轭传热。
 ` : ''}
-**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
+${euler ? `## 可压 Euler 结果
+
+最后完整可压场：t=${euler.summary.time} s，本次${euler.summary.acceptedSteps}个接受步。先看 **euler-preview.png**。
+
+当前完整结果清单：${euler.manifest}
+
+- euler.cells.csv / euler.fields.json / euler.vtk：密度kg/m³、绝对压力Pa、速度m/s、温度K、Mach数；rhoE为总能量密度J/m³。
+- euler.faces.csv：实际面上质量、两分量动量和总能量通量，按owner外向、每单位厚度；检查点保存守恒场。
+- euler.history.csv：每个已接受时间步的物理时间、声学CFL、密度/压力下限、质量与能量。
+- desktop-state.json + euler.checkpoint：恢复相同网格后可在App中载入的续算清单与状态；两文件需要保留在同一目录。
+- euler-run-* 各自独立；只有 desktop-state.json 中 complete 是到达目标时间的完整结果。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
+
+当前为一阶Rusanov、前向欧拉无黏理想气体模型，物面自由滑移。没有黏性、热传导或湍流，光滑涡精度研究尚未通过。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
+` : ''}
+**导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体无黏工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;
 }
 

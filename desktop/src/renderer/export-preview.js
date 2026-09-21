@@ -14,8 +14,8 @@ window.CartMeshExport = {
     };
     const n = mesh.cells.length.toLocaleString('en-US');
     text(`网格预览  ·  ${n} 个单元`, 1000, 52, 32, 'center');
-    text('全景 · 最终求解网格', 510, 98, 24, 'center');
-    text('壁面局部 · 真实单元', 1500, 98, 24, 'center');
+    text(mesh.background?'全景 · 完整笛卡尔背景网格':'全景 · 最终求解网格', 510, 98, 24, 'center');
+    text(mesh.background?'几何附近 · 完整单元保留':'壁面局部 · 真实单元', 1500, 98, 24, 'center');
 
     const b = mesh.bounds;
     const span = Math.max(b.maxX - b.minX, b.maxY - b.minY);
@@ -44,6 +44,14 @@ window.CartMeshExport = {
         Math.max(p[1], q[1]) < centerY - rect.h / scale / 2 ||
         Math.min(p[1], q[1]) > centerY + rect.h / scale / 2);
       ctx.save(); ctx.beginPath(); ctx.rect(rect.x, rect.y, rect.w, rect.h); ctx.clip();
+      if(mesh.background) for(const cell of mesh.cells) {
+        const first=mesh.vertices[cell.vertices[0]],last=mesh.vertices[cell.vertices[2]];
+        if(!visible(first,last))continue;
+        ctx.beginPath();
+        cell.vertices.forEach((v,i)=>{const p=mesh.vertices[v];i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});
+        ctx.closePath();ctx.fillStyle=['#d2e7f0','#94a3b8','#efac56'][cell.classification];ctx.fill();
+        ctx.strokeStyle='#65798a';ctx.lineWidth=.35;ctx.stroke();
+      }
       // Layer membership comes from the final mesh's lineage report.
       for (const [id, layer] of layers) {
         const ids = mesh.cells[id].vertices;
@@ -81,7 +89,7 @@ window.CartMeshExport = {
     panel(b, { x: 105, y: 145, w: 840, h: 790 }, true);
     panel(detail, { x: 1100, y: 145, w: 840, h: 790 }, false);
     const gate = value => (value?.pass ?? value?.valid) === true ? '通过' : (value?.pass ?? value?.valid) === false ? '未通过' : '未检查';
-    text(`内部拓扑：${gate(result.gates?.topology)}   |   内部 Solver：${gate(result.gates?.solver)}   |   外部 CFD 检查：需另行运行`, 1000, 1042, 22, 'center');
+    text(mesh.background ? '完整域保留：浅蓝外部 / 灰蓝内部 / 橙色相交；未裁切、未生成流体求解拓扑' : `内部拓扑：${gate(result.gates?.topology)}   |   内部 Solver：${gate(result.gates?.solver)}   |   外部 CFD 检查：需另行运行`, 1000, 1042, 22, 'center');
     return canvas.toDataURL('image/png');
   }
 };
@@ -121,5 +129,43 @@ window.CartMeshExport.renderThermal = function(mesh, thermal) {
   for(let i=0;i<600;i++){ctx.fillStyle=color(1-i/599);ctx.fillRect(1600,255+i,30,1);}
   text(`${max.toPrecision(6)} K`,1640,265,20);text(`${min.toPrecision(6)} K`,1640,857,20);
   text(`D = ${thermal.request.diffusivity} m²/s · 完整场见同包 VTK / CSV；两图共用实际温度范围`,70,1008,21);
+  return canvas.toDataURL('image/png');
+};
+
+window.CartMeshExport.renderEuler = function(mesh,euler) {
+  if(!mesh?.cells?.length||euler?.fields?.cells?.length!==mesh.cells.length)throw new Error('没有绑定当前网格的可压场。');
+  const canvas=document.createElement('canvas');canvas.width=2000;canvas.height=1500;const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,2000,1500);
+  const text=(value,x,y,size=24)=>{ctx.fillStyle='#24333f';ctx.font=`${size}px "CartMesh UI", sans-serif`;ctx.fillText(value,x,y);};
+  text(`可压 Euler · t=${euler.summary.time.toPrecision(6)} s · ${mesh.cells.length.toLocaleString('en-US')} 个真实单元`,70,58,32);
+  text('一阶无黏理想气体；光滑涡精度研究尚未通过。到达时间不等于稳态。',70,99,24);
+  const palette=['#172a52','#185b83','#188ca1','#2bb6a8','#73cf8d','#cadd62','#f4c84d','#ef7538'];
+  let frame=mesh.bounds;
+  if(euler.request.case==='external') {
+    const wall=mesh.edges.filter(e=>e.patch===1);
+    if(wall.length) {
+      let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+      for(const edge of wall)for(const id of [edge.a,edge.b]){const p=mesh.vertices[id];x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}
+      const pad=Math.max(x1-x0,y1-y0);frame={minX:x0-pad,maxX:x1+pad,minY:y0-pad,maxY:y1+pad};
+    }
+  }
+  for(const [index,key,label,unit] of [[0,'rho','密度','kg/m³'],[1,'p','绝对压力','Pa'],[2,'temperature','温度','K'],[3,'mach','Mach 数','']]) {
+    const left=70+(index%2)*970,top=150+Math.floor(index/2)*615;
+    const values=euler.fields.cells.map((c,i)=>{if(c.id!==i||!Number.isFinite(c[key]))throw new Error('可压场单元错误。');return c[key];});
+    let min=Infinity,max=-Infinity;for(const v of values){min=Math.min(min,v);max=Math.max(max,v);}
+    text(`${label}（${unit||'无量纲'}）`,left,top,27);
+    text(`${min.toPrecision(6)} — ${max.toPrecision(6)} ${unit}`,left,top+35,21);
+    const scale=Math.min(865/(frame.maxX-frame.minX),470/(frame.maxY-frame.minY));
+    const X=x=>left+432+(x-(frame.minX+frame.maxX)/2)*scale,Y=y=>top+320-(y-(frame.minY+frame.maxY)/2)*scale;
+    ctx.save();ctx.beginPath();ctx.rect(left,top+65,865,490);ctx.clip();
+    for(const cell of mesh.cells) {
+      const ratio=max>min?(values[cell.id]-min)/(max-min):.5;
+      ctx.fillStyle=palette[Math.max(0,Math.min(7,Math.floor(8*ratio)))];ctx.beginPath();
+      cell.vertices.forEach((id,i)=>{const p=mesh.vertices[id];i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1]));});ctx.closePath();ctx.fill();
+    }
+    ctx.beginPath();for(const e of mesh.edges){const a=mesh.vertices[e.a],b=mesh.vertices[e.b];ctx.moveTo(X(a[0]),Y(a[1]));ctx.lineTo(X(b[0]),Y(b[1]));}ctx.strokeStyle='rgba(35,50,65,.32)';ctx.lineWidth=.35;ctx.stroke();ctx.restore();
+    for(let i=0;i<8;i++){ctx.fillStyle=palette[i];ctx.fillRect(left+i*108,top+565,108,12);}
+  }
+  text(`${frame===mesh.bounds?'全域':'物面附近放大'}；所有数值来自实际多边形场，完整域见同包 CSV / VTK。`,70,1445,23);
   return canvas.toDataURL('image/png');
 };

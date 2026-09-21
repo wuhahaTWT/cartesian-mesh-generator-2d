@@ -1,0 +1,199 @@
+{
+  "version": "0.4.30",
+  "records": [
+    {
+      "case": "app-adaptive",
+      "audit": {
+        "cells": 2296,
+        "counts": [
+          976,
+          804,
+          516
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "background_sha256": "95823c125c8253bc224fbdfeefd7d6890b1f20a51d7fd11c8e782fbd4fa9176a",
+      "actual_app": {
+        "rejected": [
+          "runFlow",
+          "runThermal",
+          "runEuler"
+        ],
+        "displayMode": "classification",
+        "panelsHidden": true,
+        "legend": "外部 976　\n内部 804　\n相交 516　"
+      },
+      "home": null,
+      "zip_bytes_match": true
+    },
+    {
+      "case": "app-uniform",
+      "audit": {
+        "cells": 65536,
+        "counts": [
+          52480,
+          12540,
+          516
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "background_sha256": "1d962a1274be7a9e0197ec5cb9cab7d7529fb2b27655a8d438b377c730fc28c0",
+      "actual_app": {
+        "rejected": [
+          "runFlow",
+          "runThermal",
+          "runEuler"
+        ],
+        "displayMode": "classification",
+        "panelsHidden": true,
+        "legend": "外部 52,480　\n内部 12,540　\n相交 516　"
+      },
+      "home": {
+        "emptyVisible": true,
+        "released": true,
+        "geometryCleared": true,
+        "exportAvailable": true,
+        "mainPreviewReleased": true,
+        "exported": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/background-grid/app-uniform-home.zip"
+      },
+      "zip_bytes_match": true
+    },
+    {
+      "case": "packaged",
+      "audit": {
+        "cells": 23632,
+        "counts": [
+          15824,
+          5756,
+          2052
+        ],
+        "full_domain_coverage": true,
+        "classification_checked": true,
+        "balanced": true,
+        "solver_ready": false
+      },
+      "background_sha256": "292e1dd00eef03486724563c383f9259629fb2e4f27fad42794c462c66286733",
+      "actual_app": {
+        "rejected": [
+          "runFlow",
+          "runThermal",
+          "runEuler"
+        ],
+        "displayMode": "classification",
+        "panelsHidden": true,
+        "legend": "外部 15,824　\n内部 5,756　\n相交 2,052　"
+      },
+      "home": null,
+      "zip_bytes_match": true
+    }
+  ],
+  "frontend_tests": 178,
+  "new_reader_tests": 3,
+  "native_tools": [
+    {
+      "tool": "cartmesh2d_transport_cli",
+      "identical": true,
+      "sha256": "db176b6b1d1f00a65dd03e48a66b6fdcdf70c5fde14c152d729b063cacc65ff0"
+    },
+    {
+      "tool": "cartmesh2d_dxf_cli",
+      "identical": true,
+      "sha256": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696"
+    },
+    {
+      "tool": "cartmesh2d_flow_cli",
+      "identical": true,
+      "sha256": "2453d648f70b48b963c9a57c65a97879ce57bb8a22c16aa92e003101ac041e9b"
+    },
+    {
+      "tool": "cartmesh2d_hybrid_cli",
+      "identical": true,
+      "sha256": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a"
+    },
+    {
+      "tool": "cartmesh2d_euler_cli",
+      "identical": true,
+      "sha256": "b213d82002587fae4394c59ef6d9f611750ee218c3c355025968111319fa60f6"
+    },
+    {
+      "tool": "cartmesh2d_cli",
+      "identical": true,
+      "sha256": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799"
+    }
+  ],
+  "scope": "Background generation and desktop workflow; not fluid solver topology. Existing experimental Euler edits retained, no new physical capability qualification.",
+  "finalPackagedAudit": {
+    "cells": 23632,
+    "counts": [
+      15824,
+      5756,
+      2052
+    ],
+    "full_domain_coverage": true,
+    "classification_checked": true,
+    "balanced": true,
+    "solver_ready": false
+  },
+  "finalPackagedChecks": {
+    "background": {
+      "rejected": [
+        "runFlow",
+        "runThermal",
+        "runEuler"
+      ],
+      "displayMode": "classification",
+      "panelsHidden": true,
+      "legend": "外部 15,824　\n内部 5,756　\n相交 2,052　"
+    },
+    "layout": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 313,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": false
+      },
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    },
+    "zipOriginalBytesMatch": true
+  },
+  "finalNativeHashes": {
+    "cartmesh2d_cli": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "fc0572bb97ce18a81d87803904b97a6006316893ad50bfab0c6bb414a7028ad4",
+    "cartmesh2d_transport_cli": "0fa1182fca622b287ac851c67fe0bdf033c9352a1cf2d1ba491a3746d970644f",
+    "cartmesh2d_euler_cli": "b213d82002587fae4394c59ef6d9f611750ee218c3c355025968111319fa60f6"
+  },
+  "existingInterfaceRegression": {
+    "scope": "Previously uncommitted experimental interface only; no new physical model or Euler accuracy qualification. Unsupported uniform with embedded walls was refused.",
+    "cells": 728,
+    "checks": {
+      "repeatedFieldsAndHistoryIdentical": true,
+      "resumeChecked": true,
+      "failedBudgetPreservedComplete": true,
+      "cancelledTime": 0.0006389967807699637,
+      "cancelResumeChecked": true,
+      "allFiveFieldMaps": true
+    },
+    "audit": {
+      "maximumCellBalanceRelative": 1.1015993251073253e-19,
+      "acousticCourant": 0.009141016736178393,
+      "scope": "last accepted step finite-volume balance, EOS, mesh/field/checkpoint binding; full Rusanov physics audited separately"
+    }
+  }
+}

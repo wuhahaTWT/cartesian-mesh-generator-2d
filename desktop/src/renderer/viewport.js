@@ -54,6 +54,7 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
+    this.eulerFields = null;
     this.fieldRange = null;
     this.pendingDraw = null;
     this.attachInput();
@@ -63,7 +64,7 @@ class Viewport {
 
   theme() { return THEMES[this.mode] || THEMES.level; }
 
-  fieldPalette() { return this.mode === 'temperature' ? TEMPERATURE_RAMP : this.mode === 'pressure' ? PRESSURE_RAMP : SPEED_RAMP; }
+  fieldPalette() { return this.mode.endsWith('temperature') ? TEMPERATURE_RAMP : ['pressure','euler-p'].includes(this.mode) ? PRESSURE_RAMP : SPEED_RAMP; }
 
   attachInput() {
     this.canvas.addEventListener('wheel', event => {
@@ -133,12 +134,23 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
+    this.eulerFields = null;
     this.fieldRange = null;
     this.fitTo(mesh.bounds);
   }
 
   setFlowFields(cells) {
     this.flowFields = cells || null;
+    this.fieldRange = null;
+    if (this.meshCache) this.meshCache.field = null;
+    this.draw();
+  }
+
+  setEulerFields(cells) {
+    if (cells && (!this.mesh || cells.length !== this.mesh.cells.length ||
+        cells.some((cell,index)=>cell.id!==index || ['rho','u','v','p','rhoE','temperature','mach'].some(k=>!Number.isFinite(cell[k])))))
+      throw new Error('可压场与当前最终网格不匹配');
+    this.eulerFields = cells ? cells.map(cell=>({...cell,speed:Math.hypot(cell.u,cell.v)})) : null;
     this.fieldRange = null;
     if (this.meshCache) this.meshCache.field = null;
     this.draw();
@@ -163,6 +175,7 @@ class Viewport {
     this.outline = loops;
     this.flowFields = null;
     this.thermalFields = null;
+    this.eulerFields = null;
     this.fieldRange = null;
     const points = loops.flat();
     if (!points.length) return;
@@ -178,6 +191,7 @@ class Viewport {
     this.meshCache = null;
     this.flowFields = null;
     this.thermalFields = null;
+    this.eulerFields = null;
     this.fieldRange = null;
     this.draw();
   }
@@ -253,7 +267,7 @@ class Viewport {
     ctx.transform(this.scale, 0, 0, -this.scale,
                   -this.offset.x * this.scale,
                   height + this.offset.y * this.scale);
-    if ((['speed', 'pressure'].includes(this.mode) && this.flowFields) || (this.mode === 'temperature' && this.thermalFields)) {
+    if ((['speed', 'pressure'].includes(this.mode) && this.flowFields) || (this.mode === 'temperature' && this.thermalFields) || (this.mode.startsWith('euler-') && this.eulerFields)) {
       const field = this.cachedFieldPaths(mesh, this.mode);
       const palette = this.fieldPalette();
       field.bins.forEach((chunks, index) => {
@@ -261,17 +275,17 @@ class Viewport {
         for (const chunk of chunks) if (this.intersects(chunk.bounds, visible)) ctx.fill(chunk.path);
       });
     }
-    for (const { level, chunks } of cache.levels) {
+    for (const { level, classification, chunks } of cache.levels) {
       const visibleChunks = chunks.filter(chunk => this.intersects(chunk.bounds, visible));
-      if (theme.fill === 'level' && this.mode === 'level') {
-        ctx.fillStyle = levelColour(level, mesh.minLevel, mesh.maxLevel);
+      if ((theme.fill === 'level' && this.mode === 'level') || (mesh.background && this.mode==='classification')) {
+        ctx.fillStyle = this.mode==='classification' ? ['#79b8d4','#7f8fa8','#efac56'][classification] : levelColour(level, mesh.minLevel, mesh.maxLevel);
         for (const chunk of visibleChunks) ctx.fill(chunk.path);
       }
       // Outlining cells narrower than ~3 px turns the mesh into a solid block and
       // costs the most time on the largest meshes, so it is skipped there.  Without a
       // fill there would be nothing left to see, so the floor drops to 1 px.
       const onScreen = (cache.domainSpan / Math.pow(2, level)) * this.scale;
-      if (this.showGrid && onScreen >= (theme.fill ? 3 : 1)) {
+      if (this.showGrid && onScreen >= (theme.fill && !mesh.background ? 3 : 1)) {
         ctx.strokeStyle = theme.cellEdge;
         ctx.lineWidth = Math.min(theme.fill ? 1 : 0.7,
                                  Math.max(0.35, onScreen / 12)) / this.scale;
@@ -296,8 +310,9 @@ class Viewport {
     if (this.meshCache && this.meshCache.mesh === mesh) return this.meshCache;
     const levels = new Map();
     for (const cell of mesh.cells) {
-      if (!levels.has(cell.level)) levels.set(cell.level, []);
-      const chunks = levels.get(cell.level);
+      const group=mesh.background?cell.level*3+cell.classification:cell.level;
+      if (!levels.has(group)) levels.set(group, []);
+      const chunks = levels.get(group);
       if (!chunks.length || chunks[chunks.length - 1].cells === CELLS_PER_PATH) {
         chunks.push({ path: new Path2D(), cells: 0,
           bounds: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity } });
@@ -327,7 +342,7 @@ class Viewport {
     this.meshCache = {
       mesh,
       levels: [...levels].sort((a, b) => a[0] - b[0])
-        .map(([level, chunks]) => ({ level, chunks })),
+        .map(([group, chunks]) => ({ level:mesh.background?Math.floor(group/3):group, classification:mesh.background?group%3:null, chunks })),
       boundaries,
       field: null,
       domainSpan: Math.max(mesh.bounds.maxX - mesh.bounds.minX,
@@ -338,13 +353,13 @@ class Viewport {
 
   cachedFieldPaths(mesh, mode) {
     const cache = this.cachedMeshPaths(mesh);
-    const cells = mode === 'temperature' ? this.thermalFields : this.flowFields;
+    const cells = mode.startsWith('euler-') ? this.eulerFields : mode === 'temperature' ? this.thermalFields : this.flowFields;
     if (cache.field?.cells === cells && cache.field.mode === mode) return cache.field;
-    const key = mode === 'temperature' ? 'theta' : mode === 'pressure' ? 'p' : 'speed';
+    const key = mode.startsWith('euler-') ? mode.slice(6) : mode === 'temperature' ? 'theta' : mode === 'pressure' ? 'p' : 'speed';
     const values = cells.map(cell => cell[key]);
     let min = Infinity, max = -Infinity;
     for (const value of values) { if (value < min) min = value; if (value > max) max = value; }
-    const palette = mode === 'temperature' ? TEMPERATURE_RAMP : mode === 'pressure' ? PRESSURE_RAMP : SPEED_RAMP;
+    const palette = this.fieldPalette();
     const bins = Array.from({ length: palette.length }, () => []);
     mesh.cells.forEach((cell, id) => {
       const t = max > min ? (values[id] - min) / (max - min) : 0.5;
