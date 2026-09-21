@@ -15,6 +15,8 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -57,6 +59,33 @@ std::vector<double> viscosityCsv(const std::string& path,std::size_t count) {
     return values;
 }
 
+fv::FlowInitialGuess2D initialGuessCsv(const std::string& path,const fv::FvMesh2D& mesh) {
+    std::ifstream input(path);if(!input)throw std::runtime_error("cannot open initial guess CSV");
+    std::string line;std::getline(input,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    if(line!="cell,x,y,u,v,p")throw std::runtime_error("initial guess header must be cell,x,y,u,v,p");
+    fv::FlowInitialGuess2D result;
+    result.u.reserve(mesh.cells.size());result.v.reserve(mesh.cells.size());result.p.reserve(mesh.cells.size());
+    while(std::getline(input,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        std::istringstream row(line);std::string token;std::vector<double> values;
+        while(std::getline(row,token,',')) {
+            if(values.size()==6)throw std::runtime_error("initial guess row has extra fields");
+            values.push_back(number(token));
+        }
+        const auto i=result.u.size();
+        if(values.size()!=6 || line.back()==',' || i>=mesh.cells.size() || values[0]!=static_cast<double>(i))
+            throw std::runtime_error("initial guess row or cell order invalid");
+        const auto centre=mesh.cells[i].centre;
+        const double scale=std::max({std::abs(centre.x),std::abs(centre.y),std::sqrt(mesh.cells[i].area)});
+        if(std::abs(values[1]-centre.x)>32*std::numeric_limits<double>::epsilon()*scale ||
+           std::abs(values[2]-centre.y)>32*std::numeric_limits<double>::epsilon()*scale)
+            throw std::runtime_error("initial guess coordinates differ from target mesh");
+        result.u.push_back(values[3]);result.v.push_back(values[4]);result.p.push_back(values[5]);
+    }
+    if(!input.eof() || result.u.size()!=mesh.cells.size())throw std::runtime_error("initial guess does not cover target mesh");
+    return result;
+}
+
 std::ofstream out(const std::string& p, const char* ext) {
     std::ofstream s(p + ext);
     s.exceptions(std::ios::badbit | std::ios::failbit);
@@ -80,7 +109,7 @@ int main(int argc, char** argv) {
     double acceptedTime=0;
     bool transientOutputStarted=false;
     try {
-        std::string path,viscosityPath,boundaryPath,boundaryExportPath;
+        std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath;
         fv::FlowControls2D controls;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
@@ -109,6 +138,7 @@ int main(int argc, char** argv) {
             "--time-step DT --steps N: backward Euler physical time, converged SIMPLE at each step.\n"
             "--time-step MAX_DT --end-time T: adaptive backward Euler to absolute physical time T.\n"
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
+            "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
             "--linear-policy strict|adaptive; --convergence strict|engineering (steady laminar only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
@@ -166,6 +196,8 @@ int main(int argc, char** argv) {
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--initial-guess") {
+                guessPath=v;
             } else if (a == "--velocity-relaxation") {
                 controls.velocityRelaxation=number(v);
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
@@ -253,6 +285,8 @@ int main(int argc, char** argv) {
             fv::validateFlowTimeStepControls2D(adaptiveControls);
         } else if (adaptiveOptions || (timeStep>0)!=(requestedSteps>0) || (!restart.empty() && timeStep==0))
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
+        if(!guessPath.empty() && (timeStep>0 || !boundaryExportPath.empty()))
+            throw std::invalid_argument("initial-guess requires an actual steady solve");
         if((controls.adaptiveLinear || controls.convergence!=fv::FlowConvergence2D::Strict) && timeStep>0)
             throw std::invalid_argument("Adaptive linear/engineering convergence requires steady laminar flow");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
@@ -300,6 +334,8 @@ int main(int argc, char** argv) {
             for(const auto& f:mesh.faces)
                 controls.faceViscosity.push_back(controls.nu*(1+controls.manufacturedViscositySlope*f.centre.x));
         }
+        fv::FlowInitialGuess2D guess;
+        if(!guessPath.empty())guess=initialGuessCsv(guessPath,mesh);
         const double readSeconds = std::chrono::duration<double>(
             std::chrono::steady_clock::now() - readStart).count();
         const auto parent = std::filesystem::path(prefix).parent_path();
@@ -311,7 +347,8 @@ int main(int argc, char** argv) {
         fv::FlowResult2D r;
         std::size_t totalInnerIterations=0;
         fv::FlowPerformance2D totalPerformance;
-        if (timeStep==0) r=fv::solveIncompressible2D(mesh,controls,progress);
+        if (timeStep==0) r=guessPath.empty()?fv::solveIncompressible2D(mesh,controls,progress)
+            :fv::solveIncompressibleFromGuess2D(mesh,controls,guess,progress);
         else {
             fv::FlowState2D state;
             if (restart.empty()) state=fv::initialIncompressibleState2D(mesh,controls);
@@ -499,6 +536,7 @@ int main(int argc, char** argv) {
         const bool counterflowCase=controls.scenario == "counterflow";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        if(!guessPath.empty())summary << "\"steadyInitialization\":\"target-cell-initial-guess\",\n";
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
                                 << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"

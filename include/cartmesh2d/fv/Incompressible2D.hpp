@@ -201,6 +201,13 @@ struct FlowResult2D {
     const FlowControls2D&,
     const std::function<void(const FlowIteration2D&)>& progress = {});
 
+// Optional steady initial iterate, not a physical initial condition or restart.
+// Fluxes are rebuilt on the target mesh and every original acceptance gate applies.
+struct FlowInitialGuess2D { std::vector<double> u, v, p; };
+[[nodiscard]] FlowResult2D solveIncompressibleFromGuess2D(
+    const FvMesh2D&, const FlowControls2D&, const FlowInitialGuess2D&,
+    const std::function<void(const FlowIteration2D&)>& progress = {});
+
 // Backward Euler on a fixed mesh; SIMPLE iterations converge each time step.
 // Temporal and inner-iteration face-flux defects retain momentum interpolation.
 // The caller must not accept a result unless converged is true.

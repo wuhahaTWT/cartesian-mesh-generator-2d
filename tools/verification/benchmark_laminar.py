@@ -23,6 +23,7 @@ def main():
     p.add_argument('--tolerance',type=float,default=1e-8)
     p.add_argument('--velocity-relaxation',type=float,default=.6)
     p.add_argument('--no-resource-counters',action='store_true',help='Run without platform time wrapper; peak RSS is unmeasured')
+    p.add_argument('--initial-guess',type=Path)
     args=p.parse_args()
     if not 0<args.velocity_relaxation<=1:p.error('velocity relaxation must be in (0,1]')
     if not 0<args.timeout<=600 or not 0<args.iterations<=100000 or not 1e-12<=args.tolerance<=1e-6:
@@ -36,8 +37,9 @@ def main():
          '--nu','.1','--speed','1','--tolerance',str(args.tolerance),'--max-iterations',str(args.iterations),
          '--convection','face-limited-linear','--pressure-preconditioner','aggregation',
          '--steady-acceleration','anderson','--linear-policy',args.linear_policy,'--convergence','strict','--velocity-relaxation',str(args.velocity_relaxation),'--profile']
+    if args.initial_guess:cmd+=['--initial-guess',str(args.initial_guess.resolve(strict=True))]
     wrapper=[] if args.no_resource_counters else ['/usr/bin/time','-l' if platform.system()=='Darwin' else '-v']
-    input_hashes={str(x):hashlib.sha256(x.read_bytes()).hexdigest() for x in [cli,mesh,bc,Path(__file__).resolve()]}
+    input_hashes={str(x):hashlib.sha256(x.read_bytes()).hexdigest() for x in [cli,mesh,bc,Path(__file__).resolve()]+([args.initial_guess.resolve()] if args.initial_guess else [])}
     start=time.monotonic();record=run_process_group(wrapper+cmd,prefix,args.timeout);record['wallSeconds']=time.monotonic()-start
     record['inputHashes']=input_hashes
     record['timeoutSeconds']=args.timeout

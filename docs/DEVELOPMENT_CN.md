@@ -616,6 +616,17 @@ profile分别记录 `pressureHierarchyBuilds`（完整分组）、`pressureHiera
 
 开发分支CLI/核心提供一阶后向欧拉。桌面0.4.4起提供固定时间步、物理量监测、取消保留与checkpoint续算；0.4.18增加CFL控制的自动步长及失败重试，本地macOS已打包实测；不支持二阶时间格式、时间误差估计、瞬态湍流或移动网格。
 
+稳态层流可用 `--initial-guess CSV` 指定**迭代起点**。CSV头必须为`cell,x,y,u,v,p`，按目标网格单元编号覆盖所有单元，坐标必须与目标单元中心一致；拒绝缺行、错序、非有限数、错坐标、非定常与边界模板导出组合。它不是检查点或物理初始条件；目标面的通量重新构造，指定边界条件和全部严格停止门仍生效。API对应`solveIncompressibleFromGuess2D`。默认不读取初值，桌面尚未提供此选项。
+
+规则网格参考研究可用下列工具从已收敛粗场生成细网格初值：
+```sh
+python3 tools/verification/prolongate_regular_flow.py --source-mesh COARSE.solver.cm2d --source-prefix outputs/coarse --target-mesh FINE.solver.cm2d --output outputs/fine-initial.csv
+python3 tools/verification/benchmark_laminar.py --mesh FINE.solver.cm2d --boundary FINE.boundaries --output outputs/fine-warm --initial-guess outputs/fine-initial.csv --velocity-relaxation .8 --tolerance 1e-8
+python3 tools/verification/prolongate_regular_flow.py --source-mesh FINE.solver.cm2d --source-prefix outputs/fine-warm --target-mesh FINE.solver.cm2d --output outputs/fine-tight-initial.csv
+python3 tools/verification/benchmark_laminar.py --mesh FINE.solver.cm2d --boundary FINE.boundaries --output outputs/fine-tight --initial-guess outputs/fine-tight-initial.csv --velocity-relaxation .8 --tolerance 1e-10 --timeout 300
+```
+`benchmark_laminar.py`的物性/格式约束见下文；上述文件名是占位符。映射工具仅支持同域完整矩形张量粗网格，不是任意Cut-cell的几何映射器。源场必须有严格收敛记录，仍须核对源场与细场的独立方程；插值本身不建立物理精度资格。计时必须计入粗解、映射、中间细解和最终加严求解，独立审核时间另列。比较时使用同一个最终停止容差，并检查场差与解析误差，不能只比较迭代轮数。
+
 CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制稳态迭代或每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。流动CLI允许稳态/非定常；同步热输运允许演化载流，冻结载流拒绝；不会自动调大，桌面当前仍使用默认值。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
 
 稳态层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。二者拒绝非定常与材料耦合。当前桌面仍使用strict，不能把CLI试验参数误称已接入桌面。

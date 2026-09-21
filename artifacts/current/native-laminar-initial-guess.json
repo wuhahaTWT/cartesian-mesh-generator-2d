@@ -1,0 +1,298 @@
+{
+  "format": "cartmesh2d-laminar-initial-guess-v1",
+  "scope": "102400-cell complete rectangular pressure-driven laminar reference channel; single serial timing samples. No general Cut-cell interpolation or performance qualification. All original gates retained.",
+  "parameters": {
+    "L": 4,
+    "H": 1,
+    "nu": 0.1,
+    "pressureDrop": 4.8,
+    "finalTolerance": 1e-10,
+    "velocityRelaxation": 0.8,
+    "pressurePreconditioner": "aggregation",
+    "steadyAcceleration": "anderson",
+    "linearPolicy": "adaptive"
+  },
+  "cold": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--mesh",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/cold-tight-102400",
+      "--case",
+      "custom",
+      "--boundary",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries",
+      "--nu",
+      ".1",
+      "--speed",
+      "1",
+      "--tolerance",
+      "1e-10",
+      "--max-iterations",
+      "3000",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--steady-acceleration",
+      "anderson",
+      "--linear-policy",
+      "adaptive",
+      "--convergence",
+      "strict",
+      "--velocity-relaxation",
+      "0.8",
+      "--profile"
+    ],
+    "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/cold-tight-102400 --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries --nu .1 --speed 1 --tolerance 1e-10 --max-iterations 3000 --convection face-limited-linear --pressure-preconditioner aggregation --steady-acceleration anderson --linear-policy adaptive --convergence strict --velocity-relaxation 0.8 --profile",
+    "returncode": 0,
+    "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/cold-tight-102400.stdout.log",
+    "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/cold-tight-102400.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 474.59525654200115,
+    "inputHashes": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "5011c6384fff9b20c00d876ce152dac76938a122ed1e046a78d1693cab19a225",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d": "f7de17647a3cff035d8cddfdb3c785f90e8dbb313147038278aca6ef75a5e91b",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries": "9829ddb3fc6fb065f082ae2588b9431198e5ffc3928adce9475051963541bbf6",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/benchmark_laminar.py": "5fcb8664912f592d2fc783da6e553cd218f606648f0d774c1407078027a6cc30"
+    },
+    "timeoutSeconds": 600.0,
+    "resourceCountersMeasured": false,
+    "scope": "Same strict stopping gates; custom incompressible laminar flow, nu=.1 and Uref=1. Independent equation/accuracy audit required separately.",
+    "maximumRssBytes": null,
+    "summary": {
+      "converged": true,
+      "iterations": 1959,
+      "cells": 102400,
+      "case": "custom",
+      "nu": 0.1,
+      "speed": 1,
+      "tolerance": 1e-10,
+      "momentumResidual": 3.4476719469789764e-12,
+      "velocityChange": 8.585795081854223e-12,
+      "pressureChange": 3.453076208808687e-11,
+      "continuity": 1.858328497863382e-12,
+      "globalRelativeImbalance": 4.703346705578069e-13,
+      "strictLinearFinal": true,
+      "adaptiveLinear": true,
+      "convergenceMode": "strict",
+      "velocityRelaxation": 0.8
+    },
+    "performance": {
+      "format": "cartmesh2d-flow-performance-v1",
+      "cells": 102400,
+      "faces": 205600,
+      "simpleIterations": 1959,
+      "converged": true,
+      "pressurePreconditioner": "aggregation",
+      "readAndMeshSeconds": 0.355746333,
+      "solveSeconds": 472.848714958,
+      "momentumLinearSolveSeconds": 95.9575220179999,
+      "pressureLinearSolveSeconds": 223.42984865799954,
+      "momentumSolves": 3918,
+      "momentumIterations": 39658,
+      "maxMomentumIterations": 20,
+      "pressureSolves": 3889,
+      "pressureCorrectionPassesSkipped": 3947,
+      "pressureFactorizations": 0,
+      "pressureFactorReuses": 0,
+      "pressureHierarchyBuilds": 215,
+      "pressureHierarchyReuses": 0,
+      "pressureHierarchyRefreshes": 1715,
+      "maxPressureHierarchyLevels": 13,
+      "maxPressureCoarseCells": 22,
+      "pressureIterations": 42239,
+      "maxPressureIterations": 59,
+      "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+    },
+    "converged": true,
+    "accuracyQualified": false
+  },
+  "warmFinal": {
+    "command": [
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+      "--mesh",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d",
+      "--output",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/warm-polish-102400",
+      "--case",
+      "custom",
+      "--boundary",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries",
+      "--nu",
+      ".1",
+      "--speed",
+      "1",
+      "--tolerance",
+      "1e-10",
+      "--max-iterations",
+      "3000",
+      "--convection",
+      "face-limited-linear",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--steady-acceleration",
+      "anderson",
+      "--linear-policy",
+      "adaptive",
+      "--convergence",
+      "strict",
+      "--velocity-relaxation",
+      "0.8",
+      "--profile",
+      "--initial-guess",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/fine-to-tight-102400.csv"
+    ],
+    "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/warm-polish-102400 --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries --nu .1 --speed 1 --tolerance 1e-10 --max-iterations 3000 --convection face-limited-linear --pressure-preconditioner aggregation --steady-acceleration anderson --linear-policy adaptive --convergence strict --velocity-relaxation 0.8 --profile --initial-guess /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/fine-to-tight-102400.csv",
+    "returncode": 0,
+    "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/warm-polish-102400.stdout.log",
+    "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/warm-polish-102400.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 97.5475901250029,
+    "inputHashes": {
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "5011c6384fff9b20c00d876ce152dac76938a122ed1e046a78d1693cab19a225",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-102400.solver.cm2d": "f7de17647a3cff035d8cddfdb3c785f90e8dbb313147038278aca6ef75a5e91b",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/channel-large-boundaries": "9829ddb3fc6fb065f082ae2588b9431198e5ffc3928adce9475051963541bbf6",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/benchmark_laminar.py": "5fcb8664912f592d2fc783da6e553cd218f606648f0d774c1407078027a6cc30",
+      "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/fine-to-tight-102400.csv": "c0d1a0063cbbfc579fc534dc09daa1d57a0d4d70b55884f490d510e01b9dd02e"
+    },
+    "timeoutSeconds": 300.0,
+    "resourceCountersMeasured": false,
+    "scope": "Same strict stopping gates; custom incompressible laminar flow, nu=.1 and Uref=1. Independent equation/accuracy audit required separately.",
+    "maximumRssBytes": null,
+    "summary": {
+      "converged": true,
+      "iterations": 659,
+      "cells": 102400,
+      "case": "custom",
+      "nu": 0.1,
+      "speed": 1,
+      "tolerance": 1e-10,
+      "momentumResidual": 3.579158008298176e-12,
+      "velocityChange": 1.0737570108141066e-11,
+      "pressureChange": 0,
+      "continuity": 7.815806953367343e-13,
+      "globalRelativeImbalance": 2.807616225591874e-14,
+      "strictLinearFinal": true,
+      "adaptiveLinear": true,
+      "convergenceMode": "strict",
+      "velocityRelaxation": 0.8,
+      "steadyInitialization": "target-cell-initial-guess"
+    },
+    "performance": {
+      "format": "cartmesh2d-flow-performance-v1",
+      "cells": 102400,
+      "faces": 205600,
+      "simpleIterations": 659,
+      "converged": true,
+      "pressurePreconditioner": "aggregation",
+      "readAndMeshSeconds": 0.410049125,
+      "solveSeconds": 95.675622458,
+      "momentumLinearSolveSeconds": 18.893623443999992,
+      "pressureLinearSolveSeconds": 25.384858890000007,
+      "momentumSolves": 1318,
+      "momentumIterations": 7165,
+      "maxMomentumIterations": 12,
+      "pressureSolves": 1272,
+      "pressureCorrectionPassesSkipped": 1364,
+      "pressureFactorizations": 0,
+      "pressureFactorReuses": 0,
+      "pressureHierarchyBuilds": 69,
+      "pressureHierarchyReuses": 0,
+      "pressureHierarchyRefreshes": 544,
+      "maxPressureHierarchyLevels": 13,
+      "maxPressureCoarseCells": 22,
+      "pressureIterations": 3857,
+      "maxPressureIterations": 32,
+      "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+    },
+    "converged": true,
+    "accuracyQualified": false
+  },
+  "pipelineStages": [
+    {
+      "name": "Coarse solve",
+      "seconds": 10.561179666998214
+    },
+    {
+      "name": "Coarse mapping",
+      "seconds": 2.995749416993931
+    },
+    {
+      "name": "Fine solve 1e-8",
+      "seconds": 78.9396400419937
+    },
+    {
+      "name": "Fine remapping",
+      "seconds": 5.017467832993134
+    },
+    {
+      "name": "Fine solve 1e-10",
+      "seconds": 97.5475901250029
+    }
+  ],
+  "totalPipelineSeconds": 195.06162708398188,
+  "speedup": 2.43305289531738,
+  "independentComparison": {
+    "valid": true,
+    "issues": [],
+    "velocityReferenceL2": 5.857986588040277e-05,
+    "maximumDifferences": {
+      "u": 4.7157536320341364e-08,
+      "v": 2.3370738216775736e-10,
+      "p": 6.000249186399742e-10
+    }
+  },
+  "warmReference": {
+    "valid": true,
+    "issues": [],
+    "velocityReferenceL2": 5.860973590236677e-05
+  },
+  "failedResearch": [
+    {
+      "prefix": "warm-tight-102400",
+      "timedOut": true,
+      "seconds": 180,
+      "reason": "velocity change still above 1e-10; no accepted result"
+    }
+  ],
+  "precisionCheck": "Loose 1e-8 startup comparisons differed by 5.19e-5 in u and were not accepted as equal-accuracy speed evidence. Final 1e-10 comparison is the acceptance result.",
+  "artifacts": {
+    "meshSha256": "f7de17647a3cff035d8cddfdb3c785f90e8dbb313147038278aca6ef75a5e91b",
+    "directory": "outputs/laminar-performance"
+  },
+  "verification": {
+    "fullCtest": 151,
+    "ctestSeconds": 97.06,
+    "frontendTests": 178,
+    "packagedInitialGuessEndToEndPassed": true
+  },
+  "package": {
+    "version": "0.4.31",
+    "buildRuntimeAppHashesMatch": {
+      "cartmesh2d_cli": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799",
+      "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+      "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+      "cartmesh2d_flow_cli": "5011c6384fff9b20c00d876ce152dac76938a122ed1e046a78d1693cab19a225",
+      "cartmesh2d_transport_cli": "54119b37373a0a9f69e17c6afa6c49fcaf82770d25c1fae3551a4ec5f3ceef79",
+      "cartmesh2d_euler_cli": "b213d82002587fae4394c59ef6d9f611750ee218c3c355025968111319fa60f6"
+    },
+    "actualAppDefaultRegression": {
+      "cells": 2504,
+      "converged": true,
+      "iterations": 181,
+      "previousReleaseFilesIdentical": {
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".residuals.csv": true,
+        ".fields.json": true,
+        ".vtk": true
+      },
+      "gates": "\u5185\u90e8\u62d3\u6251\u68c0\u67e5\nPASS\n\u8be6\u60c5\nSolver \u8d28\u91cf\nPASS\n\u8be6\u60c5\n\u65b9\u5411\u8fde\u901a\u8d28\u91cf\nFAIL\n\u8be6\u60c5"
+    }
+  },
+  "compressedFieldRestoreManifest": "outputs/laminar-performance/compressed-diagnostics.json"
+}

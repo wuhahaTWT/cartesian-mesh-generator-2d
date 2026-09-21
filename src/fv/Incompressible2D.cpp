@@ -463,7 +463,7 @@ static FlowResult2D solveFlow(
     const FvMesh2D& m, const FlowControls2D& input,
     const std::function<void(const FlowIteration2D&)>& progress,
     const FlowState2D* previous, double timeStep,
-    const detail::MaterialUpdate2D& material = {}) {
+    const detail::MaterialUpdate2D& material = {}, const FlowInitialGuess2D* guess = nullptr) {
     auto c=input;
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
@@ -509,6 +509,11 @@ static FlowResult2D solveFlow(
     auto b = boundaries(m, c);
     const auto n = m.cells.size();
     const auto nf = m.faces.size();
+    if(guess) {
+        ensure(!previous && !material,"Steady initial guess cannot initialize time or material coupling");
+        ensure(guess->u.size()==n && guess->v.size()==n && guess->p.size()==n,"Initial guess size differs from mesh");
+        for(const auto* field:{&guess->u,&guess->v,&guess->p})for(double value:*field)finite(value);
+    }
     if (previous) {
         ensure(std::isfinite(timeStep) && timeStep>0 && std::isfinite(previous->time) && previous->time>=0 &&
                    std::isfinite(previous->time+timeStep) && previous->time+timeStep>previous->time,
@@ -645,6 +650,10 @@ static FlowResult2D solveFlow(
             r.u[i] = b.initialU; r.v[i] = b.initialV; r.p[i] = b.initialP;
         }
     }
+    if(guess) {
+        r.u=guess->u;r.v=guess->v;r.p=guess->p;
+        if(b.closed) {const double gauge=r.p.front();for(double& p:r.p)p=finite(p-gauge);}
+    }
     for (std::size_t id = 0; id < nf; ++id) {
         const auto& f = m.faces[id];
         r.flux[id] =
@@ -657,6 +666,15 @@ static FlowResult2D solveFlow(
             r.flux[id] = f.neighbour ? interpolate(f, r.u)*f.areaVector.x + interpolate(f, r.v)*f.areaVector.y
                 : b.role[id] == Role::Inlet ? b.u[id]*f.areaVector.x + b.v[id]*f.areaVector.y
                 : (b.role[id] == Role::Outlet || b.role[id] == Role::Opening) ? r.u[f.owner]*f.areaVector.x + r.v[f.owner]*f.areaVector.y : 0;
+    }
+
+    if(guess)for(std::size_t id=0;id<nf;++id) {
+        const auto& f=m.faces[id];
+        r.flux[id]=f.neighbour ? interpolate(f,r.u)*f.areaVector.x+interpolate(f,r.v)*f.areaVector.y
+            : b.role[id]==Role::Inlet ? b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y
+            : (b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield)
+                ? r.u[f.owner]*f.areaVector.x+r.v[f.owner]*f.areaVector.y : 0.;
+        finite(r.flux[id]);
     }
 
     Vec oldFluxDefect(nf);
@@ -1110,6 +1128,10 @@ static FlowResult2D solveFlow(
 FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
     return solveFlow(m,c,progress,nullptr,0);
+}
+FlowResult2D solveIncompressibleFromGuess2D(const FvMesh2D& m,const FlowControls2D& c,
+    const FlowInitialGuess2D& guess,const std::function<void(const FlowIteration2D&)>& progress) {
+    return solveFlow(m,c,progress,nullptr,0,{},&guess);
 }
 FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D& c,
     const MaterialUpdate2D& material,const std::function<void(const FlowIteration2D&)>& progress) {
