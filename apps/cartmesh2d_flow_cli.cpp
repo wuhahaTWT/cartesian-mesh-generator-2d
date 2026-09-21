@@ -110,6 +110,7 @@ int main(int argc, char** argv) {
             "--time-step MAX_DT --end-time T: adaptive backward Euler to absolute physical time T.\n"
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--velocity-relaxation 0.6: transient inner iterations only; (0,1], larger may be unstable.\n"
+            "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
@@ -162,6 +163,10 @@ int main(int argc, char** argv) {
                 if (!(controls.velocityRelaxation>0 && controls.velocityRelaxation<=1))
                     throw std::invalid_argument("velocity-relaxation must be in (0,1]");
                 explicitVelocityRelaxation=true;
+            } else if (a == "--steady-acceleration") {
+                if(v=="none")controls.steadyAcceleration=fv::SteadyAcceleration2D::None;
+                else if(v=="anderson")controls.steadyAcceleration=fv::SteadyAcceleration2D::Anderson;
+                else throw std::invalid_argument("steady-acceleration must be none or anderson");
             } else if (a == "--time-step") {
                 timeStep=number(v);
                 if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
@@ -243,6 +248,8 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
         if (explicitVelocityRelaxation && timeStep==0)
             throw std::invalid_argument("velocity-relaxation option requires transient flow");
+        if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
+            throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {
             if (vortexOptions!=15 || timeStep==0 || !restart.empty() || !boundaryExportPath.empty() ||
                 (controls.scenario!="external" && controls.scenario!="channel" && controls.scenario!="duct" &&
@@ -486,7 +493,11 @@ int main(int argc, char** argv) {
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
-                                << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
+                                << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
+                                << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
+                                << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
+                                << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
+                                << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
         if (vortexOptions) summary << "\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
             << initialVortex.centre.x << ',' << initialVortex.centre.y << "],\"radius\":" << initialVortex.radius
             << ",\"peakSpeed\":" << initialVortex.peakSpeed << ",\"checkpointSuffix\":\".initial.checkpoint\"},\n";

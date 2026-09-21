@@ -114,6 +114,20 @@ void steadyRelaxationIndependence() {
         auto changed=control;changed.velocityRelaxation=alpha;
         compare(baseline,solveIncompressible2D(mesh,changed));
     }
+    auto accelerated=control;accelerated.steadyAcceleration=SteadyAcceleration2D::Anderson;
+    const auto faster=solveIncompressible2D(mesh,accelerated);
+    compare(baseline,faster);
+    require(faster.performance.accelerationAccepted>0,"Anderson never accepted a candidate");
+    require(faster.history.size()<baseline.history.size(),"Anderson did not accelerate the warped channel");
+    compare(faster,solveIncompressible2D(rotated(mesh,std::acos(-1.)/2),accelerated),std::acos(-1.)/2);
+    auto shifted=accelerated;
+    for(auto& b:shifted.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening)b.pressure+=7.25;
+    compare(faster,solveIncompressible2D(mesh,shifted),0,7.25);
+    rejects([&]{(void)advanceIncompressible2D(mesh,accelerated,initialIncompressibleState2D(mesh,control),.02);});
+    const auto cavity=rectangle(10,10,1);auto closed=conditions(cavity,true);
+    const auto original=solveIncompressible2D(cavity,closed);
+    closed.steadyAcceleration=SteadyAcceleration2D::Anderson;
+    compare(original,solveIncompressible2D(cavity,closed));
 }
 
 void pressureOpenings() {

@@ -883,6 +883,8 @@ async function runSmoke() {
       document.getElementById('flowConvection').dispatchEvent(new Event('change'));
       document.getElementById('flowPressurePreconditioner').value = ${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')};
       document.getElementById('flowPressurePreconditioner').dispatchEvent(new Event('change'));
+      document.getElementById('flowSteadyAcceleration').value = ${JSON.stringify(argument('flow-steady-acceleration') || 'none')};
+      document.getElementById('flowSteadyAcceleration').dispatchEvent(new Event('change'));
       if (${JSON.stringify(argument('flow') === 'custom')}) {
         await smoke.prepareFlowBoundaries(${JSON.stringify(argument('flow-boundary-preset') || 'duct')});
         if (!smoke.state.flowBoundaryDefinition) throw new Error('Custom boundary editor did not receive definition');
@@ -927,6 +929,7 @@ async function runSmoke() {
         document.getElementById('flowMode').value='steady';
         document.getElementById('flowMode').dispatchEvent(new Event('change'));
         document.getElementById('flowConvection').value='upwind';
+        document.getElementById('flowSteadyAcceleration').value='none';
         document.getElementById('flowInitialVortex').checked=false;
         document.getElementById('flowVortexSpeed').value='7';
         smoke.state.flowBoundaryDefinition=null;
@@ -1304,6 +1307,18 @@ async function runSmoke() {
         mainWindow.setSize(1100,800);
         await new Promise(resolve=>setTimeout(resolve,200));
         await mainWindow.webContents.executeJavaScript("document.getElementById('flowBoundarySettings').scrollIntoView({block:'start'});");
+      }
+      if (argument('flow-acceleration-shot')) {
+        mainWindow.setSize(1320,900);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript(`(() => {
+          const result=document.getElementById('flowResult'),summary=window.__smoke.state.flow?.summary;
+          if(summary?.steadyAcceleration!=='anderson' || !(summary.accelerationAccepted>0) || !result.innerText.includes('历史迭代'))
+            throw new Error('Steady acceleration did not reach the actual App result');
+          if(document.getElementById('flowSteadyAcceleration').value!=='anderson')throw new Error('Acceleration control differs from result');
+          document.getElementById('flowSteadyAcceleration').scrollIntoView({block:'center'});
+          result.scrollIntoView({block:'start'});
+        })()`);
       }
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());

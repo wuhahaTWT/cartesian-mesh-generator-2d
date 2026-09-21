@@ -103,10 +103,13 @@ function validateFlowRequest(request = {}) {
   if (viscousStress !== VISCOUS_STRESS) throw new Error('未知黏性应力格式。当前仅支持 symmetric。');
   const mode = request.mode ?? 'steady';
   if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
+  const steadyAcceleration=request.steadyAcceleration ?? 'none';
+  if (!['none','anderson'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
+    throw new Error('稳态加速仅支持稳态流动的 none 或 anderson。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, tolerance, convection,
-    pressurePreconditioner, outletBackflow, viscousStress, mode, resume: Boolean(request.resume) };
+    pressurePreconditioner, outletBackflow, viscousStress, steadyAcceleration, mode, resume: Boolean(request.resume) };
   if (flowCase.id === 'custom') {
     if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
     normalized.boundaryDefinition = normalizeBoundaryDefinition(request.boundaryDefinition);
@@ -149,6 +152,7 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
       '--min-time-step',String(validated.minDt),'--max-courant',String(validated.maxCourant),
       '--max-step-retries',String(validated.maxRetries),'--max-time-steps',String(validated.maxSteps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
+  if (validated.steadyAcceleration!=='none') temporalArgs.push('--steady-acceleration',validated.steadyAcceleration);
   if (validated.initialVortex) {
     const v=validated.initialVortex;
     temporalArgs.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
@@ -381,6 +385,19 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
 
   validateWallLoads(normalizedSummary);
   validateBoundaryFluxes(normalizedSummary);
+  const acceleration=summary.steadyAcceleration ?? 'none';
+  if (summary.steadyAcceleration===undefined && ['accelerationCandidates','accelerationAccepted','accelerationRejected'].some(key=>Object.hasOwn(summary,key)))
+    throw new Error('稳态加速统计缺少模式。');
+  if (!['none','anderson'].includes(acceleration) || (acceleration!=='none' && transient))
+    throw new Error('稳态加速结果模式无效。');
+  normalizedSummary.steadyAcceleration=acceleration;
+  if (summary.steadyAcceleration!==undefined) {
+    for (const key of ['accelerationCandidates','accelerationAccepted','accelerationRejected'])
+      if (!Number.isInteger(summary[key]) || summary[key]<0 || summary[key]>iterations)
+        throw new Error('稳态加速统计无效。');
+    if (summary.accelerationCandidates!==summary.accelerationAccepted+summary.accelerationRejected ||
+        (acceleration==='none' && summary.accelerationCandidates!==0)) throw new Error('稳态加速统计不一致。');
+  }
   validateInitialVortexOutput(summary,null,startTime);
 
   if (expectedRequest) {
@@ -403,6 +420,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         || normalizedSummary.pressurePreconditioner !== request.pressurePreconditioner
         || normalizedSummary.outletBackflow !== request.outletBackflow
         || normalizedSummary.tolerance !== request.tolerance
+        || normalizedSummary.steadyAcceleration !== request.steadyAcceleration
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }

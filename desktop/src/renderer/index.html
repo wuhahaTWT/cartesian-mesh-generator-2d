@@ -282,6 +282,13 @@
         </select>
       </label>
       <p class="note">大网格可尝试；内存占用可能增加。</p>
+      <label class="field">稳态迭代加速
+        <select id="flowSteadyAcceleration">
+          <option value="none" selected>关闭（默认）</option>
+          <option value="anderson">历史迭代加速（Anderson，试验）</option>
+        </select>
+      </label>
+      <p class="note">可减少部分稳态算例的迭代；候选场需降低原动量残差并保持守恒，否则舍弃。收敛门不变，不保证所有工况更快。非定常和温度联算不使用。</p>
       <label class="field">出口回流
         <select id="flowOutletBackflow">
           <option value="reject" selected>检测到回流时停止</option>

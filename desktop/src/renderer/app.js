@@ -872,6 +872,8 @@ function renderFlowResult(summary) {
     ...(summary.timeStepControl==='adaptive-cfl-retry' ? [['时间步控制','自动 CFL / 重试'],['拒绝的试算次数',String(summary.rejectedSteps)],['CFL 上限',summary.targetCourant]] : []),
     ['对流格式', convectionText],
     ['压力求解', pressurePreconditionerText],
+    ['稳态加速', summary.steadyAcceleration==='anderson'
+      ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
     ['出口回流', flowOutletBackflowLabel(summary)],
     ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
@@ -940,6 +942,7 @@ function updateFlowMode() {
     const element=$(id); if (element) element.disabled = state.busy || Boolean(resuming || thermalResuming);
   }
   $('flowPressurePreconditioner').disabled = state.busy;
+  $('flowSteadyAcceleration').disabled=state.busy||transient;
   if ($('flowCase').value==='custom') $('flowOutletBackflow').disabled=true;
   for(const control of document.querySelectorAll('#flowBoundarySettings input, #flowBoundarySettings select, #flowBoundarySettings button'))
     control.disabled=Boolean(state.busy||resuming||thermalResuming||!state.result);
@@ -1173,6 +1176,7 @@ function flowRequest() {
     maxIterations:Number($('flowMaxIterations').value),convection:$('flowConvection').value,
     tolerance:Number($('flowTolerance').value),
     pressurePreconditioner:$('flowPressurePreconditioner').value,
+    steadyAcceleration:transient?'none':$('flowSteadyAcceleration').value,
     outletBackflow:$('flowOutletBackflow').value,
     mode:$('flowMode').value,dt:Number($('flowDt').value),steps:Number($('flowSteps').value),
     endTime:Number($('flowEndTime').value),minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),
@@ -1189,7 +1193,7 @@ function applyFlowCase(request) {
   clearFlowBinding(); clearThermalBinding();
   state.flowBoundaryDefinition = request.boundaryDefinition ? structuredClone(request.boundaryDefinition) : null;
   applySharedFlowControls(request);
-  const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',
+  const fields = {mode:'flowMode',maxIterations:'flowMaxIterations',tolerance:'flowTolerance',pressurePreconditioner:'flowPressurePreconditioner',steadyAcceleration:'flowSteadyAcceleration',
     dt:'flowDt',steps:'flowSteps',endTime:'flowEndTime',minDt:'flowMinDt',maxCourant:'flowMaxCourant',
     maxRetries:'flowMaxRetries',maxSteps:'flowMaxSteps'};
   for (const [key,id] of Object.entries(fields)) if (request[key] !== undefined) $(id).value=request[key];
@@ -1332,6 +1336,7 @@ for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations', 'flowTolerance']) 
 }
 $('flowConvection').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('flowPressurePreconditioner').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
+$('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
 $('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('addRegion').addEventListener('click', addRegion);
 

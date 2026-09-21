@@ -210,3 +210,22 @@ test('desktop tolerance can only tighten the historical flow default',()=>{
   for(const tolerance of [0,-1,NaN,Infinity,1e-5,1e-13])
     assert.throws(()=>validateFlowRequest({...request,tolerance}));
 });
+
+test('steady acceleration is explicit, unavailable in time marching, and bound to recorded diagnostics', () => {
+  const request={case:'external',nu:.01,speed:1,maxIterations:30,steadyAcceleration:'anderson'};
+  const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request);
+  assert.equal(invocation.args[invocation.args.indexOf('--steady-acceleration')+1],'anderson');
+  assert.equal(validateFlowRequest({...request,steadyAcceleration:undefined}).steadyAcceleration,'none');
+  assert.throws(()=>validateFlowRequest({...request,steadyAcceleration:'unknown'}),/稳态加速/);
+  assert.throws(()=>validateFlowRequest({...request,mode:'transient',dt:.02,steps:1}),/稳态加速/);
+  const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
+    forceDefinition:'shared-face-newtonian-traction',forceX:2,forceY:-3,pressureForceX:1,pressureForceY:-1,
+    discreteForceX:2,discreteForceY:-3,wallForceX:2,wallForceY:-3,wallViscousForceX:1,wallViscousForceY:-2,
+    steadyAcceleration:'anderson',accelerationCandidates:6,accelerationAccepted:4,accelerationRejected:2};
+  assert.equal(validateFlowOutput(current,fields,2,request).summary.steadyAcceleration,'anderson');
+  assert.throws(()=>validateFlowOutput({...current,accelerationAccepted:5},fields,2,request),/统计不一致/);
+  assert.throws(()=>validateFlowOutput({...current,accelerationCandidates:NaN},fields,2,request),/统计无效/);
+  assert.throws(()=>validateFlowOutput({...current,steadyAcceleration:undefined},fields,2,request),/缺少模式/);
+  const legacy={...current};for(const key of ['steadyAcceleration','accelerationCandidates','accelerationAccepted','accelerationRejected'])delete legacy[key];
+  assert.throws(()=>validateFlowOutput(legacy,fields,2,request),/不一致/);
+});

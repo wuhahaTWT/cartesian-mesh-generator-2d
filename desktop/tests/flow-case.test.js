@@ -16,7 +16,7 @@ const temporal={dt:.04,endTime:1,minDt:.00001,maxCourant:.3,maxRetries:8,maxStep
   initialVortex:{centre:[.5,.5],radius:.1,peakSpeed:-.05}};
 test('flow case restores native solver arguments for each time mode and all named values',()=>{
   for(const mode of ['steady','transient','adaptive']) {
-    const input={...common,mode,...(mode==='steady'?{}:temporal)};
+    const input={...common,mode,...(mode==='steady'?{steadyAcceleration:'anderson'}:temporal)};
     const saved=createFlowCaseDocument(input,Buffer.from(mesh));
     const loaded=parseFlowCaseDocument(serializeFlowCase(saved),mesh);
     assert.deepEqual(loaded,saved);
@@ -38,7 +38,8 @@ test('case rejects a different mesh even with equal counts and checks boundary g
 });
 test('case never silently accepts restart, unknown or inactive solver settings, or invalid values',()=>{
   const saved=createFlowCaseDocument({...common,...temporal,mode:'adaptive'},mesh);
-  const mutations=[d=>d.format='cartmesh2d-flow-case-v3',d=>d.request.resume=true,
+  const mutations=[d=>d.format='cartmesh2d-flow-case-v4',d=>d.request.resume=true,
+    d=>d.request.steadyAcceleration='anderson',d=>delete d.request.steadyAcceleration,
     d=>delete d.request.tolerance,d=>d.request.tolerance=1e-4,
     d=>delete d.request.nu,d=>d.request.nu='0.1',d=>d.request.nu=-1,d=>d.request.dt=0,
     d=>d.request.turbulence='sst',d=>d.request.steps=10,d=>d.request.command='/bin/sh',
@@ -51,10 +52,14 @@ test('case never silently accepts restart, unknown or inactive solver settings, 
 });
 
 test('legacy case files retain the exact old default while v2 preserves tighter stopping controls',()=>{
-  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v2');
-  const legacy=structuredClone(saved);legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;
+  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v3');
+  const legacy=structuredClone(saved);legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;delete legacy.request.steadyAcceleration;
   const restored=parseFlowCaseDocument(serializeFlowCase(legacy),mesh);
   assert.equal(restored.request.tolerance,1e-6);assert.equal(restored.format,saved.format);
+  assert.equal(restored.request.steadyAcceleration,'none');
+  const v2=structuredClone(saved);v2.format='cartmesh2d-flow-case-v2';delete v2.request.steadyAcceleration;
+  assert.equal(parseFlowCaseDocument(serializeFlowCase(v2),mesh).request.steadyAcceleration,'none');
+  v2.request.steadyAcceleration='anderson';assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(v2),mesh),/旧版工况/);
   assert.equal(parseFlowCaseDocument(serializeFlowCase(saved),mesh).request.tolerance,1e-9);
   legacy.request.tolerance=1e-9;
   assert.throws(()=>parseFlowCaseDocument(serializeFlowCase(legacy),mesh),/旧版工况/);

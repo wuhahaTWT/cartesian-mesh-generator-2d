@@ -13,6 +13,7 @@ enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation }
 enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
+enum class SteadyAcceleration2D { None, Anderson };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
 // Normal velocity is free; incoming tangential velocity is zero.
@@ -48,6 +49,8 @@ struct FlowControls2D {
     std::size_t maxIterations = 1500;
     double velocityRelaxation = .6;
     double pressureRelaxation = .25;
+    // Optional safeguarded fixed-point extrapolation. Steady laminar only.
+    SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
     bool profile = false;
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
@@ -87,6 +90,7 @@ struct FlowState2D {
 };
 
 struct FlowPerformance2D {
+    std::size_t accelerationCandidates = 0, accelerationAccepted = 0, accelerationRejected = 0;
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
     std::size_t maxMomentumIterations = 0;

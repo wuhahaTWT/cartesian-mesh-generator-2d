@@ -5,6 +5,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
+#include "cartmesh2d/fv/detail/Anderson2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -483,6 +484,9 @@ static FlowResult2D solveFlow(
     ensure(c.velocityRelaxation > 0 && c.velocityRelaxation <= 1 &&
                c.pressureRelaxation > 0 && c.pressureRelaxation <= 1,
            "Invalid SIMPLE relaxation");
+    ensure(c.steadyAcceleration==SteadyAcceleration2D::None ||
+           (c.steadyAcceleration==SteadyAcceleration2D::Anderson && !previous && !material),
+           "Anderson acceleration requires steady laminar flow");
     ensure(c.pressurePreconditioner == PressurePreconditioner2D::Jacobi ||
                c.pressurePreconditioner == PressurePreconditioner2D::IncompleteCholesky0 ||
                c.pressurePreconditioner == PressurePreconditioner2D::Aggregation,
@@ -546,9 +550,10 @@ static FlowResult2D solveFlow(
     // large far-field cells carry the time term. Also require each row's
     // residual/diagonal in velocity units to be <=1% of the nonlinear target.
     // The existing global linear and nonlinear gates both remain in force.
-    const double momentumScaledStop=previous?finite(.01*c.tolerance*c.speed*c.velocityRelaxation)
-        :std::numeric_limits<double>::infinity();
-    ensure(momentumScaledStop>0,"Transient linear residual scale underflow");
+    // Apply this to steady solves too: an RHS-relative linear tolerance can
+    // otherwise return zero updates above a stricter nonlinear stop forever.
+    const double momentumScaledStop=finite(.01*c.tolerance*c.speed*c.velocityRelaxation);
+    ensure(momentumScaledStop>0,"Flow linear residual scale underflow");
     // Diagnostic normalization only; does not change pressure stopping.
     double shortestFace=std::numeric_limits<double>::infinity();
     for(const auto& face:m.faces)shortestFace=std::min(shortestFace,std::hypot(face.areaVector.x,face.areaVector.y));
@@ -715,11 +720,39 @@ static FlowResult2D solveFlow(
             destination.rhs[i]+=(destination.diag[i]-old)*field[i];
         }
     };
+    const bool accelerated=c.steadyAcceleration==SteadyAcceleration2D::Anderson;
+    detail::Anderson2D accelerator;
+    Vec stateScale;
+    if(accelerated) {
+        double area=0,length=0;
+        for(const auto& cell:m.cells)area+=cell.area;
+        for(const auto& face:m.faces)length+=std::hypot(face.areaVector.x,face.areaVector.y);
+        stateScale.resize(3*n+nf);
+        for(std::size_t i=0;i<n;++i) {
+            const double weight=std::sqrt(m.cells[i].area/area);
+            stateScale[i]=stateScale[n+i]=weight/c.speed;stateScale[2*n+i]=weight/pressureScale;
+        }
+        for(std::size_t i=0;i<nf;++i) {
+            const double size=std::hypot(m.faces[i].areaVector.x,m.faces[i].areaVector.y);
+            stateScale[3*n+i]=std::sqrt(size/length)/(c.speed*size);
+        }
+    }
+    const auto packState=[&] {
+        Vec state;state.reserve(3*n+nf);
+        for(const auto* field:{&r.u,&r.v,&r.p,&r.flux})state.insert(state.end(),field->begin(),field->end());
+        for(std::size_t i=0;i<state.size();++i)state[i]*=stateScale[i];
+        return state;
+    };
+    const auto unpackState=[&](const Vec& state) {
+        std::size_t i=0;
+        for(auto* field:{&r.u,&r.v,&r.p,&r.flux})for(auto& value:*field){value=state[i]/stateScale[i];++i;}
+    };
     refreshMomentum();
     for (std::size_t it = 1; it <= c.maxIterations; ++it) {
         const Vec oldU = r.u;
         const Vec oldV = r.v;
         const Vec oldP = r.p;
+        const Vec previousScaled=accelerated ? packState() : Vec{};
         takeRelaxed(au,checkU,r.u);
         takeRelaxed(av,checkV,r.v);
         // Use one pressure response for both components. Slip constraints can
@@ -833,13 +866,76 @@ static FlowResult2D solveFlow(
             ensure(scale>0,"Flow momentum scale underflow");
             const double residual=std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale;
             if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
+        bool acceleratedCandidate=false;
+        const bool baseConverged=it>=10 && mr<c.tolerance && du<c.tolerance && dp<c.tolerance &&
+            continuity<1e-8 && r.globalRelativeImbalance<1e-8 && materialConverged;
+        if(accelerated && it>=10 && !baseConverged) {
+            const auto candidate=accelerator.propose(previousScaled,packState());
+            if(candidate) {
+                ++r.performance.accelerationCandidates;
+                const Vec baseU=r.u,baseV=r.v,baseP=r.p,baseFlux=r.flux;
+                try {
+                    unpackState(*candidate);
+                    Vec candidateDivergence(n);double imbalance=0,incoming=0,candidateContinuity=0;
+                    bool allowed=true;
+                    for(std::size_t id=0;id<nf;++id) {
+                        const auto& face=m.faces[id];const double flux=r.flux[id];
+                        allowed=allowed && std::isfinite(flux);
+                        candidateDivergence[face.owner]+=flux;
+                        if(face.neighbour)candidateDivergence[*face.neighbour]-=flux;
+                        else {
+                            imbalance+=flux;incoming+=std::max(0.,-flux);
+                            if(b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::Reject && flux<0)allowed=false;
+                        }
+                    }
+                    for(std::size_t i=0;i<n;++i)candidateContinuity=std::max(candidateContinuity,
+                        std::abs(candidateDivergence[i])/(c.speed*std::sqrt(m.cells[i].area)));
+                    const double reference=b.closed?c.speed*h:incoming;
+                    const double relative=reference>0 ? std::abs(imbalance)/reference : (imbalance==0?0:1);
+                    allowed=allowed && std::isfinite(candidateContinuity) && candidateContinuity<1e-8 && relative<1e-8;
+                    if(allowed) {
+                        refreshMomentum();checkU.apply(r.u,mu);checkV.apply(r.v,mv);
+                        double candidateResidual=0,candidateX=0,candidateY=0;std::size_t candidateWorst=0;
+                        for(std::size_t i=0;i<n;++i) {
+                            const double scale=(checkU.diag[i]+checkV.diag[i])*c.speed;
+                            const double x=(mu[i]-checkU.rhs[i])/scale,y=(mv[i]-checkV.rhs[i])/scale;
+                            const double residual=std::hypot(x,y);
+                            allowed=allowed && std::isfinite(residual);
+                            if(residual>candidateResidual){candidateResidual=residual;candidateWorst=i;candidateX=x;candidateY=y;}
+                        }
+                        if(allowed && candidateResidual<mr) {
+                            acceleratedCandidate=true;
+                            mr=candidateResidual;worstCell=candidateWorst;worstX=candidateX;worstY=candidateY;
+                            continuity=candidateContinuity;r.globalImbalance=imbalance;r.globalRelativeImbalance=relative;
+                            du=dp=0;
+                            for(std::size_t i=0;i<n;++i) {
+                                du=std::max(du,std::hypot(r.u[i]-oldU[i],r.v[i]-oldV[i])/c.speed);
+                                dp=std::max(dp,std::abs(r.p[i]-oldP[i])/pressureScale);
+                            }
+                        }
+                    }
+                } catch(const std::runtime_error&) {
+                    // A failed extrapolation is not a failed SIMPLE step.
+                    // Restore its exact fields, then rebuild and recheck the
+                    // original equations; failures of that restore propagate.
+                }
+                if(acceleratedCandidate)++r.performance.accelerationAccepted;
+                else {
+                    ++r.performance.accelerationRejected;
+                    r.u=baseU;r.v=baseV;r.p=baseP;r.flux=baseFlux;refreshMomentum();accelerator.clear();
+                }
+            }
+        }
         FlowIteration2D step{it,finite(mr),finite(continuity),finite(du),finite(dp)};
         step.momentumWorstCell=worstCell;step.momentumResidualX=worstX;step.momentumResidualY=worstY;
         step.momentumPredictorResidual=finite(predictorResidual);step.momentumPredictorWorstCell=predictorWorstCell;
         step.pressureLinearResidual=finite(pressureLinearResidual);
         r.history.push_back(step);
         if(progress&&(it==1||it%10==0))progress(step);
-        if(it>=10&&mr<c.tolerance&&du<c.tolerance&&dp<c.tolerance&&continuity<1e-8&&r.globalRelativeImbalance<1e-8&&materialConverged){r.converged=true;break;}
+        // Only an ordinary SIMPLE step can certify the fixed-point and all
+        // original stopping gates. An extrapolated field is never the final
+        // convergence proof, even when its momentum residual is small.
+        if(baseConverged){r.converged=true;break;}
         if(c.stopRequested && c.stopRequested()){r.stopped=true;break;}
     }
     if (previous) {

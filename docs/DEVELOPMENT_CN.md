@@ -973,3 +973,13 @@ App复用`examples/acceptance/rectangle.xy`作为2×1m矩形内流示例，选�
 `flow_boundary`新增108格变形半通道回归，alphaU=.6/.8/.9、tol1e-11。旧代码速度/压力差约1.67e-4/9.85e-4，修正后最大速度/压力差约3.34e-10/5.23e-12。真实1,300格Cut-cell半通道以.6/.8对照：tol1e-9时最大速度差3.99e-7、压力差1.11e-8；tol1e-10时分别3.93e-8、1.15e-9，剩余差随停止容差降低。两档均独立审核原动量与面通量，未修改停止门。
 
 CLI默认仍为.6，显式速度松弛选项仍仅允许非定常；诊断通过临时API入口使用相同库测试，不将参数扫描入口打包。旧核心在.9时120秒超时、.95/1.0数值范围失败，不能把调大参数当作通用提速。修正后默认仍约16,525轮，性能问题未解决。稳态摘要记录`steadyFaceInterpolation=iteration-flux-defect-skew-corrected-v1`和实际`velocityRelaxation`，历史结果仍绑定各自二进制证据。
+
+### 有限历史稳态加速（0.4.28）
+
+CLI使用`--steady-acceleration anderson`，省略或`none`保持普通SIMPLE；App流动设置加入同名可选项，默认关闭。它不改变时间步或物理方程，不支持非定常和材料更新/RANS路径；温度联算不使用。工况文件升级v3保存该数值选项；v1/v2读取时明确补none，拒绝在旧格式中夹带新参数。结果记录候选/接受/拒绝计数，App与本次请求核对，最后一次迭代必须是普通SIMPLE收敛确认。
+
+实现位于`detail/Anderson2D.hpp`及`Incompressible2D.cpp`：以体积/边长和物理参考量缩放U/V/P/共享面通量，最多四个历史差分，二次正交QR求最小二乘系数。秩不足或系数绝对和超过1e4不提出候选；候选必须降低原非线性动量残差且满足原1e-8局部/全局质量门，否则逐字节恢复原SIMPLE场并清除历史。数值异常的候选也计入拒绝，不作为最终场。参考[Walker与Ni 2011](https://users.wpi.edu/~walker/Papers/Walker-Ni,SINUM,V49,1715-1735.pdf)的Type-II固定点加速，接受门直接检查本项目的离散方程。
+
+同时将已用于非定常的动量线性每行`abs(b-Au)/aP <= .01*tolerance*Uref*alphaU`约束用于稳态，既有全局线性残差门保留。否则严格稳态停止门可能仍未达到，而线性求解已经返回零更新。保留64格half-channel、upwind、nu=.1、tol1e-11的5000轮停滞，修正后990轮收敛。
+
+`cartmesh2d_steady_acceleration_cli`独立审核三种对流的原动量/连续性、与普通SIMPLE的场差及不支持的选项；`flow_boundary`核对变形半通道、旋转、压力平移与封闭顶盖腔。当前真实对照与原始命令在`outputs/native-flow/anderson-suite-current/`及同名完成归档；`render_steady_acceleration.py --study <directory> --output <png>`先核对各文件哈希和半通道方程再绘图。不要把单次本机运行时间当成其他工况的保证。App验收可加`--flow-steady-acceleration=anderson --flow-acceleration-shot=true --flow-require-converged=true --flow-case-check=true`，实际检查开关、加速计数、工况修改后重载及重复场。
