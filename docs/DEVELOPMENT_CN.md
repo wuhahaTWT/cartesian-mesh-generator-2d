@@ -636,9 +636,9 @@ python3 tools/verification/benchmark_laminar.py --mesh FINE.solver.cm2d --bounda
 ```
 `benchmark_laminar.py`的物性/格式约束见下文；上述文件名是占位符。映射工具仅支持同域完整矩形张量粗网格，不是任意Cut-cell的几何映射器。源场必须有严格收敛记录，仍须核对源场与细场的独立方程；插值本身不建立物理精度资格。计时必须计入粗解、映射、中间细解和最终加严求解，独立审核时间另列。比较时使用同一个最终停止容差，并检查场差与解析误差，不能只比较迭代轮数。
 
-CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制稳态迭代或每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。流动CLI允许稳态/非定常；同步热输运允许演化载流，冻结载流拒绝；不会自动调大，桌面当前仍使用默认值。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
+CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制稳态迭代或每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。流动CLI允许稳态/非定常；同步热输运允许演化载流，冻结载流拒绝；不会自动调大，桌面0.4.35可设置独立层流的速度松弛，默认仍为.6；桌面温度联算保持默认设置。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
 
-层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。adaptive线性支持固定/自动物理时间步，每个接受步都须严格复核，强迫序列每步重置；摘要`strictAcceptedSteps`只统计本次调用的接受步，`adaptiveLinearAttemptIterations`包含被拒候选步。engineering仍拒绝非定常，两者均拒绝材料耦合。当前桌面仍使用strict，不能把CLI试验参数误称已接入桌面。
+层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。adaptive线性支持固定/自动物理时间步，每个接受步都须严格复核，强迫序列每步重置；摘要`strictAcceptedSteps`只统计本次调用的接受步，`adaptiveLinearAttemptIterations`包含被拒候选步。engineering仍拒绝非定常，两者均拒绝材料耦合。桌面0.4.35已接通独立层流的strict/adaptive与速度松弛系数，稳态及固定/自动物理时间推进均可用；温度联算保持strict/.6并拒绝其它值。结果核对实际模式/松弛值，adaptive收敛必须有strictLinearFinal，时间推进还须strictAcceptedSteps等于本次completedSteps。工况v4保存这两项，v1—v3只恢复历史strict/.6；伪装在旧格式中的新选项明确拒绝。桌面默认仍为strict/.6，不自动切到性能试验参数。
 
 可复现串行层流性能测量：
 ```sh

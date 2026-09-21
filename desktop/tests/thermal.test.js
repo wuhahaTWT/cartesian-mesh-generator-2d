@@ -225,3 +225,8 @@ test('coupled flow retains its 1e-8 default and binds stricter user tolerance to
   validateThermalOutput(q,f.cells,history,f.joint,f.mesh,{...f.input,tolerance:1e-10});
   assert.throws(()=>validateThermalOutput(q,f.cells,history.replace(',10,1e-11,1e-12,',',10,1e-9,1e-12,'),f.joint,f.mesh,{...f.input,tolerance:1e-10}),/接受条件/);
 });
+
+test('thermal frontend cannot silently discard standalone flow acceleration controls',()=>{
+  assert.throws(()=>validateThermalRequest(request({linearPolicy:'adaptive'})),/独立层流/);
+  assert.throws(()=>validateThermalRequest(request({velocityRelaxation:.8})),/独立层流/);
+});

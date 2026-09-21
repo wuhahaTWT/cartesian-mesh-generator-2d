@@ -106,10 +106,14 @@ function validateFlowRequest(request = {}) {
   const steadyAcceleration=request.steadyAcceleration ?? 'none';
   if (!['none','anderson'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
     throw new Error('稳态加速仅支持稳态流动的 none 或 anderson。');
+  const linearPolicy=request.linearPolicy ?? 'strict';
+  if (!['strict','adaptive'].includes(linearPolicy)) throw new Error('线性迭代精度须为 strict 或 adaptive。');
+  const velocityRelaxation=finite(request.velocityRelaxation ?? .6,'速度松弛系数');
+  if (!(velocityRelaxation>0 && velocityRelaxation<=1)) throw new Error('速度松弛系数须大于0且不大于1。');
   if (request.resume !== undefined && typeof request.resume !== 'boolean') throw new Error('续算选项无效。');
   if (mode === 'steady' && request.resume) throw new Error('稳态模式不能读取非定常重启状态。');
   const normalized = { case: flowCase.id, nu, speed, maxIterations, tolerance, convection,
-    pressurePreconditioner, outletBackflow, viscousStress, steadyAcceleration, mode, resume: Boolean(request.resume) };
+    pressurePreconditioner, outletBackflow, viscousStress, steadyAcceleration, linearPolicy, velocityRelaxation, mode, resume: Boolean(request.resume) };
   if (flowCase.id === 'custom') {
     if (outletBackflow !== 'reject') throw new Error('命名边界目前只支持检测到出口回流时停止。');
     normalized.boundaryDefinition = normalizeBoundaryDefinition(request.boundaryDefinition);
@@ -153,6 +157,8 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
       '--max-step-retries',String(validated.maxRetries),'--max-time-steps',String(validated.maxSteps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
   if (validated.steadyAcceleration!=='none') temporalArgs.push('--steady-acceleration',validated.steadyAcceleration);
+  if (validated.linearPolicy!=='strict') temporalArgs.push('--linear-policy',validated.linearPolicy);
+  if (validated.velocityRelaxation!==.6) temporalArgs.push('--velocity-relaxation',String(validated.velocityRelaxation));
   if (validated.initialVortex) {
     const v=validated.initialVortex;
     temporalArgs.push('--initial-vortex-x',String(v.centre[0]),'--initial-vortex-y',String(v.centre[1]),
@@ -400,6 +406,21 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   }
   validateInitialVortexOutput(summary,null,startTime);
 
+  if (summary.adaptiveLinear!==undefined && typeof summary.adaptiveLinear!=='boolean')
+    throw new Error('原生线性迭代精度模式无效。');
+  if (summary.strictLinearFinal!==undefined && typeof summary.strictLinearFinal!=='boolean')
+    throw new Error('原生严格线性复核标记无效。');
+  const linearPolicy=summary.adaptiveLinear===true?'adaptive':'strict';
+  const velocityRelaxation=summary.velocityRelaxation===undefined?.6:finite(summary.velocityRelaxation,'速度松弛系数');
+  if (!(velocityRelaxation>0 && velocityRelaxation<=1)) throw new Error('原生速度松弛系数无效。');
+  if (linearPolicy==='adaptive' && normalizedSummary.converged && summary.strictLinearFinal!==true)
+    throw new Error('自适应线性结果缺少严格收敛复核。');
+  if (linearPolicy==='adaptive' && transient && (!Number.isInteger(summary.strictAcceptedSteps)
+      || summary.strictAcceptedSteps!==normalizedSummary.completedSteps))
+    throw new Error('自适应线性时间推进缺少逐步严格复核。');
+  normalizedSummary.linearPolicy=linearPolicy;
+  normalizedSummary.velocityRelaxation=velocityRelaxation;
+
   if (expectedRequest) {
     const request = validateFlowRequest(expectedRequest);
     validateInitialVortexOutput(summary,request,startTime);
@@ -421,6 +442,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         || normalizedSummary.outletBackflow !== request.outletBackflow
         || normalizedSummary.tolerance !== request.tolerance
         || normalizedSummary.steadyAcceleration !== request.steadyAcceleration
+        || normalizedSummary.linearPolicy !== request.linearPolicy
+        || normalizedSummary.velocityRelaxation !== request.velocityRelaxation
         || normalizedSummary.iterations > request.maxIterations)
       throw new Error('原生求解结果与请求工况不一致。');
   }

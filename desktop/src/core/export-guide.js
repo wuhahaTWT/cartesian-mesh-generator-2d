@@ -59,6 +59,7 @@ ${flow?.summary?.namedWallLoads ? '命名壁面载荷在摘要 namedWallLoads �
 ${flow?.summary?.timeStepControl === 'adaptive-cfl-retry' ? '自动步长仅控制 CFL 与失败重试，不是时间误差估计；需独立做步长细化。续算目标为绝对物理时间。\n' : ''}
 ${flow?.summary?.initialVortex ? `初始局部涡 compact-cubic-v1：中心 (${flow.summary.initialVortex.centre.join(', ')}) m，支撑半径 ${flow.summary.initialVortex.radius} m，带符号峰值速度 ${flow.summary.initialVortex.peakSpeed} m/s（正值逆时针）。仅在零时刻施加，整个支撑圆盘须位于流体内；不是持续源项。*.flow.initial.checkpoint 保存真实初始场，可用于独立复核或从零重算；*.flow.checkpoint 继续最后接受的状态，续算不再施加扰动。\n` : ''}
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，最后一步 dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；流动停止容差 ${flow.summary.tolerance ?? "未记录"}（动量残差与速度/压力变化），连续性门 1e-8；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
+${flow ? `线性迭代精度：${flow.summary.linearPolicy==='adaptive' || flow.summary.adaptiveLinear===true ? '自适应（最终仍须严格复核）' : '固定精度'}；速度松弛系数：${flow.summary.velocityRelaxation ?? '旧结果未记录'}。这些是数值迭代设置，不改变物理时间步或最终停止容差。\n` : ''}
 ${thermal ? `## 温度结果
 
 最后完整温度场：t=${thermal.summary.acceptedTime} s，${thermal.summary.minValue.toPrecision(6)}–${thermal.summary.maxValue.toPrecision(6)} K。先看 **temperature-preview.png**。

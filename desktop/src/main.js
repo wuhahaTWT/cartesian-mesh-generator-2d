@@ -933,6 +933,8 @@ async function runSmoke() {
       document.getElementById('flowPressurePreconditioner').value = ${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')};
       document.getElementById('flowPressurePreconditioner').dispatchEvent(new Event('change'));
       document.getElementById('flowSteadyAcceleration').value = ${JSON.stringify(argument('flow-steady-acceleration') || 'none')};
+      document.getElementById('flowLinearPolicy').value = ${JSON.stringify(argument('flow-linear-policy') || 'strict')};
+      document.getElementById('flowVelocityRelaxation').value = ${JSON.stringify(argument('flow-velocity-relaxation') || '.6')};
       document.getElementById('flowSteadyAcceleration').dispatchEvent(new Event('change'));
       if (${JSON.stringify(argument('flow') === 'custom')}) {
         await smoke.prepareFlowBoundaries(${JSON.stringify(argument('flow-boundary-preset') || 'duct')});
@@ -979,6 +981,8 @@ async function runSmoke() {
         document.getElementById('flowMode').dispatchEvent(new Event('change'));
         document.getElementById('flowConvection').value='upwind';
         document.getElementById('flowSteadyAcceleration').value='none';
+        document.getElementById('flowLinearPolicy').value='strict';
+        document.getElementById('flowVelocityRelaxation').value='.4';
         document.getElementById('flowInitialVortex').checked=false;
         document.getElementById('flowVortexSpeed').value='7';
         smoke.state.flowBoundaryDefinition=null;
@@ -1362,6 +1366,19 @@ async function runSmoke() {
     }
     if (argument('flow-require-converged')==='true' && !report.flow?.summary?.converged)
       throw new Error('App acceptance requires a converged flow; diagnostic output is retained.');
+    if (argument('flow-linear-policy') || argument('flow-velocity-relaxation')) {
+      report.flow.linearControls=await mainWindow.webContents.executeJavaScript(`(() => {
+        const summary=window.__smoke.state.flow?.summary,result=document.getElementById('flowResult');
+        const policy=document.getElementById('flowLinearPolicy').value;
+        const relaxation=Number(document.getElementById('flowVelocityRelaxation').value);
+        if(!summary || summary.linearPolicy!==policy || summary.velocityRelaxation!==relaxation)
+          throw new Error('Linear efficiency controls do not match actual result');
+        if(policy==='adaptive' && (!summary.strictLinearFinal || !result.innerText.includes('严格复核通过')))
+          throw new Error('Adaptive linear solve lacks strict final certification in App');
+        if(!result.innerText.includes('速度松弛系数'))throw new Error('Relaxation not shown in actual App');
+        return {policy,relaxation,strictLinearFinal:summary.strictLinearFinal,strictAcceptedSteps:summary.strictAcceptedSteps};
+      })()`);
+    }
     console.log(JSON.stringify(report, null, 2));
     if (!report.layout.bottomReachable) throw new Error('Sidebar bottom is inaccessible');
     if (Math.abs(report.layout.geometry.bodyHeight - report.layout.geometry.innerHeight) > 1 ||
@@ -1418,6 +1435,11 @@ async function runSmoke() {
           document.getElementById('flowSteadyAcceleration').scrollIntoView({block:'center'});
           result.scrollIntoView({block:'start'});
         })()`);
+      }
+      if (argument('flow-linear-shot')) {
+        mainWindow.setSize(1320,900);
+        await new Promise(resolve=>setTimeout(resolve,200));
+        await mainWindow.webContents.executeJavaScript("document.getElementById('flowLinearPolicy').scrollIntoView({block:'center'}); document.getElementById('flowResult').scrollIntoView({block:'start'});");
       }
       await new Promise(resolve => setTimeout(resolve, 400));
       await fs.writeFile(shot, (await mainWindow.webContents.capturePage()).toPNG());

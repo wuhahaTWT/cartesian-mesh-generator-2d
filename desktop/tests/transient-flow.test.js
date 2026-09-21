@@ -155,3 +155,13 @@ test('three cross-mode contract violations fail closed', () => {
     { ...transientRequest, mode: 'steady' }), /时间模式|非定常时间|时间步长/);
   assert.throws(() => validateFlowOutput({ ...transientSummary, temporalDiscretization: undefined }, fields, 1), /非定常离散格式/);
 });
+
+test('adaptive linear time steps and resumed calls require strict certification of every accepted step',()=>{
+  const request={...transientRequest,linearPolicy:'adaptive',velocityRelaxation:.8,resume:true};
+  const current={...transientSummary,adaptiveLinear:true,velocityRelaxation:.8,strictLinearFinal:true,strictAcceptedSteps:2};
+  assert.equal(validateFlowOutput(current,fields,1,request,.2).summary.strictAcceptedSteps,2);
+  for(const patch of [{strictAcceptedSteps:1},{strictAcceptedSteps:3},{strictAcceptedSteps:undefined},{strictAcceptedSteps:2.5},{strictLinearFinal:false}])
+    assert.throws(()=>validateFlowOutput({...current,...patch},fields,1,request,.2),/严格/);
+  const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request,'/tmp/state.checkpoint');
+  assert.ok(invocation.args.includes('--restart'));assert.ok(invocation.args.includes('--linear-policy'));
+});
