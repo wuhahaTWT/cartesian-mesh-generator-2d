@@ -1442,5 +1442,547 @@
   "externalCheckMesh": "not run: unavailable locally",
   "reference": "https://farside.ph.utexas.edu/teaching/336L/Fluidhtml/node137.html",
   "pressureGauge": "cell 0, unchanged original definition",
-  "interpretation": "Convergence and independent discrete-equation verification pass. Fine pressure threshold and nonmonotonic pressure/rotor torque refinement fail. Tight solve confirms this is not removed by iteration tolerance."
+  "interpretation": "Convergence and independent discrete-equation verification pass. Fine pressure threshold and nonmonotonic pressure/rotor torque refinement fail. Tight solve confirms this is not removed by iteration tolerance.",
+  "existingStabilizationSensitivity": {
+    "scope": "Same original level7 polygon; change only existing small-cell alpha from.1 to.3 or.5, all quality thresholds preserved. Single fine-mesh sensitivity, not a new refinement qualification.",
+    "runs": [
+      {
+        "alpha": 0.3,
+        "mesh": {
+          "cells": 6143,
+          "area": 2.35595793819958,
+          "expectedArea": 2.3559579381995794,
+          "solverQuality": {
+            "quality_class": "solver_quality",
+            "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 65.7588726009202,
+              "max_internal_skewness": 1.4901590402139158,
+              "max_boundary_skewness": 3.7461281663306814,
+              "max_concavity_deg": 1.406250000005116,
+              "max_cell_aspect": 16.054455972779667,
+              "min_interior_angle_deg": 8.553156839618897,
+              "min_face_length": 0.000269479546568791,
+              "min_face_weight": 0.05721863740616151,
+              "min_volume_ratio": 0.02896067313466857,
+              "min_compactness": 0.18319265532390724
+            },
+            "issue_count": 0,
+            "issues": []
+          },
+          "sha256": "2a99d626b24ee6eb0a1c1de0b9cfc3242dff6c03416151b20db136062a3585aa"
+        },
+        "metrics": {
+          "cells": 6143,
+          "velocityL2": 0.0006508693559809781,
+          "radialVelocityL2": 0.0004191505464257727,
+          "pressureL2": 0.015152806940353493,
+          "rotorTorque": -0.41930997294164296,
+          "housingTorque": 0.41854508073375224,
+          "rotorTorqueError": 0.0010288232208704616,
+          "housingTorqueError": 0.0007972224164037683,
+          "torqueImbalance": 0.0018260456372742298,
+          "iterations": 346
+        },
+        "inputHashes": {
+          "outputs/native-flow/couette-probe/l7/annulus.xy": "6dd56bb5341a86ef4f113b37ee514bd51555e6eb32da28f058cc9060a38cd318",
+          "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+          "build/cartmesh2d_cli": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f"
+        },
+        "runSeconds": [
+          12.771425416009151,
+          0.03280770800483879,
+          3.1378811659960775
+        ],
+        "independentAuditValid": true,
+        "sourceReport": "outputs/laminar-performance/annulus-alpha3/study.json"
+      },
+      {
+        "alpha": 0.5,
+        "mesh": {
+          "cells": 6055,
+          "area": 2.35595793819958,
+          "expectedArea": 2.3559579381995794,
+          "solverQuality": {
+            "quality_class": "solver_quality",
+            "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 63.76722958304871,
+              "max_internal_skewness": 1.4901590402139158,
+              "max_boundary_skewness": 3.616033878385826,
+              "max_concavity_deg": 1.406250000005116,
+              "max_cell_aspect": 15.364983082553655,
+              "min_interior_angle_deg": 8.80276799753666,
+              "min_face_length": 0.000269479546568791,
+              "min_face_weight": 0.05721863740616151,
+              "min_volume_ratio": 0.03609046308282983,
+              "min_compactness": 0.19783226903935966
+            },
+            "issue_count": 0,
+            "issues": []
+          },
+          "sha256": "84a903886daa33b5a4a57a4f58c1273cd12084d908055259a7a710048369ab03"
+        },
+        "metrics": {
+          "cells": 6055,
+          "velocityL2": 0.0006108633059038077,
+          "radialVelocityL2": 0.00035615229625828997,
+          "pressureL2": 0.01463605576011538,
+          "rotorTorque": -0.4191064972305746,
+          "housingTorque": 0.4185265434547278,
+          "rotorTorqueError": 0.0005430607426353986,
+          "housingTorqueError": 0.000841476910227005,
+          "torqueImbalance": 0.0013845376528624036,
+          "iterations": 359
+        },
+        "inputHashes": {
+          "outputs/native-flow/couette-probe/l7/annulus.xy": "6dd56bb5341a86ef4f113b37ee514bd51555e6eb32da28f058cc9060a38cd318",
+          "build/cartmesh2d_flow_cli": "7f49716afd98db8276c1d9422cb04abad5e31e59b2a2be79f528adade1cbd972",
+          "build/cartmesh2d_cli": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f"
+        },
+        "runSeconds": [
+          12.142445166013204,
+          0.032915957999648526,
+          3.2923838749993593
+        ],
+        "independentAuditValid": true,
+        "sourceReport": "outputs/laminar-performance/annulus-alpha5/study.json"
+      }
+    ],
+    "qualified": false,
+    "conclusion": "Pressure error reduced to1.515%/1.464% but still above original0.5% gate; no default or solver change adopted."
+  },
+  "pressureErrorLocalization": {
+    "scope": "Diagnostic partition of the unchanged all-cell pressure error; no cells excluded and no qualification gate changed. Demeaned error is explanatory only; the original cell0 pressure gauge remains authoritative.",
+    "cases": [
+      {
+        "case": "alpha.1",
+        "cells": 6208,
+        "allCellOriginalL2": 0.027757946588076128,
+        "weightedErrorMean": -0.001962169015967124,
+        "demeanedDiagnosticL2": 0.02768850829386202,
+        "boundaryAdjacentSquaredErrorFraction": 0.8604573086970637,
+        "top10SquaredErrorFraction": 0.4209828814357191,
+        "top50SquaredErrorFraction": 0.7016443561157496,
+        "worstContributors": [
+          {
+            "cell": 4838,
+            "radius": 0.5007842915138827,
+            "error": -1.6612838612373273,
+            "weight": 1.3038777906513124e-05,
+            "squaredContribution": 3.598525462970146e-05,
+            "touchesWall": true,
+            "area": 3.0718812313270894e-05
+          },
+          {
+            "cell": 2579,
+            "radius": 0.5007842915138827,
+            "error": -1.6605206262655348,
+            "weight": 1.3038777906513003e-05,
+            "squaredContribution": 3.595219718979563e-05,
+            "touchesWall": true,
+            "area": 3.071881231327061e-05
+          },
+          {
+            "cell": 1309,
+            "radius": 0.5007842915138827,
+            "error": -1.6604265194190593,
+            "weight": 1.3038777906513017e-05,
+            "squaredContribution": 3.5948122260553016e-05,
+            "touchesWall": true,
+            "area": 3.0718812313270644e-05
+          },
+          {
+            "cell": 1508,
+            "radius": 0.5007842915138827,
+            "error": 1.6601930761991914,
+            "weight": 1.303877790651326e-05,
+            "squaredContribution": 3.5938014911151524e-05,
+            "touchesWall": true,
+            "area": 3.071881231327121e-05
+          },
+          {
+            "cell": 2097,
+            "radius": 0.5007842915138827,
+            "error": 1.6550185203732133,
+            "weight": 1.3038777906513276e-05,
+            "squaredContribution": 3.5714337968699356e-05,
+            "touchesWall": true,
+            "area": 3.0718812313271254e-05
+          },
+          {
+            "cell": 4659,
+            "radius": 0.5007842915138827,
+            "error": 1.6545064428556155,
+            "weight": 1.3038777906513271e-05,
+            "squaredContribution": 3.569224071723003e-05,
+            "touchesWall": true,
+            "area": 3.071881231327124e-05
+          },
+          {
+            "cell": 4047,
+            "radius": 0.5007842915138827,
+            "error": 1.6537596489817268,
+            "weight": 1.3038777906513297e-05,
+            "squaredContribution": 3.566002720575399e-05,
+            "touchesWall": true,
+            "area": 3.07188123132713e-05
+          },
+          {
+            "cell": 3626,
+            "radius": 0.5007842915138827,
+            "error": -1.653745968169954,
+            "weight": 1.3038777906513032e-05,
+            "squaredContribution": 3.565943720937453e-05,
+            "touchesWall": true,
+            "area": 3.071881231327068e-05
+          },
+          {
+            "cell": 3711,
+            "radius": 0.5028620339211318,
+            "error": 1.0890471593946234,
+            "weight": 1.949454197450469e-05,
+            "squaredContribution": 2.31209891023406e-05,
+            "touchesWall": true,
+            "area": 4.592832091639924e-05
+          },
+          {
+            "cell": 2186,
+            "radius": 0.5029606377662578,
+            "error": 0.7937393685573688,
+            "weight": 2.3329660961876593e-05,
+            "squaredContribution": 1.469820397912648e-05,
+            "touchesWall": true,
+            "area": 5.4963699938638e-05
+          },
+          {
+            "cell": 5024,
+            "radius": 0.5063674692571423,
+            "error": -0.33958327679172134,
+            "weight": 8.770839678906994e-05,
+            "squaredContribution": 1.0114251815439647e-05,
+            "touchesWall": true,
+            "area": 0.00020663729366196786
+          },
+          {
+            "cell": 2385,
+            "radius": 0.5063674692571423,
+            "error": -0.33895261090017287,
+            "weight": 8.770839678906955e-05,
+            "squaredContribution": 1.0076718810269341e-05,
+            "touchesWall": true,
+            "area": 0.00020663729366196694
+          }
+        ]
+      },
+      {
+        "case": "alpha.3",
+        "cells": 6143,
+        "allCellOriginalL2": 0.015152806940353496,
+        "weightedErrorMean": 0.0011187373441938339,
+        "demeanedDiagnosticL2": 0.015111452111770438,
+        "boundaryAdjacentSquaredErrorFraction": 0.8968022917358891,
+        "top10SquaredErrorFraction": 0.2539023773134284,
+        "top50SquaredErrorFraction": 0.5705790110377628,
+        "worstContributors": [
+          {
+            "cell": 1176,
+            "radius": 0.5063674692571423,
+            "error": 0.3394412842395042,
+            "weight": 8.770839678907066e-05,
+            "squaredContribution": 1.0105795284901804e-05,
+            "touchesWall": true,
+            "area": 0.00020663729366196957
+          },
+          {
+            "cell": 4971,
+            "radius": 0.5063674692571423,
+            "error": -0.33629358651677016,
+            "weight": 8.770839678906994e-05,
+            "squaredContribution": 9.919238725570065e-06,
+            "touchesWall": true,
+            "area": 0.00020663729366196786
+          },
+          {
+            "cell": 2361,
+            "radius": 0.5063674692571423,
+            "error": -0.33611245456938216,
+            "weight": 8.770839678906955e-05,
+            "squaredContribution": 9.908556350176529e-06,
+            "touchesWall": true,
+            "area": 0.00020663729366196694
+          },
+          {
+            "cell": 3786,
+            "radius": 0.5009423939482595,
+            "error": 0.8786018242065605,
+            "weight": 7.642240060934155e-06,
+            "squaredContribution": 5.899359699661393e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184663e-05
+          },
+          {
+            "cell": 4969,
+            "radius": 0.5009423939482595,
+            "error": -0.7640147777156197,
+            "weight": 7.642240060934146e-06,
+            "squaredContribution": 4.460917520727222e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184643e-05
+          },
+          {
+            "cell": 2353,
+            "radius": 0.5009423939482595,
+            "error": -0.7639779333674976,
+            "weight": 7.642240060934099e-06,
+            "squaredContribution": 4.460487278695813e-06,
+            "touchesWall": true,
+            "area": 1.800479613718453e-05
+          },
+          {
+            "cell": 1172,
+            "radius": 0.5009423939482595,
+            "error": 0.7524425351464721,
+            "weight": 7.642240060934113e-06,
+            "squaredContribution": 4.32680528763098e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184565e-05
+          },
+          {
+            "cell": 3787,
+            "radius": 0.5009670146623388,
+            "error": 2.5821162841403495,
+            "weight": 4.638175725223342e-07,
+            "squaredContribution": 3.0924222670455693e-06,
+            "touchesWall": true,
+            "area": 1.0927346918604526e-06
+          },
+          {
+            "cell": 1178,
+            "radius": 0.5009423939482595,
+            "error": -0.6338925649112654,
+            "weight": 7.642240060934099e-06,
+            "squaredContribution": 3.070803249412691e-06,
+            "touchesWall": true,
+            "area": 1.800479613718453e-05
+          },
+          {
+            "cell": 2362,
+            "radius": 0.5009423939482595,
+            "error": 0.6321061125327949,
+            "weight": 7.642240060934162e-06,
+            "squaredContribution": 3.053519205084846e-06,
+            "touchesWall": true,
+            "area": 1.800479613718468e-05
+          },
+          {
+            "cell": 4973,
+            "radius": 0.5009423939482595,
+            "error": 0.6319868026578466,
+            "weight": 7.642240060934196e-06,
+            "squaredContribution": 3.052366611856903e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184758e-05
+          },
+          {
+            "cell": 1179,
+            "radius": 0.5009670146623388,
+            "error": -2.5458355431024433,
+            "weight": 4.638175725224227e-07,
+            "squaredContribution": 3.0061309129022445e-06,
+            "touchesWall": true,
+            "area": 1.0927346918606612e-06
+          }
+        ]
+      },
+      {
+        "case": "alpha.5",
+        "cells": 6055,
+        "allCellOriginalL2": 0.014636055760115384,
+        "weightedErrorMean": 0.0012920903487202706,
+        "demeanedDiagnosticL2": 0.014578910478631475,
+        "boundaryAdjacentSquaredErrorFraction": 0.9115401708621768,
+        "top10SquaredErrorFraction": 0.27212275207909425,
+        "top50SquaredErrorFraction": 0.6167087273972549,
+        "worstContributors": [
+          {
+            "cell": 1162,
+            "radius": 0.5063674692571423,
+            "error": 0.33970555318485024,
+            "weight": 8.770839678907066e-05,
+            "squaredContribution": 1.012153696153488e-05,
+            "touchesWall": true,
+            "area": 0.00020663729366196957
+          },
+          {
+            "cell": 4897,
+            "radius": 0.5063674692571423,
+            "error": -0.3361372892907262,
+            "weight": 8.770839678906994e-05,
+            "squaredContribution": 9.910020653707072e-06,
+            "touchesWall": true,
+            "area": 0.00020663729366196786
+          },
+          {
+            "cell": 2328,
+            "radius": 0.5063674692571423,
+            "error": -0.33595351853854255,
+            "weight": 8.770839678906955e-05,
+            "squaredContribution": 9.899187734074713e-06,
+            "touchesWall": true,
+            "area": 0.00020663729366196694
+          },
+          {
+            "cell": 3731,
+            "radius": 0.5009423939482595,
+            "error": 0.8787368733030338,
+            "weight": 7.642240060934155e-06,
+            "squaredContribution": 5.901173409593525e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184663e-05
+          },
+          {
+            "cell": 4895,
+            "radius": 0.5009423939482595,
+            "error": -0.7637634311501591,
+            "weight": 7.642240060934146e-06,
+            "squaredContribution": 4.457982886745117e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184643e-05
+          },
+          {
+            "cell": 2320,
+            "radius": 0.5009423939482595,
+            "error": -0.7637269627534349,
+            "weight": 7.642240060934099e-06,
+            "squaredContribution": 4.45755717480204e-06,
+            "touchesWall": true,
+            "area": 1.800479613718453e-05
+          },
+          {
+            "cell": 1158,
+            "radius": 0.5009423939482595,
+            "error": 0.7525949715716354,
+            "weight": 7.642240060934113e-06,
+            "squaredContribution": 4.328558589736116e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184565e-05
+          },
+          {
+            "cell": 3732,
+            "radius": 0.5009670146623388,
+            "error": 2.582289120551237,
+            "weight": 4.638175725223342e-07,
+            "squaredContribution": 3.092836269355951e-06,
+            "touchesWall": true,
+            "area": 1.0927346918604526e-06
+          },
+          {
+            "cell": 1164,
+            "radius": 0.5009423939482595,
+            "error": -0.6336542232761992,
+            "weight": 7.642240060934099e-06,
+            "squaredContribution": 3.0684944585802234e-06,
+            "touchesWall": true,
+            "area": 1.800479613718453e-05
+          },
+          {
+            "cell": 2329,
+            "radius": 0.5009423939482595,
+            "error": 0.6322790201450632,
+            "weight": 7.642240060934162e-06,
+            "squaredContribution": 3.0551899654721225e-06,
+            "touchesWall": true,
+            "area": 1.800479613718468e-05
+          },
+          {
+            "cell": 4899,
+            "radius": 0.5009423939482595,
+            "error": 0.6321580937058771,
+            "weight": 7.642240060934196e-06,
+            "squaredContribution": 3.0540214373321013e-06,
+            "touchesWall": true,
+            "area": 1.8004796137184758e-05
+          },
+          {
+            "cell": 1165,
+            "radius": 0.5009670146623388,
+            "error": -2.5456885769332365,
+            "weight": 4.638175725224227e-07,
+            "squaredContribution": 3.0057838466563643e-06,
+            "touchesWall": true,
+            "area": 1.0927346918606612e-06
+          }
+        ]
+      }
+    ]
+  },
+  "sameBoundaryPolarControl": {
+    "scope": "Independently constructed8192-cell polar control, NOT Cartesian/Cut-cell output. Every inner/outer boundary endpoint and segment exactly matches retained level7 original input; cell partition and wall-face subdivision differ, while polygon geometry is identical. Same existing moving-wall preset and controls as current Cut-cell study; one control is not a refinement qualification.",
+    "sameOriginalBoundarySegments": true,
+    "inputHashes": {
+      "outputs/native-flow/couette-probe/l7/annulus.xy": "6dd56bb5341a86ef4f113b37ee514bd51555e6eb32da28f058cc9060a38cd318",
+      "outputs/laminar-performance/annulus-polar-control/ring.solver.cm2d": "d4a35bb54982249276c05cbe9db6c71ec060cf2cbdad8fcd1bbd2a4106a7db4c",
+      "build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+    },
+    "cells": 8192,
+    "area": 2.35595793819958,
+    "metrics": {
+      "cells": 8192,
+      "velocityL2": 0.000500935147692094,
+      "radialVelocityL2": 3.7579115757323563e-06,
+      "pressureL2": 0.00020031461560690957,
+      "rotorTorque": -0.4186128083559741,
+      "housingTorque": 0.41864650096811634,
+      "rotorTorqueError": 0.0006355346284967566,
+      "housingTorqueError": 0.0005550994419749872,
+      "torqueImbalance": 8.043518652176937e-05,
+      "iterations": 551
+    },
+    "independentAuditValid": true,
+    "nativeFactorySolverGatePassed": true,
+    "cutcellRecheckSameBinary": {
+      "metrics": {
+        "cells": 6208,
+        "velocityL2": 0.0011436344637915736,
+        "radialVelocityL2": 0.0006935697688579843,
+        "pressureL2": 0.02775794658807613,
+        "rotorTorque": -0.41967687507905355,
+        "housingTorque": 0.4181990922160986,
+        "rotorTorqueError": 0.0019047375528686084,
+        "housingTorqueError": 0.001623209158968034,
+        "torqueImbalance": 0.0035279467118366423,
+        "iterations": 518
+      },
+      "auditValid": true,
+      "previous5FieldsByteIdentical": true,
+      "measurement": "outputs/laminar-performance/annulus-current/l7-cache-final.measurement.json"
+    },
+    "sourceReport": "outputs/laminar-performance/annulus-polar-control/study.json",
+    "interpretation": "With identical original polygon geometry and same solver controls, independently built polar cells give much smaller pressure error. Cell count/distribution and boundary-face subdivision differ, so this isolates a mesh/discretization sensitivity, not one proven faulty operator. This reference is NOT Cut-cell output and does not make the existing Cut-cell refinement qualify."
+  }
 }

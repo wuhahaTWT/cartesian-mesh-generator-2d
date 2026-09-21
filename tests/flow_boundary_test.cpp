@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -96,6 +97,41 @@ template<class F> void rejects(F function) {
     bool rejected=false;
     try {function();} catch(const std::runtime_error&) {rejected=true;}
     require(rejected,"invalid custom boundary was accepted");
+}
+
+void cachedGradientGeometry() {
+    const auto mesh=rectangle(18,6,3,true);
+    std::vector<double> values(mesh.cells.size()),boundary(mesh.faces.size());
+    detail::ChangingFlowGradientStencil2D changing(mesh);
+    for(int mask:{0,1,2,0,2,1}) {
+        std::vector<bool> fixed(mesh.faces.size(),false);
+        for(std::size_t id=0;id<mesh.faces.size();++id) {
+            fixed[id]=!mesh.faces[id].neighbour && (mask==1 || (mask==2 && mesh.faces[id].areaVector.x>0));
+            boundary[id]=std::cos(.11*id+mask);
+        }
+        for(std::size_t i=0;i<values.size();++i)values[i]=std::sin(.19*i-mask);
+        const auto original=detail::flowGradient(mesh,values,boundary,fixed);
+        const auto cached=changing.apply(values,boundary,fixed);
+        for(std::size_t i=0;i<values.size();++i)
+            require(original[i].x==cached[i].x && original[i].y==cached[i].y,"Changing boundary mask reused stale gradient geometry");
+    }
+    for(bool extrapolate:{false,true})for(int mask=0;mask<3;++mask) {
+        std::vector<bool> fixed(mesh.faces.size(),false);
+        for(std::size_t id=0;id<mesh.faces.size();++id)
+            fixed[id]=!mesh.faces[id].neighbour && (mask==1 || (mask==2 && mesh.faces[id].areaVector.x>0));
+        const auto stencil=detail::buildFlowGradientStencil2D(mesh,fixed,extrapolate);
+        for(int field=0;field<4;++field) {
+            for(std::size_t i=0;i<values.size();++i)values[i]=std::sin(.37*i+field)*3.2+field;
+            for(std::size_t i=0;i<boundary.size();++i)boundary[i]=std::cos(.23*i-field)*2.1-field;
+            const auto original=detail::flowGradient(mesh,values,boundary,fixed,extrapolate);
+            const auto cached=stencil.apply(values,boundary);
+            for(std::size_t i=0;i<values.size();++i)
+                require(original[i].x==cached[i].x && original[i].y==cached[i].y,"Cached gradient changed ordered arithmetic or live values");
+        }
+        auto shortField=values;shortField.pop_back();rejects([&]{(void)stencil.apply(shortField,boundary);});
+        auto badBoundary=boundary;badBoundary.pop_back();rejects([&]{(void)stencil.apply(values,badBoundary);});
+        auto invalid=values;invalid[0]=std::numeric_limits<double>::quiet_NaN();rejects([&]{(void)stencil.apply(invalid,boundary);});
+    }
 }
 
 void steadyRelaxationIndependence() {
@@ -289,6 +325,7 @@ int main() {
     setenv("VECLIB_MAXIMUM_THREADS", "1", 1);
 #endif
     try {
+        cachedGradientGeometry();
         steadyRelaxationIndependence();
         pressureOpenings();
         symmetryBoundaries();

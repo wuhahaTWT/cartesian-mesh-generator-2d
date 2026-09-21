@@ -338,7 +338,6 @@ void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
     }
 }
 
-using detail::flowGradient;
 
 Vector2D interpolateGradient(const Face& f, const std::vector<Vector2D>& g) {
     auto result = g[f.owner];
@@ -648,6 +647,10 @@ static FlowResult2D solveFlow(
     }
     Vec zeros(nf);
     const auto& pressureBoundary = c.scenario == "custom" ? b.p : zeros;
+    // fixedP is constant. Velocity caches detect every mask change caused by
+    // backflow, including candidate rejection and physical-time initialization.
+    const auto pressureGradientStencil=detail::buildFlowGradientStencil2D(m,b.fixedP,true);
+    detail::ChangingFlowGradientStencil2D velocityGradientU(m),velocityGradientV(m);
     Vec ra(n);
     Vec pc(n);
     Vec df(nf);
@@ -713,7 +716,7 @@ static FlowResult2D solveFlow(
         updateOutletBoundary(b,m,c,r.flux);
         r.time=previous->time+timeStep; r.timeStep=timeStep;
         r.previousU=previous->u; r.previousV=previous->v;
-        const auto oldGu=flowGradient(m,r.u,b.u,b.fixedU),oldGv=flowGradient(m,r.v,b.v,b.fixedV);
+        const auto oldGu=velocityGradientU.apply(r.u,b.u,b.fixedU),oldGv=velocityGradientV.apply(r.v,b.v,b.fixedV);
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=m.faces[id];
             if (!f.neighbour) {
@@ -754,9 +757,9 @@ static FlowResult2D solveFlow(
             ensure(c.faceViscosity.size()==nf,"Material update must supply every face viscosity");
             validateViscosity(m,c);
         }
-        gp=flowGradient(m,r.p,pressureBoundary,b.fixedP,true);
-        gu=flowGradient(m,r.u,b.u,b.fixedU);
-        gv=flowGradient(m,r.v,b.v,b.fixedV);
+        gp=pressureGradientStencil.apply(r.p,pressureBoundary);
+        gu=velocityGradientU.apply(r.u,b.u,b.fixedU);
+        gv=velocityGradientV.apply(r.v,b.v,b.fixedV);
         pressureFaces=detail::pressureFaceValues(m,r.p,gp,pressureBoundary,b.fixedP);
         forceGradient=detail::conservativePressureGradient(m,pressureFaces);
         stressCorrection=c.viscousStress==ViscousStress2D::Symmetric
@@ -875,7 +878,7 @@ static FlowResult2D solveFlow(
         linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
         for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
-        const auto gup=flowGradient(m,r.u,b.u,b.fixedU),gvp=flowGradient(m,r.v,b.v,b.fixedV);
+        const auto gup=velocityGradientU.apply(r.u,b.u,b.fixedU),gvp=velocityGradientV.apply(r.v,b.v,b.fixedV);
         Vec predicted(nf);
         for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
             const double rf=interpolate(f,ra);df[id]=rf*f.transmissibility;
@@ -931,7 +934,7 @@ static FlowResult2D solveFlow(
         std::fill(pc.begin(),pc.end(),0);Vec correction(nf);
         for(std::size_t pass=0;pass<c.pressureCorrectionPasses;++pass){
             std::fill(ap.rhs.begin(),ap.rhs.end(),0.);
-            const auto gc=flowGradient(m,pc,zeros,b.fixedP,true);
+            const auto gc=pressureGradientStencil.apply(pc,zeros);
             for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
                 correction[id]=(f.neighbour||b.fixedP[id])?-interpolate(f,ra)*dot(interpolateGradient(f,gc),f.correction):0;
                 ap.rhs[i]-=predicted[id]+correction[id];
@@ -948,7 +951,7 @@ static FlowResult2D solveFlow(
                 break;
             }
         }
-        const auto correctionGradient=flowGradient(m,pc,zeros,b.fixedP,true);
+        const auto correctionGradient=pressureGradientStencil.apply(pc,zeros);
         const auto gc=detail::conservativePressureGradient(m,
             detail::pressureFaceValues(m,pc,correctionGradient,zeros,b.fixedP));
         double du=0,dp=0;

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 #include <utility>
@@ -78,6 +79,36 @@ inline std::vector<Vector2D> symmetricViscousCorrection(const FvMesh2D& m,
 inline constexpr double pressureGradientConditionTarget2D = 16.;
 inline constexpr std::size_t pressureGradientMaximumRings2D = 6;
 
+// Fixed-mesh reconstruction geometry. Samples preserve the original row order,
+// divisions and final 2x2 solve; only geometry/ring discovery is cached. Build a
+// fresh stencil when the mesh or fixed-boundary mask changes. A solver owns its
+// pressure stencil locally, so separate solves and rejected candidates cannot
+// share mutable state. Boundary VALUES and cell fields remain live inputs.
+struct FlowGradientStencil2D {
+    struct Sample { std::size_t index; Vector2D direction; double length; bool boundary; bool zero; };
+    struct Row { std::size_t begin,end; double xx,xy,yy,det; };
+    std::vector<Sample> samples;
+    std::vector<Row> rows;
+    std::size_t boundarySize=0;
+    std::vector<Vector2D> apply(const std::vector<double>& field,const std::vector<double>& boundary) const {
+        if(field.size()!=rows.size() || boundary.size()!=boundarySize)
+            throw std::runtime_error("Cached flow gradient field size differs from stencil");
+        std::vector<Vector2D> result(rows.size());
+        for(std::size_t i=0;i<rows.size();++i) {
+            const auto& row=rows[i];double bx=0,by=0;
+            for(std::size_t k=row.begin;k<row.end;++k) {
+                const auto& sample=samples[k];
+                const double value=sample.zero?0:((sample.boundary?boundary[sample.index]:field[sample.index])-field[i])/sample.length;
+                bx+=sample.direction.x*value;by+=sample.direction.y*value;
+            }
+            result[i]={(row.yy*bx-row.xy*by)/row.det,(row.xx*by-row.xy*bx)/row.det};
+            if(!std::isfinite(result[i].x) || !std::isfinite(result[i].y))
+                throw std::runtime_error("Flow gradient numerical range exceeded");
+        }
+        return result;
+    }
+};
+
 // Pressure at velocity boundaries is extrapolated from interior values.
 // It is not a prescribed zero physical pressure gradient. Velocity slip/outflow
 // retains the zero-normal row; pressure-correction face flux remains a separate BC.
@@ -85,7 +116,13 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                                const std::vector<double>& u,
                                const std::vector<double>& bc,
                                const std::vector<bool>& fixed,
-                               bool extrapolateUnknown = false) {
+                               bool extrapolateUnknown = false,
+                               FlowGradientStencil2D* capture = nullptr) {
+    if(capture) {
+        capture->rows.clear();capture->rows.reserve(m.cells.size());
+        capture->samples.clear();capture->samples.reserve(2*m.faces.size());
+        capture->boundarySize=m.faces.size();
+    }
     std::vector<Vector2D> g(u.size());
     for (std::size_t i = 0; i < u.size(); ++i) {
         double xx = 0;
@@ -94,16 +131,19 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
         double bx = 0;
         double by = 0;
         bool omittedBoundary=false;
+        const auto rowBegin=capture?capture->samples.size():0;
         for (auto id : m.cells[i].faces) {
             const auto& f = m.faces[id];
             const auto j =
                 f.owner == i ? f.neighbour : std::optional<std::size_t>(f.owner);
             Vector2D d;
             double value = 0;
+            double sampleLength=1;
             if (j || fixed[id]) {
                 d = (j ? m.cells[*j].centre : f.centre) - m.cells[i].centre;
                 const double length = std::hypot(d.x, d.y);
                 if (!(length > 0)) throw std::runtime_error("Flow gradient degenerate stencil");
+                sampleLength=length;
                 value = ((j ? u[*j] : bc[id]) - u[i]) / length;
                 d = d * (1 / length);
             } else {
@@ -112,6 +152,7 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                 const double length = std::hypot(d.x, d.y);
                 d = d * (1 / length);
             }
+            if(capture)capture->samples.push_back({j?*j:id,d,sampleLength,!j,!j&&!fixed[id]});
             xx += d.x * d.x;
             xy += d.x * d.y;
             yy += d.y * d.y;
@@ -142,6 +183,7 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
                     auto d=m.cells[k].centre-m.cells[i].centre;const double length=std::hypot(d.x,d.y);
                     if (!(length>0)) throw std::runtime_error("Flow gradient degenerate extended stencil");
                     const double value=(u[k]-u[i])/length;d=d*(1/length);
+                    if(capture)capture->samples.push_back({k,d,length,false,false});
                     xx+=d.x*d.x;xy+=d.x*d.y;yy+=d.y*d.y;bx+=d.x*value;by+=d.y*value;
                 }
                 visited.insert(visited.end(),next.begin(),next.end());std::sort(visited.begin(),visited.end());frontier=std::move(next);
@@ -152,6 +194,7 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
         const double det = xx * yy - xy * xy;
         if (!fullRank())
             throw std::runtime_error("Flow gradient rank deficient; cannot reconstruct from the available stencil");
+        if(capture)capture->rows.push_back({rowBegin,capture->samples.size(),xx,xy,yy,det});
         g[i] = {(yy * bx - xy * by) / det, (xx * by - xy * bx) / det};
         if (!std::isfinite(g[i].x) || !std::isfinite(g[i].y))
             throw std::runtime_error("Flow gradient numerical range exceeded");
@@ -159,6 +202,33 @@ inline std::vector<Vector2D> flowGradient(const FvMesh2D& m,
     return g;
 }
 
+
+inline FlowGradientStencil2D buildFlowGradientStencil2D(const FvMesh2D& mesh,
+    const std::vector<bool>& fixed,bool extrapolateUnknown=false) {
+    if(fixed.size()!=mesh.faces.size())throw std::runtime_error("Flow gradient boundary mask size differs from mesh");
+    FlowGradientStencil2D result;
+    (void)flowGradient(mesh,std::vector<double>(mesh.cells.size()),std::vector<double>(mesh.faces.size()),fixed,extrapolateUnknown,&result);
+    return result;
+}
+
+// Velocity boundary types can change with outlet backflow. Compare the entire
+// mask before each use and rebuild on any change; values never enter the cache.
+// The mesh referenced by this per-solve object must remain immutable.
+class ChangingFlowGradientStencil2D {
+    const FvMesh2D& mesh_;
+    std::vector<bool> fixed_;
+    std::optional<FlowGradientStencil2D> stencil_;
+public:
+    explicit ChangingFlowGradientStencil2D(const FvMesh2D& mesh):mesh_(mesh) {}
+    std::vector<Vector2D> apply(const std::vector<double>& field,const std::vector<double>& boundary,
+                               const std::vector<bool>& fixed) {
+        if(!stencil_ || fixed_!=fixed) {
+            auto next=buildFlowGradientStencil2D(mesh_,fixed);
+            stencil_=std::move(next);fixed_=fixed;
+        }
+        return stencil_->apply(field,boundary);
+    }
+};
 
 // Internal operators: the caller validates the mesh and field extents once.
 // A single reconstructed value is stored per shared face, never per incidence.

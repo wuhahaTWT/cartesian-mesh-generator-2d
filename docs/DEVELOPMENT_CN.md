@@ -646,6 +646,8 @@ macOS可选 `--pressure-preconditioner cholesky` 使用系统Accelerate稀疏Cho
 
 确定性要求：流动CLI在任何Accelerate调用前固定本进程 `VECLIB_MAXIMUM_THREADS=1`，因此App保存后重算可逐字节核对。直接调用C++ API的宿主须在首次使用任何Accelerate功能前设置该环境变量，因子构造会检查；不能在系统库已缓存多线程设置后再修改它来声称确定性。Apple说明默认多线程的求和顺序可能变化，见[官方Sparse Solvers文档](https://developer.apple.com/documentation/accelerate/sparse-solvers-library)。初期默认多线程研究的数据不替代最终单线程交付性能。跨系统或不同编译器的逐字节一致性未验证。
 
+固定网格的压力重构可预建 `FlowGradientStencil2D`：缓存采样索引、原顺序的归一化方向/距离及2×2几何矩阵，场值、边界值与原除法/求和顺序实时执行。每次求解局部持有，压力与压力校正共用固定`fixedP`几何；速度重构使用逐次核对完整固定边界掩码的局部缓存，回流/候选回退导致掩码变化时立即重建，边界数值始终实时读取。网格或固定边界掩码变化必须重建；当前压力掩码在整个内迭代中不变。该缓存不改梯度邻域、条件数目标、任何质量/停止门，跨编译器逐位一致仍须另证。
+
 可复现串行层流性能测量：
 ```sh
 python3 tools/verification/benchmark_laminar.py --mesh INPUT.solver.cm2d --boundary INPUT.boundaries --output outputs/laminar-new --linear-policy adaptive --velocity-relaxation .6
