@@ -1,0 +1,904 @@
+{
+  "format": "cartmesh2d-steady-relaxation-v1",
+  "valid": true,
+  "scope": "steady face/cell under-relaxation consistency; not a general speedup or geometry-accuracy qualification",
+  "beforeCommit": "e4842b7",
+  "defaultVelocityRelaxation": 0.6,
+  "steadyExplicitCliOptionStillRejected": true,
+  "studies": {
+    "steady-relaxation": {
+      "binarySha256": "8c913a48b192535acabe63fb76ff0e7ce95b11dd1b48d92313664f7bd437a4e2",
+      "budget": {
+        "outputMiB": 40,
+        "perRunSeconds": 120,
+        "totalSeconds": 500
+      },
+      "complete": true,
+      "meshSha256": "ce19626ff598c054d9e1700efa6f9e8239860135ad5d26190b3fc7e6f7082843",
+      "runs": [
+        {
+          "alpha": 0.6,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation/a0.6",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.6"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli --mesh outputs/native-flow/steady-relaxation/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation/input.boundaries --case custom --output outputs/native-flow/steady-relaxation/a0.6 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.6",
+            "returncode": 0,
+            "status": "passed",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 0.0,
+            "u": 0.0,
+            "v": 0.0
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 1.364802574923902e-14,
+            "iterations": 16523,
+            "momentumResidual": 9.99815961978289e-10,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 16523,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.015105625,
+            "solveSeconds": 43.033587083,
+            "momentumLinearSolveSeconds": 6.420507410000001,
+            "pressureLinearSolveSeconds": 18.00625466100288,
+            "momentumSolves": 33046,
+            "momentumIterations": 195821,
+            "maxMomentumIterations": 13,
+            "pressureSolves": 61922,
+            "pressureCorrectionPassesSkipped": 4170,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 1837,
+            "pressureHierarchyReuses": 37748,
+            "pressureHierarchyRefreshes": 14686,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 317195,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a0.6.json": "bd5ee0014f74d70c9ac6c51a9b7a02816090fb161856de13bb6cd222b8705c90",
+            "a0.6.cells.csv": "3f3f34c244614496ad20de8af688309c4c6a3ef587099977632a9b2ca56e979f",
+            "a0.6.faces.csv": "cd258ea33926941280788ebaceed769c27139c7d6727b05636c3213fffa9f815",
+            "a0.6.residuals.csv": "3798d7584643917363778917d44dc2064513286b9838d7925857da80cf97479f",
+            "a0.6.performance.json": "36552465d5b5afd1c39e233d1dcc4703a828a872971db1156dd551e2b44edfeb"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.0012435104750982333,
+            "pressureMax": 0.0028794594884271885
+          }
+        },
+        {
+          "alpha": 0.8,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation/a0.8",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.8"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli --mesh outputs/native-flow/steady-relaxation/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation/input.boundaries --case custom --output outputs/native-flow/steady-relaxation/a0.8 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.8",
+            "returncode": 0,
+            "status": "passed",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 0.00035165854563184995,
+            "u": 3.959899094962971e-05,
+            "v": 3.241005758505757e-05
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 7.855514112126734e-14,
+            "iterations": 8970,
+            "momentumResidual": 8.376778394367135e-10,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 8970,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.005455542,
+            "solveSeconds": 25.987029042,
+            "momentumLinearSolveSeconds": 5.421374600999997,
+            "pressureLinearSolveSeconds": 10.530016708999318,
+            "momentumSolves": 17940,
+            "momentumIterations": 180842,
+            "maxMomentumIterations": 23,
+            "pressureSolves": 33950,
+            "pressureCorrectionPassesSkipped": 1930,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 998,
+            "pressureHierarchyReuses": 21257,
+            "pressureHierarchyRefreshes": 7972,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 190339,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a0.8.json": "346022653102385308f5a51f9b8248feeab5522d084bcd0169bbdbc84a4ade34",
+            "a0.8.cells.csv": "b5da9534e2b9a2f9167a3eac80ff39eaaedfeb29839c8fc07dc0e820b0b6d047",
+            "a0.8.faces.csv": "b5e1bbd7107dca5eebc803764b706f6bf10e137070445aa2809c9b844b7abe6d",
+            "a0.8.residuals.csv": "43805e2acb0f8eed1b574cbac68da69ab7eb10d55c7df23da5ad294c667eb6db",
+            "a0.8.performance.json": "cd44e7b77b5fed6c5ab78fe0f86bac38b41ddc6a3894e24331e02873da650502"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.001236492424249108,
+            "pressureMax": 0.002554968846074736
+          }
+        },
+        {
+          "alpha": 0.9,
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation/a0.9",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.9"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli --mesh outputs/native-flow/steady-relaxation/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation/input.boundaries --case custom --output outputs/native-flow/steady-relaxation/a0.9 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.9",
+            "error": "timed out after 120s",
+            "returncode": null,
+            "status": "failed",
+            "timedOut": true
+          }
+        },
+        {
+          "alpha": 0.95,
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation/a0.95",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.95"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli --mesh outputs/native-flow/steady-relaxation/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation/input.boundaries --case custom --output outputs/native-flow/steady-relaxation/a0.95 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.95",
+            "returncode": 1,
+            "status": "failed",
+            "timedOut": false
+          }
+        },
+        {
+          "alpha": 1.0,
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation/a1.0",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "1.0"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli --mesh outputs/native-flow/steady-relaxation/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation/input.boundaries --case custom --output outputs/native-flow/steady-relaxation/a1.0 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 1.0",
+            "returncode": 1,
+            "status": "failed",
+            "timedOut": false
+          }
+        }
+      ],
+      "scope": "diagnostic API velocity relaxation probe, not a product setting"
+    },
+    "steady-relaxation-fixed": {
+      "binarySha256": "e161774be0904a3fad37aeb87fe6ada304cd1227e148a1ee3b16a51257cd810c",
+      "budget": {
+        "outputMiB": 40,
+        "perRunSeconds": 120,
+        "totalSeconds": 500
+      },
+      "complete": true,
+      "meshSha256": "ce19626ff598c054d9e1700efa6f9e8239860135ad5d26190b3fc7e6f7082843",
+      "runs": [
+        {
+          "alpha": 0.6,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli-fixed",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation-fixed/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation-fixed/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation-fixed/a60",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.6"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli-fixed --mesh outputs/native-flow/steady-relaxation-fixed/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation-fixed/input.boundaries --case custom --output outputs/native-flow/steady-relaxation-fixed/a60 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.6",
+            "returncode": 0,
+            "status": "passed",
+            "stderr": "outputs/native-flow/steady-relaxation-fixed/logs/a60.stderr.log",
+            "stdout": "outputs/native-flow/steady-relaxation-fixed/logs/a60.stdout.log",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 0.0,
+            "u": 0.0,
+            "v": 0.0
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 8.293914759999379e-15,
+            "iterations": 16525,
+            "momentumResidual": 9.99637219095322e-10,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 16525,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.005131458,
+            "solveSeconds": 44.338700875,
+            "momentumLinearSolveSeconds": 6.657609433999935,
+            "pressureLinearSolveSeconds": 18.317519323003584,
+            "momentumSolves": 33050,
+            "momentumIterations": 196179,
+            "maxMomentumIterations": 13,
+            "pressureSolves": 61960,
+            "pressureCorrectionPassesSkipped": 4140,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 1837,
+            "pressureHierarchyReuses": 37754,
+            "pressureHierarchyRefreshes": 14688,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 316521,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a60.json": "c87da6b38eb817f19f94b29ee5a60c0124a82589db4a3d45e16499e4318b9b48",
+            "a60.cells.csv": "78d5887872b4f8e34264f17cc0a3ecc2fc6a96108b361c223e777da7c409e94d",
+            "a60.faces.csv": "3e1fea533318809762767e4d5374d5c5894f7b815718b031e9d6beef630103ea",
+            "a60.residuals.csv": "8f8db8d7b2aa600c073baa1941e607e9c34f627905d1711b3c8bcb58847ff86a",
+            "a60.performance.json": "a1550c8a00ed04aa20134904ccee40a04e496a14a1cdc46a46db89ed9cfbe69f"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.0012317822064451928,
+            "pressureMax": 0.002340291828917894
+          }
+        },
+        {
+          "alpha": 0.8,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli-fixed",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation-fixed/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation-fixed/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation-fixed/a80",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-09",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.8"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli-fixed --mesh outputs/native-flow/steady-relaxation-fixed/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation-fixed/input.boundaries --case custom --output outputs/native-flow/steady-relaxation-fixed/a80 --nu 0.1 --speed 1 --tolerance 1e-09 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.8",
+            "returncode": 0,
+            "status": "passed",
+            "stderr": "outputs/native-flow/steady-relaxation-fixed/logs/a80.stderr.log",
+            "stdout": "outputs/native-flow/steady-relaxation-fixed/logs/a80.stdout.log",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 1.1122411602837445e-08,
+            "u": 3.990450397894918e-07,
+            "v": 2.020614180729479e-09
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 7.784436234705084e-14,
+            "iterations": 8971,
+            "momentumResidual": 8.37059751126946e-10,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 8971,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.004976459,
+            "solveSeconds": 26.562163,
+            "momentumLinearSolveSeconds": 5.591475170000044,
+            "pressureLinearSolveSeconds": 10.623419890999047,
+            "momentumSolves": 17942,
+            "momentumIterations": 180756,
+            "maxMomentumIterations": 23,
+            "pressureSolves": 33960,
+            "pressureCorrectionPassesSkipped": 1924,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 998,
+            "pressureHierarchyReuses": 21258,
+            "pressureHierarchyRefreshes": 7973,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 190154,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a80.json": "0278d67729acc47e71cf4de5feb9d2671ea095777a7a8ff8cd5d7a253a4052c7",
+            "a80.cells.csv": "6481aaf090746e23385831ece3f4a58a79d4d6edfe3cb214dd3b36d6c3a7dc61",
+            "a80.faces.csv": "33d9faa9db52ff8f7fc82a76d8db228774e3b0377393e037f3094ece63feaf53",
+            "a80.residuals.csv": "4df9f7fd9621b99d2675f9cb3e41dc304e0179b3be76f6b50b541937ed79968d",
+            "a80.performance.json": "a202375e3983ef3763ed18a4bb4aa48055163ad993b38bc8c4c058c66ecbf8f4"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.0012319569197148904,
+            "pressureMax": 0.0023402873213124523
+          }
+        }
+      ],
+      "scope": "diagnostic API velocity relaxation probe, not a product setting"
+    },
+    "steady-relaxation-tight": {
+      "binarySha256": "e161774be0904a3fad37aeb87fe6ada304cd1227e148a1ee3b16a51257cd810c",
+      "budget": {
+        "outputMiB": 40,
+        "perRunSeconds": 120,
+        "totalSeconds": 500
+      },
+      "complete": true,
+      "meshSha256": "ce19626ff598c054d9e1700efa6f9e8239860135ad5d26190b3fc7e6f7082843",
+      "runs": [
+        {
+          "alpha": 0.6,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli-fixed",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation-tight/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation-tight/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation-tight/a60",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-10",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.6"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli-fixed --mesh outputs/native-flow/steady-relaxation-tight/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation-tight/input.boundaries --case custom --output outputs/native-flow/steady-relaxation-tight/a60 --nu 0.1 --speed 1 --tolerance 1e-10 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.6",
+            "returncode": 0,
+            "status": "passed",
+            "stderr": "outputs/native-flow/steady-relaxation-tight/logs/a60.stderr.log",
+            "stdout": "outputs/native-flow/steady-relaxation-tight/logs/a60.stdout.log",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 0.0,
+            "u": 0.0,
+            "v": 0.0
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 2.0111559625494996e-14,
+            "iterations": 19307,
+            "momentumResidual": 9.996170981158329e-11,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 19307,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.005781916,
+            "solveSeconds": 47.692924458,
+            "momentumLinearSolveSeconds": 6.89136793600004,
+            "pressureLinearSolveSeconds": 18.9959322800094,
+            "momentumSolves": 38614,
+            "momentumIterations": 206942,
+            "maxMomentumIterations": 13,
+            "pressureSolves": 68028,
+            "pressureCorrectionPassesSkipped": 9200,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 2142,
+            "pressureHierarchyReuses": 38295,
+            "pressureHierarchyRefreshes": 17128,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 321963,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a60.json": "2def7bc3bbde307c1d08ea952acca97ded6ce2e2d6e3acec7037c933fa5294e3",
+            "a60.cells.csv": "bb0d1d59efb09f74c14b9718a69d159913d1ff9ec6ef617367e7fb4554c1424f",
+            "a60.faces.csv": "855666ee66da8a3e99466dce5688186d9bd7139dc78f34d1c516f4740011ee11",
+            "a60.residuals.csv": "f61d93422dbebf0e4ae098a86b404adfd5108cd0cc024e5df89545adcf3e7cae",
+            "a60.performance.json": "2ced2f21df613b43a4e5f0dfd41d773c21d16c19ae37d5a6d25513226409c044"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.0012321720700256707,
+            "pressureMax": 0.0023402862657016382
+          }
+        },
+        {
+          "alpha": 0.8,
+          "audit": {
+            "issues": [],
+            "valid": true
+          },
+          "columns": [
+            "cell",
+            "x",
+            "y",
+            "area",
+            "u",
+            "v",
+            "p",
+            "speed"
+          ],
+          "execution": {
+            "command": [
+              "/private/tmp/cm2d-steady-relaxation-cli-fixed",
+              "--mesh",
+              "outputs/native-flow/steady-relaxation-tight/mesh.solver.cm2d",
+              "--boundary",
+              "outputs/native-flow/steady-relaxation-tight/input.boundaries",
+              "--case",
+              "custom",
+              "--output",
+              "outputs/native-flow/steady-relaxation-tight/a80",
+              "--nu",
+              "0.1",
+              "--speed",
+              "1",
+              "--tolerance",
+              "1e-10",
+              "--max-iterations",
+              "20000",
+              "--convection",
+              "face-limited-linear",
+              "--pressure-preconditioner",
+              "aggregation",
+              "--profile",
+              "--velocity-relaxation",
+              "0.8"
+            ],
+            "commandText": "/private/tmp/cm2d-steady-relaxation-cli-fixed --mesh outputs/native-flow/steady-relaxation-tight/mesh.solver.cm2d --boundary outputs/native-flow/steady-relaxation-tight/input.boundaries --case custom --output outputs/native-flow/steady-relaxation-tight/a80 --nu 0.1 --speed 1 --tolerance 1e-10 --max-iterations 20000 --convection face-limited-linear --pressure-preconditioner aggregation --profile --velocity-relaxation 0.8",
+            "returncode": 0,
+            "status": "passed",
+            "stderr": "outputs/native-flow/steady-relaxation-tight/logs/a80.stderr.log",
+            "stdout": "outputs/native-flow/steady-relaxation-tight/logs/a80.stdout.log",
+            "timedOut": false
+          },
+          "maxDifferenceFromBaseline": {
+            "p": 1.1516719800042097e-09,
+            "u": 3.928677816400494e-08,
+            "v": 1.8655457492927456e-10
+          },
+          "summary": {
+            "continuityResidual": null,
+            "converged": true,
+            "globalRelativeImbalance": 1.3062515974330379e-13,
+            "iterations": 10433,
+            "momentumResidual": 8.119371893924935e-11,
+            "performance": null
+          },
+          "performance": {
+            "format": "cartmesh2d-flow-performance-v1",
+            "cells": 1300,
+            "faces": 2812,
+            "simpleIterations": 10433,
+            "converged": true,
+            "pressurePreconditioner": "aggregation",
+            "readAndMeshSeconds": 0.005199,
+            "solveSeconds": 28.778556333,
+            "momentumLinearSolveSeconds": 5.879678786999989,
+            "pressureLinearSolveSeconds": 11.087571638999506,
+            "momentumSolves": 20866,
+            "momentumIterations": 188717,
+            "maxMomentumIterations": 23,
+            "pressureSolves": 37146,
+            "pressureCorrectionPassesSkipped": 4586,
+            "pressureFactorizations": 0,
+            "pressureFactorReuses": 0,
+            "pressureHierarchyBuilds": 1160,
+            "pressureHierarchyReuses": 21526,
+            "pressureHierarchyRefreshes": 9267,
+            "maxPressureHierarchyLevels": 7,
+            "maxPressureCoarseCells": 19,
+            "pressureIterations": 193220,
+            "maxPressureIterations": 22,
+            "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+          },
+          "files": {
+            "a80.json": "51f4996b261b97b8467e529db36202501336087fdddc29443f8589e130034bae",
+            "a80.cells.csv": "86eeb93d0dbb8f80195a1a76056b6e19f57f32dabb79b4f878c0ac8e18c38376",
+            "a80.faces.csv": "501e59d5ce89fa87d8f14757173f1c9e39c3c9ea4d94e25bc4890a2db150e0da",
+            "a80.residuals.csv": "4cc04a4ac52fd7f81b00fe3ced8af96a2adc8035f8a259cf8d76189ee3f857b5",
+            "a80.performance.json": "ab21731b3faf30451b01aed6bb63907db3574e659382f2da5285fb7a1cf116cf"
+          },
+          "referenceMetrics": {
+            "velocityL2": 0.0012321891503194152,
+            "pressureMax": 0.002340285877961583
+          }
+        }
+      ],
+      "scope": "diagnostic API velocity relaxation probe, not a product setting"
+    }
+  },
+  "unitRegression": {
+    "cells": 108,
+    "geometry": "non-orthogonal warped half-channel",
+    "tolerance": 1e-11,
+    "alphas": [
+      0.6,
+      0.8,
+      0.9
+    ],
+    "oldCodeExit": 1,
+    "oldMaxU": 0.000167234,
+    "oldMaxP": 0.000985461,
+    "newMaxU": 3.33439e-10,
+    "newMaxP": 5.22771e-12,
+    "testSourceSha256": "3993d19f7fb2950afa63eeb60401e39c55d8b7f24a6219980514a8018f54d8bd"
+  },
+  "validation": {
+    "ctest": {
+      "passed": 145,
+      "total": 145,
+      "seconds": 48.85
+    },
+    "frontend": {
+      "passed": 171,
+      "total": 171
+    }
+  },
+  "limitations": [
+    "Default half-channel still requires approximately 16525 SIMPLE iterations.",
+    "Explicit steady relaxation remains disabled in the product CLI; this is a temporary API probe.",
+    "The initial probe used repeated a0 log stems; successful raw fields and summaries are intact, run failure/timeout status is preserved but earlier per-run log text was overwritten.",
+    "Old-core alpha .9 timed out at 120 seconds; .95 and 1.0 returned numerical range failures. No default relaxation increase."
+  ],
+  "probeBinaries": {
+    "outputs/native-flow/binaries/flow-0.4.26-steady-api-probe": "8c913a48b192535acabe63fb76ff0e7ce95b11dd1b48d92313664f7bd437a4e2",
+    "outputs/native-flow/binaries/flow-0.4.27-steady-api-probe": "e161774be0904a3fad37aeb87fe6ada304cd1227e148a1ee3b16a51257cd810c"
+  },
+  "packedBinaries": {
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_flow_cli": "0ab73cb0ca65dbc22d89ba8c9f694036a6d794c97732d7b41617c7cb51447776",
+    "cartmesh2d_transport_cli": "dc880e48496db8f4d4e8d2708f0ef1f2d5d98043e04e37e2e6622369dde22845"
+  },
+  "app": {
+    "execution": {
+      "command": [
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D",
+        "--smoke=rectangle",
+        "--out=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/steady-relaxation-app/half",
+        "--target-cells=1000",
+        "--flow=custom",
+        "--flow-boundary-preset=pressure-half-channel",
+        "--flow-opening-pressure=0.4",
+        "--flow-outlet-pressure=0",
+        "--flow-nu=0.1",
+        "--flow-speed=1",
+        "--flow-tolerance=1e-9",
+        "--flow-max-iterations=20000",
+        "--flow-convection=face-limited-linear",
+        "--flow-pressure-preconditioner=aggregation",
+        "--flow-case-check=true",
+        "--flow-boundary-shot=true",
+        "--shot=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/artifacts/current/native-steady-relaxation-app.png",
+        "--export=/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/steady-relaxation-app/half.zip",
+        "--flow-require-converged=true",
+        "--flow-flux-shot=true"
+      ],
+      "timeoutSeconds": 180,
+      "returncode": 0,
+      "elapsedSeconds": 88.32012816599672
+    },
+    "summary": {
+      "cells": 1300,
+      "iterations": 16525,
+      "tolerance": 1e-09,
+      "momentumResidual": 9.99637219095322e-10,
+      "continuity": 2.7133850721838826e-13,
+      "globalRelativeImbalance": 8.293914759999379e-15,
+      "steadyFaceInterpolation": "iteration-flux-defect-skew-corrected-v1",
+      "velocityRelaxation": 0.6,
+      "namedBoundaryFluxes": [
+        {
+          "faces": 44,
+          "inflow": 0.6680448187136103,
+          "length": 1,
+          "name": "inlet",
+          "net": -0.6680448187136103,
+          "normalMeanVelocity": -0.6680448187136103,
+          "outflow": 0
+        },
+        {
+          "faces": 44,
+          "inflow": 0,
+          "length": 1,
+          "name": "outlet",
+          "net": 0.6680448187136159,
+          "normalMeanVelocity": 0.6680448187136159,
+          "outflow": 0.6680448187136159
+        },
+        {
+          "faces": 86,
+          "inflow": 0,
+          "length": 2,
+          "name": "symmetry",
+          "net": 0,
+          "normalMeanVelocity": 0,
+          "outflow": 0
+        },
+        {
+          "faces": 86,
+          "inflow": 0,
+          "length": 2,
+          "name": "wall",
+          "net": 0,
+          "normalMeanVelocity": 0,
+          "outflow": 0
+        }
+      ]
+    },
+    "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+    "independentAuditValid": true,
+    "zipSha256": "de52d43411aee64ce14729dc4c9dd6d92f1b30b04139a046ac74ffc9015d85a9",
+    "settingsRoundTrip": true,
+    "repeatedCalculationIdentical": true
+  },
+  "transientComparison": {
+    "valid": true,
+    "comparison": "0.4.25 frozen core versus 0.4.27; actual 1300-cell half-channel, nu=.1, tol1e-9, max1000, two steps dt=.02",
+    "byteIdentical": {
+      ".cells.csv": true,
+      ".faces.csv": true,
+      ".residuals.csv": true,
+      ".time-history.csv": true,
+      ".checkpoint": true,
+      ".fields.json": true,
+      ".vtk": true,
+      ".boundaries": true
+    },
+    "auditValid": true
+  }
+}

@@ -754,13 +754,23 @@ static FlowResult2D solveFlow(
                     // depends on the arbitrary inner relaxation factor.
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
                         +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
+                } else {
+                    // The face equation must retain the same implicit
+                    // relaxation as the cell momentum equation. Otherwise
+                    // the converged Rhie--Chow flux depends on alphaU.
+                    const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
+                    const double oldVf=interpolate(f,oldV)+dot(interpolateGradient(f,gv),skew);
+                    predicted[id]+=(1-c.velocityRelaxation)*
+                        (r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 }
             }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield){
                 const double pressureDifference = c.scenario == "custom"
                     ? f.transmissibility*(b.p[id]-r.p[i]) : -f.transmissibility*r.p[i];
                 predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(pressureDifference+dot(gp[i],f.correction));
                 if (previous) predicted[id]+=rf/timeStep*oldFluxDefect[id]
-                    +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
+                    +(1-c.velocityRelaxation)*(r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);
+                else predicted[id]+=(1-c.velocityRelaxation)*
+                    (r.flux[id]-oldU[i]*f.areaVector.x-oldV[i]*f.areaVector.y);}
             else if(b.role[id]==Role::Inlet)predicted[id]=b.u[id]*f.areaVector.x+b.v[id]*f.areaVector.y;
             else predicted[id]=0;
         }

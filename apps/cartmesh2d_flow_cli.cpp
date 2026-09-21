@@ -485,6 +485,8 @@ int main(int argc, char** argv) {
         const bool counterflowCase=controls.scenario == "counterflow";
         const char* convection = fv::flow_checkpoint_detail::convectionName(controls.convection);
         summary << "{\n";
+        if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
+                                << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n";
         if (vortexOptions) summary << "\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
             << initialVortex.centre.x << ',' << initialVortex.centre.y << "],\"radius\":" << initialVortex.radius
             << ",\"peakSpeed\":" << initialVortex.peakSpeed << ",\"checkpointSuffix\":\".initial.checkpoint\"},\n";

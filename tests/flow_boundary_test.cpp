@@ -13,16 +13,30 @@ using namespace cartmesh2d::fv;
 
 void require(bool ok, const char* message) { if (!ok) throw std::runtime_error(message); }
 
-FvMesh2D rectangle(int nx=24, int ny=8, double length=4) {
+FvMesh2D rectangle(int nx=24, int ny=8, double length=4, bool warped=false) {
     TopologyMesh2D t;
-    for (int j=0;j<=ny;++j) for (int i=0;i<=nx;++i)
-        t.vertices.push_back({t.vertices.size(),{length*i/nx, double(j)/ny}});
+    for (int j=0;j<=ny;++j) for (int i=0;i<=nx;++i) {
+        double x=length*i/nx,y=double(j)/ny;
+        if(warped && i>0 && i<nx && j>0 && j<ny) {
+            const double pi=std::acos(-1.),amplitude=.2*std::min(length/nx,1./ny);
+            x+=amplitude*std::sin(2*pi*length*i/nx/length)*std::sin(pi*double(j)/ny);
+            y+=amplitude*std::sin(pi*length*i/nx/length)*std::sin(2*pi*double(j)/ny);
+        }
+        t.vertices.push_back({t.vertices.size(),{x,y}});
+    }
     std::map<std::pair<std::size_t,std::size_t>,std::size_t> edges;
     for (int j=0;j<ny;++j) for (int i=0;i<nx;++i) {
         TopologyCell2D cell;
         cell.id=t.cells.size();cell.geometryArea=length/nx/ny;
         const auto a=static_cast<std::size_t>(j*(nx+1)+i);
         cell.vertices={a,a+1,a+static_cast<std::size_t>(nx)+2,a+static_cast<std::size_t>(nx)+1};
+        if(warped) {
+            cell.geometryArea=0;
+            for(std::size_t k=0;k<4;++k) {
+                const auto p=t.vertices[cell.vertices[k]].point,q=t.vertices[cell.vertices[(k+1)%4]].point;
+                cell.geometryArea+=(p.x*q.y-p.y*q.x)/2;
+            }
+        }
         for (std::size_t k=0;k<4;++k) {
             const auto x=cell.vertices[k],y=cell.vertices[(k+1)%4];
             const auto [it,inserted]=edges.emplace(std::minmax(x,y),t.edges.size());
@@ -81,6 +95,25 @@ template<class F> void rejects(F function) {
     bool rejected=false;
     try {function();} catch(const std::runtime_error&) {rejected=true;}
     require(rejected,"invalid custom boundary was accepted");
+}
+
+void steadyRelaxationIndependence() {
+    // Non-orthogonal cells expose the face/cell interpolation defect that
+    // vanishes for the linear pressure of an orthogonal Poiseuille mesh.
+    const auto mesh=rectangle(18,6,3,true);auto control=conditions(mesh);
+    control.nu=.1;control.tolerance=1e-11;control.maxIterations=8000;
+    control.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
+    for(auto& b:control.boundaryConditions) {
+        const auto& face=mesh.faces[b.face];
+        if(b.kind==FlowBoundaryKind2D::VelocityInlet || b.kind==FlowBoundaryKind2D::PressureOutlet)
+            b={b.face,FlowBoundaryKind2D::PressureOpening,{},face.areaVector.x<0?.6:0,b.name};
+        else if(face.areaVector.y>0)b={b.face,FlowBoundaryKind2D::Symmetry,{},0,"symmetry"};
+    }
+    const auto baseline=solveIncompressible2D(mesh,control);
+    for(double alpha:{.8,.9}) {
+        auto changed=control;changed.velocityRelaxation=alpha;
+        compare(baseline,solveIncompressible2D(mesh,changed));
+    }
 }
 
 void pressureOpenings() {
@@ -198,6 +231,7 @@ void symmetryBoundaries() {
 
 int main() {
     try {
+        steadyRelaxationIndependence();
         pressureOpenings();
         symmetryBoundaries();
         const auto mesh=rectangle();const auto control=conditions(mesh);
