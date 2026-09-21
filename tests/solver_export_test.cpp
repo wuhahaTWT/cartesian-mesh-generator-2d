@@ -526,6 +526,45 @@ int main() {
     }
 
     {
+        // Three disconnected thin rectangles, each with a short collinear
+        // physical-wall segment. Only a one-cell/two-piece split is available.
+        std::vector<CutCell2D> wallSources;
+        std::vector<BoundaryLoop> loops;
+        for (std::size_t copy=0;copy<3;++copy) {
+            const double x=2.0*static_cast<double>(copy);
+            std::vector<Point2D> points{{x,0},{x+.06,0},{x+1,0},{x+1,.1},{x,.1}};
+            wallSources.push_back(polygonCell(copy,points));
+            loops.emplace_back(points);
+        }
+        const BoundaryRegion2D region(std::move(loops));
+        const Domain2D localDomain{region.bounds()};
+        const auto input=buildGlobalTopology(wallSources,localDomain,region);
+        const auto before=evaluateSolverQuality2D(input);
+        const auto batch=repartitionSolverTopologyByQuality2D(input,localDomain,region);
+        const auto reference=repartitionSolverTopologyByQualitySequentialReference2D(input,localDomain,region);
+        check(input.valid() && before.issues.size()==3 && batch.valid() && reference.valid() &&
+              evaluateSolverQuality2D(batch.topology).valid() &&
+              evaluateSolverQuality2D(reference.topology).valid(),
+              "independent single wall splits and exhaustive reference pass unchanged quality");
+        check(batch.topology.cells.size()==6 && batch.immutableCells.size()==6,
+              "one-to-two batch retains replacement cells and matching protection flags");
+        const auto locked=improveSolverForTargetPolicy2D(input,localDomain,region,
+            std::vector<bool>(3,true),SolverQualityPolicy2D{});
+        check(locked.topology.cells.size()==3 &&
+              !evaluateSolverQuality2D(locked.topology).valid(),
+              "immutable wall cells remain untouched and their failures remain visible");
+        std::array<double,3> areas{};
+        for (const auto& cell:batch.topology.cells) {
+            check(cell.sourceLineage.size()==1 && cell.sourceLineage.front()<3,
+                  "wall split preserves its original source identity");
+            if (cell.sourceLineage.size()==1 && cell.sourceLineage.front()<3)
+                areas[cell.sourceLineage.front()]+=cell.geometryArea;
+        }
+        for(const double area:areas)check(std::abs(area-.1)<1e-12,
+            "each disconnected wall split conserves its original area");
+    }
+
+    {
         // Independent low-weight pairs require true 2-to-1 unions. A batch
         // may therefore emit fewer cells than it removes; every metadata and
         // source-lineage array must follow the actual replacement count.

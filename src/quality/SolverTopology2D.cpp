@@ -1252,7 +1252,8 @@ template<class Proposal>
     for (const auto& proposal:selected) {
         if (proposal.first>=topology.cells.size() || proposal.second>=topology.cells.size()) continue;
         replacements[proposal.first]=&proposal;
-        removed[proposal.second]=true;
+        // A physical-wall split replaces one cell by two pieces.
+        if (proposal.second!=proposal.first) removed[proposal.second]=true;
     }
     std::vector<CutCell2D> cells;
     std::vector<bool> rebuiltImmutable;
@@ -1405,6 +1406,36 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 if (profile) {
                     profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
                 }
+            }
+            // The exhaustive fallback also splits a single skewed wall cell.
+            // Rank those same candidates alongside pair repairs, so disjoint
+            // wall defects can share one authoritative global rebuild.
+            std::set<std::size_t> wallCells;
+            for (const auto& issue:quality.issues)
+                if (issue.code==SolverQualityIssueCode2D::ExcessiveBoundarySkewness &&
+                    issue.cellId<result.topology.cells.size() &&
+                    (result.immutableCells.empty() || !result.immutableCells[issue.cellId]))
+                    wallCells.insert(issue.cellId);
+            for (const auto cell:wallCells) {
+                const auto polygonStart=ProfileClock::now();
+                const auto polygon=topologyCellPolygon(result.topology,cell);
+                const auto splits=convexTwoPieceSplits(polygon,domain,boundary,tol,true,allowCollinear);
+                if (profile) profile->candidateSplits+=splits.size();
+                const auto halo=cellPairHalo(result.topology,cell,cell);
+                const std::vector<std::size_t> removed{cell};
+                const auto baseRank=localReplacementQualityRank(
+                    result.topology,halo,removed,{polygon},tol,policy);
+                std::optional<RepartitionProposal2D> best;
+                for (const auto& [firstPiece,secondPiece]:splits) {
+                    std::vector<Polygon2D> pieces{firstPiece,secondPiece};
+                    auto rank=localReplacementQualityRank(result.topology,halo,removed,pieces,tol,policy);
+                    if (!rank) continue;
+                    if (baseRank) rankRelativeToBase(*rank,*baseRank);
+                    RepartitionProposal2D proposal{cell,cell,std::move(pieces),*rank,halo};
+                    if (!best || betterLocalQualityRank(proposal.rank,best->rank)) best=std::move(proposal);
+                }
+                if (best) proposals.push_back(std::move(*best));
+                if (profile) profile->candidatePolygonWorkSeconds+=profileSeconds(polygonStart);
             }
             auto selected=selectIndependentProposals(std::move(proposals));
             if (profile) profile->repairPatchCount+=selected.size();

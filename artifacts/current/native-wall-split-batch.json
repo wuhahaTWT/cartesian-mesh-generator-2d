@@ -1,0 +1,726 @@
+{
+  "scope": "Native2D wall-quality candidate scheduling; single-wall-cell split candidates already present in the exhaustive fallback now enter independent batches. Same full global topology and quality acceptance; immutable cells and original input polyline preserved. Changed candidate order can change the final partition. Single serial timing samples.",
+  "input": "examples/complex/nozzle_profile.xy",
+  "inputSha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e",
+  "baseline": {
+    "command": [
+      "outputs/laminar-performance/dense-cutcell/baseline-mesher",
+      "examples/complex/nozzle_profile.xy",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline",
+      "7",
+      "0.03333333333333333",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline-foam",
+      "7",
+      "0"
+    ],
+    "commandText": "outputs/laminar-performance/dense-cutcell/baseline-mesher examples/complex/nozzle_profile.xy outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline 7 0.03333333333333333 .1 interior outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline-foam 7 0",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/nozzle-l7-serial-baseline.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 46.82158900001377,
+    "binarySha256": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799"
+  },
+  "optimized9336": {
+    "command": [
+      "build/cartmesh2d_cli",
+      "examples/complex/nozzle_profile.xy",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch",
+      "7",
+      "0.03333333333333333",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch-foam",
+      "7",
+      "0"
+    ],
+    "commandText": "build/cartmesh2d_cli examples/complex/nozzle_profile.xy outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch 7 0.03333333333333333 .1 interior outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch-foam 7 0",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 6.061091249997844,
+    "binarySha256": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f"
+  },
+  "optimized102017": {
+    "command": [
+      "build/cartmesh2d_cli",
+      "examples/complex/nozzle_profile.xy",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch",
+      "10",
+      "0.03333333333333333",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch-foam",
+      "7",
+      "0",
+      "--refine-box",
+      "-1.6",
+      "-.18",
+      "1.6",
+      ".18",
+      "10"
+    ],
+    "timeoutSeconds": 180,
+    "binarySha256": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f",
+    "commandText": "build/cartmesh2d_cli examples/complex/nozzle_profile.xy outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch 10 0.03333333333333333 .1 interior outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch-foam 7 0 --refine-box -1.6 -.18 1.6 .18 10",
+    "returncode": 0,
+    "stdout": "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch.stderr.log",
+    "timedOut": false,
+    "status": "passed",
+    "wallSeconds": 50.25300125000649
+  },
+  "baselineMetrics": {
+    "timing_refinement_seconds": "0.023792458",
+    "timing_balance_seconds": "0.005621084",
+    "timing_neighbor_generation_seconds": "0.005455625",
+    "timing_neighbor_generation_calls": "1",
+    "timing_balance_excluding_neighbors_seconds": "0.000165459",
+    "timing_cut_cell_seconds": "0.027524334",
+    "timing_source_topology_seconds": "0.026583417",
+    "timing_agglomeration_seconds": "0.037628292",
+    "timing_solver_topology_seconds": "45.8648711",
+    "timing_serialization_export_seconds": "0.137128917",
+    "timing_total_seconds": "46.1253495",
+    "solver_quality": "PASS",
+    "solver_max_nonorthogonality_deg": "67.950265",
+    "solver_max_internal_skewness": "0.333333333",
+    "solver_max_boundary_skewness": "3.99092473",
+    "solver_max_cell_aspect": "20.6424017",
+    "solver_min_face_length": "0.000456626601",
+    "solver_min_face_weight": "0.122033799",
+    "solver_min_volume_ratio": "0.123567022",
+    "solver_partitioned_input_cells": "50",
+    "solver_quality_agglomerated_source_cells": "2",
+    "solver_quality_local_repartitions": "16",
+    "solver_profile_initial_partition_seconds": "0.024687917",
+    "solver_profile_build_global_topology_seconds": "39.5616007",
+    "solver_profile_full_quality_seconds": "2.62097328",
+    "solver_profile_candidate_generation_seconds": "6.8123e-05",
+    "solver_profile_candidate_polygon_work_seconds": "0.095512457",
+    "solver_profile_candidate_global_rebuild_seconds": "39.5386833",
+    "solver_profile_candidate_quality_seconds": "2.59139369",
+    "solver_profile_source_repair_seconds": "5.30776838",
+    "solver_profile_final_repartition_seconds": "40.5269866",
+    "solver_profile_global_topology_rebuild_calls": "1760",
+    "solver_profile_full_quality_calls": "1779",
+    "solver_profile_candidate_topology_count": "1759",
+    "solver_profile_candidate_quality_evaluation_count": "1759",
+    "solver_profile_source_candidate_pairs": "189",
+    "solver_profile_repartition_candidate_pairs": "544",
+    "solver_profile_candidate_splits": "544",
+    "solver_profile_repair_patch_count": "184",
+    "solver_profile_accepted_topology_commit_count": "18",
+    "solver_profile_rejected_candidate_count": "1741",
+    "solver_profile_maximum_quality_issue_count": "16",
+    "solver_profile_accepted_source_repairs": "2",
+    "solver_profile_accepted_repartitions": "16",
+    "solver_profile_source_repair_iterations": "3",
+    "solver_profile_repartition_iterations": "16",
+    "solver_output_cells": "9336",
+    "solver_output_vertices": "9549",
+    "solver_output_faces": "18884"
+  },
+  "optimized9336Metrics": {
+    "timing_refinement_seconds": "0.023502416",
+    "timing_balance_seconds": "0.005411042",
+    "timing_neighbor_generation_seconds": "0.005248125",
+    "timing_neighbor_generation_calls": "1",
+    "timing_balance_excluding_neighbors_seconds": "0.000162917",
+    "timing_cut_cell_seconds": "0.027563625",
+    "timing_source_topology_seconds": "0.025686542",
+    "timing_agglomeration_seconds": "0.036624167",
+    "timing_solver_topology_seconds": "5.36031887",
+    "timing_serialization_export_seconds": "0.135993083",
+    "timing_total_seconds": "5.61728208",
+    "solver_quality": "PASS",
+    "solver_max_nonorthogonality_deg": "57.1907936",
+    "solver_max_internal_skewness": "0.333333333",
+    "solver_max_boundary_skewness": "3.99092473",
+    "solver_max_cell_aspect": "20.6424017",
+    "solver_min_face_length": "0.000456626601",
+    "solver_min_face_weight": "0.10706947",
+    "solver_min_volume_ratio": "0.0902055432",
+    "solver_partitioned_input_cells": "50",
+    "solver_quality_agglomerated_source_cells": "2",
+    "solver_quality_local_repartitions": "16",
+    "solver_profile_initial_partition_seconds": "0.024148542",
+    "solver_profile_build_global_topology_seconds": "4.58837366",
+    "solver_profile_full_quality_seconds": "0.305613791",
+    "solver_profile_candidate_generation_seconds": "2.9958e-05",
+    "solver_profile_candidate_polygon_work_seconds": "0.062527163",
+    "solver_profile_candidate_global_rebuild_seconds": "4.56599295",
+    "solver_profile_candidate_quality_seconds": "0.298379457",
+    "solver_profile_source_repair_seconds": "5.29490146",
+    "solver_profile_final_repartition_seconds": "0.036051291",
+    "solver_profile_global_topology_rebuild_calls": "206",
+    "solver_profile_full_quality_calls": "210",
+    "solver_profile_candidate_topology_count": "205",
+    "solver_profile_candidate_quality_evaluation_count": "205",
+    "solver_profile_source_candidate_pairs": "189",
+    "solver_profile_repartition_candidate_pairs": "64",
+    "solver_profile_candidate_splits": "176",
+    "solver_profile_repair_patch_count": "64",
+    "solver_profile_accepted_topology_commit_count": "3",
+    "solver_profile_rejected_candidate_count": "202",
+    "solver_profile_maximum_quality_issue_count": "16",
+    "solver_profile_accepted_source_repairs": "2",
+    "solver_profile_accepted_repartitions": "16",
+    "solver_profile_source_repair_iterations": "3",
+    "solver_profile_repartition_iterations": "1",
+    "solver_output_cells": "9336",
+    "solver_output_vertices": "9549",
+    "solver_output_faces": "18884"
+  },
+  "optimized102017Metrics": {
+    "timing_refinement_seconds": "0.060079",
+    "timing_balance_seconds": "0.10074325",
+    "timing_neighbor_generation_seconds": "0.084061375",
+    "timing_neighbor_generation_calls": "4",
+    "timing_balance_excluding_neighbors_seconds": "0.016681875",
+    "timing_cut_cell_seconds": "0.160042833",
+    "timing_source_topology_seconds": "0.316986666",
+    "timing_agglomeration_seconds": "0.514512458",
+    "timing_solver_topology_seconds": "47.3265695",
+    "timing_serialization_export_seconds": "1.70561112",
+    "timing_total_seconds": "50.1950063",
+    "solver_quality": "PASS",
+    "solver_max_nonorthogonality_deg": "69.0506737",
+    "solver_max_internal_skewness": "1.04999691",
+    "solver_max_boundary_skewness": "3.99897108",
+    "solver_max_cell_aspect": "22.8540056",
+    "solver_min_face_length": "6.14556667e-06",
+    "solver_min_face_weight": "0.0626202891",
+    "solver_min_volume_ratio": "0.0157770473",
+    "solver_partitioned_input_cells": "564",
+    "solver_quality_agglomerated_source_cells": "74",
+    "solver_quality_local_repartitions": "44",
+    "solver_profile_initial_partition_seconds": "0.357323958",
+    "solver_profile_build_global_topology_seconds": "42.364813",
+    "solver_profile_full_quality_seconds": "1.33232554",
+    "solver_profile_candidate_generation_seconds": "9.404e-05",
+    "solver_profile_candidate_polygon_work_seconds": "0.394388953",
+    "solver_profile_candidate_global_rebuild_seconds": "42.0279012",
+    "solver_profile_candidate_quality_seconds": "1.20520325",
+    "solver_profile_source_repair_seconds": "46.0535244",
+    "solver_profile_final_repartition_seconds": "0.861521375",
+    "solver_profile_global_topology_rebuild_calls": "129",
+    "solver_profile_full_quality_calls": "73",
+    "solver_profile_candidate_topology_count": "128",
+    "solver_profile_candidate_quality_evaluation_count": "66",
+    "solver_profile_source_candidate_pairs": "593",
+    "solver_profile_repartition_candidate_pairs": "188",
+    "solver_profile_candidate_splits": "521",
+    "solver_profile_repair_patch_count": "192",
+    "solver_profile_accepted_topology_commit_count": "5",
+    "solver_profile_rejected_candidate_count": "123",
+    "solver_profile_maximum_quality_issue_count": "52",
+    "solver_profile_accepted_source_repairs": "74",
+    "solver_profile_accepted_repartitions": "44",
+    "solver_profile_source_repair_iterations": "4",
+    "solver_profile_repartition_iterations": "2",
+    "solver_output_cells": "102017",
+    "solver_output_vertices": "106195",
+    "solver_output_faces": "208211"
+  },
+  "priorDenseTimeout": {
+    "command": [
+      "build/cartmesh2d_cli",
+      "examples/complex/nozzle_profile.xy",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-core",
+      "10",
+      "0.03333333333333333",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-core-foam",
+      "7",
+      "0",
+      "--refine-box",
+      "-1.6",
+      "-.18",
+      "1.6",
+      ".18",
+      "10"
+    ],
+    "inputHashes": {
+      "build/cartmesh2d_cli": "99b2c7758c374d10d7143bb7af67ab492fefa19bba3cf4914caf6e815c2c9799",
+      "examples/complex/nozzle_profile.xy": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e"
+    },
+    "timeoutSeconds": 180,
+    "scope": "Existing nozzle boundary at level7, refine fluid interior only to level10; estimated about100k cells. Full Solver gates unchanged. Bounded generation probe, no CFD qualification.",
+    "commandText": "build/cartmesh2d_cli examples/complex/nozzle_profile.xy outputs/laminar-performance/dense-cutcell/nozzle-dense-core 10 0.03333333333333333 .1 interior outputs/laminar-performance/dense-cutcell/nozzle-dense-core-foam 7 0 --refine-box -1.6 -.18 1.6 .18 10",
+    "returncode": -9,
+    "stdout": "outputs/laminar-performance/dense-cutcell/nozzle-dense-core.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/nozzle-dense-core.stderr.log",
+    "timedOut": true,
+    "status": "failed",
+    "error": "timed out after 180s",
+    "wallSeconds": 180.02721079198818
+  },
+  "meshAudits": {
+    "nozzle-l7-wallbatch": {
+      "valid": true,
+      "cells": 9336,
+      "edges": 18884,
+      "boundaryEdges": 504,
+      "area": 8.4411,
+      "expectedArea": 8.441099999999999,
+      "sourceSha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e",
+      "meshSha256": "076e3c8041b8204c1e81d261e6eb2897cf19f33a534967d895da270dfaf2579d",
+      "scope": "Independent CM2D loop/edge incidence/area validation and every physical face on an original input segment. Not external checkMesh or CFD acceptance."
+    },
+    "nozzle-dense-wallbatch": {
+      "valid": true,
+      "cells": 102017,
+      "edges": 208211,
+      "boundaryEdges": 3940,
+      "area": 8.4411,
+      "expectedArea": 8.441099999999999,
+      "sourceSha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e",
+      "meshSha256": "b9b9d6abfd15cd48da511ae4aa73322e1fdf5b949a00811891146cae7b4ffc2d",
+      "scope": "Independent CM2D loop/edge incidence/area validation and every physical face on an original input segment. Not external checkMesh or CFD acceptance."
+    }
+  },
+  "flow9336": {
+    "command": [
+      "build/cartmesh2d_flow_cli",
+      "--mesh",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch.solver.cm2d",
+      "--output",
+      "outputs/laminar-performance/dense-cutcell/flow-l7-wallbatch",
+      "--case",
+      "duct",
+      "--nu",
+      ".1",
+      "--speed",
+      "1",
+      "--tolerance",
+      "1e-10",
+      "--max-iterations",
+      "5000",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--convection",
+      "face-limited-linear",
+      "--steady-acceleration",
+      "anderson",
+      "--linear-policy",
+      "adaptive",
+      "--velocity-relaxation",
+      ".8",
+      "--profile"
+    ],
+    "wallSeconds": 10.055486082987045,
+    "inputHashes": {
+      "build/cartmesh2d_flow_cli": "e0edb07d6a27e143b4c832a74600c9337de16a5fcb0e9b05b291b55939f49e34",
+      "outputs/laminar-performance/dense-cutcell/nozzle-l7-wallbatch.solver.cm2d": "076e3c8041b8204c1e81d261e6eb2897cf19f33a534967d895da270dfaf2579d"
+    },
+    "performance": {
+      "format": "cartmesh2d-flow-performance-v1",
+      "cells": 9336,
+      "faces": 18884,
+      "simpleIterations": 426,
+      "converged": true,
+      "pressurePreconditioner": "aggregation",
+      "readAndMeshSeconds": 0.032782875,
+      "solveSeconds": 9.896127959,
+      "momentumLinearSolveSeconds": 0.7605337890000003,
+      "pressureLinearSolveSeconds": 5.633274609999989,
+      "momentumSolves": 852,
+      "momentumIterations": 3066,
+      "maxMomentumIterations": 7,
+      "pressureSolves": 1665,
+      "pressureCorrectionPassesSkipped": 39,
+      "pressureFactorizations": 0,
+      "pressureFactorReuses": 0,
+      "pressureHierarchyBuilds": 48,
+      "pressureHierarchyReuses": 1165,
+      "pressureHierarchyRefreshes": 378,
+      "maxPressureHierarchyLevels": 9,
+      "maxPressureCoarseCells": 31,
+      "pressureIterations": 15144,
+      "maxPressureIterations": 29,
+      "scope": "steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement"
+    }
+  },
+  "flow9336Audit": {
+    "valid": true,
+    "issues": [],
+    "independentContinuity": {
+      "maxCellImbalance": 1.2822154362573945e-14,
+      "l2CellImbalance": 4.639131958490406e-14,
+      "maxScaledCellImbalance": 4.203605762593766e-06,
+      "nativeDefinitionContinuity": 4.346087581851322e-13,
+      "boundaryFluxSum": 2.8927001852890877e-14,
+      "referenceThroughput": 1.96,
+      "globalRelativeImbalance": 1.4758674414740242e-14,
+      "cellValid": true,
+      "globalValid": true,
+      "globalLimit": 2.9063571209061376e-07
+    },
+    "momentumAudit": {
+      "status": "available",
+      "valid": true,
+      "viscosityInput": {
+        "model": "uniform"
+      },
+      "convection": "face-limited-linear",
+      "namedBoundaryFluxes": {
+        "status": "unavailable"
+      },
+      "namedWallLoads": {
+        "status": "unavailable"
+      },
+      "pressureDiscretization": "shared-face-gauss",
+      "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+      "outletBackflow": "reject",
+      "outletBackflowAudit": {
+        "faceIds": [],
+        "faceCount": 0,
+        "inwardVolumeFlux": 0.0
+      },
+      "faceCount": 18884,
+      "maxFaceDeviation": {
+        "pressure": 3.019806626980426e-14,
+        "advectionX": 2.7755575615628914e-17,
+        "advectionY": 8.673617379884035e-19,
+        "diffusionX": 1.942890293094024e-16,
+        "diffusionY": 5.551115123125783e-17
+      },
+      "faceConsistencyTolerance": {
+        "absolute": 5e-10,
+        "relative": 0.0,
+        "meaning": "CSV reconstruction comparison only; pressure in m2/s2 and momentum flux in m3/s2; not a CFD accuracy gate"
+      },
+      "faceDeviation": {
+        "pressure": {
+          "actual": 10.551327206568383,
+          "expected": 10.551327206568352,
+          "absolute": 3.019806626980426e-14,
+          "relative": 2.8620159036491107e-15
+        },
+        "advectionX": {
+          "actual": 0.1414482897723628,
+          "expected": 0.14144828977236282,
+          "absolute": 2.7755575615628914e-17,
+          "relative": 2.7755575615628914e-17
+        },
+        "advectionY": {
+          "actual": 0.005693096620878696,
+          "expected": 0.005693096620878695,
+          "absolute": 8.673617379884035e-19,
+          "relative": 8.673617379884035e-19
+        },
+        "diffusionX": {
+          "actual": 0.05370284336710093,
+          "expected": 0.05370284336710074,
+          "absolute": 1.942890293094024e-16,
+          "relative": 1.942890293094024e-16
+        },
+        "diffusionY": {
+          "actual": 0.10284205976152438,
+          "expected": 0.10284205976152433,
+          "absolute": 5.551115123125783e-17,
+          "relative": 5.551115123125783e-17
+        }
+      },
+      "cellResidual": {
+        "maxNormalized": 1.036059424671273e-11,
+        "worstCellIndex": 8872,
+        "worstNormalizedX": 4.504746408982248e-12,
+        "worstNormalizedY": -9.330014626771946e-12,
+        "worstCentre": {
+          "x": 2.975,
+          "y": 0.58078125
+        },
+        "l2": 2.2843681584755282e-10,
+        "maxCellVector": 1.2397757371245913e-11,
+        "denominatorDefinition": "(uDiagonal+vDiagonal)*speed; nu*T plus upwind flux; fixed component uses nu*T; incoming normal-inlet u flux is on RHS, not diagonal; transient adds measuredArea/dt per component"
+      },
+      "summaryDeviation": {
+        "momentumResidual": {
+          "actual": 1.0360572394903071e-11,
+          "expected": 1.036059424671273e-11,
+          "absolute": 2.18518096592269e-17,
+          "relative": 2.18518096592269e-17
+        },
+        "pressureForceX": {
+          "actual": 5.914797603741188,
+          "expected": 5.914797603741188,
+          "absolute": 0.0,
+          "relative": 0.0
+        },
+        "pressureForceY": {
+          "actual": 9.198647486080569e-12,
+          "expected": 9.198529958565071e-12,
+          "absolute": 1.1752751549742868e-16,
+          "relative": 1.1752751549742868e-16
+        },
+        "discreteForceX": {
+          "actual": 15.981268180720935,
+          "expected": 15.981268180720933,
+          "absolute": 1.7763568394002505e-15,
+          "relative": 1.1115243291788104e-16
+        },
+        "discreteForceY": {
+          "actual": -6.230831389036906e-12,
+          "expected": -6.230972335319329e-12,
+          "absolute": 1.4094628242311558e-16,
+          "relative": 1.4094628242311558e-16
+        },
+        "reconstructedForceX": {
+          "actual": 15.680248818935537,
+          "expected": 15.680248818935535,
+          "absolute": 1.7763568394002505e-15,
+          "relative": 1.1328626604796692e-16
+        },
+        "reconstructedForceY": {
+          "actual": -7.409897348487071e-12,
+          "expected": -7.41003569268428e-12,
+          "absolute": 1.3834419720915037e-16,
+          "relative": 1.3834419720915037e-16
+        },
+        "forceX": {
+          "actual": 15.981268180720935,
+          "expected": 15.981268180720933,
+          "absolute": 1.7763568394002505e-15,
+          "relative": 1.1115243291788104e-16
+        },
+        "forceY": {
+          "actual": -6.230831389036906e-12,
+          "expected": -6.230972335319329e-12,
+          "absolute": 1.4094628242311558e-16,
+          "relative": 1.4094628242311558e-16
+        },
+        "wallForceX": {
+          "actual": 15.981268180720935,
+          "expected": 15.981268180720933,
+          "absolute": 1.7763568394002505e-15,
+          "relative": 1.1115243291788104e-16
+        },
+        "wallForceY": {
+          "actual": -6.230613681240671e-12,
+          "expected": -6.230972335319329e-12,
+          "absolute": 3.5865407865820487e-16,
+          "relative": 3.5865407865820487e-16
+        },
+        "wallViscousForceX": {
+          "actual": 10.066470576979754,
+          "expected": 10.066470576979754,
+          "absolute": 0.0,
+          "relative": 0.0
+        },
+        "wallViscousForceY": {
+          "actual": -1.5429542409364783e-11,
+          "expected": -1.5429440711201003e-11,
+          "absolute": 1.0169816377914032e-16,
+          "relative": 1.0169816377914032e-16
+        }
+      },
+      "sourceForcing": {
+        "case": "duct",
+        "integralX": 0.0,
+        "integralY": 0.0,
+        "definition": "zero/unforced non-manufactured case"
+      },
+      "temporal": {
+        "enabled": false,
+        "dt": null,
+        "integralX": 0.0,
+        "integralY": 0.0,
+        "maxAbsX": 0.0,
+        "maxAbsY": 0.0
+      },
+      "pressureForce": {
+        "x": 5.914797603741188,
+        "y": 9.198529958565071e-12
+      },
+      "discreteForce": {
+        "x": 15.981268180720933,
+        "y": -6.230972335319329e-12
+      },
+      "globalBoundaryMomentum": {
+        "x": -2.0952757904522696e-11,
+        "y": -1.3798901344480585e-10,
+        "magnitude": 1.3957072005000314e-10,
+        "boundaryTermScale": 75.54787843784814,
+        "relativeToBoundary": 1.847447247176179e-12,
+        "denominatorDefinition": "sum over boundary faces of |p*Sx|+|p*Sy|+|advectionX|+|advectionY|+|diffusionX|+|diffusionY|; zero if all terms zero"
+      },
+      "globalSourceBalance": {
+        "boundaryMinusSourceX": -2.0952757904522696e-11,
+        "boundaryMinusSourceY": -1.3798901344480585e-10,
+        "magnitude": 1.3957072005000314e-10,
+        "sourceIntegralX": 0.0,
+        "sourceIntegralY": 0.0,
+        "definition": "global boundary momentum minus independent volume source integral"
+      },
+      "cellResidualSum": {
+        "x": -2.0958463657368804e-11,
+        "y": -1.3798847445063646e-10
+      },
+      "expectedCellResidualSum": {
+        "x": -2.0952757904522696e-11,
+        "y": -1.3798901344480585e-10
+      },
+      "cellBoundaryConservationDifference": {
+        "x": -5.705752846108317e-15,
+        "y": 5.389941693922234e-16,
+        "magnitude": 5.731154356280414e-15
+      },
+      "viscousStress": "symmetric",
+      "forceDefinition": "shared-face-newtonian-traction",
+      "reconstructedForce": {
+        "x": 15.680248818935535,
+        "y": -7.41003569268428e-12
+      },
+      "wallForce": {
+        "x": 15.981268180720933,
+        "y": -6.230972335319329e-12
+      },
+      "wallViscousForce": {
+        "x": 10.066470576979754,
+        "y": -1.5429440711201003e-11
+      },
+      "wallFaceFlags": "checked",
+      "fullNewtonianForceAudit": "forceX/forceY selected by viscousStress; reconstructedForceX/Y remain the cell-gradient diagnostic"
+    },
+    "benchmark": {
+      "valid": true,
+      "status": "not-qualified",
+      "scope": "Arbitrary duct: geometry, constitutive and conservation audits only; no physical reference or accuracy qualification."
+    },
+    "artifactSha256": {
+      "outputs/laminar-performance/dense-cutcell/flow-l7-wallbatch.cells.csv": "f44a6acb66ba9e16864351e5fe9cb5ee0270eb08a80de6962b21b5b9dbe37b23",
+      "outputs/laminar-performance/dense-cutcell/flow-l7-wallbatch.faces.csv": "fe3ed26a7e1b2005ba83bac525e1478987afe167b343c2b91670f7a9fcfb9ac2",
+      "outputs/laminar-performance/dense-cutcell/flow-l7-wallbatch.residuals.csv": "ae91606bbf7d3160a588f457d8934e81051b6e8d705a9f1aeb240f622f1481e5",
+      "outputs/laminar-performance/dense-cutcell/flow-l7-wallbatch.json": "e79de7f4fd0ec0c924b37492e0874caf76c4f5598fed03dd979edad7333478df"
+    }
+  },
+  "denseFlow": {
+    "command": [
+      "build/cartmesh2d_flow_cli",
+      "--mesh",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch.solver.cm2d",
+      "--output",
+      "outputs/laminar-performance/dense-cutcell/flow-dense-adaptive",
+      "--case",
+      "duct",
+      "--nu",
+      ".1",
+      "--speed",
+      "1",
+      "--tolerance",
+      "1e-10",
+      "--max-iterations",
+      "3000",
+      "--pressure-preconditioner",
+      "aggregation",
+      "--convection",
+      "face-limited-linear",
+      "--steady-acceleration",
+      "anderson",
+      "--linear-policy",
+      "adaptive",
+      "--velocity-relaxation",
+      ".8",
+      "--profile"
+    ],
+    "timeoutSeconds": 180,
+    "inputHashes": {
+      "build/cartmesh2d_flow_cli": "e0edb07d6a27e143b4c832a74600c9337de16a5fcb0e9b05b291b55939f49e34",
+      "outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch.solver.cm2d": "b9b9d6abfd15cd48da511ae4aa73322e1fdf5b949a00811891146cae7b4ffc2d"
+    },
+    "scope": "Real102017-cell Cut-cell nozzle. Strict original stopping and quality gates. Serial180-second steady laminar probe; no accuracy claim from convergence alone.",
+    "commandText": "build/cartmesh2d_flow_cli --mesh outputs/laminar-performance/dense-cutcell/nozzle-dense-wallbatch.solver.cm2d --output outputs/laminar-performance/dense-cutcell/flow-dense-adaptive --case duct --nu .1 --speed 1 --tolerance 1e-10 --max-iterations 3000 --pressure-preconditioner aggregation --convection face-limited-linear --steady-acceleration anderson --linear-policy adaptive --velocity-relaxation .8 --profile",
+    "returncode": -9,
+    "stdout": "outputs/laminar-performance/dense-cutcell/flow-dense-adaptive.stdout.log",
+    "stderr": "outputs/laminar-performance/dense-cutcell/flow-dense-adaptive.stderr.log",
+    "timedOut": true,
+    "status": "failed",
+    "error": "timed out after 180s",
+    "wallSeconds": 180.01009895899915,
+    "lastProgress": {
+      "type": "flow-progress",
+      "iteration": 310,
+      "momentumResidual": 0.00022805677779738124,
+      "continuity": 3.7382742332534843e-13,
+      "velocityChange": 0.0018247546242726018,
+      "pressureChange": 0.030467288600192228
+    },
+    "converged": false,
+    "accuracyQualified": false,
+    "observedRssKiB": 213072,
+    "memoryScope": "single ps snapshot at160 seconds, not peak"
+  },
+  "externalCheckMesh": "not run: binary absent from PATH and Docker daemon socket absent",
+  "rejectedExperiment": "Replacing exact physical-boundary endpoint matching in local ranking with segment containment had no performance benefit; reverted. No such classification change is included.",
+  "directionalAudits": {
+    "nozzle-l7-wallbatch": {
+      "format": "cartmesh2d-directional-connectivity-v1",
+      "scope": "uncoupled planar mesh; uniform extrusion; empty front/back",
+      "external_checkMesh": "not_run_by_this_reader",
+      "cell_count": 9336,
+      "minimum_required": 0.001,
+      "minimum_measured": 0.018620390386201544,
+      "failed_cell_count": 0,
+      "failed_cells": [],
+      "valid": true,
+      "native_report_verified": true
+    },
+    "nozzle-dense-wallbatch": {
+      "format": "cartmesh2d-directional-connectivity-v1",
+      "scope": "uncoupled planar mesh; uniform extrusion; empty front/back",
+      "external_checkMesh": "not_run_by_this_reader",
+      "cell_count": 102017,
+      "minimum_required": 0.001,
+      "minimum_measured": 0.00850510486402324,
+      "failed_cell_count": 0,
+      "failed_cells": [],
+      "valid": true,
+      "native_report_verified": true
+    }
+  },
+  "release": {
+    "version": "0.4.33",
+    "compiler": "/usr/bin/clang++",
+    "ctest": {
+      "passed": 154,
+      "total": 154,
+      "seconds": 61.43
+    },
+    "frontend": {
+      "passed": 178,
+      "total": 178
+    },
+    "packagedWallRegressionPassed": true,
+    "runtimeHashes": {
+      "cartmesh2d_transport_cli": "414177794acb540026dfc24041c5802b0e94086933767eff500f62ba898566ef",
+      "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+      "cartmesh2d_flow_cli": "e0edb07d6a27e143b4c832a74600c9337de16a5fcb0e9b05b291b55939f49e34",
+      "cartmesh2d_hybrid_cli": "6d7c9846bb511cdb53cf9945f24cba8e8e43646974ce1dec5b1229740027b63d",
+      "cartmesh2d_euler_cli": "b213d82002587fae4394c59ef6d9f611750ee218c3c355025968111319fa60f6",
+      "cartmesh2d_cli": "cdad770071fd425f8713a546d40c0f4e144ef5849f49c5484605794c9bbddf0f"
+    },
+    "actualApp": {
+      "cells": 2504,
+      "iterations": 181,
+      "topology": "PASS",
+      "solverQuality": "PASS",
+      "directionalQuality": "FAIL",
+      "defaultFieldsIdenticalTo0432": {
+        ".cells.csv": "6cd8219c9ce5e58ce65ebaba8a61d9175b670c052d30e308d64bc27c25ee25d3",
+        ".faces.csv": "4fdcb6de2cb43ffacf0f611051c0996e24ec72f67d7f65953a74841fa21a90cd",
+        ".residuals.csv": "33e9120918a45aa4ecf3d32c96f460c9ba4eb0cd0da5e5971bb05d50361eec27",
+        ".fields.json": "2f607069e49d2650a993f978be20efa934840d8e4c2b51bb7b66a95121d4c307",
+        ".vtk": "308a10a0bcc9de3d6cd21a836a3607addf47bdfb465cfc8af4d1f3bfc3864e05"
+      },
+      "screenshot": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/dense-cutcell/app-wall-batch.png"
+    }
+  }
+}

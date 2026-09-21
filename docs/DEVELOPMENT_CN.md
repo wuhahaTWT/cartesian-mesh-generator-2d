@@ -46,7 +46,7 @@ python3 tools/verification/check_background_grid.py outputs/background-grid/circ
 | `topology/EdgeIncidence2D`、`PatchTransaction2D` | 边关联检查、局部修改事务和全局校验 |
 | `stabilization/SmallCell2D`、`Agglomeration2D` | 小单元识别与聚合 |
 | `quality/Quality2D`、`SolverQuality2D` | 基础质量与硬求解门 |
-| `quality/SolverTopology2D`、`PatchLocalQuality2D` | 凸划分、源邻域相对评分、精确合并/切分批量与完整质量验收 |
+| `quality/SolverTopology2D`、`PatchLocalQuality2D` | 凸划分、源邻域相对评分、精确合并/切分及单壁面一变二批量，完整质量验收 |
 | `io/Dxf2D`、`BoundaryMetadata2D` | CAD 曲线、单位、边界名称/角色 |
 | `io/MeshIO2D`、`OpenFoam2D` | CM2D/VTK/JSON、二维挤出和 OpenFOAM case |
 
