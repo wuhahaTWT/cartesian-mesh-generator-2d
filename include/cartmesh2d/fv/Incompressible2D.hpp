@@ -56,6 +56,9 @@ struct FlowControls2D {
     // Engineering stopping is steady laminar only; it also requires a 50-step
     // window of field/physical-monitor stability and a strict final linear step.
     FlowConvergence2D convergence = FlowConvergence2D::Strict;
+    // Laminar steady or transient. Every accepted state requires a strict
+    // final linear step; each physical time step resets the forcing sequence.
+    // Constitutive material coupling is deliberately unsupported.
     bool adaptiveLinear = false;
     bool profile = false;
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition

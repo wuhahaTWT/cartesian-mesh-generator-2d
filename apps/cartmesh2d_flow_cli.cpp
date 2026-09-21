@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
-            "--linear-policy strict|adaptive; --convergence strict|engineering (steady laminar only).\n"
+            "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
@@ -287,8 +287,8 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("fixed time mode requires --time-step and --steps; adaptive limits require --end-time");
         if(!guessPath.empty() && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("initial-guess requires an actual steady solve");
-        if((controls.adaptiveLinear || controls.convergence!=fv::FlowConvergence2D::Strict) && timeStep>0)
-            throw std::invalid_argument("Adaptive linear/engineering convergence requires steady laminar flow");
+        if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
+            throw std::invalid_argument("Engineering convergence requires steady laminar flow");
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {
@@ -345,7 +345,7 @@ int main(int argc, char** argv) {
             fv::writeFlowBoundaryConditions2D(boundarySnapshot, mesh, controls);
         }
         fv::FlowResult2D r;
-        std::size_t totalInnerIterations=0;
+        std::size_t totalInnerIterations=0, adaptiveInnerIterations=0, strictAcceptedSteps=0;
         fv::FlowPerformance2D totalPerformance;
         if (timeStep==0) r=guessPath.empty()?fv::solveIncompressible2D(mesh,controls,progress)
             :fv::solveIncompressibleFromGuess2D(mesh,controls,guess,progress);
@@ -400,7 +400,10 @@ int main(int argc, char** argv) {
                     };
                     r=fv::advanceIncompressible2D(mesh,controls,state,trialStep,innerProgress);
                     const auto& last=r.history.back();
+                    if (r.converged && !last.strictLinearStep)
+                        throw std::runtime_error("Converged time step lacks strict linear certification");
                     totalInnerIterations+=last.iteration;
+                    adaptiveInnerIterations+=std::count_if(r.history.begin(),r.history.end(),[](const auto& h){return h.linearRelativeTolerance>1e-11;});
                     if (controls.profile) {
                         const auto& p=r.performance;
                         totalPerformance.momentumSolves+=p.momentumSolves;
@@ -453,6 +456,7 @@ int main(int argc, char** argv) {
                       << ',' << energy << ',' << r.forceX << ',' << r.forceY << '\n';
                 times.flush();
                 if (!r.converged) break; // fixed-step mode preserves its diagnostic failure output
+                ++strictAcceptedSteps;
                 state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
                 saveAccepted();
                 std::cout << "{\"type\":\"flow-time-step\",\"time\":" << state.time
@@ -568,6 +572,10 @@ int main(int argc, char** argv) {
                 summary << "]},\n";
             }
         }
+        if(timeStep>0) summary << "\"adaptiveLinear\":" << (controls.adaptiveLinear?"true":"false")
+            << ",\n\"strictLinearFinal\":" << (last.strictLinearStep?"true":"false")
+            << ",\n\"strictAcceptedSteps\":" << strictAcceptedSteps
+            << ",\n\"adaptiveLinearAttemptIterations\":" << adaptiveInnerIterations << ",\n";
         if (vortexOptions) summary << "\"initialVortex\":{\"definition\":\"compact-cubic-v1\",\"centre\":["
             << initialVortex.centre.x << ',' << initialVortex.centre.y << "],\"radius\":" << initialVortex.radius
             << ",\"peakSpeed\":" << initialVortex.peakSpeed << ",\"checkpointSuffix\":\".initial.checkpoint\"},\n";

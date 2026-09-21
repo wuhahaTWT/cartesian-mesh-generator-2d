@@ -34,6 +34,10 @@ FvMesh2D square() {
 template<class F>void rejects(F&& f) {bool thrown=false;try{f();}catch(const std::runtime_error&){thrown=true;}require(thrown,"invalid coupling input accepted");}
 void materialContract(const FvMesh2D& m) {
     FlowControls2D c;c.scenario="channel";c.nu=.01;c.tolerance=1e-8;
+    auto adaptive=c;adaptive.adaptiveLinear=true;
+    rejects([&]{(void)detail::solveMaterialFlow2D(m,adaptive,[&](const auto&,const auto&) {
+        return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),true};
+    });});
     const auto old=solveIncompressible2D(m,c);std::size_t updates=0;
     auto same=detail::solveMaterialFlow2D(m,c,[&](const auto& flow,const auto& bc) {
         require(flow.u.size()==m.cells.size()&&bc.size()==m.faces.size(),"callback current state missing");

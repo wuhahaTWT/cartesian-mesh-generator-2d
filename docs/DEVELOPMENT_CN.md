@@ -629,7 +629,7 @@ python3 tools/verification/benchmark_laminar.py --mesh FINE.solver.cm2d --bounda
 
 CLI高级数值选项 `--velocity-relaxation`（同步热输运用 `--flow-velocity-relaxation`）控制稳态迭代或每个物理时间步内部的速度松弛，范围 `(0,1]`，默认仍为 `.6`。它不改变物理时间步，不是精度或质量门；较大值有时减少外迭代，也可能使线性求解失败。流动CLI允许稳态/非定常；同步热输运允许演化载流，冻结载流拒绝；不会自动调大，桌面当前仍使用默认值。输出记录实际系数；续算允许改变这种数值控制，但同网格细化对照须固定它。不能把不同系数的有限迭代误差视为逐位一致。
 
-稳态层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。二者拒绝非定常与材料耦合。当前桌面仍使用strict，不能把CLI试验参数误称已接入桌面。
+层流CLI另支持 `--linear-policy strict|adaptive`（默认strict）。adaptive只改变内部线性求解精度，随非线性残差降低而收紧；收敛候选必须再通过原严格线性步骤与全部原停止门。`--convergence engineering` 在严格停止门之外附加50轮场/物理监测稳定性检查，不能替代原门；默认strict。adaptive线性支持固定/自动物理时间步，每个接受步都须严格复核，强迫序列每步重置；摘要`strictAcceptedSteps`只统计本次调用的接受步，`adaptiveLinearAttemptIterations`包含被拒候选步。engineering仍拒绝非定常，两者均拒绝材料耦合。当前桌面仍使用strict，不能把CLI试验参数误称已接入桌面。
 
 可复现串行层流性能测量：
 ```sh

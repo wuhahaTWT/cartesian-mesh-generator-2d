@@ -488,7 +488,7 @@ static FlowResult2D solveFlow(
     ensure(c.convergence==FlowConvergence2D::Strict ||
            (c.convergence==FlowConvergence2D::Engineering && !previous && !material),
            "Engineering convergence requires steady laminar flow");
-    ensure(!c.adaptiveLinear || (!previous && !material),"Adaptive linear solving requires steady laminar flow");
+    ensure(!c.adaptiveLinear || !material,"Adaptive linear solving does not support material coupling");
     ensure(c.steadyAcceleration==SteadyAcceleration2D::None ||
            (c.steadyAcceleration==SteadyAcceleration2D::Anderson && !previous && !material),
            "Anderson acceleration requires steady laminar flow");

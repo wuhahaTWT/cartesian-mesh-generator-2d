@@ -345,6 +345,13 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_linear_cli_test.py
         --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
     set_tests_properties(cartmesh2d_adaptive_linear_cli PROPERTIES TIMEOUT 90)
+    add_test(NAME cartmesh2d_transient_linear_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_linear_cli_test.py
+        --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
+    add_test(NAME cartmesh2d_adaptive_time_linear_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_flow_cli_test.py
+        --cli $<TARGET_FILE:cartmesh2d_flow_cli> --linear-policy adaptive)
+    set_tests_properties(cartmesh2d_transient_linear_cli cartmesh2d_adaptive_time_linear_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_steady_initial_guess_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/steady_initial_guess_cli_test.py
         --cli $<TARGET_FILE:cartmesh2d_flow_cli>)

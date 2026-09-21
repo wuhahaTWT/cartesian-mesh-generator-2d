@@ -42,6 +42,6 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-adaptive-linear-') as name:
    assert difference<1e-6,(policy,field,difference)
  # Unsupported temporal combinations are refused before any accepted state.
  p=subprocess.run([cli,'--mesh',str(mesh),'--case','channel','--output',str(root/'invalid'),
-   '--linear-policy','adaptive','--time-step','.01','--steps','1'],capture_output=True,text=True,timeout=20)
+   '--convergence','engineering','--time-step','.01','--steps','1'],capture_output=True,text=True,timeout=20)
  assert p.returncode!=0 and 'steady laminar' in p.stderr
 print('Adaptive and strict solves pass original gates, independent equations and field comparison; transient misuse refused')

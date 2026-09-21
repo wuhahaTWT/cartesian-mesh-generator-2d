@@ -7,7 +7,7 @@ sys.path.insert(0,str(ROOT/'tools/verification'))
 import verify_rotating_annulus as annulus
 import verify_transient_flow as audit
 
-def main(cli):
+def main(cli,linear_policy="strict"):
     with tempfile.TemporaryDirectory(prefix='cm2d-adaptive-') as directory:
         root=Path(directory);mesh=root/'ring.solver.cm2d';bc=root/'input.boundaries'
         annulus.write_polar_mesh(mesh,8,64)
@@ -19,13 +19,14 @@ def main(cli):
         def solve(name,extra=(),success=True):
             prefix=root/name
             r=command([cli,'--mesh',mesh,'--case','custom','--boundary',bc,'--nu',.1,'--speed',.5,
-                '--convection','face-limited-linear','--pressure-preconditioner','aggregation','--tolerance',1e-8,
+                '--linear-policy',linear_policy,'--convection','face-limited-linear','--pressure-preconditioner','aggregation','--tolerance',1e-8,
                 '--max-iterations',80,'--time-step',.04,'--end-time',.08,'--max-courant',.15,'--output',prefix,*extra],success)
             return prefix,r
         def check(prefix):return audit.verify(mesh,prefix,root/(prefix.name+'-audit.json'))
         def checkpoint(prefix):return Path(str(prefix)+'.checkpoint').read_bytes()
         whole,_=solve('whole');assert check(whole)['valid']
         q=json.loads(Path(str(whole)+'.json').read_text())
+        assert q['strictAcceptedSteps']==q['completedSteps'] and q['strictLinearFinal']
         assert q['rejectedSteps']>=1 and q['completedSteps']>2 and q['time']==.08
         attempts=list(csv.DictReader(open(str(whole)+'.attempt-history.csv')))
         assert attempts[0]['reason']=='courant'
@@ -74,4 +75,4 @@ def main(cli):
             acceptedSteps=q['completedSteps'],innerRetry=True,minimumStepRollback=True)))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--cli',type=Path,required=True);main(p.parse_args().cli.resolve())
+    p=argparse.ArgumentParser();p.add_argument('--cli',type=Path,required=True);p.add_argument('--linear-policy',default='strict');a=p.parse_args();main(a.cli.resolve(),a.linear_policy)
