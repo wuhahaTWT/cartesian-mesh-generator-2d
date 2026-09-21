@@ -431,9 +431,9 @@ def continuity(mesh: Mesh, measured: Measurement, fluxes: list[float], speed: fl
         flow_scale = speed * math.sqrt(measured.total_area)
     else:
         flow_scale = inflow
-    if not (math.isfinite(flow_scale) and flow_scale > 0.0):
+    if not (math.isfinite(flow_scale) and (flow_scale > 0.0 or (case == "custom" and flow_scale == 0.0 and boundary == 0.0))):
         raise VerificationError("independent continuity has no positive reference throughput")
-    global_relative = abs(boundary) / flow_scale
+    global_relative = abs(boundary) / flow_scale if flow_scale > 0 else 0.0
     return {
         "maxCellImbalance": max(map(abs, balances), default=0.0),
         "l2CellImbalance": math.hypot(*balances),
@@ -614,12 +614,14 @@ def audit_explicit_boundaries(prefix: Path, mesh: Mesh, measured: Measurement,
 
 def closed_flow_case(case: str, payload: dict[str, Any]) -> bool:
     return case in ('cavity', 'manufactured', 'taylor-green') or (
-        case == 'custom' and not any(b['type'] == 'pressure-outlet' for b in payload['boundaryConditions']))
+        case == 'custom' and not any(b['type'] in ('pressure-outlet', 'pressure-opening') for b in payload['boundaryConditions']))
 
 
 def pressure_reference(case: str, payload: dict[str, Any]) -> str:
     if closed_flow_case(case, payload):
         return 'cell 0, kinematic pressure zero'
+    if case == 'custom' and any(b['type'] == 'pressure-opening' for b in payload['boundaryConditions']):
+        return 'explicit pressure opening faces, prescribed static kinematic pressure'
     return ('explicit pressure outlet faces, prescribed kinematic pressure' if case == 'custom'
             else 'right outlet faces, kinematic pressure zero')
 
@@ -679,11 +681,19 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
                     raise VerificationError('custom velocity inlet must point inward and omit pressure')
                 roles[face] = 'inlet'
                 fixed_u[face] = fixed_v[face] = True
-            elif kind == 'pressure-outlet':
+            elif kind in ('pressure-outlet', 'pressure-opening'):
                 if u != 0 or v != 0:
                     raise VerificationError('custom pressure outlet cannot prescribe velocity')
-                roles[face] = 'outlet'
+                roles[face] = 'outlet' if kind == 'pressure-outlet' else 'opening'
                 fixed_p[face] = True
+                if kind == 'pressure-opening':
+                    if min(abs(sx), abs(sy)) > (1e-12 + 1e-10)*math.hypot(sx,sy):
+                        raise VerificationError('custom pressure opening must be axis aligned')
+                    if fluxes is not None and fluxes[face] < 0:
+                        if abs(sx) > abs(sy):
+                            fixed_v[face] = constant_v[face] = True
+                        else:
+                            fixed_u[face] = constant_u[face] = True
             elif kind in ('wall', 'moving-wall', 'smooth-moving-wall'):
                 tolerance = (1e-12 + 1e-10*max(speed, math.hypot(u,v))) * math.hypot(sx,sy)
                 if p != 0 or (kind == 'wall' and (u != 0 or v != 0)) or abs(q) > tolerance:
@@ -696,7 +706,7 @@ def flow_boundaries(mesh: Mesh, measured: Measurement, case: str, speed: float,
             bc_u[face], bc_v[face], bc_p[face] = u, v, p
         if seen != {e.id for e in mesh.edges if e.neighbour < 0}:
             raise VerificationError('custom missing boundary faces')
-        if ('inlet' in roles) != ('outlet' in roles):
+        if 'opening' not in roles and ('inlet' in roles) != ('outlet' in roles):
             raise VerificationError('custom requires both inlet and outlet, or only walls')
         return result
     height = ymax - ymin
@@ -1188,7 +1198,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
     for edge, geom, record, pf, flux in zip(mesh.edges, geometries, face_records, pressure_faces, fluxes):
         i = edge.owner
         face_nu = viscosities[edge.id]
-        normal_inlet = boundaries["roles"][edge.id] == 'farfield' or (
+        normal_inlet = boundaries["roles"][edge.id] in ('farfield', 'opening') or (
             outlet_backflow == "normal-inlet" and boundaries["roles"][edge.id] == "outlet")
         if edge.neighbour >= 0:
             other_u, other_v = u[edge.neighbour], v[edge.neighbour]
@@ -1285,7 +1295,7 @@ def reconstruct_momentum_audit(mesh: Mesh, measured: Measurement, cells: list[di
             diagonal_v[edge.owner] += d + max(q, 0.0)
             diagonal_v[j] += d + max(-q, 0.0)
         else:
-            normal_inflow = q < 0 and (boundaries['roles'][edge.id] == 'farfield' or
+            normal_inflow = q < 0 and (boundaries['roles'][edge.id] in ('farfield', 'opening') or
                 (outlet_backflow == 'normal-inlet' and boundaries['roles'][edge.id] == 'outlet'))
             if boundaries["fixedU"][edge.id]:
                 diagonal_u[edge.owner] += d

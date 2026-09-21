@@ -21,7 +21,7 @@ const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { readCheckpointMetadata } = require('./core/flow-checkpoint');
-const { parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
+const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
@@ -288,16 +288,17 @@ app.whenReady().then(async () => {
       if ((await fs.stat(picked.filePaths[0])).size>32*1024*1024) throw new Error('边界文件超过32MB。');
       text=await fs.readFile(picked.filePaths[0],'utf8');
     } else {
-      if (!['channel','duct','cavity','annulus'].includes(request.source)) throw new Error('请选择支持的边界预设。');
+      if (!['channel','duct','pressure-duct','cavity','annulus'].includes(request.source)) throw new Error('请选择支持的边界预设。');
       const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'boundary-input-'));
       const target=path.join(directory,'input.boundaries');
       try {
-        await runProcess(executable('cartmesh2d_flow_cli'),['--mesh',currentResult.cm2dPath,'--case',request.source,
+        await runProcess(executable('cartmesh2d_flow_cli'),['--mesh',currentResult.cm2dPath,'--case',request.source==='pressure-duct'?'duct':request.source,
           '--speed',String(speed),'--export-boundaries',target],()=>{},operation.signal,30000);
         text=await fs.readFile(target,'utf8');
       } finally { await fs.rm(directory,{recursive:true,force:true}); }
     }
-    return validateBoundaryMesh(parseBoundaryDefinition(text),mesh,speed);
+    const definition=parseBoundaryDefinition(text);
+    return validateBoundaryMesh(request.source==='pressure-duct' ? pressureDrivenBoundaryDefinition(definition) : definition,mesh,speed);
   }));
   ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先生成与重启文件对应的最终网格。');
@@ -885,11 +886,17 @@ async function runSmoke() {
       if (${JSON.stringify(argument('flow') === 'custom')}) {
         await smoke.prepareFlowBoundaries(${JSON.stringify(argument('flow-boundary-preset') || 'duct')});
         if (!smoke.state.flowBoundaryDefinition) throw new Error('Custom boundary editor did not receive definition');
-        const pressure=document.querySelector('[data-boundary-key="p"]');
+        const pressure=document.querySelector('[data-boundary-key="p"][data-patch-name="outlet"]') || document.querySelector('[data-boundary-key="p"]');
         if (${JSON.stringify(argument('flow-outlet-pressure') !== null)}) {
           if (!pressure) throw new Error('No explicit pressure patch in editor');
           pressure.value=${JSON.stringify(argument('flow-outlet-pressure') || '0')};
           pressure.dispatchEvent(new Event('input'));
+        }
+        if (${JSON.stringify(argument('flow-opening-pressure') !== null)}) {
+          const inlet=document.querySelector('[data-boundary-key="p"][data-patch-name="inlet"]');
+          if(!inlet)throw new Error('No pressure-driven inlet in editor');
+          inlet.value=${JSON.stringify(argument('flow-opening-pressure') || '0')};
+          inlet.dispatchEvent(new Event('input'));
         }
         document.querySelector('#flowBoundaryPatches button').click();
         if (!smoke.view.boundaryHighlight.length) throw new Error('Patch location was not highlighted');

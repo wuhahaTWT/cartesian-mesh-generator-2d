@@ -941,3 +941,11 @@ MPLBACKEND=Agg python3 tools/visualization/render_flow_trajectory.py --verified 
 `tools/verification/verify_external_spatial.py`保持同一32段单位圆和10Lref外域，把壁面及背景尺寸同时减半做三档稳态Re20对照，并在最细网格加严100倍容差。所有候选须完成原生Solver质量门及独立动量/通量审核；失败保留，不追加计算预算。`render_external_spatial.py`重算最终场审核后绘制实际网格、速度及积分载荷变化。固定折线几何与有限外域误差仍在，三档结果不自动赋予连续圆柱精度资格。
 
 外流独立读取器把力与已无量纲化的Cd/Cl分开处理：力按`0.5 Uref² D`归一化，已有系数不再次归一化，混合字段先还原为同一量纲；同时提供力与系数却相互矛盾时明确失败。回归使用非单位速度防止U=1、D=2掩盖单位错误；不改变原生求解出的力。
+
+### 静压驱动法向开口（0.4.24）
+
+命名边界新增`pressure-opening`。只接受轴对齐边，`u=v=0`是配置占位而非零法向速度；`p`为静压除以密度，单位m²/s²。法向速度零梯度，压力修正决定守恒面通量；流入时切向速度为零，流出时速度零梯度。它与继续拒绝回流的`pressure-outlet`分开。方向倾斜时明确失败，不悄悄投影。完全静止且净面通量严格为零时，零吞吐的全局相对不平衡按零报告；非零吞吐、单元连续性和原方程停止门不变。
+
+App选择“命名边界→压差驱动通道：两端静压→从预设生成”，初始左p/rho=1、右=0，可编辑两组压力。两组压力均整体增加常数不会改变速度。参考速度仅归一化，不规定流量。边界文件、工况v2及检查点v4保存新类型；旧程序会拒绝未知类型。命名边界尚未支持温度配置。
+
+`tools/verification/verify_pressure_openings.py --output outputs/native-flow/<fresh-directory>`生成独立矩形网格并审核压差通道，默认256/1,024/4,096格、tol1e-10、最多10,000轮；每命令180秒、总900秒、50MiB、至少5GiB剩余空间，所有失败保留。`tools/visualization/render_pressure_openings.py <directory> <png>`先校验文件哈希与细档离散方程再作图。公式L=4、H=1、nu=.1、Δ(p/rho)=4.8给出u=6y(1−y)、Q=1；这是特定Poiseuille参考，不是曲壁网格或通用精度认证。运行`ctest --test-dir build -R 'flow_boundary|pressure_opening' --output-on-failure`可复现三种格式、等压静止、坐标/压力变换、普通出口拒绝和续算检查。

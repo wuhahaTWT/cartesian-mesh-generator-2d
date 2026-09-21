@@ -83,8 +83,75 @@ template<class F> void rejects(F function) {
     require(rejected,"invalid custom boundary was accepted");
 }
 
+void pressureOpenings() {
+    double previousError=0;
+    for (int n:{8,16}) {
+        const auto mesh=rectangle(4*n,n);auto control=conditions(mesh);
+        control.nu=.1;
+        control.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
+        for(auto& b:control.boundaryConditions) {
+            if(b.kind==FlowBoundaryKind2D::VelocityInlet || b.kind==FlowBoundaryKind2D::PressureOutlet) {
+                b.kind=FlowBoundaryKind2D::PressureOpening;b.velocity={};
+                b.pressure=mesh.faces[b.face].areaVector.x<0 ? 4.8 : 0;
+            }
+        }
+        const auto result=solveIncompressible2D(mesh,control);
+        require(result.converged,"pressure-driven flow did not converge");
+        double error=0,pressureError=0,flux=0;
+        for(std::size_t i=0;i<mesh.cells.size();++i) {
+            const auto point=mesh.cells[i].centre;
+            const double exact=6*point.y*(1-point.y);
+            error+=mesh.cells[i].area*std::pow(result.u[i]-exact,2);
+            pressureError=std::max(pressureError,std::abs(result.p[i]-4.8*(1-point.x/4)));
+        }
+        error=std::sqrt(error/4);
+        for(std::size_t i=0;i<mesh.faces.size();++i)
+            if(!mesh.faces[i].neighbour && mesh.faces[i].areaVector.x>0)flux+=result.flux[i];
+        std::cout<<"pressure opening n="<<n<<" U L2="<<error<<" p max="<<pressureError<<" flow="<<flux<<'\n';
+        require(error<.05 && pressureError<1e-7 && std::abs(flux-1)<.05,"pressure-driven Poiseuille reference failed");
+        if(previousError>0)require(previousError/error>3.8,"pressure-driven spatial order below expected second order");
+        previousError=error;
+        if(n!=8)continue;
+        auto shifted=control;
+        for(auto& b:shifted.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening)b.pressure+=7.25;
+        compare(result,solveIncompressible2D(mesh,shifted),0,7.25);
+        compare(result,solveIncompressible2D(rotated(mesh,std::acos(-1.)/2),control),std::acos(-1.)/2);
+        auto equal=control;
+        for(auto& b:equal.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening)b.pressure=7.25;
+        const auto rest=solveIncompressible2D(mesh,equal);
+        require(rest.converged,"equal-pressure state did not converge");
+        for(std::size_t i=0;i<rest.u.size();++i)
+            require(std::hypot(rest.u[i],rest.v[i])<1e-10 && std::abs(rest.p[i]-7.25)<1e-9,"equal-pressure opening creates flow");
+        auto reverse=control;
+        for(auto& b:reverse.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening)b.pressure=4.8-b.pressure;
+        const auto reversed=solveIncompressible2D(mesh,reverse);
+        require(reversed.converged,"reverse-pressure flow failed");
+        for(std::size_t i=0;i<result.u.size();++i)
+            require(std::abs(reversed.u[i]+result.u[i])<2e-8,"reverse-pressure velocity is not symmetric");
+        auto rejectBackflow=reverse;
+        for(auto& b:rejectBackflow.boundaryConditions)
+            if(b.kind==FlowBoundaryKind2D::PressureOpening && mesh.faces[b.face].areaVector.x>0)
+                b.kind=FlowBoundaryKind2D::PressureOutlet;
+        rejects([&]{(void)solveIncompressible2D(mesh,rejectBackflow);});
+        const auto first=advanceIncompressible2D(mesh,control,initialIncompressibleState2D(mesh,control),.03);
+        require(first.converged,"pressure startup failed");
+        FlowState2D state{first.time,first.u,first.v,first.p,first.flux};
+        std::ostringstream file;writeFlowCheckpoint2D(file,mesh,control,state);
+        std::istringstream stream(file.str());const auto restored=readFlowCheckpoint2D(stream,mesh,control);
+        const auto whole=advanceIncompressible2D(mesh,control,state,.03);
+        const auto resumed=advanceIncompressible2D(mesh,control,restored,.03);
+        require(whole.converged && resumed.converged && whole.u==resumed.u && whole.v==resumed.v &&
+                whole.p==resumed.p && whole.flux==resumed.flux,"pressure restart changed state");
+        rejects([&]{validateFlowBoundaryConditions2D(rotated(mesh,.3),control);});
+        auto bad=control;
+        for(auto& b:bad.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening){b.velocity.x=1;break;}
+        rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
+    }
+}
+
 int main() {
     try {
+        pressureOpenings();
         const auto mesh=rectangle();const auto control=conditions(mesh);
         const auto baseline=solveIncompressible2D(mesh,control);
         std::ostringstream boundaryFile;writeFlowBoundaryConditions2D(boundaryFile,mesh,control);

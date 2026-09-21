@@ -14,7 +14,9 @@ enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
 
-enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall };
+// PressureOpening prescribes static kinematic pressure on axis-aligned faces.
+// Normal velocity is free; incoming tangential velocity is zero.
+enum class FlowBoundaryKind2D { VelocityInlet, PressureOutlet, Wall, MovingWall, SmoothMovingWall, PressureOpening };
 
 // Explicit conditions refer to boundary face IDs in the final FvMesh2D only.
 // Velocity and kinematic pressure are physical values, not multiples of speed.
@@ -36,7 +38,8 @@ struct FlowControls2D {
     // It must be selected explicitly and is not a general patch-BC interface.
     std::string scenario = "external";
     // scenario="custom": exactly one entry per boundary face, no internal
-    // faces. Supports arbitrary orientations; moving walls must be tangential.
+    // faces. Pressure openings must be axis aligned; other kinds support arbitrary
+    // orientations. Moving walls must be tangential.
     // Named groups may have spatially varying values but one physical kind.
     std::vector<FlowBoundaryCondition2D> boundaryConditions;
     double nu = .01;

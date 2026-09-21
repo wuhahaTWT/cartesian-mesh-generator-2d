@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
                 std::cout
                     << "Native 2D incompressible laminar SIMPLE (experimental)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
-            "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/wall conditions.\n"
+            "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
             "--nu 0.01 --speed 1 --max-iterations 1500 --tolerance 1e-6\n"
             "--face-viscosity NU.csv: face,viscosity; all faces, positive kinematic nu; physical cases only.\n"
@@ -124,8 +124,9 @@ int main(int argc, char** argv) {
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
             "channel speed=maximum parabolic inlet speed; cavity speed=lid speed.\n"
             "duct: uniform left inlet, right p=0, arbitrary no-slip walls; both openings must be vertical x-extrema.\n"
-            "custom: arbitrary face orientation and prescribed pressure; speed is a reference scale only.\n"
-            "Custom outlets currently require backflow rejection; custom slip is not implemented.\n"
+            "custom: velocity inlets, pressure outlets and walls allow arbitrary orientation; speed is a reference scale only.\n"
+            "pressure-opening: axis-aligned static p/rho; normal velocity free, incoming tangential velocity zero.\n"
+            "Ordinary pressure-outlet retains backflow rejection; custom slip is not implemented.\n"
             "Other presets require fixed axis-aligned rectangular outer boundaries. Pressure is kinematic.\n"
             "No turbulence/compressibility; outlet backflow policy is explicit.\n";
                 return 0;
@@ -473,7 +474,7 @@ int main(int argc, char** argv) {
         auto summary = out(prefix, ".json");
         const bool custom = controls.scenario == "custom";
         const bool customClosed = custom && std::none_of(controls.boundaryConditions.begin(), controls.boundaryConditions.end(),
-            [](const auto& b) { return b.kind == fv::FlowBoundaryKind2D::PressureOutlet; });
+            [](const auto& b) { return b.kind == fv::FlowBoundaryKind2D::PressureOutlet || b.kind == fv::FlowBoundaryKind2D::PressureOpening; });
         const char* preconditioner = controls.pressurePreconditioner ==
             fv::PressurePreconditioner2D::IncompleteCholesky0 ? "ic0" :
             (controls.pressurePreconditioner == fv::PressurePreconditioner2D::Aggregation ? "aggregation" : "jacobi");
@@ -576,7 +577,10 @@ int main(int argc, char** argv) {
                 << "\"pressureReference\":\""
                 << ((controls.scenario == "cavity" || controls.scenario=="taylor-green" || manufactured || customClosed)
                         ? "cell 0, kinematic pressure zero"
-                        : custom ? "explicit pressure outlet faces, prescribed kinematic pressure"
+                       : custom ? (std::any_of(controls.boundaryConditions.begin(), controls.boundaryConditions.end(),
+                             [](const auto& b){return b.kind==fv::FlowBoundaryKind2D::PressureOpening;})
+                             ? "explicit pressure opening faces, prescribed static kinematic pressure"
+                             : "explicit pressure outlet faces, prescribed kinematic pressure")
                                  : "right outlet faces, kinematic pressure zero")
                 << "\",\n"
                 << "\"method\":\"cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; "

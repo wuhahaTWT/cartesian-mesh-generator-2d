@@ -29,7 +29,7 @@ double finite(double x) {
 
 using System = detail::SparseSystem2D;
 
-enum class Role { Wall, Inlet, Outlet, Slip, Lid, Farfield };
+enum class Role { Wall, Inlet, Outlet, Slip, Lid, Farfield, Opening };
 
 double counterflowSpeed(double y, double speed) {
     return speed * (1 + 2 * std::cos(2 * std::acos(-1.) * y));
@@ -51,6 +51,7 @@ struct Boundary {
     double ymin = 0;
     double ymax = 0;
     bool closed = false;
+    bool pressureOpenings = false;
 };
 Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     const auto nf = m.faces.size();
@@ -90,7 +91,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         std::vector<bool> seen(nf, false);
         std::map<std::string, FlowBoundaryKind2D> namedKinds;
         b.p.resize(nf);
-        std::size_t inletCount = 0, outletCount = 0;
+        std::size_t inletCount = 0, outletCount = 0, openingCount = 0;
         double inletLength = 0, outletLength = 0;
         for (const auto& condition : c.boundaryConditions) {
             const auto id = condition.face;
@@ -123,9 +124,17 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                 ++inletCount;
                 break;
             case FlowBoundaryKind2D::PressureOutlet:
+            case FlowBoundaryKind2D::PressureOpening:
                 ensure(condition.velocity.x == 0 && condition.velocity.y == 0,
-                       "Pressure outlet cannot also prescribe velocity");
-                b.role[id] = Role::Outlet;
+                       "Pressure boundary cannot also prescribe velocity");
+                if (condition.kind == FlowBoundaryKind2D::PressureOpening) {
+                    ensure(std::min(std::abs(face.areaVector.x), std::abs(face.areaVector.y)) <=
+                               TolerancePolicy{}.scale(1.) * length,
+                           "Pressure opening must be axis aligned");
+                    ++openingCount;
+                    b.pressureOpenings = true;
+                }
+                b.role[id] = condition.kind == FlowBoundaryKind2D::PressureOpening ? Role::Opening : Role::Outlet;
                 b.fixedP[id] = true; b.p[id] = condition.pressure;
                 b.initialP += condition.pressure * length;
                 outletLength += length;
@@ -152,12 +161,14 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         }
         for (std::size_t id = 0; id < nf; ++id)
             ensure(m.faces[id].neighbour || seen[id], "Missing custom boundary face");
-        ensure((inletCount > 0 && outletCount > 0) || (inletCount == 0 && outletCount == 0),
-               "Custom open flow needs velocity inlet and pressure outlet; closed flow needs only walls");
+        ensure(openingCount > 0 || (inletCount > 0 && outletCount > 0) || (inletCount == 0 && outletCount == 0),
+               "Custom open flow needs a pressure opening or velocity inlet and pressure outlet; closed flow needs only walls");
         b.closed = outletCount == 0;
         if (!b.closed) {
-            b.initialU = finite(b.initialU / inletLength);
-            b.initialV = finite(b.initialV / inletLength);
+            if (inletLength > 0) {
+                b.initialU = finite(b.initialU / inletLength);
+                b.initialV = finite(b.initialV / inletLength);
+            }
             b.initialP = finite(b.initialP / outletLength);
         }
         return b;
@@ -251,6 +262,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             if (c.scenario == "counterflow") b.u[id] = counterflowSpeed(f.centre.y, c.speed);
             break;
         case Role::Outlet:
+        case Role::Opening:
             b.fixedP[id] = true;
             break;
         case Role::Farfield:
@@ -290,8 +302,14 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
 
 void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
                           const FlowControls2D& c, const Vec& flux) {
-    if(c.scenario!="flatplate" && c.outletBackflow!=OutletBackflow2D::NormalInlet)return;
+    if(c.scenario!="flatplate" && c.scenario!="custom" && c.outletBackflow!=OutletBackflow2D::NormalInlet)return;
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
+        if (!m.faces[id].neighbour && b.role[id] == Role::Opening) {
+            const bool normalX = std::abs(m.faces[id].areaVector.x) > std::abs(m.faces[id].areaVector.y);
+            b.fixedU[id] = b.constantU[id] = !normalX && flux[id] < 0;
+            b.fixedV[id] = b.constantV[id] = normalX && flux[id] < 0;
+            continue;
+        }
         if(!m.faces[id].neighbour && b.role[id]==Role::Farfield) {
             // Horizontal open top: pressure controls normal flux; only the
             // entering tangential component is prescribed from the freestream.
@@ -409,6 +427,7 @@ void momentum(System& a,
                 a.rhs[i] -= q * bc[id];
             } else {
                 if (q < 0 && (b.role[id] == Role::Farfield ||
+                    b.role[id] == Role::Opening ||
                     (b.role[id] == Role::Outlet && c.outletBackflow == OutletBackflow2D::NormalInlet))) {
                     // Same zero-gradient normal advective flux q*Uowner,
                     // lagged in the linear solve to retain a positive diagonal.
@@ -613,7 +632,7 @@ static FlowResult2D solveFlow(
         if (c.scenario == "custom")
             r.flux[id] = f.neighbour ? interpolate(f, r.u)*f.areaVector.x + interpolate(f, r.v)*f.areaVector.y
                 : b.role[id] == Role::Inlet ? b.u[id]*f.areaVector.x + b.v[id]*f.areaVector.y
-                : b.role[id] == Role::Outlet ? r.u[f.owner]*f.areaVector.x + r.v[f.owner]*f.areaVector.y : 0;
+                : (b.role[id] == Role::Outlet || b.role[id] == Role::Opening) ? r.u[f.owner]*f.areaVector.x + r.v[f.owner]*f.areaVector.y : 0;
     }
 
     Vec oldFluxDefect(nf);
@@ -626,7 +645,7 @@ static FlowResult2D solveFlow(
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=m.faces[id];
             if (!f.neighbour) {
-                if (b.role[id]==Role::Outlet)
+                if (b.role[id]==Role::Outlet || b.role[id]==Role::Opening)
                     oldFluxDefect[id]=r.flux[id]-r.u[f.owner]*f.areaVector.x-r.v[f.owner]*f.areaVector.y;
                 continue; // fixed-velocity and impermeable boundaries impose their new-time flux
             }
@@ -654,8 +673,8 @@ static FlowResult2D solveFlow(
             for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)
                 snapshot[id]={{b.u[id],b.v[id]},b.fixedU[id],b.fixedV[id],
                     b.role[id]==Role::Wall||b.role[id]==Role::Lid,
-                    b.role[id]==Role::Inlet || (b.role[id]==Role::Farfield && r.flux[id]<0),
-                    b.role[id]==Role::Outlet || (b.role[id]==Role::Farfield && r.flux[id]>=0)};
+                    b.role[id]==Role::Inlet || ((b.role[id]==Role::Farfield || b.role[id]==Role::Opening) && r.flux[id]<0),
+                    b.role[id]==Role::Outlet || ((b.role[id]==Role::Farfield || b.role[id]==Role::Opening) && r.flux[id]>=0)};
             auto materialState=material(r,snapshot);
             materialConverged=materialState.converged;
             c.faceViscosity=std::move(materialState.faceViscosity);
@@ -725,7 +744,7 @@ static FlowResult2D solveFlow(
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
                         +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
                 }
-            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Farfield){
+            }else if(b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield){
                 const double pressureDifference = c.scenario == "custom"
                     ? f.transmissibility*(b.p[id]-r.p[i]) : -f.transmissibility*r.p[i];
                 predicted[id]=r.u[i]*f.areaVector.x+r.v[i]*f.areaVector.y+ra[i]*dot(forceGradient[i],f.areaVector)-rf*(pressureDifference+dot(gp[i],f.correction));
@@ -782,8 +801,10 @@ static FlowResult2D solveFlow(
         double continuity=0;for(std::size_t i=0;i<n;++i)continuity=std::max(continuity,std::abs(div[i])/(c.speed*std::sqrt(m.cells[i].area)));
         double inflow=0;for(std::size_t id=0;id<nf;++id)if(!m.faces[id].neighbour)inflow+=std::max(0.,-r.flux[id]);
         const double flowScale=b.closed?finite(c.speed*h):finite(inflow);
-        ensure(flowScale>0,"Flow has no positive reference throughput");
-        r.globalRelativeImbalance=finite(std::abs(r.globalImbalance)/flowScale);
+        // An exactly quiescent pressure-driven domain has no throughput to
+        // normalize. Only an exactly zero imbalance is admissible in that case.
+        ensure(flowScale>0 || (b.pressureOpenings && r.globalImbalance==0),"Flow has no positive reference throughput");
+        r.globalRelativeImbalance=flowScale>0 ? finite(std::abs(r.globalImbalance)/flowScale) : 0;
         refreshMomentum(true);
         checkU.apply(r.u,mu);checkV.apply(r.v,mv);double mr=0;
         std::size_t worstCell=0;double worstX=0,worstY=0;
@@ -832,7 +853,7 @@ static FlowResult2D solveFlow(
         auto component=[&](const Vec& value,const std::vector<Vector2D>& g,
                            const Vec& bc,const std::vector<bool>& fixed,const Vec& limiter,bool y) {
             const bool normalInflow = !f.neighbour && !fixed[id] && r.flux[id]<0 &&
-                (b.role[id]==Role::Farfield || (b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::NormalInlet));
+                (b.role[id]==Role::Farfield || b.role[id]==Role::Opening || (b.role[id]==Role::Outlet && c.outletBackflow==OutletBackflow2D::NormalInlet));
             const double faceValue=(!f.neighbour && fixed[id]) ? bc[id]
                 : normalInflow ? value[i] : !faceVelocity.empty() ? (y?faceVelocity[id].y:faceVelocity[id].x)
                 : detail::upwindFaceValue(m,id,r.flux[id],value,g,limiter);

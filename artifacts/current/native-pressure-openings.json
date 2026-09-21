@@ -1,0 +1,5342 @@
+{
+  "format": "cartmesh2d-pressure-openings-evidence-v1",
+  "appVersion": "0.4.24",
+  "scope": "Axis-aligned static kinematic pressure openings; normal velocity free, inflowing tangential velocity zero. Existing pressure-outlet backflow rejection retained.",
+  "referenceStudy": {
+    "accuracyQualification": "case-specific rectangular Poiseuille only",
+    "artifactSha256": {
+      "bad-restart.boundaries": "65c0c0d65841902e8f31a24988909d3f79ab03d68e8761795880c2d82458f906",
+      "equal.audit.json": "6b3368164753a0b1bfe77e5c0db2ee7c562d14b568d21fbe67fd92a1a9d0e010",
+      "equal.boundaries": "65c0c0d65841902e8f31a24988909d3f79ab03d68e8761795880c2d82458f906",
+      "equal.cells.csv": "440b2bf30ef843371a9d1c35792b2f878bc7c7cecf8e53859c7da6548cf9fe94",
+      "equal.faces.csv": "7ce8870ca5a9962d725eaed44ddef4fbcc29cbe98ef1014e74fbffd084964942",
+      "equal.fields.json": "5b2057ae94d72957bbca0f85642f081a86b07bd799536575c29b544d8ae38c23",
+      "equal.json": "37d9a31e3b31e48fc91d868e4e32afe653bf79be33f0913d980f4a583136b8ba",
+      "equal.residuals.csv": "822317121ce1c6341930d907a9556ded76aa36c2dda7124dc4b31fca1e76d7fa",
+      "equal.vtk": "ccdd8dc63723b754d3254742834d357f02227393664b6767e94db7b165b928ce",
+      "first.audit.json": "5a02f959b2751650aa66623b46572f4e33e3b8e8c6aa99b3ec854d6e7d075ece",
+      "first.boundaries": "a0b65c3f976addf93ebadd73c2d1568aafc5eef1d2423e5f8734a11b05263f02",
+      "first.cells.csv": "f399444d00dc907c15d5cc98758830fa380b8152d893db48603537247e3f0d7e",
+      "first.checkpoint": "f93efe7281b9324bcf4fba64a96717f8aaf2bdea1cb998df354fbc41dfaef7b3",
+      "first.faces.csv": "8aab7ed47454c9ad90f05b77fb8d8014af7ff1b906610c0681e86de3521c5cf4",
+      "first.fields.json": "6b87df3b92066913a86f8a44b008438b5145e16e78cc2e2122049201391f6292",
+      "first.json": "0b955589de4104b0c9504026d56bf771b962f6d3d7828cfb13079ffdf645ee63",
+      "first.residuals.csv": "a3ff63607cd7181949cf76c36423e6611f14c4c9dcb3652188585f769ec1cce3",
+      "first.time-history.csv": "b8f92e1df272cd697c79c889dc1f7ffce2e4ef85c6cc4670bd51100dc88d12e6",
+      "first.vtk": "2545910a7c8fcc263ddf6cc9b05618e99869d6a223cc1953f60a8637b475e538",
+      "logs/bad-restart.stderr.log": "18d14fe698727e3698dabd86cfcd5c54b371333074ef11a5fffd5f43a088f247",
+      "logs/bad-restart.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/equal.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/equal.stdout.log": "037b6d934831738dbd3a29ff316a1e4268af628665ac7219ed2b6c36ea3e56c9",
+      "logs/first.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/first.stdout.log": "96e6e79c093258dfa569a6466dd74d7e1b54d457866db8706299626771985068",
+      "logs/n16-template.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n16-template.stdout.log": "5b37c64be5b88ba4479e3dfcdb7c4b2d74e60ee77594eb5701cf12ca8c3b1270",
+      "logs/n16.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n16.stdout.log": "43eed49b835451feb27603f0c1c25ec8a33dbc3e4f76a6b2f594bcb6dd528d86",
+      "logs/n32-template.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n32-template.stdout.log": "9ab600477d1fd8a0f863b595968a679942a2195d9c0140547e95348549cfba42",
+      "logs/n32.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n32.stdout.log": "ff343eaeaddb950ce9333a30f427c60b47d5644ebf9db90b23a5e16fb9624182",
+      "logs/n8-template.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n8-template.stdout.log": "2c8b39777e298cfdbb3091f1a12d1857df545b55d7bd20eea715fb9bbe9c1b38",
+      "logs/n8.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/n8.stdout.log": "e254245c02f29f31ab1825127ee8eeca6065ec7776cc3b234e5a954f89bafec6",
+      "logs/resumed.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/resumed.stdout.log": "74afea71dac96f121c97a6143aa8607a913165464c3137bc3da0144f591f8cbb",
+      "logs/whole.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/whole.stdout.log": "ae2be4011f8a2d0ecffaf0cd965583fef64f057106d3db9203e93ec05a0b88b7",
+      "n16.audit.json": "3c45b93a0a4cb95add54ffaf33425b9c314f0c4cbbd342371f937bb677a33b0c",
+      "n16.boundaries": "cce293b909c9e94fa2e894bae0f71ca5c468ea3cc455bea420739a32752ea4f6",
+      "n16.cells.csv": "d81ebe6b9462efbedb25197f283a8059f0bdb8d2a8e71e91dca7d0dc90d9750e",
+      "n16.faces.csv": "5486f760f9f8a1e71284ddc7034cc6b3b7b90960be8b6ed9fe504e2f18d0f45a",
+      "n16.fields.json": "2b8c72247bc6d4c3b1ab7f820562b0a9c392479b39a2b9f655dc7ea3765d6956",
+      "n16.json": "49bbac05042ecc80e4e64eab8b2ecb3837af5217edd8b1afae900041d58e303d",
+      "n16.residuals.csv": "02b4fba709d1c99d49ba92d3ad1db698bd9bd4b32b7f3a51f06d246f66584e00",
+      "n16.solver.cm2d": "2a13a6774a38b7e46714aa3e3818dca6b13a56f3d2f76f821f70e98614e57242",
+      "n16.template": "3044833a14511d88e98d25e254090b28e185e83892b4d46d018b171863017d62",
+      "n16.vtk": "3f3d27f315d71bf2b800d638ebcbd5378fa5008d195b22434b2d555655a5dde9",
+      "n32.audit.json": "809ccb64c5ef69b4c7a450b341f229c32fb464c70212b6099a6f55fb06d7dcdb",
+      "n32.boundaries": "1bfee712021a1ad3531999e45ace5ab053040ae49997fa7922874a6198dbca9e",
+      "n32.cells.csv": "9bc16f033f9d46b34eedfc11bf30145be2326561721f4b19606291ddfc3a4ca8",
+      "n32.faces.csv": "59417adc70396a03d7cf5b5523859d70f92861809e5d8364938cf2ef55f6a252",
+      "n32.fields.json": "ae1210fe7d7b63d1addec3bbb5ddb33392bca397ca604568f95679bce32467c1",
+      "n32.json": "1e317752af11c1b369e29107a9c7fb0744209d114ec9a0417bd06d77eb1c4b74",
+      "n32.residuals.csv": "40db74027e182ba642a84cc7d88ea31841ce02c4c868dbdcecc25cae60f617fb",
+      "n32.solver.cm2d": "6df227b95d16a8ddc9c008020ee9c36b6c6d0a359468992c15204f4d6debd910",
+      "n32.template": "d8c89782b63155b9ddaa24c851b89505163c6d6f2dd66fd4d63b52aeb08d61c0",
+      "n32.vtk": "e34f60bbc402eda70445d2225fe9d02d966773314774d6a091cbdcc5d3589a9e",
+      "n8.audit.json": "fe69000e0104da15fcba613db57c9a763895cd4b1fbfbc2324ea7c7f7b2b2125",
+      "n8.boundaries": "a0b65c3f976addf93ebadd73c2d1568aafc5eef1d2423e5f8734a11b05263f02",
+      "n8.cells.csv": "13eb2ef2a215ac70d164f8e451384d5264d315e650196197abbeddc751cb1880",
+      "n8.faces.csv": "e91500e4a66c1b117f25bf6b512f7423e43105160004f0a4dd1beb52573ab1e2",
+      "n8.fields.json": "37c6979c5d15b7c759b3289ab058295b1d0de291544fa32a0524a98e610b4542",
+      "n8.json": "2b8fe32af943cc655eb2c0afd8032d8858abd6905fe7e2e395ede45b282de938",
+      "n8.residuals.csv": "b180cfee38673a833bb35bb4b358b126c1b0d235fdc1acbf37337905eccdc244",
+      "n8.solver.cm2d": "ee7142611271a4752378a61a7b005743c6c28c811749b7e257da14a2f2987ea7",
+      "n8.template": "21ab10ffdd4d2ed3ecf5371fbd6bb425069e49e0eef3418819da9d97c1a90b40",
+      "n8.vtk": "33649efa1e5d4ac703cc2ba2d1e9f0658621ad79d2ae5f9e8b384f99e9104b7c",
+      "resumed.audit.json": "01e5aa1748a027fa28d15cc95cdddcae104508689b6ca43cfc244e7ef6ad8701",
+      "resumed.boundaries": "a0b65c3f976addf93ebadd73c2d1568aafc5eef1d2423e5f8734a11b05263f02",
+      "resumed.cells.csv": "802279df3cb0ca60e6154e2fe4bad75f71f08b4b05c20293cd14a805e7801688",
+      "resumed.checkpoint": "769eb10f72770b618b8bb469b2c784d5dee6bceb94a2df382cd1a1936ad0a776",
+      "resumed.faces.csv": "7fdc8e221685ca6b14a19482a3a80435708b972162a6139d1c1fdb3daf16653f",
+      "resumed.fields.json": "3f80237fdf321a62360017372c3e8ebbc286a1d7eda180dc0cc2a537b6136c6b",
+      "resumed.json": "7e359ba73f919fe9ba4102b13c72ddbcdc63e89ddd33fad0caae9908f537b219",
+      "resumed.residuals.csv": "b50e898d97f1425cb5b2b663c7cc58e5ddada1ad53417b4e6b97856062086358",
+      "resumed.time-history.csv": "7fd4687f5aa26269816e4c0dd7384b564a72448bc77a9344ec72de8d22f2e64e",
+      "resumed.vtk": "70bf5c98f8949617a2360fba7e11bfa89fc9522cc67089e29788976a7a4ee7a6",
+      "whole.audit.json": "40f48759cadd3117c847f1f206a1215cad98e03cef3fdf1eaf27a161c4b4786e",
+      "whole.boundaries": "a0b65c3f976addf93ebadd73c2d1568aafc5eef1d2423e5f8734a11b05263f02",
+      "whole.cells.csv": "802279df3cb0ca60e6154e2fe4bad75f71f08b4b05c20293cd14a805e7801688",
+      "whole.checkpoint": "769eb10f72770b618b8bb469b2c784d5dee6bceb94a2df382cd1a1936ad0a776",
+      "whole.faces.csv": "7fdc8e221685ca6b14a19482a3a80435708b972162a6139d1c1fdb3daf16653f",
+      "whole.fields.json": "3f80237fdf321a62360017372c3e8ebbc286a1d7eda180dc0cc2a537b6136c6b",
+      "whole.json": "dddfc7e965bdb509ea188ef42501b9444a26824b514f1be6cb6bc4dbc94294bd",
+      "whole.residuals.csv": "b50e898d97f1425cb5b2b663c7cc58e5ddada1ad53417b4e6b97856062086358",
+      "whole.time-history.csv": "bdb18433edebbcbf4ba72033bb911818efb23fa7867ca674ee779b3e2f0a2d71",
+      "whole.vtk": "70bf5c98f8949617a2360fba7e11bfa89fc9522cc67089e29788976a7a4ee7a6"
+    },
+    "binarySha256": "ee6af2b4002e0e2929e58e5e3ec0d97e5d8a51eefdfd456a1104d190a39413f1",
+    "cases": [
+      {
+        "cells": 256,
+        "flowPerDepth": 1.031249998365781,
+        "flowRelativeError": 0.031249998365781018,
+        "n": 8,
+        "pressureMaxError": 2.1664003924115605e-10,
+        "summary": {
+          "boundaryConditions": [
+            {
+              "face": 0,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 10,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 13,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 16,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 19,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 22,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 25,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 28,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 31,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 34,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 37,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 40,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 43,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 46,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 49,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 52,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 55,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 58,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 61,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 64,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 67,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 70,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 73,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 76,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 79,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 82,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 85,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 88,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 91,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 94,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 95,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 99,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 160,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 164,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 225,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 229,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 290,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 294,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 355,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 359,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 420,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 424,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 485,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 488,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 489,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 491,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 493,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 495,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 497,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 499,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 501,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 503,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 505,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 507,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 509,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 511,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 513,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 515,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 517,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 519,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 521,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 523,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 525,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 527,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 529,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 531,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 533,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 535,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 537,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 539,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 541,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 543,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 545,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 547,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 549,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 550,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 551,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            }
+          ],
+          "boundaryFileSuffix": ".boundaries",
+          "case": "custom",
+          "cells": 256,
+          "continuity": 2.4118951507863305e-13,
+          "convection": "face-limited-linear",
+          "converged": true,
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": 2.5673907444456745e-14,
+          "globalRelativeImbalance": 2.4895910288623273e-14,
+          "iterations": 529,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 6.076678574379898e-11,
+          "namedWallLoads": [
+            {
+              "faces": 64,
+              "forceX": 4.799999993711476,
+              "forceY": 8.664126911111073e-14,
+              "length": 8,
+              "name": "wall",
+              "pressureForceX": 0,
+              "pressureForceY": -1.2869913468271932e-13,
+              "pressureTorque": -6.663022997926982e-13,
+              "torque": -2.399999996855569,
+              "viscousForceX": 4.799999993711476,
+              "viscousForceY": 2.1534040379383005e-13,
+              "viscousTorque": -2.399999996854903
+            }
+          ],
+          "nu": 0.1,
+          "outletBackflow": "reject",
+          "outletBackflowFaces": 0,
+          "outletInflow": 0,
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "pressureChange": 7.645601323764078e-12,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "explicit pressure opening faces, prescribed static kinematic pressure",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "referenceSpeedRole": "normalization-only",
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-10,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 9.658325885303715e-11,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 4.799999993711476,
+          "wallForceY": 8.844661114615349e-14,
+          "wallLoadDefinition": "fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise",
+          "wallLoadReference": [
+            0,
+            0
+          ],
+          "wallViscousForceX": 4.799999993711476,
+          "wallViscousForceY": 2.1534040379383005e-13
+        },
+        "transverseMax": 1.9531470574793185e-11,
+        "velocityL2": 0.0234374983657513
+      },
+      {
+        "cells": 1024,
+        "flowPerDepth": 1.007812494567899,
+        "flowRelativeError": 0.007812494567899009,
+        "n": 16,
+        "observedVelocityOrder": 2.0000012368798896,
+        "pressureMaxError": 3.488205280177681e-10,
+        "summary": {
+          "boundaryConditions": [
+            {
+              "face": 0,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 10,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 13,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 16,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 19,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 22,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 25,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 28,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 31,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 34,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 37,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 40,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 43,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 46,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 49,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 52,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 55,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 58,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 61,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 64,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 67,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 70,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 73,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 76,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 79,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 82,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 85,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 88,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 91,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 94,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 97,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 100,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 103,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 106,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 109,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 112,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 115,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 118,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 121,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 124,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 127,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 130,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 133,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 136,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 139,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 142,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 145,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 148,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 151,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 154,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 157,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 160,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 163,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 166,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 169,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 172,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 175,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 178,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 181,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 184,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 187,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 190,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 191,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 195,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 320,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 324,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 449,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 453,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 578,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 582,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 707,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 711,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 836,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 840,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 965,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 969,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1094,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1098,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1223,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1227,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1352,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1356,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1481,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1485,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1610,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1614,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1739,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1743,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1868,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1872,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1997,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2000,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2001,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2003,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2005,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2007,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2009,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2011,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2013,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2015,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2017,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2019,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2021,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2023,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2025,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2027,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2029,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2031,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2033,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2035,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2037,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2039,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2041,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2043,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2045,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2047,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2049,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2051,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2053,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2055,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2057,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2059,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2061,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2063,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2065,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2067,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2069,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2071,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2073,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2075,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2077,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2079,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2081,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2083,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2085,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2087,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2089,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2091,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2093,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2095,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2097,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2099,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2101,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2103,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2105,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2107,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2109,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2111,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2113,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2115,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2117,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2119,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2121,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2123,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2125,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2126,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2127,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            }
+          ],
+          "boundaryFileSuffix": ".boundaries",
+          "case": "custom",
+          "cells": 1024,
+          "continuity": 1.6046806989079982e-13,
+          "convection": "face-limited-linear",
+          "converged": true,
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -1.297104784692138e-13,
+          "globalRelativeImbalance": 1.287049715778833e-13,
+          "iterations": 1618,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 5.744473823507849e-11,
+          "namedWallLoads": [
+            {
+              "faces": 128,
+              "forceX": 4.799999978813479,
+              "forceY": -2.1807515645190462e-14,
+              "length": 8,
+              "name": "wall",
+              "pressureForceX": 0,
+              "pressureForceY": -2.110273761291026e-13,
+              "pressureTorque": -6.850725770089078e-13,
+              "torque": -2.399999989406793,
+              "viscousForceX": 4.799999978813479,
+              "viscousForceY": 1.8921986048391214e-13,
+              "viscousTorque": -2.399999989406108
+            }
+          ],
+          "nu": 0.1,
+          "outletBackflow": "reject",
+          "outletBackflowFaces": 0,
+          "outletInflow": 0,
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "pressureChange": 2.7711166694643903e-12,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "explicit pressure opening faces, prescribed static kinematic pressure",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "referenceSpeedRole": "normalization-only",
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-10,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 9.974399273085718e-11,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 4.799999978813479,
+          "wallForceY": -1.9291859776338072e-14,
+          "wallLoadDefinition": "fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise",
+          "wallLoadReference": [
+            0,
+            0
+          ],
+          "wallViscousForceX": 4.799999978813479,
+          "wallViscousForceY": 1.8921986048391214e-13
+        },
+        "transverseMax": 2.8131606563759722e-11,
+        "velocityL2": 0.005859369567964891
+      },
+      {
+        "cells": 4096,
+        "flowPerDepth": 1.0019531069254497,
+        "flowRelativeError": 0.001953106925449699,
+        "n": 32,
+        "observedVelocityOrder": 2.0000164639138234,
+        "pressureMaxError": 4.3094683377375986e-10,
+        "summary": {
+          "boundaryConditions": [
+            {
+              "face": 0,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 10,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 13,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 16,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 19,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 22,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 25,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 28,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 31,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 34,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 37,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 40,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 43,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 46,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 49,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 52,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 55,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 58,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 61,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 64,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 67,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 70,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 73,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 76,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 79,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 82,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 85,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 88,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 91,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 94,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 97,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 100,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 103,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 106,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 109,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 112,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 115,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 118,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 121,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 124,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 127,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 130,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 133,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 136,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 139,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 142,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 145,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 148,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 151,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 154,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 157,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 160,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 163,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 166,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 169,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 172,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 175,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 178,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 181,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 184,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 187,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 190,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 193,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 196,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 199,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 202,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 205,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 208,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 211,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 214,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 217,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 220,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 223,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 226,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 229,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 232,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 235,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 238,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 241,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 244,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 247,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 250,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 253,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 256,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 259,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 262,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 265,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 268,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 271,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 274,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 277,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 280,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 283,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 286,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 289,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 292,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 295,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 298,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 301,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 304,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 307,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 310,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 313,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 316,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 319,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 322,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 325,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 328,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 331,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 334,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 337,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 340,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 343,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 346,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 349,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 352,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 355,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 358,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 361,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 364,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 367,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 370,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 373,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 376,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 379,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 382,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 383,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 387,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 640,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 644,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 897,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 901,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1154,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1158,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1411,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1415,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1668,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1672,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1925,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 1929,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2182,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2186,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2439,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2443,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2696,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2700,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2953,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 2957,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3210,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3214,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3467,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3471,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3724,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3728,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3981,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 3985,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4238,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4242,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4495,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4499,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4752,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 4756,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5009,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5013,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5266,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5270,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5523,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5527,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5780,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 5784,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6037,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6041,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6294,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6298,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6551,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6555,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6808,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 6812,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7065,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7069,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7322,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7326,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7579,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7583,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7836,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 7840,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8093,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8096,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8097,
+              "name": "inlet",
+              "p": 4.8,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8099,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8101,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8103,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8105,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8107,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8109,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8111,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8113,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8115,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8117,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8119,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8121,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8123,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8125,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8127,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8129,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8131,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8133,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8135,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8137,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8139,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8141,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8143,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8145,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8147,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8149,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8151,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8153,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8155,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8157,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8159,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8161,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8163,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8165,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8167,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8169,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8171,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8173,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8175,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8177,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8179,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8181,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8183,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8185,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8187,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8189,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8191,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8193,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8195,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8197,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8199,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8201,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8203,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8205,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8207,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8209,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8211,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8213,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8215,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8217,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8219,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8221,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8223,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8225,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8227,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8229,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8231,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8233,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8235,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8237,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8239,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8241,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8243,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8245,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8247,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8249,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8251,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8253,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8255,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8257,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8259,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8261,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8263,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8265,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8267,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8269,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8271,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8273,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8275,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8277,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8279,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8281,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8283,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8285,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8287,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8289,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8291,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8293,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8295,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8297,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8299,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8301,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8303,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8305,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8307,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8309,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8311,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8313,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8315,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8317,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8319,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8321,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8323,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8325,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8327,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8329,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8331,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8333,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8335,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8337,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8339,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8341,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8343,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8345,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8347,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8349,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8350,
+              "name": "outlet",
+              "p": 0,
+              "type": "pressure-opening",
+              "u": 0,
+              "v": 0
+            },
+            {
+              "face": 8351,
+              "name": "wall",
+              "p": 0,
+              "type": "wall",
+              "u": 0,
+              "v": 0
+            }
+          ],
+          "boundaryFileSuffix": ".boundaries",
+          "case": "custom",
+          "cells": 4096,
+          "continuity": 8.408097525500284e-13,
+          "convection": "face-limited-linear",
+          "converged": true,
+          "discreteForceDefinition": "pressure plus selected viscous momentum flux; embedded walls",
+          "discreteForceX": 0,
+          "discreteForceY": 0,
+          "domainHeight": 1,
+          "forceDefinition": "shared-face-newtonian-traction",
+          "forceX": 0,
+          "forceY": 0,
+          "format": "cartmesh2d-flow-summary-v1",
+          "globalImbalance": -4.2198449595742815e-14,
+          "globalRelativeImbalance": 4.2116192169141906e-14,
+          "iterations": 5468,
+          "method": "cell-centred FVM; SIMPLE; Rhie-Chow; shared-face pressure; face-limited-linear momentum convection; corrected diffusion",
+          "momentumResidual": 4.692540156462252e-11,
+          "namedWallLoads": [
+            {
+              "faces": 256,
+              "forceX": 4.799999929094226,
+              "forceY": 8.729041868746108e-13,
+              "length": 8,
+              "name": "wall",
+              "pressureForceX": 0,
+              "pressureForceY": 9.753691994698888e-13,
+              "pressureTorque": 2.0121745846005947e-12,
+              "torque": -2.399999964545347,
+              "viscousForceX": 4.799999929094226,
+              "viscousForceY": -1.0246501259527795e-13,
+              "viscousTorque": -2.399999964547359
+            }
+          ],
+          "nu": 0.1,
+          "outletBackflow": "reject",
+          "outletBackflowFaces": 0,
+          "outletInflow": 0,
+          "pressureBoundaryReconstruction": "one-sided-linear-adaptive",
+          "pressureChange": 7.139904828983906e-11,
+          "pressureDiscretization": "shared-face-gauss",
+          "pressureForceX": 0,
+          "pressureForceY": 0,
+          "pressurePreconditioner": "aggregation",
+          "pressureReference": "explicit pressure opening faces, prescribed static kinematic pressure",
+          "reconstructedForceX": 0,
+          "reconstructedForceY": 0,
+          "referenceSpeedRole": "normalization-only",
+          "scope": "steady constant-property laminar flow; no turbulence or accuracy certification",
+          "speed": 1,
+          "status": "converged",
+          "tolerance": 1e-10,
+          "units": {
+            "faceFlux": "m2/s per unit depth",
+            "force": "m3/s2 (force / density / depth), fluid on stationary embedded walls, positive Cartesian axes",
+            "nu": "m2/s",
+            "p": "m2/s2 (kinematic)",
+            "velocity": "m/s"
+          },
+          "velocityChange": 9.799073818528073e-11,
+          "viscousStress": "symmetric",
+          "wallForceDefinition": "all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum",
+          "wallForceX": 4.799999929094226,
+          "wallForceY": 8.732735671743153e-13,
+          "wallLoadDefinition": "fluid-on-wall / density / depth; shared-face pressure and selected viscous flux; torque positive counterclockwise",
+          "wallLoadReference": [
+            0,
+            0
+          ],
+          "wallViscousForceX": 4.799999929094226,
+          "wallViscousForceY": -1.0246501259527795e-13
+        },
+        "transverseMax": 2.5941433854008917e-11,
+        "velocityL2": 0.0014648256754290856
+      }
+    ],
+    "issues": [],
+    "limits": {
+      "commandSeconds": 180,
+      "minimumFreeBytes": 5368709120,
+      "retainedBytes": 52428800,
+      "totalSeconds": 900
+    },
+    "reference": {
+      "height": 1,
+      "length": 4,
+      "nu": 0.1,
+      "pressure": "4.8*(1-x/4)",
+      "pressureDrop": 4.8,
+      "velocity": "6*y*(1-y)",
+      "volumeFlowPerDepth": 1
+    },
+    "restartByteIdentical": true,
+    "runs": [
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "duct",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.template"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case duct --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.template",
+        "elapsedSeconds": 0.005674709002050804,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n8-template.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n8-template.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8 --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000",
+        "elapsedSeconds": 0.26163687499865773,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n8.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n8.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/whole",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "2"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/whole --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000 --time-step 0.02 --steps 2",
+        "elapsedSeconds": 0.07966983300138963,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/whole.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/whole.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "1"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000 --time-step 0.02 --steps 1",
+        "elapsedSeconds": 0.05300945799899637,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/first.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/first.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/resumed",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "1",
+          "--restart",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first.checkpoint"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/resumed --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000 --time-step 0.02 --steps 1 --restart /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first.checkpoint",
+        "elapsedSeconds": 0.06069366699739476,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/resumed.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/resumed.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000",
+        "elapsedSeconds": 0.011123624997708248,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/equal.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/equal.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/bad-restart",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "1",
+          "--restart",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first.checkpoint"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n8.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/equal.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/bad-restart --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000 --time-step 0.02 --steps 1 --restart /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/first.checkpoint",
+        "elapsedSeconds": 0.006696332999126753,
+        "returncode": 1,
+        "status": "failed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/bad-restart.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/bad-restart.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.solver.cm2d",
+          "--case",
+          "duct",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.template"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.solver.cm2d --case duct --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.template",
+        "elapsedSeconds": 0.009773666999535635,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n16-template.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n16-template.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n16 --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000",
+        "elapsedSeconds": 2.9201485000012326,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n16.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n16.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.solver.cm2d",
+          "--case",
+          "duct",
+          "--export-boundaries",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.template"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.solver.cm2d --case duct --export-boundaries /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.template",
+        "elapsedSeconds": 0.019979749999038177,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n32-template.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n32-template.stdout.log",
+        "timedOut": false
+      },
+      {
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+          "--mesh",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.solver.cm2d",
+          "--case",
+          "custom",
+          "--boundary",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.boundaries",
+          "--output",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--tolerance",
+          "1e-10",
+          "--max-iterations",
+          "10000"
+        ],
+        "commandText": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli --mesh /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.solver.cm2d --case custom --boundary /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32.boundaries --output /Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/n32 --nu 0.1 --speed 1 --convection face-limited-linear --pressure-preconditioner aggregation --tolerance 1e-10 --max-iterations 10000",
+        "elapsedSeconds": 31.52354191700215,
+        "returncode": 0,
+        "status": "passed",
+        "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n32.stderr.log",
+        "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/native-flow/pressure-openings-tight/logs/n32.stdout.log",
+        "timedOut": false
+      }
+    ],
+    "targets": {
+      "fineFluxRelativeError": 0.003,
+      "fineVelocityL2": 0.002,
+      "minimumObservedOrder": 1.9,
+      "pressureMaxError": 1e-06
+    },
+    "valid": true
+  },
+  "preliminaryTolerance1e9": {
+    "cases": [
+      {
+        "n": 8,
+        "cells": 256,
+        "velocityL2": 0.023437484071349497,
+        "flowPerDepth": 1.0312499840713336,
+        "pressureMaxError": 3.5009248833262063e-09
+      },
+      {
+        "n": 16,
+        "cells": 1024,
+        "velocityL2": 0.005859322338199264,
+        "flowPerDepth": 1.0078124473381325,
+        "pressureMaxError": 5.496524124737334e-09
+      },
+      {
+        "n": 32,
+        "cells": 4096,
+        "velocityL2": 0.0014646504109032776,
+        "flowPerDepth": 1.0019529316578242,
+        "pressureMaxError": 9.985021698355467e-09
+      }
+    ],
+    "binarySha256": "805341b94156354a304fa8c7b0cf1022d6ad5434714fbdca7ba07fff3ed90303"
+  },
+  "developmentFailure": {
+    "case": "4096-cell API pressure-driven channel",
+    "tolerance": 1e-10,
+    "maxIterations": 3000,
+    "converged": false,
+    "note": "No threshold weakened; later independent study used 10000 iteration cap, same 1e-10 tolerance, and 180 second command budget. The API test emitted failure but no field files."
+  },
+  "app": {
+    "steady": {
+      "summary": {
+        "case": "custom",
+        "cells": 2784,
+        "iterations": 1085,
+        "nu": 0.1,
+        "speed": 1,
+        "convection": "face-limited-linear",
+        "tolerance": 1e-09,
+        "momentumResidual": 6.81738393989816e-10,
+        "continuity": 1.511661166612536e-13,
+        "globalRelativeImbalance": 8.692516685469014e-14,
+        "pressureReference": "explicit pressure opening faces, prescribed static kinematic pressure"
+      },
+      "acceptedTime": null,
+      "independentAuditValid": true,
+      "exportSha256": "62e2bd8606a68f51a6dc1b49f60c32ae0697293216b0955a004ad0aeb964b280",
+      "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+      "caseSettingsRoundTrip": true,
+      "repeatedCalculationIdentical": true,
+      "failureChecked": false,
+      "uiStatus": "层流求解已收敛",
+      "pressures": {
+        "inlet": 8.25,
+        "outlet": 7.25
+      }
+    },
+    "transient": {
+      "summary": {
+        "case": "custom",
+        "cells": 2784,
+        "iterations": 70,
+        "nu": 0.1,
+        "speed": 1,
+        "convection": "face-limited-linear",
+        "tolerance": 1e-09,
+        "momentumResidual": 1.836830997571538e-10,
+        "continuity": 2.9469251113430534e-13,
+        "globalRelativeImbalance": 5.197541985319513e-12,
+        "pressureReference": "explicit pressure opening faces, prescribed static kinematic pressure"
+      },
+      "acceptedTime": 0.08,
+      "independentAuditValid": true,
+      "exportSha256": "5c9c0a8e0c0cd3eb2f6415fa0b3d7a9eace481ae80e14a8fd0ab25fcbdab9ec0",
+      "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+      "caseSettingsRoundTrip": true,
+      "repeatedCalculationIdentical": true,
+      "failureChecked": true,
+      "uiStatus": "本次计算未完成",
+      "pressures": {
+        "inlet": 8.25,
+        "outlet": 7.25
+      }
+    }
+  },
+  "validation": {
+    "ctest": {
+      "passed": 144,
+      "total": 144,
+      "seconds": 43.46
+    },
+    "frontend": {
+      "passed": 168,
+      "total": 168
+    },
+    "macOnly": true,
+    "openFoamCheckMeshRun": false
+  },
+  "limitations": [
+    "Pressure openings must be horizontal or vertical; oblique faces are explicitly rejected.",
+    "Static pressure divided by density is prescribed, not total pressure.",
+    "Named-boundary thermal coupling and arbitrary slip remain unsupported.",
+    "Analytic qualification covers the rectangular laminar channel; nozzle only has discrete audits, not reference accuracy qualification."
+  ],
+  "frozenStudyBinary": {
+    "path": "outputs/native-flow/binaries/flow-0.4.24-pressure-study",
+    "sha256": "ee6af2b4002e0e2929e58e5e3ec0d97e5d8a51eefdfd456a1104d190a39413f1",
+    "note": "Kept before CLI help text and header comment clarification; final packaged solver audited separately on the actual nozzle."
+  },
+  "packagedNative": {
+    "cartmesh2d_transport_cli": "10fb700470888f12e65170af05114b5f0716709969c415dc4c5cd5cdc88e737f",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_flow_cli": "0d7937f70aefa4d2388161f24c45743b1f8c23f3f4e5bf9439a72ca296141a10",
+    "cartmesh2d_hybrid_cli": "806a889af153bdbc4b00ac5668c67073210ca1fdcad4c538c316acae5911dd6a",
+    "cartmesh2d_cli": "af2f70adc6957d22759e091b94e77be1df454d7f2312f003a07dc975be4fd796"
+  },
+  "sourceAtPackaging": {
+    "src/fv/Incompressible2D.cpp": "6051c50c39ae5cd5e94803721d23097335bab3a3d1d8eb6e89a618aa7cb65108",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "7d546cc4367b6dd8917d3aeac8c2ebd5e4b257992d55ae3b2e114aae877dae20",
+    "tools/verification/verify_native_flow.py": "c256fdee34dd0a493c285819e6fdec8e01bf2c8930796ca378ed6e9c4d728dd9",
+    "tools/verification/verify_pressure_openings.py": "7d6e76dd71819caa27cab6700207e2449e7d82709e466685899a1f8b6ea4d52b"
+  },
+  "finalPackagedApp": {
+    "summary": {
+      "cells": 2784,
+      "iterations": 1085,
+      "momentumResidual": 6.81738393989816e-10,
+      "continuity": 1.511661166612536e-13,
+      "globalRelativeImbalance": 8.692516685469014e-14
+    },
+    "independentAuditValid": true,
+    "settingsRoundTrip": true,
+    "repeatedCalculationIdentical": true,
+    "zipSha256": "ffbf247b21d0a17eac2abd378a6fa624a85f7c92fdf4c32e78fdb59e8c9583e4",
+    "gates": "内部拓扑检查\nPASS\n详情\nSolver 质量\nPASS\n详情\n方向连通质量\nPASS\n详情",
+    "uiStatus": "层流求解已收敛"
+  },
+  "retention": {
+    "pressure-openings": "202edcb870824d910017ce6b62a8c2ca01be42e4783a973ebfd273849bba0400",
+    "pressure-opening-app": "70a3d2817a17301e3e78f2db10abe7278ec07d782bb867f53656790375b3d885"
+  }
+}

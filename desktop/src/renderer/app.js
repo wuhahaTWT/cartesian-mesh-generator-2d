@@ -797,15 +797,16 @@ function renderFlowBoundaries() {
     nameInput.addEventListener('change',()=>{records.forEach(b=>b.name=nameInput.value);edited();renderFlowBoundaries();updateFlowMode();});
     label.append(nameInput);card.append(label);
     const type=document.createElement('select');type.setAttribute('aria-label',`${name} 边界类型`);
-    for(const [value,text] of [['velocity-inlet','速度入口'],['pressure-outlet','压力出口'],['wall','静止壁面'],['moving-wall','移动壁面（逐面恒速）'],['smooth-moving-wall','移动壁面（平滑变化）']]){
+    for(const [value,text] of [['velocity-inlet','速度入口'],['pressure-outlet','压力出口'],['pressure-opening','定压开口（法向进出）'],['wall','静止壁面'],['moving-wall','移动壁面（逐面恒速）'],['smooth-moving-wall','移动壁面（平滑变化）']]){
       const option=document.createElement('option');option.value=value;option.textContent=text;type.append(option);
     }
     type.value=records[0].type;
     type.addEventListener('change',()=>{
-      for(const b of records){b.type=type.value;if(type.value!=='pressure-outlet')b.p=0;if(['wall','pressure-outlet'].includes(type.value))b.u=b.v=0;}
+      for(const b of records){b.type=type.value;if(!['pressure-outlet','pressure-opening'].includes(type.value))b.p=0;if(['wall','pressure-outlet','pressure-opening'].includes(type.value))b.u=b.v=0;}
       edited();renderFlowBoundaries();updateFlowMode();
     });card.append(type);
-    const numeric=type.value==='pressure-outlet' ? [['p','出口运动学压力']] : type.value==='wall' ? [] : [['u','速度 x'],['v','速度 y']];
+    if(type.value==='pressure-opening'){const hint=document.createElement('p');hint.className='hint';hint.textContent='仅支持水平或竖直开口。压力差决定流量；入流切向速度为零，法向速度自由。输入静压除以密度，不是总压。';card.append(hint);}
+    const numeric=['pressure-outlet','pressure-opening'].includes(type.value) ? [['p','静态运动学压力 p / ρ（m²/s²）']] : type.value==='wall' ? [] : [['u','速度 x'],['v','速度 y']];
     for(const [key,caption] of numeric){
       const field=document.createElement('label');field.className='field';field.textContent=caption;
       const input=document.createElement('input');input.type='number';input.step='any';input.dataset.boundaryKey=key;input.dataset.patchName=name;
@@ -825,7 +826,7 @@ async function prepareFlowBoundaries(source) {
   setBusy(true);
   try{
     const definition=await window.cartmesh.prepareFlowBoundaries({source,speed:Number($('flowSpeed').value)});
-    if(definition){state.flowBoundaryDefinition=definition;clearFlowBinding();clearThermalBinding();renderFlowBoundaries();
+    if(definition){if(source!=='import')$('flowBoundaryPreset').value=source;state.flowBoundaryDefinition=definition;clearFlowBinding();clearThermalBinding();renderFlowBoundaries();
       status('命名边界已载入','按名称编辑条件，点击“显示位置”核对，然后启动计算。');}
   }catch(error){status('边界配置未载入',error.message);}
   finally{setBusy(false);}

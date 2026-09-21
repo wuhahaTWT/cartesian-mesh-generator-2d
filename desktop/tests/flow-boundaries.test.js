@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs/promises');
 const os=require('node:os');
 const path=require('node:path');
-const {parseBoundaryDefinition,serializeBoundaryDefinition,validateBoundaryMesh,conditions,sameConditions}=require('../src/core/flow-boundaries');
+const {pressureDrivenBoundaryDefinition,parseBoundaryDefinition,serializeBoundaryDefinition,validateBoundaryMesh,conditions,sameConditions}=require('../src/core/flow-boundaries');
 const {readCheckpointMetadata}=require('../src/core/flow-checkpoint');
 const {buildFlowInvocation,flowOutputSuffixes,validateFlowRequest}=require('../src/core/flow');
 const mesh={vertices:[[0,0],[1,0],[1,1],[0,1]],cells:[{vertices:[0,1,2,3]}],
@@ -87,4 +87,35 @@ test('smooth wall samples keep their distinct physical type through input and ch
   validateBoundaryMesh(result.boundaryDefinition,mesh,result.speed);
   d.records[0].v=.1;
   assert.throws(()=>validateBoundaryMesh(d,mesh,1),/切向/);
+});
+
+
+test('static pressure openings preserve pressure-only conditions and reject oblique faces', async()=>{
+ const d=copy();
+ for(const b of d.records)if(['velocity-inlet','pressure-outlet'].includes(b.type))
+   Object.assign(b,{type:'pressure-opening',u:0,v:0,p:b.sx<0?4.8:0});
+ assert.deepEqual(validateBoundaryMesh(d,mesh,1),d);
+ assert.deepEqual(parseBoundaryDefinition(serializeBoundaryDefinition(d)),d);
+ const text=checkpoint().split('\n').map(line=>{
+   if(line.startsWith('BOUNDARY 1 '))return 'BOUNDARY 1 pressure-opening "outlet" 0 0 0';
+   if(line.startsWith('BOUNDARY 3 '))return 'BOUNDARY 3 pressure-opening "inlet" 0 0 4.8';
+   return line;
+ }).join('\n');
+ const restored=await metadata(text);
+ validateBoundaryMesh(restored.boundaryDefinition,mesh,1);
+ assert.equal(restored.boundaryDefinition.records[3].p,4.8);
+ const angle=.3,c=Math.cos(angle),s=Math.sin(angle),rot=(x,y)=>[c*x-s*y,s*x+c*y];
+ const turned=structuredClone(mesh);turned.vertices=turned.vertices.map(([x,y])=>rot(x,y));
+ for(const b of d.records){[b.x,b.y]=rot(b.x,b.y);[b.sx,b.sy]=rot(b.sx,b.sy);}
+ assert.throws(()=>validateBoundaryMesh(d,turned,1),/水平或竖直/);
+ d.records[3].u=1;
+ assert.throws(()=>serializeBoundaryDefinition(d),/冲突/);
+});
+
+test('pressure-driven template creates editable static pressures without prescribed inflow velocity',()=>{
+ const d=pressureDrivenBoundaryDefinition(copy());
+ assert.equal(d.records[1].type,'pressure-opening');assert.equal(d.records[1].p,0);
+ assert.equal(d.records[3].type,'pressure-opening');assert.equal(d.records[3].p,1);
+ assert.equal(d.records[3].u,0);validateBoundaryMesh(d,mesh,1);
+ assert.throws(()=>pressureDrivenBoundaryDefinition(d),/模板/);
 });

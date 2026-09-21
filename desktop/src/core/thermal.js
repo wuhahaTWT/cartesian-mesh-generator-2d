@@ -10,6 +10,7 @@ const finite = (v, name) => {
 const near = (a,b) => Math.abs(a-b) <= 1e-12 + 1e-9*Math.max(Math.abs(a),Math.abs(b));
 function validateThermalRequest(input) {
   requireValue(input && typeof input === 'object','缺少配置。');
+  requireValue(input.case!=='custom','命名边界的温度配置尚未支持。');
   const flow = validateFlowRequest({ ...input, mode:'transient' });
   // Preserve the tighter historical coupled-flow default even when standalone
   // flow is configured at 1e-6. A smaller user tolerance also applies here.

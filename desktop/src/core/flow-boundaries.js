@@ -1,6 +1,6 @@
 'use strict';
 
-const KINDS = Object.freeze(['velocity-inlet','pressure-outlet','wall','moving-wall','smooth-moving-wall']);
+const KINDS = Object.freeze(['velocity-inlet','pressure-outlet','pressure-opening','wall','moving-wall','smooth-moving-wall']);
 const fail = message => { throw new Error(`流动边界：${message}`); };
 const finite = value => { if (typeof value !== 'number' || !Number.isFinite(value)) fail('数值必须有限。'); return value; };
 const numberToken = value => {
@@ -30,7 +30,7 @@ function condition(entry) {
   if (!KINDS.includes(type)) fail('不支持的边界类型。');
   if (typeof name !== 'string' || !name.length || Buffer.byteLength(name,'utf8') > 128 || /[\x00-\x1f\x7f,"]/.test(name)) fail('名称无效。');
   [u,v,p].forEach(finite);
-  if (type === 'pressure-outlet' ? (u !== 0 || v !== 0) : p !== 0) fail('压力与速度条件冲突。');
+  if (['pressure-outlet','pressure-opening'].includes(type) ? (u !== 0 || v !== 0) : p !== 0) fail('压力与速度条件冲突。');
   if (type === 'wall' && (u !== 0 || v !== 0)) fail('静止壁面速度必须为零。');
   return {face,type,name,u,v,p};
 }
@@ -46,7 +46,7 @@ function conditions(entries) {
     return value;
   }).sort((a,b)=>a.face-b.face);
   const hasInlet = result.some(b=>b.type==='velocity-inlet'), hasOutlet = result.some(b=>b.type==='pressure-outlet');
-  if (hasInlet !== hasOutlet) fail('开放流域需要入口与出口；闭域只允许壁面。');
+  if (!result.some(b=>b.type==='pressure-opening') && hasInlet !== hasOutlet) fail('开放流域需要入口与出口；闭域只允许壁面。');
   return result;
 }
 function normalizeBoundaryDefinition(definition) {
@@ -105,6 +105,8 @@ function validateBoundaryMesh(value, mesh, speed) {
     const sx=zy-ay,sy=ax-zx, length=Math.hypot(sx,sy), vectorTolerance=1e-12+1e-10*length;
     if (Math.abs(b.x-(ax+zx)/2)>positionTolerance || Math.abs(b.y-(ay+zy)/2)>positionTolerance ||
         Math.abs(b.sx-sx)>vectorTolerance || Math.abs(b.sy-sy)>vectorTolerance) fail('边界位置或法向与最终网格不匹配；请重新生成边界。');
+    if (b.type==='pressure-opening' && Math.min(Math.abs(sx),Math.abs(sy))>(1e-12+1e-10)*length)
+      fail(`定压开口 ${b.name} 必须水平或竖直。`);
     const flux=finite(b.u*sx+b.v*sy);
     if (b.type==='velocity-inlet' && !(flux<0)) fail(`入口 ${b.name} 在面 ${b.face} 上没有指向流体内部。`);
     if (['moving-wall','smooth-moving-wall'].includes(b.type) && Math.abs(flux)>(1e-12+1e-10*Math.max(speed,Math.hypot(b.u,b.v)))*length)
@@ -112,6 +114,16 @@ function validateBoundaryMesh(value, mesh, speed) {
   }
   return d;
 }
+// Build a pressure-driven counterpart of the native axis-aligned duct preset.
+// The initial static pressure difference is 1 m2/s2 and remains editable.
+function pressureDrivenBoundaryDefinition(value) {
+  const d=normalizeBoundaryDefinition(value);
+  if (!d.records.some(b=>b.type==='velocity-inlet') || !d.records.some(b=>b.type==='pressure-outlet'))
+    fail('压差模板需要原通道入口与出口。');
+  return normalizeBoundaryDefinition({...d,records:d.records.map(b=>
+    ['velocity-inlet','pressure-outlet'].includes(b.type)
+      ? {...b,type:'pressure-opening',u:0,v:0,p:b.type==='velocity-inlet'?1:0} : b)});
+}
 function sameConditions(a,b) { return JSON.stringify(conditions(a))===JSON.stringify(conditions(b)); }
 module.exports={KINDS,quotedTokens,condition,conditions,normalizeBoundaryDefinition,parseBoundaryDefinition,
-  serializeBoundaryDefinition,validateBoundaryMesh,sameConditions};
+  serializeBoundaryDefinition,validateBoundaryMesh,pressureDrivenBoundaryDefinition,sameConditions};

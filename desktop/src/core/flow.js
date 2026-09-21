@@ -7,7 +7,7 @@ const { normalizeBoundaryDefinition, sameConditions, conditions } = require('./f
 const FLOW_CASES = Object.freeze({
   custom: {
     id: 'custom', label: '命名边界',
-    scope: '按最终网格逐面指定速度入口、压力出口或静止／移动壁面。参考速度仅用于归一化；入口速度由各边界单独设置。暂不支持滑移或出口回流。'
+    scope: '按最终网格逐面指定速度入口、压力出口、定压开口或静止／移动壁面。参考速度仅用于归一化。定压开口限水平／竖直方向，允许法向进出；普通压力出口仍拒绝回流。暂不支持自定义滑移。'
   },
   external: {
     id: 'external', label: '外流',
@@ -262,7 +262,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   if (!Object.hasOwn(FLOW_CASES, summary.case)) throw new Error('流动摘要工况无效。');
   if (summary.case === 'custom') {
     const entries = conditions(summary.boundaryConditions);
-    const reference = entries.some(b=>b.type==='pressure-outlet')
+    const reference = entries.some(b=>b.type==='pressure-opening')
+      ? 'explicit pressure opening faces, prescribed static kinematic pressure' : entries.some(b=>b.type==='pressure-outlet')
       ? 'explicit pressure outlet faces, prescribed kinematic pressure' : 'cell 0, kinematic pressure zero';
     if (summary.boundaryFileSuffix !== '.boundaries' || summary.referenceSpeedRole !== 'normalization-only' ||
         summary.outletBackflow !== 'reject' || summary.pressureReference !== reference)

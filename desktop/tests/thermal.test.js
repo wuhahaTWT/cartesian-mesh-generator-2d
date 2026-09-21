@@ -59,6 +59,7 @@ const EMBEDDED_RECTANGLE = [
 ].join('\n');
 
 test('thermal request validation rejects coercion and preserves the physical contract', () => {
+  assert.throws(()=>validateThermalRequest(request({case:'custom'})),/命名边界/);
   const validated = validateThermalRequest(request());
   assert.equal(validated.diffusivity, 0.1);
   assert.equal(validated.initial, 0);
