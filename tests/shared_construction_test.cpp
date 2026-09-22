@@ -381,5 +381,50 @@ int main(int argc,char** argv) {
         rejects([&]{(void)registry.internGridCorner(a,.0625);},
                 "ambiguous input corner incidence fails instead of merging");
     }
+    // Adjacent cuts at a circular polygon's near-zero axis endpoint must share
+    // the same face. This exercises clipping plus global topology, not just
+    // an isolated registry event. Keep the trigonometric input unmodified.
+    for (double scale:{.001,1.,1000.}) {
+        std::vector<Point2D> points;
+        const double pi=std::acos(-1.0);
+        for (int i=0;i<1024;++i)
+            points.push_back({scale*std::cos(2*pi*i/1024),scale*std::sin(2*pi*i/1024)});
+        const BoundaryRegion2D wall{BoundaryLoop(points)};
+        for (bool reversed:{false,true}) {
+            auto registry=std::make_shared<IntersectionRegistry2D>();
+            registry->configureGrid({{-1.3*scale,-1.3*scale},{1.3*scale,1.3*scale}},7);
+            const double h=2.6*scale/128,lo=-1.3*scale+14*h,hi=-1.3*scale+15*h;
+            std::vector<std::size_t> inputIds;
+            for (const auto& p:points) {
+                registry->registerGridCornerAnchor(p,h);
+                inputIds.push_back(registry->internVertex(p,h));
+            }
+            std::vector<CutCell2D> cells;
+            for (int step=0;step<2;++step) {
+                const int k=reversed?1-step:step;
+                QuadtreeLeaf2D leaf;leaf.id=k;leaf.key=k;leaf.level=7;
+                leaf.bounds={{lo,(k-1)*h},{hi,k*h}};
+                leaf.classification=CellClass::Intersected;
+                auto cut=buildCutCellsShared(leaf,wall,*registry,
+                    IntersectionSource2D::WallCartesian,FluidRegion2D::Interior);
+                for (auto& cell:cut) {
+                    check(cell.valid(),"axis endpoint adjacent cut remains valid");
+                    cell.sourceId=cells.size();cells.push_back(std::move(cell));
+                }
+            }
+            const auto mesh=buildGlobalTopology(cells,Domain2D{{{lo,-h},{hi,h}}},wall,{},registry);
+            check(mesh.valid() && mesh.cells.size()==2,
+                  "roundoff axis endpoint yields valid adjacent-cell topology at three scales and both orders");
+            std::size_t internal=0;
+            for (const auto& edge:mesh.edges) if (edge.neighbour) ++internal;
+            check(internal==1,"axis adjacent cells share exactly one internal edge");
+            for (std::size_t i=0;i<points.size();++i) {
+                const auto& original=points[i];
+                const auto& retained=registry->vertices()[inputIds[i]].point;
+                check(retained.x==original.x && retained.y==original.y,
+                      "axis repair preserves original input handles and coordinates");
+            }
+        }
+    }
     return failures?1:0;
 }

@@ -1,0 +1,800 @@
+{
+  "scope": "Original retained fine-annulus trigonometric input, unchanged quality thresholds, axis endpoint fix. Topology and Solver quality reported separately.",
+  "limits": {
+    "timeoutSeconds": 180,
+    "temporaryCombinedOutputMiB": 1120
+  },
+  "sourceSha256": "aba995595e35e791e36b9134f69a7bfed3ec6a4f47ee982d0b5288e66c53b5d1",
+  "binarySha256": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+  "command": [
+    "build/cartmesh2d_cli",
+    "artifacts/current/annulus-1024-axis-roundoff.xy",
+    "outputs/laminar-performance/annulus-axis-fixed/mesh",
+    "7",
+    ".15",
+    ".1",
+    "interior",
+    "outputs/laminar-performance/annulus-axis-fixed/foam",
+    "7"
+  ],
+  "run": {
+    "command": [
+      "build/cartmesh2d_cli",
+      "artifacts/current/annulus-1024-axis-roundoff.xy",
+      "outputs/laminar-performance/annulus-axis-fixed/mesh",
+      "7",
+      ".15",
+      ".1",
+      "interior",
+      "outputs/laminar-performance/annulus-axis-fixed/foam",
+      "7"
+    ],
+    "commandText": "build/cartmesh2d_cli artifacts/current/annulus-1024-axis-roundoff.xy outputs/laminar-performance/annulus-axis-fixed/mesh 7 .15 .1 interior outputs/laminar-performance/annulus-axis-fixed/foam 7",
+    "returncode": 1,
+    "stdout": "outputs/laminar-performance/annulus-axis-fixed/generation.stdout.log",
+    "stderr": "outputs/laminar-performance/annulus-axis-fixed/generation.stderr.log",
+    "timedOut": false,
+    "status": "failed"
+  },
+  "wallSeconds": 151.27587737501017,
+  "independentTopology": {
+    "cells": 7233,
+    "vertices": 8377,
+    "edges": 15610,
+    "issues": [],
+    "area": 2.3561797052753186,
+    "expectedPolygonAnnulusArea": 2.3561797052753186,
+    "topologyValid": true,
+    "solverQualityValid": false
+  },
+  "quality": {
+    "quality_class": "solver_quality",
+    "metric_semantics": "native 2D solver-topology metrics; OpenFOAM-like formulas are not external checkMesh evidence",
+    "valid": false,
+    "policy": {
+      "max_non_orthogonality_deg": 70,
+      "max_internal_skewness": 4,
+      "max_boundary_skewness": 4,
+      "max_concavity_deg": 80,
+      "max_cell_aspect": 1000,
+      "min_interior_angle_deg": 0.5,
+      "min_face_length": 1.01e-10,
+      "min_face_weight": 0.05,
+      "min_volume_ratio": 0.01
+    },
+    "metrics": {
+      "max_non_orthogonality_deg": 80.35316242370097,
+      "max_internal_skewness": 1.2295736157143575,
+      "max_boundary_skewness": 4.350899095184213,
+      "max_concavity_deg": 8.537736277958174e-07,
+      "max_cell_aspect": 602.7035352513858,
+      "min_interior_angle_deg": 0.19059456116873624,
+      "min_face_length": 6.455285734172116e-06,
+      "min_face_weight": 0.0020946864884919,
+      "min_volume_ratio": 0.002099083410154159,
+      "min_compactness": 0.005206611195962924
+    },
+    "issue_count": 68,
+    "issues": [
+      {
+        "code": 8,
+        "cell_id": 2506,
+        "edge_id": 0,
+        "measured": 0.19059456116873624,
+        "limit": 0.5,
+        "message": "cell interior angle is below limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 526,
+        "edge_id": 1196,
+        "measured": 80.35316242370072,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 4067,
+        "edge_id": 1317,
+        "measured": 80.35316242370003,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 123,
+        "edge_id": 2595,
+        "measured": 80.35316242370082,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 4989,
+        "edge_id": 2597,
+        "measured": 80.35316242369981,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1801,
+        "edge_id": 4049,
+        "measured": 0.03800841310302898,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4203,
+        "edge_id": 4051,
+        "measured": 0.03800841310300812,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1800,
+        "edge_id": 4054,
+        "measured": 0.03723801275733724,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4201,
+        "edge_id": 4056,
+        "measured": 0.03723801275733331,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1621,
+        "edge_id": 4699,
+        "measured": 0.012509904108723144,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 1621,
+        "edge_id": 4699,
+        "measured": 0.007876974257355228,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4332,
+        "edge_id": 4701,
+        "measured": 0.01250990410872298,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 4332,
+        "edge_id": 4701,
+        "measured": 0.007876974257353205,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1647,
+        "edge_id": 4881,
+        "measured": 0.026503948754428477,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 1647,
+        "edge_id": 4881,
+        "measured": 0.0029091799490092757,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 1239,
+        "edge_id": 5141,
+        "measured": 70.83729435416248,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 1237,
+        "edge_id": 5231,
+        "measured": 73.07444829479594,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 1235,
+        "edge_id": 5237,
+        "measured": 72.70285537802317,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1505,
+        "edge_id": 5570,
+        "measured": 0.026503948754435333,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 1505,
+        "edge_id": 5570,
+        "measured": 0.002909179949010249,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1455,
+        "edge_id": 5861,
+        "measured": 0.012509904108704862,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 1455,
+        "edge_id": 5861,
+        "measured": 0.007876974257353021,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4664,
+        "edge_id": 5863,
+        "measured": 0.01250990410872345,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 4664,
+        "edge_id": 5863,
+        "measured": 0.007876974257355417,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 5,
+        "cell_id": 4729,
+        "edge_id": 6552,
+        "measured": 4.350899095184213,
+        "limit": 4,
+        "message": "boundary face skewness exceeds limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4715,
+        "edge_id": 6617,
+        "measured": 0.0416268920487612,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1527,
+        "edge_id": 6838,
+        "measured": 0.037238012757347325,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4746,
+        "edge_id": 6840,
+        "measured": 0.03723801275733408,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 1532,
+        "edge_id": 6899,
+        "measured": 0.03800841310301897,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 4742,
+        "edge_id": 6901,
+        "measured": 0.038008413103006164,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2485,
+        "edge_id": 8763,
+        "measured": 0.03800841310301963,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5707,
+        "edge_id": 8766,
+        "measured": 0.03800841310302672,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5705,
+        "edge_id": 8772,
+        "measured": 0.03723801275733142,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2484,
+        "edge_id": 8775,
+        "measured": 0.03723801275733168,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2506,
+        "edge_id": 9060,
+        "measured": 0.0020946864884919,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2506,
+        "edge_id": 9060,
+        "measured": 0.002099083410154159,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2506,
+        "edge_id": 9117,
+        "measured": 0.0021040993185677827,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2506,
+        "edge_id": 9117,
+        "measured": 0.002108535887501582,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5786,
+        "edge_id": 9808,
+        "measured": 0.012509904108722478,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 5786,
+        "edge_id": 9808,
+        "measured": 0.007876974257355143,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2555,
+        "edge_id": 9810,
+        "measured": 0.012509904108704893,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2555,
+        "edge_id": 9810,
+        "measured": 0.007876974257352816,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2576,
+        "edge_id": 10089,
+        "measured": 0.026503948754438192,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2576,
+        "edge_id": 10089,
+        "measured": 0.002909179949010082,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5721,
+        "edge_id": 10091,
+        "measured": 0.026503948754431957,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 5721,
+        "edge_id": 10091,
+        "measured": 0.0029091799490097775,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 2770,
+        "edge_id": 10360,
+        "measured": 70.83729435416217,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 5992,
+        "edge_id": 10369,
+        "measured": 72.70285537802263,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 5993,
+        "edge_id": 10370,
+        "measured": 73.07444829479563,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 2768,
+        "edge_id": 10441,
+        "measured": 73.07444829479581,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 5997,
+        "edge_id": 10450,
+        "measured": 70.83729435416392,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 2766,
+        "edge_id": 10453,
+        "measured": 72.70285537802255,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2865,
+        "edge_id": 10794,
+        "measured": 0.02650394875443811,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2865,
+        "edge_id": 10794,
+        "measured": 0.0029091799490100797,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5588,
+        "edge_id": 10795,
+        "measured": 0.026503948754431964,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 5588,
+        "edge_id": 10795,
+        "measured": 0.002909179949009777,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 2884,
+        "edge_id": 10973,
+        "measured": 0.012509904108715471,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 2884,
+        "edge_id": 10973,
+        "measured": 0.007876974257355378,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5612,
+        "edge_id": 10975,
+        "measured": 0.012509904108723845,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 10,
+        "cell_id": 5612,
+        "edge_id": 10975,
+        "measured": 0.00787697425735277,
+        "limit": 0.01,
+        "message": "neighbouring cell volume ratio is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 3024,
+        "edge_id": 11654,
+        "measured": 0.037238012757344036,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5438,
+        "edge_id": 11656,
+        "measured": 0.03723801275733142,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 3028,
+        "edge_id": 11661,
+        "measured": 0.03800841310301673,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 9,
+        "cell_id": 5436,
+        "edge_id": 11663,
+        "measured": 0.03800841310302671,
+        "limit": 0.05,
+        "message": "internal face interpolation weight is below limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 2242,
+        "edge_id": 12933,
+        "measured": 80.35316242370078,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 7112,
+        "edge_id": 13090,
+        "measured": 80.35316242370092,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 3159,
+        "edge_id": 14352,
+        "measured": 80.35316242370035,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      },
+      {
+        "code": 3,
+        "cell_id": 6704,
+        "edge_id": 14354,
+        "measured": 80.35316242370097,
+        "limit": 70,
+        "message": "internal face non-orthogonality exceeds limit"
+      }
+    ]
+  },
+  "qualityIssueCounts": {
+    "cell interior angle is below limit": 1,
+    "internal face non-orthogonality exceeds limit": 17,
+    "internal face interpolation weight is below limit": 33,
+    "neighbouring cell volume ratio is below limit": 16,
+    "boundary face skewness exceeds limit": 1
+  },
+  "interpretation": "Original eight axis topology errors removed on unchanged input; independent polygon area and topology pass. Existing 68 quality failures remain and final mesh export/CFD are refused. No quality limits changed.",
+  "acceptance": {
+    "nativeCTest": {
+      "initialPassed": 155,
+      "total": 156,
+      "initialFailed": "cartmesh2d_thermal_scale_verifier",
+      "failureContext": "macOS /usr/bin/time -l cannot read kern.clockrate inside sandbox; standalone reproduction exits1",
+      "externalRerunPassed": true,
+      "externalRerunSeconds": 2.97
+    },
+    "frontend": {
+      "passed": 184,
+      "failed": 0
+    },
+    "packagedApp": {
+      "platform": "darwin",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "6d5ebaaac003446a578dd37162f409c5805759e9005e253b3156710c6cdbac21"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "5751a620798e6fd681e063ebaeb33f8f6ff4bdc0bccc942493bc867caff6c17c"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 6076,
+            "exportedCells": 6076,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "c7fc281f6405b1cee0594048d46edce55badd1dc2528e7b1811f8160c63fc1ca"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 211.609375,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 16384,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "76c4d5251ffc95cf2711922d582bbc29803d00a9060c3adad5fb479a3b45f47c"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 1168,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "a894f7eab4d17a0dd28bde90c57f0bff196dd0de1acfb1a7c4d57adf8eeccd88"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run"
+    },
+    "package": {
+      "version": "0.4.39",
+      "nativeSha256": {
+        "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+        "cartmesh2d_hybrid_cli": "220d552cd70b76c89824271434b0d8b23466d48bd57197bf84826291a9907c5c",
+        "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+        "cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c",
+        "cartmesh2d_transport_cli": "a960b7ce47864a48660fe2c4280322632e99b7f4c965d6534ca893375ef72e09",
+        "cartmesh2d_euler_cli": "4e426af6ecfc05253f443d17ee42c5070c99ae65e75390aa6b7e512f95074f64"
+      },
+      "zip": "desktop/dist/CartMesh2D-0.4.39-arm64-mac.zip",
+      "zipBytes": 115066529,
+      "zipSha256": "c14783a9fc6d5caaa4e2d4d099f043ec67cfed83990a07a0fa154075c006363d",
+      "zipCrcValid": true
+    },
+    "scope": "Local macOS0.4.39 acceptance. Current-source Windows/Linux CI and external checkMesh not run. Flow solver binary SHA unchanged from0.4.38; no new CFD accuracy qualification."
+  }
+}

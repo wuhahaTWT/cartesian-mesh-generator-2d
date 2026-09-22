@@ -379,10 +379,17 @@ std::size_t IntersectionRegistry2D::intersectGridLine(std::size_t support,GridLi
         policy_.snapFractionOfLocalH*constructionScale,
         arithmeticFractionOfLocalH*gridSpan);
     std::size_t id;
-    if (t<=arithmeticFractionOfLocalH &&
-        std::sqrt(squaredNorm(p-s.segment.a))<=endpointEps) id=s.a;
-    else if (1.0-t<=arithmeticFractionOfLocalH &&
-            std::sqrt(squaredNorm(p-s.segment.b))<=endpointEps) id=s.b;
+    const double distanceToA=std::sqrt(squaredNorm(p-s.segment.a));
+    const double distanceToB=std::sqrt(squaredNorm(p-s.segment.b));
+    // A roundoff-sized coordinate discrepancy can exceed the dimensionless
+    // parameter budget on a short support. Keep the original spatial budget,
+    // allowing endpoint identity only when the opposite endpoint is outside
+    // it. If both endpoints fit, retain the parameter test so a resolved short
+    // support cannot collapse. Input coordinates are never moved.
+    if ((t<=arithmeticFractionOfLocalH || distanceToB>endpointEps) &&
+        distanceToA<=endpointEps) id=s.a;
+    else if ((1.0-t<=arithmeticFractionOfLocalH || distanceToA>endpointEps) &&
+             distanceToB<=endpointEps) id=s.b;
     else {
         auto feature=IntersectionFeature2D::CartesianGridLine;
         const unsigned other=1U-line.axis;

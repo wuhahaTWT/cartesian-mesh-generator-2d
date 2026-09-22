@@ -2204,5 +2204,31 @@
       "outputs/annulus-exact-axis-repro/foam",
       "7"
     ]
+  },
+  "pressureGaugeDiagnosis": {
+    "scope": "Read-only pressure error decomposition; cell0-gauge physical acceptance remains unchanged. Mean-removed errors are diagnostic only, not replacement pass criteria.",
+    "cases": [
+      {
+        "level": 5,
+        "originalCell0GaugeL2": 0.0333161448264689,
+        "meanError": -0.001949607703942708,
+        "meanRemovedDiagnosticL2": 0.033259051939268765,
+        "constantFractionOfMSE": 0.003424403892183933
+      },
+      {
+        "level": 6,
+        "originalCell0GaugeL2": 0.02067127682323428,
+        "meanError": -0.0032938974107923564,
+        "meanRemovedDiagnosticL2": 0.02040715377875999,
+        "constantFractionOfMSE": 0.025391334789747585
+      },
+      {
+        "level": 7,
+        "originalCell0GaugeL2": 0.02775794658807613,
+        "meanError": -0.0019621690159671535,
+        "meanRemovedDiagnosticL2": 0.02768850829386202,
+        "constantFractionOfMSE": 0.004996871206423012
+      }
+    ]
   }
 }
