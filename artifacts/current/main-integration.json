@@ -1,0 +1,190 @@
+{
+  "version": "0.4.40",
+  "scope": "Repository cleanup and CFD integration; no solver physics or acceptance limits changed.",
+  "baseMain": "8723a24550f9266f83abf471c705d6a9ed54aed4",
+  "previousDevelopment": "ac24bee",
+  "nativeSourcesUnchanged": true,
+  "nativeCppFilesInBuild": 42,
+  "removedRuntimeCode": [
+    "Unused .gate > .detail legacy CSS selector"
+  ],
+  "buildCleanup": "One native2D warning function replaces ten copies of unreachable parent-helper branching; same compiler warning flags.",
+  "nativeTests": {
+    "passed": 156,
+    "failed": 0,
+    "log": "outputs/main-integration/ctest.stdout.log"
+  },
+  "frontendTests": {
+    "passed": 184,
+    "failed": 0,
+    "log": "outputs/main-integration/frontend.stdout.log"
+  },
+  "appSmoke": {
+    "platform": "darwin",
+    "cases": [
+      {
+        "case": "png",
+        "cells": 5210,
+        "independentReader": true,
+        "layout": {
+          "bottomReachable": true,
+          "pageHeight": 560,
+          "windowHeight": 560,
+          "geometry": {
+            "bodyHeight": 560,
+            "innerHeight": 560,
+            "canvasHeight": 200,
+            "shellBottom": 560
+          },
+          "wallpaper": {
+            "image": "none",
+            "canvasBackground": "rgb(251, 252, 248)",
+            "welcomeHidden": true
+          },
+          "previewCells": 5210,
+          "exportedCells": 5210,
+          "sidebarCollapsed": false,
+          "sidebarExpanded": true
+        },
+        "sha256": "d6d1232bb515a0f6e7c305d46cd118f125183ad7d7f9dc72c9b0a3551f7d6838"
+      },
+      {
+        "case": "jpg",
+        "cells": 5210,
+        "independentReader": true,
+        "layout": {
+          "bottomReachable": true,
+          "pageHeight": 560,
+          "windowHeight": 560,
+          "geometry": {
+            "bodyHeight": 560,
+            "innerHeight": 560,
+            "canvasHeight": 200,
+            "shellBottom": 560
+          },
+          "wallpaper": {
+            "image": "none",
+            "canvasBackground": "rgb(251, 252, 248)",
+            "welcomeHidden": true
+          },
+          "previewCells": 5210,
+          "exportedCells": 5210,
+          "sidebarCollapsed": false,
+          "sidebarExpanded": true
+        },
+        "sha256": "d31787ac5b348154a4579ac576f4bf1817e37515456327b94d77bfcf3abfd5cb"
+      },
+      {
+        "case": "hybrid",
+        "cells": 6076,
+        "independentReader": true,
+        "layout": {
+          "bottomReachable": true,
+          "pageHeight": 560,
+          "windowHeight": 560,
+          "geometry": {
+            "bodyHeight": 560,
+            "innerHeight": 560,
+            "canvasHeight": 200,
+            "shellBottom": 560
+          },
+          "wallpaper": {
+            "image": "none",
+            "canvasBackground": "rgb(251, 252, 248)",
+            "welcomeHidden": true
+          },
+          "previewCells": 6076,
+          "exportedCells": 6076,
+          "sidebarCollapsed": false,
+          "sidebarExpanded": true
+        },
+        "sha256": "8a061612382b02a9c6ddf469ad8039f8008943d16e2d8e0a9d97bd3059b9188f"
+      },
+      {
+        "case": "background-uniform",
+        "cells": 16384,
+        "independentReader": true,
+        "layout": {
+          "bottomReachable": true,
+          "pageHeight": 560,
+          "windowHeight": 560,
+          "geometry": {
+            "bodyHeight": 560,
+            "innerHeight": 560,
+            "canvasHeight": 211.609375,
+            "shellBottom": 560
+          },
+          "wallpaper": {
+            "image": "none",
+            "canvasBackground": "rgb(251, 252, 248)",
+            "welcomeHidden": true
+          },
+          "previewCells": 16384,
+          "exportedCells": 0,
+          "sidebarCollapsed": false,
+          "sidebarExpanded": true
+        },
+        "sha256": "dd0e1a2a43be1aeaea1b79dfbdb70b6c8fb108f8433402d2c51999236358d6bb"
+      },
+      {
+        "case": "background-adaptive",
+        "cells": 1168,
+        "independentReader": true,
+        "layout": {
+          "bottomReachable": true,
+          "pageHeight": 560,
+          "windowHeight": 560,
+          "geometry": {
+            "bodyHeight": 560,
+            "innerHeight": 560,
+            "canvasHeight": 200,
+            "shellBottom": 560
+          },
+          "wallpaper": {
+            "image": "none",
+            "canvasBackground": "rgb(251, 252, 248)",
+            "welcomeHidden": true
+          },
+          "previewCells": 1168,
+          "exportedCells": 0,
+          "sidebarCollapsed": false,
+          "sidebarExpanded": true
+        },
+        "sha256": "ce9313648c63fedf7a6f0c0b2191c940dd336e4008470e9917ee8c8e33438d0c"
+      }
+    ],
+    "externalCheckMesh": "not_run",
+    "cfd": "not_run"
+  },
+  "nativeBinaryHashes": {
+    "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_euler_cli": "4e426af6ecfc05253f443d17ee42c5070c99ae65e75390aa6b7e512f95074f64",
+    "cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c",
+    "cartmesh2d_hybrid_cli": "220d552cd70b76c89824271434b0d8b23466d48bd57197bf84826291a9907c5c",
+    "cartmesh2d_transport_cli": "a960b7ce47864a48660fe2c4280322632e99b7f4c965d6534ca893375ef72e09"
+  },
+  "package": {
+    "path": "desktop/dist/CartMesh2D-0.4.40-arm64-mac.zip",
+    "sha256": "3fbabe97407b4cee42988cdcf048a4f768946d6e1858a743faff957a93f4f9b8",
+    "minimumNativeMacOS": "27.0",
+    "signed": false
+  },
+  "ci": "pending",
+  "contributors": {
+    "apiLogins": [
+      "wuhahaTWT"
+    ],
+    "statsLogins": [
+      "wuhahaTWT"
+    ],
+    "homepageLogins": [
+      "wuhahaTWT",
+      "claude",
+      "zhuanz"
+    ],
+    "historyRewriteThisRound": false,
+    "status": "API and homepage disagree; recheck after main integration"
+  },
+  "protectedLocalChanges": "Existing archive/history files remain local; pre-cleanup working patch and document retained under outputs/main-integration."
+}

@@ -316,16 +316,6 @@ select { font-family: inherit; font-size: 12px; }
 .gate-explanation:not([open]) { grid-column: 1 / -1; }
 .gate-explanation[open] { grid-column: 1 / -1; }
 
-/* Kept for any legacy gate markup produced by an older cached renderer. */
-.gate > .detail {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 9px/1.25 var(--mono);
-  color: var(--ink-faint);
-}
-
 .histogram { display: grid; gap: 3px; font: 9px/1 var(--mono); min-width: 0; }
 #cellBudgetResult {
   grid-column: 1 / -1;

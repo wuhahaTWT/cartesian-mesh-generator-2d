@@ -5,7 +5,7 @@
 唯一前端在根目录 `desktop/src/`，源码版本见 `desktop/package.json`，已打包版本与实际验收范围见 [CURRENT_STATE_CN.md](CURRENT_STATE_CN.md)。
 macOS 直接双击根目录 `打开CartMesh2D.command`；Apple Silicon App 在 `desktop/dist/mac-arm64/CartMesh2D.app`，Intel 本机构建在 `desktop/dist/mac/CartMesh2D.app`。
 开发模式：在 `desktop/` 执行 `npm start`。从其他目录调用 `sh desktop/scripts/build-macos.sh` 也可打包。
-不要再打开旧隐藏工作区路径；新旧代码关系见开发导航的历史表。
+不要再打开旧隐藏工作区路径；历史从Git读取，见开发导航。
 
 ## Windows 与 Linux
 
@@ -71,7 +71,7 @@ GitHub 的 `desktop-platforms` 工作流在三个系统分别编译、打包并�
 
 曲线显示本次计算的已接受时间步，`.flow.time-history.csv` 保存本次全部步记录；`.flow.residuals.csv` 只记录最后尝试步的内迭代。采用一阶后向欧拉；固定步长模式的CFL是实测提示。自动步长模式按目标CFL、步长上下限和终止时间推进，未接受的候选步可缩步重试；自动控制不替代时间精度验证。细网格通常需要更小步长，可靠结果仍须比较不同时间步与网格。
 
-新增求解功能本轮仅在 macOS 实测；既有三平台网格生成验收不替代新求解器的跨平台运行验收。
+三平台原生/前端回归与打包网格烟雾检查已建立；完整CFD桌面交互主要在macOS实测，不能用网格烟雾检查替代跨平台CFD交互验收。具体版本见当前状态。
 
 ## 在 App 里计算温度
 
