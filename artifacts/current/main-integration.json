@@ -170,7 +170,46 @@
     "minimumNativeMacOS": "27.0",
     "signed": false
   },
-  "ci": "pending",
+  "ci": {
+    "native": {
+      "commit": "7f10a47fb2e70bb18483e5309dfd34e7d1c4f057",
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35715154803",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "native-2d",
+          "conclusion": "success",
+          "startedAt": "2026-09-22T10:17:27Z",
+          "completedAt": "2026-09-22T10:21:34Z"
+        }
+      ]
+    },
+    "desktop": {
+      "commit": "7f10a47fb2e70bb18483e5309dfd34e7d1c4f057",
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35715150378",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "desktop (windows-2022, win, x64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-22T10:17:24Z",
+          "completedAt": "2026-09-22T10:27:19Z"
+        },
+        {
+          "name": "desktop (ubuntu-22.04, linux, x64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-22T10:17:24Z",
+          "completedAt": "2026-09-22T10:25:43Z"
+        },
+        {
+          "name": "desktop (macos-14, mac, arm64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-22T10:17:30Z",
+          "completedAt": "2026-09-22T10:22:28Z"
+        }
+      ]
+    }
+  },
   "contributors": {
     "apiLogins": [
       "wuhahaTWT"
@@ -184,7 +223,432 @@
       "zhuanz"
     ],
     "historyRewriteThisRound": false,
-    "status": "API and homepage disagree; recheck after main integration"
+    "status": "Before merge the homepage showed3 while both APIs showed1; after merge homepage refresh failed ERR_CONNECTION_CLOSED. No claim that the sidebar refreshed."
   },
-  "protectedLocalChanges": "Existing archive/history files remain local; pre-cleanup working patch and document retained under outputs/main-integration."
+  "protectedLocalChanges": "Existing archive/history files remain local; pre-cleanup working patch and document retained under outputs/main-integration.",
+  "cloudAppSmoke": {
+    "mac": {
+      "platform": "darwin",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "8f7fe8f1f61e707019d2b9c1184dd27ae05258050c4a72a1fb5a826097f16ab4"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "ca835fbda91b8eb66e001829e3b1446d1178ef542bbdb794e5d4b5b2aa03254f"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 6076,
+            "exportedCells": 6076,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "8b726d28dab002ca1583107a796fd6cc540eabd16a4448890f4fb96e5dede8a2"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 211.625,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 16384,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "f44523f9a5a39d64822b48b2b5f309551b3d722cab6be57cd9a63184f2f5358e"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 1168,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "23d26196fe563690bb4fcd3187b59a706122785898d5eb141141cbaf23a39786"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run"
+    },
+    "linux": {
+      "platform": "linux",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "195beb05eeaf32334dc4cf87498a83d0c9f03deefae4e245bf93b3c203c7f926"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "18f88936e3e0af094f7acc066165d2a7be80a49f2522a8e9af673a7fe30f6ecf"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 6076,
+            "exportedCells": 6076,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "2b64ad6acb2735e47b56fb22fc6d5d25f85f4b2b62c64da0c555d8ea1b615c86"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 209.625,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 16384,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "339a61a7ccf2d079a13a347ca5f96b6e7cecf56b693024b6dedb78642dc28dd9"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 198,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 1168,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "c64798575f8241f934bbf16852caed25d2aa8935fb02b9b06a9c50c617bde359"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run"
+    },
+    "win": {
+      "platform": "win32",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "5bd9b8efe19ad0ca598c6a4d38a9a04db3253e5f6b06bf440465ca8977e954ce"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "13c22ea88453c32643f26479b9fd1be7f361ca8d1027c1ae25b50a365c664d8a"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 6076,
+            "exportedCells": 6076,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "9dcd186af0f808dda065f1d2826f90e52e2bd2618525bbca1aa9b95c48a0771e"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 16384,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "5ff1832ddabd1ba1841395c16f161f673964dc9b6b07593eb763aaeb653224b7"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 521,
+            "windowHeight": 521,
+            "geometry": {
+              "bodyHeight": 521,
+              "innerHeight": 521,
+              "canvasHeight": 170.703125,
+              "shellBottom": 521
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 1168,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "b0bab402e0623ece782024c0e937cde42564843e00319d740a40c0d73c873ca1"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "not_run"
+    }
+  },
+  "cloudOpenFoamStandardCheckMeshCases": 15,
+  "cloudExtendedCheckMesh": "not run",
+  "mainIntegration": {
+    "previous": "8723a24550f9266f83abf471c705d6a9ed54aed4",
+    "current": "7f10a47fb2e70bb18483e5309dfd34e7d1c4f057",
+    "force": false,
+    "verifiedCIRuns": [
+      35715150378,
+      35715154803
+    ]
+  },
+  "validatedSourceFingerprint": "0ef415b5949f52dc72e1006b7ba25d471a984ac2566d0471e16a886a5caed5a0"
 }

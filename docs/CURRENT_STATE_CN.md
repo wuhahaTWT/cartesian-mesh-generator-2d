@@ -6,7 +6,7 @@
 
 源码版本 **0.4.40**：在0.4.39的网格/层流功能基础上整理公开文档，合并重复构建配置，移除无调用的旧质量卡样式。此次不更改求解方程、停止门、质量门或默认数值设置。
 
-正在完成 `codex/cfd-development` → `main` 集成验证。main原为`8723a24`，CFD分支包含其全部历史，可以快进；未通过验证前不将集成写成完成。网格阶段标签`mesher-v0.3.0`保留，网格维护线不自动覆盖。
+**CFD已集成到main**：`8723a24`非强制快进至通过完整验收的`7f10a47`，原历史保留。后续整理验收记录的提交仅修改文档与证据，编译/测试源码指纹保持不变。网格阶段标签`mesher-v0.3.0`保留，网格维护线不自动覆盖。
 
 | 范围 | 当前能力 |
 | --- | --- |
@@ -21,14 +21,14 @@
 
 ## 验证与运行包
 
-0.4.40本机系统clang构建、完整原生156/156、前端184/184已通过；0.4.40实际macOS包五例及独立读取通过，六程序哈希一致。当前源码跨平台验证待运行，下列旧证据不能替代。[本次集成证据](../artifacts/current/main-integration.json)
+0.4.40本机系统clang构建、完整原生156/156、前端184/184已通过；0.4.40实际macOS包五例及独立读取通过，六程序哈希一致。当前源码三平台各156/156原生、184/184前端以及五例实际App全部通过；见[0.4.40运行包与跨平台验收](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35715150378)。[本次集成证据](../artifacts/current/main-integration.json)
 
 - **0.4.39本机**：系统clang完整构建、原生156项通过（热规模测试需在允许读取`kern.clockrate`的环境重跑）、前端184项通过。实际macOS App五例PNG/JPG/混合/均匀背景/自适应背景通过中文路径、ZIP和独立读取。六程序build/runtime/包内哈希一致。[记录](../artifacts/current/native-annulus-axis-fixed.json)
 - **0.4.38跨平台**：[desktop-platforms 35667584541](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35667584541)，三平台各原生156/156、前端184/184及五类实际App样例通过。完整CFD桌面保存、重算、失败、取消/续算交互主要在macOS验证，不等于所有系统逐项交互验收。
 - **当前本地包0.4.40**：`desktop/dist/CartMesh2D-0.4.40-arm64-mac.zip`，SHA256 `3fbabe97407b4cee42988cdcf048a4f768946d6e1858a743faff957a93f4f9b8`；未签名，原生最低macOS27.0。
 - **本地回退包0.4.39**：`desktop/dist/CartMesh2D-0.4.39-arm64-mac.zip`，SHA256 `c14783a9fc6d5caaa4e2d4d099f043ec67cfed83990a07a0fa154075c006363d`；未签名，原生最低macOS27.0。0.4.38/0.4.37精确回退包保留。
 - **平台**：CI macOS14 arm64、Windows Server2022 x64、Ubuntu22.04 x64；本地系统clang产物的最低系统版本不能用CI系统版本替代。Windows10/11及其他Linux发行版仍需实际环境确认。
-- **外部检查**：本轮本机未运行外部checkMesh。历史喷管/圆环标准checkMesh通过，但扩展geometry/topology存在失败；内部通过不替代外部检查或求解器验收。
+- **外部检查**：本轮[原生/OpenFOAM CI](https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/35715154803)完整通过：原生156项、15个H4案例真实OpenFOAM2606标准checkMesh、确定性重放与细化检查。本机未运行外部checkMesh，本轮CI未运行扩展检查；历史喷管/圆环扩展geometry/topology失败仍未解决。
 
 ## 已验证的规模和性能
 
@@ -76,7 +76,7 @@
 
 此次整理只删除过期叙事及确认无调用的兼容样式，统一构建配置；原生算法、独立读取器、最小失败例和质量门保留。所有`src/*.cpp`仍参与CMake构建。已有本地归档改动与实验历史未发布；整理前未提交文档及差异保存在忽略提交的`outputs/main-integration/`。
 
-贡献者核查：GitHub contributors API当前只返回`wuhahaTWT`一个已关联账号；现有分支没有Co-authored-by标记。本次不重写历史，首页实际仍显示wuhahaTWT、claude、zhuanz三项，与API不一致；这是页面统计尚未一致的状态，本次集成后再次核对，不宣称删除文档能改变贡献者。
+贡献者核查：GitHub contributors API当前只返回`wuhahaTWT`一个已关联账号；现有分支没有Co-authored-by标记。本次不重写历史，合并前首页实测显示wuhahaTWT、claude、zhuanz三项，与API不一致；合并后首页刷新遇到网络断连，未确认侧栏已更新。不为刷新统计反复强推、改名或删除历史；待GitHub页面统计更新，持续异常可向GitHub支持提交缓存核查材料。
 
 维护入口固定：README供使用者、DESKTOP_APP供操作、DEVELOPMENT供开发、AGENTS供约束；完整旧过程可用`git show ac24bee:docs/CURRENT_STATE_CN.md`恢复。保留Git历史、里程碑和证据文件，不再把每轮日志追加进当前状态。
 
