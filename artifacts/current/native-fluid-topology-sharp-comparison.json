@@ -1,0 +1,694 @@
+{
+  "schema": "cartmesh2d-sharp-comparison-evidence-v1",
+  "date": "2026-09-26",
+  "branch": "codex/fluid-topology-optimization",
+  "nativeSourceRevision": "ace13f9",
+  "researchBaseRevision": "518c9446abd0a963b37873f31c167c1d96f85389",
+  "question": "Does a density-optimized bend reduce pressure drop after equal-area, equal-flow sharp-wall reconstruction?",
+  "statement": "An improvement is observed on two mesh levels with the same controls; this is not a grid-independence or general physical accuracy claim.",
+  "source": "outputs/fluid-topology-iteration/bend-high-resistance-aggregate/summary.json",
+  "sourceSha256": "646b0a17745db01140c3bf48b34a87fa9905b78318cf927c33e995bf47111dac",
+  "reviewedSourceHashes": {
+    "tools/optimization/brinkman.py": "2ae8db543820beaa7e7282bb04598c16d801d30a9868512775401dfa07bd4bfe",
+    "tools/optimization/compare_sharp_designs.py": "b1ce5f12f7a5490d176a571e7c194374fcf8844da97b96ad6097782a01f1cda4",
+    "tools/optimization/optimize_flow.py": "d6446713a4f4d9e01901b7dedfedf324fc8934b5f3402e0ff1a9746b5857cdcd",
+    "tools/optimization/render_native_flow.py": "55c8229724b9c1c11e4b21d5f91049fee4444c329e607f7e62d6372ba2fea2b8",
+    "tools/optimization/topology_artifacts.py": "dcc33690572bc3e5e00260082ea5bc1f7eb0d756c399e8c5b0f7b5f1a08dc320",
+    "tools/optimization/verify_extracted_flow.py": "a1d1a09ca6ebab668c48d5724fdf4e1ea07bdd71190d04f58cb1827ec1885106"
+  },
+  "geometryReplayedWithReviewedCode": {
+    "baseline": {
+      "boundaryIdentical": true,
+      "boundarySha256": "3660cd0021c405ab4f5f7e221a31c07ae65d40fe425b458d86cb2b819192ef64"
+    },
+    "candidate": {
+      "boundaryIdentical": true,
+      "boundarySha256": "3181ed4c3b71a9c7546ec4302016cfc37731d66b8059c7a6724d9d4965d57f60"
+    }
+  },
+  "assessmentRecomputedWithReviewedCode": true,
+  "problem": {
+    "nx": 72,
+    "ny": 48,
+    "width": 1.5,
+    "height": 1,
+    "viscosity": 1.0,
+    "alpha_max": 1000000.0,
+    "volume_fraction": 0.3,
+    "filter_radius": 0.06,
+    "port_width": 0.16666666666666666,
+    "case": "bend",
+    "linear_residual_limit": 1e-08
+  },
+  "targetArea": 0.4499595624470455,
+  "areaBudget": 0.44999999999999996,
+  "controls": {
+    "levels": [
+      6,
+      7
+    ],
+    "speed": 0.02,
+    "nu": 1,
+    "tolerance": 1e-08,
+    "iterations": 2500,
+    "smallAlpha": 0.25
+  },
+  "assessment": {
+    "paired": [
+      {
+        "level": 6,
+        "baselineDrop": 2.504466982679523,
+        "candidateDrop": 2.433968108318979,
+        "relativeReduction": 0.02814925285424108,
+        "difference": 0.07049887436054414
+      },
+      {
+        "level": 7,
+        "baselineDrop": 2.5006206308161487,
+        "candidateDrop": 2.440740552444916,
+        "relativeReduction": 0.02394608667676601,
+        "difference": 0.05988007837123277
+      }
+    ],
+    "unpairedLevels": [],
+    "meshRobustImprovementObserved": true,
+    "physicalAccuracyQualified": false,
+    "status": "improvement-observed",
+    "observedBaselineGridChange": 0.003846351863374231,
+    "observedCandidateGridChange": 0.006772444125937138,
+    "improvementBeyondObservedGridChanges": 0.0492612823819214,
+    "interpretation": "Two-grid changes are observed sensitivity, not an error estimator or grid-independence proof."
+  },
+  "testResult": {
+    "passed": 12,
+    "failed": 0,
+    "sourceSha256": "2d94a2d1cf4229e8d98bdd62028cc0fd1c7ccda372203cfe26319e835cbf9996",
+    "log": "outputs/fluid-topology-iteration/research-tests.log",
+    "logSha256": "a4c75fbc58b86378696565d8f0c5d1f81fc813410f20eef9dd0cd2890b68702d"
+  },
+  "optimization": {
+    "status": "iteration-limit",
+    "optimizationConverged": false,
+    "final": {
+      "objective": 15.852921217002354,
+      "volumeFraction": 0.3,
+      "grayness": 0.04323237112871245,
+      "dissipation": 15.852921217002354,
+      "pressurePower": 15.170756729940935,
+      "fluxWeightedPressureDrop": 136.5368105694684,
+      "maxSolidToGlobalSpeed": 0.0022704291885967433,
+      "linearResidual": 8.195293551934515e-15,
+      "continuity": 6.831766122578286e-14,
+      "adjointResidual": 6.847365807851048e-11,
+      "projectedKkt": 0.006924692705882087
+    },
+    "stages": [
+      {
+        "q": 0.01,
+        "beta": 0.0,
+        "status": "iteration-limit",
+        "accepted": 50
+      },
+      {
+        "q": 0.1,
+        "beta": 2.0,
+        "status": "line-search-stalled",
+        "accepted": 60
+      },
+      {
+        "q": 0.1,
+        "beta": 6.0,
+        "status": "iteration-limit",
+        "accepted": 250
+      }
+    ],
+    "sourceHashes": {
+      "optimize_flow.py": "d6446713a4f4d9e01901b7dedfedf324fc8934b5f3402e0ff1a9746b5857cdcd",
+      "brinkman.py": "2ae8db543820beaa7e7282bb04598c16d801d30a9868512775401dfa07bd4bfe"
+    },
+    "controls": {
+      "stages": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.1,
+          2.0
+        ],
+        [
+          0.1,
+          6.0
+        ]
+      ],
+      "stageIterations": [
+        50,
+        100,
+        250
+      ],
+      "move": 0.15,
+      "stationarityTolerance": 0.001,
+      "maxSeconds": 600
+    },
+    "environment": {
+      "python": "3.14.3",
+      "numpy": "2.4.6",
+      "scipy": "1.18.1"
+    }
+  },
+  "designs": {
+    "baseline": {
+      "matching": {
+        "targetArea": 0.4499595624470455,
+        "originalArea": 0.4447097141409835,
+        "matchedArea": 0.4499595626485245,
+        "interiorDensityOffset": 0.05303797125816345,
+        "areaTolerance": 4.5995956244704555e-10,
+        "passiveCellsUnchanged": true
+      },
+      "sourceField": "outputs/fluid-topology-iteration/bend-high-resistance/reference-geometricSeed.npz",
+      "sourceFieldSha256": "b7783620af21c64385eb55f6193493132078a6f1572551eae0f17a191616d5d0",
+      "extraction": {
+        "schema": "cartmesh2d-topology-extraction-v1",
+        "threshold": 0.5,
+        "field": "filtered projected rho at cell centres with edge extension",
+        "fluidRegion": "interior",
+        "components": 1,
+        "holes": 0,
+        "regions": [
+          {
+            "file": "fluid-component-0.xy",
+            "holes": 0,
+            "fluidArea": 0.4499595626485245,
+            "boundarySha256": "3660cd0021c405ab4f5f7e221a31c07ae65d40fe425b458d86cb2b819192ef64"
+          }
+        ],
+        "vertices": 220,
+        "fluidArea": 0.4499595626485245,
+        "designArea": 1.5,
+        "extractedVolumeFraction": 0.299973041765683,
+        "sourceFieldSha256": "0abca00294d8156b46f81e2661a3cf51a9c7749af4a99915de6ef67105f4b332",
+        "boundarySha256": "3660cd0021c405ab4f5f7e221a31c07ae65d40fe425b458d86cb2b819192ef64",
+        "topologyQualified": false,
+        "solverQualityQualified": false,
+        "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required."
+      }
+    },
+    "candidate": {
+      "matching": {
+        "targetArea": 0.4499595624470455,
+        "originalArea": 0.4499595624470455,
+        "matchedArea": 0.4499595624470455,
+        "interiorDensityOffset": 0.0,
+        "areaTolerance": 4.5995956244704555e-10,
+        "passiveCellsUnchanged": true
+      },
+      "sourceField": "outputs/fluid-topology-iteration/bend-high-resistance/final.npz",
+      "sourceFieldSha256": "ab2869d6a572fa145adaaa59034bc275d797d3f6810ffd47b784ddc87382b8c7",
+      "extraction": {
+        "schema": "cartmesh2d-topology-extraction-v1",
+        "threshold": 0.5,
+        "field": "filtered projected rho at cell centres with edge extension",
+        "fluidRegion": "interior",
+        "components": 1,
+        "holes": 0,
+        "regions": [
+          {
+            "file": "fluid-component-0.xy",
+            "holes": 0,
+            "fluidArea": 0.4499595624470455,
+            "boundarySha256": "3181ed4c3b71a9c7546ec4302016cfc37731d66b8059c7a6724d9d4965d57f60"
+          }
+        ],
+        "vertices": 220,
+        "fluidArea": 0.4499595624470455,
+        "designArea": 1.5,
+        "extractedVolumeFraction": 0.2999730416313637,
+        "sourceFieldSha256": "cd1ed8f024443c0044dc8250a08f2875eedc9ea550a5281fc7f71d38259e0b92",
+        "boundarySha256": "3181ed4c3b71a9c7546ec4302016cfc37731d66b8059c7a6724d9d4965d57f60",
+        "topologyQualified": false,
+        "solverQualityQualified": false,
+        "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required."
+      }
+    }
+  },
+  "rows": [
+    {
+      "level": 6,
+      "baseline": {
+        "metrics": {
+          "pressurePower": 0.005565482183732275,
+          "inletFlux": 0.002222222222222223,
+          "fluxWeightedPressureDrop": 2.504466982679523,
+          "cells": 1513,
+          "area": 0.44995956264852455,
+          "iterations": [
+            280
+          ],
+          "externalCheckMesh": [
+            "not-run"
+          ]
+        },
+        "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6",
+        "mesh": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/mesh.solver.cm2d",
+          "sha256": "e49dcd09cae8963951136ed47e546144173f4a71291fb62ffe4482e9f56d50a0",
+          "cells": 1513,
+          "faces": 3220,
+          "area": 0.44995956264852455,
+          "expectedArea": 0.4499595626485245,
+          "areaError": 5.551115123125783e-17,
+          "independentIssues": []
+        },
+        "nativeFlowConverged": true,
+        "independentFlowPassed": true,
+        "independentMomentum": 2.0483859422206225e-09,
+        "independentGlobalFluxImbalance": 3.3274286646324516e-12,
+        "flowFieldsSha256": "cbca91765387dbc4f4b5ded300c77006a359de38cd00549f576a8602db9604cc",
+        "faceFieldsSha256": "09354edb62bdec4040da05b9fbe4659abecbd3ce58d7d3a71e2ae98f25afa0f1",
+        "boundarySha256": "c1cd9da091750409176356dff12cd129a9557e6d92a2555dbf874db1533cf50f",
+        "auditSha256": "cb98faa24bc92dabfea04a93d6421ebb9da272db67d779dc030808516fcd6f86",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "runSeconds": [
+          3.3241772910114378,
+          0.04490641696611419,
+          1.2266060420079157
+        ],
+        "commands": [
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline/fluid.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/mesh",
+            "6",
+            "0.03333333333333333",
+            "0.25",
+            "interior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/openfoam",
+            "6",
+            "0"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/mesh.solver.cm2d",
+            "--case",
+            "duct",
+            "--speed",
+            "0.02",
+            "--export-boundaries",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/template.boundaries"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/mesh.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/flow.boundaries",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-6/level-6/flow",
+            "--nu",
+            "1",
+            "--speed",
+            "0.02",
+            "--max-iterations",
+            "2500",
+            "--tolerance",
+            "1e-08",
+            "--velocity-relaxation",
+            "0.2",
+            "--pressure-corrections",
+            "1",
+            "--steady-acceleration",
+            "anderson",
+            "--linear-policy",
+            "adaptive",
+            "--pressure-preconditioner",
+            "aggregation"
+          ]
+        ],
+        "externalCheckMesh": "not-run"
+      },
+      "candidate": {
+        "metrics": {
+          "pressurePower": 0.00540881801848662,
+          "inletFlux": 0.0022222222222222227,
+          "fluxWeightedPressureDrop": 2.433968108318979,
+          "cells": 1493,
+          "area": 0.4499595624470453,
+          "iterations": [
+            321
+          ],
+          "externalCheckMesh": [
+            "not-run"
+          ]
+        },
+        "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6",
+        "mesh": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/mesh.solver.cm2d",
+          "sha256": "1886b19cc36d1f0803a929129721fab0c388defca5e07bf21d71a864fba6734b",
+          "cells": 1493,
+          "faces": 3184,
+          "area": 0.4499595624470453,
+          "expectedArea": 0.4499595624470455,
+          "areaError": -1.6653345369377348e-16,
+          "independentIssues": []
+        },
+        "nativeFlowConverged": true,
+        "independentFlowPassed": true,
+        "independentMomentum": 4.04353044721887e-09,
+        "independentGlobalFluxImbalance": 2.1161783263223817e-12,
+        "flowFieldsSha256": "25962975c2035d480cf2c04e9c868d3907e4d8f6a01d67c09ff3a3b5b2af6380",
+        "faceFieldsSha256": "22449724790829fd4f851d4e74786b4d712b734a1f0047b38ea38394a5a06501",
+        "boundarySha256": "24cf2bfd47caf9f33d03c754ac83c78ab4d3e40222bb2977ecee55a30363c1fa",
+        "auditSha256": "3e3a7dfa44d6adff5bf287bb4c1af67e89478ec46beb86ce7fc89544fd5d8f9f",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "runSeconds": [
+          1.8640918339951895,
+          0.036632917006500065,
+          1.6492995420121588
+        ],
+        "commands": [
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate/fluid.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/mesh",
+            "6",
+            "0.03333333333333333",
+            "0.25",
+            "interior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/openfoam",
+            "6",
+            "0"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/mesh.solver.cm2d",
+            "--case",
+            "duct",
+            "--speed",
+            "0.02",
+            "--export-boundaries",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/template.boundaries"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/mesh.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/flow.boundaries",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-6/level-6/flow",
+            "--nu",
+            "1",
+            "--speed",
+            "0.02",
+            "--max-iterations",
+            "2500",
+            "--tolerance",
+            "1e-08",
+            "--velocity-relaxation",
+            "0.2",
+            "--pressure-corrections",
+            "1",
+            "--steady-acceleration",
+            "anderson",
+            "--linear-policy",
+            "adaptive",
+            "--pressure-preconditioner",
+            "aggregation"
+          ]
+        ],
+        "externalCheckMesh": "not-run"
+      }
+    },
+    {
+      "level": 7,
+      "baseline": {
+        "metrics": {
+          "pressurePower": 0.0055569347351469974,
+          "inletFlux": 0.0022222222222222222,
+          "fluxWeightedPressureDrop": 2.5006206308161487,
+          "cells": 5671,
+          "area": 0.44995956264852455,
+          "iterations": [
+            1204
+          ],
+          "externalCheckMesh": [
+            "not-run"
+          ]
+        },
+        "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7",
+        "mesh": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/mesh.solver.cm2d",
+          "sha256": "9b6be2b14fd7d67d80c5cbeca8a18d63456bf29c22b199bcf8f41567c3adad50",
+          "cells": 5671,
+          "faces": 11589,
+          "area": 0.44995956264852455,
+          "expectedArea": 0.4499595626485245,
+          "areaError": 5.551115123125783e-17,
+          "independentIssues": []
+        },
+        "nativeFlowConverged": true,
+        "independentFlowPassed": true,
+        "independentMomentum": 2.092980093346994e-09,
+        "independentGlobalFluxImbalance": 1.005883303896709e-12,
+        "flowFieldsSha256": "c9c99198f268f75168344d72d176a8b6eeb72417ed19cdb0a2414021c5c17a5a",
+        "faceFieldsSha256": "dd33d7557991efeb55f4ef07973c0c1762cbb518123baf82733808be8140cf59",
+        "boundarySha256": "57592e4f1fb7e52d67478660eca18464eedd0bef87ce1c540d7efc8b7593e09a",
+        "auditSha256": "2cdb13bf72f62114d860c41f2530566520af62a691996c004d1657fe8e94a1eb",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "runSeconds": [
+          7.621058915974572,
+          0.10769291699398309,
+          18.971763625042513
+        ],
+        "commands": [
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline/fluid.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/mesh",
+            "7",
+            "0.03333333333333333",
+            "0.25",
+            "interior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/openfoam",
+            "7",
+            "0"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/mesh.solver.cm2d",
+            "--case",
+            "duct",
+            "--speed",
+            "0.02",
+            "--export-boundaries",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/template.boundaries"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/mesh.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/flow.boundaries",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/flow",
+            "--nu",
+            "1",
+            "--speed",
+            "0.02",
+            "--max-iterations",
+            "2500",
+            "--tolerance",
+            "1e-08",
+            "--velocity-relaxation",
+            "0.2",
+            "--pressure-corrections",
+            "1",
+            "--steady-acceleration",
+            "anderson",
+            "--linear-policy",
+            "adaptive",
+            "--pressure-preconditioner",
+            "aggregation"
+          ]
+        ],
+        "externalCheckMesh": "not-run"
+      },
+      "candidate": {
+        "metrics": {
+          "pressurePower": 0.005423867894322037,
+          "inletFlux": 0.002222222222222223,
+          "fluxWeightedPressureDrop": 2.440740552444916,
+          "cells": 5666,
+          "area": 0.44995956244704527,
+          "iterations": [
+            658
+          ],
+          "externalCheckMesh": [
+            "not-run"
+          ]
+        },
+        "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7",
+        "mesh": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/mesh.solver.cm2d",
+          "sha256": "23f714db6008267b2559bec46fa4dbdceec968b8830cf4a1f6a2bd1dd997f33d",
+          "cells": 5666,
+          "faces": 11597,
+          "area": 0.44995956244704527,
+          "expectedArea": 0.4499595624470455,
+          "areaError": -2.220446049250313e-16,
+          "independentIssues": []
+        },
+        "nativeFlowConverged": true,
+        "independentFlowPassed": true,
+        "independentMomentum": 6.737044694893814e-09,
+        "independentGlobalFluxImbalance": 2.981000608712939e-11,
+        "flowFieldsSha256": "4c1ce911c883a05765b7217845cb0bc8ae88eea833e4ace6f91b2df9dc6cd48a",
+        "faceFieldsSha256": "e8f83dbe92c6fc635ef2c511b0c1ec8c10e11ca319cffef26cfe712588abfa96",
+        "boundarySha256": "ac67c065489296b30a7024ca7a6145e4576f3937532c9ef35101470c18d33943",
+        "auditSha256": "d204d9446348ddd8df4e23a7912b84004e9b75d627ef6926b027d2cebb10e679",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "runSeconds": [
+          8.35405429097591,
+          0.08971329202177003,
+          11.176019542035647
+        ],
+        "commands": [
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate/fluid.xy",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/mesh",
+            "7",
+            "0.03333333333333333",
+            "0.25",
+            "interior",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/openfoam",
+            "7",
+            "0"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/mesh.solver.cm2d",
+            "--case",
+            "duct",
+            "--speed",
+            "0.02",
+            "--export-boundaries",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/template.boundaries"
+          ],
+          [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+            "--mesh",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/mesh.solver.cm2d",
+            "--case",
+            "custom",
+            "--boundary",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/flow.boundaries",
+            "--output",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/flow",
+            "--nu",
+            "1",
+            "--speed",
+            "0.02",
+            "--max-iterations",
+            "2500",
+            "--tolerance",
+            "1e-08",
+            "--velocity-relaxation",
+            "0.2",
+            "--pressure-corrections",
+            "1",
+            "--steady-acceleration",
+            "anderson",
+            "--linear-policy",
+            "adaptive",
+            "--pressure-preconditioner",
+            "aggregation"
+          ]
+        ],
+        "externalCheckMesh": "not-run"
+      }
+    }
+  ],
+  "preservedAttempts": [
+    {
+      "source": "outputs/fluid-topology-iteration/bend-v1/summary.json",
+      "sha256": "f7288996c5444c3fbd7187580e6ff45a5c1888b01c5f16f07bc8d8ac61837835",
+      "status": "incomplete-native-comparison",
+      "assessment": {
+        "paired": [],
+        "meshRobustImprovementObserved": false,
+        "physicalAccuracyQualified": false,
+        "status": "incomplete-native-comparison"
+      },
+      "note": "Rejected meshes and incomplete solves remain incomplete; never counted as evidence of a paired ranking."
+    },
+    {
+      "source": "outputs/fluid-topology-iteration/double-pipe-v1/summary.json",
+      "sha256": "e2e9492e358db0b26a238fe881322feecd0fcad71a7f6563c4ebfb16c174d942",
+      "status": "incomplete-native-comparison",
+      "assessment": {
+        "paired": [],
+        "meshRobustImprovementObserved": false,
+        "physicalAccuracyQualified": false,
+        "status": "incomplete-native-comparison"
+      },
+      "note": "Rejected meshes and incomplete solves remain incomplete; never counted as evidence of a paired ranking."
+    },
+    {
+      "source": "outputs/fluid-topology-iteration/bend-high-resistance-native/summary.json",
+      "sha256": "303ff6b45aa3181329d1bd7fb7d9f6ba581404c630221e2abdd03fd5ae33a0d0",
+      "status": "partial-native-comparison",
+      "assessment": {
+        "paired": [
+          {
+            "level": 7,
+            "baselineDrop": 2.5013910766281082,
+            "candidateDrop": 2.4369266289049656,
+            "relativeReduction": 0.025771439070631508,
+            "difference": 0.06446444772314264
+          }
+        ],
+        "unpairedLevels": [
+          6
+        ],
+        "meshRobustImprovementObserved": false,
+        "physicalAccuracyQualified": false,
+        "status": "partial-native-comparison"
+      },
+      "note": "Rejected meshes and incomplete solves remain incomplete; never counted as evidence of a paired ranking."
+    }
+  ],
+  "limits": [
+    "Both geometries have one connected fluid region and no holes; topology change is not demonstrated.",
+    "The final optimization stopped at its iteration limit; the intermediate continuation stage stalled.",
+    "Solid resistance, grid resolution and iteration budget changed together; no isolated causal attribution.",
+    "The original geometric seed is a reproducible numerical baseline, not an industrial standard design.",
+    "Two-grid changes are observations, not rigorous error bounds or a mesh-independence proof.",
+    "Native equations are independently audited, but no independent CFD solver, external checkMesh, full native/frontend regression or platform CI was run."
+  ],
+  "physicalAccuracyQualified": false,
+  "nextResearchQuestion": "Can optimized connectivity changes and reliable design ranking be demonstrated on multi-port flow networks?"
+}

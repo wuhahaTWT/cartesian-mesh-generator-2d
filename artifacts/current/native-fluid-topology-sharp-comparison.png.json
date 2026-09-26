@@ -1,0 +1,37 @@
+{
+  "schema": "cartmesh2d-topology-native-preview-v1",
+  "cases": [
+    {
+      "label": "Baseline",
+      "cells": 5671,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "9b6be2b14fd7d67d80c5cbeca8a18d63456bf29c22b199bcf8f41567c3adad50",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/baseline-level-7/level-7/flow.cells.csv",
+          "fieldSha256": "c9c99198f268f75168344d72d176a8b6eeb72417ed19cdb0a2414021c5c17a5a"
+        }
+      ],
+      "iterations": [
+        1204
+      ]
+    },
+    {
+      "label": "Optimized",
+      "cells": 5666,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "23f714db6008267b2559bec46fa4dbdceec968b8830cf4a1f6a2bd1dd997f33d",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/bend-high-resistance-aggregate/candidate-level-7/level-7/flow.cells.csv",
+          "fieldSha256": "4c1ce911c883a05765b7217845cb0bc8ae88eea833e4ace6f91b2df9dc6cd48a"
+        }
+      ],
+      "iterations": [
+        658
+      ]
+    }
+  ],
+  "sharedColorScales": true,
+  "fieldRendering": "One constant scalar per actual native polygon; no interpolated or fabricated field."
+}

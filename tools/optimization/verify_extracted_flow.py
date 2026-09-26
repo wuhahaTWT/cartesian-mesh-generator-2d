@@ -121,6 +121,7 @@ def run(args):
     root.mkdir(parents=True)
     report = dict(schema="cartmesh2d-topology-native-v1", source=str(source), sourceSha256=sha(source),
                   executables={str(p):sha(p) for p in (mesh_cli, flow_cli)},
+                  smallCellAggregationFraction=getattr(args, "small_alpha", .1),
                   meshAccepted=False, independentTopologyPassed=False, solverQualityPassed=False,
                   nativeFlowConverged=False, independentFlowPassed=False, physicalAccuracyQualified=False,
                   externalCheckMesh="not-run", cases=[], issues=[],
@@ -132,9 +133,11 @@ def run(args):
         case = root/f"level-{level}"
         case.mkdir()
         prefix = case/"mesh"
-        item = dict(level=level, runs=[])
+        item = dict(level=level, runs=[], status="meshing")
         report["cases"].append(item)
-        command = [mesh_cli, source, prefix, level, 1/30, .1, "interior", case/"openfoam", level, 0]
+        save()
+        command = [mesh_cli, source, prefix, level, 1/30, getattr(args, "small_alpha", .1),
+                   "interior", case/"openfoam", level, 0]
         meshing = execute(command, case/"mesh-run", args.timeout)
         item["runs"].append(meshing)
         mesh_path = Path(str(prefix)+".solver.cm2d")
@@ -181,6 +184,8 @@ def run(args):
                    "--velocity-relaxation", .2, "--pressure-corrections", 1,
                    "--steady-acceleration", "anderson", "--linear-policy", "adaptive",
                    "--pressure-preconditioner", "aggregation"]
+        item["status"] = "solving"
+        save()
         solve = execute(command, case/"flow-run", args.timeout)
         item["runs"].append(solve)
         summary_path = Path(str(flow)+".json")
@@ -240,9 +245,11 @@ if __name__ == "__main__":
                         help="existing native normalised stopping tolerance, separate from physical accuracy")
     parser.add_argument("--mesh-only", action="store_true")
     parser.add_argument("--component", type=int, help="one extracted region; default processes ALL regions")
+    parser.add_argument("--small-alpha", type=float, default=.1,
+                        help="existing conservative small-cell aggregation fraction; does not change quality gates")
     args = parser.parse_args()
     if (not args.levels or not all(3 <= level <= 9 for level in args.levels) or
-            not 1 <= args.iterations <= 20000 or not 0 < args.timeout <= 600 or
+            not 1 <= args.iterations <= 20000 or not 0 < args.timeout <= 600 or not 0 < args.small_alpha <= .5 or
             not all(math.isfinite(v) and v > 0 for v in (args.speed, args.nu, args.tolerance))):
         parser.error("invalid bounded mesh or flow controls")
     try:

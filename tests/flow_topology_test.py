@@ -20,6 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"tools"/"optimization
 from brinkman import Problem, StokesBrinkman, port_average
 from topology_artifacts import contours, signed_area
 from optimize_flow import parser, run, stationarity
+from optimize_flow import reference_design
+from compare_sharp_designs import assess, match_sharp_area
 
 
 class FlowTopologyTest(unittest.TestCase):
@@ -182,6 +184,37 @@ class FlowTopologyTest(unittest.TestCase):
                     np.testing.assert_array_equal(final["rho"].ravel(), saved["rho"])
                     self.assertEqual(float(final["objective"]), saved["objective"])
                 self.assertEqual(json.loads((args.output/"summary.json").read_text())["status"], "analysis-failed")
+
+    def test_sharp_area_matching_preserves_passive_ports_and_source(self):
+        m = self.model()
+        rho = m.physical(reference_design(m, 6), 6)[0].reshape(m.ny, m.nx)
+        original = rho.copy()
+        target = m.problem.volume_fraction*m.problem.width*m.problem.height
+        matched, report = match_sharp_area(rho, m, target)
+        self.assertLessEqual(abs(report["matchedArea"]-target), report["areaTolerance"])
+        np.testing.assert_array_equal(rho, original)
+        passive = ~m.design.reshape(m.ny, m.nx)
+        np.testing.assert_array_equal(matched[passive], rho[passive])
+        with self.assertRaises(ValueError):
+            match_sharp_area(rho, m, 100)
+
+    def test_grid_change_cannot_be_hidden_by_one_improved_result(self):
+        def row(level, baseline, candidate):
+            return dict(level=level, baseline=dict(inletFlux=1, fluxWeightedPressureDrop=baseline),
+                        candidate=dict(inletFlux=1, fluxWeightedPressureDrop=candidate))
+        self.assertFalse(assess([row(6, 10, 8)])["meshRobustImprovementObserved"])
+        unstable = assess([row(6, 10, 8), row(7, 11, 10.5)])
+        self.assertFalse(unstable["meshRobustImprovementObserved"])
+        stable = assess([row(6, 10, 8), row(7, 9.9, 7.9)])
+        self.assertTrue(stable["meshRobustImprovementObserved"])
+        self.assertFalse(stable["physicalAccuracyQualified"])
+        incomplete = assess([row(6, 10, 8), row(7, 9.9, 7.9), dict(level=8, baseline=None)])
+        self.assertFalse(incomplete["meshRobustImprovementObserved"])
+        self.assertEqual(incomplete["unpairedLevels"], [8])
+        unequal = row(6, 10, 8)
+        unequal["candidate"]["inletFlux"] = .5
+        with self.assertRaises(ValueError):
+            assess([unequal])
 
 
 if __name__ == "__main__":

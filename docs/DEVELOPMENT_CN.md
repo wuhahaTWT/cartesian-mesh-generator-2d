@@ -191,7 +191,23 @@ outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs
 
 上述流动显式采用速度尺度 `.02`、运动黏度 `1`，按端口宽度算名义 Reynolds 数约 `.00333`；入口保持同形抛物线，出口改为原生压力出口。`1e-8` 是这两例为了通过既有独立方程审计所用的原生代数停止控制，未修改产品默认值或审计门。这一步证明提取几何能被原生网格/求解链接受；固体阻力、出口条件及离散格式均改变，不能把多孔分析的目标下降直接写成真实壁面 CFD 性能提升。`render_native_flow.py` 直接绘制接受网格多边形与原生 CSV，保留全部区域并记录源哈希。
 
-10 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入，以及预算与失败状态保存。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；没有做网格收敛、跨平台或通用物理精度验收。
+### 公平的真实壁面对照
+
+`compare_sharp_designs.py` 对比最终候选与 `reference-geometricSeed.npz`。等密度体积不保证等提取面积，因此默认先量取候选的实际面积，核对不超预算，再仅对基准内部密度施加标量偏移，通过二分匹配轮廓面积；候选原轮廓及两边被动端口区域均不改。这是明确记录的设计提取操作，不是修图、平滑用户 XY 或删格过门。`--area-target budget` 可显式选择把两边都投影到面积上限，产生的形状必须重新接受原生检查。
+
+每一档分辨率都对两边使用相同入口积分流量、压力出口、物性及数值控制，计算 `sum(p_in Q_in)-sum(p_out Q_out)` 与其除以入口流量得到的运动学压降。这里的 `p` 是 `p/rho`，压降单位 m²/s²；功率量按密度及单位厚度归一化，不能直接写成瓦数或商业泵效率。基准与候选都要通过网格、原生收敛、独立方程审计；失败及不等流量不能变成有效排名。
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case bend --nx 72 --ny 48 --volume 0.3 --alpha-max 1000000 --iterations 50 100 250 --no-plot --output outputs/topology/bend-high-resistance
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/compare_sharp_designs.py outputs/topology/bend-high-resistance --output outputs/topology/bend-sharp-comparison --levels 6 7 --small-alpha 0.25
+outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs/topology/bend-sharp-comparison/baseline-level-7 outputs/topology/bend-sharp-comparison/candidate-level-7 --labels Baseline Optimized --shared-scales --output outputs/topology/bend-sharp-comparison.png
+```
+
+`--small-alpha` 是原生已有的小单元守恒聚合触发比例，默认 .1；.25 不改变质量门、物理面积或边界折线，案例两边必须相同。它改变离散网格，因此结果和计时须绑定该参数。原 .1 配置有粗候选质量拒绝，记录保留；不能把不同配置最有利的几档拼成“同设置网格收敛”。工具默认会逐档计算完整成对结果，不复用不明来源的旧解。
+
+`assessment` 分别保存每档改善、两方案最后两档压降变化，以及“细网格压降差减去上述变化之和”。只有全部指定档位成对有效、最后两档排名一致且该差为正，才置 `meshRobustImprovementObserved=true`。这只是保守的**已观察敏感性**标记，不是误差估计器、概率置信度或网格无关性证明。当前两档改善 2.81% / 2.39%，流道连通数始终为一，不能声称已实证发现新的分叉拓扑。
+
+12 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入、预算与失败状态保存，以及真实面积匹配、端口保护和排名判断。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；成对网格实验也不是跨平台或通用物理精度验收。
 
 方法背景见 [Stokes 拓扑优化示例](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)。[已有 Cut-cell 流体拓扑优化研究](https://doi.org/10.1016/j.camwa.2021.06.002) 说明功能组合本身不构成原创性。后续可研究“多孔优化的候选排序能否在真实壁面 Cut-cell CFD 中保持，以及如何控制排序误差”；当前尚未完成该科研结论。
 

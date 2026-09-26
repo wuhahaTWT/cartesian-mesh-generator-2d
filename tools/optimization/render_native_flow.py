@@ -54,7 +54,7 @@ def load_case(directory):
     return polygons, speed, pressure, boundaries, sources, iterations
 
 
-def render(directories, output, labels=None):
+def render(directories, output, labels=None, shared_scales=False, title=None):
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLCONFIGDIR", str(ROOT/"outputs"/"topology-plot-cache"))
@@ -63,17 +63,24 @@ def render(directories, output, labels=None):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection, LineCollection
+    from matplotlib.colors import Normalize
     labels = labels or [path.name for path in directories]
     if len(labels) != len(directories):
         raise ValueError("provide one label per result directory")
+    datasets = [load_case(directory) for directory in directories]
+    norms = {}
+    if shared_scales:
+        for index in (1, 2):
+            values = np.concatenate([np.array(data[index]) for data in datasets])
+            norms[index] = Normalize(float(values.min()), float(values.max()))
     fig, axes = plt.subplots(len(directories), 3, figsize=(14, 3.9*len(directories)),
                              squeeze=False, constrained_layout=True)
     records = []
-    for row, (directory, label) in enumerate(zip(directories, labels)):
-        polygons, speed, pressure, boundary, sources, iterations = load_case(directory)
+    for row, (data, label) in enumerate(zip(datasets, labels)):
+        polygons, speed, pressure, boundary, sources, iterations = data
         points = np.concatenate([np.array(polygon) for polygon in polygons])
         xmin, ymin = points.min(axis=0); xmax, ymax = points.max(axis=0)
-        for col, (values, title, cmap, unit) in enumerate([
+        for col, (values, panel_title, cmap, unit) in enumerate([
                 (None, f"{len(polygons):,} real Cut-cells", None, None),
                 (speed, "Native velocity magnitude", "viridis", "m/s"),
                 (pressure, "Native kinematic pressure", "coolwarm", "m²/s²")]):
@@ -81,21 +88,22 @@ def render(directories, output, labels=None):
             if values is None:
                 collection = PolyCollection(polygons, facecolors="#edf4f8", edgecolors="#536b7b", linewidths=.23)
             else:
-                collection = PolyCollection(polygons, array=np.array(values), cmap=cmap, edgecolors="none")
+                collection = PolyCollection(polygons, array=np.array(values), cmap=cmap,
+                                            norm=norms.get(col), edgecolors="none")
                 fig.colorbar(collection, ax=axis, shrink=.72, label=unit)
             axis.add_collection(collection)
             axis.add_collection(LineCollection(boundary, colors="#192c3f", linewidths=.6))
             axis.set(xlim=(xmin-.02, xmax+.02), ylim=(min(0,ymin)-.02, max(1,ymax)+.02),
-                     aspect="equal", xlabel="x (m)", ylabel="y (m)", title=f"{label} | {title}")
+                     aspect="equal", xlabel="x (m)", ylabel="y (m)", title=f"{label} | {panel_title}")
             axis.set_facecolor("#e5e8eb")
         records.append(dict(label=label, cells=len(polygons), sources=sources, iterations=iterations))
-    fig.suptitle("CartMesh2D | Density topology → extracted wall → native Cut-cell CFD\n"
+    fig.suptitle((title or "CartMesh2D | Density topology → extracted wall → native Cut-cell CFD")+"\n"
                  "All extracted regions retained; low-Re flow converged and independently audited; physical accuracy not qualified",
                  fontsize=12)
     fig.savefig(output, dpi=160)
     plt.close(fig)
     output.with_suffix(output.suffix+".json").write_text(json.dumps(
-        dict(schema="cartmesh2d-topology-native-preview-v1", cases=records,
+        dict(schema="cartmesh2d-topology-native-preview-v1", cases=records, sharedColorScales=shared_scales,
              fieldRendering="One constant scalar per actual native polygon; no interpolated or fabricated field."),
         indent=2, allow_nan=False)+"\n")
     return output
@@ -106,5 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("directories", nargs="+", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--labels", nargs="+")
+    parser.add_argument("--shared-scales", action="store_true", help="use common velocity/pressure color ranges for design comparisons")
+    parser.add_argument("--title")
     args = parser.parse_args()
-    print(render(args.directories, args.output, args.labels))
+    print(render(args.directories, args.output, args.labels, args.shared_scales, args.title))
