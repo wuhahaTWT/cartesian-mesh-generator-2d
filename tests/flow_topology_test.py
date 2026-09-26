@@ -8,6 +8,7 @@ development tolerance, not a grid-convergence or industrial qualification.
 from contextlib import redirect_stdout
 import io
 import json
+import csv
 from dataclasses import asdict
 import shlex
 import sys
@@ -24,8 +25,9 @@ from topology_artifacts import contours, port_connectivity, signed_area
 from optimize_flow import parser, run, stationarity
 from optimize_flow import initial_design, reference_design
 from compare_sharp_designs import assess, match_sharp_area, reuse_baseline
-from verify_extracted_flow import parabolic_boundaries
-from render_connectivity_study import grouped_sensitivity
+from verify_extracted_flow import parabolic_boundaries, native
+from render_connectivity_study import grouped_sensitivity, analytic_reference_comparison
+from continue_native_flow import continuation_command, initial_files
 
 
 class FlowTopologyTest(unittest.TestCase):
@@ -321,8 +323,64 @@ class FlowTopologyTest(unittest.TestCase):
         self.assertEqual(first["acceptedPairsOnly"]["levels"], [6, 7])
         self.assertTrue(first["acceptedPairsOnly"]["assessment"]["meshRobustImprovementObserved"])
         self.assertFalse(data[1]["acceptedPairsOnly"]["assessment"]["meshRobustImprovementObserved"])
+        old, new = report(6, .25, 6), report(7, .25, 5.9)
+        old["nativeEvidence"] = dict(baseline=dict(executables={"/old/solver":"old-binary"}))
+        new["nativeEvidence"] = dict(baseline=dict(executables={"/new/solver":"new-binary"}))
+        self.assertEqual(len(grouped_sensitivity([old, new])), 2)
         with self.assertRaisesRegex(ValueError, "duplicate grid"):
             grouped_sensitivity([report(6, .25, 6), report(6, .25, 5)])
+
+    def test_analytic_reference_is_separate_and_rejects_changed_throughput(self):
+        def row(level, drop):
+            return dict(level=level, baseline=None,
+                        candidate=dict(inletFlux=1, fluxWeightedPressureDrop=drop) if drop else None)
+        rows = [row(5, None), row(6, 6), row(7, 5.9)]
+        result = analytic_reference_comparison(rows, 10, 1)
+        self.assertTrue(result["rankingStableOnAvailableCandidateGrids"])
+        self.assertFalse(assess(rows)["meshRobustImprovementObserved"])
+        self.assertEqual(assess(rows)["unpairedLevels"], [5, 6, 7])
+        self.assertFalse(analytic_reference_comparison(rows[:2], 10, 1)["rankingStableOnAvailableCandidateGrids"])
+        self.assertFalse(analytic_reference_comparison([row(6, 6), row(7, 9)], 10, 1)["rankingStableOnAvailableCandidateGrids"])
+        with self.assertRaisesRegex(ValueError, "throughput"):
+            analytic_reference_comparison(rows, 10, 2)
+
+    def test_same_mesh_continuation_preserves_equations_and_rejects_restart(self):
+        source, target = Path('/tmp/topology-source'), Path('/tmp/topology-next')
+        command = ['solver', '--mesh', str(source/'mesh.solver.cm2d'), '--boundary', str(source/'flow.boundaries'),
+                   '--output', str(source/'flow'), '--case', 'custom', '--nu', '1', '--speed', '.02',
+                   '--tolerance', '1e-8', '--velocity-relaxation', '.2', '--pressure-corrections', '1',
+                   '--steady-acceleration', 'anderson', '--max-iterations', '4000']
+        continued = continuation_command(command, source, target, 2000)
+        for flag in ('--nu', '--speed', '--tolerance', '--velocity-relaxation', '--pressure-corrections', '--steady-acceleration'):
+            self.assertEqual(continued[continued.index(flag)+1], command[command.index(flag)+1])
+        self.assertEqual(continued[continued.index('--initial-flux')+1], str(target/'initial-flux.csv'))
+        self.assertEqual(command[command.index('--max-iterations')+1], '4000')
+        for extra in (['--restart','checkpoint'],['--time-step','.01'],['--initial-guess','somewhere.csv']):
+            with self.assertRaisesRegex(ValueError, 'not a single cold steady run'):
+                continuation_command(command+extra, source, target, 2000)
+        resumed = continuation_command(command+['--initial-guess','recorded.csv','--initial-flux','recorded-flux.csv'],
+                                       source,target,2000,recorded_continuation=True)
+        self.assertEqual(resumed.count('--initial-guess'),1)
+        self.assertNotIn('recorded.csv',resumed)
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            continuation_command(command, Path('/tmp/different-mesh'), target, 2000)
+
+    def test_full_export_is_converted_to_native_initial_schema(self):
+        # Actual failure: the CLI rejects the full exported cell CSV header.
+        # Repack columns, without interpolating or rounding any field values.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            mesh = native.Mesh(root/'mesh', ((0.,0.),(1.,0.),(1.,1.),(0.,1.)),
+                               tuple(native.Edge(i,i,(i+1)%4,0,-1,1) for i in range(4)),
+                               (native.Cell(0,1.,(0,1,2,3),(0,1,2,3)),), (0,)*7)
+            (root/'flow.cells.csv').write_text('cell,x,y,area,u,v,p,speed\n0,0.5,0.5,1,1.2345678901234567e-3,0,5.2,0.001\n')
+            (root/'flow.faces.csv').write_text('face,owner,neighbour,flux,pressure\n'+''.join(f'{i},0,-1,0,5.2\n' for i in range(4)))
+            initial_files(mesh, root, root)
+            self.assertEqual((root/'initial.csv').read_text(), 'cell,x,y,u,v,p\n0,0.5,0.5,1.2345678901234567e-3,0,5.2\n')
+            with (root/'initial-flux.csv').open() as stream:
+                faces = list(csv.DictReader(stream))
+            self.assertEqual([(float(r['x']),float(r['y'])) for r in faces], [(0.5,0),(1,0.5),(0.5,1),(0,0.5)])
+            self.assertTrue(all(r['flux']=='0' for r in faces))
 
 
 if __name__ == "__main__":

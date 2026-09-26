@@ -905,7 +905,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-0/level-6/independent-flow.json",
                       "sha256": "d3518cf06d510cb2ca622cdc1ea2641285ccde84d1f0ba5776196d57f033d5f9"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-0/level-6/openfoam/solver_quality.json",
+                      "sha256": "33171068695da04366de7df0125baf888b95d569444cb4465077ba8a9e67e5d2"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.0452009408975247e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857212,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.0036458333333333204,
+                      "min_face_weight": 0.4374999999999966,
+                      "min_volume_ratio": 0.777777777777768,
+                      "min_compactness": 0.2791972840325768
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -1049,7 +1080,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-1/level-6/independent-flow.json",
                       "sha256": "81c2783a7b72b344c6c8235ba878e85bd8b5ae19f7930111bd28d0f5df8f3c83"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-1/level-6/openfoam/solver_quality.json",
+                      "sha256": "3570112dca3f6faf0d9f4e5cb28995e6ba30d65fb6a1618b58713bfb24ab9bfa"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.04518315325756e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857418,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.003645833333333237,
+                      "min_face_weight": 0.43749999999998834,
+                      "min_volume_ratio": 0.7777777777777595,
+                      "min_compactness": 0.2791972840325723
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -1275,7 +1337,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/independent-flow.json",
                       "sha256": "e15d70820d98e1a6fb1665e57001f65371887646df144cd7e625b0ceeec4590f"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/openfoam/solver_quality.json",
+                      "sha256": "cb2a6bd2b8fa4216c7fa71d4c9ed786dfb4e26c7199e0fab0ddfa540ad33a82b"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 4.163336342344336e-16,
+                      "max_boundary_skewness": 8.526512829121142e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000034,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333333426,
+                      "min_face_weight": 0.35714285714285604,
+                      "min_volume_ratio": 0.5555555555555574,
+                      "min_compactness": 0.21115514579893543
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -1419,7 +1512,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/independent-flow.json",
                       "sha256": "74221d5e2cf65e263f5c64bc824b4fa2c73fc614a0a1dead9898907d4396be3e"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/openfoam/solver_quality.json",
+                      "sha256": "d052edf07cb63f88e4447eff8ea771187343711b40b241f8b3739bad18342e4f"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 2.6645352591003852e-14,
+                      "max_boundary_skewness": 8.526512829121687e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000853,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333332593,
+                      "min_face_weight": 0.3571428571428354,
+                      "min_volume_ratio": 0.5555555555555217,
+                      "min_compactness": 0.21115514579892386
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -1981,7 +2105,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-0/level-6/independent-flow.json",
                       "sha256": "d3518cf06d510cb2ca622cdc1ea2641285ccde84d1f0ba5776196d57f033d5f9"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-0/level-6/openfoam/solver_quality.json",
+                      "sha256": "33171068695da04366de7df0125baf888b95d569444cb4465077ba8a9e67e5d2"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.0452009408975247e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857212,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.0036458333333333204,
+                      "min_face_weight": 0.4374999999999966,
+                      "min_volume_ratio": 0.777777777777768,
+                      "min_compactness": 0.2791972840325768
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -2125,7 +2280,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-1/level-6/independent-flow.json",
                       "sha256": "81c2783a7b72b344c6c8235ba878e85bd8b5ae19f7930111bd28d0f5df8f3c83"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-6/component-1/level-6/openfoam/solver_quality.json",
+                      "sha256": "3570112dca3f6faf0d9f4e5cb28995e6ba30d65fb6a1618b58713bfb24ab9bfa"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.04518315325756e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857418,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.003645833333333237,
+                      "min_face_weight": 0.43749999999998834,
+                      "min_volume_ratio": 0.7777777777777595,
+                      "min_compactness": 0.2791972840325723
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -2351,7 +2537,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/independent-flow.json",
                       "sha256": "e15d70820d98e1a6fb1665e57001f65371887646df144cd7e625b0ceeec4590f"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/openfoam/solver_quality.json",
+                      "sha256": "cb2a6bd2b8fa4216c7fa71d4c9ed786dfb4e26c7199e0fab0ddfa540ad33a82b"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 4.163336342344336e-16,
+                      "max_boundary_skewness": 8.526512829121142e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000034,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333333426,
+                      "min_face_weight": 0.35714285714285604,
+                      "min_volume_ratio": 0.5555555555555574,
+                      "min_compactness": 0.21115514579893543
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -2495,7 +2712,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/independent-flow.json",
                       "sha256": "74221d5e2cf65e263f5c64bc824b4fa2c73fc614a0a1dead9898907d4396be3e"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/openfoam/solver_quality.json",
+                      "sha256": "d052edf07cb63f88e4447eff8ea771187343711b40b241f8b3739bad18342e4f"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 2.6645352591003852e-14,
+                      "max_boundary_skewness": 8.526512829121687e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000853,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333332593,
+                      "min_face_weight": 0.3571428571428354,
+                      "min_volume_ratio": 0.5555555555555217,
+                      "min_compactness": 0.21115514579892386
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -2641,7 +2889,38 @@
                   "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/independent-flow.json",
                   "sha256": "9b27b0994b4ade0bd635037018d7c0c2337e18f6600413c54672e2973b5474c8"
                 }
-              ]
+              ],
+              "acceptedQuality": {
+                "source": {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/openfoam/solver_quality.json",
+                  "sha256": "99ab052a97f8cf7c6f9bf44f8c6f85da5eb93e5213388bc441bd3f966ebc0b46"
+                },
+                "valid": true,
+                "policy": {
+                  "max_non_orthogonality_deg": 70,
+                  "max_internal_skewness": 4,
+                  "max_boundary_skewness": 4,
+                  "max_concavity_deg": 80,
+                  "max_cell_aspect": 1000,
+                  "min_interior_angle_deg": 0.5,
+                  "min_face_length": 1.01e-10,
+                  "min_face_weight": 0.05,
+                  "min_volume_ratio": 0.01
+                },
+                "metrics": {
+                  "max_non_orthogonality_deg": 68.55280395152066,
+                  "max_internal_skewness": 1.526481668118273,
+                  "max_boundary_skewness": 3.8429723217920806,
+                  "max_concavity_deg": 2.3254984676094637,
+                  "max_cell_aspect": 36.957968582852025,
+                  "min_interior_angle_deg": 3.209494662621886,
+                  "min_face_length": 5.719876375484507e-05,
+                  "min_face_weight": 0.05044837888503493,
+                  "min_volume_ratio": 0.013099756930460466,
+                  "min_compactness": 0.06778932433776995
+                },
+                "issueCount": 0
+              }
             }
           ]
         }
@@ -3067,7 +3346,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-coarse/baseline-level-5/component-0/level-5/independent-flow.json",
                       "sha256": "d3215a9d1e8ffde0f4ba9e26fd2626067c079b37f81e4ecf1abfad72526c618c"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-coarse/baseline-level-5/component-0/level-5/openfoam/solver_quality.json",
+                      "sha256": "4614f2d81626297aba5bd477090126091e41d64d3f2ea5af64bcb43778da74a5"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 6.661338147750941e-15,
+                      "max_boundary_skewness": 1.3114509478384662e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 9.000000000000027,
+                      "min_interior_angle_deg": 89.99999999999694,
+                      "min_face_length": 0.008333333333333331,
+                      "min_face_weight": 0.47058823529411614,
+                      "min_volume_ratio": 0.8888888888888864,
+                      "min_compactness": 0.31028075591010223
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -3211,7 +3521,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-coarse/baseline-level-5/component-1/level-5/independent-flow.json",
                       "sha256": "c1cb9cd2b398da6a31e851854a6decdd5c044b4ffa0549e7f648a00b0286ded5"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-coarse/baseline-level-5/component-1/level-5/openfoam/solver_quality.json",
+                      "sha256": "c3e759ee3c1b5216cecc91450c26fdf7095799b3e718029b442371f39371fc81"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 6.661338147750941e-15,
+                      "max_boundary_skewness": 1.4155343563970978e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 9.000000000000085,
+                      "min_interior_angle_deg": 89.99999999999694,
+                      "min_face_length": 0.008333333333333193,
+                      "min_face_weight": 0.4705882352941132,
+                      "min_volume_ratio": 0.8888888888888747,
+                      "min_compactness": 0.3102807559101005
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -3759,7 +4100,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-6/component-0/level-6/independent-flow.json",
                       "sha256": "9cc396a43a4a7c657451f6d251248181fe1c91addf4390f742930ed9640c7451"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-6/component-0/level-6/openfoam/solver_quality.json",
+                      "sha256": "33171068695da04366de7df0125baf888b95d569444cb4465077ba8a9e67e5d2"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.0452009408975247e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857212,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.0036458333333333204,
+                      "min_face_weight": 0.4374999999999966,
+                      "min_volume_ratio": 0.777777777777768,
+                      "min_compactness": 0.2791972840325768
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -3903,7 +4275,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-6/component-1/level-6/independent-flow.json",
                       "sha256": "ce63fcb1c87a0c20819aae235827a84ed45eefc6d4fe2c4c4e9dc9b1ce49b709"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-6/component-1/level-6/openfoam/solver_quality.json",
+                      "sha256": "3570112dca3f6faf0d9f4e5cb28995e6ba30d65fb6a1618b58713bfb24ab9bfa"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 1.3322676295501837e-14,
+                      "max_boundary_skewness": 3.04518315325756e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 10.142857142857418,
+                      "min_interior_angle_deg": 89.99999999999302,
+                      "min_face_length": 0.003645833333333237,
+                      "min_face_weight": 0.43749999999998834,
+                      "min_volume_ratio": 0.7777777777777595,
+                      "min_compactness": 0.2791972840325723
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -4023,7 +4426,38 @@
                   "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/candidate-level-6/level-6/flow.boundaries",
                   "sha256": "4adaa5f041355b5967837002a0cecdcb9a5743df51fcd5a5389bf450e8e22586"
                 }
-              ]
+              ],
+              "acceptedQuality": {
+                "source": {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/candidate-level-6/level-6/openfoam/solver_quality.json",
+                  "sha256": "37573976206bcb303e71926562db5b90bf685f84f3c0ae61ea46e6cd4c818074"
+                },
+                "valid": true,
+                "policy": {
+                  "max_non_orthogonality_deg": 70,
+                  "max_internal_skewness": 4,
+                  "max_boundary_skewness": 4,
+                  "max_concavity_deg": 80,
+                  "max_cell_aspect": 1000,
+                  "min_interior_angle_deg": 0.5,
+                  "min_face_length": 1.01e-10,
+                  "min_face_weight": 0.05,
+                  "min_volume_ratio": 0.01
+                },
+                "metrics": {
+                  "max_non_orthogonality_deg": 69.84273588436643,
+                  "max_internal_skewness": 2.1249983613826275,
+                  "max_boundary_skewness": 3.9875010311588888,
+                  "max_concavity_deg": 7.547717281612364,
+                  "max_cell_aspect": 32.60489363032721,
+                  "min_interior_angle_deg": 4.088690773393066,
+                  "min_face_length": 5.719876375484507e-05,
+                  "min_face_weight": 0.050092153080938166,
+                  "min_volume_ratio": 0.010688763866340503,
+                  "min_compactness": 0.09560413612079371
+                },
+                "issueCount": 0
+              }
             }
           ]
         },
@@ -4173,7 +4607,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-7/component-0/level-7/independent-flow.json",
                       "sha256": "c8dd14332ec88d21e660cd7d5d0504c9e30cbae567972a904ed630a21f7485d6"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-7/component-0/level-7/openfoam/solver_quality.json",
+                      "sha256": "cb2a6bd2b8fa4216c7fa71d4c9ed786dfb4e26c7199e0fab0ddfa540ad33a82b"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 4.163336342344336e-16,
+                      "max_boundary_skewness": 8.526512829121142e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000034,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333333426,
+                      "min_face_weight": 0.35714285714285604,
+                      "min_volume_ratio": 0.5555555555555574,
+                      "min_compactness": 0.21115514579893543
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             },
@@ -4317,7 +4782,38 @@
                       "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-7/component-1/level-7/independent-flow.json",
                       "sha256": "b7996fb3d3ee40b991fdb7160049cd1f6c25bada8916e5f6e6b9ffb96ad9892b"
                     }
-                  ]
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/baseline-level-7/component-1/level-7/openfoam/solver_quality.json",
+                      "sha256": "d052edf07cb63f88e4447eff8ea771187343711b40b241f8b3739bad18342e4f"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 2.6645352591003852e-14,
+                      "max_boundary_skewness": 8.526512829121687e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 13.800000000000853,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0013020833333332593,
+                      "min_face_weight": 0.3571428571428354,
+                      "min_volume_ratio": 0.5555555555555217,
+                      "min_compactness": 0.21115514579892386
+                    },
+                    "issueCount": 0
+                  }
                 }
               ]
             }
@@ -4463,7 +4959,825 @@
                   "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/candidate-level-7/level-7/independent-flow.json",
                   "sha256": "ae9089354200f539977c23caae6fe80a0d4b1603567a71620f285619c24c74f3"
                 }
+              ],
+              "acceptedQuality": {
+                "source": {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-final/candidate-level-7/level-7/openfoam/solver_quality.json",
+                  "sha256": "948c2e19d1e1b3b5eef060d728f05104849bcdd8eb967732eeab9d21c9c1f442"
+                },
+                "valid": true,
+                "policy": {
+                  "max_non_orthogonality_deg": 70,
+                  "max_internal_skewness": 4,
+                  "max_boundary_skewness": 4,
+                  "max_concavity_deg": 80,
+                  "max_cell_aspect": 1000,
+                  "min_interior_angle_deg": 0.5,
+                  "min_face_length": 1.01e-10,
+                  "min_face_weight": 0.05,
+                  "min_volume_ratio": 0.01
+                },
+                "metrics": {
+                  "max_non_orthogonality_deg": 69.28658821066503,
+                  "max_internal_skewness": 2.1747748396126387,
+                  "max_boundary_skewness": 3.857204433717105,
+                  "max_concavity_deg": 13.352220291207885,
+                  "max_cell_aspect": 120.52146637446236,
+                  "min_interior_angle_deg": 1.0007909345742572,
+                  "min_face_length": 5.719876375484507e-05,
+                  "min_face_weight": 0.05243272545658139,
+                  "min_volume_ratio": 0.01917065918828678,
+                  "min_compactness": 0.026028868613023923
+                },
+                "issueCount": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "problem": {
+        "nx": 96,
+        "ny": 48,
+        "width": 2.0,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 25000.0,
+        "volume_fraction": 0.3333333333333333,
+        "filter_radius": 0.06,
+        "port_width": 0.16666666666666666,
+        "case": "double-pipe",
+        "linear_residual_limit": 1e-08
+      },
+      "controls": {
+        "levels": [
+          8
+        ],
+        "speed": 0.02,
+        "nu": 1,
+        "tolerance": 1e-08,
+        "iterations": 4000,
+        "smallAlpha": 0.25
+      },
+      "areaTarget": "budget",
+      "targetArea": 0.6666666666666666,
+      "status": "incomplete-native-comparison",
+      "assessment": {
+        "paired": [],
+        "unpairedLevels": [
+          8
+        ],
+        "meshRobustImprovementObserved": false,
+        "physicalAccuracyQualified": false,
+        "status": "incomplete-native-comparison"
+      },
+      "rows": [
+        {
+          "level": 8,
+          "baseline": null,
+          "baselineOutput": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8",
+          "candidate": null,
+          "candidateOutput": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8"
+        }
+      ],
+      "issues": [],
+      "designs": {
+        "baseline": {
+          "schema": "cartmesh2d-sharp-design-v1",
+          "label": "baseline",
+          "problem": {
+            "nx": 96,
+            "ny": 48,
+            "width": 2.0,
+            "height": 1,
+            "viscosity": 1.0,
+            "alpha_max": 25000.0,
+            "volume_fraction": 0.3333333333333333,
+            "filter_radius": 0.06,
+            "port_width": 0.16666666666666666,
+            "case": "double-pipe",
+            "linear_residual_limit": 1e-08
+          },
+          "sourceField": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-hybrid-low-resistance/reference-geometricSeed.npz",
+          "sourceFieldSha256": "513cf832914c0947ec63352b2098595a687159a28058e4b6d34df2abb9d50f80",
+          "extractionOnly": true,
+          "matching": {
+            "targetArea": 0.6666666666666666,
+            "originalArea": 0.6666666666666666,
+            "matchedArea": 0.6666666666666666,
+            "interiorDensityOffset": 0.0,
+            "areaTolerance": 6.766666666666666e-10,
+            "passiveCellsUnchanged": true
+          },
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 2,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.33333333333333337,
+                "boundarySha256": "0e64d091139579be64e7a7c867e425e5e131f364633b6cb2af0b57e9a8803e72"
+              },
+              {
+                "file": "fluid-component-1.xy",
+                "holes": 0,
+                "fluidArea": 0.33333333333333326,
+                "boundarySha256": "bbebff5b3a365564c74cfd03ea3b1166bdb387125b86918b2c522b501ad38487"
+              }
+            ],
+            "vertices": 424,
+            "fluidArea": 0.6666666666666666,
+            "designArea": 2.0,
+            "extractedVolumeFraction": 0.3333333333333333,
+            "sourceFieldSha256": "846fc7f6df0db407b9dffe91e616a6226bb00eeb32a33acd409b5f2fc2204322",
+            "boundarySha256": "7c1fc02df29dd84f9590a0bece38adb3dadca9bdead0753d5ec9ae13aa261d24",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.0,
+                  0.16666666666666663,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.16666666666666652,
+                  0.0,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "outlet_0"
+                ],
+                [
+                  "inlet_1",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  false
+                ],
+                [
+                  false,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          }
+        },
+        "candidate": {
+          "schema": "cartmesh2d-sharp-design-v1",
+          "label": "candidate",
+          "problem": {
+            "nx": 96,
+            "ny": 48,
+            "width": 2.0,
+            "height": 1,
+            "viscosity": 1.0,
+            "alpha_max": 25000.0,
+            "volume_fraction": 0.3333333333333333,
+            "filter_radius": 0.06,
+            "port_width": 0.16666666666666666,
+            "case": "double-pipe",
+            "linear_residual_limit": 1e-08
+          },
+          "sourceField": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-hybrid-low-resistance/final.npz",
+          "sourceFieldSha256": "9c71d03bb8a499d75cb586288e5733f7e8ed8e7acbaa6907deb2d250c5273ad1",
+          "extractionOnly": true,
+          "matching": {
+            "targetArea": 0.6666666666666666,
+            "originalArea": 0.6658146277857322,
+            "matchedArea": 0.6666666667454166,
+            "interiorDensityOffset": 0.005779191851615906,
+            "areaTolerance": 6.766666666666666e-10,
+            "passiveCellsUnchanged": true
+          },
+          "extraction": {
+            "schema": "cartmesh2d-topology-extraction-v1",
+            "threshold": 0.5,
+            "field": "filtered projected rho at cell centres with edge extension",
+            "fluidRegion": "interior",
+            "components": 1,
+            "holes": 0,
+            "regions": [
+              {
+                "file": "fluid-component-0.xy",
+                "holes": 0,
+                "fluidArea": 0.6666666667454166,
+                "boundarySha256": "2ee21a55517587cb67cb2be822161e815d31855ac35dc3007eea833bd7f3954d"
+              }
+            ],
+            "vertices": 338,
+            "fluidArea": 0.6666666667454166,
+            "designArea": 2.0,
+            "extractedVolumeFraction": 0.3333333333727083,
+            "sourceFieldSha256": "a396001358c128f52a3a09c13d8406f565d9d1942387f0c3347cbdc7dc34c43f",
+            "boundarySha256": "2ee21a55517587cb67cb2be822161e815d31855ac35dc3007eea833bd7f3954d",
+            "topologyQualified": false,
+            "solverQualityQualified": false,
+            "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required.",
+            "portConnectivity": {
+              "ports": [
+                "inlet_0",
+                "inlet_1",
+                "outlet_0",
+                "outlet_1"
+              ],
+              "coverageLengths": [
+                [
+                  0.16666666666666663,
+                  0.16666666666666652,
+                  0.16666666666666663,
+                  0.16666666666666652
+                ]
+              ],
+              "allPortsCovered": true,
+              "componentPorts": [
+                [
+                  "inlet_0",
+                  "inlet_1",
+                  "outlet_0",
+                  "outlet_1"
+                ]
+              ],
+              "inletToOutletReachability": [
+                [
+                  true,
+                  true
+                ],
+                [
+                  true,
+                  true
+                ]
+              ],
+              "meaning": "Paths within the same fluid component; not measured flow splitting or molecular mixing."
+            }
+          }
+        }
+      },
+      "sourceHashes": {
+        "compare_sharp_designs.py": "7c26adfffe9c5197bd15cc908641fda0e6b5c76bca55857d2c21f63fb3c60040",
+        "verify_extracted_flow.py": "f0c7743ce7f0785c169c49756676c75895c86144986dc11119aface2d68498d6"
+      },
+      "source": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/summary.json",
+        "sha256": "39590d313b417743a1e061a61d9f64ee5ad955ae1c32b86cfa3441a4a963a213"
+      },
+      "analyticBaseline": {
+        "kinematicPressureDrop": 11.520000000000001,
+        "formula": "8 * nu * peak_inlet_speed * length / channel_width**2",
+        "scope": "Fully developed planar Poiseuille solution; actual baseline rectangles verified. No candidate accuracy claim or new acceptance threshold.",
+        "observedErrors": []
+      },
+      "nativeEvidence": {
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8": {
+          "source": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/summary.json",
+            "sha256": "9c6a6c37f1fbc03739a04b8f4baad49de2e12c86540b26061d8eccc364777cf6"
+          },
+          "components": [
+            {
+              "meshAccepted": true,
+              "independentTopologyPassed": true,
+              "solverQualityPassed": true,
+              "nativeFlowConverged": false,
+              "independentFlowPassed": false,
+              "externalCheckMesh": "not-run",
+              "executables": {
+                "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+                "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+              },
+              "source": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/summary.json",
+                "sha256": "9925161f0be36fb04953d45860f33fcc7d3a6408318fb67e73518e1525ae81cc"
+              },
+              "cases": [
+                {
+                  "level": 8,
+                  "status": "flow-not-converged",
+                  "mesh": {
+                    "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh.solver.cm2d",
+                    "sha256": "ed35c8139356d653d6a3d08c138036e977c3da796d8619c7ac39d8d5980ccd5e",
+                    "cells": 34080,
+                    "faces": 68542,
+                    "area": 0.3333333333333334,
+                    "expectedArea": 0.33333333333333337,
+                    "areaError": 5.551115123125783e-17,
+                    "independentIssues": []
+                  },
+                  "runs": [
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline/fluid-component-0.xy",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh",
+                        "8",
+                        "0.03333333333333333",
+                        "0.25",
+                        "interior",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/openfoam",
+                        "8",
+                        "0"
+                      ],
+                      "returncode": 0,
+                      "timedOut": false,
+                      "elapsedSeconds": 3.9388604999985546,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh-run.stderr.log"
+                    },
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                        "--mesh",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh.solver.cm2d",
+                        "--case",
+                        "duct",
+                        "--speed",
+                        "0.02",
+                        "--export-boundaries",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/template.boundaries"
+                      ],
+                      "returncode": 0,
+                      "timedOut": false,
+                      "elapsedSeconds": 0.4709357079700567,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/boundary-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/boundary-run.stderr.log"
+                    },
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                        "--mesh",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/mesh.solver.cm2d",
+                        "--case",
+                        "custom",
+                        "--boundary",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow.boundaries",
+                        "--output",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow",
+                        "--nu",
+                        "1",
+                        "--speed",
+                        "0.02",
+                        "--max-iterations",
+                        "4000",
+                        "--tolerance",
+                        "1e-08",
+                        "--velocity-relaxation",
+                        "0.2",
+                        "--pressure-corrections",
+                        "1",
+                        "--steady-acceleration",
+                        "anderson",
+                        "--linear-policy",
+                        "adaptive",
+                        "--pressure-preconditioner",
+                        "aggregation"
+                      ],
+                      "returncode": 2,
+                      "timedOut": false,
+                      "elapsedSeconds": 586.3251427499927,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow-run.stderr.log"
+                    }
+                  ],
+                  "flow": {
+                    "iterations": 4000,
+                    "converged": false,
+                    "tolerance": 1e-08
+                  },
+                  "flowSources": [
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow.json",
+                      "sha256": "b80eaff1a12d3dff0ca6b99e9c25235914750edaa32586fe4f5ba2a4b06d2870"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow.cells.csv",
+                      "sha256": "a585b6078089fc53ab5126b12fccfeda08b1205ceb737be7cd68427dbc2648c9"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow.faces.csv",
+                      "sha256": "c07d23804c60c5d2e00fcac50992c7b6d486f223d2faca214ac2d88889550f21"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/flow.boundaries",
+                      "sha256": "3c7ad5ac53ebf46a11312b29850a0f485a3f299ccba1f8701946a154d6624417"
+                    }
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/openfoam/solver_quality.json",
+                      "sha256": "cc3f66c32e2dd43bbb29ae85e15df21c2cadc97e28e74a81a645aaaa95bcfe38"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 4.163336342344336e-16,
+                      "max_boundary_skewness": 8.526512829121142e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 8.111111111111343,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.001171874999999989,
+                      "min_face_weight": 0.47368421052630627,
+                      "min_volume_ratio": 0.899999999999965,
+                      "min_compactness": 0.3395679055109169
+                    },
+                    "issueCount": 0
+                  },
+                  "diagnosticOnlyAudit": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-0/level-8/independent-flow-diagnostic.json",
+                      "sha256": "2340f923ab0cbdb2db74509f754b1c40c0cb79d3565df9049cac6238961eaf68"
+                    },
+                    "valid": false,
+                    "issues": [
+                      "native JSON status is not converged",
+                      "native solver did not report convergence"
+                    ],
+                    "momentumResidual": 1.1773902419537331e-05,
+                    "scope": "Extra diagnostic of a rejected run; cannot replace native convergence or qualify a design comparison."
+                  }
+                }
               ]
+            },
+            {
+              "meshAccepted": true,
+              "independentTopologyPassed": true,
+              "solverQualityPassed": true,
+              "nativeFlowConverged": false,
+              "independentFlowPassed": false,
+              "externalCheckMesh": "not-run",
+              "executables": {
+                "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+                "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+              },
+              "source": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/summary.json",
+                "sha256": "9bdac6207b2685de5083a0881264037165d055d18ce710b75e9bac94b9997a19"
+              },
+              "cases": [
+                {
+                  "level": 8,
+                  "status": "flow-not-converged",
+                  "mesh": {
+                    "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh.solver.cm2d",
+                    "sha256": "ac34f91983e6cb5297693f3b3b1b98509ad8715cc5e22105e2f7515f1e07087a",
+                    "cells": 34080,
+                    "faces": 68542,
+                    "area": 0.3333333333333333,
+                    "expectedArea": 0.33333333333333326,
+                    "areaError": 5.551115123125783e-17,
+                    "independentIssues": []
+                  },
+                  "runs": [
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline/fluid-component-1.xy",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh",
+                        "8",
+                        "0.03333333333333333",
+                        "0.25",
+                        "interior",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/openfoam",
+                        "8",
+                        "0"
+                      ],
+                      "returncode": 0,
+                      "timedOut": false,
+                      "elapsedSeconds": 3.1015369999804534,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh-run.stderr.log"
+                    },
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                        "--mesh",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh.solver.cm2d",
+                        "--case",
+                        "duct",
+                        "--speed",
+                        "0.02",
+                        "--export-boundaries",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/template.boundaries"
+                      ],
+                      "returncode": 0,
+                      "timedOut": false,
+                      "elapsedSeconds": 0.3925963750225492,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/boundary-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/boundary-run.stderr.log"
+                    },
+                    {
+                      "command": [
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                        "--mesh",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/mesh.solver.cm2d",
+                        "--case",
+                        "custom",
+                        "--boundary",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow.boundaries",
+                        "--output",
+                        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow",
+                        "--nu",
+                        "1",
+                        "--speed",
+                        "0.02",
+                        "--max-iterations",
+                        "4000",
+                        "--tolerance",
+                        "1e-08",
+                        "--velocity-relaxation",
+                        "0.2",
+                        "--pressure-corrections",
+                        "1",
+                        "--steady-acceleration",
+                        "anderson",
+                        "--linear-policy",
+                        "adaptive",
+                        "--pressure-preconditioner",
+                        "aggregation"
+                      ],
+                      "returncode": 2,
+                      "timedOut": false,
+                      "elapsedSeconds": 578.5409133339999,
+                      "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow-run.stdout.log",
+                      "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow-run.stderr.log"
+                    }
+                  ],
+                  "flow": {
+                    "iterations": 4000,
+                    "converged": false,
+                    "tolerance": 1e-08
+                  },
+                  "flowSources": [
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow.json",
+                      "sha256": "bb0cc70c249c582fac140a14da1884b0be68e89fc51720478321e59111c2237a"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow.cells.csv",
+                      "sha256": "a6188689ffc565446a07999746325524bd932d2e61033d7a07a67edff58d30fa"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow.faces.csv",
+                      "sha256": "00fcb5e12138550e4baa83defa0b1963b500c5b7e5378c96c8f1b3fc14542c85"
+                    },
+                    {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/flow.boundaries",
+                      "sha256": "6af8e3bec1389d8ba215a67a184f17938f6b1ff0ac7d51adbb098a2b85d76e81"
+                    }
+                  ],
+                  "acceptedQuality": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/openfoam/solver_quality.json",
+                      "sha256": "9032e6c081c013876f71c4851beab8c82d1b57f69ce3c5f0136d06968f1e10c6"
+                    },
+                    "valid": true,
+                    "policy": {
+                      "max_non_orthogonality_deg": 70,
+                      "max_internal_skewness": 4,
+                      "max_boundary_skewness": 4,
+                      "max_concavity_deg": 80,
+                      "max_cell_aspect": 1000,
+                      "min_interior_angle_deg": 0.5,
+                      "min_face_length": 1.01e-10,
+                      "min_face_weight": 0.05,
+                      "min_volume_ratio": 0.01
+                    },
+                    "metrics": {
+                      "max_non_orthogonality_deg": 1.2074182697257333e-06,
+                      "max_internal_skewness": 6.661338147750941e-15,
+                      "max_boundary_skewness": 8.526512829121687e-13,
+                      "max_concavity_deg": 0,
+                      "max_cell_aspect": 8.11111111111168,
+                      "min_interior_angle_deg": 89.99999999998046,
+                      "min_face_length": 0.0011718749999999334,
+                      "min_face_weight": 0.4736842105262496,
+                      "min_volume_ratio": 0.8999999999999224,
+                      "min_compactness": 0.3395679055109049
+                    },
+                    "issueCount": 0
+                  },
+                  "diagnosticOnlyAudit": {
+                    "source": {
+                      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8/component-1/level-8/independent-flow-diagnostic.json",
+                      "sha256": "f2feb7facf0f5da02a44f23b9afe0e37c0354576f6713e652558cb2ea31ea958"
+                    },
+                    "valid": false,
+                    "issues": [
+                      "native JSON status is not converged",
+                      "native solver did not report convergence"
+                    ],
+                    "momentumResidual": 1.1773491040448878e-05,
+                    "scope": "Extra diagnostic of a rejected run; cannot replace native convergence or qualify a design comparison."
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8": {
+          "meshAccepted": true,
+          "independentTopologyPassed": true,
+          "solverQualityPassed": true,
+          "nativeFlowConverged": false,
+          "independentFlowPassed": false,
+          "externalCheckMesh": "not-run",
+          "executables": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          },
+          "source": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/summary.json",
+            "sha256": "73cb6d9f044999cc27ccf562f3b6de0cd1ce25cbbfc66fdb08591ad1159a4217"
+          },
+          "cases": [
+            {
+              "level": 8,
+              "status": "flow-not-converged",
+              "mesh": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                "sha256": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+                "cells": 26141,
+                "faces": 52845,
+                "area": 0.666666666745417,
+                "expectedArea": 0.6666666667454166,
+                "areaError": 3.3306690738754696e-16,
+                "independentIssues": []
+              },
+              "runs": [
+                {
+                  "command": [
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate/fluid.xy",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh",
+                    "8",
+                    "0.03333333333333333",
+                    "0.25",
+                    "interior",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/openfoam",
+                    "8",
+                    "0"
+                  ],
+                  "returncode": 0,
+                  "timedOut": false,
+                  "elapsedSeconds": 25.943931874993723,
+                  "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stdout.log",
+                  "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stderr.log"
+                },
+                {
+                  "command": [
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                    "--mesh",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                    "--case",
+                    "duct",
+                    "--speed",
+                    "0.02",
+                    "--export-boundaries",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/template.boundaries"
+                  ],
+                  "returncode": 0,
+                  "timedOut": false,
+                  "elapsedSeconds": 0.24255345802521333,
+                  "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stdout.log",
+                  "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stderr.log"
+                },
+                {
+                  "command": [
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                    "--mesh",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                    "--case",
+                    "custom",
+                    "--boundary",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries",
+                    "--output",
+                    "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow",
+                    "--nu",
+                    "1",
+                    "--speed",
+                    "0.02",
+                    "--max-iterations",
+                    "4000",
+                    "--tolerance",
+                    "1e-08",
+                    "--velocity-relaxation",
+                    "0.2",
+                    "--pressure-corrections",
+                    "1",
+                    "--steady-acceleration",
+                    "anderson",
+                    "--linear-policy",
+                    "adaptive",
+                    "--pressure-preconditioner",
+                    "aggregation"
+                  ],
+                  "returncode": 2,
+                  "timedOut": false,
+                  "elapsedSeconds": 335.54424074996496,
+                  "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stdout.log",
+                  "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stderr.log"
+                }
+              ],
+              "flow": {
+                "iterations": 4000,
+                "converged": false,
+                "tolerance": 1e-08
+              },
+              "flowSources": [
+                {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.json",
+                  "sha256": "9c0c3e1a265f45ce29ff17a8d913a6ea0bc173d889837acf9ff7282fb26e2c52"
+                },
+                {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.cells.csv",
+                  "sha256": "03c21b334b8dbc1a190ed9cbb287dfd056b92388a3f607d6d7a234da07a2cfe8"
+                },
+                {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.faces.csv",
+                  "sha256": "82f4d3f25c8fcc22ec9114cb4adb3ddfaa5a10dfba0b060d76b650039a19e752"
+                },
+                {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries",
+                  "sha256": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b"
+                }
+              ],
+              "acceptedQuality": {
+                "source": {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/openfoam/solver_quality.json",
+                  "sha256": "4fa43930e9b1df268f2c24d63a30fddac1ca163e2989b61161bd2a79ba8fafb9"
+                },
+                "valid": true,
+                "policy": {
+                  "max_non_orthogonality_deg": 70,
+                  "max_internal_skewness": 4,
+                  "max_boundary_skewness": 4,
+                  "max_concavity_deg": 80,
+                  "max_cell_aspect": 1000,
+                  "min_interior_angle_deg": 0.5,
+                  "min_face_length": 1.01e-10,
+                  "min_face_weight": 0.05,
+                  "min_volume_ratio": 0.01
+                },
+                "metrics": {
+                  "max_non_orthogonality_deg": 67.89052579368496,
+                  "max_internal_skewness": 1.5902516893789704,
+                  "max_boundary_skewness": 3.877762155222319,
+                  "max_concavity_deg": 44.20397713166318,
+                  "max_cell_aspect": 65.68484561579847,
+                  "min_interior_angle_deg": 1.7957200348175557,
+                  "min_face_length": 1.5000339838145316e-05,
+                  "min_face_weight": 0.050926735310565185,
+                  "min_volume_ratio": 0.010419073191737807,
+                  "min_compactness": 0.0474287960965014
+                },
+                "issueCount": 0
+              },
+              "diagnosticOnlyAudit": {
+                "source": {
+                  "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/independent-flow-diagnostic.json",
+                  "sha256": "47f3682b84b4b26de447e53eecda7c4ddad4009b9e33106502bb31163d83e150"
+                },
+                "valid": false,
+                "issues": [
+                  "native JSON status is not converged",
+                  "native solver did not report convergence"
+                ],
+                "momentumResidual": 7.755505142109118e-08,
+                "scope": "Extra diagnostic of a rejected run; cannot replace native convergence or qualify a design comparison."
+              }
             }
           ]
         }
@@ -4520,7 +5834,38 @@
               "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level6/level-6/mesh-run.stdout.log",
               "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level6/level-6/mesh-run.stderr.log"
             }
-          ]
+          ],
+          "acceptedQuality": {
+            "source": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level6/level-6/openfoam/solver_quality.json",
+              "sha256": "37573976206bcb303e71926562db5b90bf685f84f3c0ae61ea46e6cd4c818074"
+            },
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 69.84273588436643,
+              "max_internal_skewness": 2.1249983613826275,
+              "max_boundary_skewness": 3.9875010311588888,
+              "max_concavity_deg": 7.547717281612364,
+              "max_cell_aspect": 32.60489363032721,
+              "min_interior_angle_deg": 4.088690773393066,
+              "min_face_length": 5.719876375484507e-05,
+              "min_face_weight": 0.050092153080938166,
+              "min_volume_ratio": 0.010688763866340503,
+              "min_compactness": 0.09560413612079371
+            },
+            "issueCount": 0
+          }
         }
       ]
     },
@@ -4573,7 +5918,38 @@
               "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level7/level-7/mesh-run.stdout.log",
               "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level7/level-7/mesh-run.stderr.log"
             }
-          ]
+          ],
+          "acceptedQuality": {
+            "source": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-alpha40-level7/level-7/openfoam/solver_quality.json",
+              "sha256": "948c2e19d1e1b3b5eef060d728f05104849bcdd8eb967732eeab9d21c9c1f442"
+            },
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 69.28658821066503,
+              "max_internal_skewness": 2.1747748396126387,
+              "max_boundary_skewness": 3.857204433717105,
+              "max_concavity_deg": 13.352220291207885,
+              "max_cell_aspect": 120.52146637446236,
+              "min_interior_angle_deg": 1.0007909345742572,
+              "min_face_length": 5.719876375484507e-05,
+              "min_face_weight": 0.05243272545658139,
+              "min_volume_ratio": 0.01917065918828678,
+              "min_compactness": 0.026028868613023923
+            },
+            "issueCount": 0
+          }
         }
       ]
     },
@@ -4626,7 +6002,38 @@
               "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-level8/level-8/mesh-run.stdout.log",
               "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-level8/level-8/mesh-run.stderr.log"
             }
-          ]
+          ],
+          "acceptedQuality": {
+            "source": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-mesh-level8/level-8/openfoam/solver_quality.json",
+              "sha256": "4fa43930e9b1df268f2c24d63a30fddac1ca163e2989b61161bd2a79ba8fafb9"
+            },
+            "valid": true,
+            "policy": {
+              "max_non_orthogonality_deg": 70,
+              "max_internal_skewness": 4,
+              "max_boundary_skewness": 4,
+              "max_concavity_deg": 80,
+              "max_cell_aspect": 1000,
+              "min_interior_angle_deg": 0.5,
+              "min_face_length": 1.01e-10,
+              "min_face_weight": 0.05,
+              "min_volume_ratio": 0.01
+            },
+            "metrics": {
+              "max_non_orthogonality_deg": 67.89052579368496,
+              "max_internal_skewness": 1.5902516893789704,
+              "max_boundary_skewness": 3.877762155222319,
+              "max_concavity_deg": 44.20397713166318,
+              "max_cell_aspect": 65.68484561579847,
+              "min_interior_angle_deg": 1.7957200348175557,
+              "min_face_length": 1.5000339838145316e-05,
+              "min_face_weight": 0.050926735310565185,
+              "min_volume_ratio": 0.010419073191737807,
+              "min_compactness": 0.0474287960965014
+            },
+            "issueCount": 0
+          }
         }
       ]
     }
@@ -4648,6 +6055,16 @@
           "iterations": 4000,
           "smallAlpha": 0.25
         },
+        "executables": [
+          [
+            "cartmesh2d_cli",
+            "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9"
+          ],
+          [
+            "cartmesh2d_flow_cli",
+            "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          ]
+        ],
         "boundaries": {
           "baseline": "7c1fc02df29dd84f9590a0bece38adb3dadca9bdead0753d5ec9ae13aa261d24",
           "candidate": "b758828b63c89b78e27e5529a85bf75b3e8f9b4f5fc9005c388c4adf4e836fbc"
@@ -4729,6 +6146,14 @@
           "status": "incomplete-native-comparison"
         },
         "scope": "Sensitivity among fully audited pairs only; rejected grids remain in allAttemptedGrids and invalidate any all-grid success claim."
+      },
+      "analyticReferenceComparison": {
+        "referencePressureDrop": 11.520000000000001,
+        "throughput": 0.0044444444444444444,
+        "candidates": [],
+        "rankingStableOnAvailableCandidateGrids": false,
+        "physicalAccuracyQualified": false,
+        "scope": "Analytic planar Poiseuille reference versus converged/audited native candidates; not a native paired-grid comparison. All native baseline failures remain rejected."
       }
     },
     {
@@ -4740,6 +6165,16 @@
           "iterations": 4000,
           "smallAlpha": 0.25
         },
+        "executables": [
+          [
+            "cartmesh2d_cli",
+            "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9"
+          ],
+          [
+            "cartmesh2d_flow_cli",
+            "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          ]
+        ],
         "boundaries": {
           "baseline": "7c1fc02df29dd84f9590a0bece38adb3dadca9bdead0753d5ec9ae13aa261d24",
           "candidate": "2ee21a55517587cb67cb2be822161e815d31855ac35dc3007eea833bd7f3954d"
@@ -4840,6 +6275,13 @@
             ]
           },
           "candidateOutput": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7"
+        },
+        {
+          "level": 8,
+          "baseline": null,
+          "baselineOutput": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/baseline-level-8",
+          "candidate": null,
+          "candidateOutput": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8"
         }
       ],
       "sources": [
@@ -4850,6 +6292,10 @@
         {
           "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-coarse/summary.json",
           "sha256": "ba774e736aaa6a1b6dbb7690e79f40fa4da4a6ae2f091bb9d9eef57e26cedacb"
+        },
+        {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/summary.json",
+          "sha256": "39590d313b417743a1e061a61d9f64ee5ad955ae1c32b86cfa3441a4a963a213"
         }
       ],
       "allAttemptedGrids": {
@@ -4864,7 +6310,8 @@
         ],
         "unpairedLevels": [
           5,
-          6
+          6,
+          8
         ],
         "meshRobustImprovementObserved": false,
         "physicalAccuracyQualified": false,
@@ -4890,6 +6337,20 @@
           "status": "single-grid-comparison"
         },
         "scope": "Sensitivity among fully audited pairs only; rejected grids remain in allAttemptedGrids and invalidate any all-grid success claim."
+      },
+      "analyticReferenceComparison": {
+        "referencePressureDrop": 11.520000000000001,
+        "throughput": 0.0044444444444444444,
+        "candidates": [
+          {
+            "level": 7,
+            "candidateDrop": 6.156147443009957,
+            "relativeReduction": 0.4656122011276079
+          }
+        ],
+        "rankingStableOnAvailableCandidateGrids": false,
+        "physicalAccuracyQualified": false,
+        "scope": "Analytic planar Poiseuille reference versus converged/audited native candidates; not a native paired-grid comparison. All native baseline failures remain rejected."
       }
     },
     {
@@ -4901,6 +6362,16 @@
           "iterations": 4000,
           "smallAlpha": 0.4
         },
+        "executables": [
+          [
+            "cartmesh2d_cli",
+            "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9"
+          ],
+          [
+            "cartmesh2d_flow_cli",
+            "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          ]
+        ],
         "boundaries": {
           "baseline": "7c1fc02df29dd84f9590a0bece38adb3dadca9bdead0753d5ec9ae13aa261d24",
           "candidate": "2ee21a55517587cb67cb2be822161e815d31855ac35dc3007eea833bd7f3954d"
@@ -5011,7 +6482,794 @@
           "status": "single-grid-comparison"
         },
         "scope": "Sensitivity among fully audited pairs only; rejected grids remain in allAttemptedGrids and invalidate any all-grid success claim."
+      },
+      "analyticReferenceComparison": {
+        "referencePressureDrop": 11.520000000000001,
+        "throughput": 0.0044444444444444444,
+        "candidates": [
+          {
+            "level": 7,
+            "candidateDrop": 6.161744099964878,
+            "relativeReduction": 0.4651263802113822
+          }
+        ],
+        "rankingStableOnAvailableCandidateGrids": false,
+        "physicalAccuracyQualified": false,
+        "scope": "Analytic planar Poiseuille reference versus converged/audited native candidates; not a native paired-grid comparison. All native baseline failures remain rejected."
       }
+    }
+  ],
+  "continuedCandidates": [
+    {
+      "nativeEvidence": {
+        "meshAccepted": true,
+        "independentTopologyPassed": true,
+        "solverQualityPassed": true,
+        "nativeFlowConverged": false,
+        "independentFlowPassed": false,
+        "externalCheckMesh": "not-run",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "source": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/summary.json",
+          "sha256": "4d0968f24d00a40eb86dd22be85c7e9905a0e1b7eab39f0408f137718ce662a9"
+        },
+        "cases": [
+          {
+            "level": 8,
+            "status": "flow-not-converged",
+            "mesh": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/mesh.solver.cm2d",
+              "sha256": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+              "cells": 26141,
+              "faces": 52845,
+              "area": 0.666666666745417,
+              "expectedArea": 0.6666666667454166,
+              "areaError": 3.3306690738754696e-16,
+              "independentIssues": []
+            },
+            "runs": [
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate/fluid.xy",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh",
+                  "8",
+                  "0.03333333333333333",
+                  "0.25",
+                  "interior",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/openfoam",
+                  "8",
+                  "0"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 25.943931874993723,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "duct",
+                  "--speed",
+                  "0.02",
+                  "--export-boundaries",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/template.boundaries"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 0.24255345802521333,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "4000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation"
+                ],
+                "returncode": 2,
+                "timedOut": false,
+                "elapsedSeconds": 335.54424074996496,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "2000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation",
+                  "--initial-guess",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.cells.csv",
+                  "--initial-flux",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.faces.csv"
+                ],
+                "returncode": 1,
+                "timedOut": false,
+                "elapsedSeconds": 0.2409656250383705,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/flow-continuation-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/flow-continuation-run.stderr.log"
+              }
+            ],
+            "flow": {
+              "iterations": null,
+              "converged": null,
+              "tolerance": null
+            },
+            "flowSources": [
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/flow.boundaries",
+                "sha256": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b"
+              }
+            ],
+            "acceptedQuality": {
+              "source": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued/level-8/openfoam/solver_quality.json",
+                "sha256": "4fa43930e9b1df268f2c24d63a30fddac1ca163e2989b61161bd2a79ba8fafb9"
+              },
+              "valid": true,
+              "policy": {
+                "max_non_orthogonality_deg": 70,
+                "max_internal_skewness": 4,
+                "max_boundary_skewness": 4,
+                "max_concavity_deg": 80,
+                "max_cell_aspect": 1000,
+                "min_interior_angle_deg": 0.5,
+                "min_face_length": 1.01e-10,
+                "min_face_weight": 0.05,
+                "min_volume_ratio": 0.01
+              },
+              "metrics": {
+                "max_non_orthogonality_deg": 67.89052579368496,
+                "max_internal_skewness": 1.5902516893789704,
+                "max_boundary_skewness": 3.877762155222319,
+                "max_concavity_deg": 44.20397713166318,
+                "max_cell_aspect": 65.68484561579847,
+                "min_interior_angle_deg": 1.7957200348175557,
+                "min_face_length": 1.5000339838145316e-05,
+                "min_face_weight": 0.050926735310565185,
+                "min_volume_ratio": 0.010419073191737807,
+                "min_compactness": 0.0474287960965014
+              },
+              "issueCount": 0
+            }
+          }
+        ],
+        "steadyContinuation": {
+          "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8",
+          "inputs": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/summary.json": "73cb6d9f044999cc27ccf562f3b6de0cd1ce25cbbfc66fdb08591ad1159a4217",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.cells.csv": "03c21b334b8dbc1a190ed9cbb287dfd056b92388a3f607d6d7a234da07a2cfe8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.faces.csv": "82f4d3f25c8fcc22ec9114cb4adb3ddfaa5a10dfba0b060d76b650039a19e752",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.json": "9c0c3e1a265f45ce29ff17a8d913a6ea0bc173d889837acf9ff7282fb26e2c52",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/optimization/continue_native_flow.py": "8516ddead3f9dafa923f642a2fc1f8e76d3321242f8f516657293b67209ee461"
+          },
+          "previousIterations": 4000,
+          "additionalIterationBudget": 2000,
+          "meshRegenerated": false,
+          "physicalCheckpoint": false,
+          "sourceAuditIssues": [
+            "native JSON status is not converged",
+            "native solver did not report convergence"
+          ],
+          "note": "Additional bounded steady iterations on an identical verified topology mesh.\n\nAn iteration-limit field is only an initial guess, never a physical checkpoint.\nThe original failure is preserved. The new result must converge and pass a fresh\nindependent audit; all original equation, boundary and stopping controls remain.\n",
+          "totalIterations": 4000
+        }
+      },
+      "accepted": false
+    },
+    {
+      "nativeEvidence": {
+        "meshAccepted": true,
+        "independentTopologyPassed": true,
+        "solverQualityPassed": true,
+        "nativeFlowConverged": false,
+        "independentFlowPassed": false,
+        "externalCheckMesh": "not-run",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "source": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/summary.json",
+          "sha256": "9966955226d41221c09065f3df920ea722c74a8eb9c487b654329542bf1588f8"
+        },
+        "cases": [
+          {
+            "level": 8,
+            "status": "flow-not-converged",
+            "mesh": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/mesh.solver.cm2d",
+              "sha256": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+              "cells": 26141,
+              "faces": 52845,
+              "area": 0.666666666745417,
+              "expectedArea": 0.6666666667454166,
+              "areaError": 3.3306690738754696e-16,
+              "independentIssues": []
+            },
+            "runs": [
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate/fluid.xy",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh",
+                  "8",
+                  "0.03333333333333333",
+                  "0.25",
+                  "interior",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/openfoam",
+                  "8",
+                  "0"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 25.943931874993723,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "duct",
+                  "--speed",
+                  "0.02",
+                  "--export-boundaries",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/template.boundaries"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 0.24255345802521333,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "4000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation"
+                ],
+                "returncode": 2,
+                "timedOut": false,
+                "elapsedSeconds": 335.54424074996496,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "2000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation",
+                  "--initial-guess",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial.csv",
+                  "--initial-flux",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial-flux.csv"
+                ],
+                "returncode": 2,
+                "timedOut": false,
+                "elapsedSeconds": 69.95910050004022,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow-continuation-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow-continuation-run.stderr.log"
+              }
+            ],
+            "flow": {
+              "iterations": 2000,
+              "converged": false,
+              "tolerance": 1e-08
+            },
+            "flowSources": [
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.json",
+                "sha256": "f2d8605fc1a9b657e411ea8ba9dbcae381b1097b353c1b38cdf47f151dbc2fb5"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.cells.csv",
+                "sha256": "60b892e66181bb363f09593bea456014222436f52fd8c7bafeaf63e41ef150c5"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.faces.csv",
+                "sha256": "dfe9da1b87d8e8bd14e7cc66b3bed3d5ec9a0259fa892c7820b66cef828a3ab4"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.boundaries",
+                "sha256": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b"
+              }
+            ],
+            "acceptedQuality": {
+              "source": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/openfoam/solver_quality.json",
+                "sha256": "4fa43930e9b1df268f2c24d63a30fddac1ca163e2989b61161bd2a79ba8fafb9"
+              },
+              "valid": true,
+              "policy": {
+                "max_non_orthogonality_deg": 70,
+                "max_internal_skewness": 4,
+                "max_boundary_skewness": 4,
+                "max_concavity_deg": 80,
+                "max_cell_aspect": 1000,
+                "min_interior_angle_deg": 0.5,
+                "min_face_length": 1.01e-10,
+                "min_face_weight": 0.05,
+                "min_volume_ratio": 0.01
+              },
+              "metrics": {
+                "max_non_orthogonality_deg": 67.89052579368496,
+                "max_internal_skewness": 1.5902516893789704,
+                "max_boundary_skewness": 3.877762155222319,
+                "max_concavity_deg": 44.20397713166318,
+                "max_cell_aspect": 65.68484561579847,
+                "min_interior_angle_deg": 1.7957200348175557,
+                "min_face_length": 1.5000339838145316e-05,
+                "min_face_weight": 0.050926735310565185,
+                "min_volume_ratio": 0.010419073191737807,
+                "min_compactness": 0.0474287960965014
+              },
+              "issueCount": 0
+            }
+          }
+        ],
+        "steadyContinuation": {
+          "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8",
+          "inputs": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/summary.json": "73cb6d9f044999cc27ccf562f3b6de0cd1ce25cbbfc66fdb08591ad1159a4217",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.cells.csv": "03c21b334b8dbc1a190ed9cbb287dfd056b92388a3f607d6d7a234da07a2cfe8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.faces.csv": "82f4d3f25c8fcc22ec9114cb4adb3ddfaa5a10dfba0b060d76b650039a19e752",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.json": "9c0c3e1a265f45ce29ff17a8d913a6ea0bc173d889837acf9ff7282fb26e2c52",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/optimization/continue_native_flow.py": "da4ea1325a87e4ee25880e43ebd7a5f49baff19a716bbc0cf8c986515c5d1576",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/extract_steady_iterate.py": "18a042250412d3876586a334398fbd401bbba15eb27571cfbd29cf19d8ed978f"
+          },
+          "previousIterations": 4000,
+          "additionalIterationBudget": 2000,
+          "initialFiles": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial.csv": "1b415bc3b60c3e644582008200350945e67582a3fed28859255b955dd9c2063d",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial-flux.csv": "80ba5b814c7314b82479c752a60ff56c7938d885a915461cfb8777dbf50a0cce"
+          },
+          "meshRegenerated": false,
+          "physicalCheckpoint": false,
+          "sourceAuditIssues": [
+            "native JSON status is not converged",
+            "native solver did not report convergence"
+          ],
+          "note": "Additional bounded steady iterations on an identical verified topology mesh.\n\nAn iteration-limit field is only an initial guess, never a physical checkpoint.\nThe original failure is preserved. The new result must converge and pass a fresh\nindependent audit; all original equation, boundary and stopping controls remain.\n",
+          "totalIterations": 6000
+        }
+      },
+      "accepted": false
+    },
+    {
+      "nativeEvidence": {
+        "meshAccepted": true,
+        "independentTopologyPassed": true,
+        "solverQualityPassed": true,
+        "nativeFlowConverged": true,
+        "independentFlowPassed": true,
+        "externalCheckMesh": "not-run",
+        "executables": {
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+        },
+        "source": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/summary.json",
+          "sha256": "247e4efc78c0b4a4cf8a87c2b283cd751230afa5b9d565f0eba52013a7a64093"
+        },
+        "cases": [
+          {
+            "level": 8,
+            "status": "flow-audited",
+            "mesh": {
+              "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/mesh.solver.cm2d",
+              "sha256": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+              "cells": 26141,
+              "faces": 52845,
+              "area": 0.666666666745417,
+              "expectedArea": 0.6666666667454166,
+              "areaError": 3.3306690738754696e-16,
+              "independentIssues": []
+            },
+            "metrics": {
+              "inletFlux": 0.004444444444444452,
+              "outletFlux": 0.004444444444441462,
+              "pressurePower": 0.02745081012604181,
+              "fluxWeightedPressureDrop": 6.176432278359397,
+              "speed": 0.02,
+              "viscosity": 1,
+              "nominalReynolds": 0.003333333333333333
+            },
+            "independentFlowIssues": [],
+            "runs": [
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate/fluid.xy",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh",
+                  "8",
+                  "0.03333333333333333",
+                  "0.25",
+                  "interior",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/openfoam",
+                  "8",
+                  "0"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 25.943931874993723,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "duct",
+                  "--speed",
+                  "0.02",
+                  "--export-boundaries",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/template.boundaries"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 0.24255345802521333,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/boundary-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "4000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation"
+                ],
+                "returncode": 2,
+                "timedOut": false,
+                "elapsedSeconds": 335.54424074996496,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8/level-8/flow-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "2000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation",
+                  "--initial-guess",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial.csv",
+                  "--initial-flux",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/initial-flux.csv"
+                ],
+                "returncode": 2,
+                "timedOut": false,
+                "elapsedSeconds": 69.95910050004022,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow-continuation-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow-continuation-run.stderr.log"
+              },
+              {
+                "command": [
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli",
+                  "--mesh",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/mesh.solver.cm2d",
+                  "--case",
+                  "custom",
+                  "--boundary",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.boundaries",
+                  "--output",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow",
+                  "--nu",
+                  "1",
+                  "--speed",
+                  "0.02",
+                  "--max-iterations",
+                  "2000",
+                  "--tolerance",
+                  "1e-08",
+                  "--velocity-relaxation",
+                  "0.2",
+                  "--pressure-corrections",
+                  "1",
+                  "--steady-acceleration",
+                  "anderson",
+                  "--linear-policy",
+                  "adaptive",
+                  "--pressure-preconditioner",
+                  "aggregation",
+                  "--initial-guess",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/initial.csv",
+                  "--initial-flux",
+                  "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/initial-flux.csv"
+                ],
+                "returncode": 0,
+                "timedOut": false,
+                "elapsedSeconds": 42.55303787498269,
+                "stdout": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow-continuation-run.stdout.log",
+                "stderr": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow-continuation-run.stderr.log"
+              }
+            ],
+            "flow": {
+              "iterations": 1391,
+              "converged": true,
+              "tolerance": 1e-08
+            },
+            "flowSources": [
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.json",
+                "sha256": "00a07d399aa5149aadce9bce4173c73f3d67732cd689cbe3070d29208f39a563"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.cells.csv",
+                "sha256": "dab633191ec4ae885dc770ffddd91721e555e388c55c2fe61e508473b8af7ab0"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.faces.csv",
+                "sha256": "603c6902f61569748bb6348c9670b0d31f12a6764a4706acfdea5c0adfe8996e"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.boundaries",
+                "sha256": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b"
+              },
+              {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/independent-flow.json",
+                "sha256": "14cd309a5ef2dcf5d0e106949d7c40de2d63e2a9bf42ccd8c0f2ed31605535f4"
+              }
+            ],
+            "acceptedQuality": {
+              "source": {
+                "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/openfoam/solver_quality.json",
+                "sha256": "4fa43930e9b1df268f2c24d63a30fddac1ca163e2989b61161bd2a79ba8fafb9"
+              },
+              "valid": true,
+              "policy": {
+                "max_non_orthogonality_deg": 70,
+                "max_internal_skewness": 4,
+                "max_boundary_skewness": 4,
+                "max_concavity_deg": 80,
+                "max_cell_aspect": 1000,
+                "min_interior_angle_deg": 0.5,
+                "min_face_length": 1.01e-10,
+                "min_face_weight": 0.05,
+                "min_volume_ratio": 0.01
+              },
+              "metrics": {
+                "max_non_orthogonality_deg": 67.89052579368496,
+                "max_internal_skewness": 1.5902516893789704,
+                "max_boundary_skewness": 3.877762155222319,
+                "max_concavity_deg": 44.20397713166318,
+                "max_cell_aspect": 65.68484561579847,
+                "min_interior_angle_deg": 1.7957200348175557,
+                "min_face_length": 1.5000339838145316e-05,
+                "min_face_weight": 0.050926735310565185,
+                "min_volume_ratio": 0.010419073191737807,
+                "min_compactness": 0.0474287960965014
+              },
+              "issueCount": 0
+            }
+          }
+        ],
+        "steadyContinuation": {
+          "source": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified",
+          "inputs": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/summary.json": "9966955226d41221c09065f3df920ea722c74a8eb9c487b654329542bf1588f8",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/mesh.solver.cm2d": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.cells.csv": "60b892e66181bb363f09593bea456014222436f52fd8c7bafeaf63e41ef150c5",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.faces.csv": "dfe9da1b87d8e8bd14e7cc66b3bed3d5ec9a0259fa892c7820b66cef828a3ab4",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.json": "f2d8605fc1a9b657e411ea8ba9dbcae381b1097b353c1b38cdf47f151dbc2fb5",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-continued-verified/level-8/flow.boundaries": "1bb5aa7a5dbc8c774aa9d16aded517eddfef345d9640a827830799d43543649b",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/optimization/continue_native_flow.py": "0a64b058b902ad1c3e91e9a30f573ae6a40da7c03dff58a68b34f047e297e3f1",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/tools/verification/extract_steady_iterate.py": "18a042250412d3876586a334398fbd401bbba15eb27571cfbd29cf19d8ed978f"
+          },
+          "originalNativeDirectory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/candidate-level-8",
+          "previousIterations": 6000,
+          "additionalIterationBudget": 2000,
+          "initialFiles": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/initial.csv": "91781ba84e56a68e69a5d9c868a333d442a9a80e29eed71d02778fecbe012578",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/initial-flux.csv": "0c420c7829347b7d05a75ecd602e91ef0a4e5c9810f9f62228c07b69da9cce91"
+          },
+          "meshRegenerated": false,
+          "physicalCheckpoint": false,
+          "sourceAuditIssues": [
+            "native JSON status is not converged",
+            "native solver did not report convergence"
+          ],
+          "note": "Additional bounded steady iterations on an identical verified topology mesh.\n\nAn iteration-limit field is only an initial guess, never a physical checkpoint.\nThe original failure is preserved. The new result must converge and pass a fresh\nindependent audit; all original equation, boundary and stopping controls remain.\n",
+          "totalIterations": 7391
+        }
+      },
+      "accepted": true,
+      "metrics": {
+        "pressurePower": 0.02745081012604181,
+        "inletFlux": 0.004444444444444452,
+        "fluxWeightedPressureDrop": 6.176432278359397,
+        "cells": 26141,
+        "area": 0.666666666745417,
+        "iterations": [
+          7391
+        ],
+        "externalCheckMesh": [
+          "not-run"
+        ]
+      },
+      "sourceComparison": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-fine/summary.json",
+        "sha256": "39590d313b417743a1e061a61d9f64ee5ad955ae1c32b86cfa3441a4a963a213"
+      },
+      "analyticReferenceComparison": {
+        "referencePressureDrop": 11.520000000000001,
+        "throughput": 0.0044444444444444444,
+        "candidates": [
+          {
+            "level": 7,
+            "candidateDrop": 6.156147443009957,
+            "relativeReduction": 0.4656122011276079
+          },
+          {
+            "level": 8,
+            "candidateDrop": 6.176432278359397,
+            "relativeReduction": 0.46385136472574684
+          }
+        ],
+        "rankingStableOnAvailableCandidateGrids": true,
+        "physicalAccuracyQualified": false,
+        "scope": "Analytic planar Poiseuille reference versus converged/audited native candidates; not a native paired-grid comparison. All native baseline failures remain rejected.",
+        "observedCandidateGridChange": 0.02028483534943959,
+        "gainBeyondObservedChange": 5.323282886291165,
+        "interpretation": "Observed two-grid sensitivity only, not a rigorous error estimate or mesh-independence proof."
+      },
+      "scope": "Additional explicitly recorded iteration budget and same-mesh initial guess. Same equations/tolerance; not a cold-run cost comparison. Original native-pair failures remain unchanged."
     }
   ],
   "figure": {

@@ -98,7 +98,8 @@ def flow_metrics(report):
     return dict(pressurePower=power, inletFlux=flux, fluxWeightedPressureDrop=power/flux,
                 cells=sum(case["mesh"]["cells"] for case in cases),
                 area=sum(case["mesh"]["area"] for case in cases),
-                iterations=[case["flow"]["iterations"] for case in cases],
+                iterations=[leaf.get("steadyContinuation", {}).get("totalIterations", case["flow"]["iterations"])
+                            for leaf,case in zip(leaves,cases)],
                 externalCheckMesh=check)
 
 

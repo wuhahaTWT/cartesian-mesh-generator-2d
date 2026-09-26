@@ -207,7 +207,7 @@ outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs
 
 `assessment` 分别保存每档改善、两方案最后两档压降变化，以及“细网格压降差减去上述变化之和”。只有全部指定档位成对有效、最后两档排名一致且该差为正，才置 `meshRobustImprovementObserved=true`。这只是保守的**已观察敏感性**标记，不是误差估计器、概率置信度或网格无关性证明。此前弯道两档改善 2.81% / 2.39%，流道连通数始终为一；连接关系变化由下述双通道研究单独验证。
 
-18 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入、预算与失败状态保存，以及真实面积匹配、端口连通/人工端口拒绝、缓存混用拒绝和排名判断。敏感性汇总测试确保失败档位保留、不同聚合控制分开，不能拼成虚假的细化趋势。`tests/fixtures/topology_oc_stall.npz` 保留真实 OC 非下降失败时的设计变量与模型参数；测试重算流场，确认 OC 上升而梯度候选可行且下降，不依赖缓存的数值解。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；成对网格实验也不是跨平台或通用物理精度验收。
+21 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入、预算与失败状态保存，以及真实面积匹配、端口连通/人工端口拒绝、缓存混用拒绝和排名判断。敏感性汇总测试确保失败档位保留、不同聚合控制或二进制分开；解析参照不能改变原生失败标记，流量不符时拒绝比较。同网格继续迭代的测试保护原方程/停止控制、拒绝混用物理时间检查点，并覆盖原生导出 CSV 与初值 CSV 不同列格式的真实接口失败。`tests/fixtures/topology_oc_stall.npz` 保留真实 OC 非下降失败时的设计变量与模型参数；测试重算流场，确认 OC 上升而梯度候选可行且下降，不依赖缓存的数值解。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；成对网格实验也不是跨平台或通用物理精度验收。
 
 ### 连接关系与初值敏感性
 
@@ -223,7 +223,13 @@ outputs/topology-env/bin/python tools/optimization/render_connectivity_study.py 
 
 最后的命令保留所有提供的比较及失败网格证据，可用 `--comparisons` 追加其他已完成对照、`--mesh-probes` 记录只通过网格而未做流动的试验。`nativeSensitivity` 按几何及相同原生控制分组：`allAttemptedGrids` 包含失败档位，`acceptedPairsOnly` 仅给出明确列出的已审计配对敏感性；后者不能掩盖前者失败。图中不同颜色代表真实轮廓连通分量，不能当作流线或混合结果。当前数值与各分辨率的失败范围见 CURRENT_STATE 与证据 JSON；上述复现命令并不保证每一档网格或流动均通过。
 
-方法背景见 [Stokes 拓扑优化示例](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)。[已有 Cut-cell 流体拓扑优化研究](https://doi.org/10.1016/j.camwa.2021.06.002) 说明功能组合本身不构成原创性。后续可研究“多孔优化的候选排序能否在真实壁面 Cut-cell CFD 中保持，以及如何控制排序误差”；当前尚未完成该科研结论。
+仅在实际参考轮廓逐边核对为两条完整矩形管道时，报告增加解析 Poiseuille 压降 `8*nu*Umax*L/w²`。这是相同抛物线入口条件下的独立解析参照，未增加新的精度门。`analyticReferenceComparison` 只读取原生收敛且独立审计通过的候选，再核对总流量；它与原生成对网格比较分开，不能用解析值补填失败的原生基准。未收敛场可另存 `independent-flow-diagnostic.json` 用于方程重建诊断，该文件始终不授予 CFD 比较资格。
+
+`continue_native_flow.py <一个原生候选目录> --output <新目录> --iterations 2000 --timeout 300` 可对迭代预算失败的稳态单分量增加有界预算。它先核对网格与求解器哈希、原生模型和独立重建，再使用既有 `extract_steady_iterate.py` 提取同网格初值及 owner 方向面通量；复制同一网格/边界，保持原方程、物性、松弛和容差，最后重新验收。它不生成物理时间检查点，不把非有限场或其他重建错误当作可续数据；前一轮及其失败日志保留。已记录的继续计算允许串联，累计迭代数和输入哈希逐层保存。`render_connectivity_study.py --continued-candidates <目录...>` 单列这些有额外预算的结果，只与同几何、同原生设置的候选及解析基准比较；不会把原失败的成对行改成通过，也不用于宣称冷启动提速。
+
+方法背景见 [Stokes 拓扑优化示例](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)，其双管问题已经讨论了不同初始化/延续路径可能得到不同局部结果。[2021 年 Cut-cell 流体拓扑优化论文](https://www.sciencedirect.com/science/article/pii/S0898122121002406) 的摘要不仅介绍逐轮 Cut-cell 与伴随优化，也明确提取多孔设计的真实界面后重新计算以进行公平比较；所以“Cut-cell + 拓扑优化”和“提取后再验证”都不能直接作为本项目的原创点。[Brinkman 阻力参数研究预印本](https://arxiv.org/abs/2302.14156v2) 也研究了最大阻力与网格尺度、流动条件的关系，不能把参数敏感性本身当作新发现。
+
+本项目目前完成的是可复现的自身实现与诊断能力。可进一步检验的研究假设是：在固定验证预算下，依据候选间目标差、局部网格误差和可解性选择细化区域，能否比统一加密更少误选设计。这仍是待提出具体算法、做多案例和独立对照的假设；当前单例收益、测试通过和失败记录都不等于已经获得原创方法或通用可靠性证明。
 
 ## 验证与证据
 

@@ -1,0 +1,37 @@
+{
+  "schema": "cartmesh2d-topology-native-preview-v1",
+  "cases": [
+    {
+      "label": "Level 7: 2,748 iterations",
+      "cells": 6747,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "7303c2fa4e4417cb312993e66695fd56219b28ce0b1476abe63230000b5903fd",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/flow.cells.csv",
+          "fieldSha256": "87d3dfddd71073159327890476571c2b6af00a31b47c9a344e3c0a8a41ded4f7"
+        }
+      ],
+      "iterations": [
+        2748
+      ]
+    },
+    {
+      "label": "Level 8: 7,391 total iterations",
+      "cells": 26141,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/mesh.solver.cm2d",
+          "meshSha256": "6692782571535a33e4b177a2ade31c9f662d4fc3e85e13142c711c9158b4fdaf",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-candidate-final/level-8/flow.cells.csv",
+          "fieldSha256": "dab633191ec4ae885dc770ffddd91721e555e388c55c2fe61e508473b8af7ab0"
+        }
+      ],
+      "iterations": [
+        7391
+      ]
+    }
+  ],
+  "sharedColorScales": true,
+  "fieldRendering": "One constant scalar per actual native polygon; no interpolated or fabricated field."
+}

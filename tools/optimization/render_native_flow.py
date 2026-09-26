@@ -50,7 +50,7 @@ def load_case(directory):
         sources.append(dict(mesh=str(path), meshSha256=leaf["acceptedMesh"]["sha256"],
                             field=str(flow), fieldSha256=hashlib.sha256(flow.read_bytes()).hexdigest()))
         accepted = next(case for case in leaf["cases"] if case["status"] == "flow-audited")
-        iterations.append(accepted["flow"]["iterations"])
+        iterations.append(leaf.get("steadyContinuation", {}).get("totalIterations", accepted["flow"]["iterations"]))
     return polygons, speed, pressure, boundaries, sources, iterations
 
 

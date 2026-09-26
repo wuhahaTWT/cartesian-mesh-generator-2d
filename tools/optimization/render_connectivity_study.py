@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 
 from topology_artifacts import contours, port_connectivity, signed_area
-from compare_sharp_designs import assess
+from compare_sharp_designs import assess, flow_metrics
 
 
 def sha(path):
@@ -33,6 +33,8 @@ def native_record(directory):
     result = {key:report[key] for key in ("meshAccepted", "independentTopologyPassed", "solverQualityPassed",
                "nativeFlowConverged", "independentFlowPassed", "externalCheckMesh", "executables")}
     result.update(source=record(path), cases=[])
+    if "steadyContinuation" in report:
+        result["steadyContinuation"] = report["steadyContinuation"]
     for case in report["cases"]:
         entry = {key:case[key] for key in ("level", "status", "mesh", "metrics", "independentFlowIssues") if key in case}
         entry["runs"] = case["runs"]
@@ -46,6 +48,17 @@ def native_record(directory):
             quality = json.loads(failed.read_text())
             entry["failedQuality"] = dict(source=record(failed), valid=quality["valid"],
                     policy=quality["policy"], metrics=quality["metrics"], issueCount=quality["issue_count"])
+        accepted_quality = directory/f"level-{case['level']}"/"openfoam/solver_quality.json"
+        if accepted_quality.exists():
+            quality = json.loads(accepted_quality.read_text())
+            entry["acceptedQuality"] = dict(source=record(accepted_quality), valid=quality["valid"],
+                    policy=quality["policy"], metrics=quality["metrics"], issueCount=quality["issue_count"])
+        diagnostic = directory/f"level-{case['level']}"/"independent-flow-diagnostic.json"
+        if diagnostic.exists():
+            audit = json.loads(diagnostic.read_text())
+            entry["diagnosticOnlyAudit"] = dict(source=record(diagnostic), valid=audit["valid"], issues=audit["issues"],
+                    momentumResidual=audit.get("momentumAudit", {}).get("cellResidual", {}).get("maxNormalized"),
+                    scope="Extra diagnostic of a rejected run; cannot replace native convergence or qualify a design comparison.")
         result["cases"].append(entry)
     return result
 
@@ -54,13 +67,21 @@ def grouped_sensitivity(comparisons):
     """Never combine different geometry or native control settings into a trend."""
     groups = {}
     for report in comparisons:
+        def executables(native):
+            if "components" in native:
+                return [entry for child in native["components"] for entry in executables(child)]
+            return [(Path(path).name, value) for path, value in native.get("executables", {}).items()]
+        hashes = sorted(set(entry for native in report.get("nativeEvidence", {}).values()
+                            for entry in executables(native)))
         identity = dict(controls={key:value for key,value in report["controls"].items() if key != "levels"},
+                        executables=hashes,
                         boundaries={key:report["designs"][key]["extraction"]["boundarySha256"]
                                     for key in ("baseline", "candidate")},
                         ports={key:report["problem"][key] for key in ("width", "height", "port_width", "case")})
         key = json.dumps(identity, sort_keys=True)
-        group = groups.setdefault(key, dict(identity=identity, rows={}, sources=[]))
+        group = groups.setdefault(key, dict(identity=identity, rows={}, sources=[], analyticReferences=[]))
         group["sources"].append(report["source"])
+        group["analyticReferences"].append(report.get("analyticBaseline"))
         for row in report["rows"]:
             if row["level"] in group["rows"]:
                 raise ValueError("duplicate grid in one sensitivity group; do not silently choose a preferred run")
@@ -72,7 +93,45 @@ def grouped_sensitivity(comparisons):
         valid = [row for row in group["rows"] if row.get("baseline") and row.get("candidate")]
         group["acceptedPairsOnly"] = dict(levels=[row["level"] for row in valid], assessment=assess(valid),
                 scope="Sensitivity among fully audited pairs only; rejected grids remain in allAttemptedGrids and invalidate any all-grid success claim.")
+        references = group.pop("analyticReferences")
+        if references and all(reference is not None for reference in references):
+            drops = {reference["kinematicPressureDrop"] for reference in references}
+            if len(drops) != 1:
+                raise ValueError("analytic baselines differ within one sensitivity group")
+            identity = group["identity"]
+            throughput = 4*identity["controls"]["speed"]*identity["ports"]["port_width"]/3
+            group["analyticReferenceComparison"] = analytic_reference_comparison(group["rows"], drops.pop(), throughput)
         result.append(group)
+    return result
+
+
+def analytic_reference_comparison(rows, reference_drop, throughput):
+    """Separate check against an exact rectangular-channel reference.
+
+    Does not change native-pair acceptance, rescue rejected flow fields, or
+    establish a discretisation error bound for the optimized candidate.
+    """
+    values = []
+    for row in rows:
+        candidate = row.get("candidate")
+        if candidate is None:
+            continue
+        if abs(candidate["inletFlux"]-throughput) > 1e-10*throughput:
+            raise ValueError("candidate throughput differs from analytic straight-pipe reference")
+        drop = candidate["fluxWeightedPressureDrop"]
+        if not np.isfinite(drop) or drop <= 0:
+            raise ValueError("candidate requires a positive finite pressure drop")
+        values.append(dict(level=row["level"], candidateDrop=drop, relativeReduction=1-drop/reference_drop))
+    result = dict(referencePressureDrop=reference_drop, throughput=throughput, candidates=values,
+                  rankingStableOnAvailableCandidateGrids=False, physicalAccuracyQualified=False,
+                  scope="Analytic planar Poiseuille reference versus converged/audited native candidates; not a native paired-grid comparison. All native baseline failures remain rejected.")
+    if len(values) >= 2:
+        previous, final = values[-2:]
+        change = abs(final["candidateDrop"]-previous["candidateDrop"])
+        margin = reference_drop-final["candidateDrop"]-change
+        result.update(observedCandidateGridChange=change, gainBeyondObservedChange=margin,
+                      rankingStableOnAvailableCandidateGrids=bool(margin > 0 and previous["candidateDrop"] < reference_drop),
+                      interpretation="Observed two-grid sensitivity only, not a rigorous error estimate or mesh-independence proof.")
     return result
 
 
@@ -105,7 +164,7 @@ def straight_pipe_baseline(directory, report):
                                 for row in report["rows"] if row.get("baseline")])
 
 
-def render(runs, comparisons, probes, output):
+def render(runs, comparisons, probes, output, continuations=()):
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLCONFIGDIR", str(Path(__file__).resolve().parents[2]/"outputs/topology-plot-cache"))
@@ -127,6 +186,8 @@ def render(runs, comparisons, probes, output):
     for directory in comparisons:
         path = directory/"summary.json"
         data = json.loads(path.read_text())
+        if data.get("status") == "running":
+            raise ValueError("study evidence requires completed comparisons; a running solve is not a result")
         baseline = data["designs"]["baseline"]
         if baseline_hash is None:
             baseline_hash = baseline["extraction"]["boundarySha256"]
@@ -164,6 +225,38 @@ def render(runs, comparisons, probes, output):
     for directory in probes:
         evidence["meshProbes"].append(native_record(directory))
     evidence["nativeSensitivity"] = grouped_sensitivity(evidence["nativeComparisons"])
+    evidence["continuedCandidates"] = []
+    for directory in continuations:
+        report = json.loads((directory/"summary.json").read_text())
+        if "steadyContinuation" not in report or len(report["cases"]) != 1:
+            raise ValueError("continued candidate must record a single same-mesh continuation")
+        item = dict(nativeEvidence=native_record(directory), accepted=False)
+        metric = flow_metrics(report)
+        if metric is not None:
+            continuation = report["steadyContinuation"]
+            original = continuation.get("originalNativeDirectory", continuation["source"])
+            source_comparison = record(Path(original).parent/"summary.json")
+            groups = [group for group in evidence["nativeSensitivity"] if source_comparison in group["sources"]]
+            if len(groups) != 1:
+                raise ValueError("include the original failed comparison for this continued candidate")
+            group = groups[0]
+            if report["sourceSha256"] != group["identity"]["boundaries"]["candidate"]:
+                raise ValueError("continuation is not the original candidate boundary")
+            analytic = group.get("analyticReferenceComparison")
+            if analytic is None:
+                raise ValueError("continued-candidate comparison requires a verified analytic straight-pipe reference")
+            # A separate evidence item; the original native-pair rows stay failed.
+            level = report["cases"][0]["level"]
+            rows = [dict(row) for row in group["rows"]]
+            old = next(row for row in rows if row["level"] == level)
+            if old.get("candidate") is not None:
+                raise ValueError("continuation cannot silently replace an already accepted candidate")
+            old["candidate"] = metric
+            item.update(accepted=True, metrics=metric, sourceComparison=source_comparison,
+                        analyticReferenceComparison=analytic_reference_comparison(rows,
+                            analytic["referencePressureDrop"], analytic["throughput"]),
+                        scope="Additional explicitly recorded iteration budget and same-mesh initial guess. Same equations/tolerance; not a cold-run cost comparison. Original native-pair failures remain unchanged.")
+        evidence["continuedCandidates"].append(item)
     if not panels:
         raise ValueError("no saved fields to render")
     fig, axes = plt.subplots((len(panels)+1)//2, 2, figsize=(12, 3.45*((len(panels)+1)//2)),
@@ -206,6 +299,7 @@ if __name__ == "__main__":
     parser.add_argument("--runs", nargs="+", type=Path, required=True)
     parser.add_argument("--comparisons", nargs="+", type=Path, required=True)
     parser.add_argument("--mesh-probes", nargs="*", type=Path, default=[])
+    parser.add_argument("--continued-candidates", nargs="*", type=Path, default=[])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    print(render(args.runs, args.comparisons, args.mesh_probes, args.output))
+    print(render(args.runs, args.comparisons, args.mesh_probes, args.output, args.continued_candidates))
