@@ -149,7 +149,7 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 ### 隔离可压 Euler 开发
 
-`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。求解理想气体质量、两分量动量及总能量；可选恒系数 Fourier 导热直接进入总能量，尚无黏性应力或湍流。
+`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。求解理想气体质量、两分量动量及总能量；可选恒系数 Fourier 导热及 Newtonian 黏性应力/做功，二者均进入总能量；尚无湍流或变物性。
 
 - `EulerFlux2D.cpp` 以真实面面积向量计算一个共享守恒通量；HLLC 使用包含左右声学锥的 Roe/Einfeldt 估计，检查两侧星状态，失效时显式计数并用 Rusanov。
 - 每个相邻单元全部邻面上的 `min(pL,pR)/max(pL,pR)` 取三次方，再取最小值作为接触恢复权重 ω；通量为 `F_HLLE + ω (F_HLLC - F_HLLE)`。传感器依据 [Simon 与 Mandal，式49–50、α=3](https://arxiv.org/pdf/1803.04954)，本实现采用多边形邻面模板并混合四个分量，**不冒称论文的选择性 HLLC-ADC 原样复现**。未加保护的最小旋转 Sod 例曾放大舍入扰动，测试中保留该场景。
@@ -166,22 +166,22 @@ ctest --test-dir build -R '^cartmesh2d_euler_' --output-on-failure
 python3 tests/euler_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-development/qualification
 ```
 
-通量方程复核按面长乘特征通量归一化：质量 `ρV`、动量 `ρV²`、能量 `(ρE+p)V`，其中 `V=max(|速度|+声速)`，两侧/两阶段取包络。容差为512个 binary64 机器 epsilon，用于独立公式/重构的浮点一致性，不是物理精度门；避免对接近零的 SI 通量使用无量纲固定绝对误差。固壁质量/对流能量要求精确为零，总能量通量等于该面的导热通量。单位缩放回归把 SI 与无量纲的完整场归一化比较，另增两个小 Sod 和旋转闭壁例，成本为秒级。
+通量方程复核按面长乘特征通量归一化：质量 `ρV`、动量 `ρV²`、能量 `(ρE+p)V`，其中 `V=max(|速度|+声速)`，两侧/两阶段取包络。容差为512个 binary64 机器 epsilon，用于独立公式/重构的浮点一致性，不是物理精度门；避免对接近零的 SI 通量使用无量纲固定绝对误差。固壁质量/对流能量要求精确为零，总能量通量等于导热与向外黏性做功之和；静止壁面做功为零。单位缩放回归把 SI 与无量纲的完整场归一化比较，另增两个小 Sod 和旋转闭壁例，成本为秒级。
 
 开发验证按量分别判断：沿用无量纲逐格守恒门 `1e-12`；光滑熵波及涡旋比较面积加权 L1 误差，二倍细化的观测阶数回归下限为1.4，允许限制器在极值附近降阶。Sod 以单元中心采样精确 Riemann 解，比较同网格/同目标时间的面积加权离散 L1 误差，不把激波误差称为二阶收敛。Mach 3/10 法向激波加入相对密度幅度 `1e-5` 的交替扰动，检查在对流距离0.3的窗口内，横向密度跨度相对波后密度不超过输入跨度的10倍；不外推为任意强激波稳定性证明。测试规模最高128×128格，精度脚本通常为分钟内至数分钟级，取决于并行负载。
 
-无导热时检查点保持 v1，有导热时使用绑定 k 与逐面热条件的 v2；网格/物性/边界仍严格绑定；续算可显式改变通量、阶数、CFL和目标时间。使用相同控制参数中断/续算时检查点逐字节一致。摘要/历史分别报告接受阶段中的 HLLC 正性回退、重构退阶和最小接触恢复权重；`hllcFallbackStages` 的位0/1对应第一/第二阶段，周期配对只计一次。
+μ=k=0 时检查点保持 v1，μ=0、k>0 时为 v2，μ>0 使用同时绑定输运物性及壁速的 v3；网格/物性/边界仍严格绑定；续算可显式改变通量、阶数、CFL和目标时间。使用相同控制参数中断/续算时检查点逐字节一致。摘要/历史分别报告接受阶段中的 HLLC 正性回退、重构退阶和最小接触恢复权重；`hllcFallbackStages` 的位0/1对应第一/第二阶段，周期配对只计一次。
 
 
 ### 总能量耦合导热
 
-物理闭合为 `T=p/(ρR)`、`cv=R/(γ−1)`、`q=−k∇T`。总能量方程新增 `−∇·q`，质量和动量没有直接热源；压力变化会在后续流动阶段产生反馈。[NASA 的比热说明](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/specific-heats-cp-and-cv-1/)区分内能的 cv 与焓的 cp；这里定密度阶段的体积热容为 **ρcv**，不能把被动温度入口的 `k/(ρcp)` 搬过来。[NASA Wind 方程说明](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)作为理想气体/输运变量参考；本实现固定 k，不使用其中的黏度或 Prandtl 闭合。
+物理闭合为 `T=p/(ρR)`、`cv=R/(γ−1)`、`q=−k∇T`。总能量方程新增 `−∇·q`，质量和动量没有直接热源；压力变化会在后续流动阶段产生反馈。[NASA 的比热说明](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/specific-heats-cp-and-cv-1/)区分内能的 cv 与焓的 cp；这里定密度阶段的体积热容为 **ρcv**，不能把被动温度入口的 `k/(ρcp)` 搬过来。[NASA Wind 方程说明](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)作为理想气体/输运变量参考；本实现 μ 与 k 分别指定为常数，不强制 Prandtl 闭合。
 
 - `HeatConduction2D.hpp/.cpp` 是独立热算子，输入温度与体积热容，输出每条真实面的共享热通量、单元残差和 1/s 的显式速率。`EulerTransport2D` 与 `IdealGas2D` 分开；`EulerStepper2D` 持有网格/物性的不可变快照，缓存几何、梯度权重和热算子系数行范数，避免每个时间步重建。原 `advanceEuler2D` 接口继续可用。
 - 法向梯度采用 `S=τd+C`，`τ=|S|²/(S·d)`，热通量 `Qf=−k[τ(TN−TP)+gf·C]`。`gf` 来自距离加权最小二乘梯度的法向距离插值；这类非正交拆分可对照 [OpenFOAM corrected snGrad](https://doc.openfoam.com/2212/tools/processing/numerics/schemes/sngrad/rtm/corrected/)。Dirichlet 使用真实面心与壁温；Neumann 以 **n·∇T=−qout/k** 进入梯度约束，不能把倾斜的“格心到面心方向”当成法线。内部面只算一次、邻格反号；周期边界用平移后的格心与严格反号配对。
-- 边界默认绝热，也可指定 Kelvin 或向外 W/m²；后者负值加热。开边界默认零 Fourier 通量，不取消对流能量输运。`sealed` 是全部物理边界滑移壁；`custom` 的 `CM2D_EULER_BOUNDARY 2` 在每行旧格式之后增加 `insulated|temperature|flux value`，仍可读 v1。
+- 边界默认绝热，也可指定 Kelvin 或向外 W/m²；后者负值加热。开边界默认零 Fourier 通量，不取消对流能量输运。`sealed` 是全部物理边界为壁面，可选自由滑移或静止无滑移；`custom` 的 `CM2D_EULER_BOUNDARY 2` 在每行旧格式之后增加 `insulated|temperature|flux value`，仍可读 v1。
 - 对温度残差的完整线性系数矩阵 A，`h_i=Σ_j|A_ij|/(2 Vi ρi cv)`，时间步满足 `dt·(Σf af|Sf|/Vi+h_i)≤CFL`。**非正交修正项也计入 A**，每阶段按密度更新热容量，两阶段取速率包络。这是全算子行范数限制，不是任意网格的单调性或谱稳定性证明；`heatNonMonotoneRows` 报告不满足 M 矩阵符号的行数。当前修正算子保留线性精确性，可能不是单调格式；逐阶段正性失败时缩步或明确终止，绝不修剪温度/能量。均匀网格上的二阶结果也不能外推为任意 Cut-cell 上二阶，见 [OpenFOAM 非结构网格精度说明](https://openfoam.org/release/2-3-0/numerics/)。
-- 面热通量随 SSPRK2 做阶段平均并加入总能量通量，故闭壁严格零质量、总能量通量恰等于导热。`heatRate`、`heatFlux`、`convectiveEnergy`、`thermalCourant`、`combinedCourant`、`boundaryHeat` 可独立读回。`verify_heat_conduction.py` 从原始多边形重建热算子；`verify_euler.py` 重算最后步两个阶段，并核对所有相邻历史步的质量/能量收支。历史收支是记录一致性检查，不能冒称独立求解全部轨迹。
+- 面热通量随 SSPRK2 做阶段平均并加入总能量通量，故闭壁严格零质量；静止壁面总能量通量恰等于导热，切向移动壁额外包含黏性做功。`heatRate`、`heatFlux`、`convectiveEnergy`、`thermalCourant`、`combinedCourant`、`boundaryHeat` 可独立读回。`verify_heat_conduction.py` 从原始多边形重建热算子；`verify_euler.py` 重算最后步两个阶段，并核对所有相邻历史步的质量/能量收支。历史收支是记录一致性检查，不能冒称独立求解全部轨迹。
 
 导热验证保持范围明确：旋转/扭曲网格上的线性温度与混合热边界检查面通量线性精确性（按 `k|∇T||Sf|` 归一化，1024 epsilon，约百格）；通过对每格温度加减1 K、直接差分实际残差，检查完整系数行范数（2048 epsilon）。这些是浮点代数一致性门，不是工程精度要求。独立通量审计的能量尺度增加 Fourier 仿射行绝对值包络，仍使用512 epsilon；闭腔累计能量收支按初末总能量和输入热量之和归一化，门为1024 epsilon。
 
@@ -201,7 +201,7 @@ python3 tests/euler_conduction_cli_test.py --cli build/cartmesh2d_euler_cli --ou
 python3 tools/verification/verify_euler.py --mesh final.solver.cm2d --prefix outputs/heat/run
 ```
 
-v2 检查点将 k 和全部逐面热条件写入完整绑定；改变 k、热壁类型或热边界数值会拒绝续算。k=0 的旧 v1 检查点和数值默认保留，实测原二进制与新二进制的 Rusanov/一阶和 HLLC/二阶 Sod 检查点逐字节一致。模型目前没有温变/各向异性导热、辐射、固体共轭传热、黏性耗散或隐式导热；这些需要独立方程、界面守恒与验证，不通过增加界面开关冒充完成。
+v2 检查点将 k 和全部逐面热条件写入完整绑定；改变 k、热壁类型或热边界数值会拒绝续算。k=0 的旧 v1 检查点和数值默认保留，实测原二进制与新二进制的 Rusanov/一阶和 HLLC/二阶 Sod 检查点逐字节一致。模型目前没有温变/各向异性导热、辐射、固体共轭传热或隐式导热；这些需要独立方程、界面守恒与验证，不通过增加界面开关冒充完成。
 
 
 ## 验证与证据
@@ -252,3 +252,35 @@ git log --all --oneline -- src/quality/SolverTopology2D.cpp
 ```
 
 `mesher-v0.3.0`是固定网格里程碑。旧`archive/*`标签保存历史方案，不是当前验收。历史截图与JSON保留原版本适用范围；不再复制成新的阶段文档或完整源码副本。
+
+
+### 可压黏性应力与机械功
+
+`ViscousStress2D.hpp/.cpp` 是独立速度输运算子，输入二维网格、速度、密度和动力黏度 **μ（Pa·s）**；不能把不可压入口的运动黏度 ν 当作 μ。使用平面理想气体的 Stokes 假设：
+
+```text
+τ = μ [∇u + (∇u)^T − (2/3)(∇·u) I]
+F_viscous = [0, −(τ·Sf)x, −(τ·Sf)y, −u_face·(τ·Sf)]
+F_energy = F_convective_energy + F_viscous_work + q·Sf
+```
+
+`2/3` 是气体应力本构系数，不随二维网格改成 `1`；因此纵向黏性扩散系数为 `4μ/(3ρ)`，横向剪切为 `μ/ρ`。[NASA Wind 方程说明第29–31页](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)给出该本构与总能量应力做功。几何、面拓扑和未知量完全原生二维，没有调用三维核心。总能量已经包含应力做功，不能再次添加体积 `τ:∇u`，否则重复计入能量；动能与内能间转换由同一组守恒更新产生。
+
+- 距离加权最小二乘重建完整速度梯度；内面插值梯度后沿法向修正，使 `Gf·(CN−CP)=uN−uP`。因此保留交叉导数、法向应变和非正交部分。面速度以两侧梯度外推到真实面中心再插值，仿射场在偏斜面上仍精确。每条内部面计算一次，周期面对复制严格反号的动量与功；两阶段分别计算后平均。
+- `NoSlipWall` 只允许静止网格上的切向壁速；CLI 预设及 App 为静止壁，`custom` 文件可给逐面切向速度。对流部分仍使用不可穿透壁的镜像压力牵引，黏性部分使用指定壁速的 Dirichlet 梯度。静止绝热壁的质量/总能量通量精确为零；移动壁的功使用给定壁速，不用流体单元中心速度代替。带法向速度的壁面会拒绝，不能冒充移动网格。
+- 自由滑移壁的法向速度为零，切向黏性牵引投影为零；梯度模板使用局部平面壁的法向速度约束及切向零法向导数。开边界采用**零黏性牵引**，梯度延拓使用零法向速度导数；这是一项明确的边界模型，不能当作任意短出口的充分外流条件。
+- 稀疏准备阶段组装完整 `2N × 2N` 速度到动量残差 Jacobian A，包括交叉导数、非正交修正和周期耦合。每格黏性速率 `max_k Σ_j |A_(2i+k,j)| / (2ρ_i V_i)` 的单位为 `1/s`，与声学、Fourier 速率共同限制显式步长；每个 RK 阶段用当时密度重算速率。该行范数是显式扩散控制量，**不是完整非线性能量 Jacobian 或任意网格的稳定/熵证明**；两个前向阶段与最终候选继续检查正密度和正内能，失效缩步，不裁剪。
+- `EulerStepper2D` 拥有不可变几何、物性和边界，缓存热/黏性算子；内层只求场梯度与通量。μ=0 不创建黏性算子并保留旧推进路径。v3 检查点同时绑定 μ、k、全部壁面模型及切向壁速；v1/v2仍按原字节格式生成/读取。边界文件v3在v2热条件后增加 `wallUx wallUy`，旧v1/v2继续可读。`custom` 必须在边界文件指定条件，禁止用预设开关覆盖。
+- `.faces.csv` 保存 `viscousMomentumX/Y`、`viscousWork`、`convectiveMomentumX/Y`、`convectiveEnergy` 与 `heatFlux`；`.cells.csv` 保存 `viscousRate`；历史保存 `viscousCourant` 和向外 `boundaryViscousWork`。负壁功代表机械能输入。`verify_viscous_stress.py` 从原始多边形建立稀疏线性表达式，并独立求完整动量 Jacobian；`verify_euler.py` 重建最后步两阶段的黏性/热/对流通量并核对全部相邻历史的质量与能量。
+
+直接算子测试使用32格扭曲网格及旋转网格的平移、刚体转动、均匀膨胀、简单剪切和一般仿射速度。应力/功及实际残差扰动得到的行范数使用1024 epsilon的归一化浮点检查；不是工程流场精度要求。独立面通量审计保持512 epsilon，增加黏性线性表达式绝对值包络作为量纲尺度。SI相似性同时缩放 μ、k、压力、速度、时间和长度，比较归一化完整场；允许4096 epsilon累积浮点差异。
+
+连续解验证包含16/32/64格周期横向剪切波 `v=A exp(−μw²t/ρ) cos(wx)`（A=1e−4声速），及原热模态线性系统的速度行增加 `−4μw²B/(3ρ)`（相对温度幅度1e−5）。独立矩阵指数不读取求解器系数。Couette 使用周期x与上下切向壁面，μ=k=0.1、U=0.5、H=1、Tw=1，解析稳态为 `u=Uy/H`、`T=Tw+μU²/(2k)·(y/H)(1−y/H)`、`p=1`、`ρ=p/(RT)`；从解析场开始推进至t=0.1，在8/16/32层比较温度误差及机械功/热量收支，**这是稳态离散一致性检验，不是从静止收敛验收**。观测阶下限1.7用于防止光滑问题退回一阶，允许限制器与壁面局部误差；整个CLI验证通常数十秒。任意Cut-cell边界层、强激波/黏性相互作用、壁面摩擦/热流绝对精度和长期稳定性尚未验收。
+
+```sh
+ctest --test-dir build -R 'cartmesh2d_(viscous_core|euler_viscosity)' --output-on-failure
+python3 tests/euler_viscosity_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-viscosity/validation
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --density 1.225 --pressure 101325 --u 50 --end-time .00005
+```
+
+最后一条为便于短时验证的测试物性，不是空气推荐值；μ、k、γ、R 必须按实际问题指定。默认μ=k=0、滑移、Rusanov一阶均未自动更改。

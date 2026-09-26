@@ -18,7 +18,7 @@
 | 被动热输运 | 恒物性温度或标量、与流动同步推进及联合续算；无浮力、辐射或双向热耦合 |
 | 桌面流程 | XY/CSV/TXT/SVG/DXF/PNG/JPG 输入、实际尺度标定、预览、取消、工况保存、结果 ZIP |
 
-main 保留参与构建和测试的实验 Euler/SST 代码，其资格与上述层流功能分开。本 worktree 的 `codex/compressible-flow` 按用户授权独立推进 Euler：新增可选 HLLC/HLLE、受限二阶、总能量耦合的恒系数 Fourier 导热及实际桌面入口，数值证据和未完成项以 [当前状态](docs/CURRENT_STATE_CN.md) 为准；未合入 main。
+main 保留参与构建和测试的实验 Euler/SST 代码，其资格与上述层流功能分开。本 worktree 的 `codex/compressible-flow` 按用户授权独立推进 Euler：新增可选 HLLC/HLLE、受限二阶、总能量耦合的恒系数 Fourier 导热、Newtonian 黏性应力/机械功、无滑移壁及实际桌面入口，数值证据和未完成项以 [当前状态](docs/CURRENT_STATE_CN.md) 为准；未合入 main。
 
 ## 下载与启动
 

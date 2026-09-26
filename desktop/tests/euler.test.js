@@ -20,7 +20,7 @@ test('Euler accepts real independently audited native fields and rejects stale/t
   assert.throws(()=>validate({...fixture.files,'.history.csv':fixture.files['.history.csv'].trim().split('\n').slice(0,-1).join('\n')}),/历史/);
 });
 test('Euler requests and progress keep physical types and units separate',()=>{
-  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,thermalConductivity:0,wallThermal:'insulated',wallValue:0});
+  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,thermalConductivity:0,wallThermal:'insulated',wallValue:0,dynamicViscosity:0,wallModel:'slip'});
   for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'},{fluxScheme:'roe'},{order:3},{order:'2'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
   const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',request);assert.equal(command.executable,'cartmesh2d_euler_cli');assert.ok(command.args.includes('--gas-r'));
   assert.throws(()=>buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',{...request,resume:true}),/状态/);
@@ -101,6 +101,37 @@ test('thermal restart manifests prevent transport changes before invoking native
     const result=await runEulerJob({currentResult,mesh:m,request:r,executable:x=>x,runProcess:runner,signal});
     const imported=await importEulerRestart(path.join(directory,result.manifest),m,meshPath);assert.equal(imported.metadata.request.thermalConductivity,.5);
     for(const extra of [{thermalConductivity:.6},{wallValue:3},{wallThermal:'flux'}])await assert.rejects(()=>runEulerJob({currentResult,mesh:m,request:{...r,resume:true,endTime:.03,...extra},executable:x=>x,runProcess:runner,signal}),/物理参数/);
+    assert.equal(calls,1);assert.equal(currentResult.euler,result);
+  }finally{await fs.rm(directory,{recursive:true,force:true});}
+});
+
+test('viscous output binds dynamic viscosity, no-slip walls and total-energy work',()=>{
+  const sample=require('./fixtures/euler-viscosity.json'),m=parseCm2d(sample.mesh),r=sample.request;
+  const check=(files=sample.files,request=r)=>validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],m,request);
+  assert.equal(sample.independentAudit.valid,true);const result=check();assert.ok(result.audit.viscousCourant>0);assert.equal(result.audit.boundaryViscousWork,0);
+  for(const extra of [{dynamicViscosity:.3},{wallModel:'slip'}])assert.throws(()=>check(sample.files,{...r,...extra}),/黏度|壁面/);
+  for(const extra of [{dynamicViscosity:0},{dynamicViscosity:-1},{dynamicViscosity:'1'},{wallModel:'moving'},{case:'uniform'}])assert.throws(()=>validateEulerRequest({...r,...extra}));
+  for(const [suffix,field] of [['.faces.csv','viscousMomentumX'],['.faces.csv','viscousMomentumY'],['.faces.csv','viscousWork'],['.faces.csv','convectiveMomentumX'],['.cells.csv','viscousRate'],['.history.csv','viscousCourant'],['.history.csv','boundaryViscousWork']]) {
+    const lines=sample.files[suffix].trim().split('\n'),header=lines[0].split(','),values=lines.at(-1).split(',');values[header.indexOf(field)]=String(field==='viscousRate'?1e9:Number(values[header.indexOf(field)])+1);lines[lines.length-1]=values.join(',');
+    assert.throws(()=>check({...sample.files,[suffix]:lines.join('\n')}),/黏性|能量|CFL|历史|无滑移/,field);
+  }
+  assert.throws(()=>eulerCheckpoint(sample.files['.checkpoint'].replace(/VISCOSITY [^\n]+/,'VISCOSITY 0.3'),m,r),/动力黏度/);
+  assert.throws(()=>eulerCheckpoint(sample.files['.checkpoint'],m,{...r,wallModel:'slip'}),/机械壁面/);
+  const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',r);assert.equal(command.args[command.args.indexOf('--viscosity')+1],'0.2');assert.equal(command.args[command.args.indexOf('--wall-model')+1],'no-slip');
+  const progress={type:'euler-step',step:1,time:.1,acousticCourant:.1,thermalCourant:.1,viscousCourant:.2,combinedCourant:.3,minimumDensity:1,minimumPressure:1,mass:1,totalEnergy:3};
+  assert.deepEqual(parseEulerProgress(JSON.stringify(progress)),progress);assert.throws(()=>parseEulerProgress(JSON.stringify({...progress,viscousCourant:.5})),/CFL/);
+});
+
+test('viscous restart manifest blocks physical changes before launching native process',async()=>{
+  const sample=require('./fixtures/euler-viscosity.json'),m=parseCm2d(sample.mesh),r=sample.request;
+  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'cm2d-euler-viscous-job-'));
+  try {
+    const meshPath=path.join(directory,'mesh.solver.cm2d');await fs.writeFile(meshPath,sample.mesh);
+    const currentResult={cm2dPath:meshPath,outputDirectory:directory};let calls=0;
+    const runner=async(_exe,args)=>{calls++;const prefix=args[args.indexOf('--output')+1];await Promise.all(Object.entries(sample.files).map(([suffix,text])=>fs.writeFile(prefix+suffix,text)));return {code:0,stderr:''};};
+    const signal=new AbortController().signal;const result=await runEulerJob({currentResult,mesh:m,request:r,executable:x=>x,runProcess:runner,signal});
+    const imported=await importEulerRestart(path.join(directory,result.manifest),m,meshPath);assert.equal(imported.metadata.request.dynamicViscosity,.2);
+    for(const extra of [{dynamicViscosity:.3},{wallModel:'slip'}])await assert.rejects(()=>runEulerJob({currentResult,mesh:m,request:{...r,resume:true,endTime:.01,...extra},executable:x=>x,runProcess:runner,signal}),/物理参数/);
     assert.equal(calls,1);assert.equal(currentResult.euler,result);
   }finally{await fs.rm(directory,{recursive:true,force:true});}
 });

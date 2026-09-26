@@ -1,17 +1,18 @@
 #pragma once
 
 #include "cartmesh2d/fv/HeatConduction2D.hpp"
+#include "cartmesh2d/fv/ViscousStress2D.hpp"
 #include <array>
 #include <string>
 
 namespace cartmesh2d::fv {
 
-struct EulerTransport2D { double thermalConductivity=0; }; // W/(m K), constant and nonnegative.
+struct EulerTransport2D { double thermalConductivity=0, dynamicViscosity=0; }; // W/(m K), Pa s; constant, nonnegative.
 struct IdealGas2D { double gamma=1.4, gasConstant=287.05; };
 struct EulerPrimitive2D { double density=1, u=0, v=0, pressure=1; };
 // Per-volume densities: rho, rho*u, rho*v, rho*E (total internal + kinetic).
 using EulerConservative2D = std::array<double,4>;
-enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic };
+enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic, NoSlipWall };
 struct EulerBoundary2D {
     std::size_t face=0;
     EulerBoundaryKind2D kind=EulerBoundaryKind2D::SlipWall;
@@ -20,6 +21,7 @@ struct EulerBoundary2D {
     std::string name;
     HeatBoundaryKind2D thermalKind=HeatBoundaryKind2D::Insulated;
     double thermalValue=0;
+    Vector2D wallVelocity{}; // Tangential only on a static no-slip wall.
 };
 struct EulerState2D {
     double time=0;
@@ -37,7 +39,7 @@ struct EulerFaceFlux2D {
 [[nodiscard]] EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& left,
     const EulerConservative2D& right, Vector2D areaVector, const IdealGas2D&, EulerFluxScheme2D, double contactRestoration=1);
 struct EulerStepControls2D {
-    // Legacy name: with k>0 this caps the combined acoustic + thermal rate.
+    // Legacy name: with k>0 this caps the combined acoustic + thermal + viscous rate.
     double maximumStep=1, minimumStep=1e-14, acousticCourant=.4;
     std::size_t maximumRetries=12;
     EulerFluxScheme2D fluxScheme=EulerFluxScheme2D::Rusanov;
@@ -49,8 +51,9 @@ struct EulerStepResult2D {
     // Unique outward-owner numerical flux integrated over each actual edge.
     // Periodic partners hold exact opposite fluxes, evaluated only once.
     std::vector<EulerConservative2D> faceFlux;
-    std::vector<double> faceWaveSpeed,faceHeatFlux,cellHeatRate;
-    double thermalCourant=0,combinedCourant=0,boundaryHeat=0;
+    std::vector<double> faceWaveSpeed,faceHeatFlux,cellHeatRate,cellViscousRate;
+    std::vector<std::array<double,3>> faceViscousFlux;
+    double thermalCourant=0,viscousCourant=0,combinedCourant=0,boundaryHeat=0,boundaryViscousWork=0;
     std::size_t heatNonMonotoneRows=0;
     // Bits 0/1 identify HLLC fallback at the first/second RK stage. Periodic
     // partners share the mask, but evaluation counts include each pair once.
@@ -70,7 +73,7 @@ void validateEulerTransport2D(const EulerTransport2D&,const std::vector<EulerBou
 [[nodiscard]] double eulerSoundSpeed2D(const EulerPrimitive2D&,const IdealGas2D& = {});
 void validateEulerBoundaries2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,const IdealGas2D& = {});
 // Selectable Rusanov/HLLC and first/second-order spatial and temporal methods.
-// Both RK stages obey combined acoustic/heat rates and cell areas. Reconstruction
+// Both RK stages obey combined acoustic/heat/viscous rates and cell areas. Reconstruction
 // limits slopes; no accepted conserved density, pressure or energy is clipped.
 // A failed trial is retried with smaller dt, leaving the input untouched.
 [[nodiscard]] EulerStepResult2D advanceEuler2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,
@@ -86,6 +89,7 @@ private:
     std::vector<EulerBoundary2D> boundaries_;
     IdealGas2D gas_;
     std::optional<HeatConductionOperator2D> heat_;
+    std::optional<ViscousStressOperator2D> viscous_;
 };
 
 } // namespace cartmesh2d::fv

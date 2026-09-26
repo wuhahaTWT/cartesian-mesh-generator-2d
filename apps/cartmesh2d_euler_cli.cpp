@@ -45,6 +45,7 @@ std::ofstream output(const std::string& path) {
 std::string kindName(EulerBoundaryKind2D kind) {
     switch(kind) {
     case EulerBoundaryKind2D::SlipWall:return "slip-wall";
+    case EulerBoundaryKind2D::NoSlipWall:return "no-slip-wall";
     case EulerBoundaryKind2D::Transmissive:return "transmissive";
     case EulerBoundaryKind2D::Farfield:return "farfield";
     case EulerBoundaryKind2D::Periodic:return "periodic";
@@ -64,18 +65,21 @@ HeatBoundaryKind2D heatKind(const std::string& name) {
     throw std::runtime_error("unknown thermal boundary kind: "+name);
 }
 void boundaryFile(std::ostream& out,const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& bc) {
-    out<<"CM2D_EULER_BOUNDARY 2\nMESH "<<mesh.cells.size()<<' '<<mesh.faces.size()<<'\n';
+    const bool viscous=std::any_of(bc.begin(),bc.end(),[](const auto& b){return b.kind==EulerBoundaryKind2D::NoSlipWall;});
+    out<<"CM2D_EULER_BOUNDARY "<<(viscous?3:2)<<"\nMESH "<<mesh.cells.size()<<' '<<mesh.faces.size()<<'\n';
     for(const auto& b:bc) {
         const auto& f=mesh.faces[b.face];
         out<<b.face<<' '<<f.owner<<' '<<f.centre.x<<' '<<f.centre.y<<' '<<f.areaVector.x<<' '<<f.areaVector.y<<' '<<kindName(b.kind)<<' '<<b.reference.density<<' '<<b.reference.u<<' '<<b.reference.v<<' '<<b.reference.pressure<<' ';
         if(b.partner)out<<*b.partner;else out<<'-';
-        out<<' '<<std::quoted(b.name)<<' '<<heatKindName(b.thermalKind)<<' '<<b.thermalValue<<'\n';
+        out<<' '<<std::quoted(b.name)<<' '<<heatKindName(b.thermalKind)<<' '<<b.thermalValue;
+        if(viscous)out<<' '<<b.wallVelocity.x<<' '<<b.wallVelocity.y;
+        out<<'\n';
     }
     out<<"END\n";
 }
 std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh2D& mesh) {
-    std::ifstream in(path);std::string line;require(static_cast<bool>(std::getline(in,line))&&(line=="CM2D_EULER_BOUNDARY 1"||line=="CM2D_EULER_BOUNDARY 2"),"invalid Euler boundary header");
-    const bool thermal=line=="CM2D_EULER_BOUNDARY 2";
+    std::ifstream in(path);std::string line;require(static_cast<bool>(std::getline(in,line))&&(line=="CM2D_EULER_BOUNDARY 1"||line=="CM2D_EULER_BOUNDARY 2"||line=="CM2D_EULER_BOUNDARY 3"),"invalid Euler boundary header");
+    const bool viscous=line=="CM2D_EULER_BOUNDARY 3",thermal=line!="CM2D_EULER_BOUNDARY 1";
     const auto faces=mesh.faces.size();
     require(static_cast<bool>(std::getline(in,line)),"missing boundary mesh binding");
     std::ostringstream meshLine;meshLine<<"MESH "<<mesh.cells.size()<<' '<<faces;
@@ -86,11 +90,13 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
         std::istringstream row(line);std::string id,kind,partner,trailing;EulerBoundary2D b;std::size_t owner=0;double x=0,y=0,sx=0,sy=0;
         require(static_cast<bool>(row>>id>>owner>>x>>y>>sx>>sy>>kind>>b.reference.density>>b.reference.u>>b.reference.v>>b.reference.pressure>>partner>>std::quoted(b.name)),"invalid Euler boundary row");
         if(thermal){std::string name;require(static_cast<bool>(row>>name>>b.thermalValue),"missing thermal boundary");b.thermalKind=heatKind(name);}
+        if(viscous)require(static_cast<bool>(row>>b.wallVelocity.x>>b.wallVelocity.y),"missing wall velocity");
         require(!(row>>trailing),"trailing Euler boundary fields");
         const auto faceNumber=number(id);require(faceNumber>=0&&faceNumber<static_cast<double>(faces)&&faceNumber==std::floor(faceNumber),"invalid boundary face");b.face=static_cast<std::size_t>(faceNumber);
         const auto& face=mesh.faces[b.face];
         require(owner==face.owner&&x==face.centre.x&&y==face.centre.y&&sx==face.areaVector.x&&sy==face.areaVector.y,"boundary mesh geometry mismatch");
         if(kind=="slip-wall")b.kind=EulerBoundaryKind2D::SlipWall;
+        else if(kind=="no-slip-wall")b.kind=EulerBoundaryKind2D::NoSlipWall;
         else if(kind=="transmissive")b.kind=EulerBoundaryKind2D::Transmissive;
         else if(kind=="farfield")b.kind=EulerBoundaryKind2D::Farfield;
         else if(kind=="periodic")b.kind=EulerBoundaryKind2D::Periodic;
@@ -104,25 +110,27 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
 int main(int argc,char** argv) {
  try {
     std::string meshPath,prefix,problem="sod",boundaryPath,exportBoundary,restart;
-    EulerTransport2D transport;HeatBoundaryKind2D wallThermal=HeatBoundaryKind2D::Insulated;double wallValue=0;bool specifiedWall=false;
+    EulerTransport2D transport;HeatBoundaryKind2D wallThermal=HeatBoundaryKind2D::Insulated;double wallValue=0;bool specifiedWall=false;std::string wallModel="slip";bool specifiedWallModel=false;
     IdealGas2D gas;EulerPrimitive2D reference{1,0,0,1};EulerStepControls2D controls;
     double endTime=.2,split=.5,beta=5,maximumSeconds=180;std::size_t maximumSteps=100000,checkpointEvery=25;
     bool specifiedReference=false;
     for(int i=1;i<argc;++i) {
         const std::string arg=argv[i];
         if(arg=="--help") {
-            std::cout<<"Native 2D ideal-gas Euler; inviscid, Rusanov/HLLC, order 1 or 2.\n"
-                "--mesh FINAL.solver.cm2d --output PREFIX --case sod|uniform|external|sealed|vortex|thermal-wave|custom\n"
+            std::cout<<"Native 2D ideal-gas Euler / laminar Navier-Stokes; Rusanov/HLLC, order 1 or 2.\n"
+                "--mesh FINAL.solver.cm2d --output PREFIX --case sod|uniform|external|sealed|vortex|thermal-wave|shear-wave|custom\n"
                 "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
+                "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
                 "--gamma 1.4 --gas-r 287.05 --density 1 --u 0 --v 0 --pressure 1\n"
                 "Sod: left (rho,p), right (.125*rho,.1*p), u=v=0, split x fraction --split .5.\n"
                 "Vortex: fixed ambient rho=p=1, u=v=1, --vortex-strength 5; periodic rectangle width/height >= 20.\n"
-                "External: embedded slip walls, characteristic outer farfield. Uniform: all farfield.\n"
-                "Sealed: all boundaries are slip walls. Open boundaries default to zero Fourier heat flux.\n"
+                "External: embedded walls using --wall-model, characteristic outer farfield. Uniform: all farfield.\n"
+                "Sealed: all boundaries are walls. Open boundaries use zero viscous traction and Fourier heat flux.\n"
                 "Thermal-wave: periodic rectangle, zero reference velocity, relative temperature amplitude 1e-5.\n"
+                "Shear-wave: periodic transverse velocity, amplitude 1e-4 * reference sound speed.\n"
                 "Custom: --boundary FILE, full explicit face coverage; uniform initial state.\n"
                 "--export-boundaries FILE exports the selected preset without solving.\n"
                 "--restart PREFIX.checkpoint --checkpoint-every 25 --max-steps 100000 --max-seconds 180\n"
@@ -137,6 +145,8 @@ int main(int argc,char** argv) {
         else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
         else if(arg=="--end-time")endTime=number(value);else if(arg=="--max-step")controls.maximumStep=number(value);
         else if(arg=="--min-step")controls.minimumStep=number(value);else if(arg=="--cfl")controls.acousticCourant=number(value);
+        else if(arg=="--viscosity")transport.dynamicViscosity=number(value);
+        else if(arg=="--wall-model"){wallModel=value;specifiedWallModel=true;require(value=="slip"||value=="no-slip","unknown wall model");}
         else if(arg=="--conductivity")transport.thermalConductivity=number(value);
         else if(arg=="--wall-thermal"){wallThermal=heatKind(value);specifiedWall=true;}
         else if(arg=="--wall-value"){wallValue=number(value);specifiedWall=true;}
@@ -153,12 +163,12 @@ int main(int argc,char** argv) {
     }
     require(!meshPath.empty()&&(!prefix.empty()||!exportBoundary.empty()),"--mesh and --output (or --export-boundaries) required");
     require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final *.solver.cm2d");
-    require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="sealed"||problem=="custom","unknown Euler case");
+    require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave"||problem=="sealed"||problem=="custom","unknown Euler case");
     require((problem=="custom")==!boundaryPath.empty(),"only custom Euler case requires --boundary");
     require(endTime>0&&maximumSeconds>0&&controls.minimumStep>0&&controls.maximumStep>=controls.minimumStep&&
         controls.acousticCourant>0&&controls.acousticCourant<=.45,"invalid Euler time controls");
     validateIdealGas2D(gas);(void)eulerConservative2D(reference,gas);
-    require(problem!="custom"||!specifiedWall,"custom thermal conditions come from boundary file");
+    require(problem!="custom"||(!specifiedWall&&!specifiedWallModel),"custom wall conditions come from boundary file");
     require(problem=="sod"||(split==.5),"--split is only supported for Sod");
     require(problem=="vortex"||(beta==5),"--vortex-strength is only supported for vortex");
     if(problem=="sod")require(split>0&&split<1&&reference.u==0&&reference.v==0,"Sod requires split in (0,1) and zero initial velocity");
@@ -175,18 +185,18 @@ int main(int argc,char** argv) {
         EulerBoundary2D b{i,EulerBoundaryKind2D::Farfield,reference,{},"farfield"};
         if(problem=="sealed"){b.kind=EulerBoundaryKind2D::SlipWall;b.name="walls";}
         else if(problem=="external"&&f.patch==BoundaryPatch2D::EmbeddedBoundary){b.kind=EulerBoundaryKind2D::SlipWall;b.name="body";}
-        else if(problem=="sod"||problem=="vortex"||problem=="thermal-wave") {
+        else if(problem=="sod"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave") {
             const double length=std::hypot(f.areaVector.x,f.areaVector.y);
             const bool x=std::abs(f.areaVector.x)>std::abs(f.areaVector.y);
             require(std::abs(x?f.areaVector.y:f.areaVector.x)<1e-12*length,"Sod/vortex preset requires an axis-aligned rectangle");
             require(x?(std::abs(f.centre.x-xmin)<geometryTolerance||std::abs(f.centre.x-xmax)<geometryTolerance):
                       (std::abs(f.centre.y-ymin)<geometryTolerance||std::abs(f.centre.y-ymax)<geometryTolerance),"Sod/vortex preset does not support holes");
-            b.kind=(problem=="vortex"||problem=="thermal-wave")?EulerBoundaryKind2D::Periodic:(x?EulerBoundaryKind2D::Transmissive:EulerBoundaryKind2D::SlipWall);
-            b.name=(problem=="vortex"||problem=="thermal-wave")?(x?"periodic-x":"periodic-y"):(x?"ends":"walls");
+            b.kind=(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")?EulerBoundaryKind2D::Periodic:(x?EulerBoundaryKind2D::Transmissive:EulerBoundaryKind2D::SlipWall);
+            b.name=(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")?(x?"periodic-x":"periodic-y"):(x?"ends":"walls");
         } else require(problem=="external"||f.patch!=BoundaryPatch2D::EmbeddedBoundary,"use external or custom for embedded walls");
         bc.push_back(b);
     }
-    if(problem=="vortex"||problem=="thermal-wave")for(auto& b:bc) {
+    if(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")for(auto& b:bc) {
         const auto& f=mesh.faces[b.face];const bool x=b.name=="periodic-x";
         for(const auto& other:bc) {
             const auto& g=mesh.faces[other.face];
@@ -197,7 +207,8 @@ int main(int argc,char** argv) {
         }
     }
     bool hasWall=false;
-    for(auto& b:bc)if(b.kind==EulerBoundaryKind2D::SlipWall){hasWall=true;if(problem!="custom"){b.thermalKind=wallThermal;b.thermalValue=wallValue;}}
+    for(auto& b:bc)if(b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::NoSlipWall){hasWall=true;if(problem!="custom"){b.thermalKind=wallThermal;b.thermalValue=wallValue;b.kind=wallModel=="no-slip"?EulerBoundaryKind2D::NoSlipWall:EulerBoundaryKind2D::SlipWall;}}
+    require(hasWall||wallModel=="slip","no-slip model requires physical walls");
     require((hasWall||wallThermal==HeatBoundaryKind2D::Insulated)&&std::isfinite(wallValue),"wall thermal condition requires a physical wall");
     validateEulerBoundaries2D(mesh,bc,gas);validateEulerTransport2D(transport,bc);
     require(wallThermal!=HeatBoundaryKind2D::Insulated||wallValue==0,"insulated wall value must be zero");
@@ -215,6 +226,10 @@ int main(int argc,char** argv) {
             require(reference.u==0&&reference.v==0,"thermal-wave reference velocity must be zero");
             const double perturbation=1e-5*std::cos(2*std::numbers::pi*(c.centre.x-xmin)/(xmax-xmin));
             q.density*=1-perturbation;q.pressure*=1-perturbation*perturbation;
+        }
+        if(problem=="shear-wave") {
+            require(reference.u==0&&reference.v==0,"shear-wave reference velocity must be zero");
+            q.v=1e-4*eulerSoundSpeed2D(reference,gas)*std::cos(2*std::numbers::pi*(c.centre.x-xmin)/(xmax-xmin));
         }
         if(problem=="vortex") {
             const double x=c.centre.x-.5*(xmin+xmax),y=c.centre.y-.5*(ymin+ymax),r2=x*x+y*y;
@@ -236,7 +251,7 @@ int main(int argc,char** argv) {
     }
     const auto save=[&]{auto out=output(prefix+".checkpoint.tmp");writeEulerCheckpoint2D(out,mesh,bc,gas,state,problem,transport);out.close();std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");};
     save();auto boundaryOutput=output(prefix+".boundaries");boundaryFile(boundaryOutput,mesh,bc);boundaryOutput.close();
-    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat\n";
+    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat,viscousCourant,boundaryViscousWork\n";
     const EulerStepper2D solver(mesh,bc,gas,transport);
     const auto started=std::chrono::steady_clock::now();const double initialTime=state.time;const auto initialSteps=state.steps;
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
@@ -252,11 +267,11 @@ int main(int argc,char** argv) {
             minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
-            history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<'\n';
+            history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<','<<last->viscousCourant<<','<<last->boundaryViscousWork<<'\n';
             if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime) {
                 save();history.flush();
                 std::cout<<std::setprecision(17)<<"{\"type\":\"euler-step\",\"step\":"<<state.steps<<",\"time\":"<<state.time
-                    <<",\"acousticCourant\":"<<last->acousticCourant<<",\"thermalCourant\":"<<last->thermalCourant<<",\"combinedCourant\":"<<last->combinedCourant<<",\"minimumDensity\":"<<last->minimumDensity
+                    <<",\"acousticCourant\":"<<last->acousticCourant<<",\"thermalCourant\":"<<last->thermalCourant<<",\"viscousCourant\":"<<last->viscousCourant<<",\"combinedCourant\":"<<last->combinedCourant<<",\"minimumDensity\":"<<last->minimumDensity
                     <<",\"minimumPressure\":"<<last->minimumPressure<<",\"mass\":"<<last->afterIntegral[0]
                     <<",\"totalEnergy\":"<<last->afterIntegral[3]<<"}\n"<<std::flush;
             }
@@ -265,7 +280,7 @@ int main(int argc,char** argv) {
     save();history.close();
     const double elapsed=std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
     auto cells=output(prefix+".cells.csv"),fields=output(prefix+".fields.json");
-    cells<<"cell,x,y,area,rho,u,v,p,rhoU,rhoV,rhoE,temperature,mach,previousRho,previousRhoU,previousRhoV,previousRhoE,heatRate\n";
+    cells<<"cell,x,y,area,rho,u,v,p,rhoU,rhoV,rhoE,temperature,mach,previousRho,previousRhoU,previousRhoV,previousRhoE,heatRate,viscousRate\n";
     fields<<"{\"format\":\"cartmesh2d-euler-v1\",\"time\":"<<state.time<<",\"cells\":[\n";
     for(std::size_t i=0;i<state.cells.size();++i) {
         const auto& c=mesh.cells[i];const auto& q=state.cells[i];const auto p=eulerPrimitive2D(q,gas);
@@ -273,12 +288,12 @@ int main(int argc,char** argv) {
         require(std::isfinite(temperature)&&temperature>0&&std::isfinite(mach),"unrepresentable exported temperature or Mach number");
         cells<<i<<','<<c.centre.x<<','<<c.centre.y<<','<<c.area<<','<<p.density<<','<<p.u<<','<<p.v<<','<<p.pressure<<','<<q[1]<<','<<q[2]<<','<<q[3]<<','<<temperature<<','<<mach;
         for(double v:last?last->previousCells[i]:q)cells<<','<<v;
-        cells<<','<<(last?last->cellHeatRate[i]:0)<<'\n';if(i)fields<<",\n";
+        cells<<','<<(last?last->cellHeatRate[i]:0)<<','<<(last?last->cellViscousRate[i]:0)<<'\n';if(i)fields<<",\n";
         fields<<"{\"id\":"<<i<<",\"rho\":"<<p.density<<",\"u\":"<<p.u<<",\"v\":"<<p.v<<",\"p\":"<<p.pressure
             <<",\"rhoE\":"<<q[3]<<",\"temperature\":"<<temperature<<",\"mach\":"<<mach<<'}';
     }
     fields<<"\n]}\n";cells.close();fields.close();
-    auto faces=output(prefix+".faces.csv");faces<<"face,owner,neighbour,x,y,sx,sy,kind,partner,waveSpeed,mass,momentumX,momentumY,energy,hllcFallbackStages,heatFlux,convectiveEnergy\n";
+    auto faces=output(prefix+".faces.csv");faces<<"face,owner,neighbour,x,y,sx,sy,kind,partner,waveSpeed,mass,momentumX,momentumY,energy,hllcFallbackStages,heatFlux,convectiveEnergy,viscousMomentumX,viscousMomentumY,viscousWork,convectiveMomentumX,convectiveMomentumY\n";
     std::vector<const EulerBoundary2D*> lookup(mesh.faces.size());for(const auto& b:bc)lookup[b.face]=&b;
     for(std::size_t i=0;i<mesh.faces.size();++i) {
         const auto& f=mesh.faces[i];faces<<i<<','<<f.owner<<',';if(f.neighbour)faces<<*f.neighbour;else faces<<-1;
@@ -286,7 +301,10 @@ int main(int argc,char** argv) {
         if(lookup[i]&&lookup[i]->partner)faces<<*lookup[i]->partner;else faces<<-1;
         faces<<','<<(last?last->faceWaveSpeed[i]:0);
         for(double value:last?last->faceFlux[i]:EulerConservative2D{})faces<<','<<value;
-        faces<<','<<(last?static_cast<unsigned>(last->faceHllcFallbackStages[i]):0)<<','<<(last?last->faceHeatFlux[i]:0)<<','<<(last?last->faceFlux[i][3]-last->faceHeatFlux[i]:0)<<'\n';
+        faces<<','<<(last?static_cast<unsigned>(last->faceHllcFallbackStages[i]):0)<<','<<(last?last->faceHeatFlux[i]:0)<<','<<(last?last->faceFlux[i][3]-last->faceHeatFlux[i]-last->faceViscousFlux[i][2]:0);
+        for(double value:last?last->faceViscousFlux[i]:std::array<double,3>{})faces<<','<<value;
+        for(std::size_t k=0;k<2;++k)faces<<','<<(last?last->faceFlux[i][k+1]-last->faceViscousFlux[i][k]:0);
+        faces<<'\n';
     }
     faces.close();std::string vtkError;require(writeLegacyVtk2D(read.topology,prefix+".vtk",&vtkError),vtkError);
     std::ofstream vtk(prefix+".vtk",std::ios::app);vtk.exceptions(std::ios::badbit|std::ios::failbit);vtk<<std::setprecision(17);
@@ -307,6 +325,9 @@ int main(int argc,char** argv) {
         <<",\"heatDiscretization\":\"Fourier / least-squares corrected / full-row-norm explicit bound\""
         <<",\"heatNonMonotoneRows\":"<<(last?last->heatNonMonotoneRows:0)<<",\"thermalCourant\":"<<(last?last->thermalCourant:0)
         <<",\"combinedCourant\":"<<(last?last->combinedCourant:0)<<",\"boundaryHeat\":"<<(last?last->boundaryHeat:0)
+        <<",\"dynamicViscosity\":"<<transport.dynamicViscosity<<",\"wallModel\":"<<quote(problem=="custom"?"custom":wallModel)
+        <<",\"viscousCourant\":"<<(last?last->viscousCourant:0)<<",\"boundaryViscousWork\":"<<(last?last->boundaryViscousWork:0)
+        <<",\"viscousDiscretization\":\"Newtonian Stokes / corrected velocity gradient / full momentum block row norm\""
         <<",\"case\":"<<quote(problem)
         <<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
         <<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"gamma\":"<<gas.gamma<<",\"gasConstant\":"<<gas.gasConstant
@@ -317,7 +338,7 @@ int main(int argc,char** argv) {
         <<",\"maximumSteps\":"<<maximumSteps<<",\"maximumSeconds\":"<<maximumSeconds<<",\"checkpointEvery\":"<<checkpointEvery<<",\"elapsedSeconds\":"<<elapsed
         <<",\"nativeTopologyRevalidated\":true,\"solverQualityPassed\":true,\"externalCheckMesh\":\"not run\""
         <<",\"units\":{\"rho\":\"kg/m3\",\"p\":\"Pa absolute\",\"rhoE\":\"J/m3\",\"temperature\":\"K\",\"flux\":\"outward-owner per unit depth\"}"
-        <<",\"initialization\":\"cell-centre sampling; restart replaces complete conserved state\",\"scope\":\"ideal gas with optional constant Fourier conduction; no viscous stress or turbulence; target time is not steady convergence\"\n}\n";
+        <<",\"initialization\":\"cell-centre sampling; restart replaces complete conserved state\",\"scope\":\"ideal gas with constant Newtonian viscosity and Fourier conduction; planar laminar Stokes hypothesis, no turbulence; target time is not steady convergence\"\n}\n";
     summary.close();std::cout<<status<<": "<<mesh.cells.size()<<" cells, t="<<std::setprecision(17)<<state.time<<", "<<state.steps-initialSteps<<" accepted steps, "<<elapsed<<" s\n";
     if(!failure.empty())std::cerr<<failure<<'\n';return status=="target_reached"?0:2;
  }catch(const std::exception& e){std::cerr<<"cartmesh2d_euler_cli: "<<e.what()<<'\n';return 1;}

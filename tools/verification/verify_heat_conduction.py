@@ -103,7 +103,7 @@ class HeatReference:
         return flux,rates,scales
 
 
-def linear_euler_fourier_mode(time, conductivity, gamma=1.4, gas_r=1., rho=1., temperature=1., wavelength=1., amplitude=1e-5):
+def linear_euler_fourier_mode(time, conductivity, gamma=1.4, gas_r=1., rho=1., temperature=1., wavelength=1., amplitude=1e-5, viscosity=0.):
     """Continuum linearized Euler-Fourier mode, independent of spatial stencils.
 
     drho=A*cos(wx), u=B*sin(wx), dT=C*cos(wx). Initially isobaric
@@ -113,7 +113,7 @@ def linear_euler_fourier_mode(time, conductivity, gamma=1.4, gas_r=1., rho=1., t
     """
     w=2*math.pi/wavelength
     alpha=conductivity/(rho*gas_r/(gamma-1))
-    m=[[0.,-rho*w,0.], [gas_r*temperature*w/rho,0.,gas_r*w],
+    m=[[0.,-rho*w,0.], [gas_r*temperature*w/rho,-4/3*viscosity/rho*w*w,gas_r*w],
        [0.,-(gamma-1)*temperature*w,-alpha*w*w]]
     norm=max(sum(abs(x*time) for x in row) for row in m)
     squarings=max(0,math.ceil(math.log2(norm/.5))) if norm else 0

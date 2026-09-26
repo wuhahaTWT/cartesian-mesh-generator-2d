@@ -87,7 +87,7 @@ ${euler ? `## 可压 Euler 结果
 - desktop-state.json + euler.checkpoint：恢复相同网格后可在App中载入的续算清单与状态；两文件需要保留在同一目录。
 - euler-run-* 各自独立；只有 desktop-state.json 中 complete 是到达目标时间的完整结果。failed/cancelled 中保存的接受状态可续算，不能冒充完成结果。
 
-本次格式：${euler.summary.method}。无黏理想气体模型，物面自由滑移。HLLC 使用多维压力感知的 HLLE 混合保护；正性回退和退阶计数保存在摘要与历史中。本次导热系数 k=${euler.summary.thermalConductivity??0} W/(m·K)，热壁为 ${euler.summary.wallThermal??'insulated'}，边界值 ${euler.summary.wallValue??0}（定温 K，向外热流 W/m²，负值加热）。导热进入总能量并反馈压力与流动；开边界默认零 Fourier 通量，仍可通过对流携带能量。没有黏性应力或湍流，未包含固体共轭导热。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
+本次格式：${euler.summary.method}。理想气体层流模型，动力黏度 μ=${euler.summary.dynamicViscosity??0} Pa·s，壁面模型 ${euler.summary.wallModel??'slip'}。HLLC 使用多维压力感知的 HLLE 混合保护；正性回退和退阶计数保存在摘要与历史中。本次导热系数 k=${euler.summary.thermalConductivity??0} W/(m·K)，热壁为 ${euler.summary.wallThermal??'insulated'}，边界值 ${euler.summary.wallValue??0}（定温 K，向外热流 W/m²，负值加热）。导热进入总能量并反馈压力与流动；开边界默认零 Fourier 通量，仍可通过对流携带能量。黏性采用 Stokes 假设的 Newtonian 应力，同时计入总能量机械功。开边界取零黏性牵引；未包含湍流、变物性或固体共轭导热。可压绝对压力不能当成不可压的运动学压力，目标时间不表示稳态。
 ` : ''}
 **导出不等于通过外部检查**：本次打包没有运行 OpenFOAM / Fluent 检查。${flow ? '上面的收敛状态只适用于本次自研层流离散工况，不代表其他流动工况。' : thermal ? '同步流动保存在温度联合状态中；本次没有独立流场显示包。' : euler ? '上述可压结果只适用于本次明确的理想气体无黏工况。' : '本次没有自研流场结果。'}使用哪个 CFD 软件，就在该软件中检查导入后的网格。
 `;

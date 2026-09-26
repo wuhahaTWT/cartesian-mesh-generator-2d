@@ -15,7 +15,7 @@ void primitiveValid(const EulerPrimitive2D& q) {
 }
 EulerPrimitive2D ghost(const EulerPrimitive2D& inside,const EulerBoundary2D& b,Vector2D n,const IdealGas2D& gas) {
     const double normal=inside.u*n.x+inside.v*n.y;
-    if(b.kind==EulerBoundaryKind2D::SlipWall)
+    if((b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::NoSlipWall))
         return {inside.density,inside.u-2*normal*n.x,inside.v-2*normal*n.y,inside.pressure};
     if(b.kind==EulerBoundaryKind2D::Transmissive)return inside;
     require(b.kind==EulerBoundaryKind2D::Farfield,"unexpected boundary ghost type");
@@ -38,8 +38,10 @@ EulerPrimitive2D ghost(const EulerPrimitive2D& inside,const EulerBoundary2D& b,V
 }
 
 void validateEulerTransport2D(const EulerTransport2D& transport,const std::vector<EulerBoundary2D>& boundaries) {
+    require(std::isfinite(transport.dynamicViscosity)&&transport.dynamicViscosity>=0,"dynamic viscosity must be finite and nonnegative");
     require(std::isfinite(transport.thermalConductivity)&&transport.thermalConductivity>=0,"thermal conductivity must be finite and nonnegative");
     for(const auto& b:boundaries) {
+        require(b.kind!=EulerBoundaryKind2D::NoSlipWall||transport.dynamicViscosity>0,"no-slip wall requires positive dynamic viscosity");
         require(b.thermalKind==HeatBoundaryKind2D::Insulated||b.thermalKind==HeatBoundaryKind2D::Temperature||b.thermalKind==HeatBoundaryKind2D::OutwardFlux,"unknown thermal condition");
         require(std::isfinite(b.thermalValue),"nonfinite thermal boundary value");
         require(b.thermalKind!=HeatBoundaryKind2D::Temperature||b.thermalValue>0,"temperature boundary requires positive Kelvin");
@@ -79,7 +81,11 @@ void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBound
         const auto [it,inserted]=groups.emplace(b.name,b.kind);
         require(inserted||it->second==b.kind,"one boundary name has multiple physical kinds");
         require(b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::Transmissive||
-                b.kind==EulerBoundaryKind2D::Farfield||b.kind==EulerBoundaryKind2D::Periodic,"unknown boundary kind");
+                b.kind==EulerBoundaryKind2D::Farfield||b.kind==EulerBoundaryKind2D::Periodic||b.kind==EulerBoundaryKind2D::NoSlipWall,"unknown boundary kind");
+        require(std::isfinite(b.wallVelocity.x)&&std::isfinite(b.wallVelocity.y),"nonfinite wall velocity");
+        require(b.kind==EulerBoundaryKind2D::NoSlipWall||(b.wallVelocity.x==0&&b.wallVelocity.y==0),"only no-slip walls accept wall velocity");
+        const auto normal=mesh.faces[b.face].areaVector;
+        require(std::abs(dot(b.wallVelocity,normal))<=64*std::numeric_limits<double>::epsilon()*std::hypot(normal.x,normal.y)*std::hypot(b.wallVelocity.x,b.wallVelocity.y),"static mesh requires tangential wall velocity");
         primitiveValid(b.reference);
         require((b.kind==EulerBoundaryKind2D::Periodic)==b.partner.has_value(),"only periodic faces require a partner");
         lookup[b.face]=&b;
@@ -113,18 +119,19 @@ PrimitiveValues values(const EulerPrimitive2D& q){return {q.density,q.u,q.v,q.pr
 EulerPrimitive2D primitiveValues(const PrimitiveValues& q){return {q[0],q[1],q[2],q[3]};}
 struct SpatialOperator {
     std::vector<EulerConservative2D> faceFlux,residual;
-    std::vector<double> speed,spectral,heatFlux,heatRate;
+    std::vector<double> speed,spectral,heatFlux,heatRate,viscousRate;
+    std::vector<std::array<double,3>> viscousFlux;
     std::vector<unsigned char> fallback;
     std::size_t fallbackEvaluations=0,reconstructionFallbackCells=0;
     double minimumContactRestoration=1;
 };
 SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
-    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const HeatConductionOperator2D* heat) {
+    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous) {
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<EulerPrimitive2D> primitive;primitive.reserve(nc);
     for(const auto& u:cells)primitive.push_back(eulerPrimitive2D(u,gas));
     SpatialOperator out;out.faceFlux.resize(nf);out.residual.resize(nc);out.speed.resize(nf);
-    out.spectral.resize(nc);out.fallback.resize(nf);out.heatFlux.resize(nf);out.heatRate.resize(nc);
+    out.spectral.resize(nc);out.fallback.resize(nf);out.heatFlux.resize(nf);out.heatRate.resize(nc);out.viscousFlux.resize(nf);out.viscousRate.resize(nc);
     // Multidimensional pressure sensor inspired by Simon & Mandal (2018),
     // eqs. 49-50, alpha=3. Our polygon stencil includes every face incident on
     // either adjacent cell and blends ALL conserved flux components, rather
@@ -227,7 +234,7 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
             eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
         const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
         auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration);
-        if(boundary&&boundary->kind==EulerBoundaryKind2D::SlipWall) {
+        if(boundary&&(boundary->kind==EulerBoundaryKind2D::SlipWall||boundary->kind==EulerBoundaryKind2D::NoSlipWall)) {
             // The mirror Riemann problem has exactly zero mass/energy flux and
             // purely normal pressure traction. Enforce that analytical symmetry
             // before assembling the residual, rather than leaving cancellation
@@ -261,6 +268,14 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
         for(std::size_t id=0;id<nf;++id)out.faceFlux[id][3]=finite(out.faceFlux[id][3]+out.heatFlux[id]);
         for(std::size_t i=0;i<nc;++i)out.residual[i][3]=finite(out.residual[i][3]+conduction.cellResidual[i]);
     }
+    if(viscous) {
+        std::vector<Vector2D> velocity(nc);std::vector<double> density(nc);
+        for(std::size_t i=0;i<nc;++i){velocity[i]={primitive[i].u,primitive[i].v};density[i]=primitive[i].density;}
+        auto stress=viscous->evaluate(velocity,density);
+        out.viscousFlux=std::move(stress.faceFlux);out.viscousRate=std::move(stress.rate);
+        for(std::size_t id=0;id<nf;++id)for(std::size_t k=0;k<3;++k)out.faceFlux[id][k+1]=finite(out.faceFlux[id][k+1]+out.viscousFlux[id][k]);
+        for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<3;++k)out.residual[i][k+1]=finite(out.residual[i][k+1]+stress.cellResidual[i][k]);
+    }
     return out;
 }
 bool positiveUpdate(const FvMesh2D& mesh,const std::vector<EulerConservative2D>& old,
@@ -275,7 +290,7 @@ bool positiveUpdate(const FvMesh2D& mesh,const std::vector<EulerConservative2D>&
 }
 }
 static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
-    const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control,const HeatConductionOperator2D* heat) {
+    const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control,const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous) {
     validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);
     require(initial.cells.size()==mesh.cells.size()&&std::isfinite(initial.time)&&initial.time>=0,
         "initial state does not match mesh or physical time");
@@ -286,10 +301,10 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
-    const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,heat);
+    const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,heat,viscous);
     double dt=control.maximumStep;
-    for(std::size_t i=0;i<nc;++i)dt=std::min(dt,heat?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
-    require(std::isfinite(dt)&&dt>=control.minimumStep,"combined acoustic/heat CFL requires a step below the declared minimum");
+    for(std::size_t i=0;i<nc;++i)dt=std::min(dt,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
+    require(std::isfinite(dt)&&dt>=control.minimumStep,"combined acoustic/heat/viscous CFL requires a step below the declared minimum");
     EulerStepResult2D result;result.previousCells=initial.cells;
     std::vector<EulerConservative2D> accepted,stage,secondEuler,residual,absolute(nc);
     std::vector<double> spectral;
@@ -300,7 +315,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
         SpatialOperator combined=first;
         if(valid&&control.order==2) {
             try {
-                const auto second=spatialOperator(mesh,lookup,gas,stage,control,heat);
+                const auto second=spatialOperator(mesh,lookup,gas,stage,control,heat,viscous);
                 // SSPRK(2,2): U1=Un+dt L(Un); Un+1=1/2 Un+1/2 [U1+dt L(U1)].
                 // Require admissibility of each FE stage, not just of the mixture.
                 valid=positiveUpdate(mesh,stage,second.residual,dt,gas,secondEuler);
@@ -313,6 +328,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
                     const auto& face=mesh.faces[id];const double length=std::hypot(face.areaVector.x,face.areaVector.y);
                     combined.speed[id]=std::max(first.speed[id],second.speed[id]);
                     combined.heatFlux[id]=.5*(first.heatFlux[id]+second.heatFlux[id]);
+                    for(std::size_t k=0;k<3;++k)combined.viscousFlux[id][k]=.5*(first.viscousFlux[id][k]+second.viscousFlux[id][k]);
                     combined.fallback[id]=static_cast<unsigned char>(first.fallback[id]|(second.fallback[id]<<1));
                     combined.spectral[face.owner]+=combined.speed[id]*length;
                     if(face.neighbour)combined.spectral[*face.neighbour]+=combined.speed[id]*length;
@@ -326,8 +342,9 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
                 // in BOTH stages. Density-dependent volumetric cv changes at U1.
                 for(std::size_t i=0;i<nc;++i) {
                     combined.heatRate[i]=std::max(first.heatRate[i],second.heatRate[i]);
-                    if(dt*(combined.spectral[i]/mesh.cells[i].area+combined.heatRate[i])>control.acousticCourant*(1+8*std::numeric_limits<double>::epsilon())) {
-                        valid=false;failure="second-stage combined acoustic/heat CFL exceeded";break;
+                    combined.viscousRate[i]=std::max(first.viscousRate[i],second.viscousRate[i]);
+                    if(dt*(combined.spectral[i]/mesh.cells[i].area+combined.heatRate[i]+combined.viscousRate[i])>control.acousticCourant*(1+8*std::numeric_limits<double>::epsilon())) {
+                        valid=false;failure="second-stage combined acoustic/heat/viscous CFL exceeded";break;
                     }
                 }
                 if(valid)valid=positiveUpdate(mesh,initial.cells,combined.residual,dt,gas,accepted);
@@ -336,6 +353,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
         if(valid) {
             result.faceFlux=std::move(combined.faceFlux);result.faceWaveSpeed=std::move(combined.speed);
             result.faceHeatFlux=std::move(combined.heatFlux);result.cellHeatRate=std::move(combined.heatRate);
+            result.faceViscousFlux=std::move(combined.viscousFlux);result.cellViscousRate=std::move(combined.viscousRate);
             result.heatNonMonotoneRows=heat?heat->nonMonotoneRows():0;
             result.faceHllcFallbackStages=std::move(combined.fallback);
             result.hllcFallbackEvaluations=combined.fallbackEvaluations;
@@ -351,7 +369,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     result.minimumDensity=std::numeric_limits<double>::infinity();result.minimumPressure=result.minimumDensity;
     for(std::size_t id=0;id<nf;++id) {
         const auto& face=mesh.faces[id];const auto* bc=lookup[id];
-        if(!face.neighbour&&!bc->partner)result.boundaryHeat+=result.faceHeatFlux[id];
+        if(!face.neighbour&&!bc->partner){result.boundaryHeat+=result.faceHeatFlux[id];result.boundaryViscousWork+=result.faceViscousFlux[id][2];}
         for(std::size_t k=0;k<4;++k) {
             const double value=result.faceFlux[id][k];absolute[face.owner][k]+=std::abs(value);
             if(face.neighbour)absolute[*face.neighbour][k]+=std::abs(value);
@@ -361,7 +379,8 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     for(std::size_t i=0;i<nc;++i) {
         const double area=mesh.cells[i].area;result.acousticCourant=std::max(result.acousticCourant,dt*spectral[i]/area);
         result.thermalCourant=std::max(result.thermalCourant,dt*result.cellHeatRate[i]);
-        result.combinedCourant=std::max(result.combinedCourant,dt*(spectral[i]/area+result.cellHeatRate[i]));
+        result.viscousCourant=std::max(result.viscousCourant,dt*result.cellViscousRate[i]);
+        result.combinedCourant=std::max(result.combinedCourant,dt*(spectral[i]/area+result.cellHeatRate[i]+result.cellViscousRate[i]));
         const auto q=eulerPrimitive2D(result.state.cells[i],gas);
         result.minimumDensity=std::min(result.minimumDensity,q.density);result.minimumPressure=std::min(result.minimumPressure,q.pressure);
         for(std::size_t k=0;k<4;++k) {
@@ -385,18 +404,29 @@ std::optional<HeatConductionOperator2D> prepareHeat(const FvMesh2D& mesh,const s
     for(const auto& b:boundaries)thermal.push_back({b.face,b.partner?HeatBoundaryKind2D::Periodic:b.thermalKind,b.thermalValue,b.partner});
     return HeatConductionOperator2D(mesh,thermal,transport.thermalConductivity);
 }
+std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport) {
+    validateEulerTransport2D(transport,boundaries);
+    if(transport.dynamicViscosity==0)return {};
+    std::vector<ViscousBoundary2D> bc;bc.reserve(boundaries.size());
+    for(const auto& b:boundaries) {
+        const auto kind=b.partner?ViscousBoundaryKind2D::Periodic:b.kind==EulerBoundaryKind2D::NoSlipWall?ViscousBoundaryKind2D::Velocity:
+            b.kind==EulerBoundaryKind2D::SlipWall?ViscousBoundaryKind2D::Slip:ViscousBoundaryKind2D::ZeroTraction;
+        bc.push_back({b.face,kind,b.wallVelocity,b.partner});
+    }
+    return ViscousStressOperator2D(mesh,bc,transport.dynamicViscosity);
+}
 }
 EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport)
     :mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
     validateFvMesh2D(mesh_);validateEulerBoundaries2D(mesh_,boundaries_,gas_);
-    heat_=prepareHeat(mesh_,boundaries_,transport);
+    heat_=prepareHeat(mesh_,boundaries_,transport);viscous_=prepareViscous(mesh_,boundaries_,transport);
 }
 EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const EulerStepControls2D& controls) const {
-    return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,heat_?&*heat_:nullptr);
+    return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
 }
 EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& controls,const EulerTransport2D& transport) {
-    const auto heat=prepareHeat(mesh,boundaries,transport);
-    return advanceEulerImpl(mesh,boundaries,gas,initial,controls,heat?&*heat:nullptr);
+    const auto heat=prepareHeat(mesh,boundaries,transport);const auto viscous=prepareViscous(mesh,boundaries,transport);
+    return advanceEulerImpl(mesh,boundaries,gas,initial,controls,heat?&*heat:nullptr,viscous?&*viscous:nullptr);
 }
 } // namespace cartmesh2d::fv

@@ -13,7 +13,7 @@ inline std::string binding(const FvMesh2D& mesh,const std::vector<EulerBoundary2
                            const IdealGas2D& gas,const std::string& problem,const EulerTransport2D& transport) {
     validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);validateEulerTransport2D(transport,boundaries);
     if(problem.find_first_of("\r\n")!=std::string::npos)throw std::runtime_error("Euler checkpoint: invalid problem label");
-    std::ostringstream out;out<<std::setprecision(17)<<"CM2D_EULER_CHECKPOINT "<<(transport.thermalConductivity>0?2:1)<<"\nGAS "<<gas.gamma<<' '<<gas.gasConstant
+    std::ostringstream out;out<<std::setprecision(17)<<"CM2D_EULER_CHECKPOINT "<<(transport.dynamicViscosity>0?3:transport.thermalConductivity>0?2:1)<<"\nGAS "<<gas.gamma<<' '<<gas.gasConstant
         <<"\nPROBLEM "<<std::quoted(problem)<<"\nCELLS "<<mesh.cells.size()<<'\n';
     for(const auto& cell:mesh.cells) {
         out<<cell.centre.x<<' '<<cell.centre.y<<' '<<cell.area<<' '<<cell.faces.size();
@@ -34,10 +34,12 @@ inline std::string binding(const FvMesh2D& mesh,const std::vector<EulerBoundary2
         out<<b.face<<' '<<static_cast<int>(b.kind)<<' '<<std::quoted(b.name)<<' ';
         if(b.partner)out<<*b.partner;else out<<'-';
         out<<' '<<b.reference.density<<' '<<b.reference.u<<' '<<b.reference.v<<' '<<b.reference.pressure;
-        if(transport.thermalConductivity>0)out<<' '<<static_cast<int>(b.thermalKind)<<' '<<b.thermalValue;
+        if(transport.thermalConductivity>0||transport.dynamicViscosity>0)out<<' '<<static_cast<int>(b.thermalKind)<<' '<<b.thermalValue;
+        if(transport.dynamicViscosity>0)out<<' '<<b.wallVelocity.x<<' '<<b.wallVelocity.y;
         out<<'\n';
     }
-    if(transport.thermalConductivity>0)out<<"CONDUCTIVITY "<<transport.thermalConductivity<<'\n';
+    if(transport.thermalConductivity>0||transport.dynamicViscosity>0)out<<"CONDUCTIVITY "<<transport.thermalConductivity<<'\n';
+    if(transport.dynamicViscosity>0)out<<"VISCOSITY "<<transport.dynamicViscosity<<'\n';
     return out.str();
 }
 inline void validate(const EulerState2D& state,std::size_t count,const IdealGas2D& gas) {
