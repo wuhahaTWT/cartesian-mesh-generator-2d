@@ -20,8 +20,8 @@ test('Euler accepts real independently audited native fields and rejects stale/t
   assert.throws(()=>validate({...fixture.files,'.history.csv':fixture.files['.history.csv'].trim().split('\n').slice(0,-1).join('\n')}),/历史/);
 });
 test('Euler requests and progress keep physical types and units separate',()=>{
-  assert.deepEqual(validateEulerRequest(request),request);
-  for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
+  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1});
+  for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'},{fluxScheme:'roe'},{order:3},{order:'2'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
   const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',request);assert.equal(command.executable,'cartmesh2d_euler_cli');assert.ok(command.args.includes('--gas-r'));
   assert.throws(()=>buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',{...request,resume:true}),/状态/);
   assert.equal(parseEulerProgress('normal output'),null);
@@ -43,4 +43,29 @@ test('Euler job retains prior complete result on failure and binds imported rest
     await assert.rejects(()=>runEulerJob({currentResult,mesh,request:{...request,resume:true,endTime:.03,gamma:1.3},executable:x=>x,runProcess:runner,signal}),/物理参数/);
     await fs.appendFile(imported.path,'corruption\n');await assert.rejects(()=>importEulerRestart(path.join(directory,payload.manifest),mesh,meshPath),/检查点/);
   }finally{await fs.rm(directory,{recursive:true,force:true});}
+});
+
+test('Euler numerical method selection is explicit and legacy requests remain reproducible',()=>{
+  const selected={...request,fluxScheme:'hllc',order:2};
+  const invocation=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',selected);
+  assert.equal(invocation.args[invocation.args.indexOf('--flux')+1],'hllc');
+  assert.equal(invocation.args[invocation.args.indexOf('--order')+1],'2');
+  assert.throws(()=>validate(fixture.files,selected),/格式不匹配/);
+  const summary=JSON.parse(fixture.files['.json']);summary.fluxScheme='hllc';
+  assert.throws(()=>validate({...fixture.files,'.json':JSON.stringify(summary)}),/格式不匹配/);
+  // The conserved checkpoint binds physics; numerical controls may change explicitly.
+  assert.equal(eulerCheckpoint(fixture.files['.checkpoint'],mesh,selected).time,.02);
+});
+
+test('Euler validates real second-order HLLC/HLLE output and every fallback/sensor diagnostic',()=>{
+  const sample=require('./fixtures/euler-hllc.json'),m=parseCm2d(sample.mesh);
+  const check=(files=sample.files)=>validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],m,sample.request);
+  assert.equal(sample.independentAudit.valid,true);assert.equal(check().summary.order,2);
+  for(const [key,value] of [['lastHllcFallbackEvaluations',1],['hllcFallbackEvaluations',1],['minimumContactRestoration',-1],['lastMinimumContactRestoration',1],['shockControl','none']]) {
+    const summary=JSON.parse(sample.files['.json']);summary[key]=value;
+    assert.throws(()=>check({...sample.files,'.json':JSON.stringify(summary)}),/回退|保护/);
+  }
+  const lines=sample.files['.faces.csv'].trim().split('\n'),header=lines[0].split(','),row=lines[1].split(',');
+  row[header.indexOf('hllcFallbackStages')]='4';lines[1]=row.join(',');
+  assert.throws(()=>check({...sample.files,'.faces.csv':lines.join('\n')}),/回退阶段/);
 });

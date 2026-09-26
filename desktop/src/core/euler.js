@@ -7,9 +7,10 @@ const finite=(v,name)=>{requireValue(typeof v==='number'&&Number.isFinite(v),`${
 const near=(a,b)=>Math.abs(a-b)<=2e-12+2e-10*Math.max(Math.abs(a),Math.abs(b));
 function validateEulerRequest(input) {
   requireValue(input&&typeof input==='object'&&!Array.isArray(input),'缺少配置。');
-  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,'resume'].includes(k)),'存在未知配置。');
+  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,'fluxScheme','order','resume'].includes(k)),'存在未知配置。');
   requireValue(['sod','external','uniform'].includes(input.case),'未知工况。');
-  const r={case:input.case};
+  const r={case:input.case,fluxScheme:input.fluxScheme??'rusanov',order:input.order??1};
+  requireValue(['rusanov','hllc'].includes(r.fluxScheme)&&[1,2].includes(r.order),'通量格式或精度阶数无效。');
   for(const k of [...PHYSICAL.slice(1),...NUMERICAL])r[k]=finite(input[k],k);
   requireValue(r.density>0&&r.pressure>0&&r.gamma>1&&r.gasConstant>0,'密度、绝对压力、气体常数须为正，gamma须大于1。');
   requireValue(r.split>0&&r.split<1&&(r.case==='sod'||r.split===.5),'隔膜位置只适用于冲击管。');
@@ -23,7 +24,7 @@ function validateEulerRequest(input) {
 function buildEulerInvocation(mesh,prefix,input,restart=null) {
   const r=validateEulerRequest(input);requireValue(typeof mesh==='string'&&mesh.endsWith('.solver.cm2d')&&!mesh.endsWith('.failed.solver.cm2d'),'需要最终求解网格。');
   requireValue(!r.resume||restart,'没有可用的已接受状态。');
-  const args=['--mesh',mesh,'--output',prefix,'--case',r.case];
+  const args=['--mesh',mesh,'--output',prefix,'--case',r.case,'--flux',r.fluxScheme,'--order',String(r.order)];
   for(const [key,flag] of Object.entries({density:'density',u:'u',v:'v',pressure:'pressure',gamma:'gamma',gasConstant:'gas-r',split:'split',endTime:'end-time',maximumStep:'max-step',minimumStep:'min-step',cfl:'cfl',maximumSteps:'max-steps',maximumSeconds:'max-seconds'}))args.push('--'+flag,String(r[key]));
   if(r.resume)args.push('--restart',restart);
   return {request:r,executable:'cartmesh2d_euler_cli',args};
@@ -72,7 +73,15 @@ function cellGeometry(mesh,cell) {
 }
 function validateEulerOutput(summary,fields,cellsText,facesText,historyText,checkpointText,mesh,input,startTime=0) {
   const r=validateEulerRequest(input),s=summary;
-  requireValue(s?.solver==='native 2D ideal-gas Euler'&&s.method==='first-order Rusanov / forward Euler','求解模型不匹配。');
+  const method=(r.order===1?'first-order ':'limited-linear ')+(r.fluxScheme==='hllc'?'HLLC-HLLE':'Rusanov')+(r.order===1?' / forward Euler':' / SSPRK2');
+  requireValue(s?.solver==='native 2D ideal-gas Euler'&&s.method===method&&(s.fluxScheme??'rusanov')===r.fluxScheme&&(s.order??1)===r.order,'求解模型或数值格式不匹配。');
+  const modern=s.fluxScheme!==undefined;
+  if(modern) {
+    requireValue(s.shockControl===(r.fluxScheme==='hllc'?'multidimensional pressure-ratio cube HLLC/HLLE blend':'none'),'激波保护格式不匹配。');
+    for(const key of ['minimumContactRestoration','lastMinimumContactRestoration'])requireValue(finite(s[key],key)>=0&&s[key]<=1&&(r.fluxScheme==='hllc'||s[key]===1),'激波保护权重无效。');
+  }
+  const count=(value,name)=>{requireValue(Number.isSafeInteger(value)&&value>=0,`${name} 计数无效。`);return value;};
+  for(const key of ['hllcFallbackEvaluations','lastHllcFallbackEvaluations','reconstructionFallbackCells','lastReconstructionFallbackCells'])if(modern)count(s[key],key);
   requireValue(s.status==='target_reached'&&s.targetReached===true&&s.failure==='','未到达目标物理时间。');
   requireValue(s.cells===mesh.cells.length&&s.faces===mesh.edges.length&&s.case===r.case,'网格或工况不匹配。');
   for(const [key,value] of Object.entries({gamma:r.gamma,gasConstant:r.gasConstant,split:r.split,requestedEndTime:r.endTime,time:r.endTime,initialTime:startTime,cflLimit:r.cfl,maximumStep:r.maximumStep,minimumStep:r.minimumStep,maximumSteps:r.maximumSteps,maximumSeconds:r.maximumSeconds}))requireValue(s[key]===value,`${key} 与请求不同。`);
@@ -98,7 +107,11 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
   }
   const faceRows=rows(facesText,['face','owner','neighbour','x','y','sx','sy','waveSpeed','mass','momentumX','momentumY','energy']);requireValue(faceRows.length===s.faces,'面 CSV 数量不匹配。');
   const residual=mesh.cells.map(()=>[0,0,0,0]),absolute=mesh.cells.map(()=>[0,0,0,0]),spectral=mesh.cells.map(()=>0);
+  let lastFallback=0;
   faceRows.forEach((row,i)=>{
+    const mask=count(Number(row.hllcFallbackStages??(modern?NaN:0)),'通量回退');
+    requireValue(mask<=(r.order===1?1:3)&&(r.fluxScheme==='hllc'||mask===0),'通量回退阶段错误。');
+    if(Number(row.partner)<0||i<Number(row.partner))lastFallback+=(mask&1)+((mask>>1)&1);
     const e=mesh.edges[i];requireValue(Number(row.face)===i&&Number(row.owner)===e.owner&&Number(row.neighbour)===e.neighbour,'面关联不匹配。');
     const vertices=mesh.cells[e.owner].vertices,local=vertices.indexOf(e.a);requireValue(local>=0,'owner 面端点缺失。');
     const forward=vertices[(local+1)%vertices.length]===e.b;
@@ -111,6 +124,7 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
       for(let k=0;k<4;k++){residual[id][k]+=sign*flux[k];absolute[id][k]+=Math.abs(flux[k]);}
     }
   });
+  if(modern)requireValue(lastFallback===s.lastHllcFallbackEvaluations,'最后步通量回退计数不匹配。');
   let maximumCellBalanceRelative=0,acousticCourant=0;
   for(let i=0;i<current.length;i++) {
     acousticCourant=Math.max(acousticCourant,s.lastStep*spectral[i]/areas[i]);
@@ -127,6 +141,18 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
     requireValue(row.step===++step&&row.time>time&&near(row.time-time,row.dt)&&row.dt>0&&row.acousticCourant<=r.cfl*(1+1e-12)&&row.minimumDensity>0&&row.minimumPressure>0,'时间历史不满足接受条件。');time=row.time;
   }
   requireValue(time===s.time,'历史终点不匹配。');
-  return {summary:s,fields,history,request:r,audit:{maximumCellBalanceRelative,acousticCourant,scope:'last accepted step finite-volume balance, EOS, mesh/field/checkpoint binding; full Rusanov physics audited separately'}};
+  for(const [k,key] of ['mass','momentumX','momentumY','totalEnergy'].entries())requireValue(near(history.at(-1)[key],current.reduce((sum,q,i)=>sum+areas[i]*q[k],0)),'历史终态积分不匹配。');
+  const minDensity=current.reduce((value,q)=>Math.min(value,q[0]),Infinity);
+  const minPressure=current.reduce((value,q)=>Math.min(value,conservativePrimitive(q,r.gamma).p),Infinity);
+  requireValue(near(history.at(-1).minimumDensity,minDensity)&&near(history.at(-1).minimumPressure,minPressure)&&near(history.at(-1).acousticCourant,acousticCourant),'历史终态范围或 CFL 不匹配。');
+  if(modern) {
+    for(const row of history)requireValue(row.minimumContactRestoration>=0&&row.minimumContactRestoration<=1,'历史激波保护权重无效。');
+    requireValue(history.reduce((value,row)=>Math.min(value,row.minimumContactRestoration),1)===s.minimumContactRestoration&&history.at(-1).minimumContactRestoration===s.lastMinimumContactRestoration,'历史激波保护权重不匹配。');
+  }
+  if(modern)for(const [key,lastKey,limit] of [['hllcFallbackEvaluations','lastHllcFallbackEvaluations',s.faces*r.order],['reconstructionFallbackCells','lastReconstructionFallbackCells',s.cells*r.order]]) {
+    const total=history.reduce((sum,row)=>{const value=count(row[key],key);requireValue(value<=limit,'回退计数超出网格范围。');return sum+value;},0);
+    requireValue(total===s[key]&&history.at(-1)[key]===s[lastKey],'历史回退计数不匹配。');
+  }
+  return {summary:s,fields,history,request:r,audit:{maximumCellBalanceRelative,acousticCourant,scope:'last accepted step finite-volume balance, EOS, mesh/field/checkpoint binding; full selected numerical flux and RK stages audited separately'}};
 }
 module.exports={SUFFIXES,PHYSICAL,validateEulerRequest,buildEulerInvocation,eulerCheckpoint,parseEulerProgress,validateEulerOutput};

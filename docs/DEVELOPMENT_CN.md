@@ -145,7 +145,33 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 ### 实验求解器与保留代码
 
-`cartmesh2d_fv_cli --help`是独立扩散/泊松入口。`cartmesh2d_euler_cli --help`是实验理想气体Euler入口；SST输运/壁距/稳态RANS代码位于`src/fv/Sst*`及对应测试。它们仍有调用与测试，保留现有行为；本轮不扩大物理范围，也不把局部通过当作通用湍流或可压流资格。
+`cartmesh2d_fv_cli --help`是独立扩散/泊松入口。SST输运/壁距/稳态RANS代码位于`src/fv/Sst*`及对应测试；保留现有行为，不作为通用湍流资格。
+
+### 隔离可压 Euler 开发
+
+`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。仍求解理想气体无黏的质量、两分量动量及总能量，不含黏性、导热或湍流。
+
+- `EulerFlux2D.cpp` 以真实面面积向量计算一个共享守恒通量；HLLC 使用包含左右声学锥的 Roe/Einfeldt 估计，检查两侧星状态，失效时显式计数并用 Rusanov。
+- 每个相邻单元全部邻面上的 `min(pL,pR)/max(pL,pR)` 取三次方，再取最小值作为接触恢复权重 ω；通量为 `F_HLLE + ω (F_HLLC - F_HLLE)`。传感器依据 [Simon 与 Mandal，式49–50、α=3](https://arxiv.org/pdf/1803.04954)，本实现采用多边形邻面模板并混合四个分量，**不冒称论文的选择性 HLLC-ADC 原样复现**。未加保护的最小旋转 Sod 例曾放大舍入扰动，测试中保留该场景。
+- `Euler2D.cpp` 用距离加权最小二乘及面值范围限制重构原始量；速度分量在随网格旋转的局部坐标系中限幅。矩阵近奇异或面值因浮点消减失去正性时明确计数并退为常量，绝不对接受场的密度、压力或能量加下限。
+- 固壁先求镜像 Riemann 压力牵引，再按对称性构造严格零质量/能量、纯法向动量通量；避免 SI 总能量大数消减产生假泄漏。独立脚本使用另一个标量壁压公式核对。
+- 二阶每个阶段都使用真实边界或周期平移；两个前向 Euler 候选及最终状态都检查正性。导出的面通量是两个阶段的均值，波速取两阶段最大值；CFL 不满足或候选失效则缩步重试。失败候选不写入接受检查点。
+- `verify_euler.py` 从原始多边形和前一守恒场独立重建斜率、两阶段、HLLC/HLLE 通量、声速及状态方程，同时核对历史终态积分。它审计最后接受步和完整时间历史，不代表逐步独立重放整个求解。
+
+HLLC 星状态见 [Toro 的推导](https://www.prague-sum.com/download/2012/Toro_2-HLLC-RiemannSolver.pdf)；受限重构参考 [Barth–Jespersen](https://ntrs.nasa.gov/citations/19890037939)。`--order 2` 表示在光滑区使用二阶格式，激波及局部退阶处不宣称二阶精度。
+
+```sh
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case sod --gas-r 1 --end-time .2 --flux hllc --order 2
+ctest --test-dir build -R '^cartmesh2d_euler_' --output-on-failure
+python3 tests/euler_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-development/qualification
+```
+
+通量方程复核按面长乘特征通量归一化：质量 `ρV`、动量 `ρV²`、能量 `(ρE+p)V`，其中 `V=max(|速度|+声速)`，两侧/两阶段取包络。容差为512个 binary64 机器 epsilon，用于独立公式/重构的浮点一致性，不是物理精度门；避免对接近零的 SI 通量使用无量纲固定绝对误差。固壁质量/能量要求精确为零。单位缩放回归把 SI 与无量纲的完整场归一化比较，另增两个小 Sod 和旋转闭壁例，成本为秒级。
+
+开发验证按量分别判断：沿用无量纲逐格守恒门 `1e-12`；光滑熵波及涡旋比较面积加权 L1 误差，二倍细化的观测阶数回归下限为1.4，允许限制器在极值附近降阶。Sod 以单元中心采样精确 Riemann 解，比较同网格/同目标时间的面积加权离散 L1 误差，不把激波误差称为二阶收敛。Mach 3/10 法向激波加入相对密度幅度 `1e-5` 的交替扰动，检查在对流距离0.3的窗口内，横向密度跨度相对波后密度不超过输入跨度的10倍；不外推为任意强激波稳定性证明。测试规模最高128×128格，精度脚本通常为分钟内至数分钟级，取决于并行负载。
+
+检查点格式保持 v1，网格/物性/边界仍严格绑定；续算可显式改变通量、阶数、CFL和目标时间。使用相同控制参数中断/续算时检查点逐字节一致。摘要/历史分别报告接受阶段中的 HLLC 正性回退、重构退阶和最小接触恢复权重；`hllcFallbackStages` 的位0/1对应第一/第二阶段，周期配对只计一次。
+
 
 ## 验证与证据
 

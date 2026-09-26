@@ -372,9 +372,14 @@
 
     <section class="block flow-block" id="eulerBlock" hidden>
       <h2><span>7</span>可压 Euler（试验）</h2>
-      <p class="note">独立理想气体总能量模型；一阶无黏流动，壁面自由滑移。没有黏性、导热或湍流；光滑涡精度研究尚未通过。</p>
+      <p class="note">独立理想气体总能量模型；无黏流动，壁面自由滑移。可选一阶或二阶格式；没有黏性、导热或湍流。</p>
       <label class="field">工况<select id="eulerCase"><option value="sod">矩形冲击管（Sod）</option><option value="external">物体外流（特征远场）</option><option value="uniform">均匀流（无物面）</option></select></label>
       <p id="eulerScope" class="note"></p>
+      <div class="pair">
+        <label class="field">通量格式<select id="eulerFluxScheme"><option value="rusanov">Rusanov（原方案）</option><option value="hllc">HLLC（激波保护）</option></select></label>
+        <label class="field">精度格式<select id="eulerOrder"><option value="1">一阶</option><option value="2">二阶（受限线性 / RK2）</option></select></label>
+      </div>
+      <p class="note">二阶格式改善光滑区分辨率；激波附近自动限制斜率。HLLC 使用压力感知激波保护；正性回退次数随结果报告。</p>
       <div class="pair">
         <label class="field">密度 ρ（kg/m³）<input id="eulerDensity" type="number" min="0.000000000001" step="any" value="1.225"></label>
         <label class="field">绝对压力（Pa）<input id="eulerPressure" type="number" min="0.000000000001" step="any" value="101325"></label>

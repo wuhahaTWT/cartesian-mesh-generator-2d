@@ -1104,14 +1104,19 @@ async function runSmoke() {
     if (${JSON.stringify(argument('euler') === 'true')}) {
       const target=Number(${JSON.stringify(argument('euler-end-time')||'.0005')});
       for(const [id,value] of Object.entries({eulerCase:${JSON.stringify(argument('euler-case')||'sod')},eulerDensity:'1.225',eulerPressure:'101325',
-        eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
+        eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerFluxScheme:${JSON.stringify(argument('euler-flux')||'rusanov')},eulerOrder:${JSON.stringify(argument('euler-order')||'1')},eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
       document.getElementById('eulerCase').dispatchEvent(new Event('change'));
       await smoke.runEuler();
       if(!smoke.state.euler||smoke.state.euler.summary.time!==target)throw new Error('Euler result did not reach renderer: '+document.getElementById('statusText').textContent);
       const first=smoke.state.euler;
+      if(first.summary.fluxScheme!==document.getElementById('eulerFluxScheme').value||first.summary.order!==Number(document.getElementById('eulerOrder').value))throw new Error('Euler method controls did not reach native solver');
+      document.getElementById('eulerOrder').value=first.summary.order===1?'2':'1';
+      document.getElementById('eulerOrder').dispatchEvent(new Event('change'));
+      if(smoke.state.euler)throw new Error('Euler method change left a stale displayed result');
+      document.getElementById('eulerOrder').value=String(first.summary.order);
       document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
       await smoke.runEuler();
-      if(JSON.stringify(first.fields)!==JSON.stringify(smoke.state.euler?.fields)||JSON.stringify(first.history)!==JSON.stringify(smoke.state.euler?.history))throw new Error('Repeated Euler calculation differs');
+      if(JSON.stringify(first.fields)!==JSON.stringify(smoke.state.euler?.fields)||JSON.stringify(first.history)!==JSON.stringify(smoke.state.euler?.history))throw new Error('Repeated Euler calculation differs: fields='+String(JSON.stringify(first.fields)===JSON.stringify(smoke.state.euler?.fields))+', history rows='+first.history.length+'/'+smoke.state.euler?.history.length);
       document.getElementById('eulerEndTime').value=String(2*target);await smoke.runEuler();
       if(smoke.state.euler?.summary.time!==2*target)throw new Error('Euler resume failed');
       const complete=smoke.state.euler;
@@ -1132,7 +1137,7 @@ async function runSmoke() {
       }
       document.getElementById('displayMode').value='euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
       document.getElementById('eulerBlock').scrollIntoView({block:'start'});
-      smoke.state.eulerSmoke={repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
+      smoke.state.eulerSmoke={fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;

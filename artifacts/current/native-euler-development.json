@@ -1,0 +1,1284 @@
+{
+  "schema": "cartmesh2d-euler-development-evidence-v1",
+  "branch": "codex/compressible-flow",
+  "baseCommit": "ace13f9346edf215f1b7845e73af8b5dad34a092",
+  "scope": "isolated native 2D ideal-gas inviscid Euler development; not merged or engineering-qualified",
+  "implementation": [
+    "shared HLLC/HLLE flux with multidimensional pressure-ratio-cube contact restoration",
+    "cell-frame Barth-Jespersen limiting of weighted least-squares primitive gradients",
+    "SSPRK2 with both FE stages and composite CFL/admissibility checks",
+    "exact mirror-wall mass/energy symmetry",
+    "explicit accepted-stage fallback diagnostics, physical checkpoint binding, selected desktop methods"
+  ],
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a",
+  "runtimeBinarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a",
+  "sourceSha256": {
+    "CMakeLists.txt": "3428375f65f57948c649aace8208be1967ee6280da1fed860f7137f7d86d5a55",
+    "include/cartmesh2d/fv/Euler2D.hpp": "e0c9c8b53314168193ff883ea05750c0435c7fd52a85f2870ed4591fae2da097",
+    "src/fv/Euler2D.cpp": "6a2a09b268aba5c50ded12f8f54368148f9dc7f570de718be3f5a3813c050442",
+    "src/fv/EulerFlux2D.cpp": "1385e566152fd849a76815d3349605a21ee761a011781bb89fbc0e3bab49e4e3",
+    "apps/cartmesh2d_euler_cli.cpp": "b5af2d22fe80c3c805a9d7a27f36231d32386358e931d7e271e7ffe4983a0f56",
+    "tests/euler_test.cpp": "c8288cac26d0a8c76c7610130ae4ebebe89ac4171845bb7b1d9b3a3e2218be01",
+    "tests/euler_cli_test.py": "afccfd5823eeda9b54c931dd0862a8c1c99bd480394bdc117da8845644d4ea9a",
+    "tests/euler_accuracy_cli_test.py": "c95a1441fda508b055cb6e3aef6c658549193a6ce8286802445a6fc1f95c0b17",
+    "tools/verification/verify_euler.py": "5a53064650717ccc426055cc1484bcca949ac5862c8e2474b682337f4099fc3c",
+    "tools/visualization/render_euler_development.py": "58295b7840ffe2d01abcb829f8f797545a8ea268bd0134e6ce72ae3983c355c6",
+    "desktop/src/core/euler.js": "8c0b7756a41e83c321f24bed8a4dc3ef961b12cdb8d5b5ff8eb9bcee399c6d62",
+    "desktop/src/renderer/app.js": "169c81a39cb0282c3e249b4a10526274aad7dbb23094778542144837f0377df7",
+    "desktop/src/renderer/index.html": "c8ae0c6ce4c93ab7c7a66a096b3a48bac3069d34704f60656b335827f715dcdc",
+    "desktop/src/main.js": "54f29bd7b32b7f10d0ea2130caecd0d71b0da1258e70cd1aed9d18e443d4a5c0",
+    "desktop/src/renderer/export-preview.js": "cbfc827bdb778528664794fa8cecd18a13dafa2c6bb027d97ba3bba494f993a1",
+    "desktop/src/core/export-guide.js": "154f52bcc1b811f6cdb7429cd63caecfe630f4e0c61e7876a31fce9eefa4f176",
+    "desktop/tests/euler.test.js": "e9ad54b66d60127ef2c4d44011f861ead80b04f7b2ff0efe512cbda67e7dfa8c",
+    "desktop/tests/fixtures/euler-hllc.json": "f2789698f8d6ba55e4e3fe65ff9bb8fcce59e5038e680993895e7aa48ef4e30c"
+  },
+  "regression": {
+    "nativeTestsCoveredAndPassed": 157,
+    "fullRunPassed": 155,
+    "parallelTimeouts": [
+      "cartmesh2d_flow_boundary",
+      "cartmesh2d_flow_trajectory"
+    ],
+    "serialBoundaryRecheckPassed": 1,
+    "serialTrajectoryRecheckTimedOut": 1,
+    "trajectoryAloneRecheckPassed": 1,
+    "timeoutThresholdsUnchanged": true,
+    "context": "other independent solvers were concurrently using CPU; timed-out cases passed serially without source or tolerance changes",
+    "frontendPassed": 186,
+    "frontendFailed": 0,
+    "logs": {
+      "ctest.log": {
+        "path": "outputs/euler-development/ctest.log",
+        "sha256": "2b75ab09e11d54d33236889b85b77421bb66470f64089f1beaa8d66cef36d22f"
+      },
+      "ctest-serial-recheck.log": {
+        "path": "outputs/euler-development/ctest-serial-recheck.log",
+        "sha256": "f82f59c6ca2a559a6422a003b90a9d6423b62f9f6d614bc46cbea019dbd9c2d8"
+      },
+      "ctest-trajectory-alone.log": {
+        "path": "outputs/euler-development/ctest-trajectory-alone.log",
+        "sha256": "5f3cf14955fa5c9cabf7d244cc79abedc8de63ffdbb4c8d5fb0eb84382a7e237"
+      },
+      "frontend-tests.log": {
+        "path": "outputs/euler-development/frontend-tests.log",
+        "sha256": "1781f018e4c3efc1edb26d5c60e23a3a53276e7131882db5d162a50155d25e0e"
+      },
+      "native-tests.log": {
+        "path": "outputs/euler-development/native-tests.log",
+        "sha256": "f878ee623df200ed958c58fecd9af73b68e82eb6cb8ad1b8222e8537b7eed364"
+      },
+      "final-build.log": {
+        "path": "outputs/euler-development/final-build.log",
+        "sha256": "b493747b40ef9b8440f5179174f36b865d48bd4a60406dbc8bbda8164247d49c"
+      }
+    }
+  },
+  "qualification": {
+    "cases": [
+      {
+        "case": "sod50-rusanov-o1",
+        "cells": 200,
+        "time": 0.2,
+        "steps": 146,
+        "wallSecondsIncludingAudit": 0.7524577910080552,
+        "areaWeightedL1": {
+          "rho": 0.03468546384211612,
+          "u": 0.07908735471626543,
+          "p": 0.038275925646761765
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 1.0,
+          "fluxScheme": "rusanov",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.2,
+          "acousticCourant": 0.14304279370364317,
+          "maximumCellBalanceRelative": 5.2191130323790606e-17,
+          "globalBalanceRelative": [
+            2.6653454026312414e-18,
+            2.8988188382017243e-18,
+            9.885128661101254e-19,
+            3.0446778764766054e-18
+          ],
+          "maximumFluxRelative": 1.1220045901571256e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.12524871646405153,
+          "minimumPressure": 0.10027977545779783,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod50-hllc-o1",
+        "cells": 200,
+        "time": 0.2,
+        "steps": 149,
+        "wallSecondsIncludingAudit": 0.27297958300914615,
+        "areaWeightedL1": {
+          "rho": 0.029959702730143478,
+          "u": 0.06296868630867308,
+          "p": 0.02934001925357967
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.52350302953779,
+          "fluxScheme": "hllc",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.2,
+          "acousticCourant": 0.05959024482905932,
+          "maximumCellBalanceRelative": 5.2282889640030615e-17,
+          "globalBalanceRelative": [
+            5.561003454084297e-19,
+            1.7164473543008293e-18,
+            3.367240766694961e-18,
+            4.459300790734505e-19
+          ],
+          "maximumFluxRelative": 2.535171694273301e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.12524046899113997,
+          "minimumPressure": 0.10026964541502725,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod50-hllc-o2",
+        "cells": 200,
+        "time": 0.2,
+        "steps": 289,
+        "wallSecondsIncludingAudit": 1.1829290830064565,
+        "areaWeightedL1": {
+          "rho": 0.009418283660413794,
+          "u": 0.016606854724977225,
+          "p": 0.006842130825164467
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.1759394294585176,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.2,
+          "acousticCourant": 0.2351485333682344,
+          "maximumCellBalanceRelative": 5.2100936450097024e-17,
+          "globalBalanceRelative": [
+            1.8188529830839963e-18,
+            2.9016599063479624e-19,
+            2.340016842202285e-18,
+            1.3135417572277062e-18
+          ],
+          "maximumFluxRelative": 2.1428223413103041e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.125,
+          "minimumPressure": 0.1,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "hllc2-interrupted",
+        "cells": 200,
+        "time": 0.01564080224703114,
+        "steps": 20,
+        "wallSecondsIncludingAudit": 0.2833331250003539,
+        "areaWeightedL1": null,
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.1143207887804182,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.01564080224703114,
+          "acousticCourant": 0.2008306435798976,
+          "maximumCellBalanceRelative": 4.1051424033981556e-17,
+          "globalBalanceRelative": [
+            7.538593230563273e-19,
+            1.0103605109721647e-18,
+            7.979793984945434e-19,
+            2.4101937499145083e-19
+          ],
+          "maximumFluxRelative": 2.4343676770888406e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.125,
+          "minimumPressure": 0.1,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "hllc2-resumed",
+        "cells": 200,
+        "time": 0.2,
+        "steps": 289,
+        "wallSecondsIncludingAudit": 1.2500662910169922,
+        "areaWeightedL1": null,
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.1759394294585176,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.2,
+          "acousticCourant": 0.2351485333682344,
+          "maximumCellBalanceRelative": 5.2100936450097024e-17,
+          "globalBalanceRelative": [
+            1.8188529830839963e-18,
+            2.9016599063479624e-19,
+            2.340016842202285e-18,
+            1.3135417572277062e-18
+          ],
+          "maximumFluxRelative": 2.1428223413103041e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.125,
+          "minimumPressure": 0.1,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "hllc2-switched",
+        "cells": 200,
+        "time": 0.21,
+        "steps": 161,
+        "wallSecondsIncludingAudit": 0.24747524998383597,
+        "areaWeightedL1": null,
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.5063144747962904,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.21,
+          "acousticCourant": 0.2953557401111029,
+          "maximumCellBalanceRelative": 5.333231014639863e-17,
+          "globalBalanceRelative": [
+            3.6378240138818625e-18,
+            2.0987420810713825e-18,
+            2.766009386904424e-19,
+            8.401612068465209e-18
+          ],
+          "maximumFluxRelative": 1.9811837836126697e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.1252490778873895,
+          "minimumPressure": 0.10028011848137179,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod100-rusanov-o1",
+        "cells": 400,
+        "time": 0.2,
+        "steps": 255,
+        "wallSecondsIncludingAudit": 0.6357159159961157,
+        "areaWeightedL1": {
+          "rho": 0.026001377744659087,
+          "u": 0.04901753698650789,
+          "p": 0.024009153183556682
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 1.0,
+          "fluxScheme": "rusanov",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 400,
+          "faces": 904,
+          "time": 0.2,
+          "acousticCourant": 0.04554338703188683,
+          "maximumCellBalanceRelative": 5.206081296491834e-17,
+          "globalBalanceRelative": [
+            1.1195774079975265e-18,
+            3.2396076634691295e-18,
+            2.8398889429776354e-20,
+            2.7068748116012e-19
+          ],
+          "maximumFluxRelative": 1.140167573993044e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.12500009304101217,
+          "minimumPressure": 0.10000010420614777,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "f68c21cfa3e3d1b320697d46b74a625f98d9dadc6d5112f932ebfbe7ccbc96c7",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod100-hllc-o1",
+        "cells": 400,
+        "time": 0.2,
+        "steps": 259,
+        "wallSecondsIncludingAudit": 0.8019724999903701,
+        "areaWeightedL1": {
+          "rho": 0.020273200705808694,
+          "u": 0.03830501847687038,
+          "p": 0.01799007225464252
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.5424824953484508,
+          "fluxScheme": "hllc",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 400,
+          "faces": 904,
+          "time": 0.2,
+          "acousticCourant": 0.06188140033506489,
+          "maximumCellBalanceRelative": 5.3454920660874645e-17,
+          "globalBalanceRelative": [
+            1.6359114085209335e-18,
+            5.493649316956342e-18,
+            2.050671969351375e-18,
+            3.559899741264005e-18
+          ],
+          "maximumFluxRelative": 2.5362160173990755e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.12500009101528436,
+          "minimumPressure": 0.10000010193716131,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "f68c21cfa3e3d1b320697d46b74a625f98d9dadc6d5112f932ebfbe7ccbc96c7",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod100-hllc-o2",
+        "cells": 400,
+        "time": 0.2,
+        "steps": 464,
+        "wallSecondsIncludingAudit": 4.086197249998804,
+        "areaWeightedL1": {
+          "rho": 0.005030808993710064,
+          "u": 0.00932432569453857,
+          "p": 0.0034014404098301797
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.22789083633351692,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 400,
+          "faces": 904,
+          "time": 0.2,
+          "acousticCourant": 0.37825376372905534,
+          "maximumCellBalanceRelative": 5.003332263044952e-17,
+          "globalBalanceRelative": [
+            1.2145304520754357e-18,
+            1.8436029700377664e-19,
+            2.268338330612414e-18,
+            1.4017116907021085e-18
+          ],
+          "maximumFluxRelative": 1.786960422083638e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.125,
+          "minimumPressure": 0.1,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "f68c21cfa3e3d1b320697d46b74a625f98d9dadc6d5112f932ebfbe7ccbc96c7",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod200-rusanov-o1",
+        "cells": 800,
+        "time": 0.2,
+        "steps": 474,
+        "wallSecondsIncludingAudit": 2.8015224580303766,
+        "areaWeightedL1": {
+          "rho": 0.017678363508973807,
+          "u": 0.028743849468553087,
+          "p": 0.014674586699980549
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 1.0,
+          "fluxScheme": "rusanov",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 800,
+          "faces": 1804,
+          "time": 0.2,
+          "acousticCourant": 0.2872204527778359,
+          "maximumCellBalanceRelative": 5.462906048405983e-17,
+          "globalBalanceRelative": [
+            5.277581638844207e-19,
+            3.293379257898422e-18,
+            5.443784268833879e-19,
+            6.660984738804504e-19
+          ],
+          "maximumFluxRelative": 1.0979518932202503e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.1250000000000103,
+          "minimumPressure": 0.10000000000001152,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "94d2bd642ae5d65bcd87ce0c0758c175d061aca3185fd635f871ca41aff1bbf4",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod200-hllc-o1",
+        "cells": 800,
+        "time": 0.2,
+        "steps": 479,
+        "wallSecondsIncludingAudit": 2.773781624971889,
+        "areaWeightedL1": {
+          "rho": 0.012756244711411546,
+          "u": 0.021672248816041975,
+          "p": 0.010776370069671087
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.5424620762164505,
+          "fluxScheme": "hllc",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 800,
+          "faces": 1804,
+          "time": 0.2,
+          "acousticCourant": 0.10929547633202533,
+          "maximumCellBalanceRelative": 5.5403350747952587e-17,
+          "globalBalanceRelative": [
+            5.62897954131376e-21,
+            1.1723608383118857e-18,
+            3.5041045009354255e-18,
+            1.9568652133118754e-18
+          ],
+          "maximumFluxRelative": 3.172061067169756e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.12500000000001008,
+          "minimumPressure": 0.10000000000001133,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "94d2bd642ae5d65bcd87ce0c0758c175d061aca3185fd635f871ca41aff1bbf4",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod200-hllc-o2",
+        "cells": 800,
+        "time": 0.2,
+        "steps": 740,
+        "wallSecondsIncludingAudit": 9.825597665971145,
+        "areaWeightedL1": {
+          "rho": 0.002587991725284023,
+          "u": 0.00466926056659149,
+          "p": 0.0016737586804520255
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.22720492228811684,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 800,
+          "faces": 1804,
+          "time": 0.2,
+          "acousticCourant": 0.22086345338717894,
+          "maximumCellBalanceRelative": 5.2955255975314466e-17,
+          "globalBalanceRelative": [
+            3.153393261301456e-19,
+            1.05580252817414e-18,
+            5.255256110519346e-19,
+            3.2042357329202457e-19
+          ],
+          "maximumFluxRelative": 2.740939045492125e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.125,
+          "minimumPressure": 0.1,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "94d2bd642ae5d65bcd87ce0c0758c175d061aca3185fd635f871ca41aff1bbf4",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod50-SI-rusanov-o1",
+        "cells": 200,
+        "time": 0.0006954080821293684,
+        "steps": 146,
+        "wallSecondsIncludingAudit": 0.23227154096821323,
+        "areaWeightedL1": null,
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 1.0,
+          "fluxScheme": "rusanov",
+          "order": 1,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.0006954080821293684,
+          "acousticCourant": 0.14304279370366288,
+          "maximumCellBalanceRelative": 5.054177078626317e-17,
+          "globalBalanceRelative": [
+            3.0449400979329114e-18,
+            1.8341154925278409e-19,
+            1.8407210753839906e-18,
+            5.289118948428885e-18
+          ],
+          "maximumFluxRelative": 1.1157531369129705e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.15342967766846316,
+          "minimumPressure": 10160.848248261364,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "sod50-SI-hllc-o2",
+        "cells": 200,
+        "time": 0.0006954080821293684,
+        "steps": 289,
+        "wallSecondsIncludingAudit": 1.1684864590060897,
+        "areaWeightedL1": null,
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.1759394294585178,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 200,
+          "faces": 454,
+          "time": 0.0006954080821293684,
+          "acousticCourant": 0.2351485333682319,
+          "maximumCellBalanceRelative": 4.8540014104611083e-17,
+          "globalBalanceRelative": [
+            2.7028741742473847e-18,
+            3.3762573443293912e-18,
+            5.701950733927768e-19,
+            8.488989542064462e-19
+          ],
+          "maximumFluxRelative": 2.65712847350299e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.153125,
+          "minimumPressure": 10132.5,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "edc06d75839e239c0baab8d28cffd983a5ca5c66b02e1c2bedd976b7e2294494",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "vortex32-hllc-o2",
+        "cells": 1024,
+        "time": 0.5,
+        "steps": 42,
+        "wallSecondsIncludingAudit": 1.349141624988988,
+        "areaWeightedL1": {
+          "rho": 0.0007758068136684407,
+          "u": 0.0015693853677081527,
+          "v": 0.0015209511771020518,
+          "p": 0.0010856125942350031
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.3248780268311435,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 1024,
+          "faces": 2112,
+          "time": 0.5,
+          "acousticCourant": 0.34314116782145676,
+          "maximumCellBalanceRelative": 5.218322973065267e-17,
+          "globalBalanceRelative": [
+            2.1735422004990454e-19,
+            8.142491626014766e-20,
+            1.3570819376691506e-19,
+            2.7911048371578647e-19
+          ],
+          "maximumFluxRelative": 2.4316099412936697e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.5697897353266107,
+          "minimumPressure": 0.474950339651281,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "599241e3b712bb3d2e44b4a24221b0675f517d759da30c3874272b3a57803fb3",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "vortex64-hllc-o2",
+        "cells": 4096,
+        "time": 0.5,
+        "steps": 86,
+        "wallSecondsIncludingAudit": 8.903244540968444,
+        "areaWeightedL1": {
+          "rho": 0.00019821947601996896,
+          "u": 0.0003561120273899922,
+          "v": 0.00035811651487413325,
+          "p": 0.00026370310015192127
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.45790035380975014,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 4096,
+          "faces": 8320,
+          "time": 0.5,
+          "acousticCourant": 0.20380906729688847,
+          "maximumCellBalanceRelative": 5.3473066908477235e-17,
+          "globalBalanceRelative": [
+            2.176681277508793e-19,
+            8.262127263241007e-19,
+            3.3660518479870778e-19,
+            3.883727184938317e-20
+          ],
+          "maximumFluxRelative": 2.027673650374462e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.5058003247604766,
+          "minimumPressure": 0.3875724861676701,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "e80ca7cbd4cd5d8ecd1e177809bea14e6cca39fd9ffbb2b4c8ac5541647e6409",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      },
+      {
+        "case": "vortex128-hllc-o2",
+        "cells": 16384,
+        "time": 0.5,
+        "steps": 172,
+        "wallSecondsIncludingAudit": 67.39419958397048,
+        "areaWeightedL1": {
+          "rho": 4.167034634050353e-05,
+          "u": 7.427884391716585e-05,
+          "v": 7.674695275435912e-05,
+          "p": 5.523044854444841e-05
+        },
+        "audit": {
+          "valid": true,
+          "minimumContactRestoration": 0.667300854471324,
+          "fluxScheme": "hllc",
+          "order": 2,
+          "hllcFallbackEvaluations": 0,
+          "reconstructionFallbackCells": 0,
+          "cells": 16384,
+          "faces": 33024,
+          "time": 0.5,
+          "acousticCourant": 0.2874116590219453,
+          "maximumCellBalanceRelative": 5.2698869332139707e-17,
+          "globalBalanceRelative": [
+            7.143500628637503e-20,
+            1.4113965817653366e-19,
+            7.227030689762268e-20,
+            2.311343564470367e-19
+          ],
+          "maximumFluxRelative": 2.4316099369715885e-16,
+          "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+          "minimumDensity": 0.4993800357261383,
+          "minimumPressure": 0.3783159450989136,
+          "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+        },
+        "meshSha256": "e72c3d67a813e7deceb9885762607ad7a04e730b4edd2ea122cb4607f0e0394d",
+        "binarySha256": "35cf58c4d9c9becc1aedf4876c4f0bda1dfa656fedd438f2952cb7735d64a47a"
+      }
+    ],
+    "vortexObservedOrders": {
+      "rho": 2.2500057251643875,
+      "u": 2.261307896037923,
+      "v": 2.22224767703016,
+      "p": 2.2553787827787235
+    },
+    "unitScaling": [
+      {
+        "scheme": "rusanov",
+        "order": 1,
+        "maximumNormalizedDifference": 9.008281353565782e-16
+      },
+      {
+        "scheme": "hllc",
+        "order": 2,
+        "maximumNormalizedDifference": 1.6665811182636909e-15
+      }
+    ],
+    "restartIdentical": true,
+    "numericalMethodSwitchChecked": true,
+    "independentMutationChecks": 4,
+    "nativeDiagnostics": [
+      "scheme=rusanov, order=1",
+      "rotated wall SI scaling: max normalized field difference 6.45988e-16",
+      "rotation diagnostic 1.0269562977782698e-15, max single-step 0, times 0.20000000000000001 0.19999999999999998",
+      "scheme=rusanov, order=2",
+      "rotated wall SI scaling: max normalized field difference 7.30605808150808e-16",
+      "rotation diagnostic 3.4124925107903437e-12, max single-step 0, times 0.20000000000000001 0.19999999999999998",
+      "scheme=hllc, order=1",
+      "rotated wall SI scaling: max normalized field difference 7.3872943340262794e-16",
+      "rotation diagnostic 2.1094237467877974e-15, max single-step 0, times 0.20000000000000001 0.19999999999999996",
+      "scheme=hllc, order=2",
+      "rotated wall SI scaling: max normalized field difference 9.6491724452148645e-16",
+      "rotation diagnostic 1.7976731214730535e-12, max single-step 4.9960036108132044e-16, times 0.20000000000000001 0.19999999999999996",
+      "perturbed normal shock: Mach=3, maximum transverse density span/postshock density=2.0297269417015843e-05",
+      "perturbed normal shock: Mach=10, maximum transverse density span/postshock density=1.9755545708743933e-05",
+      "smooth entropy wave: order=1, nx=20, area-weighted density L1=0.011656431165692845",
+      "smooth entropy wave: order=1, nx=40, area-weighted density L1=0.0061786276480924832, observed order=0.91576781020905984",
+      "smooth entropy wave: order=1, nx=80, area-weighted density L1=0.0031807029408798758, observed order=0.95794079390593334",
+      "smooth entropy wave: order=2, nx=20, area-weighted density L1=0.001581459669865111",
+      "smooth entropy wave: order=2, nx=40, area-weighted density L1=0.00033736739177517186, observed order=2.2288643230683989",
+      "smooth entropy wave: order=2, nx=80, area-weighted density L1=7.9462105123496245e-05, observed order=2.0859816175967949"
+    ],
+    "rawReport": "outputs/euler-development/qualification/validation.json",
+    "rawReportSha256": "0b7f8b8efcaa9ce3bf23b2edf537ef2ea4b6c8e4508118760cf008aaac412745"
+  },
+  "desktop": {
+    "rectangle": {
+      "cells": 228,
+      "physicalCase": "sod",
+      "interactionChecks": {
+        "fluxScheme": "hllc",
+        "order": 2,
+        "methodChangeClearedStaleResult": true,
+        "repeatedFieldsAndHistoryIdentical": true,
+        "resumeChecked": true,
+        "failedBudgetPreservedComplete": true,
+        "cancelledTime": 0.0011533678353558541,
+        "cancelResumeChecked": true,
+        "allFiveFieldMaps": true
+      },
+      "finalTime": 0.0016533678353558541,
+      "independentAudits": [
+        {
+          "run": "euler-run-4Cwmc5",
+          "status": "complete",
+          "acceptedTime": 0.0005,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "697a8d06db5eff019b01d7b2e221358c197054afe8abbea46da48f6982c1659a",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.12085249700010432,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.0005,
+            "acousticCourant": 0.2185210355012632,
+            "maximumCellBalanceRelative": 4.99592116061915e-17,
+            "globalBalanceRelative": [
+              5.814223668333383e-19,
+              1.7515960223089464e-18,
+              1.4753855290642716e-18,
+              1.5752392332918996e-18
+            ],
+            "maximumFluxRelative": 2.735533527537741e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15312453144028676,
+            "minimumPressure": 10132.456946497565,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-HKKPtt",
+          "status": "cancelled",
+          "acceptedTime": 0.0011533678353558541,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "e5e079b814f3f14a863011170ada19b655a39f91bfb7882dcb6a83d3dd68f8b1",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.19969584545919356,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.0011533678353558541,
+            "acousticCourant": 0.2000238288923278,
+            "maximumCellBalanceRelative": 5.2045117166931124e-17,
+            "globalBalanceRelative": [
+              5.035116483880681e-19,
+              1.4880685498191833e-18,
+              1.6176212770545017e-18,
+              3.3467686477475587e-18
+            ],
+            "maximumFluxRelative": 2.611929161193536e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15312351552101144,
+            "minimumPressure": 10132.36285288217,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-JJVx57",
+          "status": "complete",
+          "acceptedTime": 0.0016533678353558541,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "52a74b2614075aba787c4cc73cd50a31bcf33768b26947371f9cfc38bcb7693a",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.17540410826532846,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.0016533678353558541,
+            "acousticCourant": 0.31168850522725294,
+            "maximumCellBalanceRelative": 5.1679410411014587e-17,
+            "globalBalanceRelative": [
+              2.0111695129951175e-18,
+              5.281330189613082e-18,
+              1.0133230971845631e-18,
+              1.7989877912335277e-18
+            ],
+            "maximumFluxRelative": 2.694948967848047e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15324760240531027,
+            "minimumPressure": 10143.035996596709,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-dhcMJG",
+          "status": "complete",
+          "acceptedTime": 0.001,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "b64a02ee4be2992b0ee42bca99bb43deb6f2a0e3aece59a99d721c0369dd47ad",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.1926370278874651,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.001,
+            "acousticCourant": 0.2987869530087298,
+            "maximumCellBalanceRelative": 4.893553485693152e-17,
+            "globalBalanceRelative": [
+              6.4881264981490414e-18,
+              2.0937665213234304e-18,
+              8.692414326762464e-18,
+              5.128454070040109e-19
+            ],
+            "maximumFluxRelative": 2.5592325205407165e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15312428574857515,
+            "minimumPressure": 10132.433823682928,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-ei0wfC",
+          "status": "complete",
+          "acceptedTime": 0.0005,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "697a8d06db5eff019b01d7b2e221358c197054afe8abbea46da48f6982c1659a",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.12085249700010432,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.0005,
+            "acousticCourant": 0.2185210355012632,
+            "maximumCellBalanceRelative": 4.99592116061915e-17,
+            "globalBalanceRelative": [
+              5.814223668333383e-19,
+              1.7515960223089464e-18,
+              1.4753855290642716e-18,
+              1.5752392332918996e-18
+            ],
+            "maximumFluxRelative": 2.735533527537741e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15312453144028676,
+            "minimumPressure": 10132.456946497565,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-fkfCda",
+          "status": "failed",
+          "acceptedTime": 0.0010055106333699017,
+          "meshSha256": "eab406c6dd79b702da8181ea41694e597b348287e76ba65deb9f3bf9cce675b7",
+          "checkpointSha256": "7a286e52203041ec9ad5cc5789c3dee437dbf5cd988154fcfca331b76c343a98",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.19281611264448,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 228,
+            "faces": 498,
+            "time": 0.0010055106333699017,
+            "acousticCourant": 0.20031538283449238,
+            "maximumCellBalanceRelative": 4.850477199893169e-17,
+            "globalBalanceRelative": [
+              4.064169452134787e-18,
+              1.0268288188914078e-17,
+              2.326106999499973e-18,
+              3.090913635937526e-19
+            ],
+            "maximumFluxRelative": 2.0089517567419556e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.15312427895751302,
+            "minimumPressure": 10132.433194573769,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        }
+      ],
+      "independentOpenfoamReader": [
+        {
+          "cell_count": 228,
+          "face_count": 954,
+          "global_constant_flux_balance": 0.0,
+          "internal_face_count": 430,
+          "issues": [],
+          "max_closure_residual": 0.0,
+          "max_constant_flux_divergence_residual": 0.0,
+          "min_volume": 0.0001220703124999997,
+          "patches": [
+            {
+              "nFaces": 68,
+              "name": "wall_0",
+              "startFace": 430,
+              "type": "wall"
+            },
+            {
+              "nFaces": 456,
+              "name": "frontAndBack",
+              "startFace": 498,
+              "type": "empty"
+            }
+          ],
+          "physical_boundary_area_vector": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "point_count": 542,
+          "valid": true
+        }
+      ],
+      "externalCheckMesh": "not run; local Docker daemon unavailable",
+      "zipFilesByteIdentical": 85,
+      "zipSha256": "d4be98d051dc19ed9bf21e145631c503ffc24f8169da066d2a52a1064edb0119",
+      "logSha256": "9c59be38d220a46809f70511aa0f494f2983360498d61f94890b1bf15adc7bf3",
+      "sourceLog": "outputs/euler-development/app-rectangle-final.log",
+      "screenshot": "outputs/euler-development/app-rectangle-final.png"
+    },
+    "circle": {
+      "cells": 3568,
+      "physicalCase": "external",
+      "interactionChecks": {
+        "fluxScheme": "hllc",
+        "order": 2,
+        "methodChangeClearedStaleResult": true,
+        "repeatedFieldsAndHistoryIdentical": true,
+        "resumeChecked": true,
+        "failedBudgetPreservedComplete": true,
+        "cancelledTime": 0.00040493840749150395,
+        "cancelResumeChecked": true,
+        "allFiveFieldMaps": true
+      },
+      "finalTime": 0.0006049384074915039,
+      "independentAudits": [
+        {
+          "run": "euler-run-4Du5oL",
+          "status": "complete",
+          "acceptedTime": 0.0004,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "40302ede7fc7d713c8b4fdc6a143d33f09175bc953c9f2cd14d2e574e5cab2c9",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5207151676612147,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.0004,
+            "acousticCourant": 0.24574285275557062,
+            "maximumCellBalanceRelative": 5.365902013339754e-17,
+            "globalBalanceRelative": [
+              1.1729804511523127e-20,
+              1.9066802902049376e-21,
+              2.46983989147348e-19,
+              3.28112934161193e-21
+            ],
+            "maximumFluxRelative": 2.3927347738106606e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.9101051649548542,
+            "minimumPressure": 67571.61950767967,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-4zcRZ0",
+          "status": "complete",
+          "acceptedTime": 0.0002,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "afc411286431dfe1b1a67ab5d617da1dc4ceabb048a69db74e177fc380ab8c64",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5377644591715648,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.0002,
+            "acousticCourant": 0.24381013194777162,
+            "maximumCellBalanceRelative": 5.473977868634604e-17,
+            "globalBalanceRelative": [
+              1.7149938301413484e-21,
+              2.7925431643161877e-22,
+              3.7513886423570163e-19,
+              5.96065308453075e-23
+            ],
+            "maximumFluxRelative": 2.8796283754517814e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.8834166936038532,
+            "minimumPressure": 64871.031881663606,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-DOVeyI",
+          "status": "complete",
+          "acceptedTime": 0.0006049384074915039,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "71e56cf4e714ea5abf5ab139f3b1ff276556719187cb15d9a30c83cd81a50139",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5876496810916402,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.0006049384074915039,
+            "acousticCourant": 0.23111888909470935,
+            "maximumCellBalanceRelative": 5.542113852797792e-17,
+            "globalBalanceRelative": [
+              1.1974754549954432e-21,
+              7.11984306315015e-21,
+              4.722185001450859e-19,
+              3.651937234509164e-21
+            ],
+            "maximumFluxRelative": 4.379210314459479e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.9258420988065428,
+            "minimumPressure": 68670.53561259572,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-OeqlQs",
+          "status": "cancelled",
+          "acceptedTime": 0.00040493840749150395,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "f7992812bca78e8648b533d6740f1e2e28bb265370f56b032564473e8a98e5e8",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5231503659205284,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.00040493840749150395,
+            "acousticCourant": 0.20000227456508127,
+            "maximumCellBalanceRelative": 5.4202180795905063e-17,
+            "globalBalanceRelative": [
+              1.0975778504071852e-20,
+              4.060049037818526e-21,
+              7.221014247665372e-20,
+              8.452060970270656e-21
+            ],
+            "maximumFluxRelative": 2.9299843365358455e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.9104143774084658,
+            "minimumPressure": 67603.68490291727,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-RmZugP",
+          "status": "failed",
+          "acceptedTime": 0.0004001829311678442,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "4b2180398d09de7c6a19f4a9e5215e56693e83d1526350c4deb5e114ef5e8d2e",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5208025902301943,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.0004001829311678442,
+            "acousticCourant": 0.20000229149754248,
+            "maximumCellBalanceRelative": 5.406018392834563e-17,
+            "globalBalanceRelative": [
+              1.3708718829416066e-20,
+              4.346011534597384e-21,
+              1.4604704599393968e-19,
+              2.3622094515999186e-21
+            ],
+            "maximumFluxRelative": 3.241872761279704e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.9101169703608929,
+            "minimumPressure": 67572.84403646532,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        },
+        {
+          "run": "euler-run-kulAnQ",
+          "status": "complete",
+          "acceptedTime": 0.0002,
+          "meshSha256": "1fb10edfb8f01ebe06ec153170824ea6265926539602399294eac5d6b5df0dee",
+          "checkpointSha256": "afc411286431dfe1b1a67ab5d617da1dc4ceabb048a69db74e177fc380ab8c64",
+          "audit": {
+            "valid": true,
+            "minimumContactRestoration": 0.5377644591715648,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "hllcFallbackEvaluations": 0,
+            "reconstructionFallbackCells": 0,
+            "cells": 3568,
+            "faces": 7552,
+            "time": 0.0002,
+            "acousticCourant": 0.24381013194777162,
+            "maximumCellBalanceRelative": 5.473977868634604e-17,
+            "globalBalanceRelative": [
+              1.7149938301413484e-21,
+              2.7925431643161877e-22,
+              3.7513886423570163e-19,
+              5.96065308453075e-23
+            ],
+            "maximumFluxRelative": 2.8796283754517814e-16,
+            "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+            "minimumDensity": 0.8834166936038532,
+            "minimumPressure": 64871.031881663606,
+            "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps"
+          }
+        }
+      ],
+      "independentOpenfoamReader": [
+        {
+          "cell_count": 3568,
+          "face_count": 14688,
+          "global_constant_flux_balance": 0.0,
+          "internal_face_count": 7184,
+          "issues": [],
+          "max_closure_residual": 5.421010862427522e-20,
+          "max_constant_flux_divergence_residual": 0.0,
+          "min_volume": 7.586875375436169e-09,
+          "patches": [
+            {
+              "nFaces": 320,
+              "name": "wall_0",
+              "startFace": 7184,
+              "type": "wall"
+            },
+            {
+              "nFaces": 12,
+              "name": "left",
+              "startFace": 7504,
+              "type": "patch"
+            },
+            {
+              "nFaces": 12,
+              "name": "right",
+              "startFace": 7516,
+              "type": "patch"
+            },
+            {
+              "nFaces": 12,
+              "name": "bottom",
+              "startFace": 7528,
+              "type": "patch"
+            },
+            {
+              "nFaces": 12,
+              "name": "top",
+              "startFace": 7540,
+              "type": "patch"
+            },
+            {
+              "nFaces": 7136,
+              "name": "frontAndBack",
+              "startFace": 7552,
+              "type": "empty"
+            }
+          ],
+          "physical_boundary_area_vector": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "point_count": 7968,
+          "valid": true
+        }
+      ],
+      "externalCheckMesh": "not run; local Docker daemon unavailable",
+      "zipFilesByteIdentical": 85,
+      "zipSha256": "674dce0bda35d0408d2b8c388649b1f4e2c9fa8090fa6d3c17c5db9cb5886b40",
+      "logSha256": "ae2451ea6231636d6e32abdd0e1ea00969db4abc1b9ed9efd5708ad558fa88d5",
+      "sourceLog": "outputs/euler-development/app-circle-final.log",
+      "screenshot": "outputs/euler-development/app-circle-final.png"
+    }
+  },
+  "limitations": [
+    "no viscous stress, conduction, turbulence or general compressible Navier-Stokes qualification",
+    "explicit global acoustic step remains limited by small Cut-cells",
+    "last accepted RK step independently reconstructed plus complete time-history checks; not full trajectory replay",
+    "Sod exact Riemann reference sampled at centroids; vortex reference/initialization are centroid sampled; entropy-wave test uses exact cell averages",
+    "normal-shock perturbation checked only at Mach 3/10 over convected distance 0.3",
+    "short-time cylinder run is not an external-flow accuracy or steady-state claim",
+    "no three-platform CI or real OpenFOAM checkMesh in this branch validation"
+  ],
+  "reproduction": [
+    "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+    "cmake --build build --parallel 2",
+    "ctest --test-dir build --output-on-failure",
+    "npm --prefix desktop test",
+    "python3 tests/euler_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-development/qualification",
+    "python3 tools/visualization/render_euler_development.py --study outputs/euler-development/qualification --output artifacts/current/native-euler-development.png"
+  ]
+}

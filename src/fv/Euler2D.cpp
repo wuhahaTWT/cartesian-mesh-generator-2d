@@ -13,11 +13,6 @@ void primitiveValid(const EulerPrimitive2D& q) {
     require(std::isfinite(q.density)&&q.density>0&&std::isfinite(q.pressure)&&q.pressure>0&&
             std::isfinite(q.u)&&std::isfinite(q.v),"density and pressure must be strictly positive; velocity must be finite");
 }
-EulerConservative2D flux(const EulerConservative2D& q,const EulerPrimitive2D& p,Vector2D n) {
-    const double velocity=finite(p.u*n.x+p.v*n.y);
-    return {finite(q[0]*velocity),finite(q[1]*velocity+p.pressure*n.x),
-        finite(q[2]*velocity+p.pressure*n.y),finite((q[3]+p.pressure)*velocity)};
-}
 EulerPrimitive2D ghost(const EulerPrimitive2D& inside,const EulerBoundary2D& b,Vector2D n,const IdealGas2D& gas) {
     const double normal=inside.u*n.x+inside.v*n.y;
     if(b.kind==EulerBoundaryKind2D::SlipWall)
@@ -100,6 +95,163 @@ void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBound
     }
 }
 
+namespace {
+using PrimitiveValues=std::array<double,4>;
+using Gradient=std::array<Vector2D,4>;
+PrimitiveValues values(const EulerPrimitive2D& q){return {q.density,q.u,q.v,q.pressure};}
+EulerPrimitive2D primitiveValues(const PrimitiveValues& q){return {q[0],q[1],q[2],q[3]};}
+struct SpatialOperator {
+    std::vector<EulerConservative2D> faceFlux,residual;
+    std::vector<double> speed,spectral;
+    std::vector<unsigned char> fallback;
+    std::size_t fallbackEvaluations=0,reconstructionFallbackCells=0;
+    double minimumContactRestoration=1;
+};
+SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
+    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control) {
+    const auto nc=mesh.cells.size(),nf=mesh.faces.size();
+    std::vector<EulerPrimitive2D> primitive;primitive.reserve(nc);
+    for(const auto& u:cells)primitive.push_back(eulerPrimitive2D(u,gas));
+    SpatialOperator out;out.faceFlux.resize(nf);out.residual.resize(nc);out.speed.resize(nf);
+    out.spectral.resize(nc);out.fallback.resize(nf);
+    // Multidimensional pressure sensor inspired by Simon & Mandal (2018),
+    // eqs. 49-50, alpha=3. Our polygon stencil includes every face incident on
+    // either adjacent cell and blends ALL conserved flux components, rather
+    // than claiming to reproduce the paper's structured, selective ADC scheme.
+    std::vector<double> contactWeight(nc,1.);
+    if(control.fluxScheme==EulerFluxScheme2D::Hllc)for(std::size_t id=0;id<nf;++id) {
+        const auto& face=mesh.faces[id];const auto* bc=lookup[id];auto neighbour=face.neighbour;
+        if(bc&&bc->partner)neighbour=mesh.faces[*bc->partner].owner;
+        const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+        const double pl=primitive[face.owner].pressure,pr=neighbour?primitive[*neighbour].pressure:
+            ghost(primitive[face.owner],*bc,{face.areaVector.x/length,face.areaVector.y/length},gas).pressure;
+        const double ratio=std::min(pl,pr)/std::max(pl,pr),weight=ratio*ratio*ratio;
+        contactWeight[face.owner]=std::min(contactWeight[face.owner],weight);
+        if(neighbour)contactWeight[*neighbour]=std::min(contactWeight[*neighbour],weight);
+    }
+    std::vector<Gradient> gradient(control.order==2?nc:0);
+    if(control.order==2)for(std::size_t i=0;i<nc;++i) {
+        const auto& cell=mesh.cells[i];
+        // Limit velocity components in a frame attached to this cell's first
+        // edge, not to the global x/y axes. A rigid mesh rotation rotates the
+        // limiter frame as well, avoiding coordinate-dependent velocity limiting.
+        const auto axis=mesh.faces[cell.faces.front()].areaVector;
+        const double axisLength=std::hypot(axis.x,axis.y),ex=axis.x/axisLength,ey=axis.y/axisLength;
+        const auto localValues=[&](const EulerPrimitive2D& q){return PrimitiveValues{q.density,q.u*ex+q.v*ey,-q.u*ey+q.v*ex,q.pressure};};
+        const auto centre=localValues(primitive[i]);
+        auto minimum=centre,maximum=centre;double xx=0,xy=0,yy=0;
+        std::array<double,4> bx{},by{};
+        for(const auto id:cell.faces) {
+            const auto& f=mesh.faces[id];const auto* bc=lookup[id];
+            Vector2D d{};EulerPrimitive2D other{};
+            if(f.neighbour) {
+                const auto j=i==f.owner?*f.neighbour:f.owner;
+                d={mesh.cells[j].centre.x-cell.centre.x,mesh.cells[j].centre.y-cell.centre.y};other=primitive[j];
+            }else if(bc->partner) {
+                const auto& partner=mesh.faces[*bc->partner];const auto& c=mesh.cells[partner.owner];
+                d={c.centre.x+f.centre.x-partner.centre.x-cell.centre.x,
+                    c.centre.y+f.centre.y-partner.centre.y-cell.centre.y};other=primitive[partner.owner];
+            }else {
+                const double length=std::hypot(f.areaVector.x,f.areaVector.y);
+                const Vector2D normal{f.areaVector.x/length,f.areaVector.y/length};
+                const double distance=(f.centre.x-cell.centre.x)*normal.x+(f.centre.y-cell.centre.y)*normal.y;
+                d={2*distance*normal.x,2*distance*normal.y};other=ghost(primitive[i],*bc,normal,gas);
+            }
+            const double distance2=finite(d.x*d.x+d.y*d.y);require(distance2>0,"zero reconstruction stencil distance");
+            const double w=1/distance2;xx+=w*d.x*d.x;xy+=w*d.x*d.y;yy+=w*d.y*d.y;
+            const auto neighbour=localValues(other);
+            for(std::size_t k=0;k<4;++k) {
+                minimum[k]=std::min(minimum[k],neighbour[k]);maximum[k]=std::max(maximum[k],neighbour[k]);
+                bx[k]+=w*d.x*(neighbour[k]-centre[k]);by[k]+=w*d.y*(neighbour[k]-centre[k]);
+            }
+        }
+        const double determinant=finite(xx*yy-xy*xy),trace=finite(xx+yy);
+        // Relative conditioning diagnostic in dimensionless least-squares geometry.
+        // An unresolved gradient becomes an explicitly counted constant reconstruction.
+        if(determinant<=64*std::numeric_limits<double>::epsilon()*trace*trace) {
+            ++out.reconstructionFallbackCells;continue;
+        }
+        auto& grad=gradient[i];PrimitiveValues theta{1,1,1,1};
+        for(std::size_t k=0;k<4;++k)grad[k]={finite((yy*bx[k]-xy*by[k])/determinant),finite((xx*by[k]-xy*bx[k])/determinant)};
+        // Barth-Jespersen face limiter: reconstruct primitive variables inside
+        // the cell/neighbour extrema, so positive density/pressure remain positive.
+        for(const auto id:cell.faces) {
+            const auto c=mesh.faces[id].centre;const Vector2D d{c.x-cell.centre.x,c.y-cell.centre.y};
+            for(std::size_t k=0;k<4;++k) {
+                const double increment=finite(grad[k].x*d.x+grad[k].y*d.y);
+                if(increment>0)theta[k]=std::min(theta[k],(maximum[k]-centre[k])/increment);
+                else if(increment<0)theta[k]=std::min(theta[k],(minimum[k]-centre[k])/increment);
+            }
+        }
+        for(std::size_t k=0;k<4;++k){theta[k]=std::clamp(theta[k],0.,1.);grad[k].x*=theta[k];grad[k].y*=theta[k];}
+        bool positive=true;
+        for(const auto id:cell.faces) {
+            auto q=centre;const auto c=mesh.faces[id].centre;
+            for(std::size_t k=0;k<4;++k)q[k]+=grad[k].x*(c.x-cell.centre.x)+grad[k].y*(c.y-cell.centre.y);
+            try {primitiveValid(primitiveValues(q));}catch(const std::runtime_error&){positive=false;break;}
+        }
+        // Floating-point cancellation at extreme contrasts must not become a floor.
+        if(!positive){grad={};++out.reconstructionFallbackCells;}
+        const auto normalGradient=grad[1],tangentGradient=grad[2];
+        grad[1]={ex*normalGradient.x-ey*tangentGradient.x,ex*normalGradient.y-ey*tangentGradient.y};
+        grad[2]={ey*normalGradient.x+ex*tangentGradient.x,ey*normalGradient.y+ex*tangentGradient.y};
+    }
+    const auto reconstructed=[&](std::size_t i,Point2D faceCentre) {
+        if(control.order==1)return cells[i];
+        auto q=values(primitive[i]);const auto c=mesh.cells[i].centre;
+        for(std::size_t k=0;k<4;++k)q[k]+=gradient[i][k].x*(faceCentre.x-c.x)+gradient[i][k].y*(faceCentre.y-c.y);
+        return eulerConservative2D(primitiveValues(q),gas);
+    };
+    for(std::size_t id=0;id<nf;++id) {
+        const auto& face=mesh.faces[id];const auto* boundary=lookup[id];
+        if(boundary&&boundary->partner&&id>*boundary->partner)continue;
+        const auto owner=face.owner;auto neighbour=face.neighbour;auto rightCentre=face.centre;
+        if(boundary&&boundary->partner) {
+            const auto& other=mesh.faces[*boundary->partner];neighbour=other.owner;rightCentre=other.centre;
+        }
+        const auto left=reconstructed(owner,face.centre);
+        const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+        const Vector2D normal{face.areaVector.x/length,face.areaVector.y/length};
+        const auto right=neighbour?reconstructed(*neighbour,rightCentre):
+            eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
+        const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
+        auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration);
+        if(boundary&&boundary->kind==EulerBoundaryKind2D::SlipWall) {
+            // The mirror Riemann problem has exactly zero mass/energy flux and
+            // purely normal pressure traction. Enforce that analytical symmetry
+            // before assembling the residual, rather than leaving cancellation
+            // of large SI energy terms to floating-point star-state arithmetic.
+            const double traction=flux.integratedFlux[1]*normal.x+flux.integratedFlux[2]*normal.y;
+            flux.integratedFlux={0,traction*normal.x,traction*normal.y,0};
+        }
+        out.minimumContactRestoration=std::min(out.minimumContactRestoration,restoration);
+        out.faceFlux[id]=flux.integratedFlux;out.speed[id]=flux.waveSpeed;
+        out.fallback[id]=static_cast<unsigned char>(flux.hllcFallback);
+        if(flux.hllcFallback)++out.fallbackEvaluations;
+        out.spectral[owner]=finite(out.spectral[owner]+flux.waveSpeed*length);
+        if(neighbour)out.spectral[*neighbour]=finite(out.spectral[*neighbour]+flux.waveSpeed*length);
+        for(std::size_t k=0;k<4;++k) {
+            const double value=flux.integratedFlux[k];out.residual[owner][k]=finite(out.residual[owner][k]+value);
+            if(neighbour)out.residual[*neighbour][k]=finite(out.residual[*neighbour][k]-value);
+            if(boundary&&boundary->partner)out.faceFlux[*boundary->partner][k]=-value;
+        }
+        if(boundary&&boundary->partner) {
+            out.speed[*boundary->partner]=flux.waveSpeed;out.fallback[*boundary->partner]=out.fallback[id];
+        }
+    }
+    return out;
+}
+bool positiveUpdate(const FvMesh2D& mesh,const std::vector<EulerConservative2D>& old,
+    const std::vector<EulerConservative2D>& residual,double dt,const IdealGas2D& gas,
+    std::vector<EulerConservative2D>& next) {
+    next=old;
+    for(std::size_t i=0;i<old.size();++i) {
+        for(std::size_t k=0;k<4;++k)next[i][k]=old[i][k]-dt/mesh.cells[i].area*residual[i][k];
+        try {(void)eulerPrimitive2D(next[i],gas);}catch(const std::runtime_error&){return false;}
+    }
+    return true;
+}
+}
 EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control) {
     validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);
@@ -109,63 +261,82 @@ EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBou
     require(std::isfinite(control.maximumStep)&&control.maximumStep>0&&std::isfinite(control.minimumStep)&&control.minimumStep>0&&
             control.minimumStep<=control.maximumStep&&std::isfinite(control.acousticCourant)&&control.acousticCourant>0&&
             control.acousticCourant<=.45&&control.maximumRetries<=30,"invalid explicit acoustic time controls");
-    const auto n=mesh.cells.size(),nf=mesh.faces.size();
-    std::vector<const EulerBoundary2D*> lookup(nf,nullptr);
-    for(const auto& b:boundaries)lookup[b.face]=&b;
-    std::vector<EulerPrimitive2D> primitive;primitive.reserve(n);
-    for(const auto& q:initial.cells)primitive.push_back(eulerPrimitive2D(q,gas));
-    EulerStepResult2D result;result.faceFlux.resize(nf);result.faceWaveSpeed.resize(nf);result.previousCells=initial.cells;
-    std::vector<EulerConservative2D> residual(n),absoluteFlux(n);
-    std::vector<double> spectral(n);
-    for(std::size_t id=0;id<nf;++id) {
-        const auto& face=mesh.faces[id];const auto* boundary=lookup[id];
-        if(boundary&&boundary->partner&&id>*boundary->partner)continue;
-        const auto owner=face.owner;auto neighbour=face.neighbour;
-        if(boundary&&boundary->partner)neighbour=mesh.faces[*boundary->partner].owner;
-        const double length=std::hypot(face.areaVector.x,face.areaVector.y);
-        const Vector2D normal{face.areaVector.x/length,face.areaVector.y/length};
-        const auto left=primitive[owner];const auto right=neighbour?primitive[*neighbour]:ghost(left,*boundary,normal,gas);
-        const auto qleft=initial.cells[owner],qright=neighbour?initial.cells[*neighbour]:eulerConservative2D(right,gas);
-        const auto fleft=flux(qleft,left,normal),fright=flux(qright,right,normal);
-        const double speed=finite(std::max(std::abs(left.u*normal.x+left.v*normal.y)+eulerSoundSpeed2D(left,gas),
-            std::abs(right.u*normal.x+right.v*normal.y)+eulerSoundSpeed2D(right,gas)));
-        require(speed>0,"non-positive acoustic speed");result.faceWaveSpeed[id]=speed;
-        spectral[owner]=finite(spectral[owner]+speed*length);
-        if(neighbour)spectral[*neighbour]=finite(spectral[*neighbour]+speed*length);
-        for(std::size_t k=0;k<4;++k) {
-            const double value=finite(.5*length*(fleft[k]+fright[k]-speed*(qright[k]-qleft[k])));
-            result.faceFlux[id][k]=value;residual[owner][k]=finite(residual[owner][k]+value);absoluteFlux[owner][k]+=std::abs(value);
-            if(neighbour){residual[*neighbour][k]=finite(residual[*neighbour][k]-value);absoluteFlux[*neighbour][k]+=std::abs(value);}
-            else result.boundaryFlux[k]=finite(result.boundaryFlux[k]+value);
-            if(boundary&&boundary->partner)result.faceFlux[*boundary->partner][k]=-value;
-        }
-        if(boundary&&boundary->partner)result.faceWaveSpeed[*boundary->partner]=speed;
-    }
+    require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
+    const auto nc=mesh.cells.size(),nf=mesh.faces.size();
+    std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
+    const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control);
     double dt=control.maximumStep;
-    for(std::size_t i=0;i<n;++i)dt=std::min(dt,control.acousticCourant*mesh.cells[i].area/spectral[i]);
+    for(std::size_t i=0;i<nc;++i)dt=std::min(dt,control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
     require(std::isfinite(dt)&&dt>=control.minimumStep,"acoustic CFL requires a step below the declared minimum");
+    EulerStepResult2D result;result.previousCells=initial.cells;
+    std::vector<EulerConservative2D> accepted,stage,secondEuler,residual,absolute(nc);
+    std::vector<double> spectral;
+    std::string failure="non-positive stage state";
     for(std::size_t attempt=0;;++attempt) {
         require(std::isfinite(initial.time+dt)&&initial.time+dt>initial.time,"physical time cannot advance at this step");
-        EulerState2D candidate{initial.time+dt,initial.steps+1,initial.cells};bool positive=true;
-        double density=std::numeric_limits<double>::infinity(),pressure=density;
-        for(std::size_t i=0;i<n;++i) {
-            for(std::size_t k=0;k<4;++k)candidate.cells[i][k]=initial.cells[i][k]-dt/mesh.cells[i].area*residual[i][k];
-            try {const auto q=eulerPrimitive2D(candidate.cells[i],gas);density=std::min(density,q.density);pressure=std::min(pressure,q.pressure);}
-            catch(const std::runtime_error&){positive=false;break;}
+        bool valid=positiveUpdate(mesh,initial.cells,first.residual,dt,gas,stage);
+        SpatialOperator combined=first;
+        if(valid&&control.order==2) {
+            try {
+                const auto second=spatialOperator(mesh,lookup,gas,stage,control);
+                // SSPRK(2,2): U1=Un+dt L(Un); Un+1=1/2 Un+1/2 [U1+dt L(U1)].
+                // Require admissibility of each FE stage, not just of the mixture.
+                valid=positiveUpdate(mesh,stage,second.residual,dt,gas,secondEuler);
+                combined.fallbackEvaluations+=second.fallbackEvaluations;
+                combined.reconstructionFallbackCells+=second.reconstructionFallbackCells;
+                combined.minimumContactRestoration=std::min(combined.minimumContactRestoration,second.minimumContactRestoration);
+                std::fill(combined.spectral.begin(),combined.spectral.end(),0.);
+                std::fill(combined.residual.begin(),combined.residual.end(),EulerConservative2D{});
+                for(std::size_t id=0;id<nf;++id) {
+                    const auto& face=mesh.faces[id];const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+                    combined.speed[id]=std::max(first.speed[id],second.speed[id]);
+                    combined.fallback[id]=static_cast<unsigned char>(first.fallback[id]|(second.fallback[id]<<1));
+                    combined.spectral[face.owner]+=combined.speed[id]*length;
+                    if(face.neighbour)combined.spectral[*face.neighbour]+=combined.speed[id]*length;
+                    for(std::size_t k=0;k<4;++k) {
+                        const double value=.5*(first.faceFlux[id][k]+second.faceFlux[id][k]);combined.faceFlux[id][k]=value;
+                        combined.residual[face.owner][k]+=value;
+                        if(face.neighbour)combined.residual[*face.neighbour][k]-=value;
+                    }
+                }
+                // The exported face maximum is conservative for both stages.
+                for(std::size_t i=0;i<nc;++i)if(dt*combined.spectral[i]/mesh.cells[i].area>control.acousticCourant*(1+8*std::numeric_limits<double>::epsilon())) {
+                    valid=false;failure="second-stage acoustic CFL exceeded";break;
+                }
+                if(valid)valid=positiveUpdate(mesh,initial.cells,combined.residual,dt,gas,accepted);
+            }catch(const std::runtime_error& e){valid=false;failure=e.what();}
+        }else if(valid)accepted=stage;
+        if(valid) {
+            result.faceFlux=std::move(combined.faceFlux);result.faceWaveSpeed=std::move(combined.speed);
+            result.faceHllcFallbackStages=std::move(combined.fallback);
+            result.hllcFallbackEvaluations=combined.fallbackEvaluations;
+            result.reconstructionFallbackCells=combined.reconstructionFallbackCells;
+            result.minimumContactRestoration=combined.minimumContactRestoration;
+            residual=std::move(combined.residual);spectral=std::move(combined.spectral);break;
         }
-        if(positive){result.state=std::move(candidate);result.minimumDensity=density;result.minimumPressure=pressure;break;}
-        require(attempt<control.maximumRetries,"positivity retry budget exhausted; previous accepted state retained");
+        require(attempt<control.maximumRetries,"stage positivity/CFL retry budget exhausted ("+failure+"); previous accepted state retained");
         ++result.rejectedCandidates;dt*=.5;
-        require(dt>=control.minimumStep,"positivity requires a step below the declared minimum; previous accepted state retained");
+        require(dt>=control.minimumStep,"stage positivity/CFL requires a step below the declared minimum; previous accepted state retained");
     }
-    result.step=dt;
-    for(std::size_t i=0;i<n;++i) {
+    result.step=dt;result.state={initial.time+dt,initial.steps+1,std::move(accepted)};
+    result.minimumDensity=std::numeric_limits<double>::infinity();result.minimumPressure=result.minimumDensity;
+    for(std::size_t id=0;id<nf;++id) {
+        const auto& face=mesh.faces[id];const auto* bc=lookup[id];
+        for(std::size_t k=0;k<4;++k) {
+            const double value=result.faceFlux[id][k];absolute[face.owner][k]+=std::abs(value);
+            if(face.neighbour)absolute[*face.neighbour][k]+=std::abs(value);
+            else if(!bc->partner)result.boundaryFlux[k]=finite(result.boundaryFlux[k]+value);
+        }
+    }
+    for(std::size_t i=0;i<nc;++i) {
         const double area=mesh.cells[i].area;result.acousticCourant=std::max(result.acousticCourant,dt*spectral[i]/area);
+        const auto q=eulerPrimitive2D(result.state.cells[i],gas);
+        result.minimumDensity=std::min(result.minimumDensity,q.density);result.minimumPressure=std::min(result.minimumPressure,q.pressure);
         for(std::size_t k=0;k<4;++k) {
             result.beforeIntegral[k]=finite(result.beforeIntegral[k]+area*initial.cells[i][k]);
             result.afterIntegral[k]=finite(result.afterIntegral[k]+area*result.state.cells[i][k]);
             const double balance=area*(result.state.cells[i][k]-initial.cells[i][k])+dt*residual[i][k];
-            const double scale=area*(std::abs(result.state.cells[i][k])+std::abs(initial.cells[i][k]))+dt*absoluteFlux[i][k];
+            const double scale=area*(std::abs(result.state.cells[i][k])+std::abs(initial.cells[i][k]))+dt*absolute[i][k];
             const double relative=scale>0?std::abs(balance)/scale:std::abs(balance);
             result.maximumCellBalanceError=std::max(result.maximumCellBalanceError,finite(relative));
         }

@@ -138,7 +138,7 @@ window.CartMeshExport.renderEuler = function(mesh,euler) {
   ctx.fillStyle='#fff';ctx.fillRect(0,0,2000,1500);
   const text=(value,x,y,size=24)=>{ctx.fillStyle='#24333f';ctx.font=`${size}px "CartMesh UI", sans-serif`;ctx.fillText(value,x,y);};
   text(`可压 Euler · t=${euler.summary.time.toPrecision(6)} s · ${mesh.cells.length.toLocaleString('en-US')} 个真实单元`,70,58,32);
-  text('一阶无黏理想气体；光滑涡精度研究尚未通过。到达时间不等于稳态。',70,99,24);
+  text(`${euler.summary.method} · 无黏理想气体；到达目标时间不等于稳态或任意工况精度合格。`,70,99,22);
   const palette=['#172a52','#185b83','#188ca1','#2bb6a8','#73cf8d','#cadd62','#f4c84d','#ef7538'];
   let frame=mesh.bounds;
   if(euler.request.case==='external') {

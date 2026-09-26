@@ -1291,7 +1291,7 @@ const EULER_CONTROLS={density:'eulerDensity',u:'eulerU',v:'eulerV',pressure:'eul
 const EULER_PHYSICAL=['density','u','v','pressure','gamma','gasConstant','split'];
 const EULER_OPTIONS=['eulerDensityOption','eulerPressureOption','eulerTemperatureOption','eulerMachOption','eulerSpeedOption'];
 function eulerRequest() {
-  const request={case:$('eulerCase').value,resume:$('eulerResume').checked};
+  const request={case:$('eulerCase').value,resume:$('eulerResume').checked,fluxScheme:$('eulerFluxScheme').value,order:Number($('eulerOrder').value)};
   for(const [key,id] of Object.entries(EULER_CONTROLS))request[key]=Number($(id).value);
   if(request.case!=='sod')request.split=.5;
   return request;
@@ -1303,6 +1303,7 @@ function updateEulerControls() {
   for(const [key,id] of Object.entries(EULER_CONTROLS))$(id).disabled=Boolean(state.busy||(resuming&&EULER_PHYSICAL.includes(key))||(sod&&['u','v'].includes(key)));
   if(sod){$('eulerU').value=0;$('eulerV').value=0;}
   $('eulerSplitField').hidden=!sod;
+  $('eulerFluxScheme').disabled=Boolean(state.busy);$('eulerOrder').disabled=Boolean(state.busy);
   $('pickEulerCheckpoint').disabled=Boolean(state.busy||!state.result);
   $('runEuler').disabled=Boolean(state.busy||!state.result||$('eulerBlock').hidden);
   if(!state.busy)$('runEuler').textContent=resuming?'继续可压计算':'启动可压计算';
@@ -1313,6 +1314,7 @@ function applyEulerRestart() {
   if($('eulerResume').checked&&state.eulerRestart) {
     const request=state.eulerRestart.request;$('eulerCase').value=request.case;
     for(const key of EULER_PHYSICAL)$(EULER_CONTROLS[key]).value=request[key];
+    $('eulerFluxScheme').value=request.fluxScheme??'rusanov';$('eulerOrder').value=String(request.order??1);
   }
   updateEulerControls();
 }
@@ -1339,14 +1341,15 @@ function renderEulerMonitor() {
   $('eulerMonitorCaption').textContent=`已接受状态 · 最新 ${values.at(-1).toPrecision(6)} · 运行时每25步更新，完成后读回全部历史；导出 CSV 保留每一步。`;
 }
 function bindEuler(payload) {
-  state.euler=payload;state.eulerHistory=payload.history;view.setEulerFields(payload.fields.cells);
+  state.euler=payload;state.eulerHistory=payload.history.map(row=>({...row}));view.setEulerFields(payload.fields.cells);
   for(const id of EULER_OPTIONS)$(id).hidden=false;
   $('displayMode').value='euler-rho';view.mode='euler-rho';view.draw();renderLegend(state.mesh,state.levelBasis);
   const container=$('eulerResult');container.replaceChildren();container.hidden=false;
-  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · 一阶无黏模型`;container.appendChild(title);
+  const title=document.createElement('div');title.className='flow-state';title.textContent=`可压 Euler · 已到达 t=${payload.summary.time.toPrecision(6)} s · 本次 ${payload.summary.acceptedSteps} 步 · ${payload.request.fluxScheme==='hllc'?'HLLC/HLLE':'Rusanov'} / ${payload.request.order===2?'二阶':'一阶'}无黏模型`;container.appendChild(title);
   const last=payload.history.at(-1),lines=[`最小密度 ${last.minimumDensity.toPrecision(6)} kg/m³；最小绝对压力 ${last.minimumPressure.toPrecision(6)} Pa`,
     `最后步声学 CFL ${payload.audit.acousticCourant.toPrecision(4)}；逐格守恒相对误差 ${payload.audit.maximumCellBalanceRelative.toExponential(2)}`,
-    '到达目标时间不代表稳态或精度合格。当前光滑涡精度研究仍有未通过项；没有黏性、导热或湍流。'];
+    `本次 HLLC 通量回退 ${payload.summary.hllcFallbackEvaluations??0} 次；重构退阶 ${payload.summary.reconstructionFallbackCells??0} 个单元阶段`,
+    '到达目标时间不代表稳态或任意工况精度合格；没有黏性、导热或湍流。'];
   for(const line of lines){const p=document.createElement('p');p.className='note';p.textContent=line;container.appendChild(p);}renderEulerMonitor();
 }
 async function refreshEulerState(show=false) {
@@ -1370,6 +1373,7 @@ $('runEuler').addEventListener('click',runEuler);
 $('eulerResume').addEventListener('change',applyEulerRestart);
 $('eulerCase').addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
 $('eulerMonitorMetric').addEventListener('change',renderEulerMonitor);
+for(const id of ['eulerFluxScheme','eulerOrder'])$(id).addEventListener('change',()=>{if(state.euler)clearEulerBinding();});
 for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();});
 $('pickEulerCheckpoint').addEventListener('click',async()=>{
   if(state.busy||!state.result)return;setBusy(true);
@@ -1377,6 +1381,7 @@ $('pickEulerCheckpoint').addEventListener('click',async()=>{
   catch(error){status('可压续算载入失败',error.message);log(error.message);}finally{setBusy(false);}
 });
 window.cartmesh.onEulerProgress(progress=>{
+  if(!state.busy||state.euler)return;
   state.eulerHistory.push(progress);if(state.eulerHistory.length>1400)state.eulerHistory=state.eulerHistory.filter((_r,i)=>i%2===0||i===state.eulerHistory.length-1);
   renderEulerMonitor();status('可压 Euler 推进中',`已接受 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 声学 CFL ${progress.acousticCourant.toPrecision(4)}`);
 });

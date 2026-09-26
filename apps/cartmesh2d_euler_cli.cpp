@@ -95,8 +95,10 @@ int main(int argc,char** argv) {
     for(int i=1;i<argc;++i) {
         const std::string arg=argv[i];
         if(arg=="--help") {
-            std::cout<<"Native 2D ideal-gas Euler; inviscid, first-order Rusanov / forward Euler.\n"
+            std::cout<<"Native 2D ideal-gas Euler; inviscid, Rusanov/HLLC, order 1 or 2.\n"
                 "--mesh FINAL.solver.cm2d --output PREFIX --case sod|uniform|external|vortex|custom\n"
+                "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
+                "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
                 "--gamma 1.4 --gas-r 287.05 --density 1 --u 0 --v 0 --pressure 1\n"
                 "Sod: left (rho,p), right (.125*rho,.1*p), u=v=0, split x fraction --split .5.\n"
@@ -112,6 +114,8 @@ int main(int argc,char** argv) {
         if(arg=="--mesh")meshPath=value;else if(arg=="--output")prefix=value;else if(arg=="--case")problem=value;
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
         else if(arg=="--restart")restart=value;
+        else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
+        else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
         else if(arg=="--end-time")endTime=number(value);else if(arg=="--max-step")controls.maximumStep=number(value);
         else if(arg=="--min-step")controls.minimumStep=number(value);else if(arg=="--cfl")controls.acousticCourant=number(value);
         else if(arg=="--gamma")gas.gamma=number(value);else if(arg=="--gas-r")gas.gasConstant=number(value);
@@ -199,10 +203,10 @@ int main(int argc,char** argv) {
     }
     const auto save=[&]{auto out=output(prefix+".checkpoint.tmp");writeEulerCheckpoint2D(out,mesh,bc,gas,state,problem);out.close();std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");};
     save();auto boundaryOutput=output(prefix+".boundaries");boundaryFile(boundaryOutput,mesh,bc);boundaryOutput.close();
-    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy\n";
+    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration\n";
     const auto started=std::chrono::steady_clock::now();const double initialTime=state.time;const auto initialSteps=state.steps;
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
-    std::size_t rejected=0;std::string status="target_reached",failure;
+    std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
     try {
         while(state.time<endTime) {
             require(!stopped,"calculation cancelled; accepted state retained");
@@ -210,9 +214,11 @@ int main(int argc,char** argv) {
             require(std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<maximumSeconds,"wall-time budget exhausted");
             auto step=controls;step.maximumStep=std::min(step.maximumStep,endTime-state.time);
             last=advanceEuler2D(mesh,bc,gas,state,step);state=last->state;rejected+=last->rejectedCandidates;
+            fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
+            minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
-            history<<'\n';
+            history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<'\n';
             if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime) {
                 save();history.flush();
                 std::cout<<std::setprecision(17)<<"{\"type\":\"euler-step\",\"step\":"<<state.steps<<",\"time\":"<<state.time
@@ -238,7 +244,7 @@ int main(int argc,char** argv) {
             <<",\"rhoE\":"<<q[3]<<",\"temperature\":"<<temperature<<",\"mach\":"<<mach<<'}';
     }
     fields<<"\n]}\n";cells.close();fields.close();
-    auto faces=output(prefix+".faces.csv");faces<<"face,owner,neighbour,x,y,sx,sy,kind,partner,waveSpeed,mass,momentumX,momentumY,energy\n";
+    auto faces=output(prefix+".faces.csv");faces<<"face,owner,neighbour,x,y,sx,sy,kind,partner,waveSpeed,mass,momentumX,momentumY,energy,hllcFallbackStages\n";
     std::vector<const EulerBoundary2D*> lookup(mesh.faces.size());for(const auto& b:bc)lookup[b.face]=&b;
     for(std::size_t i=0;i<mesh.faces.size();++i) {
         const auto& f=mesh.faces[i];faces<<i<<','<<f.owner<<',';if(f.neighbour)faces<<*f.neighbour;else faces<<-1;
@@ -246,7 +252,7 @@ int main(int argc,char** argv) {
         if(lookup[i]&&lookup[i]->partner)faces<<*lookup[i]->partner;else faces<<-1;
         faces<<','<<(last?last->faceWaveSpeed[i]:0);
         for(double value:last?last->faceFlux[i]:EulerConservative2D{})faces<<','<<value;
-        faces<<'\n';
+        faces<<','<<(last?static_cast<unsigned>(last->faceHllcFallbackStages[i]):0)<<'\n';
     }
     faces.close();std::string vtkError;require(writeLegacyVtk2D(read.topology,prefix+".vtk",&vtkError),vtkError);
     std::ofstream vtk(prefix+".vtk",std::ios::app);vtk.exceptions(std::ios::badbit|std::ios::failbit);vtk<<std::setprecision(17);
@@ -256,7 +262,14 @@ int main(int argc,char** argv) {
     }
     vtk<<"VECTORS velocity double\n";for(const auto& q:state.cells)vtk<<q[1]/q[0]<<' '<<q[2]/q[0]<<" 0\n";vtk.close();
     auto summary=output(prefix+".json");
-    summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":\"first-order Rusanov / forward Euler\",\"case\":"<<quote(problem)
+    const std::string fluxName=controls.fluxScheme==EulerFluxScheme2D::Hllc?"HLLC-HLLE":"Rusanov";
+    const std::string method=controls.order==1?"first-order "+fluxName+" / forward Euler":"limited-linear "+fluxName+" / SSPRK2";
+    summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":"<<quote(method)<<",\"fluxScheme\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")
+        <<",\"shockControl\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"multidimensional pressure-ratio cube HLLC/HLLE blend":"none")
+        <<",\"minimumContactRestoration\":"<<minimumContactRestoration<<",\"lastMinimumContactRestoration\":"<<(last?last->minimumContactRestoration:1)
+        <<",\"order\":"<<controls.order<<",\"hllcFallbackEvaluations\":"<<fallbackEvaluations<<",\"reconstructionFallbackCells\":"<<reconstructionFallbackCells
+        <<",\"lastHllcFallbackEvaluations\":"<<(last?last->hllcFallbackEvaluations:0)<<",\"lastReconstructionFallbackCells\":"<<(last?last->reconstructionFallbackCells:0)
+        <<",\"case\":"<<quote(problem)
         <<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
         <<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"gamma\":"<<gas.gamma<<",\"gasConstant\":"<<gas.gasConstant
         <<",\"referenceState\":{\"rho\":"<<reference.density<<",\"u\":"<<reference.u<<",\"v\":"<<reference.v<<",\"p\":"<<reference.pressure<<"},\"split\":"<<split
