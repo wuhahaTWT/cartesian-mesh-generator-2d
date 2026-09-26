@@ -1,0 +1,565 @@
+{
+  "schema": "cartmesh2d-fluid-topology-evidence-v1",
+  "date": "2026-09-26",
+  "branch": "codex/fluid-topology-optimization",
+  "nativeSourceRevision": "ace13f9346edf215f1b7845e73af8b5dad34a092",
+  "scope": "Development prototype: Stokes-Brinkman topology optimization and separate sharp-wall native Cut-cell/low-Re CFD.",
+  "sourceHashes": {
+    "tools/optimization/brinkman.py": "2ae8db543820beaa7e7282bb04598c16d801d30a9868512775401dfa07bd4bfe",
+    "tools/optimization/optimize_flow.py": "d6446713a4f4d9e01901b7dedfedf324fc8934b5f3402e0ff1a9746b5857cdcd",
+    "tools/optimization/render_native_flow.py": "ae7113715f6ebfb07717e22627096f9ce846204663e704879f88a924d733b5a8",
+    "tools/optimization/requirements.txt": "51c0fbd4604a43df9b904ce7ad927570b54524154309e32af8e490309e271fd4",
+    "tools/optimization/topology_artifacts.py": "dcc33690572bc3e5e00260082ea5bc1f7eb0d756c399e8c5b0f7b5f1a08dc320",
+    "tools/optimization/verify_extracted_flow.py": "87ee5f0d179b42a891cd04f8f735985ca6aa6b8fe256d12d641d7e509922aea5"
+  },
+  "researchTests": {
+    "passed": 10,
+    "failed": 0,
+    "sourceSha256": "6f8059078232dba8b73aaaea1afc24f5337968870ae17101a3a3746890839182",
+    "log": "outputs/fluid-topology/research-tests.log",
+    "logSha256": "058d2910491f942be6b81862e967893d19ed5b4dc882d88bd9f1a6febbdb5f8a"
+  },
+  "validation": {
+    "nativeTargetsBuilt": [
+      "cartmesh2d_cli",
+      "cartmesh2d_flow_cli"
+    ],
+    "compiler": "/usr/bin/clang++",
+    "fullCTest": "not-run",
+    "frontendTests": "not-run",
+    "desktopApp": "not-run",
+    "platformCI": "not-run",
+    "externalCheckMesh": "not-run",
+    "nativeEquations": "independently audited",
+    "meshConvergence": "not-run",
+    "independentSolver": "not-run",
+    "physicalAccuracyQualified": false,
+    "baselineToOptimizedSharpWallComparison": "not-run",
+    "generalTopologyOptimizationQualified": false
+  },
+  "cases": [
+    {
+      "name": "double-pipe",
+      "output": "outputs/fluid-topology/final-double-pipe",
+      "status": "iteration-limit",
+      "optimizationConverged": false,
+      "problem": {
+        "nx": 48,
+        "ny": 32,
+        "width": 1.5,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 25000,
+        "volume_fraction": 0.3333333333333333,
+        "filter_radius": 0.06,
+        "port_width": 0.16666666666666666,
+        "case": "double-pipe",
+        "linear_residual_limit": 1e-08
+      },
+      "controls": {
+        "stages": [
+          [
+            0.01,
+            0.0
+          ],
+          [
+            0.1,
+            2.0
+          ],
+          [
+            0.1,
+            6.0
+          ]
+        ],
+        "stageIterations": [
+          25,
+          40,
+          60
+        ],
+        "move": 0.15,
+        "stationarityTolerance": 0.001,
+        "maxSeconds": 600
+      },
+      "finalParameters": {
+        "q": 0.1,
+        "beta": 6.0
+      },
+      "final": {
+        "objective": 66.77967488074347,
+        "volumeFraction": 0.3333333333333333,
+        "grayness": 0.07742388147766449,
+        "dissipation": 66.77967488074347,
+        "pressurePower": 64.80611467305027,
+        "fluxWeightedPressureDrop": 291.6275160287261,
+        "maxSolidToGlobalSpeed": 0.05901970756583283,
+        "linearResidual": 2.3296483139675417e-14,
+        "continuity": 1.3669729410914483e-13,
+        "adjointResidual": 1.0882937198397843e-11,
+        "projectedKkt": 0.06696254197668153
+      },
+      "sameModelReferences": {
+        "uniformPorous": {
+          "objective": 284.2540723464127,
+          "volumeFraction": 0.33333333333333226,
+          "grayness": 0.7594221855385691,
+          "dissipation": 284.2540723464127,
+          "pressurePower": 281.6741348185226,
+          "fluxWeightedPressureDrop": 1267.5336066833513,
+          "maxSolidToGlobalSpeed": 0.10696750748207913,
+          "linearResidual": 7.809941218329839e-14,
+          "continuity": 3.849768404453126e-13,
+          "adjointResidual": 4.281417713640869e-12,
+          "projectedKkt": 0.5451843373009607,
+          "relativeObjectiveReduction": 0.7650704725898847
+        },
+        "geometricSeed": {
+          "objective": 77.1968803725061,
+          "volumeFraction": 0.3333333333333332,
+          "grayness": 0.14212493442552113,
+          "dissipation": 77.1968803725061,
+          "pressurePower": 75.14861531817955,
+          "fluxWeightedPressureDrop": 338.16876893180785,
+          "maxSolidToGlobalSpeed": 0.027192311544115957,
+          "linearResidual": 2.6092061116436466e-14,
+          "continuity": 7.620857070400608e-14,
+          "adjointResidual": 1.3684609376720885e-11,
+          "projectedKkt": 0.24183209057065191,
+          "relativeObjectiveReduction": 0.13494334798887475
+        }
+      },
+      "environment": {
+        "python": "3.14.3",
+        "numpy": "2.4.6",
+        "scipy": "1.18.1"
+      },
+      "analysisSourceHashes": {
+        "optimize_flow.py": "d6446713a4f4d9e01901b7dedfedf324fc8934b5f3402e0ff1a9746b5857cdcd",
+        "brinkman.py": "2ae8db543820beaa7e7282bb04598c16d801d30a9868512775401dfa07bd4bfe"
+      },
+      "optimizationElapsedSeconds": 10.781584999989718,
+      "timingScope": "Optimization and reference evaluations only; plotting, native meshing and CFD excluded; not a performance benchmark.",
+      "extraction": {
+        "schema": "cartmesh2d-topology-extraction-v1",
+        "threshold": 0.5,
+        "field": "filtered projected rho at cell centres with edge extension",
+        "fluidRegion": "interior",
+        "components": 2,
+        "holes": 0,
+        "regions": [
+          {
+            "file": "fluid-component-0.xy",
+            "holes": 0,
+            "fluidArea": 0.24925360799671126,
+            "boundarySha256": "d9a1bf55bf1a5cfc342b8efa05b0576f31e7b50bd4dc39d96bdf432e3792e8e1"
+          },
+          {
+            "file": "fluid-component-1.xy",
+            "holes": 0,
+            "fluidArea": 0.24925360799670593,
+            "boundarySha256": "a403cd4a6a0564e8eace87ccea5860db36ce1d33524e765081aec81f37ef5a29"
+          }
+        ],
+        "vertices": 252,
+        "fluidArea": 0.4985072159934172,
+        "designArea": 1.5,
+        "extractedVolumeFraction": 0.33233814399561146,
+        "sourceFieldSha256": "caa36381293cb99ebf6287868738fd0d3e7b79206cbec49b861c23e391b557a5",
+        "boundarySha256": "30bf5023f14805b1bac4f602e1834935f12f57d83a0e6ab478b06f3951594a86",
+        "topologyQualified": false,
+        "solverQualityQualified": false,
+        "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required."
+      },
+      "fieldsSha256": "caa36381293cb99ebf6287868738fd0d3e7b79206cbec49b861c23e391b557a5",
+      "nativeComponents": [
+        {
+          "source": "outputs/fluid-topology/final-double-pipe/fluid-component-0.xy",
+          "sourceSha256": "d9a1bf55bf1a5cfc342b8efa05b0576f31e7b50bd4dc39d96bdf432e3792e8e1",
+          "mesh": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-0/level-6/mesh.solver.cm2d",
+            "sha256": "e1a9ab30b5291398fbd5500af2b9bab387944ceddfd7559438ac4ade8939cffa",
+            "cells": 1815,
+            "faces": 3780,
+            "area": 0.2492536079967114,
+            "expectedArea": 0.24925360799671126,
+            "areaError": 1.3877787807814457e-16,
+            "independentIssues": []
+          },
+          "nativeIterations": 258,
+          "nativeTolerance": 1e-08,
+          "nativeConverged": true,
+          "independentFlowPassed": true,
+          "independentMomentumNormalized": 1.4805337651521288e-09,
+          "independentGlobalFluxImbalance": 5.712075862356278e-12,
+          "metrics": {
+            "inletFlux": 0.002222222222222222,
+            "outletFlux": 0.002222222222234915,
+            "pressurePower": 0.020758828215035403,
+            "fluxWeightedPressureDrop": 9.341472696765933,
+            "speed": 0.02,
+            "viscosity": 1.0,
+            "nominalReynolds": 0.003333333333333333
+          },
+          "executables": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          },
+          "externalCheckMesh": "not-run",
+          "attempts": [
+            {
+              "level": 5,
+              "status": "mesh-rejected",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-0/level-5/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-0/level-5/mesh-run.stderr.log"
+                }
+              ]
+            },
+            {
+              "level": 6,
+              "status": "flow-audited",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/mesh-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/boundary-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/boundary-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/flow-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/flow-run.stderr.log"
+                }
+              ]
+            }
+          ],
+          "audit": "outputs/fluid-topology/final-double-pipe-native/component-0/level-6/independent-flow.json",
+          "auditSha256": "815417be04901b894624a5126c341d0abc9aff64dfb4c8d95c4cc4b54f6c682a"
+        },
+        {
+          "source": "outputs/fluid-topology/final-double-pipe/fluid-component-1.xy",
+          "sourceSha256": "a403cd4a6a0564e8eace87ccea5860db36ce1d33524e765081aec81f37ef5a29",
+          "mesh": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-1/level-6/mesh.solver.cm2d",
+            "sha256": "9209303e6e2d8e2cd67b7405f01880adee530c60b69eaff38b394be535eeaad6",
+            "cells": 1814,
+            "faces": 3781,
+            "area": 0.24925360799670593,
+            "expectedArea": 0.24925360799670593,
+            "areaError": 0.0,
+            "independentIssues": []
+          },
+          "nativeIterations": 302,
+          "nativeTolerance": 1e-08,
+          "nativeConverged": true,
+          "independentFlowPassed": true,
+          "independentMomentumNormalized": 3.0268155814974193e-09,
+          "independentGlobalFluxImbalance": 1.5497268004394331e-12,
+          "metrics": {
+            "inletFlux": 0.002222222222222224,
+            "outletFlux": 0.0022222222222187797,
+            "pressurePower": 0.020761679911192002,
+            "fluxWeightedPressureDrop": 9.342755960036394,
+            "speed": 0.02,
+            "viscosity": 1.0,
+            "nominalReynolds": 0.003333333333333333
+          },
+          "executables": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          },
+          "externalCheckMesh": "not-run",
+          "attempts": [
+            {
+              "level": 5,
+              "status": "mesh-rejected",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-1/level-5/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-1/level-5/mesh-run.stderr.log"
+                }
+              ]
+            },
+            {
+              "level": 6,
+              "status": "flow-audited",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/mesh-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/boundary-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/boundary-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/flow-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/flow-run.stderr.log"
+                }
+              ]
+            }
+          ],
+          "audit": "outputs/fluid-topology/final-double-pipe-native/component-1/level-6/independent-flow.json",
+          "auditSha256": "70caf2ab8e55d81d13a32c482f46a920fe61678555388c3d4240ea41e610e3a1"
+        }
+      ],
+      "totalNativeCells": 3629,
+      "geometryReproducedAgainstPriorRun": true
+    },
+    {
+      "name": "bend",
+      "output": "outputs/fluid-topology/final-bend",
+      "status": "iteration-limit",
+      "optimizationConverged": false,
+      "problem": {
+        "nx": 48,
+        "ny": 32,
+        "width": 1.5,
+        "height": 1,
+        "viscosity": 1.0,
+        "alpha_max": 25000,
+        "volume_fraction": 0.3,
+        "filter_radius": 0.06,
+        "port_width": 0.16666666666666666,
+        "case": "bend",
+        "linear_residual_limit": 1e-08
+      },
+      "controls": {
+        "stages": [
+          [
+            0.01,
+            0.0
+          ],
+          [
+            0.1,
+            2.0
+          ],
+          [
+            0.1,
+            6.0
+          ]
+        ],
+        "stageIterations": [
+          25,
+          40,
+          60
+        ],
+        "move": 0.15,
+        "stationarityTolerance": 0.001,
+        "maxSeconds": 600
+      },
+      "finalParameters": {
+        "q": 0.1,
+        "beta": 6.0
+      },
+      "final": {
+        "objective": 10.90724463971087,
+        "volumeFraction": 0.3,
+        "grayness": 0.04177203090853968,
+        "dissipation": 10.90724463971087,
+        "pressurePower": 9.831097267707896,
+        "fluxWeightedPressureDrop": 88.47987540937105,
+        "maxSolidToGlobalSpeed": 0.03553563211515868,
+        "linearResidual": 1.0832864659949068e-14,
+        "continuity": 1.110595304075804e-13,
+        "adjointResidual": 1.3771619730692909e-12,
+        "projectedKkt": 0.08588367521284737
+      },
+      "sameModelReferences": {
+        "uniformPorous": {
+          "objective": 114.37278143461599,
+          "volumeFraction": 0.29999999999999977,
+          "grayness": 0.7403824358826859,
+          "dissipation": 114.37278143461599,
+          "pressurePower": 113.05454478268648,
+          "fluxWeightedPressureDrop": 1017.4909030441781,
+          "maxSolidToGlobalSpeed": 0.13712246513360013,
+          "linearResidual": 5.218412223287293e-14,
+          "continuity": 4.695065137453463e-13,
+          "adjointResidual": 2.112547909517205e-12,
+          "projectedKkt": 0.5510017493973839,
+          "relativeObjectiveReduction": 0.9046342626025383
+        },
+        "geometricSeed": {
+          "objective": 11.396511901579814,
+          "volumeFraction": 0.2999999999999999,
+          "grayness": 0.05022135680012349,
+          "dissipation": 11.396511901579814,
+          "pressurePower": 10.312703631342355,
+          "fluxWeightedPressureDrop": 92.81433268208117,
+          "maxSolidToGlobalSpeed": 0.043924442022848724,
+          "linearResidual": 5.824120784918854e-15,
+          "continuity": 2.7860526385925504e-14,
+          "adjointResidual": 2.6027051849839787e-12,
+          "projectedKkt": 0.4732332628387368,
+          "relativeObjectiveReduction": 0.04293131671289008
+        }
+      },
+      "environment": {
+        "python": "3.14.3",
+        "numpy": "2.4.6",
+        "scipy": "1.18.1"
+      },
+      "analysisSourceHashes": {
+        "optimize_flow.py": "d6446713a4f4d9e01901b7dedfedf324fc8934b5f3402e0ff1a9746b5857cdcd",
+        "brinkman.py": "2ae8db543820beaa7e7282bb04598c16d801d30a9868512775401dfa07bd4bfe"
+      },
+      "optimizationElapsedSeconds": 10.65334429097129,
+      "timingScope": "Optimization and reference evaluations only; plotting, native meshing and CFD excluded; not a performance benchmark.",
+      "extraction": {
+        "schema": "cartmesh2d-topology-extraction-v1",
+        "threshold": 0.5,
+        "field": "filtered projected rho at cell centres with edge extension",
+        "fluidRegion": "interior",
+        "components": 1,
+        "holes": 0,
+        "regions": [
+          {
+            "file": "fluid-component-0.xy",
+            "holes": 0,
+            "fluidArea": 0.44930016248293025,
+            "boundarySha256": "e2fa90766c0fb4a91ab4f5c47a8d434eb28390196100c86fbacc5079307ea9bd"
+          }
+        ],
+        "vertices": 144,
+        "fluidArea": 0.44930016248293025,
+        "designArea": 1.5,
+        "extractedVolumeFraction": 0.29953344165528684,
+        "sourceFieldSha256": "9bdd1afe499fd6d7aecbbc38a5ae91ccb50d2f11b4750678683ada5c43cadc64",
+        "boundarySha256": "e2fa90766c0fb4a91ab4f5c47a8d434eb28390196100c86fbacc5079307ea9bd",
+        "topologyQualified": false,
+        "solverQualityQualified": false,
+        "note": "Contour construction only. Sharp-wall extraction changes the porous model; native checks required."
+      },
+      "fieldsSha256": "9bdd1afe499fd6d7aecbbc38a5ae91ccb50d2f11b4750678683ada5c43cadc64",
+      "nativeComponents": [
+        {
+          "source": "outputs/fluid-topology/final-bend/fluid.xy",
+          "sourceSha256": "e2fa90766c0fb4a91ab4f5c47a8d434eb28390196100c86fbacc5079307ea9bd",
+          "mesh": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-bend-native/level-7/mesh.solver.cm2d",
+            "sha256": "1bf57e3665c01a13de7e651eada82f49b4b47f4fd7492fce085f87817ff18198",
+            "cells": 5897,
+            "faces": 12013,
+            "area": 0.44930016248292987,
+            "expectedArea": 0.44930016248293025,
+            "areaError": -3.885780586188048e-16,
+            "independentIssues": []
+          },
+          "nativeIterations": 1293,
+          "nativeTolerance": 1e-08,
+          "nativeConverged": true,
+          "independentFlowPassed": true,
+          "independentMomentumNormalized": 9.97267810142678e-09,
+          "independentGlobalFluxImbalance": 3.000018751486439e-12,
+          "metrics": {
+            "inletFlux": 0.0022222222222222222,
+            "outletFlux": 0.0022222222222155557,
+            "pressurePower": 0.005142007534760696,
+            "fluxWeightedPressureDrop": 2.3139033906423134,
+            "speed": 0.02,
+            "viscosity": 1.0,
+            "nominalReynolds": 0.003333333333333333
+          },
+          "executables": {
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c"
+          },
+          "externalCheckMesh": "not-run",
+          "attempts": [
+            {
+              "level": 6,
+              "status": "mesh-rejected",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-bend-native/level-6/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-bend-native/level-6/mesh-run.stderr.log"
+                }
+              ]
+            },
+            {
+              "level": 7,
+              "status": "flow-audited",
+              "logs": [
+                {
+                  "stdout": "outputs/fluid-topology/final-bend-native/level-7/mesh-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-bend-native/level-7/mesh-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-bend-native/level-7/boundary-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-bend-native/level-7/boundary-run.stderr.log"
+                },
+                {
+                  "stdout": "outputs/fluid-topology/final-bend-native/level-7/flow-run.stdout.log",
+                  "stderr": "outputs/fluid-topology/final-bend-native/level-7/flow-run.stderr.log"
+                }
+              ]
+            }
+          ],
+          "audit": "outputs/fluid-topology/final-bend-native/level-7/independent-flow.json",
+          "auditSha256": "0c5475683a110b16da3336b232d1d255f3e980ea1ea5631cc728114623b916bf"
+        }
+      ],
+      "totalNativeCells": 5897,
+      "geometryReproducedAgainstPriorRun": true
+    }
+  ],
+  "analyticSanity": {
+    "case": "Poiseuille",
+    "nx": 32,
+    "ny": 24,
+    "velocityRelativeL2": 0.0016052611787773395,
+    "pressureDropRelativeError": 0.005975864154016963,
+    "maxTransverseSpeed": 0.000783326166042219,
+    "acceptance": "2% relative error on this single modest grid only; not a grid-convergence study"
+  },
+  "adjointDirectionalChecks": [
+    {
+      "objective": "dissipation",
+      "beta": 0,
+      "finiteDifference": 32.84094688268624,
+      "adjoint": 32.840946350871874,
+      "relativeError": 1.6193636769667604e-08
+    },
+    {
+      "objective": "dissipation",
+      "beta": 3,
+      "finiteDifference": 60.99792381633051,
+      "adjoint": 60.997923204776654,
+      "relativeError": 1.0025814322175872e-08
+    },
+    {
+      "objective": "pressure-power",
+      "beta": 0,
+      "finiteDifference": 32.85913904676363,
+      "adjoint": 32.859138720179146,
+      "relativeError": 9.938923945508135e-09
+    },
+    {
+      "objective": "pressure-power",
+      "beta": 3,
+      "finiteDifference": 61.02142956422085,
+      "adjoint": 61.02142908618583,
+      "relativeError": 7.833887586420437e-09
+    }
+  ],
+  "retainedEarlierFailures": [
+    {
+      "output": "outputs/fluid-topology/double-pipe-native",
+      "reason": "Combined disconnected region rejected by native flow pressure-reference requirement; every region is now solved separately."
+    },
+    {
+      "output": "outputs/fluid-topology/bend-native",
+      "reason": "Level 5 passes mesher but native FVM geometry rejects face outside centre normal bracket; original geometry and failure logs retained."
+    }
+  ],
+  "limits": [
+    "Both optimization cases reached iteration budget, not stationarity.",
+    "Finite solid resistance, density interpolation and threshold extraction change the physical model.",
+    "Native pressure outlets differ from prescribed outflow profiles in the Stokes optimization.",
+    "Reported objective reductions apply only to equal-volume equal-parameter porous-model references.",
+    "No scientific novelty or general engineering accuracy claim.",
+    "Coarse geometry failures remain failures; no input smoothing, missing components, relaxed gates or Q1 reintroduction."
+  ]
+}

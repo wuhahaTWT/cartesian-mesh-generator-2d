@@ -147,6 +147,54 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 `cartmesh2d_fv_cli --help`是独立扩散/泊松入口。`cartmesh2d_euler_cli --help`是实验理想气体Euler入口；SST输运/壁距/稳态RANS代码位于`src/fv/Sst*`及对应测试。它们仍有调用与测试，保留现有行为；本轮不扩大物理范围，也不把局部通过当作通用湍流或可压流资格。
 
+## 流体拓扑优化研究入口
+
+`tools/optimization/` 是用户授权的独立研究原型，当前为命令行入口，未接入桌面菜单，也未替换原生不可压求解器。设计变量覆盖内部材料分布，允许流道连接关系变化；不是只调整几根管道的宽度或控制点。它不读取产品 `.background.json` 作为流体网格。
+
+### 模型、灵敏度与停止条件
+
+`brinkman.py` 独立实现原生二维交错 MAC 分析网格，求解无量纲 Stokes–Brinkman 方程 `-mu Laplacian(u) + grad(p) + alpha(rho) u = 0`、`div(u)=0`。`rho=1` 表示流体，`rho=0` 为有限阻力近似固体；`alpha=alpha_max*q*(1-rho)/(q+rho)`。它不含对流惯性，不能当作通用 Navier–Stokes 拓扑优化器。
+
+入口/出口采用积分匹配的抛物线速度，两格被动端口区域固定为流体，外壁单元固定为固体；设计区由内部变量决定。锥形密度滤波与 tanh 投影后计算真实约束量 `mean(rho) <= volume_fraction`。`filter_radius` 使用设计域长度单位，不等于已证明的制造最小壁厚。
+
+稀疏离散系统消去规定速度及一个压力参考自由度；伴随使用同一离散矩阵的转置，并通过滤波、投影求导。默认目标是离散黏性耗散加 Brinkman 阻力耗散；可选 `pressure-power` 是端口邻接压力单元的通量加权压差功率，不能误称精确边界应力功。OC 更新同时满足变量界、移动界与物理体积约束，候选须重新求解并通过目标回溯才接受。
+
+三阶段 `(q,beta)=(.01,0),(.1,2),(.1,6)` 改变了模型，不能把跨阶段目标变化当成一次性能提升。报告中的两组参考设计均重新投影到相同体积、使用最终相同参数求解。`uniformPorous` 是数值初值，`geometricSeed` 是可复现的几何种子；两者都不是独立工程基准。
+
+`projectedKkt` 为目标梯度归一化后、体积约束切平面及变量界上的投影步无穷范数；默认 `1e-3` 是局部设计停止条件，不是 CFD 精度。达到迭代/时间预算、回溯停滞或分析失败会明确报告，不能写成优化收敛。直接线性解及伴随的 `1e-8` 门检查 `||Ax-b||inf/||b||inf`，连续性检查最大单元净通量/总入口流量，用于拒绝不可信梯度；不是物理误差要求。失败或中断保存最后已接受设计及对应的阶段参数；当前没有自动续算入口。
+
+### 运行与实际网格连接
+
+可选 Python 依赖仅供研究脚本使用，不进入原生产品构建：
+
+```sh
+python3 -m venv outputs/topology-env
+outputs/topology-env/bin/python -m pip install -r tools/optimization/requirements.txt
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tests/flow_topology_test.py
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --output outputs/topology/double-pipe
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case bend --volume 0.3 --output outputs/topology/bend
+```
+
+输出目录必须是新目录。默认 48×32 分析格、25/40/60 步预算；首轮 Matplotlib 字体缓存可能需要额外时间。`summary.json` 保存控制、版本、源代码哈希、停止原因和参考对照；`history.csv`、`accepted-design.npz`、阶段快照、`final.analysis.vtk` 保留数值证据。VTK 明确是含固体阻力的分析场，不是产品求解网格。`--no-plot` 同时跳过等值轮廓提取，可随后单独运行 `topology_artifacts.py <结果目录>`。
+
+`topology_artifacts.py` 对投影密度提取分段直线等值轮廓，保留所有连通区域与孔洞，不平滑折线、不填孔。`fluid.xy` 显式使用 interior 语义；每个独立流域另有 `fluid-component-N.xy`，坐标及哈希可追溯。阈值轮廓面积与分析密度体积是不同量，分别报告。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+cmake --build build --target cartmesh2d_cli cartmesh2d_flow_cli -j2
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/verify_extracted_flow.py outputs/topology/double-pipe --output outputs/topology/double-pipe-native --levels 5 6 --tolerance 1e-8
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/verify_extracted_flow.py outputs/topology/bend --output outputs/topology/bend-native --levels 6 7 --tolerance 1e-8
+outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs/topology/double-pipe-native outputs/topology/bend-native --labels Double-pipe Bend --output outputs/topology/native-preview.png
+```
+
+连接脚本真实执行原生 Cut-cell 生成、Solver 质量门、独立 CM2D 读取/面积核对、原生低 Reynolds 数流动及独立离散方程审计。多个不连通流域逐个求解以提供独立压力参考，全部保留并汇总面积；任何一个失败均不能报告整例成功。失败分辨率和原始日志仍保留，不能挑图隐去失败。检测到本机 `checkMesh` 时实际运行标准检查，否则明确 `not-run`。
+
+上述流动显式采用速度尺度 `.02`、运动黏度 `1`，按端口宽度算名义 Reynolds 数约 `.00333`；入口保持同形抛物线，出口改为原生压力出口。`1e-8` 是这两例为了通过既有独立方程审计所用的原生代数停止控制，未修改产品默认值或审计门。这一步证明提取几何能被原生网格/求解链接受；固体阻力、出口条件及离散格式均改变，不能把多孔分析的目标下降直接写成真实壁面 CFD 性能提升。`render_native_flow.py` 直接绘制接受网格多边形与原生 CSV，保留全部区域并记录源哈希。
+
+10 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入，以及预算与失败状态保存。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；没有做网格收敛、跨平台或通用物理精度验收。
+
+方法背景见 [Stokes 拓扑优化示例](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)。[已有 Cut-cell 流体拓扑优化研究](https://doi.org/10.1016/j.camwa.2021.06.002) 说明功能组合本身不构成原创性。后续可研究“多孔优化的候选排序能否在真实壁面 Cut-cell CFD 中保持，以及如何控制排序误差”；当前尚未完成该科研结论。
+
 ## 验证与证据
 
 | 目的 | 入口 |
