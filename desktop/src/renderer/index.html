@@ -394,6 +394,8 @@
       </div>
       <label class="field">动力黏度 μ（Pa·s；0关闭）<input id="eulerViscosity" type="number" min="0" step="any" value="0"></label>
       <label class="field">壁面机械条件<select id="eulerWallModel"><option value="slip">自由滑移</option><option value="no-slip">静止无滑移</option></select></label>
+      <label class="field">壁面热流 / 应力梯度<select id="eulerWallGradient"><option value="linear">线性</option><option value="quadratic">二次重构（更高壁面精度）</option></select></label>
+      <p class="hint">二次重构适用于定温和无滑移壁，整体精度仍取决于上方阶数及网格。壁面附近单元不足时会明确报错。</p>
       <label class="field">导热系数 k（W/m/K；0关闭）<input id="eulerConductivity" type="number" min="0" step="any" value="0"></label>
       <label class="field">壁面热条件<select id="eulerWallThermal"><option value="insulated">绝热</option><option value="temperature">指定温度</option><option value="flux">指定热流</option></select></label>
       <label class="field" id="eulerWallValueField"><span id="eulerWallValueLabel">壁温（K）</span><input id="eulerWallValue" type="number" step="any" value="300"></label>

@@ -1,5 +1,5 @@
 #pragma once
-#include "cartmesh2d/fv/FvMesh2D.hpp"
+#include "cartmesh2d/fv/WallGradient2D.hpp"
 
 namespace cartmesh2d::fv {
 enum class HeatBoundaryKind2D { Insulated, Temperature, OutwardFlux, Periodic };
@@ -20,18 +20,21 @@ struct HeatConductionResult2D {
 // rate bounds its full row norm; callers must still check stage admissibility.
 class HeatConductionOperator2D {
 public:
-    HeatConductionOperator2D(const FvMesh2D&,const std::vector<HeatBoundary2D>&,double conductivity);
+    HeatConductionOperator2D(const FvMesh2D&,const std::vector<HeatBoundary2D>&,double conductivity,WallGradient2D = WallGradient2D::Linear);
     [[nodiscard]] HeatConductionResult2D evaluate(const std::vector<double>& temperature,
                                                  const std::vector<double>& volumetricHeatCapacity) const;
     [[nodiscard]] std::size_t nonMonotoneRows() const { return nonMonotoneRows_; }
+    [[nodiscard]] std::size_t quadraticWalls() const { return quadraticWalls_; }
 private:
+    std::vector<std::optional<WallGradientStencil2D>> wallGradients_;
+    std::size_t quadraticWalls_=0;
     struct Sample { std::optional<std::size_t> cell; double value=0; Vector2D weight{}; };
     struct Gradient { Vector2D constant{}; std::vector<Sample> samples; };
     struct FaceData {
         std::size_t owner=0;std::optional<std::size_t> neighbour,partner;
         HeatBoundaryKind2D kind=HeatBoundaryKind2D::Insulated;
         double value=0,length=0,transmissibility=0,weight=0;
-        Vector2D correction{};
+        Vector2D correction{},area{};
     };
     double conductivity_=0;
     std::vector<double> areas_,rowNorm_;

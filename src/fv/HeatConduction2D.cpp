@@ -11,8 +11,9 @@ void require(bool ok,const char* message){if(!ok)throw std::runtime_error(std::s
 double checked(double x){require(std::isfinite(x),"non-finite arithmetic");return x;}
 }
 HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
-    const std::vector<HeatBoundary2D>& boundaries,double conductivity):conductivity_(conductivity) {
+    const std::vector<HeatBoundary2D>& boundaries,double conductivity,WallGradient2D wallGradient):conductivity_(conductivity) {
     validateFvMesh2D(mesh);require(std::isfinite(conductivity)&&conductivity>0,"conductivity must be positive");
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
     std::vector<const HeatBoundary2D*> lookup(mesh.faces.size());
     for(const auto& b:boundaries) {
         require(b.face<lookup.size()&&!mesh.faces[b.face].neighbour&&!lookup[b.face],"invalid/duplicate thermal boundary");
@@ -29,7 +30,7 @@ HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
         const auto& f=mesh.faces[id];auto& out=faces_[id];const auto* b=lookup[id];
         require(f.neighbour||b,"missing thermal boundary");
         out.owner=f.owner;out.neighbour=f.neighbour;out.length=std::hypot(f.areaVector.x,f.areaVector.y);
-        out.transmissibility=f.transmissibility;out.correction=f.correction;out.weight=f.neighbourWeight;
+        out.area=f.areaVector;out.transmissibility=f.transmissibility;out.correction=f.correction;out.weight=f.neighbourWeight;
         if(!b)continue;
         out.kind=b->kind;out.value=b->value;out.partner=b->partner;
         if(!b->partner)continue;
@@ -71,6 +72,12 @@ HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
             else gradient.samples.push_back({c.cell,c.value,w});
         }
     }
+    wallGradients_.resize(faces_.size());
+    if(wallGradient==WallGradient2D::Quadratic) {
+        std::vector<bool> prescribed(faces_.size());std::vector<std::optional<std::size_t>> partners(faces_.size());
+        for(std::size_t id=0;id<faces_.size();++id){prescribed[id]=!faces_[id].neighbour&&faces_[id].kind==HeatBoundaryKind2D::Temperature;partners[id]=faces_[id].partner;}
+        for(std::size_t id=0;id<faces_.size();++id)if(prescribed[id]){wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);++quadraticWalls_;}
+    }
     // Assemble only the constant Jacobian for a dimensional time-step estimate.
     // Runtime flux evaluation below uses temperature DIFFERENCES, preserving
     // a constant field exactly without cancellation of large absolute Kelvin.
@@ -79,6 +86,10 @@ HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
         const auto& f=faces_[id];if(f.partner&&id>*f.partner)continue;
         if(!f.neighbour&&f.kind!=HeatBoundaryKind2D::Temperature)continue;
         std::map<std::size_t,double> coefficients;
+        if(wallGradients_[id]) {
+            for(const auto& sample:wallGradients_[id]->samples)if(!sample.boundary)rows[f.owner][sample.index]-=conductivity_*dot(sample.weight,mesh.faces[id].areaVector);
+            continue;
+        }
         const double a=conductivity_*f.transmissibility;
         coefficients[f.owner]+=a;if(f.neighbour)coefficients[*f.neighbour]-=a;
         const auto addGradient=[&](std::size_t i,double weight){
@@ -117,6 +128,13 @@ HeatConductionResult2D HeatConductionOperator2D::evaluate(const std::vector<doub
             auto g=gradients[f.owner];
             if(f.neighbour){const auto h=gradients[*f.neighbour];g={g.x*(1-f.weight)+h.x*f.weight,g.y*(1-f.weight)+h.y*f.weight};}
             q=-conductivity_*(f.transmissibility*((f.neighbour?t[*f.neighbour]:f.value)-t[f.owner])+dot(g,f.correction));
+        }
+        if(wallGradients_[id]) {
+            Vector2D g{};
+            for(const auto& sample:wallGradients_[id]->samples){const double delta=(sample.boundary?faces_[sample.index].value:t[sample.index])-f.value;g.x+=sample.weight.x*delta;g.y+=sample.weight.y*delta;}
+            // S = correction + tau * d; for a physical wall it is simpler to
+            // cache the actual area vector than recover it from the split.
+            q=-conductivity_*dot(g,f.area);
         }
         q=checked(q);out.faceHeatFlux[id]=q;out.cellResidual[f.owner]+=q;
         if(f.neighbour)out.cellResidual[*f.neighbour]-=q;

@@ -5,6 +5,7 @@ The complete affine face Jacobian supplies a dimensional explicit-step bound.
 """
 import math
 from collections import defaultdict
+from verify_wall_gradient import wall_stencils
 
 
 def require(ok,message):
@@ -12,7 +13,7 @@ def require(ok,message):
 
 
 class HeatReference:
-    def __init__(self, mesh, measured, boundaries, conductivity):
+    def __init__(self, mesh, measured, boundaries, conductivity, wall_gradient="linear"):
         require(math.isfinite(conductivity) and conductivity>0,"invalid conductivity")
         self.mesh, self.measured, self.k = mesh, measured, conductivity
         self.faces = []
@@ -55,8 +56,9 @@ class HeatReference:
             xx=math.fsum(dx*dx*w for dx,dy,w,*_ in constraints);xy=math.fsum(dx*dy*w for dx,dy,w,*_ in constraints);yy=math.fsum(dy*dy*w for dx,dy,w,*_ in constraints)
             det=xx*yy-xy*xy;require(det>64*math.ulp(1.)*(xx+yy)**2,"rank-deficient gradient")
             self.gradients.append([(w*(yy*dx-xy*dy)/det,w*(xx*dy-xy*dx)/det,kind,j,value) for dx,dy,w,kind,j,value in constraints])
+        self.wall_stencils=wall_stencils(mesh,measured,boundaries,{i for i,b in boundaries.items() if b.get('thermalKind')=='temperature'}) if wall_gradient=='quadratic' else {}
         self.coefficients=[];self.constants=[];rows=[defaultdict(float) for _ in mesh.cells]
-        for f in self.faces:
+        for face_id,f in enumerate(self.faces):
             c=defaultdict(float);constant=0.;i,j=f['owner'],f['neighbour']
             if j>=0 or f['kind']=='temperature':
                 c[i]+=conductivity*f['a']
@@ -71,6 +73,13 @@ class HeatReference:
                             if other>=0:c[other]+=coefficient
                             else:constant+=coefficient*value
             elif f['kind']=='flux':constant=f['value']*f['length']
+            if face_id in self.wall_stencils:
+                c=defaultdict(float);constant=0.
+                for index,boundary,w in self.wall_stencils[face_id]:
+                    coefficient=-conductivity*(w[0]*f['sx']+w[1]*f['sy'])
+                    constant-=coefficient*f['value']
+                    if boundary:constant+=coefficient*self.faces[index]['value']
+                    else:c[index]+=coefficient
             self.coefficients.append(c);self.constants.append(constant)
         for face_id,(f,c) in enumerate(zip(self.faces,self.coefficients)):
             if f['partner']>=0 and face_id>f['partner']:continue
@@ -88,12 +97,15 @@ class HeatReference:
             delta=[value if kind=='derivative' else (temperature[j] if j>=0 else value)-temperature[i] for wx,wy,kind,j,value in samples]
             gradients.append((math.fsum(s[0]*d for s,d in zip(samples,delta)),math.fsum(s[1]*d for s,d in zip(samples,delta))))
         flux=[]
-        for f in self.faces:
+        for face_id,f in enumerate(self.faces):
             i,j=f['owner'],f['neighbour'];gx,gy=gradients[i]
             if j>=0 or f['kind']=='temperature':
                 if j>=0:gx,gy=((1-f['w'])*a+f['w']*b for a,b in zip((gx,gy),gradients[j]))
                 value=-self.k*(f['a']*((temperature[j] if j>=0 else f['value'])-temperature[i])+gx*f['cx']+gy*f['cy'])
             else:value=f['value']*f['length'] if f['kind']=='flux' else 0.
+            if face_id in self.wall_stencils:
+                g=[math.fsum(w[a]*((self.faces[index]['value'] if boundary else temperature[index])-f['value']) for index,boundary,w in self.wall_stencils[face_id]) for a in range(2)]
+                value=-self.k*(g[0]*f['sx']+g[1]*f['sy'])
             flux.append(value)
         # Pair once, using the same outward-owner convention as the topology.
         for face_id,f in enumerate(self.faces):

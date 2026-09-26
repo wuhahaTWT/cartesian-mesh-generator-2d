@@ -20,7 +20,7 @@ test('Euler accepts real independently audited native fields and rejects stale/t
   assert.throws(()=>validate({...fixture.files,'.history.csv':fixture.files['.history.csv'].trim().split('\n').slice(0,-1).join('\n')}),/历史/);
 });
 test('Euler requests and progress keep physical types and units separate',()=>{
-  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,thermalConductivity:0,wallThermal:'insulated',wallValue:0,dynamicViscosity:0,wallModel:'slip'});
+  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,wallGradient:'linear',thermalConductivity:0,wallThermal:'insulated',wallValue:0,dynamicViscosity:0,wallModel:'slip'});
   for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'},{fluxScheme:'roe'},{order:3},{order:'2'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
   const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',request);assert.equal(command.executable,'cartmesh2d_euler_cli');assert.ok(command.args.includes('--gas-r'));
   assert.throws(()=>buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',{...request,resume:true}),/状态/);
@@ -134,4 +134,20 @@ test('viscous restart manifest blocks physical changes before launching native p
     for(const extra of [{dynamicViscosity:.3},{wallModel:'slip'}])await assert.rejects(()=>runEulerJob({currentResult,mesh:m,request:{...r,resume:true,endTime:.01,...extra},executable:x=>x,runProcess:runner,signal}),/物理参数/);
     assert.equal(calls,1);assert.equal(currentResult.euler,result);
   }finally{await fs.rm(directory,{recursive:true,force:true});}
+});
+
+test('quadratic wall recovery binds numerical control and actual prescribed walls',()=>{
+  const sample=require('./fixtures/euler-wall-accuracy.json'),m=parseCm2d(sample.mesh),r=sample.request;
+  const check=(files=sample.files,request=r)=>validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],m,request);
+  assert.equal(sample.independentAudit.valid,true);const result=check();assert.ok(result.summary.quadraticHeatWalls>0&&result.summary.quadraticViscousWalls>0);
+  const invocation=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',r);assert.equal(invocation.args[invocation.args.indexOf('--wall-gradient')+1],'quadratic');
+  assert.throws(()=>validateEulerRequest({...r,wallGradient:'cubic'}),/梯度格式/);
+  assert.throws(()=>check(sample.files,{...r,wallGradient:'linear'}),/梯度格式/);
+  for(const [key,value] of [['quadraticHeatWalls',0],['quadraticViscousWalls',0],['quadraticHeatWalls',.5],['quadraticViscousWalls',-1]]){
+    const summary=JSON.parse(sample.files['.json']);summary[key]=value;
+    assert.throws(()=>check({...sample.files,'.json':JSON.stringify(summary)}),/二次壁面/);
+  }
+  // Physical states remain restart-compatible when the numerical wall stencil
+  // is changed explicitly; the output must still declare the method it used.
+  assert.equal(eulerCheckpoint(sample.files['.checkpoint'],m,{...r,wallGradient:'linear'}).time,r.endTime);
 });

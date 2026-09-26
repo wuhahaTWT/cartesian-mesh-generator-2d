@@ -1104,7 +1104,7 @@ async function runSmoke() {
     if (${JSON.stringify(argument('euler') === 'true')}) {
       const target=Number(${JSON.stringify(argument('euler-end-time')||'.0005')});
       for(const [id,value] of Object.entries({eulerCase:${JSON.stringify(argument('euler-case')||'sod')},eulerDensity:'1.225',eulerPressure:'101325',
-        eulerViscosity:${JSON.stringify(argument('euler-viscosity')||'0')},eulerWallModel:${JSON.stringify(argument('euler-wall-model')||'slip')},
+        eulerWallGradient:${JSON.stringify(argument('euler-wall-gradient')||'linear')},eulerViscosity:${JSON.stringify(argument('euler-viscosity')||'0')},eulerWallModel:${JSON.stringify(argument('euler-wall-model')||'slip')},
         eulerConductivity:${JSON.stringify(argument('euler-conductivity')||'0')},eulerWallThermal:${JSON.stringify(argument('euler-wall-thermal')||'insulated')},eulerWallValue:${JSON.stringify(argument('euler-wall-value')||'0')},
         eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerFluxScheme:${JSON.stringify(argument('euler-flux')||'rusanov')},eulerOrder:${JSON.stringify(argument('euler-order')||'1')},eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
       document.getElementById('eulerCase').dispatchEvent(new Event('change'));
@@ -1113,8 +1113,13 @@ async function runSmoke() {
       const first=smoke.state.euler;
       if(first.summary.fluxScheme!==document.getElementById('eulerFluxScheme').value||first.summary.order!==Number(document.getElementById('eulerOrder').value))throw new Error('Euler method controls did not reach native solver');
       if(first.summary.thermalConductivity!==Number(document.getElementById('eulerConductivity').value)||first.summary.wallThermal!==document.getElementById('eulerWallThermal').value||first.summary.wallValue!==smoke.eulerRequest().wallValue)throw new Error('Thermal controls did not reach native solver');
+      if(first.summary.wallGradient!==document.getElementById('eulerWallGradient').value)throw new Error('Wall gradient control did not reach native solver');
       if(first.summary.dynamicViscosity!==Number(document.getElementById('eulerViscosity').value)||first.summary.wallModel!==document.getElementById('eulerWallModel').value)throw new Error('Viscous controls did not reach native solver');
       if(!['eulerViscosity','eulerWallModel','eulerConductivity','eulerWallThermal','eulerWallValue'].every(id=>document.getElementById(id).disabled))throw new Error('Restart thermal parameters are not locked');
+      document.getElementById('eulerWallGradient').value=first.summary.wallGradient==='quadratic'?'linear':'quadratic';
+      document.getElementById('eulerWallGradient').dispatchEvent(new Event('change'));
+      if(smoke.state.euler)throw new Error('Wall gradient change left stale displayed fields');
+      document.getElementById('eulerWallGradient').value=first.summary.wallGradient;
       if(first.summary.dynamicViscosity>0) {
         document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
         document.getElementById('eulerViscosity').value=String(first.summary.dynamicViscosity*2);
@@ -1156,7 +1161,7 @@ async function runSmoke() {
       }
       document.getElementById('displayMode').value=first.summary.thermalConductivity>0?'euler-temperature':'euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
       document.getElementById('eulerBlock').scrollIntoView({block:'start'});
-      smoke.state.eulerSmoke={dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
+      smoke.state.eulerSmoke={wallGradient:first.summary.wallGradient,wallGradientControlsReachedNative:true,wallGradientChangeClearedStaleResult:true,dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;

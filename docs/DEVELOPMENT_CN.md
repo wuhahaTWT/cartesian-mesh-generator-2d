@@ -284,3 +284,32 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 ```
 
 最后一条为便于短时验证的测试物性，不是空气推荐值；μ、k、γ、R 必须按实际问题指定。默认μ=k=0、滑移、Rusanov一阶均未自动更改。
+
+
+### 可压壁面精度与时间细化
+
+`--wall-gradient quadratic` / App“壁面热流 / 应力梯度 → 二次重构”是可选数值格式。默认仍为 `linear`；适用于定温壁的 Fourier 热流和无滑移壁的完整黏性应力。内面、指定热流、绝热、滑移和开边界保留原模型。该选项允许随检查点显式更改，物理边界和物性仍严格绑定。缓存求解器在构造时选择壁面格式，推进时拒绝与缓存不同的设置。
+
+`WallGradient2D` 只依赖原生二维有限体积几何。以真实壁面中心的指定值固定常数项，在法向/切向局部坐标拟合五项 `n, t, n²/2, nt, t²/2`。沿共形流体 owner/neighbour 图扩展模板，周期边界使用平移后的像点，绝不跨越物理边界。先取两层邻域，必要时最多五层；超过512个像单元或仍缺秩时显式失败，不静默降阶。法向和切向分别按局部跨度无量纲化，再进行列归一化、列主元 Householder QR；不用正规方程。尺度化矩阵残余列范数须大于 `sqrt(machine epsilon)`，这是保留约半数双精度有效位的数值秩保护，不是物理精度阈值。准备时只缓存梯度系数，运行时对“样本值减目标壁值”求和，常量在加权前消去。
+
+二次最小二乘和QR的基本做法可参考 [NASA White/Nishikawa，D.2.3节](https://ntrs.nasa.gov/api/citations/20210024196/downloads/white_and_nishikawa_afang_paper_v_1.7.pdf)。本实现是独立推导的二维壁面值约束模板，不是该论文的三维F-ANG移植。这里输入的是现有二阶方法中的**质心原始变量点值近似**，没有将保守量单元平均值变成三阶多项式，也没有高阶面积/面通量积分；**局部二次重构不等于全局三阶**。对流仍为所选一阶/二阶，光滑问题按整体二阶验收；非光滑角点和激波附近不能使用光滑阶数推断精度。
+
+热流和应力直接用恢复的壁面梯度；壁功始终使用指定壁速。所有新增非局部系数进入热残差和完整动量块的行范数，参与两阶段组合CFL及正性重试。高精度热算子仍可能非M矩阵；范数及正性检查不是任意Cut-cell的稳定性证明。`quadraticHeatWalls` / `quadraticViscousWalls` 声明实际采用二次重构的面数；原始多边形独立读取器使用再正交Gram–Schmidt构建参考系数，与原生Householder实现区分，复核通量、壁功、扩展行范数和实际面数。
+
+精度验证分开组织，通常约1–2分钟完成本轮新增数值测试，完整回归另计：
+
+- `wall_gradient_test.cpp`：二次温度/速度场、扭曲及旋转网格、长宽比0.03/3/30、长度缩放1e−3/1/1e3；对热流、应力和面中心壁功进行4096 epsilon的归一化代数检查，直接扰动每个自由度检查完整Jacobian。该阈值容纳QR和差分累计舍入，只验证代数一致性。缺秩最小网格必须拒绝。新增极端长宽比算例会把已舍入的绝对点值误差按1/法向间距放大，因此另以实际梯度系数传播输入舍入包络进行相同4096 epsilon检查，并同时保留原几何门限及未经包络缩放的误差；不把这个代数诊断作为物理精度门限。
+- `transport_precision_test.cpp`：`T=2+0.2 sin(πx)sinh(πy)/sinh(π)` 的无源稳态导热，8/16/32平方网格及扭曲网格。独立单位扰动恢复实际算子，线性求解后再针对真实通量残差修正；线性容差1e−11与1e−13的场差应小于温度离散误差1%，排除求解容差污染。壁面热流比较**解析边积分**，L1分子为逐面绝对误差之和，分母为全部壁面解析热流绝对值之和（均W/m）。最细误差目标0.5%并至少优于原格式2倍，细化观测阶>1.7；这是小规模光滑热场目标，不是所有工程算例的通用标准。
+- `euler_wall_accuracy_cli_test.py`：Couette含黏性发热，μ=k=0.1、R=1、U=0.5、H=1、Tw=1。8/16/32层解析初值保持试验之外，还从静止、均匀冷场推进8/16/32层算例至t=60，验证温度、速度、场变化率、壁面功热平衡和全过程累计能量。温度误差以解析最大温升0.03125 K归一化，速度以0.5 m/s归一化，目标均为1e−6；最后一步保守量时间导数也须小于测试单位下1e−7，不能只凭目标时间或净热量接近零宣布稳态。冷启动封闭质量固定，解析稳态压力由质量约束决定，不把压力强定为初值1。用解析积分 `p=1/[∫₀¹ 1/T(y) dy]` 另查压力的空间细化，观测阶>1.8且最细相对L∞误差<0.01%，防止温度多项式恰好复现掩盖全场误差。
+- 时间精度使用固定网格冷启动，dt=1e−3/5e−4/2.5e−4，相同终点0.02；以dt=1.5625e−5的离散轨迹为参考，再与3.125e−5核对参考差异须小于最细被测误差10%。四个保守分量的RMS误差应表现为二阶（观测阶>1.8）；这是时间自收敛，不是连续PDE解析轨迹。
+- 同物理条件按接受步中断/续算必须逐字节一致；显式切换壁面数值格式可以续算。篡改通量、步长系数和壁面格式/面数必须被独立审计拒绝。原线性路径与修改前二进制比较黏性/导热/无黏四组检查点。
+
+时间细化还保留了一个最小失败例：dt=1.5625e−5累加1280次后，浮点时间可能比0.02少约5e−16，原CLI因尾步小于声明最小步长而错误失败。`EulerStepControls2D::endTime` 现在让求解器检查实际CFL步长后的剩余区间，必要时把倒数第二步分成两个合规小步，真实计算每一步通量；不伪造终点时间，不绕过最小步长。全部接受步均检查上下限，检查点仍保存实际接受时钟。
+
+```sh
+ctest --test-dir build -R 'cartmesh2d_(wall_gradient|transport_precision|euler_wall_accuracy)' --output-on-failure
+python3 tests/euler_wall_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-wall-accuracy/validation
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --wall-gradient quadratic --density 1.225 --pressure 101325 --u 50 --end-time .00005
+```
+
+最后一条仍为短时App验证物性，不是空气推荐值。实际曲壁App和独立面通量审计证明功能路径与离散实现相符，不能代替曲壁摩擦/换热关联式、网格无关性或跨平台精度验收。[壁面精度证据](../artifacts/current/native-euler-wall-accuracy.json) · [实际结果与细化图](../artifacts/current/native-euler-wall-accuracy.png)

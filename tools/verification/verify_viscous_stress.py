@@ -5,6 +5,7 @@ No native face gradients, coefficients, Jacobians or accepted flags are read.
 """
 import math
 from collections import defaultdict
+from verify_wall_gradient import wall_stencils
 
 
 class Linear:
@@ -28,7 +29,7 @@ def dot(a,b):return sum(x*y for x,y in zip(a,b))
 
 
 class ViscousReference:
-    def __init__(self,mesh,measured,bc,mu):
+    def __init__(self,mesh,measured,bc,mu,wall_gradient="linear"):
         self.mesh,self.measured,self.mu=mesh,measured,mu
         self.faces=[]
         for e in mesh.edges:
@@ -69,6 +70,7 @@ class ViscousReference:
             if determinant<=64*math.ulp(1.)*(xx+yy)**2:raise ValueError('singular viscous reference stencil')
             gradients.append([[sum((delta[k]*(w*(yy*d[0]-xy*d[1])/determinant) for d,w,delta in constraints),Linear()),
                                sum((delta[k]*(w*(xx*d[1]-xy*d[0])/determinant) for d,w,delta in constraints),Linear())] for k in range(2)])
+        self.wall_stencils=wall_stencils(mesh,measured,bc,{i for i,b in bc.items() if b['kind']=='no-slip-wall'}) if wall_gradient=='quadratic' else {}
         self.momentum=[];self.face_velocity=[];rows=[[Linear(),Linear()] for _ in mesh.cells]
         for face_id,f in enumerate(self.faces):
             i,j=f['owner'],f['neighbour'];w=f['weight'];n=f['normal'];g=[[x for x in row] for row in gradients[i]]
@@ -79,6 +81,8 @@ class ViscousReference:
             if j>=0 or f['kind']=='no-slip-wall':
                 other=velocity[j] if j>=0 else uf
                 g=[[g[k][a]+(other[k]-velocity[i][k]-dot(g[k],f['d']))*(n[a]/f['dn']) for a in range(2)] for k in range(2)]
+            if face_id in self.wall_stencils:
+                g=[[sum(((Linear({-1:self.faces[index]['wallVelocity'][k]}) if boundary else velocity[index][k])-uf[k])*w[a] for index,boundary,w in self.wall_stencils[face_id]) for a in range(2)] for k in range(2)]
             div=g[0][0]+g[1][1]
             stress=[[(2*g[0][0]-2/3*div)*mu,(g[0][1]+g[1][0])*mu],[(g[0][1]+g[1][0])*mu,(2*g[1][1]-2/3*div)*mu]]
             traction=[dot(row,f['area']) for row in stress]

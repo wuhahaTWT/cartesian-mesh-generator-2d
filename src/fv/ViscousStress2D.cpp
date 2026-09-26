@@ -16,8 +16,9 @@ void add(Form& a,const Form& b,double s){for(const auto& [j,v]:b)a[j]+=s*v;}
 using Gradient=std::array<Vector2D,2>; // rows grad(u), grad(v)
 }
 ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
-    const std::vector<ViscousBoundary2D>& boundaries,double viscosity):viscosity_(viscosity) {
+    const std::vector<ViscousBoundary2D>& boundaries,double viscosity,WallGradient2D wallGradient):viscosity_(viscosity) {
     validateFvMesh2D(mesh);require(std::isfinite(viscosity)&&viscosity>0,"dynamic viscosity must be positive");
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
     std::vector<const ViscousBoundary2D*> lookup(mesh.faces.size());
     for(const auto& b:boundaries) {
         require(b.face<lookup.size()&&!mesh.faces[b.face].neighbour&&!lookup[b.face],"invalid/duplicate boundary");
@@ -49,6 +50,12 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
         a.normalDistance=checked(dot(a.normal,a.d));require(a.normalDistance>0,"nonpositive normal distance");
         a.weight=a.neighbour?dot(a.normal,a.ownerOffset)/a.normalDistance:0;
         require(!a.neighbour||(a.weight>0&&a.weight<1),"face outside centre bracket");
+    }
+    wallGradients_.resize(faces_.size());
+    if(wallGradient==WallGradient2D::Quadratic) {
+        std::vector<bool> prescribed(faces_.size());std::vector<std::optional<std::size_t>> partners(faces_.size());
+        for(std::size_t id=0;id<faces_.size();++id){prescribed[id]=!faces_[id].neighbour&&faces_[id].kind==ViscousBoundaryKind2D::Velocity;partners[id]=faces_[id].partner;}
+        for(std::size_t id=0;id<faces_.size();++id)if(prescribed[id]){wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);++quadraticWalls_;}
     }
     std::vector<std::array<Form,4>> jac(mesh.cells.size());
     for(std::size_t i=0;i<mesh.cells.size();++i) {
@@ -88,6 +95,10 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
                 for(std::size_t a=0;a<2;++a)add(g[2*k+a],delta,n[a]/f.normalDistance);
             }
         }
+        if(wallGradients_[id]) {
+            g={};
+            for(const auto& sample:wallGradients_[id]->samples)if(!sample.boundary)for(std::size_t k=0;k<2;++k){g[2*k][2*sample.index+k]+=sample.weight.x;g[2*k+1][2*sample.index+k]+=sample.weight.y;}
+        }
         Form tx,ty;add(tx,g[0],4./3*f.area.x);add(tx,g[3],-2./3*f.area.x);add(tx,g[1],f.area.y);add(tx,g[2],f.area.y);
         add(ty,g[1],f.area.x);add(ty,g[2],f.area.x);add(ty,g[3],4./3*f.area.y);add(ty,g[0],-2./3*f.area.y);
         if(!f.neighbour&&f.kind==ViscousBoundaryKind2D::Slip){Form normal;add(normal,tx,n[0]);add(normal,ty,n[1]);tx.clear();ty.clear();add(tx,normal,n[0]);add(ty,normal,n[1]);}
@@ -124,6 +135,13 @@ ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector
             const auto other=f.neighbour?u[*f.neighbour]:f.value;
             const double delta[2]={other.x-u[f.owner].x,other.y-u[f.owner].y};
             for(std::size_t k=0;k<2;++k){const double correction=(delta[k]-dot(g[k],f.d))/f.normalDistance;g[k].x+=correction*f.normal.x;g[k].y+=correction*f.normal.y;}
+        }
+        if(wallGradients_[id]) {
+            g={};
+            for(const auto& sample:wallGradients_[id]->samples) {
+                const auto value=sample.boundary?faces_[sample.index].value:u[sample.index];const double delta[2]={value.x-f.value.x,value.y-f.value.y};
+                for(std::size_t k=0;k<2;++k){g[k].x+=sample.weight.x*delta[k];g[k].y+=sample.weight.y*delta[k];}
+            }
         }
         // Planar Newtonian gas, Stokes hypothesis. The 2/3 coefficient follows
         // the molecular constitutive law, not the dimension of the mesh.

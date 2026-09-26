@@ -298,14 +298,23 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(std::isfinite(control.maximumStep)&&control.maximumStep>0&&std::isfinite(control.minimumStep)&&control.minimumStep>0&&
             control.minimumStep<=control.maximumStep&&std::isfinite(control.acousticCourant)&&control.acousticCourant>0&&
             control.acousticCourant<=.45&&control.maximumRetries<=30,"invalid explicit acoustic time controls");
+    require(control.wallGradient==WallGradient2D::Linear||control.wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
+    require(!control.endTime||(std::isfinite(*control.endTime)&&*control.endTime>initial.time),"invalid integration end time");
     const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,heat,viscous);
     double dt=control.maximumStep;
     for(std::size_t i=0;i<nc;++i)dt=std::min(dt,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
+    if(control.endTime) {
+        const double remaining=*control.endTime-initial.time;dt=std::min(dt,remaining);
+        // Keep every step within BOTH user limits. A roundoff-sized final tail
+        // is avoided by taking two ordinary smaller steps, never by advancing
+        // the clock without flux or silently reducing the declared minimum.
+        if(remaining>dt&&remaining-dt<control.minimumStep)dt=.5*remaining;
+    }
     require(std::isfinite(dt)&&dt>=control.minimumStep,"combined acoustic/heat/viscous CFL requires a step below the declared minimum");
-    EulerStepResult2D result;result.previousCells=initial.cells;
+    EulerStepResult2D result;result.quadraticHeatWalls=heat?heat->quadraticWalls():0;result.quadraticViscousWalls=viscous?viscous->quadraticWalls():0;result.previousCells=initial.cells;
     std::vector<EulerConservative2D> accepted,stage,secondEuler,residual,absolute(nc);
     std::vector<double> spectral;
     std::string failure="non-positive stage state";
@@ -397,14 +406,14 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     return result;
 }
 namespace {
-std::optional<HeatConductionOperator2D> prepareHeat(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport) {
+std::optional<HeatConductionOperator2D> prepareHeat(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport,WallGradient2D wallGradient) {
     validateEulerTransport2D(transport,boundaries);
     if(transport.thermalConductivity==0)return {};
     std::vector<HeatBoundary2D> thermal;thermal.reserve(boundaries.size());
     for(const auto& b:boundaries)thermal.push_back({b.face,b.partner?HeatBoundaryKind2D::Periodic:b.thermalKind,b.thermalValue,b.partner});
-    return HeatConductionOperator2D(mesh,thermal,transport.thermalConductivity);
+    return HeatConductionOperator2D(mesh,thermal,transport.thermalConductivity,wallGradient);
 }
-std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport) {
+std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const EulerTransport2D& transport,WallGradient2D wallGradient) {
     validateEulerTransport2D(transport,boundaries);
     if(transport.dynamicViscosity==0)return {};
     std::vector<ViscousBoundary2D> bc;bc.reserve(boundaries.size());
@@ -413,20 +422,22 @@ std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const
             b.kind==EulerBoundaryKind2D::SlipWall?ViscousBoundaryKind2D::Slip:ViscousBoundaryKind2D::ZeroTraction;
         bc.push_back({b.face,kind,b.wallVelocity,b.partner});
     }
-    return ViscousStressOperator2D(mesh,bc,transport.dynamicViscosity);
+    return ViscousStressOperator2D(mesh,bc,transport.dynamicViscosity,wallGradient);
 }
 }
-EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport)
-    :mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
+EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport,WallGradient2D wallGradient)
+    :wallGradient_(wallGradient),mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
     validateFvMesh2D(mesh_);validateEulerBoundaries2D(mesh_,boundaries_,gas_);
-    heat_=prepareHeat(mesh_,boundaries_,transport);viscous_=prepareViscous(mesh_,boundaries_,transport);
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
+    heat_=prepareHeat(mesh_,boundaries_,transport,wallGradient);viscous_=prepareViscous(mesh_,boundaries_,transport,wallGradient);
 }
 EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const EulerStepControls2D& controls) const {
+    require(controls.wallGradient==wallGradient_,"wall gradient setting differs from prepared solver");
     return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
 }
 EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& controls,const EulerTransport2D& transport) {
-    const auto heat=prepareHeat(mesh,boundaries,transport);const auto viscous=prepareViscous(mesh,boundaries,transport);
+    const auto heat=prepareHeat(mesh,boundaries,transport,controls.wallGradient);const auto viscous=prepareViscous(mesh,boundaries,transport,controls.wallGradient);
     return advanceEulerImpl(mesh,boundaries,gas,initial,controls,heat?&*heat:nullptr,viscous?&*viscous:nullptr);
 }
 } // namespace cartmesh2d::fv

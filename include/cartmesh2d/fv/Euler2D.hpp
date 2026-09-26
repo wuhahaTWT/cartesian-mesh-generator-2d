@@ -44,6 +44,10 @@ struct EulerStepControls2D {
     std::size_t maximumRetries=12;
     EulerFluxScheme2D fluxScheme=EulerFluxScheme2D::Rusanov;
     unsigned order=1; // 1: constant/forward Euler; 2: limited linear/SSPRK(2,2).
+    WallGradient2D wallGradient=WallGradient2D::Linear;
+    // Optional exact integration horizon; splits the penultimate step if the
+    // remaining tail would fall below minimumStep. No accepted clock snapping.
+    std::optional<double> endTime;
 };
 struct EulerStepResult2D {
     EulerState2D state;
@@ -54,7 +58,7 @@ struct EulerStepResult2D {
     std::vector<double> faceWaveSpeed,faceHeatFlux,cellHeatRate,cellViscousRate;
     std::vector<std::array<double,3>> faceViscousFlux;
     double thermalCourant=0,viscousCourant=0,combinedCourant=0,boundaryHeat=0,boundaryViscousWork=0;
-    std::size_t heatNonMonotoneRows=0;
+    std::size_t heatNonMonotoneRows=0,quadraticHeatWalls=0,quadraticViscousWalls=0;
     // Bits 0/1 identify HLLC fallback at the first/second RK stage. Periodic
     // partners share the mask, but evaluation counts include each pair once.
     std::vector<unsigned char> faceHllcFallbackStages;
@@ -82,9 +86,10 @@ void validateEulerBoundaries2D(const FvMesh2D&,const std::vector<EulerBoundary2D
 // and the full thermal Jacobian are prepared once, then reused for every stage.
 class EulerStepper2D {
 public:
-    EulerStepper2D(FvMesh2D,std::vector<EulerBoundary2D>,IdealGas2D = {},EulerTransport2D = {});
+    EulerStepper2D(FvMesh2D,std::vector<EulerBoundary2D>,IdealGas2D = {},EulerTransport2D = {},WallGradient2D = WallGradient2D::Linear);
     [[nodiscard]] EulerStepResult2D advance(const EulerState2D&,const EulerStepControls2D&) const;
 private:
+    WallGradient2D wallGradient_=WallGradient2D::Linear;
     FvMesh2D mesh_;
     std::vector<EulerBoundary2D> boundaries_;
     IdealGas2D gas_;

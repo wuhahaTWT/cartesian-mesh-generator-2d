@@ -122,6 +122,7 @@ int main(int argc,char** argv) {
                 "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
+                "--wall-gradient linear|quadratic (optional quadratic Dirichlet wall recovery, overall order unchanged)\n"
                 "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
                 "--gamma 1.4 --gas-r 287.05 --density 1 --u 0 --v 0 --pressure 1\n"
@@ -142,6 +143,7 @@ int main(int argc,char** argv) {
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
         else if(arg=="--restart")restart=value;
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
+        else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic","unknown wall gradient scheme");controls.wallGradient=value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
         else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
         else if(arg=="--end-time")endTime=number(value);else if(arg=="--max-step")controls.maximumStep=number(value);
         else if(arg=="--min-step")controls.minimumStep=number(value);else if(arg=="--cfl")controls.acousticCourant=number(value);
@@ -252,7 +254,7 @@ int main(int argc,char** argv) {
     const auto save=[&]{auto out=output(prefix+".checkpoint.tmp");writeEulerCheckpoint2D(out,mesh,bc,gas,state,problem,transport);out.close();std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");};
     save();auto boundaryOutput=output(prefix+".boundaries");boundaryFile(boundaryOutput,mesh,bc);boundaryOutput.close();
     auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat,viscousCourant,boundaryViscousWork\n";
-    const EulerStepper2D solver(mesh,bc,gas,transport);
+    const EulerStepper2D solver(mesh,bc,gas,transport,controls.wallGradient);
     const auto started=std::chrono::steady_clock::now();const double initialTime=state.time;const auto initialSteps=state.steps;
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
     std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
@@ -261,7 +263,7 @@ int main(int argc,char** argv) {
             require(!stopped,"calculation cancelled; accepted state retained");
             require(state.steps-initialSteps<maximumSteps,"accepted-step budget exhausted");
             require(std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<maximumSeconds,"wall-time budget exhausted");
-            auto step=controls;step.maximumStep=std::min(step.maximumStep,endTime-state.time);
+            auto step=controls;step.endTime=endTime;
             last=solver.advance(state,step);state=last->state;rejected+=last->rejectedCandidates;
             fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
             minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
@@ -319,6 +321,7 @@ int main(int argc,char** argv) {
     summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":"<<quote(method)<<",\"fluxScheme\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")
         <<",\"shockControl\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"multidimensional pressure-ratio cube HLLC/HLLE blend":"none")
         <<",\"minimumContactRestoration\":"<<minimumContactRestoration<<",\"lastMinimumContactRestoration\":"<<(last?last->minimumContactRestoration:1)
+        <<",\"wallGradient\":"<<quote(controls.wallGradient==WallGradient2D::Quadratic?"quadratic":"linear")<<",\"quadraticHeatWalls\":"<<(last?last->quadraticHeatWalls:0)<<",\"quadraticViscousWalls\":"<<(last?last->quadraticViscousWalls:0)
         <<",\"order\":"<<controls.order<<",\"hllcFallbackEvaluations\":"<<fallbackEvaluations<<",\"reconstructionFallbackCells\":"<<reconstructionFallbackCells
         <<",\"lastHllcFallbackEvaluations\":"<<(last?last->hllcFallbackEvaluations:0)<<",\"lastReconstructionFallbackCells\":"<<(last?last->reconstructionFallbackCells:0)
         <<",\"thermalConductivity\":"<<transport.thermalConductivity<<",\"wallThermal\":"<<quote(heatKindName(wallThermal))<<",\"wallValue\":"<<wallValue

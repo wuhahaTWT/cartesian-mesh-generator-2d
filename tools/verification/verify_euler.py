@@ -291,14 +291,18 @@ def audit(mesh_path, prefix):
     gamma,gas_r=summary['gamma'],summary['gasConstant'];require(gamma>1 and gas_r>0,'gas properties')
     dt=summary['lastStep'];require(dt>0,'no accepted step to audit')
     bc=read_boundaries(Path(prefix+'.boundaries'),mesh)
+    wall_gradient=summary.get('wallGradient','linear');require(wall_gradient in ('linear','quadratic'),'invalid wall gradient selection')
     conductivity=summary.get('thermalConductivity',0)
     require(math.isfinite(conductivity) and conductivity>=0,'invalid conductivity')
     require(conductivity>0 or all(b['thermalKind']=='insulated' for b in bc.values()),'active thermal boundary with zero conductivity')
     require(all(b['kind']!='periodic' or b['thermalKind']=='insulated' for b in bc.values()),'periodic thermal boundary override')
-    heat=HeatReference(mesh,measured,bc,conductivity) if conductivity else None
+    heat=HeatReference(mesh,measured,bc,conductivity,wall_gradient) if conductivity else None
     mu=summary.get('dynamicViscosity',0);require(math.isfinite(mu) and mu>=0,'invalid dynamic viscosity')
     require(mu>0 or all(b['kind']!='no-slip-wall' for b in bc.values()),'no-slip without viscosity')
-    viscous=ViscousReference(mesh,measured,bc,mu) if mu else None
+    viscous=ViscousReference(mesh,measured,bc,mu,wall_gradient) if mu else None
+    if 'wallGradient' in summary:
+        require(summary['quadraticHeatWalls']==(len(heat.wall_stencils) if heat else 0),'quadratic thermal wall count')
+        require(summary['quadraticViscousWalls']==(len(viscous.wall_stencils) if viscous else 0),'quadratic viscous wall count')
     cells=list(csv.DictReader(Path(prefix+'.cells.csv').open()));faces=list(csv.DictReader(Path(prefix+'.faces.csv').open()))
     require(len(cells)==len(mesh.cells) and len(faces)==len(mesh.edges),'field size')
     current=[];old=[]

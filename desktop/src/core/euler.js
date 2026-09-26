@@ -7,10 +7,11 @@ const finite=(v,name)=>{requireValue(typeof v==='number'&&Number.isFinite(v),`${
 const near=(a,b)=>Math.abs(a-b)<=2e-12+2e-10*Math.max(Math.abs(a),Math.abs(b));
 function validateEulerRequest(input) {
   requireValue(input&&typeof input==='object'&&!Array.isArray(input),'缺少配置。');
-  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,'fluxScheme','order','resume'].includes(k)),'存在未知配置。');
+  requireValue(Object.keys(input).every(k=>[...PHYSICAL,...NUMERICAL,'fluxScheme','order','wallGradient','resume'].includes(k)),'存在未知配置。');
   requireValue(['sod','external','uniform','sealed'].includes(input.case),'未知工况。');
-  const r={case:input.case,fluxScheme:input.fluxScheme??'rusanov',order:input.order??1,thermalConductivity:input.thermalConductivity??0,wallThermal:input.wallThermal??'insulated',wallValue:input.wallValue??0,dynamicViscosity:input.dynamicViscosity??0,wallModel:input.wallModel??'slip'};
+  const r={case:input.case,fluxScheme:input.fluxScheme??'rusanov',order:input.order??1,wallGradient:input.wallGradient??'linear',thermalConductivity:input.thermalConductivity??0,wallThermal:input.wallThermal??'insulated',wallValue:input.wallValue??0,dynamicViscosity:input.dynamicViscosity??0,wallModel:input.wallModel??'slip'};
   requireValue(['rusanov','hllc'].includes(r.fluxScheme)&&[1,2].includes(r.order),'通量格式或精度阶数无效。');
+  requireValue(['linear','quadratic'].includes(r.wallGradient),'壁面梯度格式无效。');
   for(const k of [...PHYSICAL.slice(1).filter(k=>!['thermalConductivity','wallThermal','wallValue','dynamicViscosity','wallModel'].includes(k)),...NUMERICAL])r[k]=finite(input[k],k);
   finite(r.dynamicViscosity,'动力黏度');requireValue(r.dynamicViscosity>=0&&['slip','no-slip'].includes(r.wallModel),'动力黏度或壁面模型无效。');
   requireValue(r.wallModel==='slip'||(r.dynamicViscosity>0&&r.case!=='uniform'),'无滑移壁需要正动力黏度及有壁面工况。');
@@ -31,7 +32,7 @@ function validateEulerRequest(input) {
 function buildEulerInvocation(mesh,prefix,input,restart=null) {
   const r=validateEulerRequest(input);requireValue(typeof mesh==='string'&&mesh.endsWith('.solver.cm2d')&&!mesh.endsWith('.failed.solver.cm2d'),'需要最终求解网格。');
   requireValue(!r.resume||restart,'没有可用的已接受状态。');
-  const args=['--mesh',mesh,'--output',prefix,'--case',r.case,'--flux',r.fluxScheme,'--order',String(r.order),'--wall-thermal',r.wallThermal,'--wall-model',r.wallModel];
+  const args=['--mesh',mesh,'--output',prefix,'--case',r.case,'--flux',r.fluxScheme,'--order',String(r.order),'--wall-thermal',r.wallThermal,'--wall-model',r.wallModel,'--wall-gradient',r.wallGradient];
   for(const [key,flag] of Object.entries({dynamicViscosity:'viscosity',thermalConductivity:'conductivity',wallValue:'wall-value',density:'density',u:'u',v:'v',pressure:'pressure',gamma:'gamma',gasConstant:'gas-r',split:'split',endTime:'end-time',maximumStep:'max-step',minimumStep:'min-step',cfl:'cfl',maximumSteps:'max-steps',maximumSeconds:'max-seconds'}))args.push('--'+flag,String(r[key]));
   if(r.resume)args.push('--restart',restart);
   return {request:r,executable:'cartmesh2d_euler_cli',args};
@@ -46,6 +47,7 @@ function conservativePrimitive(q,gamma) {
 function eulerCheckpoint(text,mesh,input) {
   const r=validateEulerRequest(input),lines=text.trimEnd().split(/\r?\n/);
   const version=r.dynamicViscosity>0?3:r.thermalConductivity>0?2:1;requireValue(lines[0]==='CM2D_EULER_CHECKPOINT '+version,'检查点导热物理/格式不符。');
+  let mechanicalWalls=0,temperatureWalls=0;
   if(version>=2) {
     const conductivity=lines.filter(line=>line.startsWith('CONDUCTIVITY '));requireValue(conductivity.length===1&&Number(conductivity[0].split(' ')[1])===r.thermalConductivity,'检查点导热系数不匹配。');
     const index=lines.findIndex(line=>line.startsWith('BOUNDARIES ')),count=Number(lines[index]?.split(' ')[1]);requireValue(index>=0&&Number.isSafeInteger(count)&&count>0,'检查点热边界缺失。');
@@ -53,6 +55,7 @@ function eulerCheckpoint(text,mesh,input) {
       const tokens=line.match(/"(?:[^"\\]|\\.)*"|\S+/g);requireValue(tokens?.length===(version===3?12:10),'检查点热边界行错误。');
       const wall=[0,4].includes(Number(tokens[1])),kind=wall?['insulated','temperature','flux'].indexOf(r.wallThermal):0,value=wall?r.wallValue:0;
       if(version===3)requireValue((!wall||Number(tokens[1])===(r.wallModel==='no-slip'?4:0))&&Number(tokens[10])===0&&Number(tokens[11])===0,'检查点机械壁面条件不匹配。');
+      if(wall&&Number(tokens[1])===4)mechanicalWalls++;if(wall&&Number(tokens[8])===1)temperatureWalls++;
       requireValue(Number(tokens[8])===kind&&Number(tokens[9])===value,'检查点热壁与请求不匹配。');
     }
   }
@@ -65,7 +68,7 @@ function eulerCheckpoint(text,mesh,input) {
   requireValue(header.length===3&&Number.isFinite(time)&&time>=0&&Number.isSafeInteger(steps)&&steps>=0,'检查点时间/步数错误。');
   requireValue(lines.length===index+mesh.cells.length+2&&lines.at(-1)==='END','检查点状态截断或有额外内容。');
   const cells=lines.slice(index+1,-1).map(line=>line.split(' ').map(Number));cells.forEach(q=>conservativePrimitive(q,r.gamma));
-  return {time,steps,cells};
+  return {time,steps,cells,mechanicalWalls,temperatureWalls};
 }
 function parseEulerProgress(line) {
   let r;try{r=JSON.parse(line);}catch{return null;}
@@ -98,6 +101,8 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
   const r=validateEulerRequest(input),s=summary;
   const method=(r.order===1?'first-order ':'limited-linear ')+(r.fluxScheme==='hllc'?'HLLC-HLLE':'Rusanov')+(r.order===1?' / forward Euler':' / SSPRK2');
   requireValue(s?.solver==='native 2D ideal-gas Euler'&&s.method===method&&(s.fluxScheme??'rusanov')===r.fluxScheme&&(s.order??1)===r.order,'求解模型或数值格式不匹配。');
+  requireValue((s.wallGradient??'linear')===r.wallGradient,'壁面梯度格式与请求不同。');
+  if(s.wallGradient!==undefined)for(const key of ['quadraticHeatWalls','quadraticViscousWalls'])requireValue(Number.isSafeInteger(s[key])&&s[key]>=0&&s[key]<=s.faces&&(r.wallGradient==='quadratic'||s[key]===0),'二次壁面数量诊断无效。');
   const modern=s.fluxScheme!==undefined,thermal=s.thermalConductivity!==undefined,viscous=s.dynamicViscosity!==undefined;
   requireValue((s.dynamicViscosity??0)===r.dynamicViscosity&&(s.wallModel??'slip')===r.wallModel,'动力黏度或机械壁面与请求不同。');
   if(viscous)requireValue(s.viscousDiscretization==='Newtonian Stokes / corrected velocity gradient / full momentum block row norm','黏性离散模型不匹配。');
@@ -117,6 +122,7 @@ function validateEulerOutput(summary,fields,cellsText,facesText,historyText,chec
   finite(s.lastStep,'最后时间步');
   requireValue(fields?.format==='cartmesh2d-euler-v1'&&fields.time===s.time&&fields.cells?.length===s.cells,'显示场格式或时间不匹配。');
   const checkpoint=eulerCheckpoint(checkpointText,mesh,r);requireValue(checkpoint.time===s.time&&checkpoint.steps===s.steps,'检查点终态不匹配。');
+  if(s.wallGradient!==undefined){const quadratic=r.wallGradient==='quadratic';requireValue(s.quadraticHeatWalls===(quadratic?checkpoint.temperatureWalls:0)&&s.quadraticViscousWalls===(quadratic?checkpoint.mechanicalWalls:0),'二次壁面数量与实际边界不符。');}
   const raw=rows(cellsText,['cell','x','y','area','rho','u','v','p','rhoU','rhoV','rhoE','temperature','mach','previousRho','previousRhoU','previousRhoV','previousRhoE']);
   requireValue(raw.length===s.cells,'单元 CSV 数量不匹配。');
   const current=[],previous=[],areas=[],heatRates=[],viscousRates=[];

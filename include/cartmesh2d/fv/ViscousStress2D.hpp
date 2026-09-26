@@ -1,5 +1,5 @@
 #pragma once
-#include "cartmesh2d/fv/FvMesh2D.hpp"
+#include "cartmesh2d/fv/WallGradient2D.hpp"
 #include <array>
 
 namespace cartmesh2d::fv {
@@ -19,9 +19,12 @@ struct ViscousStressResult2D {
 };
 class ViscousStressOperator2D {
 public:
-    ViscousStressOperator2D(const FvMesh2D&,const std::vector<ViscousBoundary2D>&,double dynamicViscosity);
+    ViscousStressOperator2D(const FvMesh2D&,const std::vector<ViscousBoundary2D>&,double dynamicViscosity,WallGradient2D = WallGradient2D::Linear);
     [[nodiscard]] ViscousStressResult2D evaluate(const std::vector<Vector2D>& velocity,const std::vector<double>& density) const;
+    [[nodiscard]] std::size_t quadraticWalls() const { return quadraticWalls_; }
 private:
+    std::vector<std::optional<WallGradientStencil2D>> wallGradients_;
+    std::size_t quadraticWalls_=0;
     struct Sample { std::optional<std::size_t> cell; Vector2D value{},weight{},normal{}; ViscousBoundaryKind2D kind{}; };
     struct Face {
         std::size_t owner=0;

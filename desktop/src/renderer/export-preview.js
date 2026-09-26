@@ -138,7 +138,7 @@ window.CartMeshExport.renderEuler = function(mesh,euler) {
   ctx.fillStyle='#fff';ctx.fillRect(0,0,2000,1500);
   const text=(value,x,y,size=24)=>{ctx.fillStyle='#24333f';ctx.font=`${size}px "CartMesh UI", sans-serif`;ctx.fillText(value,x,y);};
   text(`可压 Euler · t=${euler.summary.time.toPrecision(6)} s · ${mesh.cells.length.toLocaleString('en-US')} 个真实单元`,70,58,32);
-  text(`${euler.summary.method} · 理想气体，μ=${euler.summary.dynamicViscosity??0} Pa·s，k=${euler.summary.thermalConductivity??0} W/(m·K)；无湍流。`,70,99,22);
+  text(`${euler.summary.method} · ${euler.summary.wallGradient==='quadratic'?'二次壁面梯度':'线性壁面梯度'} · 理想气体，μ=${euler.summary.dynamicViscosity??0} Pa·s，k=${euler.summary.thermalConductivity??0} W/(m·K)；无湍流。`,70,99,22);
   const palette=['#172a52','#185b83','#188ca1','#2bb6a8','#73cf8d','#cadd62','#f4c84d','#ef7538'];
   let frame=mesh.bounds;
   if(euler.request.case==='external') {
