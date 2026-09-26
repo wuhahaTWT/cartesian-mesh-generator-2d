@@ -20,7 +20,7 @@ test('Euler accepts real independently audited native fields and rejects stale/t
   assert.throws(()=>validate({...fixture.files,'.history.csv':fixture.files['.history.csv'].trim().split('\n').slice(0,-1).join('\n')}),/历史/);
 });
 test('Euler requests and progress keep physical types and units separate',()=>{
-  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1});
+  assert.deepEqual(validateEulerRequest(request),{...request,fluxScheme:'rusanov',order:1,thermalConductivity:0,wallThermal:'insulated',wallValue:0});
   for(const extra of [{pressure:'1'},{density:0},{gamma:1},{cfl:.5},{case:'channel'},{resume:'yes'},{unknown:1},{case:'sod'},{fluxScheme:'roe'},{order:3},{order:'2'}])assert.throws(()=>validateEulerRequest({...request,...extra}));
   const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',request);assert.equal(command.executable,'cartmesh2d_euler_cli');assert.ok(command.args.includes('--gas-r'));
   assert.throws(()=>buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',{...request,resume:true}),/状态/);
@@ -68,4 +68,39 @@ test('Euler validates real second-order HLLC/HLLE output and every fallback/sens
   const lines=sample.files['.faces.csv'].trim().split('\n'),header=lines[0].split(','),row=lines[1].split(',');
   row[header.indexOf('hllcFallbackStages')]='4';lines[1]=row.join(',');
   assert.throws(()=>check({...sample.files,'.faces.csv':lines.join('\n')}),/回退阶段/);
+});
+
+test('Fourier total-energy output binds physical walls and audits heat/combined CFL',()=>{
+  const sample=require('./fixtures/euler-conduction.json'),m=parseCm2d(sample.mesh),r=sample.request;
+  const check=(files=sample.files,request=r)=>validateEulerOutput(JSON.parse(files['.json']),JSON.parse(files['.fields.json']),files['.cells.csv'],files['.faces.csv'],files['.history.csv'],files['.checkpoint'],m,request);
+  assert.equal(sample.independentAudit.valid,true);const result=check();assert.ok(result.audit.thermalCourant>0);assert.ok(result.audit.boundaryHeat<0);
+  for(const extra of [{thermalConductivity:.6},{wallThermal:'flux'},{wallValue:3}])assert.throws(()=>check(sample.files,{...r,...extra}),/导热|热壁/);
+  for(const [suffix,field] of [['.faces.csv','heatFlux'],['.faces.csv','convectiveEnergy'],['.cells.csv','heatRate'],['.history.csv','combinedCourant'],['.history.csv','boundaryHeat']]) {
+    const lines=sample.files[suffix].trim().split('\n'),header=lines[0].split(','),values=lines.at(-1).split(',');
+    values[header.indexOf(field)]=String(Number(values[header.indexOf(field)])+1);lines[lines.length-1]=values.join(',');
+    assert.throws(()=>check({...sample.files,[suffix]:lines.join('\n')}),/导热|能量|热流|CFL|历史/);
+  }
+  assert.throws(()=>eulerCheckpoint(sample.files['.checkpoint'].replace('CONDUCTIVITY 0.5','CONDUCTIVITY 0.6'),m,r),/导热系数/);
+  assert.throws(()=>eulerCheckpoint(sample.files['.checkpoint'],m,{...r,wallValue:2.1}),/热壁/);
+  const command=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',r);
+  for(const [flag,value] of [['--conductivity','0.5'],['--wall-thermal','temperature'],['--wall-value','2']])assert.equal(command.args[command.args.indexOf(flag)+1],value);
+  for(const extra of [{thermalConductivity:-1},{thermalConductivity:'1'},{thermalConductivity:0},{wallValue:0},{wallThermal:'insulated'},{case:'uniform'},{wallThermal:'radiation'}])assert.throws(()=>validateEulerRequest({...r,...extra}));
+  const progress={type:'euler-step',step:1,time:.1,acousticCourant:.1,thermalCourant:.2,combinedCourant:.3,minimumDensity:1,minimumPressure:1,mass:1,totalEnergy:3};
+  assert.deepEqual(parseEulerProgress(JSON.stringify(progress)),progress);
+  for(const extra of [{thermalCourant:-1},{combinedCourant:.5},{combinedCourant:.05}])assert.throws(()=>parseEulerProgress(JSON.stringify({...progress,...extra})),/CFL/);
+});
+
+test('thermal restart manifests prevent transport changes before invoking native solver',async()=>{
+  const sample=require('./fixtures/euler-conduction.json'),m=parseCm2d(sample.mesh),r=sample.request;
+  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'cm2d-euler-heat-job-'));
+  try {
+    const meshPath=path.join(directory,'mesh.solver.cm2d');await fs.writeFile(meshPath,sample.mesh);
+    const currentResult={cm2dPath:meshPath,outputDirectory:directory};let calls=0;
+    const runner=async(_exe,args)=>{calls++;const prefix=args[args.indexOf('--output')+1];await Promise.all(Object.entries(sample.files).map(([suffix,text])=>fs.writeFile(prefix+suffix,text)));return {code:0,stderr:''};};
+    const signal=new AbortController().signal;
+    const result=await runEulerJob({currentResult,mesh:m,request:r,executable:x=>x,runProcess:runner,signal});
+    const imported=await importEulerRestart(path.join(directory,result.manifest),m,meshPath);assert.equal(imported.metadata.request.thermalConductivity,.5);
+    for(const extra of [{thermalConductivity:.6},{wallValue:3},{wallThermal:'flux'}])await assert.rejects(()=>runEulerJob({currentResult,mesh:m,request:{...r,resume:true,endTime:.03,...extra},executable:x=>x,runProcess:runner,signal}),/物理参数/);
+    assert.equal(calls,1);assert.equal(currentResult.euler,result);
+  }finally{await fs.rm(directory,{recursive:true,force:true});}
 });

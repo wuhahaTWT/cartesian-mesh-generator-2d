@@ -149,12 +149,12 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 ### 隔离可压 Euler 开发
 
-`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。仍求解理想气体无黏的质量、两分量动量及总能量，不含黏性、导热或湍流。
+`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。求解理想气体质量、两分量动量及总能量；可选恒系数 Fourier 导热直接进入总能量，尚无黏性应力或湍流。
 
 - `EulerFlux2D.cpp` 以真实面面积向量计算一个共享守恒通量；HLLC 使用包含左右声学锥的 Roe/Einfeldt 估计，检查两侧星状态，失效时显式计数并用 Rusanov。
 - 每个相邻单元全部邻面上的 `min(pL,pR)/max(pL,pR)` 取三次方，再取最小值作为接触恢复权重 ω；通量为 `F_HLLE + ω (F_HLLC - F_HLLE)`。传感器依据 [Simon 与 Mandal，式49–50、α=3](https://arxiv.org/pdf/1803.04954)，本实现采用多边形邻面模板并混合四个分量，**不冒称论文的选择性 HLLC-ADC 原样复现**。未加保护的最小旋转 Sod 例曾放大舍入扰动，测试中保留该场景。
 - `Euler2D.cpp` 用距离加权最小二乘及面值范围限制重构原始量；速度分量在随网格旋转的局部坐标系中限幅。矩阵近奇异或面值因浮点消减失去正性时明确计数并退为常量，绝不对接受场的密度、压力或能量加下限。
-- 固壁先求镜像 Riemann 压力牵引，再按对称性构造严格零质量/能量、纯法向动量通量；避免 SI 总能量大数消减产生假泄漏。独立脚本使用另一个标量壁压公式核对。
+- 固壁先求镜像 Riemann 压力牵引，再按对称性构造严格零质量/对流能量、纯法向动量通量；避免 SI 总能量大数消减产生假泄漏。独立脚本使用另一个标量壁压公式核对。
 - 二阶每个阶段都使用真实边界或周期平移；两个前向 Euler 候选及最终状态都检查正性。导出的面通量是两个阶段的均值，波速取两阶段最大值；CFL 不满足或候选失效则缩步重试。失败候选不写入接受检查点。
 - `verify_euler.py` 从原始多边形和前一守恒场独立重建斜率、两阶段、HLLC/HLLE 通量、声速及状态方程，同时核对历史终态积分。它审计最后接受步和完整时间历史，不代表逐步独立重放整个求解。
 
@@ -166,11 +166,42 @@ ctest --test-dir build -R '^cartmesh2d_euler_' --output-on-failure
 python3 tests/euler_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-development/qualification
 ```
 
-通量方程复核按面长乘特征通量归一化：质量 `ρV`、动量 `ρV²`、能量 `(ρE+p)V`，其中 `V=max(|速度|+声速)`，两侧/两阶段取包络。容差为512个 binary64 机器 epsilon，用于独立公式/重构的浮点一致性，不是物理精度门；避免对接近零的 SI 通量使用无量纲固定绝对误差。固壁质量/能量要求精确为零。单位缩放回归把 SI 与无量纲的完整场归一化比较，另增两个小 Sod 和旋转闭壁例，成本为秒级。
+通量方程复核按面长乘特征通量归一化：质量 `ρV`、动量 `ρV²`、能量 `(ρE+p)V`，其中 `V=max(|速度|+声速)`，两侧/两阶段取包络。容差为512个 binary64 机器 epsilon，用于独立公式/重构的浮点一致性，不是物理精度门；避免对接近零的 SI 通量使用无量纲固定绝对误差。固壁质量/对流能量要求精确为零，总能量通量等于该面的导热通量。单位缩放回归把 SI 与无量纲的完整场归一化比较，另增两个小 Sod 和旋转闭壁例，成本为秒级。
 
 开发验证按量分别判断：沿用无量纲逐格守恒门 `1e-12`；光滑熵波及涡旋比较面积加权 L1 误差，二倍细化的观测阶数回归下限为1.4，允许限制器在极值附近降阶。Sod 以单元中心采样精确 Riemann 解，比较同网格/同目标时间的面积加权离散 L1 误差，不把激波误差称为二阶收敛。Mach 3/10 法向激波加入相对密度幅度 `1e-5` 的交替扰动，检查在对流距离0.3的窗口内，横向密度跨度相对波后密度不超过输入跨度的10倍；不外推为任意强激波稳定性证明。测试规模最高128×128格，精度脚本通常为分钟内至数分钟级，取决于并行负载。
 
-检查点格式保持 v1，网格/物性/边界仍严格绑定；续算可显式改变通量、阶数、CFL和目标时间。使用相同控制参数中断/续算时检查点逐字节一致。摘要/历史分别报告接受阶段中的 HLLC 正性回退、重构退阶和最小接触恢复权重；`hllcFallbackStages` 的位0/1对应第一/第二阶段，周期配对只计一次。
+无导热时检查点保持 v1，有导热时使用绑定 k 与逐面热条件的 v2；网格/物性/边界仍严格绑定；续算可显式改变通量、阶数、CFL和目标时间。使用相同控制参数中断/续算时检查点逐字节一致。摘要/历史分别报告接受阶段中的 HLLC 正性回退、重构退阶和最小接触恢复权重；`hllcFallbackStages` 的位0/1对应第一/第二阶段，周期配对只计一次。
+
+
+### 总能量耦合导热
+
+物理闭合为 `T=p/(ρR)`、`cv=R/(γ−1)`、`q=−k∇T`。总能量方程新增 `−∇·q`，质量和动量没有直接热源；压力变化会在后续流动阶段产生反馈。[NASA 的比热说明](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/specific-heats-cp-and-cv-1/)区分内能的 cv 与焓的 cp；这里定密度阶段的体积热容为 **ρcv**，不能把被动温度入口的 `k/(ρcp)` 搬过来。[NASA Wind 方程说明](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)作为理想气体/输运变量参考；本实现固定 k，不使用其中的黏度或 Prandtl 闭合。
+
+- `HeatConduction2D.hpp/.cpp` 是独立热算子，输入温度与体积热容，输出每条真实面的共享热通量、单元残差和 1/s 的显式速率。`EulerTransport2D` 与 `IdealGas2D` 分开；`EulerStepper2D` 持有网格/物性的不可变快照，缓存几何、梯度权重和热算子系数行范数，避免每个时间步重建。原 `advanceEuler2D` 接口继续可用。
+- 法向梯度采用 `S=τd+C`，`τ=|S|²/(S·d)`，热通量 `Qf=−k[τ(TN−TP)+gf·C]`。`gf` 来自距离加权最小二乘梯度的法向距离插值；这类非正交拆分可对照 [OpenFOAM corrected snGrad](https://doc.openfoam.com/2212/tools/processing/numerics/schemes/sngrad/rtm/corrected/)。Dirichlet 使用真实面心与壁温；Neumann 以 **n·∇T=−qout/k** 进入梯度约束，不能把倾斜的“格心到面心方向”当成法线。内部面只算一次、邻格反号；周期边界用平移后的格心与严格反号配对。
+- 边界默认绝热，也可指定 Kelvin 或向外 W/m²；后者负值加热。开边界默认零 Fourier 通量，不取消对流能量输运。`sealed` 是全部物理边界滑移壁；`custom` 的 `CM2D_EULER_BOUNDARY 2` 在每行旧格式之后增加 `insulated|temperature|flux value`，仍可读 v1。
+- 对温度残差的完整线性系数矩阵 A，`h_i=Σ_j|A_ij|/(2 Vi ρi cv)`，时间步满足 `dt·(Σf af|Sf|/Vi+h_i)≤CFL`。**非正交修正项也计入 A**，每阶段按密度更新热容量，两阶段取速率包络。这是全算子行范数限制，不是任意网格的单调性或谱稳定性证明；`heatNonMonotoneRows` 报告不满足 M 矩阵符号的行数。当前修正算子保留线性精确性，可能不是单调格式；逐阶段正性失败时缩步或明确终止，绝不修剪温度/能量。均匀网格上的二阶结果也不能外推为任意 Cut-cell 上二阶，见 [OpenFOAM 非结构网格精度说明](https://openfoam.org/release/2-3-0/numerics/)。
+- 面热通量随 SSPRK2 做阶段平均并加入总能量通量，故闭壁严格零质量、总能量通量恰等于导热。`heatRate`、`heatFlux`、`convectiveEnergy`、`thermalCourant`、`combinedCourant`、`boundaryHeat` 可独立读回。`verify_heat_conduction.py` 从原始多边形重建热算子；`verify_euler.py` 重算最后步两个阶段，并核对所有相邻历史步的质量/能量收支。历史收支是记录一致性检查，不能冒称独立求解全部轨迹。
+
+导热验证保持范围明确：旋转/扭曲网格上的线性温度与混合热边界检查面通量线性精确性（按 `k|∇T||Sf|` 归一化，1024 epsilon，约百格）；通过对每格温度加减1 K、直接差分实际残差，检查完整系数行范数（2048 epsilon）。这些是浮点代数一致性门，不是工程精度要求。独立通量审计的能量尺度增加 Fourier 仿射行绝对值包络，仍使用512 epsilon；闭腔累计能量收支按初末总能量和输入热量之和归一化，门为1024 epsilon。
+
+纯热方程周期正弦衰减采用精确单元平均初值，16/32/64格验证空间与 RK2 联合误差。完整 Euler–Fourier 小扰动使用相对温度幅度 `ε=1e-5`，初始 `δρ=−ρ0 ε cos(wx)`、`u=0`、`δT=T0 ε cos(wx)`；线性化连续方程的模态系数满足：
+
+```text
+A' = −ρ0 w B
+B' = (R T0/ρ0) w A + R w C
+C' = −(γ−1) T0 w B − [k/(ρ0 cv)] w² C
+```
+
+独立 Python 以矩阵指数求该常系数连续系统，完全不使用原生离散系数。误差按面积平均、除以初始扰动幅度；中心采样初始化/参考的空间误差和非线性 `O(ε²)` 误差都保留。16/32/64的局部回归要求最终观测阶大于1.5，区分二阶行为与退化为一阶；不作强非线性或通用网格精度承诺。该脚本同时检查所有四种对流格式/时间阶数组合、SI量纲相似性、定温/热流/绝热/混合条件、物理续算绑定与篡改拒绝，通常秒级运行。实际 App 的 `k=100 W/(m·K), Tw=400 K` 是显式标定的功能验证参数，不代表空气材料数据库。
+
+```sh
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/heat/run --case sealed --conductivity 100 --wall-thermal temperature --wall-value 400 --density 1.225 --pressure 101325 --gas-r 287.05 --end-time .002 --flux hllc --order 2
+python3 tests/euler_conduction_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-conduction/verification
+python3 tools/verification/verify_euler.py --mesh final.solver.cm2d --prefix outputs/heat/run
+```
+
+v2 检查点将 k 和全部逐面热条件写入完整绑定；改变 k、热壁类型或热边界数值会拒绝续算。k=0 的旧 v1 检查点和数值默认保留，实测原二进制与新二进制的 Rusanov/一阶和 HLLC/二阶 Sod 检查点逐字节一致。模型目前没有温变/各向异性导热、辐射、固体共轭传热、黏性耗散或隐式导热；这些需要独立方程、界面守恒与验证，不通过增加界面开关冒充完成。
 
 
 ## 验证与证据

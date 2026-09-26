@@ -320,6 +320,111 @@ void smoothAccuracy() {
     }
     require(last[1]<.3*last[0],"second-order smooth transport did not improve resolution");
 }
+void heatOperatorChecks() {
+    const auto mesh=rotated(rectangle(12,8,2,true),.37);
+    constexpr double conductivity=2.7;
+    const Vector2D gradient{20,-7};
+    const auto temperature=[&](Point2D p){return 300+gradient.x*p.x+gradient.y*p.y;};
+    for(bool mixed:{false,true}) {
+        std::vector<HeatBoundary2D> bc;
+        for(std::size_t id=0;id<mesh.faces.size();++id) {
+            const auto& f=mesh.faces[id];if(f.neighbour)continue;
+            if(mixed&&id%2)bc.push_back({id,HeatBoundaryKind2D::OutwardFlux,-conductivity*dot(gradient,f.areaVector)/std::hypot(f.areaVector.x,f.areaVector.y),{}});
+            else bc.push_back({id,HeatBoundaryKind2D::Temperature,temperature(f.centre),{}});
+        }
+        HeatConductionOperator2D op(mesh,bc,conductivity);
+        std::vector<double> t,capacity(mesh.cells.size(),1000);
+        for(const auto& c:mesh.cells)t.push_back(temperature(c.centre));
+        const auto heat=op.evaluate(t,capacity);double maximum=0;
+        for(std::size_t id=0;id<mesh.faces.size();++id) {
+            const auto& f=mesh.faces[id];const double exact=-conductivity*dot(gradient,f.areaVector);
+            maximum=std::max(maximum,std::abs(heat.faceHeatFlux[id]-exact)/(conductivity*std::hypot(gradient.x,gradient.y)*std::hypot(f.areaVector.x,f.areaVector.y)));
+        }
+        require(maximum<1024*std::numeric_limits<double>::epsilon(),"nonorthogonal Fourier operator lost linear exactness");
+        // Independently differentiate evaluated residuals, column by column.
+        // The operator is affine: a centered 1 K perturbation measures its exact
+        // Jacobian up to rounding. Its absolute row sum must include the full
+        // nonorthogonal correction, not only a two-point diagonal estimate.
+        std::vector<double> measuredNorm(t.size());
+        for(std::size_t j=0;j<t.size();++j) {
+            auto plus=t,minus=t;plus[j]+=1;minus[j]-=1;
+            const auto a=op.evaluate(plus,capacity),b=op.evaluate(minus,capacity);
+            for(std::size_t i=0;i<t.size();++i)measuredNorm[i]+=.25*std::abs(a.cellResidual[i]-b.cellResidual[i]);
+        }
+        double rateError=0;
+        for(std::size_t i=0;i<t.size();++i) {
+            const double expected=measuredNorm[i]/(mesh.cells[i].area*capacity[i]);
+            rateError=std::max(rateError,std::abs(heat.rate[i]-expected)/expected);
+        }
+        require(rateError<2048*std::numeric_limits<double>::epsilon(),"full heat Jacobian row bound mismatch");
+        std::cout<<"heat row norm finite perturbation: "<<rateError<<'\n';
+        std::cout<<"heat linear rotated/skew mesh: mixed="<<mixed<<", normalized flux error="<<maximum<<'\n';
+    }
+    const double pi=std::acos(-1.),end=.03,alpha=.2;
+    double previous=0;
+    for(int n:{16,32,64}) {
+        const auto grid=rectangle(n,4,1);const auto periodicBc=periodic(grid);std::vector<HeatBoundary2D> bc;
+        for(const auto& b:periodicBc)bc.push_back({b.face,HeatBoundaryKind2D::Periodic,0,b.partner});
+        HeatConductionOperator2D op(grid,bc,.5);
+        std::vector<double> t,capacity(grid.cells.size(),2.5);
+        const double average=std::sin(pi/n)/(pi/n);
+        for(const auto& c:grid.cells)t.push_back(2+.2*average*std::cos(2*pi*c.centre.x));
+        double time=0;
+        while(time<end) {
+            auto first=op.evaluate(t,capacity);double rate=0;for(double r:first.rate)rate=std::max(rate,r);
+            const double dt=std::min(end-time,.4/rate);auto stage=t;
+            for(std::size_t i=0;i<t.size();++i)stage[i]-=dt*first.cellResidual[i]/(capacity[i]*grid.cells[i].area);
+            const auto second=op.evaluate(stage,capacity);
+            for(std::size_t i=0;i<t.size();++i)t[i]-=.5*dt*(first.cellResidual[i]+second.cellResidual[i])/(capacity[i]*grid.cells[i].area);
+            time+=dt;
+        }
+        double error=0,total=0;
+        for(std::size_t i=0;i<t.size();++i) {
+            const double exact=2+.2*average*std::cos(2*pi*grid.cells[i].centre.x)*std::exp(-4*pi*pi*alpha*end);
+            error+=grid.cells[i].area*std::abs(t[i]-exact);total+=grid.cells[i].area*t[i];
+        }
+        require(std::abs(total-2)<256*std::numeric_limits<double>::epsilon(),"periodic diffusion loses energy");
+        std::cout<<"heat Fourier decay: nx="<<n<<", temperature L1="<<error;
+        if(previous)std::cout<<", observed order="<<std::log2(previous/error);std::cout<<'\n';
+        if(n==64)require(previous/error>std::pow(2.,1.8),"Fourier diffusion lost second-order convergence");
+        previous=error;
+    }
+}
+void coupledHeatChecks() {
+    const auto mesh=rectangle(8,4,1,true);auto bc=boundaries(mesh,EulerBoundaryKind2D::SlipWall);
+    const IdealGas2D gas{1.4,1};const auto initial=constant(mesh,{1,0,0,1});
+    EulerStepControls2D controls;controls.fluxScheme=EulerFluxScheme2D::Hllc;controls.order=2;controls.maximumStep=.001;
+    const auto legacy=advanceEuler2D(mesh,bc,gas,initial,controls);
+    require(legacy.state.cells==EulerStepper2D(mesh,bc,gas).advance(initial,controls).state.cells,"cached zero-conductivity path differs");
+    const auto uniform=EulerStepper2D(mesh,bc,gas,{10}).advance(initial,controls);
+    same(uniform.state,initial,128*std::numeric_limits<double>::epsilon());
+    for(auto q:uniform.faceHeatFlux)require(q==0,"uniform temperature has false heat flux");
+    require(uniform.step<legacy.step&&uniform.combinedCourant<=.4*(1+1e-12),"diffusion not included in time step");
+    for(auto& b:bc){b.thermalKind=HeatBoundaryKind2D::OutwardFlux;b.thermalValue=-2;}
+    EulerStepper2D solver(mesh,bc,gas,{.5});auto state=initial;
+    for(int n=0;n<20;++n) {
+        const auto next=solver.advance(state,controls);state=next.state;
+        const double balance=next.afterIntegral[3]-next.beforeIntegral[3]+next.step*next.boundaryHeat;
+        require(std::abs(balance)<256*std::numeric_limits<double>::epsilon()*next.beforeIntegral[3],"heated closed gas violates total energy");
+        for(const auto& b:bc){require(next.faceFlux[b.face][0]==0,"heated wall leaks mass");require(next.faceFlux[b.face][3]==next.faceHeatFlux[b.face],"wall energy differs from prescribed heat");}
+    }
+    require(state.cells[0][3]>initial.cells[0][3],"negative outward wall flux did not heat fluid");
+    std::stringstream saved;writeEulerCheckpoint2D(saved,mesh,bc,gas,state,"sealed",{.5});const auto data=saved.str();
+    require(data.starts_with("CM2D_EULER_CHECKPOINT 2"),"conductive checkpoint lacks transport version");
+    same(state,readEulerCheckpoint2D(saved,mesh,bc,gas,"sealed",{.5}));
+    rejects([&]{std::istringstream in(data);(void)readEulerCheckpoint2D(in,mesh,bc,gas,"sealed",{.6});});
+    auto changed=bc;changed[0].thermalValue=-1;
+    rejects([&]{std::istringstream in(data);(void)readEulerCheckpoint2D(in,mesh,changed,gas,"sealed",{.5});});
+    rejects([&]{(void)EulerStepper2D(mesh,bc,gas,{0});});
+    rejects([&]{(void)EulerStepper2D(mesh,bc,gas,{-1});});
+    for(auto& b:bc)b.thermalValue=1e8;
+    controls.maximumRetries=0;controls.maximumStep=.01;
+    rejects([&]{(void)EulerStepper2D(mesh,bc,gas,{.5}).advance(initial,controls);});
+    controls.maximumRetries=30;controls.minimumStep=1e-16;
+    const auto cooled=EulerStepper2D(mesh,bc,gas,{.5}).advance(initial,controls);
+    require(cooled.rejectedCandidates>0&&cooled.minimumPressure>0&&initial.time==0,"cooling positivity retry/initial state preservation failed");
+    std::cout<<"coupled heat: conservation, combined CFL, zero-k identity, wall signs, cooling retries and physical restart binding passed\n";
+}
 int main() {
     try {
         const EulerPrimitive2D p{1.225,320,-12,101325};const auto round=eulerPrimitive2D(eulerConservative2D(p));
@@ -333,7 +438,7 @@ int main() {
             std::cout<<"scheme="<<(scheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")<<", order="<<order<<std::endl;
             restAndFreeStream();periodicConservation();wallAndUnitScaling();shockRotationAndCheckpoint();strongWaves();stationaryContact();
         }
-        perturbedNormalShock();smoothAccuracy();
+        perturbedNormalShock();smoothAccuracy();heatOperatorChecks();coupledHeatChecks();
         std::cout<<"Euler conservation, acoustic CFL, boundaries, rotation and checkpoint passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

@@ -10,10 +10,10 @@
 namespace cartmesh2d::fv {
 namespace euler_checkpoint_detail {
 inline std::string binding(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
-                           const IdealGas2D& gas,const std::string& problem) {
-    validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);
+                           const IdealGas2D& gas,const std::string& problem,const EulerTransport2D& transport) {
+    validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);validateEulerTransport2D(transport,boundaries);
     if(problem.find_first_of("\r\n")!=std::string::npos)throw std::runtime_error("Euler checkpoint: invalid problem label");
-    std::ostringstream out;out<<std::setprecision(17)<<"CM2D_EULER_CHECKPOINT 1\nGAS "<<gas.gamma<<' '<<gas.gasConstant
+    std::ostringstream out;out<<std::setprecision(17)<<"CM2D_EULER_CHECKPOINT "<<(transport.thermalConductivity>0?2:1)<<"\nGAS "<<gas.gamma<<' '<<gas.gasConstant
         <<"\nPROBLEM "<<std::quoted(problem)<<"\nCELLS "<<mesh.cells.size()<<'\n';
     for(const auto& cell:mesh.cells) {
         out<<cell.centre.x<<' '<<cell.centre.y<<' '<<cell.area<<' '<<cell.faces.size();
@@ -33,8 +33,11 @@ inline std::string binding(const FvMesh2D& mesh,const std::vector<EulerBoundary2
         if(b.name.find_first_of("\r\n")!=std::string::npos)throw std::runtime_error("Euler checkpoint: invalid boundary label");
         out<<b.face<<' '<<static_cast<int>(b.kind)<<' '<<std::quoted(b.name)<<' ';
         if(b.partner)out<<*b.partner;else out<<'-';
-        out<<' '<<b.reference.density<<' '<<b.reference.u<<' '<<b.reference.v<<' '<<b.reference.pressure<<'\n';
+        out<<' '<<b.reference.density<<' '<<b.reference.u<<' '<<b.reference.v<<' '<<b.reference.pressure;
+        if(transport.thermalConductivity>0)out<<' '<<static_cast<int>(b.thermalKind)<<' '<<b.thermalValue;
+        out<<'\n';
     }
+    if(transport.thermalConductivity>0)out<<"CONDUCTIVITY "<<transport.thermalConductivity<<'\n';
     return out.str();
 }
 inline void validate(const EulerState2D& state,std::size_t count,const IdealGas2D& gas) {
@@ -47,17 +50,17 @@ inline void validate(const EulerState2D& state,std::size_t count,const IdealGas2
 // Numerical dt/CFL and requested final time may change on restart.
 inline void writeEulerCheckpoint2D(std::ostream& out,const FvMesh2D& mesh,
     const std::vector<EulerBoundary2D>& boundaries,const IdealGas2D& gas,const EulerState2D& state,
-    const std::string& problem="") {
+    const std::string& problem="",const EulerTransport2D& transport={}) {
     euler_checkpoint_detail::validate(state,mesh.cells.size(),gas);
-    std::ostringstream data;data<<std::setprecision(17)<<euler_checkpoint_detail::binding(mesh,boundaries,gas,problem)
+    std::ostringstream data;data<<std::setprecision(17)<<euler_checkpoint_detail::binding(mesh,boundaries,gas,problem,transport)
         <<"STATE "<<state.time<<' '<<state.steps<<'\n';
     for(const auto& q:state.cells)data<<q[0]<<' '<<q[1]<<' '<<q[2]<<' '<<q[3]<<'\n';
     data<<"END\n";out<<data.str();
     if(!out)throw std::runtime_error("Euler checkpoint: cannot write state");
 }
 inline EulerState2D readEulerCheckpoint2D(std::istream& in,const FvMesh2D& mesh,
-    const std::vector<EulerBoundary2D>& boundaries,const IdealGas2D& gas,const std::string& problem="") {
-    std::istringstream expected(euler_checkpoint_detail::binding(mesh,boundaries,gas,problem));
+    const std::vector<EulerBoundary2D>& boundaries,const IdealGas2D& gas,const std::string& problem="",const EulerTransport2D& transport={}) {
+    std::istringstream expected(euler_checkpoint_detail::binding(mesh,boundaries,gas,problem,transport));
     std::string line,actual;
     while(std::getline(expected,line))if(!std::getline(in,actual)||actual!=line)
         throw std::runtime_error("Euler checkpoint: incompatible geometry, gas, boundary or problem");

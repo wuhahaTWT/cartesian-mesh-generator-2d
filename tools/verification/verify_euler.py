@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 import shlex
 import verify_native_flow as geometry
+from verify_heat_conduction import HeatReference
 
 
 def require(ok, message):
@@ -116,7 +117,7 @@ def numerical_flux(left, right, normal, gamma, scheme, restoration=1):
     return tuple((fl[k]+fr[k]-speed*(right[k]-left[k]))/2 for k in range(4)), speed, fallback
 
 
-def spatial_reference(mesh, measured, bc, states, gamma, scheme, order):
+def spatial_reference(mesh, measured, bc, states, gamma, scheme, order, heat=None, gas_r=1):
     """Rebuild face states from polygons, with no exported slopes/stages as oracle."""
     primitives = [primitive(q, gamma) for q in states]
     face_geometry = []
@@ -218,7 +219,11 @@ def spatial_reference(mesh, measured, bc, states, gamma, scheme, order):
         scales.append([length*density*velocity, length*density*velocity**2,
                        length*density*velocity**2, length*enthalpy*velocity])
         fluxes.append([length*v for v in f]); speeds.append(speed); fallback.append(int(used_fallback))
-    return fluxes, speeds, fallback, reconstruction_fallback, min(contact_weight), scales
+    heat_flux, heat_rates = [0.]*len(mesh.edges),[0.]*len(mesh.cells)
+    if heat:
+        heat_flux,heat_rates,heat_scales=heat.evaluate([q[3]/(q[0]*gas_r) for q in primitives],[q[0]*gas_r/(gamma-1) for q in primitives])
+        for i,q in enumerate(heat_flux):fluxes[i][3]+=q;scales[i][3]+=heat_scales[i]
+    return fluxes, speeds, fallback, reconstruction_fallback, min(contact_weight), scales, heat_flux, heat_rates
 
 
 def stage_update(mesh, measured, states, fluxes, dt):
@@ -242,16 +247,21 @@ def owner_segment(mesh, edge):
 
 def read_boundaries(path, mesh):
     lines=path.read_text().splitlines()
-    require(lines[0]=='CM2D_EULER_BOUNDARY 1' and lines[-1]=='END', 'boundary format')
+    require(lines[0] in ('CM2D_EULER_BOUNDARY 1','CM2D_EULER_BOUNDARY 2') and lines[-1]=='END', 'boundary format')
+    thermal=lines[0].endswith(' 2')
     result={}
     require(lines[1]==f'MESH {len(mesh.cells)} {len(mesh.edges)}', 'boundary mesh binding')
     for line in lines[2:-1]:
-        row=shlex.split(line);require(len(row)==13, 'boundary row size')
+        row=shlex.split(line);require(len(row)==(15 if thermal else 13), 'boundary row size')
         face=int(row[0]);require(0<=face<len(mesh.edges) and mesh.edges[face].neighbour<0 and face not in result, 'boundary coverage')
+        if thermal:
+            require(row[13] in ('insulated','temperature','flux') and math.isfinite(float(row[14])), 'invalid thermal boundary')
+            require(row[13]!='temperature' or float(row[14])>0,'nonpositive wall Kelvin')
+            require(row[13]!='insulated' or float(row[14])==0,'insulated boundary value')
         edge=mesh.edges[face];a,b=owner_segment(mesh,edge)
         require(int(row[1])==edge.owner,'boundary owner binding')
         for actual,expected in zip(map(float,row[2:6]),[(a[0]+b[0])/2,(a[1]+b[1])/2,b[1]-a[1],a[0]-b[0]]):close(actual,expected,'boundary geometry binding')
-        result[face]=dict(kind=row[6],reference=tuple(map(float,row[7:11])),partner=-1 if row[11]=='-' else int(row[11]),name=row[12])
+        result[face]=dict(kind=row[6],reference=tuple(map(float,row[7:11])),partner=-1 if row[11]=='-' else int(row[11]),name=row[12],thermalKind=row[13] if thermal else 'insulated',thermalValue=float(row[14]) if thermal else 0)
     require(set(result)=={e.id for e in mesh.edges if e.neighbour<0}, 'incomplete boundary coverage')
     for face,b in result.items():
         if b['kind']=='periodic':
@@ -271,6 +281,11 @@ def audit(mesh_path, prefix):
     gamma,gas_r=summary['gamma'],summary['gasConstant'];require(gamma>1 and gas_r>0,'gas properties')
     dt=summary['lastStep'];require(dt>0,'no accepted step to audit')
     bc=read_boundaries(Path(prefix+'.boundaries'),mesh)
+    conductivity=summary.get('thermalConductivity',0)
+    require(math.isfinite(conductivity) and conductivity>=0,'invalid conductivity')
+    require(conductivity>0 or all(b['thermalKind']=='insulated' for b in bc.values()),'active thermal boundary with zero conductivity')
+    require(all(b['kind']!='periodic' or b['thermalKind']=='insulated' for b in bc.values()),'periodic thermal boundary override')
+    heat=HeatReference(mesh,measured,bc,conductivity) if conductivity else None
     cells=list(csv.DictReader(Path(prefix+'.cells.csv').open()));faces=list(csv.DictReader(Path(prefix+'.faces.csv').open()))
     require(len(cells)==len(mesh.cells) and len(faces)==len(mesh.edges),'field size')
     current=[];old=[]
@@ -284,16 +299,18 @@ def audit(mesh_path, prefix):
         close(float(row['mach']),math.hypot(pq[1],pq[2])/acoustic(pq,gamma),'Mach EOS')
         current.append(q);old.append(previous)
     residual=[[0.]*4 for _ in cells];absolute=[[0.]*4 for _ in cells];spectral=[0.]*len(cells);boundary=[[] for _ in range(4)]
-    expected_flux, expected_speed, expected_fallback, reconstruction_fallback, minimum_restoration, flux_scales = spatial_reference(mesh, measured, bc, old, gamma, scheme, order)
+    expected_flux, expected_speed, expected_fallback, reconstruction_fallback, minimum_restoration, flux_scales, heat_flux, heat_rates = spatial_reference(mesh, measured, bc, old, gamma, scheme, order, heat, gas_r)
     if order == 2:
         stage = stage_update(mesh, measured, old, expected_flux, dt)
         for q in stage: primitive(q, gamma)
-        f2, s2, b2, r2, restoration2, scales2 = spatial_reference(mesh, measured, bc, stage, gamma, scheme, order)
+        f2, s2, b2, r2, restoration2, scales2, heat2, rates2 = spatial_reference(mesh, measured, bc, stage, gamma, scheme, order, heat, gas_r)
         for q in stage_update(mesh, measured, stage, f2, dt): primitive(q, gamma)
         expected_flux = [[(a+b)/2 for a, b in zip(left, right)] for left, right in zip(expected_flux, f2)]
         expected_speed = [max(a,b) for a,b in zip(expected_speed,s2)]
         flux_scales = [[max(a,b) for a,b in zip(s,t)] for s,t in zip(flux_scales,scales2)]
         expected_fallback = [a | (b << 1) for a,b in zip(expected_fallback,b2)]
+        heat_flux=[(a+b)/2 for a,b in zip(heat_flux,heat2)]
+        heat_rates=[max(a,b) for a,b in zip(heat_rates,rates2)]
         reconstruction_fallback += r2
         minimum_restoration = min(minimum_restoration,restoration2)
     close(summary.get('lastMinimumContactRestoration',1), minimum_restoration, 'pressure sensor weight')
@@ -328,10 +345,15 @@ def audit(mesh_path, prefix):
             residual[edge.owner][k]+=values[k];absolute[edge.owner][k]+=abs(values[k])
             if edge.neighbour>=0:residual[edge.neighbour][k]-=values[k];absolute[edge.neighbour][k]+=abs(values[k])
             else:boundary[k].append(values[k])
+        if 'heatFlux' in row:
+            error=abs(float(row['heatFlux'])-heat_flux[edge.id])/flux_scales[edge.id][3]
+            require(error<=512*math.ulp(1.),'independent Fourier heat flux')
+            close(float(row['convectiveEnergy'])+float(row['heatFlux']),values[3],'energy flux decomposition')
         spectral[edge.owner]+=speed*length
         if edge.neighbour>=0:spectral[edge.neighbour]+=speed*length
         if boundary_condition and boundary_condition['kind']=='slip-wall':
-            require(values[0] == 0 and values[3] == 0, 'mirror wall mass and energy must be exactly zero')
+            require(values[0] == 0, 'mirror wall mass must be exactly zero')
+            close(values[3],float(row.get('heatFlux',0)), 'wall total energy equals heat flux')
             tangential = abs(-normal[1]*values[1]+normal[0]*values[2])/flux_scales[edge.id][1]
             require(tangential <= 512*math.ulp(1.), 'inviscid wall tangential traction')
         if boundary_condition and boundary_condition['kind']=='periodic':
@@ -345,6 +367,16 @@ def audit(mesh_path, prefix):
             max_local=max(max_local,abs(error)/(scale or 1))
     require(max_local<1e-12,'cell conservative update failed')
     cfl=max(dt*s/a for s,a in zip(spectral,measured.areas));require(cfl<=summary['cflLimit']*(1+1e-12),'acoustic CFL limit')
+    thermal_cfl=max(dt*x for x in heat_rates)
+    combined_cfl=max(dt*(s/a+h) for s,a,h in zip(spectral,measured.areas,heat_rates))
+    require(combined_cfl<=summary['cflLimit']*(1+1e-12),'combined acoustic/heat CFL')
+    boundary_heat=math.fsum(q for edge,q in zip(mesh.edges,heat_flux) if edge.neighbour<0 and bc[edge.id]['partner']<0)
+    if 'thermalConductivity' in summary:
+        close(summary['thermalCourant'],thermal_cfl,'thermal Courant')
+        close(summary['combinedCourant'],combined_cfl,'combined Courant')
+        close(summary['boundaryHeat'],boundary_heat,'boundary heat balance')
+        require(summary['heatNonMonotoneRows']==(heat.non_monotone if heat else 0),'thermal stencil monotonicity diagnostic')
+        for row,rate in zip(cells,heat_rates):close(float(row['heatRate']),rate,'full corrected heat rate')
     global_errors=[]
     for k in range(4):
         terms=[a*(q[k]-p[k]) for a,q,p in zip(measured.areas,current,old)]+[dt*f for f in boundary[k]]
@@ -353,27 +385,44 @@ def audit(mesh_path, prefix):
     require(max(global_errors)<1e-12,'global conservation failed')
     history=list(csv.DictReader(Path(prefix+'.history.csv').open()));require(len(history)==summary['acceptedSteps'] and history,'accepted history size')
     previous_time=summary['initialTime'];previous_step=summary['steps']-summary['acceptedSteps']
+    previous_integrals=None;history_energy_error=0.
+    closed=all(b['kind'] in ('slip-wall','periodic') for b in bc.values())
     for row in history:
         values={k:float(v) for k,v in row.items()};require(all(math.isfinite(x) for x in values.values()),'nonfinite history')
         require(int(row['step'])==previous_step+1 and values['time']>previous_time,'history not sequential')
         close(values['time']-previous_time,values['dt'],'history physical time',absolute=1e-14)
         require(values['minimumDensity']>0 and values['minimumPressure']>0 and values['acousticCourant']<=summary['cflLimit']*(1+1e-12),'history positivity/CFL')
+
+        if 'combinedCourant' in values:require(0<=values['thermalCourant']<=values['combinedCourant'] and values['combinedCourant']<=summary['cflLimit']*(1+1e-12),'history combined CFL')
+        if 'thermalConductivity' in summary and closed:
+            close(values['boundaryEnergy'],values['boundaryHeat'],'closed history wall energy equals heat')
+            require(values['boundaryMass']==0,'closed history leaked mass')
+        if previous_integrals is not None:
+            for key,flux in [('mass','boundaryMass'),('totalEnergy','boundaryEnergy')]:
+                before=previous_integrals[key];after=values[key];transfer=values['dt']*values[flux]
+                error=abs(math.fsum((after,-before,transfer)))/(abs(before)+abs(after)+abs(transfer))
+                require(error<1e-12,'history integral balance '+key)
+                if key=='totalEnergy':history_energy_error=max(history_energy_error,error)
+        previous_integrals=values
         previous_time=values['time'];previous_step+=1
     for k, key in enumerate(('mass','momentumX','momentumY','totalEnergy')):
         close(float(history[-1][key]), math.fsum(a*q[k] for a,q in zip(measured.areas,current)), 'history final integral '+key)
     close(float(history[-1]['minimumDensity']), min(q[0] for q in current), 'history final minimum density')
     close(float(history[-1]['minimumPressure']), min(primitive(q,gamma)[3] for q in current), 'history final minimum pressure')
     close(float(history[-1]['acousticCourant']), cfl, 'history final acoustic CFL')
+    if 'thermalConductivity' in summary:
+        for key,value in [('thermalCourant',thermal_cfl),('combinedCourant',combined_cfl),('boundaryHeat',boundary_heat)]:
+            close(float(history[-1][key]),value,'history final '+key)
     for key in ('hllcFallbackEvaluations', 'reconstructionFallbackCells'):
         require(summary.get(key, 0) == sum(int(row.get(key, 0)) for row in history), 'history fallback total')
     close(summary.get('minimumContactRestoration',1), min(float(row.get('minimumContactRestoration',1)) for row in history),'history pressure sensor')
     close(previous_time,summary['time'],'summary physical time')
     if summary['targetReached']:require(summary['time']==summary['requestedEndTime'] and summary['status']=='target_reached','false target-time completion')
-    return dict(valid=True,minimumContactRestoration=minimum_restoration,fluxScheme=scheme,order=order,hllcFallbackEvaluations=fallback_count,reconstructionFallbackCells=reconstruction_fallback,cells=len(cells),faces=len(faces),time=summary['time'],acousticCourant=cfl,
+    return dict(valid=True,historyMaximumEnergyBalanceRelative=history_energy_error,thermalCourant=thermal_cfl,combinedCourant=combined_cfl,boundaryHeat=boundary_heat,thermalConductivity=conductivity,minimumContactRestoration=minimum_restoration,fluxScheme=scheme,order=order,hllcFallbackEvaluations=fallback_count,reconstructionFallbackCells=reconstruction_fallback,cells=len(cells),faces=len(faces),time=summary['time'],acousticCourant=cfl,
         maximumCellBalanceRelative=max_local,globalBalanceRelative=global_errors,maximumFluxRelative=max_flux_error,
-        fluxErrorNormalization="face length times characteristic rho*V, rho*V^2, (rhoE+p)*V; V=max(|velocity|+sound); 512 binary64 eps",
+        fluxErrorNormalization="face length times characteristic rho*V, rho*V^2, (rhoE+p)*V plus Fourier affine row scale for energy; V=max(|velocity|+sound); 512 binary64 eps",
         minimumDensity=min(q[0] for q in current),minimumPressure=min(primitive(q,gamma)[3] for q in current),
-        note='last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity checks; not independent replay of all steps')
+        note='last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity and adjacent-history mass/energy balances; not independent replay of all steps')
 
 
 def sod(x,time,gamma=1.4,split=.5):

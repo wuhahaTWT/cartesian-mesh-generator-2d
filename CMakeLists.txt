@@ -95,7 +95,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 if(APPLE)
     target_link_libraries(cartmesh2d_fv PUBLIC "-framework Accelerate")
@@ -223,6 +223,9 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_euler_accuracy COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_accuracy_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
     set_tests_properties(cartmesh2d_euler_accuracy PROPERTIES TIMEOUT 180)
+    add_test(NAME cartmesh2d_euler_conduction COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_conduction_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
+    set_tests_properties(cartmesh2d_euler_conduction PROPERTIES TIMEOUT 120)
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_fv_foundation COMMAND cartmesh2d_fv_tests)
     add_executable(cartmesh2d_flow_linear_tests tests/flow_linear_test.cpp)

@@ -1104,12 +1104,22 @@ async function runSmoke() {
     if (${JSON.stringify(argument('euler') === 'true')}) {
       const target=Number(${JSON.stringify(argument('euler-end-time')||'.0005')});
       for(const [id,value] of Object.entries({eulerCase:${JSON.stringify(argument('euler-case')||'sod')},eulerDensity:'1.225',eulerPressure:'101325',
+        eulerConductivity:${JSON.stringify(argument('euler-conductivity')||'0')},eulerWallThermal:${JSON.stringify(argument('euler-wall-thermal')||'insulated')},eulerWallValue:${JSON.stringify(argument('euler-wall-value')||'0')},
         eulerU:${JSON.stringify(argument('euler-u')||'0')},eulerV:'0',eulerFluxScheme:${JSON.stringify(argument('euler-flux')||'rusanov')},eulerOrder:${JSON.stringify(argument('euler-order')||'1')},eulerGamma:'1.4',eulerGasConstant:'287.05',eulerEndTime:String(target)}))document.getElementById(id).value=value;
       document.getElementById('eulerCase').dispatchEvent(new Event('change'));
       await smoke.runEuler();
       if(!smoke.state.euler||smoke.state.euler.summary.time!==target)throw new Error('Euler result did not reach renderer: '+document.getElementById('statusText').textContent);
       const first=smoke.state.euler;
       if(first.summary.fluxScheme!==document.getElementById('eulerFluxScheme').value||first.summary.order!==Number(document.getElementById('eulerOrder').value))throw new Error('Euler method controls did not reach native solver');
+      if(first.summary.thermalConductivity!==Number(document.getElementById('eulerConductivity').value)||first.summary.wallThermal!==document.getElementById('eulerWallThermal').value||first.summary.wallValue!==smoke.eulerRequest().wallValue)throw new Error('Thermal controls did not reach native solver');
+      if(!['eulerConductivity','eulerWallThermal','eulerWallValue'].every(id=>document.getElementById(id).disabled))throw new Error('Restart thermal parameters are not locked');
+      if(first.summary.thermalConductivity>0) {
+        document.getElementById('eulerResume').checked=false;document.getElementById('eulerResume').dispatchEvent(new Event('change'));
+        document.getElementById('eulerConductivity').value=String(first.summary.thermalConductivity*2);
+        document.getElementById('eulerConductivity').dispatchEvent(new Event('change'));
+        if(smoke.state.euler)throw new Error('Thermal change left stale displayed fields');
+        document.getElementById('eulerConductivity').value=String(first.summary.thermalConductivity);
+      }
       document.getElementById('eulerOrder').value=first.summary.order===1?'2':'1';
       document.getElementById('eulerOrder').dispatchEvent(new Event('change'));
       if(smoke.state.euler)throw new Error('Euler method change left a stale displayed result');
@@ -1135,9 +1145,9 @@ async function runSmoke() {
         document.getElementById('displayMode').value=mode;document.getElementById('displayMode').dispatchEvent(new Event('change'));
         if(!smoke.view.fieldRange||!Number.isFinite(smoke.view.fieldRange.min))throw new Error('Euler field map missing: '+mode);
       }
-      document.getElementById('displayMode').value='euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
+      document.getElementById('displayMode').value=first.summary.thermalConductivity>0?'euler-temperature':'euler-rho';document.getElementById('displayMode').dispatchEvent(new Event('change'));
       document.getElementById('eulerBlock').scrollIntoView({block:'start'});
-      smoke.state.eulerSmoke={fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
+      smoke.state.eulerSmoke={thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
@@ -1330,6 +1340,13 @@ async function runSmoke() {
       report.home.mainPreviewReleased = currentResult?.mesh === null;
       if (!Object.values(report.home).every(Boolean)) throw new Error('Return to start did not release preview or preserve export');
       if (argument('export')) report.home.exported = await exportPackage(argument('export').replace(/\.zip$/, '') + '-home.zip');
+    }
+    if(report.euler && shot){
+      mainWindow.setSize(1320,900);
+      await new Promise(resolve=>setTimeout(resolve,200));
+      await mainWindow.webContents.executeJavaScript("document.getElementById('eulerConductivity').scrollIntoView({block:'start'}); document.querySelector('.results').scrollTop=0;");
+      await new Promise(resolve=>setTimeout(resolve,200));
+      await fs.writeFile(shot.replace(/\.png$/, '-euler-controls.png'),(await mainWindow.webContents.capturePage()).toPNG());
     }
     if(report.thermal && shot){
       mainWindow.setSize(1320,900);
