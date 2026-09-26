@@ -147,6 +147,47 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 `cartmesh2d_fv_cli --help`是独立扩散/泊松入口。`cartmesh2d_euler_cli --help`是实验理想气体Euler入口；SST输运/壁距/稳态RANS代码位于`src/fv/Sst*`及对应测试。它们仍有调用与测试，保留现有行为；本轮不扩大物理范围，也不把局部通过当作通用湍流或可压流资格。
 
+## 纯笛卡尔浸入边界研究入口
+
+`codex/pure-cartesian-cfd` 的 `cartmesh2d_immersed_cli` 是独立原生 C++ 开发原型，尚未接入 App。核心在 `include/cartmesh2d/immersed/CartesianFlow2D.hpp` 和 `src/immersed/CartesianFlow2D.cpp`，复用二维几何诊断和既有稀疏线性代数。它不读取或伪装 `*.solver.cm2d`，不修改背景 JSON 的 `solver_ready=false`，也不经过或降低现有 Cut-cell 的 Solver 质量门。
+
+### 方程和当前适用范围
+
+计算域为 `[0,L] × [0,H]`，均匀 MAC 交错网格：压力在格心，u/v 在对应面中心。所有方格完整保留，固体中的数值是辅助未知量，不属于真实流体。x 方向速度和压力扰动周期，y 两壁静止无滑移。恒定 x 加速度 `drive` 等价于周期压差驱动；输出运动学总压力可写为 `p_total = p_fluctuation - drive*x`。这是周期通道，不是入口/压力出口外流。
+
+离散不可压 Navier–Stokes–Brinkman 方程：`du/dt + div(uu) = -grad(p) + nu Laplacian(u) + drive e_x - chi u/eta`，`div(u)=0`。对流为一阶守恒迎风，黏性项为中心差分；对流/扩散显式、阻力隐式，自动限制伪时间步。压力校正使用 `beta=1/(1+dt chi/eta)`，求解 `-div(beta grad(phi)) = -div(u*)/dt`，然后校正速度和压力。压力参考设为第一个格心，接受前仍检查该格的连续性。默认 PCG/IC0；macOS 可显式选择系统 Cholesky，CLI 在调用前固定本进程的 `VECLIB_MAXIMUM_THREADS=1`。当前用伪时间推进求稳态，尚未取得非定常精度资格。
+
+`chi` 来自原始二维折线的有符号距离，默认在半宽 `0.5 min(dx,dy)` 内使用正弦过渡。折线本身不移动、不平滑、不裁切网格。`eta` 是阻力时间尺度，默认 `1e-4` 秒；有限阻力和掩膜过渡都会产生壁面误差。真实壁面上按原线段插值采样速度，分别报告总速度、法向穿透和切向滑移。`penalty_drag_per_density` 是辅助阻力体积分，不是已验证的表面应力阻力系数。
+
+`channel` 不含内置固体。`cylinder` 是圆心 `(L/3,H/2)`、半径 `.15 H` 的 128 段规则多边形，实际坐标保存在 `boundary.xy`；流动代表周期通道里的重复障碍物。`custom --boundary SOLID.xy` 接受以空行分隔的原生多环固体，嵌套按奇偶规则保留孔洞；当前只支持静止壁面，不接受带命名边界角色的 XY 元数据。非法、自交、重复边、接触环显式拒绝。固体离外域边界/周期接缝须留出两格加掩膜半宽，至少有一个完整内部单元，否则报告当前不支持或欠分辨；这不是任意细缝/薄壁已被充分解析的证明。
+
+### 停止量和结果语义
+
+`Uref = drive H²/(12 nu)` 是无障碍通道解析平均速度。开发默认 `steady-tolerance=1e-4` 检查最大离散动量余量除以驱动加速度，同时检查最大速度步变化除以 `Uref`。这是相对驱动的 0.01% 代数平衡目标，不是壁面或物理误差要求。`continuity-tolerance=1e-6` 检查 `max|div(u)| H/Uref`，每个接受步都必须满足。该连续性和截面通量覆盖含辅助固体的完整计算域，不能代替真实壁面不穿透验证。默认线性相对 L2 目标 `1e-8` 用来使压力校正的误差小于这些开发停止量，仍使用原线性工具的 `1e-13` 绝对算术余量并独立核对实际残差；不将其中任何数值当作通用精度标准。
+
+达到步数预算返回码 2 和 `iteration-limit`。失败候选不替换最后接受步；若一个步都没接受，结果明确为 `initial-only`，不能作为检查点。POSIX 取消保存最后接受步，返回 130。线性/连续性失败返回 `candidate-failed`；输入/导出错误返回 1。`steady-converged` 返回 0，仍不表示网格无关或有限阻力壁面精度合格。首个 4096 格冷启动通道在 20000 步时未达到动量目标，原结果保留在 `outputs/immersed-prototype/channel/`；默认预算据此设为 40000 步，没有放宽残差。
+
+### 构建、运行和独立核查
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+cmake --build build --target cartmesh2d_immersed_cli -j2
+ctest --test-dir build -R '^cartmesh2d_immersed_flow$' --output-on-failure
+build/cartmesh2d_immersed_cli --case channel --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --output outputs/immersed-channel
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --output outputs/immersed-cylinder
+# macOS 可选压力后端，使用新目录保留 IC0 对照
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --linear-solver cholesky --output outputs/immersed-cylinder-cholesky
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-channel --require-converged
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-cylinder --require-converged
+python3 tools/visualization/render_immersed_flow.py outputs/immersed-cylinder --output outputs/immersed-cylinder/preview.png
+```
+
+绘图脚本需要 NumPy/Matplotlib；原生求解与独立读取器不需要它们。输出目录必须尚不存在，避免覆盖之前的失败/接受证据。`summary.json` 记录实际参数、停止原因、量纲/归一化和网格/边界/求解/导出分段时间（`pressure_seconds` 为包含在求解总耗时中的压力线性求解时间）；`u.csv`、`v.csv` 保留所有交错自由度和掩膜，`cells.csv` 和真实二维 `field.vtk` 保留每个完整方格及几何分类。`walls.csv` 是实际折线采样，`history.csv` 只记录接受步，原始折线单独导出。不能将仅网格生成的时间视为总成本。
+
+独立 Python 读取器重新计算动量、连续性、通量、壁面插值、原折线面积和掩膜样本，并核对 VTK/CSV 一致性及线性真残差。相关测试包含解析通道、圆柱流动阻滞与对称性、原始多边形/孔洞、确定性、预算/失败/取消状态、非法输入和损坏导出，以及 macOS 两种压力后端的三步场对照。解析通道的 16×16 单网格 1% L2 界、粗圆柱的壁速上界仅为低成本开发冒烟检查，不属于工程验收。首阶段不自动运行全量回归、网格收敛、跨平台或性能极限研究。
+
+本入口没有真实共形流体 `polyMesh`，因此现有 `checkMesh` 和 Cut-cell Solver 质量门不适用；它们没有被这个独立读取器替代。方法背景：[Brinkman 固体惩罚法](https://www.math.u-bordeaux.fr/~chabrune/publi/ABF-NM.pdf)、[含惩罚项的压力投影预条件研究](https://arxiv.org/abs/2306.06277)。这里只借鉴离散处理原则，没有复现后者的整套耦合算法、精度阶或性能结论。
+
 ## 验证与证据
 
 | 目的 | 入口 |

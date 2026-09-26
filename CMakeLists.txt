@@ -126,6 +126,17 @@ if(MSVC)
 endif()
 cartmesh2d_enable_warnings(cartmesh2d_transport_cli)
 
+# Independent Cartesian immersed-boundary analysis; never bypasses FvMesh2D gates.
+add_library(cartmesh2d_immersed src/immersed/CartesianFlow2D.cpp)
+target_link_libraries(cartmesh2d_immersed PUBLIC cartmesh2d_fv)
+cartmesh2d_enable_warnings(cartmesh2d_immersed)
+add_executable(cartmesh2d_immersed_cli apps/cartmesh2d_immersed_cli.cpp)
+target_link_libraries(cartmesh2d_immersed_cli PRIVATE cartmesh2d_immersed)
+cartmesh2d_enable_warnings(cartmesh2d_immersed_cli)
+if(MSVC)
+    target_sources(cartmesh2d_immersed_cli PRIVATE apps/cartmesh2d.exe.manifest)
+endif()
+
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
 
 if(CARTMESH2D_BUILD_TESTS)
@@ -163,6 +174,10 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_workspace_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_workspace COMMAND cartmesh2d_scalar_workspace_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cartmesh2d_immersed_flow
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/immersed_flow_cli_test.py
+                $<TARGET_FILE:cartmesh2d_immersed_cli>)
+    set_tests_properties(cartmesh2d_immersed_flow PROPERTIES TIMEOUT 180)
     add_test(NAME cartmesh2d_background_grid
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/test_background_grid.py
                 $<TARGET_FILE:cartmesh2d_cli>)

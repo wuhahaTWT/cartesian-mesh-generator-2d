@@ -1,0 +1,12 @@
+{
+  "source": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/immersed-prototype/cylinder-cholesky",
+  "image": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/artifacts/current/native-cartesian-immersed.png",
+  "inputs": {
+    "cells.csv": "2cb28949244f422df60883a9d4a3f758268af0613644d25490cbf589e0c731ae",
+    "u.csv": "ce9fcca61cde0b9d6a80c74ca2a7258941d6b009868b5931fae5fb4e78f6bbde",
+    "v.csv": "f07b3a1a8fab3383ecce8899bfc0c1dde316e0b7cd269e0943e4d9ec69fe55be",
+    "history.csv": "23b202d0cc1703f5048e6ee063ebfd6376e79dc1e0c64a0e2f55c748a2e1b0e0",
+    "boundary.xy": "d1801876a811f144b20233707cb43b673c0baafb28bdeadd93a1a821c8f623f4",
+    "summary.json": "157ad1c0d4dae530f0ff6ae9ef0e466398987919c5c48a7e30a1618eeae324c1"
+  }
+}
