@@ -1,0 +1,74 @@
+{
+  "pairs": [
+    {
+      "label": "Cylinder",
+      "sources": {
+        "Brinkman": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/cylinder-baseline-current",
+          "sha256": {
+            "cells.csv": "25977345f258d1c418a694d43c1bd359b866b475f242cffb58092a555d80d86b",
+            "walls.csv": "8f18594dcd411d7f408350a46bcc037212fcbe64762ae43da7761a4eee188a40",
+            "boundary.xy": "d1801876a811f144b20233707cb43b673c0baafb28bdeadd93a1a821c8f623f4",
+            "summary.json": "f4b28628dbecdb9523dc4b72cc353b49c137207c52b5d2373f4fadee389346cb"
+          }
+        },
+        "Coupled wall": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/cylinder-release",
+          "sha256": {
+            "cells.csv": "7e42c101e84c5e93df1e5dd55cc19ca6fc054cf4c9469b935e342554f5f5c4a5",
+            "walls.csv": "14f5e9b0c6709a029b14a87ecc853742ff38cc0b85190b323d275d18eb819362",
+            "boundary.xy": "d1801876a811f144b20233707cb43b673c0baafb28bdeadd93a1a821c8f623f4",
+            "summary.json": "8ae7bdfc1c25e001c1737f1476ffba1d0c2750a772b41f30984f53ee7d852344"
+          }
+        }
+      }
+    },
+    {
+      "label": "Oblique walls",
+      "sources": {
+        "Brinkman": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/skew-brinkman",
+          "sha256": {
+            "cells.csv": "84897799599b89760777f57d98a3d3624904314910199edca2c7ca4dfb0da755",
+            "walls.csv": "3926972f2a4bf571c3a5a1d03afbc4c60178f049df53da3bf6bf5b2a40e1b7dc",
+            "boundary.xy": "09d50443256fbc5337b31c9e31114fbf490114bbbd4a26eb2f88f033aaed79ce",
+            "summary.json": "d1b7acbdf9952a62ee249344b23426e617d70794f1791d90c7d6e8b62976164d"
+          }
+        },
+        "Coupled wall": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/skew-release",
+          "sha256": {
+            "cells.csv": "7f37e0e5724cd62b1dcb8031d5f4a3bc73145bfe1fc2febbaa2ea59acee74907",
+            "walls.csv": "1bff55b5046bfc9f17e25b3b7d317d16d8a1278234beb4de93f649f419440ca3",
+            "boundary.xy": "09d50443256fbc5337b31c9e31114fbf490114bbbd4a26eb2f88f033aaed79ce",
+            "summary.json": "054f55ec485d08edbee1814bf9424448df2ee7f1003db739ae08fe29108695fe"
+          }
+        }
+      }
+    },
+    {
+      "label": "Concave corner",
+      "sources": {
+        "Brinkman": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/concave-baseline",
+          "sha256": {
+            "cells.csv": "1866fc3d00bb3e90017a1b51fc2e496757384e91d58a6ca7b0c5d7a088cb1e70",
+            "walls.csv": "c071a7ee6e66674155064676feb637ede1cee7930276d15519f525b71e8914a5",
+            "boundary.xy": "02e81d574a704500d0624a3e0d3a6c3b6e40a86725640f88ac2dfd31466240ee",
+            "summary.json": "c0f48687f24cb97ec696d940a734d437f08cf7602ad0c40bdf2937df27255835"
+          }
+        },
+        "Coupled wall": {
+          "directory": "/Users/Zhuanz/.codex/worktrees/pure-cartesian-cfd/cartesian-mesh-generator-2d/outputs/wall-treatment/concave-release",
+          "sha256": {
+            "cells.csv": "84c8122b5e8e2e952d4b20dc28439e9ed5daf42ad8dd7bb6550e8e3eca9dcead",
+            "walls.csv": "b5241f9327441e970b57d733d1de4da357d0b783bdd9a54169874cfbad7442ec",
+            "boundary.xy": "02e81d574a704500d0624a3e0d3a6c3b6e40a86725640f88ac2dfd31466240ee",
+            "summary.json": "b79cac73c44c3533cf0dab183cb0c9090283584aab9a1904331791d2494c2ea0"
+          }
+        }
+      }
+    }
+  ],
+  "description": "Computed fields and dense boundary samples; no synthesized flow"
+}

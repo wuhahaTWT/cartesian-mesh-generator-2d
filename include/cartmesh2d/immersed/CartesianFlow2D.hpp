@@ -1,5 +1,6 @@
 #pragma once
 #include "cartmesh2d/geometry/Geometry2D.hpp"
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <string>
@@ -8,17 +9,28 @@
 namespace cartmesh2d::immersed {
 // A separate computational lattice, including auxiliary solid degrees of freedom.
 // This is deliberately NOT FvMesh2D or the product background-grid file format.
+enum class PressureSolver { Automatic, IC0, Jacobi, SystemCholesky };
 struct Controls {
     std::size_t nx = 128, ny = 32, maxSteps = 40000;
     double length = 4, height = 1, viscosity = .01, drive = .12;
     double penaltyTime = 1e-4, maskHalfWidthCells = .5;
     double steadyTolerance = 1e-4, continuityTolerance = 1e-6;
     double linearTolerance = 1e-8, maxTimeStep = .02;
-    bool systemCholesky = false;
+    PressureSolver pressureSolver = PressureSolver::Automatic;
+    // Opt-in surface penalty, solved simultaneously with incompressibility.
+    bool surfacePenalty = false;
+    double wallPenaltyTime = 1e-4;
+};
+struct WallStencil {
+    Point2D point;
+    double length = 0, weight = 0; // weight = segment length * min(dx,dy) / cell area
+    std::array<std::size_t,4> uIndex{}, vIndex{};
+    std::array<double,4> uWeight{}, vWeight{};
 };
 struct Grid {
     Controls controls;
     std::vector<BoundaryLoop> solids;
+    std::vector<WallStencil> wallStencils;
     std::vector<double> maskU, maskV, maskCell;
     std::vector<unsigned> classification; // 0 outside, 1 inside, 2 intersected
     double solidArea = 0, gridSeconds = 0, boundarySeconds = 0;
@@ -29,6 +41,7 @@ struct Grid {
 };
 struct State {
     std::vector<double> u, v, p; // p is periodic kinematic pressure fluctuation
+    std::vector<double> wallForceU, wallForceV, wallMultipliers;
     std::size_t steps = 0;
     double pseudoTime = 0;
 };
@@ -38,6 +51,10 @@ struct Metrics {
     double meanVelocity = 0, maxSpeed = 0, fluxSpread = 0;
     double wallSpeed = 0, wallNormalSpeed = 0, wallTangentialSpeed = 0;
     double deepSolidSpeed = 0, penaltyDrag = 0, penaltyLift = 0;
+    double surfaceDrag = 0, surfaceLift = 0, surfacePower = 0;
+    double wallConstraintResidual = 0, markerSpeed = 0;
+    double wallNormalFluxNet = 0, wallNormalFluxAbs = 0;
+    double channelWallDrag = 0, forceBalance = 0;
     double channelRelativeL2 = 0, dt = 0;
     std::size_t pressureIterations = 0;
 };

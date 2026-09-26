@@ -110,6 +110,88 @@ class ImmersedFlowTests(unittest.TestCase):
             if process.poll() is None:
                 process.kill()
                 process.communicate()
+    def test_surface_coupling_reduces_dense_wall_error(self):
+        xy=self.root/'skew.xy';xy.write_text('1.21 .31\n1.63 .29\n1.69 .65\n1.28 .69\n')
+        common=['--case','custom','--boundary',xy,'--nx',32,'--ny',16,'--nu',.1,'--drive',1.2,'--max-steps',10000]
+        base,_=self.run_case('base',*common)
+        wall,_=self.run_case('wall',*common,'--wall-method','surface-penalty','--wall-penalty-time',1e-6)
+        a,b=verify.verify(base,True),verify.verify(wall,True)
+        # Development guard: dense original-wall samples must improve by >=4x,
+        # not just quadrature markers. Not an engineering wall-accuracy gate.
+        self.assertLess(b['wall_speed_max'],a['wall_speed_max']/4)
+        self.assertLess(b['wall_normal_speed_max'],a['wall_normal_speed_max']/4)
+        # On a quadratic interval the three Gauss interpolation basis functions
+        # have sum(abs(L_i)) <= 7/3. An omitted interval/endpoint breaks this
+        # bound (the old sparse-marker skew-wall case exceeded it by >50x).
+        self.assertLessEqual(b['wall_speed_max'],(7/3)*b['marker_speed_max']+1e-12)
+        self.assertLess(b['surface_power_per_density'],0)
+        self.assertLess(b['force_balance'],1e-4) # same normalized steady balance budget
+        report=json.loads((wall/'summary.json').read_text())
+        self.assertEqual(report['controls']['linear_solver'],'jacobi')
+        self.assertGreater(report['metrics']['mean_velocity'],.05) # not a stagnant fake solution
+        self.assertEqual((base/'boundary.xy').read_bytes(),(wall/'boundary.xy').read_bytes())
+    def test_surface_quadrature_ignores_collinear_vertex_subdivision(self):
+        # The wall-energy integral should depend on geometry, not how a straight
+        # input edge was divided. Reversing the same loop also preserves physics.
+        points=[(1.125,.375),(1.625,.375),(1.625,.625),(1.125,.625)]
+        subdivided=[]
+        for a,b in zip(points,points[1:]+points[:1]):
+            subdivided.extend([a,((2*a[0]+b[0])/3,(2*a[1]+b[1])/3),((a[0]+2*b[0])/3,(a[1]+2*b[1])/3)])
+        outputs=[]
+        for name,vertices in [('plain',points),('split',subdivided),('reversed',list(reversed(points)))]:
+            xy=self.root/(name+'.xy');xy.write_text(''.join(f'{x:.17g} {y:.17g}\n' for x,y in vertices))
+            path,_=self.run_case(name,'--case','custom','--boundary',xy,'--nx',48,'--ny',16,'--wall-method','surface-penalty','--wall-penalty-time',1e-6,'--max-steps',3,expected=2)
+            self.assertEqual(verify.verify(path)['steps'],3)
+            outputs.append(path)
+        for other in outputs[1:]:
+            for name,field in [('u.csv','u'),('v.csv','v'),('cells.csv','pressure_fluctuation')]:
+                delta=max(abs(a[field]-b[field]) for a,b in zip(verify.table(outputs[0]/name),verify.table(other/name)))
+                self.assertLess(delta,1e-6) # allowance for independent PCG paths at relative 1e-8
+    def test_coupled_backend_guards_and_rejected_state(self):
+        _,result=self.run_case('ic0','--wall-method','surface-penalty','--linear-solver','ic0',expected=1)
+        self.assertIn('requires jacobi or cholesky',result.stderr)
+        for name,args in [('method',['--wall-method','unknown']),('time',['--wall-penalty-time',0])]:
+            self.run_case(name,*args,expected=1)
+        path,_=self.run_case('fail','--case','cylinder','--nx',48,'--ny',16,'--wall-method','surface-penalty','--max-steps',2,'--continuity-tolerance',1e-30,expected=2)
+        report=json.loads((path/'summary.json').read_text())
+        self.assertEqual(report['stop_reason'],'candidate-failed')
+        self.assertEqual(report['steps'],0)
+        verify.verify(path)
+        self.assertTrue(all(row['wall_force']==0 for row in verify.table(path/'u.csv')))
+    @unittest.skipUnless(sys.platform == 'darwin', 'system Cholesky is a macOS option')
+    def test_coupled_cholesky_matches_portable_jacobi(self):
+        outputs=[]
+        for solver in ('jacobi','cholesky'):
+            path,_=self.run_case(solver,'--case','cylinder','--nx',48,'--ny',16,'--wall-method','surface-penalty','--wall-penalty-time',1e-6,'--max-steps',3,'--linear-solver',solver,expected=2)
+            self.assertEqual(verify.verify(path)['steps'],3)
+            outputs.append(path)
+        for name,field in [('u.csv','u'),('v.csv','v'),('cells.csv','pressure_fluctuation')]:
+            delta=max(abs(a[field]-b[field]) for a,b in zip(verify.table(outputs[0]/name),verify.table(outputs[1]/name)))
+            self.assertLess(delta,1e-6)
+    def test_surface_mode_without_solids_preserves_channel(self):
+        outputs=[]
+        for method in ('brinkman','surface-penalty'):
+            path,_=self.run_case(method,'--nx',16,'--ny',16,'--wall-method',method,'--max-steps',3,expected=2)
+            self.assertEqual(verify.verify(path)['steps'],3);outputs.append(path)
+        for name in ('cells.csv','u.csv','v.csv','walls.csv','field.vtk'):
+            self.assertEqual((outputs[0]/name).read_bytes(),(outputs[1]/name).read_bytes())
+    def test_surface_nested_loop_orientation(self):
+        xy=self.root/'nested.xy'
+        xy.write_text('1 .25\n2 .25\n2 .75\n1 .75\n\n1.3 .4\n1.3 .6\n1.7 .6\n1.7 .4\n')
+        path,_=self.run_case('nested','--case','custom','--boundary',xy,'--nx',64,'--ny',32,'--wall-method','surface-penalty','--max-steps',2,expected=2)
+        self.assertEqual(verify.verify(path)['steps'],2)
+        self.assertAlmostEqual(json.loads((path/'summary.json').read_text())['grid']['solid_area_geometry'],.42)
+    def test_surface_reader_detects_force_corruption(self):
+        path,_=self.run_case('force','--case','cylinder','--nx',48,'--ny',16,'--wall-method','surface-penalty','--max-steps',2,expected=2)
+        verify.verify(path)
+        p=path/'u.csv';original=p.read_text();lines=original.splitlines();values=lines[1].split(',');values[-1]='1';lines[1]=','.join(values);p.write_text('\n'.join(lines)+'\n')
+        with self.assertRaisesRegex(verify.VerificationError,'spread wall force mismatch'):
+            verify.verify(path)
+        p.write_text(original)
+        p=path/'walls.csv';lines=p.read_text().splitlines();values=lines[1].split(',')
+        values[2]=str(-float(values[2]));values[3]=str(-float(values[3]));lines[1]=','.join(values);p.write_text('\n'.join(lines)+'\n')
+        with self.assertRaisesRegex(verify.VerificationError,'wall normal orientation mismatch|summary mismatch: wall_normal_flux_net'):
+            verify.verify(path)
     def test_reader_detects_corruption(self):
         path,_=self.run_case('corrupt','--nx',8,'--ny',8,'--max-steps',1,expected=2)
         text=(path/'field.vtk').read_text().replace('DIMENSIONS 9 9 1','DIMENSIONS 8 9 1')

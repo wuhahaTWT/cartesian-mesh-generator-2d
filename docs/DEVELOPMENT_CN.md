@@ -157,13 +157,35 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 离散不可压 Navier–Stokes–Brinkman 方程：`du/dt + div(uu) = -grad(p) + nu Laplacian(u) + drive e_x - chi u/eta`，`div(u)=0`。对流为一阶守恒迎风，黏性项为中心差分；对流/扩散显式、阻力隐式，自动限制伪时间步。压力校正使用 `beta=1/(1+dt chi/eta)`，求解 `-div(beta grad(phi)) = -div(u*)/dt`，然后校正速度和压力。压力参考设为第一个格心，接受前仍检查该格的连续性。默认 PCG/IC0；macOS 可显式选择系统 Cholesky，CLI 在调用前固定本进程的 `VECLIB_MAXIMUM_THREADS=1`。当前用伪时间推进求稳态，尚未取得非定常精度资格。
 
-`chi` 来自原始二维折线的有符号距离，默认在半宽 `0.5 min(dx,dy)` 内使用正弦过渡。折线本身不移动、不平滑、不裁切网格。`eta` 是阻力时间尺度，默认 `1e-4` 秒；有限阻力和掩膜过渡都会产生壁面误差。真实壁面上按原线段插值采样速度，分别报告总速度、法向穿透和切向滑移。`penalty_drag_per_density` 是辅助阻力体积分，不是已验证的表面应力阻力系数。
+`chi` 来自原始二维折线的有符号距离，默认在半宽 `0.5 min(dx,dy)` 内使用正弦过渡。折线本身不移动、不平滑、不裁切网格。`eta` 是阻力时间尺度，默认 `1e-4` 秒；有限阻力和掩膜过渡都会产生壁面误差。真实壁面上按原线段插值采样速度，分别报告总速度、法向穿透和切向滑移。`penalty_drag_per_density` 是辅助阻力体积分，不是已验证的表面应力阻力系数。壁面诊断包含每条原线段两端及不超过 `h/8` 的间隔，`h=min(dx,dy)`；报告的是这些稠密采样中的最大值。
 
 `channel` 不含内置固体。`cylinder` 是圆心 `(L/3,H/2)`、半径 `.15 H` 的 128 段规则多边形，实际坐标保存在 `boundary.xy`；流动代表周期通道里的重复障碍物。`custom --boundary SOLID.xy` 接受以空行分隔的原生多环固体，嵌套按奇偶规则保留孔洞；当前只支持静止壁面，不接受带命名边界角色的 XY 元数据。非法、自交、重复边、接触环显式拒绝。固体离外域边界/周期接缝须留出两格加掩膜半宽，至少有一个完整内部单元，否则报告当前不支持或欠分辨；这不是任意细缝/薄壁已被充分解析的证明。
 
+### 压力与真实壁面力耦合
+
+显式启用 `--wall-method surface-penalty` 时，在原体积 Brinkman 项上增加整段壁面惩罚。`J` 是交错速度在原始折线上的双线性插值，`W=ds*h/(dx*dy)`，`E=sqrt(W) J`。每条线段在两种 MAC 分量的插值结点线处划分积分区间，每区间使用三点 Gauss 积分；区间内 `J` 沿线段至多二次，因此 `Jᵀ W J` 的四次积分是精确的（浮点算术范围内）。这些是积分点，原输入折线和完整方格均不改变。新增/倒置共线顶点的回归检查几何分段不会实质改变解。
+
+令 `D` 为 MAC 散度，`B=[-h D; E]`。每个伪时间步同时求解
+
+```text
+(B beta Bᵀ + diag(0, eta_wall/dt)) q = B u_star/dt
+u_new = u_star - dt beta Bᵀ q
+p_new = p_old + h q_pressure
+wall_force = -Eᵀ q_wall
+E u_new = eta_wall q_wall
+```
+
+压力参考行仍被固定，但接受前检查全部格的散度。壁面力、压力和体积阻力使用同一个 `beta`；没有求解后截断壁速的步骤。`eta_wall > 0` 保证壁面块有正的顺应项，处理重复约束，不通过删除坏约束或对角补丁凑成可解矩阵。模型的壁面功率满足 `sum(u*wall_force)*dx*dy = -eta_wall sum(q_wall²)*dx*dy <= 0`，独立读取器重新构造 `Eᵀ q_wall` 并核对这个恒等式。
+
+`--wall-penalty-time` 默认设为 `1e-4` 时间单位；本次比较显式用 `1e-6`，无量纲值 `eta_wall Uref/H=1e-6`。它是当前尺度的开发参数，不是通用最优值或物理滑移长度。该模式依然是**有限表面惩罚**，不是精确的无滑移/锐界面资格。单纯减小体积 `eta` 不能消除插值壁面误差；首个中点壁面版本还出现“标记点很小、点间穿透较大”的斜壁案例，因此改用整段积分，保留原结果。
+
+`--linear-solver auto` 在旧 Brinkman 模式选择 IC0，在新耦合模式选择 Jacobi；macOS 可显式选 Cholesky。原 IC0 对这种含壁面块的 SPD 矩阵出现过非正主元，现明确拒绝此组合，失败复现在 `outputs/wall-treatment/gauss-ic0-probe/`，不静默切换或改变线性门。Jacobi 在本机完成小规模稳态和三步场对照；大规模效率、其他平台未验证。资源上限为 16,384 个壁面积分点、8,000,000 个原始图连接贡献，超限显式失败，不删除输入几何。
+
+`wall_force` 是加速度，`wall-markers.csv` 的 `multiplier_*` 为 `q_wall`；`weight` 是无量纲 `W`。新增表面/体积反力应同时读取：二者可有反向分量，不能单独把其中一项当作真实阻力系数。`surface_power_per_density` 是完整辅助计算域内的模型功率；`force_balance` 是驱动力、两项障碍物反力和上下通道壁黏性力之差除以 `drive*L*H`。`wall_normal_flux_net/abs` 是原折线稠密采样的法向有符号/绝对速度线积分，量纲为长度²/时间。网格散度很小并不使这些物面通量自动为零。
+
 ### 停止量和结果语义
 
-`Uref = drive H²/(12 nu)` 是无障碍通道解析平均速度。开发默认 `steady-tolerance=1e-4` 检查最大离散动量余量除以驱动加速度，同时检查最大速度步变化除以 `Uref`。这是相对驱动的 0.01% 代数平衡目标，不是壁面或物理误差要求。`continuity-tolerance=1e-6` 检查 `max|div(u)| H/Uref`，每个接受步都必须满足。该连续性和截面通量覆盖含辅助固体的完整计算域，不能代替真实壁面不穿透验证。默认线性相对 L2 目标 `1e-8` 用来使压力校正的误差小于这些开发停止量，仍使用原线性工具的 `1e-13` 绝对算术余量并独立核对实际残差；不将其中任何数值当作通用精度标准。
+`Uref = drive H²/(12 nu)` 是无障碍通道解析平均速度。开发默认 `steady-tolerance=1e-4` 检查最大离散动量余量除以驱动加速度，同时检查最大速度步变化除以 `Uref`。这是相对驱动的 0.01% 代数平衡目标，不是壁面或物理误差要求。`continuity-tolerance=1e-6` 检查 `max|div(u)| H/Uref`，每个接受步都必须满足。新模式还逐步检查 `max|Ju - eta_wall q_wall/sqrt(W)|/Uref <= continuity-tolerance`，这是与速度同尺度的壁面方程求解误差；它与真实壁速、法向穿透分开报告，不作为物理无滑移证明。该连续性和截面通量覆盖含辅助固体的完整计算域，不能代替真实壁面不穿透验证。默认线性相对 L2 目标 `1e-8` 用来使压力校正的误差小于这些开发停止量，仍使用原线性工具的 `1e-13` 绝对算术余量并独立核对实际残差；不将其中任何数值当作通用精度标准。
 
 达到步数预算返回码 2 和 `iteration-limit`。失败候选不替换最后接受步；若一个步都没接受，结果明确为 `initial-only`，不能作为检查点。POSIX 取消保存最后接受步，返回 130。线性/连续性失败返回 `candidate-failed`；输入/导出错误返回 1。`steady-converged` 返回 0，仍不表示网格无关或有限阻力壁面精度合格。首个 4096 格冷启动通道在 20000 步时未达到动量目标，原结果保留在 `outputs/immersed-prototype/channel/`；默认预算据此设为 40000 步，没有放宽残差。
 
@@ -177,16 +199,19 @@ build/cartmesh2d_immersed_cli --case channel --nx 128 --ny 32 --nu 0.01 --drive 
 build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --output outputs/immersed-cylinder
 # macOS 可选压力后端，使用新目录保留 IC0 对照
 build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --linear-solver cholesky --output outputs/immersed-cylinder-cholesky
+# 新壁面模式显式比较参数；其他平台省略 Cholesky 参数，auto 选择 Jacobi
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --wall-method surface-penalty --wall-penalty-time 1e-6 --linear-solver cholesky --output outputs/immersed-wall
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-wall --require-converged
 python3 tools/verification/verify_immersed_flow.py outputs/immersed-channel --require-converged
 python3 tools/verification/verify_immersed_flow.py outputs/immersed-cylinder --require-converged
 python3 tools/visualization/render_immersed_flow.py outputs/immersed-cylinder --output outputs/immersed-cylinder/preview.png
 ```
 
-绘图脚本需要 NumPy/Matplotlib；原生求解与独立读取器不需要它们。输出目录必须尚不存在，避免覆盖之前的失败/接受证据。`summary.json` 记录实际参数、停止原因、量纲/归一化和网格/边界/求解/导出分段时间（`pressure_seconds` 为包含在求解总耗时中的压力线性求解时间）；`u.csv`、`v.csv` 保留所有交错自由度和掩膜，`cells.csv` 和真实二维 `field.vtk` 保留每个完整方格及几何分类。`walls.csv` 是实际折线采样，`history.csv` 只记录接受步，原始折线单独导出。不能将仅网格生成的时间视为总成本。
+绘图脚本需要 NumPy/Matplotlib；原生求解与独立读取器不需要它们。输出目录必须尚不存在，避免覆盖之前的失败/接受证据。`summary.json` 记录实际参数、停止原因、量纲/归一化和网格/边界/求解/导出分段时间（`pressure_seconds` 为包含在求解总耗时中的压力线性求解时间）；`u.csv`、`v.csv` 保留所有交错自由度、掩膜和表面力，`cells.csv` 和真实二维 `field.vtk` 保留每个完整方格及几何分类。`wall-markers.csv` 保存积分点/权重/乘子，`walls.csv` 是独立于积分点的稠密实际折线采样，`history.csv` 只记录接受步，原始折线单独导出。不能将仅网格生成的时间视为总成本。
 
-独立 Python 读取器重新计算动量、连续性、通量、壁面插值、原折线面积和掩膜样本，并核对 VTK/CSV 一致性及线性真残差。相关测试包含解析通道、圆柱流动阻滞与对称性、原始多边形/孔洞、确定性、预算/失败/取消状态、非法输入和损坏导出，以及 macOS 两种压力后端的三步场对照。解析通道的 16×16 单网格 1% L2 界、粗圆柱的壁速上界仅为低成本开发冒烟检查，不属于工程验收。首阶段不自动运行全量回归、网格收敛、跨平台或性能极限研究。
+独立 Python 读取器重新计算动量、连续性、通量、壁面插值、原折线面积和掩膜样本，并核对 VTK/CSV 一致性及线性真残差。18 项相关测试覆盖解析通道、圆柱流动阻滞/对称、原始多边形/孔洞、确定性、预算/失败/取消、非法输入/损坏导出、整段壁面改善、共线分段/方向不变性、表面力破坏检测、空域不变性和两种耦合后端场对照。斜壁改善至少 4 倍是低成本开发回归，归一化采用相同 `Uref`。另核对每段二次插值的 Gauss 包络：稠密壁速不超过标记最大值的 `7/3` 加 `1e-12 Uref` 算术读回余量；`7/3` 来自三点 Gauss 拉格朗日基函数绝对值之和的上界，用于抓住旧漏点问题，不是新增工程壁面误差门。解析通道的 16×16 单网格 1% L2 界、粗圆柱的壁速上界仅为低成本开发冒烟检查，不属于工程验收。本次额外做了固定原折线的两个网格和周期 x 平移检查；它们用于揭示敏感性，不代替完整网格收敛/独立物理对标。未运行全量回归、跨平台或性能极限研究。
 
-本入口没有真实共形流体 `polyMesh`，因此现有 `checkMesh` 和 Cut-cell Solver 质量门不适用；它们没有被这个独立读取器替代。方法背景：[Brinkman 固体惩罚法](https://www.math.u-bordeaux.fr/~chabrune/publi/ABF-NM.pdf)、[含惩罚项的压力投影预条件研究](https://arxiv.org/abs/2306.06277)。这里只借鉴离散处理原则，没有复现后者的整套耦合算法、精度阶或性能结论。
+本入口没有真实共形流体 `polyMesh`，因此现有 `checkMesh` 和 Cut-cell Solver 质量门不适用；它们没有被这个独立读取器替代。方法背景：[Brinkman 固体惩罚法](https://www.math.u-bordeaux.fr/~chabrune/publi/ABF-NM.pdf)、[含惩罚项的压力投影预条件研究](https://arxiv.org/abs/2306.06277)。压力与壁面力联合约束的背景见 [Taira–Colonius 2007 原作者论文目录](https://www.seas.ucla.edu/fluidflow/pubs.html)（DOI: 10.1016/j.jcp.2007.03.005）。本实现为带有限顺应项的双线性表面惩罚，没有复现这些论文的整套算法、精度阶或性能结论。
 
 ## 验证与证据
 

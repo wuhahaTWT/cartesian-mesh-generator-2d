@@ -65,15 +65,17 @@ def render(source, destination):
     res.grid(alpha=.2)
     ref=summary['normalization']['reference_velocity']
     fig.suptitle(f"Cartesian immersed-boundary prototype: {summary['case']}\n"
-                 f"Periodic x; no-slip channel walls; finite Brinkman solid | wall speed / Uref = {100*m['wall_speed_max']/ref:.3f}%",fontsize=14)
+                 f"Periodic x; {summary['controls'].get('wall_method','brinkman')} | sampled wall speed / Uref = {100*m['wall_speed_max']/ref:.3f}%",fontsize=14)
     fig.supxlabel(f"Solid auxiliary values retained. Grid {summary['timing']['grid_seconds']:.4f}s + boundary {summary['timing']['boundary_seconds']:.3f}s + solve {summary['timing']['solve_seconds']:.2f}s.\n"
-                  'Development result: finite-penalty / spatial error remains; no mesh-independence or open-exterior-flow claim.',fontsize=10)
+                  'Development result: finite wall penalty and spatial error remain; physical accuracy is not qualified.',fontsize=10)
     destination.parent.mkdir(parents=True,exist_ok=True)
     fig.savefig(destination,dpi=160)
     plt.close(fig)
     evidence={'source':str(source.resolve()),'image':str(destination.resolve()),'inputs':{}}
-    for name in ['cells.csv','u.csv','v.csv','history.csv','boundary.xy','summary.json']:
+    for name in ['cells.csv','u.csv','v.csv','walls.csv','history.csv','boundary.xy','summary.json']:
         evidence['inputs'][name]=hashlib.sha256((source/name).read_bytes()).hexdigest()
+    if (source/'wall-markers.csv').exists():
+        evidence['inputs']['wall-markers.csv']=hashlib.sha256((source/'wall-markers.csv').read_bytes()).hexdigest()
     destination.with_suffix(destination.suffix+'.json').write_text(json.dumps(evidence,indent=2)+'\n')
 
 
