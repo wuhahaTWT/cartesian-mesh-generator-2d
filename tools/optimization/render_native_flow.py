@@ -94,7 +94,8 @@ def render(directories, output, labels=None, shared_scales=False, title=None):
             axis.add_collection(collection)
             axis.add_collection(LineCollection(boundary, colors="#192c3f", linewidths=.6))
             axis.set(xlim=(xmin-.02, xmax+.02), ylim=(min(0,ymin)-.02, max(1,ymax)+.02),
-                     aspect="equal", xlabel="x (m)", ylabel="y (m)", title=f"{label} | {panel_title}")
+                     aspect="equal", xlabel="x (m)", ylabel="y (m)")
+            axis.set_title(f"{label}\n{panel_title}", fontsize=10)
             axis.set_facecolor("#e5e8eb")
         records.append(dict(label=label, cells=len(polygons), sources=sources, iterations=iterations))
     fig.suptitle((title or "CartMesh2D | Density topology → extracted wall → native Cut-cell CFD")+"\n"

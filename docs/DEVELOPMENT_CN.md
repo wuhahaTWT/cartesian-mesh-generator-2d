@@ -157,7 +157,7 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 入口/出口采用积分匹配的抛物线速度，两格被动端口区域固定为流体，外壁单元固定为固体；设计区由内部变量决定。锥形密度滤波与 tanh 投影后计算真实约束量 `mean(rho) <= volume_fraction`。`filter_radius` 使用设计域长度单位，不等于已证明的制造最小壁厚。
 
-稀疏离散系统消去规定速度及一个压力参考自由度；伴随使用同一离散矩阵的转置，并通过滤波、投影求导。默认目标是离散黏性耗散加 Brinkman 阻力耗散；可选 `pressure-power` 是端口邻接压力单元的通量加权压差功率，不能误称精确边界应力功。OC 更新同时满足变量界、移动界与物理体积约束，候选须重新求解并通过目标回溯才接受。
+稀疏离散系统消去规定速度及一个压力参考自由度；伴随使用同一离散矩阵的转置，并通过滤波、投影求导。默认目标是离散黏性耗散加 Brinkman 阻力耗散；可选 `pressure-power` 是端口邻接压力单元的通量加权压差功率，不能误称精确边界应力功。默认 `--update hybrid` 首先尝试 OC；非下降或回溯失败时，尝试有移动界的归一化梯度步，并沿当前体积梯度二分校正到真实非线性体积约束。这不是精确的非线性投影。所有候选都须重新求解并通过方向下降与实际目标回溯才接受；可指定 `oc` 或 `gradient` 进行算法对照。
 
 三阶段 `(q,beta)=(.01,0),(.1,2),(.1,6)` 改变了模型，不能把跨阶段目标变化当成一次性能提升。报告中的两组参考设计均重新投影到相同体积、使用最终相同参数求解。`uniformPorous` 是数值初值，`geometricSeed` 是可复现的几何种子；两者都不是独立工程基准。
 
@@ -175,9 +175,9 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python 
 VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case bend --volume 0.3 --output outputs/topology/bend
 ```
 
-输出目录必须是新目录。默认 48×32 分析格、25/40/60 步预算；首轮 Matplotlib 字体缓存可能需要额外时间。`summary.json` 保存控制、版本、源代码哈希、停止原因和参考对照；`history.csv`、`accepted-design.npz`、阶段快照、`final.analysis.vtk` 保留数值证据。VTK 明确是含固体阻力的分析场，不是产品求解网格。`--no-plot` 同时跳过等值轮廓提取，可随后单独运行 `topology_artifacts.py <结果目录>`。
+输出目录必须是新目录。默认 48×32 分析格、25/40/60 步预算；首轮 Matplotlib 字体缓存可能需要额外时间。`summary.json` 保存控制、版本、源代码哈希、停止原因和参考对照；`history.csv`、`accepted-design.npz`、阶段快照、`final.analysis.vtk` 保留数值证据。VTK 明确是含固体阻力的分析场，不是产品求解网格。`--no-plot` 同时跳过等值轮廓提取，可随后单独运行 `topology_artifacts.py <结果目录>`。`--initialization uniform|geometric|merged` 区分无内部路径预设、几何参考种子和人为合流种子；后者仅用于双入口/双出口，不能把人工指定的初始连接关系宣传为自动发现。
 
-`topology_artifacts.py` 对投影密度提取分段直线等值轮廓，保留所有连通区域与孔洞，不平滑折线、不填孔。`fluid.xy` 显式使用 interior 语义；每个独立流域另有 `fluid-component-N.xy`，坐标及哈希可追溯。阈值轮廓面积与分析密度体积是不同量，分别报告。
+`topology_artifacts.py` 对投影密度提取分段直线等值轮廓，保留所有连通区域与孔洞，不平滑折线、不填孔。`fluid.xy` 显式使用 interior 语义；每个独立流域另有 `fluid-component-N.xy`，坐标及哈希可追溯。阈值轮廓面积与分析密度体积是不同量，分别报告。端口连通矩阵来自每个真实轮廓分量与端口边界的覆盖关系：它只表示几何可达，不是实际流量分配或混合效率。
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
@@ -187,7 +187,7 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python 
 outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs/topology/double-pipe-native outputs/topology/bend-native --labels Double-pipe Bend --output outputs/topology/native-preview.png
 ```
 
-连接脚本真实执行原生 Cut-cell 生成、Solver 质量门、独立 CM2D 读取/面积核对、原生低 Reynolds 数流动及独立离散方程审计。多个不连通流域逐个求解以提供独立压力参考，全部保留并汇总面积；任何一个失败均不能报告整例成功。失败分辨率和原始日志仍保留，不能挑图隐去失败。检测到本机 `checkMesh` 时实际运行标准检查，否则明确 `not-run`。
+连接脚本真实执行原生 Cut-cell 生成、Solver 质量门、独立 CM2D 读取/面积核对、原生低 Reynolds 数流动及独立离散方程审计。多个不连通流域逐个求解以提供独立压力参考，全部保留并汇总面积；任何一个失败均不能报告整例成功。仅位于全局设计域左右边界、覆盖规定孔口的面才能成为进出口，组件局部包围盒不能凭空产生端口。无入口或出口的分量会保留并明确拒绝，当前贯通流验证器尚未资格认定孤立区或盲腔。失败分辨率和原始日志仍保留，不能挑图隐去失败。检测到本机 `checkMesh` 时实际运行标准检查，否则明确 `not-run`。
 
 上述流动显式采用速度尺度 `.02`、运动黏度 `1`，按端口宽度算名义 Reynolds 数约 `.00333`；入口保持同形抛物线，出口改为原生压力出口。`1e-8` 是这两例为了通过既有独立方程审计所用的原生代数停止控制，未修改产品默认值或审计门。这一步证明提取几何能被原生网格/求解链接受；固体阻力、出口条件及离散格式均改变，不能把多孔分析的目标下降直接写成真实壁面 CFD 性能提升。`render_native_flow.py` 直接绘制接受网格多边形与原生 CSV，保留全部区域并记录源哈希。
 
@@ -203,11 +203,25 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python 
 outputs/topology-env/bin/python tools/optimization/render_native_flow.py outputs/topology/bend-sharp-comparison/baseline-level-7 outputs/topology/bend-sharp-comparison/candidate-level-7 --labels Baseline Optimized --shared-scales --output outputs/topology/bend-sharp-comparison.png
 ```
 
-`--small-alpha` 是原生已有的小单元守恒聚合触发比例，默认 .1；.25 不改变质量门、物理面积或边界折线，案例两边必须相同。它改变离散网格，因此结果和计时须绑定该参数。原 .1 配置有粗候选质量拒绝，记录保留；不能把不同配置最有利的几档拼成“同设置网格收敛”。工具默认会逐档计算完整成对结果，不复用不明来源的旧解。
+`--small-alpha` 是原生已有的小单元守恒聚合触发比例，默认 .1；.25 或 .4 不改变质量门、物理面积或边界折线，案例两边必须相同。它改变离散网格，因此结果和计时须绑定该参数。原 .1 配置有粗候选质量拒绝，记录保留；不能把不同配置最有利的几档拼成“同设置网格收敛”。工具默认逐档计算完整成对结果。可显式 `--reuse-baseline <既有比较目录>`，但必须具有相同基准 XY 哈希、端口、物性、迭代/停止控制、小单元设置和实际二进制，当前生成的边界条件还须逐字节相同；随后重新独立审计旧场并从面 CSV 重算指标。匹配失败即拒绝，不把缓存当作新一次 CFD 运行。
 
-`assessment` 分别保存每档改善、两方案最后两档压降变化，以及“细网格压降差减去上述变化之和”。只有全部指定档位成对有效、最后两档排名一致且该差为正，才置 `meshRobustImprovementObserved=true`。这只是保守的**已观察敏感性**标记，不是误差估计器、概率置信度或网格无关性证明。当前两档改善 2.81% / 2.39%，流道连通数始终为一，不能声称已实证发现新的分叉拓扑。
+`assessment` 分别保存每档改善、两方案最后两档压降变化，以及“细网格压降差减去上述变化之和”。只有全部指定档位成对有效、最后两档排名一致且该差为正，才置 `meshRobustImprovementObserved=true`。这只是保守的**已观察敏感性**标记，不是误差估计器、概率置信度或网格无关性证明。此前弯道两档改善 2.81% / 2.39%，流道连通数始终为一；连接关系变化由下述双通道研究单独验证。
 
-12 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入、预算与失败状态保存，以及真实面积匹配、端口保护和排名判断。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；成对网格实验也不是跨平台或通用物理精度验收。
+18 项相关测试覆盖解析 Poiseuille 单网格基本检查、两种目标/投影的伴随有限差分、体积导数、下降及约束、确定性、孔洞/多区域提取、非法输入、预算与失败状态保存，以及真实面积匹配、端口连通/人工端口拒绝、缓存混用拒绝和排名判断。敏感性汇总测试确保失败档位保留、不同聚合控制分开，不能拼成虚假的细化趋势。`tests/fixtures/topology_oc_stall.npz` 保留真实 OC 非下降失败时的设计变量与模型参数；测试重算流场，确认 OC 上升而梯度候选可行且下降，不依赖缓存的数值解。Poiseuille 的 2% 相对误差界仅针对 32×24 的低成本开发检查；成对网格实验也不是跨平台或通用物理精度验收。
+
+### 连接关系与初值敏感性
+
+双入口/双出口研究使用 2×1 设计域、流体面积上限 2/3、端口宽 1/6、96×48 分析格、滤波半径 .06、80/120/300 步预算。保持其他参数相同，分别比较高阻力均匀初值、高阻力合流初值及低阻力均匀初值。跨阻力的多孔目标值不能直接比较优劣；需要将各自轮廓提取为真实壁面再做同条件 CFD。
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --width 2 --nx 96 --ny 48 --alpha-max 1000000 --initialization uniform --iterations 80 120 300 --max-seconds 600 --no-plot --output outputs/topology/uniform-high
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --width 2 --nx 96 --ny 48 --alpha-max 1000000 --initialization merged --iterations 80 120 300 --max-seconds 600 --no-plot --output outputs/topology/merged-high
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --width 2 --nx 96 --ny 48 --alpha-max 25000 --initialization uniform --iterations 80 120 300 --max-seconds 600 --no-plot --output outputs/topology/uniform-low
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/compare_sharp_designs.py outputs/topology/uniform-low --output outputs/topology/connectivity-native --area-target budget --levels 6 7 --small-alpha 0.25 --iterations 4000 --timeout 300
+outputs/topology-env/bin/python tools/optimization/render_connectivity_study.py --runs outputs/topology/uniform-high outputs/topology/merged-high outputs/topology/uniform-low --comparisons outputs/topology/connectivity-native --output outputs/topology/connectivity.png
+```
+
+最后的命令保留所有提供的比较及失败网格证据，可用 `--comparisons` 追加其他已完成对照、`--mesh-probes` 记录只通过网格而未做流动的试验。`nativeSensitivity` 按几何及相同原生控制分组：`allAttemptedGrids` 包含失败档位，`acceptedPairsOnly` 仅给出明确列出的已审计配对敏感性；后者不能掩盖前者失败。图中不同颜色代表真实轮廓连通分量，不能当作流线或混合结果。当前数值与各分辨率的失败范围见 CURRENT_STATE 与证据 JSON；上述复现命令并不保证每一档网格或流动均通过。
 
 方法背景见 [Stokes 拓扑优化示例](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)。[已有 Cut-cell 流体拓扑优化研究](https://doi.org/10.1016/j.camwa.2021.06.002) 说明功能组合本身不构成原创性。后续可研究“多孔优化的候选排序能否在真实壁面 Cut-cell CFD 中保持，以及如何控制排序误差”；当前尚未完成该科研结论。
 

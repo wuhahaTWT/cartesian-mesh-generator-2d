@@ -352,3 +352,38 @@ class StokesBrinkman:
             else:
                 high = mid
         return candidate(high)
+
+    def gradient_candidate(self, x, evaluation, beta, move=0.15):
+        """Bounded gradient proposal corrected along the current volume gradient.
+
+        Clipping enforces moving bounds, and scalar bisection enforces the exact
+        nonlinear physical volume. The correction direction uses the CURRENT
+        volume derivative, so this is not an exact nonlinear metric projection.
+        The caller must backtrack and verify actual objective decrease.
+        """
+        if not 0 < move <= 1:
+            raise ValueError("move must be in (0,1]")
+        x = self.enforce_passive(x)
+        g = evaluation.gradient/max(np.max(np.abs(evaluation.gradient[self.design])), 1e-30)
+        v = evaluation.volume_gradient
+        lower, upper = np.maximum(0, x-move), np.minimum(1, x+move)
+        def candidate(multiplier):
+            return self.enforce_passive(np.clip(x-move*g-multiplier*v, lower, upper))
+        target = self.problem.volume_fraction
+        y = candidate(0)
+        if self.volume(y, beta)[0] <= target:
+            return y
+        low, high = 0., 1.
+        for _ in range(100):
+            if self.volume(candidate(high), beta)[0] <= target:
+                break
+            high *= 2
+        else:
+            raise ArithmeticError("gradient volume correction could not be bracketed")
+        for _ in range(55):
+            mid = (low+high)/2
+            if self.volume(candidate(mid), beta)[0] > target:
+                low = mid
+            else:
+                high = mid
+        return candidate(high)

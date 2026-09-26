@@ -11,6 +11,7 @@ from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 
 import numpy as np
 
@@ -74,7 +75,7 @@ def prepare_design(directory, source_field, model, target, label):
     directory.mkdir(parents=True)
     # This is an extraction field, not a new porous solution: do not copy u/p.
     np.savez_compressed(directory/"final.npz", rho=field, width=model.problem.width, height=model.problem.height)
-    extracted = extract(directory)
+    extracted = extract(directory, problem=asdict(model.problem))
     metadata = dict(schema="cartmesh2d-sharp-design-v1", label=label, problem=asdict(model.problem),
                     sourceField=str(source_field.resolve()),
                     sourceFieldSha256=hashlib.sha256(source_field.read_bytes()).hexdigest(),
@@ -140,6 +141,51 @@ def assess(rows):
     return result
 
 
+def reuse_baseline(source, design, controls, level, args):
+    """Reuse only identical geometry/controls/binaries after a fresh equation audit."""
+    path = source.resolve(strict=True)/"summary.json"
+    old = json.loads(path.read_text())
+    for key in ("speed", "nu", "tolerance", "iterations", "smallAlpha"):
+        if old["controls"].get(key) != controls[key]:
+            raise ValueError(f"baseline reuse rejected: different {key}")
+    if old["designs"]["baseline"]["extraction"]["boundarySha256"] != design["extraction"]["boundarySha256"]:
+        raise ValueError("baseline reuse rejected: different boundary")
+    for key in ("width", "height", "port_width", "case"):
+        if old["problem"][key] != design["problem"][key]:
+            raise ValueError(f"baseline reuse rejected: different port parameter {key}")
+    row = next((row for row in old["rows"] if row["level"] == level and row.get("baseline")), None)
+    if row is None:
+        raise ValueError(f"baseline reuse requires a completed baseline at level {level}")
+    directory = Path(row["baselineOutput"])
+    native_path = directory/"summary.json"
+    native = json.loads(native_path.read_text())
+    if flow_metrics(native) is None:
+        raise ValueError("baseline reuse requires valid native flow and topology")
+    for leaf in native.get("components", [native]):
+        for executable in (args.mesh_cli.resolve(), args.flow_cli.resolve()):
+            if leaf["executables"].get(str(executable)) != native_bridge.sha(executable):
+                raise ValueError("baseline reuse rejected: binary changed")
+        case = next(case for case in leaf["cases"] if case["status"] == "flow-audited")
+        mesh = Path(case["mesh"]["path"])
+        if native_bridge.sha(mesh) != case["mesh"]["sha256"]:
+            raise ValueError("baseline reuse rejected: mesh changed")
+        flow, boundary = mesh.parent/"flow", mesh.parent/"flow.boundaries"
+        with tempfile.TemporaryDirectory() as temporary:
+            regenerated = Path(temporary)/"boundaries"
+            native_bridge.parabolic_boundaries(mesh.parent/"template.boundaries", regenerated,
+                                                design["problem"], args.speed)
+            if regenerated.read_bytes() != boundary.read_bytes():
+                raise ValueError("baseline reuse rejected: boundary conditions changed")
+        options = native_bridge.native.argument_parser().parse_args(["--max-iterations", str(args.iterations)])
+        audit = native_bridge.native.verify_case(mesh, flow, "custom", args.nu, args.speed, options)
+        if not audit["valid"]:
+            raise ValueError("baseline reuse rejected by fresh independent equation audit")
+        case["metrics"] = native_bridge.pressure_metrics(flow, boundary, design["problem"], args.speed, args.nu)
+    return directory, flow_metrics(native), dict(source=str(path), sourceSha256=native_bridge.sha(path),
+        nativeSummarySha256=native_bridge.sha(native_path), independentlyReaudited=True,
+        statement="No CFD rerun; geometry, binaries and regenerated boundary conditions match, equations reaudited, metrics recalculated from face CSV.")
+
+
 def run(args):
     source, root = args.directory.resolve(strict=True), args.output.resolve()
     if root.exists():
@@ -169,6 +215,12 @@ def run(args):
         row = dict(level=level)
         report["rows"].append(row)
         for label in ("baseline", "candidate"):
+            if label == "baseline" and args.reuse_baseline is not None:
+                output, metric, provenance = reuse_baseline(args.reuse_baseline, report["designs"][label],
+                                                            report["controls"], level, args)
+                row[label], row[label+"Output"], row["baselineReuse"] = metric, str(output), provenance
+                write_json(root/"summary.json", report)
+                continue
             output = root/f"{label}-level-{level}"
             controls = argparse.Namespace(directory=root/label, output=output, mesh_cli=args.mesh_cli,
                         flow_cli=args.flow_cli, levels=[level], timeout=args.timeout, iterations=args.iterations,
@@ -207,6 +259,8 @@ def parser():
     p.add_argument("--nu", type=float, default=1)
     p.add_argument("--tolerance", type=float, default=1e-8)
     p.add_argument("--small-alpha", type=float, default=.1)
+    p.add_argument("--reuse-baseline", type=Path,
+                   help="completed comparison with identical baseline; strict provenance checks and fresh equation audit")
     return p
 
 

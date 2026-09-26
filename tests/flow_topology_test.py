@@ -8,6 +8,8 @@ development tolerance, not a grid-convergence or industrial qualification.
 from contextlib import redirect_stdout
 import io
 import json
+from dataclasses import asdict
+import shlex
 import sys
 from pathlib import Path
 import tempfile
@@ -18,10 +20,12 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"tools"/"optimization"))
 from brinkman import Problem, StokesBrinkman, port_average
-from topology_artifacts import contours, signed_area
+from topology_artifacts import contours, port_connectivity, signed_area
 from optimize_flow import parser, run, stationarity
-from optimize_flow import reference_design
-from compare_sharp_designs import assess, match_sharp_area
+from optimize_flow import initial_design, reference_design
+from compare_sharp_designs import assess, match_sharp_area, reuse_baseline
+from verify_extracted_flow import parabolic_boundaries
+from render_connectivity_study import grouped_sensitivity
 
 
 class FlowTopologyTest(unittest.TestCase):
@@ -215,6 +219,110 @@ class FlowTopologyTest(unittest.TestCase):
         unequal["candidate"]["inletFlux"] = .5
         with self.assertRaises(ValueError):
             assess([unequal])
+
+    def test_real_oc_stall_has_feasible_gradient_descent(self):
+        # Preserve the observed failure's design only, not a cached flow field.
+        fixture = Path(__file__).with_name("fixtures")/"topology_oc_stall.npz"
+        with np.load(fixture) as saved:
+            m = StokesBrinkman(Problem(**json.loads(str(saved["problem"]))))
+            x = saved["design"].ravel()
+            q, beta = float(saved["q"]), float(saved["beta"])
+        e = m.evaluate(x, q, beta)
+        oc = m.oc_candidate(x, e, beta)
+        self.assertGreater(e.gradient@(oc-x), 0)
+        self.assertGreater(m.evaluate(oc, q, beta).objective, e.objective)
+        candidate = m.gradient_candidate(x, e, beta)
+        updated = m.evaluate(candidate, q, beta)
+        self.assertLess(e.gradient@(candidate-x), 0)
+        self.assertLess(updated.objective, e.objective)
+        self.assertLessEqual(updated.volume, m.problem.volume_fraction+1e-10)
+        self.assertLessEqual(np.max(np.abs(candidate-x)), .15+1e-12)
+        np.testing.assert_array_equal(candidate[~m.design], x[~m.design])
+
+    def test_initialization_records_explicit_connected_seed(self):
+        m = StokesBrinkman(Problem(nx=48, ny=24, width=2))
+        for name, count in (("geometric", 2), ("merged", 1)):
+            x = initial_design(m, name)
+            rho = m.physical(x, 0)[0].reshape(m.ny, m.nx)
+            groups = contours(rho, 2, 1)
+            self.assertEqual(len(groups), count)
+            reachability = port_connectivity(groups, asdict(m.problem))
+            self.assertTrue(reachability["allPortsCovered"])
+            self.assertEqual(reachability["inletToOutletReachability"],
+                             [[True, False], [False, True]] if name == "geometric" else [[True, True], [True, True]])
+            self.assertLessEqual(m.volume(x, 0)[0], m.problem.volume_fraction+1e-10)
+            np.testing.assert_array_equal(x[~m.design], m.fixed_design[~m.design])
+        with self.assertRaises(ValueError):
+            initial_design(StokesBrinkman(Problem(case="bend")), "merged")
+
+    def test_driver_recovers_from_non_descent_oc_proposal(self):
+        with tempfile.TemporaryDirectory() as temporary, redirect_stdout(io.StringIO()):
+            args = parser().parse_args(["--output", str(Path(temporary)/"run"),
+                                        "--nx", "18", "--ny", "12", "--port-width", ".25",
+                                        "--filter-radius", ".12", "--iterations", "1", "--no-plot"])
+            def stalled(model, x, evaluation, beta, move):
+                return x.copy()
+            with patch.object(StokesBrinkman, "oc_candidate", stalled):
+                report = run(args)
+            self.assertEqual(sum(s["gradientSteps"] for s in report["stages"]), 3)
+            for stage in report["stages"]:
+                self.assertLess(stage["final"]["objective"], stage["initial"]["objective"])
+                self.assertLessEqual(stage["final"]["volumeFraction"], args.volume+1e-10)
+
+    def test_internal_component_cannot_receive_artificial_ports(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source, target = Path(temporary)/"template", Path(temporary)/"boundaries"
+            source.write_text('CARTMESH2D_FLOW_BOUNDARIES 1\nCOUNTS 1 5 5\n'
+                'BOUNDARY 0 0 0.5 0.25 -0.1 0 velocity-inlet "inlet" .02 0 0\n'
+                'BOUNDARY 1 0 1.5 0.25 0.1 0 pressure-outlet "outlet" 0 0 0\n'
+                'BOUNDARY 2 0 0 0.25 -0.1 0 velocity-inlet "inlet" .02 0 0\n'
+                'BOUNDARY 3 0 2 0.75 0.1 0 pressure-outlet "outlet" 0 0 0\n'
+                'BOUNDARY 4 0 2 0.95 0.02 0 pressure-outlet "outlet" 0 0 0\n')
+            counts = parabolic_boundaries(source, target, asdict(Problem(width=2)), .02)
+            self.assertEqual(counts, dict(inletFaces=1, outletFaces=1, closedArtificialOpenings=3))
+            rows = {int(row[1]):row for line in target.read_text().splitlines()
+                    if line.startswith('BOUNDARY ') for row in [shlex.split(line)]}
+            for index in (0, 1, 4):
+                self.assertEqual(rows[index][7], "wall")
+                self.assertEqual(rows[index][9:12], ["0", "0", "0"])
+
+    def test_cached_baseline_cannot_cross_physical_controls_or_geometry(self):
+        # A cache from another experiment must fail before reading any field.
+        controls = dict(speed=.02, nu=1., tolerance=1e-8, iterations=4000, smallAlpha=.25)
+        design = dict(problem=asdict(Problem(width=2)), extraction=dict(boundarySha256="exact-boundary"))
+        old = dict(controls=controls, designs=dict(baseline=design), problem=design["problem"], rows=[])
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory/"summary.json").write_text(json.dumps(old))
+            for key, value in (("speed", .01), ("nu", .5), ("tolerance", 1e-6), ("smallAlpha", .1)):
+                with self.subTest(key=key), self.assertRaisesRegex(ValueError, "different "+key):
+                    reuse_baseline(directory, design, dict(controls, **{key:value}), 6, None)
+            other = dict(design, extraction=dict(boundarySha256="other-boundary"))
+            with self.assertRaisesRegex(ValueError, "different boundary"):
+                reuse_baseline(directory, other, controls, 6, None)
+            other = dict(design, problem=dict(design["problem"], port_width=.2))
+            with self.assertRaisesRegex(ValueError, "different port parameter"):
+                reuse_baseline(directory, other, controls, 6, None)
+            with self.assertRaisesRegex(ValueError, "completed baseline"):
+                reuse_baseline(directory, design, controls, 6, None)
+
+    def test_sensitivity_keeps_rejections_and_separates_mesh_controls(self):
+        def report(level, alpha, candidate):
+            return dict(controls=dict(levels=[level], smallAlpha=alpha), problem=asdict(Problem(width=2)),
+                        source=dict(path=f"level-{level}-{alpha}"),
+                        designs={key:dict(extraction=dict(boundarySha256=key)) for key in ("baseline", "candidate")},
+                        rows=[dict(level=level, baseline=dict(inletFlux=1, fluxWeightedPressureDrop=10),
+                                   candidate=dict(inletFlux=1, fluxWeightedPressureDrop=candidate) if candidate else None)])
+        data = grouped_sensitivity([report(5, .25, None), report(6, .25, 6), report(7, .25, 5.9), report(7, .4, 5.8)])
+        self.assertEqual(len(data), 2)
+        first = data[0]
+        self.assertFalse(first["allAttemptedGrids"]["meshRobustImprovementObserved"])
+        self.assertEqual(first["allAttemptedGrids"]["unpairedLevels"], [5])
+        self.assertEqual(first["acceptedPairsOnly"]["levels"], [6, 7])
+        self.assertTrue(first["acceptedPairsOnly"]["assessment"]["meshRobustImprovementObserved"])
+        self.assertFalse(data[1]["acceptedPairsOnly"]["assessment"]["meshRobustImprovementObserved"])
+        with self.assertRaisesRegex(ValueError, "duplicate grid"):
+            grouped_sensitivity([report(6, .25, 6), report(6, .25, 5)])
 
 
 if __name__ == "__main__":

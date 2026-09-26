@@ -51,6 +51,9 @@ def parabolic_boundaries(source, target, problem, speed):
     centres = [problem["height"]/4]
     if problem["case"] == "double-pipe":
         centres.append(3*problem["height"]/4)
+    right_centres = centres if problem["case"] == "double-pipe" else [3*problem["height"]/4]
+    coordinate_tolerance = 1e-11+1e-9*max(problem["width"], problem["height"])
+    counts = dict(inletFaces=0, outletFaces=0, closedArtificialOpenings=0)
     rows = []
     for line in source.read_text().splitlines():
         if not line.startswith("BOUNDARY "):
@@ -59,20 +62,53 @@ def parabolic_boundaries(source, target, problem, speed):
         fields = shlex.split(line)
         if len(fields) != 12:
             raise ValueError("invalid native boundary export")
-        if fields[7] == "velocity-inlet":
+        if fields[7] in ("velocity-inlet", "pressure-outlet"):
             y, length = float(fields[4]), abs(float(fields[5]))
             if length <= 0 or abs(float(fields[6])) > 1e-12*length:
-                raise ValueError("topology prototype only supports vertical inlet faces")
-            velocity = speed*sum(port_average(y-length/2, y+length/2, c, problem["port_width"])
-                                 for c in centres)
-            if velocity > 0:
+                raise ValueError("topology prototype only supports vertical port faces")
+            x = float(fields[3])
+            inlet = fields[7] == "velocity-inlet"
+            port_centres = centres if inlet else right_centres
+            actual_side = abs(x-(0 if inlet else problem["width"])) <= coordinate_tolerance
+            profile = sum(port_average(y-length/2, y+length/2, c, problem["port_width"]) for c in port_centres)
+            if actual_side and profile > 0 and inlet:
+                velocity = speed*profile
                 fields[9] = format(velocity, ".17g")
                 fields[8] = "inlet_"+str(min(range(len(centres)), key=lambda i:abs(y-centres[i])))
+                counts["inletFaces"] += 1
+            elif actual_side and profile > 0:
+                fields[8] = "outlet_"+str(min(range(len(right_centres)), key=lambda i:abs(y-right_centres[i])))
+                counts["outletFaces"] += 1
             else:
-                fields[7], fields[8], fields[9] = "wall", "closed_end", "0"
+                fields[7:12] = ["wall", "closed_end", "0", "0", "0"]
+                counts["closedArtificialOpenings"] += 1
         fields[8] = json.dumps(fields[8])
         rows.append(" ".join(fields))
     target.write_text("\n".join(rows)+"\n")
+    return counts
+
+
+def pressure_metrics(flow, boundary, problem, speed, viscosity):
+    with Path(str(flow)+".faces.csv").open() as stream:
+        faces = {int(row["face"]):row for row in csv.DictReader(stream)}
+    inlet_power, outlet_power, inlet_flux, outlet_flux = 0.0, 0.0, 0.0, 0.0
+    for line in boundary.read_text().splitlines():
+        if not line.startswith("BOUNDARY "):
+            continue
+        fields = shlex.split(line)
+        face = faces[int(fields[1])]
+        flux, pressure = float(face["flux"]), float(face["pressure"])
+        if fields[7] == "velocity-inlet":
+            inlet_flux -= flux; inlet_power -= pressure*flux
+        elif fields[7] == "pressure-outlet":
+            outlet_flux += flux; outlet_power += pressure*flux
+    if inlet_flux <= 0:
+        raise ValueError("pressure-drop comparison requires a positive inlet throughput")
+    return dict(inletFlux=inlet_flux, outletFlux=outlet_flux,
+                pressurePower=inlet_power-outlet_power,
+                fluxWeightedPressureDrop=(inlet_power-outlet_power)/inlet_flux,
+                speed=speed, viscosity=viscosity,
+                nominalReynolds=speed*problem["port_width"]/viscosity)
 
 
 def run(args):
@@ -176,7 +212,13 @@ def run(args):
         item["runs"].append(boundary_run)
         if boundary_run["returncode"] != 0:
             item["status"] = "boundary-rejected"; save(); continue
-        parabolic_boundaries(template, boundary, research["problem"], args.speed)
+        ports = parabolic_boundaries(template, boundary, research["problem"], args.speed)
+        item["ports"] = ports
+        if not ports["inletFaces"] or not ports["outletFaces"]:
+            item["status"] = "ports-rejected"
+            item["issue"] = "A component without both global inlet and outlet ports is retained but not qualified by this through-flow bridge."
+            save()
+            continue
         flow = case/"flow"
         command = [flow_cli, "--mesh", mesh_path, "--case", "custom", "--boundary", boundary,
                    "--output", flow, "--nu", args.nu, "--speed", args.speed,
@@ -200,24 +242,7 @@ def run(args):
         report["independentFlowPassed"] = bool(audit["valid"])
         item["status"] = "flow-audited" if audit["valid"] else "flow-audit-failed"
         item["independentFlowIssues"] = audit["issues"]
-        with Path(str(flow)+".faces.csv").open() as stream:
-            faces = {int(row["face"]):row for row in csv.DictReader(stream)}
-        inlet_power, outlet_power, inlet_flux, outlet_flux = 0.0, 0.0, 0.0, 0.0
-        for line in boundary.read_text().splitlines():
-            if not line.startswith("BOUNDARY "):
-                continue
-            fields = shlex.split(line)
-            face = faces[int(fields[1])]
-            flux, pressure = float(face["flux"]), float(face["pressure"])
-            if fields[7] == "velocity-inlet":
-                inlet_flux -= flux; inlet_power -= pressure*flux
-            elif fields[7] == "pressure-outlet":
-                outlet_flux += flux; outlet_power += pressure*flux
-        item["metrics"] = dict(inletFlux=inlet_flux, outletFlux=outlet_flux,
-                               pressurePower=inlet_power-outlet_power,
-                               fluxWeightedPressureDrop=(inlet_power-outlet_power)/inlet_flux,
-                               speed=args.speed, viscosity=args.nu,
-                               nominalReynolds=args.speed*research["problem"]["port_width"]/args.nu)
+        item["metrics"] = pressure_metrics(flow, boundary, research["problem"], args.speed, args.nu)
         save()
         break
     if not report["meshAccepted"]:

@@ -1,0 +1,44 @@
+{
+  "schema": "cartmesh2d-topology-native-preview-v1",
+  "cases": [
+    {
+      "label": "Reference: independent pipes",
+      "cells": 17280,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/mesh.solver.cm2d",
+          "meshSha256": "540b0d3f6c87aab098bc277bde8aeb8eb35deff8a69c7655efb4226ce2cc8f7b",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-0/level-7/flow.cells.csv",
+          "fieldSha256": "98de58f30c9c514e357b74940acf508ebff1141de2deba50d725258df0436c63"
+        },
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/mesh.solver.cm2d",
+          "meshSha256": "be635cdc475ef6b748dfad634a12f16c43a73b41c389fcc044ad8a711500f9a9",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-merged-native/baseline-level-7/component-1/level-7/flow.cells.csv",
+          "fieldSha256": "c77d06dbfe4f889d648e4863a1082a11947ae3bd1589ba0b3c953e6e1036eeb7"
+        }
+      ],
+      "iterations": [
+        2195,
+        2981
+      ]
+    },
+    {
+      "label": "Optimized: shared trunk",
+      "cells": 6747,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/mesh.solver.cm2d",
+          "meshSha256": "7303c2fa4e4417cb312993e66695fd56219b28ce0b1476abe63230000b5903fd",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology-iteration/double-pipe-automatic-native/candidate-level-7/level-7/flow.cells.csv",
+          "fieldSha256": "87d3dfddd71073159327890476571c2b6af00a31b47c9a344e3c0a8a41ded4f7"
+        }
+      ],
+      "iterations": [
+        2748
+      ]
+    }
+  ],
+  "sharedColorScales": true,
+  "fieldRendering": "One constant scalar per actual native polygon; no interpolated or fabricated field."
+}

@@ -110,6 +110,33 @@ def reference_design(model, beta):
     return model.feasible_design(x, beta)
 
 
+def initial_design(model, kind):
+    if kind == "uniform":
+        return model.uniform_design()
+    if kind == "geometric":
+        return reference_design(model, 0)
+    if kind != "merged" or model.problem.case != "double-pipe":
+        raise ValueError("merged initialization is only defined for the double-pipe case")
+    # Deliberately specified merge/split seed, NOT an automatically discovered
+    # topology. Only the initialization is prescribed; all interior cells remain
+    # design variables and may reconnect during optimization.
+    p = model.problem
+    x = np.zeros(model.cells)
+    for i in range(model.nx):
+        t = (i+.5)/model.nx
+        distance = min(t, 1-t)
+        if distance < .25:
+            centres = [p.height*(.25+distance), p.height*(.75-distance)]
+            half_width = p.volume_fraction*p.height/4
+        else:
+            centres = [p.height/2]
+            half_width = np.sqrt(2)*p.volume_fraction*p.height/4
+        for j in range(model.ny):
+            y = (j+.5)*model.dy
+            x[model.c(i, j)] = float(any(abs(y-c) <= half_width for c in centres))
+    return model.feasible_design(x, 0)
+
+
 def run(args):
     root = args.output.resolve()
     if root.exists():
@@ -119,7 +146,7 @@ def run(args):
                       alpha_max=args.alpha_max, case=args.case, port_width=args.port_width)
     model = StokesBrinkman(problem)
     # Construct/validate the initial design before creating any output directory.
-    x = model.uniform_design()
+    x = initial_design(model, args.initialization)
     root.mkdir(parents=True)
     (root/"snapshots").mkdir()
     os.environ.setdefault("MPLCONFIGDIR", str(root/"plot-cache"))
@@ -129,8 +156,11 @@ def run(args):
     report = dict(schema="cartmesh2d-fluid-topology-v1", experimental=True,
                   model="nondimensional 2D Stokes-Brinkman, staggered finite volume",
                   objective=args.objective, problem=asdict(problem),
-                  optimizer="filtered/projected OC with feasible-volume bisection and backtracking",
+                  initialization=dict(kind=args.initialization, connectivitySpecified=args.initialization != "uniform",
+                      note="Uniform porous field has no prescribed interior path; other seeds prescribe the starting pattern only."),
+                  optimizer="filtered/projected OC with feasible-volume correction, gradient fallback and backtracking",
                   controls=dict(stages=stages, stageIterations=budgets, move=args.move,
+                                initialization=args.initialization, update=args.update,
                                 stationarityTolerance=args.stationarity_tolerance,
                                 maxSeconds=args.max_seconds),
                   analysisIsProductFluidMesh=False, physicalAccuracyQualified=False,
@@ -148,7 +178,7 @@ def run(args):
             stage_evaluation = model.evaluate(stage_x, q, beta, args.objective)
             x, current = stage_x, stage_evaluation
             record = dict(stage=stage, q=q, beta=beta, initial=metrics(model, x, current),
-                          status="iteration-limit", accepted=0, rejectedTrials=0)
+                          status="iteration-limit", accepted=0, rejectedTrials=0, gradientSteps=0)
             report["stages"].append(record)
             snapshot(root/"accepted-design.npz", model, x, current, q, beta)
             snapshot(root/"snapshots"/f"stage-{stage}-initial.npz", model, x, current, q, beta)
@@ -163,26 +193,41 @@ def run(args):
                 if time.monotonic()-start >= args.max_seconds:
                     record["status"] = "time-limit"
                     break
-                move = args.move
                 accepted = False
-                for trial in range(10):
-                    proposal = model.oc_candidate(x, current, beta, move)
-                    candidate = model.evaluate(proposal, q, beta, args.objective)
-                    # Small allowance is floating-point objective repeatability,
-                    # not a relaxation of any physical or solver acceptance gate.
-                    if (candidate.volume <= problem.volume_fraction+1e-10 and
-                            candidate.objective <= current.objective+1e-11*max(current.objective, 1.0)):
-                        accepted = True
+                methods = ["oc", "gradient"] if args.update == "hybrid" else [args.update]
+                for method in methods:
+                    move = args.move
+                    update = model.oc_candidate if method == "oc" else model.gradient_candidate
+                    for trial in range(12):
+                        proposal = update(x, current, beta, move)
+                        predicted = float(current.gradient@(proposal-x))
+                        # A vanishing/non-descent OC proposal must not prevent
+                        # trying the gradient fallback at a nonstationary point.
+                        if predicted >= -1e-13*max(current.objective, 1.0):
+                            record["rejectedTrials"] += 1
+                            if method == "oc":
+                                break
+                            move *= .5
+                            continue
+                        candidate = model.evaluate(proposal, q, beta, args.objective)
+                        if (candidate.volume <= problem.volume_fraction+1e-10 and
+                                candidate.objective <= current.objective+1e-4*predicted+
+                                1e-11*max(current.objective, 1.0)):
+                            accepted = True
+                            break
+                        move *= .5
+                        record["rejectedTrials"] += 1
+                    if accepted:
                         break
-                    move *= .5
-                    record["rejectedTrials"] += 1
                 if not accepted:
                     record["status"] = "line-search-stalled"
                     break
                 row["acceptedChange"] = float(np.max(np.abs(proposal-x)))
+                row["acceptedMethod"] = method
                 x, current = proposal, candidate
                 snapshot(root/"accepted-design.npz", model, x, current, q, beta)
                 record["accepted"] += 1
+                record["gradientSteps"] += int(method == "gradient")
                 global_iteration += 1
                 if global_iteration % args.snapshot_every == 0:
                     snapshot(root/"snapshots"/f"accepted-{global_iteration:04d}.npz", model, x, current, q, beta)
@@ -262,6 +307,8 @@ def parser():
     p.add_argument("--filter-radius", type=float, default=.06)
     p.add_argument("--alpha-max", type=float, default=25000)
     p.add_argument("--objective", choices=["dissipation", "pressure-power"], default="dissipation")
+    p.add_argument("--initialization", choices=["uniform", "geometric", "merged"], default="uniform")
+    p.add_argument("--update", choices=["hybrid", "oc", "gradient"], default="hybrid")
     p.add_argument("--iterations", nargs="+", type=int, default=[25, 40, 60])
     p.add_argument("--move", type=float, default=.15)
     p.add_argument("--stationarity-tolerance", type=float, default=1e-3,

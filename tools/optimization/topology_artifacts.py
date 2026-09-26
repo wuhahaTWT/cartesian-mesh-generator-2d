@@ -51,11 +51,49 @@ def signed_area(loop):
                         loop[:, 1]*np.roll(loop[:, 0], -1))/2)
 
 
-def extract(root, threshold=.5):
+def port_connectivity(groups, problem):
+    """Geometric port reachability, not a mixing/flow-transfer matrix."""
+    width, height = problem["width"], problem["height"]
+    centres = [height/4, 3*height/4] if problem["case"] == "double-pipe" else [height/4]
+    right = centres if problem["case"] == "double-pipe" else [3*height/4]
+    ports = [(f"inlet_{i}", 0., y) for i, y in enumerate(centres)]
+    ports += [(f"outlet_{i}", width, y) for i, y in enumerate(right)]
+    tolerance = 1e-11+1e-9*max(width, height)
+    coverage = np.zeros((len(groups), len(ports)))
+    for component, group in enumerate(groups):
+        loop = group[0]
+        for index, (_, x, y) in enumerate(ports):
+            intervals = []
+            lo, hi = y-problem["port_width"]/2, y+problem["port_width"]/2
+            for a, b in zip(loop, np.roll(loop, -1, axis=0)):
+                if abs(a[0]-x) <= tolerance and abs(b[0]-x) <= tolerance:
+                    start, end = max(lo, min(a[1], b[1])), min(hi, max(a[1], b[1]))
+                    if end > start:
+                        intervals.append((start, end))
+            # Union avoids double counting shared endpoint representations.
+            end = -float("inf")
+            for start, stop in sorted(intervals):
+                coverage[component, index] += max(0, stop-max(start, end))
+                end = max(end, stop)
+    present = coverage > tolerance
+    count = len(centres)
+    matrix = [[bool(np.any(present[:, i] & present[:, count+j])) for j in range(len(right))]
+              for i in range(count)]
+    total = np.sum(coverage, axis=0)
+    return dict(ports=[name for name, _, _ in ports], coverageLengths=coverage.tolist(),
+                allPortsCovered=bool(np.all(np.abs(total-problem["port_width"]) <= tolerance)),
+                componentPorts=[[ports[i][0] for i in range(len(ports)) if present[c, i]] for c in range(len(groups))],
+                inletToOutletReachability=matrix,
+                meaning="Paths within the same fluid component; not measured flow splitting or molecular mixing.")
+
+
+def extract(root, threshold=.5, problem=None):
     root = Path(root)
     with np.load(root/"final.npz") as f:
         rho, width, height = f["rho"], float(f["width"]), float(f["height"])
     groups = contours(rho, width, height, threshold)
+    if problem is None and (root/"summary.json").exists():
+        problem = json.loads((root/"summary.json").read_text()).get("problem")
     def write_boundary(path, selected):
         with path.open("w") as f:
             f.write("# Fluid interior of rho isocontour; use explicit interior mode.\n")
@@ -86,6 +124,8 @@ def extract(root, threshold=.5):
                    boundarySha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                    topologyQualified=False, solverQualityQualified=False,
                    note="Contour construction only. Sharp-wall extraction changes the porous model; native checks required.")
+    if problem is not None:
+        records["portConnectivity"] = port_connectivity(groups, problem)
     (root/"extraction.json").write_text(json.dumps(records, indent=2)+"\n")
     # Standalone vector preview of exactly the exported polygon coordinates.
     paths = []
