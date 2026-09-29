@@ -1,6 +1,6 @@
 {
   "schema": "cartmesh2d-reacting-flame-v1",
-  "snapshot_utc": "2026-09-29T21:42:15.089889+00:00",
+  "snapshot_utc": "2026-09-29T21:45:24.589210+00:00",
   "branch": "codex/cfd-development",
   "source_base": "5307a170d42343be72a480f1795189fe0e116386",
   "mature_combustion_goal_complete": false,
@@ -109,7 +109,43 @@
     "completed_case_elapsed_seconds_including_IO": 216.4834457920515,
     "performance_scope": "Wall time with other validation jobs running; no general performance claim. Two-second sampling retained for follow-up.",
     "frontend_app_platform_ci": "not run for this native module milestone",
-    "external_checkMesh": "not run; native topology and independent reader checks do not replace it"
+    "external_checkMesh": "not run; native topology and independent reader checks do not replace it",
+    "additional_completed_native_cases": [
+      {
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 610,
+        "spacing_m": 2e-05,
+        "time_s": 1e-06,
+        "accepted_steps": 1309,
+        "rejections": 0,
+        "failure": "",
+        "thermo_relative_error": 1.3823534884773523e-14,
+        "source_error_over_gross_activity": 2.0949013650956473e-15,
+        "face_assembly_relative_error": 8.840590013513022e-17,
+        "species_sum_absolute_error": 6.195044477408373e-14,
+        "mass_budget_per_initial_mass": 1.586810681522857e-15,
+        "energy_budget_scaled": 1.80698049289283e-12,
+        "momentum_budget_scaled": 3.877738320306351e-16,
+        "element_budget_per_initial_mass": 1.4345757310863221e-15,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.22549780782468487,
+          "maximum_temperature_derivative_K_per_s": 439124.8590991177,
+          "hydrogen_consumption_kg_per_m2_s": 0.038088056500448844,
+          "pressure_max_relative_to_reference": 0.00020267482316671526
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.20610111731200237,
+          "maximum_temperature_derivative_K_per_s": 550983.703902973,
+          "hydrogen_consumption_kg_per_m2_s": 0.038383846340701216,
+          "pressure_max_relative_to_reference": 0.00018351643867364764
+        },
+        "maximum_temperature_drift_K": 0.47588287526741624,
+        "field_sha256": "c1d314de8466c345620226f8987438e77b4c76c460a4e3d10b51a65099a59627",
+        "elapsed_seconds_including_all_IO": 788.1567899579532
+      }
+    ]
   },
   "reference": {
     "composition": "H2:1.6,O2:1,N2:3.76",
@@ -160,13 +196,6 @@
   "reference_interpretation": "Independent steady BVP uses constant thermodynamic pressure; native FV retains longitudinal kinetic energy and viscous work. Reference flame speed is not a native prediction.",
   "open_calculations_at_snapshot": [
     {
-      "cells": 610,
-      "spacing_m": 2e-05,
-      "requested_time_s": 1e-06,
-      "status": "running; not qualified",
-      "directory": "outputs/combustion-foundation/flame-native-comparison-004/native-1"
-    },
-    {
       "cells": 890,
       "spacing_m": 1e-05,
       "requested_time_s": 1e-06,
@@ -203,7 +232,12 @@
     "outputs/combustion-foundation/flame-reference-001/profile-0.json": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de",
     "outputs/combustion-foundation/flame-reference-001/reference-2.yaml": "d237dc172803f0a80a055c084734c96e7849d841e9aabf3db3305c401836d6dc",
     "outputs/combustion-foundation/flame-reference-001/reference-0.yaml": "99b352edfae9aafebd8b38c7643c82bde1e47c6845d9a55d607846068a532ed3",
-    "outputs/combustion-foundation/flame-reference-001/reference-1.yaml": "f4148e43809ee08caed76426f84acc3249d8d63afc48afecc46d407aa8348191"
+    "outputs/combustion-foundation/flame-reference-001/reference-1.yaml": "f4148e43809ee08caed76426f84acc3249d8d63afc48afecc46d407aa8348191",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/field.json": "c1d314de8466c345620226f8987438e77b4c76c460a4e3d10b51a65099a59627",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/audit.json": "29d18c358d66ebed2f40595d7c28ab12e496a883f8d596c183bde7fe7fbebae7",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/steps.jsonl": "66d8bd591c4c794e744f5d7836f62f6674bd2e09ad4b598e64b6d577d68f9d43",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/accepted.checkpoint": "b79ad5e13b06ecb5c902ee252ef651f2a619a616824f33f1a12118d82149b6ed",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7"
   },
   "preview": {
     "path": "artifacts/current/native-reacting-flame.png",
@@ -216,5 +250,6 @@
     "full-cost explicit/implicit advancement work",
     "actual target geometry, appropriate turbulence/spray/radiation/heat-transfer models and experiments",
     "product input/output, App and platform qualification"
-  ]
+  ],
+  "source_commit": "856f7f7c3eda3bbfaa59086b670b6ab50a0ec1cf"
 }
