@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <array>
+#include <map>
 #include <stdexcept>
 #include <utility>
 
@@ -26,7 +28,8 @@ ReactingDiffusionOperator2D::ReactingDiffusionOperator2D(FvMesh2D mesh,
                 "invalid or duplicate boundary face");
         require(b.kind == ReactingDiffusionBoundaryKind2D::AdiabaticWall
                 || b.kind == ReactingDiffusionBoundaryKind2D::IsothermalWall
-                || b.kind == ReactingDiffusionBoundaryKind2D::Reservoir, "invalid boundary kind");
+                || b.kind == ReactingDiffusionBoundaryKind2D::Reservoir
+                || b.kind == ReactingDiffusionBoundaryKind2D::ZeroFluxOutflow, "invalid boundary kind");
         require((b.kind == ReactingDiffusionBoundaryKind2D::Reservoir) == b.reservoir.has_value(),
                 "reservoir state missing or inactive");
         require(b.kind == ReactingDiffusionBoundaryKind2D::IsothermalWall
@@ -84,7 +87,7 @@ std::vector<Vector2D> ReactingDiffusionOperator2D::gradients(const Stencil& sten
 }
 
 ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::DetailedGas& gas,
-    const std::vector<chemistry::GasState>& states) const {
+    const std::vector<chemistry::GasState>& states, bool estimateRate) const {
     require(states.size() == mesh_.cells.size(), "state/mesh cell count mismatch");
     const auto ns = gas.mechanism().species.size(), nc = states.size(), nf = mesh_.faces.size();
     std::vector<chemistry::GasProperties> properties, boundaryProperties(nf);
@@ -135,12 +138,15 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
     result.speciesResidual.assign(nc, std::vector<double>(ns));
     result.energyResidual.resize(nc);
     result.boundarySpeciesFlux.resize(ns);
+    std::vector<std::vector<double>> rateRows;
+    if (estimateRate) { result.rate.resize(nc); rateRows.assign(nc, std::vector<double>(ns + 1)); }
     for (std::size_t f = 0; f < nf; ++f) {
         const auto& face = mesh_.faces[f];
         auto& out = result.faces[f];
         out.species.resize(ns);
         const auto* b = boundaries_[f] ? &*boundaries_[f] : nullptr;
-        if (b && b->kind == ReactingDiffusionBoundaryKind2D::AdiabaticWall) continue;
+        if (b && (b->kind == ReactingDiffusionBoundaryKind2D::AdiabaticWall
+                  || b->kind == ReactingDiffusionBoundaryKind2D::ZeroFluxOutflow)) continue;
         const auto owner = face.owner;
         const double length = std::hypot(face.areaVector.x, face.areaVector.y);
         const double w = face.neighbour ? face.neighbourWeight : 1;
@@ -182,6 +188,72 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
             out.closureCorrection = checked(flux.closureCorrection * length);
             out.zeroLimitCorrection = checked(flux.zeroLimitCorrection * length);
         }
+        if (estimateRate) {
+            // Differentiate the SAME frozen constitutive flux and scalar
+            // normal-gradient stencils, rather than max(D)/h^2 on a cut cell.
+            std::map<std::size_t, std::array<double,2>> weights; // T, composition/ln(p)
+            for (std::size_t type = 0; type < 2; ++type) {
+                const auto& stencil = type == 0 ? temperatureStencil_ : compositionStencil_;
+                weights[owner][type] -= face.transmissibility / length;
+                if (face.neighbour) weights[*face.neighbour][type] += face.transmissibility / length;
+                const auto add = [&](std::size_t cell, double factor) {
+                    for (const auto& s : stencil[cell]) {
+                        const double a = factor * dot(s.weight, face.correction) / length;
+                        weights[cell][type] -= a;
+                        if (!s.boundary) weights[s.index][type] += a;
+                    }
+                };
+                add(owner, face.neighbour ? 1 - w : 1);
+                if (face.neighbour) add(*face.neighbour, w);
+            }
+            const auto fp = gas.properties(faceState);
+            const auto ft = gas.transport(faceState);
+            const auto& mw = gas.mechanism().molecularWeights;
+            std::vector<double> kt(ns + 1), kp(ns + 1);
+            std::vector<std::vector<double>> kx(ns + 1, std::vector<double>(ns));
+            kt[ns] = -ft.thermalConductivity;
+            const bool wall = b && b->kind == ReactingDiffusionBoundaryKind2D::IsothermalWall;
+            if (!wall) for (std::size_t k = 0; k < ns; ++k) {
+                kt[k] = -ft.thermalDiffusion[k] / fp.temperature;
+                for (std::size_t j = 0; j < ns; ++j) {
+                    kx[k][j] = faceState.density * mw[k] * mw[j] / (fp.meanMolecularWeight * fp.meanMolecularWeight)
+                        * ft.multicomponentDiffusion[k + ns * j];
+                    kp[k] += kx[k][j] * fp.massFractions[j] * (fp.meanMolecularWeight / mw[j] - 1);
+                    kx[ns][j] += fp.speciesEnthalpies[k] * kx[k][j];
+                }
+                kt[ns] += fp.speciesEnthalpies[k] * kt[k];
+                kp[ns] += fp.speciesEnthalpies[k] * kp[k];
+            }
+            for (const auto& [cell, weight] : weights) {
+                const auto& cp = properties[cell];
+                const auto ref = static_cast<std::size_t>(std::max_element(cp.massFractions.begin(), cp.massFractions.end()) - cp.massFractions.begin());
+                const double eref = cp.speciesEnthalpies[ref] - 8314.46261815324 * cp.temperature / mw[ref];
+                // Column ns is delta(rho e)/(rho cv T). Other independent
+                // columns are delta(rho Y_j)/rho, with Y_ref dependent.
+                for (std::size_t column = 0; column <= ns; ++column) if (column != ref) {
+                    const double inverseWeight = column == ns ? 0 : 1 / mw[column] - 1 / mw[ref];
+                    const double dt = column == ns ? cp.temperature
+                        : -(cp.speciesEnthalpies[column] - 8314.46261815324 * cp.temperature / mw[column] - eref) / cp.cv;
+                    const double dp = dt / cp.temperature + cp.meanMolecularWeight * inverseWeight;
+                    for (std::size_t row = 0; row <= ns; ++row) {
+                        double value = kt[row] * weight[0] * dt + kp[row] * weight[1] * dp;
+                        if (column != ns) for (std::size_t j = 0; j < ns; ++j) {
+                            const double dx = cp.meanMolecularWeight * ((j == column ? 1 / mw[j] : 0)
+                                - (j == ref ? 1 / mw[j] : 0)
+                                - cp.massFractions[j] * cp.meanMolecularWeight / mw[j] * inverseWeight);
+                            value += kx[row][j] * weight[1] * dx;
+                        }
+                        const double magnitude = std::abs(value * length);
+                        const auto accumulate = [&](std::size_t i) {
+                            const double scale = states[i].density * (row == ns ? properties[i].cv * properties[i].temperature : 1);
+                            rateRows[i][row] += checked(magnitude / (mesh_.cells[i].area * scale));
+                        };
+                        accumulate(owner);
+                        if (face.neighbour) accumulate(*face.neighbour);
+                    }
+                }
+            }
+        }
         for (std::size_t k = 0; k < ns; ++k) {
             result.speciesResidual[owner][k] += out.species[k];
             if (face.neighbour) result.speciesResidual[*face.neighbour][k] -= out.species[k];
@@ -195,6 +267,8 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
     for (double value : result.energyResidual) checked(value);
     for (double value : result.boundarySpeciesFlux) checked(value);
     checked(result.boundaryEnergyFlux);
+    if (estimateRate) for (std::size_t i = 0; i < nc; ++i)
+        result.rate[i] = checked(*std::max_element(rateRows[i].begin(), rateRows[i].end()));
     return result;
 }
 } // namespace cartmesh2d::fv

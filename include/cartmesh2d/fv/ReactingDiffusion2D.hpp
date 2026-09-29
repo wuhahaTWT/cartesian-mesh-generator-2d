@@ -5,7 +5,7 @@
 
 namespace cartmesh2d::fv {
 
-enum class ReactingDiffusionBoundaryKind2D { AdiabaticWall, IsothermalWall, Reservoir };
+enum class ReactingDiffusionBoundaryKind2D { AdiabaticWall, IsothermalWall, Reservoir, ZeroFluxOutflow };
 struct ReactingDiffusionBoundary2D {
     std::size_t face = 0;
     ReactingDiffusionBoundaryKind2D kind = ReactingDiffusionBoundaryKind2D::AdiabaticWall;
@@ -27,6 +27,10 @@ struct ReactingDiffusionResult2D {
     std::vector<double> energyResidual; // W/m
     std::vector<double> boundarySpeciesFlux; // kg/(m s)
     double boundaryEnergyFlux = 0; // W/m
+    // Optional absolute row-sum bound [1/s] of the frozen-coefficient
+    // thermochemical Jacobian at fixed density, in scaled E / independent Y.
+    // Includes nonorthogonal reconstruction; not a nonlinear stability proof.
+    std::vector<double> rate;
 };
 
 // Spatial constitutive operator for the reacting-flow solver, not a stand-alone
@@ -39,7 +43,7 @@ class ReactingDiffusionOperator2D {
 public:
     ReactingDiffusionOperator2D(FvMesh2D, std::vector<ReactingDiffusionBoundary2D>);
     [[nodiscard]] ReactingDiffusionResult2D evaluate(chemistry::DetailedGas&,
-        const std::vector<chemistry::GasState>&) const;
+        const std::vector<chemistry::GasState>&, bool estimateRate = false) const;
 private:
     struct Sample { std::size_t index; bool boundary; Vector2D weight; };
     using Stencil = std::vector<std::vector<Sample>>;

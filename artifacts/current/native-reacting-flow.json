@@ -1,0 +1,325 @@
+{
+  "schema": "cartmesh2d-reacting-flow-v1",
+  "goal": "mature combustion simulation",
+  "goal_complete": false,
+  "coupled_development_kernel_usable": true,
+  "qualified_flame": false,
+  "qualified_reacting_flow": false,
+  "scope": "Native planar detailed finite-rate chemistry, conservative multicomponent compressible flow, full molecular transport and restart binding; short-time numerical coupling verification",
+  "branch": "codex/cfd-development",
+  "source_base": "38b3b42100d079bed712cd0633b0222c6912ec5a",
+  "source_sha256": {
+    "CMakeLists.txt": "3258b2e55406ebdf8751f49829f4a95f9585ca5c5a917b89fae148ee344e3982",
+    "include/cartmesh2d/chemistry/DetailedGas.hpp": "f0d75f05c005ff8b864879919aaea37501a26a5f2abac0b8d17f3e056e23557b",
+    "src/chemistry/DetailedGas.cpp": "b05582825deb4bb4307b78f758055421a5bb6670bf18a2ededcc7c65c0301237",
+    "include/cartmesh2d/fv/ReactingDiffusion2D.hpp": "8bfd38d43826d685851397619f3947eb11477d999a50ec3d01d477c1c41ef67b",
+    "src/fv/ReactingDiffusion2D.cpp": "b0793c376a1b316d6cd38433d78c74272ee87b0ff23042256dabca060661db60",
+    "include/cartmesh2d/fv/ViscousStress2D.hpp": "496d9af1b24083373bd9eb4492112df0b9cdb2623912f5fe22a57c3f80a2c302",
+    "src/fv/ViscousStress2D.cpp": "fe8e343d773854b38eba20311bdc1d65e92d05be33dcffafb1634b9a7c41ebde",
+    "include/cartmesh2d/fv/ReactingFlow2D.hpp": "c69fc920bdeb265f0f91b273efa2e0b982c35003d38a6b90acb7a1b3efdddcfd",
+    "src/fv/ReactingFlow2D.cpp": "84e788aaeb52b6e6457d29d3d63f2e67e493a18d2cca25db5b50cd31cdb67b76",
+    "tests/reacting_flow_test.cpp": "d16e60c030a3d8288788d8a96025bee655ba4f35d7f3bdf40727a3d855ce89ae",
+    "tests/reacting_flow_probe.cpp": "ee103a9934e7a3be93ea61b21c5da6a0c8e66112cb47383431840933073df3ed",
+    "tests/FvTestMesh2D.hpp": "5e3e7216674450bdd484a3840ea529ceb2f232f5d81fd30775d0cd1371da64a5",
+    "src/fv/FvMesh2D.cpp": "ddd21eccb702139cb05ef719362ffff74ffd3551389ea8fac0abad7529c291c8",
+    "tools/verification/verify_reacting_flow.py": "5a76c2ed0fa25073fec66695348732812a2c890fb500fc2b62e4a75accefd862"
+  },
+  "dependencies": {
+    "cantera": "3.2.0",
+    "cantera_source_commit": "4a8358eb80cfeb50474386b5f9ec0b3a83519889",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "cantera_library": "build/deps/cantera/lib/libcantera_shared.3.2.0.dylib",
+    "cantera_library_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "python_verification": {
+      "cantera": "3.2.0",
+      "numpy": "2.5.3",
+      "matplotlib": "3.11.2"
+    },
+    "previous_evidence": [
+      "artifacts/current/native-detailed-chemistry.json",
+      "artifacts/current/native-reacting-diffusion.json"
+    ]
+  },
+  "binary_sha256": {
+    "build/cartmesh2d_reacting_flow_tests": "9aa7c6e71449393e8d49f2ef509e8e0ffe9d007c0dff11ccabedf9cd8b550ae0",
+    "build/cartmesh2d_reacting_flow_probe": "e60a7658a009382e7b2d64740058e2a2e4940f270ed57dff045ede46bd861967",
+    "build/libcartmesh2d_reacting.a": "9a65bf69f56a205653b1c6e59bf446646f27fc43f0e4f03c44c82fec9401773d",
+    "build/libcartmesh2d_chemistry.a": "0a4866ae05a521623e6f412b3891ae64c00b413846e7f25766f46e90d4c8c3a2",
+    "build/libcartmesh2d_fv.a": "374d68946f1ad508f4d33c1eda05bfd8bbb9df20903806156d75034984a435a6"
+  },
+  "mechanism_sha256": {
+    "build/deps/cantera/share/cantera/data/h2o2.yaml": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "build/deps/cantera/share/cantera/data/gri30.yaml": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345"
+  },
+  "model": {
+    "state": "rho,rho*u,rho*v,rho*E,rho*Yk; E includes formation, sensible and kinetic energy and may be negative",
+    "convection": "MUSCL T/logp/u/v/Y with common species limiter; HLLC endpoint frozen acoustic bounds; thermodynamic star admissibility and reported HLLE fallback",
+    "transport": "full multicomponent, pressure diffusion, Soret, heat conduction and species formation-enthalpy diffusion; temperature/composition-dependent viscosity and full stress work",
+    "time": "Strang CVODES chemistry half-step / conservative SSPRK2 transport / chemistry half-step; default predictionSafety .9, CFL .35",
+    "rate_bound": "acoustics plus variable-viscosity row bound plus frozen-coefficient fixed-density thermochemical diffusion Jacobian row bound; NOT a nonlinear stability proof",
+    "boundaries": [
+      "static slip wall",
+      "no-slip wall with optional tangential motion",
+      "adiabatic/isothermal wall",
+      "fixed-state reservoir",
+      "zero-diffusive-flux/zero-traction extrapolated outflow; backflow explicitly rejected"
+    ],
+    "checkpoint": "17-digit conserved state and accepted clock, bound to full resolved mechanism, backend version, complete FV geometry/topology, boundary data and physical switches",
+    "failure": "private trial states, no clipping or heat double-counting; state/range/CFL/source failures halve dt, preserve reasons; exhaustion returns no accepted state"
+  },
+  "verification": {
+    "related_ctest": {
+      "passed": true,
+      "tests": [
+        "cartmesh2d_detailed_gas",
+        "cartmesh2d_reacting_diffusion",
+        "cartmesh2d_reacting_flow",
+        "cartmesh2d_viscous_core",
+        "cartmesh2d_euler_core"
+      ],
+      "log": "outputs/combustion-foundation/reacting-native-002.log",
+      "seconds": 88.56,
+      "scope": "five related tests before final prediction-safety and dimensionally consistent test-scale updates; final coupled test rerun below; other tested core code unchanged"
+    },
+    "final_coupled_ctest": {
+      "passed": true,
+      "log": "outputs/combustion-foundation/reacting-native-004-details.log",
+      "seconds": 38.89,
+      "metrics": {
+        "passed": true,
+        "hydrogenHomogeneousError": 1.3711032309515758e-11,
+        "methaneHomogeneousError": 7.674083590814007e-12,
+        "acousticCoarseL2": 0.008738036522601463,
+        "acousticFineL2": 0.0015557306611878256,
+        "diffusionJacobianToBound": 1.0000000006930545
+      },
+      "checks": [
+        "oriented face reversal",
+        "negative formation-inclusive total energy",
+        "uniform H2/full GRI30 CH4 coupling",
+        "no double-counted heat",
+        "acoustic spatial refinement",
+        "variable viscosity affine stress/work and finite-difference bound",
+        "multicomponent frozen Jacobian finite-difference bound",
+        "accepted-only checkpoint roundtrip and exact continuation",
+        "changed boundary/model/kinetic rates rejected",
+        "replaced chemistry context rejected",
+        "truncated/trailing checkpoint rejected",
+        "chemical budget failure preserves initial and later accepted states"
+      ]
+    },
+    "hot_spot_runs": [
+      {
+        "directory": "outputs/combustion-foundation/reacting-hotspot-004",
+        "audit": "outputs/combustion-foundation/reacting-hotspot-004-review/audit.json",
+        "audit_sha256": "52404b95754409a11984b2413439cb66bd0e66acfc935cbb552b124d1b578d64",
+        "raw_files_sha256": {
+          "field.json": "b1c2ee3ceac446d727994d72aa12eadcee190744f82e365a232481990f248e96",
+          "steps.jsonl": "e1d20cc2fca9fd64b98d96f152f091df9d0a5dc2ffc39249baa6c1b146309a0d",
+          "resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "accepted.checkpoint": "b6b8ef940f7ae8799e626983c15ad16dd702f95c8b8c05e118ab6353258587b8"
+        },
+        "controls": {
+          "courant": 0.35,
+          "predictionSafety": 0.9,
+          "maximumStep": 2e-06,
+          "minimumStep": 1e-15,
+          "order": 2,
+          "relativeChemistryTolerance": 1e-08,
+          "absoluteChemistryTolerance": 1e-18
+        },
+        "elapsed_seconds": 7.90317975,
+        "timing_scope": "driver start through solve/checkpoint, before final field JSON serialization; concurrent verification processes; not a full-cost benchmark",
+        "source_calls_including_retries": 6912,
+        "rejections": 0,
+        "accepted_flux_hlle_fallbacks": 0,
+        "minimum_step_s": 4.441887239050316e-08,
+        "metrics": {
+          "passed": true,
+          "qualified_flame": false,
+          "scope": "short-time detailed-chemistry/flow coupling on a coarse native 2D verification mesh",
+          "cells": 48,
+          "faces": 110,
+          "time": 4e-05,
+          "steps": 72,
+          "initial_temperature_range": [
+            1000.1363111571167,
+            1237.8880861855725
+          ],
+          "final_temperature_range": [
+            1000.1374249646066,
+            1844.0831712748102
+          ],
+          "final_pressure_range": [
+            101325.10153371526,
+            122095.63520471855
+          ],
+          "maximum_speed_m_per_s": 48.132837964835105,
+          "hydrogen_mass_consumed_fraction": 0.02103410817571949,
+          "mass_drift_relative": 3.543905903074883e-16,
+          "total_energy_drift_relative": 3.832695085659655e-14,
+          "element_drift_per_initial_mass": [
+            1.3154767549222444e-15,
+            2.355865559197124e-16,
+            0.0,
+            8.859764757687207e-17
+          ],
+          "momentum_balance_scaled": 9.268008819099482e-18,
+          "energy_scale_J_per_m": 737.1100111648773,
+          "initial_maximum_sound_speed_m_per_s": 809.7205952096741,
+          "geometric_area_relative_error": 4.218847493575595e-15,
+          "thermo_interface_relative_error": 5.769372942144875e-16,
+          "species_sum_absolute_error": 4.6629367034256575e-15,
+          "velocity_roundtrip_absolute_error": 0.0,
+          "time_step_comparison": {
+            "scope": "two time-step settings on one coarse mesh; not a convergence-order or spatial-accuracy qualification",
+            "case_courant": 0.35,
+            "other_courant": 0.175,
+            "other_raw_sha256": "099a7f22f14b7e01f946e5d12eba1b80d52c806c5023ba772fd5e3ca4a9376b0",
+            "other_steps": 143,
+            "temperature_max_difference_K": 0.20379557991373076,
+            "temperature_area_l2_difference_K": 0.03008096223165163,
+            "pressure_max_difference_Pa": 26.067679888452403,
+            "pressure_area_l2_difference_Pa": 5.080665449355295,
+            "velocity_max_difference_m_per_s": 0.12066339096628924,
+            "mass_fraction_max_absolute_difference": 3.2055590859725314e-05,
+            "mass_fraction_area_mean_l1_difference": 3.5642088309440197e-06
+          }
+        }
+      },
+      {
+        "directory": "outputs/combustion-foundation/reacting-hotspot-005",
+        "audit": "outputs/combustion-foundation/reacting-hotspot-005-review/audit.json",
+        "audit_sha256": "c54dc92ef066f8c0ab951ded91adfd4b5c2815a956e770d45eed5e722f73fd81",
+        "raw_files_sha256": {
+          "field.json": "099a7f22f14b7e01f946e5d12eba1b80d52c806c5023ba772fd5e3ca4a9376b0",
+          "steps.jsonl": "466dc5d3a7b927985911db9e304eed7f39fb0bcda5b79e8c995eacbb66bde0eb",
+          "resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "accepted.checkpoint": "ae116ac6e6d5290fa4dc5a6d077d6bd79748e7b18267e79fb6d128bc47577431"
+        },
+        "controls": {
+          "courant": 0.175,
+          "predictionSafety": 0.9,
+          "maximumStep": 2e-06,
+          "minimumStep": 1e-15,
+          "order": 2,
+          "relativeChemistryTolerance": 1e-08,
+          "absoluteChemistryTolerance": 1e-18
+        },
+        "elapsed_seconds": 10.520499959,
+        "timing_scope": "driver start through solve/checkpoint, before final field JSON serialization; concurrent verification processes; not a full-cost benchmark",
+        "source_calls_including_retries": 13728,
+        "rejections": 0,
+        "accepted_flux_hlle_fallbacks": 0,
+        "minimum_step_s": 6.473235291018606e-08,
+        "metrics": {
+          "passed": true,
+          "qualified_flame": false,
+          "scope": "short-time detailed-chemistry/flow coupling on a coarse native 2D verification mesh",
+          "cells": 48,
+          "faces": 110,
+          "time": 4e-05,
+          "steps": 143,
+          "initial_temperature_range": [
+            1000.1363111571167,
+            1237.8880861855725
+          ],
+          "final_temperature_range": [
+            1000.1374311644148,
+            1843.8793756948965
+          ],
+          "final_pressure_range": [
+            101325.10259838733,
+            122069.5675248301
+          ],
+          "maximum_speed_m_per_s": 48.2509561920002,
+          "hydrogen_mass_consumed_fraction": 0.021037697983184667,
+          "mass_drift_relative": 5.315858854612325e-16,
+          "total_energy_drift_relative": 7.572850249733966e-14,
+          "element_drift_per_initial_mass": [
+            2.6764569380619355e-15,
+            4.291263943674157e-16,
+            0.0,
+            -8.859764757687207e-17
+          ],
+          "momentum_balance_scaled": 5.0451750645937234e-18,
+          "energy_scale_J_per_m": 737.1100111648773,
+          "initial_maximum_sound_speed_m_per_s": 809.7205952096741,
+          "geometric_area_relative_error": 4.218847493575595e-15,
+          "thermo_interface_relative_error": 5.869103352409638e-16,
+          "species_sum_absolute_error": 7.105427357601002e-15,
+          "velocity_roundtrip_absolute_error": 0.0
+        }
+      }
+    ],
+    "independent_reader": "Independent Python polygon/face incidence, conservation budgets, clock and field consistency. Python Cantera EOS shares chemical backend; no independent kinetic data or experimental validation.",
+    "invalid_driver_controls": {
+      "passed": true,
+      "exit_code": 1,
+      "failure": "reacting flow: invalid time/space controls",
+      "initial_not_saved_as_checkpoint": true
+    },
+    "numerical_gates": {
+      "meaning": "assembly/interface/integration-budget diagnostics, not physical accuracy; quantities/scales/costs in DEVELOPMENT_CN.md",
+      "native_algebraic_balance": 2e-11,
+      "native_element_per_initial_mass": 2e-08,
+      "field_mass_energy_element_scaled": 1e-08,
+      "thermo_interface_scaled": 2e-09,
+      "species_sum_absolute": 1e-10,
+      "homogeneous_temperature_relative_or_mass_fraction_absolute": 2e-06,
+      "acoustic_pressure_l2_per_initial_perturbation_fine_limit": 0.06,
+      "acoustic_fine_to_coarse_limit": 0.7,
+      "frozen_jacobian_relative_difference_allowance": 5e-05
+    },
+    "preview": {
+      "path": "artifacts/current/native-reacting-flow.png",
+      "sha256": "132337ea749242386d60ac47b9a467586c6625ff44511f2a41c2fda5df4e754a",
+      "visually_reviewed": true,
+      "source": "outputs/combustion-foundation/reacting-hotspot-004-review/reacting-flow.png",
+      "render": "uninterpolated actual cell polygons, initial/final T, final p/velocity; common T scale; explicitly coarse early-ignition fixture"
+    }
+  },
+  "retained_evidence": {
+    "first_step_prediction": {
+      "directory": "outputs/combustion-foundation/reacting-hotspot-001",
+      "steps": 119,
+      "rejections": 109,
+      "prediction_safety": 1.0,
+      "explanation": "initial CFL ceiling caused routine post-chemistry wave-speed rejections; accepted fields and independent audit retained; no altered thresholds or general performance claim"
+    },
+    "logs_sha256": {
+      "outputs/combustion-foundation/reacting-native-001.log": "eea34fb8c71e2ebe3900fb5cffca5e87a5ece929ce84e13db7fd49eb55abadd5",
+      "outputs/combustion-foundation/reacting-native-001-details.log": "08f84dd261979a3f085e77a9a410d4f209827e866a7e826cc5f9e8b22d7922b5",
+      "outputs/combustion-foundation/reacting-native-002.log": "b5f87f432ed012b6f0d9210876d231fde8c42493613d0d693cca5dfed2f75453",
+      "outputs/combustion-foundation/reacting-native-002-details.log": "2cf9b4ce19604a94fc7f4ba45ab4c873c40ffcf499c089ee24c00deb55dff2f6",
+      "outputs/combustion-foundation/reacting-native-003.log": "82edcb4b1374b8833fea070afdfb2ddb1e9fff6fda2046ef6725f2776a44489d",
+      "outputs/combustion-foundation/reacting-native-003-details.log": "1ff81bf3d36c955bd7e5a8ca71d27972719aca72efc7dcca232378814f6c8506",
+      "outputs/combustion-foundation/reacting-native-004.log": "cb02a493248a032b0c96c22feb2e0ec96f29895eb150bdb5d3445f259df148e8",
+      "outputs/combustion-foundation/reacting-native-004-details.log": "f93d9e92aaaba169dfe2d6b6d50c4e04ce2054aac45b1c2172ea8d3976c7b1f9",
+      "outputs/combustion-foundation/reacting-build-003.log": "6b5c4d64a85c6260dc8c42a6c425c06f49eeb3b6c9bcfef3159c773d2b7583ad",
+      "outputs/combustion-foundation/reacting-build-004.log": "13dfb48edc0e883c11482f2657ccd5be674c09e395d60e35256477e9e2fc3708",
+      "outputs/combustion-foundation/reacting-build-005.log": "c0e5a5b46f48801969c11c45cd3a8d3e9d24cba344b36f7ffc75715c4706df4f",
+      "outputs/combustion-foundation/reacting-invalid-controls/field.json": "2129280958f8ad3c5579aa2db9c2a3ab3fec4c60141a0c9b9475c30b75f76faa",
+      "outputs/combustion-foundation/reacting-invalid-controls/steps.jsonl": "7ad5d0e5a0b8700b79c054fc6807edc6863e0f087407a1d68043c6931d501598",
+      "outputs/combustion-foundation/reacting-invalid-controls/stderr.log": "9719f689d3567a5c29cd9a9ed6fd68f153de94bf77a3f6f10c35ff3aa0c6462a",
+      "outputs/combustion-foundation/reacting-invalid-controls/failure-check.json": "5e21eb14bbf4f95d357f7f74380ff4e4b74a0a8ffb7c00353684504e28e710e7"
+    }
+  },
+  "not_qualified": [
+    "resolved flame structure/speed or extinction",
+    "spatial grid independence of ignition fixture",
+    "experimental validation or actual combustor",
+    "target fuel/regime selection",
+    "turbulence combustion",
+    "spray/multiphase fuel",
+    "radiation/CHT/Dufour",
+    "general skew-wall/moving-composition-contact accuracy",
+    "strong shock interaction/long-time stability",
+    "periodic/nonreflecting characteristic reacting boundaries",
+    "implicit transport/large-scale total-cost performance",
+    "configurable product input/App workflow",
+    "full native/frontend/App/platform combustion acceptance",
+    "main integration"
+  ],
+  "validation_and_performance_separation": "48-cell 40-us fixture checks coupling/bookkeeping, not resolved flame physics; two CFL settings give sensitivity only; elapsed times omit final JSON and are not a benchmark"
+}

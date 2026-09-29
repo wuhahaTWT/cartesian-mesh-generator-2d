@@ -10,6 +10,10 @@ namespace cartmesh2d::chemistry {
 
 struct GasMechanism {
     std::string source, phase, backendVersion;
+    // Self-contained resolved phase/species/reaction/transport definition.
+    // No timestamp, source path or initial thermodynamic state; suitable for
+    // exact restart binding, including species imported from other YAML files.
+    std::string resolvedDefinition;
     std::vector<std::string> species, elements;
     std::vector<double> molecularWeights; // kg/kmol
     std::vector<double> atomicWeights; // kg/kmol
@@ -19,7 +23,7 @@ struct GasMechanism {
 };
 
 // Volumetric conserved state. Internal energy includes species formation energy
-// and may be negative; kinetic energy is owned by the future flow discretization.
+// and may be negative; kinetic energy is owned by the flow discretization.
 struct GasState {
     double density = 0; // kg/m^3
     double internalEnergyDensity = 0; // J/m^3, including chemical energy

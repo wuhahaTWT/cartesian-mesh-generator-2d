@@ -3,6 +3,7 @@
 #include "cantera/base/Solution.h"
 #include "cantera/base/AnyMap.h"
 #include "cantera/base/global.h"
+#include "cantera/base/YamlWriter.h"
 #include "cantera/kinetics/Kinetics.h"
 #include "cantera/thermo/ThermoPhase.h"
 #include "cantera/transport/Transport.h"
@@ -77,6 +78,15 @@ struct DetailedGas::Impl {
             info.atomicWeights.push_back(gas->atomicWeight(m));
         require(info.maximumTemperature > info.minimumTemperature,
                 "species thermodynamic data have no common temperature interval");
+        Cantera::YamlWriter writer;
+        writer.setPrecision(17);
+        writer.skipUserDefined();
+        writer.addPhase(solution);
+        auto definition = Cantera::AnyMap::fromYamlString(writer.toYamlString());
+        for (const auto* key : {"generator", "date", "git-commit"}) definition.erase(key);
+        for (auto& p : definition["phases"].asVector<Cantera::AnyMap>()) p.erase("state");
+        definition.setMetadata("precision", Cantera::AnyValue(17L));
+        info.resolvedDefinition = definition.toYamlString();
     }
 
     void validateFractions(const std::vector<double>& y) const {

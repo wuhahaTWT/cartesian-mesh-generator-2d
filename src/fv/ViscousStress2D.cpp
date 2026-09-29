@@ -84,6 +84,7 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
         }
     }
     std::vector<Form> rows(2*mesh.cells.size());
+    faceRowNorm_.resize(faces_.size());
     for(std::size_t id=0;id<faces_.size();++id) {
         const auto& f=faces_[id];if((f.partner&&id>*f.partner)||(!f.neighbour&&f.kind==ViscousBoundaryKind2D::ZeroTraction))continue;
         std::array<Form,4> g;const double n[2]={f.normal.x,f.normal.y};
@@ -102,16 +103,24 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
         Form tx,ty;add(tx,g[0],4./3*f.area.x);add(tx,g[3],-2./3*f.area.x);add(tx,g[1],f.area.y);add(tx,g[2],f.area.y);
         add(ty,g[1],f.area.x);add(ty,g[2],f.area.x);add(ty,g[3],4./3*f.area.y);add(ty,g[0],-2./3*f.area.y);
         if(!f.neighbour&&f.kind==ViscousBoundaryKind2D::Slip){Form normal;add(normal,tx,n[0]);add(normal,ty,n[1]);tx.clear();ty.clear();add(tx,normal,n[0]);add(ty,normal,n[1]);}
-        for(std::size_t k=0;k<2;++k){const auto& t=k==0?tx:ty;add(rows[2*f.owner+k],t,-viscosity_);if(f.neighbour)add(rows[2*(*f.neighbour)+k],t,viscosity_);}
+        for(std::size_t k=0;k<2;++k){const auto& t=k==0?tx:ty;add(rows[2*f.owner+k],t,-viscosity_);if(f.neighbour)add(rows[2*(*f.neighbour)+k],t,viscosity_);
+            for(const auto& [j,value]:t){(void)j;faceRowNorm_[id][k]+=.5*std::abs(value);}}
     }
     rowNorm_.resize(areas_.size());
     for(std::size_t i=0;i<areas_.size();++i)for(std::size_t k=0;k<2;++k){double sum=0;for(const auto& [j,v]:rows[2*i+k])sum+=std::abs(v);rowNorm_[i]=std::max(rowNorm_[i],checked(.5*sum));}
 }
 ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector2D>& u,const std::vector<double>& rho) const {
+    return evaluate(u,rho,{});
+}
+ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector2D>& u,const std::vector<double>& rho,
+    const std::vector<double>& faceViscosity) const {
     require(u.size()==areas_.size()&&rho.size()==u.size(),"velocity/density size mismatch");
+    require(faceViscosity.empty()||faceViscosity.size()==faces_.size(),"face viscosity size mismatch");
+    for(double mu:faceViscosity)require(std::isfinite(mu)&&mu>0,"invalid face viscosity");
     for(std::size_t i=0;i<u.size();++i)require(std::isfinite(u[i].x)&&std::isfinite(u[i].y)&&std::isfinite(rho[i])&&rho[i]>0,"invalid velocity or density");
     ViscousStressResult2D out;out.faceFlux.resize(faces_.size());out.cellResidual.resize(u.size());out.rate.resize(u.size());
     std::vector<Gradient> gradients(u.size());
+    std::vector<std::array<double,2>> variableRows(u.size());
     for(std::size_t i=0;i<u.size();++i) {
         for(const auto& s:gradients_[i]) {
             Vector2D delta{};
@@ -121,10 +130,15 @@ ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector
             gradients[i][0].x+=delta.x*s.weight.x;gradients[i][0].y+=delta.x*s.weight.y;
             gradients[i][1].x+=delta.y*s.weight.x;gradients[i][1].y+=delta.y*s.weight.y;
         }
-        for(const auto& g:gradients[i]){checked(g.x);checked(g.y);}out.rate[i]=checked(rowNorm_[i]/(areas_[i]*rho[i]));
+        for(const auto& g:gradients[i]){checked(g.x);checked(g.y);}if(faceViscosity.empty())out.rate[i]=checked(rowNorm_[i]/(areas_[i]*rho[i]));
     }
     for(std::size_t id=0;id<faces_.size();++id) {
         const auto& f=faces_[id];if((f.partner&&id>*f.partner)||(!f.neighbour&&f.kind==ViscousBoundaryKind2D::ZeroTraction))continue;
+        const double mu=faceViscosity.empty()?viscosity_:faceViscosity[id];
+        if(!faceViscosity.empty()) {
+            if(f.partner)require(faceViscosity[*f.partner]==mu,"periodic viscosities differ");
+            for(std::size_t k=0;k<2;++k){variableRows[f.owner][k]+=mu*faceRowNorm_[id][k];if(f.neighbour)variableRows[*f.neighbour][k]+=mu*faceRowNorm_[id][k];}
+        }
         auto g=gradients[f.owner];Vector2D uf=f.value;
         if(f.neighbour) {
             for(std::size_t k=0;k<2;++k){g[k].x=(1-f.weight)*g[k].x+f.weight*gradients[*f.neighbour][k].x;g[k].y=(1-f.weight)*g[k].y+f.weight*gradients[*f.neighbour][k].y;}
@@ -145,7 +159,7 @@ ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector
         }
         // Planar Newtonian gas, Stokes hypothesis. The 2/3 coefficient follows
         // the molecular constitutive law, not the dimension of the mesh.
-        const double div=g[0].x+g[1].y,xx=viscosity_*(2*g[0].x-2./3*div),yy=viscosity_*(2*g[1].y-2./3*div),xy=viscosity_*(g[0].y+g[1].x);
+        const double div=g[0].x+g[1].y,xx=mu*(2*g[0].x-2./3*div),yy=mu*(2*g[1].y-2./3*div),xy=mu*(g[0].y+g[1].x);
         Vector2D traction{xx*f.area.x+xy*f.area.y,xy*f.area.x+yy*f.area.y};
         if(!f.neighbour&&f.kind==ViscousBoundaryKind2D::Slip){const double normal=dot(traction,f.normal);traction={normal*f.normal.x,normal*f.normal.y};uf={};}
         const std::array<double,3> flux{checked(-traction.x),checked(-traction.y),checked(-dot(uf,traction))};
@@ -153,6 +167,7 @@ ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector
         for(std::size_t k=0;k<3;++k){out.cellResidual[f.owner][k]+=flux[k];if(f.neighbour)out.cellResidual[*f.neighbour][k]-=flux[k];if(f.partner)out.faceFlux[*f.partner][k]=-flux[k];}
     }
     for(const auto& r:out.cellResidual)for(double v:r)checked(v);
+    if(!faceViscosity.empty())for(std::size_t i=0;i<u.size();++i)out.rate[i]=checked(std::max(variableRows[i][0],variableRows[i][1])/(areas_[i]*rho[i]));
     return out;
 }
 } // namespace cartmesh2d::fv
