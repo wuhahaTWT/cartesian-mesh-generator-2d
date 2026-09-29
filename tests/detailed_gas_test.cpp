@@ -72,6 +72,30 @@ int main(int argc, char** argv) {
         check(transport.multicomponentDiffusion.size() == 100 && transport.thermalDiffusion.size() == 10,
               "multicomponent/Soret coefficients missing");
         check(transport.viscosity > 0 && transport.thermalConductivity > 0, "invalid transport properties");
+        // A trace concentration gradient must survive inverse-matrix
+        // cancellation and the backend's internal mole-fraction floor.
+        const auto trace = hydrogen.fromMoleAmounts(1000, 101325, mixture(hydrogen, {{"H2", 1e-24}, {"N2", 1}}));
+        const auto tp = hydrogen.properties(trace); const auto td = hydrogen.transport(trace);
+        const auto& mechanism = hydrogen.mechanism();
+        const auto h2 = static_cast<std::size_t>(std::find(mechanism.species.begin(), mechanism.species.end(), "H2") - mechanism.species.begin());
+        const auto n2 = static_cast<std::size_t>(std::find(mechanism.species.begin(), mechanism.species.end(), "N2") - mechanism.species.begin());
+        GasDiffusionGradient gradient; gradient.moleFractions.resize(mechanism.species.size());
+        gradient.moleFractions[h2] = 1e-20; gradient.moleFractions[n2] = -1e-20;
+        const auto traceFlux = hydrogen.diffusiveFlux(trace, gradient);
+        const double binary = -trace.density * mechanism.molecularWeights[h2] * mechanism.molecularWeights[n2]
+            / (tp.meanMolecularWeight * tp.meanMolecularWeight) * td.binaryDiffusion[h2 + mechanism.species.size() * n2] * 1e-20;
+        check(std::abs((traceFlux.species[h2] - binary) / binary) < 5e-12, "trace binary analytic diffusion limit failed");
+        // IEEE gradual-underflow regression: keep positive species and solve
+        // the physical flux even when its storage has an absolute half-ulp
+        // error instead of the normal relative-epsilon error model.
+        for (double dx : {1e-310, 1e-318}) {
+            gradient.moleFractions[h2] = dx; gradient.moleFractions[n2] = -dx;
+            const auto tinyFlux = hydrogen.diffusiveFlux(trace, gradient);
+            const double expected = (binary / 1e-20) * dx;
+            const double rounding = 64 * std::numeric_limits<double>::epsilon() * std::abs(expected)
+                + 2 * std::numeric_limits<double>::denorm_min();
+            check(std::abs(tinyFlux.species[h2] - expected) <= rounding, "subnormal binary flux lost its representable value");
+        }
         const auto step = hydrogen.advanceConstantVolume(initial, .001);
         if (!step.accepted) throw std::runtime_error(step.failure);
         const auto burned = hydrogen.properties(*step.accepted);

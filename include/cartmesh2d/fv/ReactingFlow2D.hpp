@@ -66,6 +66,15 @@ struct ReactingStepResult2D {
     std::vector<double> elementalBalanceError;
 };
 
+struct ReactingResidual2D {
+    // Instantaneous semi-discrete operators, not an accepted time step.
+    // Derivatives are per-volume per-second; face fluxes are edge-integrated.
+    std::vector<ReactingConservative2D> faceFlux, transportDerivative, chemistryDerivative, derivative;
+    ReactingConservative2D boundaryFlux, chemistryIntegral;
+    std::vector<double> transportRate;
+    std::size_t hlleFallbacks = 0;
+};
+
 // Serial native planar reacting Navier-Stokes development kernel. Holds a
 // reference to one DetailedGas context, which must outlive this stepper.
 // Chemistry (dt/2) -> conservative SSPRK transport (dt) -> chemistry (dt/2).
@@ -75,6 +84,7 @@ public:
     ReactingFlowStepper2D(chemistry::DetailedGas&, FvMesh2D,
         std::vector<ReactingBoundary2D>, ReactingPhysics2D = {});
     [[nodiscard]] ReactingState2D initialState(std::vector<ReactingConservative2D>) const;
+    [[nodiscard]] ReactingResidual2D evaluateResidual(const ReactingState2D&, unsigned order = 2);
     [[nodiscard]] ReactingStepResult2D advance(const ReactingState2D&, const ReactingStepControls2D& = {});
     void writeCheckpoint(std::ostream&, const ReactingState2D&) const;
     [[nodiscard]] ReactingState2D readCheckpoint(std::istream&) const;

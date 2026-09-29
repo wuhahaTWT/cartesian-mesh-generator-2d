@@ -50,6 +50,7 @@ struct GasTransport {
     // These require the corresponding multicomponent flux formula; they are
     // not independent Fick coefficients multiplying each species' mass gradient.
     std::vector<double> multicomponentDiffusion;
+    std::vector<double> binaryDiffusion; // m^2/s, column-major; Stefan-Maxwell pair coefficients
     std::vector<double> thermalDiffusion; // Soret coefficients, kg/(m s)
 };
 
@@ -71,6 +72,8 @@ struct GasDiffusiveFlux {
     // applying exact absent-species/pure-gas limits; never changes a GasState.
     double zeroLimitCorrection = 0; // kg/(m^2 s)
     bool pureSpeciesLimit = false;
+    double concentrationSolveResidual = 0; // dimensionless componentwise linear backward error
+    double matrixFormDifferenceL1 = 0; // kg/(m^2 s), cancellation diagnostic vs inverse-D form
 };
 
 struct ChemistryControls {

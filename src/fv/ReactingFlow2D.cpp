@@ -75,11 +75,13 @@ ReactingFaceFlux2D reactingFaceFlux2D(chemistry::DetailedGas& gas,
         const double sm = (r.properties.pressure - l.properties.pressure + dl * vl - dr * vr) / (dl - dr);
         bool usable = std::isfinite(sm) && sl < sm && sm < sr;
         ReactingConservative2D star[2];
+        double starPressure[2]{};
         for (unsigned side = 0; side < 2 && usable; ++side) {
             const auto& u = side ? ur : ul; const auto& p = side ? r : l;
             const double speed = side ? sr : sl, vn = side ? vr : vl;
             const double ratio = (speed - vn) / (speed - sm);
             const double ps = p.properties.pressure + u[0] * (speed - vn) * (sm - vn);
+            starPressure[side] = ps;
             auto& us = star[side]; us.resize(u.size());
             us[0] = u[0] * ratio;
             us[1] = us[0] * (p.velocity.x + (sm - vn) * n.x);
@@ -89,10 +91,20 @@ ReactingFaceFlux2D reactingFaceFlux2D(chemistry::DetailedGas& gas,
             usable = std::isfinite(ps) && ps > 0 && ratio > 0;
             try { if (usable) (void)reactingPrimitive2D(gas, us); } catch (const std::exception&) { usable = false; }
         }
-        for (std::size_t k = 0; k < ul.size(); ++k) {
-            if (usable) out.integratedFlux[k] = sm >= 0 ? fl[k] + sl * (star[0][k] - ul[k]) : fr[k] + sr * (star[1][k] - ur[k]);
-            else out.integratedFlux[k] = (sr * fl[k] - sl * fr[k] + sl * sr * (ur[k] - ul[k])) / (sr - sl);
-        }
+        if (usable) {
+            const auto side = sm >= 0 ? 0U : 1U;
+            const auto& u = star[side]; const auto& p = side ? r : l;
+            // Algebraically the HLLC jump flux, evaluated in the star region.
+            // Avoid subtracting nearly equal densities separately for every
+            // species when the normal mass flow is close to zero.
+            out.integratedFlux[0] = u[0] * sm;
+            out.integratedFlux[1] = u[1] * sm + starPressure[side] * n.x;
+            out.integratedFlux[2] = u[2] * sm + starPressure[side] * n.y;
+            out.integratedFlux[3] = (u[3] + starPressure[side]) * sm;
+            for (std::size_t k = 4; k < ul.size(); ++k)
+                out.integratedFlux[k] = out.integratedFlux[0] * p.properties.massFractions[k - 4];
+        } else for (std::size_t k = 0; k < ul.size(); ++k)
+            out.integratedFlux[k] = (sr * fl[k] - sl * fr[k] + sl * sr * (ur[k] - ul[k])) / (sr - sl);
         out.hlleFallback = !usable;
     }
     for (double& v : out.integratedFlux) v = finite(v * length);
@@ -170,6 +182,33 @@ ReactingState2D ReactingFlowStepper2D::initialState(std::vector<ReactingConserva
     ReactingState2D s; s.binding = binding_; s.cells = std::move(cells); validate(s); return s;
 }
 
+ReactingResidual2D ReactingFlowStepper2D::evaluateResidual(const ReactingState2D& state, unsigned order) {
+    validate(state);
+    require(order == 1 || order == 2, "invalid residual reconstruction order");
+    auto stage = spatial(state.cells, order);
+    const auto nv = gas_.mechanism().species.size() + 4;
+    ReactingResidual2D out;
+    out.faceFlux = std::move(stage.faceFlux); out.transportRate = std::move(stage.rate);
+    out.hlleFallbacks = stage.fallbacks;
+    out.transportDerivative = std::move(stage.residual);
+    out.chemistryDerivative.assign(state.cells.size(), ReactingConservative2D(nv));
+    for (std::size_t i = 0; i < state.cells.size(); ++i) {
+        for (double& value : out.transportDerivative[i]) value = finite(-value / mesh_.cells[i].area);
+        if (physics_.chemistry) {
+            const auto p = reactingPrimitive2D(gas_, state.cells[i]);
+            for (std::size_t k = 4; k < nv; ++k) out.chemistryDerivative[i][k] = p.properties.massProductionRates[k - 4];
+        }
+    }
+    out.derivative = out.transportDerivative;
+    for (std::size_t i = 0; i < state.cells.size(); ++i)
+        for (std::size_t k = 0; k < nv; ++k) out.derivative[i][k] = finite(out.derivative[i][k] + out.chemistryDerivative[i][k]);
+    out.chemistryIntegral = integral(out.chemistryDerivative);
+    out.boundaryFlux.assign(nv, 0);
+    for (std::size_t f = 0; f < mesh_.faces.size(); ++f) if (!mesh_.faces[f].neighbour)
+        for (std::size_t k = 0; k < nv; ++k) out.boundaryFlux[k] += out.faceFlux[f][k];
+    return out;
+}
+
 ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<ReactingConservative2D>& cells, unsigned order) {
     const auto nc = cells.size(), nf = mesh_.faces.size(), nv = gas_.mechanism().species.size() + 4;
     Stage out; out.faceFlux.assign(nf, ReactingConservative2D(nv)); out.residual.assign(nc, ReactingConservative2D(nv)); out.rate.resize(nc);
@@ -215,14 +254,27 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
                 }
             }
             const double speciesTheta = *std::min_element(theta.begin() + 4, theta.end());
-            for (std::size_t k = 0; k < nv; ++k) gradient[k][i] = gradient[k][i] * std::clamp(k < 4 ? theta[k] : speciesTheta, 0., 1.);
+            // Keep reconstructed face values inside their convex bounds after
+            // multiply/add roundoff. Without this arithmetic reserve a trace
+            // value exactly limited to zero can become, e.g., -2.5e-60.
+            // One common species factor preserves sum(grad Y)=0. No face or
+            // conserved cell value is clipped and no positive trace is erased.
+            const double inward = 1 - 64 * std::numeric_limits<double>::epsilon();
+            for (std::size_t k = 0; k < nv; ++k)
+                gradient[k][i] = gradient[k][i] * (inward * std::clamp(k < 4 ? theta[k] : speciesTheta, 0., 1.));
         }
     }
     const auto reconstructed = [&](std::size_t i, Point2D point) {
         if (order == 1) return cells[i];
         auto values = phi[i];
         for (std::size_t k = 0; k < nv; ++k) values[k] += dot(gradient[k][i], point - mesh_.cells[i].centre);
-        return fromValues(gas_, values);
+        try { return fromValues(gas_, values); }
+        catch (const std::exception& error) {
+            std::ostringstream message; message << std::setprecision(17) << "MUSCL face from cell " << i << ": " << error.what();
+            for (std::size_t k = 4; k < nv; ++k) if (values[k] < 0)
+                message << "; " << gas_.mechanism().species[k - 4] << "=" << values[k];
+            throw std::runtime_error(message.str());
+        }
     };
     for (std::size_t id = 0; id < nf; ++id) {
         const auto& f = mesh_.faces[id]; const auto* b = boundaries_[id] ? &*boundaries_[id] : nullptr;
@@ -322,7 +374,14 @@ ReactingStepResult2D ReactingFlowStepper2D::advance(const ReactingState2D& initi
                 require(courant <= c.courant * (1 + 16 * std::numeric_limits<double>::epsilon()), "post-chemistry transport CFL increased");
                 for (std::size_t i = 0; i < nc; ++i) {
                     for (std::size_t k = 0; k < nv; ++k) cells[i][k] -= dt / mesh_.cells[i].area * first.residual[i][k];
-                    (void)reactingPrimitive2D(gas_, cells[i]);
+                    try { (void)reactingPrimitive2D(gas_, cells[i]); }
+                    catch (const std::exception& e) {
+                        std::ostringstream message; message << std::setprecision(17) << "first transport stage, cell " << i << ": " << e.what();
+                        for (std::size_t k = 4; k < nv; ++k) if (cells[i][k] < 0)
+                            message << "; rhoY(" << gas_.mechanism().species[k - 4] << ")=" << cells[i][k]
+                                    << ", base=" << base[i][k] << ", derivative=" << -first.residual[i][k] / mesh_.cells[i].area;
+                        throw std::runtime_error(message.str());
+                    }
                 }
                 if (c.order == 2) {
                     const auto second = spatial(cells, c.order);
@@ -330,7 +389,13 @@ ReactingStepResult2D ReactingFlowStepper2D::advance(const ReactingState2D& initi
                     require(courant <= c.courant * (1 + 16 * std::numeric_limits<double>::epsilon()), "second-stage transport CFL increased");
                     for (std::size_t i = 0; i < nc; ++i) {
                         for (std::size_t k = 0; k < nv; ++k) cells[i][k] = .5 * (base[i][k] + cells[i][k] - dt / mesh_.cells[i].area * second.residual[i][k]);
-                        (void)reactingPrimitive2D(gas_, cells[i]);
+                        try { (void)reactingPrimitive2D(gas_, cells[i]); }
+                        catch (const std::exception& e) {
+                            std::ostringstream message; message << std::setprecision(17) << "second transport stage, cell " << i << ": " << e.what();
+                            for (std::size_t k = 4; k < nv; ++k) if (cells[i][k] < 0)
+                                message << "; rhoY(" << gas_.mechanism().species[k - 4] << ")=" << cells[i][k];
+                            throw std::runtime_error(message.str());
+                        }
                     }
                     for (std::size_t f = 0; f < first.faceFlux.size(); ++f) for (std::size_t k = 0; k < nv; ++k) first.faceFlux[f][k] = .5 * (first.faceFlux[f][k] + second.faceFlux[f][k]);
                     first.fallbacks += second.fallbacks;

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -181,6 +182,9 @@ double diffusionRate(DetailedGas& gas) {
     const auto base = op.evaluate(gas, states, true);
     std::vector<std::vector<double>> norm(m.cells.size(), std::vector<double>(ns + 1));
     const double epsilon = 1e-6, energyScale = q.density * p.cv * p.temperature;
+    auto speciesEnergy = p.speciesEnthalpies;
+    for (std::size_t k = 0; k < ns; ++k)
+        speciesEnergy[k] -= 8314.46261815324 * p.temperature / gas.mechanism().molecularWeights[k];
     const auto ref = static_cast<std::size_t>(std::max_element(p.massFractions.begin(), p.massFractions.end()) - p.massFractions.begin());
     for (std::size_t c = 0; c < states.size(); ++c) for (std::size_t column = 0; column <= ns; ++column) if (column != ref) {
         auto plus = states, minus = states;
@@ -188,11 +192,17 @@ double diffusionRate(DetailedGas& gas) {
         else {
             plus[c].speciesDensities[column] += q.density * epsilon; plus[c].speciesDensities[ref] -= q.density * epsilon;
             minus[c].speciesDensities[column] -= q.density * epsilon; minus[c].speciesDensities[ref] += q.density * epsilon;
+            // Independent composition perturbations keep temperature fixed.
+            const double de = q.density * epsilon * (speciesEnergy[column] - speciesEnergy[ref]);
+            plus[c].internalEnergyDensity += de; minus[c].internalEnergyDensity -= de;
         }
         const auto a = op.evaluate(gas, plus), z = op.evaluate(gas, minus);
         for (std::size_t i = 0; i < states.size(); ++i) {
             for (std::size_t k = 0; k < ns; ++k) norm[i][k] += std::abs(a.speciesResidual[i][k] - z.speciesResidual[i][k]) / (2 * epsilon * m.cells[i].area * q.density);
-            norm[i][ns] += std::abs(a.energyResidual[i] - z.energyResidual[i]) / (2 * epsilon * m.cells[i].area * energyScale);
+            long double thermal = a.energyResidual[i] - z.energyResidual[i];
+            for (std::size_t k = 0; k < ns; ++k)
+                thermal -= speciesEnergy[k] * (a.speciesResidual[i][k] - z.speciesResidual[i][k]);
+            norm[i][ns] += static_cast<double>(std::abs(thermal)) / (2 * epsilon * m.cells[i].area * energyScale);
         }
     }
     double maximumRatio = 0;
@@ -240,6 +250,18 @@ int main(int argc, char** argv) {
         const auto reverse = reactingFaceFlux2D(gas, right, left, {-.2, -.1});
         for (std::size_t k = 0; k < left.size(); ++k)
             check(std::abs(f.integratedFlux[k] + reverse.integratedFlux[k]) < 2e-12 * (1 + std::abs(f.integratedFlux[k])), "HLLC face reversal failed");
+        const auto mixture = gas.properties(gas.fromMoleAmounts(1100, 101325, x)).massFractions;
+        for (double delta : {-1e-12, -1e-15, 1e-15, 1e-14, 1e-12}) {
+            const auto a = reactingConservative2D(gas.fromMoleAmounts(1100, 101325 * (1 + delta), x));
+            const auto b = reactingConservative2D(gas.fromMoleAmounts(1100, 101325, x));
+            const auto tiny = reactingFaceFlux2D(gas, a, b, {1, 0});
+            check(!tiny.hlleFallback, "near-zero-flow regression unexpectedly uses HLLE");
+            for (std::size_t k = 0; k < mixture.size(); ++k) {
+                const double expected = tiny.integratedFlux[0] * mixture[k];
+                check(std::abs(tiny.integratedFlux[k + 4] - expected) <= 64 * std::numeric_limits<double>::epsilon() * std::abs(expected),
+                      "HLLC species and density use inconsistent near-zero mass flux");
+            }
+        }
         const auto water = reactingConservative2D(gas.fromMoleAmounts(800, 101325, composition(gas, {{"H2O", 1}})), {20, 30});
         check(water[3] < 0 && std::abs(reactingPrimitive2D(gas, water).properties.temperature - 800) < 2e-9, "formation-inclusive total energy rejected");
         std::cerr << "hydrogen coupled source/restart\n";

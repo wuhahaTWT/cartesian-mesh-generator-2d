@@ -28,7 +28,7 @@ struct ReactingDiffusionResult2D {
     std::vector<double> boundarySpeciesFlux; // kg/(m s)
     double boundaryEnergyFlux = 0; // W/m
     // Optional absolute row-sum bound [1/s] of the frozen-coefficient
-    // thermochemical Jacobian at fixed density, in scaled E / independent Y.
+    // thermochemical Jacobian at fixed density, in delta T/T / independent Y.
     // Includes nonorthogonal reconstruction; not a nonlinear stability proof.
     std::vector<double> rate;
 };

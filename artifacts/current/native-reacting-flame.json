@@ -1,0 +1,220 @@
+{
+  "schema": "cartmesh2d-reacting-flame-v1",
+  "snapshot_utc": "2026-09-29T21:42:15.089889+00:00",
+  "branch": "codex/cfd-development",
+  "source_base": "5307a170d42343be72a480f1795189fe0e116386",
+  "mature_combustion_goal_complete": false,
+  "native_flame_speed_qualified": false,
+  "grid_comparison_complete": false,
+  "experimental_qualification": false,
+  "scope": "Detailed planar reacting-flow numerical development: trace-stable transport and reference-initialized short-time open-boundary flame",
+  "source_sha256": {
+    "CMakeLists.txt": "783cb11a114eeaf289fa2c07dbfa8a1e99354d3a68f7556642ef8cfc80b7cd23",
+    "include/cartmesh2d/chemistry/DetailedGas.hpp": "92a6f36ee475978c1c4dd25d0eaddf6816e939900799d84b95d33424dcf25aed",
+    "src/chemistry/DetailedGas.cpp": "8da5d81a473530753ef2daddeda4cda50c5c6cbd8e71251e4bd298595ae4c578",
+    "src/chemistry/TraceStableMultiTransport.hpp": "18861d436abec5f1fe0fbabc910e1076c3f6655339d905f5e1619b67e4fd4185",
+    "include/cartmesh2d/fv/ReactingDiffusion2D.hpp": "bbe1f28c264fd320704d8d14c2eb5fd9a75d9782800dc4cf8280b56d3e139acb",
+    "src/fv/ReactingDiffusion2D.cpp": "52b965b12e7eb3ab84936a7eda8209c09417ff804c1bd8ad059c558b4f4a8974",
+    "include/cartmesh2d/fv/ReactingFlow2D.hpp": "89a75f8594b529e653643cfb01fd8e1e3429132554d5ddb276e5aea39c37c153",
+    "src/fv/ReactingFlow2D.cpp": "85c8cf9518faf3f91e2d1741cb10f81f7b7c115042886661aeee09959f1832bf",
+    "tests/detailed_gas_test.cpp": "39194be2130e39a7617e9184cbee8367a89f7ff32074eaf562c2b3b44516bff6",
+    "tests/diffusive_flux_probe.cpp": "5a3e049c0983d55a7d451c0dfffb3bb3f43363dd1bc1e4debbfed590190805f9",
+    "tests/reacting_flow_test.cpp": "a470df11c84b3be345b00143513fbe6ae3625281c1c03d1d51d50d27f6d12979",
+    "tests/reacting_flame_probe.cpp": "eb126d9b037d77768de3689f617dea4303ab5f395c8d15be4fc9c7ece05ff66f",
+    "tests/fixtures/reacting_flame_trace_muscl.fixture": "d628a959a366e5cb812e42640cf94eb1dfc8a69a56a10051be98cfa5eb8b2298",
+    "tests/fixtures/reacting_flame_trace_soret.fixture": "4e8b77e573ebed2a1a3c074a7003b1cf83d3bd214d9fc4937e82bdcc7f7b6781",
+    "tools/verification/verify_diffusive_flux.py": "4b20752d09b1764c029091014f867c2a1a5a4c72f279ceff385cf7c97f64b1ea",
+    "tools/verification/prepare_reacting_flame.py": "57d98c1bccf3df136550e9bed74fa1ab652497ed31ec9e1227b0367e100263d7",
+    "tools/verification/verify_reacting_flame.py": "1caa39235f5fa88b4dda081b99c94f5232984716f410ac28f02b779965285b15"
+  },
+  "binary_sha256": {
+    "build/cartmesh2d_reacting_flame_probe": "64e65867803183e98fe670aacbcac5783ffa235b58367e3e4812a0ac165eed00",
+    "build/cartmesh2d_diffusive_flux_probe": "7eb3a40aad13d88c77c674577e140bb905dea5b15742f0daea52a86fb3a64756",
+    "build/cartmesh2d_detailed_gas_tests": "1d5cbeb72e94c7381e03964bf63c67ba93aed72f2aa9d636c7ff64ebf9944d21",
+    "build/cartmesh2d_reacting_diffusion_tests": "467be997db5645b22f46fe0932417365e56800d818160853770e96e256fa6770",
+    "build/cartmesh2d_reacting_flow_tests": "83a5a91fd65095f9da1915139db522a128e08cc21c56c55f44b02cad119ef274"
+  },
+  "cantera": {
+    "version": "3.2.0",
+    "source_commit": "4a8358eb80cfeb50474386b5f9ec0b3a83519889",
+    "library_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c"
+  },
+  "model": {
+    "chemistry": "full h2o2 and GRI-Mech 3.0 mechanisms; no species clipping or mechanism reduction",
+    "concentration_transport": "direct Stefan-Maxwell mass-flux solve, analytically eliminated mass constraint, row/column equilibration, IEEE subnormal error bounds",
+    "thermal_transport": "full Cantera 3.2 3N kinetic system with equivalent velocity-difference equations and abundance scaling; actual-X back-substitution; internal O(N*1e-20) regularization retained",
+    "convection": "MUSCL arithmetic inward reserve; HLLC star-region flux with a common mass flux for species; unchanged HLLE admissibility fallback",
+    "time": "Strang chemistry and SSPRK2 transport; frozen diffusion rate in delta T/T and independent Y; CFL .35 and predictionSafety .9",
+    "boundaries": "fixed-state inlet reservoir, extrapolated outflow, slip/adiabatic sidewalls"
+  },
+  "verification": {
+    "native_tests": {
+      "passed": 7,
+      "total": 7,
+      "elapsed_seconds": 128.57,
+      "tests": [
+        "detailed_gas",
+        "reacting_diffusion",
+        "reacting_flow",
+        "reacting_flame_muscl",
+        "reacting_flame_soret",
+        "viscous_core",
+        "euler_core"
+      ],
+      "log": "outputs/combustion-foundation/flame-native-007-details.log"
+    },
+    "transport_interface": {
+      "passed": true,
+      "cases": 48,
+      "relative_arithmetic_tolerance": 2e-09,
+      "dilute_soret_tolerance": 2e-07,
+      "max_trace_relative_error": 5.08794794179664e-12,
+      "max_dilute_extrapolation_change": 2.0023168300811027e-11,
+      "report": "outputs/combustion-foundation/flame-diffusion-interface-005/report.json",
+      "independence": "NumPy Stefan-Maxwell equations and binary analytic limit; unmodified Python Cantera dilute Soret extrapolation; collision/thermodynamic data shared"
+    },
+    "completed_native_case": {
+      "numerical_checks_passed": true,
+      "physical_endpoint_reached": true,
+      "qualified_flame": false,
+      "cells": 464,
+      "spacing_m": 4e-05,
+      "time_s": 1e-06,
+      "accepted_steps": 418,
+      "rejections": 0,
+      "failure": "",
+      "thermo_relative_error": 1.2913903601263736e-14,
+      "source_error_over_gross_activity": 2.075351116755789e-15,
+      "face_assembly_relative_error": 1.0349746244192959e-16,
+      "species_sum_absolute_error": 5.6621374255882984e-14,
+      "mass_budget_per_initial_mass": 1.661217147083476e-15,
+      "energy_budget_scaled": 5.347877873051099e-13,
+      "momentum_budget_scaled": 3.6028247712141994e-16,
+      "element_budget_per_initial_mass": 8.632183755530648e-16,
+      "initial_residual": {
+        "species_residual_L1_over_chemical_activity": 0.28330173663265734,
+        "maximum_temperature_derivative_K_per_s": 906915.9888012456,
+        "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+        "pressure_max_relative_to_reference": 0.0007260122451633322
+      },
+      "final_residual": {
+        "species_residual_L1_over_chemical_activity": 0.4289688920503409,
+        "maximum_temperature_derivative_K_per_s": 799956.9599234292,
+        "hydrogen_consumption_kg_per_m2_s": 0.038998680419631206,
+        "pressure_max_relative_to_reference": 0.0003688105265655661
+      },
+      "maximum_temperature_drift_K": 0.8132755464621368,
+      "field_sha256": "324026cb8cbda82f3da73e3a562b7128309077c16f86a151354ca3638b1eade0"
+    },
+    "completed_case_elapsed_seconds_including_IO": 216.4834457920515,
+    "performance_scope": "Wall time with other validation jobs running; no general performance claim. Two-second sampling retained for follow-up.",
+    "frontend_app_platform_ci": "not run for this native module milestone",
+    "external_checkMesh": "not run; native topology and independent reader checks do not replace it"
+  },
+  "reference": {
+    "composition": "H2:1.6,O2:1,N2:3.76",
+    "temperature_K": 400,
+    "pressure_Pa": 101325,
+    "transport": "multicomponent with Soret",
+    "stages": [
+      {
+        "points": 134,
+        "speed_m_per_s": 2.4837996709614862,
+        "peak_temperature_K": 2219.035234295443,
+        "minimum_raw_mass_fraction": -1.6546770447291023e-16,
+        "maximum_raw_species_sum_error": 2.220446049250313e-14,
+        "refine_slope": 0.06,
+        "refine_curve": 0.12
+      },
+      {
+        "points": 238,
+        "speed_m_per_s": 2.477463422440337,
+        "peak_temperature_K": 2226.7761620664633,
+        "minimum_raw_mass_fraction": -2.314855495715792e-16,
+        "maximum_raw_species_sum_error": 7.882583474838611e-14,
+        "refine_slope": 0.03,
+        "refine_curve": 0.06
+      },
+      {
+        "points": 459,
+        "speed_m_per_s": 2.4830659424121304,
+        "peak_temperature_K": 2234.4436489125546,
+        "minimum_raw_mass_fraction": -1.005810858628349e-15,
+        "maximum_raw_species_sum_error": 1.2367884494324244e-13,
+        "refine_slope": 0.015,
+        "refine_curve": 0.03
+      }
+    ],
+    "thermal_thickness_m": 0.000354542735017425,
+    "projection": {
+      "maximum_absolute_mass_fraction_change": 1.2378986724570495e-13,
+      "allowance": 1.6631940186722205e-13,
+      "allowance_basis": "10 times BVP absolute species tolerance plus 64*(N+1)*machine epsilon for closure arithmetic",
+      "maximum_element_mass_fraction_change": 1.2378986724570495e-13,
+      "rho_momentum_total_energy_preserved_per_reference_point": true,
+      "native_time_step_projection": false,
+      "large_negative_input_rejected": true
+    },
+    "reference_model_difference": "Cantera free flame has constant thermodynamic pressure and no longitudinal kinetic-energy/viscous-work balance; native planar flow retains both"
+  },
+  "reference_interpretation": "Independent steady BVP uses constant thermodynamic pressure; native FV retains longitudinal kinetic energy and viscous work. Reference flame speed is not a native prediction.",
+  "open_calculations_at_snapshot": [
+    {
+      "cells": 610,
+      "spacing_m": 2e-05,
+      "requested_time_s": 1e-06,
+      "status": "running; not qualified",
+      "directory": "outputs/combustion-foundation/flame-native-comparison-004/native-1"
+    },
+    {
+      "cells": 890,
+      "spacing_m": 1e-05,
+      "requested_time_s": 1e-06,
+      "status": "running; not qualified",
+      "directory": "outputs/combustion-foundation/flame-native-comparison-004/native-2"
+    }
+  ],
+  "retained_failures": {
+    "outputs/combustion-foundation/native-flame-h40-001": "inverse-D cancellation produces outward flux of an absent species",
+    "outputs/combustion-foundation/native-flame-h40-005": "MUSCL reconstruction just beyond zero by floating-point roundoff",
+    "outputs/combustion-foundation/roundoff-fixed-003": "regularized backend Soret plateau generates excessive trace flux",
+    "outputs/combustion-foundation/flame-native-comparison-002": "subnormal linear-equation arithmetic bound failure; retained last accepted state",
+    "outputs/combustion-foundation/flame-native-comparison-003": "native endpoint reached; independent audit exposes near-zero HLLC mass/species inconsistency",
+    "outputs/combustion-foundation/flame-diffusion-interface-004": "48 raw cases retained; report serialization failed, not a verification pass"
+  },
+  "raw_sha256": {
+    "outputs/combustion-foundation/flame-native-comparison-004/native-0/field.json": "324026cb8cbda82f3da73e3a562b7128309077c16f86a151354ca3638b1eade0",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-0/audit.json": "37ec997abc999332abb83c731bb2a2b21a547a6bf3013c55bda6ea7a01c62024",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-0/steps.jsonl": "12b522bd9f5e0cec0ee30a75131203cd143093a16159e06d93c62721e01944a0",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-0/accepted.checkpoint": "292d1ba9e58516ebaea35284c6b8773b5b8c458c2b73a4ae29301485f26302a9",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "outputs/combustion-foundation/flame-reference-001/reference.json": "775283dc08994c484d9529e07ade25dcd7185381ac64ca0ac8f0342856425af6",
+    "outputs/combustion-foundation/flame-diffusion-interface-005/report.json": "d5f2282496aafa37aae7cd1e62eed044b3dee909c6d7306b8c2b8086ab52781b",
+    "outputs/combustion-foundation/flame-native-007.log": "18c42a9f3643b061bacb884f733d5a2f426878c56ff0fd77d8b1d7577c0ba834",
+    "outputs/combustion-foundation/flame-native-007-details.log": "0de8491d5768c967e9f913222bd6079c87942a1b46c5be78c8c7065c6453efe3",
+    "outputs/combustion-foundation/flame-build-015.log": "26ddbcb6e23715a2c90377e4fea0f06b94a0f6d849be552afde5a0c6e0d7d914",
+    "outputs/combustion-foundation/flame-build-016.log": "f10d82aae17f9960e8ed2b5702fb702a5b27ed6bb545633029f62992871c2ae8",
+    "outputs/combustion-foundation/flame-performance-sample-001.txt": "e7fe69e8d86dcc47d23aff9c52c6a0c7bed7efa55518022fe515c58e93da0fe7",
+    "outputs/combustion-foundation/flame-reference-001/grid-2.fixture": "2a37090a7e421fa1a42ab7ca0412035fc4f5a1379b8770c804dbf77d64a07202",
+    "outputs/combustion-foundation/flame-reference-001/grid-1.fixture": "e896bb23d9d51e2d19a386324b5fcfec4b51f0946cf2ae2f619a18071c0dd789",
+    "outputs/combustion-foundation/flame-reference-001/grid-0.fixture": "24178de475747c79ee16813b1047d2f1e418e173b3ae8b560f6af01dfe69db5b",
+    "outputs/combustion-foundation/flame-reference-001/profile-2.json": "587b6e97815965180f72af743c5f0abbd0a5f177b6c5c4bfe1e6160d03152746",
+    "outputs/combustion-foundation/flame-reference-001/profile-1.json": "9d55a9d5f05bb99382dd028357fe7fecb6098b4bb49412313da4914c7f8e2a57",
+    "outputs/combustion-foundation/flame-reference-001/profile-0.json": "ce528f14c183f105b24c55e065db706aa5fe9b8dbcd8a52870003f265b3610de",
+    "outputs/combustion-foundation/flame-reference-001/reference-2.yaml": "d237dc172803f0a80a055c084734c96e7849d841e9aabf3db3305c401836d6dc",
+    "outputs/combustion-foundation/flame-reference-001/reference-0.yaml": "99b352edfae9aafebd8b38c7643c82bde1e47c6845d9a55d607846068a532ed3",
+    "outputs/combustion-foundation/flame-reference-001/reference-1.yaml": "f4148e43809ee08caed76426f84acc3249d8d63afc48afecc46d407aa8348191"
+  },
+  "preview": {
+    "path": "artifacts/current/native-reacting-flame.png",
+    "sha256": "03cde10b5edec58cc96f57868c1e63798241184d8882d2f16197451141462e17",
+    "source": "Actual cell-average temperature and H2 after accepted native evolution; no synthetic flame field"
+  },
+  "next": [
+    "finish fine-grid runs",
+    "native flame propagation and time/grid error assessment",
+    "full-cost explicit/implicit advancement work",
+    "actual target geometry, appropriate turbulence/spray/radiation/heat-transfer models and experiments",
+    "product input/output, App and platform qualification"
+  ]
+}

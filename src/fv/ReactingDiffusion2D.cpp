@@ -227,14 +227,15 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
             for (const auto& [cell, weight] : weights) {
                 const auto& cp = properties[cell];
                 const auto ref = static_cast<std::size_t>(std::max_element(cp.massFractions.begin(), cp.massFractions.end()) - cp.massFractions.begin());
-                const double eref = cp.speciesEnthalpies[ref] - 8314.46261815324 * cp.temperature / mw[ref];
-                // Column ns is delta(rho e)/(rho cv T). Other independent
-                // columns are delta(rho Y_j)/rho, with Y_ref dependent.
+                // Similarity-transform the frozen conserved Jacobian to
+                // [delta T/T, independent delta Y] at fixed density. This
+                // removes artificial formation-energy scaling stiffness;
+                // the conservative operator and its eigenvalues are unchanged.
                 for (std::size_t column = 0; column <= ns; ++column) if (column != ref) {
                     const double inverseWeight = column == ns ? 0 : 1 / mw[column] - 1 / mw[ref];
-                    const double dt = column == ns ? cp.temperature
-                        : -(cp.speciesEnthalpies[column] - 8314.46261815324 * cp.temperature / mw[column] - eref) / cp.cv;
+                    const double dt = column == ns ? cp.temperature : 0;
                     const double dp = dt / cp.temperature + cp.meanMolecularWeight * inverseWeight;
+                    std::vector<double> fluxDerivative(ns + 1);
                     for (std::size_t row = 0; row <= ns; ++row) {
                         double value = kt[row] * weight[0] * dt + kp[row] * weight[1] * dp;
                         if (column != ns) for (std::size_t j = 0; j < ns; ++j) {
@@ -243,14 +244,21 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
                                 - cp.massFractions[j] * cp.meanMolecularWeight / mw[j] * inverseWeight);
                             value += kx[row][j] * weight[1] * dx;
                         }
-                        const double magnitude = std::abs(value * length);
-                        const auto accumulate = [&](std::size_t i) {
-                            const double scale = states[i].density * (row == ns ? properties[i].cv * properties[i].temperature : 1);
-                            rateRows[i][row] += checked(magnitude / (mesh_.cells[i].area * scale));
-                        };
-                        accumulate(owner);
-                        if (face.neighbour) accumulate(*face.neighbour);
+                        fluxDerivative[row] = value * length;
                     }
+                    const auto accumulate = [&](std::size_t i) {
+                        const auto& pcell = properties[i];
+                        const double mass = mesh_.cells[i].area * states[i].density;
+                        long double temperatureFlux = fluxDerivative[ns];
+                        for (std::size_t k = 0; k < ns; ++k) {
+                            rateRows[i][k] += checked(std::abs(fluxDerivative[k]) / mass);
+                            const double energy = pcell.speciesEnthalpies[k] - 8314.46261815324 * pcell.temperature / mw[k];
+                            temperatureFlux -= static_cast<long double>(energy) * fluxDerivative[k];
+                        }
+                        rateRows[i][ns] += checked(static_cast<double>(std::abs(temperatureFlux) / (mass * pcell.cv * pcell.temperature)));
+                    };
+                    accumulate(owner);
+                    if (face.neighbour) accumulate(*face.neighbour);
                 }
             }
         }

@@ -1,4 +1,5 @@
 #include "cartmesh2d/chemistry/DetailedGas.hpp"
+#include "TraceStableMultiTransport.hpp"
 
 #include "cantera/base/Solution.h"
 #include "cantera/base/AnyMap.h"
@@ -15,6 +16,7 @@
 #include <filesystem>
 #include <limits>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
 
 namespace cartmesh2d::chemistry {
@@ -30,6 +32,105 @@ double finite(double value, const char* name) {
 // This is a summation/serialization allowance, not a chemistry solver tolerance.
 double compositionAllowance(std::size_t count) {
     return 64 * std::numeric_limits<double>::epsilon() * static_cast<double>(count + 1);
+}
+// Stefan-Maxwell written directly in mass fluxes. No division by trace X/Y,
+// and no inverse-matrix differences cancelling O(1) terms to obtain tiny j_k.
+std::vector<double> concentrationFlux(const std::vector<double>& x, const std::vector<double>& mw,
+    double mean, double density, const std::vector<double>& binary,
+    const std::vector<double>& driving, double& backwardError) {
+    const auto n = x.size();
+    if (n == 1) return {0};
+    std::vector<std::vector<double>> full(n, std::vector<double>(n));
+    for (std::size_t k = 0; k < n; ++k) for (std::size_t j = 0; j < n; ++j) if (j != k) {
+        const double d = binary[k + n * j];
+        require(std::isfinite(d) && d > 0, "invalid binary diffusion coefficient");
+        full[k][j] = x[k] * mean / (density * mw[j] * d);
+        full[k][k] -= x[j] * mean / (density * mw[k] * d);
+    }
+    const auto constraint = static_cast<std::size_t>(std::max_element(x.begin(), x.end()) - x.begin());
+    // Eliminate the abundant flux analytically with sum(j)=0. A separately
+    // scaled all-ones constraint row can pollute trace rows during pivoting.
+    std::vector<std::size_t> independent, absent;
+    std::vector<double> result(n);
+    double fluxScale = 0;
+    for (std::size_t k = 0; k < n; ++k) if (k != constraint) {
+        require(full[k][k] < 0, "invalid Stefan-Maxwell diagonal");
+        fluxScale = std::max(fluxScale, std::abs(driving[k] / full[k][k]));
+        if (x[k] == 0) {
+            // This row has no off-diagonal coefficients, even when grad X_k
+            // is nonzero. Solve it exactly before eliminating the constraint.
+            absent.push_back(k); result[k] = driving[k] / full[k][k];
+        } else independent.push_back(k);
+    }
+    if (fluxScale == 0) return result;
+    const auto reduced = independent.size();
+    std::vector<std::vector<double>> a(reduced, std::vector<double>(reduced));
+    std::vector<double> rhs(reduced), columnScale(reduced);
+    for (std::size_t i = 0; i < reduced; ++i) {
+        rhs[i] = driving[independent[i]];
+        for (auto k : absent) rhs[i] -= (full[independent[i]][k] - full[independent[i]][constraint]) * result[k];
+        // This is the unit of a linear-system unknown, never a physical
+        // concentration/flux floor. Keep the unit normal so equilibration
+        // does not quantize a subnormal column before the solve. The solved
+        // unknown and final stored flux may still be arbitrarily smaller.
+        columnScale[i] = std::max({std::numeric_limits<double>::min(), x[independent[i]] * fluxScale,
+            std::abs(driving[independent[i]] / full[independent[i]][independent[i]])});
+        require(std::isfinite(columnScale[i]) && columnScale[i] > 0, "unrepresentable trace flux scale");
+        for (std::size_t j = 0; j < reduced; ++j)
+            a[i][j] = full[independent[i]][independent[j]] - full[independent[i]][constraint];
+    }
+    const auto original = a;
+    const auto originalRhs = rhs;
+    for (std::size_t i = 0; i < reduced; ++i) {
+        // Scale flux unknowns as well as equations. Trace equations then
+        // retain their own arithmetic scale through pivoting; no X cutoff.
+        for (std::size_t j = 0; j < reduced; ++j) a[i][j] *= columnScale[j];
+        double scale = 0; for (double v : a[i]) scale = std::max(scale, std::abs(v));
+        require(std::isfinite(scale) && scale > 0, "singular Stefan-Maxwell row");
+        for (double& v : a[i]) v /= scale; rhs[i] /= scale;
+    }
+    for (std::size_t column = 0; column < reduced; ++column) {
+        auto pivot = column;
+        for (std::size_t i = column + 1; i < reduced; ++i)
+            if (std::abs(a[i][column]) > std::abs(a[pivot][column])) pivot = i;
+        require(std::isfinite(a[pivot][column]) && a[pivot][column] != 0, "singular Stefan-Maxwell system");
+        std::swap(a[column], a[pivot]); std::swap(rhs[column], rhs[pivot]);
+        for (std::size_t i = column + 1; i < reduced; ++i) {
+            const double factor = a[i][column] / a[column][column]; a[i][column] = 0;
+            for (std::size_t j = column + 1; j < reduced; ++j) a[i][j] -= factor * a[column][j];
+            rhs[i] -= factor * rhs[column];
+        }
+    }
+    std::vector<double> flux(reduced);
+    for (std::size_t i = reduced; i-- > 0;) {
+        long double sum = rhs[i];
+        for (std::size_t j = i + 1; j < reduced; ++j) sum -= static_cast<long double>(a[i][j]) * flux[j];
+        flux[i] = finite(static_cast<double>(sum / a[i][i]), "Stefan-Maxwell flux");
+    }
+    for (std::size_t i = 0; i < reduced; ++i) flux[i] *= columnScale[i];
+    for (std::size_t i = 0; i < reduced; ++i) {
+        long double residual = -originalRhs[i], activity = std::abs(originalRhs[i]), coefficientNorm = 0;
+        for (std::size_t j = 0; j < reduced; ++j) {
+            const long double term = static_cast<long double>(original[i][j]) * flux[j];
+            residual += term; activity += std::abs(term);
+            coefficientNorm += std::abs(original[i][j]);
+        }
+        // IEEE subnormal fluxes have an absolute rounding bound, not eps*j.
+        // Include exactly the propagated half-ulp of each stored flux. This
+        // is neither a concentration floor nor a relaxed relative tolerance.
+        const long double quantization = coefficientNorm * std::numeric_limits<double>::denorm_min() / 2;
+        if (std::abs(residual) > compositionAllowance(n) * activity + quantization) {
+            std::ostringstream error; error.precision(17);
+            error << "Stefan-Maxwell backward error at species " << independent[i]
+                  << ": residual=" << residual << ", activity=" << activity;
+            throw std::runtime_error(error.str());
+        }
+        if (activity > 0) backwardError = std::max(backwardError, static_cast<double>(std::abs(residual) / activity));
+    }
+    long double sum = 0; for (auto k : absent) sum += result[k];
+    for (std::size_t i = 0; i < reduced; ++i) { result[independent[i]] = flux[i]; sum += flux[i]; }
+    result[constraint] = -static_cast<double>(sum);
+    return result;
 }
 class RangeCheckedReactor final : public Cantera::Reactor {
 public:
@@ -53,10 +154,12 @@ struct DetailedGas::Impl {
     explicit Impl(const std::string& file, const std::string& phase) {
         require(std::filesystem::is_regular_file(file), "mechanism must be an existing explicit file");
         info.source = std::filesystem::canonical(file).string();
-        solution = Cantera::newSolution(info.source, phase, "multicomponent");
+        solution = Cantera::newSolution(info.source, phase, "none");
         auto gas = solution->thermo();
         require(gas->type() == "ideal-gas", "this backend requires an ideal-gas mixture");
         require(solution->kinetics()->nPhases() == 1, "surface/multiphase mechanisms need a separate coupling");
+        auto transport = std::make_shared<TraceStableMultiTransport>();
+        transport->init(gas.get()); solution->setTransport(transport);
         info.phase = gas->name();
         info.backendVersion = Cantera::version();
         info.species = gas->speciesNames();
@@ -240,10 +343,13 @@ GasTransport DetailedGas::transport(const GasState& q) {
     require(result.viscosity > 0 && result.thermalConductivity > 0, "nonpositive transport property");
     const auto count = impl_->info.species.size();
     result.multicomponentDiffusion.resize(count * count);
+    result.binaryDiffusion.resize(count * count);
     result.thermalDiffusion.resize(count);
     transport->getMultiDiffCoeffs(count, result.multicomponentDiffusion.data());
+    transport->getBinaryDiffCoeffs(count, result.binaryDiffusion.data());
     transport->getThermalDiffCoeffs(result.thermalDiffusion.data());
     for (double value : result.multicomponentDiffusion) finite(value, "multicomponent diffusion");
+    for (double value : result.binaryDiffusion) require(std::isfinite(value) && value > 0, "invalid binary diffusion");
     for (double value : result.thermalDiffusion) finite(value, "thermal diffusion");
     return result;
 }
@@ -278,6 +384,8 @@ GasDiffusiveFlux DetailedGas::diffusiveFlux(const GasState& state, const GasDiff
                             "diffusion driving force");
     GasDiffusiveFlux result;
     result.species.resize(count);
+    const auto concentration = concentrationFlux(x, info.molecularWeights, meanWeight, state.density,
+        coefficients.binaryDiffusion, driving, result.concentrationSolveResidual);
     result.pureSpeciesLimit = std::count_if(state.speciesDensities.begin(), state.speciesDensities.end(),
         [](double value) { return value > 0; }) == 1;
     long double massSum = 0, activity = 0;
@@ -299,10 +407,14 @@ GasDiffusiveFlux DetailedGas::diffusiveFlux(const GasState& state, const GasDiff
         // otherwise a strict-positive FV update could create negative traces.
         // A pure gas has no Soret separation. Neither rule is a concentration
         // threshold, clipping, or a reduced-species mechanism.
-        const double thermal = result.pureSpeciesLimit ? 0 : backendThermal;
-        const double backendFlux = finite(static_cast<double>(sum - backendThermal), "backend diffusive mass flux");
+        // Soret vanishes at an exactly absent face species even if its
+        // concentration gradient is nonzero (for example an inlet face).
+        // That gradient can still drive a genuine Stefan-Maxwell mass flux.
+        const double thermal = result.pureSpeciesLimit || state.speciesDensities[k] == 0 ? 0 : backendThermal;
+        const double backendFlux = finite(concentration[k] - backendThermal, "regularized thermal mass flux");
+        result.matrixFormDifferenceL1 += std::abs(concentration[k] - static_cast<double>(sum));
         result.species[k] = state.speciesDensities[k] == 0 && gradient.moleFractions[k] == 0
-            ? 0 : finite(static_cast<double>(sum - thermal), "diffusive mass flux");
+            ? 0 : finite(concentration[k] - thermal, "diffusive mass flux");
         result.zeroLimitCorrection += std::abs(result.species[k] - backendFlux);
         massSum += result.species[k];
         activity += std::abs(thermal);
