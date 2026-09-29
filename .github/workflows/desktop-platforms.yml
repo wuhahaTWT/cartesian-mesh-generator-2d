@@ -79,6 +79,7 @@ jobs:
             outputs/platform-smoke/**/*.log
             outputs/platform-smoke/**/*.png
             outputs/platform-smoke/**/reader.json
+            outputs/platform-smoke/**/euler-audit.json
             build/Testing/Temporary/LastTest.log
             desktop/runtime/manifest.json
           if-no-files-found: warn

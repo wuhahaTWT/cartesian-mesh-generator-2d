@@ -1,0 +1,41 @@
+name: flow-research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['tools/optimization/**', 'tests/flow_topology_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
+  pull_request:
+    paths: ['tools/optimization/**', 'tests/flow_topology_test.py', 'tests/fixtures/topology_oc_stall.npz', '.github/workflows/flow-research.yml']
+
+permissions:
+  contents: read
+concurrency:
+  group: flow-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  topology:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-14]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      PYTHONUTF8: '1'
+      MPLBACKEND: Agg
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      VECLIB_MAXIMUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/optimization/requirements.txt
+      - name: Install optional research dependencies
+        run: python -m pip install -r tools/optimization/requirements.txt
+      - name: Test fluid topology research and guarded native interfaces
+        run: python tests/flow_topology_test.py

@@ -1,0 +1,319 @@
+{
+  "status": "experimental-development-prototype",
+  "branch": "codex/pure-cartesian-cfd",
+  "base_commit": "ace13f9346edf215f1b7845e73af8b5dad34a092",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "binary_sha256": "c16d11571e02ae0128c25a14fa49d95168ab6dc515168ca884f3114d1e908174",
+  "source_sha256": {
+    "src/immersed/CartesianFlow2D.cpp": "af8e065d9585429175e461fad9dbb567fa114c87a74ff3c25c8123fa0c215ad6",
+    "include/cartmesh2d/immersed/CartesianFlow2D.hpp": "bc941092ed89a8002302e38e8063f9c0bc036c7868d207cc3bba5178b3d7fb75",
+    "apps/cartmesh2d_immersed_cli.cpp": "a88856aa589ffcfd2ea511dc0bc0bd1e93339ee39798ca3c5973d4d71c975093",
+    "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "61080acf8e4da616845587cdd400ae8b1c48be51fa956f0f247a938eb3ea65c4"
+  },
+  "implementation": {
+    "grid": "uniform 2D MAC; all Cartesian cells retained",
+    "boundary": "periodic x, no-slip y, fixed solids via finite Brinkman mask",
+    "pressure": "kinematic periodic fluctuation; total p = fluctuation - drive*x",
+    "scope": "command line; no App integration"
+  },
+  "validation": {
+    "native_build": "system /usr/bin/clang++ Release",
+    "related_test_suite": "cartmesh2d_immersed_flow: 11 Python unittest cases passed on macOS",
+    "independent_equations_and_readback": "passed for channel, cylinder IC0 and cylinder Cholesky",
+    "full_CTest": "not-run",
+    "frontend_tests": "not-run; no frontend changes",
+    "App_check": "not-run",
+    "cross_platform_CI": "not-run in this task",
+    "mesh_independence": "not-run",
+    "general_physical_accuracy": "not-qualified",
+    "checkMesh": "not-applicable to full immersed analysis lattice; no conformal fluid polyMesh"
+  },
+  "cases": {
+    "channel": {
+      "command": [
+        "build/cartmesh2d_immersed_cli",
+        "--case",
+        "channel",
+        "--nx",
+        "128",
+        "--ny",
+        "32",
+        "--nu",
+        "0.01",
+        "--drive",
+        "0.12",
+        "--max-steps",
+        "40000",
+        "--linear-solver",
+        "ic0",
+        "--output",
+        "outputs/immersed-prototype/channel-current"
+      ],
+      "process_seconds": 13.485813916951884,
+      "summary": {
+        "format": "cartmesh2d-immersed-flow-v1",
+        "solver": "periodic-mac-brinkman",
+        "case": "channel",
+        "experimental": true,
+        "product_solver_ready": false,
+        "boundary_conditions": {
+          "x": "periodic velocity and pressure fluctuation",
+          "y": "stationary no-slip",
+          "solid": "finite Brinkman penalty"
+        },
+        "converged": true,
+        "stop_reason": "steady-converged",
+        "error": "",
+        "state_status": "last-accepted-iterate",
+        "steps": 29164,
+        "pseudo_time": 95.82213785042558,
+        "grid": {
+          "nx": 128,
+          "ny": 32,
+          "length": 4,
+          "height": 1,
+          "dx": 0.03125,
+          "dy": 0.03125,
+          "cells": 4096,
+          "classification_counts": [
+            4096,
+            0,
+            0
+          ],
+          "solid_area_geometry": 0,
+          "fluid_area_geometry": 4
+        },
+        "controls": {
+          "viscosity": 0.01,
+          "drive": 0.12,
+          "penalty_time": 0.0001,
+          "mask_half_width_cells": 0.5,
+          "max_steps": 40000,
+          "max_time_step": 0.02,
+          "steady_tolerance": 0.0001,
+          "continuity_tolerance": 1e-06,
+          "linear_tolerance": 1e-08,
+          "linear_solver": "ic0"
+        },
+        "normalization": {
+          "reference_velocity": 1,
+          "momentum": "max abs(nu Laplacian(u)-div(uu)-grad(p)-chi*u/eta+drive) / drive",
+          "continuity": "max abs(div(u))*H/Uref, including pressure reference cell",
+          "field_change": "max abs(delta velocity)/Uref",
+          "pressure_linear": "true L2 residual <= 1e-13 + linear_tolerance*L2(rhs)",
+          "pressure": "kinematic periodic fluctuation; total p = fluctuation - drive*x"
+        },
+        "metrics": {
+          "momentum": 9.998975567283852e-05,
+          "continuity": 0,
+          "field_change": 3.9436309107188094e-08,
+          "pressure_linear_residual": 0,
+          "pressure_linear_rhs_norm": 0,
+          "last_dt": 0.0032856308411214953,
+          "mean_velocity": 1.001875542486336,
+          "max_speed": 1.4998783293419018,
+          "flux_spread": 0,
+          "wall_speed_max": 0,
+          "wall_normal_speed_max": 0,
+          "wall_tangential_speed_max": 0,
+          "deep_solid_speed_max": 0,
+          "penalty_drag_per_density": 0,
+          "penalty_lift_per_density": 0,
+          "channel_relative_l2": 0.0012668506958903117
+        },
+        "timing": {
+          "grid_seconds": 8.8167e-05,
+          "boundary_seconds": 4.2e-08,
+          "solve_seconds": 13.396216625,
+          "pressure_seconds": 2.001457112000011,
+          "export_seconds": 0.053150542,
+          "pressure_iterations": 0
+        },
+        "qualification": {
+          "physical_accuracy": "not-qualified",
+          "mesh_independence": "not-run",
+          "external_checkMesh": "not-applicable: full analysis lattice, no conformal fluid polyMesh",
+          "transient_accuracy": "not-qualified; pseudo-time used to reach steady state"
+        }
+      },
+      "independent_audit": {
+        "momentum": 9.998975567283852e-05,
+        "continuity": 0.0,
+        "flux_spread": 0.0,
+        "max_speed": 1.4998783293419018,
+        "wall_speed_max": 0.0,
+        "wall_normal_speed_max": 0.0,
+        "wall_tangential_speed_max": 0.0,
+        "independent_equation_audit": "pass",
+        "staggered_and_vtk_readback": "pass",
+        "steps": 29164,
+        "stop_reason": "steady-converged",
+        "channel_relative_l2": 0.0012668506958903015
+      },
+      "output_sha256": {
+        "cells.csv": "d5b06309ef8f664812dcf5ac87d92aa894e6a10fa2754465314d05beaa423f7f",
+        "u.csv": "5b82c038d52b450c638d3b2f271e26b71c0d557a1e1c156bdfda8e4c76e45205",
+        "v.csv": "7c78e400284896c2493a307b14665f90eba6e9e4c145bb2cd8fb63d460f464fa",
+        "walls.csv": "b389f496d967d494b55f1675b0c2179caa6b1953169dae08c19c89e15fdfec7a",
+        "history.csv": "111fde84e4c02ddf4c0126d57d834949cce74f54fa57a71f1a1ba9f2c5b719d6",
+        "boundary.xy": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "field.vtk": "5de1f1034b9db1573dd2cb34d84711ab21e5050bcbff94ff51aadfa516be5be3"
+      }
+    },
+    "cylinder": {
+      "command": [
+        "build/cartmesh2d_immersed_cli",
+        "--case",
+        "cylinder",
+        "--nx",
+        "128",
+        "--ny",
+        "32",
+        "--nu",
+        "0.01",
+        "--drive",
+        "0.12",
+        "--max-steps",
+        "40000",
+        "--linear-solver",
+        "cholesky",
+        "--output",
+        "outputs/immersed-prototype/cylinder-cholesky"
+      ],
+      "process_seconds": 12.243418916943483,
+      "summary": {
+        "format": "cartmesh2d-immersed-flow-v1",
+        "solver": "periodic-mac-brinkman",
+        "case": "cylinder",
+        "experimental": true,
+        "product_solver_ready": false,
+        "boundary_conditions": {
+          "x": "periodic velocity and pressure fluctuation",
+          "y": "stationary no-slip",
+          "solid": "finite Brinkman penalty"
+        },
+        "converged": true,
+        "stop_reason": "steady-converged",
+        "error": "",
+        "state_status": "last-accepted-iterate",
+        "steps": 9425,
+        "pseudo_time": 30.96707067756246,
+        "grid": {
+          "nx": 128,
+          "ny": 32,
+          "length": 4,
+          "height": 1,
+          "dx": 0.03125,
+          "dy": 0.03125,
+          "cells": 4096,
+          "classification_counts": [
+            4002,
+            56,
+            38
+          ],
+          "solid_area_geometry": 0.07065745103148197,
+          "fluid_area_geometry": 3.929342548968518
+        },
+        "controls": {
+          "viscosity": 0.01,
+          "drive": 0.12,
+          "penalty_time": 0.0001,
+          "mask_half_width_cells": 0.5,
+          "max_steps": 40000,
+          "max_time_step": 0.02,
+          "steady_tolerance": 0.0001,
+          "continuity_tolerance": 1e-06,
+          "linear_tolerance": 1e-08,
+          "linear_solver": "cholesky"
+        },
+        "normalization": {
+          "reference_velocity": 1,
+          "momentum": "max abs(nu Laplacian(u)-div(uu)-grad(p)-chi*u/eta+drive) / drive",
+          "continuity": "max abs(div(u))*H/Uref, including pressure reference cell",
+          "field_change": "max abs(delta velocity)/Uref",
+          "pressure_linear": "true L2 residual <= 1e-13 + linear_tolerance*L2(rhs)",
+          "pressure": "kinematic periodic fluctuation; total p = fluctuation - drive*x"
+        },
+        "metrics": {
+          "momentum": 9.998063437733722e-05,
+          "continuity": 3.552713678800501e-15,
+          "field_change": 3.945867543819759e-08,
+          "pressure_linear_residual": 3.1760940714951664e-19,
+          "pressure_linear_rhs_norm": 4.263768867018727e-05,
+          "last_dt": 0.0032856308411214953,
+          "mean_velocity": 0.3691136534874107,
+          "max_speed": 0.7394321831322785,
+          "flux_spread": 3.3306690738754696e-16,
+          "wall_speed_max": 0.09085141543375508,
+          "wall_normal_speed_max": 0.03270156374997461,
+          "wall_tangential_speed_max": 0.09082514974845034,
+          "deep_solid_speed_max": 0.0006213883901982693,
+          "penalty_drag_per_density": 0.21043182715740066,
+          "penalty_lift_per_density": -5.550437496767979e-17,
+          "channel_relative_l2": null
+        },
+        "timing": {
+          "grid_seconds": 4.3834e-05,
+          "boundary_seconds": 0.038696542,
+          "solve_seconds": 12.106027208,
+          "pressure_seconds": 8.049168486999987,
+          "export_seconds": 0.078972709,
+          "pressure_iterations": 9425
+        },
+        "qualification": {
+          "physical_accuracy": "not-qualified",
+          "mesh_independence": "not-run",
+          "external_checkMesh": "not-applicable: full analysis lattice, no conformal fluid polyMesh",
+          "transient_accuracy": "not-qualified; pseudo-time used to reach steady state"
+        }
+      },
+      "independent_audit": {
+        "momentum": 9.998063437756852e-05,
+        "continuity": 3.552713678800501e-15,
+        "flux_spread": 5.551115123125783e-17,
+        "max_speed": 0.7394321831322785,
+        "wall_speed_max": 0.09085141543375508,
+        "wall_normal_speed_max": 0.03270156374997462,
+        "wall_tangential_speed_max": 0.09082514974845034,
+        "independent_equation_audit": "pass",
+        "staggered_and_vtk_readback": "pass",
+        "steps": 9425,
+        "stop_reason": "steady-converged"
+      },
+      "output_sha256": {
+        "cells.csv": "2cb28949244f422df60883a9d4a3f758268af0613644d25490cbf589e0c731ae",
+        "u.csv": "ce9fcca61cde0b9d6a80c74ca2a7258941d6b009868b5931fae5fb4e78f6bbde",
+        "v.csv": "f07b3a1a8fab3383ecce8899bfc0c1dde316e0b7cd269e0943e4d9ec69fe55be",
+        "walls.csv": "891ea09828385a6933e70f27001fdeab218a6d9d36b575d4b20df396121fcdd9",
+        "history.csv": "23b202d0cc1703f5048e6ee063ebfd6376e79dc1e0c64a0e2f55c748a2e1b0e0",
+        "boundary.xy": "d1801876a811f144b20233707cb43b673c0baafb28bdeadd93a1a821c8f623f4",
+        "field.vtk": "1b2a4c48482aad8a614c8f085d2312a16240a5870071582739df15c904745ebf"
+      }
+    }
+  },
+  "limits": [
+    "Finite Brinkman wall error is significant; at the measured cylinder maximum wall speed is about 9.085 percent of the empty-channel reference velocity, normal velocity about 3.270 percent.",
+    "Only uniform fixed-body periodic-channel laminar flow is implemented.",
+    "Full computational-domain continuity includes solid auxiliary fields; it does not certify exact physical wall impermeability.",
+    "Timing is observed local elapsed time for one 4096-cell case, not a controlled general performance qualification.",
+    "Earlier channel budget exhaustion and missing Cholesky thread initialization reproductions are retained in outputs/immersed-prototype."
+  ],
+  "pressure_backend_comparison": {
+    "cells": 4096,
+    "unchanged_numerical_core_sha256": "af8e065d9585429175e461fad9dbb567fa114c87a74ff3c25c8123fa0c215ad6",
+    "ic0_binary_sha256": "5c9591a3b7398a88986b9b11e4648923d32266459e2c832729b62ae8c3ff1255",
+    "ic0_solve_seconds": 228.045810542,
+    "ic0_process_seconds": 228.18838916701498,
+    "ic0_pressure_iterations": 1064654,
+    "cholesky_solve_seconds": 12.106027208,
+    "cholesky_process_seconds": 12.243418916943483,
+    "cholesky_pressure_iterations": 9425,
+    "max_abs_field_difference": {
+      "u": 3.3306690738754696e-16,
+      "v": 1.6197980456933436e-16,
+      "pressure_fluctuation": 2.2065682614424986e-15
+    },
+    "both_steps": 9425,
+    "note": "The IC0 baseline precedes the CLI-only Cholesky thread initialization fix; the numerical core is byte-identical. Methods use the same grid, physics, time step and residual controls. Cross-platform default remains IC0."
+  }
+}

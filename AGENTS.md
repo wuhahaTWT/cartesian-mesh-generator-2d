@@ -5,11 +5,11 @@
 - 当前根目录是唯一工作区，前端只看 `desktop/src/`；当前能力、版本与限制以 `docs/CURRENT_STATE_CN.md` 为准，旧版本不再充当当前基线。
 - 先核对 `git status`、`git branch --show-current` 和 `git worktree list`，再读 `docs/CURRENT_STATE_CN.md`。
 - 当前状态只维护该文件；代码导航在 `docs/DEVELOPMENT_CN.md`。不要新增带日期的审计、阶段计划或交接文档。
-- 当前主线为网格完整性、不可压层流精度/默认稳定性及高密度提速；提速优先减少外迭代并比较完整成本，不拓展新流动形式。
-- `codex/compressible-flow` 是用户明确授权的独立可压 Euler 开发线；只在该 worktree 使用自己的 `build/`、`outputs/` 和桌面 runtime，按可复现算例推进数值核心与交互，暂不合入 main。
+- 当前主线继续维护网格完整性、层流精度/默认稳定性及高密度提速；已集成实验入口按当前状态的边界维护，提速比较完整成本，后续物理扩展由明确任务驱动。
+- 可压层流、纯笛卡尔浸入边界和流体拓扑优化按各自开发版/实验版/研究工具范围维护；软件集成不扩大物理精度资格，默认数值控制不自动改变。
 - 重要突破完成验证后 commit 并 push；报告分支、提交和真实验证范围，不提交缓存、依赖或大批生成网格。
 
-- `main`为通过验证的集成线，`codex/cfd-development`为后续开发线；网格里程碑标签固定。用户已授权本轮整理后验证并集成CFD，不把这项授权当作无限期自动合并规则。
+- `main`为通过验证的集成线，`codex/cfd-development`为后续开发线；网格里程碑标签固定。三条 CFD 开发线本轮由用户明确授权集成，不把本轮授权当作无限期自动合并规则。
 - Git提交使用用户已配置的身份；不自动增加AI/bot的Co-authored-by。贡献者显示先查实际历史和GitHub API，不为刷新页面反复改写历史。
 
 ## 原生二维与物理硬约束
@@ -19,6 +19,7 @@
 - 闭合 BoundaryLoop 默认是固体；Domain2D 是外域；流体是 `domain - solid interior`。
 - Inside 是固体，不进入流体网格；Outside 是流体；Intersected 必须保留真实外侧 polygon。
 - 纯笛卡尔背景模式是独立的几何网格产品：保留 Inside/Outside/Intersected 的完整单元并分类，但不标记为流体求解网格。不得将其直接接入现有绕流CFD或以保留内部格子改变Cut-cell的流体语义。
+- 独立浸入边界原型使用独立计算网格、命名空间和输出格式；固体辅助未知量必须明确标识。保留真实几何面积、有限阻力泄漏和壁面误差，不将完整方格冒充现有共形流体拓扑，也不把实验求解收敛当作物理精度资格。
 - 外流须同时具有 EmbeddedBoundary 与 DomainBoundary，并满足 `fluid_area = domain_area - solid_area`（容差内）。
 - 内流只允许显式 `FluidRegion2D::Interior`。不得以单元中心采样或删除相交格子代替 Cut-cell。
 - 自交、零面积、重复边、孤立边、非流形、分类冲突必须显式失败；现有漏检属于待修缺陷，不能作为放宽规则的依据。

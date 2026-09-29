@@ -87,7 +87,7 @@ npm --prefix desktop run pack:mac
 
 构建依赖 Node.js 22、CMake 3.20+、Python 3 和 C++20 编译器；Windows 使用 Visual Studio 2022 C++ 桌面工作负载（含 Windows SDK），Linux 使用 GCC 11+ 或兼容 Clang。运行用户无需安装这些工具。`build-native.js` 准备本机六份 CLI、11 个样例和 runtime manifest；打包前检查实际 PE/ELF/Mach-O 格式与架构，拒绝跨系统或错架构混装。macOS 固定系统 clang 并检查动态库；Windows 使用静态 CRT、UTF-8 编码/路径 manifest。ZIP 导出改用流式 `yazl`，不依赖 ditto/zip/PowerShell 命令。
 
-`desktop-platforms.yml` 分别在 macOS 14 arm64、Ubuntu 22.04 x64、Windows Server 2022 x64 执行完整构建/测试。`tools/verification/desktop_platform_smoke.py` 启动打包 App，使用含中文和空格的临时/输出路径，运行 PNG、JPG、hybrid、均匀背景和自适应背景五例，解压 ZIP 后独立核对 OpenFOAM 单元、图片和标定。Linux 的 `--no-sandbox` 仅用于隔离 CI 虚拟显示测试；产品启动入口不附加该参数。通过后上传版本运行包与证据；不把独立读取器当成真实 checkMesh。
+`desktop-platforms.yml` 分别在 macOS 14 arm64、Ubuntu 22.04 x64、Windows Server 2022 x64 执行完整构建/测试。`tools/verification/desktop_platform_smoke.py` 启动打包 App，使用含中文和空格的临时/输出路径，运行 PNG、JPG、hybrid、均匀背景、自适应背景及两类可压壁面共七例，解压 ZIP 后独立核对 OpenFOAM 单元、图片和标定。Linux 的 `--no-sandbox` 仅用于隔离 CI 虚拟显示测试；产品启动入口不附加该参数。通过后上传版本运行包与证据；不把独立读取器当成真实 checkMesh。
 
 日常用 `ctest --test-dir build -R <相关测试名> --output-on-failure`；完整交付才统一全量运行。
 测试目录包含解析、拓扑、守恒、质量、尺寸场、真实输出和确定性检查，不是可删除的缓存。
@@ -147,9 +147,9 @@ SmoothMovingWall保留平滑壁速梯度，普通恒定壁迹具有不同语义�
 
 `cartmesh2d_fv_cli --help`是独立扩散/泊松入口。SST输运/壁距/稳态RANS代码位于`src/fv/Sst*`及对应测试；保留现有行为，不作为通用湍流资格。
 
-### 隔离可压 Euler 开发
+### 可压层流开发入口
 
-`codex/compressible-flow` 从 main 分出，保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。求解理想气体质量、两分量动量及总能量；可选恒系数 Fourier 导热及 Newtonian 黏性应力/做功，二者均进入总能量；尚无湍流或变物性。
+可压层流来自 `codex/compressible-flow`，0.4.41 集成保留默认 Rusanov / 一阶；`--flux hllc --order 2` 启用压力感知 HLLC/HLLE、受限线性重构与 SSPRK(2,2)。求解理想气体质量、两分量动量及总能量；可选恒系数 Fourier 导热及 Newtonian 黏性应力/做功，二者均进入总能量；尚无湍流或变物性。
 
 - `EulerFlux2D.cpp` 以真实面面积向量计算一个共享守恒通量；HLLC 使用包含左右声学锥的 Roe/Einfeldt 估计，检查两侧星状态，失效时显式计数并用 Rusanov。
 - 每个相邻单元全部邻面上的 `min(pL,pR)/max(pL,pR)` 取三次方，再取最小值作为接触恢复权重 ω；通量为 `F_HLLE + ω (F_HLLC - F_HLLE)`。传感器依据 [Simon 与 Mandal，式49–50、α=3](https://arxiv.org/pdf/1803.04954)，本实现采用多边形邻面模板并混合四个分量，**不冒称论文的选择性 HLLC-ADC 原样复现**。未加保护的最小旋转 Sod 例曾放大舍入扰动，测试中保留该场景。
@@ -204,7 +204,69 @@ python3 tools/verification/verify_euler.py --mesh final.solver.cm2d --prefix out
 v2 检查点将 k 和全部逐面热条件写入完整绑定；改变 k、热壁类型或热边界数值会拒绝续算。k=0 的旧 v1 检查点和数值默认保留，实测原二进制与新二进制的 Rusanov/一阶和 HLLC/二阶 Sod 检查点逐字节一致。模型目前没有温变/各向异性导热、辐射、固体共轭传热或隐式导热；这些需要独立方程、界面守恒与验证，不通过增加界面开关冒充完成。
 
 
+### 可压黏性应力与机械功
+
+`ViscousStress2D.hpp/.cpp` 是独立速度输运算子，输入二维网格、速度、密度和动力黏度 **μ（Pa·s）**；不能把不可压入口的运动黏度 ν 当作 μ。使用平面理想气体的 Stokes 假设：
+
+```text
+τ = μ [∇u + (∇u)^T − (2/3)(∇·u) I]
+F_viscous = [0, −(τ·Sf)x, −(τ·Sf)y, −u_face·(τ·Sf)]
+F_energy = F_convective_energy + F_viscous_work + q·Sf
+```
+
+`2/3` 是气体应力本构系数，不随二维网格改成 `1`；因此纵向黏性扩散系数为 `4μ/(3ρ)`，横向剪切为 `μ/ρ`。[NASA Wind 方程说明第29–31页](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)给出该本构与总能量应力做功。几何、面拓扑和未知量完全原生二维，没有调用三维核心。总能量已经包含应力做功，不能再次添加体积 `τ:∇u`，否则重复计入能量；动能与内能间转换由同一组守恒更新产生。
+
+- 距离加权最小二乘重建完整速度梯度；内面插值梯度后沿法向修正，使 `Gf·(CN−CP)=uN−uP`。因此保留交叉导数、法向应变和非正交部分。面速度以两侧梯度外推到真实面中心再插值，仿射场在偏斜面上仍精确。每条内部面计算一次，周期面对复制严格反号的动量与功；两阶段分别计算后平均。
+- `NoSlipWall` 只允许静止网格上的切向壁速；CLI 预设及 App 为静止壁，`custom` 文件可给逐面切向速度。对流部分仍使用不可穿透壁的镜像压力牵引，黏性部分使用指定壁速的 Dirichlet 梯度。静止绝热壁的质量/总能量通量精确为零；移动壁的功使用给定壁速，不用流体单元中心速度代替。带法向速度的壁面会拒绝，不能冒充移动网格。
+- 自由滑移壁的法向速度为零，切向黏性牵引投影为零；梯度模板使用局部平面壁的法向速度约束及切向零法向导数。开边界采用**零黏性牵引**，梯度延拓使用零法向速度导数；这是一项明确的边界模型，不能当作任意短出口的充分外流条件。
+- 稀疏准备阶段组装完整 `2N × 2N` 速度到动量残差 Jacobian A，包括交叉导数、非正交修正和周期耦合。每格黏性速率 `max_k Σ_j |A_(2i+k,j)| / (2ρ_i V_i)` 的单位为 `1/s`，与声学、Fourier 速率共同限制显式步长；每个 RK 阶段用当时密度重算速率。该行范数是显式扩散控制量，**不是完整非线性能量 Jacobian 或任意网格的稳定/熵证明**；两个前向阶段与最终候选继续检查正密度和正内能，失效缩步，不裁剪。
+- `EulerStepper2D` 拥有不可变几何、物性和边界，缓存热/黏性算子；内层只求场梯度与通量。μ=0 不创建黏性算子并保留旧推进路径。v3 检查点同时绑定 μ、k、全部壁面模型及切向壁速；v1/v2仍按原字节格式生成/读取。边界文件v3在v2热条件后增加 `wallUx wallUy`，旧v1/v2继续可读。`custom` 必须在边界文件指定条件，禁止用预设开关覆盖。
+- `.faces.csv` 保存 `viscousMomentumX/Y`、`viscousWork`、`convectiveMomentumX/Y`、`convectiveEnergy` 与 `heatFlux`；`.cells.csv` 保存 `viscousRate`；历史保存 `viscousCourant` 和向外 `boundaryViscousWork`。负壁功代表机械能输入。`verify_viscous_stress.py` 从原始多边形建立稀疏线性表达式，并独立求完整动量 Jacobian；`verify_euler.py` 重建最后步两阶段的黏性/热/对流通量并核对全部相邻历史的质量与能量。
+
+直接算子测试使用32格扭曲网格及旋转网格的平移、刚体转动、均匀膨胀、简单剪切和一般仿射速度。应力/功及实际残差扰动得到的行范数使用1024 epsilon的归一化浮点检查；不是工程流场精度要求。独立面通量审计保持512 epsilon，增加黏性线性表达式绝对值包络作为量纲尺度。SI相似性同时缩放 μ、k、压力、速度、时间和长度，比较归一化完整场；允许4096 epsilon累积浮点差异。
+
+连续解验证包含16/32/64格周期横向剪切波 `v=A exp(−μw²t/ρ) cos(wx)`（A=1e−4声速），及原热模态线性系统的速度行增加 `−4μw²B/(3ρ)`（相对温度幅度1e−5）。独立矩阵指数不读取求解器系数。Couette 使用周期x与上下切向壁面，μ=k=0.1、U=0.5、H=1、Tw=1，解析稳态为 `u=Uy/H`、`T=Tw+μU²/(2k)·(y/H)(1−y/H)`、`p=1`、`ρ=p/(RT)`；从解析场开始推进至t=0.1，在8/16/32层比较温度误差及机械功/热量收支，**这是稳态离散一致性检验，不是从静止收敛验收**。观测阶下限1.7用于防止光滑问题退回一阶，允许限制器与壁面局部误差；整个CLI验证通常数十秒。任意Cut-cell边界层、强激波/黏性相互作用、壁面摩擦/热流绝对精度和长期稳定性尚未验收。
+
+```sh
+ctest --test-dir build -R 'cartmesh2d_(viscous_core|euler_viscosity)' --output-on-failure
+python3 tests/euler_viscosity_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-viscosity/validation
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --density 1.225 --pressure 101325 --u 50 --end-time .00005
+```
+
+最后一条为便于短时验证的测试物性，不是空气推荐值；μ、k、γ、R 必须按实际问题指定。默认μ=k=0、滑移、Rusanov一阶均未自动更改。
+
+
+### 可压壁面精度与时间细化
+
+`--wall-gradient quadratic` / App“壁面热流 / 应力梯度 → 二次重构”是可选数值格式。默认仍为 `linear`；适用于定温壁的 Fourier 热流和无滑移壁的完整黏性应力。内面、指定热流、绝热、滑移和开边界保留原模型。该选项允许随检查点显式更改，物理边界和物性仍严格绑定。缓存求解器在构造时选择壁面格式，推进时拒绝与缓存不同的设置。
+
+`WallGradient2D` 只依赖原生二维有限体积几何。以真实壁面中心的指定值固定常数项，在法向/切向局部坐标拟合五项 `n, t, n²/2, nt, t²/2`。沿共形流体 owner/neighbour 图扩展模板，周期边界使用平移后的像点，绝不跨越物理边界。先取两层邻域，必要时最多五层；超过512个像单元或仍缺秩时显式失败，不静默降阶。法向和切向分别按局部跨度无量纲化，再进行列归一化、列主元 Householder QR；不用正规方程。尺度化矩阵残余列范数须大于 `sqrt(machine epsilon)`，这是保留约半数双精度有效位的数值秩保护，不是物理精度阈值。准备时只缓存梯度系数，运行时对“样本值减目标壁值”求和，常量在加权前消去。
+
+二次最小二乘和QR的基本做法可参考 [NASA White/Nishikawa，D.2.3节](https://ntrs.nasa.gov/api/citations/20210024196/downloads/white_and_nishikawa_afang_paper_v_1.7.pdf)。本实现是独立推导的二维壁面值约束模板，不是该论文的三维F-ANG移植。这里输入的是现有二阶方法中的**质心原始变量点值近似**，没有将保守量单元平均值变成三阶多项式，也没有高阶面积/面通量积分；**局部二次重构不等于全局三阶**。对流仍为所选一阶/二阶，光滑问题按整体二阶验收；非光滑角点和激波附近不能使用光滑阶数推断精度。
+
+热流和应力直接用恢复的壁面梯度；壁功始终使用指定壁速。所有新增非局部系数进入热残差和完整动量块的行范数，参与两阶段组合CFL及正性重试。高精度热算子仍可能非M矩阵；范数及正性检查不是任意Cut-cell的稳定性证明。`quadraticHeatWalls` / `quadraticViscousWalls` 声明实际采用二次重构的面数；原始多边形独立读取器使用再正交Gram–Schmidt构建参考系数，与原生Householder实现区分，复核通量、壁功、扩展行范数和实际面数。
+
+精度验证分开组织，通常约1–2分钟完成本轮新增数值测试，完整回归另计：
+
+- `wall_gradient_test.cpp`：二次温度/速度场、扭曲及旋转网格、长宽比0.03/3/30、长度缩放1e−3/1/1e3；对热流、应力和面中心壁功进行4096 epsilon的归一化代数检查，直接扰动每个自由度检查完整Jacobian。该阈值容纳QR和差分累计舍入，只验证代数一致性。缺秩最小网格必须拒绝。新增极端长宽比算例会把已舍入的绝对点值误差按1/法向间距放大，因此另以实际梯度系数传播输入舍入包络进行相同4096 epsilon检查，并同时保留原几何门限及未经包络缩放的误差；不把这个代数诊断作为物理精度门限。
+- `transport_precision_test.cpp`：`T=2+0.2 sin(πx)sinh(πy)/sinh(π)` 的无源稳态导热，8/16/32平方网格及扭曲网格。独立单位扰动恢复实际算子，线性求解后再针对真实通量残差修正；线性容差1e−11与1e−13的场差应小于温度离散误差1%，排除求解容差污染。壁面热流比较**解析边积分**，L1分子为逐面绝对误差之和，分母为全部壁面解析热流绝对值之和（均W/m）。最细误差目标0.5%并至少优于原格式2倍，细化观测阶>1.7；这是小规模光滑热场目标，不是所有工程算例的通用标准。
+- `euler_wall_accuracy_cli_test.py`：Couette含黏性发热，μ=k=0.1、R=1、U=0.5、H=1、Tw=1。8/16/32层解析初值保持试验之外，还从静止、均匀冷场推进8/16/32层算例至t=60，验证温度、速度、场变化率、壁面功热平衡和全过程累计能量。温度误差以解析最大温升0.03125 K归一化，速度以0.5 m/s归一化，目标均为1e−6；最后一步保守量时间导数也须小于测试单位下1e−7，不能只凭目标时间或净热量接近零宣布稳态。冷启动封闭质量固定，解析稳态压力由质量约束决定，不把压力强定为初值1。用解析积分 `p=1/[∫₀¹ 1/T(y) dy]` 另查压力的空间细化，观测阶>1.8且最细相对L∞误差<0.01%，防止温度多项式恰好复现掩盖全场误差。
+- 时间精度使用固定网格冷启动，dt=1e−3/5e−4/2.5e−4，相同终点0.02；以dt=1.5625e−5的离散轨迹为参考，再与3.125e−5核对参考差异须小于最细被测误差10%。四个保守分量的RMS误差应表现为二阶（观测阶>1.8）；这是时间自收敛，不是连续PDE解析轨迹。
+- 同物理条件按接受步中断/续算必须逐字节一致；显式切换壁面数值格式可以续算。篡改通量、步长系数和壁面格式/面数必须被独立审计拒绝。原线性路径与修改前二进制比较黏性/导热/无黏四组检查点。
+
+时间细化还保留了一个最小失败例：dt=1.5625e−5累加1280次后，浮点时间可能比0.02少约5e−16，原CLI因尾步小于声明最小步长而错误失败。`EulerStepControls2D::endTime` 现在让求解器检查实际CFL步长后的剩余区间，必要时把倒数第二步分成两个合规小步，真实计算每一步通量；不伪造终点时间，不绕过最小步长。全部接受步均检查上下限，检查点仍保存实际接受时钟。
+
+```sh
+ctest --test-dir build -R 'cartmesh2d_(wall_gradient|transport_precision|euler_wall_accuracy)' --output-on-failure
+python3 tests/euler_wall_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-wall-accuracy/validation
+build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --wall-gradient quadratic --density 1.225 --pressure 101325 --u 50 --end-time .00005
+```
+
+最后一条仍为短时App验证物性，不是空气推荐值。实际曲壁App和独立面通量审计证明功能路径与离散实现相符，不能代替曲壁摩擦/换热关联式、网格无关性或跨平台精度验收。[壁面精度证据](../artifacts/current/native-euler-wall-accuracy.json) · [实际结果与细化图](../artifacts/current/native-euler-wall-accuracy.png)
+
 ## 流体拓扑优化研究入口
+
+研究测试独立于产品 CTest：安装 `tools/optimization/requirements.txt` 后运行 `python tests/flow_topology_test.py`。`.github/workflows/flow-research.yml` 在 macOS、Windows、Linux 检查这套测试；不把 NumPy/SciPy/Matplotlib 加入桌面运行依赖。
 
 `tools/optimization/` 是用户授权的独立研究原型，当前为命令行入口，未接入桌面菜单，也未替换原生不可压求解器。设计变量覆盖内部材料分布，允许流道连接关系变化；不是只调整几根管道的宽度或控制点。它不读取产品 `.background.json` 作为流体网格。
 
@@ -288,6 +350,72 @@ outputs/topology-env/bin/python tools/optimization/render_connectivity_study.py 
 
 本项目目前完成的是可复现的自身实现与诊断能力。可进一步检验的研究假设是：在固定验证预算下，依据候选间目标差、局部网格误差和可解性选择细化区域，能否比统一加密更少误选设计。这仍是待提出具体算法、做多案例和独立对照的假设；当前单例收益、测试通过和失败记录都不等于已经获得原创方法或通用可靠性证明。
 
+## 纯笛卡尔浸入边界研究入口
+
+`codex/pure-cartesian-cfd` 的 `cartmesh2d_immersed_cli` 是独立原生 C++ 开发原型，尚未接入 App。核心在 `include/cartmesh2d/immersed/CartesianFlow2D.hpp` 和 `src/immersed/CartesianFlow2D.cpp`，复用二维几何诊断和既有稀疏线性代数。它不读取或伪装 `*.solver.cm2d`，不修改背景 JSON 的 `solver_ready=false`，也不经过或降低现有 Cut-cell 的 Solver 质量门。
+
+### 方程和当前适用范围
+
+计算域为 `[0,L] × [0,H]`，均匀 MAC 交错网格：压力在格心，u/v 在对应面中心。所有方格完整保留，固体中的数值是辅助未知量，不属于真实流体。x 方向速度和压力扰动周期，y 两壁静止无滑移。恒定 x 加速度 `drive` 等价于周期压差驱动；输出运动学总压力可写为 `p_total = p_fluctuation - drive*x`。这是周期通道，不是入口/压力出口外流。
+
+离散不可压 Navier–Stokes–Brinkman 方程：`du/dt + div(uu) = -grad(p) + nu Laplacian(u) + drive e_x - chi u/eta`，`div(u)=0`。对流为一阶守恒迎风，黏性项为中心差分；对流/扩散显式、阻力隐式，自动限制伪时间步。压力校正使用 `beta=1/(1+dt chi/eta)`，求解 `-div(beta grad(phi)) = -div(u*)/dt`，然后校正速度和压力。压力参考设为第一个格心，接受前仍检查该格的连续性。默认 PCG/IC0；macOS 可显式选择系统 Cholesky，CLI 在调用前固定本进程的 `VECLIB_MAXIMUM_THREADS=1`。当前用伪时间推进求稳态，尚未取得非定常精度资格。
+
+`chi` 来自原始二维折线的有符号距离，默认在半宽 `0.5 min(dx,dy)` 内使用正弦过渡。折线本身不移动、不平滑、不裁切网格。`eta` 是阻力时间尺度，默认 `1e-4` 秒；有限阻力和掩膜过渡都会产生壁面误差。真实壁面上按原线段插值采样速度，分别报告总速度、法向穿透和切向滑移。`penalty_drag_per_density` 是辅助阻力体积分，不是已验证的表面应力阻力系数。壁面诊断包含每条原线段两端及不超过 `h/8` 的间隔，`h=min(dx,dy)`；报告的是这些稠密采样中的最大值。
+
+`channel` 不含内置固体。`cylinder` 是圆心 `(L/3,H/2)`、半径 `.15 H` 的 128 段规则多边形，实际坐标保存在 `boundary.xy`；流动代表周期通道里的重复障碍物。`custom --boundary SOLID.xy` 接受以空行分隔的原生多环固体，嵌套按奇偶规则保留孔洞；当前只支持静止壁面，不接受带命名边界角色的 XY 元数据。非法、自交、重复边、接触环显式拒绝。固体离外域边界/周期接缝须留出两格加掩膜半宽，至少有一个完整内部单元，否则报告当前不支持或欠分辨；这不是任意细缝/薄壁已被充分解析的证明。
+
+### 压力与真实壁面力耦合
+
+显式启用 `--wall-method surface-penalty` 时，在原体积 Brinkman 项上增加整段壁面惩罚。`J` 是交错速度在原始折线上的双线性插值，`W=ds*h/(dx*dy)`，`E=sqrt(W) J`。每条线段在两种 MAC 分量的插值结点线处划分积分区间，每区间使用三点 Gauss 积分；区间内 `J` 沿线段至多二次，因此 `Jᵀ W J` 的四次积分是精确的（浮点算术范围内）。这些是积分点，原输入折线和完整方格均不改变。新增/倒置共线顶点的回归检查几何分段不会实质改变解。
+
+令 `D` 为 MAC 散度，`B=[-h D; E]`。每个伪时间步同时求解
+
+```text
+(B beta Bᵀ + diag(0, eta_wall/dt)) q = B u_star/dt
+u_new = u_star - dt beta Bᵀ q
+p_new = p_old + h q_pressure
+wall_force = -Eᵀ q_wall
+E u_new = eta_wall q_wall
+```
+
+压力参考行仍被固定，但接受前检查全部格的散度。壁面力、压力和体积阻力使用同一个 `beta`；没有求解后截断壁速的步骤。`eta_wall > 0` 保证壁面块有正的顺应项，处理重复约束，不通过删除坏约束或对角补丁凑成可解矩阵。模型的壁面功率满足 `sum(u*wall_force)*dx*dy = -eta_wall sum(q_wall²)*dx*dy <= 0`，独立读取器重新构造 `Eᵀ q_wall` 并核对这个恒等式。
+
+`--wall-penalty-time` 默认设为 `1e-4` 时间单位；本次比较显式用 `1e-6`，无量纲值 `eta_wall Uref/H=1e-6`。它是当前尺度的开发参数，不是通用最优值或物理滑移长度。该模式依然是**有限表面惩罚**，不是精确的无滑移/锐界面资格。单纯减小体积 `eta` 不能消除插值壁面误差；首个中点壁面版本还出现“标记点很小、点间穿透较大”的斜壁案例，因此改用整段积分，保留原结果。
+
+`--linear-solver auto` 在旧 Brinkman 模式选择 IC0，在新耦合模式选择 Jacobi；macOS 可显式选 Cholesky。原 IC0 对这种含壁面块的 SPD 矩阵出现过非正主元，现明确拒绝此组合，失败复现在 `outputs/wall-treatment/gauss-ic0-probe/`，不静默切换或改变线性门。Jacobi 在本机完成小规模稳态和三步场对照；大规模效率、其他平台未验证。资源上限为 16,384 个壁面积分点、8,000,000 个原始图连接贡献，超限显式失败，不删除输入几何。
+
+`wall_force` 是加速度，`wall-markers.csv` 的 `multiplier_*` 为 `q_wall`；`weight` 是无量纲 `W`。新增表面/体积反力应同时读取：二者可有反向分量，不能单独把其中一项当作真实阻力系数。`surface_power_per_density` 是完整辅助计算域内的模型功率；`force_balance` 是驱动力、两项障碍物反力和上下通道壁黏性力之差除以 `drive*L*H`。`wall_normal_flux_net/abs` 是原折线稠密采样的法向有符号/绝对速度线积分，量纲为长度²/时间。网格散度很小并不使这些物面通量自动为零。
+
+### 停止量和结果语义
+
+`Uref = drive H²/(12 nu)` 是无障碍通道解析平均速度。开发默认 `steady-tolerance=1e-4` 检查最大离散动量余量除以驱动加速度，同时检查最大速度步变化除以 `Uref`。这是相对驱动的 0.01% 代数平衡目标，不是壁面或物理误差要求。`continuity-tolerance=1e-6` 检查 `max|div(u)| H/Uref`，每个接受步都必须满足。新模式还逐步检查 `max|Ju - eta_wall q_wall/sqrt(W)|/Uref <= continuity-tolerance`，这是与速度同尺度的壁面方程求解误差；它与真实壁速、法向穿透分开报告，不作为物理无滑移证明。该连续性和截面通量覆盖含辅助固体的完整计算域，不能代替真实壁面不穿透验证。默认线性相对 L2 目标 `1e-8` 用来使压力校正的误差小于这些开发停止量，仍使用原线性工具的 `1e-13` 绝对算术余量并独立核对实际残差；不将其中任何数值当作通用精度标准。
+
+达到步数预算返回码 2 和 `iteration-limit`。失败候选不替换最后接受步；若一个步都没接受，结果明确为 `initial-only`，不能作为检查点。POSIX 取消保存最后接受步，返回 130。线性/连续性失败返回 `candidate-failed`；输入/导出错误返回 1。`steady-converged` 返回 0，仍不表示网格无关或有限阻力壁面精度合格。首个 4096 格冷启动通道在 20000 步时未达到动量目标，原结果保留在 `outputs/immersed-prototype/channel/`；默认预算据此设为 40000 步，没有放宽残差。
+
+### 构建、运行和独立核查
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+cmake --build build --target cartmesh2d_immersed_cli -j2
+ctest --test-dir build -R '^cartmesh2d_immersed_flow$' --output-on-failure
+build/cartmesh2d_immersed_cli --case channel --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --output outputs/immersed-channel
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --output outputs/immersed-cylinder
+# macOS 可选压力后端，使用新目录保留 IC0 对照
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu 0.01 --drive 0.12 --max-steps 40000 --linear-solver cholesky --output outputs/immersed-cylinder-cholesky
+# 新壁面模式显式比较参数；其他平台省略 Cholesky 参数，auto 选择 Jacobi
+build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --wall-method surface-penalty --wall-penalty-time 1e-6 --linear-solver cholesky --output outputs/immersed-wall
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-wall --require-converged
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-channel --require-converged
+python3 tools/verification/verify_immersed_flow.py outputs/immersed-cylinder --require-converged
+python3 tools/visualization/render_immersed_flow.py outputs/immersed-cylinder --output outputs/immersed-cylinder/preview.png
+```
+
+绘图脚本需要 NumPy/Matplotlib；原生求解与独立读取器不需要它们。输出目录必须尚不存在，避免覆盖之前的失败/接受证据。`summary.json` 记录实际参数、停止原因、量纲/归一化和网格/边界/求解/导出分段时间（`pressure_seconds` 为包含在求解总耗时中的压力线性求解时间）；`u.csv`、`v.csv` 保留所有交错自由度、掩膜和表面力，`cells.csv` 和真实二维 `field.vtk` 保留每个完整方格及几何分类。`wall-markers.csv` 保存积分点/权重/乘子，`walls.csv` 是独立于积分点的稠密实际折线采样，`history.csv` 只记录接受步，原始折线单独导出。不能将仅网格生成的时间视为总成本。
+
+独立 Python 读取器重新计算动量、连续性、通量、壁面插值、原折线面积和掩膜样本，并核对 VTK/CSV 一致性及线性真残差。18 项相关测试覆盖解析通道、圆柱流动阻滞/对称、原始多边形/孔洞、确定性、预算/失败/取消、非法输入/损坏导出、整段壁面改善、共线分段/方向不变性、表面力破坏检测、空域不变性和两种耦合后端场对照。斜壁改善至少 4 倍是低成本开发回归，归一化采用相同 `Uref`。另核对每段二次插值的 Gauss 包络：稠密壁速不超过标记最大值的 `7/3` 加 `1e-12 Uref` 算术读回余量；`7/3` 来自三点 Gauss 拉格朗日基函数绝对值之和的上界，用于抓住旧漏点问题，不是新增工程壁面误差门。解析通道的 16×16 单网格 1% L2 界、粗圆柱的壁速上界仅为低成本开发冒烟检查，不属于工程验收。本次额外做了固定原折线的两个网格和周期 x 平移检查；它们用于揭示敏感性，不代替完整网格收敛/独立物理对标。未运行全量回归、跨平台或性能极限研究。
+
+本入口没有真实共形流体 `polyMesh`，因此现有 `checkMesh` 和 Cut-cell Solver 质量门不适用；它们没有被这个独立读取器替代。方法背景：[Brinkman 固体惩罚法](https://www.math.u-bordeaux.fr/~chabrune/publi/ABF-NM.pdf)、[含惩罚项的压力投影预条件研究](https://arxiv.org/abs/2306.06277)。压力与壁面力联合约束的背景见 [Taira–Colonius 2007 原作者论文目录](https://www.seas.ucla.edu/fluidflow/pubs.html)（DOI: 10.1016/j.jcp.2007.03.005）。本实现为带有限顺应项的双线性表面惩罚，没有复现这些论文的整套算法、精度阶或性能结论。
+
 ## 验证与证据
 
 | 目的 | 入口 |
@@ -336,64 +464,3 @@ git log --all --oneline -- src/quality/SolverTopology2D.cpp
 ```
 
 `mesher-v0.3.0`是固定网格里程碑。旧`archive/*`标签保存历史方案，不是当前验收。历史截图与JSON保留原版本适用范围；不再复制成新的阶段文档或完整源码副本。
-
-
-### 可压黏性应力与机械功
-
-`ViscousStress2D.hpp/.cpp` 是独立速度输运算子，输入二维网格、速度、密度和动力黏度 **μ（Pa·s）**；不能把不可压入口的运动黏度 ν 当作 μ。使用平面理想气体的 Stokes 假设：
-
-```text
-τ = μ [∇u + (∇u)^T − (2/3)(∇·u) I]
-F_viscous = [0, −(τ·Sf)x, −(τ·Sf)y, −u_face·(τ·Sf)]
-F_energy = F_convective_energy + F_viscous_work + q·Sf
-```
-
-`2/3` 是气体应力本构系数，不随二维网格改成 `1`；因此纵向黏性扩散系数为 `4μ/(3ρ)`，横向剪切为 `μ/ρ`。[NASA Wind 方程说明第29–31页](https://www.grc.nasa.gov/WWW/wind/TFAWS2007/Formulation.pdf)给出该本构与总能量应力做功。几何、面拓扑和未知量完全原生二维，没有调用三维核心。总能量已经包含应力做功，不能再次添加体积 `τ:∇u`，否则重复计入能量；动能与内能间转换由同一组守恒更新产生。
-
-- 距离加权最小二乘重建完整速度梯度；内面插值梯度后沿法向修正，使 `Gf·(CN−CP)=uN−uP`。因此保留交叉导数、法向应变和非正交部分。面速度以两侧梯度外推到真实面中心再插值，仿射场在偏斜面上仍精确。每条内部面计算一次，周期面对复制严格反号的动量与功；两阶段分别计算后平均。
-- `NoSlipWall` 只允许静止网格上的切向壁速；CLI 预设及 App 为静止壁，`custom` 文件可给逐面切向速度。对流部分仍使用不可穿透壁的镜像压力牵引，黏性部分使用指定壁速的 Dirichlet 梯度。静止绝热壁的质量/总能量通量精确为零；移动壁的功使用给定壁速，不用流体单元中心速度代替。带法向速度的壁面会拒绝，不能冒充移动网格。
-- 自由滑移壁的法向速度为零，切向黏性牵引投影为零；梯度模板使用局部平面壁的法向速度约束及切向零法向导数。开边界采用**零黏性牵引**，梯度延拓使用零法向速度导数；这是一项明确的边界模型，不能当作任意短出口的充分外流条件。
-- 稀疏准备阶段组装完整 `2N × 2N` 速度到动量残差 Jacobian A，包括交叉导数、非正交修正和周期耦合。每格黏性速率 `max_k Σ_j |A_(2i+k,j)| / (2ρ_i V_i)` 的单位为 `1/s`，与声学、Fourier 速率共同限制显式步长；每个 RK 阶段用当时密度重算速率。该行范数是显式扩散控制量，**不是完整非线性能量 Jacobian 或任意网格的稳定/熵证明**；两个前向阶段与最终候选继续检查正密度和正内能，失效缩步，不裁剪。
-- `EulerStepper2D` 拥有不可变几何、物性和边界，缓存热/黏性算子；内层只求场梯度与通量。μ=0 不创建黏性算子并保留旧推进路径。v3 检查点同时绑定 μ、k、全部壁面模型及切向壁速；v1/v2仍按原字节格式生成/读取。边界文件v3在v2热条件后增加 `wallUx wallUy`，旧v1/v2继续可读。`custom` 必须在边界文件指定条件，禁止用预设开关覆盖。
-- `.faces.csv` 保存 `viscousMomentumX/Y`、`viscousWork`、`convectiveMomentumX/Y`、`convectiveEnergy` 与 `heatFlux`；`.cells.csv` 保存 `viscousRate`；历史保存 `viscousCourant` 和向外 `boundaryViscousWork`。负壁功代表机械能输入。`verify_viscous_stress.py` 从原始多边形建立稀疏线性表达式，并独立求完整动量 Jacobian；`verify_euler.py` 重建最后步两阶段的黏性/热/对流通量并核对全部相邻历史的质量与能量。
-
-直接算子测试使用32格扭曲网格及旋转网格的平移、刚体转动、均匀膨胀、简单剪切和一般仿射速度。应力/功及实际残差扰动得到的行范数使用1024 epsilon的归一化浮点检查；不是工程流场精度要求。独立面通量审计保持512 epsilon，增加黏性线性表达式绝对值包络作为量纲尺度。SI相似性同时缩放 μ、k、压力、速度、时间和长度，比较归一化完整场；允许4096 epsilon累积浮点差异。
-
-连续解验证包含16/32/64格周期横向剪切波 `v=A exp(−μw²t/ρ) cos(wx)`（A=1e−4声速），及原热模态线性系统的速度行增加 `−4μw²B/(3ρ)`（相对温度幅度1e−5）。独立矩阵指数不读取求解器系数。Couette 使用周期x与上下切向壁面，μ=k=0.1、U=0.5、H=1、Tw=1，解析稳态为 `u=Uy/H`、`T=Tw+μU²/(2k)·(y/H)(1−y/H)`、`p=1`、`ρ=p/(RT)`；从解析场开始推进至t=0.1，在8/16/32层比较温度误差及机械功/热量收支，**这是稳态离散一致性检验，不是从静止收敛验收**。观测阶下限1.7用于防止光滑问题退回一阶，允许限制器与壁面局部误差；整个CLI验证通常数十秒。任意Cut-cell边界层、强激波/黏性相互作用、壁面摩擦/热流绝对精度和长期稳定性尚未验收。
-
-```sh
-ctest --test-dir build -R 'cartmesh2d_(viscous_core|euler_viscosity)' --output-on-failure
-python3 tests/euler_viscosity_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-viscosity/validation
-build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --density 1.225 --pressure 101325 --u 50 --end-time .00005
-```
-
-最后一条为便于短时验证的测试物性，不是空气推荐值；μ、k、γ、R 必须按实际问题指定。默认μ=k=0、滑移、Rusanov一阶均未自动更改。
-
-
-### 可压壁面精度与时间细化
-
-`--wall-gradient quadratic` / App“壁面热流 / 应力梯度 → 二次重构”是可选数值格式。默认仍为 `linear`；适用于定温壁的 Fourier 热流和无滑移壁的完整黏性应力。内面、指定热流、绝热、滑移和开边界保留原模型。该选项允许随检查点显式更改，物理边界和物性仍严格绑定。缓存求解器在构造时选择壁面格式，推进时拒绝与缓存不同的设置。
-
-`WallGradient2D` 只依赖原生二维有限体积几何。以真实壁面中心的指定值固定常数项，在法向/切向局部坐标拟合五项 `n, t, n²/2, nt, t²/2`。沿共形流体 owner/neighbour 图扩展模板，周期边界使用平移后的像点，绝不跨越物理边界。先取两层邻域，必要时最多五层；超过512个像单元或仍缺秩时显式失败，不静默降阶。法向和切向分别按局部跨度无量纲化，再进行列归一化、列主元 Householder QR；不用正规方程。尺度化矩阵残余列范数须大于 `sqrt(machine epsilon)`，这是保留约半数双精度有效位的数值秩保护，不是物理精度阈值。准备时只缓存梯度系数，运行时对“样本值减目标壁值”求和，常量在加权前消去。
-
-二次最小二乘和QR的基本做法可参考 [NASA White/Nishikawa，D.2.3节](https://ntrs.nasa.gov/api/citations/20210024196/downloads/white_and_nishikawa_afang_paper_v_1.7.pdf)。本实现是独立推导的二维壁面值约束模板，不是该论文的三维F-ANG移植。这里输入的是现有二阶方法中的**质心原始变量点值近似**，没有将保守量单元平均值变成三阶多项式，也没有高阶面积/面通量积分；**局部二次重构不等于全局三阶**。对流仍为所选一阶/二阶，光滑问题按整体二阶验收；非光滑角点和激波附近不能使用光滑阶数推断精度。
-
-热流和应力直接用恢复的壁面梯度；壁功始终使用指定壁速。所有新增非局部系数进入热残差和完整动量块的行范数，参与两阶段组合CFL及正性重试。高精度热算子仍可能非M矩阵；范数及正性检查不是任意Cut-cell的稳定性证明。`quadraticHeatWalls` / `quadraticViscousWalls` 声明实际采用二次重构的面数；原始多边形独立读取器使用再正交Gram–Schmidt构建参考系数，与原生Householder实现区分，复核通量、壁功、扩展行范数和实际面数。
-
-精度验证分开组织，通常约1–2分钟完成本轮新增数值测试，完整回归另计：
-
-- `wall_gradient_test.cpp`：二次温度/速度场、扭曲及旋转网格、长宽比0.03/3/30、长度缩放1e−3/1/1e3；对热流、应力和面中心壁功进行4096 epsilon的归一化代数检查，直接扰动每个自由度检查完整Jacobian。该阈值容纳QR和差分累计舍入，只验证代数一致性。缺秩最小网格必须拒绝。新增极端长宽比算例会把已舍入的绝对点值误差按1/法向间距放大，因此另以实际梯度系数传播输入舍入包络进行相同4096 epsilon检查，并同时保留原几何门限及未经包络缩放的误差；不把这个代数诊断作为物理精度门限。
-- `transport_precision_test.cpp`：`T=2+0.2 sin(πx)sinh(πy)/sinh(π)` 的无源稳态导热，8/16/32平方网格及扭曲网格。独立单位扰动恢复实际算子，线性求解后再针对真实通量残差修正；线性容差1e−11与1e−13的场差应小于温度离散误差1%，排除求解容差污染。壁面热流比较**解析边积分**，L1分子为逐面绝对误差之和，分母为全部壁面解析热流绝对值之和（均W/m）。最细误差目标0.5%并至少优于原格式2倍，细化观测阶>1.7；这是小规模光滑热场目标，不是所有工程算例的通用标准。
-- `euler_wall_accuracy_cli_test.py`：Couette含黏性发热，μ=k=0.1、R=1、U=0.5、H=1、Tw=1。8/16/32层解析初值保持试验之外，还从静止、均匀冷场推进8/16/32层算例至t=60，验证温度、速度、场变化率、壁面功热平衡和全过程累计能量。温度误差以解析最大温升0.03125 K归一化，速度以0.5 m/s归一化，目标均为1e−6；最后一步保守量时间导数也须小于测试单位下1e−7，不能只凭目标时间或净热量接近零宣布稳态。冷启动封闭质量固定，解析稳态压力由质量约束决定，不把压力强定为初值1。用解析积分 `p=1/[∫₀¹ 1/T(y) dy]` 另查压力的空间细化，观测阶>1.8且最细相对L∞误差<0.01%，防止温度多项式恰好复现掩盖全场误差。
-- 时间精度使用固定网格冷启动，dt=1e−3/5e−4/2.5e−4，相同终点0.02；以dt=1.5625e−5的离散轨迹为参考，再与3.125e−5核对参考差异须小于最细被测误差10%。四个保守分量的RMS误差应表现为二阶（观测阶>1.8）；这是时间自收敛，不是连续PDE解析轨迹。
-- 同物理条件按接受步中断/续算必须逐字节一致；显式切换壁面数值格式可以续算。篡改通量、步长系数和壁面格式/面数必须被独立审计拒绝。原线性路径与修改前二进制比较黏性/导热/无黏四组检查点。
-
-时间细化还保留了一个最小失败例：dt=1.5625e−5累加1280次后，浮点时间可能比0.02少约5e−16，原CLI因尾步小于声明最小步长而错误失败。`EulerStepControls2D::endTime` 现在让求解器检查实际CFL步长后的剩余区间，必要时把倒数第二步分成两个合规小步，真实计算每一步通量；不伪造终点时间，不绕过最小步长。全部接受步均检查上下限，检查点仍保存实际接受时钟。
-
-```sh
-ctest --test-dir build -R 'cartmesh2d_(wall_gradient|transport_precision|euler_wall_accuracy)' --output-on-failure
-python3 tests/euler_wall_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-wall-accuracy/validation
-build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --wall-gradient quadratic --density 1.225 --pressure 101325 --u 50 --end-time .00005
-```
-
-最后一条仍为短时App验证物性，不是空气推荐值。实际曲壁App和独立面通量审计证明功能路径与离散实现相符，不能代替曲壁摩擦/换热关联式、网格无关性或跨平台精度验收。[壁面精度证据](../artifacts/current/native-euler-wall-accuracy.json) · [实际结果与细化图](../artifacts/current/native-euler-wall-accuracy.png)

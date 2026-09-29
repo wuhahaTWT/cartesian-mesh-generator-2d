@@ -11,6 +11,7 @@ import sys
 import zipfile
 
 from check_background_grid import audit as audit_background
+from verify_euler import audit as audit_euler
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,17 +29,28 @@ def main():
     workspace.mkdir(exist_ok=True)
     temporary = workspace / 'temp'; temporary.mkdir(exist_ok=True)
     env = dict(os.environ, TEMP=str(temporary), TMP=str(temporary), TMPDIR=str(temporary))
-    for name, image, method in [('png', 'raster-input-L.png', 'cutcell'),
-                                ('jpg', 'raster-input-L.jpg', 'cutcell'),
-                                ('hybrid', None, 'hybrid'),
-                                ('background-uniform', None, 'background'),
-                                ('background-adaptive', None, 'background')]:
+    cases = [('png', 'raster-input-L.png', 'cutcell', 'circle'),
+             ('jpg', 'raster-input-L.jpg', 'cutcell', 'circle'),
+             ('hybrid', None, 'hybrid', 'circle'),
+             ('background-uniform', None, 'background', 'circle'),
+             ('background-adaptive', None, 'background', 'circle'),
+             ('euler-sealed', None, 'cutcell', 'rectangle'),
+             ('euler-external', None, 'cutcell', 'circle')]
+    for name, image, method, sample in cases:
         target = workspace / name; target.mkdir(exist_ok=True)
         screenshot = target / 'app.png'
         archive = target / 'result.zip'
-        command = [str(args.app.resolve()), *args.electron_arg, '--smoke=circle',
+        command = [str(args.app.resolve()), *args.electron_arg, '--smoke=' + sample,
                    '--method=' + method, '--out=' + str(target / 'cases'),
                    '--export=' + str(archive), '--shot=' + str(screenshot)]
+        if name.startswith('euler-'):
+            # Short development cases: these properties are test controls, not an air model.
+            command += ['--euler=true', '--euler-case=' + name.removeprefix('euler-'),
+                        '--euler-flux=hllc', '--euler-order=2', '--euler-wall-gradient=quadratic',
+                        '--euler-wall-model=no-slip', '--euler-conductivity=100',
+                        '--euler-wall-thermal=temperature', '--euler-wall-value=400', '--euler-u=50',
+                        '--euler-viscosity=' + ('2' if sample == 'rectangle' else '.02'),
+                        '--euler-end-time=' + ('.001' if sample == 'rectangle' else '.00005')]
         if method == 'background':
             command += ['--background-mode=' + name.split('-')[1],
                         '--background-level=7', '--background-minimum-level=4', '--background-padding=.5']
@@ -84,10 +96,30 @@ def main():
             assert imported['physicalWidth'] == .2 and imported['outputUnits'] == 'm'
             assert imported['sourceSha256'] == hashlib.sha256(source.read_bytes()).hexdigest()
             assert next(unpacked.rglob('image-outline.png')).read_bytes()[:8] == b'\x89PNG\r\n\x1a\n'
+        euler_audits = []
+        if name.startswith('euler-'):
+            euler = ui['euler']
+            checks = euler['checks']
+            for check in ['wallGradientControlsReachedNative', 'wallGradientChangeClearedStaleResult',
+                          'viscousControlsReachedNative', 'thermalControlsReachedNative',
+                          'repeatedFieldsAndHistoryIdentical', 'resumeChecked',
+                          'failedBudgetPreservedComplete', 'cancelResumeChecked', 'allFiveFieldMaps']:
+                assert checks[check] is True, check
+            assert euler['summary']['wallGradient'] == 'quadratic'
+            assert euler['summary']['dynamicViscosity'] > 0 and euler['summary']['thermalConductivity'] > 0
+            # Audit the exported complete result using only exported geometry and fields.
+            mesh = next(unpacked.rglob('*.solver.cm2d'))
+            checkpoint = mesh.parent / euler['files']['.checkpoint']
+            assert checkpoint.is_file(), 'export lost the selected compressible checkpoint'
+            audit = audit_euler(mesh, checkpoint.with_suffix(''))
+            assert audit['valid'] is True
+            euler_audits.append(audit)
+            (target / 'euler-audit.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
         results.append({'case': name, 'cells': reader['cell_count'], 'independentReader': reader['valid'],
+                        'eulerAudits': euler_audits, 'eulerChecks': ui.get('euler', {}).get('checks') if ui.get('euler') else None,
                         'layout': ui['layout'], 'sha256': hashlib.sha256(archive.read_bytes()).hexdigest()})
     (output / 'summary.json').write_text(json.dumps({'platform': sys.platform, 'cases': results,
-        'externalCheckMesh': 'not_run', 'cfd': 'not_run'}, indent=2, ensure_ascii=False), encoding='utf-8')
+        'externalCheckMesh': 'not_run', 'cfd': 'two short compressible wall cases; not physical qualification'}, indent=2, ensure_ascii=False), encoding='utf-8')
 
 if __name__ == '__main__':
     main()
