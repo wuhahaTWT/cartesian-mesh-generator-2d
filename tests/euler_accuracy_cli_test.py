@@ -21,8 +21,12 @@ def run_suite(cli, root):
         prefix = root / name
         command = [str(cli), '--mesh', str(mesh), '--output', str(prefix), '--gas-r', '1',
                    '--flux', scheme, '--order', str(order), *map(str, extra)]
+        # Keep the full 128x128 vortex on slower Windows hosted runners.
+        # These are wall-clock allowances, not physical or accuracy controls.
+        if sys.platform == 'win32':command += ['--max-seconds', '480']
+        timeout = 540 if sys.platform == 'win32' else 90
         started = time.perf_counter()
-        result = subprocess.run(command, capture_output=True, text=True, timeout=90)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
         (root / (name+'.log')).write_text(result.stdout+result.stderr)
         assert result.returncode == expected, (command, result.returncode, result.stdout, result.stderr)
         summary = json.loads(Path(str(prefix)+'.json').read_text())
