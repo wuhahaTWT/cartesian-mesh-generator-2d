@@ -197,7 +197,7 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 - 保守状态为 `rho`、`rho*e` 和各 `rho*Yk`，其中 `e` 包含生成能，允许负值。组分不自动归一化或裁剪；能量到温度的反解限制在所有组分热力学数据的共同温区。
 - 返回温变比热、焓、反应源，以及 `multicomponent` 扩散矩阵和 Soret 热扩散系数；矩阵为列主序，须配合完整通量公式，不能当作各组分独立的 Fick 系数。
 - 恒容绝热化学子步使用 Cantera `Reactor` / CVODES，内部能量为守恒变量；化学变化通过组分及温度体现。`-sum(hk*omega_k)` 只作放热诊断，不重复加入已经含生成能的总能量方程。反应阶段超出共同物性温区也会拒绝。
-- 失败返回空 `accepted` 和原因；输入不变，下一次调用从调用者保留的接受状态重新开始。当前是串行、每工作线程独享的化学上下文，尚未实现空间输运、耦合时间推进或产品检查点。
+- 失败返回空 `accepted` 和原因；输入不变，下一次调用从调用者保留的接受状态重新开始。当前是串行、每工作线程独享的化学上下文；空间扩散算子见下文，尚未实现完整反应流的耦合时间推进或产品检查点。
 
 依赖按[官方 C++ 构建说明](https://cantera.org/3.2/userguide/compiling-cxx.html)准备；源代码版本为官方 `v3.2.0` / `4a8358eb80cfeb50474386b5f9ec0b3a83519889`。本机源码和安装分别在忽略提交的 `build/deps/cantera-src`、`build/deps/cantera`，用系统 clang 和上游固定子模块编译，Boost 1.88 仅使用头文件。没有全局安装依赖。
 
@@ -224,6 +224,28 @@ build/chemistry-env/bin/python tools/verification/verify_detailed_gas.py \
 检查按用途分开：原生测试核对状态反解、元素源、完整机理规模、负生成能、扩散数据、反应积分及失败恢复。元素源舍入检查以**总生成与消耗量**归一化，不能用已相消的净源作舍入尺度；首轮甲烷氮元素因此误报，原日志保留在 `outputs/combustion-foundation/first-native-test-failure.log`。接口脚本直接计算 NASA7 多项式，独立核对混合物比热/内能；反应轨迹和扩散与另装的 Cantera Python 接口比较，仍共享化学后端，不能称为独立机理或实验验证。
 
 阈值只限定数值接入误差：温度往返 `2e-9 K`、NASA7 及接口值采用脚本声明的归一化差异；积分对照检查温度相对差和质量分数绝对差。默认化学子步的元素质量分数漂移门为 `1e-8`，能量变化以 `max(|rho*e|,rho*cv*T)` 归一化后为 `1e-8`；它们是可配置的子步守恒检查，不是火焰精度目标。上述少量案例为秒至分钟级，网格/火焰/真实工况验收尚未完成。
+
+### 多组分空间扩散与焓通量
+
+`DetailedGas::diffusiveFlux` 接受沿单位方向的 `dT/dn`、`dln(p)/dn` 和各 `dXk/dn`，计算相对于质量平均速度的组分通量。采用 [Cantera 多组分矩阵的通量约定](https://www.cantera.org/3.2/reference/onedim/governing-equations.html#diffusive-fluxes)，驱动力为 `dk = dXk/dn + (Xk-Yk)*dln(p)/dn`，压力项依据 [PeleLM 完整输运模型](https://amrex-combustion.github.io/PeleLM/manual/html/Model.html)。矩阵使用分子量加权及正确的列主序，包含 Soret；能量通量为 `-lambda*dT/dn + sum(hk*jk)`，组分焓保留生成焓。当前中性理想气体模型未含差异体力、电迁移或 Dufour 热通量，不能声称覆盖所有压力/输运物理。
+
+`ReactingDiffusionOperator2D` 位于 `include/cartmesh2d/fv/ReactingDiffusion2D.hpp` 和 `src/fv/ReactingDiffusion2D.cpp`，以通过原有质量门的真实 `FvMesh2D` 为输入。一次计算共享面通量，再正负加入 owner/neighbour；输出为实际边长积分、单位厚度的组分/能量通量和单元向外残差，时间导数应取 `-residual/真实单元面积`。算子本身不推进时间、不改变密度/动量、不调用反应积分，也不添加化学热源。
+
+梯度使用几何加权最小二乘及现有非正交面修正；只重构 N−1 个独立摩尔分数梯度，其余由 `sum(grad X)=0` 确定，不改变守恒组分。面物性用 T、ln(p)、Y 的凸插值，不裁剪负值。边界支持固定状态储库、绝热不透壁、定温不透壁，缺失/重复边界和非法状态显式拒绝。不透壁直接约束全部组分法向通量为零，定温壁的能量通量只含导热；壁面梯度辅助模板采用齐次法向组分/压力导数。复杂曲壁热扩散边界层的精度、凸插值在任意偏斜网格上的收敛、周期边界及隐式多组分时间推进仍待完成；一次守恒测试不代表这些已经合格。
+
+通量闭合门只允许 `64*(N+1)*机器 epsilon` 乘参与矩阵运算的绝对项总和；驱动力尺度保留浓度和压力相消前的项。通过后只在最丰富组分上消去浮点求和余差，返回原始质量残差和修正量；超限失败，不用可调修正隐藏不守恒。Cantera 内部对 X 使用 `max(X,1e-20)`，原生接口另处理严格的物理极限：浓度恰为零且该组分梯度为零时通量为零；恰好只有一个组分时 Soret 分离为零。返回 `zeroLimitCorrection`/`pureSpeciesLimit` 记录与正则化后端的差别，不改变任何状态或将微量组分视为零。纯水蒸气 `800 K, 1 atm, dT/dn=100000 K/m` 曾因此触发闭合拒绝，失败记录与最小回归保留；零浓度但有梯度的组分仍允许扩散。
+
+测试以总面传递量归一化检查共享面装配和闭域预算，并用仿射场检查非正交梯度；这些是浮点/离散算子的直接检查，不是通用物理误差门。24 个零维局部通量案例另用 NumPy 从二元扩散系数组装 Stefan–Maxwell 线性系统求解，并核对二元解析极限。该算法对照独立于多组分 D 矩阵，但碰撞、Soret 和焓数据仍来自 Python Cantera，未提供独立输运数据或实验验证。脚本核对运行前后的可执行文件 SHA256，拒绝验证中发生替换的混合结果；首轮 NumPy 布尔值序列化失败的原始数据也保留。运行成本为秒至数分钟。
+
+```sh
+cmake -S . -B build # 沿用上文已配置的 Cantera 开关和路径
+cmake --build build --target cartmesh2d_reacting_diffusion_tests cartmesh2d_diffusive_flux_probe -j2
+ctest --test-dir build -R '^cartmesh2d_reacting_diffusion$' --output-on-failure
+build/chemistry-env/bin/python tools/verification/verify_diffusive_flux.py \
+  --probe build/cartmesh2d_diffusive_flux_probe \
+  --mechanism-root build/deps/cantera/share/cantera/data \
+  --output outputs/combustion-foundation/diffusion-interface-new
+```
 
 ## 流体拓扑优化研究入口
 

@@ -49,6 +49,26 @@ struct GasTransport {
     std::vector<double> thermalDiffusion; // Soret coefficients, kg/(m s)
 };
 
+// Derivatives along one physical unit direction. A caller may evaluate each
+// Cartesian component or the outward face normal. sum(dX_k/dn) must be zero.
+struct GasDiffusionGradient {
+    double temperature = 0; // dT/dn, K/m
+    double logPressure = 0; // d(ln p)/dn, 1/m
+    std::vector<double> moleFractions; // dX_k/dn, 1/m
+};
+
+struct GasDiffusiveFlux {
+    std::vector<double> species; // kg/(m^2 s), mass-average reference velocity
+    double conduction = 0, speciesEnthalpy = 0, energy = 0; // W/m^2
+    // Raw sum before an explicitly bounded roundoff closure correction. This
+    // cannot be used to conceal a non-conservative constitutive model.
+    double rawMassResidual = 0, closureCorrection = 0; // kg/(m^2 s)
+    // L1 difference from the backend's 1e-20 concentration regularization when
+    // applying exact absent-species/pure-gas limits; never changes a GasState.
+    double zeroLimitCorrection = 0; // kg/(m^2 s)
+    bool pureSpeciesLimit = false;
+};
+
 struct ChemistryControls {
     // CVODES local error weights, not physical accuracy qualification. The
     // absolute weight applies to its mass, volume, energy and mass-fraction ODEs.
@@ -90,6 +110,10 @@ public:
                                            const std::vector<double>& moleAmounts);
     [[nodiscard]] GasProperties properties(const GasState&);
     [[nodiscard]] GasTransport transport(const GasState&);
+    // Full multicomponent concentration/pressure diffusion plus Soret.
+    // q = -lambda*dT/dn + sum(h_k*j_k), with formation-inclusive enthalpy.
+    // Neutral ideal gases, no differential body forces or Dufour heat term.
+    [[nodiscard]] GasDiffusiveFlux diffusiveFlux(const GasState&, const GasDiffusionGradient&);
     // Homogeneous source substep for operator coupling: fixed volume, no mass
     // transfer, no external heat. Uses CVODES with conserved internal energy.
     // Every failure leaves input untouched and returns no accepted candidate.

@@ -1,0 +1,849 @@
+{
+  "schema": "cartmesh2d-reacting-diffusion-v1",
+  "goal": "mature combustion simulation",
+  "goal_complete": false,
+  "qualified_reacting_flow": false,
+  "scope": "Native multicomponent constitutive flux and conservative diffusion/enthalpy assembly on validated 2D conformal FV meshes; no flow/time integrator",
+  "branch": "codex/cfd-development",
+  "source_base": "5874f8133d0192638f4040e589044c18caa8f4dc",
+  "source_sha256": {
+    "CMakeLists.txt": "972cd8d02266bc005d436d45664a92de89df1d126f678ea30063d5e9f9be6f50",
+    "include/cartmesh2d/chemistry/DetailedGas.hpp": "fb44df7a6642ced905c2220ff70009faac077b9d475efd1bdec859d597769253",
+    "src/chemistry/DetailedGas.cpp": "cbd6bd1220a83addbd7027cbb51ee4fd1fb0250998f459ed29a9745c1a3a4960",
+    "include/cartmesh2d/fv/ReactingDiffusion2D.hpp": "c0a8a66693954fcb4ddcec5007e9b5aeaefc1fd4a604f9123f4056600fd0905b",
+    "src/fv/ReactingDiffusion2D.cpp": "0dbf732cd46436f46f614f795674db4d9619f5e1284d217439f6404b2a38a4f9",
+    "tests/diffusive_flux_probe.cpp": "7950fd2bdbe847dc5505ccb6e34929ba5490c0a8b158ad694e6652ab56dfe74d",
+    "tests/reacting_diffusion_test.cpp": "e74ecc1c8f0acc5d68c4142a579871dfc1d74327f423644a763f12a8b4a277a5",
+    "tests/detailed_gas_test.cpp": "4415ff467eadd24d8ea0fc1f288aa317def5b21516c5c9938373e85ae73b1ea9",
+    "tests/FvTestMesh2D.hpp": "5e3e7216674450bdd484a3840ea529ceb2f232f5d81fd30775d0cd1371da64a5",
+    "src/fv/FvMesh2D.cpp": "ddd21eccb702139cb05ef719362ffff74ffd3551389ea8fac0abad7529c291c8",
+    "tools/verification/verify_diffusive_flux.py": "f242887cb5bbe636e9e43522524d2a25bb97c450147aaf3e647b6b17997a4c4e"
+  },
+  "dependencies": {
+    "previous_manifest": "artifacts/current/native-detailed-chemistry.json",
+    "cantera": "3.2.0",
+    "numpy_reference": "2.5.3",
+    "cantera_library_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  },
+  "model": {
+    "driving": "grad X_k + (X_k-Y_k)*grad ln p",
+    "mass_flux": "rho*W_k/Wbar^2*sum_j W_j D_kj driving_j - D^T_k grad(T)/T",
+    "energy_flux": "-lambda grad(T) + sum_k h_k j_k, formation-inclusive enthalpy",
+    "exact_limits": "j_k=0 at exact rhoY_k=0 AND grad X_k=0; pure gas Soret=0; no positive species threshold or state clipping",
+    "closure_gate": "64*(N+1)*machine epsilon times gross matrix/thermal arithmetic activity, retaining concentration and pressure terms before cancellation",
+    "closure_diagnostics": [
+      "rawMassResidual",
+      "closureCorrection",
+      "zeroLimitCorrection",
+      "pureSpeciesLimit"
+    ],
+    "mesh": "48 warped quadrilateral cells, 110 actual owner/neighbour faces; original factory Solver quality gate",
+    "boundaries": [
+      "adiabatic impermeable",
+      "isothermal impermeable",
+      "fixed thermodynamic state reservoir"
+    ],
+    "interpolation": "convex T, log(p), Y; least-squares N-1 independent X gradients plus nonorthogonal normal correction",
+    "unsupported": [
+      "Dufour energy term",
+      "differential body forces",
+      "charged/nonideal/multiphase mixture",
+      "periodic spatial boundary",
+      "coupled time advance",
+      "advection/momentum/viscosity coupling"
+    ]
+  },
+  "verification": {
+    "native_ctest": {
+      "passed": true,
+      "tests": [
+        "cartmesh2d_detailed_gas",
+        "cartmesh2d_reacting_diffusion"
+      ],
+      "seconds": 21.42,
+      "log": "outputs/combustion-foundation/diffusion-native-002-details.log",
+      "metrics": {
+        "passed": true,
+        "cells": 48,
+        "faces": 110,
+        "closedBudgetRelative": 5.0473593082063543e-17,
+        "openBudgetRelative": 4.638929230328057e-17,
+        "affineFluxRelative": 4.8301475278445906e-14
+      }
+    },
+    "independent_flux": {
+      "passed": true,
+      "cases": 24,
+      "report": "outputs/combustion-foundation/diffusion-interface-003/report.json",
+      "oracle": "Independent Stefan-Maxwell mass-flux linear system and binary analytic limit; collision, thermal diffusion and enthalpy data from Python Cantera",
+      "tolerance": 2e-09,
+      "max_species_relative": 8.493374828629023e-15,
+      "max_energy_relative": 6.6760078384762826e-15,
+      "max_linear_solve_relative": 1.2807875210000132e-15,
+      "case_results": [
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "concentration",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 1.3389331751737413e-16,
+          "speciesRelative": 2.099412594930226e-16,
+          "energyRelative": 3.724062591546515e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 1.3093415134408101e-15,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "soret",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 7.790059592361358e-16,
+          "energyRelative": 1.310592139975263e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "combined",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 1.1712801419396614e-16,
+          "speciesRelative": 1.1849934788021384e-16,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "balanced_pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 6.712217903587571e-16,
+          "energyRelative": 2.1345643753264437e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:2,O2:1,N2:3.76",
+          "case": "all_species",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 1.2807875210000132e-15,
+          "speciesRelative": 3.84905854776211e-15,
+          "energyRelative": 6.6760078384762826e-15,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "concentration",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 1.637433493501282e-16,
+          "speciesRelative": 4.863722097588237e-16,
+          "energyRelative": 8.183747828385943e-17,
+          "massRelative": 4.053101747990197e-17
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "pressure",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 9.198586085845413e-17,
+          "speciesRelative": 8.818685900181922e-16,
+          "energyRelative": 1.6526342130673661e-15,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "soret",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 3.383610829888325e-16,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "combined",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 7.265831257445475e-17,
+          "speciesRelative": 6.810674340548233e-16,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "balanced_pressure",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 2.89237434715144e-16,
+          "energyRelative": 2.1892195774115126e-16,
+          "massRelative": 2.486529049731859e-32
+        },
+        {
+          "mechanism": "gri30.yaml",
+          "mechanismSha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345",
+          "composition": "CH4:1,O2:2,N2:7.52",
+          "case": "all_species",
+          "temperature": 1300,
+          "pressure": 709275,
+          "passed": true,
+          "linearSolveRelative": 2.881362429473364e-16,
+          "speciesRelative": 8.493374828629023e-15,
+          "energyRelative": 4.63508299708089e-16,
+          "massRelative": 9.53369121388854e-18
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "concentration",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 7.859268142865329e-17,
+          "speciesRelative": 7.859268142865329e-17,
+          "energyRelative": 6.449828373081845e-16,
+          "massRelative": 0.0,
+          "binaryAnalyticRelative": 7.859268142865329e-17
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 8.050087425057845e-17,
+          "speciesRelative": 2.4150262275173533e-16,
+          "energyRelative": 9.248997981814249e-16,
+          "massRelative": 0.0,
+          "binaryAnalyticRelative": 2.4150262275173533e-16
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "soret",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 5.934016274839727e-16,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "combined",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 7.763980108989216e-17,
+          "speciesRelative": 2.399276832112509e-16,
+          "energyRelative": 2.4328814960821656e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "balanced_pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 1.1114187413991203e-16,
+          "energyRelative": 1.9148347061017065e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2:1,N2:1",
+          "case": "all_species",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 3.5508188890908223e-16,
+          "speciesRelative": 4.495737073760313e-16,
+          "energyRelative": 5.633430550887184e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "concentration",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 0.0,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 0.0,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "soret",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 0.0,
+          "energyRelative": 1.6693656421972807e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "combined",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 0.0,
+          "energyRelative": 2.225820856263041e-16,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "balanced_pressure",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 0.0,
+          "speciesRelative": 0.0,
+          "energyRelative": 0.0,
+          "massRelative": 0.0
+        },
+        {
+          "mechanism": "h2o2.yaml",
+          "mechanismSha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+          "composition": "H2O:1",
+          "case": "all_species",
+          "temperature": 950,
+          "pressure": 101325,
+          "passed": true,
+          "linearSolveRelative": 6.714348557724229e-17,
+          "speciesRelative": 8.330732176943261e-16,
+          "energyRelative": 1.671463788470491e-15,
+          "massRelative": 0.0
+        }
+      ]
+    },
+    "runtime_libraries": [
+      "build/cartmesh2d_diffusive_flux_probe:",
+      "\t@rpath/libcantera_shared.3.2.0.dylib (compatibility version 3.2.0, current version 3.2.0)",
+      "\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)",
+      "\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)"
+    ],
+    "build_warnings": false,
+    "physics_qualification": false,
+    "full_native_frontend_app_platform": "not run; current work is an optional module development change, not main integration"
+  },
+  "preserved_failures": [
+    {
+      "path": "outputs/combustion-foundation/diffusion-pure-species-regression.json",
+      "what": "Pure water Soret exposed backend regularization; exact limits now covered by native and independent regression"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-001-failure.json",
+      "what": "NumPy scalar JSON serialization; raw first-run I/O retained; corrected script rerun"
+    }
+  ],
+  "next": [
+    "Mechanism identity and restart binding",
+    "Multicomponent conservative advection and variable-property momentum/viscosity",
+    "Conservative chemistry/diffusion/flow integration with positivity and failure recovery",
+    "Flame, grid/time, boundary, independent experimental and delivery qualification for user-selected physical scope"
+  ],
+  "files": [
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-00.in",
+      "bytes": 161,
+      "sha256": "45d14a39baeed8dd5d7a1dad94efc1e516be0fd6a8344aa659a4a33e759e8b96"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-00.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-00.stdout",
+      "bytes": 332,
+      "sha256": "8d651c7d3105c83bcc8e2614f1138648068dae4debc414046be5ef4dc68b90ea"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-01.in",
+      "bytes": 111,
+      "sha256": "014d9836ca25e7fe0abd46f6a9479425bcb433263fcc056c725d6f77f23a3c11"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-01.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-01.stdout",
+      "bytes": 336,
+      "sha256": "819fbb7ed4f9f5d1b3f413f544dd5f840560ab1979eafed7a7d3650b326e0ba0"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-02.in",
+      "bytes": 114,
+      "sha256": "e8838eca52b7272046dcbbd9e1cf803f4a372080dbbf0c47a7619ebcad4178df"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-02.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-02.stdout",
+      "bytes": 310,
+      "sha256": "96b2ac5d34c4f25d79f4dcad2269468a3eae14a9d111729ad3ddec5e4bdb18c7"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-03.in",
+      "bytes": 168,
+      "sha256": "7d95d4fcdfe8ccdba78d9550e69f65539ccfa7ec69979110342909813baf0635"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-03.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-03.stdout",
+      "bytes": 349,
+      "sha256": "34d599a240f80749a5816618caeaaed1e97cffa2e800c4bf56e6f3300bf7b3be"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-04.in",
+      "bytes": 170,
+      "sha256": "52c203643f05590a9c0ce4c574c7612614dabb4af2a0c231928bb91aa0e32a6f"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-04.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-04.stdout",
+      "bytes": 341,
+      "sha256": "2ac51930b32e89c48e3fd162c334690aa4b8c91d868c57e8e24a1a9cb5b6db04"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-05.in",
+      "bytes": 444,
+      "sha256": "9e08e1a8629c69274389b39316baae4adb7470dac86eb504e3fe2d722b5de639"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-05.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-05.stdout",
+      "bytes": 475,
+      "sha256": "b31e59be5f7357c1243e08389a1f47b62c6b559c1959168038da6f144bf0f6f0"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-06.in",
+      "bytes": 335,
+      "sha256": "7bbc75534e31a93b44e9ef68fc5b305920e4a5f831abea1e76b26d9966d35ab4"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-06.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-06.stdout",
+      "bytes": 419,
+      "sha256": "c623e44c0ed7f9bf009f25d09f8714a48d832945a0c770c494d995a89ebf6924"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-07.in",
+      "bytes": 285,
+      "sha256": "917a633eb83849d3502d9ea867814597dc16f15201ddc7eee11e209721789d28"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-07.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-07.stdout",
+      "bytes": 420,
+      "sha256": "6732a49d8a926015994b3ece42cd0f0e552db0afe62ed912f9ca348ed3058714"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-08.in",
+      "bytes": 288,
+      "sha256": "4df0fdfdc99bb466d9223cf6c1e5850562b1525b6e00d8c3faa6a6b99116a9ae"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-08.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-08.stdout",
+      "bytes": 436,
+      "sha256": "2da5427097305a0830fd85941f68d319371430d6d0b69dc31b257306db4d8362"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-09.in",
+      "bytes": 371,
+      "sha256": "6b3c534940e8eb4f36065a09ca9c1e1ba53bf945b7bc2159c5048d0c486d9961"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-09.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-09.stdout",
+      "bytes": 434,
+      "sha256": "9d53dec309207e83044a57737657e8e1c99f523f9fe4629eb0f489c20979ade5"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-10.in",
+      "bytes": 387,
+      "sha256": "f93d0acb793800f925a9003349f659dfba11b033f3ce4bc2010d9d983e73368a"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-10.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-10.stdout",
+      "bytes": 428,
+      "sha256": "38b313ab338433e7260b71fce1bcb457c28b1b8c1671a81367139301f6cde360"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-11.in",
+      "bytes": 2306,
+      "sha256": "2412859fb956fc6d273f683394484e486648896dcb8d0568aad3afdcc056b784"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-11.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-11.stdout",
+      "bytes": 1494,
+      "sha256": "3262c96fd9d5f9a012cae20accf9fa6f8ee57d4b7e699939b59fcf2a62ba03fd"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-12.in",
+      "bytes": 126,
+      "sha256": "ef0a2db8430b1903728166a74bb26e72a1ea643d260cdc5b7faa149a247f253c"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-12.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-12.stdout",
+      "bytes": 315,
+      "sha256": "cf69f288eb3ca9fee1199503a8abeeecdd5d6499961bb6d56d012173faf87ed4"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-13.in",
+      "bytes": 93,
+      "sha256": "765c0b30625f4c800b0a3ee1dcdf38567265371e30a2e411e7acb91a983c26c4"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-13.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-13.stdout",
+      "bytes": 311,
+      "sha256": "a2c891a36134a18d9b87160223fd3eb2c994c100d368a01062f8e73ae77c71c6"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-14.in",
+      "bytes": 96,
+      "sha256": "9414ebd568d87fe3e8f22e2d877e07844030cfda23c89b12247092221a4e0a2a"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-14.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-14.stdout",
+      "bytes": 331,
+      "sha256": "dd07e9cf28141c8e995397b2d0f077cebe127f83f49c0b5dc5483a9afd825f1f"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-15.in",
+      "bytes": 133,
+      "sha256": "5943b3c6d4e9841a1ddb5f9990295b153e98d481db2897c0e044bac8f81acaf7"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-15.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-15.stdout",
+      "bytes": 326,
+      "sha256": "471b1fd0c11e9e02e7c2ee20965a36bde309f8046a1783be1c33f83714baea8e"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-16.in",
+      "bytes": 136,
+      "sha256": "e307af3aee30c85f116f78508630ec52bfc0b3978409043e429753a642a66ee0"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-16.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-16.stdout",
+      "bytes": 323,
+      "sha256": "b93f96c7fcbbd5066d4b57c3667665a2aad6a32e93b3c7894743d5e193396bb4"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-17.in",
+      "bytes": 440,
+      "sha256": "2ed7375dbd94fd5d2250f480b5967137cf04f9d07b1b8593871367f0a8b8552b"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-17.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-17.stdout",
+      "bytes": 476,
+      "sha256": "26e9cc01dcd0a435e749a2fabdf37f709d0376ccec884718c581fa62750c6418"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-18.in",
+      "bytes": 56,
+      "sha256": "f8658e1d1e8e20417fd1e0a76453ec1fae3fdbf9befda9c9f90d53aef9898a12"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-18.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-18.stdout",
+      "bytes": 173,
+      "sha256": "9d0a0b6666fcad8112f2e6b42b8bc5f848a4d325d94ad5ae15b8f9c8ac6aa2b3"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-19.in",
+      "bytes": 57,
+      "sha256": "bd8af6c0a85f6e6811d75aa755ff960a3fe46870241354851474c8c87f0d1394"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-19.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-19.stdout",
+      "bytes": 173,
+      "sha256": "9d0a0b6666fcad8112f2e6b42b8bc5f848a4d325d94ad5ae15b8f9c8ac6aa2b3"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-20.in",
+      "bytes": 60,
+      "sha256": "8108f7f3cfb69e4d0c86a70f2520ac0bc2c17d20619eac1d42cb4476ae15be8d"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-20.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-20.stdout",
+      "bytes": 229,
+      "sha256": "2eae3c480a39aab2c340ef3035698cdf4eb4bf1b90bfb8fc100e6a0f207f096f"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-21.in",
+      "bytes": 66,
+      "sha256": "f5bf42e46126d7282d3b5c141eca6371eaecb023fefb213c9c006c9328d4a9a7"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-21.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-21.stdout",
+      "bytes": 227,
+      "sha256": "6de333d4c17a7c94970944d0aec1ae1f35fbf793f6e03a81dda37a466471aa0e"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-22.in",
+      "bytes": 67,
+      "sha256": "c7e641552ddacafe42db1740c198170665a3754eb7584c28d696a205bfa23848"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-22.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-22.stdout",
+      "bytes": 173,
+      "sha256": "9d0a0b6666fcad8112f2e6b42b8bc5f848a4d325d94ad5ae15b8f9c8ac6aa2b3"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-23.in",
+      "bytes": 440,
+      "sha256": "2e190a2115b8ca70725a5c87ee1e3d35fe3a7f4b9a8253490f01b3b4847ad42e"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-23.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/case-23.stdout",
+      "bytes": 477,
+      "sha256": "f74e79718fb48275cc6dd6d6d4b4edce6c09a3d5613a72905a780fa71df91454"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003/report.json",
+      "bytes": 59643,
+      "sha256": "4194a9f6ea50c35f5dbf417b77f16d31cf725944a94fc50520bec9cacafcc8ec"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-build-002.log",
+      "bytes": 1206,
+      "sha256": "85f7670799352b7ddaa174e816da955aa83a3bd825db3b96b0c9a358c2aa8a47"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-native-002.log",
+      "bytes": 352,
+      "sha256": "10141a1f3c26e7daab0e5edb2cbe9e0887ed23d841c71ca00be4d8ec489eacc9"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-native-002-details.log",
+      "bytes": 2012,
+      "sha256": "282a0c43069c1e2e596e643d998832ec65eda827b0a823473577aee1cc3f6fb1"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-003.log",
+      "bytes": 52,
+      "sha256": "4aa25aa69a5bbd31552fd93b1e41acaa0bc0fccf791bc437ffb1cbac5733b326"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-pure-species-regression.json",
+      "bytes": 898,
+      "sha256": "218d96eae4a350906cd47b4d777084c220f71dbcd9c3e89614c5032652a3cbd1"
+    },
+    {
+      "path": "outputs/combustion-foundation/diffusion-interface-001-failure.json",
+      "bytes": 462,
+      "sha256": "172ec434b382f1ddecfe50173bcd97a237ff860d356b6611ae171967971c737e"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/h2o2.yaml",
+      "bytes": 10033,
+      "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/gri30.yaml",
+      "bytes": 67813,
+      "sha256": "06650b1e0ee0012f6903d5328b1bb218cb6007d07f8ebe375d18f24811039345"
+    },
+    {
+      "path": "build/cartmesh2d_diffusive_flux_probe",
+      "bytes": 90080,
+      "sha256": "37967eb903b68063be897259bd7b6a95294c45a5cb4945297075e37c51b20a5b"
+    },
+    {
+      "path": "build/cartmesh2d_reacting_diffusion_tests",
+      "bytes": 216656,
+      "sha256": "8a9df05b68b3a526a113e010c3cf221e7a4ab4f034f3ab809cfa59bfdb195585"
+    },
+    {
+      "path": "build/cartmesh2d_detailed_gas_tests",
+      "bytes": 90112,
+      "sha256": "a4691724a100ded6f6dd9220f571e624acc27527d19878b2d3c6a65d3a227348"
+    }
+  ]
+}

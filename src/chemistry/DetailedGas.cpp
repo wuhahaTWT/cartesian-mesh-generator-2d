@@ -238,6 +238,86 @@ GasTransport DetailedGas::transport(const GasState& q) {
     return result;
 }
 
+GasDiffusiveFlux DetailedGas::diffusiveFlux(const GasState& state, const GasDiffusionGradient& gradient) {
+    impl_->restore(state);
+    finite(gradient.temperature, "temperature gradient");
+    finite(gradient.logPressure, "log-pressure gradient");
+    const auto& info = impl_->info;
+    const auto count = info.species.size();
+    require(gradient.moleFractions.size() == count, "mole-fraction gradient count mismatch");
+    long double gradientSum = 0, gradientMagnitude = 0;
+    for (double value : gradient.moleFractions) {
+        finite(value, "mole-fraction gradient");
+        gradientSum += value;
+        gradientMagnitude += std::abs(value);
+    }
+    require(std::abs(gradientSum) <= compositionAllowance(count) * gradientMagnitude,
+            "mole-fraction gradients do not sum to zero");
+    auto gas = impl_->solution->thermo();
+    std::vector<double> x(count), y(count), enthalpy(count), driving(count);
+    gas->getMoleFractions(x.data());
+    gas->getMassFractions(y.data());
+    gas->getPartialMolarEnthalpies(enthalpy.data());
+    const double temperature = gas->temperature(), meanWeight = gas->meanMolecularWeight();
+    const auto coefficients = transport(state);
+    // Ideal-gas Stefan-Maxwell driving force, including pressure diffusion.
+    // The Cantera D_ki matrix follows the positive-sign, W_i-weighted convention;
+    // it is not a set of independent species Fick diffusivities.
+    for (std::size_t k = 0; k < count; ++k)
+        driving[k] = finite(gradient.moleFractions[k] + (x[k] - y[k]) * gradient.logPressure,
+                            "diffusion driving force");
+    GasDiffusiveFlux result;
+    result.species.resize(count);
+    result.pureSpeciesLimit = std::count_if(state.speciesDensities.begin(), state.speciesDensities.end(),
+        [](double value) { return value > 0; }) == 1;
+    long double massSum = 0, activity = 0;
+    for (std::size_t k = 0; k < count; ++k) {
+        long double sum = 0;
+        const double factor = state.density * info.molecularWeights[k] / (meanWeight * meanWeight);
+        for (std::size_t j = 0; j < count; ++j) {
+            const long double term = static_cast<long double>(factor) * info.molecularWeights[j]
+                * coefficients.multicomponentDiffusion[k + count * j] * driving[j];
+            sum += term;
+            activity += std::abs(static_cast<long double>(factor) * info.molecularWeights[j]
+                * coefficients.multicomponentDiffusion[k + count * j])
+                * (std::abs(gradient.moleFractions[j]) + std::abs((x[j] - y[j]) * gradient.logPressure));
+        }
+        const double backendThermal = finite(coefficients.thermalDiffusion[k] * gradient.temperature / temperature,
+                                              "thermal diffusion flux");
+        // MultiTransport regularizes X to max(X, 1e-20). At an EXACT zero with
+        // zero species gradient the Stefan-Maxwell flux limit is exactly zero;
+        // otherwise a strict-positive FV update could create negative traces.
+        // A pure gas has no Soret separation. Neither rule is a concentration
+        // threshold, clipping, or a reduced-species mechanism.
+        const double thermal = result.pureSpeciesLimit ? 0 : backendThermal;
+        const double backendFlux = finite(static_cast<double>(sum - backendThermal), "backend diffusive mass flux");
+        result.species[k] = state.speciesDensities[k] == 0 && gradient.moleFractions[k] == 0
+            ? 0 : finite(static_cast<double>(sum - thermal), "diffusive mass flux");
+        result.zeroLimitCorrection += std::abs(result.species[k] - backendFlux);
+        massSum += result.species[k];
+        activity += std::abs(thermal);
+    }
+    result.rawMassResidual = static_cast<double>(massSum);
+    // Bound cancellation by the arithmetic activity, not the net flux near
+    // equilibrium. No dimensional floor and no user-tunable mass correction.
+    require(std::abs(massSum) <= compositionAllowance(count) * activity,
+            "multicomponent mass-flux closure failed");
+    const auto closureSpecies = static_cast<std::size_t>(std::max_element(y.begin(), y.end()) - y.begin());
+    long double others = 0;
+    for (std::size_t k = 0; k < count; ++k) if (k != closureSpecies) others += result.species[k];
+    const double closed = -static_cast<double>(others);
+    result.closureCorrection = closed - result.species[closureSpecies];
+    result.species[closureSpecies] = closed;
+    finite(result.zeroLimitCorrection, "zero-concentration limit correction");
+    long double enthalpyFlux = 0;
+    for (std::size_t k = 0; k < count; ++k)
+        enthalpyFlux += result.species[k] * static_cast<long double>(enthalpy[k] / info.molecularWeights[k]);
+    result.conduction = finite(-coefficients.thermalConductivity * gradient.temperature, "conductive heat flux");
+    result.speciesEnthalpy = finite(static_cast<double>(enthalpyFlux), "diffusive enthalpy flux");
+    result.energy = finite(result.conduction + result.speciesEnthalpy, "diffusive energy flux");
+    return result;
+}
+
 ChemistryStep DetailedGas::advanceConstantVolume(const GasState& input, double dt, const ChemistryControls& c) {
     ChemistryStep result;
     result.requestedTime = dt;
