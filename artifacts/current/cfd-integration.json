@@ -1,0 +1,712 @@
+{
+  "version": "0.4.41",
+  "scope": "Software integration of compressible laminar development, independent Cartesian immersed-boundary CLI, and fluid-topology research; numerical defaults and qualification limits preserved.",
+  "baseMain": "ace13f9346edf215f1b7845e73af8b5dad34a092",
+  "validatedCommit": "3a95510d078b7c34ae57faa277d6817368913ddb",
+  "sourceBranches": {
+    "codex/compressible-flow": "f7733a2c6c5515749ea1706fd3f41825dc187e82",
+    "codex/pure-cartesian-cfd": "98ffe0df442bcc4b72e495b93e1b806b30a3449d",
+    "codex/fluid-topology-optimization": "d13c17536774b07968018fba5a2eed661815feda"
+  },
+  "validatedSourceFingerprint": "1aaafc483dd227cc67ec72adc530acc782657ab5acad837be9acaf374ea2adba",
+  "sourceFingerprintManifest": "outputs/integration/source-files.json",
+  "workspace": "/Users/Zhuanz/.codex/worktrees/cfd-integration/cartesian-mesh-generator-2d",
+  "localValidation": {
+    "native": {
+      "passed": 164,
+      "failed": 0,
+      "seconds": 131.85,
+      "log": "outputs/integration/native-final.log",
+      "sourceCommit": "81857cfeea66d1dfdab944d344596a98693c9bab"
+    },
+    "frontend": {
+      "passed": 191,
+      "failed": 0,
+      "log": "outputs/integration/frontend.log",
+      "sourceCommit": "81857cfeea66d1dfdab944d344596a98693c9bab"
+    },
+    "topologyResearch": {
+      "passed": 21,
+      "failed": 0,
+      "log": "outputs/integration/research.log",
+      "sourceCommit": "81857cfeea66d1dfdab944d344596a98693c9bab"
+    },
+    "app": {
+      "platform": "darwin",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "eulerAudits": [],
+          "eulerChecks": null,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "c9dd3607ddc7d30f3f4b676fb5d90b63abcd0f40c1ca86ce604cd9522e408367"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "eulerAudits": [],
+          "eulerChecks": null,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 5210,
+            "exportedCells": 5210,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "d4495d7eca5fb71de19d97b66f26708376b5cbc95f6bd433fa47447d4d469664"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "eulerAudits": [],
+          "eulerChecks": null,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 6076,
+            "exportedCells": 6076,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "12e15a88f073f9903a189a2486517d1d1b1f2bc0dac39a9a317ba6e347398e92"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "eulerAudits": [],
+          "eulerChecks": null,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 211.609375,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 16384,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "1b8ba1504fffbf8e59c6e935e8fd54cba589627190fa7c96d113cd9c4e2f0b51"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "eulerAudits": [],
+          "eulerChecks": null,
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 1168,
+            "exportedCells": 0,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "3002e652b70cd0b3a7b39cf55f5db6fe038ba2cf9388c7205e759748b0a788ed"
+        },
+        {
+          "case": "euler-sealed",
+          "cells": 228,
+          "independentReader": true,
+          "eulerAudits": [
+            {
+              "valid": true,
+              "dynamicViscosity": 2,
+              "viscousCourant": 0.0346804629953028,
+              "boundaryViscousWork": 0.0,
+              "historyMaximumEnergyBalanceRelative": 9.456427348184593e-16,
+              "thermalCourant": 0.0017237980539084948,
+              "combinedCourant": 0.3031554189027457,
+              "boundaryHeat": -2285425.1557271355,
+              "thermalConductivity": 100,
+              "minimumContactRestoration": 0.6934554461170498,
+              "fluxScheme": "hllc",
+              "order": 2,
+              "hllcFallbackEvaluations": 0,
+              "reconstructionFallbackCells": 0,
+              "cells": 228,
+              "faces": 498,
+              "time": 0.003166114475768673,
+              "acousticCourant": 0.2706945551569048,
+              "maximumCellBalanceRelative": 5.424873638055039e-17,
+              "globalBalanceRelative": [
+                1.1948350472289233e-18,
+                8.402436800957488e-21,
+                3.489374232722792e-18,
+                2.397823676190175e-18
+              ],
+              "maximumFluxRelative": 2.0021639336543547e-16,
+              "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V plus independent viscous and Fourier affine scales; V=max(|velocity|+sound); 512 binary64 eps",
+              "minimumDensity": 0.914664545071708,
+              "minimumPressure": 84816.3738510258,
+              "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity and adjacent-history mass/energy balances; not independent replay of all steps"
+            }
+          ],
+          "eulerChecks": {
+            "wallGradient": "quadratic",
+            "wallGradientControlsReachedNative": true,
+            "wallGradientChangeClearedStaleResult": true,
+            "dynamicViscosity": 2,
+            "wallModel": "no-slip",
+            "viscousControlsReachedNative": true,
+            "viscousRestartLocked": true,
+            "viscosityChangeClearedStaleResult": true,
+            "thermalConductivity": 100,
+            "thermalControlsReachedNative": true,
+            "thermalRestartLocked": true,
+            "thermalChangeClearedStaleResult": true,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "methodChangeClearedStaleResult": true,
+            "repeatedFieldsAndHistoryIdentical": true,
+            "resumeChecked": true,
+            "failedBudgetPreservedComplete": true,
+            "cancelledTime": 0.002166114475768673,
+            "cancelResumeChecked": true,
+            "allFiveFieldMaps": true
+          },
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 228,
+            "exportedCells": 228,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "9184be1c1e2558e8a8b798980dfd62fb3d562f6deb7ff151ee05e9f5eb0bbd30"
+        },
+        {
+          "case": "euler-external",
+          "cells": 3568,
+          "independentReader": true,
+          "eulerAudits": [
+            {
+              "valid": true,
+              "dynamicViscosity": 0.02,
+              "viscousCourant": 0.0038997834117829354,
+              "boundaryViscousWork": 0.0,
+              "historyMaximumEnergyBalanceRelative": 3.1568692486992825e-15,
+              "thermalCourant": 0.01639889420681742,
+              "combinedCourant": 0.39786359458119447,
+              "boundaryHeat": -10680952.891432242,
+              "thermalConductivity": 100,
+              "minimumContactRestoration": 0.7277422009453797,
+              "fluxScheme": "hllc",
+              "order": 2,
+              "hllcFallbackEvaluations": 0,
+              "reconstructionFallbackCells": 0,
+              "cells": 3568,
+              "faces": 7552,
+              "time": 0.00015517960874302582,
+              "acousticCourant": 0.38507397372035956,
+              "maximumCellBalanceRelative": 5.462763257351598e-17,
+              "globalBalanceRelative": [
+                2.956643865489503e-21,
+                2.0236032093391617e-21,
+                6.699119405578959e-20,
+                1.0019962619240044e-21
+              ],
+              "maximumFluxRelative": 3.1435906596545113e-16,
+              "fluxErrorNormalization": "face length times characteristic rho*V, rho*V^2, (rhoE+p)*V plus independent viscous and Fourier affine scales; V=max(|velocity|+sound); 512 binary64 eps",
+              "minimumDensity": 0.8004291724588154,
+              "minimumPressure": 83250.54870527657,
+              "note": "last accepted step four-equation/flux/EOS audit plus every-row time/CFL/positivity and adjacent-history mass/energy balances; not independent replay of all steps"
+            }
+          ],
+          "eulerChecks": {
+            "wallGradient": "quadratic",
+            "wallGradientControlsReachedNative": true,
+            "wallGradientChangeClearedStaleResult": true,
+            "dynamicViscosity": 0.02,
+            "wallModel": "no-slip",
+            "viscousControlsReachedNative": true,
+            "viscousRestartLocked": true,
+            "viscosityChangeClearedStaleResult": true,
+            "thermalConductivity": 100,
+            "thermalControlsReachedNative": true,
+            "thermalRestartLocked": true,
+            "thermalChangeClearedStaleResult": true,
+            "fluxScheme": "hllc",
+            "order": 2,
+            "methodChangeClearedStaleResult": true,
+            "repeatedFieldsAndHistoryIdentical": true,
+            "resumeChecked": true,
+            "failedBudgetPreservedComplete": true,
+            "cancelledTime": 0.00010517960874302583,
+            "cancelResumeChecked": true,
+            "allFiveFieldMaps": true
+          },
+          "layout": {
+            "bottomReachable": true,
+            "pageHeight": 560,
+            "windowHeight": 560,
+            "geometry": {
+              "bodyHeight": 560,
+              "innerHeight": 560,
+              "canvasHeight": 200,
+              "shellBottom": 560
+            },
+            "wallpaper": {
+              "image": "none",
+              "canvasBackground": "rgb(251, 252, 248)",
+              "welcomeHidden": true
+            },
+            "previewCells": 3568,
+            "exportedCells": 3568,
+            "sidebarCollapsed": false,
+            "sidebarExpanded": true
+          },
+          "sha256": "d64c8c2e32e44cd3977c04f7967aef077da920f9f833f102474052970cb0eeba"
+        }
+      ],
+      "externalCheckMesh": "not_run",
+      "cfd": "two short compressible wall cases; not physical qualification"
+    },
+    "compiler": "/usr/bin/clang++",
+    "externalCheckMesh": "not_run",
+    "windowsBudgetFollowup": {
+      "sourceCommit": "d4dd5fa9b87720a376d6c79b65a7b20b90c93946",
+      "scope": "Only Windows test wall-clock budgets change: CLI 480s, Python 540s, full accuracy study CTest 900s, core CTest 180s. All grids, equations, end times, step limits and assertions remain identical; macOS/Linux budgets and product defaults unchanged.",
+      "runtimeBinariesEqualFullLocalRegression": true,
+      "macOSPreflightOfWindowsBudgetBranch": {
+        "tests": [
+          "euler_accuracy_cli_test.py",
+          "euler_wall_accuracy_cli_test.py"
+        ],
+        "logs": [
+          "outputs/integration/euler_accuracy_cli_test-windows-budget-preflight.log",
+          "outputs/integration/euler_wall_accuracy_cli_test-windows-budget-preflight.log"
+        ],
+        "result": "passed",
+        "limitation": "macOS executable with harness platform selection overridden; actual Windows validation requires CI."
+      }
+    },
+    "unicodePathRegression": {
+      "result": "passed",
+      "sourceCommit": "3a95510d078b7c34ae57faa277d6817368913ddb",
+      "log": "outputs/integration/euler-unicode-local.log",
+      "scope": "Existing Euler CLI suite now uses a Chinese-and-space directory for mesh/boundary input, results, checkpoint resume and cancellation recovery. Local macOS passes; Windows requires actual CI."
+    }
+  },
+  "nativeBinaryHashes": {
+    "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+    "cartmesh2d_dxf_cli": "c3f6de41a678f81048288b3d0e8a93f53c189a4a6e3977bd5d5f1f6801bfe696",
+    "cartmesh2d_euler_cli": "53f8b1d88bd3b75ae0d679592adbc6dc43e24b88b3332d784c4f4356fde7a7d5",
+    "cartmesh2d_flow_cli": "7e4990dbc32505dce771b89f69c91e8c4bc00c25d799fa9e9b20b5675626f09c",
+    "cartmesh2d_hybrid_cli": "220d552cd70b76c89824271434b0d8b23466d48bd57197bf84826291a9907c5c",
+    "cartmesh2d_transport_cli": "a960b7ce47864a48660fe2c4280322632e99b7f4c965d6534ca893375ef72e09"
+  },
+  "immersedBinarySha256": "0a72a30aa4f3a7db8b652caff571008872c72dc3b9df783bb3d03e3bf97afa20",
+  "package": {
+    "path": "desktop/dist/CartMesh2D-0.4.41-arm64-mac.zip",
+    "sha256": "be891b97eb7d82abede54e64555189917c35e5ed3e3bc5e4553122e6dd6bc5e9",
+    "signed": false,
+    "packagedNativeToolsByteEqualCurrentBuild": true,
+    "appSmokeDirectory": "outputs/integration/app-smoke-bounded",
+    "visuallyInspected": [
+      "中文 路径/euler-external/app.png",
+      "中文 路径/euler-sealed/app.png"
+    ]
+  },
+  "failuresPreserved": [
+    {
+      "issue": "GCC rejected conditional std::array assignment with untyped initializer",
+      "resolution": "Explicit std::array<std::size_t,4> and std::array<double,4>; values and algorithms unchanged",
+      "log": "outputs/integration/ci-first-native-failure.log",
+      "run": 36580580127
+    },
+    {
+      "issue": "New App wall cases inherited dense automatic mesh and exceeded 240-second budget",
+      "resolution": "Select original branch validated manual 228-cell sealed and 3568-cell external meshes; solver/quality gates unchanged",
+      "directory": "outputs/integration/app-smoke",
+      "log": "outputs/integration/app-smoke.log"
+    },
+    {
+      "issue": "Windows hosted-runner wall-accuracy study exceeded aggregate 180-second CTest budget; other 163 tests passed",
+      "run": 36581326890,
+      "log": "outputs/integration/ci/81857cf/windows-native-failure.log",
+      "resolution": "Allow 600-second aggregate and 450-second per-command wall-clock budget on Windows only; rerun complete platform validation with unchanged physical/accuracy requirements."
+    },
+    {
+      "issue": "Windows vortex128 exceeded its 90s Python limit; Couette32 reached the solver default 180s at t=33.7196 rather than t=60. Other 162 tests passed.",
+      "run": 36583614341,
+      "log": "outputs/integration/ci/646dabb/windows-native-failure.log",
+      "resolution": "Coordinate all three wall-clock budgets (solver/Python/CTest) on Windows; keep full calculations and physical assertions. Core runtime was 55.67s of a 60s cap, so allow 180s on Windows."
+    },
+    {
+      "issue": "Windows native 164/164 passed, then the real App could not open a mesh in a Chinese directory because the Euler CLI omitted the UTF-8 process manifest used by the other executables.",
+      "run": 36586003194,
+      "log": "outputs/integration/ci/d4dd5fa/windows-app-failure.log",
+      "appLog": "outputs/integration/ci/d4dd5fa/desktop-evidence-win-x64/outputs/platform-smoke/中文 路径/euler-sealed/app.log",
+      "resolution": "Embed the existing UTF-8 manifest in Euler CLI, run its existing CLI regression in a Unicode-and-space directory, and run packaged-App smoke before long native tests while keeping every test mandatory."
+    }
+  ],
+  "physicalQualification": {
+    "compressible": "Development-only constant-property ideal-gas laminar flow; arbitrary curved-wall stress/heat accuracy and long-term stability unqualified",
+    "cartesian": "Experimental separate CLI; wall leakage reduced in original evidence, but 8.22% mean-flow mesh change remains unresolved",
+    "topology": "Research-only CLI; optimized candidate accepted in original evidence, fine straight-channel CFD baseline remains unaccepted; no global optimum or grid independence claim"
+  },
+  "protectedLocalChanges": {
+    "inventory": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/three-line-integration/original-worktree.json",
+    "patch": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/three-line-integration/original-tracked.patch",
+    "files": 21,
+    "allOriginalFileHashesVerifiedBeforeMainUpdate": true
+  },
+  "ci": {
+    "native": {
+      "run": 36587976831,
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/36587976831",
+      "commit": "3a95510d078b7c34ae57faa277d6817368913ddb",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "native-2d",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:10:14Z",
+          "completedAt": "2026-09-29T15:19:31Z"
+        }
+      ]
+    },
+    "research": {
+      "run": 36587976811,
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/36587976811",
+      "commit": "3a95510d078b7c34ae57faa277d6817368913ddb",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "topology (ubuntu-22.04)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:06Z",
+          "completedAt": "2026-09-29T15:09:35Z"
+        },
+        {
+          "name": "topology (macos-14)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:14Z",
+          "completedAt": "2026-09-29T15:09:42Z"
+        },
+        {
+          "name": "topology (windows-2022)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:06Z",
+          "completedAt": "2026-09-29T15:09:54Z"
+        }
+      ]
+    },
+    "desktop": {
+      "run": 36587976826,
+      "url": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/actions/runs/36587976826",
+      "commit": "3a95510d078b7c34ae57faa277d6817368913ddb",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "desktop (windows-2022, win, x64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:05Z",
+          "completedAt": "2026-09-29T15:33:04Z"
+        },
+        {
+          "name": "desktop (ubuntu-22.04, linux, x64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:05Z",
+          "completedAt": "2026-09-29T15:22:36Z"
+        },
+        {
+          "name": "desktop (macos-14, mac, arm64)",
+          "conclusion": "success",
+          "startedAt": "2026-09-29T15:09:10Z",
+          "completedAt": "2026-09-29T15:17:00Z"
+        }
+      ]
+    }
+  },
+  "cloudAppChecks": {
+    "mac": {
+      "summary": "outputs/integration/ci/desktop-evidence-mac-arm64/outputs/platform-smoke/summary.json",
+      "summarySha256": "3c6b8f7aa6aa09d7950fa1cdef03ce623de6a6eb1a5b800536feb7daf2513df8",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "c1194366f39c88f1cb992d696a8cf044dad5a7fbf94e3cdeac9ea3819e06d928"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "a059ef6cb61775b58c3b7131065aa22276f694de01b442e85c2428f5f63eba9a"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "sha256": "863e4adb743dfc451c8cd0936d79a0e71572425428d12d0621859363b8ae107a"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "sha256": "de673c984b22b215c932625451f2969d0891c5acdd5db58c5d771e74aff730a1"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "sha256": "e627a6805a2e7fda2100265865be8a306a300611fd8886435320782177bf3889"
+        },
+        {
+          "case": "euler-sealed",
+          "cells": 228,
+          "independentReader": true,
+          "sha256": "9b92fbb8a3385456de2d74cf7274c57c82673d282e7396aaa56607de5c5040c3",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        },
+        {
+          "case": "euler-external",
+          "cells": 3568,
+          "independentReader": true,
+          "sha256": "9fffcf52f8b495230e0d14f773f932d1aef695da66f9b769507c4e70bad2c3f4",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        }
+      ]
+    },
+    "linux": {
+      "summary": "outputs/integration/ci/desktop-evidence-linux-x64/outputs/platform-smoke/summary.json",
+      "summarySha256": "a7556a979a850a47ce37aeb2fd26ecc7c5b1dce2a54412a0eba60915a31fc756",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "bf2d92f6427138de558b3ad92b1fff73c1e131e1363a6ffcf4773c7b01ee6903"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "205829e0ba52590da50f476ebe5afaef3b4bda1574efa21289251bc40cd938b9"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "sha256": "1376cec54a350019d99c8c0fafa34dd92f14cb908c90ac872e62da3843812179"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "sha256": "7f7a59ea35d7fc70afcb3985045c5e7a0c5009fb3eb9f92398f2dc9e92762463"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "sha256": "974c2860bd9737c8b527aeb469050fed62f335c42e920d42cbcc950dfbc013d7"
+        },
+        {
+          "case": "euler-sealed",
+          "cells": 228,
+          "independentReader": true,
+          "sha256": "43647f4847b5455346c616b2a6229f74466af129e96a85c1edce3765e4ed9d63",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        },
+        {
+          "case": "euler-external",
+          "cells": 3568,
+          "independentReader": true,
+          "sha256": "d8a31eee65fe4f1f3e6c7b65e467f2ac42756cc8bc5b6bd57d61a59096e0449c",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        }
+      ]
+    },
+    "win": {
+      "summary": "outputs/integration/ci/desktop-evidence-win-x64/outputs/platform-smoke/summary.json",
+      "summarySha256": "d872bec44718ca494ca621efa65b39341e92a8422c0b2f20b1c2836a7e1132c0",
+      "cases": [
+        {
+          "case": "png",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "a45c738ce48af9ab791c1a3af202300c09a0a764940373c334470a6031f54c67"
+        },
+        {
+          "case": "jpg",
+          "cells": 5210,
+          "independentReader": true,
+          "sha256": "942ab2564fde0e7e1899c77b91d0de52061a574e13347758c226edc82af37ff7"
+        },
+        {
+          "case": "hybrid",
+          "cells": 6076,
+          "independentReader": true,
+          "sha256": "0ab04f4b86641d5ce4ead39251eaae7d1394bc602ba83216af6ead5741602cf5"
+        },
+        {
+          "case": "background-uniform",
+          "cells": 16384,
+          "independentReader": true,
+          "sha256": "a4b5f4f6b792e06e93548739635254ec6cd29c28762cb855e3043bab308bc442"
+        },
+        {
+          "case": "background-adaptive",
+          "cells": 1168,
+          "independentReader": true,
+          "sha256": "051e3923632591a80953d111b9f6e26e32616557a642d896c3272ae36bf0de50"
+        },
+        {
+          "case": "euler-sealed",
+          "cells": 228,
+          "independentReader": true,
+          "sha256": "8ead443ccebe82d64916311ccef2bface4d719c47f0353dd7a0da26e761a6359",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        },
+        {
+          "case": "euler-external",
+          "cells": 3568,
+          "independentReader": true,
+          "sha256": "1db428380540d427e9b80615d57cb07092aa25fbed42971655028f9902c6dc3d",
+          "independentEulerAudit": true,
+          "allUiChecks": true
+        }
+      ]
+    }
+  },
+  "cloudExternalCheckMesh": {
+    "tool": "OpenFOAM v2606 checkMesh",
+    "standardPassed": 15,
+    "extended": "not_run",
+    "scope": "Existing H4 mesh acceptance cases; does not certify the original topology-optimization or Cartesian research cases."
+  },
+  "branchPreservation": [
+    {
+      "branch": "codex/compressible-flow",
+      "sourceChangedFiles": 57,
+      "preservedByteEqualFiles": 49,
+      "integrationChangedFiles": [
+        "AGENTS.md",
+        "CMakeLists.txt",
+        "README.md",
+        "docs/CURRENT_STATE_CN.md",
+        "docs/DESKTOP_APP_CN.md",
+        "docs/DEVELOPMENT_CN.md",
+        "tests/euler_accuracy_cli_test.py",
+        "tests/euler_wall_accuracy_cli_test.py"
+      ]
+    },
+    {
+      "branch": "codex/pure-cartesian-cfd",
+      "sourceChangedFiles": 17,
+      "preservedByteEqualFiles": 12,
+      "integrationChangedFiles": [
+        "AGENTS.md",
+        "CMakeLists.txt",
+        "docs/CURRENT_STATE_CN.md",
+        "docs/DEVELOPMENT_CN.md",
+        "src/immersed/CartesianFlow2D.cpp"
+      ]
+    },
+    {
+      "branch": "codex/fluid-topology-optimization",
+      "sourceChangedFiles": 25,
+      "preservedByteEqualFiles": 23,
+      "integrationChangedFiles": [
+        "docs/CURRENT_STATE_CN.md",
+        "docs/DEVELOPMENT_CN.md"
+      ]
+    }
+  ],
+  "integration": {
+    "pullRequest": "https://github.com/wuhahaTWT/cartesian-mesh-generator-2d/pull/8",
+    "method": "Fast-forward the integration history; preserve all source branches and milestone tags.",
+    "followupScope": "After the validated commit, only this evidence and CURRENT_STATE_CN.md change; source fingerprint remains identical."
+  }
+}
