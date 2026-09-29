@@ -139,9 +139,47 @@ if(MSVC)
 endif()
 
 option(CARTMESH2D_BUILD_TESTS "Build cartmesh2d tests" ON)
+option(CARTMESH2D_BUILD_CHEMISTRY "Build detailed reacting-gas backend (requires Cantera 3.2)" OFF)
+set(CARTMESH2D_CANTERA_ROOT "" CACHE PATH "Cantera installation prefix for detailed chemistry")
+
+if(CARTMESH2D_BUILD_CHEMISTRY)
+    find_path(CARTMESH2D_CANTERA_INCLUDE_DIR cantera/base/Solution.h
+        HINTS "${CARTMESH2D_CANTERA_ROOT}/include" REQUIRED)
+    find_library(CARTMESH2D_CANTERA_LIBRARY NAMES cantera_shared cantera
+        HINTS "${CARTMESH2D_CANTERA_ROOT}/lib" REQUIRED)
+    file(STRINGS "${CARTMESH2D_CANTERA_INCLUDE_DIR}/cantera/base/config.h"
+        cantera_version_line REGEX "^#define CANTERA_VERSION ")
+    if(NOT cantera_version_line MATCHES "\"3\\.2\\.[0-9]+\"")
+        message(FATAL_ERROR "Detailed chemistry currently requires the Cantera 3.2 API")
+    endif()
+    add_library(cartmesh2d_cantera UNKNOWN IMPORTED)
+    set_target_properties(cartmesh2d_cantera PROPERTIES
+        IMPORTED_LOCATION "${CARTMESH2D_CANTERA_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${CARTMESH2D_CANTERA_INCLUDE_DIR}")
+    add_library(cartmesh2d_chemistry src/chemistry/DetailedGas.cpp)
+    target_include_directories(cartmesh2d_chemistry PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    target_compile_features(cartmesh2d_chemistry PUBLIC cxx_std_20)
+    target_link_libraries(cartmesh2d_chemistry PRIVATE cartmesh2d_cantera)
+    cartmesh2d_enable_warnings(cartmesh2d_chemistry)
+endif()
 
 if(CARTMESH2D_BUILD_TESTS)
     include(CTest)
+    if(CARTMESH2D_BUILD_CHEMISTRY)
+        find_file(CARTMESH2D_HYDROGEN_MECHANISM h2o2.yaml
+            HINTS "${CARTMESH2D_CANTERA_ROOT}/share/cantera/data" REQUIRED)
+        find_file(CARTMESH2D_METHANE_MECHANISM gri30.yaml
+            HINTS "${CARTMESH2D_CANTERA_ROOT}/share/cantera/data" REQUIRED)
+        add_executable(cartmesh2d_detailed_gas_tests tests/detailed_gas_test.cpp)
+        target_link_libraries(cartmesh2d_detailed_gas_tests PRIVATE cartmesh2d_chemistry)
+        cartmesh2d_enable_warnings(cartmesh2d_detailed_gas_tests)
+        add_test(NAME cartmesh2d_detailed_gas COMMAND cartmesh2d_detailed_gas_tests
+            "${CARTMESH2D_HYDROGEN_MECHANISM}" "${CARTMESH2D_METHANE_MECHANISM}")
+        set_tests_properties(cartmesh2d_detailed_gas PROPERTIES TIMEOUT 90)
+        add_executable(cartmesh2d_detailed_gas_probe tests/detailed_gas_probe.cpp)
+        target_link_libraries(cartmesh2d_detailed_gas_probe PRIVATE cartmesh2d_chemistry)
+        cartmesh2d_enable_warnings(cartmesh2d_detailed_gas_probe)
+    endif()
     add_executable(cartmesh2d_rectilinear_tests tests/rectilinear_test.cpp)
     target_link_libraries(cartmesh2d_rectilinear_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_rectilinear COMMAND cartmesh2d_rectilinear_tests)
