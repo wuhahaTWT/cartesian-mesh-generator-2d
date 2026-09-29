@@ -1,0 +1,43 @@
+{
+  "schema": "cartmesh2d-topology-native-preview-v1",
+  "cases": [
+    {
+      "label": "Double-pipe",
+      "cells": 3629,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-0/level-6/mesh.solver.cm2d",
+          "meshSha256": "e1a9ab30b5291398fbd5500af2b9bab387944ceddfd7559438ac4ade8939cffa",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-0/level-6/flow.cells.csv",
+          "fieldSha256": "b00b8c41dd5f9a5279f5804fa235f1406b2c2f1ce51c6a38f830267d4e879d3c"
+        },
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-1/level-6/mesh.solver.cm2d",
+          "meshSha256": "9209303e6e2d8e2cd67b7405f01880adee530c60b69eaff38b394be535eeaad6",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-double-pipe-native/component-1/level-6/flow.cells.csv",
+          "fieldSha256": "e7b236a4be50a710429cc0e9d236d58843950562acd36db3f2124f3b9abdd5bc"
+        }
+      ],
+      "iterations": [
+        258,
+        302
+      ]
+    },
+    {
+      "label": "Bend",
+      "cells": 5897,
+      "sources": [
+        {
+          "mesh": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-bend-native/level-7/mesh.solver.cm2d",
+          "meshSha256": "1bf57e3665c01a13de7e651eada82f49b4b47f4fd7492fce085f87817ff18198",
+          "field": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/fluid-topology/final-bend-native/level-7/flow.cells.csv",
+          "fieldSha256": "90aaa53e7c4ed777f96f17ba30da0a46ba410acbd538ad909c75924f75a8c9e2"
+        }
+      ],
+      "iterations": [
+        1293
+      ]
+    }
+  ],
+  "fieldRendering": "One constant scalar per actual native polygon; no interpolated or fabricated field."
+}

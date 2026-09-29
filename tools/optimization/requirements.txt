@@ -1,0 +1,4 @@
+# Optional research tools; the native product build does not require these.
+numpy>=1.26
+scipy>=1.13
+matplotlib>=3.8
