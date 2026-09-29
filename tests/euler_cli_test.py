@@ -5,7 +5,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/verification'))
 import verify_euler as euler
 parser=argparse.ArgumentParser();parser.add_argument('--cli',required=True);args=parser.parse_args()
 with tempfile.TemporaryDirectory(prefix='cm2d-euler-') as directory:
-    root=Path(directory)
+    # Exercise argv, mesh/boundary reads, exports and restart through UTF-8 paths.
+    # The Windows executable must embed the same UTF-8 manifest as other CLIs.
+    root=Path(directory)/'中文 路径';root.mkdir()
     def run(mesh,name,extra=(),expected=0):
         prefix=root/name
         command=[args.cli,'--mesh',str(mesh),'--output',str(prefix),'--end-time','.2','--gas-r','1',*map(str,extra)]

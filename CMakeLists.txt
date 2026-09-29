@@ -116,6 +116,7 @@ cartmesh2d_enable_warnings(cartmesh2d_euler_cli)
 target_link_libraries(cartmesh2d_flow_cli PRIVATE cartmesh2d_fv)
 if(MSVC)
     target_sources(cartmesh2d_flow_cli PRIVATE apps/cartmesh2d.exe.manifest)
+    target_sources(cartmesh2d_euler_cli PRIVATE apps/cartmesh2d.exe.manifest)
 endif()
 cartmesh2d_enable_warnings(cartmesh2d_flow_cli)
 

@@ -53,8 +53,6 @@ jobs:
         run: npm --prefix desktop run build:native
       - name: Build all native tests
         run: cmake --build build --config Release --parallel 2
-      - name: Native tests
-        run: ctest --test-dir build -C Release --output-on-failure
       - name: Desktop tests
         run: npm --prefix desktop test
       - name: Package host desktop
@@ -69,6 +67,9 @@ jobs:
       - name: macOS packaged application smoke
         if: runner.os == 'macOS'
         run: python tools/verification/desktop_platform_smoke.py --app desktop/dist/mac-arm64/CartMesh2D.app/Contents/MacOS/CartMesh2D --out outputs/platform-smoke
+      # Catch packaged-App/path failures before the long precision studies.
+      - name: Native tests
+        run: ctest --test-dir build -C Release --output-on-failure
       - name: Upload validation evidence
         if: always()
         uses: actions/upload-artifact@v4
