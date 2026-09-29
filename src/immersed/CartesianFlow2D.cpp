@@ -196,8 +196,8 @@ Grid makeGrid(const Controls& c,const std::vector<BoundaryLoop>& solids) {
                     const double x=w.point.x/g.dx()-(isU?0:.5),y=w.point.y/g.dy()-(isU?.5:0);
                     const auto i=static_cast<std::size_t>(std::floor(x)),j=static_cast<std::size_t>(std::floor(y));
                     const double fx=x-static_cast<double>(i),fy=y-static_cast<double>(j);
-                    (isU?w.uIndex:w.vIndex)={g.index(i,j),g.index(i+1,j),g.index(i,j+1),g.index(i+1,j+1)};
-                    (isU?w.uWeight:w.vWeight)={(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy};
+                    (isU?w.uIndex:w.vIndex)=std::array<std::size_t,4>{g.index(i,j),g.index(i+1,j),g.index(i,j+1),g.index(i+1,j+1)};
+                    (isU?w.uWeight:w.vWeight)=std::array<double,4>{(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy};
                 }
                 g.wallStencils.push_back(w);
             }

@@ -45,6 +45,12 @@ def main():
                    '--export=' + str(archive), '--shot=' + str(screenshot)]
         if name.startswith('euler-'):
             # Short development cases: these properties are test controls, not an air model.
+            # Match the bounded rectangle/circle meshes from the branch App evidence.
+            command += ['--control=manual', '--band-cells=3',
+                        '--wall-relative-size=' + ('.0625' if sample == 'rectangle' else '.015625'),
+                        '--background-relative-size=' + ('.09375' if sample == 'rectangle' else '21'),
+                        '--padding-relative-size=' + ('.25' if sample == 'rectangle' else '10'),
+                        '--small-alpha=' + ('.1' if sample == 'rectangle' else '.15')]
             command += ['--euler=true', '--euler-case=' + name.removeprefix('euler-'),
                         '--euler-flux=hllc', '--euler-order=2', '--euler-wall-gradient=quadratic',
                         '--euler-wall-model=no-slip', '--euler-conductivity=100',
