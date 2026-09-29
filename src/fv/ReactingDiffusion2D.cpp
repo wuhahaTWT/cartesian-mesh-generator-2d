@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ReactingDiffusion2D.hpp"
+#include "cartmesh2d/chemistry/SpeciesMassClosure.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -156,6 +157,7 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
         const double p = std::exp((1 - w) * std::log(left.pressure) + w * std::log(right.pressure));
         std::vector<double> y(ns);
         for (std::size_t k = 0; k < ns; ++k) y[k] = (1 - w) * left.massFractions[k] + w * right.massFractions[k];
+        (void)chemistry::closeSpeciesMassRoundoff(1, y);
         const auto faceState = gas.fromMassFractions(t, p, y);
         const auto derivative = [&](std::size_t field) {
             auto g = gradient[field][owner];

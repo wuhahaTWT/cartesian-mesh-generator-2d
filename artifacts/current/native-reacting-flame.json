@@ -209,7 +209,8 @@
     "outputs/combustion-foundation/roundoff-fixed-003": "regularized backend Soret plateau generates excessive trace flux",
     "outputs/combustion-foundation/flame-native-comparison-002": "subnormal linear-equation arithmetic bound failure; retained last accepted state",
     "outputs/combustion-foundation/flame-native-comparison-003": "native endpoint reached; independent audit exposes near-zero HLLC mass/species inconsistency",
-    "outputs/combustion-foundation/flame-diffusion-interface-004": "48 raw cases retained; report serialization failed, not a verification pass"
+    "outputs/combustion-foundation/flame-diffusion-interface-004": "48 raw cases retained; report serialization failed, not a verification pass",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-2": "Accumulated composition closure roundoff at 1209 accepted steps; last accepted checkpoint retained"
   },
   "raw_sha256": {
     "outputs/combustion-foundation/flame-native-comparison-004/native-0/field.json": "324026cb8cbda82f3da73e3a562b7128309077c16f86a151354ca3638b1eade0",
@@ -237,7 +238,9 @@
     "outputs/combustion-foundation/flame-native-comparison-004/native-1/audit.json": "29d18c358d66ebed2f40595d7c28ab12e496a883f8d596c183bde7fe7fbebae7",
     "outputs/combustion-foundation/flame-native-comparison-004/native-1/steps.jsonl": "66d8bd591c4c794e744f5d7836f62f6674bd2e09ad4b598e64b6d577d68f9d43",
     "outputs/combustion-foundation/flame-native-comparison-004/native-1/accepted.checkpoint": "b79ad5e13b06ecb5c902ee252ef651f2a619a616824f33f1a12118d82149b6ed",
-    "outputs/combustion-foundation/flame-native-comparison-004/native-1/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7"
+    "outputs/combustion-foundation/flame-native-comparison-004/native-1/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-2/steps.jsonl": "75c145912d6ae7b5dfb6e11fb283741ad2d8c9c9013d21bf221e59ee8c39560a",
+    "outputs/combustion-foundation/flame-native-comparison-004/native-2/accepted.checkpoint": "e82c23776cb745cf6da0539804a7c71ae797c01e2ad7f9cbde09e7ca90c98e35"
   },
   "preview": {
     "path": "artifacts/current/native-reacting-flame.png",
@@ -251,5 +254,15 @@
     "actual target geometry, appropriate turbulence/spray/radiation/heat-transfer models and experiments",
     "product input/output, App and platform qualification"
   ],
-  "source_commit": "856f7f7c3eda3bbfaa59086b670b6ab50a0ec1cf"
+  "source_commit": "856f7f7c3eda3bbfaa59086b670b6ab50a0ec1cf",
+  "resolved_open_calculations": [
+    {
+      "directory": "outputs/combustion-foundation/flame-native-comparison-004/native-2",
+      "status": "failed",
+      "time_s": 2.6104035134716166e-07,
+      "accepted_steps": 1209,
+      "reason": "mass fraction sum roundoff reached the unchanged composition check",
+      "followup": "artifacts/current/native-reacting-mass-closure.json"
+    }
+  ]
 }

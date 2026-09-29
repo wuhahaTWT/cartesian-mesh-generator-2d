@@ -22,7 +22,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def audit(path, reference, fixture):
+def audit(path, reference, fixture, audit_output=None):
     r = json.loads((path / "field.json").read_text())
     gas = ct.Solution(str(path / "resolved-mechanism.yaml"))
     area = np.array(r["areas"])
@@ -93,7 +93,8 @@ def audit(path, reference, fixture):
                               "pressure_max_relative_to_reference": float(np.max(abs(np.array(state["pressure"]) / reference["pressure_Pa"] - 1)))})
     assert closure_error < 1e-10 and thermo_error < 2e-9 and chemical_error < 2e-8 and flux_error < 2e-11
     # Verify the native initial state is the supplied conservative average;
-    # the solver must not silently repair imported or subsequently evolved Y.
+    # the solver must not silently repair imported Y. Algebraic N-1 stage
+    # closure is reported explicitly and remains in the physical budgets.
     lines = Path(fixture["path"]).read_text().splitlines()
     columns = np.array([[float(v) for v in line.split()] for line in lines[4:4 + nx]])
     assert np.array_equal(np.tile(columns, (ny, 1)), r["initial"]["U"])
@@ -116,6 +117,34 @@ def audit(path, reference, fixture):
         else:
             assert step is steps[-1]
     assert clock == last["time"] and accepted == last["steps"]
+    closure_report = None
+    if "massClosure" in r:
+        closure = r["massClosure"]
+        accepted_log = [s for s in steps if s["accepted"]]
+        assert all(0 <= s["maximumMassClosureFraction"] <= 64 * (gas.n_species + 1) * np.finfo(float).eps
+                   for s in accepted_log)
+        assert max((s["maximumMassClosureFraction"] for s in accepted_log), default=0.) == closure["maximumFraction"]
+        # Python 3.12+ sum() uses compensated accumulation; the native log
+        # accumulator uses ordered IEEE additions. Reproduce those additions
+        # for the exact serialization check, without relaxing its threshold.
+        absolute = 0.
+        for s in accepted_log:
+            absolute += s["absoluteMassClosureIntegral"]
+        assert absolute == closure["absoluteIntegral"]
+        for kind in ["transport", "chemistry"]:
+            total = np.zeros(gas.n_species + 4)
+            for s in accepted_log:
+                change = np.array(s[kind + "MassClosureChange"])
+                assert change.shape == total.shape and np.all(np.isfinite(change)) and np.all(change[:4] == 0)
+                total += change
+            assert np.array_equal(total, closure[kind])
+        # Unsubtracted physical budgets above still include all closure
+        # changes. Separately expose the total absolute roundoff operation.
+        assert closure["absoluteIntegral"] >= 0
+        closure_report = {"maximum_stage_fraction": closure["maximumFraction"],
+                          "absolute_integral_per_initial_mass": float(closure["absoluteIntegral"] / before[0]),
+                          "net_element_change_per_initial_mass": ((np.array(closure["transport"])[4:]
+                              + np.array(closure["chemistry"])[4:]) @ elements / float(before[0])).tolist()}
     report = {"numerical_checks_passed": True, "physical_endpoint_reached": r["complete"] and accepted > 0,
               "qualified_flame": False, "cells": nx * ny, "spacing_m": fixture["spacing_m"],
               "time_s": clock, "accepted_steps": accepted, "rejections": r["rejections"], "failure": r["failure"],
@@ -126,7 +155,9 @@ def audit(path, reference, fixture):
               "initial_residual": state_metrics[0], "final_residual": state_metrics[1],
               "maximum_temperature_drift_K": float(np.max(abs(np.array(last["temperature"]) - first["temperature"]))),
               "field_sha256": sha(path / "field.json")}
-    (path / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
+    if closure_report is not None:
+        report["mass_closure_diagnostics"] = closure_report
+    (Path(audit_output or path) / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
     return report, r
 
 
@@ -137,7 +168,10 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--duration", type=float, default=1e-6)
     parser.add_argument("--jobs", type=int, default=3, help="independent native cases in parallel; 1 for sequential execution")
+    parser.add_argument("--audit-native-output", type=Path,
+                        help="audit an already completed verifier run into a NEW output directory, without running the solver")
     args = parser.parse_args()
+    verifier_hash = sha(Path(__file__))
     assert np.isfinite(args.duration) and args.duration > 0
     assert 1 <= args.jobs <= 3
     args.output.mkdir(parents=True, exist_ok=False)
@@ -146,27 +180,43 @@ def main():
         assert sha(args.reference / name) == digest
     assert sha(reference["mechanism"]) == reference["mechanism_sha256"]
     probe_hash = sha(args.probe)
+    previous = None
+    if args.audit_native_output:
+        previous = json.loads((args.audit_native_output / "report.json").read_text())
+        assert previous["probe_sha256"] == probe_hash and previous["duration_s"] == args.duration
+        assert previous["reference_report_sha256"] == sha(args.reference / "reference.json")
+        assert len(previous["cases"]) == len(reference["fixtures"])
     def run_case(item):
         number, fixture = item
         assert sha(fixture["path"]) == fixture["sha256"] and sha(args.probe) == probe_hash
-        path = args.output / f"native-{number}"
-        start = time.perf_counter()
-        process = subprocess.run([str(args.probe.resolve()), reference["mechanism"], fixture["path"],
-                                  str(path), format(args.duration, ".17g")], capture_output=True, text=True)
-        elapsed = time.perf_counter() - start
-        (args.output / f"native-{number}.stdout").write_text(process.stdout)
-        (args.output / f"native-{number}.stderr").write_text(process.stderr)
-        case = {"returncode": process.returncode, "elapsed_seconds_including_all_IO": elapsed, "directory": str(path)}
+        audit_path = args.output / f"native-{number}"
+        path = (args.audit_native_output or args.output) / f"native-{number}"
+        if previous is None:
+            start = time.perf_counter()
+            process = subprocess.run([str(args.probe.resolve()), reference["mechanism"], fixture["path"],
+                                      str(path), format(args.duration, ".17g")], capture_output=True, text=True)
+            elapsed, returncode, failure = time.perf_counter() - start, process.returncode, process.stderr
+            (args.output / f"native-{number}.stdout").write_text(process.stdout)
+            (args.output / f"native-{number}.stderr").write_text(process.stderr)
+        else:
+            saved = previous["cases"][number]
+            assert Path(saved["directory"]).resolve() == path.resolve()
+            elapsed, returncode, failure = saved["elapsed_seconds_including_all_IO"], saved["returncode"], saved.get("failure", "")
+            audit_path.mkdir()
+        raw_hashes = {str(p): sha(p) for p in (path.iterdir() if path.is_dir() else [])
+                      if p.is_file() and p.name not in {"audit.json", "audit-error.txt"}}
+        case = {"returncode": returncode, "elapsed_seconds_including_all_IO": elapsed, "directory": str(path), "raw_sha256": raw_hashes}
         field = None
         if (path / "field.json").exists():
             try:
-                checked, field = audit(path, reference, fixture); case.update(checked)
+                checked, field = audit(path, reference, fixture, audit_path); case.update(checked)
             except Exception as error:
-                (path / "audit-error.txt").write_text(traceback.format_exc())
+                (audit_path / "audit-error.txt").write_text(traceback.format_exc())
                 case.update(numerical_checks_passed=False, physical_endpoint_reached=False,
                             failure=f"Independent audit failed: {type(error).__name__}: {error}; see audit-error.txt")
         else:
-            case.update(numerical_checks_passed=False, physical_endpoint_reached=False, failure=process.stderr)
+            case.update(numerical_checks_passed=False, physical_endpoint_reached=False, failure=failure)
+        assert all(sha(p) == digest for p, digest in raw_hashes.items())
         print(json.dumps(case), flush=True)
         return case, field
     wall_start = time.perf_counter()
@@ -175,14 +225,22 @@ def main():
     cases = [case for case, _ in results]
     fields = [field for _, field in results if field is not None]
     assert sha(args.probe) == probe_hash
+    assert sha(Path(__file__)) == verifier_hash
     report = {"qualified_flame": False, "duration_s": args.duration, "probe_sha256": probe_hash,
+              "execution_mode": "audit_existing" if previous is not None else "run_and_audit",
+              "verifier_sha256": verifier_hash,
               "reference_report_sha256": sha(args.reference / "reference.json"), "cases": cases,
               "parallel_jobs": args.jobs, "case_wall_seconds_including_audits": time.perf_counter() - wall_start,
               "all_numerical_checks_passed": all(c["numerical_checks_passed"] for c in cases),
               "all_endpoints_reached": all(c["physical_endpoint_reached"] for c in cases),
+              "all_native_runs_succeeded": all(c["returncode"] == 0 for c in cases),
               "limits": ["reference and native share chemistry/transport backend", "constant-pressure BVP versus full compressible FV",
                          "short evolution from a reference initial condition does not predict or qualify flame speed",
                          "reference roundoff preparation recorded separately; no native species clipping", "no experiment or actual combustor qualification"]}
+    if previous is not None:
+        report["audit_source_report"] = {"path": str(args.audit_native_output / "report.json"),
+                                         "sha256": sha(args.audit_native_output / "report.json")}
+        report["audit_wall_seconds"] = report.pop("case_wall_seconds_including_audits")
     (args.output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     if len(fields) == len(cases):
         os.environ.setdefault("MPLCONFIGDIR", str(Path(__file__).resolve().parents[2] / "build" / "matplotlib-cache"))
@@ -212,7 +270,7 @@ def main():
         fig.suptitle(f"Detailed H2/air planar flame | native evolution requested: {args.duration*1e6:g} us")
         fig.supxlabel("Reference-initialized short-time verification; no independently predicted flame-speed or experimental qualification.", fontsize=8)
         fig.savefig(args.output / "reacting-flame.png", dpi=160); plt.close(fig)
-    if not report["all_numerical_checks_passed"] or not report["all_endpoints_reached"]:
+    if not report["all_numerical_checks_passed"] or not report["all_endpoints_reached"] or not report["all_native_runs_succeeded"]:
         raise SystemExit(1)
 
 

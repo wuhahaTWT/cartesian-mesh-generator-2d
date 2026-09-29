@@ -1,4 +1,5 @@
 #include "cartmesh2d/chemistry/DetailedGas.hpp"
+#include "cartmesh2d/chemistry/SpeciesMassClosure.hpp"
 #include "TraceStableMultiTransport.hpp"
 
 #include "cantera/base/Solution.h"
@@ -199,8 +200,12 @@ struct DetailedGas::Impl {
             require(std::isfinite(value) && value >= 0, "negative or nonfinite mass fraction");
             sum += value;
         }
-        require(std::abs(sum - 1) <= compositionAllowance(y.size()),
-                "mass fractions do not sum to one; normalization is not implicit");
+        if (std::abs(sum - 1) > compositionAllowance(y.size())) {
+            std::ostringstream message; message.precision(17);
+            message << "mass fractions do not sum to one; normalization is not implicit; sum=" << sum
+                    << ", allowance=" << compositionAllowance(y.size());
+            require(false, message.str());
+        }
     }
 
     void validateTemperature(double temperature) const {
@@ -334,20 +339,29 @@ GasProperties DetailedGas::properties(const GasState& q) {
     return impl_->currentProperties();
 }
 
+double DetailedGas::viscosity(const GasState& q) {
+    impl_->restore(q);
+    const double value = finite(impl_->solution->transport()->viscosity(), "viscosity");
+    require(value > 0, "nonpositive viscosity");
+    return value;
+}
+
 GasTransport DetailedGas::transport(const GasState& q) {
     impl_->restore(q);
     GasTransport result;
     auto transport = impl_->solution->transport();
     result.viscosity = finite(transport->viscosity(), "viscosity");
-    result.thermalConductivity = finite(transport->thermalConductivity(), "thermal conductivity");
-    require(result.viscosity > 0 && result.thermalConductivity > 0, "nonpositive transport property");
     const auto count = impl_->info.species.size();
     result.multicomponentDiffusion.resize(count * count);
     result.binaryDiffusion.resize(count * count);
     result.thermalDiffusion.resize(count);
     transport->getMultiDiffCoeffs(count, result.multicomponentDiffusion.data());
     transport->getBinaryDiffCoeffs(count, result.binaryDiffusion.data());
+    // getMultiDiffCoeffs overwrites Cantera's L workspace. Query both thermal
+    // properties afterwards so their shared full kinetic solve is reused.
+    result.thermalConductivity = finite(transport->thermalConductivity(), "thermal conductivity");
     transport->getThermalDiffCoeffs(result.thermalDiffusion.data());
+    require(result.viscosity > 0 && result.thermalConductivity > 0, "nonpositive transport property");
     for (double value : result.multicomponentDiffusion) finite(value, "multicomponent diffusion");
     for (double value : result.binaryDiffusion) require(std::isfinite(value) && value > 0, "invalid binary diffusion");
     for (double value : result.thermalDiffusion) finite(value, "thermal diffusion");
@@ -476,7 +490,14 @@ ChemistryStep DetailedGas::advanceConstantVolume(const GasState& input, double d
         result.internalSteps = stats.at("steps").asInt();
         result.rhsEvaluations = stats.at("rhs_evals").asInt();
         require(result.reachedTime == dt, "source integrator did not reach requested physical time");
-        const auto candidate = impl_->capture();
+        auto candidate = impl_->capture();
+        // Preserve the algebraic mass constraint across repeated source
+        // restarts. Validate the raw redundant species first; do not repair
+        // a chemistry integration defect outside the summation allowance.
+        const auto closure = closeSpeciesMassRoundoff(candidate.density, candidate.speciesDensities);
+        result.massClosureChange.assign(candidate.speciesDensities.size(), 0);
+        result.massClosureChange[closure.species] = closure.change;
+        impl_->restore(candidate);
         const auto after = impl_->currentProperties(); // includes strict positivity, no clipping
         for (std::size_t m = 0; m < before.elementalMassFractions.size(); ++m)
             result.maximumElementDrift = std::max(result.maximumElementDrift,

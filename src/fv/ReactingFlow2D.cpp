@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/ReactingFlow2D.hpp"
+#include "cartmesh2d/chemistry/SpeciesMassClosure.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -30,7 +31,9 @@ std::vector<double> primitiveValues(const ReactingPrimitive2D& p) {
     return v;
 }
 ReactingConservative2D fromValues(chemistry::DetailedGas& gas, const std::vector<double>& v) {
-    return reactingConservative2D(gas.fromMassFractions(v[0], std::exp(v[1]), {v.begin() + 4, v.end()}), {v[2], v[3]});
+    std::vector<double> y(v.begin() + 4, v.end());
+    (void)chemistry::closeSpeciesMassRoundoff(1, y);
+    return reactingConservative2D(gas.fromMassFractions(v[0], std::exp(v[1]), y), {v[2], v[3]});
 }
 bool wall(ReactingBoundaryKind2D k) { return k == ReactingBoundaryKind2D::SlipWall || k == ReactingBoundaryKind2D::NoSlipWall; }
 }
@@ -309,9 +312,10 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
             if (b && b->wallTemperature > 0) rp.temperature = b->wallTemperature;
             const double w = f.neighbour ? f.neighbourWeight : 1;
             auto y = lp.massFractions; for (std::size_t k = 0; k < y.size(); ++k) y[k] = (1 - w) * y[k] + w * rp.massFractions[k];
+            (void)chemistry::closeSpeciesMassRoundoff(1, y);
             const auto q = gas_.fromMassFractions((1 - w) * lp.temperature + w * rp.temperature,
                 std::exp((1 - w) * std::log(lp.pressure) + w * std::log(rp.pressure)), y);
-            mu[id] = gas_.transport(q).viscosity;
+            mu[id] = gas_.viscosity(q);
             out.faceFlux[id][3] += d.faces[id].energy;
             for (std::size_t k = 4; k < nv; ++k) out.faceFlux[id][k] += d.faces[id].species[k - 4];
         }
@@ -333,7 +337,8 @@ ReactingConservative2D ReactingFlowStepper2D::integral(const std::vector<Reactin
     return {sums.begin(), sums.end()};
 }
 void ReactingFlowStepper2D::react(std::vector<ReactingConservative2D>& cells, double dt,
-    const chemistry::ChemistryControls& controls, ReactingStepResult2D& result, ReactingConservative2D& change) {
+    const chemistry::ChemistryControls& controls, ReactingStepResult2D& result, ReactingConservative2D& change,
+    ReactingConservative2D& closureChange, double& maximumClosure, double& absoluteClosure) {
     if (!physics_.chemistry) return;
     for (std::size_t i = 0; i < cells.size(); ++i) {
         const auto before = cells[i]; const auto p = reactingPrimitive2D(gas_, before);
@@ -344,6 +349,11 @@ void ReactingFlowStepper2D::react(std::vector<ReactingConservative2D>& cells, do
         auto& u = cells[i]; u[0] = source.accepted->density;
         u[3] = source.accepted->internalEnergyDensity + kinetic(u);
         for (std::size_t k = 4; k < u.size(); ++k) u[k] = source.accepted->speciesDensities[k - 4];
+        for (std::size_t k = 4; k < u.size(); ++k) {
+            closureChange[k] += source.massClosureChange[k - 4] * mesh_.cells[i].area;
+            maximumClosure = std::max(maximumClosure, std::abs(source.massClosureChange[k - 4] / u[0]));
+            absoluteClosure += std::abs(source.massClosureChange[k - 4]) * mesh_.cells[i].area;
+        }
         for (std::size_t k = 0; k < u.size(); ++k) change[k] += (u[k] - before[k]) * mesh_.cells[i].area;
         (void)reactingPrimitive2D(gas_, u);
     }
@@ -365,16 +375,23 @@ ReactingStepResult2D ReactingFlowStepper2D::advance(const ReactingState2D& initi
         result.beforeIntegral = integral(initial.cells);
         for (std::size_t attempt = 0; attempt <= c.maximumRetries; ++attempt) {
             require(dt >= c.minimumStep && std::isfinite(dt) && initial.time + dt > initial.time, "required step below minimum or clock resolution");
-            auto cells = initial.cells; ReactingConservative2D chemicalChange(nv);
+            auto cells = initial.cells; ReactingConservative2D chemicalChange(nv), chemicalClosure(nv), transportClosure(nv);
+            double maximumClosure = 0, absoluteClosure = 0;
+            const auto closeStage = [&](std::size_t i, double weight) {
+                const auto closure = chemistry::closeSpeciesMassRoundoff(cells[i][0], cells[i], 4);
+                transportClosure[closure.species + 4] += weight * closure.change * mesh_.cells[i].area;
+                maximumClosure = std::max(maximumClosure, std::abs(closure.change / cells[i][0]));
+                absoluteClosure += weight * std::abs(closure.change) * mesh_.cells[i].area;
+            };
             try {
-                react(cells, dt / 2, c.chemistry, result, chemicalChange);
+                react(cells, dt / 2, c.chemistry, result, chemicalChange, chemicalClosure, maximumClosure, absoluteClosure);
                 const auto base = cells;
                 auto first = spatial(base, c.order);
                 double courant = dt * *std::max_element(first.rate.begin(), first.rate.end());
                 require(courant <= c.courant * (1 + 16 * std::numeric_limits<double>::epsilon()), "post-chemistry transport CFL increased");
                 for (std::size_t i = 0; i < nc; ++i) {
                     for (std::size_t k = 0; k < nv; ++k) cells[i][k] -= dt / mesh_.cells[i].area * first.residual[i][k];
-                    try { (void)reactingPrimitive2D(gas_, cells[i]); }
+                    try { closeStage(i, c.order == 2 ? .5 : 1); (void)reactingPrimitive2D(gas_, cells[i]); }
                     catch (const std::exception& e) {
                         std::ostringstream message; message << std::setprecision(17) << "first transport stage, cell " << i << ": " << e.what();
                         for (std::size_t k = 4; k < nv; ++k) if (cells[i][k] < 0)
@@ -389,7 +406,7 @@ ReactingStepResult2D ReactingFlowStepper2D::advance(const ReactingState2D& initi
                     require(courant <= c.courant * (1 + 16 * std::numeric_limits<double>::epsilon()), "second-stage transport CFL increased");
                     for (std::size_t i = 0; i < nc; ++i) {
                         for (std::size_t k = 0; k < nv; ++k) cells[i][k] = .5 * (base[i][k] + cells[i][k] - dt / mesh_.cells[i].area * second.residual[i][k]);
-                        try { (void)reactingPrimitive2D(gas_, cells[i]); }
+                        try { closeStage(i, 1); (void)reactingPrimitive2D(gas_, cells[i]); }
                         catch (const std::exception& e) {
                             std::ostringstream message; message << std::setprecision(17) << "second transport stage, cell " << i << ": " << e.what();
                             for (std::size_t k = 4; k < nv; ++k) if (cells[i][k] < 0)
@@ -400,17 +417,21 @@ ReactingStepResult2D ReactingFlowStepper2D::advance(const ReactingState2D& initi
                     for (std::size_t f = 0; f < first.faceFlux.size(); ++f) for (std::size_t k = 0; k < nv; ++k) first.faceFlux[f][k] = .5 * (first.faceFlux[f][k] + second.faceFlux[f][k]);
                     first.fallbacks += second.fallbacks;
                 }
-                react(cells, dt / 2, c.chemistry, result, chemicalChange);
+                react(cells, dt / 2, c.chemistry, result, chemicalChange, chemicalClosure, maximumClosure, absoluteClosure);
                 ReactingState2D accepted{initial.time + dt, initial.steps + 1, binding_, std::move(cells)};
                 validate(accepted);
                 require(!c.endTime || accepted.time <= *c.endTime, "candidate exceeds integration horizon");
                 result.step = dt; result.combinedCourant = courant; result.hlleFallbacks = first.fallbacks;
                 result.faceFlux = std::move(first.faceFlux); result.chemistryChange = std::move(chemicalChange);
+                result.transportMassClosureChange = std::move(transportClosure);
+                result.chemistryMassClosureChange = std::move(chemicalClosure);
+                result.maximumMassClosureFraction = maximumClosure;
+                result.absoluteMassClosureIntegral = absoluteClosure;
                 result.afterIntegral = integral(accepted.cells); result.boundaryFlux.assign(nv, 0); result.balanceError.resize(nv);
                 for (std::size_t f = 0; f < mesh_.faces.size(); ++f) if (!mesh_.faces[f].neighbour)
                     for (std::size_t k = 0; k < nv; ++k) result.boundaryFlux[k] += result.faceFlux[f][k];
                 for (std::size_t k = 0; k < nv; ++k) result.balanceError[k] = finite(result.afterIntegral[k] - result.beforeIntegral[k]
-                    + dt * result.boundaryFlux[k] - result.chemistryChange[k]);
+                    + dt * result.boundaryFlux[k] - result.chemistryChange[k] - result.transportMassClosureChange[k]);
                 const auto& m = gas_.mechanism(); result.elementalBalanceError.resize(m.elements.size());
                 for (std::size_t e = 0; e < m.elements.size(); ++e) {
                     long double sum = 0;

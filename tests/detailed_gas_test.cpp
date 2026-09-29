@@ -1,8 +1,10 @@
 #include "cartmesh2d/chemistry/DetailedGas.hpp"
+#include "cartmesh2d/chemistry/SpeciesMassClosure.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 
 using namespace cartmesh2d::chemistry;
@@ -53,6 +55,33 @@ int main(int argc, char** argv) {
         check(hydrogen.mechanism().species.size() == 10 && hydrogen.mechanism().reactions == 29,
               "hydrogen detailed mechanism was changed/reduced");
         const auto x = mixture(hydrogen, {{"H2", 2}, {"O2", 1}, {"N2", 3.76}});
+        // The repeated-source failure originated in a cold upstream cell.
+        // Require bounded composition error after many genuine CVODES
+        // restarts, not merely a one-shot algebraic closure test.
+        auto cold = hydrogen.fromMoleAmounts(400, 101325, x);
+        const auto coldInitial = cold;
+        double maximumClosure = 0;
+        for (unsigned i = 0; i < 2048; ++i) {
+            const auto source = hydrogen.advanceConstantVolume(cold, 2.2e-10);
+            if (!source.accepted) throw std::runtime_error(source.failure);
+            cold = *source.accepted;
+            const auto y = hydrogen.properties(cold).massFractions;
+            check(std::abs(std::accumulate(y.begin(), y.end(), 0.) - 1) <= 4 * y.size() * std::numeric_limits<double>::epsilon(),
+                  "composition closure accumulated during repeated chemistry");
+            for (double change : source.massClosureChange) maximumClosure = std::max(maximumClosure, std::abs(change / cold.density));
+        }
+        check(maximumClosure < 64 * 11 * std::numeric_limits<double>::epsilon(), "source closure exceeded roundoff scale");
+        check(std::abs(cold.density / coldInitial.density - 1) < 2e-11, "repeated constant-volume source changed mass");
+        std::vector<double> traceMass{.2, 1e-310, .8 + 1e-15, 0};
+        const auto traceBefore = traceMass;
+        const auto closed = closeSpeciesMassRoundoff(1, traceMass);
+        check(closed.species == 2 && traceMass[0] == traceBefore[0] && traceMass[1] == traceBefore[1]
+              && traceMass[3] == 0, "mass closure changed independent or trace species");
+        for (const auto& invalid : {std::vector<double>{.2, .8 + 1e-8}, std::vector<double>{-1e-310, 1.}}) {
+            auto candidate = invalid;
+            rejects([&] { (void)closeSpeciesMassRoundoff(1, candidate); }, "invalid composition was repaired");
+            check(candidate == invalid, "failed mass closure modified its input");
+        }
         for (double temperature : {300., 800., 999., 1001., 2500.}) {
             for (double pressure : {101325., 10 * 101325.}) {
                 const auto state = hydrogen.fromMoleAmounts(temperature, pressure, x);

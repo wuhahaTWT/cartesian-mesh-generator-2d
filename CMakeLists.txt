@@ -203,7 +203,7 @@ if(CARTMESH2D_BUILD_TESTS)
         add_executable(cartmesh2d_reacting_flame_probe tests/reacting_flame_probe.cpp)
         target_link_libraries(cartmesh2d_reacting_flame_probe PRIVATE cartmesh2d_reacting)
         cartmesh2d_enable_warnings(cartmesh2d_reacting_flame_probe)
-        foreach(trace_case IN ITEMS muscl soret)
+        foreach(trace_case IN ITEMS muscl soret closure)
             add_test(NAME cartmesh2d_reacting_flame_${trace_case} COMMAND cartmesh2d_reacting_flame_probe
                 "${CARTMESH2D_HYDROGEN_MECHANISM}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/reacting_flame_trace_${trace_case}.fixture" --regression)
             set_tests_properties(cartmesh2d_reacting_flame_${trace_case} PROPERTIES TIMEOUT 60)

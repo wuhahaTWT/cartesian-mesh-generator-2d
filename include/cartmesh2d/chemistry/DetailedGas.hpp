@@ -93,6 +93,9 @@ struct ChemistryStep {
     double requestedTime = 0, reachedTime = 0;
     double maximumElementDrift = 0, relativeEnergyDrift = 0;
     double relativeDensityDrift = 0;
+    // Explicit N-1 mass closure at the accepted source stage, kg/m^3.
+    // Included in the reported elemental drift; never hidden normalization.
+    std::vector<double> massClosureChange;
     long internalSteps = 0, rhsEvaluations = 0;
 };
 
@@ -116,6 +119,9 @@ public:
     [[nodiscard]] GasState fromMoleAmounts(double temperature, double pressure,
                                            const std::vector<double>& moleAmounts);
     [[nodiscard]] GasProperties properties(const GasState&);
+    // Validated viscosity-only query; avoids unrelated multicomponent solves
+    // when assembling viscous stresses at the same physical face state.
+    [[nodiscard]] double viscosity(const GasState&);
     [[nodiscard]] GasTransport transport(const GasState&);
     // Full multicomponent concentration/pressure diffusion plus Soret.
     // q = -lambda*dT/dn + sum(h_k*j_k), with formation-inclusive enthalpy.

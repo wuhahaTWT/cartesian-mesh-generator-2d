@@ -70,6 +70,8 @@ int main(int argc, char** argv) {
         ReactingStepControls2D controls; controls.maximumStep = 2e-6; controls.endTime = 4e-5;
         if (argc == 4) controls.courant = std::stod(argv[3]);
         std::vector<double> boundaryImpulse(cells[0].size()), chemicalChange(cells[0].size());
+        std::vector<double> transportClosure(cells[0].size()), chemistryClosure(cells[0].size());
+        double maximumClosure = 0, absoluteClosure = 0;
         std::vector<ReactingState2D> frames{initial};
         std::size_t sourceCalls = 0, rejections = 0, fallbacks = 0; double minimumStep = controls.maximumStep;
         std::ofstream log(directory / "steps.jsonl"); log << std::setprecision(17);
@@ -87,7 +89,10 @@ int main(int argc, char** argv) {
             minimumStep = std::min(minimumStep, step.step);
             for (std::size_t k = 0; k < boundaryImpulse.size(); ++k) {
                 boundaryImpulse[k] += step.step * step.boundaryFlux[k]; chemicalChange[k] += step.chemistryChange[k];
+                transportClosure[k] += step.transportMassClosureChange[k]; chemistryClosure[k] += step.chemistryMassClosureChange[k];
             }
+            maximumClosure = std::max(maximumClosure, step.maximumMassClosureFraction);
+            absoluteClosure += step.absoluteMassClosureIntegral;
             current = *step.accepted;
             if (current.steps % 10 == 0) {
                 frames.push_back(current);
@@ -114,6 +119,8 @@ int main(int argc, char** argv) {
         output << ",\"atomCounts\":"; numbers(output, gas.mechanism().atomCounts);
         output << ",\"boundaryImpulse\":"; numbers(output, boundaryImpulse);
         output << ",\"chemistryChange\":"; numbers(output, chemicalChange);
+        output << ",\"massClosure\":{\"maximumFraction\":" << maximumClosure << ",\"absoluteIntegral\":" << absoluteClosure
+               << ",\"transport\":"; numbers(output, transportClosure); output << ",\"chemistry\":"; numbers(output, chemistryClosure); output << '}';
         output << ",\"mesh\":{\"cells\":[";
         for (std::size_t i = 0; i < mesh.cells.size(); ++i) {
             if (i) output << ','; const auto& c = mesh.cells[i];

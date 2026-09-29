@@ -62,6 +62,12 @@ struct ReactingStepResult2D {
     // Stage-averaged shared numerical flux, including molecular transport.
     std::vector<ReactingConservative2D> faceFlux;
     ReactingConservative2D beforeIntegral, afterIntegral, boundaryFlux, chemistryChange, balanceError;
+    // Integrated, stage-weighted N-1 composition closure. Chemistry closure
+    // is already included in chemistryChange; transport closure is separate.
+    // Physical mass/element budgets must still include these roundoff effects.
+    ReactingConservative2D transportMassClosureChange, chemistryMassClosureChange;
+    double maximumMassClosureFraction = 0;
+    double absoluteMassClosureIntegral = 0; // sum of weighted |change| * cell area
     // after - before + dt*boundary, divided by integrated initial mass, per element.
     std::vector<double> elementalBalanceError;
 };
@@ -97,7 +103,8 @@ private:
     void validate(const ReactingState2D&) const;
     [[nodiscard]] Stage spatial(const std::vector<ReactingConservative2D>&, unsigned order);
     void react(std::vector<ReactingConservative2D>&, double,
-        const chemistry::ChemistryControls&, ReactingStepResult2D&, ReactingConservative2D& change);
+        const chemistry::ChemistryControls&, ReactingStepResult2D&, ReactingConservative2D& change,
+        ReactingConservative2D& closureChange, double& maximumClosure, double& absoluteClosure);
     [[nodiscard]] ReactingConservative2D integral(const std::vector<ReactingConservative2D>&) const;
     chemistry::DetailedGas& gas_;
     FvMesh2D mesh_;

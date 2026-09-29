@@ -125,21 +125,38 @@ int main(int argc, char** argv) {
           require(static_cast<bool>(definition), "cannot write resolved mechanism"); }
         std::ofstream log(directory / "steps.jsonl"); log << std::setprecision(17);
         ReactingStepControls2D controls; controls.endTime = duration;
-        std::vector<double> boundaryImpulse(ns + 4), chemistryChange(ns + 4);
+        std::vector<double> boundaryImpulse(ns + 4), chemistryChange(ns + 4), transportClosure(ns + 4), chemistryClosure(ns + 4);
+        double maximumClosure = 0, absoluteClosure = 0;
         std::string failure; std::size_t rejected = 0, sourceCalls = 0;
         while (current.time < duration && current.steps < 20000) {
             const auto r = solver.advance(current, controls); sourceCalls += r.sourceCalls; rejected += r.rejectedReasons.size();
             log << "{\"time\":" << current.time << ",\"dt\":" << r.step << ",\"accepted\":" << (r.accepted ? "true" : "false")
                 << ",\"courant\":" << r.combinedCourant << ",\"rejectedReasons\":[";
             for (std::size_t j = 0; j < r.rejectedReasons.size(); ++j) { if (j) log << ','; string(log, r.rejectedReasons[j]); }
-            log << "],\"failure\":"; string(log, r.failure); log << "}\n"; log.flush();
+            log << "],\"failure\":"; string(log, r.failure);
+            log << ",\"maximumMassClosureFraction\":" << r.maximumMassClosureFraction
+                << ",\"absoluteMassClosureIntegral\":" << r.absoluteMassClosureIntegral
+                << ",\"transportMassClosureChange\":"; numbers(log, r.transportMassClosureChange);
+            log << ",\"chemistryMassClosureChange\":"; numbers(log, r.chemistryMassClosureChange);
+            log << "}\n"; log.flush();
             if (!r.accepted) { failure = r.failure; break; }
-            for (std::size_t k = 0; k < ns + 4; ++k) { boundaryImpulse[k] += r.step * r.boundaryFlux[k]; chemistryChange[k] += r.chemistryChange[k]; }
+            for (std::size_t k = 0; k < ns + 4; ++k) {
+                boundaryImpulse[k] += r.step * r.boundaryFlux[k]; chemistryChange[k] += r.chemistryChange[k];
+                transportClosure[k] += r.transportMassClosureChange[k]; chemistryClosure[k] += r.chemistryMassClosureChange[k];
+            }
+            maximumClosure = std::max(maximumClosure, r.maximumMassClosureFraction);
+            absoluteClosure += r.absoluteMassClosureIntegral;
             current = *r.accepted;
             if (current.steps % 50 == 0) std::cerr << "accepted " << current.steps << " t=" << current.time << '\n';
         }
         if (current.time < duration && failure.empty()) failure = "step budget exhausted before physical endpoint";
         if (current.steps > 0) { std::ofstream checkpoint(directory / "accepted.checkpoint"); solver.writeCheckpoint(checkpoint, current); }
+        // Preserve raw final accepted values before optional residual
+        // diagnostics, which can themselves expose an interpolation failure.
+        { std::ofstream saved(directory / "accepted-state.json"); saved << std::setprecision(17)
+              << "{\"time\":" << current.time << ",\"steps\":" << current.steps << ",\"U\":";
+          matrix(saved, current.cells); saved << ",\"failure\":"; string(saved, failure); saved << "}\n";
+          require(static_cast<bool>(saved), "cannot save final accepted state"); }
         const auto finalResidual = solver.evaluateResidual(current);
         std::ofstream out(directory / "field.json"); out << std::setprecision(17);
         out << "{\"complete\":" << (current.time == duration ? "true" : "false") << ",\"qualifiedFlame\":false,\"duration\":" << duration
@@ -153,6 +170,8 @@ int main(int argc, char** argv) {
             out << ",\"centre\":[" << f.centre.x << ',' << f.centre.y << "],\"S\":[" << f.areaVector.x << ',' << f.areaVector.y << "]}";
         }
         out << "],\"boundaryImpulse\":"; numbers(out, boundaryImpulse); out << ",\"chemistryChange\":"; numbers(out, chemistryChange);
+        out << ",\"massClosure\":{\"maximumFraction\":" << maximumClosure << ",\"absoluteIntegral\":" << absoluteClosure
+            << ",\"transport\":"; numbers(out, transportClosure); out << ",\"chemistry\":"; numbers(out, chemistryClosure); out << '}';
         out << ",\"initial\":"; state(out, gas, initial, initialResidual);
         out << ",\"final\":"; state(out, gas, current, finalResidual);
         out << ",\"rejections\":" << rejected << ",\"sourceCalls\":" << sourceCalls << ",\"failure\":"; string(out, failure);
