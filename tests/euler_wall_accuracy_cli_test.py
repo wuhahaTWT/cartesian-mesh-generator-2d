@@ -24,7 +24,9 @@ report={'couette':[],'temporal':[],'coldRefinement':[]}
 
 def execute(mesh,name,extra=(),expected=0):
     out=root/name;command=[args.cli,'--mesh',str(mesh),'--output',str(out),'--gas-r','1','--viscosity','.1','--conductivity','.1','--flux','hllc','--order','2','--wall-gradient','quadratic','--end-time','.1',*map(str,extra)]
-    start=time.perf_counter();result=subprocess.run(command,capture_output=True,text=True,timeout=150)
+    # Keep the cold-start solve intact on slower Windows hosted runners.
+    timeout = 450 if sys.platform == 'win32' else 150
+    start=time.perf_counter();result=subprocess.run(command,capture_output=True,text=True,timeout=timeout)
     assert result.returncode==expected,(command,result.stdout[-1000:],result.stderr)
     return out,time.perf_counter()-start
 

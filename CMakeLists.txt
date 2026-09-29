@@ -255,7 +255,14 @@ if(CARTMESH2D_BUILD_TESTS)
     set_tests_properties(cartmesh2d_euler_conduction PROPERTIES TIMEOUT 120)
     add_test(NAME cartmesh2d_euler_wall_accuracy COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_wall_accuracy_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_wall_accuracy PROPERTIES TIMEOUT 180)
+    # The three-grid cold-start Couette study exceeded 180 s on the hosted
+    # Windows runner. Only the wall-clock budget differs; all cases, simulated
+    # end times, iteration limits and numerical assertions remain identical.
+    if(WIN32)
+        set_tests_properties(cartmesh2d_euler_wall_accuracy PROPERTIES TIMEOUT 600)
+    else()
+        set_tests_properties(cartmesh2d_euler_wall_accuracy PROPERTIES TIMEOUT 180)
+    endif()
     add_test(NAME cartmesh2d_euler_viscosity COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_viscosity_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
     set_tests_properties(cartmesh2d_euler_viscosity PROPERTIES TIMEOUT 180)
