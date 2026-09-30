@@ -349,7 +349,11 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 
 读取器用同一套独立时钟、EOS、共享面和质量/元素/能量预算检查逐帧核对。`initial` 表示本段起点：冷启动来自参考初值，续算来自真实接受检查点，两者通过 `restart` 元数据区分。`sample-audits.json` 保留每帧诊断；历史图使用真实接受时刻。固定本段初始温度范围中点的等温位置通过单元中心剖面线性插值得到，多个交点全部记录；该位置标记不等于已验收火焰速度。464 格、0.1 微秒采样开关对照的全部物理场相等，步长日志和检查点逐字节相同。故意改坏的时钟和质量预算被拒绝；两条样本上限测试在第 20 个接受步退出，保留的场和预算与正常运行的同一步相同。
 
+完整 100 微秒输出保留在 `outputs/combustion-foundation/implicit-evolution-100us-001`，进程实际使用 `implicit-sampling-002/probe` 和 `implicit-sampling-003/verify_reacting_flame.py` 的固定版本；不要用当前构建冒充旧运行来源。`analyze_completed_evolution.py` 从已核对哈希的实际场和样本读取不同等温位置，列出末段残差变化；温度平移诊断只在初始剖面的真实重叠区间作线性插值，不生成接受状态。不同温度标记的速度不能直接作为火焰速度资格。`residual-profile-001` 保留临时计时补丁、编译命令、调用数量及原/计时版本逐字节对照；它只定位成本，不构成提速证据。详细来源统一由[演化证据](../artifacts/current/native-reacting-evolution.json)索引。
+
 显式、隐式原生验证驱动均支持 `--restart 检查点`；Python 运行/审计入口使用 `--restart-checkpoint 检查点`，一次只选一档网格。先用原生绑定检查完整机理、网格、边界和模型，原样保存输入到新输出目录的 `restart.checkpoint`；监督程序核对源文件运行前后及副本 SHA256。`--duration` 是从检查点起追加的物理时长，`endTime` 为实际请求终点，累计接受步数保留。步长预算、方程调用及收支积分从本段起点重新计数，采样步距也从本段起点计算。读取器核对原样导入的完整场、时间和步数，并分别报告本段/累计接受步数；不能把重复计算或重置为零的时钟当作续算。
+
+Python 监督入口要求追加时长大于零。若只诊断终点检查点读回，可直接调用原生探针，时长为 `0` 并给出 `--restart`；独立 `audit()` 可检查此输出，但明确不将零新增步标作完成新的物理区间。文件读回保持原值，与重建 BDF 历史后继续积分的误差验证分开。
 
 检查点保存物理状态，BDF 历史及初始积分尺度在新会话重建，因此续算轨迹不要求逐字节等于不中断运行。原诊断上限失败的 464 格案例现已从第 20 步、约 `0.0426812` 微秒续至 `0.1` 微秒；新增 23 步，6 帧审计通过。与不中断同终点的最大温差约 `1.98e-5 K`，合并两段实际通量后的质量/元素/能量预算仍通过原检查；未扩大到长期误差资格。冷启动物理场、步长日志和检查点保持原结果。不同网格/入口/绑定、非法时钟、截断及尾部损坏被拒绝；零时长读回保留全部原值并且不新增接受步。该案例也经过显式入口的导入与推进检查，不将它视为两种积分方法的精度等价证明。
 
@@ -363,7 +367,12 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
   --probe build/cartmesh2d_reacting_implicit_flame_probe \
   --reference outputs/combustion-foundation/flame-reference-new \
   --output outputs/combustion-foundation/implicit-flame-new --duration 1e-6 --grid 0 --jobs 1 --reflect-species 1
-# 较长演化可加 --sample-every 200；时间步仍由原误差控制决定。
+# 10 微米档计算至 100 微秒并保存接受状态；时间步仍由原误差控制决定。
+build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
+  --probe build/cartmesh2d_reacting_implicit_flame_probe \
+  --reference outputs/combustion-foundation/flame-reference-new \
+  --output outputs/combustion-foundation/implicit-long-new \
+  --duration 1e-4 --grid 2 --jobs 1 --reflect-species 1 --sample-every 200
 # 从既有 native-0/accepted.checkpoint 追加计算，用新的输出目录：
 build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
   --probe build/cartmesh2d_reacting_implicit_flame_probe \

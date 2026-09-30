@@ -1,5 +1,5 @@
 {
-  "snapshot_utc": "2026-09-30T03:23:43.901806+00:00",
+  "snapshot_utc": "2026-09-30T04:22:28.904721+00:00",
   "source_base_commit": "2c85d7054653a94e51935ec86c45aa1ea16419c9",
   "sampling_source_commit": "70cc9336f80e1fc34442a2c4bd1fc2f59f445865",
   "source_manifest": {
@@ -129,7 +129,7 @@
         "sha256": "a92afe05140fbe8116e8bf551362bd28c3fa1be72d6591f160441348156777f9"
       },
       "preview": {
-        "path": "artifacts/current/native-reacting-evolution.png",
+        "path": "outputs/combustion-foundation/evolution-progress-001/native-2-history.png",
         "sha256": "6350953207b8744805fc75cb8a4cc115d9b42f6ec8b6328027636a5f2cb27cdf"
       },
       "last_sample_s": 3.256035601729115e-05,
@@ -153,19 +153,269 @@
       },
       "scope": "Read-only frozen prefix of complete accepted samples. Geometry scaffold comes from the earlier identical fixture, with full initial-state equality checked. This is not final native completion."
     },
-    "status": "running_at_snapshot",
-    "session_id": 53145,
-    "latest_accepted_step": {
-      "time": 4.169795527201393e-05,
-      "dt": 9.569641131620629e-09,
-      "accepted": true,
-      "internalSteps": 4351,
-      "rhsCalls": 21160,
-      "rejectedRhsCalls": 1,
-      "bdfOrder": 4,
-      "localErrorNorm": 0.09494754624014656,
-      "predictorCorrectionNorm": 0.9890369400015289,
-      "failure": ""
+    "status": "completed",
+    "report": {
+      "path": "outputs/combustion-foundation/implicit-evolution-100us-001/report.json",
+      "sha256": "7ba2b275498f58859fb00c661ef20cf76fbef0dbd6ad7883a9e7162b91204f39"
+    },
+    "cases": [
+      {
+        "fixture_index": 2,
+        "returncode": 0,
+        "elapsed_seconds_including_all_IO": 5533.40237245796,
+        "directory": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2",
+        "raw_sha256": {
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/evaluation-progress.jsonl": "87007f6790e2b193bc5587204355bda66b578d77c9d89e688e421719936a1435",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/field.json": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/steps.jsonl": "4a3fb60ac94bf3a0ff5704e3e5cebcff2afbc066ebfe2424b822265a13de9eae",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/accepted-state.json": "e978e0edaa25ce15282b7e9cd0aac9b5cd9a467e1db50c752df96f0588754727",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/accepted.checkpoint": "0fa8ded36780151f9cd740fed1037f493b402f1b10c5ed9aa96da82b444c2816",
+          "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/samples.jsonl": "427b00549e1b3667f167091481d00c72182e7b875fd1196233861ce83bfde1da"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 890,
+        "spacing_m": 1e-05,
+        "time_s": 0.0001,
+        "accepted_steps": 10443,
+        "rejections": null,
+        "failure": "",
+        "thermo_relative_error": 1.3566230765661375e-14,
+        "source_error_over_gross_activity": 2.0218556683072572e-15,
+        "face_assembly_relative_error": 9.802885060676438e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 6.269516819494984e-12,
+        "energy_budget_scaled": 7.844911158675019e-13,
+        "momentum_budget_scaled": 2.971857437580124e-12,
+        "element_budget_per_initial_mass": 4.697573298155693e-12,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.0257931870731371,
+          "maximum_temperature_derivative_K_per_s": 441502.5476567114,
+          "hydrogen_consumption_kg_per_m2_s": 0.038023706301407584,
+          "pressure_max_relative_to_reference": 5.180039436236683e-05
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.0667647567933091,
+          "maximum_temperature_derivative_K_per_s": 318693.11793014716,
+          "hydrogen_consumption_kg_per_m2_s": 0.03791085951849403,
+          "pressure_max_relative_to_reference": 0.0002052534230805314
+        },
+        "maximum_temperature_drift_K": 27.31710666097024,
+        "integration": {
+          "method": "CVODES-BDF",
+          "errorControlCorrection": "fullPredictorCorrection",
+          "maximumOrder": 5,
+          "maximumNonlinearIterations": 3,
+          "continueDampedNewton": false,
+          "reflectSpeciesNewton": true,
+          "relativeTolerance": 1e-07,
+          "spatialOrder": 2,
+          "jacobianAdvectionOrder": 1,
+          "absoluteConservedTolerance": 1e-12,
+          "absoluteSpeciesFraction": 1e-18,
+          "maximumStep": 0.0001,
+          "maximumResidualEvaluations": 100000,
+          "rhsCalls": 50159,
+          "rejectedRhsCalls": 1,
+          "errorTestFailures": 5,
+          "linearSetups": 537,
+          "jacobianEvaluations": 175,
+          "nonlinearIterations": 16955,
+          "nonlinearConvergenceFailures": 1,
+          "dampedNewtonUpdates": 0,
+          "continuedDampedNewtonUpdates": 0,
+          "reflectedNewtonUpdates": 1175,
+          "reflectionAttempts": 1175,
+          "maximumReflectedSpeciesScaledChange": 7.646796380954314e-22,
+          "maximumLocalErrorNorm": 0.994018822640833,
+          "minimumNewtonFraction": 1,
+          "bandHalfWidth": 64,
+          "bandBytes": 17864080,
+          "sampleEveryAcceptedSteps": 200,
+          "sampleResidualEvaluations": 54,
+          "maximumSamples": 256,
+          "samplingFailure": "",
+          "acceptedByBdfOrder": [
+            0,
+            2,
+            11,
+            515,
+            9915,
+            0
+          ],
+          "lastDampedTrialFailure": "implicit reacting flow: trial cell 3 species H density=-6.9172721934398593e-26"
+        },
+        "bdf_species_quadrature_defect_per_mass": 4.6975403312530056e-12,
+        "constraint_change_per_initial_mass": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          3.29669026870905e-17
+        ],
+        "field_sha256": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26",
+        "accepted_state_samples": {
+          "all_samples_passed": true,
+          "sampling_complete": true,
+          "sampling_failure": "",
+          "sample_count": 54,
+          "sample_audits": "outputs/combustion-foundation/implicit-evolution-100us-001/native-2/sample-audits.json",
+          "sample_audits_sha256": "5bccfd2b28272048e4f35eb4d74a8134e5cf99734f588d094a1815dea24fa987",
+          "samples_sha256": "427b00549e1b3667f167091481d00c72182e7b875fd1196233861ce83bfde1da"
+        }
+      }
+    ],
+    "completed_history": {
+      "sample_count": 54,
+      "sampling_complete": true,
+      "marker_temperature_K": 1317.2218244563126,
+      "initial_marker_positions_m": [
+        0.014101879137838745
+      ],
+      "final_marker_positions_m": [
+        0.014095892745320856
+      ],
+      "unique_marker_displacement_m": -5.986392517889211e-06,
+      "all_frames_physical_budgets_passed": true,
+      "maximum_over_recorded_frames": {
+        "mass_budget_per_initial_mass": 6.2815488812454654e-12,
+        "element_budget_per_initial_mass": 4.7069680715957634e-12,
+        "energy_budget_scaled": 7.862780270539196e-13,
+        "momentum_budget_scaled": 2.978616068610217e-12,
+        "thermo_relative_error": 1.4222539547653616e-14
+      },
+      "scope": "Actual accepted native initial/end states and every 200 steps, independently audited. A completed time interval does not establish a stationary or propagating flame solution."
+    },
+    "end_state_diagnostics": {
+      "report": {
+        "path": "outputs/combustion-foundation/evolution-analysis-100us-001/report.json",
+        "sha256": "6ba92fa2425d25de2fae53704a17d05e48ac6a1763ae884dd6b4e2f2f382dfe2"
+      },
+      "script": {
+        "path": "outputs/combustion-foundation/analyze_completed_evolution.py",
+        "sha256": "d78da21e2fdf64009290a90ec4350b3b10748c1301c3c01889f87ef1cec05042"
+      },
+      "late_window": {
+        "first_actual_sample_s": 8.045500185507747e-05,
+        "last_actual_sample_s": 0.0001,
+        "samples": 12,
+        "selection": "last 20 microseconds, for diagnostic trend only; no new pass/fail threshold",
+        "species_residual_first": 0.06194055945803062,
+        "species_residual_last": 0.0667647567933091,
+        "temperature_drift_first_K": 21.438229788384547,
+        "temperature_drift_last_K": 27.31710666097024
+      },
+      "temperature_translation_diagnostic": {
+        "alignment": "Translate the initial row-mean temperature profile by the fixed midpoint-isotherm displacement, then linearly interpolate only within its actual support.",
+        "displacement_m": -5.986392517889211e-06,
+        "compared_columns": 444,
+        "maximum_temperature_difference_before_alignment_K": 27.31709111098712,
+        "maximum_temperature_difference_after_alignment_K": 5.211134505948621,
+        "scope": "Exploratory shape-versus-position diagnostic; interpolation is not a new native state or a convergence test."
+      },
+      "isotherm_trends": [
+        {
+          "temperature_K": 600.0,
+          "single_crossing_at_every_sample": true,
+          "displacement_from_initial_m": -4.876642971465145e-06,
+          "last_window_marker_velocity_m_per_s": -0.06035364047576411
+        },
+        {
+          "temperature_K": 1000.0,
+          "single_crossing_at_every_sample": true,
+          "displacement_from_initial_m": -5.463441523046245e-06,
+          "last_window_marker_velocity_m_per_s": -0.05831576005136513
+        },
+        {
+          "temperature_K": 1317.2218244563126,
+          "single_crossing_at_every_sample": true,
+          "displacement_from_initial_m": -5.986392517889211e-06,
+          "last_window_marker_velocity_m_per_s": -0.060481484569574674
+        },
+        {
+          "temperature_K": 1500.0,
+          "single_crossing_at_every_sample": true,
+          "displacement_from_initial_m": -6.669681498644789e-06,
+          "last_window_marker_velocity_m_per_s": -0.05895814245265564
+        },
+        {
+          "temperature_K": 2000.0,
+          "single_crossing_at_every_sample": true,
+          "displacement_from_initial_m": -2.174575332829741e-05,
+          "last_window_marker_velocity_m_per_s": -0.13712492128507264
+        }
+      ],
+      "conclusion": "Position and profile shape both still evolve; late-window residual grows. No stationary or established traveling-wave qualification, and no unique cause established."
+    },
+    "terminal_checkpoint_readback": {
+      "report": {
+        "path": "outputs/combustion-foundation/implicit-restart-100us-read-002/report.json",
+        "sha256": "5899e1f85cd42118c732dd5a00775200ab028fedd91136d835451ee24b07bbd6"
+      },
+      "result": {
+        "returncode": 0,
+        "initial_and_final_fields_exactly_equal_to_completed_native_state": true,
+        "checkpoint_bytes_equal": true,
+        "initial_time_preserved_s": 0.0001,
+        "total_accepted_steps_preserved": 10443,
+        "new_accepted_steps": 0,
+        "numerical_checks_passed": true,
+        "new_physical_interval_completed": false,
+        "scope": "Import/re-export and full state/audit check only, no BDF continuation or long restart sensitivity claim. Python supervisor requires positive duration, so this zero-duration diagnostic calls the native probe directly.",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-restart-002/probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "outputs/combustion-foundation/flame-reference-001/grid-2.fixture",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-restart-100us-read-002/native-2",
+          "0",
+          "--restart",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-evolution-100us-001/native-2/accepted.checkpoint",
+          "--reflect-species",
+          "1",
+          "--bdf-order",
+          "5",
+          "--sample-every",
+          "200"
+        ],
+        "elapsed_seconds": 9.126886833051685,
+        "probe_sha256": "55227b97397c63444f80855c3b303f463ca6ceadcec1c649068980dd9373ec40",
+        "reader_sha256": "694f4787e49dc2b79b7128f58bc60405544ee52a20eeb079726dd3d3c8fd14d3",
+        "source_checkpoint_sha256": "0fa8ded36780151f9cd740fed1037f493b402f1b10c5ed9aa96da82b444c2816",
+        "source_field_sha256": "9cbf569225da947db9e5fc3059ccd94deb3507367c801a304f35a7623285cd26",
+        "output_files_sha256": {
+          "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "native-2/sample-audits.json": "5b9e7f47571094a1e0133e857441227b5d4f301e127b7c7996c73853d7e7b407",
+          "native-2/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "native-2/audit.json": "c5578c512fb1684d412b4f14bb51cb39ae679c19d87cdc32a3d9768ce4e56cac",
+          "native-2/evaluation-progress.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "native-2/field.json": "42e3ab03a6af16f6fb3ff17a36283467b629125300f8c35a36f0b416a6336b1b",
+          "native-2/steps.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "native-2/accepted-state.json": "e978e0edaa25ce15282b7e9cd0aac9b5cd9a467e1db50c752df96f0588754727",
+          "native-2/accepted.checkpoint": "0fa8ded36780151f9cd740fed1037f493b402f1b10c5ed9aa96da82b444c2816",
+          "native-2/samples.jsonl": "79edd0ab85da84773903f16871b5d2d976db924039e45ee82157dbef01c10efa",
+          "native-2/restart.checkpoint": "0fa8ded36780151f9cd740fed1037f493b402f1b10c5ed9aa96da82b444c2816"
+        }
+      },
+      "supervisor_zero_duration_rejection": {
+        "path": "outputs/combustion-foundation/implicit-restart-100us-read-001.log",
+        "sha256": "ab3b6427588d245b7b3a8a66bc3bd8c24ea88322ab7380c27dc35533951c070c"
+      }
+    },
+    "completed_preview": {
+      "path": "artifacts/current/native-reacting-evolution.png",
+      "sha256": "d92868c60d8d9fa7de94bb80fe5960ac79a7232caf470c836867691cd87cd770"
     }
   },
   "not_run": [
@@ -361,5 +611,16 @@
       "sha256": "856f6f20ec6f3b97de47b487cd0c6bf70bf5890e6c99b5352a1cb39b81dbaecd"
     },
     "explicit_restart_scope": "Same preserved implicit accepted state imported into the explicit driver and advanced to the same endpoint; physical audits pass. This checks import/workflow, not method equivalence."
+  },
+  "residual_cost_diagnostic": {
+    "report": {
+      "path": "outputs/combustion-foundation/residual-profile-001/profile-analysis.json",
+      "sha256": "927ee9189990fbcb613d321e03508c7b8dcacc629735a8f9022a61e7ec2dc991"
+    },
+    "scope": "Instrumented 464-cell, 0.1-microsecond full model; exact initial/final fields, step log and checkpoint equality with uninstrumented case. Call-count/timing attribution only, not a speedup comparison."
+  },
+  "generator": {
+    "path": "outputs/combustion-foundation/write_evolution_evidence.py",
+    "sha256": "6b6cecd3790ce1768629dba04a8f2510de5a08dd8b7f8d65975d2b1f8bf1d938"
   }
 }
