@@ -185,13 +185,14 @@ ReactingState2D ReactingFlowStepper2D::initialState(std::vector<ReactingConserva
     ReactingState2D s; s.binding = binding_; s.cells = std::move(cells); validate(s); return s;
 }
 
-ReactingResidual2D ReactingFlowStepper2D::evaluateResidual(const ReactingState2D& state, unsigned order) {
+ReactingResidual2D ReactingFlowStepper2D::evaluateResidual(const ReactingState2D& state, unsigned order, bool estimateRate) {
     validate(state);
     require(order == 1 || order == 2, "invalid residual reconstruction order");
-    auto stage = spatial(state.cells, order);
+    auto stage = spatial(state.cells, order, estimateRate);
     const auto nv = gas_.mechanism().species.size() + 4;
     ReactingResidual2D out;
-    out.faceFlux = std::move(stage.faceFlux); out.transportRate = std::move(stage.rate);
+    out.faceFlux = std::move(stage.faceFlux);
+    if (estimateRate) out.transportRate = std::move(stage.rate);
     out.hlleFallbacks = stage.fallbacks;
     out.transportDerivative = std::move(stage.residual);
     out.chemistryDerivative.assign(state.cells.size(), ReactingConservative2D(nv));
@@ -212,7 +213,7 @@ ReactingResidual2D ReactingFlowStepper2D::evaluateResidual(const ReactingState2D
     return out;
 }
 
-ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<ReactingConservative2D>& cells, unsigned order) {
+ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<ReactingConservative2D>& cells, unsigned order, bool estimateRate) {
     const auto nc = cells.size(), nf = mesh_.faces.size(), nv = gas_.mechanism().species.size() + 4;
     Stage out; out.faceFlux.assign(nf, ReactingConservative2D(nv)); out.residual.assign(nc, ReactingConservative2D(nv)); out.rate.resize(nc);
     std::vector<ReactingPrimitive2D> primitive;
@@ -256,15 +257,34 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
                     if (delta < 0) theta[k] = std::min(theta[k], (lo - phi[i][k]) / delta);
                 }
             }
-            const double speciesTheta = *std::min_element(theta.begin() + 4, theta.end());
             // Keep reconstructed face values inside their convex bounds after
             // multiply/add roundoff. Without this arithmetic reserve a trace
             // value exactly limited to zero can become, e.g., -2.5e-60.
-            // One common species factor preserves sum(grad Y)=0. No face or
-            // conserved cell value is clipped and no positive trace is erased.
+            // Limit independent species separately. A common minimum over all
+            // species made arbitrarily small trace oscillations suppress the
+            // slopes of the major constituents, giving a finite bulk-flux jump
+            // as the trace abundance tended to zero.
             const double inward = 1 - 64 * std::numeric_limits<double>::epsilon();
-            for (std::size_t k = 0; k < nv; ++k)
-                gradient[k][i] = gradient[k][i] * (inward * std::clamp(k < 4 ? theta[k] : speciesTheta, 0., 1.));
+            for (std::size_t k = 0; k < nv; ++k) if (k != dependent)
+                gradient[k][i] = gradient[k][i] * (inward * std::clamp(theta[k], 0., 1.));
+            gradient[dependent][i] = {};
+            for (std::size_t k = 4; k < nv; ++k) if (k != dependent) {
+                gradient[dependent][i].x -= gradient[k][i].x;
+                gradient[dependent][i].y -= gradient[k][i].y;
+            }
+            // The dependent (most abundant) fraction closes the simplex. If
+            // it would leave [0,1], contract all species slopes toward the cell
+            // mean by the same factor. Independent species remain within their
+            // neighbour bounds. The dependent species has physical [0,1]
+            // bounds, not a separate local-extrema guarantee.
+            double simplexTheta = 1;
+            for (auto id : mesh_.cells[i].faces) {
+                const double delta = dot(gradient[dependent][i], mesh_.faces[id].centre - mesh_.cells[i].centre);
+                if (delta > 0) simplexTheta = std::min(simplexTheta, (1 - phi[i][dependent]) / delta);
+                if (delta < 0) simplexTheta = std::min(simplexTheta, -phi[i][dependent] / delta);
+            }
+            for (std::size_t k = 4; k < nv; ++k)
+                gradient[k][i] = gradient[k][i] * (inward * std::clamp(simplexTheta, 0., 1.));
         }
     }
     const auto reconstructed = [&](std::size_t i, Point2D point) {
@@ -303,7 +323,7 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
     if (diffusion_) {
         std::vector<chemistry::GasState> state; std::vector<Vector2D> velocity; std::vector<double> density;
         for (const auto& p : primitive) { state.push_back(p.gas); velocity.push_back(p.velocity); density.push_back(p.gas.density); }
-        const auto d = diffusion_->evaluate(gas_, state, true);
+        const auto d = diffusion_->evaluate(gas_, state, estimateRate);
         std::vector<double> mu(nf);
         for (std::size_t id = 0; id < nf; ++id) {
             const auto& f = mesh_.faces[id]; const auto* b = boundaries_[id] ? &*boundaries_[id] : nullptr;
@@ -321,7 +341,7 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
         }
         const auto v = viscous_->evaluate(velocity, density, mu);
         for (std::size_t f = 0; f < nf; ++f) for (std::size_t k = 0; k < 3; ++k) out.faceFlux[f][k + 1] += v.faceFlux[f][k];
-        for (std::size_t i = 0; i < nc; ++i) out.rate[i] += d.rate[i] + v.rate[i];
+        if (estimateRate) for (std::size_t i = 0; i < nc; ++i) out.rate[i] += d.rate[i] + v.rate[i];
     }
     for (std::size_t id = 0; id < nf; ++id) {
         const auto& f = mesh_.faces[id];

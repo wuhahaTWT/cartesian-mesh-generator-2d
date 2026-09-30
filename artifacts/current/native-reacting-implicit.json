@@ -1,0 +1,931 @@
+{
+  "schema": "cartmesh2d-reacting-implicit-and-reconstruction-v1",
+  "snapshot_utc": "2026-09-30T00:20:00.965536+00:00",
+  "branch": "codex/cfd-development",
+  "source_base_commit": "3375db00141e7c1e4916659acab19d37aa8722fb",
+  "source_sha256": {
+    "CMakeLists.txt": "1dc673e627868a62f05774cc6f5c70d5f7651b21b002998436bf932251b2a999",
+    "include/cartmesh2d/fv/ReactingFlow2D.hpp": "9eb9c54df170badc684a3230b04cfa402e675208018d771e31c48ff702e22ccf",
+    "include/cartmesh2d/fv/ReactingImplicit2D.hpp": "2f38fe4fafdaaccb2d71dd7135b5c953c9f8c87213dd6d7fafed9f162e157e27",
+    "src/fv/ReactingFlow2D.cpp": "854706c66fc2d1f2ff305de7c0580f680266220291ec4e79cb3e471e3719ef1f",
+    "src/fv/ReactingImplicit2D.cpp": "9b54f9b0a3c8bf648f49bd7c226c2f2eb677461ca76d5bf24e5fd8d560cf28e7",
+    "src/chemistry/DetailedGas.cpp": "d29debda22ccf0a78214f9f6acd655a46fb6af343cdc70513a81b523f7d2437a",
+    "src/chemistry/TraceStableMultiTransport.hpp": "5064f727788991da3affe00807779d2c813f30ed940d38f9c054425c6d775f3f",
+    "src/fv/ReactingDiffusion2D.cpp": "96248c58fa4ded1f91bc7ca155b8ffe07927c41f25bc627afeb703b05606c978",
+    "tests/detailed_gas_test.cpp": "fa3b15a090d5af7c1c1e292fe468e121d138b77b079de4b04162389c6b52d6a1",
+    "tests/reacting_flame_probe.cpp": "5bfa54ba9afc39e8452bc2796e3379a7d3ca8781990d0fa96fab54057658e417",
+    "tests/reacting_implicit_test.cpp": "289ddaced0ef516b060b6681091bd9a4906d2234dd38539f0e7d8357aec13b80",
+    "tests/reacting_reconstruction_test.cpp": "d8403b1f9cfb08e78ef9268fa760b72a2b8a88e240baef0888f4c56ca8550d39",
+    "tests/fixtures/reacting_flame_trace_newton.fixture": "df6bd7a230bd298536dcd25145fd54a576be9b68f4daef42d32d03b3de294ac1",
+    "tools/verification/verify_reacting_flame.py": "c5d6bc672eff33104d26337b4b6ae78f633384acd32810148bfd2ed5bd887a92"
+  },
+  "binary_sha256": {
+    "build/cartmesh2d_reacting_flame_probe": "58fe0e91f5c8b8497fc9b79243e5f18e4a0bb0a64572facc27c2d74da6034aef",
+    "build/cartmesh2d_reacting_implicit_flame_probe": "d5ff310df1bfe8efd85aa8e8c1924b65cc893356a7d847fe499ea728e628ff99",
+    "build/cartmesh2d_reacting_reconstruction_tests": "fb67efcb6a4427121d6debce0e8aadf09c3798bf973da7cacbe170842ba12dab",
+    "build/cartmesh2d_reacting_implicit_tests": "ef4a0da4ae58cfc74f4781ceefc4f1528f6e94f40576eba00bb5f84b3eece3c0",
+    "build/cartmesh2d_detailed_gas_tests": "44e18a12dabee9225b89f15fdd4ab999ce4c024ec54592dc4048445c60741fb0",
+    "build/cartmesh2d_reacting_flow_tests": "61e33bbf1c629c6bd6ec5258bab656b3a29ceea5fe0110eaf583ab143a7a1469",
+    "build/cartmesh2d_reacting_diffusion_tests": "24dae1eecaaffdc77f7c7351de56fa542ad66e89d8d0618eae0c176c71224681",
+    "build/cartmesh2d_diffusive_flux_probe": "101edd550253d1ba4e5c8cb7db4291f252b8d6c6813d3d32b94c93b399d9f5d9",
+    "build/deps/cantera/lib/libcantera_shared.3.2.0.dylib": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "outputs/combustion-foundation/mass-closure-3375db0-probe": "23f64656556c517b732eaab917aaa1fb1828ed38a75cbc6c734a7dc91ec8772b",
+    "outputs/combustion-foundation/common-limiter-baseline-probe": "2e0dc31ec76bbe27e4e166e43f44b2b26fa9258a89451f78324b84cf6ffdb8ed",
+    "outputs/combustion-foundation/unguarded-newton-baseline-probe": "d06ca5e2b6890a6d808e4d830c1eb21b836105d50e4d57d03a6e28755f1c0b1a"
+  },
+  "mature_combustion_goal_complete": false,
+  "native_flame_speed_qualified": false,
+  "experimental_qualification": false,
+  "new_reconstruction_grid_independence_qualified": false,
+  "implicit_performance_qualified": false,
+  "method": {
+    "physics": "same full detailed compressible finite-volume residual, formation-inclusive total energy, multi-component/Soret/viscous transport",
+    "reconstruction": "independent species limiting; most abundant species closes gradient sum; common contraction only for dependent [0,1] simplex bound",
+    "dependent_species_local_extrema_guarantee": false,
+    "species_clipping": false,
+    "trace_concentration_floor": false,
+    "implicit": "unsplit CVODES BDF with algebraic N-1 species; separately integrated boundary/chemistry/constraint budgets",
+    "cvodes_inequality_projection_enabled": false,
+    "nonlinear_guard": "backtrack the full Newton update and check the unscaled correction plus actual nonlinear residual at original local tolerance",
+    "linearization": "dimensionless grouped sqrt(epsilon) perturbations; RCM direct band matrix with explicit 256 MiB budget; first-order advection only in approximate Newton matrix, second-order actual equations",
+    "physics_budget_subtracts_constraint_changes": false,
+    "default_relative_tolerance": 1e-07,
+    "default_conserved_absolute_tolerance": 1e-12,
+    "default_species_absolute_tolerance": 1e-18,
+    "default_maximum_bdf_order": 2,
+    "validation_probe_maximum_bdf_order": 5,
+    "current_backend": "Cantera 3.2.0 with bundled SUNDIALS 5.3, verified on system clang/macOS ARM64 only"
+  },
+  "native_verification": {
+    "current_distinct_checks_passed": 9,
+    "test_names": [
+      "detailed_gas",
+      "reacting_diffusion",
+      "reacting_flow",
+      "reacting_reconstruction",
+      "reacting_implicit",
+      "reacting_implicit_trace",
+      "reacting_flame_muscl",
+      "reacting_flame_soret",
+      "reacting_flame_closure"
+    ],
+    "interpretation": "aggregate relevant runs: reconstruction-ctest-001 retains its initial continuity-test failure; corrected targeted rerun passed after isolating reconstruction from the NASA switch; no physical threshold was relaxed",
+    "transport_cases": 48,
+    "transport_report": {
+      "path": "outputs/combustion-foundation/cache-fixed-transport-001/report.json",
+      "sha256": "00b4870305469e5f4e0ecaccd7243af41b714593ec2dea0c659bc71dcbb99cf4"
+    },
+    "logs": [
+      {
+        "path": "outputs/combustion-foundation/cache-implicit-ctest-001.log",
+        "sha256": "335dae1886d6d439ba2ce33dc768191ce44be71cd1705ee8ffae2c09b894b381"
+      },
+      {
+        "path": "outputs/combustion-foundation/cache-fixed-trace-ctest.log",
+        "sha256": "67d6868ffaca6efa94b17c1c36ca84f025b1e0df988b592264dbaa875d6fc682"
+      },
+      {
+        "path": "outputs/combustion-foundation/cache-fixed-trace-ctest-002.log",
+        "sha256": "3aa3e73d21673c2265d0fa8b60f9449d608dc8adb1688a3378c13d1ae6b3f4b5"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-ctest-007.log",
+        "sha256": "a57281a3d1d1c5acf7d2efd591f8568577d00562c390de1f7e2a6fb75c57e3ba"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-ctest-007-details.log",
+        "sha256": "a1a162f245c5fda7b46126adc8250d6df06d20a3b14a30f09ce704485be5f52b"
+      },
+      {
+        "path": "outputs/combustion-foundation/reconstruction-ctest-001.log",
+        "sha256": "58bcd8a11b7d316a1cf0d9f075b5ae20b8cfa9eb88d1ef0310af85d76dde4fb0"
+      },
+      {
+        "path": "outputs/combustion-foundation/reconstruction-ctest-002.log",
+        "sha256": "b8a082aab6e638364f2c587d2dc5790513efac42ddb21d7cb41c4a2a1424fdc4"
+      },
+      {
+        "path": "outputs/combustion-foundation/reconstruction-ctest-002-details.log",
+        "sha256": "cdceb782db84372b01f41b6f92252e34985b2f20bff4e089c85d4268ed829103"
+      },
+      {
+        "path": "outputs/combustion-foundation/common-limiter-baseline.log",
+        "sha256": "2e4b8103e64a3e75f488e492ce96677f678e3c75ef56e6571cedeba638566fc9"
+      },
+      {
+        "path": "outputs/combustion-foundation/unguarded-newton-trace.log",
+        "sha256": "4182b3f60c4092cfc0eac008c3cd40703e3742de456f2d4970baab2d5c8fbe60"
+      },
+      {
+        "path": "outputs/combustion-foundation/cache-sequence-baseline.log",
+        "sha256": "c4268646df343d7082669657b005cd81e86ba02cadb348183e68d2c352abde85"
+      },
+      {
+        "path": "outputs/combustion-foundation/cache-sequence-fixed.log",
+        "sha256": "c55d5021987a18c8f93a59797f1f2c6b34a3038f09bee4704bcfce8dcf995bbb"
+      },
+      {
+        "path": "outputs/combustion-foundation/reconstruction-diagnostic.log",
+        "sha256": "e6bb3e6438bba81252dbae974c8e8e17acb8641785239064386b2faf9a5a1e3e"
+      },
+      {
+        "path": "outputs/combustion-foundation/reconstruction-gradient-diagnostic.txt",
+        "sha256": "507b1309990bd2ce65a703e250163ba81309ee4d2bd06ac977db50d0d25d83d8"
+      },
+      {
+        "path": "outputs/combustion-foundation/thermo-switch-diagnostic.json",
+        "sha256": "d4dd257bc35fe994c371e0597c1311b5b6507cb820f82734141bfe23cf9b0936"
+      }
+    ],
+    "app_platform_full_regression": "not run for this development module",
+    "external_checkMesh": "not run; native topology/geometry independently read from actual fields"
+  },
+  "transport_cache_fix": {
+    "minimal_sequence": "transport(A=1100 K), viscosity(B=1200 K), transport(A=1100 K)",
+    "baseline_thermal_conductivity_before_after": [
+      0.1389784762234433,
+      0.13897543967601061
+    ],
+    "fixed_thermal_conductivity_before_after": [
+      0.1389784762234433,
+      0.1389784762234433
+    ],
+    "same_state_conductivity_soret_multidiffusion_bitwise_equal": true,
+    "rate_estimate_toggle_preserves_actual_residual_and_face_flux_bitwise": true,
+    "historical_coarse_full_numerical_payload_unchanged": true,
+    "coarse_recompute": {
+      "report": {
+        "path": "outputs/combustion-foundation/cache-fixed-explicit-h40-001/report.json",
+        "sha256": "ee423df5407b9caa35d83c4d6335b7f87dc14fb18a49393009f0e02c5c9ce29a"
+      },
+      "cases": [
+        {
+          "fixture_index": 0,
+          "returncode": 0,
+          "elapsed_seconds_including_all_IO": 145.1740138749592,
+          "directory": "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0",
+          "raw_sha256": {
+            "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+            "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0/field.json": "6a610ddbf672e03dc66f6f0e6bf61ecb68f205b82986729764606013ee17692b",
+            "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0/steps.jsonl": "f3ecbae5169d97a2401e09a79d31051de60df245fbc683ce707f820db608e535",
+            "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0/accepted-state.json": "c88fd2d9d431ab5bf48c298dc4cc0325459e0d40815befbdb03d504a60556ede",
+            "outputs/combustion-foundation/cache-fixed-explicit-h40-001/native-0/accepted.checkpoint": "91522a6fb7dfd9c7b37e58d6580a16c620a088fdf9d2d378d3f4c863bcdf69b1"
+          },
+          "numerical_checks_passed": true,
+          "physical_endpoint_reached": true,
+          "qualified_flame": false,
+          "cells": 464,
+          "spacing_m": 4e-05,
+          "time_s": 1e-06,
+          "accepted_steps": 418,
+          "rejections": 0,
+          "failure": "",
+          "thermo_relative_error": 1.2693780244430693e-14,
+          "source_error_over_gross_activity": 2.075351116755794e-15,
+          "face_assembly_relative_error": 9.837116213813714e-17,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 1.7885034309808617e-15,
+          "energy_budget_scaled": 5.330216056192112e-13,
+          "momentum_budget_scaled": 3.5471923081397233e-16,
+          "element_budget_per_initial_mass": 6.573577710917249e-16,
+          "initial_residual": {
+            "species_residual_L1_over_chemical_activity": 0.28330173663257835,
+            "maximum_temperature_derivative_K_per_s": 906915.9888015225,
+            "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+            "pressure_max_relative_to_reference": 0.0007260122451633322
+          },
+          "final_residual": {
+            "species_residual_L1_over_chemical_activity": 0.42896889675312894,
+            "maximum_temperature_derivative_K_per_s": 799956.9596523059,
+            "hydrogen_consumption_kg_per_m2_s": 0.03899868038852312,
+            "pressure_max_relative_to_reference": 0.00036881052376314116
+          },
+          "maximum_temperature_drift_K": 0.8132755457397707,
+          "field_sha256": "6a610ddbf672e03dc66f6f0e6bf61ecb68f205b82986729764606013ee17692b",
+          "mass_closure_diagnostics": {
+            "maximum_stage_fraction": 4.941477034686199e-16,
+            "absolute_integral_per_initial_mass": 3.044872340708852e-14,
+            "net_element_change_per_initial_mass": [
+              0.0,
+              0.0,
+              0.0,
+              -3.0813252634459416e-16
+            ]
+          }
+        }
+      ],
+      "all_numerical_checks_passed": true,
+      "all_endpoints_reached": true,
+      "all_native_runs_succeeded": true
+    }
+  },
+  "trace_continuity": {
+    "test_temperature_range_K": [
+      1150,
+      1350
+    ],
+    "amplitudes": [
+      1e-12,
+      1e-16
+    ],
+    "baseline_relative_mass_flux_responses": [
+      0.00273795,
+      0.00273795
+    ],
+    "fixed_relative_mass_flux_responses": [
+      1.04939e-11,
+      1.90614e-14
+    ],
+    "normalization": "sum absolute face-flux changes / sum absolute baseline face flux, by conserved component",
+    "test_allowance": "1000*(specified trace mass-fraction perturbation + binary64 epsilon)",
+    "baseline": {
+      "purpose": "same source and inputs, only original common species limiter restored",
+      "returncode": 1,
+      "elapsed_s": 4.813836292014457,
+      "sha256": {
+        "src/fv/ReactingFlow2D.cpp": "854706c66fc2d1f2ff305de7c0580f680266220291ec4e79cb3e471e3719ef1f",
+        "outputs/combustion-foundation/common-limiter-baseline.cpp": "d382866879791f0ca361669d1f9f010b15821c26854f8ccb688b533fdb418000",
+        "outputs/combustion-foundation/common-limiter-baseline-probe": "2e0dc31ec76bbe27e4e166e43f44b2b26fa9258a89451f78324b84cf6ffdb8ed",
+        "outputs/combustion-foundation/common-limiter-baseline.log": "2e4b8103e64a3e75f488e492ce96677f678e3c75ef56e6571cedeba638566fc9",
+        "tests/reacting_reconstruction_test.cpp": "d8403b1f9cfb08e78ef9268fa760b72a2b8a88e240baef0888f4c56ca8550d39"
+      }
+    },
+    "zero_trace_physical_model_preserved": true
+  },
+  "newton_trace_regression": {
+    "fixture": "tests/fixtures/reacting_flame_trace_newton.fixture",
+    "original_columns_zero_based": [
+      98,
+      104
+    ],
+    "upstream_reservoir_column": 97,
+    "rows": 2,
+    "cells": 14,
+    "end_time_s": 1e-08,
+    "all_original_conservative_values_preserved": true,
+    "stock_newton_failure": {
+      "purpose": "same source and inputs, only guarded Newton installation removed",
+      "returncode": 1,
+      "elapsed_s": 4.9019081669976,
+      "sha256": {
+        "src/fv/ReactingImplicit2D.cpp": "de5172a2b98501e35402ab63230cae96e31813d54656f453f26dab80f346abb1",
+        "outputs/combustion-foundation/unguarded-newton-baseline.cpp": "b861e959a31409bf908d3ea7d94bca9a02b6a9788e49af1222e5c36fffe0d17b",
+        "outputs/combustion-foundation/unguarded-newton-baseline-probe": "d06ca5e2b6890a6d808e4d830c1eb21b836105d50e4d57d03a6e28755f1c0b1a",
+        "outputs/combustion-foundation/unguarded-newton-trace.log": "4182b3f60c4092cfc0eac008c3cd40703e3742de456f2d4970baab2d5c8fbe60",
+        "tests/fixtures/reacting_flame_trace_newton.fixture": "df6bd7a230bd298536dcd25145fd54a576be9b68f4daef42d32d03b3de294ac1"
+      }
+    },
+    "current_regression_passed": true
+  },
+  "thermodynamic_switch": {
+    "states": [
+      {
+        "T": 999.999999999,
+        "e_J_per_kg": 611001.2235966362,
+        "cv_J_per_kg_K": 1119.6034847918995
+      },
+      {
+        "T": 1000,
+        "e_J_per_kg": 611001.2235977555,
+        "cv_J_per_kg_K": 1119.6034847920748
+      },
+      {
+        "T": 1000.000000001,
+        "e_J_per_kg": 611001.0837221929,
+        "cv_J_per_kg_K": 1119.6038002983848
+      }
+    ],
+    "internal_energy_jump_J_per_kg": -0.13987444329541177,
+    "mechanism_data_modified": false,
+    "mixture": "H2:1.8,O2:1,N2:3.76",
+    "pressure_Pa": 101325,
+    "qualification": "original NASA data retained; energy inversion branch continuity and long-time flame consequences remain unqualified"
+  },
+  "current_explicit_full_flame": {
+    "report": {
+      "path": "outputs/combustion-foundation/reconstruction-explicit-h40-001/report.json",
+      "sha256": "c3a8c5f3a033f44c5f11b15f0477299fc46e2c93a21dda439b2a8ca0ac93ad80"
+    },
+    "cases": [
+      {
+        "fixture_index": 0,
+        "returncode": 0,
+        "elapsed_seconds_including_all_IO": 141.84735316602746,
+        "directory": "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0",
+        "raw_sha256": {
+          "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0/field.json": "65872b934c026817866864f469acb7c415e9c662b3314512d7dac8c89e5d69be",
+          "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0/steps.jsonl": "12ae986bcd0eceafd55a3f7e38acbc2c8f78b9c2bd4fe4ca21d3c1249a2a6392",
+          "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0/accepted-state.json": "228cf09050ebfdc98e9589e3d302270ffc5db3558a375f4086bd7d216d86f4c0",
+          "outputs/combustion-foundation/reconstruction-explicit-h40-001/native-0/accepted.checkpoint": "e997fb343e13ec4f0d175e3c89f677d02fd12cf8289a791fe95dec1a7e4be3d5"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 464,
+        "spacing_m": 4e-05,
+        "time_s": 1e-06,
+        "accepted_steps": 418,
+        "rejections": 0,
+        "failure": "",
+        "thermo_relative_error": 1.265715018378912e-14,
+        "source_error_over_gross_activity": 2.0753511374319622e-15,
+        "face_assembly_relative_error": 8.020607313567639e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 1.2790900937321785e-15,
+        "energy_budget_scaled": 5.336279707337606e-13,
+        "momentum_budget_scaled": 3.445939224391669e-16,
+        "element_budget_per_initial_mass": 9.36492967857267e-16,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.13519312896649716,
+          "maximum_temperature_derivative_K_per_s": 865313.2566632282,
+          "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+          "pressure_max_relative_to_reference": 0.0007260122451633322
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.30156095643326564,
+          "maximum_temperature_derivative_K_per_s": 508055.7663124522,
+          "hydrogen_consumption_kg_per_m2_s": 0.03817066966148053,
+          "pressure_max_relative_to_reference": 0.00032897409182397475
+        },
+        "maximum_temperature_drift_K": 0.4697701347710108,
+        "field_sha256": "65872b934c026817866864f469acb7c415e9c662b3314512d7dac8c89e5d69be",
+        "mass_closure_diagnostics": {
+          "maximum_stage_fraction": 4.024085976788408e-16,
+          "absolute_integral_per_initial_mass": 3.039172063345627e-14,
+          "net_element_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            -4.0213656230087666e-16
+          ]
+        }
+      }
+    ],
+    "all_numerical_checks_passed": true,
+    "all_endpoints_reached": true,
+    "all_native_runs_succeeded": true
+  },
+  "historical_three_grid_closure": {
+    "source_commit": "3375db00141e7c1e4916659acab19d37aa8722fb",
+    "superseded_common_species_limiter": true,
+    "predates_transport_cache_fix": true,
+    "report": {
+      "path": "outputs/combustion-foundation/closure-three-grid-reaudit-001/report.json",
+      "sha256": "051e8bb6774ca2cee42d53cd1feb86172c08eeee910fb92ad27ed6d5e9f2fc4d"
+    },
+    "cases": [
+      {
+        "returncode": 0,
+        "elapsed_seconds_including_all_IO": 171.94405345799169,
+        "directory": "outputs/combustion-foundation/flame-native-comparison-005/native-0",
+        "raw_sha256": {
+          "outputs/combustion-foundation/flame-native-comparison-005/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-0/field.json": "c24c1043a0c6a0e6abdedc53466c852e61cc509ce01e684fa7ba1646308341d2",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-0/steps.jsonl": "f3ecbae5169d97a2401e09a79d31051de60df245fbc683ce707f820db608e535",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-0/accepted-state.json": "c88fd2d9d431ab5bf48c298dc4cc0325459e0d40815befbdb03d504a60556ede",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-0/accepted.checkpoint": "91522a6fb7dfd9c7b37e58d6580a16c620a088fdf9d2d378d3f4c863bcdf69b1"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 464,
+        "spacing_m": 4e-05,
+        "time_s": 1e-06,
+        "accepted_steps": 418,
+        "rejections": 0,
+        "failure": "",
+        "thermo_relative_error": 1.2693780244430693e-14,
+        "source_error_over_gross_activity": 2.075351116755794e-15,
+        "face_assembly_relative_error": 9.837116213813714e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 1.7885034309808617e-15,
+        "energy_budget_scaled": 5.330216056192112e-13,
+        "momentum_budget_scaled": 3.5471923081397233e-16,
+        "element_budget_per_initial_mass": 6.573577710917249e-16,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.28330173663257835,
+          "maximum_temperature_derivative_K_per_s": 906915.9888015225,
+          "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+          "pressure_max_relative_to_reference": 0.0007260122451633322
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.42896889675312894,
+          "maximum_temperature_derivative_K_per_s": 799956.9596523059,
+          "hydrogen_consumption_kg_per_m2_s": 0.03899868038852312,
+          "pressure_max_relative_to_reference": 0.00036881052376314116
+        },
+        "maximum_temperature_drift_K": 0.8132755457397707,
+        "field_sha256": "c24c1043a0c6a0e6abdedc53466c852e61cc509ce01e684fa7ba1646308341d2",
+        "mass_closure_diagnostics": {
+          "maximum_stage_fraction": 4.941477034686199e-16,
+          "absolute_integral_per_initial_mass": 3.044872340708852e-14,
+          "net_element_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            -3.0813252634459416e-16
+          ]
+        }
+      },
+      {
+        "returncode": 0,
+        "elapsed_seconds_including_all_IO": 640.8886712919921,
+        "directory": "outputs/combustion-foundation/flame-native-comparison-005/native-1",
+        "raw_sha256": {
+          "outputs/combustion-foundation/flame-native-comparison-005/native-1/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-1/field.json": "ac5796ad43de98c9ec25a69e395faebc67de3185f93348f5917a6d9408553565",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-1/steps.jsonl": "9b8ea1caf0731ef2f7d02d5970f9300390982029feb98de2d45ab5efe24a423d",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-1/accepted-state.json": "99a1c13e3c12d4e884b90fce96027abcd67756441f38a68b87c668668929787c",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-1/accepted.checkpoint": "ad51630c9368e5f2af15f18e64256b9799d8f02095f6207f62e51e7438e5fecf"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 610,
+        "spacing_m": 2e-05,
+        "time_s": 1e-06,
+        "accepted_steps": 1309,
+        "rejections": 0,
+        "failure": "",
+        "thermo_relative_error": 1.4116813887130708e-14,
+        "source_error_over_gross_activity": 2.0949013650956473e-15,
+        "face_assembly_relative_error": 1.0237892396882804e-16,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 7.208878880404611e-16,
+        "energy_budget_scaled": 1.806338785718368e-12,
+        "momentum_budget_scaled": 3.671109679631181e-16,
+        "element_budget_per_initial_mass": 1.4267896877907401e-15,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.22549780782434592,
+          "maximum_temperature_derivative_K_per_s": 439124.8591010374,
+          "hydrogen_consumption_kg_per_m2_s": 0.038088056500448844,
+          "pressure_max_relative_to_reference": 0.00020267482316671526
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.206101116738449,
+          "maximum_temperature_derivative_K_per_s": 550983.7068455751,
+          "hydrogen_consumption_kg_per_m2_s": 0.03838384631070808,
+          "pressure_max_relative_to_reference": 0.0001835164384957899
+        },
+        "maximum_temperature_drift_K": 0.4758828756355342,
+        "field_sha256": "ac5796ad43de98c9ec25a69e395faebc67de3185f93348f5917a6d9408553565",
+        "mass_closure_diagnostics": {
+          "maximum_stage_fraction": 4.944808171649447e-16,
+          "absolute_integral_per_initial_mass": 8.97076418775347e-14,
+          "net_element_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            -8.497960623719601e-16
+          ]
+        }
+      },
+      {
+        "returncode": 0,
+        "elapsed_seconds_including_all_IO": 2722.8405907079577,
+        "directory": "outputs/combustion-foundation/flame-native-comparison-005/native-2",
+        "raw_sha256": {
+          "outputs/combustion-foundation/flame-native-comparison-005/native-2/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-2/field.json": "6240b29ccab486fddcaf18199415353fb043ec29fe1b254fdc1f6b3fa3e1dba4",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-2/steps.jsonl": "9c1155351a385b515c90dabf62a8bea6a33d5475e35053544f8946f150648ac9",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-2/accepted-state.json": "7e9535ce58e8960849132eaaf4df2a3fdab02f3c005e2f24fe546c3ebaa824ba",
+          "outputs/combustion-foundation/flame-native-comparison-005/native-2/accepted.checkpoint": "b1de026f67b41b9705f5b78ccc7888ce671998b21d93b64cc2b53b129e7ff7f8"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": true,
+        "qualified_flame": false,
+        "cells": 890,
+        "spacing_m": 1e-05,
+        "time_s": 1e-06,
+        "accepted_steps": 4558,
+        "rejections": 1,
+        "failure": "",
+        "thermo_relative_error": 1.3566230765661375e-14,
+        "source_error_over_gross_activity": 2.284424921151646e-15,
+        "face_assembly_relative_error": 9.873272197415859e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 4.8391020360677884e-15,
+        "energy_budget_scaled": 5.957009018027666e-12,
+        "momentum_budget_scaled": 4.223691728322038e-16,
+        "element_budget_per_initial_mass": 1.0404824177348979e-14,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.2813986061358025,
+          "maximum_temperature_derivative_K_per_s": 451991.8597218927,
+          "hydrogen_consumption_kg_per_m2_s": 0.038023706301407584,
+          "pressure_max_relative_to_reference": 5.180039436236683e-05
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.128233575617683,
+          "maximum_temperature_derivative_K_per_s": 460123.97235870373,
+          "hydrogen_consumption_kg_per_m2_s": 0.03815660105577494,
+          "pressure_max_relative_to_reference": 0.00014181279966019034
+        },
+        "maximum_temperature_drift_K": 0.40183917459535223,
+        "field_sha256": "6240b29ccab486fddcaf18199415353fb043ec29fe1b254fdc1f6b3fa3e1dba4",
+        "mass_closure_diagnostics": {
+          "maximum_stage_fraction": 4.946472132244957e-16,
+          "absolute_integral_per_initial_mass": 3.0504040165438476e-13,
+          "net_element_change_per_initial_mass": [
+            0.0,
+            0.0,
+            0.0,
+            -6.0093025959495475e-15
+          ]
+        }
+      }
+    ],
+    "all_numerical_checks_passed": true,
+    "all_endpoints_reached": true,
+    "all_native_runs_succeeded": true
+  },
+  "cancellation_with_saved_accepted_state": {
+    "report": {
+      "path": "outputs/combustion-foundation/implicit-flame-h40-007/report.json",
+      "sha256": "be9cedbb333b092a05558f5caf0549ef0512b1c7e926a9217da5e47508217628"
+    },
+    "cases": [
+      {
+        "fixture_index": 0,
+        "returncode": 1,
+        "elapsed_seconds_including_all_IO": 208.63084054202773,
+        "directory": "outputs/combustion-foundation/implicit-flame-h40-007/native-0",
+        "raw_sha256": {
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/evaluation-progress.jsonl": "838e46cff72e029b6822d58cf27e94402a3a2f3b19f527e675d86a765247b2e9",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/field.json": "14e72dd0f7d5f31183228f8ef01a0f90d6bc6d891f930f09ee064fb8bd1b2754",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/steps.jsonl": "141e6510e155cce8a4fbf62075bf6bfe28ad828e6fb54ddd842710506d9a4b0f",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/accepted-state.json": "05b9b4fccfe32b4803c194f88b4ff050183db48115a73439a434bbd363ece4d6",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/accepted.checkpoint": "ac6bd66bd6c0728bebc0ee8d2cc85779bd53d1ae516b89fa8c88d60d2f2ebbb0",
+          "outputs/combustion-foundation/implicit-flame-h40-007/native-0/cancel.request": "f78dc378fa32a97e792b5528607669d8722ac3bce79257b20444dcda159b4073"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": false,
+        "qualified_flame": false,
+        "cells": 464,
+        "spacing_m": 4e-05,
+        "time_s": 7.620431155450992e-08,
+        "accepted_steps": 60,
+        "rejections": null,
+        "failure": "implicit reacting flow: CVODES flag -6: At t = 7.62043e-08, the setup routine failed in an unrecoverable manner.; last RHS error: canceled during a trial solve; restart from the last accepted state with fresh BDF history",
+        "thermo_relative_error": 1.2877271867455841e-14,
+        "source_error_over_gross_activity": 2.199393089491268e-15,
+        "face_assembly_relative_error": 9.778980271771419e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 1.2977393348086663e-15,
+        "energy_budget_scaled": 1.109912260093782e-16,
+        "momentum_budget_scaled": 2.910230574681935e-16,
+        "element_budget_per_initial_mass": 7.54060526576312e-16,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.28330173663257835,
+          "maximum_temperature_derivative_K_per_s": 906915.9888015225,
+          "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+          "pressure_max_relative_to_reference": 0.0007260122451633322
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.40436213836085994,
+          "maximum_temperature_derivative_K_per_s": 782646.5594840588,
+          "hydrogen_consumption_kg_per_m2_s": 0.03841946737112776,
+          "pressure_max_relative_to_reference": 0.0006265712175637095
+        },
+        "maximum_temperature_drift_K": 0.06378375696476724,
+        "field_sha256": "14e72dd0f7d5f31183228f8ef01a0f90d6bc6d891f930f09ee064fb8bd1b2754",
+        "integration": {
+          "method": "CVODES-BDF",
+          "maximumOrder": 5,
+          "relativeTolerance": 1e-07,
+          "spatialOrder": 2,
+          "jacobianAdvectionOrder": 1,
+          "absoluteConservedTolerance": 1e-12,
+          "absoluteSpeciesFraction": 1e-18,
+          "maximumStep": 1e-06,
+          "maximumResidualEvaluations": 100000,
+          "rhsCalls": 3825,
+          "rejectedRhsCalls": 9,
+          "errorTestFailures": 0,
+          "linearSetups": 58,
+          "dampedNewtonUpdates": 40,
+          "minimumNewtonFraction": 0.0078125,
+          "bandHalfWidth": 64,
+          "bandBytes": 9313408
+        },
+        "bdf_species_quadrature_defect_per_mass": 6.147021169035318e-14,
+        "constraint_change_per_initial_mass": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          5.245136797205208e-17
+        ]
+      }
+    ],
+    "all_numerical_checks_passed": true,
+    "all_endpoints_reached": false,
+    "all_native_runs_succeeded": false
+  },
+  "tolerance_pilots": {
+    "qualification": "both stopped before the requested endpoint; no matched-endpoint accuracy/performance conclusion; superseded common limiter",
+    "runs": [
+      {
+        "report": {
+          "path": "outputs/combustion-foundation/implicit-flame-h40-atol14-001/report.json",
+          "sha256": "376b6e41f04e91504078a8974706300e044c148f603ea8b7ae84d9f57a61b5f5"
+        },
+        "cases": [
+          {
+            "fixture_index": 0,
+            "returncode": 1,
+            "elapsed_seconds_including_all_IO": 244.74203791702166,
+            "directory": "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0",
+            "raw_sha256": {
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/evaluation-progress.jsonl": "72eefb3e97c5ae4cb973affec3546f574f2242a50c3f0404c4f5e485d0ef9238",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/field.json": "2f838da3628c75f72084a7ea9d68f0326002ad9ed314c69fdad86f927d5d4151",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/steps.jsonl": "39f072407627ed9dd51f8cc425a80af82fa12b8c3d57e392037dcc1eecd20e1d",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/accepted-state.json": "5fc0c9fead78474dc0c333acc263064c6664b0dc3f762386f396b84a3ec3731c",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/accepted.checkpoint": "641d14d983bc554d83f933bb71660b8c36d0353cfe4d4237a0261efc1319b23b",
+              "outputs/combustion-foundation/implicit-flame-h40-atol14-001/native-0/cancel.request": "379ce344797fb15deedce02b61ff29082378e06d05a4ac7dfae2dbfc6dd5be0b"
+            },
+            "numerical_checks_passed": true,
+            "physical_endpoint_reached": false,
+            "qualified_flame": false,
+            "cells": 464,
+            "spacing_m": 4e-05,
+            "time_s": 5.743468757402702e-08,
+            "accepted_steps": 61,
+            "rejections": null,
+            "failure": "implicit reacting flow: CVODES flag -6: At t = 5.74347e-08, the setup routine failed in an unrecoverable manner.; last RHS error: canceled during a trial solve; restart from the last accepted state with fresh BDF history",
+            "thermo_relative_error": 1.265715018378912e-14,
+            "source_error_over_gross_activity": 2.2106851843605664e-15,
+            "face_assembly_relative_error": 8.136930063586532e-17,
+            "species_sum_absolute_error": 4.440892098500626e-16,
+            "mass_budget_per_initial_mass": 1.03825284802428e-15,
+            "energy_budget_scaled": 4.362588960470751e-17,
+            "momentum_budget_scaled": 3.273871473524688e-16,
+            "element_budget_per_initial_mass": 5.011759606055526e-16,
+            "initial_residual": {
+              "species_residual_L1_over_chemical_activity": 0.28330173663257835,
+              "maximum_temperature_derivative_K_per_s": 906915.9888015225,
+              "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+              "pressure_max_relative_to_reference": 0.0007260122451633322
+            },
+            "final_residual": {
+              "species_residual_L1_over_chemical_activity": 0.3708540028830964,
+              "maximum_temperature_derivative_K_per_s": 811437.2005869735,
+              "hydrogen_consumption_kg_per_m2_s": 0.03840191338971068,
+              "pressure_max_relative_to_reference": 0.0006642592506636014
+            },
+            "maximum_temperature_drift_K": 0.04892679656575183,
+            "field_sha256": "2f838da3628c75f72084a7ea9d68f0326002ad9ed314c69fdad86f927d5d4151",
+            "integration": {
+              "method": "CVODES-BDF",
+              "maximumOrder": 5,
+              "relativeTolerance": 1e-07,
+              "spatialOrder": 2,
+              "jacobianAdvectionOrder": 1,
+              "absoluteConservedTolerance": 1e-12,
+              "absoluteSpeciesFraction": 1e-14,
+              "maximumStep": 1e-06,
+              "maximumResidualEvaluations": 100000,
+              "rhsCalls": 4059,
+              "rejectedRhsCalls": 14,
+              "errorTestFailures": 0,
+              "linearSetups": 61,
+              "dampedNewtonUpdates": 40,
+              "minimumNewtonFraction": 0.015625,
+              "bandHalfWidth": 64,
+              "bandBytes": 9313408
+            },
+            "bdf_species_quadrature_defect_per_mass": 9.232920870795146e-14,
+            "constraint_change_per_initial_mass": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              5.24512636312079e-17
+            ]
+          }
+        ],
+        "all_numerical_checks_passed": true,
+        "all_endpoints_reached": false,
+        "all_native_runs_succeeded": false
+      },
+      {
+        "report": {
+          "path": "outputs/combustion-foundation/implicit-flame-h40-atol15-001/report.json",
+          "sha256": "6495a1ab4b37d2c7350bf610521cb9195a0c97cee73299d128eab2b9a55164d2"
+        },
+        "cases": [
+          {
+            "fixture_index": 0,
+            "returncode": 1,
+            "elapsed_seconds_including_all_IO": 244.71443979104515,
+            "directory": "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0",
+            "raw_sha256": {
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/evaluation-progress.jsonl": "45da8bc605a329eca6091a780397f0f05a90649dd2b34ea84902025adee1eb94",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/field.json": "7b70e5a03ff8fe2ca9222836f531f270c3505d30034cc33285644d6e4978e159",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/steps.jsonl": "a2e0be998e37650101c6f7b35597b91573a97e1b3ac4d883d094f67d693fa5b9",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/accepted-state.json": "11df1fcde8e892fd0df95445b3882bbcf2db3accb05e89f3db81e4268c62944f",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/accepted.checkpoint": "80bc47b6a0e5383c2690326f13053c5ee3af49c57e441a54d6a5c15ac5ef8ddc",
+              "outputs/combustion-foundation/implicit-flame-h40-atol15-001/native-0/cancel.request": "379ce344797fb15deedce02b61ff29082378e06d05a4ac7dfae2dbfc6dd5be0b"
+            },
+            "numerical_checks_passed": true,
+            "physical_endpoint_reached": false,
+            "qualified_flame": false,
+            "cells": 464,
+            "spacing_m": 4e-05,
+            "time_s": 1.0741827911346636e-07,
+            "accepted_steps": 73,
+            "rejections": null,
+            "failure": "implicit reacting flow: CVODES flag -6: At t = 1.07418e-07, the setup routine failed in an unrecoverable manner.; last RHS error: canceled during a trial solve; restart from the last accepted state with fresh BDF history",
+            "thermo_relative_error": 1.2767208531249579e-14,
+            "source_error_over_gross_activity": 2.125800508825167e-15,
+            "face_assembly_relative_error": 1.0017113048796701e-16,
+            "species_sum_absolute_error": 4.440892098500626e-16,
+            "mass_budget_per_initial_mass": 6.482145722412615e-16,
+            "energy_budget_scaled": 8.870183099562558e-17,
+            "momentum_budget_scaled": 3.030918637438444e-16,
+            "element_budget_per_initial_mass": 5.753072231923562e-16,
+            "initial_residual": {
+              "species_residual_L1_over_chemical_activity": 0.28330173663257835,
+              "maximum_temperature_derivative_K_per_s": 906915.9888015225,
+              "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+              "pressure_max_relative_to_reference": 0.0007260122451633322
+            },
+            "final_residual": {
+              "species_residual_L1_over_chemical_activity": 0.43693479262606455,
+              "maximum_temperature_derivative_K_per_s": 783959.6934567771,
+              "hydrogen_consumption_kg_per_m2_s": 0.038447354517327746,
+              "pressure_max_relative_to_reference": 0.0005552231254206674
+            },
+            "maximum_temperature_drift_K": 0.08755161152714663,
+            "field_sha256": "7b70e5a03ff8fe2ca9222836f531f270c3505d30034cc33285644d6e4978e159",
+            "integration": {
+              "method": "CVODES-BDF",
+              "maximumOrder": 5,
+              "relativeTolerance": 1e-07,
+              "spatialOrder": 2,
+              "jacobianAdvectionOrder": 1,
+              "absoluteConservedTolerance": 1e-12,
+              "absoluteSpeciesFraction": 1e-15,
+              "maximumStep": 1e-06,
+              "maximumResidualEvaluations": 100000,
+              "rhsCalls": 4067,
+              "rejectedRhsCalls": 15,
+              "errorTestFailures": 0,
+              "linearSetups": 67,
+              "dampedNewtonUpdates": 48,
+              "minimumNewtonFraction": 0.0009765625,
+              "bandHalfWidth": 64,
+              "bandBytes": 9313408
+            },
+            "bdf_species_quadrature_defect_per_mass": 1.3098617869103779e-13,
+            "constraint_change_per_initial_mass": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              5.2450723041114337e-17
+            ]
+          }
+        ],
+        "all_numerical_checks_passed": true,
+        "all_endpoints_reached": false,
+        "all_native_runs_succeeded": false
+      }
+    ]
+  },
+  "limits": [
+    "reference-initialized short-time planar field does not predict flame speed",
+    "reference and native share mechanism/collision data and chemistry backend",
+    "current reconstructed medium/fine flame grids not rerun",
+    "new implicit module methane/large sparse/3D/turbulent/spray/radiation/actual combustor/App/platform qualification pending"
+  ],
+  "current_implicit_full_flame": {
+    "status": "canceled_at_goal_pause",
+    "qualified": false,
+    "report": {
+      "path": "outputs/combustion-foundation/reconstruction-implicit-h40-001/report.json",
+      "sha256": "27e03dab0e424f82113a8be7d0481abc1e036f7a70feb3f2954778b5794f8d73"
+    },
+    "cases": [
+      {
+        "fixture_index": 0,
+        "returncode": 1,
+        "elapsed_seconds_including_all_IO": 1200.5059784580371,
+        "directory": "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0",
+        "raw_sha256": {
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/resolved-mechanism.yaml": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/evaluation-progress.jsonl": "392dbd75b24bae1780009ce4970f52ced76aeed0859073e75a9bcc374bb8cc1d",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/field.json": "87a754fba8e7088672148d6f657384dc7fee35ca08905e8c0a8be1ed794cb4c7",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/steps.jsonl": "8a293a2653a1173d054cd0680282dd487f783dd411c7833fd65914de98590389",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/accepted-state.json": "87a3230a7f038323d1afe7c7003314b5573d72b4ca3bdb58cbcaed10cfc94b82",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/accepted.checkpoint": "1a5b7557a4cd1d1c7670ec053d53c6a828c30d151ba0cad87c3d7f84a78104a8",
+          "outputs/combustion-foundation/reconstruction-implicit-h40-001/native-0/cancel.request": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "numerical_checks_passed": true,
+        "physical_endpoint_reached": false,
+        "qualified_flame": false,
+        "cells": 464,
+        "spacing_m": 4e-05,
+        "time_s": 7.597098000150596e-07,
+        "accepted_steps": 421,
+        "rejections": null,
+        "failure": "implicit reacting flow: CVODES flag -6: At t = 7.5971e-07, the setup routine failed in an unrecoverable manner.; last RHS error: canceled during a trial solve; restart from the last accepted state with fresh BDF history",
+        "thermo_relative_error": 1.2840532519283016e-14,
+        "source_error_over_gross_activity": 2.2609618651395696e-15,
+        "face_assembly_relative_error": 9.865752380473734e-17,
+        "species_sum_absolute_error": 4.440892098500626e-16,
+        "mass_budget_per_initial_mass": 1.288821507341335e-15,
+        "energy_budget_scaled": 7.486991672272723e-17,
+        "momentum_budget_scaled": 3.004710609408191e-16,
+        "element_budget_per_initial_mass": 7.720559951226124e-16,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.13519312896649716,
+          "maximum_temperature_derivative_K_per_s": 865313.2566632282,
+          "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+          "pressure_max_relative_to_reference": 0.0007260122451633322
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.3091547468687568,
+          "maximum_temperature_derivative_K_per_s": 510783.6436835417,
+          "hydrogen_consumption_kg_per_m2_s": 0.038206583390435506,
+          "pressure_max_relative_to_reference": 0.00033923485049713875
+        },
+        "maximum_temperature_drift_K": 0.3923935527610638,
+        "field_sha256": "87a754fba8e7088672148d6f657384dc7fee35ca08905e8c0a8be1ed794cb4c7",
+        "integration": {
+          "method": "CVODES-BDF",
+          "maximumOrder": 5,
+          "relativeTolerance": 1e-07,
+          "spatialOrder": 2,
+          "jacobianAdvectionOrder": 1,
+          "absoluteConservedTolerance": 1e-12,
+          "absoluteSpeciesFraction": 1e-18,
+          "maximumStep": 1e-06,
+          "maximumResidualEvaluations": 100000,
+          "rhsCalls": 21054,
+          "rejectedRhsCalls": 53,
+          "errorTestFailures": 1,
+          "linearSetups": 308,
+          "dampedNewtonUpdates": 197,
+          "minimumNewtonFraction": 0.001953125,
+          "bandHalfWidth": 64,
+          "bandBytes": 9313408
+        },
+        "bdf_species_quadrature_defect_per_mass": 1.5612504621832924e-13,
+        "constraint_change_per_initial_mass": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          5.244650907177303e-17
+        ]
+      }
+    ],
+    "all_numerical_checks_passed": true,
+    "all_endpoints_reached": false,
+    "all_native_runs_succeeded": false
+  },
+  "preview": {
+    "path": "artifacts/current/native-reacting-reconstruction.png",
+    "sha256": "1e25c39fb497d667731d1dc7b2e7efa5f0595a8366760ca0e99efd87a35b5787"
+  }
+}

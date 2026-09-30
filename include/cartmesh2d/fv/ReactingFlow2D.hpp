@@ -77,7 +77,7 @@ struct ReactingResidual2D {
     // Derivatives are per-volume per-second; face fluxes are edge-integrated.
     std::vector<ReactingConservative2D> faceFlux, transportDerivative, chemistryDerivative, derivative;
     ReactingConservative2D boundaryFlux, chemistryIntegral;
-    std::vector<double> transportRate;
+    std::vector<double> transportRate; // empty when rate estimation was not requested
     std::size_t hlleFallbacks = 0;
 };
 
@@ -90,18 +90,21 @@ public:
     ReactingFlowStepper2D(chemistry::DetailedGas&, FvMesh2D,
         std::vector<ReactingBoundary2D>, ReactingPhysics2D = {});
     [[nodiscard]] ReactingState2D initialState(std::vector<ReactingConservative2D>) const;
-    [[nodiscard]] ReactingResidual2D evaluateResidual(const ReactingState2D&, unsigned order = 2);
+    [[nodiscard]] ReactingResidual2D evaluateResidual(const ReactingState2D&, unsigned order = 2,
+                                                    bool estimateTransportRate = true);
+    [[nodiscard]] const FvMesh2D& mesh() const { return mesh_; }
     [[nodiscard]] ReactingStepResult2D advance(const ReactingState2D&, const ReactingStepControls2D& = {});
     void writeCheckpoint(std::ostream&, const ReactingState2D&) const;
     [[nodiscard]] ReactingState2D readCheckpoint(std::istream&) const;
 private:
+    friend class ReactingImplicitIntegrator2D;
     struct Stage {
         std::vector<ReactingConservative2D> faceFlux, residual;
         std::vector<double> rate;
         std::size_t fallbacks = 0;
     };
     void validate(const ReactingState2D&) const;
-    [[nodiscard]] Stage spatial(const std::vector<ReactingConservative2D>&, unsigned order);
+    [[nodiscard]] Stage spatial(const std::vector<ReactingConservative2D>&, unsigned order, bool estimateRate = true);
     void react(std::vector<ReactingConservative2D>&, double,
         const chemistry::ChemistryControls&, ReactingStepResult2D&, ReactingConservative2D& change,
         ReactingConservative2D& closureChange, double& maximumClosure, double& absoluteClosure);

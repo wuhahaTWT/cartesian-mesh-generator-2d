@@ -107,12 +107,18 @@ def audit(path, reference, fixture, audit_output=None):
     element_error = float(np.max(abs(physical_budget[4:] @ elements / before[0])))
     assert max(mass_error, energy_error, momentum_error, element_error) < 1e-8
     first, last = r["initial"], r["final"]
+    implicit = r.get("integration", {}).get("method") == "CVODES-BDF"
     steps = [json.loads(line) for line in (path / "steps.jsonl").read_text().splitlines()]
     clock, accepted = 0., 0
     for step in steps:
         assert step["time"] == clock
         if step["accepted"]:
-            assert step["dt"] > 0 and step["courant"] <= .35 * (1 + 1e-12)
+            assert step["dt"] > 0
+            if implicit:
+                assert step["internalSteps"] == accepted + 1
+                assert step["dt"] <= r["integration"]["maximumStep"] * (1 + 1e-12)
+            else:
+                assert step["courant"] <= .35 * (1 + 1e-12)
             clock += step["dt"]; accepted += 1
         else:
             assert step is steps[-1]
@@ -157,6 +163,16 @@ def audit(path, reference, fixture, audit_output=None):
               "field_sha256": sha(path / "field.json")}
     if closure_report is not None:
         report["mass_closure_diagnostics"] = closure_report
+    if implicit:
+        report["integration"] = r["integration"]
+        constraint = np.array(r["constraintChange"])
+        assert constraint.shape == impulse.shape and np.all(np.isfinite(constraint)) and np.all(constraint[:4] == 0)
+        # A BDF quadrature audit is separate from the unsubtracted physical
+        # element/energy budgets above. Same 1e-8 mass-normalized gate.
+        equation_defect = float(np.max(abs(physical_budget[4:] - np.array(r["chemistryChange"])[4:] - constraint[4:])) / before[0])
+        assert equation_defect < 1e-8
+        report["bdf_species_quadrature_defect_per_mass"] = equation_defect
+        report["constraint_change_per_initial_mass"] = (constraint / float(before[0])).tolist()
     (Path(audit_output or path) / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
     return report, r
 
@@ -167,12 +183,17 @@ def main():
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--duration", type=float, default=1e-6)
+    parser.add_argument("--species-atol", type=float,
+                        help="explicit implicit-probe local integration control; physical audit gates are unchanged")
     parser.add_argument("--jobs", type=int, default=3, help="independent native cases in parallel; 1 for sequential execution")
+    parser.add_argument("--grid", type=int, action="append",
+                        help="reference fixture index; repeat to select cases (default: every fixture)")
     parser.add_argument("--audit-native-output", type=Path,
                         help="audit an already completed verifier run into a NEW output directory, without running the solver")
     args = parser.parse_args()
     verifier_hash = sha(Path(__file__))
     assert np.isfinite(args.duration) and args.duration > 0
+    assert args.species_atol is None or np.isfinite(args.species_atol) and args.species_atol > 0
     assert 1 <= args.jobs <= 3
     args.output.mkdir(parents=True, exist_ok=False)
     reference = json.loads((args.reference / "reference.json").read_text())
@@ -185,7 +206,10 @@ def main():
         previous = json.loads((args.audit_native_output / "report.json").read_text())
         assert previous["probe_sha256"] == probe_hash and previous["duration_s"] == args.duration
         assert previous["reference_report_sha256"] == sha(args.reference / "reference.json")
-        assert len(previous["cases"]) == len(reference["fixtures"])
+    indices = args.grid if args.grid is not None else (previous or {}).get("fixture_indices", list(range(len(reference["fixtures"]))))
+    assert indices and len(set(indices)) == len(indices) and all(0 <= i < len(reference["fixtures"]) for i in indices)
+    saved_cases = {} if previous is None else {c.get("fixture_index", i): c for i, c in enumerate(previous["cases"])}
+    assert previous is None or all(i in saved_cases for i in indices)
     def run_case(item):
         number, fixture = item
         assert sha(fixture["path"]) == fixture["sha256"] and sha(args.probe) == probe_hash
@@ -193,23 +217,28 @@ def main():
         path = (args.audit_native_output or args.output) / f"native-{number}"
         if previous is None:
             start = time.perf_counter()
-            process = subprocess.run([str(args.probe.resolve()), reference["mechanism"], fixture["path"],
-                                      str(path), format(args.duration, ".17g")], capture_output=True, text=True)
+            command = [str(args.probe.resolve()), reference["mechanism"], fixture["path"], str(path), format(args.duration, ".17g")]
+            if args.species_atol is not None:
+                command += ["--species-atol", format(args.species_atol, ".17g")]
+            process = subprocess.run(command, capture_output=True, text=True)
             elapsed, returncode, failure = time.perf_counter() - start, process.returncode, process.stderr
             (args.output / f"native-{number}.stdout").write_text(process.stdout)
             (args.output / f"native-{number}.stderr").write_text(process.stderr)
         else:
-            saved = previous["cases"][number]
+            saved = saved_cases[number]
             assert Path(saved["directory"]).resolve() == path.resolve()
+            assert all(sha(p) == digest for p, digest in saved.get("raw_sha256", {}).items())
             elapsed, returncode, failure = saved["elapsed_seconds_including_all_IO"], saved["returncode"], saved.get("failure", "")
             audit_path.mkdir()
         raw_hashes = {str(p): sha(p) for p in (path.iterdir() if path.is_dir() else [])
                       if p.is_file() and p.name not in {"audit.json", "audit-error.txt"}}
-        case = {"returncode": returncode, "elapsed_seconds_including_all_IO": elapsed, "directory": str(path), "raw_sha256": raw_hashes}
+        case = {"fixture_index": number, "returncode": returncode, "elapsed_seconds_including_all_IO": elapsed, "directory": str(path), "raw_sha256": raw_hashes}
         field = None
         if (path / "field.json").exists():
             try:
                 checked, field = audit(path, reference, fixture, audit_path); case.update(checked)
+                if args.species_atol is not None:
+                    assert field["integration"]["absoluteSpeciesFraction"] == args.species_atol
             except Exception as error:
                 (audit_path / "audit-error.txt").write_text(traceback.format_exc())
                 case.update(numerical_checks_passed=False, physical_endpoint_reached=False,
@@ -221,15 +250,16 @@ def main():
         return case, field
     wall_start = time.perf_counter()
     with ThreadPoolExecutor(max_workers=args.jobs) as executor:
-        results = list(executor.map(run_case, enumerate(reference["fixtures"])))
+        results = list(executor.map(run_case, ((i, reference["fixtures"][i]) for i in indices)))
     cases = [case for case, _ in results]
     fields = [field for _, field in results if field is not None]
     assert sha(args.probe) == probe_hash
     assert sha(Path(__file__)) == verifier_hash
     report = {"qualified_flame": False, "duration_s": args.duration, "probe_sha256": probe_hash,
+              "requested_species_absolute_tolerance": args.species_atol,
               "execution_mode": "audit_existing" if previous is not None else "run_and_audit",
               "verifier_sha256": verifier_hash,
-              "reference_report_sha256": sha(args.reference / "reference.json"), "cases": cases,
+              "reference_report_sha256": sha(args.reference / "reference.json"), "fixture_indices": indices, "cases": cases,
               "parallel_jobs": args.jobs, "case_wall_seconds_including_audits": time.perf_counter() - wall_start,
               "all_numerical_checks_passed": all(c["numerical_checks_passed"] for c in cases),
               "all_endpoints_reached": all(c["physical_endpoint_reached"] for c in cases),

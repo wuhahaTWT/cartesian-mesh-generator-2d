@@ -1,4 +1,7 @@
 #include "cartmesh2d/fv/ReactingFlow2D.hpp"
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+#include "cartmesh2d/fv/ReactingImplicit2D.hpp"
+#endif
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -70,7 +73,12 @@ void state(std::ostream& out, DetailedGas& gas, const ReactingState2D& s, const 
 int main(int argc, char** argv) {
     try {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+        const bool toleranceOverride = argc == 7 && std::string(argv[5]) == "--species-atol";
+        require(argc == 5 || regression || toleranceOverride, "expected mechanism fixture output duration [--species-atol value], or mechanism fixture --regression");
+#else
         require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
+#endif
         const auto start = std::chrono::steady_clock::now();
         DetailedGas gas(argv[1]); std::ifstream input(argv[2]);
         std::string token; unsigned version = 0; std::size_t nx = 0, ny = 0, ns = 0; double height = 0;
@@ -98,6 +106,48 @@ int main(int argc, char** argv) {
         const auto initial = solver.initialState(cells); auto current = initial;
         const auto initialResidual = solver.evaluateResidual(initial);
         if (regression) {
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+            ReactingImplicitControls2D controls; controls.maximumBdfOrder = 5;
+            controls.maximumResidualEvaluations = 3000;
+            ReactingImplicitIntegrator2D integrator(gas, solver, initial, controls);
+            const auto result = integrator.advance(1e-8);
+            std::cout << "implicit trace: time=" << result.lastAccepted.time << " steps=" << result.internalSteps
+                << " RHS=" << result.rhsCalls << " damping=" << result.dampedNewtonUpdates
+                << " delta=" << result.lastNewtonCorrectionNorm << " residual=" << result.lastNewtonResidualNorm
+                << " tolerance=" << result.lastNewtonTolerance << '\n';
+            if (!result.reachedEnd) throw std::runtime_error(result.failure);
+            require(result.lastAccepted.time == 1e-8 && result.lastAccepted.steps > 0, "implicit trace endpoint mismatch");
+            std::vector<double> before(ns + 4), after(ns + 4);
+            double energyScale = 0, sound = 0;
+            for (std::size_t i = 0; i < cells.size(); ++i) {
+                const auto p = reactingPrimitive2D(gas, initial.cells[i]);
+                energyScale += mesh.cells[i].area * std::max(std::abs(initial.cells[i][3]),
+                    initial.cells[i][0] * p.properties.cv * p.properties.temperature);
+                sound = std::max(sound, p.soundSpeed);
+                for (std::size_t k = 0; k < ns + 4; ++k) {
+                    before[k] += mesh.cells[i].area * initial.cells[i][k];
+                    after[k] += mesh.cells[i].area * result.lastAccepted.cells[i][k];
+                }
+            }
+            std::vector<double> physical(ns + 4);
+            for (std::size_t k = 0; k < ns + 4; ++k) physical[k] = after[k] - before[k] + result.boundaryImpulse[k];
+            require(std::abs(physical[0]) / before[0] < 1e-8 && std::abs(physical[3]) / energyScale < 1e-8,
+                    "implicit trace mass/energy budget failed");
+            require(std::max(std::abs(physical[1]), std::abs(physical[2])) / (before[0] * sound) < 1e-8,
+                    "implicit trace momentum budget failed");
+            for (std::size_t k = 4; k < ns + 4; ++k)
+                require(std::abs(physical[k] - result.chemistryChange[k] - result.constraintChange[k]) / before[0] < 1e-8,
+                        "implicit trace species quadrature budget failed");
+            const auto& m = gas.mechanism();
+            for (std::size_t e = 0; e < m.elements.size(); ++e) {
+                double element = 0;
+                for (std::size_t k = 0; k < ns; ++k)
+                    element += physical[k + 4] * m.atomCounts[k * m.elements.size() + e] * m.atomicWeights[e] / m.molecularWeights[k];
+                require(std::abs(element) / before[0] < 1e-8, "implicit trace physical element budget failed");
+            }
+            (void)solver.evaluateResidual(result.lastAccepted);
+            require(initial.cells == cells && initial.steps == 0 && initial.time == 0, "implicit trace modified input");
+#else
             ReactingStepControls2D controls; controls.endTime = 1e-8;
             while (current.time < *controls.endTime && current.steps < 128) {
                 const auto r = solver.advance(current, controls);
@@ -115,6 +165,7 @@ int main(int argc, char** argv) {
             require(initial.cells == cells && initial.steps == 0 && initial.time == 0, "trace regression modified initial state");
             (void)solver.evaluateResidual(current);
             std::cout << "Trace flame regression: " << mesh.cells.size() << " cells, " << current.steps << " accepted steps, no rejections\n";
+#endif
             return 0;
         }
         std::size_t used = 0; const std::string durationText(argv[4]); const double duration = std::stod(durationText, &used);
@@ -124,10 +175,55 @@ int main(int argc, char** argv) {
         { std::ofstream definition(directory / "resolved-mechanism.yaml"); definition << gas.mechanism().resolvedDefinition;
           require(static_cast<bool>(definition), "cannot write resolved mechanism"); }
         std::ofstream log(directory / "steps.jsonl"); log << std::setprecision(17);
+        std::vector<double> boundaryImpulse(ns + 4), chemistryChange(ns + 4);
+        std::string failure;
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+        ReactingImplicitControls2D implicitControls;
+        if (toleranceOverride) {
+            std::size_t read = 0; const std::string value(argv[6]);
+            implicitControls.absoluteSpeciesFraction = std::stod(value, &read);
+            require(read == value.size() && std::isfinite(implicitControls.absoluteSpeciesFraction)
+                && implicitControls.absoluteSpeciesFraction > 0, "invalid species absolute local tolerance");
+        }
+        implicitControls.maximumBdfOrder = 5; implicitControls.maximumStep = std::max(duration, 1e-15);
+        ReactingImplicitProgress2D implicitResult;
+        std::ofstream evaluations(directory / "evaluation-progress.jsonl"); evaluations << std::setprecision(17);
+        if (duration > 0) {
+            ReactingImplicitIntegrator2D implicit(gas, solver, initial, implicitControls);
+            implicitResult = implicit.advance(duration, [&] { return std::filesystem::exists(directory / "cancel.request"); }, [&](const auto& r) {
+                const double dt = r.lastAccepted.time - current.time;
+                log << "{\"time\":" << current.time << ",\"dt\":" << dt << ",\"accepted\":true,\"internalSteps\":"
+                    << r.internalSteps << ",\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls << ",\"failure\":\"\"}\n";
+                log.flush(); current = r.lastAccepted;
+                if (current.steps % 10 == 0) std::cerr << "implicit accepted " << current.steps << " t=" << current.time << '\n';
+            }, [&](const auto& r, double trialTime) {
+                if (r.rhsCalls == 1 || r.rhsCalls % 100 == 0) {
+                    std::cerr << "implicit residuals=" << r.rhsCalls << " rejected=" << r.rejectedRhsCalls
+                        << " accepted=" << r.lastAccepted.steps << " trial_t=" << trialTime
+                        << " band=" << r.bandHalfWidth << '\n';
+                    evaluations << "{\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls
+                        << ",\"acceptedSteps\":" << r.lastAccepted.steps << ",\"acceptedTime\":" << r.lastAccepted.time
+                        << ",\"trialTime\":" << trialTime << ",\"bandHalfWidth\":" << r.bandHalfWidth
+                        << ",\"dampedNewtonUpdates\":" << r.dampedNewtonUpdates
+                        << ",\"newtonCorrectionNorm\":" << r.lastNewtonCorrectionNorm
+                        << ",\"newtonResidualNorm\":" << r.lastNewtonResidualNorm
+                        << ",\"newtonTolerance\":" << r.lastNewtonTolerance << "}\n";
+                    evaluations.flush(); require(static_cast<bool>(evaluations), "evaluation log write failed");
+                }
+            });
+            current = implicitResult.lastAccepted; failure = implicitResult.failure;
+            if (implicitResult.canceled && failure.empty()) failure = "canceled between accepted steps";
+            boundaryImpulse = implicitResult.boundaryImpulse; chemistryChange = implicitResult.chemistryChange;
+            if (!implicitResult.reachedEnd) {
+                log << "{\"time\":" << current.time << ",\"dt\":0,\"accepted\":false,\"failure\":";
+                string(log, failure); log << "}\n"; log.flush();
+            }
+        }
+#else
         ReactingStepControls2D controls; controls.endTime = duration;
-        std::vector<double> boundaryImpulse(ns + 4), chemistryChange(ns + 4), transportClosure(ns + 4), chemistryClosure(ns + 4);
+        std::vector<double> transportClosure(ns + 4), chemistryClosure(ns + 4);
         double maximumClosure = 0, absoluteClosure = 0;
-        std::string failure; std::size_t rejected = 0, sourceCalls = 0;
+        std::size_t rejected = 0, sourceCalls = 0;
         while (current.time < duration && current.steps < 20000) {
             const auto r = solver.advance(current, controls); sourceCalls += r.sourceCalls; rejected += r.rejectedReasons.size();
             log << "{\"time\":" << current.time << ",\"dt\":" << r.step << ",\"accepted\":" << (r.accepted ? "true" : "false")
@@ -149,6 +245,7 @@ int main(int argc, char** argv) {
             current = *r.accepted;
             if (current.steps % 50 == 0) std::cerr << "accepted " << current.steps << " t=" << current.time << '\n';
         }
+#endif
         if (current.time < duration && failure.empty()) failure = "step budget exhausted before physical endpoint";
         if (current.steps > 0) { std::ofstream checkpoint(directory / "accepted.checkpoint"); solver.writeCheckpoint(checkpoint, current); }
         // Preserve raw final accepted values before optional residual
@@ -170,11 +267,33 @@ int main(int argc, char** argv) {
             out << ",\"centre\":[" << f.centre.x << ',' << f.centre.y << "],\"S\":[" << f.areaVector.x << ',' << f.areaVector.y << "]}";
         }
         out << "],\"boundaryImpulse\":"; numbers(out, boundaryImpulse); out << ",\"chemistryChange\":"; numbers(out, chemistryChange);
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+        out << ",\"constraintChange\":"; numbers(out, implicitResult.constraintChange);
+        out << ",\"integration\":{\"method\":\"CVODES-BDF\",\"maximumOrder\":" << implicitControls.maximumBdfOrder
+            << ",\"relativeTolerance\":" << implicitControls.relativeTolerance
+            << ",\"spatialOrder\":" << implicitControls.spatialOrder
+            << ",\"jacobianAdvectionOrder\":" << implicitControls.jacobianAdvectionOrder
+            << ",\"absoluteConservedTolerance\":" << implicitControls.absoluteConservedTolerance
+            << ",\"absoluteSpeciesFraction\":" << implicitControls.absoluteSpeciesFraction
+            << ",\"maximumStep\":" << implicitControls.maximumStep
+            << ",\"maximumResidualEvaluations\":" << implicitControls.maximumResidualEvaluations
+            << ",\"rhsCalls\":" << implicitResult.rhsCalls << ",\"rejectedRhsCalls\":" << implicitResult.rejectedRhsCalls
+            << ",\"errorTestFailures\":" << implicitResult.errorTestFailures << ",\"linearSetups\":" << implicitResult.linearSetups
+            << ",\"dampedNewtonUpdates\":" << implicitResult.dampedNewtonUpdates
+            << ",\"minimumNewtonFraction\":" << implicitResult.minimumNewtonFraction
+            << ",\"bandHalfWidth\":" << implicitResult.bandHalfWidth << ",\"bandBytes\":" << implicitResult.bandBytes << '}';
+#else
         out << ",\"massClosure\":{\"maximumFraction\":" << maximumClosure << ",\"absoluteIntegral\":" << absoluteClosure
             << ",\"transport\":"; numbers(out, transportClosure); out << ",\"chemistry\":"; numbers(out, chemistryClosure); out << '}';
+#endif
         out << ",\"initial\":"; state(out, gas, initial, initialResidual);
         out << ",\"final\":"; state(out, gas, current, finalResidual);
-        out << ",\"rejections\":" << rejected << ",\"sourceCalls\":" << sourceCalls << ",\"failure\":"; string(out, failure);
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+        out << ",\"rejections\":null,\"sourceCalls\":null,\"failure\":";
+#else
+        out << ",\"rejections\":" << rejected << ",\"sourceCalls\":" << sourceCalls << ",\"failure\":";
+#endif
+        string(out, failure);
         out << ",\"elapsedSecondsBeforeFinalFlush\":" << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() << "}\n";
         out.close(); require(static_cast<bool>(out) && static_cast<bool>(log), "verification output write failed");
         if (!failure.empty()) std::cerr << failure << '\n';

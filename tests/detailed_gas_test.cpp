@@ -101,6 +101,15 @@ int main(int argc, char** argv) {
         check(transport.multicomponentDiffusion.size() == 100 && transport.thermalDiffusion.size() == 10,
               "multicomponent/Soret coefficients missing");
         check(transport.viscosity > 0 && transport.thermalConductivity > 0, "invalid transport properties");
+        // A -> viscosity-only B -> A used to leave the thermal cache's
+        // temperature key valid while binary self-diffusion was overwritten.
+        const auto anotherTemperature = hydrogen.fromMoleAmounts(1200, 101325, x);
+        (void)hydrogen.viscosity(anotherTemperature);
+        const auto revisited = hydrogen.transport(initial);
+        check(transport.thermalConductivity == revisited.thermalConductivity
+            && transport.thermalDiffusion == revisited.thermalDiffusion
+            && transport.multicomponentDiffusion == revisited.multicomponentDiffusion,
+            "transport depends on intervening viscosity-only temperature query");
         // A trace concentration gradient must survive inverse-matrix
         // cancellation and the backend's internal mole-fraction floor.
         const auto trace = hydrogen.fromMoleAmounts(1000, 101325, mixture(hydrogen, {{"H2", 1e-24}, {"N2", 1}}));

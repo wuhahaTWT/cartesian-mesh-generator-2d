@@ -39,6 +39,18 @@ public:
     }
 
 protected:
+    void update_T() override {
+        const double previous = m_temp;
+        Cantera::MultiTransport::update_T();
+        // A viscosity-only visit to B followed by a return to A invalidates
+        // binary diffusion even when the old thermal-cache key is still A.
+        // updateDiff_T then overwrites the special kinetic self-diffusion
+        // diagonal. Invalidate the thermal key on EVERY transport-temperature
+        // change so updateThermal_T rebuilds that diagonal and its heat modes.
+        // Otherwise transport(A), viscosity(B), transport(A) changes lambda/D_T.
+        if (m_temp != previous) m_thermal_tlast = Cantera::Undef;
+    }
+
     void solveLMatrixEquation() override {
         updateThermal_T(); update_C();
         if (m_lmatrix_soln_ok) return;
