@@ -6,6 +6,7 @@ Report short-time drift and spatial residuals separately from flame qualificatio
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
 import hashlib
 import json
 import os
@@ -22,7 +23,33 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def audit_fields(r, mechanism, steps, reference, fixture):
+def read_checkpoint(path, cells, variables):
+    """Read the serialized state independently; native loading checks binding."""
+    def scalar(token):
+        value = float(token)
+        assert np.isfinite(value) and (value != 0 or Decimal(token) == 0)
+        return value
+
+    with Path(path).open("rb") as stream:
+        assert stream.readline() == b"CM2D_REACTING_CHECKPOINT 1\n"
+        size_text = stream.readline().strip()
+        assert size_text.isdigit()
+        size = int(size_text)
+        assert 0 < size <= Path(path).stat().st_size
+        binding = stream.read(size)
+        assert len(binding) == size
+        clock = stream.readline().decode("ascii").split()
+        assert len(clock) == 3 and clock[0] == "STATE" and clock[2].isdigit()
+        time_s, count = scalar(clock[1]), int(clock[2])
+        assert np.isfinite(time_s) and time_s > 0 and count > 0
+        rows = [[scalar(v) for v in stream.readline().decode("ascii").split()] for _ in range(cells)]
+        u = np.array(rows)
+        assert u.shape == (cells, variables) and np.all(np.isfinite(u))
+        assert stream.read().split() == [b"END"]
+    return {"time": time_s, "steps": count, "U": rows}
+
+
+def audit_fields(r, mechanism, steps, reference, fixture, checkpoint=None):
     """Audit serialized native data; callers identify its raw file or sample."""
     gas = ct.Solution(str(mechanism))
     area = np.array(r["areas"])
@@ -92,12 +119,18 @@ def audit_fields(r, mechanism, steps, reference, fixture):
                               "hydrogen_consumption_kg_per_m2_s": consumption,
                               "pressure_max_relative_to_reference": float(np.max(abs(np.array(state["pressure"]) / reference["pressure_Pa"] - 1)))})
     assert closure_error < 1e-10 and thermo_error < 2e-9 and chemical_error < 2e-8 and flux_error < 2e-11
-    # Verify the native initial state is the supplied conservative average;
-    # the solver must not silently repair imported Y. Algebraic N-1 stage
-    # closure is reported explicitly and remains in the physical budgets.
-    lines = Path(fixture["path"]).read_text().splitlines()
-    columns = np.array([[float(v) for v in line.split()] for line in lines[4:4 + nx]])
-    assert np.array_equal(np.tile(columns, (ny, 1)), r["initial"]["U"])
+    # Verify exact import, including the clock. A restart starts a new BDF
+    # session and new budget interval, while retaining the accepted physical
+    # time and total step count. Native checkpoint binding is also enforced.
+    if r.get("restart") is None:
+        assert checkpoint is None and r["initial"]["time"] == 0 and r["initial"]["steps"] == 0
+        lines = Path(fixture["path"]).read_text().splitlines()
+        columns = np.array([[float(v) for v in line.split()] for line in lines[4:4 + nx]])
+        assert np.array_equal(np.tile(columns, (ny, 1)), r["initial"]["U"])
+    else:
+        assert checkpoint is not None and r["restart"]["restoresIntegratorHistory"] is False
+        assert r["restart"]["budgetOrigin"] == "initial-state"
+        assert all(r["initial"][key] == checkpoint[key] for key in ("time", "steps", "U"))
     before, after = integrals
     impulse = np.array(r["boundaryImpulse"])
     physical_budget = after - before + impulse
@@ -107,8 +140,13 @@ def audit_fields(r, mechanism, steps, reference, fixture):
     element_error = float(np.max(abs(physical_budget[4:] @ elements / before[0])))
     assert max(mass_error, energy_error, momentum_error, element_error) < 1e-8
     first, last = r["initial"], r["final"]
+    end_time = r.get("endTime", r["duration"])
+    assert np.isfinite(r["duration"]) and r["duration"] >= 0 and np.isfinite(end_time)
+    assert end_time == first["time"] + r["duration"]
+    assert first["time"] <= last["time"] <= end_time
+    assert r["complete"] == (last["time"] == end_time)
     implicit = r.get("integration", {}).get("method") == "CVODES-BDF"
-    clock, accepted = 0., 0
+    clock, accepted = first["time"], 0
     for step in steps:
         assert step["time"] == clock
         if step["accepted"]:
@@ -121,7 +159,7 @@ def audit_fields(r, mechanism, steps, reference, fixture):
             clock += step["dt"]; accepted += 1
         else:
             assert step is steps[-1]
-    assert clock == last["time"] and accepted == last["steps"]
+    assert clock == last["time"] and first["steps"] + accepted == last["steps"]
     if implicit and "acceptedByBdfOrder" in r["integration"]:
         orders = [0] * 6
         for step in steps:
@@ -167,6 +205,8 @@ def audit_fields(r, mechanism, steps, reference, fixture):
     report = {"numerical_checks_passed": True, "physical_endpoint_reached": r["complete"] and accepted > 0,
               "qualified_flame": False, "cells": nx * ny, "spacing_m": fixture["spacing_m"],
               "time_s": clock, "accepted_steps": accepted, "rejections": r["rejections"], "failure": r["failure"],
+              "initial_time_s": first["time"], "initial_accepted_steps": first["steps"],
+              "total_accepted_steps": last["steps"], "restarted": checkpoint is not None,
               "thermo_relative_error": thermo_error, "source_error_over_gross_activity": chemical_error,
               "face_assembly_relative_error": flux_error, "species_sum_absolute_error": closure_error,
               "mass_budget_per_initial_mass": mass_error, "energy_budget_scaled": energy_error,
@@ -188,16 +228,17 @@ def audit_fields(r, mechanism, steps, reference, fixture):
     return report
 
 
-def audit_samples(path, field, steps, reference, fixture, audit_output):
+def audit_samples(path, field, steps, reference, fixture, audit_output, checkpoint=None):
     every = field.get("integration", {}).get("sampleEveryAcceptedSteps", 0)
     if not every:
         assert not (path / "samples.jsonl").exists()
         return None
     samples = [json.loads(line) for line in (path / "samples.jsonl").read_text().splitlines()]
     accepted = [step for step in steps if step["accepted"]]
-    expected = [0] + [i for i in range(1, len(accepted) + 1) if i % every == 0]
-    if expected[-1] != len(accepted):
-        expected.append(len(accepted))
+    first_step = field["initial"]["steps"]
+    expected = [first_step] + [first_step + i for i in range(1, len(accepted) + 1) if i % every == 0]
+    if expected[-1] != first_step + len(accepted):
+        expected.append(first_step + len(accepted))
     sampling_failure = field["integration"].get("samplingFailure", "")
     assert samples
     assert [sample["state"]["steps"] for sample in samples] == (expected[:len(samples)] if sampling_failure else expected)
@@ -213,7 +254,7 @@ def audit_samples(path, field, steps, reference, fixture, audit_output):
     x = .5 * (np.array(field["xEdges"][:-1]) + field["xEdges"][1:])
     rows = []
     for index, sample in enumerate(samples):
-        n = sample["state"]["steps"]
+        n = sample["state"]["steps"] - first_step
         assert sample["kind"] == ("accepted" if n else "initial")
         assert sample["integration"]["sampleResidualEvaluations"] == index + 1
         assert sample["integration"]["rhsCalls"] == (accepted[n - 1]["rhsCalls"] if n else 0)
@@ -221,9 +262,9 @@ def audit_samples(path, field, steps, reference, fixture, audit_output):
         virtual["final"] = sample["state"]
         for key in ("boundaryImpulse", "chemistryChange", "constraintChange", "integration"):
             virtual[key] = sample[key]
-        virtual["complete"] = field["complete"] and sample["state"]["time"] == field["duration"]
+        virtual["complete"] = field["complete"] and sample["state"]["time"] == field.get("endTime", field["duration"])
         virtual["failure"] = field["failure"] if index == len(samples) - 1 else ""
-        checked = audit_fields(virtual, path / "resolved-mechanism.yaml", accepted[:n], reference, fixture)
+        checked = audit_fields(virtual, path / "resolved-mechanism.yaml", accepted[:n], reference, fixture, checkpoint)
         temperature = np.array(sample["state"]["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
         markers = []
         for j, (a, b) in enumerate(zip(temperature[:-1], temperature[1:])):
@@ -247,9 +288,15 @@ def audit_samples(path, field, steps, reference, fixture, audit_output):
 def audit(path, reference, fixture, audit_output=None):
     r = json.loads((path / "field.json").read_text())
     steps = [json.loads(line) for line in (path / "steps.jsonl").read_text().splitlines()]
-    report = audit_fields(r, path / "resolved-mechanism.yaml", steps, reference, fixture)
+    checkpoint = None
+    if r.get("restart") is not None:
+        assert r["restart"]["checkpointFile"] == "restart.checkpoint"
+        checkpoint = read_checkpoint(path / "restart.checkpoint", r["cells"], len(r["initial"]["U"][0]))
+    report = audit_fields(r, path / "resolved-mechanism.yaml", steps, reference, fixture, checkpoint)
+    if checkpoint is not None:
+        report["restart_checkpoint_sha256"] = sha(path / "restart.checkpoint")
     report["field_sha256"] = sha(path / "field.json")
-    sampling = audit_samples(path, r, steps, reference, fixture, Path(audit_output or path))
+    sampling = audit_samples(path, r, steps, reference, fixture, Path(audit_output or path), checkpoint)
     if sampling is not None:
         report["accepted_state_samples"] = sampling
     (Path(audit_output or path) / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -298,7 +345,7 @@ def plot_sample_history(case, field, output, plt):
     for ax in axes.flat:
         ax.grid(alpha=.2)
     suffix = "" if history["sampling_complete"] else " | sampling stopped early"
-    fig.suptitle(f"Detailed H2/air | {field['cells']} cells | actual end {field['final']['time'] * 1e6:g} / requested {field['duration'] * 1e6:g} us{suffix}")
+    fig.suptitle(f"Detailed H2/air | {field['cells']} cells | actual end {field['final']['time'] * 1e6:g} / requested {field.get('endTime', field['duration']) * 1e6:g} us{suffix}")
     fig.supxlabel("Recorded accepted states and budgets; position marker is not a flame-speed qualification; multiple crossings remain in the JSON", fontsize=8)
     fig.savefig(output / f"native-{case['fixture_index']}-history.png", dpi=160); plt.close(fig)
 
@@ -308,7 +355,9 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--duration", type=float, default=1e-6)
+    parser.add_argument("--duration", type=float, default=1e-6, help="additional physical time from fixture or restart checkpoint")
+    parser.add_argument("--restart-checkpoint", type=Path,
+                        help="resume one selected fixture from an accepted checkpoint; BDF history is rebuilt")
     parser.add_argument("--rtol", type=float,
                         help="implicit relative local integration control; defaults remain unchanged")
     parser.add_argument("--conserved-atol", type=float,
@@ -358,6 +407,12 @@ def main():
         assert previous["reference_report_sha256"] == sha(args.reference / "reference.json")
     indices = args.grid if args.grid is not None else (previous or {}).get("fixture_indices", list(range(len(reference["fixtures"]))))
     assert indices and len(set(indices)) == len(indices) and all(0 <= i < len(reference["fixtures"]) for i in indices)
+    restart = None if previous is None else previous.get("restart")
+    if args.restart_checkpoint is not None:
+        assert len(indices) == 1
+        requested_restart = {"path": str(args.restart_checkpoint.resolve()), "sha256": sha(args.restart_checkpoint)}
+        assert previous is None or restart == requested_restart
+        restart = requested_restart
     saved_cases = {} if previous is None else {c.get("fixture_index", i): c for i, c in enumerate(previous["cases"])}
     assert previous is None or all(i in saved_cases for i in indices)
     def run_case(item):
@@ -368,6 +423,9 @@ def main():
         if previous is None:
             start = time.perf_counter()
             command = [str(args.probe.resolve()), reference["mechanism"], fixture["path"], str(path), format(args.duration, ".17g")]
+            if restart is not None:
+                assert sha(restart["path"]) == restart["sha256"]
+                command += ["--restart", restart["path"]]
             for option in ("rtol", "conserved_atol", "species_atol"):
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), format(getattr(args, option), ".17g")]
@@ -375,6 +433,8 @@ def main():
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), str(getattr(args, option))]
             process = subprocess.run(command, capture_output=True, text=True)
+            if restart is not None:
+                assert sha(restart["path"]) == restart["sha256"]
             elapsed, returncode, failure = time.perf_counter() - start, process.returncode, process.stderr
             (args.output / f"native-{number}.stdout").write_text(process.stdout)
             (args.output / f"native-{number}.stderr").write_text(process.stderr)
@@ -391,6 +451,11 @@ def main():
         if (path / "field.json").exists():
             try:
                 checked, field = audit(path, reference, fixture, audit_path); case.update(checked)
+                assert field["duration"] == args.duration
+                assert (field.get("restart") is not None) == (restart is not None)
+                if restart is not None:
+                    assert field["restart"]["sourcePath"] == restart["path"]
+                    assert sha(path / "restart.checkpoint") == restart["sha256"]
                 for key, value in requested_controls.items():
                     assert field["integration"][key] == value
             except Exception as error:
@@ -409,7 +474,7 @@ def main():
     fields = [field for _, field in results if field is not None]
     assert sha(args.probe) == probe_hash
     assert sha(Path(__file__)) == verifier_hash
-    report = {"qualified_flame": False, "duration_s": args.duration, "probe_sha256": probe_hash,
+    report = {"qualified_flame": False, "duration_s": args.duration, "restart": restart, "probe_sha256": probe_hash,
               "requested_species_absolute_tolerance": args.species_atol,
               "requested_implicit_controls": requested_controls,
               "execution_mode": "audit_existing" if previous is not None else "run_and_audit",

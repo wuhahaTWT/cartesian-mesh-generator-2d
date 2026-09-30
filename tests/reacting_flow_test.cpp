@@ -86,6 +86,30 @@ double homogeneous(DetailedGas& gas, const std::vector<double>& x, double temper
         std::stringstream stream; solver.writeCheckpoint(stream, *step.accepted);
         const auto bytes = stream.str(); const auto restored = solver.readCheckpoint(stream);
         check(restored.cells == step.accepted->cells && restored.time == step.accepted->time && restored.steps == step.accepted->steps, "checkpoint round trip lost state/clock");
+        // The full flame produced positive AR densities down to 4.3e-321.
+        // libc++ stream extraction flags these as underflow despite returning
+        // a representable value. Preserve them, including the smallest double.
+        auto trace = *step.accepted;
+        const auto argon = std::find(gas.mechanism().species.begin(), gas.mechanism().species.end(), "AR");
+        check(argon != gas.mechanism().species.end(), "checkpoint trace regression needs argon");
+        const auto slot = 4 + static_cast<std::size_t>(argon - gas.mechanism().species.begin());
+        const double tiny[] = {4.3529079602675429e-310, 4.3230744011109073e-321,
+                               std::numeric_limits<double>::denorm_min(), 1e-308};
+        for (std::size_t i = 0; i < trace.cells.size(); ++i) trace.cells[i][slot] = tiny[i % 4];
+        std::stringstream traceStream; solver.writeCheckpoint(traceStream, trace);
+        const auto traceBytes = traceStream.str();
+        const auto traceRestored = solver.readCheckpoint(traceStream);
+        check(traceRestored.cells == trace.cells && traceRestored.time == trace.time && traceRestored.steps == trace.steps,
+              "checkpoint changed a representable subnormal species density");
+        const auto stateStart = traceBytes.rfind("\nSTATE ");
+        check(stateStart != std::string::npos, "checkpoint scalar fixture missing state");
+        const auto firstScalar = traceBytes.find('\n', stateStart + 1) + 1;
+        const auto scalarEnd = traceBytes.find(' ', firstScalar);
+        for (const auto* invalid : {"nan", "inf", "1e9999", "1e-9999", "1.0tail"}) {
+            auto corrupt = traceBytes; corrupt.replace(firstScalar, scalarEnd - firstScalar, invalid);
+            std::stringstream reader(corrupt);
+            rejects([&] { (void)solver.readCheckpoint(reader); }, "invalid or unrepresentable checkpoint scalar accepted");
+        }
         controls.maximumStep = 1e-6; controls.endTime.reset();
         const auto continued = solver.advance(*step.accepted, controls), resumed = solver.advance(restored, controls); accepted(continued); accepted(resumed);
         check(continued.accepted->cells == resumed.accepted->cells && continued.accepted->time == resumed.accepted->time, "restart continuation not reproducible");

@@ -2,6 +2,7 @@
 #include "cartmesh2d/chemistry/SpeciesMassClosure.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -16,6 +17,16 @@ void require(bool test, const std::string& message) {
     if (!test) throw std::runtime_error("reacting flow: " + message);
 }
 double finite(double value) { require(std::isfinite(value), "nonfinite arithmetic"); return value; }
+double checkpointScalar(const std::string& token) {
+    double value = 0;
+    const auto parsed = std::from_chars(token.data(), token.data() + token.size(), value);
+    // Some iostream implementations set failbit for finite representable
+    // subnormals. Check the locale-independent conversion explicitly so a
+    // positive trace species survives a checkpoint round trip unchanged.
+    require(parsed.ec == std::errc{} && parsed.ptr == token.data() + token.size() && std::isfinite(value),
+            "invalid or unrepresentable checkpoint scalar");
+    return value;
+}
 double kinetic(const ReactingConservative2D& u) { return .5 * (u[1] * u[1] + u[2] * u[2]) / u[0]; }
 ReactingConservative2D flux(const ReactingConservative2D& u, const ReactingPrimitive2D& p, Vector2D n) {
     const double un = dot(p.velocity, n);
@@ -483,12 +494,16 @@ ReactingState2D ReactingFlowStepper2D::readCheckpoint(std::istream& in) const {
     require(static_cast<bool>(std::getline(in, line)) && line == std::to_string(binding_.size()), "incompatible checkpoint binding size");
     std::string binding(binding_.size(), '\0'); in.read(binding.data(), static_cast<std::streamsize>(binding.size()));
     require(static_cast<bool>(in) && binding == binding_, "checkpoint mechanism/geometry/boundary/model mismatch");
-    ReactingState2D s; s.binding = binding_; std::string token, steps;
-    require(static_cast<bool>(in >> token >> s.time >> steps) && token == "STATE" && !steps.empty()
+    ReactingState2D s; s.binding = binding_; std::string token, clock, steps;
+    require(static_cast<bool>(in >> token >> clock >> steps) && token == "STATE" && !steps.empty()
         && steps.find_first_not_of("0123456789") == std::string::npos, "invalid checkpoint clock");
+    s.time = checkpointScalar(clock);
     const auto count = std::stoull(steps); require(count > 0 && count < std::numeric_limits<std::size_t>::max() && s.time > 0, "invalid accepted step count/time");
     s.steps = static_cast<std::size_t>(count); s.cells.assign(mesh_.cells.size(), ReactingConservative2D(gas_.mechanism().species.size() + 4));
-    for (auto& u : s.cells) for (double& v : u) require(static_cast<bool>(in >> v), "truncated checkpoint state");
+    for (auto& u : s.cells) for (double& v : u) {
+        require(static_cast<bool>(in >> token), "truncated checkpoint state");
+        v = checkpointScalar(token);
+    }
     require(static_cast<bool>(in >> token) && token == "END" && !(in >> token), "invalid checkpoint terminator/trailing content");
     validate(s); return s;
 }

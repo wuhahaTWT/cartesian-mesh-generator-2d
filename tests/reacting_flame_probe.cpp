@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 
 using namespace cartmesh2d;
@@ -113,11 +114,17 @@ int main(int argc, char** argv) {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         require(regression || (argc >= 5 && (argc - 5) % 2 == 0),
-            "expected mechanism fixture output duration [--rtol value] [--conserved-atol value] [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1] [--sample-every acceptedSteps] [--max-samples count], or mechanism fixture --regression");
+            "expected mechanism fixture output duration [--restart checkpoint] [--rtol value] [--conserved-atol value] [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1] [--sample-every acceptedSteps] [--max-samples count], or mechanism fixture --regression");
 #else
-        require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
+        require(argc == 5 || (argc == 7 && std::string(argv[5]) == "--restart") || regression,
+            "expected mechanism fixture NEW-output duration [--restart checkpoint], or mechanism fixture --regression");
 #endif
         const auto start = std::chrono::steady_clock::now();
+        std::string restartPath, restartData;
+        for (int argument = 5; argument < argc; argument += 2) if (std::string(argv[argument]) == "--restart") {
+            require(restartPath.empty() && std::string(argv[argument + 1]).size() > 0, "invalid or duplicate restart checkpoint");
+            restartPath = std::filesystem::absolute(argv[argument + 1]).string();
+        }
         DetailedGas gas(argv[1]); std::ifstream input(argv[2]);
         std::string token; unsigned version = 0; std::size_t nx = 0, ny = 0, ns = 0; double height = 0;
         require(static_cast<bool>(input >> token >> version) && token == "CM2D_FLAME_FIXTURE" && version == 1, "invalid fixture version");
@@ -141,7 +148,16 @@ int main(int argc, char** argv) {
         ReactingFlowStepper2D solver(gas, mesh, bc);
         std::vector<ReactingConservative2D> cells;
         for (std::size_t j = 0; j < ny; ++j) cells.insert(cells.end(), columns.begin(), columns.end());
-        const auto initial = solver.initialState(cells); auto current = initial;
+        auto initial = solver.initialState(cells);
+        if (!restartPath.empty()) {
+            std::ifstream checkpoint(restartPath, std::ios::binary);
+            require(static_cast<bool>(checkpoint), "cannot open restart checkpoint");
+            std::ostringstream saved; saved << checkpoint.rdbuf();
+            require(!checkpoint.bad() && static_cast<bool>(saved), "cannot read restart checkpoint");
+            restartData = saved.str(); std::istringstream reader(restartData);
+            initial = solver.readCheckpoint(reader);
+        }
+        auto current = initial;
         const auto initialResidual = solver.evaluateResidual(initial);
         if (regression) {
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
@@ -209,8 +225,14 @@ int main(int argc, char** argv) {
         }
         std::size_t used = 0; const std::string durationText(argv[4]); const double duration = std::stod(durationText, &used);
         require(used == durationText.size() && duration >= 0 && std::isfinite(duration), "invalid physical duration");
+        const double endTime = initial.time + duration;
+        require(std::isfinite(endTime) && (duration == 0 || endTime > initial.time), "physical duration cannot advance checkpoint clock");
         const std::filesystem::path directory(argv[3]); require(!std::filesystem::exists(directory), "output directory already exists");
         std::filesystem::create_directories(directory);
+        if (!restartPath.empty()) {
+            std::ofstream checkpoint(directory / "restart.checkpoint", std::ios::binary); checkpoint << restartData;
+            checkpoint.close(); require(static_cast<bool>(checkpoint), "cannot preserve restart checkpoint");
+        }
         { std::ofstream definition(directory / "resolved-mechanism.yaml"); definition << gas.mechanism().resolvedDefinition;
           require(static_cast<bool>(definition), "cannot write resolved mechanism"); }
         std::ofstream log(directory / "steps.jsonl"); log << std::setprecision(17);
@@ -219,12 +241,13 @@ int main(int argc, char** argv) {
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         ReactingImplicitControls2D implicitControls;
         implicitControls.maximumBdfOrder = 5; implicitControls.maximumStep = std::max(duration, 1e-15);
-        std::size_t sampleEvery = 0, sampleEvaluations = 0, lastSampleSteps = 0, maximumSamples = 256;
+        std::size_t sampleEvery = 0, sampleEvaluations = 0, lastSampleSteps = initial.steps, maximumSamples = 256;
         std::string samplingFailure;
         std::set<std::string> suppliedOptions;
         for (int argument = 5; argument < argc; argument += 2) {
             const std::string option(argv[argument]), value(argv[argument + 1]);
             require(suppliedOptions.insert(option).second, "duplicate implicit control option");
+            if (option == "--restart") continue;
             std::size_t read = 0;
             if (option == "--rtol" || option == "--conserved-atol" || option == "--species-atol") {
                 const double tolerance = std::stod(value, &read);
@@ -275,7 +298,7 @@ int main(int argc, char** argv) {
             try {
                 require(sampleEvaluations < maximumSamples, "accepted-state sample budget exhausted");
                 const auto residual = sampleSolver->evaluateResidual(saved); ++sampleEvaluations;
-                samples << "{\"kind\":\"" << (saved.steps ? "accepted" : "initial") << "\",\"state\":";
+                samples << "{\"kind\":\"" << (saved.steps == initial.steps ? "initial" : "accepted") << "\",\"state\":";
                 state(samples, *sampleGas, saved, residual);
                 samples << ",\"boundaryImpulse\":"; numbers(samples, progress.boundaryImpulse);
                 samples << ",\"chemistryChange\":"; numbers(samples, progress.chemistryChange);
@@ -293,7 +316,7 @@ int main(int argc, char** argv) {
         std::ofstream evaluations(directory / "evaluation-progress.jsonl"); evaluations << std::setprecision(17);
         if (duration > 0) {
             ReactingImplicitIntegrator2D implicit(gas, solver, initial, implicitControls);
-            implicitResult = implicit.advance(duration, [&] {
+            implicitResult = implicit.advance(endTime, [&] {
                 return !samplingFailure.empty() || std::filesystem::exists(directory / "cancel.request");
             }, [&](const auto& r) {
                 const double dt = r.lastAccepted.time - current.time;
@@ -302,7 +325,7 @@ int main(int argc, char** argv) {
                     << ",\"bdfOrder\":" << r.lastBdfOrder << ",\"localErrorNorm\":" << r.lastLocalErrorNorm
                     << ",\"predictorCorrectionNorm\":" << r.lastPredictorCorrectionNorm << ",\"failure\":\"\"}\n";
                 log.flush(); current = r.lastAccepted;
-                if (sampleEvery && current.steps % sampleEvery == 0) writeSample(current, r);
+                if (sampleEvery && (current.steps - initial.steps) % sampleEvery == 0) writeSample(current, r);
                 if (current.steps % 10 == 0) std::cerr << "implicit accepted " << current.steps << " t=" << current.time << '\n';
             }, [&](const auto& r, double trialTime) {
                 if (r.rhsCalls == 1 || r.rhsCalls % 100 == 0) {
@@ -340,11 +363,11 @@ int main(int argc, char** argv) {
         if (sampleEvery && current.steps > lastSampleSteps) writeSample(current, implicitResult);
         if (!samplingFailure.empty()) failure = samplingFailure;
 #else
-        ReactingStepControls2D controls; controls.endTime = duration;
+        ReactingStepControls2D controls; controls.endTime = endTime;
         std::vector<double> transportClosure(ns + 4), chemistryClosure(ns + 4);
         double maximumClosure = 0, absoluteClosure = 0;
         std::size_t rejected = 0, sourceCalls = 0;
-        while (current.time < duration && current.steps < 20000) {
+        while (current.time < endTime && current.steps - initial.steps < 20000) {
             const auto r = solver.advance(current, controls); sourceCalls += r.sourceCalls; rejected += r.rejectedReasons.size();
             log << "{\"time\":" << current.time << ",\"dt\":" << r.step << ",\"accepted\":" << (r.accepted ? "true" : "false")
                 << ",\"courant\":" << r.combinedCourant << ",\"rejectedReasons\":[";
@@ -366,7 +389,7 @@ int main(int argc, char** argv) {
             if (current.steps % 50 == 0) std::cerr << "accepted " << current.steps << " t=" << current.time << '\n';
         }
 #endif
-        if (current.time < duration && failure.empty()) failure = "step budget exhausted before physical endpoint";
+        if (current.time < endTime && failure.empty()) failure = "step budget exhausted before physical endpoint";
         if (current.steps > 0) { std::ofstream checkpoint(directory / "accepted.checkpoint"); solver.writeCheckpoint(checkpoint, current); }
         // Preserve raw final accepted values before optional residual
         // diagnostics, which can themselves expose an interpolation failure.
@@ -376,8 +399,14 @@ int main(int argc, char** argv) {
           require(static_cast<bool>(saved), "cannot save final accepted state"); }
         const auto finalResidual = solver.evaluateResidual(current);
         std::ofstream out(directory / "field.json"); out << std::setprecision(17);
-        out << "{\"complete\":" << (current.time == duration ? "true" : "false") << ",\"qualifiedFlame\":false,\"duration\":" << duration
-            << ",\"cells\":" << mesh.cells.size() << ",\"nx\":" << nx << ",\"ny\":" << ny << ",\"height\":" << height << ",\"xEdges\":";
+        out << "{\"complete\":" << (current.time == endTime ? "true" : "false") << ",\"qualifiedFlame\":false,\"duration\":" << duration
+            << ",\"endTime\":" << endTime << ",\"restart\":";
+        if (restartPath.empty()) out << "null";
+        else {
+            out << "{\"sourcePath\":"; string(out, restartPath);
+            out << ",\"checkpointFile\":\"restart.checkpoint\",\"restoresIntegratorHistory\":false,\"budgetOrigin\":\"initial-state\"}";
+        }
+        out << ",\"cells\":" << mesh.cells.size() << ",\"nx\":" << nx << ",\"ny\":" << ny << ",\"height\":" << height << ",\"xEdges\":";
         numbers(out, x); out << ",\"areas\":[";
         for (std::size_t i = 0; i < mesh.cells.size(); ++i) { if (i) out << ','; out << mesh.cells[i].area; }
         out << "],\"faces\":[";
@@ -405,6 +434,6 @@ int main(int argc, char** argv) {
         out << ",\"elapsedSecondsBeforeFinalFlush\":" << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() << "}\n";
         out.close(); require(static_cast<bool>(out) && static_cast<bool>(log), "verification output write failed");
         if (!failure.empty()) std::cerr << failure << '\n';
-        return current.time == duration && failure.empty() ? 0 : 1;
+        return current.time == endTime && failure.empty() ? 0 : 1;
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
 }
