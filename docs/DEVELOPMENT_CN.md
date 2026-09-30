@@ -413,6 +413,23 @@ build/chemistry-env/bin/python tools/verification/compare_reacting_flame_grid.py
 
 参考解的舍入缺陷显式处理：保存原始负微量及组分和误差，只在验证初值准备阶段将负舍入值置零，并由最丰富组分闭合。允许改变量为 `10*BVP绝对容差 + 64*(N+1)*epsilon`，超过则拒绝；有意输入 `-1e-4` 会失败。保留原参考点的密度、动量及含生成能总能量，记录元素变化，再对分段线性守恒剖面逐格积分。该准备程序不进入原生推进或续算，初值不是接受检查点。
 
+参考解可用 `--refine-slopes` 增加细化层级，`--maximum-reference-points` 只控制参考网格的计算预算。前者是 Cantera 按剖面变化增点的无量纲控制，曲率控制为其两倍，不是燃烧精度验收门；BVP 原求解容差保留。`--fixed-grid-reference` 与 `--fixed-grid-index` 从哈希验证过的旧夹具复用精确网格边、行数和高度，重新积分最终参考守恒剖面，用来隔离参考初值敏感性。拒绝坏网格、哈希不符及超出参考域的映射。`reference.json` 的 `profile_file` 明确指向最终剖面；原生审计器及动量初值准备器均读取它，旧参考仍兼容。
+
+`cartmesh2d_reacting_flame_reference_probe` 是只链接 Cantera 的独立稳态 BVP 验证程序，不链接原生瞬态有限体积核心。可选 `--closure-probe` 在固定参考网格上重新求解完整机理、多组分和 Soret，用 `sum(Y)=1` 替代一种丰富组分在内部点的冗余方程；原组分方程全部照常计算，原残差另存于最终剖面，不能因质量恒等式满足就忽略组分平衡。能量、边界和原求解容差保留，最终初值导入仍使用上述原额度。原未约束参考及失败结果保留；该选项不归一化求解后的参考剖面，不修改原生接受状态或默认设置。示例：
+
+```sh
+cmake --build build --target cartmesh2d_reacting_flame_reference_probe -j 2
+build/chemistry-env/bin/python tools/verification/prepare_reacting_flame.py \
+  --mechanism build/deps/cantera/share/cantera/data/h2o2.yaml \
+  --output outputs/combustion-foundation/refined-reference-new \
+  --refine-slopes .06 .03 .015 .0075 .00375 .001875 \
+  --maximum-reference-points 5000 \
+  --fixed-grid-reference outputs/combustion-foundation/flame-reference-001 \
+  --fixed-grid-index 2 --closure-probe build/cartmesh2d_reacting_flame_reference_probe
+```
+
+参考细化同时更新自由火焰的入口速度特征值；同网格对照须显式列出入口状态变化，不能称边界数值完全相同。实际对照、逐帧审计及未验范围见[当前状态](CURRENT_STATE_CN.md#持续目标成熟燃烧模拟)，脚本和原始失败保存在 `outputs/combustion-foundation/reference-refinement-001/`。
+
 对运动火焰，分别记录固定坐标中的等温面速度和相对于实际未燃气速度的运动，不能把输入的入口速度当成实际面质量流量。当前 `Reservoir` 是外侧黎曼状态，亚声速面通量还受内部压力影响；[Cantera 的参考方程与入口条件](https://www.cantera.org/3.2/reference/onedim/governing-equations.html)则将质量流量作为自由火焰解的一部分。`flame-motion-001/analyze.py` 从原 100 微秒真实历史中计算多个固定温度标记、三个明确位置的未燃气测点和实际时间窗口。它还分解 `d(rho*Y)/dt = Y*d(rho)/dt + rho*dY/dt`；各项 L1 范数因相消不能相加为贡献百分比。移动参考系的 `R + c*dU/dx` 用独立非均匀差分作诊断，原生残差与验收门保留。
 
 `prepare_reacting_flame_momentum.py` 是显式可选的**新初值**准备器：从通过审计的非续算夹具读取原始单元 T/Y，保留入口状态及网格，以原入口轴向质量通量为常量，在低马赫分支求解 `p + m²/rho - tau_xx = 入口动量通量`，其中 `rho = p/(Rmix*T)`、`tau_xx = (4/3)*mu*du/dx`，黏度由完整温变物性取得。沿单元中心用非均匀二阶差分构造速度导数，固定点循环后重建含生成能的守恒变量；不求解稳态化学/组分/能量方程，也不声称原生离散残差为零。循环检查最大压力更新量（Pa），停止额度为 `64*epsilon*max(|p|)`，用于压力构造的浮点终止，最多 50 次；不增加燃烧精度门。源文件哈希、初始质量/能量改变量和循环记录输出到 `preparation.json`。禁止覆盖既有目录，拒绝续算输入、非轴向条带及来源不符的数据。

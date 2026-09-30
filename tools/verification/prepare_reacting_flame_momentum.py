@@ -113,12 +113,13 @@ def prepare(reference_directory, source_run, fixture_index, output):
         for row in prepared:
             stream.write(" ".join(format(v, ".17g") for v in row) + "\n")
         stream.write(lines[4 + nx] + "\nEND\n")
-    shutil.copyfile(reference_directory / "profile-2.json", output / "profile-2.json")
+    profile_file = reference.get("profile_file", "profile-2.json")
+    shutil.copyfile(reference_directory / profile_file, output / profile_file)
     reference.update(
         scope="Optional momentum-compatible initial data at original T/Y; not a new coupled steady BVP or flame qualification.",
         source_reference={"path": str(reference_path), "sha256": sha(reference_path)},
         fixtures=[{**fixture, "path": str(path), "sha256": sha(path), "original_fixture_index": fixture_index}])
-    reference["files_sha256"] = {p.name: sha(p) for p in (path, output / "profile-2.json")}
+    reference["files_sha256"] = {p.name: sha(p) for p in (path, output / profile_file)}
     (output / "reference.json").write_text(json.dumps(reference, indent=2) + "\n")
     result = {
         "source_run": {"path": str(run_path), "sha256": sha(run_path)},

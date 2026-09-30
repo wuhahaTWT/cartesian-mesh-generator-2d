@@ -497,7 +497,7 @@ def main():
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-        profile = json.loads((args.reference / "profile-2.json").read_text())
+        profile = json.loads((args.reference / reference.get("profile_file", "profile-2.json")).read_text())
         grid, temperature = np.array(profile["grid"]), np.array(profile["T"])
         centre = grid[np.argmax(np.gradient(temperature, grid))]
         fig, axes = plt.subplots(2, 2, figsize=(11, 8), layout="constrained")
