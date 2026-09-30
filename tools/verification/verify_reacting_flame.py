@@ -303,6 +303,16 @@ def audit(path, reference, fixture, audit_output=None):
     return report, r
 
 
+def check_initial_evaluation(field, case, directory):
+    """A zero-time diagnostic is never a physical endpoint or checkpoint."""
+    assert field["duration"] == field["endTime"] == field["initial"]["time"] == field["final"]["time"] == 0
+    assert field["complete"] and not field["failure"] and field.get("restart") is None
+    assert field["initial"] == field["final"] and field["initial"]["steps"] == 0
+    assert case["accepted_steps"] == case["total_accepted_steps"] == 0
+    assert case["numerical_checks_passed"] and not case["physical_endpoint_reached"]
+    assert not (directory / "accepted.checkpoint").exists()
+
+
 def plot_sample_history(case, field, output, plt):
     sampling = case.get("accepted_state_samples")
     if not sampling:
@@ -355,7 +365,10 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--duration", type=float, default=1e-6, help="additional physical time from fixture or restart checkpoint")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--duration", type=float, default=1e-6, help="additional physical time from fixture or restart checkpoint")
+    mode.add_argument("--evaluate-initial", action="store_true",
+                      help="evaluate and audit the original initial state with zero advancement; never qualifies a physical endpoint")
     parser.add_argument("--restart-checkpoint", type=Path,
                         help="resume one selected fixture from an accepted checkpoint; BDF history is rebuilt")
     parser.add_argument("--rtol", type=float,
@@ -378,7 +391,11 @@ def main():
                         help="audit an already completed verifier run into a NEW output directory, without running the solver")
     args = parser.parse_args()
     verifier_hash = sha(Path(__file__))
-    assert np.isfinite(args.duration) and args.duration > 0
+    if args.evaluate_initial:
+        assert args.restart_checkpoint is None and args.sample_every is None and args.max_samples is None
+        args.duration = 0.
+    else:
+        assert np.isfinite(args.duration) and args.duration > 0
     assert args.rtol is None or np.isfinite(args.rtol) and 0 < args.rtol < 1
     assert args.conserved_atol is None or np.isfinite(args.conserved_atol) and args.conserved_atol > 0
     assert args.species_atol is None or np.isfinite(args.species_atol) and args.species_atol > 0
@@ -403,6 +420,7 @@ def main():
     previous = None
     if args.audit_native_output:
         previous = json.loads((args.audit_native_output / "report.json").read_text())
+        assert bool(previous.get("initial_evaluation_only", False)) == args.evaluate_initial
         assert previous["probe_sha256"] == probe_hash and previous["duration_s"] == args.duration
         assert previous["reference_report_sha256"] == sha(args.reference / "reference.json")
     indices = args.grid if args.grid is not None else (previous or {}).get("fixture_indices", list(range(len(reference["fixtures"]))))
@@ -451,6 +469,9 @@ def main():
         if (path / "field.json").exists():
             try:
                 checked, field = audit(path, reference, fixture, audit_path); case.update(checked)
+                if args.evaluate_initial:
+                    check_initial_evaluation(field, case, path)
+                    case["initial_evaluation_passed"] = True
                 assert field["duration"] == args.duration
                 assert (field.get("restart") is not None) == (restart is not None)
                 if restart is not None:
@@ -477,7 +498,7 @@ def main():
     report = {"qualified_flame": False, "duration_s": args.duration, "restart": restart, "probe_sha256": probe_hash,
               "requested_species_absolute_tolerance": args.species_atol,
               "requested_implicit_controls": requested_controls,
-              "execution_mode": "audit_existing" if previous is not None else "run_and_audit",
+              "execution_mode": "audit_existing" if previous is not None else ("evaluate_initial" if args.evaluate_initial else "run_and_audit"),
               "verifier_sha256": verifier_hash,
               "reference_report_sha256": sha(args.reference / "reference.json"), "fixture_indices": indices, "cases": cases,
               "parallel_jobs": args.jobs, "case_wall_seconds_including_audits": time.perf_counter() - wall_start,
@@ -487,6 +508,9 @@ def main():
               "limits": ["reference and native share chemistry/transport backend", "constant-pressure BVP versus full compressible FV",
                          "short evolution from a reference initial condition does not predict or qualify flame speed",
                          "reference roundoff preparation recorded separately; no native species clipping", "no experiment or actual combustor qualification"]}
+    if args.evaluate_initial:
+        report.update(initial_evaluation_only=True,
+                      all_initial_evaluations_passed=all(c.get("initial_evaluation_passed", False) for c in cases))
     if previous is not None:
         report["audit_source_report"] = {"path": str(args.audit_native_output / "report.json"),
                                          "sha256": sha(args.audit_native_output / "report.json")}
@@ -512,17 +536,21 @@ def main():
             axes[1, 0].plot((x-centre)*1000, np.array(field["final"]["temperature"][:nx])-field["initial"]["temperature"][:nx], label=label)
         h = [c["spacing_m"]*1e6 for c in cases]
         axes[1, 1].loglog(h, [c["initial_residual"]["species_residual_L1_over_chemical_activity"] for c in cases], "o-")
+        change_title = "Initial readback temperature difference" if args.evaluate_initial else "Temperature change during native evolution"
         for ax, title, unit in [(axes[0, 0], "Temperature", "K"), (axes[0, 1], "Hydrogen mass fraction", "Y(H2)"),
-                                (axes[1, 0], "Temperature change during native evolution", "K")]:
+                                (axes[1, 0], change_title, "K")]:
             ax.set(title=title, xlabel="x relative to reference flame (mm)", ylabel=unit, xlim=(-.6, 2)); ax.legend(fontsize=8); ax.grid(alpha=.2)
         axes[1, 1].set(title="Initial species equation imbalance", xlabel="Core spacing (um)", ylabel="L1 residual / L1 reaction activity")
         axes[1, 1].grid(alpha=.2)
-        fig.suptitle(f"Detailed H2/air planar flame | native evolution requested: {args.duration*1e6:g} us")
-        fig.supxlabel("Reference-initialized short-time verification; no independently predicted flame-speed or experimental qualification.", fontsize=8)
+        fig.suptitle("Detailed H2/air | initial-state evaluation | zero accepted steps" if args.evaluate_initial else
+                     f"Detailed H2/air planar flame | native evolution requested: {args.duration*1e6:g} us")
+        fig.supxlabel("Initial-data and residual audit only; no physical advancement or accepted checkpoint." if args.evaluate_initial else
+                      "Reference-initialized short-time verification; no independently predicted flame-speed or experimental qualification.", fontsize=8)
         fig.savefig(args.output / "reacting-flame.png", dpi=160); plt.close(fig)
         for case, field in results:
             plot_sample_history(case, field, args.output, plt)
-    if not report["all_numerical_checks_passed"] or not report["all_endpoints_reached"] or not report["all_native_runs_succeeded"]:
+    requested_operation_passed = report.get("all_initial_evaluations_passed", report["all_endpoints_reached"])
+    if not report["all_numerical_checks_passed"] or not requested_operation_passed or not report["all_native_runs_succeeded"]:
         raise SystemExit(1)
 
 

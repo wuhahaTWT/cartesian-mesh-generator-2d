@@ -25,7 +25,9 @@ def prepare(reference_directory, source_run, fixture_index, output):
     reference = json.loads(reference_path.read_text())
     run_path = source_run / "report.json"
     run = json.loads(run_path.read_text())
-    if not all(run[key] for key in ("all_numerical_checks_passed", "all_endpoints_reached", "all_native_runs_succeeded")):
+    initial_evaluation = run.get("initial_evaluation_only", False)
+    completed_operation = (run.get("all_initial_evaluations_passed", False) if initial_evaluation else run["all_endpoints_reached"])
+    if not completed_operation or not all(run[key] for key in ("all_numerical_checks_passed", "all_native_runs_succeeded")):
         raise ValueError("source run must have completed its original independent audit")
     if run["reference_report_sha256"] != sha(reference_path):
         raise ValueError("source reference provenance mismatch")
@@ -42,6 +44,9 @@ def prepare(reference_directory, source_run, fixture_index, output):
         raise ValueError("source fixture or mechanism hash mismatch")
     field_path = Path(case["directory"]) / "field.json"
     field = json.loads(field_path.read_text())
+    if initial_evaluation:
+        from verify_reacting_flame import check_initial_evaluation
+        check_initial_evaluation(field, case, field_path.parent)
     if field.get("restart") is not None or field["initial"]["time"] != 0:
         raise ValueError("this prepares new initial data, not a restart state")
     nx, ny = field["nx"], field["ny"]
@@ -123,6 +128,7 @@ def prepare(reference_directory, source_run, fixture_index, output):
     (output / "reference.json").write_text(json.dumps(reference, indent=2) + "\n")
     result = {
         "source_run": {"path": str(run_path), "sha256": sha(run_path)},
+        "source_kind": "audited_initial_evaluation" if initial_evaluation else "audited_evolution_initial_state",
         "source_field": {"path": str(field_path), "sha256": sha(field_path)},
         "source_fixture": {"path": fixture["path"], "sha256": fixture["sha256"]},
         "script_sha256": sha(__file__), "output_fixture_sha256": sha(path), "cantera": ct.__version__,

@@ -361,7 +361,7 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 
 显式、隐式原生验证驱动均支持 `--restart 检查点`；Python 运行/审计入口使用 `--restart-checkpoint 检查点`，一次只选一档网格。先用原生绑定检查完整机理、网格、边界和模型，原样保存输入到新输出目录的 `restart.checkpoint`；监督程序核对源文件运行前后及副本 SHA256。`--duration` 是从检查点起追加的物理时长，`endTime` 为实际请求终点，累计接受步数保留。步长预算、方程调用及收支积分从本段起点重新计数，采样步距也从本段起点计算。读取器核对原样导入的完整场、时间和步数，并分别报告本段/累计接受步数；不能把重复计算或重置为零的时钟当作续算。
 
-Python 监督入口要求追加时长大于零。若只诊断终点检查点读回，可直接调用原生探针，时长为 `0` 并给出 `--restart`；独立 `audit()` 可检查此输出，但明确不将零新增步标作完成新的物理区间。文件读回保持原值，与重建 BDF 历史后继续积分的误差验证分开。
+Python 监督入口的 `--duration` 继续要求追加时长大于零。显式 `--evaluate-initial` 只求值并审计原始夹具，时间、接受步和推进 RHS 调用均为零，不允许与时长、续算或采样参数混用。原几何、EOS、源项及共享面审计保留，另核对初末场完全一致且不存在 `accepted.checkpoint`；报告 `initial_evaluation_only=true`、`all_initial_evaluations_passed`，同时保持 `all_endpoints_reached=false`。同模式可重审，不能把初值报告重分类为已推进区间。零收支只是未推进的恒等式，不提供积分守恒或火焰精度证据。若只诊断终点检查点读回，仍直接调用原生探针，时长为 `0` 并给出 `--restart`；独立 `audit()` 可检查此输出，但明确不将零新增步标作完成新的物理区间。文件读回保持原值，与重建 BDF 历史后继续积分的误差验证分开。
 
 检查点保存物理状态，BDF 历史及初始积分尺度在新会话重建，因此续算轨迹不要求逐字节等于不中断运行。原诊断上限失败的 464 格案例现已从第 20 步、约 `0.0426812` 微秒续至 `0.1` 微秒；新增 23 步，6 帧审计通过。与不中断同终点的最大温差约 `1.98e-5 K`，合并两段实际通量后的质量/元素/能量预算仍通过原检查；未扩大到长期误差资格。冷启动物理场、步长日志和检查点保持原结果。不同网格/入口/绑定、非法时钟、截断及尾部损坏被拒绝；零时长读回保留全部原值并且不新增接受步。该案例也经过显式入口的导入与推进检查，不将它视为两种积分方法的精度等价证明。
 
@@ -434,12 +434,18 @@ build/chemistry-env/bin/python tools/verification/prepare_reacting_flame.py \
 
 `prepare_reacting_flame_momentum.py` 是显式可选的**新初值**准备器：从通过审计的非续算夹具读取原始单元 T/Y，保留入口状态及网格，以原入口轴向质量通量为常量，在低马赫分支求解 `p + m²/rho - tau_xx = 入口动量通量`，其中 `rho = p/(Rmix*T)`、`tau_xx = (4/3)*mu*du/dx`，黏度由完整温变物性取得。沿单元中心用非均匀二阶差分构造速度导数，固定点循环后重建含生成能的守恒变量；不求解稳态化学/组分/能量方程，也不声称原生离散残差为零。循环检查最大压力更新量（Pa），停止额度为 `64*epsilon*max(|p|)`，用于压力构造的浮点终止，最多 50 次；不增加燃烧精度门。源文件哈希、初始质量/能量改变量和循环记录输出到 `preparation.json`。禁止覆盖既有目录，拒绝续算输入、非轴向条带及来源不符的数据。
 
-两种输入的真实计算保存在 `outputs/combustion-foundation/flame-motion-001/`；比较器检查二进制、完整检查点绑定（机理/网格/边界/物理开关）、实际积分控制和逐帧审计，分别列出坐标位移与平移后的形状差异。正式准备器的夹具另与实际对照输入作逐字节核对，原始输入保留。数值和未验范围统一见[当前状态](CURRENT_STATE_CN.md#持续目标成熟燃烧模拟)，来源见[诊断证据](../artifacts/current/native-reacting-flame-motion.json)。复现示例：
+准备器既可读取已通过审计的正时长案例的初始场，也可读取显式零时长初值审计。后者复核独立审计通过、零时钟/接受步、初末场不变及没有接受检查点，并将来源标为 `audited_initial_evaluation`；无需先推进一段无关时间来取得初值物性。既有来源类型标为 `audited_evolution_initial_state`，原字段和输入仍兼容。
+
+两种输入的真实计算保存在 `outputs/combustion-foundation/flame-motion-001/`；比较器检查二进制、完整检查点绑定（机理/网格/边界/物理开关）、实际积分控制和逐帧审计，分别列出坐标位移与平移后的形状差异。正式准备器的夹具另与实际对照输入作逐字节核对，原始输入保留。数值和未验范围统一见[当前状态](CURRENT_STATE_CN.md#持续目标成熟燃烧模拟)，来源见[诊断证据](../artifacts/current/native-reacting-flame-motion.json)。从原夹具开始的复现示例：
 
 ```sh
+build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
+  --probe build/cartmesh2d_reacting_implicit_flame_probe \
+  --reference outputs/combustion-foundation/flame-reference-001 \
+  --output outputs/combustion-foundation/initial-evaluation-new --grid 2 --evaluate-initial
 build/chemistry-env/bin/python tools/verification/prepare_reacting_flame_momentum.py \
   --reference outputs/combustion-foundation/flame-reference-001 \
-  --source-run outputs/combustion-foundation/implicit-evolution-100us-001 --grid 2 \
+  --source-run outputs/combustion-foundation/initial-evaluation-new --grid 2 \
   --output outputs/combustion-foundation/momentum-reference-new
 # 准备器只导出所选夹具，在新参考目录中的索引为 0；推进仍使用原完整方程。
 build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
@@ -448,6 +454,8 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
   --output outputs/combustion-foundation/momentum-flame-new \
   --duration 1e-5 --grid 0 --jobs 1 --reflect-species 1 --sample-every 50 --max-samples 128
 ```
+
+`outputs/combustion-foundation/refined-state-refinement-001/` 保存新细参考的时间/空间对照。`map_reference.py` 从已哈希验证的 3446 点 `prepared-reference.npz` 积分到原三档精确网格，使用正式准备器的保守映射函数，不重算 BVP；`run_grid.py` 经三档初值审计后生成动量相容输入，粗/中档实际推进，细档夹具与既有完整运行逐字节相同后复用。因合并夹具清单与旧单档清单的元数据不同，`analyze_refinement.py` 分别核对各自清单、同一 BVP/映射源、入口行、检查点机理/物理前缀及完整边界数值和控制，再调用原网格比较器的守恒重叠/EOS 函数；没有放宽通用比较器要求相同清单的检查。`run_time.py` 使用冻结的上一版审计器在相同细档上收紧时间容差，两份版本的原物理审计函数 AST 与正时长审计结果均核对一致。完整命令、源码/原始场哈希和初值模式拒绝检查见[证据索引](../artifacts/current/native-reacting-refined-state.json)；复现使用新目录，不覆盖已完成结果。
 
 `cartmesh2d_reacting_flame_probe` 建立真实二维条带拓扑，左侧固定储库、右侧外推流出，上下滑移绝热。输出初始/最终守恒场、实际共享面通量、分开的化学与输运残差、开放边界积分、逐步接受/拒绝、展开机理与最后接受检查点。`evaluateResidual` 是瞬时半离散算子诊断，不会把输入标为已收敛或接受步。`verify_reacting_flame.py` 独立读取实际文件，检查几何关联、质量/元素/动量/能量预算、EOS、未被修改的导入初值与真实时钟，并绘制单元场和残差趋势。数值检查、达到物理终点和火焰资格分别记录。
 
