@@ -197,6 +197,10 @@ def main():
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--duration", type=float, default=1e-6)
+    parser.add_argument("--rtol", type=float,
+                        help="implicit relative local integration control; defaults remain unchanged")
+    parser.add_argument("--conserved-atol", type=float,
+                        help="implicit absolute local tolerance in the conserved-variable scales")
     parser.add_argument("--species-atol", type=float,
                         help="explicit implicit-probe local integration control; physical audit gates are unchanged")
     parser.add_argument("--bdf-order", type=int, choices=range(1, 6))
@@ -212,9 +216,12 @@ def main():
     args = parser.parse_args()
     verifier_hash = sha(Path(__file__))
     assert np.isfinite(args.duration) and args.duration > 0
+    assert args.rtol is None or np.isfinite(args.rtol) and 0 < args.rtol < 1
+    assert args.conserved_atol is None or np.isfinite(args.conserved_atol) and args.conserved_atol > 0
     assert args.species_atol is None or np.isfinite(args.species_atol) and args.species_atol > 0
     assert args.newton_iterations is None or 0 < args.newton_iterations <= np.iinfo(np.int32).max
     requested_controls = {key: value for key, value in {
+        "relativeTolerance": args.rtol, "absoluteConservedTolerance": args.conserved_atol,
         "absoluteSpeciesFraction": args.species_atol, "maximumOrder": args.bdf_order,
         "jacobianAdvectionOrder": args.jacobian_order, "maximumNonlinearIterations": args.newton_iterations,
         "continueDampedNewton": None if args.continue_damped is None else bool(args.continue_damped),
@@ -244,8 +251,9 @@ def main():
         if previous is None:
             start = time.perf_counter()
             command = [str(args.probe.resolve()), reference["mechanism"], fixture["path"], str(path), format(args.duration, ".17g")]
-            if args.species_atol is not None:
-                command += ["--species-atol", format(args.species_atol, ".17g")]
+            for option in ("rtol", "conserved_atol", "species_atol"):
+                if getattr(args, option) is not None:
+                    command += ["--" + option.replace("_", "-"), format(getattr(args, option), ".17g")]
             for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped", "reflect_species"):
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), str(getattr(args, option))]

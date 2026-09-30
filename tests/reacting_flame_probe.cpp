@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         require(regression || (argc >= 5 && (argc - 5) % 2 == 0),
-            "expected mechanism fixture output duration [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1], or mechanism fixture --regression");
+            "expected mechanism fixture output duration [--rtol value] [--conserved-atol value] [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1], or mechanism fixture --regression");
 #else
         require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
 #endif
@@ -188,10 +188,15 @@ int main(int argc, char** argv) {
             const std::string option(argv[argument]), value(argv[argument + 1]);
             require(suppliedOptions.insert(option).second, "duplicate implicit control option");
             std::size_t read = 0;
-            if (option == "--species-atol") {
-                implicitControls.absoluteSpeciesFraction = std::stod(value, &read);
-                require(read == value.size() && std::isfinite(implicitControls.absoluteSpeciesFraction)
-                    && implicitControls.absoluteSpeciesFraction > 0, "invalid species absolute local tolerance");
+            if (option == "--rtol" || option == "--conserved-atol" || option == "--species-atol") {
+                const double tolerance = std::stod(value, &read);
+                require(read == value.size() && std::isfinite(tolerance) && tolerance > 0,
+                    "invalid local integration tolerance");
+                if (option == "--rtol") {
+                    require(tolerance < 1, "relative local tolerance must be less than one");
+                    implicitControls.relativeTolerance = tolerance;
+                } else if (option == "--conserved-atol") implicitControls.absoluteConservedTolerance = tolerance;
+                else implicitControls.absoluteSpeciesFraction = tolerance;
             } else if (option == "--continue-damped") {
                 require(value == "0" || value == "1", "invalid damped continuation control");
                 implicitControls.continueDampedNewton = value == "1";
@@ -210,6 +215,7 @@ int main(int argc, char** argv) {
             }
         }
         ReactingImplicitProgress2D implicitResult;
+        implicitResult.constraintChange.assign(ns + 4, 0);
         std::ofstream evaluations(directory / "evaluation-progress.jsonl"); evaluations << std::setprecision(17);
         if (duration > 0) {
             ReactingImplicitIntegrator2D implicit(gas, solver, initial, implicitControls);

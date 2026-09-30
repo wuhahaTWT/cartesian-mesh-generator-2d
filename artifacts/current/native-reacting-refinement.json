@@ -1,0 +1,656 @@
+{
+  "snapshot_utc": "2026-09-30T02:23:40.160035+00:00",
+  "source_base_commit": "89457c880263bdac5798fa18bbd37a2d6b04f64f",
+  "scope": "Detailed H2/air planar flame, H2:1.6 O2:1 N2:3.76, 400 K and 1 atm; same full compressible residual, multicomponent transport and Soret; 10 microsecond endpoint",
+  "default_controls_changed": false,
+  "physics_reduced": false,
+  "physical_acceptance_thresholds_changed": false,
+  "time_refinement": {
+    "comparison_complete": true,
+    "physical_time_s": 1e-05,
+    "cells": 464,
+    "fixture_index": 0,
+    "fuel": "H2",
+    "mechanism_sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "runs": [
+      {
+        "report": "outputs/combustion-foundation/implicit-reflection-10us-h40-001/report.json",
+        "report_sha256": "3ad89a6a2c0751661eb0750a3539c9849c690c4eb9cfd78c8893649d2f527772",
+        "field_sha256": "871346588d7129fa08151a78701a9f63d3258bac40e6b65612fbedd6e45ba4dc",
+        "probe_sha256": "73a8b5dfb3d5614d11dde1d5556fa7c6a8cbcc3a2dd9a3883675a6405161aa7e",
+        "controls": {
+          "relativeTolerance": 1e-07,
+          "absoluteConservedTolerance": 1e-12,
+          "absoluteSpeciesFraction": 1e-18
+        },
+        "accepted_steps": 944,
+        "rhs_calls": 5220,
+        "elapsed_seconds_including_all_IO": 320.2441991249798,
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.15621253681698433,
+          "maximum_temperature_derivative_K_per_s": 214770.7309783892,
+          "hydrogen_consumption_kg_per_m2_s": 0.03768707334595767,
+          "pressure_max_relative_to_reference": 0.00021480018530639633
+        },
+        "fuel_consumption_kg_per_m2_s": 0.037687073345957674,
+        "maximum_temperature_drift_K": 2.75051237823709
+      },
+      {
+        "report": "outputs/combustion-foundation/implicit-time-refinement-001/half/report.json",
+        "report_sha256": "33312fcad5f6ea27a674211bc919c8ca462fdebaf780861163494a2c0f64b07f",
+        "field_sha256": "d839306726706ec90b2e9e93c98609b6418e48dda4c668f5c5be09ae759576f1",
+        "probe_sha256": "3d084555fec8bc9a6b03090fc5c08250a622d5ca4cf30914345fd92ab5492aa3",
+        "controls": {
+          "relativeTolerance": 5e-08,
+          "absoluteConservedTolerance": 5e-13,
+          "absoluteSpeciesFraction": 5e-19
+        },
+        "accepted_steps": 1151,
+        "rhs_calls": 6453,
+        "elapsed_seconds_including_all_IO": 460.85230825003237,
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.1562067286540311,
+          "maximum_temperature_derivative_K_per_s": 214769.10182220992,
+          "hydrogen_consumption_kg_per_m2_s": 0.03768707346333401,
+          "pressure_max_relative_to_reference": 0.0002148010702160974
+        },
+        "fuel_consumption_kg_per_m2_s": 0.03768707346333401,
+        "maximum_temperature_drift_K": 2.750512986783633
+      },
+      {
+        "report": "outputs/combustion-foundation/implicit-time-refinement-001/quarter/report.json",
+        "report_sha256": "c803f824fecfa6fa4d5de0c887d71ed2d341137a628ffbc282d5dc51f531e396",
+        "field_sha256": "482880fed0bb177b94ad2ddf3a3f1c4cabbfb04084e6a58f325ed4023b9aafa9",
+        "probe_sha256": "3d084555fec8bc9a6b03090fc5c08250a622d5ca4cf30914345fd92ab5492aa3",
+        "controls": {
+          "relativeTolerance": 2.5e-08,
+          "absoluteConservedTolerance": 2.5e-13,
+          "absoluteSpeciesFraction": 2.5e-19
+        },
+        "accepted_steps": 1464,
+        "rhs_calls": 8514,
+        "elapsed_seconds_including_all_IO": 575.7634812080069,
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.15620496544869775,
+          "maximum_temperature_derivative_K_per_s": 214768.34589273424,
+          "hydrogen_consumption_kg_per_m2_s": 0.03768707346836508,
+          "pressure_max_relative_to_reference": 0.0002148015487863919
+        },
+        "fuel_consumption_kg_per_m2_s": 0.03768707346836508,
+        "maximum_temperature_drift_K": 2.7505134386142345
+      }
+    ],
+    "successive_pairs": [
+      {
+        "coarser": 0,
+        "finer": 1,
+        "maximum_temperature_difference_K": 1.007091486826539e-05,
+        "volume_RMS_temperature_difference_K": 1.7195922220406696e-06,
+        "maximum_mass_fraction_difference": 1.064409199669214e-09,
+        "maximum_mass_fraction_difference_by_species": {
+          "H2": 9.84129548686763e-11,
+          "H": 1.0335855326996934e-11,
+          "O": 6.464636378294975e-11,
+          "O2": 1.064409199669214e-09,
+          "OH": 5.500922026918653e-11,
+          "H2O": 1.0328491950595264e-09,
+          "HO2": 8.932760510015764e-12,
+          "H2O2": 2.3714067141173897e-12,
+          "AR": 1.9612335283298007e-24,
+          "N2": 5.123668156414851e-11
+        },
+        "volume_RMS_mass_fraction_difference_by_species": {
+          "H2": 6.748548584923519e-12,
+          "H": 5.615769293614052e-13,
+          "O": 3.3365608982889424e-12,
+          "O2": 6.172684648033327e-11,
+          "OH": 3.7612842871714925e-12,
+          "H2O": 6.278956210239672e-11,
+          "HO2": 4.758487410458501e-13,
+          "H2O2": 1.1498636229309622e-13,
+          "AR": 1.1203226003996892e-25,
+          "N2": 4.288736123205498e-12
+        },
+        "maximum_pressure_relative_difference": 2.2734028786888988e-08,
+        "maximum_velocity_difference_m_per_s": 2.4788164322941952e-05,
+        "fuel_consumption_kg_per_m2_s": [
+          0.037687073345957674,
+          0.03768707346333401
+        ],
+        "fuel_consumption_relative_difference": 3.114498607331249e-09
+      },
+      {
+        "coarser": 1,
+        "finer": 2,
+        "maximum_temperature_difference_K": 3.4074150789820123e-06,
+        "volume_RMS_temperature_difference_K": 6.750118725654156e-07,
+        "maximum_mass_fraction_difference": 3.6408440151625143e-10,
+        "maximum_mass_fraction_difference_by_species": {
+          "H2": 3.8579769587321344e-11,
+          "H": 3.852843174709242e-12,
+          "O": 1.9992743138103064e-11,
+          "O2": 3.557638073026226e-10,
+          "OH": 1.3497202487611215e-11,
+          "H2O": 3.6408440151625143e-10,
+          "HO2": 4.2319936075473075e-12,
+          "H2O2": 1.1619787434764134e-12,
+          "AR": 8.357566703581212e-25,
+          "N2": 1.990330122936257e-11
+        },
+        "volume_RMS_mass_fraction_difference_by_species": {
+          "H2": 2.672374810329456e-12,
+          "H": 2.0495945764770833e-13,
+          "O": 1.0398166485593626e-12,
+          "O2": 2.091333119421234e-11,
+          "OH": 1.5722117408020125e-12,
+          "H2O": 2.2204546383167022e-11,
+          "HO2": 2.028400996296223e-13,
+          "H2O2": 5.048797521489503e-14,
+          "AR": 6.18789660445276e-26,
+          "N2": 2.6319954953813792e-12
+        },
+        "maximum_pressure_relative_difference": 7.675550465134318e-09,
+        "maximum_velocity_difference_m_per_s": 6.573379209839914e-06,
+        "fuel_consumption_kg_per_m2_s": [
+          0.03768707346333401,
+          0.03768707346836508
+        ],
+        "fuel_consumption_relative_difference": 1.334957952076798e-10
+      }
+    ],
+    "coarsest_to_finest": {
+      "maximum_temperature_difference_K": 1.3478324490279192e-05,
+      "volume_RMS_temperature_difference_K": 2.0287069405726632e-06,
+      "maximum_mass_fraction_difference": 7.086453923665914e-10,
+      "maximum_mass_fraction_difference_by_species": {
+        "H2": 5.983318528135495e-11,
+        "H": 6.6096787331576534e-12,
+        "O": 4.465362064484668e-11,
+        "O2": 7.086453923665914e-10,
+        "OH": 4.2865706643968604e-11,
+        "H2O": 6.817517661517059e-10,
+        "HO2": 4.928727564967872e-12,
+        "H2O2": 1.3999676119974894e-12,
+        "AR": 2.005208720854604e-24,
+        "N2": 3.133371340169333e-11
+      },
+      "volume_RMS_mass_fraction_difference_by_species": {
+        "H2": 4.23431148712881e-12,
+        "H": 3.679432101963426e-13,
+        "O": 2.4260363099071676e-12,
+        "O2": 4.1231228128668094e-11,
+        "OH": 3.3770304161807744e-12,
+        "H2O": 4.1076589802589054e-11,
+        "HO2": 2.8169066645433224e-13,
+        "H2O2": 6.666315820798871e-14,
+        "AR": 1.3245230621882296e-25,
+        "N2": 2.815972081771903e-12
+      },
+      "maximum_pressure_relative_difference": 2.996752673988574e-08,
+      "maximum_velocity_difference_m_per_s": 2.9689928913612107e-05,
+      "fuel_consumption_kg_per_m2_s": [
+        0.037687073345957674,
+        0.03768707346836508
+      ],
+      "fuel_consumption_relative_difference": 3.2479944021231566e-09
+    },
+    "difference_trends": {
+      "maximum_temperature_difference_K": {
+        "successive_differences": [
+          1.007091486826539e-05,
+          3.4074150789820123e-06
+        ],
+        "strictly_decreasing": true,
+        "last_ratio": 0.33834215893524916
+      },
+      "volume_RMS_temperature_difference_K": {
+        "successive_differences": [
+          1.7195922220406696e-06,
+          6.750118725654156e-07
+        ],
+        "strictly_decreasing": true,
+        "last_ratio": 0.3925418270177842
+      },
+      "maximum_mass_fraction_difference": {
+        "successive_differences": [
+          1.064409199669214e-09,
+          3.6408440151625143e-10
+        ],
+        "strictly_decreasing": true,
+        "last_ratio": 0.3420530390280334
+      },
+      "fuel_consumption_relative_difference": {
+        "successive_differences": [
+          3.114498607331249e-09,
+          1.334957952076798e-10
+        ],
+        "strictly_decreasing": true,
+        "last_ratio": 0.042862692214227595
+      }
+    },
+    "comparator_sha256": "6eb8e0ab626ac0a705b5b9150ec77ff53cc134ad8fcdb9bc8b58d5767491d202",
+    "same_probe_binary": false,
+    "limits": [
+      "same serialized grid, initial residual and state, mechanism, endpoint and non-tolerance controls checked",
+      "different probe binaries require separately reviewed source provenance",
+      "adaptive tolerance refinement is not fixed-step convergence or BDF-order measurement",
+      "no experimental threshold imposed on these measured field differences",
+      "spatial error, long-time propagation and actual combustor qualification remain separate"
+    ],
+    "qualified_flame": false,
+    "general_performance_qualified": false
+  },
+  "time_comparison_record": {
+    "path": "outputs/combustion-foundation/implicit-time-refinement-001/comparison-002/comparison.json",
+    "sha256": "5d93fe924087895cb2afedd1aa183409256b71989f93700298cdb33d34bb9e67"
+  },
+  "grid_refinement": {
+    "comparison_complete": true,
+    "physical_time_s": 1e-05,
+    "fuel": "H2",
+    "mechanism_sha256": "2b9ebd3498f35c186d57c33764e27e1b648ef6922d810778cd5e8cdcd60873e7",
+    "runs": [
+      {
+        "report": "outputs/combustion-foundation/implicit-reflection-10us-h40-001/report.json",
+        "report_sha256": "3ad89a6a2c0751661eb0750a3539c9849c690c4eb9cfd78c8893649d2f527772",
+        "fixture_index": 0,
+        "field_sha256": "871346588d7129fa08151a78701a9f63d3258bac40e6b65612fbedd6e45ba4dc",
+        "probe_sha256": "73a8b5dfb3d5614d11dde1d5556fa7c6a8cbcc3a2dd9a3883675a6405161aa7e",
+        "spacing_m": 4e-05,
+        "cells": 464,
+        "accepted_steps": 944,
+        "rhs_calls": 5220,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.13519312896649716,
+          "maximum_temperature_derivative_K_per_s": 865313.2566632282,
+          "hydrogen_consumption_kg_per_m2_s": 0.03834319796508114,
+          "pressure_max_relative_to_reference": 0.0007260122451633322
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.15621253681698433,
+          "maximum_temperature_derivative_K_per_s": 214770.7309783892,
+          "hydrogen_consumption_kg_per_m2_s": 0.03768707334595767,
+          "pressure_max_relative_to_reference": 0.00021480018530639633
+        },
+        "maximum_temperature_drift_K": 2.75051237823709,
+        "fuel_consumption_kg_per_m2_s": {
+          "initial": 0.038343197965081156,
+          "final": 0.037687073345957674
+        }
+      },
+      {
+        "report": "outputs/combustion-foundation/implicit-grid-10us-001/report.json",
+        "report_sha256": "3c947013fddc41cba22407da5fc14d8b62a3439ccc4783e1ef8ba1714b124bfb",
+        "fixture_index": 1,
+        "field_sha256": "07b9fc94fb2b576f58c98b43147791b088c3fb5e443318ad2534442770bae6ad",
+        "probe_sha256": "05eda5a3a5499136301ed0f82aab415c62f7a31e5ff127c561e9f4767b082a6a",
+        "spacing_m": 2e-05,
+        "cells": 610,
+        "accepted_steps": 803,
+        "rhs_calls": 4852,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.03993219620141604,
+          "maximum_temperature_derivative_K_per_s": 403234.4857436801,
+          "hydrogen_consumption_kg_per_m2_s": 0.038088056500448844,
+          "pressure_max_relative_to_reference": 0.00020267482316671526
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.10903977302449441,
+          "maximum_temperature_derivative_K_per_s": 231137.76589717763,
+          "hydrogen_consumption_kg_per_m2_s": 0.037889459745054074,
+          "pressure_max_relative_to_reference": 0.00016810595040062104
+        },
+        "maximum_temperature_drift_K": 3.083344954917038,
+        "fuel_consumption_kg_per_m2_s": {
+          "initial": 0.03808805650044883,
+          "final": 0.037889459745054074
+        }
+      },
+      {
+        "report": "outputs/combustion-foundation/implicit-grid-10us-001/report.json",
+        "report_sha256": "3c947013fddc41cba22407da5fc14d8b62a3439ccc4783e1ef8ba1714b124bfb",
+        "fixture_index": 2,
+        "field_sha256": "ad7e2c552a004ff5bd8cc2f9ec95d33b5843cbe21b5bca88282a9709b8687e44",
+        "probe_sha256": "05eda5a3a5499136301ed0f82aab415c62f7a31e5ff127c561e9f4767b082a6a",
+        "spacing_m": 1e-05,
+        "cells": 890,
+        "accepted_steps": 659,
+        "rhs_calls": 3800,
+        "initial_residual": {
+          "species_residual_L1_over_chemical_activity": 0.0257931870731371,
+          "maximum_temperature_derivative_K_per_s": 441502.5476567114,
+          "hydrogen_consumption_kg_per_m2_s": 0.038023706301407584,
+          "pressure_max_relative_to_reference": 5.180039436236683e-05
+        },
+        "final_residual": {
+          "species_residual_L1_over_chemical_activity": 0.11030888747147036,
+          "maximum_temperature_derivative_K_per_s": 296992.7587432784,
+          "hydrogen_consumption_kg_per_m2_s": 0.03794124113481436,
+          "pressure_max_relative_to_reference": 0.00016794009270526544
+        },
+        "maximum_temperature_drift_K": 3.3258679188593305,
+        "fuel_consumption_kg_per_m2_s": {
+          "initial": 0.03802370630140757,
+          "final": 0.03794124113481438
+        }
+      }
+    ],
+    "successive_pairs": [
+      {
+        "coarser": 0,
+        "finer": 1,
+        "initial_projection_temperature_difference": {
+          "maximum_K": 1.833367373028409,
+          "volume_RMS_K": 0.12666370820004472
+        },
+        "final_temperature_difference_after_restriction": {
+          "maximum_K": 2.044058977230634,
+          "volume_RMS_K": 0.11581965782707945
+        },
+        "temperature_evolution_difference_after_restriction": {
+          "maximum_K": 3.877426350259043,
+          "volume_RMS_K": 0.19494561300785607
+        },
+        "maximum_final_mass_fraction_difference_after_restriction": 0.0005347659778671965,
+        "fuel_consumption_relative_difference": 0.005341496037636674
+      },
+      {
+        "coarser": 1,
+        "finer": 2,
+        "initial_projection_temperature_difference": {
+          "maximum_K": 0.4536483995273102,
+          "volume_RMS_K": 0.040066963685708536
+        },
+        "final_temperature_difference_after_restriction": {
+          "maximum_K": 0.49647237428291646,
+          "volume_RMS_K": 0.04154186193731429
+        },
+        "temperature_evolution_difference_after_restriction": {
+          "maximum_K": 0.9498938855056167,
+          "volume_RMS_K": 0.04776150287418833
+        },
+        "maximum_final_mass_fraction_difference_after_restriction": 0.00015134633336355563,
+        "fuel_consumption_relative_difference": 0.0013647784893571703
+      }
+    ],
+    "comparator_sha256": "2cf0cb078bd1b107c2e9d79bc6804a03271aa600803b6d19303af3845dbe06a6",
+    "case_loader_sha256": "6eb8e0ab626ac0a705b5b9150ec77ff53cc134ad8fcdb9bc8b58d5767491d202",
+    "projection": "piecewise-constant fine conserved averages integrated over coarse rectangles; EOS after restriction; initial projection discrepancy and evolution discrepancy shown separately",
+    "limits": [
+      "same mechanism, reference provenance, endpoint, y grid and integration controls checked",
+      "probe source provenance must be reviewed separately when binaries differ",
+      "non-nested grid restriction contributes projection error; not a formal spatial-order measurement",
+      "only one endpoint; no long-time or steady native flame-speed qualification",
+      "temporal refinement so far covers the coarsest grid, not every grid",
+      "reference and native share chemistry/transport data; no experimental qualification"
+    ],
+    "qualified_flame": false,
+    "mesh_independence_qualified": false
+  },
+  "grid_comparison_record": {
+    "path": "outputs/combustion-foundation/implicit-grid-10us-001/comparison/comparison.json",
+    "sha256": "a39dec6be63aa73173e105981745089ec89c145b83f516c817e5284b3b65aee9"
+  },
+  "verified_raw_reports": {
+    "outputs/combustion-foundation/implicit-grid-10us-001/report.json": {
+      "report": {
+        "path": "outputs/combustion-foundation/implicit-grid-10us-001/report.json",
+        "sha256": "3c947013fddc41cba22407da5fc14d8b62a3439ccc4783e1ef8ba1714b124bfb"
+      },
+      "probe_sha256": "05eda5a3a5499136301ed0f82aab415c62f7a31e5ff127c561e9f4767b082a6a",
+      "verifier_sha256": "a16c3aefeaa9ea5b6bc139f815625b897c2e46312f0e9c9ca3652bc98a0d6ffd",
+      "cases": [
+        {
+          "fixture_index": 1,
+          "cells": 610,
+          "spacing_m": 2e-05,
+          "accepted_steps": 803,
+          "time_s": 1e-05,
+          "elapsed_seconds_including_all_IO": 429.9191081250319,
+          "thermo_relative_error": 1.3859808121462854e-14,
+          "source_error_over_gross_activity": 2.0858546909545084e-15,
+          "face_assembly_relative_error": 8.613404921572713e-17,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 5.56237787340016e-16,
+          "energy_budget_scaled": 1.5759040783954983e-16,
+          "momentum_budget_scaled": 2.9052982338626137e-15,
+          "element_budget_per_initial_mass": 1.268021635693607e-15,
+          "bdf_species_quadrature_defect_per_mass": 1.2802976774034197e-15
+        },
+        {
+          "fixture_index": 2,
+          "cells": 890,
+          "spacing_m": 1e-05,
+          "accepted_steps": 659,
+          "time_s": 1e-05,
+          "elapsed_seconds_including_all_IO": 486.72637108300114,
+          "thermo_relative_error": 1.3719410516947074e-14,
+          "source_error_over_gross_activity": 2.1616234697611163e-15,
+          "face_assembly_relative_error": 1.039787163108739e-16,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 2.6088529052781416e-16,
+          "energy_budget_scaled": 6.118790338236282e-17,
+          "momentum_budget_scaled": 3.271109109984753e-15,
+          "element_budget_per_initial_mass": 1.6207161138978232e-15,
+          "bdf_species_quadrature_defect_per_mass": 1.6524356942261384e-15
+        }
+      ]
+    },
+    "outputs/combustion-foundation/implicit-reflection-10us-h40-001/report.json": {
+      "report": {
+        "path": "outputs/combustion-foundation/implicit-reflection-10us-h40-001/report.json",
+        "sha256": "3ad89a6a2c0751661eb0750a3539c9849c690c4eb9cfd78c8893649d2f527772"
+      },
+      "probe_sha256": "73a8b5dfb3d5614d11dde1d5556fa7c6a8cbcc3a2dd9a3883675a6405161aa7e",
+      "verifier_sha256": "fa8cb032faea59958789976bab009543a2ccae1ca047b8e29a6814a47467da00",
+      "cases": [
+        {
+          "fixture_index": 0,
+          "cells": 464,
+          "spacing_m": 4e-05,
+          "accepted_steps": 944,
+          "time_s": 1e-05,
+          "elapsed_seconds_including_all_IO": 320.2441991249798,
+          "thermo_relative_error": 1.2913685182666813e-14,
+          "source_error_over_gross_activity": 2.062902840013591e-15,
+          "face_assembly_relative_error": 9.089516888651652e-17,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 1.5441335739993501e-15,
+          "energy_budget_scaled": 3.368672128598122e-17,
+          "momentum_budget_scaled": 2.8153078791127693e-15,
+          "element_budget_per_initial_mass": 5.940596579934497e-16,
+          "bdf_species_quadrature_defect_per_mass": 6.402715654540213e-16
+        }
+      ]
+    },
+    "outputs/combustion-foundation/implicit-time-refinement-001/half/report.json": {
+      "report": {
+        "path": "outputs/combustion-foundation/implicit-time-refinement-001/half/report.json",
+        "sha256": "33312fcad5f6ea27a674211bc919c8ca462fdebaf780861163494a2c0f64b07f"
+      },
+      "probe_sha256": "3d084555fec8bc9a6b03090fc5c08250a622d5ca4cf30914345fd92ab5492aa3",
+      "verifier_sha256": "a16c3aefeaa9ea5b6bc139f815625b897c2e46312f0e9c9ca3652bc98a0d6ffd",
+      "cases": [
+        {
+          "fixture_index": 0,
+          "cells": 464,
+          "spacing_m": 4e-05,
+          "accepted_steps": 1151,
+          "time_s": 1e-05,
+          "elapsed_seconds_including_all_IO": 460.85230825003237,
+          "thermo_relative_error": 1.2693565555270786e-14,
+          "source_error_over_gross_activity": 2.1803494482530586e-15,
+          "face_assembly_relative_error": 9.810105451958891e-17,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 8.649129536145849e-16,
+          "energy_budget_scaled": 3.9443708196081924e-17,
+          "momentum_budget_scaled": 2.929459804757601e-15,
+          "element_budget_per_initial_mass": 7.420426792187592e-16,
+          "bdf_species_quadrature_defect_per_mass": 7.945069952644352e-16
+        }
+      ]
+    },
+    "outputs/combustion-foundation/implicit-time-refinement-001/quarter/report.json": {
+      "report": {
+        "path": "outputs/combustion-foundation/implicit-time-refinement-001/quarter/report.json",
+        "sha256": "c803f824fecfa6fa4d5de0c887d71ed2d341137a628ffbc282d5dc51f531e396"
+      },
+      "probe_sha256": "3d084555fec8bc9a6b03090fc5c08250a622d5ca4cf30914345fd92ab5492aa3",
+      "verifier_sha256": "a16c3aefeaa9ea5b6bc139f815625b897c2e46312f0e9c9ca3652bc98a0d6ffd",
+      "cases": [
+        {
+          "fixture_index": 0,
+          "cells": 464,
+          "spacing_m": 4e-05,
+          "accepted_steps": 1464,
+          "time_s": 1e-05,
+          "elapsed_seconds_including_all_IO": 575.7634812080069,
+          "thermo_relative_error": 1.3097118207652358e-14,
+          "source_error_over_gross_activity": 2.1389742808574403e-15,
+          "face_assembly_relative_error": 8.755616094371786e-17,
+          "species_sum_absolute_error": 4.440892098500626e-16,
+          "mass_budget_per_initial_mass": 1.1471005542405428e-15,
+          "energy_budget_scaled": 6.2238353146050504e-18,
+          "momentum_budget_scaled": 2.9515635398131996e-15,
+          "element_budget_per_initial_mass": 4.9937109659483e-16,
+          "bdf_species_quadrature_defect_per_mass": 5.19426132592174e-16
+        }
+      ]
+    }
+  },
+  "source_provenance": {
+    "common_versioned_core_sha256": {
+      "src/chemistry/DetailedGas.cpp": "d29debda22ccf0a78214f9f6acd655a46fb6af343cdc70513a81b523f7d2437a",
+      "include/cartmesh2d/chemistry/DetailedGas.hpp": "0aeada0526d1919080fe6db18f38c9889c0e9b158c636a04cda8844ecf7ee026",
+      "src/fv/ReactingFlow2D.cpp": "854706c66fc2d1f2ff305de7c0580f680266220291ec4e79cb3e471e3719ef1f",
+      "include/cartmesh2d/fv/ReactingFlow2D.hpp": "9eb9c54df170badc684a3230b04cfa402e675208018d771e31c48ff702e22ccf",
+      "src/fv/ReactingDiffusion2D.cpp": "96248c58fa4ded1f91bc7ca155b8ffe07927c41f25bc627afeb703b05606c978",
+      "include/cartmesh2d/fv/ReactingDiffusion2D.hpp": "bbe1f28c264fd320704d8d14c2eb5fd9a75d9782800dc4cf8280b56d3e139acb",
+      "src/fv/ReactingImplicit2D.cpp": "543805652c6c4228b48f3d3da1e1ded24ff1efd36783e1317b532fc6e745ef8e",
+      "include/cartmesh2d/fv/ReactingImplicit2D.hpp": "9e868502ab190ae0c669225b7d5d1988f0849be46ce17905cf10977e8b144656"
+    },
+    "source_difference": "baseline probe before additional tolerance flags; time-refinement probe exposes rtol/conserved-atol; grid probe also initializes a zero-duration diagnostic vector. No governing equation changes between these binaries.",
+    "build_manifests": [
+      {
+        "path": "outputs/combustion-foundation/implicit-reflection-final-build.json",
+        "sha256": "e55e51f1c7842aedd43f421e16cc4666d0bb589f6e920d3811a7f5c4c1af03d7"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-time-refinement-001/build.json",
+        "sha256": "297814ce8f126dc5438088261f00b96db3e4e6f1cc42870963ee4e81260fcb68"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-spatial-residual-002/build.json",
+        "sha256": "9bcc886fc1d8996574b3443766c95c811a2be4a8118ff48b90ad7979ebcb0f4c"
+      }
+    ],
+    "build_patches": [
+      {
+        "path": "outputs/combustion-foundation/implicit-reflection-final-build.patch",
+        "sha256": "d28c3e90954050f690652d7ad17c328e70e02e4b374631fba1447ad4693f48d2"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-time-refinement-001/build.patch",
+        "sha256": "fcf08b6204e79010afd4a3c03be7b0a7a8d9a358a455278595a15f727d49c931"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-spatial-residual-002/build.patch",
+        "sha256": "2f17243101450633ad979a6058df3283065b770c648bb71ac845a8c349c8f3a8"
+      }
+    ],
+    "probes": [
+      {
+        "path": "outputs/combustion-foundation/implicit-reflection-final-probe",
+        "sha256": "73a8b5dfb3d5614d11dde1d5556fa7c6a8cbcc3a2dd9a3883675a6405161aa7e"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-time-refinement-001/probe",
+        "sha256": "3d084555fec8bc9a6b03090fc5c08250a622d5ca4cf30914345fd92ab5492aa3"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-spatial-residual-002/probe",
+        "sha256": "05eda5a3a5499136301ed0f82aab415c62f7a31e5ff127c561e9f4767b082a6a"
+      }
+    ],
+    "cantera_dylib": {
+      "path": "build/deps/cantera/lib/libcantera_shared.3.2.0.dylib",
+      "sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c"
+    },
+    "current_driver_sha256": {
+      "tests/reacting_flame_probe.cpp": "cef6df53625d80d73221793b26d02251fad0b596f17447b33a504ff6a463a319",
+      "tools/verification/verify_reacting_flame.py": "a16c3aefeaa9ea5b6bc139f815625b897c2e46312f0e9c9ca3652bc98a0d6ffd",
+      "tools/verification/compare_reacting_flame_time.py": "6eb8e0ab626ac0a705b5b9150ec77ff53cc134ad8fcdb9bc8b58d5767491d202",
+      "tools/verification/compare_reacting_flame_grid.py": "2cf0cb078bd1b107c2e9d79bc6804a03271aa600803b6d19303af3845dbe06a6"
+    }
+  },
+  "related_checks": {
+    "native_tests_passed": [
+      "cartmesh2d_reacting_implicit",
+      "cartmesh2d_reacting_implicit_trace"
+    ],
+    "test_log": {
+      "path": "outputs/combustion-foundation/implicit-time-control-ctest-001.log",
+      "sha256": "fe05988826d3ad96312cb14f16e7ad731cd0434de3add343654238a8c30b733d"
+    },
+    "build_log": {
+      "path": "outputs/combustion-foundation/implicit-time-control-build-002.log",
+      "sha256": "96b4a5360118dd41718bcdf154082ff97ec2013c2582a49bdba7d0ae8bbfcfd4"
+    },
+    "invalid_tolerances": {
+      "path": "outputs/combustion-foundation/implicit-time-refinement-001/invalid-controls.json",
+      "sha256": "30f38a3e14d4675da892d91e775c7971ddc785b69d810c9e31632a2d3e886d8c"
+    },
+    "different_endpoints_rejected": {
+      "path": "outputs/combustion-foundation/implicit-time-refinement-001/comparator-invalid-endpoint.json",
+      "sha256": "8a76ba9c59ba7d9f57a2c83b2de61d1ad0856a932b26e036e3ed197cca79fa85"
+    },
+    "analytic_rectangle_restriction": {
+      "path": "outputs/combustion-foundation/implicit-time-refinement-001/restriction-check.json",
+      "sha256": "37b88384290bbc019cabe3c0287d5facdfca9f7b5a0233d37071544871f4fafa"
+    },
+    "zero_duration_failure_and_fix": {
+      "path": "outputs/combustion-foundation/implicit-spatial-residual-002/previous-failure.json",
+      "sha256": "9308e8c0f760341ec49e0f152db040f58a1a13983f7df6b7d6319023ab1d65ca"
+    },
+    "zero_duration_rerun": {
+      "path": "outputs/combustion-foundation/implicit-spatial-residual-002/report.json",
+      "sha256": "4dae673d7567f54ddf6120b022bbbeadbdeb21c372576b855f75c23575c46f6e"
+    }
+  },
+  "previews": [
+    {
+      "path": "artifacts/current/native-reacting-time-refinement.png",
+      "sha256": "5f8ff96417c185b1984351cd2edd98d37edec18340e5f40062f8ffcf2071e9e3"
+    },
+    {
+      "path": "artifacts/current/native-reacting-grid-refinement.png",
+      "sha256": "07cc9fbeb772533155808341c037436eca1e199539a9d473d328fc6a6f5771d1"
+    }
+  ],
+  "interpretation": {
+    "time_sensitivity_decreases": true,
+    "grid_fuel_consumption_relative_differences": [
+      0.005341496037636674,
+      0.0013647784893571703
+    ],
+    "grid_restricted_maximum_temperature_differences_K": [
+      2.044058977230634,
+      0.49647237428291646
+    ],
+    "final_species_residual_fraction": [
+      0.15621253681698433,
+      0.10903977302449441,
+      0.11030888747147036
+    ],
+    "temperature_drift_does_not_monotonically_decrease": true,
+    "steady_flame_qualified": false,
+    "formal_spatial_order_measured": false,
+    "timing_is_not_isolated_benchmark": true
+  },
+  "not_run": [
+    "full native/frontend/App/platform qualification for this development change",
+    "temporal refinement on both finer grids",
+    "longer-time and actual combustor/experimental qualification"
+  ],
+  "mature_combustion_goal_complete": false
+}
