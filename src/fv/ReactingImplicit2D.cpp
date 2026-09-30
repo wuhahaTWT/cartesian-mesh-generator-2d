@@ -39,6 +39,7 @@ struct EvaluationCanceled : std::runtime_error {
 struct SundialsResources {
     void* ode = nullptr;
     N_Vector y = nullptr, absolute = nullptr, quadrature = nullptr, quadAbsolute = nullptr;
+    N_Vector localError = nullptr, errorWeights = nullptr;
     SUNMatrix matrix = nullptr;
     SUNLinearSolver linear = nullptr;
     SUNNonlinearSolver nonlinear = nullptr;
@@ -47,7 +48,7 @@ struct SundialsResources {
         if (nonlinear) SUNNonlinSolFree(nonlinear);
         if (linear) SUNLinSolFree(linear);
         if (matrix) SUNMatDestroy(matrix);
-        for (auto v : {y, absolute, quadrature, quadAbsolute}) if (v) N_VDestroy(v);
+        for (auto v : {y, absolute, quadrature, quadAbsolute, localError, errorWeights}) if (v) N_VDestroy(v);
     }
 };
 std::vector<std::vector<std::size_t>> adjacency(const FvMesh2D& mesh) {
@@ -87,8 +88,6 @@ struct ReactingImplicitIntegrator2D::Impl {
         Impl& owner;
         SUNNonlinearSolver inner = nullptr;
         SUNNonlinSolSysFn system = nullptr;
-        SUNNonlinSolConvTestFn convergence = nullptr;
-        void* convergenceData = nullptr;
         void* integrator = nullptr;
         N_Vector prediction = nullptr, base = nullptr, candidate = nullptr, full = nullptr, residual = nullptr;
         static inline thread_local GuardedNewton* active = nullptr;
@@ -112,12 +111,13 @@ struct ReactingImplicitIntegrator2D::Impl {
                 return true;
             } catch (const std::exception& error) { owner.lastRhsError = error.what(); return false; }
         }
-        static int test(SUNNonlinearSolver inner, N_Vector correction, N_Vector delta,
+        static int test(SUNNonlinearSolver, N_Vector correction, N_Vector delta,
                         realtype tolerance, N_Vector weights, void* context) {
             auto& g = *static_cast<GuardedNewton*>(context);
             try {
                 double fraction = 1;
                 if (!g.admissible(correction)) {
+                    g.owner.progress.lastDampedTrialFailure = g.owner.lastRhsError;
                     bool found = false;
                     for (unsigned attempt = 0; attempt < 64; ++attempt) {
                         fraction *= .5;
@@ -145,9 +145,21 @@ struct ReactingImplicitIntegrator2D::Impl {
                 p.lastNewtonCorrectionNorm = N_VWrmsNorm(delta, weights);
                 p.lastNewtonResidualNorm = N_VWrmsNorm(g.residual, weights);
                 p.lastNewtonTolerance = tolerance;
-                if (fraction < 1 && (p.lastNewtonCorrectionNorm > tolerance || p.lastNewtonResidualNorm > tolerance))
-                    return SUN_NLS_CONV_RECVR;
-                return g.convergence(inner, correction, delta, tolerance, weights, g.convergenceData);
+                p.lastPredictorCorrectionNorm = N_VWrmsNorm(correction, weights);
+                // The stock CVODES convergence test caches |delta| as |acor|
+                // on the first Newton iteration. Our feasible initial guess
+                // and backtracking invalidate delta == acor. Never invoke
+                // that shortcut: leaving CVODES' acnrmcur flag false makes
+                // it compute the actual total predictor correction for LTE.
+                // Both the original Newton update and the actual residual
+                // must meet the supplied nonlinear tolerance.
+                if (p.lastNewtonCorrectionNorm <= tolerance && p.lastNewtonResidualNorm <= tolerance)
+                    return SUN_NLS_SUCCESS;
+                if (fraction < 1) {
+                    if (!g.owner.controls.continueDampedNewton || fraction == 0) return SUN_NLS_CONV_RECVR;
+                    ++p.continuedDampedNewtonUpdates;
+                }
+                return SUN_NLS_CONTINUE;
             } catch (const std::exception& error) { g.owner.lastRhsError = error.what(); return SUN_NLS_EXT_FAIL; }
             catch (...) { g.owner.lastRhsError = "unknown nonlinear convergence exception"; return SUN_NLS_EXT_FAIL; }
         }
@@ -166,8 +178,8 @@ struct ReactingImplicitIntegrator2D::Impl {
             };
             n->ops->setlsetupfn = [](auto s, SUNNonlinSolLSetupFn f) { return SUNNonlinSolSetLSetupFn(get(s).inner, f); };
             n->ops->setlsolvefn = [](auto s, SUNNonlinSolLSolveFn f) { return SUNNonlinSolSetLSolveFn(get(s).inner, f); };
-            n->ops->setctestfn = [](auto s, SUNNonlinSolConvTestFn f, void* data) {
-                auto& a = get(s); a.convergence = f; a.convergenceData = data;
+            n->ops->setctestfn = [](auto s, SUNNonlinSolConvTestFn, void*) {
+                auto& a = get(s);
                 return SUNNonlinSolSetConvTestFn(a.inner, test, &a);
             };
             n->ops->setmaxiters = [](auto s, int count) { return SUNNonlinSolSetMaxIters(get(s).inner, count); };
@@ -234,6 +246,8 @@ struct ReactingImplicitIntegrator2D::Impl {
         require((c.spatialOrder == 1 || c.spatialOrder == 2) && c.maximumBdfOrder >= 1 && c.maximumBdfOrder <= 5,
             "invalid spatial/BDF order");
         require(c.jacobianAdvectionOrder == 1 || c.jacobianAdvectionOrder == 2, "invalid Newton advection linearization order");
+        require(c.maximumNonlinearIterations > 0 && c.maximumNonlinearIterations <= static_cast<unsigned>(std::numeric_limits<int>::max()),
+            "invalid nonlinear iteration budget");
         const auto& mesh = solver.mesh(); const auto nc = mesh.cells.size();
         nv = gas.mechanism().species.size() + 4;
         const auto independent = nv - 1;
@@ -274,8 +288,10 @@ struct ReactingImplicitIntegrator2D::Impl {
         require(mapping.size() == neq, "invalid independent-state layout");
         auto& r = resources;
         r.y = N_VNew_Serial(static_cast<sunindextype>(neq)); r.absolute = N_VNew_Serial(static_cast<sunindextype>(neq));
+        require(r.y && r.absolute, "state vector allocation failed");
+        r.localError = N_VClone(r.y); r.errorWeights = N_VClone(r.y);
         r.quadrature = N_VNew_Serial(static_cast<sunindextype>(3 * nv)); r.quadAbsolute = N_VNew_Serial(static_cast<sunindextype>(3 * nv));
-        require(r.y && r.absolute && r.quadrature && r.quadAbsolute, "vector allocation failed");
+        require(r.y && r.absolute && r.quadrature && r.quadAbsolute && r.localError && r.errorWeights, "vector allocation failed");
         for (std::size_t a = 0; a < neq; ++a) {
             const auto [i, k] = mapping[a];
             NV_Ith_S(r.y, a) = input.cells[i][k] / scale[a];
@@ -303,6 +319,7 @@ struct ReactingImplicitIntegrator2D::Impl {
         check(CVodeSetJacFn(r.ode, jacobianCallback), "CVodeSetJacFn");
         r.nonlinear = GuardedNewton::create(*this, r.y);
         check(CVodeSetNonlinearSolver(r.ode, r.nonlinear), "CVodeSetNonlinearSolver");
+        check(CVodeSetMaxNonlinIters(r.ode, static_cast<int>(c.maximumNonlinearIterations)), "CVodeSetMaxNonlinIters");
         check(CVodeQuadInit(r.ode, quadCallback, r.quadrature), "CVodeQuadInit");
         check(CVodeQuadSVtolerances(r.ode, c.relativeTolerance, r.quadAbsolute), "CVodeQuadSVtolerances");
         check(CVodeSetQuadErrCon(r.ode, 1), "CVodeSetQuadErrCon");
@@ -433,6 +450,13 @@ struct ReactingImplicitIntegrator2D::Impl {
     static void errorCallback(int, const char*, const char*, char* message, void* context) {
         static_cast<Impl*>(context)->integratorError = message;
     }
+    void statistics() {
+        CVodeGetNumErrTestFails(resources.ode, &progress.errorTestFailures);
+        CVodeGetNumLinSolvSetups(resources.ode, &progress.linearSetups);
+        CVodeGetNumJacEvals(resources.ode, &progress.jacobianEvaluations);
+        CVodeGetNumNonlinSolvIters(resources.ode, &progress.nonlinearIterations);
+        CVodeGetNumNonlinSolvConvFails(resources.ode, &progress.nonlinearConvergenceFailures);
+    }
     ReactingImplicitProgress2D advance(double endTime, const std::function<bool()>& cancel,
         const std::function<void(const ReactingImplicitProgress2D&)>& onAccepted,
         const std::function<void(const ReactingImplicitProgress2D&, double)>& onEvaluation) {
@@ -469,18 +493,32 @@ struct ReactingImplicitIntegrator2D::Impl {
                     require(std::isfinite(boundary[k]) && std::isfinite(chemistry[k]) && std::isfinite(constraint[k]), "nonfinite integral budget");
                 }
                 const double dt = reached - progress.lastAccepted.time;
+                check(CVodeGetEstLocalErrors(resources.ode, resources.localError), "CVodeGetEstLocalErrors");
+                check(CVodeGetErrWeights(resources.ode, resources.errorWeights), "CVodeGetErrWeights");
+                const double localErrorNorm = N_VWrmsNorm(resources.localError, resources.errorWeights);
+                // This is CVODES' own dimensionless weighted LTE acceptance
+                // bound, not a flame-accuracy threshold. Allow accumulated
+                // binary64 norm/rescaling roundoff only.
+                const double normRoundoff = 64 * std::numeric_limits<double>::epsilon() * static_cast<double>(mapping.size());
+                require(std::isfinite(localErrorNorm) && localErrorNorm <= 1 + normRoundoff,
+                    "accepted state exceeds weighted local-error bound");
                 progress.minimumAcceptedStep = progress.minimumAcceptedStep > 0 ? std::min(progress.minimumAcceptedStep, dt) : dt;
                 progress.maximumAcceptedStep = std::max(progress.maximumAcceptedStep, dt);
                 progress.lastAccepted = std::move(candidate); progress.boundaryImpulse = std::move(boundary);
                 progress.chemistryChange = std::move(chemistry); progress.constraintChange = std::move(constraint);
+                check(CVodeGetLastOrder(resources.ode, &progress.lastBdfOrder), "CVodeGetLastOrder");
+                require(progress.lastBdfOrder >= 1 && progress.lastBdfOrder <= static_cast<int>(controls.maximumBdfOrder), "invalid accepted BDF order");
+                ++progress.acceptedByBdfOrder[static_cast<std::size_t>(progress.lastBdfOrder)];
+                progress.lastLocalErrorNorm = localErrorNorm;
+                progress.maximumLocalErrorNorm = std::max(progress.maximumLocalErrorNorm, progress.lastLocalErrorNorm);
+                statistics();
                 if (onAccepted) onAccepted(progress);
             }
             progress.reachedEnd = progress.lastAccepted.time == endTime;
         } catch (const std::exception& error) { terminalFailure = true; progress.failure = error.what(); }
         // Preserve backend statistics on failure as well as successful exit.
         // A failed candidate never replaces lastAccepted or its quadratures.
-        CVodeGetNumErrTestFails(resources.ode, &progress.errorTestFailures);
-        CVodeGetNumLinSolvSetups(resources.ode, &progress.linearSetups);
+        statistics();
         return progress;
     }
 };

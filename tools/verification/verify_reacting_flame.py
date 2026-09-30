@@ -123,6 +123,20 @@ def audit(path, reference, fixture, audit_output=None):
         else:
             assert step is steps[-1]
     assert clock == last["time"] and accepted == last["steps"]
+    if implicit and "acceptedByBdfOrder" in r["integration"]:
+        orders = [0] * 6
+        for step in steps:
+            if step["accepted"]:
+                assert 1 <= step["bdfOrder"] <= r["integration"]["maximumOrder"]
+                orders[step["bdfOrder"]] += 1
+        assert orders == r["integration"]["acceptedByBdfOrder"] and sum(orders) == accepted
+    if implicit and r["integration"].get("errorControlCorrection") == "fullPredictorCorrection":
+        errors = [s["localErrorNorm"] for s in steps if s["accepted"]]
+        # Backend's weighted local-error acceptance invariant only. It does
+        # not establish an independently measured physical time-step error.
+        allowance = 1 + 64 * np.finfo(float).eps * nx * ny * (gas.n_species + 3)
+        assert all(np.isfinite(e) and 0 <= e <= allowance for e in errors)
+        assert max(errors, default=0.) == r["integration"]["maximumLocalErrorNorm"]
     closure_report = None
     if "massClosure" in r:
         closure = r["massClosure"]
@@ -185,6 +199,10 @@ def main():
     parser.add_argument("--duration", type=float, default=1e-6)
     parser.add_argument("--species-atol", type=float,
                         help="explicit implicit-probe local integration control; physical audit gates are unchanged")
+    parser.add_argument("--bdf-order", type=int, choices=range(1, 6))
+    parser.add_argument("--jacobian-order", type=int, choices=(1, 2))
+    parser.add_argument("--newton-iterations", type=int)
+    parser.add_argument("--continue-damped", type=int, choices=(0, 1))
     parser.add_argument("--jobs", type=int, default=3, help="independent native cases in parallel; 1 for sequential execution")
     parser.add_argument("--grid", type=int, action="append",
                         help="reference fixture index; repeat to select cases (default: every fixture)")
@@ -194,6 +212,12 @@ def main():
     verifier_hash = sha(Path(__file__))
     assert np.isfinite(args.duration) and args.duration > 0
     assert args.species_atol is None or np.isfinite(args.species_atol) and args.species_atol > 0
+    assert args.newton_iterations is None or 0 < args.newton_iterations <= np.iinfo(np.int32).max
+    requested_controls = {key: value for key, value in {
+        "absoluteSpeciesFraction": args.species_atol, "maximumOrder": args.bdf_order,
+        "jacobianAdvectionOrder": args.jacobian_order, "maximumNonlinearIterations": args.newton_iterations,
+        "continueDampedNewton": None if args.continue_damped is None else bool(args.continue_damped)
+    }.items() if value is not None}
     assert 1 <= args.jobs <= 3
     args.output.mkdir(parents=True, exist_ok=False)
     reference = json.loads((args.reference / "reference.json").read_text())
@@ -220,6 +244,9 @@ def main():
             command = [str(args.probe.resolve()), reference["mechanism"], fixture["path"], str(path), format(args.duration, ".17g")]
             if args.species_atol is not None:
                 command += ["--species-atol", format(args.species_atol, ".17g")]
+            for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped"):
+                if getattr(args, option) is not None:
+                    command += ["--" + option.replace("_", "-"), str(getattr(args, option))]
             process = subprocess.run(command, capture_output=True, text=True)
             elapsed, returncode, failure = time.perf_counter() - start, process.returncode, process.stderr
             (args.output / f"native-{number}.stdout").write_text(process.stdout)
@@ -237,8 +264,8 @@ def main():
         if (path / "field.json").exists():
             try:
                 checked, field = audit(path, reference, fixture, audit_path); case.update(checked)
-                if args.species_atol is not None:
-                    assert field["integration"]["absoluteSpeciesFraction"] == args.species_atol
+                for key, value in requested_controls.items():
+                    assert field["integration"][key] == value
             except Exception as error:
                 (audit_path / "audit-error.txt").write_text(traceback.format_exc())
                 case.update(numerical_checks_passed=False, physical_endpoint_reached=False,
@@ -257,6 +284,7 @@ def main():
     assert sha(Path(__file__)) == verifier_hash
     report = {"qualified_flame": False, "duration_s": args.duration, "probe_sha256": probe_hash,
               "requested_species_absolute_tolerance": args.species_atol,
+              "requested_implicit_controls": requested_controls,
               "execution_mode": "audit_existing" if previous is not None else "run_and_audit",
               "verifier_sha256": verifier_hash,
               "reference_report_sha256": sha(args.reference / "reference.json"), "fixture_indices": indices, "cases": cases,

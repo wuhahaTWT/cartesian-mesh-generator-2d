@@ -2,6 +2,7 @@
 
 #include "cartmesh2d/fv/ReactingFlow2D.hpp"
 #include <functional>
+#include <array>
 #include <memory>
 
 namespace cartmesh2d::fv {
@@ -14,6 +15,10 @@ struct ReactingImplicitControls2D {
     double absoluteConservedTolerance = 1e-12, absoluteSpeciesFraction = 1e-18;
     double maximumStep = 1e-5, initialStep = 0;
     unsigned spatialOrder = 2, maximumBdfOrder = 2;
+    unsigned maximumNonlinearIterations = 3;
+    // Experimental globalization option; the default rejects an unconverged
+    // damped update and lets CVODES retry the time step.
+    bool continueDampedNewton = false;
     // Approximate Newton matrix only. A first-order advection linearization
     // avoids differencing discontinuous MUSCL limiter switches. The actual
     // residual and its convergence checks still use spatialOrder throughout.
@@ -32,9 +37,14 @@ struct ReactingImplicitProgress2D {
     ReactingConservative2D boundaryImpulse, chemistryChange, constraintChange;
     std::size_t rhsCalls = 0, rejectedRhsCalls = 0, bandHalfWidth = 0, bandBytes = 0;
     long internalSteps = 0, errorTestFailures = 0, linearSetups = 0;
-    std::size_t dampedNewtonUpdates = 0;
+    long jacobianEvaluations = 0, nonlinearIterations = 0, nonlinearConvergenceFailures = 0;
+    std::array<long, 6> acceptedByBdfOrder{};
+    int lastBdfOrder = 0;
+    std::size_t dampedNewtonUpdates = 0, continuedDampedNewtonUpdates = 0;
     double minimumNewtonFraction = 1;
     double lastNewtonCorrectionNorm = 0, lastNewtonResidualNorm = 0, lastNewtonTolerance = 0;
+    double lastPredictorCorrectionNorm = 0, lastLocalErrorNorm = 0, maximumLocalErrorNorm = 0;
+    std::string lastDampedTrialFailure;
     double minimumAcceptedStep = 0, maximumAcceptedStep = 0;
 };
 

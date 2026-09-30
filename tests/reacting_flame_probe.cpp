@@ -9,7 +9,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
+#include <set>
 #include <stdexcept>
 
 using namespace cartmesh2d;
@@ -74,8 +76,8 @@ int main(int argc, char** argv) {
     try {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
-        const bool toleranceOverride = argc == 7 && std::string(argv[5]) == "--species-atol";
-        require(argc == 5 || regression || toleranceOverride, "expected mechanism fixture output duration [--species-atol value], or mechanism fixture --regression");
+        require(regression || (argc >= 5 && (argc - 5) % 2 == 0),
+            "expected mechanism fixture output duration [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1], or mechanism fixture --regression");
 #else
         require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
 #endif
@@ -113,6 +115,7 @@ int main(int argc, char** argv) {
             const auto result = integrator.advance(1e-8);
             std::cout << "implicit trace: time=" << result.lastAccepted.time << " steps=" << result.internalSteps
                 << " RHS=" << result.rhsCalls << " damping=" << result.dampedNewtonUpdates
+                << " continued=" << result.continuedDampedNewtonUpdates
                 << " delta=" << result.lastNewtonCorrectionNorm << " residual=" << result.lastNewtonResidualNorm
                 << " tolerance=" << result.lastNewtonTolerance << '\n';
             if (!result.reachedEnd) throw std::runtime_error(result.failure);
@@ -179,13 +182,30 @@ int main(int argc, char** argv) {
         std::string failure;
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         ReactingImplicitControls2D implicitControls;
-        if (toleranceOverride) {
-            std::size_t read = 0; const std::string value(argv[6]);
-            implicitControls.absoluteSpeciesFraction = std::stod(value, &read);
-            require(read == value.size() && std::isfinite(implicitControls.absoluteSpeciesFraction)
-                && implicitControls.absoluteSpeciesFraction > 0, "invalid species absolute local tolerance");
-        }
         implicitControls.maximumBdfOrder = 5; implicitControls.maximumStep = std::max(duration, 1e-15);
+        std::set<std::string> suppliedOptions;
+        for (int argument = 5; argument < argc; argument += 2) {
+            const std::string option(argv[argument]), value(argv[argument + 1]);
+            require(suppliedOptions.insert(option).second, "duplicate implicit control option");
+            std::size_t read = 0;
+            if (option == "--species-atol") {
+                implicitControls.absoluteSpeciesFraction = std::stod(value, &read);
+                require(read == value.size() && std::isfinite(implicitControls.absoluteSpeciesFraction)
+                    && implicitControls.absoluteSpeciesFraction > 0, "invalid species absolute local tolerance");
+            } else if (option == "--continue-damped") {
+                require(value == "0" || value == "1", "invalid damped continuation control");
+                implicitControls.continueDampedNewton = value == "1";
+            } else {
+                require(option == "--bdf-order" || option == "--jacobian-order" || option == "--newton-iterations", "unknown implicit control option");
+                const auto count = std::stoul(value, &read);
+                require(read == value.size() && count > 0 && count <= static_cast<unsigned long>(std::numeric_limits<int>::max()), "invalid implicit integer control");
+                if (option == "--bdf-order") {
+                    require(count <= 5, "invalid maximum BDF order"); implicitControls.maximumBdfOrder = static_cast<unsigned>(count);
+                } else if (option == "--jacobian-order") {
+                    require(count <= 2, "invalid Jacobian advection order"); implicitControls.jacobianAdvectionOrder = static_cast<unsigned>(count);
+                } else implicitControls.maximumNonlinearIterations = static_cast<unsigned>(count);
+            }
+        }
         ReactingImplicitProgress2D implicitResult;
         std::ofstream evaluations(directory / "evaluation-progress.jsonl"); evaluations << std::setprecision(17);
         if (duration > 0) {
@@ -193,7 +213,9 @@ int main(int argc, char** argv) {
             implicitResult = implicit.advance(duration, [&] { return std::filesystem::exists(directory / "cancel.request"); }, [&](const auto& r) {
                 const double dt = r.lastAccepted.time - current.time;
                 log << "{\"time\":" << current.time << ",\"dt\":" << dt << ",\"accepted\":true,\"internalSteps\":"
-                    << r.internalSteps << ",\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls << ",\"failure\":\"\"}\n";
+                    << r.internalSteps << ",\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls
+                    << ",\"bdfOrder\":" << r.lastBdfOrder << ",\"localErrorNorm\":" << r.lastLocalErrorNorm
+                    << ",\"predictorCorrectionNorm\":" << r.lastPredictorCorrectionNorm << ",\"failure\":\"\"}\n";
                 log.flush(); current = r.lastAccepted;
                 if (current.steps % 10 == 0) std::cerr << "implicit accepted " << current.steps << " t=" << current.time << '\n';
             }, [&](const auto& r, double trialTime) {
@@ -205,9 +227,15 @@ int main(int argc, char** argv) {
                         << ",\"acceptedSteps\":" << r.lastAccepted.steps << ",\"acceptedTime\":" << r.lastAccepted.time
                         << ",\"trialTime\":" << trialTime << ",\"bandHalfWidth\":" << r.bandHalfWidth
                         << ",\"dampedNewtonUpdates\":" << r.dampedNewtonUpdates
+                        << ",\"continuedDampedNewtonUpdates\":" << r.continuedDampedNewtonUpdates
+                        << ",\"jacobianEvaluations\":" << r.jacobianEvaluations
+                        << ",\"nonlinearIterations\":" << r.nonlinearIterations
+                        << ",\"nonlinearConvergenceFailures\":" << r.nonlinearConvergenceFailures
+                        << ",\"lastBdfOrder\":" << r.lastBdfOrder
                         << ",\"newtonCorrectionNorm\":" << r.lastNewtonCorrectionNorm
                         << ",\"newtonResidualNorm\":" << r.lastNewtonResidualNorm
-                        << ",\"newtonTolerance\":" << r.lastNewtonTolerance << "}\n";
+                        << ",\"newtonTolerance\":" << r.lastNewtonTolerance << ",\"lastDampedTrialFailure\":";
+                    string(evaluations, r.lastDampedTrialFailure); evaluations << "}\n";
                     evaluations.flush(); require(static_cast<bool>(evaluations), "evaluation log write failed");
                 }
             });
@@ -269,7 +297,9 @@ int main(int argc, char** argv) {
         out << "],\"boundaryImpulse\":"; numbers(out, boundaryImpulse); out << ",\"chemistryChange\":"; numbers(out, chemistryChange);
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         out << ",\"constraintChange\":"; numbers(out, implicitResult.constraintChange);
-        out << ",\"integration\":{\"method\":\"CVODES-BDF\",\"maximumOrder\":" << implicitControls.maximumBdfOrder
+        out << ",\"integration\":{\"method\":\"CVODES-BDF\",\"errorControlCorrection\":\"fullPredictorCorrection\",\"maximumOrder\":" << implicitControls.maximumBdfOrder
+            << ",\"maximumNonlinearIterations\":" << implicitControls.maximumNonlinearIterations
+            << ",\"continueDampedNewton\":" << (implicitControls.continueDampedNewton ? "true" : "false")
             << ",\"relativeTolerance\":" << implicitControls.relativeTolerance
             << ",\"spatialOrder\":" << implicitControls.spatialOrder
             << ",\"jacobianAdvectionOrder\":" << implicitControls.jacobianAdvectionOrder
@@ -279,9 +309,16 @@ int main(int argc, char** argv) {
             << ",\"maximumResidualEvaluations\":" << implicitControls.maximumResidualEvaluations
             << ",\"rhsCalls\":" << implicitResult.rhsCalls << ",\"rejectedRhsCalls\":" << implicitResult.rejectedRhsCalls
             << ",\"errorTestFailures\":" << implicitResult.errorTestFailures << ",\"linearSetups\":" << implicitResult.linearSetups
+            << ",\"jacobianEvaluations\":" << implicitResult.jacobianEvaluations
+            << ",\"nonlinearIterations\":" << implicitResult.nonlinearIterations
+            << ",\"nonlinearConvergenceFailures\":" << implicitResult.nonlinearConvergenceFailures
             << ",\"dampedNewtonUpdates\":" << implicitResult.dampedNewtonUpdates
+            << ",\"continuedDampedNewtonUpdates\":" << implicitResult.continuedDampedNewtonUpdates
+            << ",\"maximumLocalErrorNorm\":" << implicitResult.maximumLocalErrorNorm
             << ",\"minimumNewtonFraction\":" << implicitResult.minimumNewtonFraction
-            << ",\"bandHalfWidth\":" << implicitResult.bandHalfWidth << ",\"bandBytes\":" << implicitResult.bandBytes << '}';
+            << ",\"bandHalfWidth\":" << implicitResult.bandHalfWidth << ",\"bandBytes\":" << implicitResult.bandBytes
+            << ",\"acceptedByBdfOrder\":"; numbers(out, implicitResult.acceptedByBdfOrder);
+        out << ",\"lastDampedTrialFailure\":"; string(out, implicitResult.lastDampedTrialFailure); out << '}';
 #else
         out << ",\"massClosure\":{\"maximumFraction\":" << maximumClosure << ",\"absoluteIntegral\":" << absoluteClosure
             << ",\"transport\":"; numbers(out, transportClosure); out << ",\"chemistry\":"; numbers(out, chemistryClosure); out << '}';

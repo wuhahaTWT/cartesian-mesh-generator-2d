@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 using namespace cartmesh2d;
@@ -33,6 +34,9 @@ std::vector<double> integral(const FvMesh2D& mesh, const ReactingState2D& state)
 void budget(const DetailedGas& gas, const FvMesh2D& mesh, const ReactingState2D& initial,
             const ReactingImplicitProgress2D& result) {
     const auto before = integral(mesh, initial), after = integral(mesh, result.lastAccepted);
+    const double normRoundoff = 64 * std::numeric_limits<double>::epsilon() * static_cast<double>(mesh.cells.size() * (before.size() - 1));
+    check(std::isfinite(result.maximumLocalErrorNorm) && result.maximumLocalErrorNorm <= 1 + normRoundoff,
+          "accepted implicit state exceeded its weighted local-error allowance");
     double speciesDefect = 0;
     for (std::size_t k = 4; k < before.size(); ++k)
         speciesDefect = std::max(speciesDefect, std::abs(after[k] - before[k] + result.boundaryImpulse[k]
@@ -49,7 +53,8 @@ void budget(const DetailedGas& gas, const FvMesh2D& mesh, const ReactingState2D&
                 * mechanism.atomCounts[k * mechanism.elements.size() + m] * mechanism.atomicWeights[m] / mechanism.molecularWeights[k];
         check(std::abs(physical / before[0]) < 1e-8, "implicit physical elemental budget failed");
     }
-    std::cout << "quadrature species defect per initial mass=" << speciesDefect << '\n';
+    std::cout << "quadrature species defect per initial mass=" << speciesDefect
+              << ", maximum weighted local error=" << result.maximumLocalErrorNorm << '\n';
 }
 }
 int main(int argc, char** argv) {
