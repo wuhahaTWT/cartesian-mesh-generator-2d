@@ -120,6 +120,38 @@ int main(int argc, char** argv) {
         check(trialCancel.canceled && !trialCancel.reachedEnd && trialCancel.lastAccepted.cells == initial.cells
             && trialCancel.failure.find("canceled during a trial") != std::string::npos,
             "trial cancellation lost the last accepted state");
+        check(trialCancel.failure.find("CVODES flag") == std::string::npos,
+            "trial cancellation was reported as a backend failure");
+        const auto repeatedCancel = interrupted.advance(1e-3);
+        check(repeatedCancel.canceled && repeatedCancel.failure == trialCancel.failure
+            && repeatedCancel.rhsCalls == trialCancel.rhsCalls
+            && repeatedCancel.lastAccepted.cells == trialCancel.lastAccepted.cells,
+            "terminal cancellation status was lost or its BDF history was reused");
+
+        auto cancelControls = c; cancelControls.maximumAcceptedSteps = 20000;
+        ReactingImplicitIntegrator2D afterAccepted(gas, solver, initial, cancelControls);
+        ReactingImplicitProgress2D saved;
+        bool haveAccepted = false, cancelTrial = false;
+        const auto laterCancel = afterAccepted.advance(1e-3, [&] { return cancelTrial; },
+            [&](const auto& p) { saved = p; haveAccepted = true; },
+            [&](const auto&, double) { if (haveAccepted) cancelTrial = true; });
+        check(haveAccepted && laterCancel.canceled && !laterCancel.reachedEnd
+            && laterCancel.failure.find("canceled during a trial") != std::string::npos
+            && laterCancel.lastAccepted.cells == saved.lastAccepted.cells
+            && laterCancel.lastAccepted.time == saved.lastAccepted.time
+            && laterCancel.lastAccepted.steps == saved.lastAccepted.steps
+            && laterCancel.boundaryImpulse == saved.boundaryImpulse
+            && laterCancel.chemistryChange == saved.chemistryChange
+            && laterCancel.constraintChange == saved.constraintChange
+            && laterCancel.rhsCalls > saved.rhsCalls,
+            "trial cancellation changed an accepted state/budget or discarded trial statistics");
+        budget(gas, mesh, initial, laterCancel);
+        ReactingImplicitIntegrator2D freshAfterCancel(gas, solver, laterCancel.lastAccepted, cancelControls);
+        const auto resumedAfterCancel = freshAfterCancel.advance(1e-6);
+        check(resumedAfterCancel.reachedEnd && !resumedAfterCancel.canceled
+            && resumedAfterCancel.lastAccepted.steps > laterCancel.lastAccepted.steps,
+            "fresh BDF session could not advance the canceled accepted state");
+        budget(gas, mesh, laterCancel.lastAccepted, resumedAfterCancel);
 
         auto spatialMesh = fv_test::rectangle(4, 3, 1, true);
         constexpr double size = .002;

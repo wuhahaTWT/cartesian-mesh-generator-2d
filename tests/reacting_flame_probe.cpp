@@ -78,6 +78,7 @@ void integration(std::ostream& out, const ReactingImplicitControls2D& c,
                  const ReactingImplicitProgress2D& r, std::size_t sampleEvery, std::size_t sampleEvaluations,
                  std::size_t maximumSamples, const std::string& samplingFailure) {
     out << "{\"method\":\"CVODES-BDF\",\"errorControlCorrection\":\"fullPredictorCorrection\",\"maximumOrder\":" << c.maximumBdfOrder
+        << ",\"canceled\":" << (r.canceled ? "true" : "false")
         << ",\"maximumNonlinearIterations\":" << c.maximumNonlinearIterations
         << ",\"continueDampedNewton\":" << (c.continueDampedNewton ? "true" : "false")
         << ",\"reflectSpeciesNewton\":" << (c.reflectSpeciesNewton ? "true" : "false")

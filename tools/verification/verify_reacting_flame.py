@@ -228,6 +228,48 @@ def audit_fields(r, mechanism, steps, reference, fixture, checkpoint=None):
     return report
 
 
+def audit_sample_counters(field, sample, accepted_rhs, last_sample):
+    """Separate accepted-step statistics from a stopped trial's final snapshot.
+
+    A stopped backend can evaluate more RHS/Jacobian candidates without
+    accepting a state. Its final sample may contain those terminal counters,
+    or the last regular sample may predate them. Neither is a new time step.
+    """
+    saved, terminal = sample["integration"], field["integration"]
+    rhs = saved["rhsCalls"]
+    assert type(rhs) is int and type(accepted_rhs) is int and rhs >= 0 and accepted_rhs >= 0
+    stopped_final = (last_sample and not field["complete"] and bool(field["failure"])
+                     and sample["state"] == field["final"])
+    if rhs != accepted_rhs:
+        assert stopped_final and rhs > accepted_rhs and saved == terminal
+    if not last_sample or field["integration"].get("samplingFailure"):
+        return
+    if not stopped_final:
+        assert saved == terminal
+        return
+    assert type(terminal["rhsCalls"]) is int and terminal["rhsCalls"] >= rhs
+    monotone_counts = {"rhsCalls", "rejectedRhsCalls", "errorTestFailures", "linearSetups", "jacobianEvaluations",
+                       "nonlinearIterations", "nonlinearConvergenceFailures", "dampedNewtonUpdates",
+                       "continuedDampedNewtonUpdates", "reflectedNewtonUpdates", "reflectionAttempts"}
+    assert saved.keys() == terminal.keys()
+    for key, before in saved.items():
+        after = terminal[key]
+        if key in monotone_counts:
+            assert type(before) is int and type(after) is int and 0 <= before <= after
+        elif key == "maximumReflectedSpeciesScaledChange":
+            assert np.isfinite(before) and np.isfinite(after) and 0 <= before <= after
+        elif key == "minimumNewtonFraction":
+            assert np.isfinite(before) and np.isfinite(after) and 0 <= after <= before <= 1
+        elif key == "lastDampedTrialFailure":
+            assert isinstance(before, str) and isinstance(after, str)
+        elif key == "canceled":
+            assert type(before) is bool and type(after) is bool and (not before or after)
+        else:
+            # Controls, sample counts, accepted-order counts and accepted LTE
+            # statistics cannot change while retaining this accepted state.
+            assert before == after
+
+
 def audit_samples(path, field, steps, reference, fixture, audit_output, checkpoint=None):
     every = field.get("integration", {}).get("sampleEveryAcceptedSteps", 0)
     if not every:
@@ -246,7 +288,6 @@ def audit_samples(path, field, steps, reference, fixture, audit_output, checkpoi
     assert samples[0]["kind"] == "initial" and samples[0]["state"] == field["initial"]
     if not sampling_failure:
         assert samples[-1]["state"] == field["final"]
-        assert samples[-1]["integration"] == field["integration"]
     else:
         assert sampling_failure in field["failure"]
     initial_temperature = np.array(field["initial"]["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
@@ -257,7 +298,7 @@ def audit_samples(path, field, steps, reference, fixture, audit_output, checkpoi
         n = sample["state"]["steps"] - first_step
         assert sample["kind"] == ("accepted" if n else "initial")
         assert sample["integration"]["sampleResidualEvaluations"] == index + 1
-        assert sample["integration"]["rhsCalls"] == (accepted[n - 1]["rhsCalls"] if n else 0)
+        audit_sample_counters(field, sample, accepted[n - 1]["rhsCalls"] if n else 0, index == len(samples)-1)
         virtual = dict(field)
         virtual["final"] = sample["state"]
         for key in ("boundaryImpulse", "chemistryChange", "constraintChange", "integration"):
@@ -278,6 +319,14 @@ def audit_samples(path, field, steps, reference, fixture, audit_output, checkpoi
               "marker_temperature_K": marker_temperature,
               "marker_method": "all crossings of the fixed initial midpoint temperature in the row-mean cell-centre profile, with linear interpolation; a position diagnostic, not an independently qualified flame speed",
               "samples": rows}
+    if not field["complete"] and field["failure"] and samples[-1]["state"] == field["final"]:
+        last_accepted_rhs = accepted[-1]["rhsCalls"] if accepted else 0
+        result["terminal_attempt_statistics"] = {
+            "last_accepted_step_rhs_calls": last_accepted_rhs,
+            "terminal_rhs_calls": field["integration"]["rhsCalls"],
+            "rhs_calls_after_last_accepted_step": field["integration"]["rhsCalls"]-last_accepted_rhs,
+            "last_sample_rhs_calls": samples[-1]["integration"]["rhsCalls"],
+            "last_sample_counters_include_stopped_trials": samples[-1]["integration"]["rhsCalls"] != last_accepted_rhs}
     target = audit_output / "sample-audits.json"
     target.write_text(json.dumps(result, indent=2) + "\n")
     return {"all_samples_passed": True, "sampling_complete": not sampling_failure, "sampling_failure": sampling_failure,

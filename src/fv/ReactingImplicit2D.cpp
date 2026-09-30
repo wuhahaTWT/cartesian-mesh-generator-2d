@@ -498,8 +498,8 @@ struct ReactingImplicitIntegrator2D::Impl {
     ReactingImplicitProgress2D advance(double endTime, const std::function<bool()>& cancel,
         const std::function<void(const ReactingImplicitProgress2D&)>& onAccepted,
         const std::function<void(const ReactingImplicitProgress2D&, double)>& onEvaluation) {
-        progress.reachedEnd = false; progress.canceled = false;
         if (terminalFailure) return progress;
+        progress.reachedEnd = false; progress.canceled = false;
         evaluationObserver = &onEvaluation;
         evaluationCancel = &cancel;
         struct ObserverScope {
@@ -515,6 +515,10 @@ struct ReactingImplicitIntegrator2D::Impl {
                 require(static_cast<std::size_t>(progress.internalSteps) < controls.maximumAcceptedSteps, "accepted-step budget exhausted before endpoint");
                 double reached = progress.lastAccepted.time;
                 const int flag = CVode(resources.ode, endTime, resources.y, &reached, CV_ONE_STEP);
+                // The backend must abort an in-flight trial on cancellation.
+                // Preserve that distinct outcome instead of presenting its
+                // resulting RHS/linear-setup abort code as a solver defect.
+                if (flag < 0 && progress.canceled) throw EvaluationCanceled();
                 require(flag >= 0, "CVODES flag " + std::to_string(flag) + ": " + integratorError + "; last RHS error: " + lastRhsError);
                 require(std::isfinite(reached) && reached > progress.lastAccepted.time && reached <= endTime, "invalid accepted clock");
                 ReactingState2D candidate = progress.lastAccepted; decode(reached, NV_DATA_S(resources.y), candidate);
