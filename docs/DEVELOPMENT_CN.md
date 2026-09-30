@@ -359,6 +359,22 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 
 完整 100 微秒输出保留在 `outputs/combustion-foundation/implicit-evolution-100us-001`，进程实际使用 `implicit-sampling-002/probe` 和 `implicit-sampling-003/verify_reacting_flame.py` 的固定版本；不要用当前构建冒充旧运行来源。`analyze_completed_evolution.py` 从已核对哈希的实际场和样本读取不同等温位置，列出末段残差变化；温度平移诊断只在初始剖面的真实重叠区间作线性插值，不生成接受状态。不同温度标记的速度不能直接作为火焰速度资格。`residual-profile-001` 保留临时计时补丁、编译命令、调用数量及原/计时版本逐字节对照；它只定位成本，不构成提速证据。详细来源统一由[演化证据](../artifacts/current/native-reacting-evolution.json)索引。
 
+`analyze_reacting_flame_history.py` 将已完成且独立审计通过的二维条带历史转为可复现的传播诊断。它校对报告、原始场、样本、参考与夹具哈希，逐条读取 JSONL，核对首末状态、实际时钟、总步数与样本数；零推进、部分采样和来源不符均拒绝。兼容旧零起点报告及真实续算的累计时钟；没有 `endTime` 或累计步数字段的旧记录必须证明确为零时钟/零步冷启动，不能据缺字段将续算重置为零。逐条读取避免把所有完整场同时保存在内存。
+
+标记温度（K）、上游测点（m）、平移对齐温度（K）和末段窗口（s）均须显式指定。等温交点与等温平台全部保留；窗口内不足三个样本，或任一时刻没有唯一交点，就不估计该标记速度。用真实保存时刻拟合固定坐标速度，同时列出端点割线、相邻时刻速度范围与拟合位置偏差。测点速度按实际时间梯形积分，再减去标记速度，得到相对运动诊断；另列测点温度/组分相对入口的偏离和是否位于标记上游，不自动将它判定为未燃气或成熟燃烧速度。平移仅插值初始行均温度的真实重叠区，并记录被排除列数、宽度比例和跨行温差；原场、残差和检查点不变。
+
+`test_reacting_flame_history.py` 用解析平移剖面检查位置、秒制速度、变形及多交点/平台，也检查 JSONL 缺帧、增帧和时钟倒退。几何/速度/温度数值检查允许 `64*epsilon` 乘对应构造尺度；速度还除以实际时间跨度，只用于解析恒等式的运算舍入，不增加 CFD 精度门。测试为秒级，真实历史复核只读既有场。示例：
+
+```sh
+build/chemistry-env/bin/python tools/verification/test_reacting_flame_history.py
+build/chemistry-env/bin/python tools/verification/analyze_reacting_flame_history.py \
+  --report outputs/combustion-foundation/implicit-long-new/report.json \
+  --reference outputs/combustion-foundation/flame-reference-new --fixture-index 2 \
+  --output outputs/combustion-foundation/flame-history-analysis-new \
+  --marker 600 --marker 1000 --marker 1500 --marker 2000 --align-temperature 1500 \
+  --station .005 --station .01 --station .0125 --late-window 2e-5
+```
+
 显式、隐式原生验证驱动均支持 `--restart 检查点`；Python 运行/审计入口使用 `--restart-checkpoint 检查点`，一次只选一档网格。先用原生绑定检查完整机理、网格、边界和模型，原样保存输入到新输出目录的 `restart.checkpoint`；监督程序核对源文件运行前后及副本 SHA256。`--duration` 是从检查点起追加的物理时长，`endTime` 为实际请求终点，累计接受步数保留。步长预算、方程调用及收支积分从本段起点重新计数，采样步距也从本段起点计算。读取器核对原样导入的完整场、时间和步数，并分别报告本段/累计接受步数；不能把重复计算或重置为零的时钟当作续算。
 
 Python 监督入口的 `--duration` 继续要求追加时长大于零。显式 `--evaluate-initial` 只求值并审计原始夹具，时间、接受步和推进 RHS 调用均为零，不允许与时长、续算或采样参数混用。原几何、EOS、源项及共享面审计保留，另核对初末场完全一致且不存在 `accepted.checkpoint`；报告 `initial_evaluation_only=true`、`all_initial_evaluations_passed`，同时保持 `all_endpoints_reached=false`。同模式可重审，不能把初值报告重分类为已推进区间。零收支只是未推进的恒等式，不提供积分守恒或火焰精度证据。若只诊断终点检查点读回，仍直接调用原生探针，时长为 `0` 并给出 `--restart`；独立 `audit()` 可检查此输出，但明确不将零新增步标作完成新的物理区间。文件读回保持原值，与重建 BDF 历史后继续积分的误差验证分开。
