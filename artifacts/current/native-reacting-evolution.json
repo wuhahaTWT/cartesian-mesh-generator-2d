@@ -1,0 +1,142 @@
+{
+  "snapshot_utc": "2026-09-30T02:54:41.829273+00:00",
+  "source_base_commit": "2c85d7054653a94e51935ec86c45aa1ea16419c9",
+  "source_manifest": {
+    "path": "outputs/combustion-foundation/implicit-sampling-003/build.json",
+    "sha256": "fbe3d379bca56e1db614cc5eb2ca54eac0efb10b1b4dfb5582babcd6aad2f839"
+  },
+  "source_patch": {
+    "path": "outputs/combustion-foundation/implicit-sampling-003/build.patch",
+    "sha256": "a1d492848d0765a6800508ab14a476509a2da89763e5162d60645a2b2de09ca1"
+  },
+  "scope": "Optional accepted-state sampling for full detailed native reacting flow; independent per-frame audit and bounded diagnostic output",
+  "physical_model_or_default_numerical_controls_changed": false,
+  "method": {
+    "cadence": "initial state, every requested N accepted steps, and final accepted state; no time interpolation or new integration stops",
+    "diagnostic_context": "separate DetailedGas and ReactingFlowStepper2D instances; counted residual diagnostics do not change primary gas query sequence or BDF history",
+    "default_enabled": false,
+    "default_maximum_samples": 256,
+    "failure_behavior": "diagnostic failure or sample-count exhaustion stops at an accepted state, reports failure, and attempts normal accepted-state/checkpoint output; incomplete sample history is explicitly marked",
+    "position_marker": "fixed initial midpoint temperature, all crossings from row-mean cell-centre profile with linear interpolation; not a flame-speed qualification"
+  },
+  "verified_sampling": {
+    "normal_report": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/with-samples/report.json",
+      "sha256": "0453d81fa86fabee9c3a7b6ecf53f53fe323ee4cbaf039e9f358a0debd9bba94"
+    },
+    "equivalence_and_failure_check": {
+      "sampling_preserves_physical_fields_exactly": true,
+      "sampling_preserves_step_log_and_checkpoint_bytes": true,
+      "sample_budget_failure": {
+        "native_returncode": 1,
+        "accepted_steps_preserved": 20,
+        "accepted_time_s": 4.268124572555661e-08,
+        "recorded_samples": 2,
+        "sampling_complete": false,
+        "physical_budget_audit_passed": true,
+        "accepted_field_and_budget_equal_same_step_of_successful_run": true,
+        "accepted_state_file_verified": true,
+        "checkpoint_written": true,
+        "checkpoint_restart_in_this_check": false,
+        "failure": "accepted-state sampling failed: accepted-state sample budget exhausted"
+      }
+    },
+    "equivalence_record": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/sampling-and-budget-checks.json",
+      "sha256": "5b3c3c900582c9e8b8929339822ce627f4b016b2e334f3a2f7e40d166a93f06c"
+    },
+    "source_cases": {
+      "without_samples": {
+        "path": "outputs/combustion-foundation/implicit-sampling-001/without-samples/report.json",
+        "sha256": "0bdeda0553f297b45e05d3e53b9fc1bbc86cbd53a21bd4f249c520302ad95276"
+      },
+      "with_samples": {
+        "path": "outputs/combustion-foundation/implicit-sampling-002/with-samples/report.json",
+        "sha256": "0453d81fa86fabee9c3a7b6ecf53f53fe323ee4cbaf039e9f358a0debd9bba94"
+      }
+    },
+    "corrupted_sample_rejections": [
+      {
+        "case": "sample-clock",
+        "rejected": true,
+        "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 25, in <module>\n  File \"/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-sampling-001/verify_reacting_flame.py\", line 221, in audit_samples\n    checked = audit_fields(virtual, path / \"resolved-mechanism.yaml\", accepted[:n], reference, fixture)\n  File \"/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-sampling-001/verify_reacting_flame.py\", line 124, in audit_fields\n    assert clock == last[\"time\"] and accepted == last[\"steps\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      {
+        "case": "sample-mass-budget",
+        "rejected": true,
+        "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 25, in <module>\n  File \"/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-sampling-001/verify_reacting_flame.py\", line 221, in audit_samples\n    checked = audit_fields(virtual, path / \"resolved-mechanism.yaml\", accepted[:n], reference, fixture)\n  File \"/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/implicit-sampling-001/verify_reacting_flame.py\", line 108, in audit_fields\n    assert max(mass_error, energy_error, momentum_error, element_error) < 1e-8\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    ],
+    "corrupted_sample_record": {
+      "path": "outputs/combustion-foundation/implicit-sampling-001/sampling-equivalence.json",
+      "sha256": "88c034022490c74d07e77449898ab5f6124ce00af5d8b0266b9abd0170e5cb56"
+    },
+    "old_readers_and_zero_duration": {
+      "path": "outputs/combustion-foundation/implicit-sampling-001/reader-and-zero-checks.json",
+      "sha256": "83edf54c3f35a1232616de58138ce205467861a3066e72b95062f7a06f32f907"
+    },
+    "sample_budget_report": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/sample-budget/report.json",
+      "sha256": "31246ea732e6b6086ab7113447a5555cd2c7094a7136faa62cfa7f0ab1440fd1"
+    },
+    "current_reader_reports": [
+      {
+        "path": "outputs/combustion-foundation/implicit-sampling-002/history-reader/report.json",
+        "sha256": "381d4563047c5b69f84c1c18de6046a8d9a4fa63c1aff6243d152544fb6d7d98"
+      },
+      {
+        "path": "outputs/combustion-foundation/implicit-sampling-002/budget-history-reader/report.json",
+        "sha256": "370b4f0a8c2349e5acfed4d1c74cbf59bbda97fb07bbb8f95fcb980cc20f0d8c"
+      }
+    ],
+    "short_history_preview": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/history-reader/native-0-history.png",
+      "sha256": "799a7e9ab70f31bb5374ed29780ce028792b5637d3304d4cb6268ab48e8b58c6"
+    },
+    "build_log": {
+      "path": "outputs/combustion-foundation/implicit-sampling-build-003.log",
+      "sha256": "4a6544900f4aa298c7927d8d1bbdbdf30cb3a5e857b6c9ff3b3ad019d865c73e"
+    },
+    "native_probe_build": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/build.json",
+      "sha256": "cc4cec29a0e07d6e00cd287e18934c8563342023ea6cfc8110b9a50ff4c888b5"
+    },
+    "primary_solver_sha256": "543805652c6c4228b48f3d3da1e1ded24ff1efd36783e1317b532fc6e745ef8e"
+  },
+  "longer_evolution_100us": {
+    "requested_time_s": 0.0001,
+    "fixture_index": 2,
+    "cells": 890,
+    "core_spacing_m": 1e-05,
+    "output_directory": "outputs/combustion-foundation/implicit-evolution-100us-001",
+    "sample_every_accepted_steps": 200,
+    "solver_probe": {
+      "path": "outputs/combustion-foundation/implicit-sampling-002/probe",
+      "sha256": "87f6250de802c8e0da63fe7344fb75c3b5aba59993423d3a3e1f047f1548aaae"
+    },
+    "verifier": {
+      "path": "outputs/combustion-foundation/implicit-sampling-003/verify_reacting_flame.py",
+      "sha256": "bb0220c6ff9acfea7f1db8123a0a52bae42dd7069bfd55aec7809da58cd850fd"
+    },
+    "status": "running_at_snapshot",
+    "session_id": 53145,
+    "latest_accepted_step": {
+      "time": 1.0031927780667538e-05,
+      "dt": 8.40931057536311e-09,
+      "accepted": true,
+      "internalSteps": 971,
+      "rhsCalls": 5217,
+      "rejectedRhsCalls": 1,
+      "bdfOrder": 4,
+      "localErrorNorm": 0.07499039157331994,
+      "predictorCorrectionNorm": 0.7811499122220846,
+      "failure": ""
+    }
+  },
+  "not_run": [
+    "checkpoint restart from the particular diagnostic-budget failure case",
+    "full native/frontend/App/platform qualification for this diagnostic feature",
+    "experimental or actual combustor qualification"
+  ],
+  "mature_combustion_goal_complete": false
+}

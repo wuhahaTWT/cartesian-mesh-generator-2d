@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <stdexcept>
 
@@ -71,13 +72,48 @@ void state(std::ostream& out, DetailedGas& gas, const ReactingState2D& s, const 
     out << ",\"chemistryIntegral\":"; numbers(out, r.chemistryIntegral);
     out << ",\"hlleFallbacks\":" << r.hlleFallbacks << '}';
 }
+#ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
+void integration(std::ostream& out, const ReactingImplicitControls2D& c,
+                 const ReactingImplicitProgress2D& r, std::size_t sampleEvery, std::size_t sampleEvaluations,
+                 std::size_t maximumSamples, const std::string& samplingFailure) {
+    out << "{\"method\":\"CVODES-BDF\",\"errorControlCorrection\":\"fullPredictorCorrection\",\"maximumOrder\":" << c.maximumBdfOrder
+        << ",\"maximumNonlinearIterations\":" << c.maximumNonlinearIterations
+        << ",\"continueDampedNewton\":" << (c.continueDampedNewton ? "true" : "false")
+        << ",\"reflectSpeciesNewton\":" << (c.reflectSpeciesNewton ? "true" : "false")
+        << ",\"relativeTolerance\":" << c.relativeTolerance
+        << ",\"spatialOrder\":" << c.spatialOrder
+        << ",\"jacobianAdvectionOrder\":" << c.jacobianAdvectionOrder
+        << ",\"absoluteConservedTolerance\":" << c.absoluteConservedTolerance
+        << ",\"absoluteSpeciesFraction\":" << c.absoluteSpeciesFraction
+        << ",\"maximumStep\":" << c.maximumStep
+        << ",\"maximumResidualEvaluations\":" << c.maximumResidualEvaluations
+        << ",\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls
+        << ",\"errorTestFailures\":" << r.errorTestFailures << ",\"linearSetups\":" << r.linearSetups
+        << ",\"jacobianEvaluations\":" << r.jacobianEvaluations
+        << ",\"nonlinearIterations\":" << r.nonlinearIterations
+        << ",\"nonlinearConvergenceFailures\":" << r.nonlinearConvergenceFailures
+        << ",\"dampedNewtonUpdates\":" << r.dampedNewtonUpdates
+        << ",\"continuedDampedNewtonUpdates\":" << r.continuedDampedNewtonUpdates
+        << ",\"reflectedNewtonUpdates\":" << r.reflectedNewtonUpdates
+        << ",\"reflectionAttempts\":" << r.reflectionAttempts
+        << ",\"maximumReflectedSpeciesScaledChange\":" << r.maximumReflectedSpeciesScaledChange
+        << ",\"maximumLocalErrorNorm\":" << r.maximumLocalErrorNorm
+        << ",\"minimumNewtonFraction\":" << r.minimumNewtonFraction
+        << ",\"bandHalfWidth\":" << r.bandHalfWidth << ",\"bandBytes\":" << r.bandBytes
+        << ",\"sampleEveryAcceptedSteps\":" << sampleEvery
+        << ",\"sampleResidualEvaluations\":" << sampleEvaluations
+        << ",\"maximumSamples\":" << maximumSamples << ",\"samplingFailure\":"; string(out, samplingFailure);
+    out << ",\"acceptedByBdfOrder\":"; numbers(out, r.acceptedByBdfOrder);
+    out << ",\"lastDampedTrialFailure\":"; string(out, r.lastDampedTrialFailure); out << '}';
+}
+#endif
 }
 int main(int argc, char** argv) {
     try {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         require(regression || (argc >= 5 && (argc - 5) % 2 == 0),
-            "expected mechanism fixture output duration [--rtol value] [--conserved-atol value] [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1], or mechanism fixture --regression");
+            "expected mechanism fixture output duration [--rtol value] [--conserved-atol value] [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1] [--sample-every acceptedSteps] [--max-samples count], or mechanism fixture --regression");
 #else
         require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
 #endif
@@ -183,6 +219,8 @@ int main(int argc, char** argv) {
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         ReactingImplicitControls2D implicitControls;
         implicitControls.maximumBdfOrder = 5; implicitControls.maximumStep = std::max(duration, 1e-15);
+        std::size_t sampleEvery = 0, sampleEvaluations = 0, lastSampleSteps = 0, maximumSamples = 256;
+        std::string samplingFailure;
         std::set<std::string> suppliedOptions;
         for (int argument = 5; argument < argc; argument += 2) {
             const std::string option(argv[argument]), value(argv[argument + 1]);
@@ -204,28 +242,67 @@ int main(int argc, char** argv) {
                 require(value == "0" || value == "1", "invalid species reflection control");
                 implicitControls.reflectSpeciesNewton = value == "1";
             } else {
-                require(option == "--bdf-order" || option == "--jacobian-order" || option == "--newton-iterations", "unknown implicit control option");
+                require(option == "--bdf-order" || option == "--jacobian-order" || option == "--newton-iterations"
+                    || option == "--sample-every" || option == "--max-samples", "unknown implicit control option");
                 const auto count = std::stoul(value, &read);
                 require(read == value.size() && count > 0 && count <= static_cast<unsigned long>(std::numeric_limits<int>::max()), "invalid implicit integer control");
                 if (option == "--bdf-order") {
                     require(count <= 5, "invalid maximum BDF order"); implicitControls.maximumBdfOrder = static_cast<unsigned>(count);
                 } else if (option == "--jacobian-order") {
                     require(count <= 2, "invalid Jacobian advection order"); implicitControls.jacobianAdvectionOrder = static_cast<unsigned>(count);
-                } else implicitControls.maximumNonlinearIterations = static_cast<unsigned>(count);
+                } else if (option == "--sample-every") sampleEvery = static_cast<std::size_t>(count);
+                else if (option == "--max-samples") maximumSamples = static_cast<std::size_t>(count);
+                else implicitControls.maximumNonlinearIterations = static_cast<unsigned>(count);
             }
         }
         ReactingImplicitProgress2D implicitResult;
         implicitResult.constraintChange.assign(ns + 4, 0);
+        implicitResult.boundaryImpulse = boundaryImpulse; implicitResult.chemistryChange = chemistryChange;
+        std::unique_ptr<DetailedGas> sampleGas;
+        std::unique_ptr<ReactingFlowStepper2D> sampleSolver;
+        std::ofstream samples;
+        if (sampleEvery) {
+            // Diagnostic queries have their own mutable thermodynamic and
+            // transport context. Sampling never changes the integrator's
+            // state, BDF history, requested endpoint, or gas-query sequence.
+            sampleGas = std::make_unique<DetailedGas>(argv[1]);
+            sampleSolver = std::make_unique<ReactingFlowStepper2D>(*sampleGas, mesh, bc);
+            samples.open(directory / "samples.jsonl"); samples << std::setprecision(17);
+            require(static_cast<bool>(samples), "cannot open accepted-state samples");
+        }
+        const auto writeSample = [&](const ReactingState2D& saved, const ReactingImplicitProgress2D& progress) {
+            if (!samplingFailure.empty()) return;
+            try {
+                require(sampleEvaluations < maximumSamples, "accepted-state sample budget exhausted");
+                const auto residual = sampleSolver->evaluateResidual(saved); ++sampleEvaluations;
+                samples << "{\"kind\":\"" << (saved.steps ? "accepted" : "initial") << "\",\"state\":";
+                state(samples, *sampleGas, saved, residual);
+                samples << ",\"boundaryImpulse\":"; numbers(samples, progress.boundaryImpulse);
+                samples << ",\"chemistryChange\":"; numbers(samples, progress.chemistryChange);
+                samples << ",\"constraintChange\":"; numbers(samples, progress.constraintChange);
+                samples << ",\"integration\":"; integration(samples, implicitControls, progress, sampleEvery, sampleEvaluations, maximumSamples, samplingFailure);
+                samples << "}\n"; samples.flush(); require(static_cast<bool>(samples), "accepted-state sample write failed");
+                lastSampleSteps = saved.steps;
+            } catch (const std::exception& error) {
+                // Stop at an accepted state and let the normal checkpoint and
+                // final-state writers run even when optional diagnostics fail.
+                samplingFailure = std::string("accepted-state sampling failed: ") + error.what();
+            }
+        };
+        if (sampleEvery) writeSample(initial, implicitResult);
         std::ofstream evaluations(directory / "evaluation-progress.jsonl"); evaluations << std::setprecision(17);
         if (duration > 0) {
             ReactingImplicitIntegrator2D implicit(gas, solver, initial, implicitControls);
-            implicitResult = implicit.advance(duration, [&] { return std::filesystem::exists(directory / "cancel.request"); }, [&](const auto& r) {
+            implicitResult = implicit.advance(duration, [&] {
+                return !samplingFailure.empty() || std::filesystem::exists(directory / "cancel.request");
+            }, [&](const auto& r) {
                 const double dt = r.lastAccepted.time - current.time;
                 log << "{\"time\":" << current.time << ",\"dt\":" << dt << ",\"accepted\":true,\"internalSteps\":"
                     << r.internalSteps << ",\"rhsCalls\":" << r.rhsCalls << ",\"rejectedRhsCalls\":" << r.rejectedRhsCalls
                     << ",\"bdfOrder\":" << r.lastBdfOrder << ",\"localErrorNorm\":" << r.lastLocalErrorNorm
                     << ",\"predictorCorrectionNorm\":" << r.lastPredictorCorrectionNorm << ",\"failure\":\"\"}\n";
                 log.flush(); current = r.lastAccepted;
+                if (sampleEvery && current.steps % sampleEvery == 0) writeSample(current, r);
                 if (current.steps % 10 == 0) std::cerr << "implicit accepted " << current.steps << " t=" << current.time << '\n';
             }, [&](const auto& r, double trialTime) {
                 if (r.rhsCalls == 1 || r.rhsCalls % 100 == 0) {
@@ -252,13 +329,16 @@ int main(int argc, char** argv) {
                 }
             });
             current = implicitResult.lastAccepted; failure = implicitResult.failure;
-            if (implicitResult.canceled && failure.empty()) failure = "canceled between accepted steps";
+            if (!samplingFailure.empty()) failure = samplingFailure;
+            else if (implicitResult.canceled && failure.empty()) failure = "canceled between accepted steps";
             boundaryImpulse = implicitResult.boundaryImpulse; chemistryChange = implicitResult.chemistryChange;
             if (!implicitResult.reachedEnd) {
                 log << "{\"time\":" << current.time << ",\"dt\":0,\"accepted\":false,\"failure\":";
                 string(log, failure); log << "}\n"; log.flush();
             }
         }
+        if (sampleEvery && current.steps > lastSampleSteps) writeSample(current, implicitResult);
+        if (!samplingFailure.empty()) failure = samplingFailure;
 #else
         ReactingStepControls2D controls; controls.endTime = duration;
         std::vector<double> transportClosure(ns + 4), chemistryClosure(ns + 4);
@@ -309,32 +389,7 @@ int main(int argc, char** argv) {
         out << "],\"boundaryImpulse\":"; numbers(out, boundaryImpulse); out << ",\"chemistryChange\":"; numbers(out, chemistryChange);
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         out << ",\"constraintChange\":"; numbers(out, implicitResult.constraintChange);
-        out << ",\"integration\":{\"method\":\"CVODES-BDF\",\"errorControlCorrection\":\"fullPredictorCorrection\",\"maximumOrder\":" << implicitControls.maximumBdfOrder
-            << ",\"maximumNonlinearIterations\":" << implicitControls.maximumNonlinearIterations
-            << ",\"continueDampedNewton\":" << (implicitControls.continueDampedNewton ? "true" : "false")
-            << ",\"reflectSpeciesNewton\":" << (implicitControls.reflectSpeciesNewton ? "true" : "false")
-            << ",\"relativeTolerance\":" << implicitControls.relativeTolerance
-            << ",\"spatialOrder\":" << implicitControls.spatialOrder
-            << ",\"jacobianAdvectionOrder\":" << implicitControls.jacobianAdvectionOrder
-            << ",\"absoluteConservedTolerance\":" << implicitControls.absoluteConservedTolerance
-            << ",\"absoluteSpeciesFraction\":" << implicitControls.absoluteSpeciesFraction
-            << ",\"maximumStep\":" << implicitControls.maximumStep
-            << ",\"maximumResidualEvaluations\":" << implicitControls.maximumResidualEvaluations
-            << ",\"rhsCalls\":" << implicitResult.rhsCalls << ",\"rejectedRhsCalls\":" << implicitResult.rejectedRhsCalls
-            << ",\"errorTestFailures\":" << implicitResult.errorTestFailures << ",\"linearSetups\":" << implicitResult.linearSetups
-            << ",\"jacobianEvaluations\":" << implicitResult.jacobianEvaluations
-            << ",\"nonlinearIterations\":" << implicitResult.nonlinearIterations
-            << ",\"nonlinearConvergenceFailures\":" << implicitResult.nonlinearConvergenceFailures
-            << ",\"dampedNewtonUpdates\":" << implicitResult.dampedNewtonUpdates
-            << ",\"continuedDampedNewtonUpdates\":" << implicitResult.continuedDampedNewtonUpdates
-            << ",\"reflectedNewtonUpdates\":" << implicitResult.reflectedNewtonUpdates
-            << ",\"reflectionAttempts\":" << implicitResult.reflectionAttempts
-            << ",\"maximumReflectedSpeciesScaledChange\":" << implicitResult.maximumReflectedSpeciesScaledChange
-            << ",\"maximumLocalErrorNorm\":" << implicitResult.maximumLocalErrorNorm
-            << ",\"minimumNewtonFraction\":" << implicitResult.minimumNewtonFraction
-            << ",\"bandHalfWidth\":" << implicitResult.bandHalfWidth << ",\"bandBytes\":" << implicitResult.bandBytes
-            << ",\"acceptedByBdfOrder\":"; numbers(out, implicitResult.acceptedByBdfOrder);
-        out << ",\"lastDampedTrialFailure\":"; string(out, implicitResult.lastDampedTrialFailure); out << '}';
+        out << ",\"integration\":"; integration(out, implicitControls, implicitResult, sampleEvery, sampleEvaluations, maximumSamples, samplingFailure);
 #else
         out << ",\"massClosure\":{\"maximumFraction\":" << maximumClosure << ",\"absoluteIntegral\":" << absoluteClosure
             << ",\"transport\":"; numbers(out, transportClosure); out << ",\"chemistry\":"; numbers(out, chemistryClosure); out << '}';
@@ -350,6 +405,6 @@ int main(int argc, char** argv) {
         out << ",\"elapsedSecondsBeforeFinalFlush\":" << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() << "}\n";
         out.close(); require(static_cast<bool>(out) && static_cast<bool>(log), "verification output write failed");
         if (!failure.empty()) std::cerr << failure << '\n';
-        return current.time == duration ? 0 : 1;
+        return current.time == duration && failure.empty() ? 0 : 1;
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
 }

@@ -323,6 +323,10 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 
 接受状态只在真实状态、物性和积分时钟检查后更新。会话保留 BDF 历史；步间取消可继续同一会话，内部试算取消或失败保留最后接受状态，但须用新会话重建历史。残差评估和接受步都有成本预算，不把预算耗尽记为完成。火焰验证驱动保存 `evaluation-progress.jsonl`；在输出目录创建 `cancel.request` 可有序停止并保存最后接受状态、检查点和失败原因。直接杀进程不提供同样的保存保证。
 
+长时间验证可用 `--sample-every N` 将初始状态、每 N 个接受步及末态写入 `samples.jsonl`。采样不改变时间步或 BDF 历史，使用单独的物性和残差上下文；额外诊断调用在 `sampleResidualEvaluations` 中计数，仍包含在完整进程耗时内。默认关闭采样；开启后，`--max-samples` 默认 256 条，用于限制诊断输出数量，不是物理精度门。达到保存上限或诊断出错会在接受状态退出并尝试写入最后接受场和检查点，原失败原因进入结果；部分轨迹明确标记 `sampling_complete=false`，不冒充完整计算。
+
+读取器用同一套独立时钟、EOS、共享面和质量/元素/能量预算检查逐帧核对，初始样本单独标记，不称为接受检查点。`sample-audits.json` 保留每帧诊断；历史图使用真实接受时刻。固定初始温度范围中点的等温位置通过单元中心剖面线性插值得到，多个交点全部记录；该位置标记不等于已验收火焰速度。464 格、0.1 微秒采样开关对照的全部物理场相等，步长日志和检查点逐字节相同。故意改坏的时钟和质量预算被拒绝；两条样本上限测试在第 20 个接受步退出，保留的场和预算与正常运行的同一步相同。该失败案例已写检查点，但本次未从该检查点重新启动。
+
 本机可选后端目前要求 Cantera 随附并导出的 SUNDIALS 5 接口；其他 SUNDIALS 主版本、App 和平台打包尚未适配。先使用已有的详细化学配置，再运行：
 
 ```sh
@@ -333,6 +337,7 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
   --probe build/cartmesh2d_reacting_implicit_flame_probe \
   --reference outputs/combustion-foundation/flame-reference-new \
   --output outputs/combustion-foundation/implicit-flame-new --duration 1e-6 --grid 0 --jobs 1 --reflect-species 1
+# 较长演化可加 --sample-every 200；时间步仍由原误差控制决定。
 # 同一 10 微秒案例分别用默认、减半和四分之一容差保存至三个新目录。
 # 例如减半：在 verify_reacting_flame.py 命令中加入
 # --rtol 5e-8 --conserved-atol 5e-13 --species-atol 5e-19

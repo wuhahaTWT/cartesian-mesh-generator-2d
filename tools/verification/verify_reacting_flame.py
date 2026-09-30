@@ -22,9 +22,9 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def audit(path, reference, fixture, audit_output=None):
-    r = json.loads((path / "field.json").read_text())
-    gas = ct.Solution(str(path / "resolved-mechanism.yaml"))
+def audit_fields(r, mechanism, steps, reference, fixture):
+    """Audit serialized native data; callers identify its raw file or sample."""
+    gas = ct.Solution(str(mechanism))
     area = np.array(r["areas"])
     faces, nx, ny = r["faces"], r["nx"], r["ny"]
     assert len(area) == nx * ny and np.all(area > 0)
@@ -108,7 +108,6 @@ def audit(path, reference, fixture, audit_output=None):
     assert max(mass_error, energy_error, momentum_error, element_error) < 1e-8
     first, last = r["initial"], r["final"]
     implicit = r.get("integration", {}).get("method") == "CVODES-BDF"
-    steps = [json.loads(line) for line in (path / "steps.jsonl").read_text().splitlines()]
     clock, accepted = 0., 0
     for step in steps:
         assert step["time"] == clock
@@ -173,8 +172,7 @@ def audit(path, reference, fixture, audit_output=None):
               "mass_budget_per_initial_mass": mass_error, "energy_budget_scaled": energy_error,
               "momentum_budget_scaled": momentum_error, "element_budget_per_initial_mass": element_error,
               "initial_residual": state_metrics[0], "final_residual": state_metrics[1],
-              "maximum_temperature_drift_K": float(np.max(abs(np.array(last["temperature"]) - first["temperature"]))),
-              "field_sha256": sha(path / "field.json")}
+              "maximum_temperature_drift_K": float(np.max(abs(np.array(last["temperature"]) - first["temperature"])))}
     if closure_report is not None:
         report["mass_closure_diagnostics"] = closure_report
     if implicit:
@@ -187,8 +185,122 @@ def audit(path, reference, fixture, audit_output=None):
         assert equation_defect < 1e-8
         report["bdf_species_quadrature_defect_per_mass"] = equation_defect
         report["constraint_change_per_initial_mass"] = (constraint / float(before[0])).tolist()
+    return report
+
+
+def audit_samples(path, field, steps, reference, fixture, audit_output):
+    every = field.get("integration", {}).get("sampleEveryAcceptedSteps", 0)
+    if not every:
+        assert not (path / "samples.jsonl").exists()
+        return None
+    samples = [json.loads(line) for line in (path / "samples.jsonl").read_text().splitlines()]
+    accepted = [step for step in steps if step["accepted"]]
+    expected = [0] + [i for i in range(1, len(accepted) + 1) if i % every == 0]
+    if expected[-1] != len(accepted):
+        expected.append(len(accepted))
+    sampling_failure = field["integration"].get("samplingFailure", "")
+    assert samples
+    assert [sample["state"]["steps"] for sample in samples] == (expected[:len(samples)] if sampling_failure else expected)
+    assert len(samples) == field["integration"]["sampleResidualEvaluations"]
+    assert samples[0]["kind"] == "initial" and samples[0]["state"] == field["initial"]
+    if not sampling_failure:
+        assert samples[-1]["state"] == field["final"]
+        assert samples[-1]["integration"] == field["integration"]
+    else:
+        assert sampling_failure in field["failure"]
+    initial_temperature = np.array(field["initial"]["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
+    marker_temperature = .5 * (float(initial_temperature.min()) + float(initial_temperature.max()))
+    x = .5 * (np.array(field["xEdges"][:-1]) + field["xEdges"][1:])
+    rows = []
+    for index, sample in enumerate(samples):
+        n = sample["state"]["steps"]
+        assert sample["kind"] == ("accepted" if n else "initial")
+        assert sample["integration"]["sampleResidualEvaluations"] == index + 1
+        assert sample["integration"]["rhsCalls"] == (accepted[n - 1]["rhsCalls"] if n else 0)
+        virtual = dict(field)
+        virtual["final"] = sample["state"]
+        for key in ("boundaryImpulse", "chemistryChange", "constraintChange", "integration"):
+            virtual[key] = sample[key]
+        virtual["complete"] = field["complete"] and sample["state"]["time"] == field["duration"]
+        virtual["failure"] = field["failure"] if index == len(samples) - 1 else ""
+        checked = audit_fields(virtual, path / "resolved-mechanism.yaml", accepted[:n], reference, fixture)
+        temperature = np.array(sample["state"]["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
+        markers = []
+        for j, (a, b) in enumerate(zip(temperature[:-1], temperature[1:])):
+            if a < marker_temperature <= b or b < marker_temperature <= a:
+                markers.append(float(x[j] + (marker_temperature - a) / (b - a) * (x[j + 1] - x[j])))
+        rows.append({"sample_index": index, "kind": sample["kind"], "temperature_marker_positions_m": markers,
+                     "audit": checked})
+    result = {"all_samples_passed": True, "sampling_complete": not sampling_failure, "sampling_failure": sampling_failure,
+              "sample_count": len(samples), "every_accepted_steps": every,
+              "samples_sha256": sha(path / "samples.jsonl"), "scaffold_field_sha256": sha(path / "field.json"),
+              "marker_temperature_K": marker_temperature,
+              "marker_method": "all crossings of the fixed initial midpoint temperature in the row-mean cell-centre profile, with linear interpolation; a position diagnostic, not an independently qualified flame speed",
+              "samples": rows}
+    target = audit_output / "sample-audits.json"
+    target.write_text(json.dumps(result, indent=2) + "\n")
+    return {"all_samples_passed": True, "sampling_complete": not sampling_failure, "sampling_failure": sampling_failure,
+            "sample_count": len(samples), "sample_audits": str(target),
+            "sample_audits_sha256": sha(target), "samples_sha256": result["samples_sha256"]}
+
+
+def audit(path, reference, fixture, audit_output=None):
+    r = json.loads((path / "field.json").read_text())
+    steps = [json.loads(line) for line in (path / "steps.jsonl").read_text().splitlines()]
+    report = audit_fields(r, path / "resolved-mechanism.yaml", steps, reference, fixture)
+    report["field_sha256"] = sha(path / "field.json")
+    sampling = audit_samples(path, r, steps, reference, fixture, Path(audit_output or path))
+    if sampling is not None:
+        report["accepted_state_samples"] = sampling
     (Path(audit_output or path) / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
     return report, r
+
+
+def plot_sample_history(case, field, output, plt):
+    sampling = case.get("accepted_state_samples")
+    if not sampling:
+        return
+    assert sha(sampling["sample_audits"]) == sampling["sample_audits_sha256"]
+    history = json.loads(Path(sampling["sample_audits"]).read_text())
+    samples_path = Path(case["directory"]) / "samples.jsonl"
+    assert sha(samples_path) == history["samples_sha256"]
+    rows = history["samples"]
+    times = np.array([row["audit"]["time_s"] for row in rows])
+    selected = sorted({int(np.argmin(abs(times - target))) for target in np.linspace(times[0], times[-1], 4)})
+    snapshots = {}
+    with samples_path.open() as stream:
+        for index, line in enumerate(stream):
+            if index in selected:
+                snapshots[index] = json.loads(line)["state"]
+    x = .5 * (np.array(field["xEdges"][:-1]) + field["xEdges"][1:])
+    initial_t = np.array(field["initial"]["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
+    origin = x[np.argmax(np.gradient(initial_t, x))]
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5), layout="constrained")
+    for index in selected:
+        state = snapshots[index]
+        temperature = np.array(state["temperature"]).reshape(field["ny"], field["nx"]).mean(axis=0)
+        axes[0, 0].plot((x - origin) * 1000, temperature, label=f"{state['time'] * 1e6:.3g} us")
+    axes[0, 0].set(title="Actual accepted temperature profiles", xlabel="Distance from initial flame (mm)",
+                   ylabel="Temperature (K)", xlim=(-.6, 2))
+    axes[0, 0].legend(fontsize=8)
+    positions = np.array([row["temperature_marker_positions_m"][0]
+                          if len(row["temperature_marker_positions_m"]) == 1 else np.nan for row in rows])
+    axes[0, 1].plot(times * 1e6, (positions - positions[0]) * 1e6, "o-", markersize=3)
+    axes[0, 1].set(title=f"Fixed {history['marker_temperature_K']:.1f} K position marker",
+                   ylabel="Displacement from initial position (um)")
+    axes[1, 0].plot(times * 1e6, [row["audit"]["final_residual"]["hydrogen_consumption_kg_per_m2_s"] for row in rows], "o-", markersize=3)
+    axes[1, 0].set(title="Actual integrated H2 consumption", ylabel="kg / m² / s")
+    axes[1, 0].ticklabel_format(axis="y", style="plain", useOffset=False)
+    axes[1, 1].plot(times * 1e6, [row["audit"]["final_residual"]["species_residual_L1_over_chemical_activity"] * 100 for row in rows], "o-", markersize=3)
+    axes[1, 1].set(title="Species equation imbalance", ylabel="L1 residual / L1 reaction activity (%)")
+    for ax in (axes[0, 1], axes[1, 0], axes[1, 1]):
+        ax.set_xlabel("Actual accepted time (us)")
+    for ax in axes.flat:
+        ax.grid(alpha=.2)
+    suffix = "" if history["sampling_complete"] else " | sampling stopped early"
+    fig.suptitle(f"Detailed H2/air | {field['cells']} cells | actual end {field['final']['time'] * 1e6:g} / requested {field['duration'] * 1e6:g} us{suffix}")
+    fig.supxlabel("Recorded accepted states and budgets; position marker is not a flame-speed qualification; multiple crossings remain in the JSON", fontsize=8)
+    fig.savefig(output / f"native-{case['fixture_index']}-history.png", dpi=160); plt.close(fig)
 
 
 def main():
@@ -208,6 +320,8 @@ def main():
     parser.add_argument("--newton-iterations", type=int)
     parser.add_argument("--continue-damped", type=int, choices=(0, 1))
     parser.add_argument("--reflect-species", type=int, choices=(0, 1))
+    parser.add_argument("--sample-every", type=int, help="save and audit every Nth accepted state plus initial/final states")
+    parser.add_argument("--max-samples", type=int, help="explicit diagnostic record budget; exhaustion preserves the accepted state and fails")
     parser.add_argument("--jobs", type=int, default=3, help="independent native cases in parallel; 1 for sequential execution")
     parser.add_argument("--grid", type=int, action="append",
                         help="reference fixture index; repeat to select cases (default: every fixture)")
@@ -220,12 +334,15 @@ def main():
     assert args.conserved_atol is None or np.isfinite(args.conserved_atol) and args.conserved_atol > 0
     assert args.species_atol is None or np.isfinite(args.species_atol) and args.species_atol > 0
     assert args.newton_iterations is None or 0 < args.newton_iterations <= np.iinfo(np.int32).max
+    assert args.sample_every is None or 0 < args.sample_every <= np.iinfo(np.int32).max
+    assert args.max_samples is None or 0 < args.max_samples <= np.iinfo(np.int32).max
     requested_controls = {key: value for key, value in {
         "relativeTolerance": args.rtol, "absoluteConservedTolerance": args.conserved_atol,
         "absoluteSpeciesFraction": args.species_atol, "maximumOrder": args.bdf_order,
         "jacobianAdvectionOrder": args.jacobian_order, "maximumNonlinearIterations": args.newton_iterations,
         "continueDampedNewton": None if args.continue_damped is None else bool(args.continue_damped),
-        "reflectSpeciesNewton": None if args.reflect_species is None else bool(args.reflect_species)
+        "reflectSpeciesNewton": None if args.reflect_species is None else bool(args.reflect_species),
+        "sampleEveryAcceptedSteps": args.sample_every, "maximumSamples": args.max_samples
     }.items() if value is not None}
     assert 1 <= args.jobs <= 3
     args.output.mkdir(parents=True, exist_ok=False)
@@ -254,7 +371,7 @@ def main():
             for option in ("rtol", "conserved_atol", "species_atol"):
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), format(getattr(args, option), ".17g")]
-            for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped", "reflect_species"):
+            for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped", "reflect_species", "sample_every", "max_samples"):
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), str(getattr(args, option))]
             process = subprocess.run(command, capture_output=True, text=True)
@@ -268,7 +385,7 @@ def main():
             elapsed, returncode, failure = saved["elapsed_seconds_including_all_IO"], saved["returncode"], saved.get("failure", "")
             audit_path.mkdir()
         raw_hashes = {str(p): sha(p) for p in (path.iterdir() if path.is_dir() else [])
-                      if p.is_file() and p.name not in {"audit.json", "audit-error.txt"}}
+                      if p.is_file() and p.name not in {"audit.json", "audit-error.txt", "sample-audits.json"}}
         case = {"fixture_index": number, "returncode": returncode, "elapsed_seconds_including_all_IO": elapsed, "directory": str(path), "raw_sha256": raw_hashes}
         field = None
         if (path / "field.json").exists():
@@ -338,6 +455,8 @@ def main():
         fig.suptitle(f"Detailed H2/air planar flame | native evolution requested: {args.duration*1e6:g} us")
         fig.supxlabel("Reference-initialized short-time verification; no independently predicted flame-speed or experimental qualification.", fontsize=8)
         fig.savefig(args.output / "reacting-flame.png", dpi=160); plt.close(fig)
+        for case, field in results:
+            plot_sample_history(case, field, args.output, plt)
     if not report["all_numerical_checks_passed"] or not report["all_endpoints_reached"] or not report["all_native_runs_succeeded"]:
         raise SystemExit(1)
 
