@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
         const bool regression = argc == 4 && std::string(argv[3]) == "--regression";
 #ifdef CARTMESH2D_IMPLICIT_FLAME_PROBE
         require(regression || (argc >= 5 && (argc - 5) % 2 == 0),
-            "expected mechanism fixture output duration [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1], or mechanism fixture --regression");
+            "expected mechanism fixture output duration [--species-atol value] [--bdf-order 1..5] [--jacobian-order 1|2] [--newton-iterations count] [--continue-damped 0|1] [--reflect-species 0|1], or mechanism fixture --regression");
 #else
         require(argc == 5 || regression, "expected mechanism, fixture, NEW output directory, physical duration (0 for residual only), or mechanism fixture --regression");
 #endif
@@ -195,6 +195,9 @@ int main(int argc, char** argv) {
             } else if (option == "--continue-damped") {
                 require(value == "0" || value == "1", "invalid damped continuation control");
                 implicitControls.continueDampedNewton = value == "1";
+            } else if (option == "--reflect-species") {
+                require(value == "0" || value == "1", "invalid species reflection control");
+                implicitControls.reflectSpeciesNewton = value == "1";
             } else {
                 require(option == "--bdf-order" || option == "--jacobian-order" || option == "--newton-iterations", "unknown implicit control option");
                 const auto count = std::stoul(value, &read);
@@ -228,6 +231,9 @@ int main(int argc, char** argv) {
                         << ",\"trialTime\":" << trialTime << ",\"bandHalfWidth\":" << r.bandHalfWidth
                         << ",\"dampedNewtonUpdates\":" << r.dampedNewtonUpdates
                         << ",\"continuedDampedNewtonUpdates\":" << r.continuedDampedNewtonUpdates
+                        << ",\"reflectedNewtonUpdates\":" << r.reflectedNewtonUpdates
+                        << ",\"reflectionAttempts\":" << r.reflectionAttempts
+                        << ",\"maximumReflectedSpeciesScaledChange\":" << r.maximumReflectedSpeciesScaledChange
                         << ",\"jacobianEvaluations\":" << r.jacobianEvaluations
                         << ",\"nonlinearIterations\":" << r.nonlinearIterations
                         << ",\"nonlinearConvergenceFailures\":" << r.nonlinearConvergenceFailures
@@ -300,6 +306,7 @@ int main(int argc, char** argv) {
         out << ",\"integration\":{\"method\":\"CVODES-BDF\",\"errorControlCorrection\":\"fullPredictorCorrection\",\"maximumOrder\":" << implicitControls.maximumBdfOrder
             << ",\"maximumNonlinearIterations\":" << implicitControls.maximumNonlinearIterations
             << ",\"continueDampedNewton\":" << (implicitControls.continueDampedNewton ? "true" : "false")
+            << ",\"reflectSpeciesNewton\":" << (implicitControls.reflectSpeciesNewton ? "true" : "false")
             << ",\"relativeTolerance\":" << implicitControls.relativeTolerance
             << ",\"spatialOrder\":" << implicitControls.spatialOrder
             << ",\"jacobianAdvectionOrder\":" << implicitControls.jacobianAdvectionOrder
@@ -314,6 +321,9 @@ int main(int argc, char** argv) {
             << ",\"nonlinearConvergenceFailures\":" << implicitResult.nonlinearConvergenceFailures
             << ",\"dampedNewtonUpdates\":" << implicitResult.dampedNewtonUpdates
             << ",\"continuedDampedNewtonUpdates\":" << implicitResult.continuedDampedNewtonUpdates
+            << ",\"reflectedNewtonUpdates\":" << implicitResult.reflectedNewtonUpdates
+            << ",\"reflectionAttempts\":" << implicitResult.reflectionAttempts
+            << ",\"maximumReflectedSpeciesScaledChange\":" << implicitResult.maximumReflectedSpeciesScaledChange
             << ",\"maximumLocalErrorNorm\":" << implicitResult.maximumLocalErrorNorm
             << ",\"minimumNewtonFraction\":" << implicitResult.minimumNewtonFraction
             << ",\"bandHalfWidth\":" << implicitResult.bandHalfWidth << ",\"bandBytes\":" << implicitResult.bandBytes

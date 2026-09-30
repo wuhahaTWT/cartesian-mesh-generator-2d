@@ -203,6 +203,7 @@ def main():
     parser.add_argument("--jacobian-order", type=int, choices=(1, 2))
     parser.add_argument("--newton-iterations", type=int)
     parser.add_argument("--continue-damped", type=int, choices=(0, 1))
+    parser.add_argument("--reflect-species", type=int, choices=(0, 1))
     parser.add_argument("--jobs", type=int, default=3, help="independent native cases in parallel; 1 for sequential execution")
     parser.add_argument("--grid", type=int, action="append",
                         help="reference fixture index; repeat to select cases (default: every fixture)")
@@ -216,7 +217,8 @@ def main():
     requested_controls = {key: value for key, value in {
         "absoluteSpeciesFraction": args.species_atol, "maximumOrder": args.bdf_order,
         "jacobianAdvectionOrder": args.jacobian_order, "maximumNonlinearIterations": args.newton_iterations,
-        "continueDampedNewton": None if args.continue_damped is None else bool(args.continue_damped)
+        "continueDampedNewton": None if args.continue_damped is None else bool(args.continue_damped),
+        "reflectSpeciesNewton": None if args.reflect_species is None else bool(args.reflect_species)
     }.items() if value is not None}
     assert 1 <= args.jobs <= 3
     args.output.mkdir(parents=True, exist_ok=False)
@@ -244,7 +246,7 @@ def main():
             command = [str(args.probe.resolve()), reference["mechanism"], fixture["path"], str(path), format(args.duration, ".17g")]
             if args.species_atol is not None:
                 command += ["--species-atol", format(args.species_atol, ".17g")]
-            for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped"):
+            for option in ("bdf_order", "jacobian_order", "newton_iterations", "continue_damped", "reflect_species"):
                 if getattr(args, option) is not None:
                     command += ["--" + option.replace("_", "-"), str(getattr(args, option))]
             process = subprocess.run(command, capture_output=True, text=True)

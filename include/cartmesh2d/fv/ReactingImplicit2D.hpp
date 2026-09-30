@@ -19,6 +19,9 @@ struct ReactingImplicitControls2D {
     // Experimental globalization option; the default rejects an unconverged
     // damped update and lets CVODES retry the time step.
     bool continueDampedNewton = false;
+    // Try a species-bound reflection of an infeasible Newton candidate,
+    // requiring a decrease of the true nonlinear residual before use.
+    bool reflectSpeciesNewton = false;
     // Approximate Newton matrix only. A first-order advection linearization
     // avoids differencing discontinuous MUSCL limiter switches. The actual
     // residual and its convergence checks still use spatialOrder throughout.
@@ -41,6 +44,8 @@ struct ReactingImplicitProgress2D {
     std::array<long, 6> acceptedByBdfOrder{};
     int lastBdfOrder = 0;
     std::size_t dampedNewtonUpdates = 0, continuedDampedNewtonUpdates = 0;
+    std::size_t reflectionAttempts = 0, reflectedNewtonUpdates = 0;
+    double maximumReflectedSpeciesScaledChange = 0;
     double minimumNewtonFraction = 1;
     double lastNewtonCorrectionNorm = 0, lastNewtonResidualNorm = 0, lastNewtonTolerance = 0;
     double lastPredictorCorrectionNorm = 0, lastLocalErrorNorm = 0, maximumLocalErrorNorm = 0;

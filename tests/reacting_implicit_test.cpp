@@ -92,6 +92,9 @@ int main(int argc, char** argv) {
         bool rejected = false;
         try { ReactingImplicitIntegrator2D bad(gas, solver, invalid, c); } catch (const std::exception&) { rejected = true; }
         check(rejected && invalid.cells[0][4] == -1e-30, "invalid initial species repaired");
+        auto reflective = c; reflective.reflectSpeciesNewton = true; rejected = false;
+        try { ReactingImplicitIntegrator2D bad(gas, solver, invalid, reflective); } catch (const std::exception&) { rejected = true; }
+        check(rejected && invalid.cells[0][4] == -1e-30, "Newton reflection repaired invalid initial data");
         c.maximumAcceptedSteps = 1;
         ReactingImplicitIntegrator2D limited(gas, solver, initial, c);
         const auto stopped = limited.advance(1e-3);
@@ -144,7 +147,7 @@ int main(int argc, char** argv) {
         }
         check(withRate.derivative == withoutRate.derivative && withRate.faceFlux == withoutRate.faceFlux
             && withoutRate.transportRate.empty(), "optional rate estimation changed physical residual");
-        c.maximumAcceptedSteps = 20000; c.maximumStep = 2e-7;
+        c.maximumAcceptedSteps = 20000; c.maximumStep = 2e-7; c.reflectSpeciesNewton = true;
         ReactingImplicitIntegrator2D spatialIntegrator(gas, spatial, nonuniform, c);
         const auto spatialResult = spatialIntegrator.advance(2e-7);
         if (!spatialResult.reachedEnd) throw std::runtime_error(spatialResult.failure);

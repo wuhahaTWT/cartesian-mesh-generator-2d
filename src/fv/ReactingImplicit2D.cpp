@@ -81,15 +81,17 @@ std::vector<std::size_t> reverseCuthillMcKee(const std::vector<std::vector<std::
 }
 
 struct ReactingImplicitIntegrator2D::Impl {
-    // Decorate the public SUNDIALS Newton solver interface. Whole Newton
-    // updates are backtracked to an admissible iterate; no component is
-    // projected/clipped, and the original correction controls convergence.
+    // Decorate the public SUNDIALS Newton solver interface. Feasible Newton
+    // candidates are chosen by backtracking or optional bound reflection;
+    // no state is projected/clipped after convergence.
     struct GuardedNewton {
         Impl& owner;
         SUNNonlinearSolver inner = nullptr;
         SUNNonlinSolSysFn system = nullptr;
         void* integrator = nullptr;
         N_Vector prediction = nullptr, base = nullptr, candidate = nullptr, full = nullptr, residual = nullptr;
+        N_Vector solveWeights = nullptr;
+        double baseResidualNorm = 0;
         static inline thread_local GuardedNewton* active = nullptr;
         explicit GuardedNewton(Impl& i) : owner(i) {}
         ~GuardedNewton() {
@@ -100,7 +102,11 @@ struct ReactingImplicitIntegrator2D::Impl {
         static int systemCallback(N_Vector correction, N_Vector result, void* memory) {
             if (!active || active->integrator != memory) return SUN_NLS_ILL_INPUT;
             const int status = active->system(correction, result, memory);
-            if (status == 0) N_VScale(1, correction, active->base);
+            if (status == 0) {
+                N_VScale(1, correction, active->base);
+                if (active->owner.controls.reflectSpeciesNewton)
+                    active->baseResidualNorm = N_VWrmsNorm(result, active->solveWeights);
+            }
             return status;
         }
         bool admissible(N_Vector correction) {
@@ -118,23 +124,55 @@ struct ReactingImplicitIntegrator2D::Impl {
                 double fraction = 1;
                 if (!g.admissible(correction)) {
                     g.owner.progress.lastDampedTrialFailure = g.owner.lastRhsError;
-                    bool found = false;
-                    for (unsigned attempt = 0; attempt < 64; ++attempt) {
-                        fraction *= .5;
-                        N_VLinearSum(1, g.base, fraction, delta, g.candidate);
-                        if (g.admissible(g.candidate)) { found = true; break; }
+                    bool reflected = false;
+                    if (g.owner.controls.reflectSpeciesNewton) {
+                        N_VScale(1, correction, g.candidate);
+                        double changed = 0;
+                        for (std::size_t a = 0; a < g.owner.mapping.size(); ++a) {
+                            if (g.owner.mapping[a].second < 4) continue;
+                            const double proposed = NV_Ith_S(g.prediction, a) + NV_Ith_S(correction, a);
+                            if (std::isfinite(proposed) && proposed < 0) {
+                                // Reflect the trial direction at the zero
+                                // bound. This is an alternative nonlinear
+                                // iterate, not an accepted-state repair or a
+                                // concentration floor. Closure and EOS are
+                                // checked again on the complete candidate.
+                                NV_Ith_S(g.candidate, a) = -NV_Ith_S(g.prediction, a) - proposed;
+                                changed = std::max(changed, -2 * proposed);
+                            }
+                        }
+                        if (changed > 0 && g.admissible(g.candidate)) {
+                            ++g.owner.progress.reflectionAttempts;
+                            const int status = g.system(g.candidate, g.residual, g.integrator);
+                            if (status < 0) return status;
+                            if (status == 0 && N_VWrmsNorm(g.residual, weights) < g.baseResidualNorm) {
+                                reflected = true;
+                                N_VScale(1, g.candidate, correction);
+                                ++g.owner.progress.reflectedNewtonUpdates;
+                                g.owner.progress.maximumReflectedSpeciesScaledChange = std::max(
+                                    g.owner.progress.maximumReflectedSpeciesScaledChange, changed);
+                            }
+                        }
                     }
-                    // A feasible base iterate may already solve the nonlinear
-                    // system within its unchanged local tolerance. Accepting
-                    // that iterate requires BOTH the full Newton correction
-                    // and the actual nonlinear residual to meet that tolerance.
-                    if (!found) {
-                        fraction = 0; N_VScale(1, g.base, g.candidate);
-                        if (!g.admissible(g.candidate)) return SUN_NLS_CONV_RECVR;
+                    if (!reflected) {
+                        bool found = false;
+                        for (unsigned attempt = 0; attempt < 64; ++attempt) {
+                            fraction *= .5;
+                            N_VLinearSum(1, g.base, fraction, delta, g.candidate);
+                            if (g.admissible(g.candidate)) { found = true; break; }
+                        }
+                        // A feasible base iterate may already solve the nonlinear
+                        // system within its unchanged local tolerance. Accepting
+                        // that iterate requires BOTH the full Newton correction
+                        // and the actual nonlinear residual to meet that tolerance.
+                        if (!found) {
+                            fraction = 0; N_VScale(1, g.base, g.candidate);
+                            if (!g.admissible(g.candidate)) return SUN_NLS_CONV_RECVR;
+                        }
+                        N_VScale(1, g.candidate, correction);
+                        ++g.owner.progress.dampedNewtonUpdates;
+                        g.owner.progress.minimumNewtonFraction = std::min(g.owner.progress.minimumNewtonFraction, fraction);
                     }
-                    N_VScale(1, g.candidate, correction);
-                    ++g.owner.progress.dampedNewtonUpdates;
-                    g.owner.progress.minimumNewtonFraction = std::min(g.owner.progress.minimumNewtonFraction, fraction);
                 }
                 // Evaluate the final iterate even when the stock correction
                 // test would stop without evaluating it. This also synchronizes
@@ -188,7 +226,7 @@ struct ReactingImplicitIntegrator2D::Impl {
             n->ops->getnumconvfails = [](auto s, long* count) { return SUNNonlinSolGetNumConvFails(get(s).inner, count); };
             n->ops->solve = [](auto s, N_Vector prediction, N_Vector correction, N_Vector weights,
                                realtype tolerance, booleantype setup, void* memory) {
-                auto& a = get(s); a.prediction = prediction; a.integrator = memory;
+                auto& a = get(s); a.prediction = prediction; a.integrator = memory; a.solveWeights = weights;
                 // The C system callback has no solver-context argument. Scope
                 // its adapter per thread and restore nested calls on exit.
                 struct ActiveScope {
