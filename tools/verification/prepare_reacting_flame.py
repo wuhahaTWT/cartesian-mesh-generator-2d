@@ -112,6 +112,8 @@ def main():
     parser.add_argument("--maximum-reference-points", type=int, default=1500)
     parser.add_argument("--closure-probe", type=Path,
                         help="optional independent BVP executable enforcing sum(Y)=1 during a fixed-grid solve; all final import gates remain unchanged")
+    parser.add_argument("--conservative-reference", action="store_true",
+                        help="explicit total-species/total-enthalpy flux BVP discretization (requires --closure-probe); no change to native equations or import gates")
     args = parser.parse_args()
     spacings = args.spacings if args.spacings is not None else [40e-6, 20e-6, 10e-6]
     if any(not np.isfinite(x) or x <= 0 for x in [args.temperature, args.pressure, args.width, *spacings]):
@@ -122,6 +124,8 @@ def main():
         raise ValueError("refinement slopes must decrease within (0, 0.5], with at least six reference points allowed")
     if args.fixed_grid_index is not None and args.fixed_grid_reference is None:
         raise ValueError("fixed-grid indices require a reference")
+    if args.conservative_reference and args.closure_probe is None:
+        raise ValueError("conservative reference requires an explicit closure probe")
     templates, fixed_source = (None, None) if args.fixed_grid_reference is None else fixed_grids(
         args.fixed_grid_reference.resolve(), args.fixed_grid_index)
     preparer_hash = sha(__file__)
@@ -164,9 +168,11 @@ def main():
             for x, t, u, y in zip(grid, temperature, velocity, raw_y):
                 stream.write(" ".join(format(v, ".17g") for v in [x, t, u, *y]) + "\n")
             stream.write("END\n")
-        profile_file = "profile-closed.json"
+        profile_file = "profile-conservative.json" if args.conservative_reference else "profile-closed.json"
         command = [str(probe), str(args.mechanism.resolve()), str(guess.resolve()),
                    str((args.output / profile_file).resolve()), "1"]
+        if args.conservative_reference:
+            command.append("1")
         with (args.output / "closure.stdout").open("w") as stdout, (args.output / "closure.stderr").open("w") as stderr:
             process = subprocess.run(command, stdout=stdout, stderr=stderr)
         if process.returncode != 0 or sha(probe) != probe_hash:
@@ -175,7 +181,8 @@ def main():
         if (not closed["constraint_enabled"] or closed["species"] != gas.species_names
                 or not np.array_equal(closed["grid"], grid) or closed["p"] != flame.P
                 or closed["transport"] != "multicomponent" or not closed["soret"] or not closed["energy"]
-                or closed["steady_relative_tolerance"] != 1e-9 or closed["steady_absolute_tolerance"] != absolute_tolerance):
+                or closed["steady_relative_tolerance"] != 1e-9 or closed["steady_absolute_tolerance"] != absolute_tolerance
+                or closed.get("conservative_flux_form", False) != args.conservative_reference):
             raise ValueError("independent closure BVP metadata differs from the requested model/grid/controls")
         closure_reference = {
             "command": command, "probe_sha256": probe_hash, "dependent_species": closed["dependent_species"],
@@ -184,11 +191,18 @@ def main():
             "speed_change_from_unconstrained_BVP_m_per_s": float(closed["u"][0] - velocity[0]),
             "maximum_mass_fraction_change_from_unconstrained_BVP": float(np.max(abs(np.asarray(closed["Y"]) - raw_y))),
             "method": "Re-solve all original thermochemistry and transport with one redundant interior species equation replaced by algebraic mass closure. Original species-equation residuals are separately output; no solved profile is normalized or clipped."}
+        if args.conservative_reference:
+            closure_reference.update(
+                conservative_flux_form=True,
+                maximum_selected_species_residual_per_s=float(np.max(abs(np.asarray(closed["selected_species_residual_per_s_interior"])))),
+                method="Re-solve complete thermochemistry and multicomponent/Soret transport using interval total-species and total-enthalpy flux divergences on nodal dual volumes, with algebraic mass closure. Original and selected equation residuals are both retained. Pseudo-time is BVP stabilization only; no solved profile is normalized or clipped.")
         temperature, velocity, raw_y = np.asarray(closed["T"]), np.asarray(closed["u"]), np.asarray(closed["Y"])
         stages.append({**stages[-1], "fixed_grid_algebraic_mass_closure": True,
                        "speed_m_per_s": float(velocity[0]), "peak_temperature_K": float(max(temperature)),
                        "minimum_raw_mass_fraction": float(np.min(raw_y)),
                        "maximum_raw_species_sum_error": float(max(abs(raw_y.sum(axis=1) - 1)))})
+        if args.conservative_reference:
+            stages[-1]["conservative_flux_form"] = True
     prepared_y, allowance, maximum = prepare_species(raw_y, absolute_tolerance)
     # A deliberately invalid input must not be silently repaired by this
     # verification-only import path.
