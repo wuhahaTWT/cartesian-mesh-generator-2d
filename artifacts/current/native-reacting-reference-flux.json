@@ -1,0 +1,1732 @@
+{
+  "schema_version": 1,
+  "scope": "Independent detailed-chemistry BVP domain and grid experiments, with actual stored diffusive fluxes and chemical mass sources used to audit global elemental conservation.",
+  "mature_combustion_goal_complete": false,
+  "qualified_reference_or_flame": false,
+  "native_domain_qualified": false,
+  "branch": "codex/cfd-development",
+  "parent_commit": "beed0c9c9c5994b75268cb757c45942675113850",
+  "build_command": [
+    "cmake",
+    "--build",
+    "build",
+    "--target",
+    "cartmesh2d_reacting_flame_reference_probe",
+    "-j",
+    "2"
+  ],
+  "compiler": "/usr/bin/clang++",
+  "source_sha256": {
+    "tests/reacting_flame_reference_probe.cpp": "f154c4b717678c30d6fe9745ef54eefacfb569a537c9f155fc381aeb819d52e4",
+    "build/deps/cantera-src/src/oneD/Flow1D.cpp": "a29a13580704348db06a5316d4c23e2748e4c47db4190dd2b5cdd36961936602",
+    "build/deps/cantera-src/src/oneD/Boundary1D.cpp": "6140b72ebf563db4b7dde71f2355f23c30e47f95717170cd30b20cd6b9ebc7e2",
+    "build/deps/cantera/include/cantera/oneD/Flow1D.h": "17f85d3f7268a1c3df4fccfc82730fd004df2df37a7247df3d50ada8aeaf74ba"
+  },
+  "domain_experiment": {
+    "complete": true,
+    "qualified_reference_or_flame": false,
+    "native_domain_qualified": false,
+    "analysis_sha256": "a1291b442e0a7bae11a12bc39cbeea9c948ab8ed0b833a866f84a86a553b8efc",
+    "runs_sha256": "e61c67de014dbea5ec25b4806d4f519f3828ffd8842596dc2737ffddcbf5d8ce",
+    "saved_reference_replay": {
+      "maximum_temperature_change_K": 4.5440674512065016e-07,
+      "speed_change_m_per_s": 8.715028698702554e-10,
+      "maximum_mass_fraction_change": 9.297906888861007e-11
+    },
+    "fixed_anchor": {
+      "temperature_K": 860.9968584910545,
+      "position_m": 0.013999999999999999
+    },
+    "records": [
+      {
+        "name": "original-domain",
+        "domain_m": [
+          0.0,
+          0.04
+        ],
+        "points": 3446,
+        "profile_sha256": "169b4694973d77f9d18ea2ff21f388e6bfa0bce4c687de1c7477ee21718d43e2",
+        "speed_m_per_s": 2.489708125304847,
+        "speed_difference_from_repeated_baseline_m_per_s": 0.0,
+        "speed_difference_from_saved_reference_m_per_s": 8.715028698702554e-10,
+        "end_temperature_K": 2241.9664814069342,
+        "temperature_at_original_outlet_K": 2241.9664814069342,
+        "maximum_temperature_difference_on_original_nodes_K": 0.0,
+        "maximum_temperature_difference_x12_to_18mm_K": 0.0,
+        "maximum_mass_fraction_difference_on_original_nodes": 0.0,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -7.912334527100616e-16,
+        "outlet_enthalpy_minus_inlet_J_per_kg": -163.43977006760542,
+        "outlet_enthalpy_defect_over_cp_K": -0.10001430933946677,
+        "original_species_equations_L1_kg_per_m2_s": 3.4091159032130125e-09,
+        "net_chemical_source_L1_kg_per_m2_s": 0.7440264189873389,
+        "all_original_species_equations_L1_over_net_chemistry": 4.581982327795574e-09,
+        "dependent_original_equation_L1_over_net_chemistry": 1.8527787420249064e-09
+      },
+      {
+        "name": "downstream-extended",
+        "domain_m": [
+          0.0,
+          0.08
+        ],
+        "points": 3456,
+        "profile_sha256": "4c5d40f8bd14e0cbaed2dfabcb7a6a87682b2a367cff852cf02fb78a62202074",
+        "speed_m_per_s": 2.489708126067186,
+        "speed_difference_from_repeated_baseline_m_per_s": 7.623386366617524e-10,
+        "speed_difference_from_saved_reference_m_per_s": 1.6338415065320078e-09,
+        "end_temperature_K": 2242.065628924733,
+        "temperature_at_original_outlet_K": 2242.027415496137,
+        "maximum_temperature_difference_on_original_nodes_K": 0.06093408920287402,
+        "maximum_temperature_difference_x12_to_18mm_K": 3.000000106112566e-07,
+        "maximum_mass_fraction_difference_on_original_nodes": 5.12197713956053e-06,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -5.190151558711495e-16,
+        "outlet_enthalpy_minus_inlet_J_per_kg": -163.42797724649427,
+        "outlet_enthalpy_defect_over_cp_K": -0.10000646036833098,
+        "original_species_equations_L1_kg_per_m2_s": 1.0181242729984062e-07,
+        "net_chemical_source_L1_kg_per_m2_s": 0.7440544101369301,
+        "all_original_species_equations_L1_over_net_chemistry": 1.3683465337044886e-07,
+        "dependent_original_equation_L1_over_net_chemistry": 1.8474161421514126e-09
+      },
+      {
+        "name": "upstream-extended",
+        "domain_m": [
+          -0.02,
+          0.04
+        ],
+        "points": 3451,
+        "profile_sha256": "22f8230e036cf7f969149591e35dcef0147c9cab012bea1daa39648f9dfaae3f",
+        "speed_m_per_s": 2.4897081253048476,
+        "speed_difference_from_repeated_baseline_m_per_s": 4.440892098500626e-16,
+        "speed_difference_from_saved_reference_m_per_s": 8.715033139594652e-10,
+        "end_temperature_K": 2241.9664814069342,
+        "temperature_at_original_outlet_K": 2241.9664814069342,
+        "maximum_temperature_difference_on_original_nodes_K": 4.547473508864641e-13,
+        "maximum_temperature_difference_x12_to_18mm_K": 4.547473508864641e-13,
+        "maximum_mass_fraction_difference_on_original_nodes": 1.1102230246251565e-16,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -7.912333135271657e-16,
+        "outlet_enthalpy_minus_inlet_J_per_kg": -163.43977006760542,
+        "outlet_enthalpy_defect_over_cp_K": -0.10001430933946677,
+        "original_species_equations_L1_kg_per_m2_s": 3.415848445108649e-09,
+        "net_chemical_source_L1_kg_per_m2_s": 0.7440264189873391,
+        "all_original_species_equations_L1_over_net_chemistry": 4.591031121929523e-09,
+        "dependent_original_equation_L1_over_net_chemistry": 1.8521316768837208e-09
+      },
+      {
+        "name": "both-extended",
+        "domain_m": [
+          -0.02,
+          0.08
+        ],
+        "points": 3461,
+        "profile_sha256": "505d693f5a1428c093e691e150de47f64b9a2a5728deeb5e69006da228301fc7",
+        "speed_m_per_s": 2.489708126067169,
+        "speed_difference_from_repeated_baseline_m_per_s": 7.623217612717781e-10,
+        "speed_difference_from_saved_reference_m_per_s": 1.6338246311420335e-09,
+        "end_temperature_K": 2242.0656289247363,
+        "temperature_at_original_outlet_K": 2242.02741549614,
+        "maximum_temperature_difference_on_original_nodes_K": 0.060934089205602504,
+        "maximum_temperature_difference_x12_to_18mm_K": 3.0000137485330924e-07,
+        "maximum_mass_fraction_difference_on_original_nodes": 5.121977140004619e-06,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -6.956393053590689e-16,
+        "outlet_enthalpy_minus_inlet_J_per_kg": -163.42797724562115,
+        "outlet_enthalpy_defect_over_cp_K": -0.10000646036779658,
+        "original_species_equations_L1_kg_per_m2_s": 1.0189449851195675e-07,
+        "net_chemical_source_L1_kg_per_m2_s": 0.7440544101368668,
+        "all_original_species_equations_L1_over_net_chemistry": 1.3694495607278712e-07,
+        "dependent_original_equation_L1_over_net_chemistry": 1.9488131840687092e-09
+      },
+      {
+        "name": "downstream-extra-region-finer",
+        "domain_m": [
+          0.0,
+          0.08
+        ],
+        "points": 3466,
+        "profile_sha256": "475665b08c5697de690f26598f1358cd965bbab5856ef366b78733bc335c6284",
+        "speed_m_per_s": 2.4897081260671667,
+        "speed_difference_from_repeated_baseline_m_per_s": 7.623195408257288e-10,
+        "speed_difference_from_saved_reference_m_per_s": 1.6338224106959842e-09,
+        "end_temperature_K": 2242.065810738609,
+        "temperature_at_original_outlet_K": 2242.027414194908,
+        "maximum_temperature_difference_on_original_nodes_K": 0.06093278797379753,
+        "maximum_temperature_difference_x12_to_18mm_K": 3.000054675794672e-07,
+        "maximum_mass_fraction_difference_on_original_nodes": 5.12196744251181e-06,
+        "maximum_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -6.554009786225392e-16,
+        "outlet_enthalpy_minus_inlet_J_per_kg": -163.25930668815272,
+        "outlet_enthalpy_defect_over_cp_K": -0.09990324278516355,
+        "original_species_equations_L1_kg_per_m2_s": 1.0722037725136229e-07,
+        "net_chemical_source_L1_kg_per_m2_s": 0.744050160835449,
+        "all_original_species_equations_L1_over_net_chemistry": 1.4410369474414333e-07,
+        "dependent_original_equation_L1_over_net_chemistry": 1.901705685796901e-09
+      }
+    ],
+    "appended_downstream_grid_halving": {
+      "speed_m_per_s": -1.9095836023552692e-14,
+      "end_temperature_K": 0.00018181387576987618,
+      "maximum_temperature_difference_on_all_common_nodes_K": 0.002922956086877093
+    },
+    "ideal_HP_equilibrium_temperature_K": 2243.9874339642206,
+    "species_equation_diagnostic": "Original unmodified species equations, including the algebraically replaced dependent equation, integrated with rho and nonuniform dual widths; divided by integrated L1 net mass-production activity. Values reported without new accuracy gates.",
+    "limits": [
+      "Only the independent constant-pressure reference BVP domain was extended. No native FV domain or boundary-reflection qualification.",
+      "All original nodes and anchor retained; only appended downstream-region spacing halved. Not a full-domain grid-convergence study.",
+      "Measured speed changes are comparable to repeating the saved steady solve at unchanged tolerances; not resolved physical differences.",
+      "The equilibrium temperature is a thermochemical endpoint diagnostic; finite-domain departure alone is not a numerical-error measure.",
+      "Raw BVP mass fractions and all original species residuals retained, including tiny negative roundoff; no native state imported or modified.",
+      "Reference and native share chemistry/transport data. No experiment or mature-combustor qualification."
+    ]
+  },
+  "flux_and_grid_analysis": {
+    "complete": true,
+    "qualified_reference_or_flame": false,
+    "native_domain_qualified": false,
+    "analysis_sha256": "a4b85a26b3448fc5803354587cbf1bc3f0367f99147db5a0bda2c09707198fdd",
+    "runs_sha256": "191252469df0766bc189e819ee73d6ebf42962a0a7636d76eeb5ce1bf619e0e8",
+    "refinement_runs_sha256": "1b441bc046dc0716aed09e896d81e5666e0e50133467571866036304abbc417b",
+    "cantera_python_version": "3.2.0",
+    "element_mass_matrix_maximum_row_sum_error": 1.1102230246251565e-16,
+    "method": "Use actual stored BVP diffusion fluxes and chemical mass sources; positive velocity upwind derivative on each preceding interval, diffusion on nonuniform dual widths. For each element: boundary flux difference = integrated chemical source - integrated original equation residual + (advective boundary difference - integrated convective derivative).",
+    "normalization": "Signed outlet-minus-inlet element flux [kg/m2/s] divided by prescribed incoming flux of that same element. Absent inlet elements remain null, with absolute defects retained. No new physical-accuracy gates.",
+    "limits": [
+      "A small nonlinear equation residual does not establish global element conservation on this nonuniform finite-difference mesh.",
+      "Diagnostic additions did not alter any previous output field in all five exact replays.",
+      "Bisection runs change reference discretization, not chemical mechanism or tolerances. They are not native FV grid/domain convergence.",
+      "Actual-outlet equilibrium is skipped for raw negative mass fractions; no clipping or normalization of a saved state.",
+      "No experiment, native flame-speed or mature combustor qualification."
+    ],
+    "records": [
+      {
+        "name": "original-domain",
+        "profile_sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750",
+        "points": 3446,
+        "domain_m": [
+          0.0,
+          0.04
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.489708125304847,
+        "outlet_temperature_K": 2241.9664814069342,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468701335227,
+          1.6763468701335338
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.569819357312042e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -7.912334527100616e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.2968073224056,
+        "equation_reconstruction_error_over_epsilon_scale": 0.532538813654869,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.3816248012221486,
+          0.038470184349714436,
+          0.0,
+          1.2562518845616641
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.8448951256462502e-05,
+          -6.527518264268017e-05,
+          1.1703956603644606e-16,
+          3.682623138145935e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.454691405106559e-05,
+          -0.0016967733257863815,
+          null,
+          2.9314369064058273e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          4.570822831893129e-16,
+          7.491652939572817e-17,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -9.71725959996306e-12,
+          1.0394125131168204e-10,
+          -1.5320881901096644e-19,
+          -9.422369896003917e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.8448941539399495e-05,
+          -6.527507870152882e-05,
+          1.1688635721692814e-16,
+          3.682613715778612e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.8448941540225755e-05,
+          -6.527507870135067e-05,
+          1.1688635721686715e-16,
+          3.682613716123436e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          -8.262090051447e-16,
+          -1.7817428810571636e-16,
+          6.098880873489948e-29,
+          -3.4482372469543665e-15
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          -7.099457469388754e-16,
+          2.1833121248426846e-17,
+          5.069663911209409e-28,
+          -2.5729472805796627e-17
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 6.091248185550549e-33,
+        "original_all_species_equation_L1_over_net_chemistry": 4.581982327795575e-09,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.43977006763453,
+        "enthalpy_defect_over_outlet_cp_K": -0.10001430933948458,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2242.065622890643,
+          "outlet_minus_equilibrium_K": -0.09914148370899056,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "downstream-extended",
+        "profile_sha256": "b3ecdd78848bfeb7099d7ea77c69152ae3ae6b5673d7541eba5fb6d631390c60",
+        "points": 3456,
+        "domain_m": [
+          0.0,
+          0.08
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.489708126067186,
+        "outlet_temperature_K": 2242.065628924733,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468706467763,
+          1.6763468706468707
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.218500556872005e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -5.190151558711495e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.4106051319131787e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.2968107370543,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5325388130657397,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.38162480133900056,
+          0.03847018436149385,
+          0.0,
+          1.2562518849463233
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.8449156286792567e-05,
+          -6.527493148670985e-05,
+          6.592332313331809e-16,
+          3.68257752518808e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.454745128454306e-05,
+          -0.0016967667966791915,
+          null,
+          2.9314005967405397e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          -6.332076949215962e-16,
+          -7.166433747688284e-17,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -7.875518653940807e-12,
+          8.763931377023112e-11,
+          4.985202601400276e-18,
+          -7.976438613801151e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.844914841122687e-05,
+          -6.527484384728439e-05,
+          6.642184339355605e-16,
+          3.6825695487508276e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.844914839932724e-05,
+          -6.527484384861594e-05,
+          6.642184339356829e-16,
+          3.6825695447945305e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          1.1899672315742766e-14,
+          1.3315516059192973e-15,
+          -1.2247065553556208e-28,
+          3.956297095486505e-14
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          6.750886470934664e-16,
+          -3.335276933108533e-17,
+          -9.792722062187335e-28,
+          -1.3613513528271115e-17
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 2.2604009732189833e-18,
+        "original_all_species_equation_L1_over_net_chemistry": 1.3683465337044886e-07,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.42797724652337,
+        "enthalpy_defect_over_outlet_cp_K": -0.10000646036834879,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2242.0656358870083,
+          "outlet_minus_equilibrium_K": -6.962275165278697e-06,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "upstream-extended",
+        "profile_sha256": "c4936e003e04d75d1eb21fd15344cc5707ac0f2499ab706607ed731cd116af13",
+        "points": 3451,
+        "domain_m": [
+          -0.02,
+          0.04
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.4897081253048476,
+        "outlet_temperature_K": 2241.9664814069342,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468701335227,
+          1.6763468701335338
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.6510868153528655e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -7.912333135271657e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.296807322406,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5325388136548689,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.38162480122214854,
+          0.038470184349714436,
+          0.0,
+          1.256251884561664
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.8448951256569503e-05,
+          -6.527518264267395e-05,
+          1.1621021766307232e-16,
+          3.682623138190344e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.454691405134598e-05,
+          -0.0016967733257862198,
+          null,
+          2.931436906441178e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          3.5833130067067284e-16,
+          8.27121809784705e-17,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -9.717136506475156e-12,
+          1.0394127479425593e-10,
+          6.763282743649171e-19,
+          -9.422386587313353e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.8448941539966455e-05,
+          -6.527507870144323e-05,
+          1.1688654593771752e-16,
+          3.682613715804533e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.844894154033555e-05,
+          -6.527507870133324e-05,
+          1.1688654593765126e-16,
+          3.6826137161048235e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          -3.691030159128099e-16,
+          -1.1000550059206086e-16,
+          6.626431603856499e-29,
+          -3.0029079808695236e-15
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          -8.144933295525791e-16,
+          -3.2959746043559335e-17,
+          -2.8029214038634076e-28,
+          -7.758821796849391e-18
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 6.09124818555055e-34,
+        "original_all_species_equation_L1_over_net_chemistry": 4.591031121929523e-09,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.43977006763453,
+        "enthalpy_defect_over_outlet_cp_K": -0.10001430933948458,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2242.065622890643,
+          "outlet_minus_equilibrium_K": -0.09914148370899056,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "both-extended",
+        "profile_sha256": "153c579bc2577402a3d6f1edc295b860207848ec05e33bb858a96c89653f4594",
+        "points": 3461,
+        "domain_m": [
+          -0.02,
+          0.08
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.489708126067169,
+        "outlet_temperature_K": 2242.0656289247363,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468706467646,
+          1.6763468706468592
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.0688611414299007e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -6.956393053590689e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.2968099109735,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5325388131769317,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.38162480133899784,
+          0.03847018436149358,
+          0.0,
+          1.2562518849463145
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.844915628619108e-05,
+          -6.527493148660618e-05,
+          -2.247826299920293e-16,
+          3.682577525343511e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.454745128296746e-05,
+          -0.0016967667966765083,
+          null,
+          2.9314005968642865e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          -1.0390645224245854e-15,
+          -1.2463941098897867e-16,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -7.878022612143034e-12,
+          8.76390817018158e-11,
+          3.710563609865687e-18,
+          -7.976134439635996e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.844914840900189e-05,
+          -6.527484384753467e-05,
+          -2.2107206638415475e-16,
+          3.682569549209484e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.8449148396136147e-05,
+          -6.527484384875472e-05,
+          -2.2107206638455446e-16,
+          3.6825695452458304e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          1.2865777039427192e-14,
+          1.2200532834194718e-15,
+          3.997059599141714e-28,
+          3.963653407226819e-14
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          2.912946305607539e-16,
+          1.3374989050324304e-16,
+          1.99113422858441e-27,
+          -4.119968255444917e-18
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 5.213420718725788e-20,
+        "original_all_species_equation_L1_over_net_chemistry": 1.369449560727871e-07,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.42797724565025,
+        "enthalpy_defect_over_outlet_cp_K": -0.1000064603678144,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": false,
+          "reason": "raw outlet contains a negative mass fraction"
+        }
+      },
+      {
+        "name": "downstream-extra-region-finer",
+        "profile_sha256": "91ce86c415d380e2bbf368be1cf04ee11994f1cdc612d1d6999272eb001fb1f0",
+        "points": 3466,
+        "domain_m": [
+          0.0,
+          0.08
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.4897081260671667,
+        "outlet_temperature_K": 2242.065810738609,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468706467641,
+          1.6763468706468567
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.2797094073601087e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -6.554009786225392e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.4106051321778765e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.29680954795,
+        "equation_reconstruction_error_over_epsilon_scale": 0.532538813326619,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.3816248013389977,
+          0.03847018436149356,
+          0.0,
+          1.2562518849463138
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.8451250838891968e-05,
+          -6.527170776446225e-05,
+          4.173179617914714e-17,
+          3.682045697606107e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.455293979601366e-05,
+          -0.0016966829987379907,
+          null,
+          2.9309772520368872e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          -1.1883460076805207e-16,
+          -5.3074507400690616e-17,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -7.871424953103164e-12,
+          8.763979293534947e-11,
+          1.3104107174281432e-17,
+          -7.976969194063768e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.8451242967146954e-05,
+          -6.527162012465171e-05,
+          5.48359033543678e-17,
+          3.682037720639442e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.8451242955878447e-05,
+          -6.527162012585546e-05,
+          5.4835903354650117e-17,
+          3.682037716847565e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          1.1268514613360755e-14,
+          1.2037482793338898e-15,
+          -2.823135964559696e-28,
+          3.7918771584027205e-14
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          4.536539058904582e-16,
+          2.913793338554793e-17,
+          -9.392313523029451e-28,
+          -2.5295791936802425e-17
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 2.220446049250313e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 7.906522058650171e-18,
+        "original_all_species_equation_L1_over_net_chemistry": 1.4410369474414333e-07,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.25930668818182,
+        "enthalpy_defect_over_outlet_cp_K": -0.09990324278518135,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2242.0658113144095,
+          "outlet_minus_equilibrium_K": -5.7580064094509e-07,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "global-bisection-1",
+        "profile_sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+        "points": 6891,
+        "domain_m": [
+          0.0,
+          0.04
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.491504304115231,
+        "outlet_temperature_K": 2242.9903110515334,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6775562563649364,
+          1.6775562563649509
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 4.462147231570901e-12,
+        "maximum_raw_species_sum_error": 4.440892098500626e-16,
+        "minimum_raw_mass_fraction": -8.672318214071482e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2889.0487031500743,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5316628959301456,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.38190012119821537,
+          0.03849793833792623,
+          0.0,
+          1.257158196828801
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          1.424368079924555e-05,
+          -3.263173992420408e-05,
+          3.3076500360666803e-16,
+          1.838805911891228e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          3.729687425747827e-05,
+          -0.0008476230502986944,
+          null,
+          1.4626686733059065e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          1.4634213555753907e-16,
+          1.814365721554676e-16,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -3.689662831302111e-11,
+          5.59745392455034e-10,
+          1.1935559630064482e-17,
+          -5.228488231064752e-10
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          1.424364390327774e-05,
+          -3.263118017869707e-05,
+          3.427005632331676e-16,
+          1.8387536270085818e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          1.4243643904019765e-05,
+          -3.2631180178707606e-05,
+          3.4270056325607375e-16,
+          1.838753627454558e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          -7.420107008617214e-16,
+          1.0544970167107223e-17,
+          -2.290615410490252e-26,
+          -4.459760604433663e-15
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          -7.63747585682574e-16,
+          -2.967529108728606e-16,
+          3.564911734500329e-27,
+          3.3576386029160465e-18
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 8.475954916560887e-17,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 7.909314849605179e-18,
+        "original_all_species_equation_L1_over_net_chemistry": 1.8630870657801484e-08,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -81.66093054244993,
+        "enthalpy_defect_over_outlet_cp_K": -0.04995834479197035,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2243.0280968795128,
+          "outlet_minus_equilibrium_K": -0.03778582797940544,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "global-bisection-2",
+        "profile_sha256": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a",
+        "points": 13781,
+        "domain_m": [
+          0.0,
+          0.04
+        ],
+        "constraint_enabled": true,
+        "speed_m_per_s": 2.4923947392730987,
+        "outlet_temperature_K": 2243.4877563578325,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6781557957947875,
+          1.6781557957948015
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 1.0405032738192155e-11,
+        "maximum_raw_species_sum_error": 1.2212453270876722e-15,
+        "minimum_raw_mass_fraction": -3.168313432299965e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.4106051401188104e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2891.411237259697,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5312284824867819,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.38203660793602484,
+          0.03851169706101762,
+          0.0,
+          1.257607490797751
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          7.135680701012571e-06,
+          -1.6346579585394583e-05,
+          5.455478528579395e-16,
+          9.21089887806481e-06
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          1.8678002455218896e-05,
+          -0.0004244575241515635,
+          null,
+          7.324144413470348e-06
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          -2.500978422602023e-16,
+          3.8863847175430016e-16,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -1.4227080739545385e-10,
+          2.1903923196565934e-09,
+          2.6755082188823814e-17,
+          -2.0481214722327837e-09
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          7.135538432942024e-06,
+          -1.6344389193107495e-05,
+          5.723029350542315e-16,
+          9.208850756590748e-06
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          7.135538431434132e-06,
+          -1.634438919298949e-05,
+          5.723029350683421e-16,
+          9.20885076053259e-06
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          1.507891013985541e-15,
+          -1.180075085314009e-16,
+          -1.4110552226914543e-26,
+          -3.941842308835021e-15
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          -2.482712013675715e-15,
+          -3.4541325962672564e-16,
+          -7.468244797340471e-27,
+          1.8295911660692887e-18
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 1.3062149150743763e-15,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 9.046464795929445e-18,
+        "original_all_species_equation_L1_over_net_chemistry": 7.530409496762944e-08,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -40.854789718810935,
+        "enthalpy_defect_over_outlet_cp_K": -0.02499090039514143,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2243.50723051851,
+          "outlet_minus_equilibrium_K": -0.019474160677418695,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      },
+      {
+        "name": "unconstrained-new",
+        "profile_sha256": "e5c1bfc553779b06bcf5d8a2dc6a423615508d3dfe1f140c802f3abb7af90f89",
+        "points": 3446,
+        "domain_m": [
+          0.0,
+          0.04
+        ],
+        "constraint_enabled": false,
+        "speed_m_per_s": 2.4897081253037756,
+        "outlet_temperature_K": 2241.966481406653,
+        "mass_flux_range_kg_per_m2_s": [
+          1.6763468701328008,
+          1.6763468701328124
+        ],
+        "maximum_diffusive_species_flux_sum_kg_per_m2_s": 2.500174980241132e-12,
+        "maximum_raw_species_sum_error": 1.4774848011711583e-12,
+        "minimum_raw_mass_fraction": -7.912333244276789e-16,
+        "equation_reconstruction_max_error_kg_per_m3_s": 3.410605131648481e-13,
+        "equation_reconstruction_global_scale_kg_per_m3_s": 2884.296807319885,
+        "equation_reconstruction_error_over_epsilon_scale": 0.5325388136553344,
+        "element_order": [
+          "O",
+          "H",
+          "Ar",
+          "N"
+        ],
+        "inlet_prescribed_element_flux_kg_per_m2_s": [
+          0.3816248012219843,
+          0.03847018434969788,
+          0.0,
+          1.2562518845611232
+        ],
+        "outlet_minus_inlet_element_flux_kg_per_m2_s": [
+          2.84489509484586e-05,
+          -6.527518267011386e-05,
+          1.1094793784755239e-16,
+          3.682623171741284e-05
+        ],
+        "element_flux_defect_over_prescribed_inlet_element_flux": [
+          7.454691324401204e-05,
+          -0.0016967733265002274,
+          null,
+          2.9314369331496153e-05
+        ],
+        "integrated_chemical_element_source_kg_per_m2_s": [
+          -3.480199189104594e-16,
+          -5.3357210760159054e-17,
+          0.0,
+          0.0
+        ],
+        "integrated_original_element_equation_residual_kg_per_m2_s": [
+          -9.587119586135227e-12,
+          1.039532073142004e-10,
+          5.938629683333996e-18,
+          -9.43662078365843e-11
+        ],
+        "advective_boundary_minus_integrated_upwind_derivative_kg_per_m2_s": [
+          2.8448941362588767e-05,
+          -6.527507871688776e-05,
+          1.1688656752953524e-16,
+          3.682613735121805e-05
+        ],
+        "nonuniform_width_contribution_kg_per_m2_s": [
+          2.8448941362226447e-05,
+          -6.527507871684351e-05,
+          1.1688656752946634e-16,
+          3.682613658324804e-05
+        ],
+        "remaining_mass_flux_variation_and_final_interval_kg_per_m2_s": [
+          3.6229179352621844e-16,
+          -4.424198620010219e-17,
+          6.890206969039775e-29,
+          7.679700110433188e-13
+        ],
+        "element_budget_identity_error_kg_per_m2_s": [
+          -8.703094126448485e-16,
+          2.992397996059992e-17,
+          1.3511461673205761e-27,
+          -1.3044307387716225e-17
+        ],
+        "inlet_species_flux_bc_max_error_kg_per_m2_s": 4.440892098500626e-16,
+        "outlet_diffusive_flux_max_kg_per_m2_s": 3.1230544698640798e-15,
+        "original_all_species_equation_L1_over_net_chemistry": 2.843454624717916e-09,
+        "outlet_minus_prescribed_inlet_enthalpy_J_per_kg": -163.43976904210285,
+        "enthalpy_defect_over_outlet_cp_K": -0.10001430871194378,
+        "nominal_inlet_HP_equilibrium_temperature_K": 2243.9874339642206,
+        "actual_outlet_HP_equilibrium": {
+          "available": true,
+          "temperature_K": 2242.0656228903567,
+          "outlet_minus_equilibrium_K": -0.0991414837035336,
+          "input": "actual outlet element abundances and specific enthalpy; diagnostic only"
+        }
+      }
+    ]
+  },
+  "readonly_diagnostic_replay": {
+    "constrained_cases": 5,
+    "all_preexisting_output_fields_exact": true,
+    "runs": {
+      "complete": true,
+      "qualified_reference_or_flame": false,
+      "script_sha256": "2b262e15678ab853ca0e534f4fc46887d9f94c1a108dbaa5d6545834e15f4409",
+      "probe_sha256": "5f04d44813713f0fc0ddfd7ac717a709e68123b7dd036326013d30ccf84ccce3",
+      "probe_source_sha256": "f154c4b717678c30d6fe9745ef54eefacfb569a537c9f155fc381aeb819d52e4",
+      "backend_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+      "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+      "source_sha256": {
+        "tests/reacting_flame_reference_probe.cpp": "f154c4b717678c30d6fe9745ef54eefacfb569a537c9f155fc381aeb819d52e4",
+        "build/deps/cantera-src/src/oneD/Flow1D.cpp": "a29a13580704348db06a5316d4c23e2748e4c47db4190dd2b5cdd36961936602",
+        "build/deps/cantera-src/src/oneD/Boundary1D.cpp": "6140b72ebf563db4b7dde71f2355f23c30e47f95717170cd30b20cd6b9ebc7e2",
+        "build/deps/cantera/include/cantera/oneD/Flow1D.h": "17f85d3f7268a1c3df4fccfc82730fd004df2df37a7247df3d50ada8aeaf74ba"
+      },
+      "previous_runs": {
+        "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/runs.json",
+        "sha256": "e61c67de014dbea5ec25b4806d4f519f3828ffd8842596dc2737ffddcbf5d8ce"
+      },
+      "build_log_sha256": "adb3a781e3adb916678b110bb1a77fdd13b39b6ad69eb2aa5374f396d6de9e59",
+      "method": "Identical five guesses, equations, tolerances and backend. New read-only export of actual stored diffusion and chemical mass sources after the same complete steady evaluation. All pre-existing output fields must be exactly equal.",
+      "cases": [
+        {
+          "name": "original-domain",
+          "input": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+            "sha256": "3b6cc564195f4d72838887f011eeca7fabf06b667cafaef4ca0cbb21e8293794"
+          },
+          "baseline": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.json",
+            "sha256": "169b4694973d77f9d18ea2ff21f388e6bfa0bce4c687de1c7477ee21718d43e2"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/original-domain.json",
+            "1"
+          ],
+          "state": "completed",
+          "returncode": 0,
+          "elapsed_seconds": 4.562243541004136,
+          "stdout_sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "different_original_output_fields": [],
+          "all_original_output_fields_exact": true,
+          "compared_original_fields": [
+            "constraint_enabled",
+            "steady_relative_tolerance",
+            "steady_absolute_tolerance",
+            "transient_relative_tolerance",
+            "transient_absolute_tolerance",
+            "transport",
+            "soret",
+            "energy",
+            "dependent_species",
+            "p",
+            "species",
+            "grid",
+            "T",
+            "u",
+            "Y",
+            "rho",
+            "original_species_residual_per_s_interior"
+          ],
+          "profile_sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750"
+        },
+        {
+          "name": "downstream-extended",
+          "input": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extended.guess",
+            "sha256": "c49815c225fbfab369fe2984b54a9cc11a2cae50e426f3ac6dc1e2580b9ad194"
+          },
+          "baseline": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extended.json",
+            "sha256": "4c5d40f8bd14e0cbaed2dfabcb7a6a87682b2a367cff852cf02fb78a62202074"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extended.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/downstream-extended.json",
+            "1"
+          ],
+          "state": "completed",
+          "returncode": 0,
+          "elapsed_seconds": 3.2186414160532877,
+          "stdout_sha256": "1e409dc2ec9c58d13bac4b9e4127ff38bca059506b38a1e9656a8a6073327c55",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "different_original_output_fields": [],
+          "all_original_output_fields_exact": true,
+          "compared_original_fields": [
+            "constraint_enabled",
+            "steady_relative_tolerance",
+            "steady_absolute_tolerance",
+            "transient_relative_tolerance",
+            "transient_absolute_tolerance",
+            "transport",
+            "soret",
+            "energy",
+            "dependent_species",
+            "p",
+            "species",
+            "grid",
+            "T",
+            "u",
+            "Y",
+            "rho",
+            "original_species_residual_per_s_interior"
+          ],
+          "profile_sha256": "b3ecdd78848bfeb7099d7ea77c69152ae3ae6b5673d7541eba5fb6d631390c60"
+        },
+        {
+          "name": "upstream-extended",
+          "input": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/upstream-extended.guess",
+            "sha256": "4fd4898365ad20ed61d8aebe52361250b92b09a183fcb06d4685bdc8a2e608cf"
+          },
+          "baseline": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/upstream-extended.json",
+            "sha256": "22f8230e036cf7f969149591e35dcef0147c9cab012bea1daa39648f9dfaae3f"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/upstream-extended.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/upstream-extended.json",
+            "1"
+          ],
+          "state": "completed",
+          "returncode": 0,
+          "elapsed_seconds": 3.047370541957207,
+          "stdout_sha256": "19832eb36678e795d5d795f6ad585ca1b5f2f2cca5af9235f7f8fd754fdcb177",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "different_original_output_fields": [],
+          "all_original_output_fields_exact": true,
+          "compared_original_fields": [
+            "constraint_enabled",
+            "steady_relative_tolerance",
+            "steady_absolute_tolerance",
+            "transient_relative_tolerance",
+            "transient_absolute_tolerance",
+            "transport",
+            "soret",
+            "energy",
+            "dependent_species",
+            "p",
+            "species",
+            "grid",
+            "T",
+            "u",
+            "Y",
+            "rho",
+            "original_species_residual_per_s_interior"
+          ],
+          "profile_sha256": "c4936e003e04d75d1eb21fd15344cc5707ac0f2499ab706607ed731cd116af13"
+        },
+        {
+          "name": "both-extended",
+          "input": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/both-extended.guess",
+            "sha256": "2f7ea55c180ce1e73389c66b445257a2c6b442b87d0a581c622c47afe286b189"
+          },
+          "baseline": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/both-extended.json",
+            "sha256": "505d693f5a1428c093e691e150de47f64b9a2a5728deeb5e69006da228301fc7"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/both-extended.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/both-extended.json",
+            "1"
+          ],
+          "state": "completed",
+          "returncode": 0,
+          "elapsed_seconds": 3.1225108329672366,
+          "stdout_sha256": "c2754e64ad9e9ba39625cfd441c0d747f06bd06b05264c3d26116a726426b492",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "different_original_output_fields": [],
+          "all_original_output_fields_exact": true,
+          "compared_original_fields": [
+            "constraint_enabled",
+            "steady_relative_tolerance",
+            "steady_absolute_tolerance",
+            "transient_relative_tolerance",
+            "transient_absolute_tolerance",
+            "transport",
+            "soret",
+            "energy",
+            "dependent_species",
+            "p",
+            "species",
+            "grid",
+            "T",
+            "u",
+            "Y",
+            "rho",
+            "original_species_residual_per_s_interior"
+          ],
+          "profile_sha256": "153c579bc2577402a3d6f1edc295b860207848ec05e33bb858a96c89653f4594"
+        },
+        {
+          "name": "downstream-extra-region-finer",
+          "input": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.guess",
+            "sha256": "a692d7b6e03e320b5bb4a41d41fdfde115c1823e2b1714370ac27c28743759ee"
+          },
+          "baseline": {
+            "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.json",
+            "sha256": "475665b08c5697de690f26598f1358cd965bbab5856ef366b78733bc335c6284"
+          },
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/downstream-extra-region-finer.json",
+            "1"
+          ],
+          "state": "completed",
+          "returncode": 0,
+          "elapsed_seconds": 3.1632763749803416,
+          "stdout_sha256": "2cddf640b9bc99f307883fc488c671b1e3793b2c10ed0abbb1badc558502655e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "different_original_output_fields": [],
+          "all_original_output_fields_exact": true,
+          "compared_original_fields": [
+            "constraint_enabled",
+            "steady_relative_tolerance",
+            "steady_absolute_tolerance",
+            "transient_relative_tolerance",
+            "transient_absolute_tolerance",
+            "transport",
+            "soret",
+            "energy",
+            "dependent_species",
+            "p",
+            "species",
+            "grid",
+            "T",
+            "u",
+            "Y",
+            "rho",
+            "original_species_residual_per_s_interior"
+          ],
+          "profile_sha256": "91ce86c415d380e2bbf368be1cf04ee11994f1cdc612d1d6999272eb001fb1f0"
+        }
+      ]
+    },
+    "unconstrained_old_new_check": {
+      "passed": true,
+      "script_sha256": "ec203517d28909c89af25e89f9a65aa3c522b47a0bdbf7a3e3290b6528cda331",
+      "runs": [
+        {
+          "name": "old",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/unconstrained-old.json",
+            "0"
+          ],
+          "probe_sha256": "a7db210667a87356aea884a6483059c1c5012c57018aeaeadd817f89808b3b58",
+          "returncode": 0,
+          "elapsed_seconds": 3.0402634579804726,
+          "profile_sha256": "2c9a97bf22ea3651224f95bbd33301b5cbf84f244a8a085e6a26d5e1f9b8ba90"
+        },
+        {
+          "name": "new",
+          "command": [
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+            "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/unconstrained-new.json",
+            "0"
+          ],
+          "probe_sha256": "5f04d44813713f0fc0ddfd7ac717a709e68123b7dd036326013d30ccf84ccce3",
+          "returncode": 0,
+          "elapsed_seconds": 3.2509623329970054,
+          "profile_sha256": "e5c1bfc553779b06bcf5d8a2dc6a423615508d3dfe1f140c802f3abb7af90f89"
+        }
+      ],
+      "different_original_output_fields": [],
+      "compared_original_fields": [
+        "constraint_enabled",
+        "steady_relative_tolerance",
+        "steady_absolute_tolerance",
+        "transient_relative_tolerance",
+        "transient_absolute_tolerance",
+        "transport",
+        "soret",
+        "energy",
+        "dependent_species",
+        "p",
+        "species",
+        "grid",
+        "T",
+        "u",
+        "Y",
+        "rho",
+        "original_species_residual_per_s_interior"
+      ]
+    }
+  },
+  "constrained_unconstrained_comparison": {
+    "maximum_temperature_difference_K": 2.823981049004942e-10,
+    "speed_difference_m_per_s": 1.071587263368201e-12,
+    "maximum_mass_fraction_difference": 1.0925704785336166e-12,
+    "element_flux_records": [
+      "original-domain",
+      "unconstrained-new"
+    ]
+  },
+  "grid_refinement_runs": {
+    "complete": true,
+    "qualified_reference_or_flame": false,
+    "script_sha256": "4e8e240a533ef19ad99896b76f7cdf26aa784b2e0242987e8bdc186707141a05",
+    "probe_sha256": "5f04d44813713f0fc0ddfd7ac717a709e68123b7dd036326013d30ccf84ccce3",
+    "mechanism_sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4",
+    "backend_sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c",
+    "baseline": {
+      "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/original-domain.json",
+      "sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750"
+    },
+    "method": "Bisect every interval of the preceding solved BVP grid, retaining all original nodes and the exact temperature anchor. Linear interpolation supplies only the new initial guess. Re-solve the complete original equations at unchanged tolerances, mass constraint, pressure, inlet mixture and full multicomponent/Soret transport.",
+    "cases": [
+      {
+        "name": "global-bisection-1",
+        "points": 6891,
+        "input": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.guess",
+          "sha256": "7148948ad14db00f41c36610ab8763f4515aa28dfa11f16ae12b297aa45611dd"
+        },
+        "initial_guess_parent_sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-1.json",
+          "1"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "elapsed_seconds": 129.2065109590185,
+        "stdout_sha256": "e62f07c0d1c806eff5dbd50aab9e86efaa5c67e89d26302f8a1a9e0c2c2ce7bf",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "profile_sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+        "speed_m_per_s": 2.491504304115231,
+        "outlet_temperature_K": 2242.9903110515334
+      },
+      {
+        "name": "global-bisection-2",
+        "points": 13781,
+        "input": {
+          "path": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess",
+          "sha256": "f947d96cc2e22b4696e21dbc0068f390ccc966aa9cfe19b3960d4b16a51fa3cb"
+        },
+        "initial_guess_parent_sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b",
+        "command": [
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/reference-probe",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/build/deps/cantera/share/cantera/data/h2o2.yaml",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess",
+          "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/combustion-foundation/reference-flux-001/global-bisection-2.json",
+          "1"
+        ],
+        "state": "completed",
+        "returncode": 0,
+        "elapsed_seconds": 720.2857496659853,
+        "stdout_sha256": "0d903e8a17c74db2baace059f070abe51d62ad2495d13331e395838e9bba02f3",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "profile_sha256": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a",
+        "speed_m_per_s": 2.4923947392730987,
+        "outlet_temperature_K": 2243.4877563578325
+      }
+    ]
+  },
+  "first_launch_failure_preserved": {
+    "directory": "outputs/combustion-foundation/reference-domain-001",
+    "reason": "The archived executable copy lacked execute permission; no BVP was launched. A separate directory used an executable-bit-preserving copy with the same binary hash."
+  },
+  "figure": {
+    "path": "artifacts/current/native-reacting-reference-flux.png",
+    "sha256": "296490c0cc960f7a7ff7df9b9bb306943c8da0862b29d483c5701735a4973916",
+    "data": "outputs/combustion-foundation/reference-flux-001/analysis.json"
+  },
+  "verified_raw_file_count": 92,
+  "raw_files": [
+    {
+      "path": "build/deps/cantera-src/src/oneD/Boundary1D.cpp",
+      "sha256": "6140b72ebf563db4b7dde71f2355f23c30e47f95717170cd30b20cd6b9ebc7e2"
+    },
+    {
+      "path": "build/deps/cantera-src/src/oneD/Flow1D.cpp",
+      "sha256": "a29a13580704348db06a5316d4c23e2748e4c47db4190dd2b5cdd36961936602"
+    },
+    {
+      "path": "build/deps/cantera/include/cantera/oneD/Flow1D.h",
+      "sha256": "17f85d3f7268a1c3df4fccfc82730fd004df2df37a7247df3d50ada8aeaf74ba"
+    },
+    {
+      "path": "build/deps/cantera/lib/libcantera_shared.3.2.0.dylib",
+      "sha256": "bc111bdded7750a60dbb0317b08994f83b1e93fd1d90446a931c4c2b8524407c"
+    },
+    {
+      "path": "build/deps/cantera/share/cantera/data/h2o2.yaml",
+      "sha256": "0efc6c52862741a29e0c29b65d979c7d8cb409db5282bca83b9c5437b3d8c8d4"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/launcher.log",
+      "sha256": "9704d2e6cec1aae3bbc3e4df83179118c65f2bd0ebeea9cb583f25d7c93cdf8d"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/original-domain.guess",
+      "sha256": "3b6cc564195f4d72838887f011eeca7fabf06b667cafaef4ca0cbb21e8293794"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/original-domain.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/original-domain.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/reference-probe",
+      "sha256": "a7db210667a87356aea884a6483059c1c5012c57018aeaeadd817f89808b3b58"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/reference-probe.cpp",
+      "sha256": "d7f4bda3af541056f7ef956af0bff19a3684fa9112b8b18c8e628ed169844cc2"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/run.py",
+      "sha256": "177389cae609da655cb1681ea741c3499497a68830107ba0a1e19599d9e88e8f"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/runs-before-launch-diagnosis.json",
+      "sha256": "f6cdb1c2abbe1572e3c0a73688bb81cd993c3d29c736e63520b6b99e03110f95"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-001/runs.json",
+      "sha256": "84475e8a0320f88be385c925d91ae92b333b82535a5814d431193d58c6b925cc"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/analysis.json",
+      "sha256": "a3da301f150928c78d5538b88ba04fda81c64a8ac12abbb6d20ddcba1ef39cce"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/analysis.log",
+      "sha256": "a3da301f150928c78d5538b88ba04fda81c64a8ac12abbb6d20ddcba1ef39cce"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/analyze.py",
+      "sha256": "a1291b442e0a7bae11a12bc39cbeea9c948ab8ed0b833a866f84a86a553b8efc"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/both-extended.guess",
+      "sha256": "2f7ea55c180ce1e73389c66b445257a2c6b442b87d0a581c622c47afe286b189"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/both-extended.json",
+      "sha256": "505d693f5a1428c093e691e150de47f64b9a2a5728deeb5e69006da228301fc7"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/both-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/both-extended.stdout",
+      "sha256": "c2754e64ad9e9ba39625cfd441c0d747f06bd06b05264c3d26116a726426b492"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/domain-comparison.png",
+      "sha256": "23eaf54815482da21e9d58ba8c5d708074ba7fcd53bf8d922d01ff8a8189dfb9"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extended.guess",
+      "sha256": "c49815c225fbfab369fe2984b54a9cc11a2cae50e426f3ac6dc1e2580b9ad194"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extended.json",
+      "sha256": "4c5d40f8bd14e0cbaed2dfabcb7a6a87682b2a367cff852cf02fb78a62202074"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extended.stdout",
+      "sha256": "1e409dc2ec9c58d13bac4b9e4127ff38bca059506b38a1e9656a8a6073327c55"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.guess",
+      "sha256": "a692d7b6e03e320b5bb4a41d41fdfde115c1823e2b1714370ac27c28743759ee"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.json",
+      "sha256": "475665b08c5697de690f26598f1358cd965bbab5856ef366b78733bc335c6284"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/downstream-extra-region-finer.stdout",
+      "sha256": "2cddf640b9bc99f307883fc488c671b1e3793b2c10ed0abbb1badc558502655e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/flux-probe-build.log",
+      "sha256": "adb3a781e3adb916678b110bb1a77fdd13b39b6ad69eb2aa5374f396d6de9e59"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/launcher.log",
+      "sha256": "dd85ea95f97fd9aa20e1643bb88712aaa382b2b6f14309ed122fe66921eed3f2"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/original-domain.guess",
+      "sha256": "3b6cc564195f4d72838887f011eeca7fabf06b667cafaef4ca0cbb21e8293794"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/original-domain.json",
+      "sha256": "169b4694973d77f9d18ea2ff21f388e6bfa0bce4c687de1c7477ee21718d43e2"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/original-domain.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/original-domain.stdout",
+      "sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/reference-probe",
+      "sha256": "a7db210667a87356aea884a6483059c1c5012c57018aeaeadd817f89808b3b58"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/reference-probe.cpp",
+      "sha256": "d7f4bda3af541056f7ef956af0bff19a3684fa9112b8b18c8e628ed169844cc2"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/run.py",
+      "sha256": "b95881a91c9a16a4745ee6c0da2db2fbdf481e6f4a270986ca4241ed41409863"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/runs.json",
+      "sha256": "e61c67de014dbea5ec25b4806d4f519f3828ffd8842596dc2737ffddcbf5d8ce"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/upstream-extended.guess",
+      "sha256": "4fd4898365ad20ed61d8aebe52361250b92b09a183fcb06d4685bdc8a2e608cf"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/upstream-extended.json",
+      "sha256": "22f8230e036cf7f969149591e35dcef0147c9cab012bea1daa39648f9dfaae3f"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/upstream-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-domain-002/upstream-extended.stdout",
+      "sha256": "19832eb36678e795d5d795f6ad585ca1b5f2f2cca5af9235f7f8fd754fdcb177"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/analysis.json",
+      "sha256": "6bc76bc194f2e210804cc8ec6c8af7d0c9be7e534bc73cf5e1e952db5a4b31f2"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/analysis.log",
+      "sha256": "87f0aade2abc8595e2453f96c6176b1c02bf987e673044dc87ac190b14595910"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/analyze.py",
+      "sha256": "a4b85a26b3448fc5803354587cbf1bc3f0367f99147db5a0bda2c09707198fdd"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/both-extended.json",
+      "sha256": "153c579bc2577402a3d6f1edc295b860207848ec05e33bb858a96c89653f4594"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/both-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/both-extended.stdout",
+      "sha256": "c2754e64ad9e9ba39625cfd441c0d747f06bd06b05264c3d26116a726426b492"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/check_unconstrained.py",
+      "sha256": "ec203517d28909c89af25e89f9a65aa3c522b47a0bdbf7a3e3290b6528cda331"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extended.json",
+      "sha256": "b3ecdd78848bfeb7099d7ea77c69152ae3ae6b5673d7541eba5fb6d631390c60"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extended.stdout",
+      "sha256": "1e409dc2ec9c58d13bac4b9e4127ff38bca059506b38a1e9656a8a6073327c55"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extra-region-finer.json",
+      "sha256": "91ce86c415d380e2bbf368be1cf04ee11994f1cdc612d1d6999272eb001fb1f0"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extra-region-finer.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/downstream-extra-region-finer.stdout",
+      "sha256": "2cddf640b9bc99f307883fc488c671b1e3793b2c10ed0abbb1badc558502655e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/element-flux-comparison.png",
+      "sha256": "296490c0cc960f7a7ff7df9b9bb306943c8da0862b29d483c5701735a4973916"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-1.guess",
+      "sha256": "7148948ad14db00f41c36610ab8763f4515aa28dfa11f16ae12b297aa45611dd"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-1.json",
+      "sha256": "585fe9d6444ab8e37638ceb2a5b049de224a54eb4d40aeb3c232e91d4ffb073b"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-1.stdout",
+      "sha256": "e62f07c0d1c806eff5dbd50aab9e86efaa5c67e89d26302f8a1a9e0c2c2ce7bf"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-2.guess",
+      "sha256": "f947d96cc2e22b4696e21dbc0068f390ccc966aa9cfe19b3960d4b16a51fa3cb"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-2.json",
+      "sha256": "97b1eced31045279d89e593bd81b79232d40de2c7d5359de0163c61cfb59c92a"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/global-bisection-2.stdout",
+      "sha256": "0d903e8a17c74db2baace059f070abe51d62ad2495d13331e395838e9bba02f3"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/launcher.log",
+      "sha256": "3a0d0ef1068014963fb005c90881806d8ebc550b42650fa0cbacad8c32f8f8c3"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/original-domain.json",
+      "sha256": "74e10891d5bbe6aeada2c119c015dec9638d934d30b08830550b6bd21e249750"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/original-domain.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/original-domain.stdout",
+      "sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/reference-probe",
+      "sha256": "5f04d44813713f0fc0ddfd7ac717a709e68123b7dd036326013d30ccf84ccce3"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/reference-probe.cpp",
+      "sha256": "f154c4b717678c30d6fe9745ef54eefacfb569a537c9f155fc381aeb819d52e4"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/refine.py",
+      "sha256": "4e8e240a533ef19ad99896b76f7cdf26aa784b2e0242987e8bdc186707141a05"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/refinement-launcher.log",
+      "sha256": "349ae82e1b00c18cf5fdabb1559c4a954581be1d3a17a5b918fad57cd77ca019"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/refinement-runs.json",
+      "sha256": "1b441bc046dc0716aed09e896d81e5666e0e50133467571866036304abbc417b"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/run.py",
+      "sha256": "2b262e15678ab853ca0e534f4fc46887d9f94c1a108dbaa5d6545834e15f4409"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/runs.json",
+      "sha256": "191252469df0766bc189e819ee73d6ebf42962a0a7636d76eeb5ce1bf619e0e8"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-check.json",
+      "sha256": "c8ce76245a427f1f9266bfb9ba79ca1f3350e5853932ebb154409bf4a19a9f85"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-check.log",
+      "sha256": "ec7c329b078c41df4d841a72ebd418a9113e7dadeb22177283ca7a0bfa1a4815"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-new.json",
+      "sha256": "e5c1bfc553779b06bcf5d8a2dc6a423615508d3dfe1f140c802f3abb7af90f89"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-new.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-new.stdout",
+      "sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-old.json",
+      "sha256": "2c9a97bf22ea3651224f95bbd33301b5cbf84f244a8a085e6a26d5e1f9b8ba90"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-old.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/unconstrained-old.stdout",
+      "sha256": "a07cf948e25c4e23780ee437723d59e2d3712e667a6e46ff1a0cc6c1c215bd9e"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/upstream-extended.json",
+      "sha256": "c4936e003e04d75d1eb21fd15344cc5707ac0f2499ab706607ed731cd116af13"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/upstream-extended.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/upstream-extended.stdout",
+      "sha256": "19832eb36678e795d5d795f6ad585ca1b5f2f2cca5af9235f7f8fd754fdcb177"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-flux-001/write_artifact.py",
+      "sha256": "8a56f0f7265d8f39cb9802779f8d15a0e28db550c9068c552290eebacdb3a8f3"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/profile-closed.json",
+      "sha256": "5abdbcc13f529aa55d3c314d8139a0c6c3748e97a42c8caf457c5fe37dcb6a72"
+    },
+    {
+      "path": "outputs/combustion-foundation/reference-refinement-001/canonical-reference-004/reference.json",
+      "sha256": "4e4d9fc73a23deaa41d76978893159d290c3fe5656653dbb3107aa05415a7f6b"
+    },
+    {
+      "path": "tests/reacting_flame_reference_probe.cpp",
+      "sha256": "f154c4b717678c30d6fe9745ef54eefacfb569a537c9f155fc381aeb819d52e4"
+    }
+  ],
+  "validation_scope": {
+    "native_equations_changed": false,
+    "reference_equations_changed": false,
+    "reference_diagnostic_output_added": true,
+    "default_controls_changed": false,
+    "physical_audit_gates_changed": false,
+    "full_CTest_rerun": false,
+    "frontend_rerun": false,
+    "App_tested": false,
+    "platform_CI_rerun": false
+  },
+  "limits": [
+    "A small nonlinear equation residual does not establish global element conservation on this nonuniform finite-difference mesh.",
+    "Diagnostic additions did not alter any previous output field in all five exact replays.",
+    "Bisection runs change reference discretization, not chemical mechanism or tolerances. They are not native FV grid/domain convergence.",
+    "Actual-outlet equilibrium is skipped for raw negative mass fractions; no clipping or normalization of a saved state.",
+    "No experiment, native flame-speed or mature combustor qualification.",
+    "The 100 us native run kept the previous 3446-point reference; neither later extended-domain nor bisected profiles were inserted into its state.",
+    "No reference plateau or extrapolated true solution is claimed from three meshes. Full native time/grid/domain and experimental qualification remain incomplete."
+  ]
+}

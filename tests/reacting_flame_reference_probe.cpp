@@ -21,6 +21,12 @@ public:
         : Flow1D(solution, "flame", points), dependent_(dependent), enabled_(enabled) {}
     bool capture = false;
     std::vector<double> originalSpeciesResidual;
+    // Read the arrays from the completed steady evaluation. Do not reconstruct
+    // or re-evaluate transport when auditing the BVP's discrete element budget.
+    double diffusiveMassFlux(std::size_t k, std::size_t j) const { return flux(k,j); }
+    double chemicalMassProduction(std::size_t k, std::size_t j) const {
+        return m_wt[k] * m_wdot(k,j);
+    }
 protected:
     void evalSpecies(double* x, double* residual, int* diagonal, double rdt,
                      std::size_t jmin, std::size_t jmax) override {
@@ -147,6 +153,23 @@ int main(int argc, char** argv) {
         for(std::size_t j=1;j<points-1;++j) {
             if(j>1) stream << ',';
             for(std::size_t k=0;k<species;++k) row[k]=flow->originalSpeciesResidual[j*species+k];
+            array(row);
+        }
+        stream << "],\"inlet_prescribed_mass_fractions\":";
+        for(std::size_t k=0;k<species;++k) row[k]=inlet->massFraction(k);
+        array(row);
+        stream << ",\"inlet_mass_flux_kg_per_m2_s\":" << inlet->mdot()
+               << ",\"diffusive_flux_convention\":\"positive along increasing grid; row j is interval [j,j+1]\""
+               << ",\"diffusive_mass_flux_kg_per_m2_s_intervals\":[";
+        for(std::size_t j=0;j<points-1;++j) {
+            if(j) stream << ',';
+            for(std::size_t k=0;k<species;++k) row[k]=flow->diffusiveMassFlux(k,j);
+            array(row);
+        }
+        stream << "],\"chemical_mass_production_kg_per_m3_s_interior\":[";
+        for(std::size_t j=1;j<points-1;++j) {
+            if(j>1) stream << ',';
+            for(std::size_t k=0;k<species;++k) row[k]=flow->chemicalMassProduction(k,j);
             array(row);
         }
         stream << "]}\n";
