@@ -91,25 +91,25 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
     const std::vector<chemistry::GasState>& states, bool estimateRate) const {
     require(states.size() == mesh_.cells.size(), "state/mesh cell count mismatch");
     const auto ns = gas.mechanism().species.size(), nc = states.size(), nf = mesh_.faces.size();
-    std::vector<chemistry::GasProperties> properties, boundaryProperties(nf);
+    std::vector<chemistry::GasThermodynamics> properties, boundaryProperties(nf);
     std::vector<std::vector<double>> values(ns + 2, std::vector<double>(nc));
     std::vector<std::vector<double>> boundaryValues(ns + 2, std::vector<double>(nf));
     std::vector<long double> abundance(ns);
-    const auto fill = [&](const chemistry::GasProperties& p, std::vector<std::vector<double>>& fields, std::size_t i) {
+    const auto fill = [&](const chemistry::GasThermodynamics& p, std::vector<std::vector<double>>& fields, std::size_t i) {
         fields[0][i] = p.temperature;
         fields[1][i] = std::log(p.pressure);
         for (std::size_t k = 0; k < ns; ++k)
             fields[k + 2][i] = p.massFractions[k] * p.meanMolecularWeight / gas.mechanism().molecularWeights[k];
     };
     for (std::size_t i = 0; i < nc; ++i) {
-        properties.push_back(gas.properties(states[i]));
+        properties.push_back(gas.thermodynamics(states[i]));
         fill(properties.back(), values, i);
         for (std::size_t k = 0; k < ns; ++k) abundance[k] += values[k + 2][i];
     }
     for (std::size_t f = 0; f < nf; ++f) if (boundaries_[f]) {
         const auto& b = *boundaries_[f];
         const auto owner = mesh_.faces[f].owner;
-        if (b.reservoir) boundaryProperties[f] = gas.properties(*b.reservoir);
+        if (b.reservoir) boundaryProperties[f] = gas.thermodynamics(*b.reservoir);
         else {
             boundaryProperties[f] = properties[owner];
             if (b.kind == ReactingDiffusionBoundaryKind2D::IsothermalWall) {
@@ -208,7 +208,7 @@ ReactingDiffusionResult2D ReactingDiffusionOperator2D::evaluate(chemistry::Detai
                 add(owner, face.neighbour ? 1 - w : 1);
                 if (face.neighbour) add(*face.neighbour, w);
             }
-            const auto fp = gas.properties(faceState);
+            const auto fp = gas.thermodynamics(faceState);
             const auto ft = gas.transport(faceState);
             const auto& mw = gas.mechanism().molecularWeights;
             std::vector<double> kt(ns + 1), kp(ns + 1);

@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <limits>
 #include <numeric>
@@ -151,6 +152,8 @@ private:
 struct DetailedGas::Impl {
     GasMechanism info;
     std::shared_ptr<Cantera::Solution> solution;
+    GasState restoredState;
+    bool hasRestoredState = false;
 
     explicit Impl(const std::string& file, const std::string& phase) {
         require(std::filesystem::is_regular_file(file), "mechanism must be an existing explicit file");
@@ -225,6 +228,15 @@ struct DetailedGas::Impl {
     }
 
     void restore(const GasState& q) {
+        // Reuse only the last successfully inverted conserved state, including
+        // every trace-species bit. All paths that directly mutate the phase
+        // invalidate this key first. A failed inversion never publishes a key.
+        if (hasRestoredState && q.speciesDensities.size() == restoredState.speciesDensities.size()
+            && std::memcmp(&q.density, &restoredState.density, sizeof(double)) == 0
+            && std::memcmp(&q.internalEnergyDensity, &restoredState.internalEnergyDensity, sizeof(double)) == 0
+            && std::memcmp(q.speciesDensities.data(), restoredState.speciesDensities.data(),
+                           q.speciesDensities.size() * sizeof(double)) == 0) return;
+        hasRestoredState = false;
         require(std::isfinite(q.density) && q.density > 0, "density must be positive");
         finite(q.internalEnergyDensity, "internal energy density");
         require(q.speciesDensities.size() == info.species.size(), "species density count mismatch");
@@ -236,7 +248,10 @@ struct DetailedGas::Impl {
         // Bracket the energy inversion inside the common thermodynamic data
         // interval. Cantera's general UV setter permits extrapolation; here it
         // must fail instead. Formation energy is retained throughout.
-        const double target = q.internalEnergyDensity / q.density;
+        // Finite conserved scalars can still overflow in this division. An
+        // infinite target would also make the roundoff allowance infinite and
+        // could make |residual| <= allowance falsely accept an unrelated T.
+        const double target = finite(q.internalEnergyDensity / q.density, "specific internal energy");
         double lo = info.minimumTemperature, hi = info.maximumTemperature;
         gas->setState_TD(lo, q.density);
         const double lowerEnergy = gas->intEnergy_mass();
@@ -255,7 +270,11 @@ struct DetailedGas::Impl {
             const double residual = energy - target;
             const double allowance = 64 * std::numeric_limits<double>::epsilon()
                 * std::max({std::abs(target), std::abs(energy), cv * temperature, 1.0});
-            if (std::abs(residual) <= allowance) return;
+            if (std::abs(residual) <= allowance) {
+                restoredState = q;
+                hasRestoredState = true;
+                return;
+            }
             if (residual > 0) hi = temperature;
             else lo = temperature;
             const double next = temperature - residual / cv;
@@ -264,9 +283,9 @@ struct DetailedGas::Impl {
         throw std::runtime_error("DetailedGas: temperature inversion did not converge");
     }
 
-    GasProperties currentProperties() const {
+    GasThermodynamics currentThermodynamics() const {
         auto gas = solution->thermo();
-        GasProperties result;
+        GasThermodynamics result;
         result.temperature = gas->temperature();
         validateTemperature(result.temperature);
         result.pressure = finite(gas->pressure(), "pressure");
@@ -277,28 +296,36 @@ struct DetailedGas::Impl {
                 "invalid mixture thermodynamic properties");
         result.massFractions.resize(info.species.size());
         result.speciesEnthalpies.resize(info.species.size());
-        result.massProductionRates.resize(info.species.size());
-        result.massRateActivities.resize(info.species.size());
-        std::vector<double> destruction(info.species.size());
         gas->getMassFractions(result.massFractions.data());
         validateFractions(result.massFractions);
         gas->getPartialMolarEnthalpies(result.speciesEnthalpies.data());
+        for (std::size_t k = 0; k < info.species.size(); ++k) {
+            result.speciesEnthalpies[k] /= info.molecularWeights[k];
+            finite(result.speciesEnthalpies[k], "species enthalpy");
+        }
+        for (std::size_t m = 0; m < info.elements.size(); ++m)
+            result.elementalMassFractions.push_back(finite(gas->elementalMassFraction(m), "element fraction"));
+        return result;
+    }
+
+    GasProperties currentProperties() const {
+        GasProperties result;
+        static_cast<GasThermodynamics&>(result) = currentThermodynamics();
+        result.massProductionRates.resize(info.species.size());
+        result.massRateActivities.resize(info.species.size());
+        std::vector<double> destruction(info.species.size());
         solution->kinetics()->getNetProductionRates(result.massProductionRates.data());
         solution->kinetics()->getCreationRates(result.massRateActivities.data());
         solution->kinetics()->getDestructionRates(destruction.data());
         long double release = 0;
         for (std::size_t k = 0; k < info.species.size(); ++k) {
-            result.speciesEnthalpies[k] /= info.molecularWeights[k];
             result.massProductionRates[k] *= info.molecularWeights[k];
             result.massRateActivities[k] = (result.massRateActivities[k] + destruction[k]) * info.molecularWeights[k];
-            finite(result.speciesEnthalpies[k], "species enthalpy");
             finite(result.massProductionRates[k], "mass production rate");
             finite(result.massRateActivities[k], "mass rate activity");
             release -= static_cast<long double>(result.speciesEnthalpies[k]) * result.massProductionRates[k];
         }
         result.enthalpyReleaseRate = finite(static_cast<double>(release), "enthalpy release rate");
-        for (std::size_t m = 0; m < info.elements.size(); ++m)
-            result.elementalMassFractions.push_back(finite(gas->elementalMassFraction(m), "element fraction"));
         return result;
     }
 };
@@ -311,6 +338,7 @@ DetailedGas& DetailedGas::operator=(DetailedGas&&) noexcept = default;
 const GasMechanism& DetailedGas::mechanism() const { return impl_->info; }
 
 GasState DetailedGas::fromMassFractions(double temperature, double pressure, const std::vector<double>& y) {
+    impl_->hasRestoredState = false;
     impl_->validateTemperature(temperature);
     impl_->validateFractions(y);
     require(std::isfinite(pressure) && pressure > 0, "pressure must be positive");
@@ -337,6 +365,11 @@ GasState DetailedGas::fromMoleAmounts(double temperature, double pressure, const
 GasProperties DetailedGas::properties(const GasState& q) {
     impl_->restore(q);
     return impl_->currentProperties();
+}
+
+GasThermodynamics DetailedGas::thermodynamics(const GasState& q) {
+    impl_->restore(q);
+    return impl_->currentThermodynamics();
 }
 
 double DetailedGas::viscosity(const GasState& q) {
@@ -473,6 +506,7 @@ ChemistryStep DetailedGas::advanceConstantVolume(const GasState& input, double d
         // The generic Reactor evolves total INTERNAL ENERGY, not temperature.
         // No surfaces, walls or flow devices are installed. Its energy is
         // therefore constant without imposing a post-integration correction.
+        impl_->hasRestoredState = false;
         auto reactor = std::make_shared<RangeCheckedReactor>(impl_->solution,
             impl_->info.minimumTemperature, impl_->info.maximumTemperature);
         Cantera::ReactorNet network(reactor);

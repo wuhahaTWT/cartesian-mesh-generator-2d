@@ -64,7 +64,7 @@ ReactingPrimitive2D reactingPrimitive2D(chemistry::DetailedGas& gas, const React
     require(u[0] > 0, "nonpositive density");
     ReactingPrimitive2D p;
     p.gas = {u[0], u[3] - kinetic(u), {u.begin() + 4, u.end()}};
-    p.properties = gas.properties(p.gas);
+    p.properties = gas.thermodynamics(p.gas);
     p.velocity = {u[1] / u[0], u[2] / u[0]};
     p.soundSpeed = finite(std::sqrt(p.properties.cp / p.properties.cv * p.properties.pressure / u[0]));
     require(p.soundSpeed > 0, "nonpositive acoustic speed");
@@ -143,7 +143,7 @@ ReactingFlowStepper2D::ReactingFlowStepper2D(chemistry::DetailedGas& gas, FvMesh
         require(wall(b.kind) ? b.wallTemperature >= 0 : b.wallTemperature == 0, "invalid/inactive wall temperature");
         require(b.wallTemperature == 0 || (b.wallTemperature >= gas.mechanism().minimumTemperature
                 && b.wallTemperature <= gas.mechanism().maximumTemperature), "wall temperature outside mechanism range");
-        if (b.reservoir) (void)gas.properties(*b.reservoir);
+        if (b.reservoir) (void)gas.thermodynamics(*b.reservoir);
         const auto& f = mesh_.faces[b.face]; const double length = std::hypot(f.areaVector.x, f.areaVector.y);
         if (wall(b.kind)) require(std::abs(dot(b.velocity, f.areaVector)) <= 64 * std::numeric_limits<double>::epsilon() * length * std::hypot(b.velocity.x, b.velocity.y), "moving normal wall on a static mesh");
         if (b.kind == ReactingBoundaryKind2D::SlipWall || b.kind == ReactingBoundaryKind2D::ExtrapolatedOutflow)
@@ -211,7 +211,8 @@ ReactingResidual2D ReactingFlowStepper2D::evaluateResidual(const ReactingState2D
         for (double& value : out.transportDerivative[i]) value = finite(-value / mesh_.cells[i].area);
         if (physics_.chemistry) {
             const auto p = reactingPrimitive2D(gas_, state.cells[i]);
-            for (std::size_t k = 4; k < nv; ++k) out.chemistryDerivative[i][k] = p.properties.massProductionRates[k - 4];
+            const auto chemistry = gas_.properties(p.gas);
+            for (std::size_t k = 4; k < nv; ++k) out.chemistryDerivative[i][k] = chemistry.massProductionRates[k - 4];
         }
     }
     out.derivative = out.transportDerivative;
@@ -339,7 +340,7 @@ ReactingFlowStepper2D::Stage ReactingFlowStepper2D::spatial(const std::vector<Re
         for (std::size_t id = 0; id < nf; ++id) {
             const auto& f = mesh_.faces[id]; const auto* b = boundaries_[id] ? &*boundaries_[id] : nullptr;
             const auto& lp = primitive[f.owner].properties;
-            auto rp = f.neighbour ? primitive[*f.neighbour].properties : b->reservoir ? gas_.properties(*b->reservoir) : lp;
+            auto rp = f.neighbour ? primitive[*f.neighbour].properties : b->reservoir ? gas_.thermodynamics(*b->reservoir) : lp;
             if (b && b->wallTemperature > 0) rp.temperature = b->wallTemperature;
             const double w = f.neighbour ? f.neighbourWeight : 1;
             auto y = lp.massFractions; for (std::size_t k = 0; k < y.size(); ++k) y[k] = (1 - w) * y[k] + w * rp.massFractions[k];

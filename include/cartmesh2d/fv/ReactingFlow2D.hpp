@@ -11,7 +11,7 @@ namespace cartmesh2d::fv {
 using ReactingConservative2D = std::vector<double>;
 struct ReactingPrimitive2D {
     chemistry::GasState gas;
-    chemistry::GasProperties properties;
+    chemistry::GasThermodynamics properties;
     Vector2D velocity;
     double soundSpeed = 0; // frozen-composition sound speed, m/s
 };

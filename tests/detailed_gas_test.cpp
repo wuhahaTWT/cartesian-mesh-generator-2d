@@ -46,6 +46,65 @@ void ratesConserveElements(const DetailedGas& gas, const GasProperties& p) {
               "reaction source violates elemental balance");
     }
 }
+void sameThermodynamics(const GasThermodynamics& actual, const GasThermodynamics& expected) {
+    check(actual.temperature == expected.temperature && actual.pressure == expected.pressure
+          && actual.cp == expected.cp && actual.cv == expected.cv
+          && actual.meanMolecularWeight == expected.meanMolecularWeight
+          && actual.massFractions == expected.massFractions
+          && actual.elementalMassFractions == expected.elementalMassFractions
+          && actual.speciesEnthalpies == expected.speciesEnthalpies,
+          "query order or exact-state reuse changed thermodynamics");
+}
+void thermodynamicQueries(DetailedGas& gas, const GasState& input) {
+    const auto expected = gas.properties(input);
+    sameThermodynamics(gas.thermodynamics(input), expected);
+    // A direct T/p/composition setter invalidates an earlier conservative key.
+    const auto other = gas.fromMassFractions(1500, 2 * expected.pressure, expected.massFractions);
+    sameThermodynamics(gas.thermodynamics(input), expected);
+    const auto transport = gas.transport(input);
+    (void)gas.thermodynamics(other);
+    const auto revisited = gas.transport(input);
+    check(transport.viscosity == revisited.viscosity
+          && transport.thermalConductivity == revisited.thermalConductivity
+          && transport.multicomponentDiffusion == revisited.multicomponentDiffusion
+          && transport.binaryDiffusion == revisited.binaryDiffusion
+          && transport.thermalDiffusion == revisited.thermalDiffusion,
+          "thermal-only query contaminated full multicomponent transport");
+    const auto rates = gas.properties(input);
+    check(rates.massProductionRates == expected.massProductionRates
+          && rates.massRateActivities == expected.massRateActivities
+          && rates.enthalpyReleaseRate == expected.enthalpyReleaseRate,
+          "thermal-only query changed full reaction source");
+    // A finite out-of-range target visits the bracket endpoints before failing;
+    // an overflowing e = (rho*e)/rho must fail before an infinite error allowance
+    // can make the temperature solve appear converged. Both invalidate the key.
+    for (double energy : {input.density * 1e12, std::numeric_limits<double>::max() / 4}) {
+        auto invalidEnergy = input;
+        invalidEnergy.internalEnergyDensity = energy;
+        rejects([&] { (void)gas.thermodynamics(invalidEnergy); }, "invalid thermal energy accepted");
+        sameThermodynamics(gas.thermodynamics(input), expected);
+    }
+    // CVODES uses the same phase. A failed source solve can leave it at a trial
+    // state even though the caller still holds the original accepted state.
+    ChemistryControls limited; limited.maximumInternalSteps = 1;
+    const auto failed = gas.advanceConstantVolume(input, .01, limited);
+    check(!failed.accepted && !failed.failure.empty(), "source-budget invalidation regression did not fail");
+    sameThermodynamics(gas.thermodynamics(input), expected);
+    const auto argon = std::find(gas.mechanism().species.begin(), gas.mechanism().species.end(), "AR");
+    check(argon != gas.mechanism().species.end(), "exact-state key regression needs argon");
+    const auto index = static_cast<std::size_t>(argon - gas.mechanism().species.begin());
+    auto trace = input;
+    trace.speciesDensities[index] = 1e-250;
+    const auto before = gas.thermodynamics(trace);
+    trace.speciesDensities[index] *= 2;
+    const auto after = gas.thermodynamics(trace);
+    check(after.massFractions[index] == trace.speciesDensities[index] / trace.density
+          && after.massFractions[index] == 2 * before.massFractions[index],
+          "exact-state key ignored a positive trace species change");
+    trace.speciesDensities[index] = -1e-250;
+    rejects([&] { (void)gas.thermodynamics(trace); }, "thermal-only query repaired negative trace species");
+    sameThermodynamics(gas.thermodynamics(input), expected);
+}
 }
 
 int main(int argc, char** argv) {
@@ -66,7 +125,7 @@ int main(int argc, char** argv) {
             if (!source.accepted) throw std::runtime_error(source.failure);
             cold = *source.accepted;
             const auto y = hydrogen.properties(cold).massFractions;
-            check(std::abs(std::accumulate(y.begin(), y.end(), 0.) - 1) <= 4 * y.size() * std::numeric_limits<double>::epsilon(),
+            check(std::abs(std::accumulate(y.begin(), y.end(), 0.) - 1) <= 4 * static_cast<double>(y.size()) * std::numeric_limits<double>::epsilon(),
                   "composition closure accumulated during repeated chemistry");
             for (double change : source.massClosureChange) maximumClosure = std::max(maximumClosure, std::abs(change / cold.density));
         }
@@ -96,6 +155,7 @@ int main(int argc, char** argv) {
             }
         }
         const auto initial = hydrogen.fromMoleAmounts(1100, 101325, x);
+        thermodynamicQueries(hydrogen, initial);
         const auto saved = initial;
         const auto transport = hydrogen.transport(initial);
         check(transport.multicomponentDiffusion.size() == 100 && transport.thermalDiffusion.size() == 10,
@@ -177,6 +237,7 @@ int main(int argc, char** argv) {
               "methane mechanism was reduced");
         const auto ch4 = methane.fromMoleAmounts(1400, 101325,
             mixture(methane, {{"CH4", 1}, {"O2", 2}, {"N2", 7.52}}));
+        thermodynamicQueries(methane, ch4);
         const auto methaneStep = methane.advanceConstantVolume(ch4, .002);
         if (!methaneStep.accepted) throw std::runtime_error(methaneStep.failure);
         ratesConserveElements(methane, methane.properties(*methaneStep.accepted));

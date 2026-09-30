@@ -30,11 +30,16 @@ struct GasState {
     std::vector<double> speciesDensities; // kg/m^3, same ordering as GasMechanism
 };
 
-struct GasProperties {
+// Thermodynamic state only. Keeping this separate from the kinetic result
+// prevents a flow/transport query from silently requesting every reaction rate.
+struct GasThermodynamics {
     double temperature = 0, pressure = 0; // K, Pa
     double cp = 0, cv = 0, meanMolecularWeight = 0; // J/(kg K), kg/kmol
     std::vector<double> massFractions, elementalMassFractions;
     std::vector<double> speciesEnthalpies; // J/kg, including formation enthalpy
+};
+
+struct GasProperties : GasThermodynamics {
     std::vector<double> massProductionRates; // kg/(m^3 s)
     // Gross creation + destruction, kg/(m^3 s); roundoff scale for cancellation
     // in net source assembly, including species appearing on both reaction sides.
@@ -119,6 +124,9 @@ public:
     [[nodiscard]] GasState fromMoleAmounts(double temperature, double pressure,
                                            const std::vector<double>& moleAmounts);
     [[nodiscard]] GasProperties properties(const GasState&);
+    // Same state validation and energy inversion as properties(), without
+    // evaluating reaction rates. No approximate state key or property table.
+    [[nodiscard]] GasThermodynamics thermodynamics(const GasState&);
     // Validated viscosity-only query; avoids unrelated multicomponent solves
     // when assembling viscous stresses at the same physical face state.
     [[nodiscard]] double viscosity(const GasState&);
