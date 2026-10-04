@@ -2,6 +2,30 @@
 
 当前能力与待办只看[当前状态](CURRENT_STATE_CN.md)，操作看[桌面使用](DESKTOP_APP_CN.md)，修改约束看[AGENTS](../AGENTS.md)。本页集中构建、代码入口、方法与复现，不重复逐轮实验结果。
 
+独立 Python 验证链及其专用测试、CI 调用已移除；运行流程使用原生网格和求解器的失败判定。下文仍保留的独立审计方法与数值记录描述的是历史实验，不能作为当前自动运行的能力；原始场和历史报告保留。
+
+## 本地研究文件导航
+
+| 文件或目录 | 用途 |
+| --- | --- |
+| `tools/optimization/navier_stokes_brinkman.py`、`brinkman.py`、`optimize_flow.py` | 多孔流动、离散伴随和材料优化；T01/T02 共用基础。 |
+| `tools/optimization/fidelity_study.py`、`fidelity_metrics.py`、`fidelity_report.py`、`topology_cases.py`、`engineering_baselines.py` | T01 算例、差距/排序实验、工程参照及汇总。 |
+| `tools/optimization/closed_loop_topology.py` | T02 在线反馈、材料/连接提案、局部校正与原生接受循环。 |
+| `tools/optimization/compare_sharp_designs.py`、`native_flow.py`、`continue_native_flow.py` | 真实壁面提取、面积/物性/流量匹配、原生复算和续算。 |
+| `tools/visualization/render_topology_feedback.py` | 从已接受的真实网格和 CSV 生成 T02 图及来源索引。 |
+| `tests/navier_stokes_topology_test.py`、`tests/topology_fidelity_test.py`、`tests/closed_loop_topology_test.py`、`tests/fixtures/topology_area_plateau.npz` | 相关实现检查和保留的失败材料。 |
+| `artifacts/current/native-topology-fidelity-completion*`、`native-topology-fidelity-fixed-ranking.png`、`native-topology-fidelity-native-fields*` | T01 补齐后的结果入口；不把原首轮 `native-topology-fidelity.json` 当最终全集。 |
+| `artifacts/current/native-topology-feedback*` | T02 主结果、对照及实际网格图。 |
+| `outputs/topology-fidelity/` | T01 原材料、原生网格/场、失败、独立审查及补齐脚本；交付入口 `t01-completion-001/summary.json`，原封存清单 `t01-completion-001/evidence-manifest.json`。 |
+| `outputs/topology-feedback/double-pipe-004/`、`double-pipe-no-feedback-001/` | T02 Re=0 主运行和匹配对照，各读 `run.json`、`evaluations.json`、`summary.json`。 |
+| `outputs/topology-feedback/double-pipe-re50-001/`、`double-pipe-re50-no-feedback-001/` | Re=50 主运行和匹配对照。 |
+| `outputs/topology-feedback/double-pipe-001/` 至 `003/`、`elbow-001/` 至 `003/` | 早期算法尝试及弯管失败/试运行，保留用于改进；不能和最终方法混作同一组统计。 |
+| `outputs/topology-env/`、`build/` | 现有研究 Python 环境和原生构建；系统 Python 未安装此流程所需的 SciPy，使用 `outputs/topology-env/bin/python`。 |
+| `outputs/codex_tasks/` | Claude 原路线、T01 任务单、进度和过程日志；历史指导不覆盖当前状态。旧自动启动脚本在 `retired_launchers/*.sh.disabled`，不作为日常入口。 |
+| `outputs/repository-tidy/workspace-index.json` | 本次接手用的本地文件清单：未提交路径、结果角色、读取入口；是整理时快照，接手仍先核对 Git。 |
+
+研究结果保留原目录，因为运行记录、图片来源和封存清单包含原路径。`outputs/combustion-foundation/` 是冻结燃烧研究，`outputs/cfd-demo-reference/` 是用户指定保留的参考包，其余网格/CFD 历史材料继续保留。源码目录杂项的原路径与恢复位置见 `outputs/repository-tidy/file-organization.json`；不把数值场、检查点或失败日志当缓存。
+
 ## 分支与里程碑
 
 只维护 `main`（已验证集成）和 `codex/cfd-development`（后续开发），网格和 CFD 修复统一从开发线推进。三条实验功能、临时集成及旧网格维护分支已完整进入 main，旧分支名可删除，提交历史仍可查。
@@ -36,12 +60,11 @@ npm test --prefix desktop
 
 ```sh
 npm --prefix desktop run pack:mac
-# Windows 用 pack:win；Linux 用 pack:linux。
 ```
 
-包输出到 `desktop/dist/`。构建检查实际 Mach-O/PE/ELF、架构及 runtime，拒绝跨系统混装；Windows 使用静态 CRT 和 UTF-8 路径 manifest，macOS 检查动态库。ZIP 使用流式 yazl，不依赖外部压缩命令。
+包输出到 `desktop/dist/`。打包入口统一检查实际 Mach-O/PE/ELF、架构及 runtime，拒绝跨系统混装；Windows 使用静态 CRT 和 UTF-8 路径 manifest，macOS 检查动态库。ZIP 使用流式 yazl，不依赖外部压缩命令。
 
-真实 App 检查入口为 `tools/verification/desktop_platform_smoke.py --help`，三平台工作流使用中文及空格路径，覆盖 PNG/JPG、hybrid、两种背景和两类可压壁面样例，并独立读取 ZIP。Linux `--no-sandbox` 仅用于隔离 CI 虚拟显示，不进入产品启动参数。
+三平台 CI 保留构建、原生测试、前端测试和打包；额外的打包 App 审计脚本已移除。真实 App 交互按交付目标手动检查。
 
 单例桌面调试（先准备 runtime）：
 
@@ -87,7 +110,6 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 ```sh
 build/cartmesh2d_cli examples/acceptance/circle.xy outputs/background-grid/circle 7 0.5 0.1 exterior - 3 --background-grid adaptive
-python3 tools/verification/check_background_grid.py outputs/background-grid/circle.background.json
 ```
 
 `cartmesh2d-background-v1` JSON 保存域、原边界、完整单元范围/层级/整数格坐标及分类（0 外部、1 内部、2 相交），`solver_ready=false`；VTK 为相同完整四边形，粗细交界可能有悬挂节点，不宣称共形求解面拓扑。独立审核检查覆盖、无重叠、分类、2:1、JSON/VTK 一致与确定性。
@@ -134,7 +156,6 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 ```sh
 build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case sod --gas-r 1 --end-time .2 --flux hllc --order 2
 ctest --test-dir build -R '^cartmesh2d_euler_' --output-on-failure
-python3 tools/verification/verify_euler.py --mesh final.solver.cm2d --prefix outputs/euler/run
 ```
 
 ### 总能量耦合导热与黏性
@@ -169,22 +190,17 @@ python3 tools/verification/verify_euler.py --mesh final.solver.cm2d --prefix out
 
 | 验证入口 | 检查什么 |
 | --- | --- |
-| `tests/euler_accuracy_cli_test.py` | 面积加权光滑波/涡及 Sod 误差；旋转与 Mach 3/10 扰动激波，保留最小失稳例，不能外推任意强激波 |
-| `tests/euler_conduction_cli_test.py` | 热扩散及 Euler–Fourier 小扰动；独立连续模态矩阵指数、物理热边界、SI 相似性和续算绑定 |
-| `tests/euler_viscosity_cli_test.py` | 周期剪切波、含纵向黏性的热模态、Couette 解析初值保持；与冷启动验收分开 |
 | `tests/wall_gradient_test.cpp` | 二次场、扭曲/旋转、长宽比 .03/3/30、长度缩放、实际 Jacobian 扰动及缺秩拒绝 |
 | `tests/transport_precision_test.cpp` | 无源光滑导热 8/16/32 格，比较解析壁面边积分、排除线性求解容差污染 |
-| `tests/euler_wall_accuracy_cli_test.py` | Couette 解析保持及静止冷启动至 t=60；功热与全过程能量、质量决定的稳态压力，以及固定网格时间细化 |
 
 测试阈值按量分别解释，均为既有门，整理文档不改断言：面通量审计使用含对流/热/黏性量纲包络的 512 epsilon，算子/SI 采用 1024–4096 epsilon 检查浮点一致性；极端长宽比另记录输入舍入传播，不能替代原几何门。物理回归使用各自归一化离散误差、网格观测阶和解析参照，不用机器 epsilon 充当工程精度。
 
 例如光滑导热 `T=2+.2sin(πx)sinh(πy)/sinh(π)` 的热流 L1 以解析边积分绝对值总和归一化，最细目标 .5%、至少优于线性 2 倍、观测阶>1.7；1e−11/1e−13 线性容差场差小于离散误差 1%。Couette 用解析温升和壁速归一化，另验压力细化，避免多项式恰好复现掩盖全场误差。准确控制、门限依据和成本在相应测试及[精度证据](../artifacts/current/native-euler-wall-accuracy.json)中。
 
-时间细化使用同网格/终点，dt=1e−3/5e−4/2.5e−4，对更细轨迹再核参考误差，属于时间自收敛。`EulerStepControls2D::endTime` 保留浮点尾步最小失败例：必要时把倒数第二步拆成两个合法小步，真实算通量，不伪造时钟或绕过最小步长。篡改通量、速率、壁面格式/面数必须被独立审计拒绝。
+时间细化使用同网格/终点，dt=1e−3/5e−4/2.5e−4，对更细轨迹再核参考误差，属于时间自收敛。`EulerStepControls2D::endTime` 保留浮点尾步最小失败例：必要时把倒数第二步拆成两个合法小步，真实算通量，不伪造时钟或绕过最小步长。原生求解器继续拒绝不合法的通量、速率和壁面格式。
 
 ```sh
-ctest --test-dir build -R 'cartmesh2d_(wall_gradient|transport_precision|euler_wall_accuracy)' --output-on-failure
-python3 tests/euler_wall_accuracy_cli_test.py --cli build/cartmesh2d_euler_cli --output outputs/euler-wall-accuracy/validation
+ctest --test-dir build -R 'cartmesh2d_(wall_gradient|transport_precision)' --output-on-failure
 build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run --case external --viscosity .02 --wall-model no-slip --conductivity 100 --wall-thermal temperature --wall-value 400 --flux hllc --order 2 --wall-gradient quadratic --density 1.225 --pressure 101325 --u 50 --end-time .00005
 ```
 
@@ -219,12 +235,6 @@ ctest --test-dir build -R '^cartmesh2d_detailed_gas$' --output-on-failure
 # 参数为机理文件、温度 K、压力 Pa、恒容反应时间 s、相对摩尔数量。
 build/cartmesh2d_detailed_gas_probe build/deps/cantera/share/cantera/data/gri30.yaml \
   1400 101325 .002 CH4=1 O2=2 N2=7.52
-
-# Python 环境单独用于核对；输出目录必须不存在，以保留上轮成功或失败记录。
-build/chemistry-env/bin/python tools/verification/verify_detailed_gas.py \
-  --probe build/cartmesh2d_detailed_gas_probe \
-  --mechanism-root build/deps/cantera/share/cantera/data \
-  --output outputs/combustion-foundation/interface-new
 ```
 
 本机依赖构建环境为 Python 3.14、SCons 4.11.1、packaging 26.3；Python 对照环境另装 Cantera 3.2.0、NumPy 2.5.3。Cantera 构建使用 `python_package=n f90_interface=n hdf_support=n clib_legacy=yes googletest=none example_data=no debug=no`，`fmt/yaml-cpp/Eigen/SUNDIALS` 使用上游固定子模块。`clib_legacy` 仅避免生成本项目不使用的 C 接口，不改变 C++ 模型；上游完整测试没有运行，原生接入检查单列。动态依赖需检查，不得引入 mesasdk 库。正式打包和跨平台部署仍待完成。
@@ -235,18 +245,14 @@ build/chemistry-env/bin/python tools/verification/verify_detailed_gas.py \
 
 ### 可选 NASA7 连续热力学输入
 
-原始分段 NASA7 拟合的焓/内能可能在拼接点跳变；在很窄的能量区间，温度反解因而不唯一。`tools/verification/prepare_continuous_nasa7.py` 显式生成新的机理文件，保留低温段锚点、两段全部比热系数、温区、组分、输运参数及完整正向反应定义。依据 [NASA7 形式与比热积分关系](https://cantera.org/stable/reference/thermo/species-thermo.html#the-nasa-7-coefficient-polynomial-parameterization)，在拼接点以 60 位算术计算高温段的 `a5`、`a6`，使 `h = h_ref + ∫cp dT`、`s = s_ref + ∫cp/T dT` 连续；最终系数仍为双精度。比热本身的拼接跳变和导数未被平滑。这里只支持理想气体的两段 NASA7，其他模型显式拒绝。
+原始分段 NASA7 拟合的焓/内能可能在拼接点跳变；在很窄的能量区间，温度反解因而不唯一。`tools/flow/prepare_continuous_nasa7.py` 显式生成新的机理文件，保留低温段锚点、两段全部比热系数、温区、组分、输运参数及完整正向反应定义。依据 [NASA7 形式与比热积分关系](https://cantera.org/stable/reference/thermo/species-thermo.html#the-nasa-7-coefficient-polynomial-parameterization)，在拼接点以 60 位算术计算高温段的 `a5`、`a6`，使 `h = h_ref + ∫cp dT`、`s = s_ref + ∫cp/T dT` 连续；最终系数仍为双精度。比热本身的拼接跳变和导数未被平滑。这里只支持理想气体的两段 NASA7，其他模型显式拒绝。
 
 这是有物理影响的数据变更：高温焓、熵、平衡常数和逆反应速率会改变。工具不修改原文件，也不接入求解器的隐式修正。输出 `original-resolved.yaml`、`continuous.yaml` 和每个组分的改动/哈希报告；已有输出目录拒绝覆盖。Cantera 展开原机理时可能因活化能单位换算产生末位舍入，报告逐项列出；准备器直接修改展开后的 YAML 树，保证两份展开文件的正向反应定义相同，另用原输入进行敏感性对照。原相配置的输运模型也保留，实际原生通量继续显式使用完整多组分模型。
 
 ```sh
-build/chemistry-env/bin/python tools/verification/prepare_continuous_nasa7.py \
+build/chemistry-env/bin/python tools/flow/prepare_continuous_nasa7.py \
   --mechanism build/deps/cantera/share/cantera/data/h2o2.yaml \
   --output outputs/combustion-foundation/continuous-h2-new
-build/chemistry-env/bin/python tools/verification/verify_continuous_nasa7.py \
-  --prepared outputs/combustion-foundation/continuous-h2-new \
-  --probe build/cartmesh2d_detailed_gas_probe --fuel H2 \
-  --output outputs/combustion-foundation/continuous-h2-audit-new
 ```
 
 甲烷对照使用 `gri30.yaml` 与 `--fuel CH4`，仍为全部 53 组分/325 反应。Python 准备环境需 Cantera、NumPy 和 `ruamel.yaml`，不增加原生求解器运行依赖。验证器按各段对 `cp`、`cp/T` 作独立 32 点 Gauss 积分，检查全部组分低温锚点至拼接点两侧和高温区间的焓/熵；复用公式检查归一化门 `5e-11`。焓误差除以 `max(|h|,|cp*T|,1)`，熵误差除以 `max(|s|,1)`；拼接处还使用原能量反演舍入预算 `64*epsilon*max(|e|,|cv*T|,1) J/kg`。每种机理实际调用原生探针 8 次，检查拼接附近往返和原/新机理的恒容反应轨迹；接口归一化门 `5e-10`、反应器温度相对差/质量分数绝对差 `2e-6` 与既有守恒门不变。它们限定数值一致性，原/新机理的物理差异直接报告，不新增物理合格阈值。
@@ -273,10 +279,6 @@ build/chemistry-env/bin/python tools/verification/verify_continuous_nasa7.py \
 cmake -S . -B build # 沿用上文已配置的 Cantera 开关和路径
 cmake --build build --target cartmesh2d_reacting_diffusion_tests cartmesh2d_diffusive_flux_probe -j2
 ctest --test-dir build -R '^cartmesh2d_reacting_diffusion$' --output-on-failure
-build/chemistry-env/bin/python tools/verification/verify_diffusive_flux.py \
-  --probe build/cartmesh2d_diffusive_flux_probe \
-  --mechanism-root build/deps/cantera/share/cantera/data \
-  --output outputs/combustion-foundation/diffusion-interface-new
 ```
 
 ### 详细反应流耦合推进
@@ -315,14 +317,6 @@ build/cartmesh2d_reacting_flow_probe build/deps/cantera/share/cantera/data/h2o2.
   outputs/combustion-foundation/reacting-new
 build/cartmesh2d_reacting_flow_probe build/deps/cantera/share/cantera/data/h2o2.yaml \
   outputs/combustion-foundation/reacting-half-new .175
-# 读取/绘图环境另需 matplotlib，本机为 3.11.2；不进入 C++ 运行依赖。
-build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
-  --case outputs/combustion-foundation/reacting-half-new \
-  --output outputs/combustion-foundation/reacting-half-review-new
-build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
-  --case outputs/combustion-foundation/reacting-new \
-  --compare outputs/combustion-foundation/reacting-half-new \
-  --output outputs/combustion-foundation/reacting-review-new
 ```
 
 `reacting_reconstruction_test.cpp` 在扭曲网格上隔离二阶对流算子，将氩气质量分数扰动依次缩小至 `1e-12/1e-16`，并保持总密度和总能量。旧共同组分限制器仍造成约 `0.274%` 的整体质量通量变化；独立限制与单纯形闭合后，相对响应约 `1.05e-11/1.91e-14`。误差按相应分量的全体面绝对通量之和归一化，检查额度为 `1000*(扰动质量分数+epsilon)`，用于发现不随扰动消失的有限跳变，非火焰精度门。保留同源码仅恢复旧限制器的失败对照。
@@ -357,7 +351,7 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 
 读取器用同一套独立时钟、EOS、共享面和质量/元素/能量预算检查逐帧核对。`initial` 表示本段起点：冷启动来自参考初值，续算来自真实接受检查点，两者通过 `restart` 元数据区分。`sample-audits.json` 保留每帧诊断；历史图使用真实接受时刻。固定本段初始温度范围中点的等温位置通过单元中心剖面线性插值得到，多个交点全部记录；该位置标记不等于已验收火焰速度。464 格、0.1 微秒采样开关对照的全部物理场相等，步长日志和检查点逐字节相同。故意改坏的时钟和质量预算被拒绝；两条样本上限测试在第 20 个接受步退出，保留的场和预算与正常运行的同一步相同。
 
-试算终止后可能增加 RHS、矩阵及非线性迭代计数，而未接受任何新场。`audit_sample_counters` 仅在未完成、有失败原因、末帧物理状态严格等于最后接受状态时，区分这种终止快照与较早的常规采样；普通帧仍须与接受步 RHS 计数相等。终止计数只允许明确列出的单调诊断变化，积分控制、接受阶数计数和接受误差统计保持；每帧继续接受原 `audit_fields` 检查。报告另列 `terminal_attempt_statistics`，不把额外试算计入物理时间。运行 `build/chemistry-env/bin/python tools/verification/test_reacting_sample_counters.py` 检查计数语义；原生取消/新会话恢复测试归入 `cartmesh2d_reacting_implicit`。
+试算终止后可能增加 RHS、矩阵及非线性迭代计数，而未接受任何新场。`audit_sample_counters` 仅在未完成、有失败原因、末帧物理状态严格等于最后接受状态时，区分这种终止快照与较早的常规采样；普通帧仍须与接受步 RHS 计数相等。终止计数只允许明确列出的单调诊断变化，积分控制、接受阶数计数和接受误差统计保持；每帧继续接受原 `audit_fields` 检查。报告另列 `terminal_attempt_statistics`，不把额外试算计入物理时间。原生取消/新会话恢复测试归入 `cartmesh2d_reacting_implicit`。
 
 `outputs/combustion-foundation/implicit-cancel-audit-001/` 绑定冻结程序、审计器及源码哈希，保留真实试算取消、零时长文件读回、续算和正常计算对照。`reaudit_legacy.py` 在单独目录重审旧记录，并检查原物理审计函数 AST 相同及实际时钟/预算/状态损坏拒绝；`restart.py` 分段审计后按真实边界、化学和约束积分合并预算。原 `acoustic-boundary-001` 的取消记录及 `acoustic-newton-001` 的报告元数据失败保留，补充已存在的夹具间距只修复审计输入，不重算或改写原场。冷态脉冲使用完整氢气机理、多组分/Soret、温变物性和黏性；脉冲是初值，不能用它代替燃烧传播或边界反射验证。相同 10 微秒终点的三/六次牛顿预算及六次预算的容差减半对照只描述该案例，默认值不改。完整文件、控制及观察范围见[证据索引](../artifacts/current/native-reacting-cancellation.json)。
 
@@ -376,8 +370,7 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flow.py \
 `test_reacting_flame_history.py` 用解析平移剖面检查位置、秒制速度、变形及多交点/平台，也检查 JSONL 缺帧、增帧和时钟倒退。几何/速度/温度数值检查允许 `64*epsilon` 乘对应构造尺度；速度还除以实际时间跨度，只用于解析恒等式的运算舍入，不增加 CFD 精度门。测试为秒级，真实历史复核只读既有场。示例：
 
 ```sh
-build/chemistry-env/bin/python tools/verification/test_reacting_flame_history.py
-build/chemistry-env/bin/python tools/verification/analyze_reacting_flame_history.py \
+build/chemistry-env/bin/python tools/flow/analyze_reacting_flame_history.py \
   --report outputs/combustion-foundation/implicit-long-new/report.json \
   --reference outputs/combustion-foundation/flame-reference-new --fixture-index 2 \
   --output outputs/combustion-foundation/flame-history-analysis-new \
@@ -397,41 +390,9 @@ Python 监督入口的 `--duration` 继续要求追加时长大于零。显式 `
 cmake -S . -B build -DCARTMESH2D_BUILD_REACTING_IMPLICIT=ON
 cmake --build build --target cartmesh2d_reacting_implicit_tests cartmesh2d_reacting_implicit_flame_probe -j2
 ctest --test-dir build -R '^cartmesh2d_reacting_implicit(_trace)?$' --output-on-failure
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_implicit_flame_probe \
-  --reference outputs/combustion-foundation/flame-reference-new \
-  --output outputs/combustion-foundation/implicit-flame-new --duration 1e-6 --grid 0 --jobs 1 --reflect-species 1
-# 10 微米档计算至 100 微秒并保存接受状态；时间步仍由原误差控制决定。
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_implicit_flame_probe \
-  --reference outputs/combustion-foundation/flame-reference-new \
-  --output outputs/combustion-foundation/implicit-long-new \
-  --duration 1e-4 --grid 2 --jobs 1 --reflect-species 1 --sample-every 200
-# 从既有 native-0/accepted.checkpoint 追加计算，用新的输出目录：
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_implicit_flame_probe \
-  --reference outputs/combustion-foundation/flame-reference-new \
-  --restart-checkpoint outputs/combustion-foundation/implicit-flame-new/native-0/accepted.checkpoint \
-  --output outputs/combustion-foundation/implicit-flame-resumed --duration 1e-6 --grid 0 --jobs 1 --reflect-species 1
-# 同一 10 微秒案例分别用默认、减半和四分之一容差保存至三个新目录。
-# 例如减半：在 verify_reacting_flame.py 命令中加入
-# --rtol 5e-8 --conserved-atol 5e-13 --species-atol 5e-19
-build/chemistry-env/bin/python tools/verification/compare_reacting_flame_time.py \
-  --report outputs/combustion-foundation/time-base/report.json \
-  --report outputs/combustion-foundation/time-half/report.json \
-  --report outputs/combustion-foundation/time-quarter/report.json \
-  --output outputs/combustion-foundation/time-comparison-new
 ```
 
 `compare_reacting_flame_grid.py` 比较同机理、同终点及同积分控制的平面条带网格。细格守恒量按真实矩形重叠面积积分到粗格，再使用原机理热力学反演温度；不直接平均温度或将不同位置的数组相减。初始映射差异、终点场差异及两者相减得到的演化差异分别报告。重叠权重的常数保持和体积守恒检查仅允许 `64*epsilon*参与格数` 的浮点运算舍入，属于精确几何恒等式诊断，不是新增 CFD 精度门；另有非嵌套矩形分段常数解析核对。非嵌套投影本身有离散误差，因此不把这些差异标作正式空间阶数。每档还独立积分实际燃料消耗，列出组分残差和温度漂移。示例：
-
-```sh
-build/chemistry-env/bin/python tools/verification/compare_reacting_flame_grid.py \
-  --case outputs/combustion-foundation/grid-coarse/report.json 0 \
-  --case outputs/combustion-foundation/grid-refined/report.json 1 \
-  --case outputs/combustion-foundation/grid-refined/report.json 2 \
-  --output outputs/combustion-foundation/grid-comparison-new
-```
 
 ### 空间火焰对照与微量组分回归
 
@@ -445,7 +406,7 @@ build/chemistry-env/bin/python tools/verification/compare_reacting_flame_grid.py
 
 ```sh
 cmake --build build --target cartmesh2d_reacting_flame_reference_probe -j 2
-build/chemistry-env/bin/python tools/verification/prepare_reacting_flame.py \
+build/chemistry-env/bin/python tools/flow/prepare_reacting_flame.py \
   --mechanism build/deps/cantera/share/cantera/data/h2o2.yaml \
   --output outputs/combustion-foundation/refined-reference-new \
   --refine-slopes .06 .03 .015 .0075 .00375 .001875 \
@@ -479,20 +440,10 @@ build/chemistry-env/bin/python tools/verification/prepare_reacting_flame.py \
 两种输入的真实计算保存在 `outputs/combustion-foundation/flame-motion-001/`；比较器检查二进制、完整检查点绑定（机理/网格/边界/物理开关）、实际积分控制和逐帧审计，分别列出坐标位移与平移后的形状差异。正式准备器的夹具另与实际对照输入作逐字节核对，原始输入保留。数值和未验范围统一见[当前状态](CURRENT_STATE_CN.md#持续目标成熟燃烧模拟)，来源见[诊断证据](../artifacts/current/native-reacting-flame-motion.json)。从原夹具开始的复现示例：
 
 ```sh
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_implicit_flame_probe \
-  --reference outputs/combustion-foundation/flame-reference-001 \
-  --output outputs/combustion-foundation/initial-evaluation-new --grid 2 --evaluate-initial
-build/chemistry-env/bin/python tools/verification/prepare_reacting_flame_momentum.py \
+build/chemistry-env/bin/python tools/flow/prepare_reacting_flame_momentum.py \
   --reference outputs/combustion-foundation/flame-reference-001 \
   --source-run outputs/combustion-foundation/initial-evaluation-new --grid 2 \
   --output outputs/combustion-foundation/momentum-reference-new
-# 准备器只导出所选夹具，在新参考目录中的索引为 0；推进仍使用原完整方程。
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_implicit_flame_probe \
-  --reference outputs/combustion-foundation/momentum-reference-new \
-  --output outputs/combustion-foundation/momentum-flame-new \
-  --duration 1e-5 --grid 0 --jobs 1 --reflect-species 1 --sample-every 50 --max-samples 128
 ```
 
 `outputs/combustion-foundation/refined-state-refinement-001/` 保存新细参考的时间/空间对照。`map_reference.py` 从已哈希验证的 3446 点 `prepared-reference.npz` 积分到原三档精确网格，使用正式准备器的保守映射函数，不重算 BVP；`run_grid.py` 经三档初值审计后生成动量相容输入，粗/中档实际推进，细档夹具与既有完整运行逐字节相同后复用。因合并夹具清单与旧单档清单的元数据不同，`analyze_refinement.py` 分别核对各自清单、同一 BVP/映射源、入口行、检查点机理/物理前缀及完整边界数值和控制，再调用原网格比较器的守恒重叠/EOS 函数；没有放宽通用比较器要求相同清单的检查。`run_time.py` 使用冻结的上一版审计器在相同细档上收紧时间容差，两份版本的原物理审计函数 AST 与正时长审计结果均核对一致。完整命令、源码/原始场哈希和初值模式拒绝检查见[证据索引](../artifacts/current/native-reacting-refined-state.json)；复现使用新目录，不覆盖已完成结果。
@@ -503,8 +454,6 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
 
 `--grid 0` 可只运行首档，重复 `--grid` 选择多个参考夹具；报告明确记录所选索引，不能将单档报告称为三档验收。
 
-读取器可用 `--audit-native-output <已结束运行的输出目录>` 单独复核；`--output` 仍必须是新目录。此模式校对原运行的程序、参考、终点与原始文件哈希，将新审计写入新目录，保留原求解日志和既有错误，不重新计算或覆盖原生场。原运行退出失败仍单列，不能因部分场可读而变成成功。
-
 `tests/fixtures/reacting_flame_trace_muscl.fixture` 和 `reacting_flame_trace_soret.fixture` 是从首档剖面分别截取的 20/36 格最小失败片段，保留原始微量组分。CTest 要求在不拒绝候选的情况下推进到 `1e-8 s`，并沿用装配和元素预算检查，防止靠大量重试掩盖旧错误；它们只验收数值修复。
 
 细档长序列曾在第 1209 个接受步后因组分和的舍入误差达到 API 边界而失败。`reacting_flame_trace_closure.fixture` 保留原检查点中的 6 格片段，旧版本可直接复现。`SpeciesMassClosure.hpp` 在化学/输运阶段及面状态插值中显式使用质量约束：先检查全部原始组分非负、有限，并确认质量缺陷除以总质量不超过原有 `64*(N+1)*epsilon` 求和额度，再从总质量减去其余组分的补偿求和，确定最丰富组分。不缩放其他组分、不设微量下限、不改变密度或能量；不合法输入和超过舍入范围的缺陷继续拒绝。完整反应机理及全部组分方程仍参与计算，这只是冗余质量约束的数值闭合。
@@ -513,18 +462,14 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
 
 `transport(A) → viscosity(B) → transport(A)` 的最小复现曾使同一个 A 状态的导热系数与 Soret 系数不同。原因是黏性查询使二元扩散缓存失效，而旧热缓存仍保留 A 的温度键；重新建立二元矩阵时覆盖了热输运使用的自扩散对角项。`TraceStableMultiTransport::update_T` 现在在每次温度改变时同步使热缓存失效。该查询序列逐值一致性和有/无显式步长估计的真实物理残差一致性都进入原生回归；48 项局部输运对照重新通过。旧性能记录仍保留，不能据此跳过物性正确性检查。
 
-完整物性查询将多组分矩阵查询放在导热/Soret 查询之前，复用同一热输运矩阵求解；黏性应力用 `DetailedGas::viscosity` 单独查询。`compare_reacting_cost.py` 针对这类缓存/查询优化交替执行旧、新完整 48 格点火计算，计时含冷启动至全部输出，要求数值场逐值一致、步日志/机理/检查点逐字节一致，只排除墙钟字段。一次三对实测中位数约 `8.274→7.927 s`；这是引入质量闭合之前的隔离性能比较，不能作为当前所有改动或任意火焰规模的提速结论。
+完整物性查询将多组分矩阵查询放在导热/Soret 查询之前，复用同一热输运矩阵求解；黏性应力用 `DetailedGas::viscosity` 单独查询。已移除的历史 `compare_reacting_cost.py` 针对这类缓存/查询优化交替执行旧、新完整 48 格点火计算，计时含冷启动至全部输出，要求数值场逐值一致、步日志/机理/检查点逐字节一致，只排除墙钟字段。一次三对实测中位数约 `8.274→7.927 s`；这是引入质量闭合之前的隔离性能比较，不能作为当前所有改动或任意火焰规模的提速结论。
 
 ```sh
 cmake --build build --target cartmesh2d_reacting_flame_probe -j2
 ctest --test-dir build -R '^cartmesh2d_reacting_flame_(muscl|soret|closure)$' --output-on-failure
-build/chemistry-env/bin/python tools/verification/prepare_reacting_flame.py \
+build/chemistry-env/bin/python tools/flow/prepare_reacting_flame.py \
   --mechanism build/deps/cantera/share/cantera/data/h2o2.yaml \
   --output outputs/combustion-foundation/flame-reference-new
-build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
-  --probe build/cartmesh2d_reacting_flame_probe \
-  --reference outputs/combustion-foundation/flame-reference-new \
-  --output outputs/combustion-foundation/flame-comparison-new --duration 1e-6
 ```
 
 参考 BVP 采用恒定热力学压力，原生平面可压方程还保留纵向动能与黏性功，因此不是完全相同的方程组。从参考剖面初始化后的短时漂移、反应积分或初始残差下降均不能当作原生独立预测的火焰速度；原生稳态传播、时间/网格误差和实验还需另验。上述驱动尚非用户可配置的通用燃烧产品。湍流燃烧、喷雾、辐射、共轭传热、实际燃烧室、App、平台资格和大规模成本均未完成；完整目标和最新证据统一见[当前状态](CURRENT_STATE_CN.md#持续目标成熟燃烧模拟)。
@@ -535,7 +480,17 @@ build/chemistry-env/bin/python tools/verification/verify_reacting_flame.py \
 
 ### 模型与停止条件
 
-`brinkman.py` 在二维 MAC 格上求无量纲 Stokes–Brinkman 方程 `−μ∇²u+∇p+α(ρ)u=0`、`div(u)=0`，**不含对流惯性**。ρ=1 为流体、0 为有限阻力固体，`α=αmax·q(1−ρ)/(q+ρ)`。抛物线端口积分匹配，两格端口固定流体、外壁固定固体；锥形滤波及 tanh 投影后检查真实 `mean(ρ)≤volume_fraction`，滤波半径不是已证明的最小制造壁厚。
+`brinkman.py` 保留二维 MAC Stokes–Brinkman 线性路径；`navier_stokes_brinkman.py` 增加 `γ div(u⊗u)−μ∇²u+∇p+α(ρ)u=0`、`div(u)=0` 的稳态不可压惯性分析。速度以入口峰值为 1，长度使用设计坐标，`Re=U_mean·w/ν`（入口端口宽度 w，抛物线均速 `U_mean=2/3`），故 `γ=Re·μ/((2/3)w)`。`--reynolds 0` 是精确 Stokes 极限；正 Re 使用阻尼 Newton，困难时从 Stokes 自适应延拓，失败不覆盖最近收敛根。ρ=1 为流体、0 为有限阻力固体，`α=αmax·q(1−ρ)/(q+ρ)`。抛物线端口积分匹配，两格端口固定流体、外壁固定固体；锥形滤波及 tanh 投影后检查真实 `mean(ρ)≤volume_fraction`，滤波半径不是已证明的最小制造壁厚。
+
+对流为守恒 MAC 对偶体中心通量：两个速度分量均用算术平均定位到对偶面，法向动量通量为平均速度的平方，交叉通量为两平均速度的乘积，零法向壁面通量。依据 [Harlow–Welch 1965](https://doi.org/10.1063/1.1761178) 的交错离散；规则内部二阶，不加人工黏性。解析微分所有二次单项式，伴随使用收敛点完整 Jacobian 的转置，仍贯穿材料、滤波和投影链。高单元 Re 下中心格式的空间精度/有界性须另验。
+
+Newton 残差为已消元的 `[积分动量;−积分连续性]` 无穷范数除以 `max(||Dirichlet rhs||∞,1e-30)`，默认停止门 `1e-11`；另保留 `max|Du|/Q_in≤1e-8` 连续性及 `1e-8` 伴随门。这些是代数一致性门，收紧 Newton 的任务依据是避免求解误差污染双精度中心差分，成本为每分析数次稀疏分解，不作为物理误差标准。梯度验收为 `|FD−adjoint|/max(|FD|,|adjoint|,1e-12)` 的步长曲线最低值 `≤1e-5`；13 个 h 从 `1e-1` 到 `1e-9`，每 Re 3 个随机设计，两目标、β=0/3，共 60 条曲线（含可收敛的 Re=200）。
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tests/navier_stokes_topology_test.py
+```
+
+实际用于B–D的总压功另做30条同规则曲线，原60条不覆盖；合计90条，最终梯度图同时展示三个目标。总压功也有30/30个内部最低点，最差最低误差2.73e-8。
 
 消去指定速度和一个压力参考后，用离散矩阵转置求伴随，贯穿滤波/投影导数。默认目标为黏性与阻力耗散；`pressure-power` 是端口邻格压力的通量加权差，不是精确边界应力功。hybrid 更新先试 OC，非下降时尝试有移动界的梯度步并二分校正实际体积；接受前重新求解、检查方向与回溯，不是精确非线性投影。
 
@@ -550,20 +505,124 @@ python3 -m venv outputs/topology-env
 outputs/topology-env/bin/python -m pip install -r tools/optimization/requirements.txt
 VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tests/flow_topology_test.py
 VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --output outputs/topology/double-pipe
-VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/verify_extracted_flow.py outputs/topology/double-pipe --output outputs/topology/double-pipe-native --levels 5 6 --tolerance 1e-8
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/native_flow.py outputs/topology/double-pipe --output outputs/topology/double-pipe-native --levels 5 6 --tolerance 1e-8
 ```
 
-使用新输出目录。默认 48×32、25/40/60 步预算；`--initialization uniform|geometric|merged` 区分无内部路径、参考几何和人为合流种子。`--no-plot` 也跳过轮廓提取，可再运行 `topology_artifacts.py <目录>`。summary/history/NPZ/阶段快照及分析 VTK 保存控制、源码哈希、停止原因和设计，分析场仍含固体阻力。
+使用新输出目录。默认 48×32、25/40/60 步预算；`--initialization uniform|random|geometric|merged` 区分无内部路径、随机材料、参考几何和人为合流种子，`--seed` 固定随机材料初值。`--no-plot` 也跳过轮廓提取，可再运行 `topology_artifacts.py <目录>`。summary/history/NPZ/阶段快照及分析 VTK 保存控制、源码哈希、停止原因和设计，分析场仍含固体阻力。
 
 轮廓提取保留所有连通分量与孔洞，不平滑/填孔；`fluid.xy` 显式 interior，各独立域另存文件。轮廓面积与密度体积分别报告，连通矩阵只表示几何可达，不等于混合效率。连接脚本真实执行 Cut-cell、质量门、独立面积读取、原生低 Re 流动和独立方程审计；所有分量均须成功，有孤立区/盲腔则明确拒绝。仅全局端口覆盖面可作入口/出口，不能按组件局部包围盒制造端口。
 
-原生对照显式用速度尺度 .02、ν=1（端口名义 Re 约 .00333）、抛物线入口和压力出口；1e−8 是这些例子的代数控制，不改产品默认或审核门。检测到 checkMesh 时实际运行，否则记 not-run；多孔目标下降不能直接当真实壁面性能。`render_native_flow.py` 从接受的多边形及 CSV 作图并保留源哈希。
+未指定 `--reynolds` 的历史原生对照显式用速度尺度 .02、ν=1（w=1/6时峰值端口Re约.00333、平均值约.00222）、抛物线入口和压力出口；与T01匹配模式分开。1e−8是这些例子的代数控制，不改产品默认或审核门。检测到checkMesh时实际运行，否则记not-run；多孔目标下降不能直接当真实壁面性能。`render_native_flow.py` 从接受的多边形及CSV作图并保留源哈希。
 
 ### 公平对照、失败与继续迭代
 
+T01 新入口为 `fidelity_study.py b --output outputs/topology-fidelity/b-rerun`（使用上述双线程环境变量）。`topology_cases.py` 固定文献来源和参数映射；`engineering_baselines.py` 对每例 3 个预先定义的工程形状按相同过滤/投影体积求宽度，再在相同 Re、端口流量、物性与 α 下全部计算并取目标最低者作为主要基准，所有备选及失败保留。双管采用合流管族，弯管采用三种转弯半径，扩压器采用三种扩张率，四端口比较 U 形回路与平行通路。旧直管行仅保留为历史/附加参照。
+
+| 案例 | 本轮设计坐标与文献映射 | 对标边界 |
+| --- | --- | --- |
+| 双管 | H=1、L=1.5、w=1/6、端口中心 1/4 和 3/4、体积分数 1/3，36×24 | [Borrvall–Petersson 2003](https://doi.org/10.1002/fld.426)，参数由 [dolfin-adjoint 实现](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)核对；FEM/滤波/端口固定位不同，不作逐数复现 |
+| 扩压器 | 单位正方形，w_in=1/3、w_out=1，出口峰值 1/3，体积分数 1/2，24×24 | 源于同文献案例类型；原完整参数获取失败，明确为自定改编，不能宣称原文数值/形状复现 |
+| 90° 弯管 | 单位正方形，左入口 y=.8、下出口 x=.8、w=.2、体积分数 .25，30×30 | B–P 几何经 [Gersborg-Hansen 论文集 Fig.C.1](https://backend.orbit.dtu.dk/ws/portalfiles/portal/4897055/C_Agh_PhD_Texts_Thesis_070122b_final_070410_final_Forside_AGH_thesis.pdf)坐标除以 5；[2005 惯性研究](https://doi.org/10.1007/s00158-004-0508-7)的流体区底阻力不同 |
+| 四端口 | H=1、L=.7、w=.2、y=.3/.7、对角入口，体积分数 .4，21×30 | [Olesen 等 2006 Fig.6–7](https://arxiv.org/pdf/physics/0410086)：原 L=3.5ℓ、H=5ℓ。本轮省略 2ℓ 引导管并规定出口速度；原峰值 Re=20/200 对应本均值 Re=13.33/133.33。原文低 Re 的 U 回路与高 Re 平行通路只作拓扑示意，不移植临界 Re 或目标数字 |
+
+图中的文献栏是根据连接关系自绘的示意图，非原图数字化。原优化流道的同控制定量复现仍未完成，不能把不可比的数值凑成相对误差；本次另有精确直管参考的定量对照，范围见下面的补齐方法。四案例首轮真实不平滑轮廓、工程参照和停止原因见 `artifacts/current/native-topology-fidelity-benchmarks.png` 与同前缀JSON，补齐结果见 `native-topology-fidelity-completion.json`。
+
+新增 `total-pressure-power` 目标使用端口边界线性外推 `p_b=1.5p_first−.5p_second` 的压力功，加解析规定抛物线速度的进出动能通量 `γ·8wUpeak³/35`；后者与设计无关，伴随仍须使用新的边界压力权重。它是边界总压功定义，不假定有限网格上等于离散体耗散。旧 `pressure-power` 邻格压力目标和默认耗散目标保持。高 α 时直接 LU 转置解可能超出原伴随门，新增至多 5 次实测残差修正，门仍为 `1e-8`；原失败三运行均保留，新回归可复现该参考设计。
+
+### T01：匹配 Re、保真度差距与排序
+
+`fidelity_study.py c` 对四案例 × Re=0/10/50/100 × 三档阻力逐一运行，`Da_w=μ/(αmax w²)` 取 `1e-3/1e-4/1e-5`；按设计高度定义的 `Da_H=Da_w(w/H)²`。以 w=1/6 为例，αmax 为 `3.6e4/3.6e5/3.6e6`；w=.2 为 `2.5e4/2.5e5/2.5e6`，w=1/3 为 `9e3/9e4/9e5`。这些是预设研究采样，不是阻力充分大的验收门；每案例固定文献映射的体积分数，本轮没有增加第二体积分数。
+
+`native_flow.py --reynolds Re` 和 `compare_sharp_designs.py --reynolds Re` 启用匹配模式。原生峰值速度 S=.02、正 Re 时 `ν=(2/3)Sw/Re`，动量采用与 MAC 对应的 Laplacian 黏性形式、显式 limited-linear 对流；入口和出口都积分同一抛物线剖面。Re=0 使用 ν=1、显式 `--momentum-inertia 0` 的精确 Stokes 方程，不能用非零流量下的近零 Re 冒充。新增 `velocity-outlet` 保留出口语义、要求速度向外；全规定流量边界须在既有 TolerancePolicy 下守恒，并只固定压力规范。惯性默认仍为1；0仅用于稳态 custom，拒绝瞬态、物性耦合与物理检查点。
+
+原生运动学总压功为 `P=Σ_in Q p_b−Σ_out Q p_b + Σ_in∫|u|²|u·n|/2 ds−Σ_out∫|u|²|u·n|/2 ds`，压力来自接受场实际边界面 CSV，动能采用规定抛物线的解析积分；Stokes 动能系数为0。比较量 `J_T=P/(νS²/μ)` 与峰值1的 MAC `J_B` 同一无量纲尺度，P 是单位密度、单位深度的量，不直接称瓦数。原生与 MAC 边界压力重建不同，有限网格的总压功不强行等同体耗散。
+
+轮廓不平滑，保留全部分量/孔洞；通过内部密度的单一偏移匹配同一真实面积预算，原密度解另存。面积投影可改变几何，故 gap=`(J_B−J_T)/J_T` 包括多孔模型、固定 MAC 分辨率和提取投影的共同影响，不能单独解释为 Brinkman 建模误差。固体漏流统计为内部 MAC 面在平均ρ<.5处的绝对体积通量之和/全部内部面绝对通量之和；重复穿越重复计数，它不是入口粒子中漏入固体的比例。固体耗散占比用正的黏性弹簧能和阻力能分配到ρ<.5单元，并检查重构总和。
+
+每个几何首先运行 level4/5/6，所有分量必须通过原质量门、严格1e-8停止门和独立方程审计后才有该档 J_T。每进程最多6000步/90秒，预算到达不算收敛。旧 duct 模板曾误拒绝没有全局右出口的弯管/U回路，匹配模式现直接从实际 CM2D 几何生成全壁模板，再赋全局端口；保留原运行，在 `c-recovery/` 重跑全部受影响档位。C 对不足两档的案例统一补 level7、再 level3；D 为控制磁盘统一先补 level3、再 level7。每档取首个接受结果，所有重试仍在 `nativeAttempts`，最细有效档给 J_T；失败细档不会因存在粗档而被称为通过。
+
+三档单调结果采用 [Roache/Richardson GCI 的 NASA 说明](https://www.grc.nasa.gov/www/wind/valid/tutorial/spatconv.html)：有效 `h=sqrt(A/N)`，按非等比细化的 Richardson 方程求正观测阶 p，`U_GCI=1.25|J_f−J_m|/(r_fm^p−1)`。归一化 GCI 为 U/|J_f|；三点本身不能独立证实渐近幂律。两档、振荡/零差或无正阶根仅报告末两档变化，不补 GCI。gap 区间用 `J_B/(J_T±U)−1` 非线性传播；若下界非正则不能给有限上界。这个条件估计不代表 ASME V&V 20 认证或物理精度证明。
+
+D 每案例 Re=0/50 复用C三档Da，另加预先固定的五个滤波/初值候选；只有密度字段重复而不足8个不同设计时才按固定顺序追加，不能按目标或反转结果挑候选。初值、种子、参数和所有两两ρ最大差入表；1e-6无量纲密度仅用于重复诊断，排除舍入差，不作几何或流动精度门。Kendall τ 同时报告全部可用 J_T、至少两档和有 GCI 的子集。列出全部两两比较，仅当两侧有 GCI 且真实目标差绝对值大于 GCI 之和时称“在该网格估计下可分辨的反转”；两档变化另列，不能顶替不确定度。
+
+```sh
+cmake --build build --target cartmesh2d_flow_cli cartmesh2d_flow_boundary_tests cartmesh2d_flow_checkpoint_tests --parallel 2
+ctest --test-dir build -R '^cartmesh2d_flow_(boundary|checkpoint)$' --output-on-failure
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tests/topology_fidelity_test.py
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/fidelity_study.py c --output outputs/topology-fidelity/c-rerun
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/fidelity_study.py c-recovery --source outputs/topology-fidelity/c-rerun/summary.json --output outputs/topology-fidelity/c-recovery-rerun
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/fidelity_study.py d --source outputs/topology-fidelity/c-recovery-rerun/summary.json --output outputs/topology-fidelity/d-rerun
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/fidelity_study.py d-uncertainty --source outputs/topology-fidelity/d-rerun/summary.json --output outputs/topology-fidelity/d-uncertainty-rerun
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/fidelity_report.py
+```
+
+候选生成后，对全部恰好两档有效且未试过level3的D候选统一补算level3，争取第三档；不根据目标大小、观测阶或反转情况选择。`fidelity_report.py` 重算全部排名、两两比较和图；也检查实际提取双管是否确为矩形，再对照独立平面Poiseuille解析功率，不用解析值替补失败曲线。完整CFD重跑需要新的资源预算；已有数据的统计/作图复算无需重做CFD。
+
+T01 驱动不再设置独立磁盘阈值或逐候选扫描全部历史结果；文件系统错误直接上报。每次实验使用新的输出目录，保留原始场和失败记录。汇总脚本的 `--matrix/--ranking/--artifact` 可指向新结果；历史结果继续保存在 `outputs/topology-fidelity/`。
+
+### T01 独立审查与研究选择
+
+`outputs/topology-fidelity/independent-review-001/` 保存本轮审查驱动、重新求解的状态和新原生失败。`review.py` 从原始面CSV/边界文件重建端口功率，对动能项另用四点Gauss积分；不调用原报告的 `pressure_metrics` 或 `ranking`。它重新运行现有MAC状态算子，用另写的边界功函数核对66个原预测，再把每个保存的物理ρ场放到共同 `Da_w=1e-3/1e-4/1e-5` 下评分。共同参数下不重新优化、不再次滤波/投影；模型、端口、物性和目标在每个案例/Re分组内相同。这是对原分析器的独立复算与统计审查，不是独立CFD求解器对照。
+
+原18对中唯一同αmax的一对在复算前选定为网格敏感性对象。每个原MAC单元均匀拆成1/2/4倍每方向的子单元，子单元保持原ρ和q，因此原分片常数阻力场、面积平均ρ及端口剖面保持；不重施随格数变化的被动区域掩码。该探针检查指定材料场的离散敏感性，不代替连续设计描述下的完整空间收敛。全部新状态另存，原 `final.npz`、XY、网格及接受场不覆盖。
+
+原生追加检查用variant-3原封存轮廓，level7、`small-alpha=.25`、`Re=50`、strict、`tolerance=1e-8`、松弛.2及Anderson，其他控制沿用原桥接。两分量分别保留；分量0初次6000轮失败后仅追加2000轮同网格迭代，最终仍失败，不能拼出完整方案目标。分量1的旧3/4/6档单独拟合与新level7接受值比较，作为对旧误差估计的留出网格检查；不把一个分量的结果当全部流道的精度。`finalize.py` 另用二分法复核36个GCI的幂律方程，并从实际数据生成[审查图和索引](../artifacts/current/native-topology-fidelity-review.json)。旧汇总及四图保留为原实验快照，解读以当前状态中的审查结论为准。
+
+审查没有增加、放宽或收紧求解/质量验收门。共同阻力档来自原T01预设采样；GCI与末两档变化分开，后者不是置信区间。封存驱动引用清理前的独立验证模块；复现这条历史审查链须恢复对应版本源码，并使用新输出目录。当前开发入口不直接运行这些封存脚本。追加原生运行的完整命令、二进制/网格哈希和失败场在对应 `summary.json`；相关测试日志、源码哈希和输入哈希由精简索引串联。
+
+### T01 补齐方法与复现
+
+`outputs/topology-fidelity/t01-completion-001/` 保存全部补算驱动、事先记录的任务表、日志及新场。旧B/C/D账本及四图不覆盖；当前完整索引为 `artifacts/current/native-topology-fidelity-completion.json`，指向本目录完整 `summary.json`。以下是封存版统计/作图入口，依赖当时的源码和独立验证模块；恢复对应版本后才可执行：
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 outputs/topology-env/bin/python tests/topology_fidelity_test.py
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 outputs/topology-env/bin/python outputs/topology-fidelity/t01-completion-001/finalize.py
+```
+
+`match_sharp_area` 的失败例保存在 `tests/fixtures/topology_area_plateau.npz`：两个真实材料场在搜索中间偏移`.5`时会出现零面积等值线，原输入与最终等面积轮廓仍然有效。搜索只跳过这一明确失败的中间探针，在有效探针之间继续二分；其他错误仍失败。最终面积仍按原逐例额度检查，固定端口材料不变，不删除任何分量、孔洞或短边。回归同时检查失败探针仍被拒绝、输入未修改及最终面积。
+
+B的两个停滞场先按原更新方法在最终 `(q,β)=(.1,6)` 下追加1000步/300秒，失败记录不改写；随后 `finish_stationarity.py` 用SciPy SLSQP和原解析伴随梯度、真实投影体积约束及变量界继续。内部ftol只控制SLSQP，最终仍独立以原projectedKkt `≤1e-3`、原体积额度及状态/伴随门验收；SLSQP返回success不授予收敛。保存最后可行下降设计，失败候选不会覆盖它。新B字段另存，C/D仍指向原材料场。`benchmark-slsqp.json`、`benchmark-continuations.json`记录全部步骤和原始来源哈希；当前两个场可由 `finalize.py` 重新求解核对，并与原同参数工程参照比较。
+
+困难扩压器的level8先按原控制从冷启动运行，保留超时及目标网格；`recover_flow.py` 将同几何、同分量、同物性的已接受粗场按单元质心最近邻映射作初始猜测。复制目标网格/边界前核对哈希，最终8000步预算、strict、`tolerance=1e-8`及独立方程审计不变；它不是物理检查点或精度提升证据。留边变体使用桥接新入口 `--padding-fraction`，默认仍为旧`1/30`，传给已有网格CLI参数；`.25`为该CLI已有默认。全程原始XY、Re、流量、面积及质量门不变。`nativeGridFamilies`按留边和聚合设置分别列档；主汇总保留原顺序首个有效结果，不按目标或GCI挑档，混合网格族不拟合GCI。每条最终至少有一个同设置的两档序列，几何/质量/流动失败均保留。
+
+当前桥接 `native_flow.py` 使用原生网格 CLI 返回状态和原生求解器的收敛状态；不再运行独立 Python 拓扑/方程审计或外部 checkMesh。报告格式为 `cartmesh2d-topology-native-v2`，成功状态为 `flow-converged`；旧 `flow-audited` 报告仍可读取。`continue_native_flow.py` 保留同网格、同控制续算，并按匹配控制计算惯性项。
+
+排名同时输出原优化参数和三档共同阻力的冻结ρ评分，分别有完整记录及预先固定的8个不同材料代表。`conditionalGciReversals`保留原筛选含义；只有评价模型相同、原生渐近误差范围另有独立依据才可进入`resolvedReversals`，当前为0。这是解释资格的修正，不改变求解或几何阈值。配对网格只取共同level/留边/聚合设置，缺失、非单调、混合网格族不补GCI，档间差不充当置信区间。
+
+Olesen Eq.(34)参考用两条宽`.2`、含引导管全长`1.5`的精确矩形通道，解析归一化功率 `Φ₀/(μU_peak²)=(96/9)(4+3.5)=80`。`paper-straight/`保存真实轮廓，`attempts.json`中6个`paper-reference`命令对应平均Re=0和133.33的level4/5/6；直管已充分发展且端口剖面与解析解一致，规定速度出口不改变这个参考解。它不复现原文压力出口优化问题或连接切换。另一个可读原始作者示例[dolfin-adjoint双管](https://www.dolfin-adjoint.org/en/stable/documentation/stokes-topology/stokes-topology.html)报告目标45.944633，但该运行以100次迭代上限停止，材料αmin、离散、投影、端口固定区及目标归一化均与本研究不同；示例文字公式与实现黏性项系数也不一致，不能拿它与本总压功直接计算相对误差。
+
+历史数值实验的命令保存在各`*-attempts.json`的`plannedTasks.command`，依赖原版本；当前新增实验使用 `native_flow.py`、`fidelity_study.py` 和新的输出目录。SLSQP和批量驱动也拒绝覆盖现有账本；完整接续需按进度清单顺序在同级新实验目录运行，保留每批结果，再继续依赖批次。`finalize.py`从实际边界CSV另用四点Gauss动能积分重建功率，不调用生产脚本的功率函数；每个新有效档及全部网格/边界/面CSV哈希列在`native-reconstruction.json`。它仍使用本项目原生求解器，不是独立CFD求解器对照。
+
+本次完整构建使用系统clang++；研究测试38项、前端191项通过。完整CTest的172项在沙箱通过，热缩放项因`/usr/bin/time -l`不能读取`sysctl kern.clockrate`而未启动原生程序；同网格裸命令通过，同控制主机CTest复测通过。原失败、裸网格和主机复测证据分别在`ctest-final.log`、`ctest-study-repro/`、`ctest-failure-repro/`及`ctest-thermal-host.log`。这项复测未修改计时、方程、质量或停止门，也未新增换热研究。
+
+文献边界决定后续方法选择：
+
+- [Vrionis等，2021](https://doi.org/10.1016/j.camwa.2021.06.002)已报告每轮Cut-cell重建与伴随优化，并提取多孔设计的真实边界重新比较。此轮核对到出版社收录的摘要，正文访问被拒绝，不能据此宣称已完成全文算法对照。
+- [Theulings等，2023](https://doi.org/10.1007/s00158-023-03570-4)的开放全文分析漏流、网格尺度相关的阻力下界与不同多孔模型；“自适应调阻力”本身不能作为尚无人研究的贡献。
+- [Sun等，2026](https://doi.org/10.3390/computation14010019)已用Darcy模型生成换热候选，再在统一工况用Navier–Stokes模型评价。此轮核对出版社索引中的摘要/章节内容，正文直连限流；候选复算与闭环优化不能混称。
+
+固定评价条件下的设计选择可靠性与复算成本仍是研究问题；T02 已新增下面的在线材料更新入口。它与已有多保真方法的差异、适用范围和创新性需要进一步研究，当前实现与结果集中记录在当前状态。
+
+### T02：真实壁面反馈驱动材料更新
+
+`tools/optimization/closed_loop_topology.py` 从已有优化目录读入 `Problem`、完整材料变量 `design` 和最终 `q/β`，原输入不修改。每轮生成多孔伴随方向、界面开闭扰动，以及在材料场具有多分量时按实际端口生成的共用通道/最近分量桥接候选；这些结构分支明确是几何搜索提案，不称为伴随求出的拓扑。每个候选都重新分析、按物理面积额度提取完整锐壁、生成 Cut-cell 并求解。只有原生网格接受、原生流动严格收敛、流量匹配的真实目标才能替换当前接受状态。坏网格和未收敛候选保留原场与日志，控制器只缩小材料扰动重试，不改变求解或质量控制。
+
+反馈不是离线重排旧设计：以当前材料 `x₀` 为中心，用实际新候选的差值拟合 `sᵢ·c = (J_Tᵢ−J_T₀)−(J_Bᵢ−J_B₀)`，再优化局部模型 `J_B(x)+c·(x−x₀)`。每轮重新求多孔状态与离散伴随；局部搜索限于已有复算方向的线性张成空间，生成新的完整材料场，随后另做原生复算决定接受。不同锐壁分量/孔洞/端口连接的样本不混入同一连续校正，连接改变后的新分支重新积累样本。它是采样方向上的近似校正，未实现原生 Cut-cell 伴随。
+
+局部 SLSQP 的目标除以 `max(|J_B₀|,1)`，`ftol=1e-9` 只控制该无量纲代理小问题的停止、每轮最多 `10×material-steps` 次迭代；不作为原生精度或设计收益门。分量宽度使用已有物理滤波半径，未授予制造最小宽度资格；回归对小于 `sqrt(machine epsilon)` 的材料变化/相关奇异值作算术截断，避免放大驻点附近的舍入噪声，也不形成 CFD 误差估计。原生固定 level、留边、聚合、Re、端口、strict、`1e-8` 停止条件不随候选变化。总时间额度在原子求解之间检查，单次求解仍受 timeout 控制；达到轮数或时间额度均不称优化收敛。
+
+```sh
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 outputs/topology-env/bin/python tools/optimization/closed_loop_topology.py --source outputs/topology-fidelity/b-retries/double-pipe-re-0 --output outputs/topology-feedback/double-pipe-rerun --rounds 5 --probes 3 --move .15 --level 5 --max-seconds 1200
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 outputs/topology-env/bin/python tools/optimization/closed_loop_topology.py --source outputs/topology-fidelity/b-retries/double-pipe-re-0 --output outputs/topology-feedback/double-pipe-control-rerun --rounds 5 --probes 3 --move .15 --level 5 --max-seconds 1200 --no-feedback
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 outputs/topology-env/bin/python tests/closed_loop_topology_test.py
+VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/visualization/render_topology_feedback.py outputs/topology-feedback/double-pipe-rerun --baseline outputs/topology-feedback/double-pipe-control-rerun --output outputs/topology-feedback/preview.png
+```
+
+第二条只关闭梯度校正，仍执行相同结构提案和原生接受机制；它用于区分结构搜索收益与校正增量，不能称为“完全不复算”的基线。`run.json` 记录源场/代码/二进制、物性和原生控制；`evaluations.json` 保存所有新材料、锐壁与目标、失败、耗时及生成它的反馈样本 ID；`summary.json` 保存每轮接受状态与预算终止原因。完整结果在 `outputs/topology-feedback/`，关键索引/真实网格速度图为 `artifacts/current/native-topology-feedback.json` 与同名前缀 PNG。性能结论、当前限制和待办见当前状态，不以代理拟合残差代替真实收益。
+
 `compare_sharp_designs.py` 匹配真实提取面积、入口积分流量、物性、出口及数值控制。默认固定候选轮廓，仅偏移基准内部密度以匹配面积；`--area-target budget` 则把两者都投影到面积上限，端口不改，形成的几何重新验收。压降是通量加权的运动学压力差（m²/s²），不能直接称为瓦数或商业节能比例。
 
-`--small-alpha` 是守恒聚合比例，改变离散网格但不放宽质量门；不同配置分组，不能挑最优档拼成细化趋势。`--reuse-baseline` 只有在几何、端口、物性/控制、实际二进制与再生成边界一致，且重新独立审计后才可使用，不算新 CFD 运行。
+`--small-alpha` 是守恒聚合比例，改变离散网格但不放宽质量门；不同配置分组，不能挑最优档拼成细化趋势。`--reuse-baseline` 只有在几何、端口、物性/控制、实际二进制与再生成边界一致，并确认原生收敛后才可使用，不算新 CFD 运行。
 
 ```sh
 VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python tools/optimization/optimize_flow.py --case double-pipe --width 2 --nx 96 --ny 48 --alpha-max 25000 --initialization uniform --iterations 80 120 300 --max-seconds 600 --no-plot --output outputs/topology/uniform-low
@@ -580,7 +639,7 @@ VECLIB_MAXIMUM_THREADS=1 OPENBLAS_NUM_THREADS=1 outputs/topology-env/bin/python 
 outputs/topology-env/bin/python tools/optimization/continue_native_flow.py <原生候选目录> --output <新目录> --iterations 2000 --timeout 300
 ```
 
-该工具只给同网格稳态单分量追加预算：核对哈希/模型，独立重建，提取单元和 owner 方向面初值，保留同边界、物性、松弛和容差再验收。非有限场或重建错误不能继续；不生成物理时间 checkpoint，不改原失败成对行，累计迭代/成本逐层保留。`--continued-candidates` 将结果单列，不能冒充冷启动提速。
+该工具只给同网格稳态单分量追加预算：核对同网格/模型，提取单元和 owner 方向面初值，保留同边界、物性、松弛和容差再验收。非有限场或重建错误不能继续；不生成物理时间 checkpoint，不改原失败成对行，累计迭代/成本逐层保留。`--continued-candidates` 将结果单列，不能冒充冷启动提速。
 
 `tests/flow_topology_test.py` 覆盖伴随差分、真实体积、下降、确定性、孔洞/端口、失败状态、缓存混用、成对排名及初值接口。`tests/fixtures/topology_oc_stall.npz` 保留 OC 上升而梯度回退可行的真实最小例；Poiseuille 单网格 2% 仅为低成本开发检查。结果和未完成项统一见当前状态。
 
@@ -630,11 +689,10 @@ auto 后端：旧 Brinkman 用 IC0，新耦合用 Jacobi，macOS 可选 Cholesky
 cmake --build build --target cartmesh2d_immersed_cli --config Release --parallel 2
 ctest --test-dir build -C Release -R '^cartmesh2d_immersed_flow$' --output-on-failure
 build/cartmesh2d_immersed_cli --case cylinder --nx 128 --ny 32 --nu .01 --drive .12 --max-steps 40000 --wall-method surface-penalty --wall-penalty-time 1e-6 --output outputs/immersed-wall
-python3 tools/verification/verify_immersed_flow.py outputs/immersed-wall --require-converged
 python3 tools/visualization/render_immersed_flow.py outputs/immersed-wall --output outputs/immersed-wall/preview.png
 ```
 
-只比较旧模式时去掉 wall 参数并换新输出目录；macOS 可加 `--linear-solver cholesky`。绘图才需要 NumPy/Matplotlib，原生和独立读取器不需要。输出记录网格/边界/求解/导出计时，压力时间已包含在求解总时间中。
+只比较旧模式时去掉 wall 参数并换新输出目录；macOS 可加 `--linear-solver cholesky`。绘图才需要 NumPy/Matplotlib，原生求解器不需要。输出记录网格/边界/求解/导出计时，压力时间已包含在求解总时间中。
 
 u/v/cells CSV 与 VTK 保存完整格、掩膜、表面力和分类；`wall-markers.csv` 是积分点/权重/乘子，`walls.csv` 是独立原折线稠密采样（含端点、间距≤h/8），history 只存接受步。阻力同时读表面与体积两部分，不能将其中一项或辅助域总反力当已验表面应力系数；法向通量积分为长度²/时间，辅助格散度小不保证真物面无穿透。
 
@@ -642,26 +700,13 @@ u/v/cells CSV 与 VTK 保存完整格、掩膜、表面力和分类；`wall-mark
 
 没有共形流体 polyMesh，外部 checkMesh 不适用，独立读取器不替代 Cut-cell 门。参考：[Brinkman 惩罚](https://www.math.u-bordeaux.fr/~chabrune/publi/ABF-NM.pdf)、[惩罚压力投影](https://arxiv.org/abs/2306.06277)、[Taira–Colonius 原作者论文目录](https://www.seas.ucla.edu/fluidflow/pubs.html)（DOI 10.1016/j.jcp.2007.03.005）；本实现是有限顺应的双线性表面惩罚，不声称复现整套算法或资格。
 
-## 验证与证据
+## 运行工具与证据
 
-以下脚本位于 `tools/verification/`，参数和预算查各自 `--help`：
+`tools/flow/` 保存计算流程需要的工具：`native_mesh.py` 读取 CM2D/CSV 并计算几何，`extract_steady_iterate.py` 提取同网格初值，`prolongate_regular_flow.py` 映射完整矩形张量格，`prepare_*.py` 准备热化学机理和火焰输入。绘图所需解析曲线和 OpenFOAM 数据读取分别在 `analytic_flow.py`、`openfoam_data.py`。这些工具不授予额外的审计通过标记。
 
-| 检查 | 入口 |
-| --- | --- |
-| 背景 / CM2D / OpenFOAM 拓扑 | `check_background_grid.py`、`check_openfoam2d.py`、`check_hybrid_mesh2d.py` |
-| 方向连通与挤出 | `check_directional_connectivity.py`、`check_extruded_quality.py` |
-| 原生方程 / 圆环 / 开口 / 对称 | `verify_native_flow.py`、`verify_native_fv.py`、`verify_rotating_annulus.py`、`verify_pressure_openings.py`、`verify_symmetry_flow.py` |
-| 非定常 / 制造解 | `verify_transient_flow.py`、`run_manufactured_flow.py`、`compare_transient_steps.py` |
-| 温度与规模 | `verify_thermal_flow.py`、`verify_thermal_time.py`、`verify_thermal_scale.py` |
-| 可压及独立算子 | `verify_euler.py`、`verify_heat_conduction.py`、`verify_viscous_stress.py`、`verify_wall_gradient.py` |
-| 初值 / 完整性能 | `verify_flow_initialization.py`、`benchmark_flow_pair.py`、`benchmark_laminar.py` |
-| 打包 App / 浸入边界 | `desktop_platform_smoke.py`、`verify_immersed_flow.py` |
+原生几何拓扑、Solver 质量、数值有限性、物理约束和收敛判定继续保留；达到迭代上限仍然失败。单元测试、前端测试与历史数值/物理结果各自说明范围。旧独立验证代码可从 Git 历史或本次源码快照恢复，当前维护入口不再调用它们。
 
-Python 独立读回、Solver 门、实际 OpenFOAM 标准/扩展 checkMesh、方程接受和物理精度分别记录；不互相替代。可视化从真实输出绘制。测试和研究脚本不是缓存，不因未列入 CMake 删除。
-
-`prolongate_regular_flow.py` 只映射完整矩形张量格；`extract_steady_iterate.py` 提取同网格初值并存哈希。曲壁映射仍在 `outputs/laminar-performance/` 研究流程，未进入 App。性能比较含粗解/映射/细解，并使用相同控制/精度。
-
-已有 gzip 场按 `compressed*.json` / `*-compressed.json` 原 SHA 核对后按需恢复，保留压缩包；`*.canonical-fields.json` 指向逐字节核验的规范场，勿批量展开历史。旧二进制作基线时检查实际 SHA，当前 runtime 不能代替旧版。
+已有 gzip 场按 `compressed*.json` / `*-compressed.json` 原 SHA 核对后按需恢复，保留压缩包；`*.canonical-fields.json` 指向规范场，勿批量展开历史。曲壁映射等未完成方案继续保留在原 `outputs/`。
 
 ## 历史展示素材
 

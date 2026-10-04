@@ -94,6 +94,8 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         std::map<std::string, FlowBoundaryKind2D> namedKinds;
         b.p.resize(nf);
         std::size_t inletCount = 0, outletCount = 0, openingCount = 0;
+        std::size_t velocityOutletCount = 0;
+        double prescribedFlux = 0, prescribedFluxMagnitude = 0;
         double inletLength = 0, outletLength = 0;
         for (const auto& condition : c.boundaryConditions) {
             const auto id = condition.face;
@@ -114,6 +116,17 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
             const double length = std::hypot(face.areaVector.x, face.areaVector.y);
             const double q = finite(dot(condition.velocity, face.areaVector));
             switch (condition.kind) {
+            case FlowBoundaryKind2D::VelocityOutlet:
+                ensure(condition.pressure == 0 && q > 0,
+                       "Velocity outlet must point out of the fluid and cannot prescribe pressure");
+                // Role::Inlet is the internal prescribed-vector/flux stencil;
+                // external boundary kind/name retain the outlet semantics.
+                b.role[id] = Role::Inlet;
+                b.fixedU[id] = b.fixedV[id] = true;
+                b.u[id] = condition.velocity.x; b.v[id] = condition.velocity.y;
+                prescribedFlux += q; prescribedFluxMagnitude += std::abs(q);
+                ++velocityOutletCount;
+                break;
             case FlowBoundaryKind2D::VelocityInlet:
                 ensure(condition.pressure == 0 && q < 0,
                        "Velocity inlet must point into the fluid and cannot prescribe pressure");
@@ -124,6 +137,7 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
                 b.initialV += condition.velocity.y * length;
                 inletLength += length;
                 ++inletCount;
+                prescribedFlux += q; prescribedFluxMagnitude += std::abs(q);
                 break;
             case FlowBoundaryKind2D::PressureOutlet:
             case FlowBoundaryKind2D::PressureOpening:
@@ -174,9 +188,13 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
         }
         for (std::size_t id = 0; id < nf; ++id)
             ensure(m.faces[id].neighbour || seen[id], "Missing custom boundary face");
-        ensure(openingCount > 0 || (inletCount > 0 && outletCount > 0) || (inletCount == 0 && outletCount == 0),
+        ensure(openingCount > 0 || (inletCount > 0 && (outletCount > 0 || velocityOutletCount > 0)) ||
+               (inletCount == 0 && outletCount == 0 && velocityOutletCount == 0),
                "Custom open flow needs a pressure opening or velocity inlet and pressure outlet; closed flow needs only walls");
         b.closed = outletCount == 0;
+        if (b.closed && velocityOutletCount > 0)
+            ensure(std::abs(prescribedFlux) <= TolerancePolicy{}.scale(prescribedFluxMagnitude),
+                   "Fully prescribed port fluxes must balance for a pressure-gauge solve");
         if (!b.closed) {
             if (inletLength > 0) {
                 b.initialU = finite(b.initialU / inletLength);
@@ -412,7 +430,7 @@ void momentum(System& a,
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
         const auto& f = m.faces[id];
         const auto i = f.owner;
-        const double q = flux[id];
+        const double q = c.momentumInertia * flux[id];
         const double viscosity=faceNu(c,id);
         const double d = viscosity * f.transmissibility;
         if (!stressCorrection.empty()) {
@@ -508,6 +526,8 @@ static FlowResult2D solveFlow(
                c.convection == ConvectionScheme2D::LimitedLinearUpwind ||
                c.convection == ConvectionScheme2D::FaceLimitedLinearUpwind,
            "Invalid convection scheme");
+    ensure(c.momentumInertia == 1 || (c.momentumInertia == 0 && c.scenario == "custom" && !previous && !material),
+           "Momentum inertia must be 1, or 0 for steady custom laminar Stokes only");
     ensure(c.viscousStress == ViscousStress2D::Symmetric ||
                c.viscousStress == ViscousStress2D::Laplacian,
            "Invalid viscous stress form");
@@ -1100,7 +1120,7 @@ static FlowResult2D solveFlow(
                 const double other=f.neighbour ? value[*f.neighbour] : bc[id];
                 diffusion=-faceNu(c,id)*(f.transmissibility*(other-value[i])+dot(interpolateGradient(f,g),f.correction));
             }
-            return std::pair{finite(r.flux[id]*faceValue),finite(diffusion)};
+            return std::pair{finite(c.momentumInertia*r.flux[id]*faceValue),finite(diffusion)};
         };
         auto [ax,dx]=component(r.u,gu,b.u,b.fixedU,lu,false);
         auto [ay,dy]=component(r.v,gv,b.v,b.fixedV,lv,true);

@@ -25,7 +25,7 @@ from topology_artifacts import contours, port_connectivity, signed_area
 from optimize_flow import parser, run, stationarity
 from optimize_flow import initial_design, reference_design
 from compare_sharp_designs import assess, match_sharp_area, reuse_baseline
-from verify_extracted_flow import parabolic_boundaries, native
+from native_flow import parabolic_boundaries, native
 from render_connectivity_study import grouped_sensitivity, analytic_reference_comparison
 from continue_native_flow import continuation_command, initial_files
 

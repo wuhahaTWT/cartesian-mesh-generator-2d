@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+from topology_cases import ports_for
 
 
 def contours(rho, width, height, threshold=.5):
@@ -54,20 +55,21 @@ def signed_area(loop):
 def port_connectivity(groups, problem):
     """Geometric port reachability, not a mixing/flow-transfer matrix."""
     width, height = problem["width"], problem["height"]
-    centres = [height/4, 3*height/4] if problem["case"] == "double-pipe" else [height/4]
-    right = centres if problem["case"] == "double-pipe" else [3*height/4]
-    ports = [(f"inlet_{i}", 0., y) for i, y in enumerate(centres)]
-    ports += [(f"outlet_{i}", width, y) for i, y in enumerate(right)]
+    definitions=ports_for(problem)
+    definitions=sorted(definitions,key=lambda p:p.role!="inlet")
+    ports=[(p.name,0. if p.side in ("left","bottom") else width if p.side=="right" else height,p.centre) for p in definitions]
     tolerance = 1e-11+1e-9*max(width, height)
     coverage = np.zeros((len(groups), len(ports)))
     for component, group in enumerate(groups):
         loop = group[0]
         for index, (_, x, y) in enumerate(ports):
+            port=definitions[index]
+            normal,tangent=(0,1) if port.side in ("left","right") else (1,0)
             intervals = []
-            lo, hi = y-problem["port_width"]/2, y+problem["port_width"]/2
+            lo, hi = y-port.width/2, y+port.width/2
             for a, b in zip(loop, np.roll(loop, -1, axis=0)):
-                if abs(a[0]-x) <= tolerance and abs(b[0]-x) <= tolerance:
-                    start, end = max(lo, min(a[1], b[1])), min(hi, max(a[1], b[1]))
+                if abs(a[normal]-x) <= tolerance and abs(b[normal]-x) <= tolerance:
+                    start, end = max(lo, min(a[tangent], b[tangent])), min(hi, max(a[tangent], b[tangent]))
                     if end > start:
                         intervals.append((start, end))
             # Union avoids double counting shared endpoint representations.
@@ -76,12 +78,12 @@ def port_connectivity(groups, problem):
                 coverage[component, index] += max(0, stop-max(start, end))
                 end = max(end, stop)
     present = coverage > tolerance
-    count = len(centres)
-    matrix = [[bool(np.any(present[:, i] & present[:, count+j])) for j in range(len(right))]
+    count = sum(p.role=="inlet" for p in definitions)
+    matrix = [[bool(np.any(present[:, i] & present[:, count+j])) for j in range(len(ports)-count)]
               for i in range(count)]
     total = np.sum(coverage, axis=0)
     return dict(ports=[name for name, _, _ in ports], coverageLengths=coverage.tolist(),
-                allPortsCovered=bool(np.all(np.abs(total-problem["port_width"]) <= tolerance)),
+                allPortsCovered=bool(np.all(np.abs(total-np.array([p.width for p in definitions])) <= tolerance)),
                 componentPorts=[[ports[i][0] for i in range(len(ports)) if present[c, i]] for c in range(len(groups))],
                 inletToOutletReachability=matrix,
                 meaning="Paths within the same fluid component; not measured flow splitting or molecular mixing.")

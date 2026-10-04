@@ -23,6 +23,7 @@ import numpy as np
 import scipy
 
 from brinkman import Problem, StokesBrinkman
+from navier_stokes_brinkman import NavierStokesBrinkman
 
 
 def write_json(path, data):
@@ -99,6 +100,9 @@ def metrics(model, x, e):
 def reference_design(model, beta):
     """Reproducible geometric seed, reevaluated at the SAME final model."""
     p = model.problem
+    if p.case in ("diffuser", "elbow", "four-terminal"):
+        from engineering_baselines import family
+        return family(model,beta)[1][1]
     x = np.zeros(model.cells)
     half_width = p.volume_fraction*p.height/(4 if p.case == "double-pipe" else 2)
     for j in range(model.ny):
@@ -110,9 +114,13 @@ def reference_design(model, beta):
     return model.feasible_design(x, beta)
 
 
-def initial_design(model, kind):
+def initial_design(model, kind, seed=0):
     if kind == "uniform":
         return model.uniform_design()
+    if kind == "random":
+        # Seeded material variation, then the same exact volume/passive-cell
+        # projection as all other starts. No prescribed interior connectivity.
+        return model.feasible_design(np.random.default_rng(seed).uniform(.05,.95,model.cells),0)
     if kind == "geometric":
         return reference_design(model, 0)
     if kind != "merged" or model.problem.case != "double-pipe":
@@ -139,14 +147,13 @@ def initial_design(model, kind):
 
 def run(args):
     root = args.output.resolve()
-    if root.exists():
-        raise ValueError("output already exists; choose a fresh directory to preserve evidence")
     problem = Problem(nx=args.nx, ny=args.ny, width=args.width, height=1,
                       volume_fraction=args.volume, filter_radius=args.filter_radius,
-                      alpha_max=args.alpha_max, case=args.case, port_width=args.port_width)
-    model = StokesBrinkman(problem)
+                      alpha_max=args.alpha_max, case=args.case, port_width=args.port_width,
+                      reynolds=args.reynolds)
+    model = (NavierStokesBrinkman if problem.reynolds else StokesBrinkman)(problem)
     # Construct/validate the initial design before creating any output directory.
-    x = initial_design(model, args.initialization)
+    x = initial_design(model, args.initialization, getattr(args,"seed",0))
     root.mkdir(parents=True)
     (root/"snapshots").mkdir()
     os.environ.setdefault("MPLCONFIGDIR", str(root/"plot-cache"))
@@ -154,20 +161,22 @@ def run(args):
     budgets = args.iterations if len(args.iterations) == 3 else args.iterations*3
     start = time.monotonic()
     report = dict(schema="cartmesh2d-fluid-topology-v1", experimental=True,
-                  model="nondimensional 2D Stokes-Brinkman, staggered finite volume",
+                  model="nondimensional 2D Navier-Stokes-Brinkman (Re=0: Stokes), staggered finite volume",
                   objective=args.objective, problem=asdict(problem),
-                  initialization=dict(kind=args.initialization, connectivitySpecified=args.initialization != "uniform",
-                      note="Uniform porous field has no prescribed interior path; other seeds prescribe the starting pattern only."),
+                  initialization=dict(kind=args.initialization, seed=getattr(args,"seed",0),
+                      connectivitySpecified=args.initialization in ("geometric","merged"),
+                      note="Uniform/random starts have no prescribed interior path; geometric/merged seeds prescribe only the starting pattern."),
                   optimizer="filtered/projected OC with feasible-volume correction, gradient fallback and backtracking",
                   controls=dict(stages=stages, stageIterations=budgets, move=args.move,
-                                initialization=args.initialization, update=args.update,
+                                initialization=args.initialization, seed=getattr(args,"seed",0), update=args.update,
                                 stationarityTolerance=args.stationarity_tolerance,
                                 maxSeconds=args.max_seconds),
                   analysisIsProductFluidMesh=False, physicalAccuracyQualified=False,
                   optimizationConverged=False, status="running", stages=[], history=[],
                   environment=dict(python=platform.python_version(), numpy=np.__version__, scipy=scipy.__version__),
                   sourceHashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in
-                                [Path(__file__), Path(__file__).with_name("brinkman.py")]})
+                                [Path(__file__), Path(__file__).with_name("brinkman.py"),
+                                 Path(__file__).with_name("navier_stokes_brinkman.py")]})
     global_iteration = 0
     current = None
     interrupted = False
@@ -266,16 +275,20 @@ def run(args):
     # Equal-volume, equal-parameter comparisons; continuation improvements are
     # not reported as if they had used one unchanged objective.
     comparisons = {}
+    write_json(root/"summary.json", report)
     for name, baseline in (("uniformPorous", model.uniform_design(beta)),
                            ("geometricSeed", reference_design(model, beta))):
-        evaluation = model.evaluate(baseline, q, beta, args.objective)
-        comparisons[name] = metrics(model, baseline, evaluation)
-        comparisons[name]["relativeObjectiveReduction"] = 1-current.objective/evaluation.objective
-        snapshot(root/f"reference-{name}.npz", model, baseline, evaluation, q, beta)
+        try:
+            evaluation = model.evaluate(baseline, q, beta, args.objective)
+            comparisons[name] = metrics(model, baseline, evaluation)
+            comparisons[name]["relativeObjectiveReduction"] = 1-current.objective/evaluation.objective
+            snapshot(root/f"reference-{name}.npz", model, baseline, evaluation, q, beta)
+        except (ArithmeticError, RuntimeError) as exc:
+            comparisons[name] = dict(status="analysis-failed",issue=str(exc))
     report["sameModelReferences"] = comparisons
     report["elapsedSeconds"] = time.monotonic()-start
     report["limits"] = ["Finite-resistance porous analysis; solid leakage is reported, not suppressed.",
-                        "Stokes creeping flow; no convective inertia, turbulence or compressibility.",
+                        "Steady incompressible laminar analysis; no turbulence or compressibility; MAC spatial accuracy unqualified.",
                         "Filter radius is not a certified manufacturing minimum width.",
                         "Local stationarity is not a global optimum or physical accuracy certificate.",
                         "Threshold extraction changes the model and requires separate sharp-wall CFD."]
@@ -298,7 +311,7 @@ def run(args):
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--output", type=Path, required=True)
-    p.add_argument("--case", choices=["double-pipe", "bend"], default="double-pipe")
+    p.add_argument("--case", choices=["double-pipe", "bend", "diffuser", "elbow", "four-terminal"], default="double-pipe")
     p.add_argument("--nx", type=int, default=48)
     p.add_argument("--ny", type=int, default=32)
     p.add_argument("--width", type=float, default=1.5)
@@ -306,8 +319,11 @@ def parser():
     p.add_argument("--volume", type=float, default=1/3)
     p.add_argument("--filter-radius", type=float, default=.06)
     p.add_argument("--alpha-max", type=float, default=25000)
-    p.add_argument("--objective", choices=["dissipation", "pressure-power"], default="dissipation")
-    p.add_argument("--initialization", choices=["uniform", "geometric", "merged"], default="uniform")
+    p.add_argument("--reynolds", type=float, default=0,
+                   help="U_mean * inlet width / nu; zero uses the exact legacy Stokes path")
+    p.add_argument("--objective", choices=["dissipation", "pressure-power", "total-pressure-power"], default="dissipation")
+    p.add_argument("--initialization", choices=["uniform", "random", "geometric", "merged"], default="uniform")
+    p.add_argument("--seed",type=int,default=0,help="Reproducible random material initialization; ignored by other starts")
     p.add_argument("--update", choices=["hybrid", "oc", "gradient"], default="hybrid")
     p.add_argument("--iterations", nargs="+", type=int, default=[25, 40, 60])
     p.add_argument("--move", type=float, default=.15)
@@ -329,9 +345,6 @@ if __name__ == "__main__":
             not 0 < args.max_seconds <= 7200 or not 1 <= args.snapshot_every <= 1000 or
             not 0 < args.threshold < 1):
         p.error("invalid iteration, update, time, output or threshold controls")
-    try:
-        result = run(args)
-        if result["status"] in ("analysis-failed", "initial-analysis-failed", "interrupted"):
-            raise SystemExit(2)
-    except (ValueError, ArithmeticError, OSError, RuntimeError) as exc:
-        p.exit(1, f"topology optimisation failed: {exc}\n")
+    result = run(args)
+    if result["status"] in ("analysis-failed", "initial-analysis-failed", "interrupted"):
+        raise SystemExit(2)

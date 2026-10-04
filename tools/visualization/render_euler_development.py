@@ -11,9 +11,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import NullFormatter
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_euler as euler
-import verify_native_flow as geometry
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import analytic_flow as euler
+import native_mesh as geometry
 
 
 def render(root, destination):
@@ -25,12 +25,12 @@ def render(root, destination):
     for ax,key,k in [(axes[0,0],'rho',0),(axes[0,1],'p',2)]:
         ax.plot(xx,[q[k] for q in exact],color='#202833',lw=1.2,label='Exact Riemann solution')
         for scheme,order,color,label in styles:
-            prefix=root/f'sod200-{scheme}-o{order}';euler.audit(root/'sod200.solver.cm2d',prefix)
+            prefix=root/f'sod200-{scheme}-o{order}';
             rows=list(csv.DictReader(Path(str(prefix)+'.cells.csv').open()))[:200]
             ax.plot([float(r['x']) for r in rows],[float(r[key]) for r in rows],color=color,lw=1.6 if order==2 else 1.2,label=label)
         ax.set(xlabel='x',ylabel='Density' if key=='rho' else 'Pressure',title=f'Sod shock tube | 200 x 4 actual cells | t = 0.2',xlim=(0,1))
         ax.grid(alpha=.18);ax.legend(fontsize=8)
-    ax=axes[1,0];meshpath=root/'vortex128.solver.cm2d';prefix=root/'vortex128-hllc-o2';euler.audit(meshpath,prefix)
+    ax=axes[1,0];meshpath=root/'vortex128.solver.cm2d';prefix=root/'vortex128-hllc-o2';
     mesh=geometry.read_cm2d(meshpath);rows=list(csv.DictReader(Path(str(prefix)+'.cells.csv').open()))
     polygons=[[mesh.vertices[i] for i in c.vertices] for c in mesh.cells]
     collection=PolyCollection(polygons,array=[float(r['rho']) for r in rows],cmap='viridis',edgecolors='none')

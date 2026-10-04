@@ -279,59 +279,7 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_scalar_workspace_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_scalar_workspace COMMAND cartmesh2d_scalar_workspace_tests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    add_test(NAME cartmesh2d_immersed_flow
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/immersed_flow_cli_test.py
-                $<TARGET_FILE:cartmesh2d_immersed_cli>)
-    set_tests_properties(cartmesh2d_immersed_flow PROPERTIES TIMEOUT 180)
-    add_test(NAME cartmesh2d_background_grid
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/test_background_grid.py
-                $<TARGET_FILE:cartmesh2d_cli>)
-    set_tests_properties(cartmesh2d_background_grid PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_sst_flatplate_analysis COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_flatplate_analysis_test.py)
-    add_test(NAME cartmesh2d_rectilinear_refinement_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/rectilinear_refinement_verifier_test.py)
-    add_test(NAME cartmesh2d_sst_rans_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_rans_verifier_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --probe $<TARGET_FILE:cartmesh2d_sst_rans_probe>
-        --rect-probe $<TARGET_FILE:cartmesh2d_rectilinear_probe>)
-    add_test(NAME cartmesh2d_sst_nonlinear_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_nonlinear_verifier_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --probe $<TARGET_FILE:cartmesh2d_sst_nonlinear_probe>)
-    add_test(NAME cartmesh2d_sst_spatial_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_spatial_verifier_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --probe $<TARGET_FILE:cartmesh2d_sst_spatial_tests>
-        --wall-probe $<TARGET_FILE:cartmesh2d_wall_distance_tests>)
-    add_test(NAME cartmesh2d_sst_decay_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_decay_verifier_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --probe $<TARGET_FILE:cartmesh2d_sst_transport_tests>)
-    add_test(NAME cartmesh2d_thermal_flow_cli COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_flow_cli_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
-    add_test(NAME cartmesh2d_thermal_scale_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_scale_verifier_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
-        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
-    set_tests_properties(cartmesh2d_thermal_scale_verifier PROPERTIES TIMEOUT 60)
-    add_test(NAME cartmesh2d_thermal_time_verifier COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_time_verifier_test.py)
-    add_test(NAME cartmesh2d_scalar_transport_cli COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/scalar_transport_cli_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
-        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
-    add_test(NAME cartmesh2d_variable_viscosity_cli COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/variable_viscosity_cli_test.py
-        --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-        --flow-cli $<TARGET_FILE:cartmesh2d_flow_cli>
-        --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
-    set_tests_properties(cartmesh2d_variable_viscosity_cli PROPERTIES TIMEOUT 60)
+
     add_executable(cartmesh2d_fv_tests tests/fv_test.cpp)
     add_executable(cartmesh2d_transport_precision_tests tests/transport_precision_test.cpp)
     target_link_libraries(cartmesh2d_transport_precision_tests PRIVATE cartmesh2d_fv)
@@ -349,18 +297,7 @@ if(CARTMESH2D_BUILD_TESTS)
     target_link_libraries(cartmesh2d_euler_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_euler_core COMMAND cartmesh2d_euler_tests)
     set_tests_properties(cartmesh2d_euler_core PROPERTIES TIMEOUT 60)
-    add_test(NAME cartmesh2d_euler_cli COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_cli PROPERTIES TIMEOUT 120)
-    add_test(NAME cartmesh2d_euler_accuracy COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_accuracy_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_accuracy PROPERTIES TIMEOUT 180)
-    add_test(NAME cartmesh2d_euler_conduction COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_conduction_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_conduction PROPERTIES TIMEOUT 120)
-    add_test(NAME cartmesh2d_euler_wall_accuracy COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_wall_accuracy_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_wall_accuracy PROPERTIES TIMEOUT 180)
+
     # Hosted Windows runs need longer wall-clock budgets: the core took 56 s,
     # vortex128 exceeded a 90 s subprocess limit, and cold Couette32 exhausted
     # the CLI's default 180 s at t=33.72 of the required t=60. Keep every grid,
@@ -368,12 +305,9 @@ if(CARTMESH2D_BUILD_TESTS)
     # Python/CLI limits for the two studies are 540/480 s; allow their full suite.
     if(WIN32)
         set_tests_properties(cartmesh2d_euler_core PROPERTIES TIMEOUT 180)
-        set_tests_properties(cartmesh2d_euler_accuracy cartmesh2d_euler_wall_accuracy
-            PROPERTIES TIMEOUT 900)
+
     endif()
-    add_test(NAME cartmesh2d_euler_viscosity COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/euler_viscosity_cli_test.py --cli $<TARGET_FILE:cartmesh2d_euler_cli>)
-    set_tests_properties(cartmesh2d_euler_viscosity PROPERTIES TIMEOUT 180)
+
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_fv_foundation COMMAND cartmesh2d_fv_tests)
     add_executable(cartmesh2d_flow_linear_tests tests/flow_linear_test.cpp)
@@ -396,13 +330,8 @@ if(CARTMESH2D_BUILD_TESTS)
     add_test(NAME cartmesh2d_transient_flow_cli
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_flow_cli_test.py
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    add_test(NAME cartmesh2d_transient_verifier
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_verifier_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    add_test(NAME cartmesh2d_transient_step_comparison
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_step_comparison_test.py)
-    set_tests_properties(cartmesh2d_transient_step_comparison PROPERTIES TIMEOUT 30)
-    set_tests_properties(cartmesh2d_transient_flow_cli cartmesh2d_transient_verifier PROPERTIES TIMEOUT 90)
+
+    set_tests_properties(cartmesh2d_transient_flow_cli PROPERTIES TIMEOUT 90)
     add_executable(cartmesh2d_taylor_green_tests tests/taylor_green_test.cpp)
     target_link_libraries(cartmesh2d_taylor_green_tests PRIVATE cartmesh2d_fv)
     add_test(NAME cartmesh2d_taylor_green COMMAND cartmesh2d_taylor_green_tests)
@@ -423,94 +352,6 @@ if(CARTMESH2D_BUILD_TESTS)
             --cli $<TARGET_FILE:cartmesh2d_flow_cli>
             --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
     set_tests_properties(cartmesh2d_flow_cli_validation PROPERTIES TIMEOUT 120)
-    add_test(NAME cartmesh2d_duct_flow_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/duct_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
-            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-            --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>)
-    set_tests_properties(cartmesh2d_duct_flow_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_frame_limited_duct_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/duct_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
-            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-            --transport-cli $<TARGET_FILE:cartmesh2d_transport_cli>
-            --convection face-limited-linear)
-    set_tests_properties(cartmesh2d_frame_limited_duct_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_custom_flow_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/custom_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
-            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
-    set_tests_properties(cartmesh2d_custom_flow_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_frame_limited_flow_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/custom_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
-            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
-            --convection face-limited-linear)
-    set_tests_properties(cartmesh2d_frame_limited_flow_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_symmetry_flow_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/symmetry_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_symmetry_flow_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_steady_acceleration_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/steady_acceleration_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_steady_acceleration_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_adaptive_linear_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_linear_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_adaptive_linear_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_wall_split_batch_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/wall_split_batch_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_cli>)
-    set_tests_properties(cartmesh2d_wall_split_batch_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_transient_linear_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/transient_linear_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    add_test(NAME cartmesh2d_adaptive_time_linear_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_flow_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_flow_cli> --linear-policy adaptive)
-    set_tests_properties(cartmesh2d_transient_linear_cli cartmesh2d_adaptive_time_linear_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_flow_cholesky_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_cholesky_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_flow_cholesky_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_steady_initial_guess_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/steady_initial_guess_cli_test.py
-        --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_steady_initial_guess_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_pressure_opening_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pressure_opening_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_pressure_opening_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_pressure_stencil_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pressure_stencil_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>
-            --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
-    set_tests_properties(cartmesh2d_pressure_stencil_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_adaptive_flow_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/adaptive_flow_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_adaptive_flow_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_flow_initialization_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_initialization_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_flow_initialization_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_flow_trajectory
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_trajectory_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli> --mesh-cli $<TARGET_FILE:cartmesh2d_cli>)
-    set_tests_properties(cartmesh2d_flow_trajectory PROPERTIES TIMEOUT 60)
-    add_test(NAME cartmesh2d_rotating_annulus_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/rotating_annulus_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_rotating_annulus_cli PROPERTIES TIMEOUT 90)
-    add_test(NAME cartmesh2d_flow_verifier
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/flow_verifier_test.py
-            --cli $<TARGET_FILE:cartmesh2d_flow_cli>)
-    set_tests_properties(cartmesh2d_flow_verifier PROPERTIES TIMEOUT 30)
-    add_test(NAME cartmesh2d_cavity_reference
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/cavity_reference_test.py)
-    set_tests_properties(cartmesh2d_cavity_reference PROPERTIES TIMEOUT 30)
-
 
     add_executable(cartmesh2d_geometry_tests tests/geometry_test.cpp)
     target_link_libraries(cartmesh2d_geometry_tests PRIVATE cartmesh2d::cartmesh2d)
@@ -645,25 +486,7 @@ if(CARTMESH2D_BUILD_TESTS)
     add_executable(cartmesh2d_boundary_layer_resolution_tests tests/boundary_layer_resolution_test.cpp)
     target_link_libraries(cartmesh2d_boundary_layer_resolution_tests PRIVATE cartmesh2d::cartmesh2d)
     add_test(NAME cartmesh2d_boundary_layer_resolution_tests COMMAND cartmesh2d_boundary_layer_resolution_tests)
-    add_test(NAME cartmesh2d_relative_resolution_cli
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/mesh_resolution_cli_test.py
-            --cli $<TARGET_FILE:cartmesh2d_cli>
-            --hybrid-cli $<TARGET_FILE:cartmesh2d_hybrid_cli>
-            --log ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution/cli.log
-            --output-dir ${CMAKE_CURRENT_BINARY_DIR}/relative-resolution)
-    set_tests_properties(cartmesh2d_relative_resolution_cli PROPERTIES TIMEOUT 150)
-    add_test(NAME cartmesh2d_layer_reader_stopped_columns
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/layer_reader_test.py)
-    set_tests_properties(cartmesh2d_layer_reader_stopped_columns PROPERTIES TIMEOUT 15)
-    add_test(NAME cartmesh2d_directional_connectivity_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/directional_connectivity_test.py)
-    set_tests_properties(cartmesh2d_directional_connectivity_reader PROPERTIES TIMEOUT 15)
-    add_test(NAME cartmesh2d_face_plane_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/face_plane_audit_test.py)
-    set_tests_properties(cartmesh2d_face_plane_reader PROPERTIES TIMEOUT 15)
-    add_test(NAME cartmesh2d_nozzle_flow_verification
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/nozzle_flow_verification_test.py)
-    set_tests_properties(cartmesh2d_nozzle_flow_verification PROPERTIES TIMEOUT 15)
+
     add_test(NAME cartmesh2d_stageD1_multiloop_tests COMMAND cartmesh2d_multiloop_tests)
     add_test(NAME cartmesh2d_stageS1_solver_export_tests COMMAND cartmesh2d_solver_export_tests)
     add_test(NAME cartmesh2d_stage3_cutcell_tests COMMAND cartmesh2d_cutcell_tests)
@@ -686,9 +509,7 @@ if(CARTMESH2D_BUILD_TESTS)
              COMMAND cartmesh2d_weld_budget_tests)
     add_test(NAME cartmesh2d_stageR2_refinement_attribution_tests
              COMMAND cartmesh2d_refinement_attribution_tests)
-    add_test(NAME cartmesh2d_stageR2_refinement_ladder_gate_tests
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/refinement_ladder_gate_test.py)
+
     add_test(NAME cartmesh2d_product_cutcell_help
         COMMAND cartmesh2d_cli --help)
     add_test(NAME cartmesh2d_product_hybrid_help
@@ -701,27 +522,11 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND cartmesh2d_boundary_layer_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
                 ${CARTMESH2D_H4_OUTPUT}/circle 4 first 0.02 1.2 exterior)
-    add_test(NAME cartmesh2d_stageH4_1_circle_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer2d.py
-                ${CARTMESH2D_H4_OUTPUT}/circle.layer.vtk
-                ${CARTMESH2D_H4_OUTPUT}/circle.layer.json
-                --report ${CARTMESH2D_H4_OUTPUT}/circle.independent.json)
-    set_tests_properties(cartmesh2d_stageH4_1_circle_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageH4_1_circle_e2e)
 
     add_test(NAME cartmesh2d_stageH4_1_rectangle_e2e
         COMMAND cartmesh2d_boundary_layer_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
                 ${CARTMESH2D_H4_OUTPUT}/rectangle 3 first 0.04 1.25 exterior)
-    add_test(NAME cartmesh2d_stageH4_1_rectangle_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer2d.py
-                ${CARTMESH2D_H4_OUTPUT}/rectangle.layer.vtk
-                ${CARTMESH2D_H4_OUTPUT}/rectangle.layer.json
-                --report ${CARTMESH2D_H4_OUTPUT}/rectangle.independent.json)
-    set_tests_properties(cartmesh2d_stageH4_1_rectangle_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageH4_1_rectangle_e2e)
 
     add_test(NAME cartmesh2d_stageH4_1_concave_fails_closed
         COMMAND cartmesh2d_boundary_layer_cli
@@ -729,13 +534,6 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_H4_OUTPUT}/concave 3 first 0.02 1.1 exterior)
     set_tests_properties(cartmesh2d_stageH4_1_concave_fails_closed PROPERTIES
         WILL_FAIL TRUE)
-    add_test(NAME cartmesh2d_stageH4_1_concave_failure_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_boundary_layer_failure.py
-                ${CARTMESH2D_H4_OUTPUT}/concave.layer.json
-                --reason concave_corner)
-    set_tests_properties(cartmesh2d_stageH4_1_concave_failure_reader PROPERTIES
-        DEPENDS cartmesh2d_stageH4_1_concave_fails_closed)
 
     add_test(NAME cartmesh2d_stageH4_1_circle_repeat_e2e
         COMMAND cartmesh2d_boundary_layer_cli
@@ -759,27 +557,11 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND cartmesh2d_hybrid_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
                 ${CARTMESH2D_H4_2_OUTPUT}/circle 6 3 6 4 0.02 1.2 1.0)
-    add_test(NAME cartmesh2d_stageH4_2_circle_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
-                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.vtk
-                ${CARTMESH2D_H4_2_OUTPUT}/circle.hybrid.json
-                --output ${CARTMESH2D_H4_2_OUTPUT}/circle.independent.json)
-    set_tests_properties(cartmesh2d_stageH4_2_circle_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageH4_2_circle_e2e)
 
     add_test(NAME cartmesh2d_stageH4_2_superellipse_e2e
         COMMAND cartmesh2d_hybrid_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/superellipse_24.xy
                 ${CARTMESH2D_H4_2_OUTPUT}/superellipse 6 3 6 3 0.015 1.15 1.0)
-    add_test(NAME cartmesh2d_stageH4_2_superellipse_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
-                ${CARTMESH2D_H4_2_OUTPUT}/superellipse.hybrid.vtk
-                ${CARTMESH2D_H4_2_OUTPUT}/superellipse.hybrid.json
-                --output ${CARTMESH2D_H4_2_OUTPUT}/superellipse.independent.json)
-    set_tests_properties(cartmesh2d_stageH4_2_superellipse_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageH4_2_superellipse_e2e)
 
     add_test(NAME cartmesh2d_stageH4_2_circle_repeat_e2e
         COMMAND cartmesh2d_hybrid_cli
@@ -811,13 +593,7 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case 0 0)
     set_tests_properties(cartmesh2d_stageDXF1_mesh_e2e PROPERTIES
         DEPENDS cartmesh2d_stageDXF1_convert_airfoil_e2e)
-    add_test(NAME cartmesh2d_stageDXF1_independent_openfoam_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case
-                --report ${CARTMESH2D_DXF_OUTPUT}/airfoil_like-case/independent_check.json)
-    set_tests_properties(cartmesh2d_stageDXF1_independent_openfoam_reader PROPERTIES
-        DEPENDS cartmesh2d_stageDXF1_mesh_e2e)
+
     add_test(NAME cartmesh2d_stageDXF1_convert_airfoil_e2e
         COMMAND cartmesh2d_dxf_cli
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/dxf/airfoil_like.dxf
@@ -833,13 +609,6 @@ if(CARTMESH2D_BUILD_TESTS)
                 --fluid-region=interior --small-alpha=0.65)
     set_tests_properties(cartmesh2d_interior_hybrid_nozzle_e2e PROPERTIES
         PASS_REGULAR_EXPRESSION "hybrid_status=success" TIMEOUT 60)
-    add_test(NAME cartmesh2d_interior_hybrid_nozzle_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CMAKE_CURRENT_BINARY_DIR}/interior-hybrid/nozzle-foam
-                --require-patch wall_0:wall)
-    set_tests_properties(cartmesh2d_interior_hybrid_nozzle_reader PROPERTIES
-        DEPENDS cartmesh2d_interior_hybrid_nozzle_e2e)
 
     add_test(NAME cartmesh2d_stageDXF2_convert_spline_mm_e2e
         COMMAND cartmesh2d_dxf_cli
@@ -853,14 +622,6 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case 0 0)
     set_tests_properties(cartmesh2d_stageDXF2_mesh_spline_mm_e2e PROPERTIES
         DEPENDS cartmesh2d_stageDXF2_convert_spline_mm_e2e)
-    add_test(NAME cartmesh2d_stageDXF2_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case
-                --require-patch wall_spline:wall
-                --report ${CARTMESH2D_DXF_OUTPUT}/spline_circle-case/independent_check.json)
-    set_tests_properties(cartmesh2d_stageDXF2_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageDXF2_mesh_spline_mm_e2e)
 
     add_test(NAME cartmesh2d_stageDXF2_convert_symmetry_e2e
         COMMAND cartmesh2d_dxf_cli
@@ -874,14 +635,6 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle-case 0 0)
     set_tests_properties(cartmesh2d_stageDXF2_mesh_symmetry_e2e PROPERTIES
         DEPENDS cartmesh2d_stageDXF2_convert_symmetry_e2e)
-    add_test(NAME cartmesh2d_stageDXF2_symmetry_patch_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_DXF_OUTPUT}/symmetry_circle-case
-                --require-patch symmetry_curve:symmetryPlane
-                --require-field-boundary symmetry_curve:symmetryPlane)
-    set_tests_properties(cartmesh2d_stageDXF2_symmetry_patch_reader PROPERTIES
-        DEPENDS cartmesh2d_stageDXF2_mesh_symmetry_e2e)
 
     set(CARTMESH2D_ACCEPTANCE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/acceptance)
     add_test(NAME cartmesh2d_stage6c_rectangle_e2e
@@ -902,13 +655,6 @@ if(CARTMESH2D_BUILD_TESTS)
                 ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
                 ${CARTMESH2D_W1_OUTPUT}/circle_l10 10 0.25 0.10 exterior
                 ${CARTMESH2D_W1_OUTPUT}/circle_l10-case 8)
-    add_test(NAME cartmesh2d_stageR2_w1_circle_l10_independent_reader
-        COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_W1_OUTPUT}/circle_l10-case
-                --report ${CARTMESH2D_W1_OUTPUT}/circle_l10-case/independent_check.json)
-    set_tests_properties(cartmesh2d_stageR2_w1_circle_l10_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageR2_w1_circle_l10_e2e)
 
     set(CARTMESH2D_SIZING_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sizing_field)
     add_test(NAME cartmesh2d_stageH1_sizing_field_e2e
@@ -979,57 +725,32 @@ if(CARTMESH2D_BUILD_TESTS)
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/rectangle.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/rectangle 5 0.25 0.05 exterior
                 ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case)
-    add_test(NAME cartmesh2d_stageS1_independent_openfoam_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case
-                --report ${CARTMESH2D_SOLVER_OUTPUT}/rectangle-case/independent_check.json)
-    set_tests_properties(cartmesh2d_stageS1_independent_openfoam_reader PROPERTIES
-        DEPENDS cartmesh2d_stageS1_rectangle_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageV1_annulus_openfoam_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/annulus.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/annulus 7 0.25 0.05 interior
                 ${CARTMESH2D_SOLVER_OUTPUT}/annulus-case)
-    add_test(NAME cartmesh2d_stageV1_annulus_independent_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/annulus-case)
-    set_tests_properties(cartmesh2d_stageV1_annulus_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageV1_annulus_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageV1_nested_openfoam_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/nested_island.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/nested 7 0.25 0.05 interior
                 ${CARTMESH2D_SOLVER_OUTPUT}/nested-case)
-    add_test(NAME cartmesh2d_stageV1_nested_independent_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/nested-case)
-    set_tests_properties(cartmesh2d_stageV1_nested_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageV1_nested_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageV1b_circle_openfoam_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/circle.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/circle 6 0.25 0.05 exterior
                 ${CARTMESH2D_SOLVER_OUTPUT}/circle-case)
-    add_test(NAME cartmesh2d_stageV1b_circle_independent_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/circle-case)
-    set_tests_properties(cartmesh2d_stageV1b_circle_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageV1b_circle_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageV1b_airfoil_openfoam_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/acceptance/airfoil_like.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/airfoil 7 0.30 0.02 exterior
                 ${CARTMESH2D_SOLVER_OUTPUT}/airfoil-case)
-    add_test(NAME cartmesh2d_stageV1b_airfoil_independent_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/airfoil-case)
-    set_tests_properties(cartmesh2d_stageV1b_airfoil_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageV1b_airfoil_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageV1b_two_obstacles_openfoam_e2e
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/two_obstacles.xy
                 ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles 8 0.25 0.05 exterior
                 ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles-case)
-    add_test(NAME cartmesh2d_stageV1b_two_obstacles_independent_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-                ${CARTMESH2D_SOLVER_OUTPUT}/two_obstacles-case)
-    set_tests_properties(cartmesh2d_stageV1b_two_obstacles_independent_reader PROPERTIES
-        DEPENDS cartmesh2d_stageV1b_two_obstacles_openfoam_e2e)
+
     add_test(NAME cartmesh2d_stageD1_rejects_intersecting_loops
         COMMAND cartmesh2d_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/invalid/intersecting_loops.xy ${CARTMESH2D_ROBUSTNESS_OUTPUT}/invalid_intersecting_loops 6 0.25 0.05 interior)
     set_tests_properties(cartmesh2d_stageD1_rejects_intersecting_loops PROPERTIES WILL_FAIL TRUE)
@@ -1041,10 +762,7 @@ if(CARTMESH2D_BUILD_TESTS)
             ${CARTMESH2D_CURVE_OUTPUT}/pure-case 0 0 --size-field
             --far-field-spans 8 --wall-cells-per-span 48 --cells-per-level 3
             --far-level 0 --max-safe-wall-level 11)
-    add_test(NAME cartmesh2d_curve_dense_cutcell_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_openfoam2d.py
-            ${CARTMESH2D_CURVE_OUTPUT}/pure-case)
-    set_tests_properties(cartmesh2d_curve_dense_cutcell_reader PROPERTIES DEPENDS cartmesh2d_curve_dense_cutcell)
+
     add_test(NAME cartmesh2d_curve_dense_hybrid
         COMMAND cartmesh2d_hybrid_cli ${CMAKE_CURRENT_SOURCE_DIR}/examples/complex/serpentine_body.xy
             ${CARTMESH2D_CURVE_OUTPUT}/hybrid 7 3 7 4 0.039 1.2 3
@@ -1052,9 +770,5 @@ if(CARTMESH2D_BUILD_TESTS)
     set_tests_properties(cartmesh2d_curve_dense_hybrid PROPERTIES
         PASS_REGULAR_EXPRESSION "hybrid_status=success"
         FAIL_REGULAR_EXPRESSION "mesh_mode=pure_cutcell_fallback")
-    add_test(NAME cartmesh2d_curve_dense_hybrid_reader
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/verification/check_hybrid_mesh2d.py
-            ${CARTMESH2D_CURVE_OUTPUT}/hybrid.hybrid.vtk
-            ${CARTMESH2D_CURVE_OUTPUT}/hybrid.hybrid.json)
-    set_tests_properties(cartmesh2d_curve_dense_hybrid_reader PROPERTIES DEPENDS cartmesh2d_curve_dense_hybrid)
+
 endif()

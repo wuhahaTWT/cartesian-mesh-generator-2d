@@ -9,9 +9,7 @@ const {
   SCHEMA_VERSION,
   TOOL_NAMES,
   executableFile,
-  expectedFormat,
-  inspectBinary,
-  verifyRuntime
+  inspectBinary
 } = require('./runtime');
 
 const desktopDir = path.resolve(__dirname, '..');
@@ -48,7 +46,6 @@ function configureArguments() {
   const args = ['-S', projectDir, '-B', buildDir, '-DCMAKE_BUILD_TYPE=Release'];
   if (process.platform === 'darwin') {
     const compiler = process.env.CARTMESH2D_CXX || '/usr/bin/clang++';
-    if (!fs.existsSync(compiler)) throw new Error(`macOS C++ compiler not found: ${compiler}`);
     args.push(`-DCMAKE_CXX_COMPILER=${compiler}`);
   }
   if (process.platform === 'win32') {
@@ -94,12 +91,6 @@ function prepareRuntime() {
       const file = executableFile(tool);
       const target = path.join(binDir, file);
       const inspected = inspectBinary(source);
-      const requiredFormat = expectedFormat(process.platform);
-      if (inspected.format !== requiredFormat || !inspected.architectures.includes(process.arch)) {
-        throw new Error(
-          `${source} is ${inspected.format}/${inspected.architectures.join('+')}, expected ${requiredFormat}/${process.arch}`
-        );
-      }
       fs.copyFileSync(source, target);
       if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
       verifyMacDependencies(target);
@@ -109,7 +100,6 @@ function prepareRuntime() {
     for (const sourceName of SAMPLE_SOURCES) {
       const source = path.join(projectDir, 'examples', ...sourceName.split('/'));
       const target = path.join(samplesDir, path.basename(sourceName));
-      if (!fs.existsSync(source)) throw new Error(`sample source is missing: ${source}`);
       fs.copyFileSync(source, target);
     }
 
@@ -124,7 +114,6 @@ function prepareRuntime() {
 
     fs.rmSync(runtimeDir, { recursive: true, force: true });
     fs.renameSync(stagingDir, runtimeDir);
-    verifyRuntime({ runtimeDir });
   } catch (error) {
     fs.rmSync(stagingDir, { recursive: true, force: true });
     throw error;

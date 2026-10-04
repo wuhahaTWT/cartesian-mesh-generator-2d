@@ -10,8 +10,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_native_flow as native
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'flow'))
+import native_mesh as native
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--circle-audit',type=Path,required=True)
@@ -26,7 +26,7 @@ def rows(prefix,suffix):
     with Path(str(prefix)+suffix).open() as stream:
         return list(csv.DictReader(stream))
 mesh=native.read_cm2d(Path(circle['mesh']))
-measured=native.measure(mesh,1e-10,1e-9)
+measured=native.measure(mesh)
 geo=native.face_geometry(mesh,measured)
 cells=rows(circle['prefix'],'.cells.csv');faces=rows(circle['prefix'],'.faces.csv')
 summary=json.loads(Path(circle['prefix']+'.json').read_text())

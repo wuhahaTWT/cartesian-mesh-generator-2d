@@ -12,8 +12,8 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "tools/verification"))
-from verify_native_fv import read_cm2d  # noqa: E402
+sys.path.insert(0, str(REPO / "tools/flow"))
+from native_mesh import read_cm2d  # noqa: E402
 
 
 def load_cells(path: Path) -> dict[int, dict[str, float]]:

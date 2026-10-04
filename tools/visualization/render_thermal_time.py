@@ -11,8 +11,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 ROOT=Path(__file__).resolve().parents[2]
-sys.path.insert(0,str(ROOT/'tools/verification'))
-import verify_native_flow as native
+sys.path.insert(0,str(ROOT/'tools/flow'))
+import native_mesh as native
 
 
 def main():

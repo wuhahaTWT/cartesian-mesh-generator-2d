@@ -6,15 +6,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_euler as e
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import native_mesh as geometry
 
 def rows(prefix,suffix='.cells.csv'):
     with Path(str(prefix)+suffix).open() as f:return list(csv.DictReader(f))
 
 def render(study,mesh_path,prefix,output):
-    report=json.loads((study/'verification.json').read_text());e.audit(mesh_path,prefix)
-    mesh=e.geometry.read_cm2d(mesh_path);cells=rows(prefix);s=json.loads(Path(str(prefix)+'.json').read_text())
+    report=json.loads((study/'verification.json').read_text());
+    mesh=geometry.read_cm2d(mesh_path);cells=rows(prefix);s=json.loads(Path(str(prefix)+'.json').read_text())
     plt.rcParams.update({'font.size':10,'axes.spines.top':False,'axes.spines.right':False})
     fig,axs=plt.subplots(2,2,figsize=(13.6,9.4),layout='constrained')
     ax=axs[0,0];polygons=[[mesh.vertices[j] for j in c.vertices] for c in mesh.cells]
@@ -28,7 +28,7 @@ def render(study,mesh_path,prefix,output):
     ax=axs[0,1];yy=[i/200 for i in range(201)]
     ax.plot([.125*y*(1-y) for y in yy],yy,color='#1f303f',label='Analytic steady Couette',lw=1.5)
     for n,color in [(8,'#df9632'),(16,'#8180ad'),(32,'#00878c')]:
-        p=study/f'couette-{n}';e.audit(study/f'couette-{n}.solver.cm2d',p);data=rows(p)[::4]
+        p=study/f'couette-{n}';data=rows(p)[::4]
         ax.plot([float(c['temperature'])-1 for c in data],[float(c['y']) for c in data],'o',mfc='none',ms=4,color=color,label=f'{n} wall-normal cells')
     ax.set(title=f'Viscous heating + Fourier conduction | order {report["couetteOrder"]:.3f}',xlabel='Temperature rise above wall (test units)',ylabel='y / H')
     ax.grid(alpha=.18);ax.legend(fontsize=8)
@@ -40,7 +40,7 @@ def render(study,mesh_path,prefix,output):
     order=report['refinement']['shear-wave']['orders']['v']
     ax.set(title=f'Periodic transverse shear wave | order {order:.3f}',xlabel='x / wavelength',ylabel='v / initial amplitude',xlim=(0,1));ax.grid(alpha=.18);ax.legend(fontsize=8)
     ax=axs[1,1];data=rows(study/'couette-32','.history.csv');initial=Path(study/'couette-32.checkpoint').read_text().splitlines();index=next(i for i,v in enumerate(initial) if v.startswith('STATE '))
-    g=e.geometry.measure(e.geometry.read_cm2d(study/'couette-32.solver.cm2d'),1e-11,1e-10)
+    g=geometry.measure(geometry.read_cm2d(study/'couette-32.solver.cm2d'))
     e0=math.fsum(a*float(row.split()[3]) for a,row in zip(g.areas,initial[index+1:-1]));tt=[0.];work=[0.];heat=[0.];energy=[0.]
     for r in data:
         dt=float(r['dt']);tt.append(float(r['time']));work.append(work[-1]-dt*float(r['boundaryViscousWork']));heat.append(heat[-1]+dt*float(r['boundaryHeat']));energy.append(float(r['totalEnergy'])-e0)

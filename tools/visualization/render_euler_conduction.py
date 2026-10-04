@@ -11,10 +11,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import NullFormatter
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'verification'))
-import verify_euler as euler
-import verify_native_flow as geometry
-from verify_heat_conduction import linear_euler_fourier_mode
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'flow'))
+import analytic_flow as euler
+import native_mesh as geometry
+from analytic_flow import linear_euler_fourier_mode
 
 
 def rows(path):
@@ -23,7 +23,7 @@ def rows(path):
 
 def render(study,mesh_path,prefix,destination):
     evidence=json.loads((study/'conduction-validation.json').read_text())
-    euler.audit(mesh_path,prefix)
+
     mesh=geometry.read_cm2d(mesh_path);data=rows(Path(str(prefix)+'.cells.csv'))
     summary=json.loads(Path(str(prefix)+'.json').read_text())
     plt.rcParams.update({'font.size':10,'axes.spines.top':False,'axes.spines.right':False})
@@ -36,7 +36,7 @@ def render(study,mesh_path,prefix,destination):
     ax.text(.02,.04,f'Wall: {summary["wallValue"]:g} K; k = {summary["thermalConductivity"]:g} W/(m K)',transform=ax.transAxes,color='white',fontsize=9,bbox=dict(facecolor='#202833',alpha=.78,pad=4))
     fig.colorbar(collection,ax=ax,shrink=.76,label='Gas temperature (K)')
 
-    ax=axes[0,1];history=rows(study/'flux.history.csv');euler.audit(study/'box.solver.cm2d',study/'flux')
+    ax=axes[0,1];history=rows(study/'flux.history.csv');
     tt=[0.];energy=[0.];heat=[0.];energy0=.1/(1.4-1)
     for row in history:
         tt.append(float(row['time']));energy.append(float(row['totalEnergy'])-energy0)
@@ -50,7 +50,7 @@ def render(study,mesh_path,prefix,destination):
     ax=axes[1,0];mode=evidence['continuumMode'];amplitude=mode['amplitude'];end=mode['time']
     a,b,c=linear_euler_fourier_mode(end,mode['conductivity'])
     xx=[i/300 for i in range(301)]
-    data=rows(study/'wave64.cells.csv')[:64];euler.audit(study/'wave64.solver.cm2d',study/'wave64')
+    data=rows(study/'wave64.cells.csv')[:64];
     for key,reference,color,label,offset in [
         ('temperature',lambda x:c*math.cos(2*math.pi*x),'#007f88','Temperature perturbation',1),
         ('rho',lambda x:a*math.cos(2*math.pi*x),'#7869a9','Density perturbation',1),

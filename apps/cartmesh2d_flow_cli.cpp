@@ -193,6 +193,7 @@ int main(int argc, char** argv) {
             "--pressure-preconditioner ic0|jacobi|aggregation|cholesky (default ic0); cholesky requires macOS; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
             "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
+            "--momentum-inertia 0|1 (default 1); 0 opts into steady custom Stokes research.\n"
             "--outlet-backflow reject|normal-inlet (default reject).\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
             "--manufactured-pressure-slope 0: add Uref^2*slope*(x+y) to the analytic pressure.\n"
@@ -294,6 +295,10 @@ int main(int argc, char** argv) {
                     throw std::invalid_argument("convection must be upwind, limited-linear or face-limited-linear");
                 controls.convection = v == "face-limited-linear" ? fv::ConvectionScheme2D::FaceLimitedLinearUpwind : v == "limited-linear"
                     ? fv::ConvectionScheme2D::LimitedLinearUpwind : fv::ConvectionScheme2D::Upwind;
+            } else if (a == "--momentum-inertia") {
+                controls.momentumInertia = number(v);
+                if (controls.momentumInertia != 0 && controls.momentumInertia != 1)
+                    throw std::invalid_argument("momentum-inertia must be 0 or 1");
             } else if (a == "--outlet-backflow") {
                 if (v != "reject" && v != "normal-inlet")
                     throw std::invalid_argument("outlet-backflow must be reject or normal-inlet");
@@ -730,6 +735,7 @@ int main(int argc, char** argv) {
                 << ",\n\"pressureDiscretization\":\"shared-face-gauss\""
                 << ",\n\"pressureBoundaryReconstruction\":\"one-sided-linear-adaptive\""
                 << ",\n\"convection\":\"" << convection << '"'
+                << ",\n\"momentumInertia\":" << controls.momentumInertia
                 << ",\n\"viscousStress\":\"" << (symmetric?"symmetric":"laplacian") << '\"'
                 << ",\n\"outletBackflow\":\"" << (controls.outletBackflow == fv::OutletBackflow2D::NormalInlet ? "normal-inlet" : "reject") << '\"'
                 << ",\n\"outletBackflowFaces\":" << r.outletBackflowFaces
