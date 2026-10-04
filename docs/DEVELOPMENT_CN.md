@@ -104,6 +104,22 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 - `renderer/app.js` 管状态，`viewport.js` 画真实网格；`theme.css` / `themes.js` 管主题，`style.css` 管布局，画布色表在 `viewport.js`。
 - `assets/fonts/cartmesh-ui-regular.woff` 来自 Noto Sans CJK SC 2.004；许可与原哈希在同目录 LICENSE.txt。`desktop/scripts/subset-ui-font.py` 用 fontTools 重建，常规构建不下载字体；生僻字由系统字体回退。
 
+## 困难曲壁的 Solver 修复
+
+`SolverTopology2D.cpp` 在原有成对修复停滞后，允许满足既有单元质量门的轻微凹分块，并搜索问题邻域内相连的三/四单元精确合并。候选必须保留全部外侧原子边，经过完整相邻 halo 的质量评分、不可变单元保护和全网格拓扑/质量复核；不修改原始 XY，不降低任何质量阈值。只在原成对路径失败后增加有界搜索，避免在全网格枚举组合。
+
+凸修复停滞时先从**已接受的当前拓扑**继续一般修复，再以原始起点为备选；按同一全局质量评分保留更好的结果。尚有缺陷的部分改进仍被 CLI 最终质量门拒绝。8/10 格真实失败缩减例位于 `tests/repro/annulus_quality_patch.hpp`，覆盖缩放、旋转、原子边、面积、来源谱系、不可变邻域及确定性；壁面缩减例的人工截断邻域故意保留失败，不作为完整 CFD 网格。
+
+普通入口复现（两环各 1,024 段，不依赖旧的手工修复网格）：
+
+```sh
+build/cartmesh2d_cli artifacts/current/annulus-1024-axis-roundoff.xy outputs/annulus 7 .15 .1 interior outputs/annulus-foam 7
+build/cartmesh2d_flow_cli --mesh outputs/annulus.solver.cm2d --case annulus --speed .5 --export-boundaries outputs/annulus.boundaries
+build/cartmesh2d_flow_cli --mesh outputs/annulus.solver.cm2d --case custom --boundary outputs/annulus.boundaries --nu .1 --speed .5 --convection face-limited-linear --steady-acceleration newton-krylov --pressure-preconditioner cholesky --tolerance 1e-6 --max-iterations 1500 --output outputs/annulus-flow
+```
+
+`cholesky` 是 macOS 的已有选项，跨平台构建不据此获得验证。普通网格、认证修复前后、默认线性求解器及真实 App 的完整记录见[入口证据](../artifacts/current/native-laminar-mesh-entry.json)。原生读回证明面积和外边界保持；当前 CM2D 格式不序列化完整 `sourceLineage`，故完整来源集合只在内存中的原生缩减例上核对，不能由两个空集合声称全网格谱系已验证。OpenFOAM 导出成功不等于外部 `checkMesh` 通过。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。
@@ -140,9 +156,11 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 
 `newton-krylov` 的入口为 `src/fv/FlowNewtonKrylov2D.cpp`，复用现有单次 SIMPLE 映射 G，同时求解 `F(x)=x−G(x)` 的速度、压力、面通量固定点；`Incompressible2D.cpp` 的原数值步骤保持。速度除以 Uref、压力除以 `Uref²+νUref/H` 并乘单元面积占比的平方根；面通量除以 `Uref×面长` 并乘面长占比的平方根。因此候选择优量无量纲，并且不让小单元个数直接支配整体范数。
 
-内部 GMRES 最多 60 个方向、两遍正交化，方向的相对线性残差目标 .1；按现有严格内解的 `1e-11` 精度取有限差分步长 `sqrt(1e-11)×sqrt(1+||x||₂)`。单次映射的动量行误差控制收紧为 `min(用户容差,100×1e-11)`，因为原行目标为 `.01×容差×Uref×速度松弛`；这避免内解误差主导雅可比差分，不是新增物理精度门。Armijo 下降比例 `1e-4`、最多 12 个减半步长候选，仅用于约束实际完整固定点残差下降及试算成本。上述算法控制服务于困难耦合求解，未按单个圆环误差调参数；最终仍使用用户容差和原动量、场变化、局部/全局守恒门，并完成十次普通 strict SIMPLE 步。方法原则见 [PETSc 的 inexact Newton 说明](https://petsc.org/release/manual/snes/#inexact-newton-like-methods)，实现不依赖 PETSc。
+内部 GMRES 最多 60 个方向、两遍正交化，方向的相对线性残差目标 .1；按现有严格内解的 `1e-11` 精度取有限差分步长 `sqrt(1e-11)×sqrt(1+||x||₂)`。单次映射的动量行误差控制收紧为 `min(用户容差,100×1e-11)`，因为原行目标为 `.01×容差×Uref×速度松弛`；这避免内解误差主导雅可比差分，不是新增物理精度门。Armijo 下降比例 `1e-4`、最多 12 个减半步长候选，仅用于约束实际完整固定点残差下降及试算成本。上述算法控制服务于困难耦合求解，未按单个圆环误差调参数；最终仍使用用户容差和原动量、场变化、局部/全局守恒门，对实际返回场重新执行一次普通 strict SIMPLE 更新。方法原则见 [PETSc 的 inexact Newton 说明](https://petsc.org/release/manual/snes/#inexact-newton-like-methods)，实现不依赖 PETSc。
 
-此模式中 `--max-iterations` 是**全部原生 SIMPLE 评估预算**，包括失败试算、雅可比方向、线搜索和十步复核；摘要 `iterations=coupledEvaluations`，`coupledOuterIterations` 才是接受的 Newton 更新次数。历史只保存已接受候选的映射结果及最终复核，不把试算作为接受状态；预算不足返回未收敛，无法继续降低残差返回 `nonlinear_stagnation`。取消保留最后完整接受的场/通量，调用方异常向上传递；`coupledFailedEvaluations` 和 `coupledLastFailure` 保留候选失败数量及最近原因，不能隐去 NaN 或内解错误。
+最终认证与 Newton 候选择优分开：`FlowConvergence2D.hpp` 共享原严格门槛；认证重新装配最终场的真实动量残差，并核对未缩短的原生更新量和局部/全局守恒。认证的线性设置恢复用户请求，全部工作纳入预算，失败不替换已接受场。普通 SIMPLE 和非定常仍保留十步暖机；Newton 不要求再串行执行十次 SIMPLE，因为这额外测试了另一种迭代的收缩性。真实圆环重放已显示，旧十步认证能把首步约 `1.8e-10` 的动量残差放大到 `0.029`。该调整改变认证流程，不改变方程、容差或物理资格；方法背景见 [PETSc 收敛测试说明](https://petsc.org/release/manual/snes/#convergence-tests)。已有解也必须重新严格复核，预算不足、认证前取消、速度/压力/通量扰动均有实际求解回归。
+
+此模式中 `--max-iterations` 是**全部原生 SIMPLE 评估预算**，包括失败试算、雅可比方向、线搜索和最终严格复核；摘要 `iterations=coupledEvaluations`，`coupledOuterIterations` 才是接受的 Newton 更新次数。历史只保存已接受候选的映射结果及最终复核，不把试算作为接受状态；预算不足返回未收敛，无法继续降低残差返回 `nonlinear_stagnation`。取消保留最后完整接受的场/通量，调用方异常向上传递；`coupledFailedEvaluations` 和 `coupledLastFailure` 保留候选失败数量及最近原因，不能隐去 NaN 或内解错误。
 
 `--profile` 的 solveSeconds 包含全部试算、失败及复核；细分线性时间/计数只覆盖完整返回的评估，失败次数单列。当前每次映射重建求解工作区，60 个方向还会占用额外内存，不能只按 Newton 外迭代数宣称提速。材料联算、非定常及 adaptive/engineering 控制显式拒绝。代表算例命令、网格哈希、直接 CSV 场差、真实 App 保存重算与检查日志统一见[当前证据](../artifacts/current/native-laminar-newton-krylov.json)；实验 CSV 用 gzip 无损保存，重放命令前按证据恢复临时输入，结束后清理可再生成文件。
 

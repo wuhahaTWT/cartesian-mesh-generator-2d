@@ -1,5 +1,6 @@
 #include "cartmesh2d/fv/detail/FlowNewtonKrylov2D.hpp"
 #include "cartmesh2d/fv/detail/NewtonKrylov2D.hpp"
+#include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include <chrono>
 
 namespace cartmesh2d::fv::detail {
@@ -91,11 +92,12 @@ FlowResult2D solveNewtonKrylovFlow2D(const FvMesh2D& mesh,const FlowControls2D& 
         if(work.coupledEvaluations>=control.maxIterations)throw BudgetReached{};
     };
     struct Evaluation {Vec residual;FlowResult2D mapped;};
-    const auto evaluate=[&](const Vec& state,bool alreadyChecked=false) {
+    const auto evaluate=[&](const Vec& state,bool alreadyChecked=false,bool certificate=false) {
         if(!alreadyChecked)checkBudget();
         ++work.coupledEvaluations;
         try {
-            auto mapped=solveIncompressibleFromGuess2D(mesh,one,unpack(state));addWork(work,mapped.performance);
+            auto settings=one;if(certificate)settings.tolerance=control.tolerance;
+            auto mapped=solveIncompressibleFromGuess2D(mesh,settings,unpack(state));addWork(work,mapped.performance);
             auto residual=pack(mapped);
             for(std::size_t i=0;i<residual.size();++i)residual[i]=linearFinite(state[i]-residual[i]);
             return Evaluation{std::move(residual),std::move(mapped)};
@@ -113,26 +115,23 @@ FlowResult2D solveNewtonKrylovFlow2D(const FvMesh2D& mesh,const FlowControls2D& 
         record();
         for(;;) {
             checkBudget();const auto& step=base.mapped.history.back();
-            // A Newton residual or small extrapolated update never certifies
-            // a solution. Repeat ten ordinary strict SIMPLE steps, preserving
-            // the existing minimum-iteration and every original stopping gate.
-            if(step.momentumResidual<control.tolerance && step.velocityChange<control.tolerance &&
-               step.pressureChange<control.tolerance && step.continuity<1e-8 &&
-               base.mapped.globalRelativeImbalance<1e-8) {
-                if(control.maxIterations-work.coupledEvaluations<10)throw BudgetReached{};
-                auto certificate=control;certificate.steadyAcceleration=SteadyAcceleration2D::None;
-                certificate.maxIterations=10;
-                const auto begin=work.coupledEvaluations;
-                auto certified=solveIncompressibleFromGuess2D(mesh,certificate,unpack(state));
-                work.coupledEvaluations+=certified.history.size();addWork(work,certified.performance);
-                if(certified.converged) {
-                    for(auto item:certified.history){item.iteration+=begin;history.push_back(item);}
-                    if(progress)progress(history.back());
-                    return finish(std::move(certified));
+            // Certify the actual returned field with a fresh, unaccelerated
+            // map at the user's original strict linear settings. The shared
+            // momentum, full update and conservation gates all remain required.
+            // Ten chained SIMPLE updates instead test contraction of G, which
+            // is unnecessary for Newton's root of x-G(x) and can amplify noise.
+            if(strictFlowResidualsAccepted2D(step,control.tolerance)) {
+                std::optional<Evaluation> certificate;
+                try {certificate=evaluate(pack(result),false,true);}
+                catch(const std::runtime_error&) {
+                    // Already counted and diagnosed by evaluate. A failed
+                    // certificate must not replace the accepted coupled pair.
                 }
-                if(certified.stopped){result.stopped=true;return finish(std::move(result));}
-                // Failed certification retains the last accepted coupled pair.
-                // The ten exploratory SIMPLE states do not replace that pair.
+                if(certificate && certificate->mapped.history.back().strictLinearStep &&
+                   strictFlowResidualsAccepted2D(certificate->mapped.history.back(),control.tolerance)) {
+                    result=std::move(certificate->mapped);result.converged=true;
+                    record();return finish(std::move(result));
+                }
             }
             const double merit=linearNorm(base.residual);
             const double epsilon=std::sqrt(mapError)*std::sqrt(1+linearNorm(state));

@@ -998,8 +998,10 @@ static FlowResult2D solveFlow(
             const double residual=std::hypot(mu[i]-checkU.rhs[i],mv[i]-checkV.rhs[i])/scale;
             if(residual>mr) {mr=residual;worstCell=i;worstX=(mu[i]-checkU.rhs[i])/scale;worstY=(mv[i]-checkV.rhs[i])/scale;}}
         bool acceleratedCandidate=false;
-        const bool baseConverged=it>=10 && mr<c.tolerance && du<c.tolerance && dp<c.tolerance &&
-            continuity<1e-8 && r.globalRelativeImbalance<1e-8 && materialConverged;
+        FlowIteration2D stoppingStep{it,mr,continuity,du,dp};
+        stoppingStep.globalRelativeImbalance=r.globalRelativeImbalance;
+        const bool baseConverged=it>=10 && materialConverged &&
+            detail::strictFlowResidualsAccepted2D(stoppingStep,c.tolerance);
         if(accelerated && it>=10 && !baseConverged && !(c.adaptiveLinear && strictLinearIteration)) {
             const auto candidate=accelerator.propose(previousScaled,packState());
             if(candidate) {

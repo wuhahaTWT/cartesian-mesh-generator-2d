@@ -712,7 +712,18 @@ struct RepartitionBatch2D {
     bool wallNormalCuts=false,bool allowCollinear=false) {
     std::vector<std::pair<Polygon2D,Polygon2D>> splits;
     const auto convex=[&](const Polygon2D& piece) {
-        return strictlyConvex(allowCollinear?removeArtificialCollinearVertices(piece,tol):piece);
+        if (strictlyConvex(allowCollinear?removeArtificialCollinearVertices(piece,tol):piece))
+            return true;
+        if (!allowCollinear) return false;
+        // The failed-convex fallback already permits exact concave unions.
+        // Apply the same existing cell policy to split pieces: a curved-wall
+        // facet chain need not be replaced by a fan of thin convex cells.
+        // Local neighbours and the unchanged full-mesh gate judge each trial.
+        const auto metrics=evaluateSolverCellMetrics2D(piece,tol);
+        const SolverQualityPolicy2D policy;
+        return metrics.valid && metrics.maxConcavityDeg<=policy.maxConcavityDeg &&
+            metrics.minInteriorAngleDeg>=policy.minInteriorAngleDeg &&
+            metrics.hydraulicAspect<=policy.maxCellAspect;
     };
     const std::size_t n=polygon.vertices.size();
     for (std::size_t i=0;i<n;++i) {
@@ -943,6 +954,7 @@ struct RepartitionProposal2D {
     std::vector<Polygon2D> pieces;
     LocalQualityRank2D rank;
     std::vector<std::size_t> halo;
+    std::vector<std::size_t> additionalCells{}; // connected three/four-cell union fallback
 };
 
 [[nodiscard]] bool sortedSetsIntersect(const std::vector<std::size_t>& first,
@@ -1157,7 +1169,10 @@ template<class Proposal>
     std::sort(proposals.begin(),proposals.end(),[](const Proposal& first,const Proposal& second) {
         if (betterLocalQualityRank(first.rank,second.rank)) return true;
         if (betterLocalQualityRank(second.rank,first.rank)) return false;
-        return std::tie(first.first,first.second)<std::tie(second.first,second.second);
+        if constexpr (requires { first.additionalCells; })
+            return std::tie(first.first,first.second,first.additionalCells)<
+                   std::tie(second.first,second.second,second.additionalCells);
+        else return std::tie(first.first,first.second)<std::tie(second.first,second.second);
     });
     std::vector<std::vector<std::size_t>> halos;
     halos.reserve(proposals.size());
@@ -1254,6 +1269,7 @@ template<class Proposal>
         replacements[proposal.first]=&proposal;
         // A physical-wall split replaces one cell by two pieces.
         if (proposal.second!=proposal.first) removed[proposal.second]=true;
+        for (const auto cell:proposal.additionalCells) removed.at(cell)=true;
     }
     std::vector<CutCell2D> cells;
     std::vector<bool> rebuiltImmutable;
@@ -1262,9 +1278,11 @@ template<class Proposal>
     for (std::size_t cell=0;cell<topology.cells.size();++cell) {
         if (removed[cell]) continue;
         if (replacements[cell]) {
-            const auto lineage=mergedLineage(
+            auto lineage=mergedLineage(
                 topology.cells[replacements[cell]->first].sourceLineage,
                 topology.cells[replacements[cell]->second].sourceLineage);
+            for (const auto extra:replacements[cell]->additionalCells)
+                lineage=mergedLineage(lineage,topology.cells.at(extra).sourceLineage);
             for (const auto& piece:replacements[cell]->pieces) {
                 cells.push_back(makeCell(cells.size(),piece,tol,lineage));
                 rebuiltImmutable.push_back(false);
@@ -1310,6 +1328,61 @@ template<class Proposal>
         }
     }
     return quality;
+}
+
+// Pair repairs can stall around a multi-cell junction: each intermediate
+// pair is poor even when the exact union of the whole connected patch passes.
+// Search only connected triples/quads beside unresolved issues, rank with all
+// immediate neighbours, and keep immutable cells and every outer atomic edge.
+[[nodiscard]] std::vector<RepartitionProposal2D> connectedUnionProposals(
+    const TopologyMesh2D& topology,const SolverQualityReport2D& quality,
+    const std::vector<std::pair<std::size_t,std::size_t>>& pairs,
+    const std::vector<bool>& immutable,const Domain2D& domain,
+    const BoundaryRegion2D& boundary,const TolerancePolicy& tol) {
+    std::set<std::vector<std::size_t>> frontier;
+    for (const auto& [first,second]:pairs) frontier.insert({first,second});
+    std::vector<RepartitionProposal2D> proposals;
+    for (std::size_t count=3;count<=4;++count) {
+        std::set<std::vector<std::size_t>> expanded;
+        for (const auto& group:frontier) for (const auto cell:group)
+            for (const auto edgeId:topology.cells[cell].edges) {
+                const auto& edge=topology.edges[edgeId];
+                if (!edge.neighbour) continue;
+                const auto next=edge.owner==cell?*edge.neighbour:edge.owner;
+                if ((!immutable.empty() && immutable[next]) ||
+                    std::binary_search(group.begin(),group.end(),next)) continue;
+                auto larger=group;larger.push_back(next);std::sort(larger.begin(),larger.end());
+                expanded.insert(std::move(larger));
+            }
+        for (const auto& group:expanded) {
+            const auto region=patchBoundaryRegion(topology,group,tol);
+            if (!region || region->loops().size()!=1U) continue;
+            const Polygon2D merged{region->loops().front().vertices()};
+            const auto metrics=evaluateSolverCellMetrics2D(merged,tol);
+            if (!metrics.valid || metrics.maxConcavityDeg>quality.policy.maxConcavityDeg ||
+                metrics.minInteriorAngleDeg<quality.policy.minInteriorAngleDeg ||
+                metrics.hydraulicAspect>quality.policy.maxCellAspect ||
+                underDeterminedBoundaryCell(merged,domain,boundary,tol)) continue;
+            double area=0;std::vector<std::size_t> halo;std::vector<Polygon2D> original;
+            for (const auto cell:group) {
+                area+=topology.cells[cell].geometryArea;
+                original.push_back(topologyCellPolygon(topology,cell));
+                const auto neighbours=cellPairHalo(topology,cell,cell);
+                halo.insert(halo.end(),neighbours.begin(),neighbours.end());
+            }
+            if (std::abs(metrics.area-area)>tol.absolute*tol.absolute+tol.relative*area) continue;
+            std::sort(halo.begin(),halo.end());halo.erase(std::unique(halo.begin(),halo.end()),halo.end());
+            const auto base=localReplacementQualityRank(topology,halo,group,original,tol,quality.policy);
+            auto rank=localReplacementQualityRank(topology,halo,group,{merged},tol,quality.policy);
+            if (!base || !rank || !betterQualityScore(rank->issues,base->issues)) continue;
+            rankRelativeToBase(*rank,*base);
+            RepartitionProposal2D proposal{group[0],group[1],{merged},*rank,std::move(halo)};
+            proposal.additionalCells.assign(group.begin()+2,group.end());
+            proposals.push_back(std::move(proposal));
+        }
+        frontier=std::move(expanded);
+    }
+    return proposals;
 }
 
 SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
@@ -1583,6 +1656,30 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
                 }
             }
         }
+        if (!bestTopology && allowCollinear) {
+            const auto generationStart=ProfileClock::now();
+            auto grouped=selectIndependentProposals(connectedUnionProposals(
+                result.topology,quality,pairs,result.immutableCells,domain,boundary,tol));
+            if (profile) {
+                profile->candidatePolygonWorkSeconds+=profileSeconds(generationStart);
+                profile->repairPatchCount+=grouped.size();
+            }
+            for (std::size_t count=grouped.size();count>0;count=(count+1)/2) {
+                const std::vector<RepartitionProposal2D> batch(grouped.begin(),
+                    grouped.begin()+static_cast<std::ptrdiff_t>(count));
+                auto candidate=applyRepartitionBatch(result.topology,batch,
+                    domain,boundary,tol,profile,result.immutableCells);
+                if (candidate.topology.valid() && betterQualityScore(qualityScore(
+                    timedFullQuality(candidate.topology,tol,profile,true,policy)),bestScore)) {
+                    // The common commit below records one transaction; include
+                    // every additional disjoint patch in the existing counters.
+                    result.repartitionCount+=count-1;
+                    if (profile) profile->acceptedRepartitions+=count-1;
+                    bestTopology=std::move(candidate);break;
+                }
+                if (count==1) break;
+            }
+        }
         if (!bestTopology) break;
         result.topology=std::move(bestTopology->topology);
         result.immutableCells=std::move(bestTopology->immutableCells);
@@ -1591,10 +1688,25 @@ SolverLocalRepartitionResult2D repartitionSolverTopologyByQualityImpl(
         if (profile) ++profile->acceptedTopologyCommitCount;
     }
     if (!allowCollinear && !evaluateSolverQuality2D(result.topology,policy,tol).valid()) {
+        // Keep the work already accepted by the global gate. Restarting only
+        // from the original partition discarded useful repairs and could miss
+        // a valid mesh reachable by the more general fallback from this state.
+        auto continued=repartitionSolverTopologyByQualityImpl(
+            result.topology,domain,boundary,tol,profile,useBatch,result.immutableCells,true,policy);
+        if (continued.valid() && betterQualityScore(
+            qualityScore(evaluateSolverQuality2D(continued.topology,policy,tol)),
+            qualityScore(evaluateSolverQuality2D(result.topology,policy,tol)))) {
+            continued.repartitionCount+=result.repartitionCount;
+            result=std::move(continued);
+        }
+        if (evaluateSolverQuality2D(result.topology,policy,tol).valid()) return result;
+        // Preserve the alternate start for cases whose earlier partition is
+        // better; incomplete improvement is retained, never reported as pass.
         auto alternate=repartitionSolverTopologyByQualityImpl(
             topology,domain,boundary,tol,profile,useBatch,initialImmutableCells,true,policy);
-        if (alternate.valid() && evaluateSolverQuality2D(alternate.topology,policy,tol).valid())
-            return alternate;
+        if (alternate.valid() && betterQualityScore(
+            qualityScore(evaluateSolverQuality2D(alternate.topology,policy,tol)),
+            qualityScore(evaluateSolverQuality2D(result.topology,policy,tol)))) return alternate;
     }
     return result;
 }

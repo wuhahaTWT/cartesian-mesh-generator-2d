@@ -3,6 +3,7 @@
 #include "cartmesh2d/quality/SolverQuality2D.hpp"
 #include "cartmesh2d/quality/SolverTopology2D.hpp"
 #include "repro/source_halo_circle_patch.hpp"
+#include "repro/annulus_quality_patch.hpp"
 #include "repro/nozzle_determinant_corner.hpp"
 #include "repro/nozzle_nonorth_patch.hpp"
 
@@ -311,6 +312,91 @@ void directionalRepairRegression() {
     }
 }
 
+void annulusQualityRepair() {
+    for (bool junction:{true,false}) for (double scale:{.001,1.,1000.})
+        for (double angle:{0.,.29670597283903605}) {
+            const auto fixture=junction?repro::annulusJunctionPatch():repro::annulusWallSkewPatch();
+            const auto transform=[&](Point2D p) {
+                return Point2D{scale*(std::cos(angle)*p.x-std::sin(angle)*p.y),
+                               scale*(std::sin(angle)*p.x+std::cos(angle)*p.y)};
+            };
+            std::vector<CutCell2D> cells;std::vector<BoundaryLoop> loops;
+            for (std::size_t i=0;i<fixture.polygons.size();++i) {
+                auto points=fixture.polygons[i].vertices;for(auto& p:points)p=transform(p);
+                cells.push_back(polygonCell(fixture.originalSourceIds[i],std::move(points)));
+            }
+            for (const auto& loop:fixture.boundaryLoops) {
+                auto points=loop.vertices();for(auto& p:points)p=transform(p);
+                loops.emplace_back(std::move(points));
+            }
+            const BoundaryRegion2D boundary(std::move(loops));const Domain2D domain{boundary.bounds()};
+            const auto mesh=buildGlobalTopology(cells,domain,boundary);
+            const auto before=evaluateSolverQuality2D(mesh);
+            check(mesh.valid() && before.issues.size()==(junction?1U:2U),
+                  "real annulus patch retains its named failures at scale and rotation");
+            check(std::count_if(before.issues.begin(),before.issues.end(),[&](const auto& issue) {
+                return !fixture.immutable[issue.cellId] && issue.code==(junction?
+                    SolverQualityIssueCode2D::ExcessiveNonOrthogonality:SolverQualityIssueCode2D::ExcessiveBoundarySkewness);
+            })==1,"annulus fixture exposes one actual mutable defect");
+            const auto repaired=improveSolverForTargetPolicy2D(mesh,domain,boundary,fixture.immutable,SolverQualityPolicy2D{});
+            const auto after=evaluateSolverQuality2D(repaired.topology);
+            check(repaired.valid() && repaired.repartitionCount>0,"annulus repair performs a valid topology transaction");
+            if(junction)check(after.valid() && repaired.topology.cells.size()==7U,
+                "connected junction repair passes the unchanged full Solver policy");
+            else check(after.issues.size()==1U && repaired.immutableCells[after.issues.front().cellId],
+                "curved wall split removes the real defect and still reports the artificial halo defect");
+            double oldArea=0,newArea=0;std::vector<std::size_t> sources;
+            for(const auto& c:mesh.cells)oldArea+=c.geometryArea;
+            for(const auto& c:repaired.topology.cells) {
+                newArea+=c.geometryArea;sources.insert(sources.end(),c.sourceLineage.begin(),c.sourceLineage.end());
+            }
+            std::sort(sources.begin(),sources.end());sources.erase(std::unique(sources.begin(),sources.end()),sources.end());
+            const TolerancePolicy tol;
+            check(sources==fixture.originalSourceIds && std::abs(oldArea-newArea)<=tol.absolute*tol.absolute+tol.relative*oldArea,
+                "annulus repair conserves area and every original source identity");
+            const auto segments=[](const TopologyMesh2D& topology) {
+                std::vector<std::array<double,4>> out;
+                for(const auto& e:topology.edges)if(!e.neighbour) {
+                    auto a=topology.vertices[e.v0].point,b=topology.vertices[e.v1].point;
+                    if(std::tie(a.x,a.y)>std::tie(b.x,b.y))std::swap(a,b);
+                    out.push_back({a.x,a.y,b.x,b.y});
+                }
+                std::sort(out.begin(),out.end());return out;
+            };
+            check(segments(mesh)==segments(repaired.topology),"annulus repair retains every outer atomic edge exactly");
+            for(std::size_t i=0;i<cells.size();++i)if(fixture.immutable[i]) {
+                const auto found=std::find_if(repaired.topology.cells.begin(),repaired.topology.cells.end(),[&](const auto& c) {
+                    return c.sourceLineage==std::vector<std::size_t>{fixture.originalSourceIds[i]};
+                });
+                bool unchanged=found!=repaired.topology.cells.end() && repaired.immutableCells[found->id];
+                if(unchanged)for(const auto id:found->vertices) {
+                    const auto point=repaired.topology.vertices[id].point;
+                    const auto& polygon=cells[i].fluidPolygon;
+                    bool onOriginal=false;
+                    for(std::size_t k=0;k<polygon.vertices.size();++k)
+                        onOriginal=onOriginal || pointOnSegment(point,{polygon.vertices[k],polygon.vertices[(k+1)%polygon.vertices.size()]},tol);
+                    unchanged=unchanged && onOriginal;
+                }
+                check(unchanged,"immutable annulus halo retains its exact polygon, allowing only common-partition points");
+            }
+            if(scale==1. && angle==0.) {
+                const auto locked=improveSolverForTargetPolicy2D(mesh,domain,boundary,
+                    std::vector<bool>(mesh.cells.size(),true),SolverQualityPolicy2D{});
+                check(locked.repartitionCount==0 && evaluateSolverQuality2D(locked.topology).issues.size()==before.issues.size(),
+                    "locked annulus failure is retained without bypassing the quality gate");
+                const auto again=improveSolverForTargetPolicy2D(mesh,domain,boundary,fixture.immutable,SolverQualityPolicy2D{});
+                bool same=again.topology.vertices.size()==repaired.topology.vertices.size() && again.topology.cells.size()==repaired.topology.cells.size();
+                if(same)for(std::size_t i=0;i<again.topology.vertices.size();++i)
+                    same=same && again.topology.vertices[i].point.x==repaired.topology.vertices[i].point.x &&
+                        again.topology.vertices[i].point.y==repaired.topology.vertices[i].point.y;
+                if(same)for(std::size_t i=0;i<again.topology.cells.size();++i)
+                    same=same && again.topology.cells[i].vertices==repaired.topology.cells[i].vertices &&
+                        again.topology.cells[i].sourceLineage==repaired.topology.cells[i].sourceLineage;
+                check(same,"annulus repair is deterministic on identical input");
+            }
+        }
+}
+
 } // namespace
 
 int main() {
@@ -359,6 +445,7 @@ int main() {
               "directional gate stays separate from legacy Solver policy and reports zero internal faces");
     }
     nozzleShortFaceRegression();
+    annulusQualityRepair();
     {
         // Two-cell reduction of the 17-degree rotated NACA failure. The exact
         // physical union is only 0.683 degrees concave; convex-only repair kept

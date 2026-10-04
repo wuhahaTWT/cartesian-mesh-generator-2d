@@ -8,6 +8,19 @@
 
 namespace cartmesh2d::fv::detail {
 
+// The physical/algebraic strict gates are independent of the nonlinear
+// method's iteration counter. Ordinary SIMPLE keeps its ten-step warmup;
+// coupled Newton certifies its final field with a fresh ordinary strict map.
+inline bool strictFlowResidualsAccepted2D(const FlowIteration2D& step,double tolerance) {
+    if(!std::isfinite(tolerance) || tolerance<=0)return false;
+    for(double value:{step.momentumResidual,step.velocityChange,step.pressureChange,
+                      step.continuity,step.globalRelativeImbalance})
+        if(!std::isfinite(value) || value<0)return false;
+    return step.momentumResidual<tolerance && step.velocityChange<tolerance &&
+        step.pressureChange<tolerance && step.continuity<1e-8 &&
+        step.globalRelativeImbalance<1e-8;
+}
+
 // Project-specific engineering criterion, inspired by residual reduction and
 // physical-monitor stability guidance, not Fluent-equivalent residuals.
 // The max-cell residual cap remains mandatory even after a large reduction.

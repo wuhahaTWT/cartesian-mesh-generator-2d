@@ -235,6 +235,36 @@ void coupledNewtonStability() {
         require(work.accelerationAccepted>0 && work.accelerationCandidates==work.accelerationAccepted+work.accelerationRejected,
             "Coupled candidate accounting invalid");
         require(result.history.back().strictLinearStep && !result.nonlinearStagnated,"Coupled result lacks strict certification");
+        // A converged initial field still needs a freshly budgeted strict
+        // certificate, but not ten further iterations of a different method.
+        const FlowInitialGuess2D guess{result.u,result.v,result.p,result.flux};
+        auto warm=coupled;warm.maxIterations=3;
+        const auto certified=solveIncompressibleFromGuess2D(mesh,warm,guess);
+        require(certified.converged && certified.performance.coupledEvaluations==3 &&
+            certified.history.back().strictLinearStep,"Warm Newton field lacks fresh strict certification");
+        warm.maxIterations=2;
+        const auto missingCertificate=solveIncompressibleFromGuess2D(mesh,warm,guess);
+        require(!missingCertificate.converged && missingCertificate.performance.coupledEvaluations==2,
+            "Budget exhaustion skipped the final certification");
+        warm.maxIterations=3;int certificateStops=0;
+        warm.stopRequested=[&]{return ++certificateStops>=3;};
+        const auto cancelledCertificate=solveIncompressibleFromGuess2D(mesh,warm,guess);
+        require(cancelledCertificate.stopped && !cancelledCertificate.converged &&
+            cancelledCertificate.u==missingCertificate.u && cancelledCertificate.v==missingCertificate.v &&
+            cancelledCertificate.p==missingCertificate.p && cancelledCertificate.flux==missingCertificate.flux,
+            "Cancelled certificate replaced the last fully evaluated field");
+        warm.stopRequested={};
+        for(int field=0;field<3;++field) {
+            auto disturbed=guess;
+            if(field==0)disturbed.u[mesh.cells.size()/2]+=.01;
+            else if(field==1)disturbed.p[mesh.cells.size()/2]+=.01;
+            else {
+                const auto face=std::find_if(mesh.faces.begin(),mesh.faces.end(),[](const auto& f){return f.neighbour.has_value();});
+                disturbed.flux[static_cast<std::size_t>(face-mesh.faces.begin())]+=.01;
+            }
+            require(!solveIncompressibleFromGuess2D(mesh,warm,disturbed).converged,
+                "A perturbed field was certified without satisfying the original gates");
+        }
         auto limited=coupled;limited.maxIterations=8;
         const auto partial=solveIncompressible2D(mesh,limited);
         require(!partial.converged && partial.performance.coupledEvaluations<=8,"Coupled budget exhaustion certified a solution");
