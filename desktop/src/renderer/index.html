@@ -309,9 +309,10 @@
         <select id="flowSteadyAcceleration">
           <option value="none" selected>关闭（默认）</option>
           <option value="anderson">历史迭代加速（Anderson，试验）</option>
+          <option value="newton-krylov">整体耦合求解（Newton–Krylov，试验）</option>
         </select>
       </label>
-      <p class="note">可减少部分稳态算例的迭代；候选场需降低原动量残差并保持守恒，否则舍弃。收敛门不变，不保证所有工况更快。非定常和温度联算不使用。</p>
+      <p class="note">历史迭代可减少部分算例的迭代；整体耦合面向困难稳态，需要固定线性精度，预算包含全部试算与收敛复核。两者保持原收敛要求，不保证所有工况更快；非定常和温度联算不使用。</p>
       <label class="field">出口回流
         <select id="flowOutletBackflow">
           <option value="reject" selected>检测到回流时停止</option>

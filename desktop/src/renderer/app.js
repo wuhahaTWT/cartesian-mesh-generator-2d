@@ -910,8 +910,10 @@ function renderFlowResult(summary) {
   const stateLine = document.createElement('div');
   stateLine.className = 'flow-state';
   stateLine.textContent = summary.converged
-    ? `已收敛 · ${summary.iterations} 次迭代 · 对流：${convectionText}`
-    : `到达 ${summary.iterations} 次迭代上限，结果有效但未收敛 · 对流：${convectionText}`;
+    ? `已收敛 · ${summary.iterations} 次${summary.steadyAcceleration==='newton-krylov'?'求解评估':'迭代'} · 对流：${convectionText}`
+    : summary.status==='nonlinear_stagnation'
+      ? `整体耦合残差未能继续降低，保留诊断场，尚未收敛 · 对流：${convectionText}`
+      : `迭代预算不足，保留诊断场，尚未收敛 · 已评估 ${summary.iterations} 次 · 对流：${convectionText}`;
   if (summary.temporalDiscretization) stateLine.textContent=`已接受 t=${summary.acceptedTime.toPrecision(6)} s · 本次 ${summary.completedSteps} 步 · 最后一步内迭代 ${summary.iterations} 次`;
   container.appendChild(stateLine);
   const rows = [
@@ -923,7 +925,9 @@ function renderFlowResult(summary) {
     ['速度松弛系数',summary.velocityRelaxation ?? .6],
     ['压力校正次数',summary.pressureCorrectionPasses ?? 4],
     ['稳态加速', summary.steadyAcceleration==='anderson'
-      ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
+      ? `历史迭代 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}`
+      : summary.steadyAcceleration==='newton-krylov'
+        ? `整体耦合 · 接受 ${summary.accelerationAccepted} / 舍弃 ${summary.accelerationRejected}` : '关闭'],
     ['出口回流', flowOutletBackflowLabel(summary)],
     ['压力离散', pressureText],
     ['局部连续性（无量纲）', summary.continuity],
@@ -936,6 +940,11 @@ function renderFlowResult(summary) {
   ];
   if (summary.outletBackflowFaces !== undefined)
     rows.push(['回流出口面数', String(summary.outletBackflowFaces)]);
+  if (summary.steadyAcceleration==='newton-krylov') {
+    rows.push(['完整求解评估次数（含试算与复核）',String(summary.coupledEvaluations)]);
+    rows.push(['失败试算次数（候选已舍弃）',String(summary.coupledFailedEvaluations)]);
+    if(summary.coupledLastFailure)rows.push(['最近试算失败原因',summary.coupledLastFailure]);
+  }
   if (summary.outletInflow !== undefined)
     rows.push(['出口流入量（m²/s）', summary.outletInflow]);
   if (summary.namedBoundaryFluxes) {
@@ -1409,7 +1418,7 @@ async function runFlow() {
     const payload=await window.cartmesh.runFlow(request);
     bindFlow(payload);
     if (transient) status('本次时间推进完成',`已接受到 t=${payload.summary.acceptedTime.toPrecision(6)} s；最大 CFL ${payload.summary.maxCourant.toPrecision(4)}。这不等于达到稳态或已验证物理精度。`);
-    else status(payload.summary.converged?'层流求解已收敛':'到达迭代上限，未收敛',`${payload.summary.iterations} 次迭代；可切换速度或压力色图并导出。`);
+    else status(payload.summary.converged?'层流求解已收敛':payload.summary.status==='nonlinear_stagnation'?'整体耦合停滞，未收敛':'迭代预算不足，未收敛',`${payload.summary.iterations} 次${payload.summary.steadyAcceleration==='newton-krylov'?'求解评估':'迭代'}；可切换速度或压力色图并导出。`);
     await refreshFlowState();
     if (transient) $('flowResume').checked=Boolean(state.flowRestart);
   } catch (error) {

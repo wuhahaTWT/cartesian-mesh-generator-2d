@@ -230,6 +230,28 @@ test('steady acceleration is explicit, unavailable in time marching, and bound t
   assert.throws(()=>validateFlowOutput(legacy,fields,2,request),/不一致/);
 });
 
+test('coupled Newton mode binds strict controls, work budget and nonconvergence status',()=>{
+  const request={case:'external',nu:.01,speed:1,maxIterations:30,steadyAcceleration:'newton-krylov'};
+  const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request);
+  assert.equal(invocation.args[invocation.args.indexOf('--steady-acceleration')+1],'newton-krylov');
+  assert.throws(()=>validateFlowRequest({...request,linearPolicy:'adaptive'}),/固定线性精度/);
+  assert.throws(()=>validateFlowRequest({...request,mode:'transient',dt:.02,steps:1}),/稳态加速/);
+  const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
+    forceDefinition:'shared-face-newtonian-traction',forceX:2,forceY:-3,pressureForceX:1,pressureForceY:-1,
+    discreteForceX:2,discreteForceY:-3,wallForceX:2,wallForceY:-3,wallViscousForceX:1,wallViscousForceY:-2,
+    steadyAcceleration:'newton-krylov',accelerationCandidates:6,accelerationAccepted:4,accelerationRejected:2,
+    coupledEvaluations:27,coupledFailedEvaluations:1,coupledOuterIterations:4,coupledLastFailure:'Rejected test probe',
+    adaptiveLinear:false,convergenceMode:'strict',strictLinearFinal:true};
+  assert.equal(validateFlowOutput(current,fields,2,request).summary.coupledEvaluations,27);
+  const failed={...current,status:'nonlinear_stagnation',converged:false};
+  assert.equal(validateFlowOutput(failed,fields,2,request).summary.converged,false);
+  for(const override of [{coupledEvaluations:26},{coupledOuterIterations:3},{strictLinearFinal:false},
+    {coupledFailedEvaluations:-1},{coupledLastFailure:''},{coupledLastFailure:undefined},
+    {coupledFailedEvaluations:0},{adaptiveLinear:true},{coupledEvaluations:undefined},{convergenceMode:'engineering'}])
+    assert.throws(()=>validateFlowOutput({...current,...override},fields,2,request),/整体耦合/);
+  assert.throws(()=>validateFlowOutput({...failed,steadyAcceleration:'anderson'},fields,2),/状态无效/);
+});
+
 test('linear efficiency controls bind requests and enforce strict final certification',()=>{
   const request={case:'external',nu:.01,speed:1,maxIterations:30,linearPolicy:'adaptive',velocityRelaxation:.8,pressureCorrectionPasses:1};
   for(const mode of ['steady','transient','adaptive']) {

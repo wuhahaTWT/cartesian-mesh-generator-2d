@@ -133,10 +133,18 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 | `--pressure-preconditioner ic0\|aggregation\|cholesky` | Cholesky 只在 macOS；仍验真实线性残差 |
 | `--linear-policy strict\|adaptive` | adaptive 最终严格复核 |
 | `--velocity-relaxation` / `--pressure-corrections` | 默认 .6 / 4；困难曲壁可能不稳，连续性小不代表收敛 |
-| `--steady-acceleration anderson` | 默认 none；限稳态、不支持材料更新，候选须降低原残差并过守恒门 |
+| `--steady-acceleration none\|anderson\|newton-krylov` | 默认 none；限固定物性稳态。Anderson 保留原残差/守恒筛选，Newton–Krylov 要求 strict 线性及收敛控制，最终使用原严格验收 |
 | `--initial-guess` / `--initial-flux` | 同目标网格稳态初值；面初值须与单元初值同用，不是物理检查点 |
 
 输出前缀在输入读取完成、首次写入结果前将 `.json` 标记为 `running`；最终摘要先写 `.json.tmp`，所有请求的输出关闭成功后才替换 `.json`。启动后的求解或导出异常标记为 `failed`，硬中断保留 `running`；只有非定常失败摘要记录最后接受时间。旧场文件可留作证据，读取端须以本次进程返回值和摘要状态共同判断，不能仅凭场文件存在认定完成。
+
+`newton-krylov` 的入口为 `src/fv/FlowNewtonKrylov2D.cpp`，复用现有单次 SIMPLE 映射 G，同时求解 `F(x)=x−G(x)` 的速度、压力、面通量固定点；`Incompressible2D.cpp` 的原数值步骤保持。速度除以 Uref、压力除以 `Uref²+νUref/H` 并乘单元面积占比的平方根；面通量除以 `Uref×面长` 并乘面长占比的平方根。因此候选择优量无量纲，并且不让小单元个数直接支配整体范数。
+
+内部 GMRES 最多 60 个方向、两遍正交化，方向的相对线性残差目标 .1；按现有严格内解的 `1e-11` 精度取有限差分步长 `sqrt(1e-11)×sqrt(1+||x||₂)`。单次映射的动量行误差控制收紧为 `min(用户容差,100×1e-11)`，因为原行目标为 `.01×容差×Uref×速度松弛`；这避免内解误差主导雅可比差分，不是新增物理精度门。Armijo 下降比例 `1e-4`、最多 12 个减半步长候选，仅用于约束实际完整固定点残差下降及试算成本。上述算法控制服务于困难耦合求解，未按单个圆环误差调参数；最终仍使用用户容差和原动量、场变化、局部/全局守恒门，并完成十次普通 strict SIMPLE 步。方法原则见 [PETSc 的 inexact Newton 说明](https://petsc.org/release/manual/snes/#inexact-newton-like-methods)，实现不依赖 PETSc。
+
+此模式中 `--max-iterations` 是**全部原生 SIMPLE 评估预算**，包括失败试算、雅可比方向、线搜索和十步复核；摘要 `iterations=coupledEvaluations`，`coupledOuterIterations` 才是接受的 Newton 更新次数。历史只保存已接受候选的映射结果及最终复核，不把试算作为接受状态；预算不足返回未收敛，无法继续降低残差返回 `nonlinear_stagnation`。取消保留最后完整接受的场/通量，调用方异常向上传递；`coupledFailedEvaluations` 和 `coupledLastFailure` 保留候选失败数量及最近原因，不能隐去 NaN 或内解错误。
+
+`--profile` 的 solveSeconds 包含全部试算、失败及复核；细分线性时间/计数只覆盖完整返回的评估，失败次数单列。当前每次映射重建求解工作区，60 个方向还会占用额外内存，不能只按 Newton 外迭代数宣称提速。材料联算、非定常及 adaptive/engineering 控制显式拒绝。代表算例命令、网格哈希、直接 CSV 场差、真实 App 保存重算与检查日志统一见[当前证据](../artifacts/current/native-laminar-newton-krylov.json)；实验 CSV 用 gzip 无损保存，重放命令前按证据恢复临时输入，结束后清理可再生成文件。
 
 动量、局部/全局守恒、场变化和线性精度分开检查。稳态面通量的旧通量缺陷项须与松弛一致，不能为提速删除。macOS CLI 首次 Accelerate 调用前固定单线程；研究入口也固定 `VECLIB_MAXIMUM_THREADS=1`。
 

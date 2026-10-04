@@ -13,7 +13,7 @@ enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation, 
 enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
-enum class SteadyAcceleration2D { None, Anderson };
+enum class SteadyAcceleration2D { None, Anderson, NewtonKrylov };
 enum class FlowConvergence2D { Strict, Engineering };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
@@ -51,7 +51,9 @@ struct FlowControls2D {
     double velocityRelaxation = .6;
     std::size_t pressureCorrectionPasses = 4; // Non-orthogonal pressure corrections per SIMPLE iteration (1..4).
     double pressureRelaxation = .25;
-    // Optional safeguarded fixed-point extrapolation. Steady laminar only.
+    // Optional safeguarded coupled iteration. Steady laminar only.
+    // NewtonKrylov requires strict linear/convergence controls. maxIterations
+    // bounds all SIMPLE evaluations, including trial directions and certification.
     SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
     // Explicit opt-ins preserve existing API/checkpoint and verification cases.
     // Engineering stopping is steady laminar only; it also requires a 50-step
@@ -103,6 +105,9 @@ struct FlowState2D {
 };
 
 struct FlowPerformance2D {
+    std::size_t coupledEvaluations = 0, coupledFailedEvaluations = 0;
+    std::size_t coupledOuterIterations = 0;
+    std::string coupledLastFailure; // last rejected map error; empty when no evaluation failed
     std::size_t accelerationCandidates = 0, accelerationAccepted = 0, accelerationRejected = 0;
     std::size_t momentumSolves = 0;
     std::size_t momentumIterations = 0;
@@ -173,6 +178,7 @@ struct FlowResult2D {
     std::vector<Vector2D> temporalIntegrals;
     bool converged = false;
     bool stopped = false;
+    bool nonlinearStagnated = false; // coupled residual could not be reduced; never converged
     std::vector<double> u;
     std::vector<double> v;
     std::vector<double> p;

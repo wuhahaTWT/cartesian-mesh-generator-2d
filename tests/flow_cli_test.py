@@ -101,6 +101,16 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     reuse_mesh = root / 'reuse.solver.cm2d'
     rectangle(reuse_mesh, 8, 4)
     run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    newton, _ = run('reuse-newton', reuse_mesh, extra=('--nu', '.1', '--steady-acceleration', 'newton-krylov', '--profile'))
+    assert newton['steadyAcceleration'] == 'newton-krylov'
+    assert newton['coupledEvaluations'] == newton['iterations'] <= 700
+    assert newton['accelerationCandidates'] == newton['accelerationAccepted'] + newton['accelerationRejected']
+    newton_work = json.loads((root / 'reuse-newton.performance.json').read_text())
+    assert newton_work['momentumSolves'] == 2 * newton['coupledEvaluations']
+    assert newton_work['simpleIterations'] == newton['coupledEvaluations']
+    assert newton['strictLinearFinal'] is True
+    assert newton['coupledLastFailure'] == ''
+    assert newton_work['coupledFailedEvaluations'] == 0
     saved_cells = (root / 'reuse.cells.csv').read_bytes()
     run('reuse', reuse_mesh, case='external', code=1)
     failed = json.loads((root / 'reuse.json').read_text())

@@ -7,6 +7,7 @@
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/detail/FlowLinearSystem2D.hpp"
 #include "cartmesh2d/fv/detail/Anderson2D.hpp"
+#include "cartmesh2d/fv/detail/FlowNewtonKrylov2D.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -1180,10 +1181,14 @@ static FlowResult2D solveFlow(
 
 FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
+    if(c.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
+        return detail::solveNewtonKrylovFlow2D(m,c,nullptr,progress);
     return solveFlow(m,c,progress,nullptr,0);
 }
 FlowResult2D solveIncompressibleFromGuess2D(const FvMesh2D& m,const FlowControls2D& c,
     const FlowInitialGuess2D& guess,const std::function<void(const FlowIteration2D&)>& progress) {
+    if(c.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
+        return detail::solveNewtonKrylovFlow2D(m,c,&guess,progress);
     return solveFlow(m,c,progress,nullptr,0,{},&guess);
 }
 FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D& c,

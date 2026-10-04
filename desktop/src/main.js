@@ -1469,9 +1469,13 @@ async function runSmoke() {
         await new Promise(resolve=>setTimeout(resolve,200));
         await mainWindow.webContents.executeJavaScript(`(() => {
           const result=document.getElementById('flowResult'),summary=window.__smoke.state.flow?.summary;
-          if(summary?.steadyAcceleration!=='anderson' || !(summary.accelerationAccepted>0) || !result.innerText.includes('历史迭代'))
+          const expected=${JSON.stringify(argument('flow-steady-acceleration') || 'anderson')};
+          const label=expected==='newton-krylov'?'整体耦合':'历史迭代';
+          if(summary?.steadyAcceleration!==expected || !(summary.accelerationAccepted>0) || !result.innerText.includes(label))
             throw new Error('Steady acceleration did not reach the actual App result');
-          if(document.getElementById('flowSteadyAcceleration').value!=='anderson')throw new Error('Acceleration control differs from result');
+          if(document.getElementById('flowSteadyAcceleration').value!==expected)throw new Error('Acceleration control differs from result');
+          if(expected==='newton-krylov' && (summary.coupledEvaluations!==summary.iterations ||
+              !result.innerText.includes('含试算与复核')))throw new Error('Coupled work accounting did not reach App');
           document.getElementById('flowSteadyAcceleration').scrollIntoView({block:'center'});
           result.scrollIntoView({block:'start'});
         })()`);

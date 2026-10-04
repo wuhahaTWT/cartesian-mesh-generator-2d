@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
 #include "cartmesh2d/fv/detail/FlowFaceOperators2D.hpp"
+#include "cartmesh2d/fv/detail/NewtonKrylov2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -207,6 +208,74 @@ void steadyRelaxationIndependence() {
     compare(original,solveIncompressible2D(cavity,closed));
 }
 
+void coupledNewtonStability() {
+    using Vec=std::vector<double>;
+    // A known nonsymmetric indefinite system exercises a direction for which
+    // an SPD-only pressure strategy is invalid. This is not a CFD acceptance gate.
+    const auto direction=detail::newtonKrylovDirection2D([](const Vec& x){return Vec{-x[0]+2*x[1],3*x[0]+4*x[1]};},Vec{-5,-5});
+    require(direction && std::hypot((*direction)[0]-1,(*direction)[1]+2)<64*std::numeric_limits<double>::epsilon(),
+        "Coupled Krylov failed the known indefinite system");
+    require(!detail::newtonKrylovDirection2D([](const Vec& x){return Vec(x.size());},Vec{1,1}),
+        "A zero Jacobian invented a Newton direction");
+    for(bool cavity:{false,true}) {
+        const auto mesh=cavity?rectangle(10,10,1):rectangle(18,6,3,true);
+        auto control=conditions(mesh,cavity);control.nu=.1;control.maxIterations=2000;control.profile=true;
+        control.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
+        if(!cavity)for(auto& b:control.boundaryConditions)
+            if(b.kind==FlowBoundaryKind2D::VelocityInlet || b.kind==FlowBoundaryKind2D::PressureOutlet)
+                b={b.face,FlowBoundaryKind2D::PressureOpening,{},mesh.faces[b.face].areaVector.x<0?.6:0,b.name};
+        const auto reference=solveIncompressible2D(mesh,control);
+        auto coupled=control;coupled.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
+        const auto result=solveIncompressible2D(mesh,coupled);compare(reference,result);
+        const auto& work=result.performance;
+        require(work.coupledEvaluations==result.history.back().iteration && work.coupledEvaluations<=coupled.maxIterations,
+            "Coupled evaluation budget or history lost work");
+        require(work.momentumSolves==2*work.coupledEvaluations && work.coupledFailedEvaluations==0,
+            "Coupled profiling omitted exploratory solves");
+        require(work.accelerationAccepted>0 && work.accelerationCandidates==work.accelerationAccepted+work.accelerationRejected,
+            "Coupled candidate accounting invalid");
+        require(result.history.back().strictLinearStep && !result.nonlinearStagnated,"Coupled result lacks strict certification");
+        auto limited=coupled;limited.maxIterations=8;
+        const auto partial=solveIncompressible2D(mesh,limited);
+        require(!partial.converged && partial.performance.coupledEvaluations<=8,"Coupled budget exhaustion certified a solution");
+        auto first=control;first.maxIterations=1;
+        const auto initial=solveIncompressible2D(mesh,first);
+        auto stopped=coupled;stopped.stopRequested=[] {return true;};
+        const auto cancelled=solveIncompressible2D(mesh,stopped);
+        require(cancelled.stopped && !cancelled.converged && cancelled.u==initial.u && cancelled.v==initial.v &&
+            cancelled.p==initial.p && cancelled.flux==initial.flux,"Cancelled Newton probe replaced the accepted iterate");
+        stopped.maxIterations=1;
+        require(solveIncompressible2D(mesh,stopped).stopped,"Budget boundary hid a requested cancellation");
+        int progressCalls=0;
+        rejects([&]{(void)solveIncompressible2D(mesh,coupled,[&](const FlowIteration2D&){
+            if(++progressCalls==3)throw std::runtime_error("caller stopped after a candidate");});});
+        require(progressCalls==3,"A candidate swallowed the caller's progress failure");
+        auto inProbe=coupled;int stopCalls=0;
+        inProbe.stopRequested=[&] {return ++stopCalls>=3;};
+        const auto probeCancelled=solveIncompressible2D(mesh,inProbe);
+        auto two=control;two.maxIterations=2;
+        const auto acceptedPair=solveIncompressible2D(mesh,two);
+        double retainedError=0;
+        for(const auto fields:{std::make_pair(&probeCancelled.u,&acceptedPair.u),std::make_pair(&probeCancelled.v,&acceptedPair.v),
+            std::make_pair(&probeCancelled.p,&acceptedPair.p),std::make_pair(&probeCancelled.flux,&acceptedPair.flux)})
+            for(std::size_t i=0;i<fields.first->size();++i)retainedError=std::max(retainedError,std::abs((*fields.first)[i]-(*fields.second)[i]));
+        require(probeCancelled.stopped && !probeCancelled.converged && retainedError<2e-10,
+            "Stopping inside Krylov retained a perturbed trial instead of the accepted pair");
+        auto invalid=coupled;invalid.adaptiveLinear=true;
+        rejects([&]{(void)solveIncompressible2D(mesh,invalid);});
+        invalid=coupled;invalid.tolerance=std::numeric_limits<double>::infinity();
+        rejects([&]{(void)solveIncompressible2D(mesh,invalid);});
+        rejects([&]{(void)advanceIncompressible2D(mesh,coupled,initialIncompressibleState2D(mesh,control),.02);});
+        rejects([&]{(void)solveIncompressible2D(mesh,coupled,[](const FlowIteration2D&){throw std::runtime_error("caller stopped");});});
+        if(!cavity) {
+            auto shifted=coupled;
+            for(auto& b:shifted.boundaryConditions)if(b.kind==FlowBoundaryKind2D::PressureOpening)b.pressure+=7.25;
+            compare(result,solveIncompressible2D(mesh,shifted),0,7.25);
+            compare(result,solveIncompressible2D(rotated(mesh,std::acos(-1.)/2),coupled),std::acos(-1.)/2);
+        }
+    }
+}
+
 void pressureOpenings() {
     double previousError=0;
     for (int n:{8,16}) {
@@ -367,6 +436,7 @@ int main() {
     try {
         cachedGradientGeometry();
         steadyRelaxationIndependence();
+        coupledNewtonStability();
         pressureOpenings();
         symmetryBoundaries();
         prescribedStokesPorts();

@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
-            "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
+            "--steady-acceleration none|anderson|newton-krylov: optional steady laminar coupled iteration; Newton requires strict controls.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
@@ -254,7 +254,8 @@ int main(int argc, char** argv) {
             } else if (a == "--steady-acceleration") {
                 if(v=="none")controls.steadyAcceleration=fv::SteadyAcceleration2D::None;
                 else if(v=="anderson")controls.steadyAcceleration=fv::SteadyAcceleration2D::Anderson;
-                else throw std::invalid_argument("steady-acceleration must be none or anderson");
+                else if(v=="newton-krylov")controls.steadyAcceleration=fv::SteadyAcceleration2D::NewtonKrylov;
+                else throw std::invalid_argument("steady-acceleration must be none, anderson or newton-krylov");
             } else if (a == "--time-step") {
                 timeStep=number(v);
                 if (!(timeStep>0)) throw std::invalid_argument("time-step must be positive");
@@ -606,10 +607,15 @@ int main(int argc, char** argv) {
         if (timeStep==0) summary << "\"steadyFaceInterpolation\":\"iteration-flux-defect-skew-corrected-v1\",\n"
                                 << "\"pressureCorrectionPasses\":" << controls.pressureCorrectionPasses << ",\n"
                                 << "\"velocityRelaxation\":" << controls.velocityRelaxation << ",\n"
-                                << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : "none") << ",\n"
+                                << "\"steadyAcceleration\":" << std::quoted(controls.steadyAcceleration==fv::SteadyAcceleration2D::Anderson ? "anderson" : controls.steadyAcceleration==fv::SteadyAcceleration2D::NewtonKrylov ? "newton-krylov" : "none") << ",\n"
                                 << "\"accelerationCandidates\":" << r.performance.accelerationCandidates << ",\n"
                                 << "\"accelerationAccepted\":" << r.performance.accelerationAccepted << ",\n"
                                 << "\"accelerationRejected\":" << r.performance.accelerationRejected << ",\n";
+        if(controls.steadyAcceleration==fv::SteadyAcceleration2D::NewtonKrylov)
+            summary << "\"coupledEvaluations\":" << r.performance.coupledEvaluations
+                    << ",\n\"coupledFailedEvaluations\":" << r.performance.coupledFailedEvaluations
+                    << ",\n\"coupledOuterIterations\":" << r.performance.coupledOuterIterations
+                    << ",\n\"coupledLastFailure\":" << std::quoted(r.performance.coupledLastFailure) << ",\n";
         if(timeStep==0) {
             summary << "\"convergenceMode\":" << std::quoted(controls.convergence==fv::FlowConvergence2D::Engineering?"engineering":"strict")
                     << ",\n\"adaptiveLinear\":" << (controls.adaptiveLinear?"true":"false")
@@ -719,7 +725,7 @@ int main(int argc, char** argv) {
         if (counterflowCase) summary << "\"counterflowDefinition\":\"u=speed*(1+2*cos(2*pi*y)), v=0, p=0; sourceX=8*pi^2*nu*speed*cos(2*pi*y), sourceY=0\",\n";
         summary << "\"format\":\"cartmesh2d-flow-summary-v1\",\n\"case\":\""
                 << controls.scenario << "\",\n\"status\":\""
-                << (r.converged ? "converged" : (timeStep>0?"time_step_not_converged":"iteration_limit"))
+                << (r.converged ? "converged" : r.nonlinearStagnated ? "nonlinear_stagnation" : (timeStep>0?"time_step_not_converged":"iteration_limit"))
                 << "\",\n\"converged\":" << (r.converged ? "true" : "false")
                 << ",\n\"cells\":" << mesh.cells.size()
                 << ",\n\"iterations\":" << last.iteration
@@ -803,7 +809,11 @@ int main(int argc, char** argv) {
             performance << "{\n\"format\":\"cartmesh2d-flow-performance-v1\",\n"
                         << "\"cells\":" << mesh.cells.size()
                         << ",\n\"faces\":" << mesh.faces.size()
-                        << ",\n\"simpleIterations\":" << (timeStep>0?totalInnerIterations:last.iteration)
+                        << ",\n\"simpleIterations\":" << (timeStep>0?totalInnerIterations:controls.steadyAcceleration==fv::SteadyAcceleration2D::NewtonKrylov?p.coupledEvaluations-p.coupledFailedEvaluations:last.iteration)
+                        << ",\n\"coupledEvaluations\":" << p.coupledEvaluations
+                        << ",\n\"coupledFailedEvaluations\":" << p.coupledFailedEvaluations
+                        << ",\n\"coupledOuterIterations\":" << p.coupledOuterIterations
+                        << ",\n\"coupledLastFailure\":" << std::quoted(p.coupledLastFailure)
                         << ",\n\"converged\":" << (r.converged ? "true" : "false")
                         << ",\n\"pressurePreconditioner\":\"" << preconditioner << '"'
                         << ",\n\"readAndMeshSeconds\":" << readSeconds
@@ -828,7 +838,7 @@ int main(int argc, char** argv) {
                         << ",\n\"maxPressureCoarseCells\":" << p.maxPressureCoarseCells
                         << ",\n\"pressureIterations\":" << p.pressureIterations
                         << ",\n\"maxPressureIterations\":" << p.maxPressureIterations
-                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement\"\n}\n";
+                        << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; coupled solve time includes all probes, but detailed linear counters/times cover completed evaluations only; exports/checkpoints excluded; no memory measurement\"\n}\n";
             performance.close();
         }
         std::filesystem::rename(prefix+".json.tmp",prefix+".json");

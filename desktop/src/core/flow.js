@@ -110,10 +110,12 @@ function validateFlowRequest(request = {}) {
   const mode = request.mode ?? 'steady';
   if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
   const steadyAcceleration=request.steadyAcceleration ?? 'none';
-  if (!['none','anderson'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
-    throw new Error('稳态加速仅支持稳态流动的 none 或 anderson。');
+  if (!['none','anderson','newton-krylov'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
+    throw new Error('稳态加速仅支持稳态流动的 none、anderson 或 newton-krylov。');
   const linearPolicy=request.linearPolicy ?? 'strict';
   if (!['strict','adaptive'].includes(linearPolicy)) throw new Error('线性迭代精度须为 strict 或 adaptive。');
+  if (steadyAcceleration==='newton-krylov' && linearPolicy!=='strict')
+    throw new Error('整体耦合求解需要固定线性精度（strict）。');
   const pressureCorrectionPasses=finite(request.pressureCorrectionPasses ?? 4,'压力校正次数');
   if (!Number.isInteger(pressureCorrectionPasses) || pressureCorrectionPasses<1 || pressureCorrectionPasses>4) throw new Error('压力校正次数须为1到4的整数。');
   const velocityRelaxation=finite(request.velocityRelaxation ?? .6,'速度松弛系数');
@@ -292,7 +294,8 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   const transient = summary.temporalDiscretization !== undefined;
   const adaptive=summary.timeStepControl==='adaptive-cfl-retry';
   if (summary.timeStepControl!==undefined && (!adaptive || !transient)) throw new Error('未知时间步控制模式。');
-  if (summary.status !== 'converged' && summary.status !== (transient ? 'time_step_not_converged' : 'iteration_limit'))
+  if (summary.status !== 'converged' && summary.status !== (transient ? 'time_step_not_converged' : 'iteration_limit')
+      && !(summary.status==='nonlinear_stagnation' && !transient && summary.steadyAcceleration==='newton-krylov'))
     throw new Error('流动摘要状态无效。');
   if (typeof summary.converged !== 'boolean' || summary.converged !== (summary.status === 'converged'))
     throw new Error('流动摘要的收敛状态互相矛盾。');
@@ -403,7 +406,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   const acceleration=summary.steadyAcceleration ?? 'none';
   if (summary.steadyAcceleration===undefined && ['accelerationCandidates','accelerationAccepted','accelerationRejected'].some(key=>Object.hasOwn(summary,key)))
     throw new Error('稳态加速统计缺少模式。');
-  if (!['none','anderson'].includes(acceleration) || (acceleration!=='none' && transient))
+  if (!['none','anderson','newton-krylov'].includes(acceleration) || (acceleration!=='none' && transient))
     throw new Error('稳态加速结果模式无效。');
   normalizedSummary.steadyAcceleration=acceleration;
   if (summary.steadyAcceleration!==undefined) {
@@ -412,6 +415,21 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
         throw new Error('稳态加速统计无效。');
     if (summary.accelerationCandidates!==summary.accelerationAccepted+summary.accelerationRejected ||
         (acceleration==='none' && summary.accelerationCandidates!==0)) throw new Error('稳态加速统计不一致。');
+  }
+  const coupledKeys=['coupledEvaluations','coupledFailedEvaluations','coupledOuterIterations'];
+  if (acceleration==='newton-krylov') {
+    for (const key of coupledKeys)
+      if (!Number.isSafeInteger(summary[key]) || summary[key]<0 || summary[key]>iterations)
+        throw new Error('整体耦合求解统计无效。');
+    if (typeof summary.coupledLastFailure!=='string' ||
+        (summary.coupledFailedEvaluations===0)!==(summary.coupledLastFailure.length===0))
+      throw new Error('整体耦合试算失败缺少诊断或与统计不一致。');
+    if (summary.coupledEvaluations!==iterations || summary.coupledOuterIterations!==summary.accelerationAccepted
+        || summary.adaptiveLinear!==false || summary.convergenceMode!=='strict'
+        || (summary.converged && summary.strictLinearFinal!==true))
+      throw new Error('整体耦合求解统计或严格复核不一致。');
+  } else if ([...coupledKeys,'coupledLastFailure'].some(key=>Object.hasOwn(summary,key))) {
+    throw new Error('整体耦合统计与求解模式不一致。');
   }
   validateInitialVortexOutput(summary,null,startTime);
 

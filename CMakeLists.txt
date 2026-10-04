@@ -95,7 +95,7 @@ if(MSVC)
 endif()
 
 # Native two-dimensional finite-volume foundation, independently executable.
-add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
+add_library(cartmesh2d_fv src/fv/FvMesh2D.cpp src/fv/Diffusion2D.cpp src/fv/Incompressible2D.cpp src/fv/FlowNewtonKrylov2D.cpp src/fv/Euler2D.cpp src/fv/EulerFlux2D.cpp src/fv/HeatConduction2D.cpp src/fv/ViscousStress2D.cpp src/fv/WallGradient2D.cpp src/fv/FlowBoundaryIO2D.cpp src/fv/ScalarTransport2D.cpp src/fv/ThermalFlow2D.cpp src/fv/Sst2003m2D.cpp src/fv/WallDistance2D.cpp src/fv/SstRans2D.cpp)
 target_link_libraries(cartmesh2d_fv PUBLIC cartmesh2d::cartmesh2d)
 if(APPLE)
     target_link_libraries(cartmesh2d_fv PUBLIC "-framework Accelerate")
