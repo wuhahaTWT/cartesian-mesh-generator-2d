@@ -18,6 +18,7 @@ EulerPrimitive2D ghost(const EulerPrimitive2D& inside,const EulerBoundary2D& b,V
     if((b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::NoSlipWall))
         return {inside.density,inside.u-2*normal*n.x,inside.v-2*normal*n.y,inside.pressure};
     if(b.kind==EulerBoundaryKind2D::Transmissive)return inside;
+    if(b.kind==EulerBoundaryKind2D::PressureOutlet)return eulerPressureOutletState2D(inside,b.reference.pressure,n,gas);
     require(b.kind==EulerBoundaryKind2D::Farfield,"unexpected boundary ghost type");
     const double sound=eulerSoundSpeed2D(inside,gas);
     if(normal>=sound)return inside;
@@ -72,6 +73,25 @@ EulerPrimitive2D eulerPrimitive2D(const EulerConservative2D& q,const IdealGas2D&
 double eulerSoundSpeed2D(const EulerPrimitive2D& q,const IdealGas2D& gas) {
     validateIdealGas2D(gas);primitiveValid(q);return finite(std::sqrt(gas.gamma*q.pressure/q.density));
 }
+EulerPrimitive2D eulerPressureOutletState2D(const EulerPrimitive2D& inside,double pressure,Vector2D area,const IdealGas2D& gas) {
+    const double sound=eulerSoundSpeed2D(inside,gas),length=std::hypot(area.x,area.y);
+    require(std::isfinite(length)&&length>0,"pressure-outlet requires a finite nonzero outward area");
+    require(std::isfinite(pressure)&&pressure>0,"pressure-outlet requires positive absolute pressure");
+    const Vector2D n{area.x/length,area.y/length};
+    const double normal=inside.u*n.x+inside.v*n.y;
+    require(normal>=0,"pressure-outlet backflow is outside the supported unidirectional regime");
+    if(normal>=sound)return inside; // No incoming characteristic can impose p.
+    const double ratio=pressure/inside.pressure;
+    const double density=finite(inside.density*std::pow(ratio,1/gas.gamma));
+    const double boundarySound=finite(sound*std::pow(ratio,(gas.gamma-1)/(2*gas.gamma)));
+    // J+ = un + 2c/(gamma-1), entropy p/rho^gamma, and ut leave the domain.
+    const double boundaryNormal=finite(normal+2*(sound-boundarySound)/(gas.gamma-1));
+    require(boundaryNormal>=0,"pressure-outlet back pressure induces unsupported backflow");
+    require(boundaryNormal<boundarySound,"pressure-outlet back pressure induces choking; extend the domain or change the condition");
+    EulerPrimitive2D result{density,inside.u+(boundaryNormal-normal)*n.x,
+        inside.v+(boundaryNormal-normal)*n.y,pressure};
+    primitiveValid(result);return result;
+}
 void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const IdealGas2D& gas) {
     validateIdealGas2D(gas);std::vector<const EulerBoundary2D*> lookup(mesh.faces.size(),nullptr);
     std::map<std::string,EulerBoundaryKind2D> groups;
@@ -81,7 +101,8 @@ void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBound
         const auto [it,inserted]=groups.emplace(b.name,b.kind);
         require(inserted||it->second==b.kind,"one boundary name has multiple physical kinds");
         require(b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::Transmissive||
-                b.kind==EulerBoundaryKind2D::Farfield||b.kind==EulerBoundaryKind2D::Periodic||b.kind==EulerBoundaryKind2D::NoSlipWall,"unknown boundary kind");
+                b.kind==EulerBoundaryKind2D::Farfield||b.kind==EulerBoundaryKind2D::Periodic||b.kind==EulerBoundaryKind2D::NoSlipWall||
+                b.kind==EulerBoundaryKind2D::PressureOutlet,"unknown boundary kind");
         require(std::isfinite(b.wallVelocity.x)&&std::isfinite(b.wallVelocity.y),"nonfinite wall velocity");
         require(b.kind==EulerBoundaryKind2D::NoSlipWall||(b.wallVelocity.x==0&&b.wallVelocity.y==0),"only no-slip walls accept wall velocity");
         const auto normal=mesh.faces[b.face].areaVector;
@@ -174,6 +195,9 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
                 const Vector2D normal{f.areaVector.x/length,f.areaVector.y/length};
                 const double distance=(f.centre.x-cell.centre.x)*normal.x+(f.centre.y-cell.centre.y)*normal.y;
                 d={2*distance*normal.x,2*distance*normal.y};other=ghost(primitive[i],*bc,normal,gas);
+                // The pressure outlet supplies a trace at the actual face,
+                // unlike the mirrored state used by solid walls.
+                if(bc->kind==EulerBoundaryKind2D::PressureOutlet)d={f.centre.x-cell.centre.x,f.centre.y-cell.centre.y};
             }
             const double distance2=finite(d.x*d.x+d.y*d.y);require(distance2>0,"zero reconstruction stencil distance");
             const double w=1/distance2;xx+=w*d.x*d.x;xy+=w*d.x*d.y;yy+=w*d.y*d.y;
@@ -234,6 +258,13 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
             eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
         const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
         auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration);
+        if(boundary&&boundary->kind==EulerBoundaryKind2D::PressureOutlet) {
+            // Apply the characteristic trace directly. A second Riemann solve
+            // against the interior would weaken the specified static pressure.
+            const double speed=flux.waveSpeed;
+            flux=eulerFaceFlux2D(right,right,face.areaVector,gas,control.fluxScheme);
+            flux.waveSpeed=std::max(speed,flux.waveSpeed);
+        }
         if(boundary&&(boundary->kind==EulerBoundaryKind2D::SlipWall||boundary->kind==EulerBoundaryKind2D::NoSlipWall)) {
             // The mirror Riemann problem has exactly zero mass/energy flux and
             // purely normal pressure traction. Enforce that analytical symmetry

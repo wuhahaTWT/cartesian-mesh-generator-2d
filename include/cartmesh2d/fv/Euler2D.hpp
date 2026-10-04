@@ -12,7 +12,8 @@ struct IdealGas2D { double gamma=1.4, gasConstant=287.05; };
 struct EulerPrimitive2D { double density=1, u=0, v=0, pressure=1; };
 // Per-volume densities: rho, rho*u, rho*v, rho*E (total internal + kinetic).
 using EulerConservative2D = std::array<double,4>;
-enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic, NoSlipWall };
+// Append kinds: checkpoint bindings persist the existing integer values.
+enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic, NoSlipWall, PressureOutlet };
 struct EulerBoundary2D {
     std::size_t face=0;
     EulerBoundaryKind2D kind=EulerBoundaryKind2D::SlipWall;
@@ -75,6 +76,11 @@ void validateEulerTransport2D(const EulerTransport2D&,const std::vector<EulerBou
 [[nodiscard]] EulerConservative2D eulerConservative2D(const EulerPrimitive2D&,const IdealGas2D& = {});
 [[nodiscard]] EulerPrimitive2D eulerPrimitive2D(const EulerConservative2D&,const IdealGas2D& = {});
 [[nodiscard]] double eulerSoundSpeed2D(const EulerPrimitive2D&,const IdealGas2D& = {});
+// Subsonic outflow: prescribed static pressure, outgoing acoustic invariant,
+// interior entropy and tangential velocity. Supersonic outflow extrapolates.
+// Backflow/choking of the subsonic boundary is rejected, never clipped.
+[[nodiscard]] EulerPrimitive2D eulerPressureOutletState2D(const EulerPrimitive2D&,
+    double pressure, Vector2D outwardArea, const IdealGas2D& = {});
 void validateEulerBoundaries2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,const IdealGas2D& = {});
 // Selectable Rusanov/HLLC and first/second-order spatial and temporal methods.
 // Both RK stages obey combined acoustic/heat/viscous rates and cell areas. Reconstruction

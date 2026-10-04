@@ -1,0 +1,289 @@
+{
+  "format": "cartmesh2d-compressible-laminar-v1",
+  "date": "2026-10-05",
+  "baseCommit": "570cd70420818fe3a1affb929410b55b1c12a984",
+  "branch": "codex/compressible-laminar",
+  "workspace": "/Users/Zhuanz/.codex/worktrees/compressible-laminar/cartesian-mesh-generator-2d",
+  "scope": "2D constant-property ideal gas; unidirectional subsonic inlet/outlet; laminar no-slip thermal walls",
+  "qualification": {
+    "nativeWorkflow": true,
+    "channelSteadyConvergence": false,
+    "channelGridIndependence": false,
+    "experimentalValidation": false,
+    "newDesktopCase": false,
+    "crossPlatformCI": false
+  },
+  "validation": {
+    "nativeCtest": [
+      "cartmesh2d_euler_core",
+      "cartmesh2d_wall_gradient",
+      "cartmesh2d_transport_precision",
+      "cartmesh2d_viscous_core"
+    ],
+    "nativeCouette": "build/cartmesh2d_compressible_laminar_tests --output outputs/compressible-laminar/walls-001",
+    "frontend": "node --test desktop/tests/euler.test.js: 10/10 passed"
+  },
+  "couette": {
+    "case": "cold-couette",
+    "endTime": 60,
+    "wallMach": 0.4225771273642583,
+    "reynolds": 5,
+    "mu": 0.1,
+    "k": 0.1,
+    "wallSpeed": 0.5,
+    "wallTemperature": 1,
+    "gasR": 1,
+    "gamma": 1.4,
+    "levels": [
+      {
+        "ny": 8,
+        "steps": 14561,
+        "rejected": 14406,
+        "temperatureRiseRelativeLinf": 2.213482730439864e-10,
+        "wallSpeedRelativeLinf": 3.2476156488121874e-13,
+        "pressureRelativeLinf": 0.0001660444347904022,
+        "wallHeatRelativeError": 1.6054402252052569e-10,
+        "wallWorkRelativeError": 3.532729664357248e-13,
+        "finalConservativeRateLinf": 4.243012491495412e-12,
+        "energyBudgetRelativeError": 1.0646923180970026e-15
+      },
+      {
+        "ny": 16,
+        "steps": 38915,
+        "rejected": 36461,
+        "temperatureRiseRelativeLinf": 2.227764639428642e-10,
+        "wallSpeedRelativeLinf": 3.5248610867868353e-13,
+        "pressureRelativeLinf": 4.152851593652862e-05,
+        "wallHeatRelativeError": 1.59750768169431e-10,
+        "wallWorkRelativeError": 3.097522238704187e-13,
+        "finalConservativeRateLinf": 4.350629140337315e-12,
+        "energyBudgetRelativeError": 1.6281893819193836e-14
+      },
+      {
+        "ny": 32,
+        "steps": 120760,
+        "rejected": 105067,
+        "temperatureRiseRelativeLinf": 2.1881163547732285e-10,
+        "wallSpeedRelativeLinf": 3.573502207885455e-13,
+        "pressureRelativeLinf": 1.0383215928388978e-05,
+        "wallHeatRelativeError": 1.5638901285086604e-10,
+        "wallWorkRelativeError": 2.4846791291111003e-13,
+        "finalConservativeRateLinf": 3.7456200196762445e-12,
+        "energyBudgetRelativeError": 1.1475923045386173e-13
+      }
+    ],
+    "pressureOrder": 1.9998489667186286,
+    "checkpointNextStepIdentical": true
+  },
+  "runs": [
+    {
+      "name": "straight-001",
+      "record": "outputs/compressible-laminar/straight-001/run.json",
+      "inputs": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.2,
+        "reynoldsHeight": 442.62865530945925,
+        "wallTemperatureK": 300.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 69.44379021914055,
+        "endTimeS": 2.30402170582993e-05,
+        "flowThroughTimes": 4.0,
+        "shape": "straight",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux"
+      },
+      "completed": true,
+      "result": {
+        "status": "target_reached",
+        "failure": "",
+        "time": 2.30402170582993e-05,
+        "requestedEndTime": 2.30402170582993e-05,
+        "cells": 200,
+        "faces": 460,
+        "acceptedSteps": 19220,
+        "rejectedCandidates": 17349,
+        "elapsedSeconds": 28.082200667
+      },
+      "fieldRanges": {
+        "rho": [
+          1.1743553285005421,
+          1.1956241133748835
+        ],
+        "p": [
+          101274.98626872417,
+          103700.68444883284
+        ],
+        "temperature": [
+          299.99444311233344,
+          302.22103370399725
+        ],
+        "mach": [
+          0.04855782896740192,
+          0.2495072942657866
+        ]
+      },
+      "finalCheckpointIdentical": true,
+      "customBoundaryFieldIdentical": true,
+      "binarySha256": {
+        "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+        "cartmesh2d_euler_cli": "f410e8063e4546953d851a6571ccd5569b70e3431f435de5ec45cc274412ab8c"
+      }
+    },
+    {
+      "name": "heated-001",
+      "record": "outputs/compressible-laminar/heated-001/run.json",
+      "inputs": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.5,
+        "reynoldsHeight": 1106.571638273648,
+        "wallTemperatureK": 330.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 173.60947554785136,
+        "endTimeS": 9.216086823319721e-06,
+        "flowThroughTimes": 4.0,
+        "shape": "straight",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux"
+      },
+      "completed": true,
+      "result": {
+        "status": "target_reached",
+        "failure": "",
+        "time": 9.216086823319721e-06,
+        "requestedEndTime": 9.216086823319721e-06,
+        "cells": 200,
+        "faces": 460,
+        "acceptedSteps": 6812,
+        "rejectedCandidates": 4379,
+        "elapsedSeconds": 7.973819833
+      },
+      "fieldRanges": {
+        "rho": [
+          1.0778623241154364,
+          1.2545323528453378
+        ],
+        "p": [
+          101302.32082506032,
+          111502.79350758351
+        ],
+        "temperature": [
+          299.56577622435066,
+          327.9301949244062
+        ],
+        "mach": [
+          0.1981130937547854,
+          0.5648601719979176
+        ]
+      },
+      "finalCheckpointIdentical": true,
+      "customBoundaryFieldIdentical": true,
+      "binarySha256": {
+        "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+        "cartmesh2d_euler_cli": "f410e8063e4546953d851a6571ccd5569b70e3431f435de5ec45cc274412ab8c"
+      }
+    },
+    {
+      "name": "channel-002",
+      "record": "outputs/compressible-laminar/channel-002/run.json",
+      "inputs": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.2,
+        "reynoldsHeight": 442.62865530945925,
+        "wallTemperatureK": 300.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 69.44379021914055,
+        "endTimeS": 2.30402170582993e-05,
+        "flowThroughTimes": 4.0,
+        "shape": "smooth",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux"
+      },
+      "completed": false,
+      "result": {
+        "status": "failed",
+        "failure": "accepted-step budget exhausted",
+        "time": 1.1053063345033645e-05,
+        "requestedEndTime": 2.30402170582993e-05,
+        "cells": 196,
+        "faces": 457,
+        "acceptedSteps": 100000,
+        "rejectedCandidates": 96871,
+        "elapsedSeconds": 143.301493708
+      },
+      "fieldRanges": null,
+      "finalCheckpointIdentical": false,
+      "customBoundaryFieldIdentical": false,
+      "binarySha256": {
+        "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+        "cartmesh2d_euler_cli": "f410e8063e4546953d851a6571ccd5569b70e3431f435de5ec45cc274412ab8c"
+      }
+    }
+  ],
+  "limitations": [
+    "pressure outlet rejects backflow and subsonic choking; fixed pressure is acoustically reflective",
+    "characteristic inlet with zero diffusive open-boundary traction/heat flux",
+    "smooth channel exhausted 100000 accepted-step budget; accepted result and checkpoint retained",
+    "frequent second-stage CFL rejection and small-cell explicit cost remain unresolved",
+    "constant-property reference-gas cases are not an experimentally validated air application"
+  ],
+  "methodSource": "https://www.nas.nasa.gov/publications/software/docs/cart3d/pages/publications/AIAA_2018-0334.pdf",
+  "reproduction": "tools/flow/run_compressible_channel.py",
+  "initialDriverFailure": "outputs/compressible-laminar/channel-001/run.json: mesher construction output was not the required solver topology; fixed by using the existing Solver-quality/export entry",
+  "finalSerializationChange": "After the long runs, only outlet-pressure summary formatting changed to preserve 17-digit precision; physical stepping code is identical. Final CLI is checked by final-smoke-001.",
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Euler2D.hpp": "9ea8b01b2a991a5b68a075e4fcf03640f535885a0f1e737c7db2a37bcaf3c747",
+    "src/fv/Euler2D.cpp": "494eb01a1e9698e790f7ca7249eddc2a652fae0128f4b8e935ef8414879e436b",
+    "apps/cartmesh2d_euler_cli.cpp": "a856679a19deacc12afbc694c4e72e87b5a5d329a36d1c5f1c375d567c8ff7ee",
+    "tests/euler_test.cpp": "5373716a9d7997cfdb52a309dc99247b959aa85a0352ecf166b45c4d74a108f1",
+    "tests/compressible_laminar_test.cpp": "4bf62a07698fca16204930ba858dc8a72ce45d711d85237c5835b1abc764eb2c",
+    "tools/flow/run_compressible_channel.py": "123a4eafb00d76f1f1f6586d627125607ba933934e570920f9afa8a5548cd504"
+  },
+  "retainedSha256": {
+    "outputs/compressible-laminar/walls-001/couette.json": "16a534662c650fc95168f0bd44692c87f4d050356d282ddf6e5c32bcde91d608",
+    "outputs/compressible-laminar/straight-001/run.json": "65b45430e161fa1d509f33b5118e7d19bbd4238aebef5ea593084530e86f258b",
+    "outputs/compressible-laminar/heated-001/run.json": "0eeca4a135d707fa5d11ab23308eae362a5d92101475a3692deb00b0c7efed69",
+    "outputs/compressible-laminar/channel-002/run.json": "e805381737a6de0b24acd949fe2b0e9f2ec59e16f71f1f1c55ef89dc02efc699",
+    "outputs/compressible-laminar/channel-001/run.json": "55ec7c2abeae0fb0bda1c5f69dfb55143b26822a4c2d7d5aa3a0fdbfd71b4ce5",
+    "outputs/compressible-laminar/final-smoke-001/run.json": "68315a598064d6234496a0a6c16f51b19c2a9f554c6bcd782016c3d9ac821153",
+    "outputs/compressible-laminar/storage-smoke-001/run.json": "24d9383bfc2cc2bc8cbad2257a3401e17c5f8188cda194d94eb19775f2c699b7"
+  },
+  "finalCliSmoke": {
+    "record": "outputs/compressible-laminar/final-smoke-001/run.json",
+    "completed": true,
+    "binarySha256": {
+      "cartmesh2d_cli": "f12dfbf99854be3a59f03301ce20864316ec136dd2311353aec280396bb560f9",
+      "cartmesh2d_euler_cli": "4dc098cb09e585802559ecc8eff6a304c127e4cd45f06cb37e655cb0d83dac92"
+    }
+  },
+  "historyStorage": {
+    "format": "gzip",
+    "uncompressedBytesBefore": 78443993,
+    "compressedBytesAfter": 30599388,
+    "losslessSha256Readback": true,
+    "finalDriverSmoke": "outputs/compressible-laminar/storage-smoke-001/run.json"
+  }
+}

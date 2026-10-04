@@ -4,7 +4,7 @@
 
 ## 分支与里程碑
 
-只维护 `main`（已验证集成）和 `codex/cfd-development`（后续开发），网格和 CFD 修复统一从开发线推进。三条实验功能、临时集成及旧网格维护分支已完整进入 main，旧分支名可删除，提交历史仍可查。
+`main` 是已验证集成线，`codex/cfd-development` 是共同集成入口。按本轮并行工作要求，可压层流在独立 worktree/`codex/compressible-laminar` 开发；不切换或修改其他聊天工作区，不自动合并 main。旧功能线的提交历史与研究证据继续保留。
 
 `mesher-v0.3.0` 固定指向网格里程碑 `691c97e`，不移动。切换前先处理当前改动，切换后按需要重建原生程序和 runtime，避免源码与旧包混用。集成须按当次授权及验证范围进行，不自动合并后续功能。
 
@@ -189,6 +189,29 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 ```
 
 最后一条用短时功能测试物性，不是空气推荐值。精度脚本可能需数分钟，Windows 预算更长；日常只选相关项，完整范围与未验物理问题见当前状态。
+
+### 亚声速通道压力出口与复现
+
+`EulerBoundaryKind2D::PressureOutlet` 追加枚举值，保留旧检查点中的类型编号。`eulerPressureOutletState2D` 对外法向 n 计算 `un=u·n` 和 `J+=un+2c/(γ−1)`；当 `0≤un<c` 时，按给定出口静压 p_b 构造 `ρ_b=ρ_i(p_b/p_i)^(1/γ)`、`c_b=c_i(p_b/p_i)^((γ−1)/(2γ))`、`un_b=un+2(c_i−c_b)/(γ−1)`，保留内部切向速度。边界迹直接形成守恒通量，避免第二次 Riemann 求解弱化规定压力；声学步长仍取内部/边界包络。重构把边界迹放在真实面心。
+
+方法依据 [NASA Cart3D 边界条件论文 §II.A](https://www.nas.nasa.gov/publications/software/docs/cart3d/pages/publications/AIAA_2018-0334.pdf)。本实现只取上述单向外流特征关系，不照搬文中的堵塞/反流替代策略。`un<0`、构造后 `un_b<0` 或亚声速构造达到声速都显式失败，保留最近接受状态；`un≥c` 外推内部状态。固定静压会反射声波，不能称为无反射边界。特征入口和零扩散开边界的适用限制见当前状态。
+
+CLI `--case channel --outlet-pressure <Pa>` 用 xmin 平面特征入口、xmax 平面压力出口，其余面按显式 `--wall-model` 和热条件设壁；要求正 x 向入口参考速度。`--case custom` 的边界文件可用 `pressure-outlet`，沿用原有字段顺序，仅该行的参考 p 用于出口静压。完整边界仍绑定检查点，改变压力后不能把旧文件作为同物理续算。预设 `channel` 不自动出现在桌面选单中。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCARTMESH2D_BUILD_CHEMISTRY=OFF
+cmake --build build --parallel 2 --target cartmesh2d_cli cartmesh2d_euler_cli cartmesh2d_euler_tests cartmesh2d_wall_gradient_tests cartmesh2d_transport_precision_tests cartmesh2d_viscous_tests cartmesh2d_compressible_laminar_tests
+ctest --test-dir build -R '^cartmesh2d_(euler_core|wall_gradient|transport_precision|viscous_core|compressible_laminar)$' --output-on-failure
+python3 tools/flow/run_compressible_channel.py --output outputs/compressible-laminar/straight-new
+python3 tools/flow/run_compressible_channel.py --output outputs/compressible-laminar/heated-new --mach .5 --wall-temperature 330
+build/cartmesh2d_compressible_laminar_tests --output outputs/compressible-laminar/walls-new
+```
+
+macOS 使用系统 Clang；其他平台去掉编译器参数，Windows 构建加 `--config Release`。输出目录必须全新。Python 驱动只用标准库准备未平滑 XY、调用原生 CLI、读取状态/场范围并比较续算文件，不重建方程或恢复已移除的独立 Python 验证链。网格使用显式 `interior` 和正式 Solver 拓扑/质量门，OpenFOAM 写出路径是当前网格 CLI 生成 `.solver.cm2d` 的入口；未调用外部 checkMesh。
+
+驱动保存完整参数和命令到 `run.json`，每次原生运行记录返回码、场、时钟和最后接受检查点；逐步 CSV 历史在结束后无损 gzip 压缩，读回 SHA256 相同后移除原始重复副本；先跑完整物理终点，再故意耗尽 8 步预算并续算，另用导出的 custom 文件检查同一短时场。`--shape smooth` 的 8% 收缩曲壁用于暴露显式小单元成本，默认 4 流经时间/100,000 步可能失败；不要把失败记录覆盖或当成成功算例。`--level 6` 和改变流经时间属于明确的新实验，不能与本轮默认 level5 混成已验证的收敛序列。
+
+`tests/compressible_laminar_test.cpp` 从静止、均温状态实际积分总能量耦合 Couette；解析温升、壁速、壁功是各自归一化尺度。沿用该基准原有 `1e−6` 目标与最细压力 `1e−4`、阶数>1.8，不新增全局精度门。只保存三个最终小场，可选输出检查点。`tests/euler_test.cpp` 增加压力/熵/外传不变量、旋转、实际通量、非法工况拒绝及物理绑定回归；128 epsilon 是这些代数恒等式的浮点额度，不是工程精度要求。
 
 ## 详细燃烧化学基础
 

@@ -49,6 +49,7 @@ std::string kindName(EulerBoundaryKind2D kind) {
     case EulerBoundaryKind2D::Transmissive:return "transmissive";
     case EulerBoundaryKind2D::Farfield:return "farfield";
     case EulerBoundaryKind2D::Periodic:return "periodic";
+    case EulerBoundaryKind2D::PressureOutlet:return "pressure-outlet";
     }
     throw std::runtime_error("invalid Euler boundary kind");
 }
@@ -100,6 +101,7 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
         else if(kind=="transmissive")b.kind=EulerBoundaryKind2D::Transmissive;
         else if(kind=="farfield")b.kind=EulerBoundaryKind2D::Farfield;
         else if(kind=="periodic")b.kind=EulerBoundaryKind2D::Periodic;
+        else if(kind=="pressure-outlet")b.kind=EulerBoundaryKind2D::PressureOutlet;
         else throw std::runtime_error("unknown Euler boundary kind: "+kind);
         if(partner!="-") {const auto n=number(partner);require(n>=0&&n<static_cast<double>(faces)&&n==std::floor(n),"invalid periodic partner");b.partner=static_cast<std::size_t>(n);}
         result.push_back(b);require(result.size()<=faces,"too many boundary rows");
@@ -114,11 +116,12 @@ int main(int argc,char** argv) {
     IdealGas2D gas;EulerPrimitive2D reference{1,0,0,1};EulerStepControls2D controls;
     double endTime=.2,split=.5,beta=5,maximumSeconds=180;std::size_t maximumSteps=100000,checkpointEvery=25;
     bool specifiedReference=false;
+    std::optional<double> outletPressure;
     for(int i=1;i<argc;++i) {
         const std::string arg=argv[i];
         if(arg=="--help") {
             std::cout<<"Native 2D ideal-gas Euler / laminar Navier-Stokes; Rusanov/HLLC, order 1 or 2.\n"
-                "--mesh FINAL.solver.cm2d --output PREFIX --case sod|uniform|external|sealed|vortex|thermal-wave|shear-wave|custom\n"
+                "--mesh FINAL.solver.cm2d --output PREFIX --case sod|uniform|external|sealed|vortex|thermal-wave|shear-wave|channel|custom\n"
                 "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
@@ -133,6 +136,8 @@ int main(int argc,char** argv) {
                 "Thermal-wave: periodic rectangle, zero reference velocity, relative temperature amplitude 1e-5.\n"
                 "Shear-wave: periodic transverse velocity, amplitude 1e-4 * reference sound speed.\n"
                 "Custom: --boundary FILE, full explicit face coverage; uniform initial state.\n"
+                "Channel: x-directed flow, characteristic inlet at xmin, --outlet-pressure Pa at xmax; other faces are walls.\n"
+                "Pressure outlet: unidirectional subsonic static pressure; backflow/choking fail explicitly, supersonic flow extrapolates.\n"
                 "--export-boundaries FILE exports the selected preset without solving.\n"
                 "--restart PREFIX.checkpoint --checkpoint-every 25 --max-steps 100000 --max-seconds 180\n"
                 "SI density kg/m3, absolute pressure Pa, velocity m/s, R J/(kg K); unit-depth integrals.\n"
@@ -142,6 +147,7 @@ int main(int argc,char** argv) {
         if(arg=="--mesh")meshPath=value;else if(arg=="--output")prefix=value;else if(arg=="--case")problem=value;
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
         else if(arg=="--restart")restart=value;
+        else if(arg=="--outlet-pressure")outletPressure=number(value);
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
         else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic","unknown wall gradient scheme");controls.wallGradient=value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
         else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
@@ -165,7 +171,9 @@ int main(int argc,char** argv) {
     }
     require(!meshPath.empty()&&(!prefix.empty()||!exportBoundary.empty()),"--mesh and --output (or --export-boundaries) required");
     require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final *.solver.cm2d");
-    require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave"||problem=="sealed"||problem=="custom","unknown Euler case");
+    require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave"||problem=="sealed"||problem=="channel"||problem=="custom","unknown Euler case");
+    require((problem=="channel")==outletPressure.has_value(),"channel requires --outlet-pressure; custom outlet values belong in the boundary file");
+    if(outletPressure)require(*outletPressure>0&&reference.u>0&&reference.v==0,"channel requires positive outlet pressure and positive x-directed reference velocity");
     require((problem=="custom")==!boundaryPath.empty(),"only custom Euler case requires --boundary");
     require(endTime>0&&maximumSeconds>0&&controls.minimumStep>0&&controls.maximumStep>=controls.minimumStep&&
         controls.acousticCourant>0&&controls.acousticCourant<=.45,"invalid Euler time controls");
@@ -187,6 +195,14 @@ int main(int argc,char** argv) {
         EulerBoundary2D b{i,EulerBoundaryKind2D::Farfield,reference,{},"farfield"};
         if(problem=="sealed"){b.kind=EulerBoundaryKind2D::SlipWall;b.name="walls";}
         else if(problem=="external"&&f.patch==BoundaryPatch2D::EmbeddedBoundary){b.kind=EulerBoundaryKind2D::SlipWall;b.name="body";}
+        else if(problem=="channel") {
+            const double length=std::hypot(f.areaVector.x,f.areaVector.y);
+            const bool axial=std::abs(f.areaVector.y)<1e-12*length;
+            if(axial&&f.areaVector.x<0&&std::abs(f.centre.x-xmin)<geometryTolerance)b.name="inlet";
+            else if(axial&&f.areaVector.x>0&&std::abs(f.centre.x-xmax)<geometryTolerance) {
+                b.kind=EulerBoundaryKind2D::PressureOutlet;b.name="outlet";b.reference.pressure=*outletPressure;
+            }else {b.kind=EulerBoundaryKind2D::SlipWall;b.name="walls";}
+        }
         else if(problem=="sod"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave") {
             const double length=std::hypot(f.areaVector.x,f.areaVector.y);
             const bool x=std::abs(f.areaVector.x)>std::abs(f.areaVector.y);
@@ -197,6 +213,10 @@ int main(int argc,char** argv) {
             b.name=(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")?(x?"periodic-x":"periodic-y"):(x?"ends":"walls");
         } else require(problem=="external"||f.patch!=BoundaryPatch2D::EmbeddedBoundary,"use external or custom for embedded walls");
         bc.push_back(b);
+    }
+    if(problem=="channel") {
+        const auto has=[&](EulerBoundaryKind2D kind){return std::any_of(bc.begin(),bc.end(),[&](const auto& b){return b.kind==kind;});};
+        require(has(EulerBoundaryKind2D::Farfield)&&has(EulerBoundaryKind2D::PressureOutlet),"channel requires planar inlet/outlet at xmin/xmax");
     }
     if(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")for(auto& b:bc) {
         const auto& f=mesh.faces[b.face];const bool x=b.name=="periodic-x";
@@ -331,8 +351,9 @@ int main(int argc,char** argv) {
         <<",\"dynamicViscosity\":"<<transport.dynamicViscosity<<",\"wallModel\":"<<quote(problem=="custom"?"custom":wallModel)
         <<",\"viscousCourant\":"<<(last?last->viscousCourant:0)<<",\"boundaryViscousWork\":"<<(last?last->boundaryViscousWork:0)
         <<",\"viscousDiscretization\":\"Newtonian Stokes / corrected velocity gradient / full momentum block row norm\""
-        <<",\"case\":"<<quote(problem)
-        <<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
+        <<",\"case\":"<<quote(problem)<<",\"outletPressure\":";
+    if(outletPressure)summary<<*outletPressure;else summary<<"null";
+    summary<<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
         <<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"gamma\":"<<gas.gamma<<",\"gasConstant\":"<<gas.gasConstant
         <<",\"referenceState\":{\"rho\":"<<reference.density<<",\"u\":"<<reference.u<<",\"v\":"<<reference.v<<",\"p\":"<<reference.pressure<<"},\"split\":"<<split
         <<",\"time\":"<<state.time<<",\"requestedEndTime\":"<<endTime<<",\"initialTime\":"<<initialTime<<",\"steps\":"<<state.steps

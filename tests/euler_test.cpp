@@ -28,6 +28,59 @@ void same(const EulerState2D& a,const EulerState2D& b,double tolerance=1e-12) {
     for(std::size_t i=0;i<a.cells.size();++i)for(std::size_t k=0;k<4;++k)
         require(std::abs(a.cells[i][k]-b.cells[i][k])<tolerance,"conserved state differs");
 }
+void pressureOutletChecks() {
+    const IdealGas2D gas{1.4,1};
+    const EulerPrimitive2D inside{1.3,.4,-.2,1.2};
+    const auto outlet=eulerPressureOutletState2D(inside,1.1,{3,0},gas);
+    const double ci=eulerSoundSpeed2D(inside,gas),cb=eulerSoundSpeed2D(outlet,gas);
+    // 128 eps after nondimensional normalization checks characteristic algebra,
+    // not a physical accuracy threshold for the computed flow.
+    const double roundoff=128*std::numeric_limits<double>::epsilon();
+    require(outlet.pressure==1.1&&outlet.v==inside.v,"outlet did not preserve pressure/tangential velocity");
+    require(std::abs((outlet.u+2*cb/(gas.gamma-1))/(inside.u+2*ci/(gas.gamma-1))-1)<roundoff,"outgoing outlet invariant changed");
+    require(std::abs(outlet.pressure/inside.pressure*std::pow(inside.density/outlet.density,gas.gamma)-1)<roundoff,"outlet entropy changed");
+    const double angle=.73,cosine=std::cos(angle),sine=std::sin(angle);
+    const auto turn=[&](const EulerPrimitive2D& q){return EulerPrimitive2D{q.density,q.u*cosine-q.v*sine,q.u*sine+q.v*cosine,q.pressure};};
+    const auto turned=eulerPressureOutletState2D(turn(inside),1.1,{cosine,sine},gas),expected=turn(outlet);
+    require(std::hypot(turned.u-expected.u,turned.v-expected.v)<roundoff,"outlet depends on global coordinate axes");
+    const EulerPrimitive2D supersonic{1,2,0,1};
+    require(eulerPressureOutletState2D(supersonic,.9,{1,0},gas).pressure==1,"supersonic outlet imposed an incoming pressure");
+    rejects([&]{(void)eulerPressureOutletState2D(inside,0,{1,0},gas);});
+    rejects([&]{(void)eulerPressureOutletState2D(inside,1.1,{0,0},gas);});
+    rejects([&]{(void)eulerPressureOutletState2D(inside,2,{1,0},gas);});
+    rejects([&]{(void)eulerPressureOutletState2D(inside,.01,{1,0},gas);});
+    rejects([&]{(void)eulerPressureOutletState2D({1,-.1,0,1},1,{1,0},gas);});
+
+    const auto mesh=rectangle(12,4,2,true);auto bc=boundaries(mesh,EulerBoundaryKind2D::SlipWall);
+    const EulerPrimitive2D uniform{1,.3,0,1};
+    for(auto& b:bc)if(mesh.faces[b.face].areaVector.x!=0) {
+        const bool right=mesh.faces[b.face].areaVector.x>0;
+        b.kind=right?EulerBoundaryKind2D::PressureOutlet:EulerBoundaryKind2D::Farfield;
+        b.name=right?"outlet":"inlet";b.reference=uniform;
+    }
+    const EulerStepper2D solver(mesh,bc,gas);auto state=constant(mesh,uniform);const auto initial=state;
+    for(unsigned i=0;i<40;++i)state=solver.advance(state,activeControls).state;
+    same(initial,state);
+    auto driven=bc;for(auto& b:driven)if(b.kind==EulerBoundaryKind2D::PressureOutlet)b.reference.pressure=.99;
+    auto firstOrder=activeControls;firstOrder.order=1;
+    const auto drivenStep=EulerStepper2D(mesh,driven,gas).advance(initial,firstOrder);
+    const auto trace=eulerPressureOutletState2D(uniform,.99,{1,0},gas);
+    for(const auto& b:driven)if(b.kind==EulerBoundaryKind2D::PressureOutlet) {
+        const auto& face=mesh.faces[b.face];const auto& flux=drivenStep.faceFlux[b.face];
+        const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+        require(std::abs(flux[0]/length-trace.density*trace.u)<roundoff,"pressure outlet mass flux does not use its characteristic trace");
+        require(std::abs((flux[1]-flux[0]*trace.u)/length-.99)<roundoff,"Riemann flux weakened the requested outlet pressure");
+    }
+    std::stringstream checkpoint;writeEulerCheckpoint2D(checkpoint,mesh,bc,gas,state,"pressure-outlet");
+    const auto saved=checkpoint.str();const auto restored=readEulerCheckpoint2D(checkpoint,mesh,bc,gas,"pressure-outlet");
+    require(restored.cells==state.cells,"pressure outlet checkpoint differs");
+    auto changed=bc;for(auto& b:changed)if(b.kind==EulerBoundaryKind2D::PressureOutlet)b.reference.pressure=.99;
+    rejects([&]{std::istringstream in(saved);(void)readEulerCheckpoint2D(in,mesh,changed,gas,"pressure-outlet");});
+    // A runtime regime failure must preserve the latest accepted state.
+    auto backflow=state;for(auto& q:backflow.cells)q[1]=-q[1];const auto before=backflow;
+    rejects([&]{(void)solver.advance(backflow,activeControls);});
+    require(backflow.cells==before.cells&&backflow.time==before.time&&backflow.steps==before.steps,"outlet failure overwrote accepted state");
+}
 void restAndFreeStream() {
     const auto mesh=rectangle(12,6,2,true);
     for(auto kind:{EulerBoundaryKind2D::SlipWall,EulerBoundaryKind2D::Farfield,EulerBoundaryKind2D::Transmissive}) {
@@ -403,7 +456,7 @@ int main() {
         for(auto scheme:{EulerFluxScheme2D::Rusanov,EulerFluxScheme2D::Hllc})for(unsigned order:{1u,2u}) {
             activeControls.fluxScheme=scheme;activeControls.order=order;
             std::cout<<"scheme="<<(scheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")<<", order="<<order<<std::endl;
-            restAndFreeStream();periodicConservation();wallAndUnitScaling();shockRotationAndCheckpoint();strongWaves();stationaryContact();
+            pressureOutletChecks();restAndFreeStream();periodicConservation();wallAndUnitScaling();shockRotationAndCheckpoint();strongWaves();stationaryContact();
         }
         perturbedNormalShock();smoothAccuracy();heatOperatorChecks();coupledHeatChecks();
         std::cout<<"Euler conservation, acoustic CFL, boundaries, rotation and checkpoint passed\n";return 0;
