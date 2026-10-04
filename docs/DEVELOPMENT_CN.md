@@ -53,6 +53,8 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 可选 `--export=/绝对路径/result.zip`、`--method=hybrid`、`--verified-preset=true`、`--target-cells=100000`、`--interaction-check=true`；图片路径用 `--image=/绝对路径/input.png --image-width=200` 检查 200 mm 标定。其他开关以 `desktop/src/` 的实际 smoke 入口为准；走通 smoke 不等于所有交互已验收。
 
+桌面续算重载复用同一 smoke 入口：`--flow=channel --flow-dt=.02 --flow-steps=2 --flow-checkpoint=/绝对路径/状态.checkpoint` 通过流动载入按钮导入；`--thermal-checkpoint=/绝对路径/thermal.thermal.checkpoint` 通过温度载入按钮导入并推进两步，步长默认 .025 s，可用 `--flow-dt=` 改变。联合文件旁须保留 `desktop-state.json`，两者均须使用原网格参数重新生成网格。路径替代仅在 `--smoke=` 下作用于文件选择对话框，解析、控件、IPC 和原生续算仍使用产品代码；这不验收系统文件对话框的人工选择。温度重载还检查从局部涡／自动步长设置切换到联合状态的操作。
+
 ## 从哪里进入代码
 
 生成链：输入 → 尺寸场/Quadtree → Cut-cell 或共形边界层 → 小单元处理 → 共享面拓扑 → 质量 → 导出。

@@ -14,6 +14,7 @@ function controls() {
   const elements = Object.fromEntries(Object.entries({flowMode:'transient', flowCase:'external', flowNu:'0.01', flowSpeed:'1', flowConvection:'upwind'})
     .map(([id, value]) => [id, {value}]));
   elements.flowResume = {checked:true}; elements.thermalResume = {checked:false};
+  elements.flowInitialVortex = {checked:false};
   const counts = { flow:0, thermal:0 };
   const context = {
     $:id => elements[id], state:{flowRestart:{case:'external', nu:.01, speed:1, convection:'upwind'}},
@@ -83,4 +84,24 @@ test('thermal resume deselects flow resume, restores thermal physics and preserv
   assert.equal(elements.flowDt.value, '0.005');
   assert.equal(elements.flowSteps.value, '7');
   assert.deepEqual(counts, {flow:1,thermal:1});
+});
+
+test('loading a thermal restart clears a locked vortex and selects supported fixed time stepping', () => {
+  const {context, elements} = controls();
+  for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection']) elements[id] = {value:''};
+  elements.flowMode.value = 'adaptive';
+  elements.flowInitialVortex.checked = true;
+  elements.thermalResume.checked = true;
+  elements.flowDt = {value:'0.005'}; elements.flowSteps = {value:'7'};
+  context.thermalPatches = [];
+  context.state.thermalRestart = {request:{case:'external',nu:.01,speed:1,convection:'upwind',
+    diffusivity:.1,initial:300,source:2,scalarConvection:'upwind',boundaries:{}}};
+  vm.runInContext(functionSource('applyThermalRestartControls'), context);
+  context.applyThermalRestartControls();
+  assert.equal(elements.flowInitialVortex.checked, false, 'restart uses its saved flow, without a fresh vortex');
+  assert.equal(elements.flowMode.value, 'transient');
+  assert.equal(elements.flowResume.checked, false);
+  assert.equal(elements.thermalResume.checked, true);
+  assert.equal(elements.flowDt.value, '0.005');
+  assert.equal(elements.flowSteps.value, '7');
 });

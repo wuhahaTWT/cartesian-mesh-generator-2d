@@ -1,0 +1,356 @@
+{
+  "format": "cartmesh2d-transient-thermal-workflow-v1",
+  "date": "2026-10-05",
+  "branch": "codex/transient-thermal-workflow",
+  "baseCommit": "570cd70420818fe3a1affb929410b55b1c12a984",
+  "scope": "Desktop workflow reliability within existing incompressible laminar and passive constant-property thermal models; no new physical accuracy qualification.",
+  "fixes": [
+    "CRLF joint thermal checkpoint metadata and final scalar extraction",
+    "Thermal restart clears standalone vortex initialization and switches adaptive controls to fixed steps"
+  ],
+  "tests": {
+    "native": {
+      "passed": 4,
+      "names": [
+        "cartmesh2d_thermal_flow",
+        "cartmesh2d_transient_flow_cli",
+        "cartmesh2d_taylor_green",
+        "cartmesh2d_flow_checkpoint"
+      ]
+    },
+    "frontend": {
+      "passed": 193,
+      "newFailureRegressions": 2,
+      "beforeFix": "2 new tests failed; original 16 passed"
+    },
+    "nativeBuild": "macOS system /usr/bin/clang++; shared runtime built before worktree migration and frozen with hard links; no solver changes in this work"
+  },
+  "cases": {
+    "flow-app": {
+      "cells": 5216,
+      "acceptedTime": 0.14,
+      "status": "本次时间推进完成",
+      "report": "outputs/transient-thermal-workflow/flow-app.png.json",
+      "screenshot": "outputs/transient-thermal-workflow/flow-app.png",
+      "fixedDt": 0.02,
+      "failurePreservedComplete": true,
+      "cancelResumePassed": true
+    },
+    "flow-reopened": {
+      "cells": 5216,
+      "acceptedTime": 0.18,
+      "status": "本次时间推进完成",
+      "report": "outputs/transient-thermal-workflow/flow-reopened.png.json",
+      "screenshot": "outputs/transient-thermal-workflow/flow-reopened.png",
+      "import": {
+        "flowStart": 0.14,
+        "flowEnd": 0.18
+      }
+    },
+    "thermal-app": {
+      "cells": 5168,
+      "acceptedTime": 0.3,
+      "status": "温度时间推进完成",
+      "report": "outputs/transient-thermal-workflow/thermal-app.png.json",
+      "screenshot": "outputs/transient-thermal-workflow/thermal-app.png",
+      "temperatureMinK": 299.99999999999943,
+      "temperatureMaxK": 346.9114414845045,
+      "fixedDt": 0.05,
+      "failurePreservedComplete": true,
+      "cancelResumePassed": true
+    },
+    "thermal-reopened": {
+      "cells": 5168,
+      "acceptedTime": 0.35000000000000003,
+      "status": "温度时间推进完成",
+      "report": "outputs/transient-thermal-workflow/thermal-reopened.png.json",
+      "screenshot": "outputs/transient-thermal-workflow/thermal-reopened.png",
+      "import": {
+        "thermalStart": 0.3,
+        "thermalEnd": 0.35000000000000003,
+        "fixedStepSelected": true,
+        "vortexCleared": true,
+        "physicsLocked": true
+      }
+    },
+    "adaptive-app": {
+      "cells": 1300,
+      "acceptedTime": 0.06,
+      "status": "本次时间推进完成",
+      "report": "outputs/transient-thermal-workflow/adaptive-app.png.json",
+      "screenshot": "outputs/transient-thermal-workflow/adaptive-app.png",
+      "adaptive": {
+        "failedAcceptedTime": 0.03,
+        "cancelledAcceptedTime": 0.04,
+        "resumedTime": 0.06
+      }
+    }
+  },
+  "stateComparisons": {
+    "thermalSplitVsContinuous": {
+      "command": {
+        "executable": "cartmesh2d_transport_cli",
+        "executableSha256": "4c78d52e1307cb3253e5e92510935b707eac5d50cd79c54b65e4587af59071c5",
+        "args": [
+          "--mesh",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-app/mesh-N72eZr/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-continuous",
+          "--boundary",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-app/mesh-N72eZr/thermal-run-C5zhoF/boundary.csv",
+          "--evolve-flow",
+          "external",
+          "--flow-nu",
+          "0.1",
+          "--flow-speed",
+          "1",
+          "--flow-max-iterations",
+          "1500",
+          "--flow-tolerance",
+          "1e-8",
+          "--flow-convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--outlet-backflow",
+          "reject",
+          "--diffusivity",
+          "0.1",
+          "--source",
+          "0",
+          "--initial",
+          "300",
+          "--convection",
+          "upwind",
+          "--dt",
+          "0.05",
+          "--steps",
+          "6"
+        ]
+      },
+      "time": 0.3,
+      "steps": 6,
+      "joint": {
+        "sha256": "ac01c19ce7f4e1ea7919ac123a437b0d1c09aece7d16ef0450a2132da05a3ebd",
+        "bytes": 1931904,
+        "identical": true
+      },
+      "temperature": {
+        "sha256": "6b67c20bb61a3caf865106ad7d1eaabe307917a3679d84b14370185f5cee6277",
+        "bytes": 565859,
+        "identical": true
+      },
+      "carrier": {
+        "sha256": "b4fce5c66a0ea5c60e87ab8863b999c06780b896a66f79021e0a6a94a4f890dc",
+        "bytes": 1824223,
+        "identical": true
+      }
+    },
+    "thermalCrLfImportVsLfRestart": {
+      "command": {
+        "executable": "cartmesh2d_transport_cli",
+        "executableSha256": "4c78d52e1307cb3253e5e92510935b707eac5d50cd79c54b65e4587af59071c5",
+        "args": [
+          "--mesh",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-app/mesh-N72eZr/circle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-restart-reference",
+          "--boundary",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-app/mesh-N72eZr/thermal-run-C5zhoF/boundary.csv",
+          "--evolve-flow",
+          "external",
+          "--flow-nu",
+          "0.1",
+          "--flow-speed",
+          "1",
+          "--flow-max-iterations",
+          "1500",
+          "--flow-tolerance",
+          "1e-8",
+          "--flow-convection",
+          "limited-linear",
+          "--pressure-preconditioner",
+          "aggregation",
+          "--outlet-backflow",
+          "reject",
+          "--diffusivity",
+          "0.1",
+          "--source",
+          "0",
+          "--initial",
+          "300",
+          "--convection",
+          "upwind",
+          "--dt",
+          "0.025",
+          "--steps",
+          "2",
+          "--restart",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/thermal-app/mesh-N72eZr/thermal-run-C5zhoF/thermal.thermal.checkpoint"
+        ]
+      },
+      "time": 0.35000000000000003,
+      "joint": {
+        "sha256": "b7f8bdeb8226eb4e245948d18d136a0fce217880f4268de31689a2617d5ceb69",
+        "bytes": 1918750,
+        "identical": true
+      },
+      "temperature": {
+        "sha256": "bcc72aa3ccdd8a79743f672c818a4fcee268f6bf4fce77791ada99ef90f2e2d4",
+        "bytes": 572063,
+        "identical": true
+      }
+    },
+    "flowSplitVsContinuous": {
+      "command": {
+        "executable": "cartmesh2d_flow_cli",
+        "executableSha256": "c8a829fa9e2345e7eb5d12f0b9a2ecdc74305428afa2e4f859f4d33b87a52caf",
+        "args": [
+          "--mesh",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/flow-app/mesh-Azcymw/rectangle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/flow-continuous",
+          "--case",
+          "channel",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "600",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "upwind",
+          "--pressure-preconditioner",
+          "ic0",
+          "--outlet-backflow",
+          "reject",
+          "--viscous-stress",
+          "symmetric",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "7"
+        ]
+      },
+      "time": 0.14,
+      "steps": 7,
+      "state": {
+        "sha256": "d55d54beb0673553dce9cc45d0fe050a8acbb9b9953dbdcdbdfc095d46fe1007",
+        "bytes": 1733541,
+        "identical": true
+      },
+      "fields": {
+        "sha256": "8b675fe79303bdac70d89e8c9471d9746c232ec542780cb3910db294154c8bb1",
+        "bytes": 601883,
+        "identical": true
+      }
+    },
+    "flowImportedVsContinuousState": {
+      "time": 0.18,
+      "command": {
+        "executable": "cartmesh2d_flow_cli",
+        "executableSha256": "c8a829fa9e2345e7eb5d12f0b9a2ecdc74305428afa2e4f859f4d33b87a52caf",
+        "args": [
+          "--mesh",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/flow-app/mesh-Azcymw/rectangle.solver.cm2d",
+          "--output",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/flow-restart-reference",
+          "--case",
+          "channel",
+          "--nu",
+          "0.1",
+          "--speed",
+          "1",
+          "--max-iterations",
+          "600",
+          "--tolerance",
+          "1e-8",
+          "--convection",
+          "upwind",
+          "--pressure-preconditioner",
+          "ic0",
+          "--outlet-backflow",
+          "reject",
+          "--viscous-stress",
+          "symmetric",
+          "--time-step",
+          "0.02",
+          "--steps",
+          "2",
+          "--restart",
+          "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/transient-thermal-workflow/flow-continuous.checkpoint"
+        ]
+      },
+      "checks": {
+        ".checkpoint": {
+          "identical": true,
+          "sha256": "fb5eb992c02353d6dc70b98a33637ff87ae507584061ba8efe71f2a473f2c408",
+          "bytes": 1733940
+        },
+        ".fields.json": {
+          "identical": true,
+          "sha256": "b89006c550b97730739572fdec5fd92f0dbff999b4a1afa3aef4183a5b69f67c",
+          "bytes": 602329
+        },
+        ".cells.csv": {
+          "identical": true,
+          "sha256": "63430cb97eefccb03f67cdfa6c702ebeba482f44a4a5a1688602fa55492b86a1",
+          "bytes": 1140992
+        },
+        ".faces.csv": {
+          "identical": true,
+          "sha256": "7a8f9039173a9cbbf9d6e720e0ea435ddc7ef346b718432f39775e69688ecf95",
+          "bytes": 1603982
+        }
+      }
+    }
+  },
+  "sources": {
+    "desktop/src/core/thermal.js": "03ecd991d8a4ff0e27ecd5813b281527118bab1fa21e05204b0633ab67a2f40a",
+    "desktop/src/renderer/app.js": "d04a904efe33a51e67258fde242b584d344e7ddfe586c9978d29787ec051e376",
+    "desktop/src/main.js": "9b58d7491a2fecc7b3676830583368c5b9e37ec9623b7999258ae01419eac3db",
+    "desktop/tests/thermal.test.js": "5e9e53cfc4c3d84fa7ce9fa5e48784d3d9ce4141ca7e8726c14653d434c15954",
+    "desktop/tests/thermal-renderer.test.js": "e09024f314ad3a464a690e97cae0dfb97a695c75426f692b60a6c5df288e29c2"
+  },
+  "baseline": {
+    "inheritedSourcePatch": "outputs/transient-thermal-workflow/inherited-baseline.patch",
+    "sha256": "232beba8da7bbf3f2663348464daf6a53c74615c3dd380e76f8915368e369fcf",
+    "includedInFeatureCommit": false,
+    "note": "Existing source cleanup and research changes inherited locally, separately from this feature. Build/node_modules/history outputs not copied. Only this feature patch removed from the shared root."
+  },
+  "evidence": {
+    "directory": "outputs/transient-thermal-workflow",
+    "retentionIndex": "outputs/transient-thermal-workflow/retention.json",
+    "archives": [
+      {
+        "path": "thermal-result.zip",
+        "bytes": 7274742,
+        "sha256": "1cd64acd214dbbb8122149c2d93bc7aa135085f1bbb08fa5f092b40ba9952dcd"
+      },
+      {
+        "path": "flow-result.zip",
+        "bytes": 6052393,
+        "sha256": "83f5f18785c858c3f64150f4639166435fc5af4f6a494955dac177315be00d29"
+      },
+      {
+        "path": "workflow-additional.zip",
+        "bytes": 6741648,
+        "sha256": "86121b9a6135b05cc6d772b9b527d7dce1841ad0a0fb10db3d422fc93eca3dd2"
+      }
+    ],
+    "localBytesAfterCompression": 25329315,
+    "cloudUploaded": false
+  },
+  "limits": [
+    "macOS Electron source App; packaged release, Windows/Linux App and platform CI not rerun",
+    "Smoke substitutes selected paths for native file dialogs; real renderer handlers, IPC, native tools and ZIP export exercised",
+    "Representative short runs only; no long-time or spatial/time accuracy study, no complex heat-transfer qualification",
+    "No main merge; no new physics, default solver control or quality-gate change"
+  ],
+  "clockChecks": {
+    "units": "s",
+    "policy": "Reuse existing smoke clock tolerances (1e-10 flow, 1e-12 thermal) only for floating-point time arithmetic; complete saved-state comparisons use exact bytes, not a new physical accuracy threshold."
+  }
+}

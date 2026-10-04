@@ -188,6 +188,18 @@ test('synthetic thermal output contract validates mesh, joint state, values and 
   assert.equal(validated.history.length, 4);
 });
 
+test('CRLF thermal checkpoints and outputs retain the same state and corruption checks', () => {
+  const f = thermalContractFixture();
+  const crlf = text => text.replace(/\n/g, '\r\n');
+  assert.equal(thermalCheckpointTime(crlf(f.joint)), f.summary.time);
+  const lf = validateThermalOutput(f.summary, f.cells, f.history, f.joint, f.mesh, f.input);
+  const windows = validateThermalOutput(f.summary, crlf(f.cells), crlf(f.history), crlf(f.joint), f.mesh, f.input);
+  assert.deepEqual(windows, lf);
+  assert.throws(() => validateThermalOutput(f.summary, crlf(f.cells), crlf(f.history),
+    crlf(f.joint.replace('SCALAR 1 0', 'SCALAR 1 9')), f.mesh, f.input), /温度 CSV 与联合状态不同/);
+  assert.throws(() => thermalCheckpointTime(crlf(f.joint.replace('TIME 0.2', 'TIME NaN'))), /物理时间/);
+});
+
 test('thermal output contract rejects tampered joint time/value, summary types, history and request', () => {
   const fixture = thermalContractFixture();
   const cases = [

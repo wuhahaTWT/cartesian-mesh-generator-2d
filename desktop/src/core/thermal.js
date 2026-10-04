@@ -86,6 +86,9 @@ function csvRows(text,header) {
 }
 // Metadata only; native restart still validates the complete geometry and state.
 function thermalCheckpointTime(text) {
+  // Native text streams use CRLF on Windows; line endings are not part of the
+  // physical checkpoint identity. Keep the same version and field checks.
+  text=text.replace(/\r\n/g,'\n');
   requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT 1\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
   const parts=text.split('\nFLOW\n');
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
@@ -108,7 +111,7 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   const t=startTime+r.dt*r.steps;
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');
   requireValue(near(thermalCheckpointTime(jointText),t),'联合保存时间不同步。');
-  const scalarLine=jointText.split('\nFLOW\n')[0].split('\n').find(l=>l.startsWith('SCALAR '));
+  const scalarLine=jointText.split(/\r?\nFLOW\r?\n/)[0].split(/\r?\n/).find(l=>l.startsWith('SCALAR '));
   requireValue(scalarLine,'缺少联合温度场。');
   const jointValues=scalarLine.trim().split(/\s+/).slice(1).map(Number);
   requireValue(jointValues.shift()===mesh.cells.length&&jointValues.length===mesh.cells.length,'联合温度场数量错误。');

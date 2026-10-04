@@ -1127,6 +1127,10 @@ function applyThermalRestartControls() {
   const request = state.thermalRestart?.request;
   if (request && $('thermalResume').checked) {
     $('flowResume').checked = false;
+    // The joint checkpoint supplies the carrier state. A leftover standalone
+    // vortex would otherwise be locked on while disabling the thermal button.
+    $('flowInitialVortex').checked = false;
+    if ($('flowMode').value === 'adaptive') $('flowMode').value = 'transient';
     applySharedFlowControls(request);
     for (const [field, id] of Object.entries({ diffusivity:'thermalDiffusivity', initial:'thermalInitial', source:'thermalSource', scalarConvection:'thermalConvection' }))
       $(id).value = request[field];

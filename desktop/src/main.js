@@ -309,7 +309,8 @@ app.whenReady().then(async () => {
   }));
   ipcMain.handle('pick-flow-checkpoint', () => exclusive(async () => {
     requireFluidMesh(currentResult);
-    const picked = await dialog.showOpenDialog(mainWindow, { title: '选择非定常重启状态',
+    const smokeFile = smokeCheckpointPath('flow');
+    const picked = smokeFile ? { canceled:false, filePaths:[smokeFile] } : await dialog.showOpenDialog(mainWindow, { title: '选择非定常重启状态',
       properties: ['openFile'], filters: [{ name: '已接受流动状态', extensions: ['checkpoint'] }] });
     if (picked.canceled) return null;
     const file = picked.filePaths[0];
@@ -476,9 +477,14 @@ app.whenReady().then(async () => {
   }));
 
   ipcMain.handle('thermal-state', () => ({thermal:currentResult?.thermal || null,restart:currentResult?.thermalRestart?.metadata || null}));
+  // A smoke invocation can replace the file dialog, but still goes through the
+  // real import handler. Normal renderer IPC cannot supply arbitrary paths.
+  const smokeCheckpointPath = kind => process.argv.some(arg=>arg.startsWith('--smoke='))
+    ? process.argv.find(arg=>arg.startsWith(`--${kind}-checkpoint=`))?.slice(`--${kind}-checkpoint=`.length) : null;
   ipcMain.handle('pick-thermal-checkpoint',()=>exclusive(async()=>{
     requireFluidMesh(currentResult);
-    const picked=await dialog.showOpenDialog(mainWindow,{title:'载入导出包中的联合续算状态',properties:['openFile'],filters:[{name:'联合状态',extensions:['checkpoint']}]});
+    const smokeFile=smokeCheckpointPath('thermal');
+    const picked=smokeFile?{canceled:false,filePaths:[smokeFile]}:await dialog.showOpenDialog(mainWindow,{title:'载入导出包中的联合续算状态',properties:['openFile'],filters:[{name:'联合状态',extensions:['checkpoint']}]});
     if(picked.canceled)return null;
     const file=picked.filePaths[0];
     if(!file.endsWith('.thermal.checkpoint'))throw new Error('请选择 thermal.checkpoint，carrier.checkpoint 不能联合续算。');
@@ -996,7 +1002,20 @@ async function runSmoke() {
           throw new Error('Loading a zero-time case silently enabled resume');
         smoke.state.flowCaseSmoke={mesh:saved.document.mesh,request:saved.document.request,settingsRoundTrip:true};
       }
+      if (${JSON.stringify(Boolean(argument('flow-checkpoint')))}) {
+        document.getElementById('pickFlowCheckpoint').click();
+        while(smoke.state.busy) await new Promise(resolve=>setTimeout(resolve,30));
+        if(!smoke.state.flowRestart || !document.getElementById('flowResume').checked)
+          throw new Error('Exported flow checkpoint did not load through the desktop picker');
+        smoke.state.restartImportSmoke={flowStart:smoke.state.flowRestart.time};
+      }
       await smoke.runFlow();
+      if(smoke.state.restartImportSmoke?.flowStart!==undefined) {
+        const expected=smoke.state.restartImportSmoke.flowStart+Number(document.getElementById('flowDt').value)*Number(document.getElementById('flowSteps').value);
+        if(!smoke.state.flow || Math.abs(smoke.state.flow.summary.acceptedTime-expected)>1e-10)
+          throw new Error('Imported flow checkpoint used the wrong physical time');
+        smoke.state.restartImportSmoke.flowEnd=smoke.state.flow.summary.acceptedTime;
+      }
       if (${JSON.stringify(argument('flow-case-check')==='true')}) {
         if(!smoke.state.flow)throw new Error('Restored case failed to calculate');
         if(document.getElementById('flowMode').value!=='steady' && !document.getElementById('saveFlowCase').disabled)
@@ -1190,6 +1209,32 @@ async function runSmoke() {
       if(document.getElementById('displayMode').value!=='temperature'||document.getElementById('thermalOption').hidden)throw new Error('Temperature map not displayed');
       document.getElementById('thermalBlock').scrollIntoView({block:'start'});
     }
+    if (${JSON.stringify(Boolean(argument('thermal-checkpoint')))}) {
+      // Start from incompatible standalone controls, as when a user switches
+      // from a vortex/adaptive flow experiment to a saved thermal calculation.
+      document.getElementById('flowMode').value='adaptive';
+      document.getElementById('flowInitialVortex').checked=true;
+      document.getElementById('flowMode').dispatchEvent(new Event('change'));
+      document.getElementById('pickThermalCheckpoint').click();
+      while(smoke.state.busy) await new Promise(resolve=>setTimeout(resolve,30));
+      const saved=smoke.state.thermalRestart;
+      if(!saved || !document.getElementById('thermalResume').checked || document.getElementById('runThermal').disabled)
+        throw new Error('Imported thermal checkpoint cannot be resumed from the desktop');
+      if(document.getElementById('flowMode').value!=='transient' || document.getElementById('flowInitialVortex').checked)
+        throw new Error('Thermal import retained incompatible standalone initialization');
+      for(const id of ['flowNu','thermalDiffusivity','thermalWallValue'])
+        if(!document.getElementById(id).disabled) throw new Error('Thermal restart physics is not locked: '+id);
+      const dt=Number(${JSON.stringify(argument('flow-dt') || '.025')});
+      for(const [id,value] of Object.entries({flowDt:dt,flowSteps:2,flowMaxIterations:saved.request.maxIterations,
+        flowPressurePreconditioner:saved.request.pressurePreconditioner,flowTolerance:saved.request.tolerance}))
+        document.getElementById(id).value=value;
+      await smoke.runThermal();
+      if(!smoke.state.thermal || Math.abs(smoke.state.thermal.summary.time-saved.time-2*dt)>1e-12)
+        throw new Error('Imported thermal checkpoint used the wrong physical time');
+      smoke.state.restartImportSmoke={...smoke.state.restartImportSmoke,thermalStart:saved.time,
+        thermalEnd:smoke.state.thermal.summary.time,fixedStepSelected:true,vortexCleared:true,physicsLocked:true};
+      document.getElementById('thermalBlock').scrollIntoView({block:'start'});
+    }
     if (${JSON.stringify(Boolean(argument('interaction-check')))}) {
       const mesh = smoke.state.mesh;
       const display = document.getElementById('displayMode').value;
@@ -1251,6 +1296,7 @@ async function runSmoke() {
       adaptive: smoke.state.adaptiveSmoke || null,
       initialVortex: smoke.state.initialVortexSmoke || null,
       flowCase: smoke.state.flowCaseSmoke || null,
+      restartImport: smoke.state.restartImportSmoke || null,
       bundledChineseFontLoaded: true,
       theme: document.documentElement.dataset.theme,
       interactionChecks: ${JSON.stringify(Boolean(argument('interaction-check')))},
