@@ -30,6 +30,7 @@ struct EulerState2D {
     std::vector<EulerConservative2D> cells;
 };
 enum class EulerFluxScheme2D { Rusanov, Hllc };
+enum class EulerTimeStepControl2D { Legacy, StageGuarded };
 struct EulerFaceFlux2D {
     EulerConservative2D integratedFlux{};
     double waveSpeed=0;
@@ -49,6 +50,9 @@ struct EulerStepControls2D {
     // Optional exact integration horizon; splits the penultimate step if the
     // remaining tail would fall below minimumStep. No accepted clock snapping.
     std::optional<double> endTime;
+    // Optional 5% headroom for changing stage rates and rate-based CFL retries.
+    // Stage positivity/CFL limits are unchanged; no history is needed on restart.
+    EulerTimeStepControl2D timeStepControl=EulerTimeStepControl2D::Legacy;
 };
 struct EulerStepResult2D {
     EulerState2D state;
@@ -69,6 +73,7 @@ struct EulerStepResult2D {
     double step=0, acousticCourant=0, minimumDensity=0, minimumPressure=0;
     double maximumCellBalanceError=0;
     std::size_t rejectedCandidates=0;
+    std::size_t cflRejectedCandidates=0,spatialEvaluations=0;
 };
 
 void validateIdealGas2D(const IdealGas2D&);

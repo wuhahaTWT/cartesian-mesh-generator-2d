@@ -190,6 +190,25 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 
 最后一条用短时功能测试物性，不是空气推荐值。精度脚本可能需数分钟，Windows 预算更长；日常只选相关项，完整范围与未验物理问题见当前状态。
 
+### 可压层流阶段步长控制
+
+`EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
+
+5% 是固定的无量纲阶段速率余量，用于避免在上限附近反复试探，没有按网格或工况拟合，也不是误差容限。每次重试重新计算实际阶段，不能用预测率绕过验收。缩步后仍处理小于 minimumStep 的浮点尾步；无法合法推进就保留最近接受状态并失败。控制不保存隐含历史，因此物理检查点格式不变，同控制续算可逐字节重现；可明确更换数值控制，物性与边界绑定保持。
+
+摘要与历史新增 `cflRejectedCandidates`（拒绝候选中出现 CFL 超限的次数，可能同时失正）及 `spatialEvaluations`（接受步及其重试中的空间算子调用数）。首次已接受状态的算子只算一次，重试复用；这些工作量指标与完整进程成本分别报告。
+
+```sh
+cmake --build build --parallel 2 --target cartmesh2d_euler_cli cartmesh2d_euler_tests
+ctest --test-dir build -R '^cartmesh2d_euler_core$' --output-on-failure
+python3 tools/flow/run_compressible_channel.py --output outputs/compressible-laminar/guarded-new --time-step-control stage-guarded
+python3 tools/flow/run_compressible_channel.py --output outputs/compressible-laminar/smooth-guarded-new --shape smooth --time-step-control stage-guarded --max-steps 250000 --max-seconds 480
+```
+
+完整对照把 mode 改为 legacy；涉及两种控制的公平成本比较需相同实际网格、边界、物性、终点、预算，并读取 `run.json` 中 `full` 命令的完整进程秒数。`--single-run` 可省去另一次完整续算和边界读回实验，明确记录 not-run；这两个额外实验不能混入提速分母。`--cfl .2` 是本轮从真实热壁启动段选出的近似时间误差匹配控制，不能当作普遍最佳值。
+
+短时启动敏感性使用 `--mach .5 --wall-temperature 330 --flow-times .125 --single-run`；分别比较 legacy/.4 与 stage-guarded 的 .4/.2/.1/.05/.025。相同 CFL 上限不代表相同实际步长或时间误差；本轮结果见当前状态。原生 `stageGuardedChecks` 在固定网格上比较 .4/.2/.1 与 .0125 参考，并用 .025 复核参考误差，沿用原有时间阶>1.8、参考差异小于最细误差10%的目标；它不是空间或实验精度门。
+
 ### 亚声速通道压力出口与复现
 
 `EulerBoundaryKind2D::PressureOutlet` 追加枚举值，保留旧检查点中的类型编号。`eulerPressureOutletState2D` 对外法向 n 计算 `un=u·n` 和 `J+=un+2c/(γ−1)`；当 `0≤un<c` 时，按给定出口静压 p_b 构造 `ρ_b=ρ_i(p_b/p_i)^(1/γ)`、`c_b=c_i(p_b/p_i)^((γ−1)/(2γ))`、`un_b=un+2(c_i−c_b)/(γ−1)`，保留内部切向速度。边界迹直接形成守恒通量，避免第二次 Riemann 求解弱化规定压力；声学步长仍取内部/边界包络。重构把边界迹放在真实面心。

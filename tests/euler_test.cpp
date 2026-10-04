@@ -443,7 +443,67 @@ void coupledHeatChecks() {
     controls.maximumRetries=30;controls.minimumStep=1e-16;
     const auto cooled=EulerStepper2D(mesh,bc,gas,{.5}).advance(initial,controls);
     require(cooled.rejectedCandidates>0&&cooled.minimumPressure>0&&initial.time==0,"cooling positivity retry/initial state preservation failed");
+    controls.timeStepControl=EulerTimeStepControl2D::StageGuarded;
+    const auto guardedCooling=EulerStepper2D(mesh,bc,gas,{.5}).advance(initial,controls);
+    require(guardedCooling.rejectedCandidates>0&&guardedCooling.minimumPressure>0&&initial.time==0,"stage guard bypassed cooling positivity retries");
+    controls.maximumRetries=0;
+    rejects([&]{(void)EulerStepper2D(mesh,bc,gas,{.5}).advance(initial,controls);});
     std::cout<<"coupled heat: conservation, combined CFL, zero-k identity, wall signs, cooling retries and physical restart binding passed\n";
+}
+void stageGuardedChecks() {
+    const auto mesh=rectangle(12,4,2,true);const auto bc=periodic(mesh);
+    const IdealGas2D gas{1.4,1};const EulerTransport2D transport{.003,.002};
+    auto initial=constant(mesh,{1,.4,0,1});
+    for(std::size_t i=0;i<mesh.cells.size();++i) {
+        const double wave=.05*std::sin(std::acos(-1.)*mesh.cells[i].centre.x);
+        initial.cells[i]=eulerConservative2D({1+wave,.4+wave,.02*std::cos(std::acos(-1.)*mesh.cells[i].centre.x),std::pow(1+wave,gas.gamma)},gas);
+    }
+    const EulerStepper2D solver(mesh,bc,gas,transport);
+    EulerStepControls2D controls;controls.order=2;controls.fluxScheme=EulerFluxScheme2D::Hllc;
+    controls.timeStepControl=static_cast<EulerTimeStepControl2D>(91);
+    rejects([&]{(void)solver.advance(initial,controls);});
+    controls.order=1;controls.timeStepControl=EulerTimeStepControl2D::Legacy;
+    const auto forward=solver.advance(initial,controls);
+    controls.timeStepControl=EulerTimeStepControl2D::StageGuarded;
+    const auto guardedForward=solver.advance(initial,controls);
+    require(forward.state.cells==guardedForward.state.cells&&forward.step==guardedForward.step,"stage guard changed first-order stepping");
+    controls.order=2;controls.endTime=.8;
+    const auto evolve=[&](double cfl) {
+        auto state=initial;controls.acousticCourant=cfl;
+        while(state.time<*controls.endTime) {
+            const auto step=solver.advance(state,controls);
+            require(step.step>=controls.minimumStep&&step.step<=controls.maximumStep,"guarded time limits violated");
+            require(step.combinedCourant<=cfl*(1+8*std::numeric_limits<double>::epsilon()),"guarded stage exceeded original combined CFL limit");
+            require(step.spatialEvaluations>=2&&step.cflRejectedCandidates<=step.rejectedCandidates,"invalid stage work counters");
+            state=step.state;
+            if(state.steps==8) {
+                std::stringstream checkpoint;writeEulerCheckpoint2D(checkpoint,mesh,bc,gas,state,"guarded",transport);
+                const auto restored=readEulerCheckpoint2D(checkpoint,mesh,bc,gas,"guarded",transport);
+                const auto a=solver.advance(state,controls),b=EulerStepper2D(mesh,bc,gas,transport).advance(restored,controls);
+                require(a.state.cells==b.state.cells&&a.state.time==b.state.time&&a.rejectedCandidates==b.rejectedCandidates,"guarded restart depends on unrecorded controller history");
+            }
+        }
+        require(state.time==*controls.endTime,"guarded integration missed the exact horizon");return state;
+    };
+    const auto coarse=evolve(.4),medium=evolve(.2),fine=evolve(.1),reference=evolve(.025),checkedReference=evolve(.0125);
+    const auto error=[&](const EulerState2D& a,const EulerState2D& b){double sum=0;for(std::size_t i=0;i<a.cells.size();++i)for(std::size_t k=0;k<4;++k){const double d=a.cells[i][k]-b.cells[i][k];sum+=mesh.cells[i].area*d*d;}return std::sqrt(sum);};
+    const double e0=error(coarse,checkedReference),e1=error(medium,checkedReference),e2=error(fine,checkedReference);
+    const double order=std::log2(e1/e2),referenceDifference=error(reference,checkedReference);
+    // Same semi-discrete equations/mesh: retain the existing temporal target
+    // >1.8, with reference uncertainty below 10% of the finest measured error.
+    std::cout<<std::setprecision(17)<<"stage-guarded temporal errors="<<e0<<','<<e1<<','<<e2<<" order="<<order<<" reference difference="<<referenceDifference<<'\n';
+    require(e0>e1&&order>1.8&&referenceDifference<.1*e2,"stage-guarded temporal refinement failed");
+    controls.acousticCourant=.4;controls.minimumStep=.0001;controls.maximumStep=.001;controls.endTime=.00105;
+    const auto penultimate=solver.advance(initial,controls),last=solver.advance(penultimate.state,controls);
+    require(penultimate.step>=controls.minimumStep&&last.step>=controls.minimumStep&&last.state.time==*controls.endTime&&last.state.steps==2,"stage guard mishandled a sub-minimum final tail");
+    auto hot=boundaries(mesh,EulerBoundaryKind2D::SlipWall);
+    for(auto& b:hot){b.thermalKind=HeatBoundaryKind2D::OutwardFlux;b.thermalValue=-1000;}
+    controls.minimumStep=1e-14;controls.maximumStep=1;controls.endTime.reset();
+    const auto heated=EulerStepper2D(mesh,hot,gas,{.5}).advance(constant(mesh,{1,0,0,1}),controls);
+    require(heated.cflRejectedCandidates>0&&heated.minimumPressure>0&&heated.combinedCourant<=controls.acousticCourant*(1+8*std::numeric_limits<double>::epsilon()),"guarded retry did not handle a rapidly increasing stage rate");
+    controls.minimumStep=.1;controls.maximumStep=.1;
+    const auto before=initial;rejects([&]{(void)solver.advance(initial,controls);});
+    require(initial.cells==before.cells&&initial.time==before.time,"minimum-step failure changed the input state");
 }
 int main() {
     try {
@@ -458,7 +518,7 @@ int main() {
             std::cout<<"scheme="<<(scheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")<<", order="<<order<<std::endl;
             pressureOutletChecks();restAndFreeStream();periodicConservation();wallAndUnitScaling();shockRotationAndCheckpoint();strongWaves();stationaryContact();
         }
-        perturbedNormalShock();smoothAccuracy();heatOperatorChecks();coupledHeatChecks();
+        perturbedNormalShock();smoothAccuracy();heatOperatorChecks();coupledHeatChecks();stageGuardedChecks();
         std::cout<<"Euler conservation, acoustic CFL, boundaries, rotation and checkpoint passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

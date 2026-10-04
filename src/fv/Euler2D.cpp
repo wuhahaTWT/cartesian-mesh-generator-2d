@@ -331,34 +331,45 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
             control.acousticCourant<=.45&&control.maximumRetries<=30,"invalid explicit acoustic time controls");
     require(control.wallGradient==WallGradient2D::Linear||control.wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
+    require(control.timeStepControl==EulerTimeStepControl2D::Legacy||control.timeStepControl==EulerTimeStepControl2D::StageGuarded,"unknown time-step control");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
     require(!control.endTime||(std::isfinite(*control.endTime)&&*control.endTime>initial.time),"invalid integration end time");
     const auto first=spatialOperator(mesh,lookup,gas,initial.cells,control,heat,viscous);
-    double dt=control.maximumStep;
-    for(std::size_t i=0;i<nc;++i)dt=std::min(dt,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
-    if(control.endTime) {
-        const double remaining=*control.endTime-initial.time;dt=std::min(dt,remaining);
+    const bool guarded=control.timeStepControl==EulerTimeStepControl2D::StageGuarded;
+    double cflStep=std::numeric_limits<double>::infinity();
+    for(std::size_t i=0;i<nc;++i)cflStep=std::min(cflStep,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
+    double dt=std::min(control.maximumStep,(guarded&&control.order==2?.95:1)*cflStep);
+    const auto limitHorizon=[&](double step) {
+      if(control.endTime) {
+        const double remaining=*control.endTime-initial.time;step=std::min(step,remaining);
         // Keep every step within BOTH user limits. A roundoff-sized final tail
         // is avoided by taking two ordinary smaller steps, never by advancing
         // the clock without flux or silently reducing the declared minimum.
-        if(remaining>dt&&remaining-dt<control.minimumStep)dt=.5*remaining;
-    }
+        if(remaining>step&&remaining-step<control.minimumStep)step=.5*remaining;
+      }
+      return step;
+    };
+    dt=limitHorizon(dt);
     require(std::isfinite(dt)&&dt>=control.minimumStep,"combined acoustic/heat/viscous CFL requires a step below the declared minimum");
-    EulerStepResult2D result;result.quadraticHeatWalls=heat?heat->quadraticWalls():0;result.quadraticViscousWalls=viscous?viscous->quadraticWalls():0;result.previousCells=initial.cells;
+    EulerStepResult2D result;result.spatialEvaluations=1;result.quadraticHeatWalls=heat?heat->quadraticWalls():0;result.quadraticViscousWalls=viscous?viscous->quadraticWalls():0;result.previousCells=initial.cells;
     std::vector<EulerConservative2D> accepted,stage,secondEuler,residual,absolute(nc);
     std::vector<double> spectral;
     std::string failure="non-positive stage state";
     for(std::size_t attempt=0;;++attempt) {
         require(std::isfinite(initial.time+dt)&&initial.time+dt>initial.time,"physical time cannot advance at this step");
         bool valid=positiveUpdate(mesh,initial.cells,first.residual,dt,gas,stage);
+        bool cflExceeded=false,positiveStages=valid;
+        double stageBound=dt;
         SpatialOperator combined=first;
         if(valid&&control.order==2) {
             try {
+                ++result.spatialEvaluations;
                 const auto second=spatialOperator(mesh,lookup,gas,stage,control,heat,viscous);
                 // SSPRK(2,2): U1=Un+dt L(Un); Un+1=1/2 Un+1/2 [U1+dt L(U1)].
                 // Require admissibility of each FE stage, not just of the mixture.
                 valid=positiveUpdate(mesh,stage,second.residual,dt,gas,secondEuler);
+                positiveStages=valid;
                 combined.fallbackEvaluations+=second.fallbackEvaluations;
                 combined.reconstructionFallbackCells+=second.reconstructionFallbackCells;
                 combined.minimumContactRestoration=std::min(combined.minimumContactRestoration,second.minimumContactRestoration);
@@ -383,12 +394,14 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
                 for(std::size_t i=0;i<nc;++i) {
                     combined.heatRate[i]=std::max(first.heatRate[i],second.heatRate[i]);
                     combined.viscousRate[i]=std::max(first.viscousRate[i],second.viscousRate[i]);
-                    if(dt*(combined.spectral[i]/mesh.cells[i].area+combined.heatRate[i]+combined.viscousRate[i])>control.acousticCourant*(1+8*std::numeric_limits<double>::epsilon())) {
-                        valid=false;failure="second-stage combined acoustic/heat/viscous CFL exceeded";break;
+                    const double rate=combined.spectral[i]/mesh.cells[i].area+combined.heatRate[i]+combined.viscousRate[i];
+                    stageBound=std::min(stageBound,control.acousticCourant/rate);
+                    if(dt*rate>control.acousticCourant*(1+8*std::numeric_limits<double>::epsilon())) {
+                        valid=false;cflExceeded=true;failure="second-stage combined acoustic/heat/viscous CFL exceeded";
                     }
                 }
                 if(valid)valid=positiveUpdate(mesh,initial.cells,combined.residual,dt,gas,accepted);
-            }catch(const std::runtime_error& e){valid=false;failure=e.what();}
+            }catch(const std::runtime_error& e){valid=false;positiveStages=false;failure=e.what();}
         }else if(valid)accepted=stage;
         if(valid) {
             result.faceFlux=std::move(combined.faceFlux);result.faceWaveSpeed=std::move(combined.speed);
@@ -402,7 +415,10 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
             residual=std::move(combined.residual);spectral=std::move(combined.spectral);break;
         }
         require(attempt<control.maximumRetries,"stage positivity/CFL retry budget exhausted ("+failure+"); previous accepted state retained");
-        ++result.rejectedCandidates;dt*=.5;
+        ++result.rejectedCandidates;if(cflExceeded)++result.cflRejectedCandidates;
+        // Only a CFL-only rejection may use the measured rate. Any positivity
+        // or boundary/operator failure retains the conservative half-step retry.
+        dt=guarded&&cflExceeded&&positiveStages?limitHorizon(.95*stageBound):.5*dt;
         require(dt>=control.minimumStep,"stage positivity/CFL requires a step below the declared minimum; previous accepted state retained");
     }
     result.step=dt;result.state={initial.time+dt,initial.steps+1,std::move(accepted)};

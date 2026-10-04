@@ -1,0 +1,403 @@
+{
+  "format": "cartmesh2d-compressible-stage-control-v1",
+  "date": "2026-10-05",
+  "baseCommit": "f67f141750e85b692a8d420289d1af976b9feadb",
+  "branch": "codex/compressible-laminar",
+  "defaultControl": "legacy",
+  "optionalControl": "stage-guarded",
+  "initialStageRateHeadroom": 0.95,
+  "scheme": "unchanged limited-linear HLLC/HLLE, SSPRK(2,2), full acoustic/thermal/viscous CFL and positivity gates",
+  "cases": [
+    {
+      "case": "straight",
+      "inputsExceptControl": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.2,
+        "reynoldsHeight": 442.62865530945925,
+        "wallTemperatureK": 300.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 69.44379021914055,
+        "endTimeS": 2.30402170582993e-05,
+        "flowThroughTimes": 4.0,
+        "shape": "straight",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux",
+        "cfl": 0.4,
+        "maximumSteps": 250000,
+        "maximumSeconds": 480.0
+      },
+      "legacy": {
+        "fullNativeProcessSeconds": 25.563284915988334,
+        "meshAndFullNativeProcessSeconds": 25.579704583011335,
+        "acceptedSteps": 19220,
+        "rejectedCandidates": 17349,
+        "cflRejectedCandidates": 17349,
+        "spatialEvaluations": 55789,
+        "lastStep": 1.3671452229986137e-09,
+        "combinedCourant": 0.25081062650865077
+      },
+      "stageGuarded": {
+        "fullNativeProcessSeconds": 9.817470874986611,
+        "meshAndFullNativeProcessSeconds": 9.830052082979819,
+        "acceptedSteps": 11101,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 22202,
+        "lastStep": 2.6977399134042734e-10,
+        "combinedCourant": 0.04949158483251593
+      },
+      "fullNativeProcessRatio": 2.6038564556498565,
+      "maximumFieldDifferencesSI": {
+        "rho": 9.814371537686384e-14,
+        "u": 1.269881977350451e-10,
+        "v": 1.366479152054012e-11,
+        "p": 5.864421837031841e-09,
+        "temperature": 2.467004378559068e-11,
+        "velocityVector": 1.2699231925933469e-10
+      },
+      "newRestartCheck": true,
+      "newBoundaryRoundtrip": true,
+      "records": [
+        "outputs/compressible-laminar/stage-control/straight-legacy/run.json",
+        "outputs/compressible-laminar/stage-control/straight-guarded/run.json"
+      ]
+    },
+    {
+      "case": "heated",
+      "inputsExceptControl": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.5,
+        "reynoldsHeight": 1106.571638273648,
+        "wallTemperatureK": 330.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 173.60947554785136,
+        "endTimeS": 9.216086823319721e-06,
+        "flowThroughTimes": 4.0,
+        "shape": "straight",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux",
+        "cfl": 0.4,
+        "maximumSteps": 250000,
+        "maximumSeconds": 480.0
+      },
+      "legacy": {
+        "fullNativeProcessSeconds": 8.347971916984534,
+        "meshAndFullNativeProcessSeconds": 8.361116583982948,
+        "acceptedSteps": 6812,
+        "rejectedCandidates": 4379,
+        "cflRejectedCandidates": 4379,
+        "spatialEvaluations": 18003,
+        "lastStep": 1.0866024734721216e-09,
+        "combinedCourant": 0.21861089631259256
+      },
+      "stageGuarded": {
+        "fullNativeProcessSeconds": 4.366683416010346,
+        "meshAndFullNativeProcessSeconds": 4.379223208001349,
+        "acceptedSteps": 4866,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 9732,
+        "lastStep": 5.809546808702713e-10,
+        "combinedCourant": 0.1168808524523052
+      },
+      "fullNativeProcessRatio": 1.9117419610445958,
+      "maximumFieldDifferencesSI": {
+        "rho": 5.687272874865812e-11,
+        "u": 2.4114910956996027e-08,
+        "v": 8.951315244587477e-09,
+        "p": 4.294663085602224e-06,
+        "temperature": 1.4519287105940748e-08,
+        "velocityVector": 2.454366778001524e-08
+      },
+      "newRestartCheck": "not-run",
+      "newBoundaryRoundtrip": "not-run",
+      "records": [
+        "outputs/compressible-laminar/stage-control/heated-legacy/run.json",
+        "outputs/compressible-laminar/stage-control/heated-guarded/run.json"
+      ]
+    },
+    {
+      "case": "smooth",
+      "inputsExceptControl": {
+        "heightM": 0.0001,
+        "lengthM": 0.0004,
+        "mach": 0.2,
+        "reynoldsHeight": 442.62865530945925,
+        "wallTemperatureK": 300.0,
+        "muPaS": 1.846e-05,
+        "kWmK": 0.025758750694444447,
+        "gamma": 1.4,
+        "gasR": 287.05,
+        "referenceDensity": 1.176624281484062,
+        "referencePressurePa": 101325.0,
+        "referenceTemperatureK": 300.0,
+        "referenceSpeedMs": 69.44379021914055,
+        "endTimeS": 2.30402170582993e-05,
+        "flowThroughTimes": 4.0,
+        "shape": "smooth",
+        "level": 5,
+        "pressureOutletBackflow": "explicit failure",
+        "openDiffusion": "zero traction and Fourier heat flux",
+        "cfl": 0.4,
+        "maximumSteps": 250000,
+        "maximumSeconds": 480.0
+      },
+      "legacy": {
+        "fullNativeProcessSeconds": 275.3488180420245,
+        "meshAndFullNativeProcessSeconds": 275.36382912500994,
+        "acceptedSteps": 211684,
+        "rejectedCandidates": 208554,
+        "cflRejectedCandidates": 208554,
+        "spatialEvaluations": 631922,
+        "lastStep": 1.219840068155721e-10,
+        "combinedCourant": 0.2273046191295046
+      },
+      "stageGuarded": {
+        "fullNativeProcessSeconds": 106.19433520801249,
+        "meshAndFullNativeProcessSeconds": 106.20714016704005,
+        "acceptedSteps": 113060,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 226120,
+        "lastStep": 1.1218957830271058e-10,
+        "combinedCourant": 0.2090537114754383
+      },
+      "fullNativeProcessRatio": 2.5928767057364572,
+      "maximumFieldDifferencesSI": {
+        "rho": 1.0287697360666925e-09,
+        "u": 9.766818465095639e-08,
+        "v": 2.746899918637524e-07,
+        "p": 9.626676910556853e-05,
+        "temperature": 7.646440280950628e-08,
+        "velocityVector": 2.749146702460811e-07
+      },
+      "newRestartCheck": true,
+      "newBoundaryRoundtrip": true,
+      "records": [
+        "outputs/compressible-laminar/stage-control/smooth-legacy/run.json",
+        "outputs/compressible-laminar/stage-control/smooth-guarded/run.json"
+      ]
+    }
+  ],
+  "nativeTemporalRefinement": {
+    "coarseError": 0.0003419478593149393,
+    "mediumError": 8.117597618528649e-05,
+    "fineError": 2.0620783639331806e-05,
+    "observedOrder": 1.9769536691823282,
+    "referenceDifference": 9.78905341977969e-07,
+    "scope": "same-mesh periodic acoustic/thermal/viscous perturbation; nondimensional conservative L2; CFL .4/.2/.1 vs .0125 reference with .025 cross-check"
+  },
+  "validation": {
+    "eulerCore": true,
+    "fastHeatingCflRetry": true,
+    "coolingPositivityRetryAndExhaustion": true,
+    "minimumStepFailure": true,
+    "subMinimumTailSplit": true,
+    "exactHorizon": true,
+    "statelessCheckpointRestart": true,
+    "firstOrderUnchanged": true,
+    "defaultAcceptedFilesByteIdenticalToBase": true,
+    "frontendEulerTests": 10
+  },
+  "limits": [
+    "Physical time targets are unchanged; both methods used a 250000-step/480-second comparison budget. The original 100000-step failed curve run remains retained.",
+    "The headroom is a single fixed controller choice, not fitted to individual meshes and not a physical accuracy tolerance.",
+    "Native process timing includes input, construction and final export. Meshing is reported separately and also in a combined cost. The test harness full restart experiment and lossless history archiving are additional recorded work, not hidden in a speedup ratio.",
+    "Local serial samples share the machine with other chats; timings are not exclusive-machine or general performance qualification.",
+    "Small-cell explicit limits remain; no implicit/local-time-step method, grid independence, long-term flow or experimental qualification is established.",
+    "New control is native API/CLI only; no new desktop control or cross-platform qualification.",
+    "Same CFL cap permits larger actual steps in stage-guarded mode and increases early transient temporal error; the 1.9-2.6 process ratios at CFL .4 are not equal-accuracy performance claims."
+  ],
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Euler2D.hpp": "737996f0d746a808fc3c1781f13710ae9cb84a06ee120310ca8d09a28040b303",
+    "src/fv/Euler2D.cpp": "49b19f1ffbea2eacf216249b5ea7e7064640a86315ea23351c71c09c95a89171",
+    "apps/cartmesh2d_euler_cli.cpp": "973f8b3319fd735556892bdd85227b5d2d5e77a7976c2015fe36d05b2275de67",
+    "tests/euler_test.cpp": "1cc08078afb9ebf56426d48c3e502cb261db7ac7c60378148a66abd53fb5375a",
+    "tools/flow/run_compressible_channel.py": "94d3c0bed8ee597ca6a9b7899560fb64446c4b2ac89acb46ecbea3acbcf54b15"
+  },
+  "evidenceSha256": {
+    "outputs/compressible-laminar/stage-control/early-legacy-0.4/run.json": "d003ffd50778eeaaa6f430ae18a7161b241ea1ec8193706f1c622ca77fc9ae80",
+    "outputs/compressible-laminar/stage-control/early-runs.json": "943ae663ae397453ada4454d1570e690685dc037182bd0a082791b9668a81eab",
+    "outputs/compressible-laminar/stage-control/early-stage-guarded-0.025/run.json": "ba286d5eb5934c8c3e3835ba66312ad5b638fcbc882a22ca88961b4cc0083c81",
+    "outputs/compressible-laminar/stage-control/early-stage-guarded-0.05/run.json": "6e80893e78889a3811ae22392e02f26a2c87160849802419008f81dbff1acaf1",
+    "outputs/compressible-laminar/stage-control/early-stage-guarded-0.1/run.json": "efbe355a433b79fae126af6faaacbe5e3528e4517d54da17c8f88a011f77811e",
+    "outputs/compressible-laminar/stage-control/early-stage-guarded-0.2/run.json": "d9f66f6c72c33a412aff1333fd364ab486ac91b1aa12f9da2d24bd505af2ebb2",
+    "outputs/compressible-laminar/stage-control/early-stage-guarded-0.4/run.json": "502c955e4efb42f0b5c772c8150e34f76751c8acc36a3f721498fbd9b471e170",
+    "outputs/compressible-laminar/stage-control/heated-guarded/run.json": "11c6211be5ea9a802c0d91941d8642a62a4e3c477b72ff0a0547791e38631ec4",
+    "outputs/compressible-laminar/stage-control/heated-legacy/run.json": "46c81eb56eb1e7b347abfdf9ace22ab2ab1e6559ac0da1e368c7674de447212b",
+    "outputs/compressible-laminar/stage-control/heated-matched/run.json": "2d56b15d77d34d23193ecfc872706f72a9b4a35100afca8807b651631ad53d83",
+    "outputs/compressible-laminar/stage-control/matched-runs.json": "57c7c941bef3ac1547e427e7301b6f9ae15be23cc18c21a499a4503a74a29dbd",
+    "outputs/compressible-laminar/stage-control/runs.json": "2cae3af5e7073bc9c65eca60b2da2710b642156ad5197bd29a4b4ee8dc70e61e",
+    "outputs/compressible-laminar/stage-control/smooth-guarded/run.json": "31666cb4eb331d773eb515739bffd4582a197c12b542e730ff57dbda89b1a425",
+    "outputs/compressible-laminar/stage-control/smooth-legacy/run.json": "36a0adc246c92cc26d298d15acff670e6e81c814941f75920f887405419096c8",
+    "outputs/compressible-laminar/stage-control/smooth-matched/run.json": "17beeb9452ca180fe17e6db5afa15e6465cb0aa1b28598e6586c0af5b2f91522",
+    "outputs/compressible-laminar/stage-control/straight-guarded/run.json": "d196e3b22a7a81af5279daefdbbd04d1f0b474cba02aa62f027dd2044a04923e",
+    "outputs/compressible-laminar/stage-control/straight-legacy/run.json": "8d68cbc8173a1e4a48742a2ddcd03141fe084954c99922ba91a7868361fe716e",
+    "outputs/compressible-laminar/stage-control/straight-matched/run.json": "8fa0a099b160ad96b61597a8c7658316687d0d7198561040b82a7c61837be4c8"
+  },
+  "heatedStartupTimeSensitivity": {
+    "flowTimes": 0.125,
+    "referenceControl": "stage-guarded",
+    "referenceCfl": 0.025,
+    "results": [
+      {
+        "mode": "legacy",
+        "cfl": 0.4,
+        "referenceCfl": 0.025,
+        "areaWeightedRmsDifferenceSI": {
+          "temperature": 3.719171459543832e-05,
+          "u": 3.1066497130174907e-05,
+          "v": 8.33168988366761e-05,
+          "p": 0.04406898308131807
+        },
+        "steps": 285
+      },
+      {
+        "mode": "stage-guarded",
+        "cfl": 0.4,
+        "referenceCfl": 0.025,
+        "areaWeightedRmsDifferenceSI": {
+          "temperature": 0.00013454598059424303,
+          "u": 0.0001142335555763256,
+          "v": 0.00030123179047184423,
+          "p": 0.16027155234820753
+        },
+        "steps": 151
+      },
+      {
+        "mode": "stage-guarded",
+        "cfl": 0.2,
+        "referenceCfl": 0.025,
+        "areaWeightedRmsDifferenceSI": {
+          "temperature": 3.403118954361106e-05,
+          "u": 2.807020844047149e-05,
+          "v": 7.491533402343812e-05,
+          "p": 0.040323938999850185
+        },
+        "steps": 301
+      },
+      {
+        "mode": "stage-guarded",
+        "cfl": 0.1,
+        "referenceCfl": 0.025,
+        "areaWeightedRmsDifferenceSI": {
+          "temperature": 7.729135017907275e-06,
+          "u": 6.910177503571335e-06,
+          "v": 1.839562298813379e-05,
+          "p": 0.009178260169271183
+        },
+        "steps": 602
+      },
+      {
+        "mode": "stage-guarded",
+        "cfl": 0.05,
+        "referenceCfl": 0.025,
+        "areaWeightedRmsDifferenceSI": {
+          "temperature": 1.524745175490208e-06,
+          "u": 1.3310290041501186e-06,
+          "v": 3.5670859878981406e-06,
+          "p": 0.0018123530331441433
+        },
+        "steps": 1204
+      }
+    ],
+    "scope": "actual 200-cell heated channel, fixed mesh/physical endpoint; these are temporal differences, not spatial or experimental accuracy"
+  },
+  "matchedStartupAccuracyControl": {
+    "legacyCfl": 0.4,
+    "stageGuardedCfl": 0.2,
+    "basis": "One fixed control selected from the actual heated startup experiment: temperature/pressure temporal RMS differences are close to legacy. This is not an error match proven separately for all trajectories.",
+    "cases": [
+      {
+        "case": "straight",
+        "fullNativeProcessSeconds": 19.940874166990397,
+        "meshAndFullNativeProcessSeconds": 19.95846649998566,
+        "legacyToGuardedCostRatio": 1.2819540759303887,
+        "fullNativeProcessReductionFraction": 0.21994085531165242,
+        "acceptedSteps": 22201,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 44402,
+        "maximumFieldDifferencesFromLegacySI": {
+          "rho": 4.04121180963557e-14,
+          "u": 4.085620730620576e-11,
+          "v": 4.0846215298984134e-12,
+          "p": 1.7316779121756554e-09,
+          "temperature": 1.0402345651527867e-11,
+          "velocityVector": 4.085728074248188e-11
+        },
+        "restartCheck": "not-run",
+        "customBoundaryCheck": "not-run",
+        "record": "outputs/compressible-laminar/stage-control/straight-matched/run.json"
+      },
+      {
+        "case": "heated",
+        "fullNativeProcessSeconds": 8.629566333023831,
+        "meshAndFullNativeProcessSeconds": 8.64233050000621,
+        "legacyToGuardedCostRatio": 0.9673686480673211,
+        "fullNativeProcessReductionFraction": -0.033732075148261265,
+        "acceptedSteps": 9731,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 19462,
+        "maximumFieldDifferencesFromLegacySI": {
+          "rho": 8.734657441777927e-11,
+          "u": 4.539244002899068e-08,
+          "v": 9.38062250099847e-09,
+          "p": 6.960515747778118e-06,
+          "temperature": 2.6962993615597952e-08,
+          "velocityVector": 4.542168229166228e-08
+        },
+        "restartCheck": "not-run",
+        "customBoundaryCheck": "not-run",
+        "record": "outputs/compressible-laminar/stage-control/heated-matched/run.json"
+      },
+      {
+        "case": "smooth",
+        "fullNativeProcessSeconds": 207.58403345898842,
+        "meshAndFullNativeProcessSeconds": 207.5975157089997,
+        "legacyToGuardedCostRatio": 1.3264450712025697,
+        "fullNativeProcessReductionFraction": 0.24610523141121177,
+        "acceptedSteps": 226120,
+        "rejectedCandidates": 0,
+        "cflRejectedCandidates": 0,
+        "spatialEvaluations": 452240,
+        "maximumFieldDifferencesFromLegacySI": {
+          "rho": 7.25524085254392e-11,
+          "u": 7.044782535103877e-09,
+          "v": 1.9551591345923214e-08,
+          "p": 6.678164936602116e-06,
+          "temperature": 5.585320650425274e-09,
+          "velocityVector": 1.9560367299160085e-08
+        },
+        "restartCheck": "not-run",
+        "customBoundaryCheck": "not-run",
+        "record": "outputs/compressible-laminar/stage-control/smooth-matched/run.json"
+      }
+    ],
+    "conclusion": "The fixed control reduces the straight/smooth full costs in these samples but gives no heated-case speedup. Default remains legacy; no universal equal-accuracy speedup is claimed."
+  },
+  "retention": {
+    "scope": "stage-control comparison records only",
+    "histories": 21,
+    "uncompressedHistoryBytes": 393151426,
+    "compressedHistoryBytes": 149237435,
+    "method": "gzip, uncompressed SHA256 readback before removing duplicate raw CSV; final fields, restart and original failures retained"
+  }
+}

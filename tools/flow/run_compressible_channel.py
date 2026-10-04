@@ -54,9 +54,18 @@ def main():
     parser.add_argument("--wall-temperature", type=float, choices=(300., 330.), default=300.)
     parser.add_argument("--shape", choices=("straight", "smooth"), default="straight")
     parser.add_argument("--flow-times", type=float, default=4.)
+    parser.add_argument("--time-step-control", choices=("legacy", "stage-guarded"), default="legacy")
+    parser.add_argument("--cfl", type=float, default=.4)
+    parser.add_argument("--max-steps", type=int, default=100000)
+    parser.add_argument("--max-seconds", type=float, default=240)
+    parser.add_argument("--single-run", action="store_true", help="only solve the physical trajectory; skip the separate restart/roundtrip experiment")
     args = parser.parse_args()
     if not math.isfinite(args.flow_times) or args.flow_times <= 0:
         parser.error("--flow-times must be finite and positive")
+    if not math.isfinite(args.cfl) or not 0 < args.cfl <= .45:
+        parser.error("--cfl must be finite and in (0, .45]")
+    if not 1 <= args.max_steps <= 10000000 or not math.isfinite(args.max_seconds) or args.max_seconds <= 0:
+        parser.error("positive finite runtime limits are required; --max-steps is limited to 10000000")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     build = args.build.resolve()
@@ -86,6 +95,7 @@ def main():
     conductivity = viscosity*(gamma*gas_r/(gamma-1))/.72
     end_time = args.flow_times*length/speed
     report["inputs"] = {"heightM": height, "lengthM": length, "mach": args.mach, "reynoldsHeight": density*speed*height/viscosity, "wallTemperatureK": args.wall_temperature, "muPaS": viscosity, "kWmK": conductivity, "gamma": gamma, "gasR": gas_r, "referenceDensity": density, "referencePressurePa": pressure, "referenceTemperatureK": temperature, "referenceSpeedMs": speed, "endTimeS": end_time, "flowThroughTimes": args.flow_times, "shape": args.shape, "level": args.level, "pressureOutletBackflow": "explicit failure", "openDiffusion": "zero traction and Fourier heat flux"}
+    report["inputs"].update(timeStepControl=args.time_step_control, cfl=args.cfl, maximumSteps=args.max_steps, maximumSeconds=args.max_seconds)
     # Explicit interior fluid region. The upper wall contracts smoothly by 8%;
     # its sampled polyline is passed unchanged to the native Cut-cell mesher.
     points = [(0., 0.), (length, 0.)]
@@ -102,12 +112,15 @@ def main():
                   "--gamma", gamma, "--gas-r", gas_r, "--density", density, "--pressure", pressure, "--u", speed,
                   "--viscosity", viscosity, "--conductivity", conductivity, "--wall-model", "no-slip",
                   "--wall-thermal", "temperature", "--wall-value", args.wall_temperature, "--wall-gradient", "quadratic",
-                  "--flux", "hllc", "--order", 2, "--cfl", .4, "--end-time", end_time,
-                  "--max-steps", 100000, "--max-seconds", 240, "--checkpoint-every", 1000]
+                  "--flux", "hllc", "--order", 2, "--cfl", args.cfl, "--time-step-control", args.time_step_control, "--end-time", end_time,
+                  "--max-steps", args.max_steps, "--max-seconds", args.max_seconds, "--checkpoint-every", 1000]
         run("full", [*common, "--output", root/"full"])
         full = summary("full")
         if not full["targetReached"] or full["time"] != end_time:
             raise RuntimeError("full run did not reach the physical endpoint")
+        if args.single_run:
+            report.update(completed=True, cells=full["cells"], faces=full["faces"], acceptedSteps=full["acceptedSteps"], rejectedCandidates=full["rejectedCandidates"], elapsedSeconds=full["elapsedSeconds"], restartCheck="not-run", customBoundaryCheck="not-run")
+            return
         run("limited", [*common, "--output", root/"limited", "--max-steps", 8], expected=2)
         limited = summary("limited")
         if limited["targetReached"] or limited["acceptedSteps"] != 8 or "accepted-step budget" not in limited["failure"]:

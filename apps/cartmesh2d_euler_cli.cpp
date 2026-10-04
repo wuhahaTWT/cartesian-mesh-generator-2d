@@ -126,6 +126,7 @@ int main(int argc,char** argv) {
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
                 "--wall-gradient linear|quadratic (optional quadratic Dirichlet wall recovery, overall order unchanged)\n"
+                "--time-step-control legacy|stage-guarded (default legacy; optional stage-rate headroom/retry)\n"
                 "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
                 "--gamma 1.4 --gas-r 287.05 --density 1 --u 0 --v 0 --pressure 1\n"
@@ -148,6 +149,7 @@ int main(int argc,char** argv) {
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
         else if(arg=="--restart")restart=value;
         else if(arg=="--outlet-pressure")outletPressure=number(value);
+        else if(arg=="--time-step-control") {require(value=="legacy"||value=="stage-guarded","unknown time-step control");controls.timeStepControl=value=="stage-guarded"?EulerTimeStepControl2D::StageGuarded:EulerTimeStepControl2D::Legacy;}
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
         else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic","unknown wall gradient scheme");controls.wallGradient=value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
         else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
@@ -273,11 +275,12 @@ int main(int argc,char** argv) {
     }
     const auto save=[&]{auto out=output(prefix+".checkpoint.tmp");writeEulerCheckpoint2D(out,mesh,bc,gas,state,problem,transport);out.close();std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");};
     save();auto boundaryOutput=output(prefix+".boundaries");boundaryFile(boundaryOutput,mesh,bc);boundaryOutput.close();
-    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat,viscousCourant,boundaryViscousWork\n";
+    auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat,viscousCourant,boundaryViscousWork,cflRejectedCandidates,spatialEvaluations\n";
     const EulerStepper2D solver(mesh,bc,gas,transport,controls.wallGradient);
     const auto started=std::chrono::steady_clock::now();const double initialTime=state.time;const auto initialSteps=state.steps;
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
     std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
+    std::size_t cflRejected=0,spatialEvaluations=0;
     try {
         while(state.time<endTime) {
             require(!stopped,"calculation cancelled; accepted state retained");
@@ -285,11 +288,12 @@ int main(int argc,char** argv) {
             require(std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<maximumSeconds,"wall-time budget exhausted");
             auto step=controls;step.endTime=endTime;
             last=solver.advance(state,step);state=last->state;rejected+=last->rejectedCandidates;
+            cflRejected+=last->cflRejectedCandidates;spatialEvaluations+=last->spatialEvaluations;
             fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
             minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
-            history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<','<<last->viscousCourant<<','<<last->boundaryViscousWork<<'\n';
+            history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<','<<last->viscousCourant<<','<<last->boundaryViscousWork<<','<<last->cflRejectedCandidates<<','<<last->spatialEvaluations<<'\n';
             if((state.steps-initialSteps)%checkpointEvery==0||state.time==endTime) {
                 save();history.flush();
                 std::cout<<std::setprecision(17)<<"{\"type\":\"euler-step\",\"step\":"<<state.steps<<",\"time\":"<<state.time
@@ -359,6 +363,7 @@ int main(int argc,char** argv) {
         <<",\"time\":"<<state.time<<",\"requestedEndTime\":"<<endTime<<",\"initialTime\":"<<initialTime<<",\"steps\":"<<state.steps
         <<",\"acceptedSteps\":"<<state.steps-initialSteps<<",\"rejectedCandidates\":"<<rejected<<",\"lastStep\":"<<(last?last->step:0)
         <<",\"cflLimit\":"<<controls.acousticCourant<<",\"maximumStep\":"<<controls.maximumStep<<",\"minimumStep\":"<<controls.minimumStep
+        <<",\"timeStepControl\":"<<quote(controls.timeStepControl==EulerTimeStepControl2D::StageGuarded?"stage-guarded":"legacy")<<",\"cflRejectedCandidates\":"<<cflRejected<<",\"spatialEvaluations\":"<<spatialEvaluations
         <<",\"maximumSteps\":"<<maximumSteps<<",\"maximumSeconds\":"<<maximumSeconds<<",\"checkpointEvery\":"<<checkpointEvery<<",\"elapsedSeconds\":"<<elapsed
         <<",\"nativeTopologyRevalidated\":true,\"solverQualityPassed\":true,\"externalCheckMesh\":\"not run\""
         <<",\"units\":{\"rho\":\"kg/m3\",\"p\":\"Pa absolute\",\"rhoE\":\"J/m3\",\"temperature\":\"K\",\"flux\":\"outward-owner per unit depth\"}"
