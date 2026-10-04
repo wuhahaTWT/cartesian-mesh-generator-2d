@@ -1,0 +1,147 @@
+{
+  "scope": "Native incompressible CLI output lifecycle on macOS; no numerical method, controls or physical qualification change",
+  "date": "2026-10-05",
+  "branch": "codex/incompressible-laminar",
+  "inheritedSourceBaseline": "98bb98b4574a31605109674d6e4d1a0515dcf456",
+  "goalStatus": "active",
+  "fix": {
+    "problem": "A steady rerun or late export failure could leave an old converged summary at the same prefix.",
+    "behavior": "Invalidate summary before first output mutation; keep running status if interrupted; mark failures explicitly; atomically publish final summary after all exports close.",
+    "steadyAcceptedTime": false,
+    "transientCheckpointSemantics": "preserved"
+  },
+  "validation": {
+    "systemCompiler": "/usr/bin/clang++",
+    "beforeRegression": "failed as expected: stale converged summary after solver exception",
+    "afterCtests": [
+      "cartmesh2d_flow_cli_validation",
+      "cartmesh2d_transient_flow_cli"
+    ],
+    "outputLifecycleCases": [
+      "successful run then solver exception with same prefix",
+      "late VTK export failure",
+      "successful retry preserving deterministic fields",
+      "real process termination after first SIMPLE iteration",
+      "iteration-budget exhaustion remains unconverged"
+    ],
+    "logs": [
+      "outputs/laminar-stability/lifecycle-before.log",
+      "outputs/laminar-stability/lifecycle-after.log",
+      "outputs/laminar-stability/lifecycle-interruption.log"
+    ],
+    "unverified": [
+      "packaged desktop App",
+      "cross-platform CI",
+      "general nonlinear stability",
+      "new physical accuracy qualification"
+    ]
+  },
+  "sourceSha256": {
+    "apps/cartmesh2d_flow_cli.cpp": "886a77a30e06db1197bae2fb2798eb5f696d7a046ca76f65af68a9fd5fd884c0",
+    "tests/flow_cli_test.py": "0a3854adbe3c1415a46dcef22d9315deda4b20e11bf672d50cac47ca60d793c3"
+  },
+  "nonlinearStabilityResearch": {
+    "meshCells": 7071,
+    "meshSha256": "e01390fd256101bf9d4a78785c72cf8977dcc7d27c3fcea7d0594b92fb599e01",
+    "researchInputOnly": true,
+    "attempts": [
+      {
+        "label": "baseline",
+        "returnCode": 1,
+        "converged": false,
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 100,
+          "momentumResidual": 28651942.122384217,
+          "continuity": 1.1221973247380996e-07,
+          "velocityChange": 51432888.92496754,
+          "pressureChange": 39541952909326.164
+        },
+        "stdout": "outputs/laminar-stability/baseline.stdout.log",
+        "stderr": "outputs/laminar-stability/baseline.stderr.log"
+      },
+      {
+        "label": "safeguard",
+        "returnCode": 1,
+        "converged": false,
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 90,
+          "momentumResidual": 15861255.898740534,
+          "continuity": 2.0366701383807863e-07,
+          "velocityChange": 55813110.237127185,
+          "pressureChange": 43053789466499.234
+        },
+        "stdout": "outputs/laminar-stability/safeguard.stdout.log",
+        "stderr": "outputs/laminar-stability/safeguard.stderr.log"
+      },
+      {
+        "label": "outer-safeguard",
+        "returnCode": 2,
+        "converged": false,
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 1500,
+          "momentumResidual": 154.88649048686366,
+          "continuity": 2.8184879932648556e-12,
+          "velocityChange": 127.21618594241218,
+          "pressureChange": 39728.380899066105
+        },
+        "stdout": "outputs/laminar-stability/outer-safeguard.stdout.log",
+        "stderr": "outputs/laminar-stability/outer-safeguard.stderr.log"
+      },
+      {
+        "label": "outer-cold-safeguard",
+        "returnCode": 1,
+        "converged": false,
+        "lastProgress": {
+          "type": "flow-progress",
+          "iteration": 1360,
+          "momentumResidual": 15187380.359804584,
+          "continuity": 1.422879137772924e-07,
+          "velocityChange": 46035892.99659922,
+          "pressureChange": 30891177782792.18
+        },
+        "stdout": "outputs/laminar-stability/outer-cold-safeguard.stdout.log",
+        "stderr": "outputs/laminar-stability/outer-cold-safeguard.stderr.log"
+      }
+    ],
+    "conclusion": "Pressure-only residual minimization and full-step damping did not reliably stabilize this case; both changes withdrawn. Small field increments were not treated as convergence with large momentum residuals.",
+    "preservedPatches": [
+      "outputs/laminar-stability/pressure-only-attempt.patch",
+      "outputs/laminar-stability/outer-damping-attempt.patch"
+    ]
+  },
+  "storage": {
+    "compressedPrimaryFailureFields": [
+      {
+        "path": "outputs/laminar-stability/outer-safeguard.cells.csv.gz",
+        "uncompressedSha256": "8690bc5577a1324299332e949f6a0f3c9d03a14345c9bd8914d675ca4731c942"
+      },
+      {
+        "path": "outputs/laminar-stability/outer-safeguard.faces.csv.gz",
+        "uncompressedSha256": "5ad6c9523e8f70ef2ef6a44362517acb63aa4e43f98736fd80cf757ce2d7b445"
+      },
+      {
+        "path": "outputs/laminar-stability/outer-safeguard.residuals.csv.gz",
+        "uncompressedSha256": "e9bb742b9ab67cef950ce6e84561cda78fd9450597217673936b263020d08de6"
+      }
+    ],
+    "removedDerivedOrDuplicateFiles": [
+      {
+        "path": "outputs/laminar-stability/outer-safeguard.vtk",
+        "bytes": 1257945
+      },
+      {
+        "path": "outputs/laminar-stability/outer-safeguard.fields.json",
+        "bytes": 779412
+      },
+      {
+        "path": "outputs/laminar-stability/annulus.solver.cm2d",
+        "bytes": 1346041,
+        "recoverFrom": "/Users/Zhuanz/Desktop/cartesian-mesh-generator-2d/outputs/laminar-performance/annulus-repaired-flow/accepted.solver.cm2d.gz"
+      }
+    ],
+    "rootHistoricalDataChanged": false
+  }
+}

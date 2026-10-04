@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
 #endif
     std::string prefix;
     double acceptedTime=0;
+    bool outputStarted=false;
     bool transientOutputStarted=false;
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
@@ -394,6 +395,12 @@ int main(int argc, char** argv) {
             std::chrono::steady_clock::now() - readStart).count();
         const auto parent = std::filesystem::path(prefix).parent_path();
         if (!parent.empty()) std::filesystem::create_directories(parent);
+        // This prefix now belongs to the new attempt. Invalidate its previous
+        // result before changing any boundary, field or checkpoint output.
+        { auto pending=out(prefix,".json");
+          pending << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"running\",\"converged\":false}\n";
+          pending.close(); }
+        outputStarted=true;
         if (controls.scenario == "custom") {
             auto boundarySnapshot = out(prefix, ".boundaries");
             fv::writeFlowBoundaryConditions2D(boundarySnapshot, mesh, controls);
@@ -422,10 +429,6 @@ int main(int argc, char** argv) {
                 checkpoint.close();
                 std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");
             };
-            // Invalidate any old summary before replacing this prefix's files.
-            // On interruption/exception, stale fields cannot look like a new pass.
-            { auto pending=out(prefix,".json");
-              pending << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"running\",\"converged\":false}\n"; }
             transientOutputStarted=true;
             if (vortexOptions) {
                 auto initial=out(prefix,".initial.checkpoint");
@@ -585,7 +588,8 @@ int main(int argc, char** argv) {
                     << h.velocityChange << ',' << h.pressureChange << '\n';
         }
 
-        auto summary = out(prefix, ".json");
+        // Publish only after every requested export has closed successfully.
+        auto summary = out(prefix, ".json.tmp");
         const bool custom = controls.scenario == "custom";
         const bool customClosed = custom && std::none_of(controls.boundaryConditions.begin(), controls.boundaryConditions.end(),
             [](const auto& b) { return b.kind == fv::FlowBoundaryKind2D::PressureOutlet || b.kind == fv::FlowBoundaryKind2D::PressureOpening; });
@@ -827,12 +831,17 @@ int main(int argc, char** argv) {
                         << ",\n\"scope\":\"steady-clock wall seconds; solve includes validation, assembly, monitoring and callbacks; transient sums all inner solves; linear times include linear setup, exclude assembly; exports/checkpoints excluded; no memory measurement\"\n}\n";
             performance.close();
         }
+        std::filesystem::rename(prefix+".json.tmp",prefix+".json");
         if (timeStep==0) progress(last);
         return r.converged ? 0 : 2;
     } catch (const std::exception& e) {
-        if (transientOutputStarted) {
+        if (outputStarted) {
+            std::error_code ignored;
+            std::filesystem::remove(prefix+".json.tmp",ignored);
             try { auto failed=out(prefix,".json");
-                failed << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"failed\",\"converged\":false,\"acceptedTime\":" << acceptedTime << "}\n";
+                failed << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"failed\",\"converged\":false";
+                if(transientOutputStarted)failed << ",\"acceptedTime\":" << acceptedTime;
+                failed << "}\n";
             } catch (const std::exception&) { /* preserve the original failure */ }
         }
         std::cerr << "cartmesh2d_flow_cli: " << e.what() << '\n';

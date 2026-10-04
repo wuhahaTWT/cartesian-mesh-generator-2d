@@ -7,6 +7,8 @@ import math
 from pathlib import Path
 import subprocess
 import tempfile
+from queue import Queue
+from threading import Thread
 
 
 def rectangle(path, nx, ny, width=4.0, separated=False):
@@ -65,7 +67,10 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         if code == 1:
             if error_contains:
                 assert error_contains in result.stderr, result.stderr
-            assert not prefix.with_suffix('.json').exists()
+            if prefix.with_suffix('.json').exists():
+                failed = json.loads(prefix.with_suffix('.json').read_text())
+                assert failed['status'] == 'failed' and failed['converged'] is False
+            assert not Path(str(prefix) + '.json.tmp').exists()
             return None
         data = json.loads(prefix.with_suffix('.json').read_text())
         field = rows(prefix.with_suffix('.cells.csv'))
@@ -90,6 +95,52 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         assert len(json.loads(prefix.with_suffix('.fields.json').read_text())['cells']) == len(field)
         assert prefix.with_suffix('.vtk').read_text().count('CELL_DATA ') == 1
         return data, field
+
+    # A reused prefix must describe the current attempt, including failures.
+    # Retain old fields as evidence, but never advertise them as the new result.
+    reuse_mesh = root / 'reuse.solver.cm2d'
+    rectangle(reuse_mesh, 8, 4)
+    run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    saved_cells = (root / 'reuse.cells.csv').read_bytes()
+    run('reuse', reuse_mesh, case='external', code=1)
+    failed = json.loads((root / 'reuse.json').read_text())
+    assert failed['status'] == 'failed' and failed['converged'] is False
+    assert 'acceptedTime' not in failed  # A steady iterate is not a time checkpoint.
+    assert (root / 'reuse.cells.csv').read_bytes() == saved_cells
+    run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    # Failure late in export must not publish a successful summary either.
+    vtk = root / 'reuse.vtk'
+    vtk.unlink()
+    vtk.mkdir()
+    run('reuse', reuse_mesh, extra=('--nu', '.1'), code=1)
+    vtk.rmdir()
+    run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    assert (root / 'reuse.cells.csv').read_bytes() == saved_cells
+    assert not (root / 'reuse.json.tmp').exists()
+    # Stop a real solve after its first completed iteration. A killed process
+    # cannot run the exception handler, so the flushed running marker matters.
+    interrupted_mesh = root / 'interrupted.solver.cm2d'
+    rectangle(interrupted_mesh, 32, 32, 1.0)
+    with subprocess.Popen([cli, '--mesh', str(interrupted_mesh), '--output', str(root / 'reuse'),
+                           '--case', 'cavity', '--nu', '.01', '--tolerance', '1e-9',
+                           '--max-iterations', '100000'], text=True,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        first_line = Queue()
+        reader = Thread(target=lambda: first_line.put(process.stdout.readline()), daemon=True)
+        reader.start()
+        try:
+            message = json.loads(first_line.get(timeout=20))
+            assert message['type'] == 'flow-progress' and message['iteration'] == 1
+            process.terminate()
+            process.communicate(timeout=10)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            reader.join(timeout=1)
+    interrupted = json.loads((root / 'reuse.json').read_text())
+    assert interrupted['status'] == 'running' and interrupted['converged'] is False
+    assert (root / 'reuse.cells.csv').read_bytes() == saved_cells
 
     errors, pressure_errors, wall_force_errors = [], [], []
     for ny in (8, 16):

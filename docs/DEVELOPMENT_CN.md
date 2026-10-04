@@ -136,6 +136,8 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 | `--steady-acceleration anderson` | 默认 none；限稳态、不支持材料更新，候选须降低原残差并过守恒门 |
 | `--initial-guess` / `--initial-flux` | 同目标网格稳态初值；面初值须与单元初值同用，不是物理检查点 |
 
+输出前缀在输入读取完成、首次写入结果前将 `.json` 标记为 `running`；最终摘要先写 `.json.tmp`，所有请求的输出关闭成功后才替换 `.json`。启动后的求解或导出异常标记为 `failed`，硬中断保留 `running`；只有非定常失败摘要记录最后接受时间。旧场文件可留作证据，读取端须以本次进程返回值和摘要状态共同判断，不能仅凭场文件存在认定完成。
+
 动量、局部/全局守恒、场变化和线性精度分开检查。稳态面通量的旧通量缺陷项须与松弛一致，不能为提速删除。macOS CLI 首次 Accelerate 调用前固定单线程；研究入口也固定 `VECLIB_MAXIMUM_THREADS=1`。
 
 非定常使用后向欧拉、固定/自动 CFL、拒绝和重试；只有接受步推进时间。checkpoint 绑定网格、物性、边界与格式；`flow.time-history.csv` 是本次接受步，`flow.residuals.csv` 是最后尝试的内迭代。温度联算必须用联合 thermal checkpoint。工况 v4 保存线性精度及松弛，旧格式按明确默认读取；实际运行设置须与请求一致。
