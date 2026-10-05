@@ -181,6 +181,8 @@ build/cartmesh2d_flow_cli \
 
 `FlowControls2D::convection=Default` 与 `resolveSteadyConvection2D` 现在只在固定物性、strict、实际采用 Newton–Krylov 的稳态上下文选择 `face-limited-linear`；显式 `--steady-acceleration none`、adaptive/engineering、物理时间和材料/温度联算解析为 `upwind`。三个显式 `--convection` 值均不改写。CLI 摘要和桌面保存工况记录解析后的实际格式；非定常 checkpoint 也把 Default 序列化为历史 Upwind，避免旧状态被新稳态策略重解释。17,796 格圆柱省略方法和对流选项的实际新默认重放以 559 次评估收敛，场、面量和残差历史与此前显式 face-limited-linear 逐字节相同。命令、哈希、100/100 原生及 194/194 前端回归见 `native-laminar-default-convection.json`；本批未运行实际 App、macOS 或打包版。
 
+上下文默认的跨工况重放使用 `artifacts/current/native-laminar-default-matrix.cpp`；它复用原生测试网格构造和产品求解器，只记录解析误差及完整求解预算，不实现独立方程。通道、manufactured、cavity 的 `n=64` / `1e-8` 运行分别与显式 face-limited-linear 场逐字节相同。曲壁路径直接对 `annulus-joint-7.solver.cm2d` 省略 `--convection` 与 `--steady-acceleration`，与显式结果的 cells/faces/residuals/summary 逐字节相同。真实 App 复验命令必须给 `--out` 绝对路径并带 `--flow=external --flow-case-check=true`；相对路径会在保存工况时按设计拒绝。本次 Linux Electron headless 路径完成两次 5,168 格求解、保存读回和复算确定性，详情及哈希见 `native-laminar-default-regression.json`。它不替代实体显示器、macOS 或打包版验证。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格

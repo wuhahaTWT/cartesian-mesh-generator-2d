@@ -1,0 +1,64 @@
+{
+  "format": "cartmesh2d-native-laminar-default-regression-v1",
+  "date": "2026-10-05",
+  "status": "verified-cross-case-default-in-progress-not-mature",
+  "scope": "Linux cloud verification of the contextual Newton-Krylov plus face-limited-linear steady default; no solver equation, quality gate, or acceptance threshold changed in this batch",
+  "environment": {
+    "platform": "Linux 6.18.44 x86_64",
+    "compiler": "g++ 13.3.0",
+    "electron": "37.10.3",
+    "sourceHeadBeforeEvidenceCommit": "82323171830e98563b9d8b68b2dcdd32ec60f5cf",
+    "flowCliSha256": "049a94dc73196f4e2b46067dde61166a07dfce7c4d758fb68856470ebc30130b"
+  },
+  "linuxHeadlessDesktop": {
+    "command": "cd desktop && node_modules/.bin/electron . --no-sandbox --ozone-platform=headless --disable-gpu --disable-software-rasterizer --smoke=circle --out=/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/app-context-default-flow --shot=/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/app-context-default-flow.png --target-cells=5000 --flow=external --flow-max-iterations=1500 --flow-tolerance=0.000001 --flow-nu=0.1 --flow-speed=0.5 --flow-case-check=true",
+    "mesh": {"cells": 5168, "faces": 10532, "vertices": 5364, "solverQuality": "PASS"},
+    "result": {"status": "converged", "effectiveAcceleration": "newton-krylov", "effectiveConvection": "face-limited-linear", "coupledEvaluations": 223, "continuity": 9.095369959833901e-14, "globalImbalance_m2_s": 3.608224830031759e-14, "momentumResidual": 1.8599415754416538e-8, "velocityChange_m_s": 5.831810067705552e-8, "pressureChange_m2_s2": 1.335340244382581e-8},
+    "flowCase": {"format": "cartmesh2d-flow-case-v5", "settingsRoundTrip": true, "repeatedCalculationIdentical": true, "savedRequestRecordsEffectiveChoices": true},
+    "sha256": {"log": "82a32aad0a04237fa7335a648a02efd2f5582551845e61757820ee3a63d3fd47", "screenshot": "0f7e66cd19cd47191447d35c51cd1f4788760bc58b57f41157f824efeff6bff9", "cells": "013c774875181f4433f18cd2ac96ac908742f5289b60b530b1ff263032113c08", "faces": "ec14adf6693c23d95dba120f165e7553983af86d0e123d7ef0ce5383284c705c", "residuals": "9e8a6bdef0cffbd54a8d98ecc83e84d19994a525947ae81e29fc5ec8d4852d8c", "summary": "762c7b86e4e61eb879687b6c783278f683c9ad07d11f59f444f9255c309e3ecd", "savedFlowCase": "435480c8a74f02a5fd0538d7c673eef4a9e1600b518337bb6df19a505e4451f2"},
+    "note": "The first invocation intentionally remains in the raw log set: a relative output directory was rejected before flow execution because smoke flow-case validation requires an absolute path. The successful run above used an absolute cloud path."
+  },
+  "nativeApiMatrix": {
+    "driver": "artifacts/current/native-laminar-default-matrix.cpp",
+    "driverSha256": "04c9b1cc34799838b21fbdf1c0dee6af70eeebb6d803f18041e4459433057ee2",
+    "binarySha256": "284742591d45ada8c8f77e1dfd030a56a319c5b6ea4da22dd425b996688dcea6",
+    "controls": {"n": 64, "tolerance": 1e-8, "requestedAcceleration": "default", "requestedConvection": "default", "effectiveAcceleration": "newton-krylov", "effectiveConvection": "face-limited-linear"},
+    "runs": [
+      {"case": "channel", "cells": 16384, "converged": true, "evaluations": 102, "seconds": 12.465814735, "velocityRms_m_s": 0.00010591667575643928, "pressureRms_m2_s2": 0.0006969581776340783, "explicitFllFieldByteIdentical": true, "cellsSha256": "810373164c9f719b426cd5e693d43a88e157fd8258382100216fe263df7c976d"},
+      {"case": "manufactured", "cells": 4096, "converged": true, "evaluations": 579, "seconds": 23.4084246, "velocityRms_m_s": 0.0003335436048154526, "pressureRms_m2_s2": 0.0004326809712220841, "explicitFllFieldByteIdentical": true, "cellsSha256": "23389168c400e7ab9a5ee8df68f2d9ad9fa9dae459924e87729f24da7a740b54"},
+      {"case": "cavity", "cells": 4096, "converged": true, "evaluations": 342, "seconds": 7.802864677, "explicitFllFieldByteIdentical": true, "cellsSha256": "e49e16be1d8d58cede591524ad8e230ee7e73cda39df40c0098f6044abf2dbd2"}
+    ],
+    "timingNote": "Wall times are concurrent process measurements and are not exclusive performance benchmarks. Evaluation counts are complete solver evaluation budgets."
+  },
+  "curvedWallCli": {
+    "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus-joint-7.solver.cm2d --case custom --boundary outputs/cloud-laminar/annulus-joint-7.boundaries --nu 0.1 --speed 0.5 --tolerance 1e-8 --max-iterations 1500 --output outputs/cloud-laminar/annulus-joint-7-context-default",
+    "requestedAcceleration": "omitted/default",
+    "requestedConvection": "omitted/default",
+    "effectiveAcceleration": "newton-krylov",
+    "effectiveConvection": "face-limited-linear",
+    "cells": 6606,
+    "converged": true,
+    "coupledEvaluations": 339,
+    "continuity": 1.6207766284395924e-11,
+    "globalImbalance_m2_s": 0,
+    "momentumResidual": 1.7711283489969812e-11,
+    "velocityChange_m_s": 5.977720682338692e-12,
+    "pressureChange_m2_s2": 5.625633292538623e-10,
+    "explicitFllByteIdentical": {"cells": true, "faces": true, "residuals": true, "summary": true},
+    "sha256": {"cells": "00003258304aecef1a5b813f2d260a714518e46cce04fd2304ec4574b9dcc340", "faces": "dda576d49b7b77d3214bd1581dd310c99e2c328caf022165865299d00406ccaa", "residuals": "b8ca518435183df0f179a3ef47bfa843fd946e8ae5806d564db9a9867024172b", "summary": "82b1752715efe1b34455f3f02470a10b21c11fd43951d8a316ae7d91d513f774"},
+    "qualificationLimit": "This exact default replay does not repair or qualify the already documented near-wall local pressure maximum."
+  },
+  "testsThisBatch": {
+    "command": "../tooling/bin/ctest --test-dir build --output-on-failure -R 'flow_(boundary|checkpoint|initialization)|thermal_flow'",
+    "passed": 4,
+    "failed": 0,
+    "fullNativeSuiteRerun": false,
+    "frontendSuiteRerun": false,
+    "note": "The immediately preceding product-default batch passed Linux native 100/100 and frontend 194/194; this evidence-only batch reran the four directly related native targets."
+  },
+  "remainingLimits": [
+    "The real polygonal no-penetration curved-wall local pressure error remains unqualified.",
+    "This was Linux Electron headless renderer/IPC/native execution, not a physical-display manual session, macOS run, or packaged-app qualification.",
+    "The maturity target remains in progress; convergence and byte identity only establish default routing and regression consistency."
+  ]
+}

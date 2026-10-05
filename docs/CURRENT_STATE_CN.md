@@ -238,6 +238,8 @@ Re=50双通道运行3轮，复算拒绝在Re=0有利的合流提案（真实目�
 
 **固定物性 strict 稳态的对流默认已升级为 face-limited-linear，其他路径保持 Upwind。** 在上述曲壁外流之外，已有 24 次通道/解析强迫涡/Re=100 方腔、12 次容差一致性、8 次圆环和 6 次原 SIMPLE 完整成本证据共同表明：面方向限制格式显著降低代表性空间误差，而保留的一例 3000 步预算失败发生在原 SIMPLE，不应转移给 Newton 默认。新增 `ConvectionScheme2D::Default` 只在实际采用 Newton–Krylov 的固定物性 strict 稳态解析为 face-limited-linear；显式 SIMPLE、adaptive/engineering、物理时间、材料/温度路径解析为 Upwind，三种显式格式均不重解释。66,912 格 20D 圆柱实际补跑旧 Upwind 默认，以 657 次完整评估、1,353.433 秒得到 `Cd=2.17429`，相对同一参考高 `6.322%`；face-limited-linear 为 904 次评估、误差 `0.838%`，完整评估成本增加 `37.6%`。17,796 格新代码省略方法及格式的实际默认以 559 次评估收敛，场、面量和残差历史与此前显式 face-limited-linear 逐字节相同。完整 Linux 原生 **100/100**、前端 **194/194** 通过；旧工况保存实际格式、非定常 checkpoint 保持历史 Upwind，原严格门、失败/取消/最后接受语义未变。本批没有实际运行 App、macOS 或打包版；圆环局部压力峰值仍未合格，故成熟目标继续进行。[默认决策、完整成本、命令与哈希](../artifacts/current/native-laminar-default-convection.json)。
 
+**新默认已完成跨工况和真实 Linux App 路径复验。** 原生 64 档通道、解析强迫涡与 Re=100 方腔省略方法/格式后分别以 102/579/342 次完整评估严格收敛，三组场均与此前显式 face-limited-linear 逐字节相同；最细 6,606 格联合圆环同样省略两项，以 339 次评估收敛，单元场、面量、残差历史和摘要均逐字节相同。Linux Electron 37 的 headless renderer→IPC→原生 CLI 实际生成 5,168 格 Solver PASS 圆柱并运行两次：默认解析为 Newton–Krylov + face-limited-linear，223 次评估收敛；工况保存/读回设置一致，复算场与历史逐字节一致。相关四项原生测试再次通过；这是无显示器 Linux App 路径，不是实体显示器人工操作、macOS 或打包版资格，也未解决圆环局部压力。[默认跨工况与 App 原始场哈希](../artifacts/current/native-laminar-default-regression.json)。
+
 已修复不可压 CLI 的通用结果状态问题：复用输出前缀时，新稳态计算或后续导出失败，曾可能留下旧的“已收敛”摘要。现在首次改写输出前标记 `running`，异常写入 `failed`，全部输出关闭成功后才发布最终摘要；进程被终止时不会把旧场当成本次完成结果，非定常最后接受检查点语义保持。32 格通道的重复运行、求解失败、VTK 导出失败与重试，以及 1,024 格方腔真实进程中断已覆盖；现有稳态/非定常 CLI 两项测试通过。只验证了 macOS 原生调用，打包 App、平台 CI 未验。[范围、源码哈希及日志](../artifacts/current/native-laminar-output-lifecycle.json)
 
 **新增显式整体耦合求解 `newton-krylov`，已通过选定代表算例。** 它同时处理速度、压力和面通量，用实际完整残差下降选择候选；最终对实际返回场重新执行一次严格原生更新，并通过与普通 SIMPLE 共用的全部原验收门；取消、预算不足和失败认证不能替换最后接受场。该历史验证时默认 `none`，松弛 .6、四次压力修正、网格质量与物理模型保持；现在按上文云端证据接入 strict 固定物性稳态默认，不能据此取得通用精度资格。
@@ -264,7 +266,7 @@ Re=50双通道运行3轮，复算拒绝在Re=0有利的合流提案（真实目�
 | --- | --- |
 | 细圆环网格 | 普通原轮廓入口已得到 7,177 格 Solver PASS，面积与物面保持；方向连通诊断仍有 94 格失败，外部 checkMesh 未验。[入口证据](../artifacts/current/native-laminar-mesh-entry.json) |
 | 圆环压力 | Linux 原 1024 段场局部误差约 `0.481 m²/s²`；新的四档几何/网格联合加密虽使 RMS 下降，最大误差仍增至约 `1.80 m²/s²`。迭代收敛不代表该局部量合格；保持真实多边形壁面语义继续通用修复。[最新诊断](../artifacts/current/native-laminar-pressure-diagnosis.json)；旧 0.5% 目标保留为历史证据，不作为唯一研发目标 |
-| 默认稳定性 | strict 固定物性稳态现在默认 Newton + face-limited-linear，已通过 Linux 原生/CLI/前端和 17,796 格真实省略选项重放；非定常、材料、adaptive/engineering 及显式 SIMPLE 保持 Upwind。此前 headless App 只验证过旧 Upwind 默认，本批未重跑 App。曲壁局部压力、实体 App、macOS 和打包版仍未完成，成熟目标进行中 |
+| 默认稳定性 | strict 固定物性稳态现在默认 Newton + face-limited-linear，已通过 Linux 原生/CLI/前端、通道/强迫涡/方腔/圆环省略选项重放，以及真实 Electron headless 保存读回与确定性复算；非定常、材料、adaptive/engineering 及显式 SIMPLE 保持 Upwind。曲壁局部压力、实体显示器人工操作、macOS 和打包版仍未完成，成熟目标进行中 |
 | 复杂几何和输入 | 窄缝、尖角、多环及层终止仍可能显式失败；SVG 的 transform/use 等完整语义未覆盖，图片识别不保证几何正确。不得靠删格、平滑原折线或放宽质量门掩盖问题 |
 
 未取得通用湍流、复杂曲壁换热或长期非定常精度资格。拓扑、Solver 质量、外部 checkMesh、离散方程收敛和物理精度必须分别判断；Q1 已取消。
