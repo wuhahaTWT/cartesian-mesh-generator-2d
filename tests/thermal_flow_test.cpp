@@ -303,10 +303,73 @@ void indexedAndCallbackRepresentations() {
     auto ambiguousBoundary = indexed; ambiguousBoundary.boundary = [](std::size_t, const Face&) { return ScalarBoundary2D{}; };
     rejects([&] { (void)solveScalarTransport2D(mesh, ambiguousBoundary); }, "exactly one valid boundary representation", "ambiguous boundary representation rejected");
 }
+void controlledTimeAndEvents() {
+    const auto mesh=cavityMesh(6);auto fc=flowControls();fc.scenario="custom";fc.maxIterations=500;
+    for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour)
+        fc.boundaryConditions.push_back({id,FlowBoundaryKind2D::Wall,{},0,"wall"});
+    const auto sc=scalarControls();auto data=setup(mesh,2.);
+    ThermalFlowState2D start{initialIncompressibleState2D(mesh,fc),std::vector<double>(mesh.cells.size(),300.)};
+    auto next=data;next.sourceDensity.assign(mesh.cells.size(),-1.);
+    data.events.push_back({.037,next.sourceDensity,next.boundary});
+    ThermalTimeControls2D c;c.limits.maximumStep=.03;c.limits.minimumStep=1e-6;c.limits.targetTime=.1;
+    c.estimateError=true;c.temperatureScale=1;
+    auto evolve=[&](ThermalFlowState2D state) {
+        while(state.flow.time<c.limits.targetTime) {
+            auto r=advanceControlledThermalFlow2D(mesh,fc,data,sc,state,c);
+            check(r.step.accepted.has_value(),"controlled source event step accepted");
+            if(!r.step.accepted)break;state=*r.step.accepted;
+        }
+        return state;
+    };
+    rejects([&]{std::stringstream out;writeThermalCheckpoint2D(out,mesh,fc,data,sc,start);},"positive accepted","initial guess cannot be published as checkpoint");
+    const auto continuous=evolve(start);
+    for(double t:continuous.scalar)check(std::abs(t-(300+2*.037-(.1-.037)))<1e-8,"event heat content uses left then right source");
+    check(continuous.flow.time==.1,"controlled exact final time");
+    auto first=advanceControlledThermalFlow2D(mesh,fc,data,sc,start,c);
+    check(first.step.accepted.has_value(),"controlled first accepted");
+    if(!first.step.accepted)return;
+    std::stringstream saved;writeThermalCheckpoint2D(saved,mesh,fc,data,sc,*first.step.accepted);
+    const auto text=saved.str();check(text.starts_with("CARTMESH2D_THERMAL_CHECKPOINT 2"),"event checkpoint version 2");
+    const auto restored=readThermalCheckpoint2D(saved,mesh,fc,data,sc);
+    compareState(continuous,evolve(restored),"stateless controller split restart");
+    auto changed=data;changed.events[0].sourceDensity[0]+=1.;
+    rejects([&]{std::stringstream in(text);(void)readThermalCheckpoint2D(in,mesh,fc,changed,sc);},"event source","complete event law bound to restart");
+    rejects([&]{(void)advanceThermalFlow2D(mesh,fc,data,sc,start,.05);},"crosses event","fixed step cannot straddle event");
+    rejects([&]{(void)advanceControlledThermalFlow2D(mesh,fc,data,sc,start,c,[]{return true;});},"cancelled","controlled cancellation leaves input");
+    compareState(start,ThermalFlowState2D{initialIncompressibleState2D(mesh,fc),std::vector<double>(mesh.cells.size(),300.)},"cancelled input");
+    auto bad=c;bad.temperatureScale=std::numeric_limits<double>::quiet_NaN();
+    rejects([&]{(void)advanceControlledThermalFlow2D(mesh,fc,data,sc,start,bad);},"scale","nonfinite controller rejected");
+    // Nonuniform diffusion drives local error and forces true rollback/retry.
+    auto hot=setup(mesh,0.);for(auto& b:hot.boundary)b={ScalarBoundaryKind2D::Value,301.,{}};
+    auto tight=c;tight.limits.maximumStep=.1;tight.limits.maximumRetries=15;
+    tight.relativeTolerance=.001;tight.temperatureAbsoluteTolerance=.0001;
+    const auto retried=advanceControlledThermalFlow2D(mesh,fc,hot,sc,start,tight);
+    check(retried.step.accepted && retried.attempts.size()>1,"time error rejects then retries same old state");
+    if(retried.step.accepted) {
+        const auto direct=advanceThermalFlow2D(mesh,fc,hot,sc,start,retried.attempts.back().timeStep);
+        compareState(*retried.step.accepted,*direct.accepted,"retried accepted state equals clean full BE step");
+    }
+    auto offset=start;for(auto& t:offset.scalar)t-=300.;auto shifted=hot;for(auto& b:shifted.boundary)b.value-=300.;
+    const auto zero=advanceControlledThermalFlow2D(mesh,fc,shifted,sc,offset,tight);
+    check(zero.step.accepted && zero.attempts.size()==retried.attempts.size(),"Kelvin offset does not mask error or change retries");
+    auto cancelScalar=sc;int callbacks=0;cancelScalar.stopRequested=[&]{return ++callbacks>1;};
+    rejects([&]{(void)advanceThermalFlow2D(mesh,fc,hot,cancelScalar,start,.01);},"cancelled","scalar correction cancellation does not publish candidate");
+    check(callbacks>1,"scalar cancellation reached a later correction");
+    auto exhausted=tight;exhausted.limits.maximumRetries=0;
+    const auto fail=advanceControlledThermalFlow2D(mesh,fc,hot,sc,start,exhausted);
+    check(!fail.step.accepted&&fail.attempts.size()==1,"retry exhaustion returns no accepted state");
+    exhausted.limits.minimumStep=.1;exhausted.limits.maximumRetries=10;
+    check(!advanceControlledThermalFlow2D(mesh,fc,hot,sc,start,exhausted).step.accepted,"minimum step stagnation fails");
+    auto shortFlow=flowControls();shortFlow.maxIterations=1;
+    const auto nonconverged=advanceControlledThermalFlow2D(mesh,shortFlow,hot,sc,start,exhausted);
+    check(!nonconverged.step.accepted&&nonconverged.attempts.front().reason=="flow","flow iteration limit never accepted");
+}
+
 }
 
 int main() {
     try {
+        controlledTimeAndEvents();
         uniformSourceAndEvolution(); restartMatchesContinuous(); failureDoesNotMutateInputs();
         transientOutletInflow();
         strictCheckpointValidation(); indexedAndCallbackRepresentations();

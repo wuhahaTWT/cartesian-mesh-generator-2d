@@ -55,6 +55,43 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 桌面续算重载复用同一 smoke 入口：`--flow=channel --flow-dt=.02 --flow-steps=2 --flow-checkpoint=/绝对路径/状态.checkpoint` 通过流动载入按钮导入；`--thermal-checkpoint=/绝对路径/thermal.thermal.checkpoint` 通过温度载入按钮导入并推进两步，步长默认 .025 s，可用 `--flow-dt=` 改变。联合文件旁须保留 `desktop-state.json`，两者均须使用原网格参数重新生成网格。路径替代仅在 `--smoke=` 下作用于文件选择对话框，解析、控件、IPC 和原生续算仍使用产品代码；这不验收系统文件对话框的人工选择。温度重载还检查从局部涡／自动步长设置切换到联合状态的操作。
 
+## 云端联合温度时间控制
+
+本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。
+
+`advanceControlledThermalFlow2D` 只从不可变的最后接受状态生成候选。先求新时刻流动，再用同一守恒面通量求温度；任何一方未收敛均不发布状态。流动失败先把候选速度松弛减半、最低 .15，重试同一物理步；再按实际 CFL／半步缩小物理步。它改变内迭代路径，不放宽线性、动量、连续性或温度残差门。所有失败记录独立保存，接受历史不混入失败候选。取消在流动迭代、温度校正与候选结束检查；不会中断正在执行的一次线性求解。
+
+控制器无隐藏历史：每次根据接受面通量预测最大步，并裁到目标／下一热事件。重启不需要上次建议步长或拒绝次数；同目标、同控制、在同一接受步中断时，轨迹可逐字节对照。改变分段目标会新增一次截断步，需按实际时间离散差异解释，不能宣称同轨迹。
+
+CFL 及内迭代收敛只控制可接受性。可选 BE 整步／两半步估计 `2*|T_full-T_halfhalf|`，归一化分母为 `temperature-atol + time-rtol*temperature-scale`（K）；速度分别用 m/s 的绝对容差和参考速度。温升尺度必须是目标温度变化量，例如 1 K，不能用 300 K 背景温度。默认绝对容差为 .001 K、.0001 m/s，相对容差 .01；这是局部时间缺陷预算，非全程／空间误差承诺。默认不启用误差估计；启用每次候选多两个联合求解。当前仍接受整步一阶 BE，不外推场；当前曲壁成本主要来自流动内迭代，尚无证据要求加入二阶方法。
+
+CLI：
+
+```sh
+build/cartmesh2d_transport_cli --mesh final.solver.cm2d --output outputs/run \
+  --evolve-flow custom --flow-boundary flow.boundaries --boundary thermal.csv \
+  --dt .1 --end-time 6 --min-dt 1e-6 --max-courant 1 --max-step-retries 10 \
+  --time-error on --temperature-scale 1 --velocity-scale .2 --time-rtol .01 \
+  --thermal-events events.csv
+```
+
+`flow.boundaries` 使用既有原生、网格绑定的命名边界格式；温度初始边界仍逐面 CSV。`events.csv` 表头为 `time,target,type,value,inflowValue`，目标可为已命名流动边界、`face:ID` 或 `source`；源项行用 `type=source`。同一时刻的多行一起形成完整快照，时间严格递增；同时间重复目标拒绝。例如 `1.37,lid,value,300,300`，或 `2.43,source,source,0.1,`。事件右连续，结束在事件的整步／半步使用左侧条件，下一步使用右侧条件；不跨越事件积分。
+
+无事件检查点仍为 v1；包含完整事件规律时为 v2。读回核对全部源、边界、流入温度和事件时间及完整流动／网格；不给匿名 callback 当作重启身份。零时刻初值不写为物理检查点，旧零时刻记录亦拒绝物理续算。`.thermal.checkpoint` 用临时文件后原子替换；失败输入立即报错，保留原接受文件。
+
+`.heat-history.csv` 保存每个接受步温度范围、热量积累、边界通量、源和储存项；`.boundary-heat-history.csv` 分命名边界记录流出／流入体积及对流热通量、向外扩散热流；`.attempt-history.csv` 记录 CFL、无量纲时间缺陷、数值松弛与具体拒绝阶段。热量指标乘 `rho*cp` 才成为单位深度物理热量；向外热流为正，负值给流体加热。
+
+代表算例完全调用原生生成、质量验证与求解；Python 只编排 CLI、生成配置并读取真实输出，不重建独立方程／拓扑审计链：
+
+```sh
+python3 tools/thermal/workflow.py --case channel --output outputs/thermal/channel --end 6 --error
+python3 tools/thermal/workflow.py --case cavity --output outputs/thermal/cavity --end 6 --error
+python3 tools/thermal/workflow.py --case cylinder --output outputs/thermal/cylinder --level 5 --end 25 --diffusivity .05 --nu .05 --relaxation .2
+ctest --test-dir build -R 'cartmesh2d_(thermal_flow$|thermal_flow_cli$|thermal_control_cli$|scalar_transport$)' --output-on-failure
+```
+
+三例分别覆盖加热通道、顶盖封闭腔体热／冷却、64 边真实曲壁圆柱（外域减固体）。通道／圆柱显式使用压力开口与规定流入温度，保留压力出口回流拒绝的失败输入。`.command.json`、原始场、接受／拒绝记录及检查点在 outputs；小证据进入 artifacts，完整字段压缩保留。原生解析衰减、核心守恒测试保留，旧 Python 重复审计不作为本方向验证后端。
+
 ## 从哪里进入代码
 
 生成链：输入 → 尺寸场/Quadtree → Cut-cell 或共形边界层 → 小单元处理 → 共享面拓扑 → 质量 → 导出。

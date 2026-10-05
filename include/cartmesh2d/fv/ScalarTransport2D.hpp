@@ -59,6 +59,8 @@ struct ScalarTransportControls2D {
     double relativeTolerance = 1e-9, absoluteTolerance = 1e-12;
     double cellTolerance = 1e-9; // imbalance / unrelaxed diagonal, in scalar units
     double carrierRelativeTolerance = 1e-8, carrierAbsoluteTolerance = 1e-12;
+    // Cooperative cancellation between complete corrections/linear solves.
+    std::function<bool()> stopRequested;
     bool profile = false; // diagnostic only; no numerical effect
     ScalarPreconditioner2D preconditioner = ScalarPreconditioner2D::Jacobi;
 };

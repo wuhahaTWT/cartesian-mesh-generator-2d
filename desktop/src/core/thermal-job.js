@@ -15,6 +15,7 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
       if(JSON.stringify(normalized[key])!==JSON.stringify(selected.metadata.request[key]))
         throw new Error('联合续算必须保持工况、物性、温度源、边界和对流格式。');
   }
+  const suffixes=[...SUFFIXES,...(normalized.mode==='adaptive'?['.attempt-history.csv']:[])];
   const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'thermal-run-'));
   const prefix=path.join(directory,'thermal'), boundaryPath=path.join(directory,'boundary.csv');
   const previousRestart=currentResult.thermalRestart;
@@ -40,12 +41,12 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
     signal.throwIfAborted();
     const summary=JSON.parse(await fs.readFile(`${prefix}.json`,'utf8'));
     if(processResult.code!==0||summary.converged!==true)throw new Error(`热计算未完成；已接受到 t=${summary.acceptedTime ?? startTime} s。`);
-    await Promise.all(SUFFIXES.map(suffix=>fs.stat(prefix+suffix)));
+    await Promise.all(suffixes.map(suffix=>fs.stat(prefix+suffix)));
     const [cells,history,joint]=await Promise.all(['.cells.csv','.thermal-history.csv','.thermal.checkpoint'].map(suffix=>fs.readFile(prefix+suffix,'utf8')));
     const validated=validateThermalOutput(summary,cells,history,joint,mesh,normalized,startTime);
     const restartState=await readRestart();
     signal.throwIfAborted();
-    const files=Object.fromEntries(SUFFIXES.map(suffix=>[suffix,path.relative(currentResult.outputDirectory,prefix+suffix)]));
+    const files=Object.fromEntries(suffixes.map(suffix=>[suffix,path.relative(currentResult.outputDirectory,prefix+suffix)]));
     const payload={...validated,files};
     await fs.writeFile(path.join(directory,'desktop-state.json.tmp'),JSON.stringify({status:'complete',request:normalized,time:summary.time},null,2));
     await fs.rename(path.join(directory,'desktop-state.json.tmp'),path.join(directory,'desktop-state.json'));

@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Native black-box state transactions, events and controller restart.
+Reads published native fields; no independent equation/topology audit backend.
+"""
+import argparse,csv,hashlib,json,math,signal,subprocess,sys,time
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'/'thermal'))
+from workflow import run,configure
+
+def main(a):
+    root=Path(a.output).resolve();root.mkdir(parents=True,exist_ok=True)
+    geom=root/'square.xy';geom.write_text('0 0\n1 0\n1 1\n0 1\n')
+    assert run([a.mesh_cli,geom,root/'mesh','4',str(1/14),'.1','interior',root/'openfoam','4','0'],root/'mesh.log')['code']==0
+    mesh=root/'mesh.solver.cm2d';flow,bc,event,_=configure(mesh,'cavity',root)
+    common=[a.cli,'--mesh',mesh,'--evolve-flow','custom','--flow-boundary',flow,'--boundary',bc,
+        '--thermal-events',event,'--initial','300','--flow-speed','.2','--flow-nu','.1','--diffusivity','.1',
+        '--dt','.1','--end-time','6','--min-dt','.000001','--flow-convection','limited-linear','--convection','limited-linear']
+    def invoke(label,extra=(),code=0):
+        out=root/label;r=run([*common,'--output',out,*extra],root/(label+'.log'))
+        assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
+        return out
+    continuous=invoke('continuous')
+    part=invoke('part',['--max-time-steps','17'],1)
+    joint=part.with_suffix('.thermal.checkpoint');assert joint.exists()
+    snapshot=joint.read_bytes();split=invoke('split',['--restart',joint])
+    assert snapshot==joint.read_bytes()
+    assert continuous.with_suffix('.thermal.checkpoint').read_bytes()==split.with_suffix('.thermal.checkpoint').read_bytes()
+    assert continuous.with_suffix('.cells.csv').read_bytes()==split.with_suffix('.cells.csv').read_bytes()
+    rows=lambda p:list(csv.DictReader(p.open()))
+    h=rows(continuous.with_suffix('.thermal-history.csv'));attempts=rows(continuous.with_suffix('.attempt-history.csv'))
+    assert all(r['accepted']=='1' for r in h)
+    for t in (1.37,2.43,3.23):assert t in [float(r['time']) for r in h]
+    assert float(h[-1]['time'])==6
+    # Actual exported native budget integrated over accepted steps, not rebuilt equations.
+    heat=rows(continuous.with_suffix('.heat-history.csv'))
+    integrated=sum(float(r['dt'])*(float(r['sourceIntegral'])-float(r['boundaryFlux'])) for r in heat)
+    actual=float(heat[-1]['heatContent'])-300
+    defect=sum(float(r['dt'])*float(r['globalBalance']) for r in heat)
+    assert abs(actual-integrated-defect)<1e-9,(actual,integrated,defect)
+    assert abs(defect)<1e-5
+    # Changed full event law cannot silently resume.
+    original=event.read_text();event.write_text(original.replace('1.37,lid,value,300,300','1.37,lid,value,300.1,300'))
+    invoke('bad-event',['--restart',joint],1);event.write_text(original)
+    assert snapshot==joint.read_bytes()
+    exhausted=invoke('exhausted',['--time-error','on','--time-rtol','.000001','--max-step-retries','0'],2)
+    assert not exhausted.with_suffix('.thermal.checkpoint').exists()
+    assert len(rows(exhausted.with_suffix('.thermal-history.csv')))==0
+    assert rows(exhausted.with_suffix('.attempt-history.csv'))[-1]['reason']=='time-error'
+    invoke('minimum',['--time-error','on','--min-dt','.1'],2)
+    scalar=invoke('scalar-fail',['--max-corrections','1','--max-step-retries','0'],2)
+    assert not scalar.with_suffix('.thermal.checkpoint').exists()
+    invoke('nan',['--temperature-scale','nan','--restart',joint],1)
+    # Changed maximum step is supported and reaches exactly the same physical target.
+    changed=invoke('changed-step',['--restart',joint,'--dt','.05'])
+    meta=json.loads(changed.with_suffix('.json').read_text());assert meta['acceptedTime']==6
+    # Cooperative cancellation while solving: saved accepted transaction survives.
+    live=root/'cancelled';log=(root/'cancelled.log').open('w')
+    proc=subprocess.Popen([str(x) for x in [*common,'--output',live,'--end-time','1000']],stdout=log,stderr=subprocess.STDOUT)
+    checkpoint=live.with_suffix('.thermal.checkpoint');deadline=time.monotonic()+10
+    while time.monotonic()<deadline and not checkpoint.exists() and proc.poll() is None:time.sleep(.01)
+    assert checkpoint.exists() and proc.poll() is None
+    proc.send_signal(signal.SIGTERM);proc.wait(timeout=10);log.close();assert proc.returncode!=0
+    saved=checkpoint.read_bytes();resumed=invoke('after-cancel',['--restart',checkpoint]);assert saved==checkpoint.read_bytes()
+    # State comparison uses matching accepted timestamps; interruption has no hidden history.
+    assert resumed.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
+    report={'passed':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+            'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
+            'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
+            'changedStepTime':meta['acceptedTime'],'continuousCheckpointSha256':hashlib.sha256(continuous.with_suffix('.thermal.checkpoint').read_bytes()).hexdigest()}
+    (root/'evidence.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--cli',required=True);p.add_argument('--mesh-cli',required=True);p.add_argument('--output',required=True);main(p.parse_args())

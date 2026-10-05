@@ -1,7 +1,7 @@
 'use strict';
 const { validateFlowRequest } = require('./flow');
 const GROUPS = ['wall','inlet','outlet','top','bottom'];
-const SUFFIXES = ['.json','.vtk','.cells.csv','.faces.csv','.history.csv','.thermal-history.csv','.thermal.checkpoint','.carrier.checkpoint'];
+const SUFFIXES = ['.json','.vtk','.cells.csv','.faces.csv','.history.csv','.thermal-history.csv','.thermal.checkpoint','.carrier.checkpoint','.heat-history.csv','.boundary-heat-history.csv'];
 const requireValue = (ok, message) => { if (!ok) throw new Error(`热输运：${message}`); };
 const finite = (v, name) => {
   requireValue(typeof v === 'number' && Number.isFinite(v), `${name} 必须是有限数。`);
@@ -11,7 +11,7 @@ const near = (a,b) => Math.abs(a-b) <= 1e-12 + 1e-9*Math.max(Math.abs(a),Math.ab
 function validateThermalRequest(input) {
   requireValue(input && typeof input === 'object','缺少配置。');
   requireValue(input.case!=='custom','命名边界的温度配置尚未支持。');
-  const flow = validateFlowRequest({ ...input, mode:'transient' });
+  const flow = validateFlowRequest({ ...input, mode:input.mode==='adaptive'?'adaptive':'transient' });
   requireValue(flow.pressurePreconditioner!=='cholesky','系统稀疏 Cholesky 暂仅支持独立层流；温度联算请选择 IC0 或多重网格。');
   requireValue(flow.linearPolicy==='strict' && flow.velocityRelaxation===.6 && flow.pressureCorrectionPasses===4,
     '桌面温度联算仍使用固定线性精度、默认速度松弛和4次压力校正；这些加速设置仅用于独立层流。');
@@ -28,6 +28,10 @@ function validateThermalRequest(input) {
     r.boundaries[group]={kind:b.kind,value:finite(b.value,group),inflowValue:finite(b.inflowValue,`${group} 回流温度`)};
     requireValue(b.inflowValue>=0 && (b.kind!=='value'||b.value>=0),'温度不得低于 0 K。');
   }
+  r.timeError=Boolean(input.timeError);
+  r.temperatureScale=finite(input.temperatureScale ?? 1,'温升尺度');
+  r.timeRtol=finite(input.timeRtol ?? .01,'时间误差相对容差');
+  requireValue(r.temperatureScale>0&&r.timeRtol>0,'温升尺度和时间误差容差须为正。');
   return r;
 }
 // Match the native flow cases. A nonrectangular boundary outside duct fails;
@@ -62,7 +66,12 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
     '--flow-tolerance',String(r.tolerance),
     '--flow-convection',r.convection,'--pressure-preconditioner',r.pressurePreconditioner,'--outlet-backflow',r.outletBackflow,
     '--diffusivity',String(r.diffusivity),'--source',String(r.source),'--initial',String(r.initial),
-    '--convection',r.scalarConvection,'--dt',String(r.dt),'--steps',String(r.steps)];
+    '--convection',r.scalarConvection,'--dt',String(r.dt)];
+  if(r.mode==='adaptive')args.push('--end-time',String(r.endTime),'--min-dt',String(r.minDt),
+    '--max-courant',String(r.maxCourant),'--max-step-retries',String(r.maxRetries),'--max-time-steps',String(r.maxSteps),
+    '--time-error',r.timeError?'on':'off','--temperature-scale',String(r.temperatureScale),
+    '--velocity-scale',String(r.speed),'--time-rtol',String(r.timeRtol));
+  else args.push('--steps',String(r.steps));
   if(r.resume)args.push('--restart',restart);
   return {executable:'cartmesh2d_transport_cli',request:r,args};
 }
@@ -94,7 +103,7 @@ function thermalCheckpointTime(text) {
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
   const m=parts[1].match(/^TIME (\S+)$/m);
   requireValue(m && /^[+\-\d.eE]+$/.test(m[1]),'缺少物理时间。');
-  const time=Number(m[1]);finite(time,'续算时间');requireValue(time>=0,'续算时间不能为负。');
+  const time=Number(m[1]);finite(time,'续算时间');requireValue(time>0,'初值不是已接受的物理续算状态。');
   requireValue(/^FLUX \d+ .+$/m.test(parts[1]),'续算通量缺失。');
   return time;
 }
@@ -102,13 +111,16 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   const r=validateThermalRequest(input);
   requireValue(summary?.format==='cartmesh2d-scalar-transport-v1'&&summary.status==='converged'&&summary.converged===true&&summary.evolvingFlow===true,'不是完整同步热计算结果。');
   for(const key of ['time','acceptedTime','carrierTime','timeStep','diffusivity','flowNu','flowSpeed','constantSource','initialValue','minValue','maxValue','globalBalance','residualNorm','maxDiagonalScaledImbalance'])finite(summary[key],key);
-  requireValue(summary.cells===mesh.cells.length&&summary.faces===mesh.edges.length&&summary.steps===r.steps,'网格数量/步数不一致。');
-  for(const [key,value] of Object.entries({timeStep:r.dt,diffusivity:r.diffusivity,flowNu:r.nu,flowSpeed:r.speed,constantSource:r.source,initialValue:r.initial}))requireValue(near(summary[key],value),`${key} 与请求不符。`);
+  requireValue(summary.cells===mesh.cells.length&&summary.faces===mesh.edges.length&&(r.mode==='adaptive'||summary.steps===r.steps),'网格数量/步数不一致。');
+  for(const [key,value] of Object.entries({...(r.mode==='adaptive'?{maximumTimeStep:r.dt}:{timeStep:r.dt}),diffusivity:r.diffusivity,flowNu:r.nu,flowSpeed:r.speed,constantSource:r.source,initialValue:r.initial}))requireValue(near(summary[key],value),`${key} 与请求不符。`);
   requireValue(summary.flowCase===r.case&&summary.convection===r.scalarConvection&&summary.flowConvection===r.convection
     && (summary.outletBackflow===undefined ? 'reject' : summary.outletBackflow)===r.outletBackflow,'物理工况/格式不一致。');
   requireValue(summary.flowTolerance===r.tolerance,'流动停止容差与请求不符。');
   requireValue(summary.maxDiagonalScaledImbalance<=1e-9,'温度单元失衡未达停止条件。');
-  const t=startTime+r.dt*r.steps;
+  const adaptive=r.mode==='adaptive';
+  const t=adaptive?r.endTime:startTime+r.dt*r.steps;
+  if(adaptive) {requireValue(near(summary.temperatureScale,r.temperatureScale)&&near(summary.timeRelativeTolerance,r.timeRtol),'时间误差尺度与请求不符。');}
+  if(adaptive)requireValue(summary.timeStepControl===(r.timeError?'joint-cfl-be-error-retry':'joint-cfl-retry'),'联合时间控制模式不符。');
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');
   requireValue(near(thermalCheckpointTime(jointText),t),'联合保存时间不同步。');
   const scalarLine=jointText.split(/\r?\nFLOW\r?\n/)[0].split(/\r?\n/).find(l=>l.startsWith('SCALAR '));
@@ -129,10 +141,11 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   const history=csvRows(historyText,'step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant').map((row,i)=>{
     requireValue(row.every(v=>v.trim()!==''&&Number.isFinite(Number(v))),'时间历史含非法值。');
     const [step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant]=row.map(Number);
-    requireValue(step===i+1&&near(time,startTime+(i+1)*r.dt),'时间历史次序错误。');
+    requireValue(step===i+1&&(adaptive ? time>startTime && time<=t : near(time,startTime+(i+1)*r.dt)),'时间历史次序错误。');
     return validateRow({step,time,accepted,flowIterations,momentumResidual,continuity,scalarIterations,scalarResidual,heatContent,globalBalance,maxCourant},r.tolerance);
   });
-  requireValue(history.length===r.steps,'时间历史不完整。');
+  requireValue(history.length===(adaptive?summary.completedSteps:r.steps),'时间历史不完整。');
+  if(adaptive)for(let i=1;i<history.length;++i)requireValue(history[i].time>history[i-1].time&&history[i].time-history[i-1].time<=r.dt*(1+1e-9),'接受时钟或最大步长错误。');
   requireValue(near(history.at(-1).heatContent,heat)&&near(history.at(-1).globalBalance,summary.globalBalance)&&near(history.at(-1).scalarResidual,summary.residualNorm),'历史、场与摘要不一致。');
   return {summary:{...summary,dt:r.dt},fields:{cells},history,request:r};
 }

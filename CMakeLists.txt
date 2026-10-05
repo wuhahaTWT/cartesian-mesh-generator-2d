@@ -309,6 +309,11 @@ if(CARTMESH2D_BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/sst_decay_verifier_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
         --probe $<TARGET_FILE:cartmesh2d_sst_transport_tests>)
+    add_test(NAME cartmesh2d_thermal_control_cli COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_control_cli_test.py
+        --cli $<TARGET_FILE:cartmesh2d_transport_cli> --mesh-cli $<TARGET_FILE:cartmesh2d_cli>
+        --output ${CMAKE_CURRENT_BINARY_DIR}/../outputs/thermal/control-ctest)
+    set_tests_properties(cartmesh2d_thermal_control_cli PROPERTIES TIMEOUT 90)
     add_test(NAME cartmesh2d_thermal_flow_cli COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/thermal_flow_cli_test.py
         --mesh-cli $<TARGET_FILE:cartmesh2d_cli>

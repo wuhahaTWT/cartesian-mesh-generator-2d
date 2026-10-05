@@ -276,6 +276,8 @@ ScalarTransportResult2D scalarTransport(const FvMesh2D& mesh,
         if(c.profile)r.performance.faceFluxSeconds+=seconds(phaseStart);
     };
     for (std::size_t it=1;it<=(supplied?1:c.maxCorrections);++it) {
+        if(!supplied && c.stopRequested && c.stopRequested())
+            throw std::runtime_error("Scalar transport cancelled; previous physical state retained");
         std::size_t linear=0;
         if (!supplied) {
             auto& a=*matrix;

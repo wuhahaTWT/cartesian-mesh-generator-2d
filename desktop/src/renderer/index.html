@@ -337,6 +337,12 @@
         <label class="field">热扩散率 D<span class="unit"><input id="thermalDiffusivity" type="number" min="0.000000000001" step="any" value="0.01"><i>m²/s</i></span></label>
         <label class="field">初始温度<span class="unit"><input id="thermalInitial" type="number" step="any" value="300"><i>K</i></span></label>
       </div>
+      <details><summary>联合时间误差控制（自动步长）</summary>
+        <label><input id="thermalTimeError" type="checkbox">启用整步／两半步误差估计</label>
+        <label class="field">特征温升<span class="unit"><input id="thermalTemperatureScale" type="number" min="0.000000001" step="any" value="1"><i>K</i></span></label>
+        <label class="field">时间相对容差<input id="thermalTimeRtol" type="number" min="0.000000001" step="any" value="0.01"></label>
+        <p class="note">按温升而非绝对开尔文温度归一化；同时检查速度误差。每次估计需要三个联合求解，仍为一阶后向欧拉。CFL／内迭代收敛与时间精度分别检查。</p>
+      </details>
       <details><summary>热源、温度格式与边界</summary>
         <label class="field">均匀源项<span class="unit"><input id="thermalSource" type="number" step="any" value="0"><i>K/s</i></span></label>
         <label class="field">温度对流格式<select id="thermalConvection"><option value="upwind">一阶迎风</option><option value="limited-linear">线性迎风（限制重构）</option></select></label>

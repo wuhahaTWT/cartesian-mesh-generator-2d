@@ -24,9 +24,10 @@ test('thermal checkpoint format remains v1 while embedded flow may be v2', () =>
   const valid = [
     'CARTMESH2D_THERMAL_CHECKPOINT 1', 'COUPLING new-time-flux-Euler-v1', 'SCALAR 1 0', 'FLOW',
     'CARTMESH2D_FLOW_CHECKPOINT 2', 'CONFIG "channel" 0.1 1 upwind symmetric 0 normal-inlet',
-    'TIME 0', 'FLUX 1 0', ''
+    'TIME 0.01', 'FLUX 1 0', ''
   ].join('\n');
-  assert.equal(thermalCheckpointTime(valid), 0);
+  assert.equal(thermalCheckpointTime(valid), .01);
+  assert.throws(()=>thermalCheckpointTime(valid.replace("TIME 0.01","TIME 0")),/初值/);
   assert.throws(() => thermalCheckpointTime(valid.replace('THERMAL_CHECKPOINT 1', 'THERMAL_CHECKPOINT 2')), /续算文件格式/);
 });
 
@@ -245,4 +246,16 @@ test('thermal frontend cannot silently discard standalone flow acceleration cont
 
 test('thermal coupling explicitly refuses the standalone system pressure backend',()=>{
   assert.throws(()=>validateThermalRequest(request({pressurePreconditioner:'cholesky'})),/独立层流|macOS/);
+});
+
+test('thermal adaptive invocation carries joint CFL, error scales and budgets', () => {
+  const r=request({mode:'adaptive',endTime:2,minDt:.0001,maxCourant:.7,maxRetries:8,maxSteps:500,
+    timeError:true,temperatureScale:.5,timeRtol:.002});
+  const invocation=buildThermalInvocation('/tmp/final.solver.cm2d','/tmp/out','/tmp/bc.csv',r);
+  const value=flag=>invocation.args[invocation.args.indexOf(flag)+1];
+  assert.equal(value('--end-time'),'2');assert.equal(value('--temperature-scale'),'0.5');
+  assert.equal(value('--time-error'),'on');assert.equal(value('--max-time-steps'),'500');
+  assert.equal(invocation.args.includes('--steps'),false);
+  assert.throws(()=>validateThermalRequest({...r,temperatureScale:0}),/尺度/);
+  assert.throws(()=>validateThermalRequest({...r,timeRtol:NaN}),/有限数/);
 });

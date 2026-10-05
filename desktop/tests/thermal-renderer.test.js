@@ -86,7 +86,7 @@ test('thermal resume deselects flow resume, restores thermal physics and preserv
   assert.deepEqual(counts, {flow:1,thermal:1});
 });
 
-test('loading a thermal restart clears a locked vortex and selects supported fixed time stepping', () => {
+test('loading a thermal restart clears a locked vortex and preserves supported adaptive controls', () => {
   const {context, elements} = controls();
   for (const id of ['thermalDiffusivity','thermalInitial','thermalSource','thermalConvection']) elements[id] = {value:''};
   elements.flowMode.value = 'adaptive';
@@ -99,7 +99,7 @@ test('loading a thermal restart clears a locked vortex and selects supported fix
   vm.runInContext(functionSource('applyThermalRestartControls'), context);
   context.applyThermalRestartControls();
   assert.equal(elements.flowInitialVortex.checked, false, 'restart uses its saved flow, without a fresh vortex');
-  assert.equal(elements.flowMode.value, 'transient');
+  assert.equal(elements.flowMode.value, 'adaptive');
   assert.equal(elements.flowResume.checked, false);
   assert.equal(elements.thermalResume.checked, true);
   assert.equal(elements.flowDt.value, '0.005');

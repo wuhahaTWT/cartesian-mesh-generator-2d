@@ -1109,8 +1109,10 @@ function updateThermalMode() {
   $('pickThermalCheckpoint').disabled=state.busy||!state.result;
   for (const input of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
     input.disabled = Boolean(state.busy || resuming);
+  const automatic=$('flowMode').value==='adaptive';
+  for(const id of ['thermalTemperatureScale','thermalTimeRtol','thermalTimeError'])$(id).disabled=Boolean(state.busy||!automatic);
   const vortex=$('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
-  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || $('flowMode').value==='adaptive' || vortex);
+  $('runThermal').disabled = Boolean(state.busy || !state.result || $('thermalBlock').hidden || $('flowCase').value==='custom' || vortex);
   if (!state.busy) $('runThermal').textContent = resuming ? '继续温度与流动推进' : '启动温度与流动推进';
   $('thermalRestartInfo').textContent = restart
     ? `联合续算状态：t=${Number(restart.time).toPrecision(6)} s。物性、源项与边界锁定；可调整时间步和迭代控制。`
@@ -1118,7 +1120,7 @@ function updateThermalMode() {
   const start = resuming ? Number(restart.time) : 0;
   const duration = Number($('flowDt').value) * Number($('flowSteps').value);
   $('thermalTimeHint').textContent = vortex ? '温度联合推进尚不支持初始局部涡；请先关闭该初始条件。' : $('flowMode').value==='adaptive'
-    ? '温度联合推进目前使用固定步长；请在上方切换为固定步长模式。'
+    ? `联合自动步长：目标 ${$('flowEndTime').value} s；任一方失败回退重试。${$('thermalTimeError').checked?'用指定温升尺度控制时间误差。':'CFL 与收敛控制不保证时间精度。'}`
     : Number.isFinite(duration) && duration > 0
     ? `温度始终非定常：本次 ${start.toPrecision(5)} → ${(start + duration).toPrecision(5)} s。温度积分需乘 ρcp 才是单位深度热量。`
     : '请在上方填写时间步长与本次步数。';
@@ -1130,7 +1132,6 @@ function applyThermalRestartControls() {
     // The joint checkpoint supplies the carrier state. A leftover standalone
     // vortex would otherwise be locked on while disabling the thermal button.
     $('flowInitialVortex').checked = false;
-    if ($('flowMode').value === 'adaptive') $('flowMode').value = 'transient';
     applySharedFlowControls(request);
     for (const [field, id] of Object.entries({ diffusivity:'thermalDiffusivity', initial:'thermalInitial', source:'thermalSource', scalarConvection:'thermalConvection' }))
       $(id).value = request[field];
@@ -1152,6 +1153,9 @@ function thermalRequest() {
     convection:$('flowConvection').value, pressurePreconditioner:$('flowPressurePreconditioner').value,
     outletBackflow:$('flowOutletBackflow').value,
     maxIterations:Number($('flowMaxIterations').value), tolerance:Number($('flowTolerance').value), dt:Number($('flowDt').value), steps:Number($('flowSteps').value),
+    mode:$('flowMode').value==='adaptive'?'adaptive':'transient',endTime:Number($('flowEndTime').value),
+    minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),
+    timeError:$('thermalTimeError').checked,temperatureScale:Number($('thermalTemperatureScale').value),timeRtol:Number($('thermalTimeRtol').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
     source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, boundaries };
 }

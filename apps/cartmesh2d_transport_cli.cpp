@@ -1,5 +1,10 @@
 #include "cartmesh2d/fv/ScalarTransport2D.hpp"
 #include "cartmesh2d/fv/ThermalCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
+#include <csignal>
+#include <map>
+#include <array>
+#include <set>
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <algorithm>
 #include <cmath>
@@ -12,6 +17,8 @@
 #include <stdexcept>
 using namespace cartmesh2d;
 namespace {
+volatile std::sig_atomic_t stopSignal=0;
+void stopHandler(int) {stopSignal=1;}
 void require(bool b,const std::string& s) {if(!b) throw std::runtime_error(s);}
 double number(const std::string& s) {
     std::size_t used=0; const auto v=std::stod(s,&used);
@@ -91,6 +98,46 @@ std::vector<fv::ScalarBoundary2D> boundaries(const std::string& path,const fv::F
         require(mesh.faces[id].neighbour.has_value()||seen[id],"missing scalar boundary face");
     return bc;
 }
+// Event rows change a named flow boundary or one explicit face; source changes
+// all cell source densities. Same-time rows form one atomic complete snapshot.
+void loadEvents(const std::string& path,const fv::FvMesh2D& mesh,
+                const fv::FlowControls2D& flow,fv::ThermalSetup2D& setup) {
+    std::ifstream in(path);require(bool(in),"cannot open thermal events CSV");
+    std::string line;std::getline(in,line);if(!line.empty()&&line.back()=='\r')line.pop_back();
+    require(line=="time,target,type,value,inflowValue","event CSV header must be time,target,type,value,inflowValue");
+    std::set<std::pair<double,std::string>> targets;
+    while(std::getline(in,line)) {
+        if(!line.empty()&&line.back()=='\r')line.pop_back();
+        std::vector<std::string> f;std::size_t pos=0;
+        for(;;) {const auto end=line.find(',',pos);f.push_back(line.substr(pos,end-pos));if(end==std::string::npos)break;pos=end+1;}
+        require(f.size()==5,"thermal event row requires five fields");
+        const double t=number(f[0]);
+        require(targets.emplace(t,f[1]).second,"duplicate same-time thermal event target");require(t>=0,"event time must be nonnegative");
+        if(setup.events.empty()||t!=setup.events.back().time) {
+            require(setup.events.empty()||t>setup.events.back().time,"event rows must be time ordered");
+            setup.events.push_back({t,setup.events.empty()?setup.sourceDensity:setup.events.back().sourceDensity,
+                                      setup.events.empty()?setup.boundary:setup.events.back().boundary});
+        }
+        auto& e=setup.events.back();
+        if(f[1]=="source") {
+            require(f[2]=="source"&&f[4].empty(),"source event requires type source and empty inflow");
+            e.sourceDensity.assign(mesh.cells.size(),number(f[3]));continue;
+        }
+        fv::ScalarBoundary2D b;
+        require(f[2]=="value"||f[2]=="flux","event boundary type must be value or flux");
+        b.kind=f[2]=="value"?fv::ScalarBoundaryKind2D::Value:fv::ScalarBoundaryKind2D::DiffusiveFlux;
+        b.value=number(f[3]);if(!f[4].empty())b.inflowValue=number(f[4]);
+        bool matched=false;
+        if(f[1].starts_with("face:")) {
+            const double id=number(f[1].substr(5));
+            require(id>=0&&id<static_cast<double>(mesh.faces.size())&&id==std::floor(id),"invalid event face");
+            const auto face=static_cast<std::size_t>(id);require(!mesh.faces[face].neighbour,"event face is internal");
+            e.boundary[face]=b;matched=true;
+        } else for(const auto& bc:flow.boundaryConditions)if(bc.name==f[1]) {e.boundary[bc.face]=b;matched=true;}
+        require(matched,"unknown event target; use face:ID or a named custom flow boundary");
+    }
+    require(in.eof(),"thermal events read failed");fv::validateThermalSetup2D(mesh,setup);
+}
 std::vector<double> faceDiffusivity(const std::string& path,std::size_t count) {
     std::ifstream in(path); require(bool(in),"cannot open face diffusivity CSV");
     std::string line; std::getline(in,line);
@@ -117,11 +164,14 @@ std::vector<double> faceDiffusivity(const std::string& path,std::size_t count) {
 int main(int argc,char**argv) {
     std::string prefix; bool started=false; double acceptedTime=0;
     try {
-        std::string meshPath,flowPath,bcPath,verification,evolve,restart,diffusivityPath;
+        std::signal(SIGINT,stopHandler);std::signal(SIGTERM,stopHandler);
+        std::string meshPath,flowPath,bcPath,verification,evolve,restart,diffusivityPath,eventPath,flowBoundaryPath;
+        fv::ThermalTimeControls2D timeControls;bool adaptive=false,explicitMinDt=false;std::size_t completedSteps=0,rejectedAttempts=0;
+        double startTime=0;
         fv::FlowControls2D flowControls; flowControls.tolerance=1e-8;
         bool explicitVelocityRelaxation=false;
         double diffusivity=.01,source=0,initial=0,dt=0,speed=1; std::size_t steps=1;
-        fv::ScalarTransportControls2D controls;
+        fv::ScalarTransportControls2D controls;controls.stopRequested=[]{return stopSignal!=0;};
         for(int i=1;i<argc;++i) {
             const std::string arg=argv[i];
             if(arg=="--help") {
@@ -143,6 +193,12 @@ int main(int argc,char**argv) {
                     "  --outlet-backflow reject|normal-inlet (default reject)\n"
                     "  --restart PREFIX.thermal.checkpoint: resume both fields, same physical setup.\n"
                     "  --verification thermal-vortex: analytic evolving vortex/scalar decay on unit square.\n"
+                    "  --end-time T: joint CFL/retry controller; --dt is maximum step.\n"
+                    "  --min-dt DT --max-courant C --max-step-retries N; --time-error on|off.\n"
+                    "  --temperature-scale K --velocity-scale M/S --time-rtol R --temperature-atol K --velocity-atol M/S.\n"
+                    "  --evolve-flow custom --flow-boundary FILE: native named flow conditions.\n"
+                    "  --thermal-events CSV: time,target,type,value,inflowValue; target=source|face:ID|named-patch.\n"
+                    "  Events right-continuous; steps ending at an event use its left state; restart binds all events.\n"
                     "Outputs .json .vtk .cells.csv .faces.csv .history.csv; evolving mode adds joint checkpoint.\n";
                 return 0;
             }
@@ -152,6 +208,23 @@ int main(int argc,char**argv) {
             else if(arg=="--verification")verification=value;
             else if(arg=="--evolve-flow")evolve=value;
             else if(arg=="--restart")restart=value;
+            else if(arg=="--thermal-events")eventPath=value;
+            else if(arg=="--flow-boundary")flowBoundaryPath=value;
+            else if(arg=="--end-time") {timeControls.limits.targetTime=number(value);adaptive=true;}
+            else if(arg=="--min-dt") {timeControls.limits.minimumStep=number(value);explicitMinDt=true;}
+            else if(arg=="--max-courant")timeControls.limits.maximumCourant=number(value);
+            else if(arg=="--time-error") {require(value=="on"||value=="off","time-error must be on|off");timeControls.estimateError=value=="on";}
+            else if(arg=="--temperature-scale")timeControls.temperatureScale=number(value);
+            else if(arg=="--velocity-scale")timeControls.velocityScale=number(value);
+            else if(arg=="--time-rtol")timeControls.relativeTolerance=number(value);
+            else if(arg=="--temperature-atol")timeControls.temperatureAbsoluteTolerance=number(value);
+            else if(arg=="--velocity-atol")timeControls.velocityAbsoluteTolerance=number(value);
+            else if(arg=="--max-time-steps") {
+                const double n=number(value);require(n>=1&&n<=1000000&&n==std::floor(n),"invalid accepted step budget");timeControls.limits.maximumAcceptedSteps=static_cast<std::size_t>(n);
+            }
+            else if(arg=="--max-step-retries") {
+                const double n=number(value);require(n>=0&&n<=30&&n==std::floor(n),"invalid retry count");timeControls.limits.maximumRetries=static_cast<std::size_t>(n);
+            }
             else if(arg=="--flow-nu")flowControls.nu=number(value);
             else if(arg=="--flow-speed")flowControls.speed=number(value);
             else if(arg=="--flow-tolerance")flowControls.tolerance=number(value);
@@ -202,16 +275,25 @@ int main(int argc,char**argv) {
         require(!explicitVelocityRelaxation||evolving,"flow-velocity-relaxation option requires evolving flow");
         if(evolving) {
             require(dt>0&&flowPath.empty()&&(verification.empty()||verification=="thermal-vortex"),"evolving flow requires dt and cannot use a frozen carrier or other verification");
-            require(evolve=="channel"||evolve=="duct"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
+            require(evolve=="custom"||evolve=="channel"||evolve=="duct"||evolve=="cavity"||evolve=="external"||evolve=="taylor-green","unsupported evolving flow case");
             require(evolve!="taylor-green"||verification=="thermal-vortex","use thermal-vortex verification for Taylor-Green");
             flowControls.scenario=evolve;
         }
+        require(!adaptive||evolving,"end-time requires evolving flow");
+        require(!timeControls.estimateError||adaptive,"time-error requires end-time");
+        require(eventPath.empty()||adaptive,"thermal events require end-time control");
+        require(flowBoundaryPath.empty()||evolve=="custom","flow-boundary requires custom flow");
+        require(evolve!="custom"||!flowBoundaryPath.empty(),"custom flow requires flow-boundary");
         require(restart.empty()||evolving,"joint restart requires evolving flow");
         require(verification.empty()?((!flowPath.empty()||evolving)&&!bcPath.empty()):(flowPath.empty()&&bcPath.empty()),"choose explicit carrier/boundary files OR verification");
         require(!steadySine||dt==0,"sine verification is steady");
         require(verification!="decay"||dt>0,"decay verification needs dt");
         auto read=readCm2dTopology(meshPath); require(read.valid(),read.error);
         const auto mesh=fv::makeFvMesh2D(read.topology);
+        if(evolve=="custom") {
+            std::ifstream in(flowBoundaryPath);require(bool(in),"cannot open flow boundary file");
+            flowControls.boundaryConditions=fv::readFlowBoundaryConditions2D(in,mesh,flowControls);
+        }
         fv::ScalarTransportProblem2D p; p.diffusivity=diffusivity;
         if(!diffusivityPath.empty())p.faceDiffusivity=faceDiffusivity(diffusivityPath,mesh.faces.size());
         if(verification=="variable-sine") {
@@ -258,6 +340,7 @@ int main(int argc,char**argv) {
             thermalSetup.diffusivity=diffusivity;
             thermalSetup.sourceDensity.assign(mesh.cells.size(),verification.empty()?source:0.);
             thermalSetup.boundary=verification.empty()?bc:std::vector<fv::ScalarBoundary2D>(mesh.faces.size());
+            if(!eventPath.empty())loadEvents(eventPath,mesh,flowControls,thermalSetup);
             fv::validateThermalSetup2D(mesh,thermalSetup);
             if(restart.empty()) {
                 state.flow=fv::initialIncompressibleState2D(mesh,flowControls);
@@ -267,7 +350,13 @@ int main(int argc,char**argv) {
                 std::ifstream in(restart);require(bool(in),"cannot open joint restart");
                 state=fv::readThermalCheckpoint2D(in,mesh,flowControls,thermalSetup,controls);
             }
-            acceptedTime=state.flow.time;
+            acceptedTime=state.flow.time;startTime=acceptedTime;
+            if(adaptive) {
+                timeControls.limits.maximumStep=dt;
+                if(!explicitMinDt)timeControls.limits.minimumStep=dt/1024;
+                fv::validateFlowTimeStepControls2D(timeControls.limits);
+                require(timeControls.limits.targetTime>acceptedTime,"end-time must exceed restart time");
+            }
         }
         const auto parent=std::filesystem::path(prefix).parent_path();if(!parent.empty())std::filesystem::create_directories(parent);
         {auto pending=output(prefix,".json");pending<<"{\"status\":\"running\",\"converged\":false}\n";} started=true;
@@ -275,23 +364,46 @@ int main(int argc,char**argv) {
         std::vector<double> previous;
         if(dt>0) {previous.assign(mesh.cells.size(),initial);if(verification=="decay") for(std::size_t i=0;i<previous.size();++i)previous[i]=exact(mesh.cells[i].centre);}
         fv::ScalarTransportResult2D result;
-        std::ofstream thermalHistory;
+        std::ofstream thermalHistory,attemptHistory,heatHistory,boundaryHeatHistory;
         const auto saveAccepted=[&](const fv::ThermalFlowState2D& accepted) {
             auto out=output(prefix,".thermal.checkpoint.tmp");
             fv::writeThermalCheckpoint2D(out,mesh,flowControls,thermalSetup,controls,accepted);
             out.close();std::filesystem::rename(prefix+".thermal.checkpoint.tmp",prefix+".thermal.checkpoint");
         };
         if(evolving) {
-            saveAccepted(state);
+            // Initial guesses are not physical checkpoints. An imported accepted
+            // state may be copied, but zero-time startup writes nothing.
+            if(state.flow.time>0)saveAccepted(state);
+            if(adaptive) {
+                attemptHistory=output(prefix,".attempt-history.csv");
+                attemptHistory<<"step,startTime,dt,error,courant,velocityRelaxation,reason\n";
+            }
+            boundaryHeatHistory=output(prefix,".boundary-heat-history.csv");
+            boundaryHeatHistory<<"step,time,name,volumeOut,volumeIn,advectiveOut,advectiveIn,diffusiveFlux\n";
+            heatHistory=output(prefix,".heat-history.csv");
+            heatHistory<<"step,time,dt,minValue,maxValue,heatContent,boundaryFlux,sourceIntegral,temporalIntegral,globalBalance\n";
             thermalHistory=output(prefix,".thermal-history.csv");
             thermalHistory<<"step,time,accepted,flowIterations,flowMomentumResidual,flowContinuity,scalarIterations,scalarResidual,heatContent,scalarGlobalBalance,maxCourant\n";
         }
-        for(std::size_t step=1;step<=steps;++step) {
+        for(std::size_t step=1;adaptive?state.flow.time<timeControls.limits.targetTime:step<=steps;++step) {
             time=evolving?state.flow.time+dt:dt*static_cast<double>(step);
             require(std::isfinite(time),"physical time overflow");
             if(evolving) {
                 previous=state.scalar;
-                const auto attempt=fv::advanceThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,dt);
+                require(!stopSignal,"thermal calculation cancelled; last accepted checkpoint retained");
+                require(!adaptive||completedSteps<timeControls.limits.maximumAcceptedSteps,"thermal accepted-step budget exhausted");
+                fv::ThermalFlowResult2D attempt;
+                if(adaptive) {
+                    auto controlled=fv::advanceControlledThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,timeControls,[]{return stopSignal!=0;},
+                        [&](const fv::ThermalAttempt2D& a) {
+                            attemptHistory<<step<<','<<a.startTime<<','<<a.timeStep<<','<<a.error<<','<<a.courant<<','<<a.velocityRelaxation<<','<<a.reason<<'\n';
+                            attemptHistory.flush();if(a.reason!="accepted")++rejectedAttempts;
+                        });
+                    dt=controlled.attempts.back().timeStep;
+                    attempt=std::move(controlled.step);
+                    time=attempt.accepted?attempt.accepted->flow.time:state.flow.time+dt;
+                } else attempt=fv::advanceThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,dt);
+                if(attempt.accepted)++completedSteps;
                 result=attempt.scalar;
                 double heat=0;
                 for(std::size_t i=0;i<result.values.size();++i)heat+=mesh.cells[i].area*result.values[i];
@@ -299,14 +411,30 @@ int main(int argc,char**argv) {
                     saveAccepted(*attempt.accepted);state=*attempt.accepted;acceptedTime=state.flow.time;
                 }
                 const auto& fh=attempt.flow.history.back();
+                if(attempt.accepted) {
                 thermalHistory<<step<<','<<time<<','<<(attempt.accepted?1:0)<<','<<attempt.flow.history.size()<<','<<fh.momentumResidual<<','<<fh.continuity
                     <<','<<result.history.size()<<',';
                 if(result.history.empty())thermalHistory<<"nan";else thermalHistory<<result.history.back().residualNorm;
                 thermalHistory<<','<<heat<<','<<result.globalBalance<<','<<attempt.flow.maxCourant<<'\n';thermalHistory.flush();
+                heatHistory<<step<<','<<time<<','<<dt<<','<<result.minValue<<','<<result.maxValue<<','<<heat<<','<<result.boundaryFlux<<','<<result.sourceIntegral<<','<<result.temporalIntegral<<','<<result.globalBalance<<'\n';heatHistory.flush();
+                std::map<std::string,std::array<double,5>> groups;
+                for(const auto& condition:flowControls.boundaryConditions) {
+                    const double q=state.flow.flux[condition.face],a=result.advectiveFlux[condition.face];
+                    auto& g=groups[condition.name];g[q>=0?0:1]+=q>=0?q:-q;g[q>=0?2:3]+=q>=0?a:-a;
+                    g[4]+=result.diffusiveFlux[condition.face];
+                }
+                for(const auto& [name,g]:groups) {
+                    std::string label="\"";for(char ch:name) {if(ch=='\"')label+='\"';label+=ch;}label+='\"';
+                    boundaryHeatHistory<<step<<','<<time<<','<<label;
+                    for(double v:g)boundaryHeatHistory<<','<<v;
+                    boundaryHeatHistory<<'\n';
+                }
+                boundaryHeatHistory.flush();
+                }
                 if(!attempt.accepted) {
                     auto failed=output(prefix,".json");
                     failed<<"{\"status\":\"step-not-accepted\",\"converged\":false,\"failedStage\":"
-                        <<quote(attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time<<"}\n";
+                        <<quote(adaptive?"joint-controller":attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time<<"}\n";
                     return 2;
                 }
                 std::cout<<std::setprecision(17)<<"{\"type\":\"thermal-time-step\",\"accepted\":1,\"step\":"<<step
@@ -366,6 +494,10 @@ int main(int argc,char**argv) {
         if(evolving) json<<flowControls.tolerance; else json<<"null";
         json<<",\n\"flowConvection\":"<<quote(fv::flow_checkpoint_detail::convectionName(flowControls.convection))
             <<",\n\"outletBackflow\":"<<quote(flowControls.outletBackflow==fv::OutletBackflow2D::NormalInlet?"normal-inlet":"reject")
+            <<",\n\"timeStepControl\":"<<quote(adaptive?timeControls.estimateError?"joint-cfl-be-error-retry":"joint-cfl-retry":"fixed")
+            <<",\n\"startTime\":"<<startTime<<",\n\"completedSteps\":"<<completedSteps<<",\n\"rejectedAttempts\":"<<rejectedAttempts
+            <<",\n\"maximumTimeStep\":"<<timeControls.limits.maximumStep
+            <<",\n\"temperatureScale\":"<<timeControls.temperatureScale<<",\n\"timeRelativeTolerance\":"<<timeControls.relativeTolerance
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"relativeTolerance\":"<<controls.relativeTolerance<<",\n\"absoluteTolerance\":"<<controls.absoluteTolerance<<",\n\"cellTolerance\":"<<controls.cellTolerance
