@@ -16,7 +16,7 @@
     "result": {"status": "converged", "effectiveAcceleration": "newton-krylov", "effectiveConvection": "face-limited-linear", "coupledEvaluations": 223, "continuity": 9.095369959833901e-14, "globalImbalance_m2_s": 3.608224830031759e-14, "momentumResidual": 1.8599415754416538e-8, "velocityChange_m_s": 5.831810067705552e-8, "pressureChange_m2_s2": 1.335340244382581e-8},
     "flowCase": {"format": "cartmesh2d-flow-case-v5", "settingsRoundTrip": true, "repeatedCalculationIdentical": true, "savedRequestRecordsEffectiveChoices": true},
     "sha256": {"log": "82a32aad0a04237fa7335a648a02efd2f5582551845e61757820ee3a63d3fd47", "screenshot": "0f7e66cd19cd47191447d35c51cd1f4788760bc58b57f41157f824efeff6bff9", "cells": "013c774875181f4433f18cd2ac96ac908742f5289b60b530b1ff263032113c08", "faces": "ec14adf6693c23d95dba120f165e7553983af86d0e123d7ef0ce5383284c705c", "residuals": "9e8a6bdef0cffbd54a8d98ecc83e84d19994a525947ae81e29fc5ec8d4852d8c", "summary": "762c7b86e4e61eb879687b6c783278f683c9ad07d11f59f444f9255c309e3ecd", "savedFlowCase": "435480c8a74f02a5fd0538d7c673eef4a9e1600b518337bb6df19a505e4451f2"},
-    "note": "The first invocation intentionally remains in the raw log set: a relative output directory was rejected before flow execution because smoke flow-case validation requires an absolute path. The successful run above used an absolute cloud path."
+    "note": "An initial relative-path invocation was rejected before flow execution because smoke flow-case validation requires an absolute output directory; it was not counted as validation. The evidence hashes above refer only to the successful absolute-path run."
   },
   "nativeApiMatrix": {
     "driver": "artifacts/current/native-laminar-default-matrix.cpp",
