@@ -928,7 +928,7 @@ async function runSmoke() {
       document.getElementById('flowTolerance').value = ${JSON.stringify(argument('flow-tolerance') || '0.000001')};
       document.getElementById('flowNu').value = ${JSON.stringify(argument('flow-nu') || '0.01')};
       document.getElementById('flowSpeed').value = ${JSON.stringify(argument('flow-speed') || '1')};
-      document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'upwind')};
+      document.getElementById('flowConvection').value = ${JSON.stringify(argument('flow-convection') || 'default')};
       document.getElementById('flowConvection').dispatchEvent(new Event('change'));
       document.getElementById('flowPressurePreconditioner').value = ${JSON.stringify(argument('flow-pressure-preconditioner') || 'ic0')};
       document.getElementById('flowPressurePreconditioner').dispatchEvent(new Event('change'));

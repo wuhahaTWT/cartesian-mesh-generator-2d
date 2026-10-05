@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
             "--profile writes extra .performance.json timing/linear iteration diagnostics.\n"
             "--pressure-preconditioner ic0|jacobi|aggregation|cholesky (default ic0); cholesky requires macOS; same true-residual tolerance.\n"
             "--viscous-stress symmetric|laplacian (default symmetric); conservative Newtonian stress.\n"
-            "--convection upwind|limited-linear|face-limited-linear (default upwind); bounded face reconstruction.\n"
+            "--convection upwind|limited-linear|face-limited-linear; omitted selects face-limited-linear with default Newton steady, otherwise upwind.\n"
             "--momentum-inertia 0|1 (default 1); 0 opts into steady custom Stokes research.\n"
             "--outlet-backflow reject|normal-inlet (default reject).\n"
             "manufactured: unit-square analytic forced vortex; verification only, stationary walls.\n"
@@ -347,6 +347,8 @@ int main(int argc, char** argv) {
         if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
             throw std::invalid_argument("Engineering convergence requires steady laminar flow");
         controls.steadyAcceleration=fv::resolveSteadyAcceleration2D(
+            controls,timeStep==0 && boundaryExportPath.empty());
+        controls.convection=fv::resolveSteadyConvection2D(
             controls,timeStep==0 && boundaryExportPath.empty());
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");

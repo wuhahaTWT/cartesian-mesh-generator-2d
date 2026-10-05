@@ -88,7 +88,7 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
             assert abs(float(cell['speed']) - math.hypot(float(cell['u']), float(cell['v']))) < 1e-12
         assert data['converged'] is (code == 0)
         assert data['pressureDiscretization'] == 'shared-face-gauss'
-        assert data['convection'] in ('upwind', 'limited-linear')
+        assert data['convection'] in ('upwind', 'limited-linear', 'face-limited-linear')
         for face in flux:
             assert all(math.isfinite(float(face[k])) for k in
                        ('pressure','advectionX','advectionY','diffusionX','diffusionY'))
@@ -102,11 +102,13 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     rectangle(reuse_mesh, 8, 4)
     default, _ = run('reuse', reuse_mesh, extra=('--nu', '.1'))
     assert default['steadyAcceleration'] == 'newton-krylov'
-    assert default['convection'] == 'upwind' and default['pressurePreconditioner'] == 'ic0'
+    assert default['convection'] == 'face-limited-linear' and default['pressurePreconditioner'] == 'ic0'
     simple, _ = run('explicit-simple', reuse_mesh, extra=('--nu', '.1', '--steady-acceleration', 'none'))
     assert simple['steadyAcceleration'] == 'none'
+    assert simple['convection'] == 'upwind'
     adaptive_linear, _ = run('adaptive-linear-default', reuse_mesh, extra=('--nu', '.1', '--linear-policy', 'adaptive'))
     assert adaptive_linear['steadyAcceleration'] == 'none'
+    assert adaptive_linear['convection'] == 'upwind'
     newton, _ = run('reuse-newton', reuse_mesh, extra=('--nu', '.1', '--steady-acceleration', 'newton-krylov', '--profile'))
     assert newton['steadyAcceleration'] == 'newton-krylov'
     assert newton['coupledEvaluations'] == newton['iterations'] <= 700
@@ -245,7 +247,7 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
         error_contains='one connected fluid region')
     cavity = root / 'cavity.solver.cm2d'
     rectangle(cavity, 12, 12, 1.0)
-    data, field = run('cavity', cavity, case='cavity')
+    data, field = run('cavity', cavity, case='cavity', extra=('--convection','upwind'))
     assert abs(float(field[0]['p'])) < 1e-12  # Closed-domain pressure gauge.
     centre = min(field, key=lambda c: (float(c['x'])-.5)**2 + (float(c['y'])-.5)**2)
     assert -.3 < float(centre['u']) < -.05  # Clockwise recirculation, not zero flow.

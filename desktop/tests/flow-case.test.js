@@ -80,11 +80,13 @@ test('saved system Cholesky cases retain their backend or fail explicitly on uns
   } else assert.throws(()=>createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh),/macOS/);
 });
 
-test('new default cases record the resolved method while explicit SIMPLE survives save and reload',()=>{
+test('new default cases record the resolved method and convection while explicit SIMPLE survives save and reload',()=>{
   for (const steadyAcceleration of ['default','none']) {
-    const saved=createFlowCaseDocument({...common,steadyAcceleration},mesh);
+    const input={...common,steadyAcceleration};delete input.convection;
+    const saved=createFlowCaseDocument(input,mesh);
     const loaded=parseFlowCaseDocument(serializeFlowCase(saved),mesh);
     assert.equal(loaded.request.steadyAcceleration,steadyAcceleration==='default'?'newton-krylov':'none');
+    assert.equal(loaded.request.convection,steadyAcceleration==='default'?'face-limited-linear':'upwind');
     assert.deepEqual(loaded,saved);
     const args=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',loaded.request,null,'/tmp/input.boundaries').args;
     assert.equal(args[args.indexOf('--steady-acceleration')+1],loaded.request.steadyAcceleration);

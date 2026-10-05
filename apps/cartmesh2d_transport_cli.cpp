@@ -197,6 +197,7 @@ int main(int argc,char**argv) {
             evolve="taylor-green";
         }
         const bool evolving=!evolve.empty();
+        flowControls.convection=fv::resolveSteadyConvection2D(flowControls,false);
         require(diffusivityPath.empty()||(!evolving&&restart.empty()&&verification.empty()),
             "face-diffusivity requires frozen carrier without restart or verification");
         require(!explicitVelocityRelaxation||evolving,"flow-velocity-relaxation option requires evolving flow");

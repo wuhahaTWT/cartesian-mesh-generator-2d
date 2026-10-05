@@ -75,6 +75,17 @@ int main() {
     require(fixedRestored.u == original.u && fixedRestored.flux == original.flux,
             "fixed-format writer did not roundtrip");
 
+    auto contextDefault = controls;
+    contextDefault.convection = ConvectionScheme2D::Default;
+    const auto contextText = serialized(m, contextDefault, original);
+    require(contextText.find(" upwind ") != std::string::npos,
+            "transient checkpoint did not resolve context-default convection");
+    auto explicitUpwind = contextDefault;
+    explicitUpwind.convection = ConvectionScheme2D::Upwind;
+    std::istringstream contextInput(contextText);
+    require(readFlowCheckpoint2D(contextInput, m, explicitUpwind).u == original.u,
+            "resolved default checkpoint is incompatible with explicit historical upwind");
+
     auto variable = controls;
     variable.faceViscosity = {.11, .17, .23, .31};
     const auto variableText = serialized(m, variable, original);

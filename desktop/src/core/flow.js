@@ -28,9 +28,13 @@ const FLOW_CASES = Object.freeze({
   }
 });
 const FLOW_CONVECTION_SCHEMES = Object.freeze({
+  default: {
+    id: 'default', label: '按工况选择',
+    description: '固定物性严格稳态使用面方向限制；时间推进、材料和显式 SIMPLE 使用一阶迎风。'
+  },
   upwind: {
     id: 'upwind', label: '一阶迎风',
-    description: '稳健的默认格式，数值扩散较大。'
+    description: '稳健的一阶格式，数值扩散较大。'
   },
   'limited-linear': {
     id: 'limited-linear', label: '线性迎风（限制重构）',
@@ -77,6 +81,7 @@ const finite = (value, name) => {
 };
 const knownConvection = value => typeof value === 'string'
   && Object.prototype.hasOwnProperty.call(FLOW_CONVECTION_SCHEMES, value);
+const knownEffectiveConvection = value => knownConvection(value) && value !== 'default';
 const knownPressurePreconditioner = value => typeof value === 'string'
   && Object.prototype.hasOwnProperty.call(FLOW_PRESSURE_PRECONDITIONERS, value);
 const knownOutletBackflow = value => typeof value === 'string'
@@ -85,8 +90,8 @@ const knownOutletBackflow = value => typeof value === 'string'
 function validateFlowRequest(request = {}) {
   const flowCase = Object.hasOwn(FLOW_CASES, request.case) ? FLOW_CASES[request.case] : null;
   if (!flowCase) throw new Error('未知流动工况。');
-  const convection = request.convection === undefined ? 'upwind' : request.convection;
-  if (!knownConvection(convection)) throw new Error('未知对流格式。请选择 upwind、limited-linear 或 face-limited-linear。');
+  const requestedConvection = request.convection === undefined ? 'default' : request.convection;
+  if (!knownConvection(requestedConvection)) throw new Error('未知对流格式。请选择 default、upwind、limited-linear 或 face-limited-linear。');
   const pressurePreconditioner = request.pressurePreconditioner === undefined
     ? 'ic0' : request.pressurePreconditioner;
   if (!knownPressurePreconditioner(pressurePreconditioner))
@@ -118,6 +123,9 @@ function validateFlowRequest(request = {}) {
   if (!['strict','adaptive'].includes(linearPolicy)) throw new Error('线性迭代精度须为 strict 或 adaptive。');
   if (steadyAcceleration==='newton-krylov' && linearPolicy!=='strict')
     throw new Error('整体耦合求解需要固定线性精度（strict）。');
+  const convection=requestedConvection==='default'
+    ? (mode==='steady' && steadyAcceleration==='newton-krylov' ? 'face-limited-linear' : 'upwind')
+    : requestedConvection;
   const pressureCorrectionPasses=finite(request.pressureCorrectionPasses ?? 4,'压力校正次数');
   if (!Number.isInteger(pressureCorrectionPasses) || pressureCorrectionPasses<1 || pressureCorrectionPasses>4) throw new Error('压力校正次数须为1到4的整数。');
   const velocityRelaxation=finite(request.velocityRelaxation ?? .6,'速度松弛系数');
@@ -304,7 +312,7 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     throw new Error('流动摘要的收敛状态互相矛盾。');
   const convectionInferred = summary.convection === undefined;
   const convection = convectionInferred ? 'upwind' : summary.convection;
-  if (!knownConvection(convection)) throw new Error('流动摘要对流格式无效。');
+  if (!knownEffectiveConvection(convection)) throw new Error('流动摘要对流格式无效。');
   const pressurePreconditionerInferred = summary.pressurePreconditioner === undefined;
   const pressurePreconditioner = pressurePreconditionerInferred
     ? LEGACY_PRESSURE_PRECONDITIONER : summary.pressurePreconditioner;

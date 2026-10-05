@@ -1188,9 +1188,17 @@ SteadyAcceleration2D resolveSteadyAcceleration2D(const FlowControls2D& c,bool co
         ? SteadyAcceleration2D::NewtonKrylov : SteadyAcceleration2D::None;
 }
 
+ConvectionScheme2D resolveSteadyConvection2D(const FlowControls2D& c,bool constantPropertySteady) {
+    if(c.convection!=ConvectionScheme2D::Default)return c.convection;
+    return constantPropertySteady &&
+        resolveSteadyAcceleration2D(c,constantPropertySteady)==SteadyAcceleration2D::NewtonKrylov
+        ? ConvectionScheme2D::FaceLimitedLinearUpwind : ConvectionScheme2D::Upwind;
+}
+
 FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
     auto selected=c;selected.steadyAcceleration=resolveSteadyAcceleration2D(c);
+    selected.convection=resolveSteadyConvection2D(selected);
     if(selected.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
         return detail::solveNewtonKrylovFlow2D(m,selected,nullptr,progress);
     return solveFlow(m,selected,progress,nullptr,0);
@@ -1198,6 +1206,7 @@ FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
 FlowResult2D solveIncompressibleFromGuess2D(const FvMesh2D& m,const FlowControls2D& c,
     const FlowInitialGuess2D& guess,const std::function<void(const FlowIteration2D&)>& progress) {
     auto selected=c;selected.steadyAcceleration=resolveSteadyAcceleration2D(c);
+    selected.convection=resolveSteadyConvection2D(selected);
     if(selected.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
         return detail::solveNewtonKrylovFlow2D(m,selected,&guess,progress);
     return solveFlow(m,selected,progress,nullptr,0,{},&guess);
@@ -1207,12 +1216,14 @@ FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D&
     ensure(bool(material),"Material flow requires a constitutive update");
     ensure(c.scenario=="channel"||c.scenario=="cavity"||c.scenario=="external"||c.scenario=="flatplate",
         "Material flow supports steady physical cases only");
-    return solveFlow(m,c,progress,nullptr,0,material);
+    auto selected=c;selected.convection=resolveSteadyConvection2D(c,false);
+    return solveFlow(m,selected,progress,nullptr,0,material);
 }
 FlowResult2D advanceIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const FlowState2D& previous, double timeStep,
     const std::function<void(const FlowIteration2D&)>& progress) {
-    return solveFlow(m,c,progress,&previous,timeStep);
+    auto selected=c;selected.convection=resolveSteadyConvection2D(c,false);
+    return solveFlow(m,selected,progress,&previous,timeStep);
 }
 FlowState2D initialIncompressibleState2D(const FvMesh2D& m, const FlowControls2D& c) {
     validateFvMesh2D(m);

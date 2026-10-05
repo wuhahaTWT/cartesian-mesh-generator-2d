@@ -57,6 +57,7 @@ inline const char* convectionName(ConvectionScheme2D value) {
     case ConvectionScheme2D::Upwind: return "upwind";
     case ConvectionScheme2D::LimitedLinearUpwind: return "limited-linear";
     case ConvectionScheme2D::FaceLimitedLinearUpwind: return "face-limited-linear";
+    case ConvectionScheme2D::Default: return "default";
     }
     fail("invalid convection scheme");
     return "";
@@ -112,7 +113,7 @@ inline void configuration(std::istream& in, const FlowControls2D& controls, bool
     finite(speed, "configuration speed");
     finite(slope, "configuration pressure slope");
     if (scenario != controls.scenario || nu != controls.nu || speed != controls.speed ||
-        convection != convectionName(controls.convection) || stress != stressName(controls.viscousStress) ||
+        convection != convectionName(resolveSteadyConvection2D(controls,false)) || stress != stressName(controls.viscousStress) ||
         slope != controls.manufacturedPressureSlope ||
         ((!hasOutletBackflow && controls.outletBackflow != OutletBackflow2D::Reject) ||
          (hasOutletBackflow && outletBackflowValue(outletBackflow) != controls.outletBackflow)))
@@ -167,7 +168,7 @@ inline void writeFlowCheckpoint2D(std::ostream& out, const FvMesh2D& mesh,
         << "CONFIG " << std::quoted(controls.scenario) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.nu, "configuration nu"); out << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.speed, "configuration speed"); out << ' '
-        << flow_checkpoint_detail::convectionName(controls.convection) << ' '
+        << flow_checkpoint_detail::convectionName(resolveSteadyConvection2D(controls,false)) << ' '
         << flow_checkpoint_detail::stressName(controls.viscousStress) << ' ';
     flow_checkpoint_detail::writeDouble(out, controls.manufacturedPressureSlope, "configuration pressure slope");
     out << ' ' << flow_checkpoint_detail::outletBackflowName(controls.outletBackflow);

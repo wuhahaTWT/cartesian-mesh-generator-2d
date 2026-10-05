@@ -7,7 +7,7 @@
 
 namespace cartmesh2d::fv {
 
-enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind, FaceLimitedLinearUpwind };
+enum class ConvectionScheme2D { Upwind, LimitedLinearUpwind, FaceLimitedLinearUpwind, Default };
 
 enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation, SystemCholesky };
 enum class ViscousStress2D { Laplacian, Symmetric };
@@ -69,7 +69,11 @@ struct FlowControls2D {
     bool profile = false;
     double manufacturedPressureSlope = 0; // verification-only linear pressure addition
     ViscousStress2D viscousStress = ViscousStress2D::Symmetric;
-    ConvectionScheme2D convection = ConvectionScheme2D::Upwind;
+    // Context default: the bounded face-frame reconstruction accompanies the
+    // strict constant-property Newton steady solver. Physical time, material,
+    // adaptive/engineering and explicit SIMPLE paths retain first-order upwind.
+    // Every explicit scheme keeps its requested meaning in every context.
+    ConvectionScheme2D convection = ConvectionScheme2D::Default;
     // Explicit research opt-in: 0 is steady custom Stokes, 1 is unchanged NS.
     // No intermediate values, transient/material coupling or checkpoints at 0.
     double momentumInertia = 1;
@@ -99,6 +103,8 @@ struct FlowControls2D {
 
 // Resolve the context default before solving or reporting effective controls.
 [[nodiscard]] SteadyAcceleration2D resolveSteadyAcceleration2D(
+    const FlowControls2D&, bool constantPropertySteady = true);
+[[nodiscard]] ConvectionScheme2D resolveSteadyConvection2D(
     const FlowControls2D&, bool constantPropertySteady = true);
 
 // Validates coverage, ownership, names, physical types and impermeability.

@@ -26,19 +26,19 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   const invocation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: '0.01', speed: '1', maxIterations: '1500' });
   assert.equal(invocation.executable, 'cartmesh2d_flow_cli');
-  assert.equal(invocation.request.convection, 'upwind');
+  assert.equal(invocation.request.convection, 'face-limited-linear');
   assert.equal(invocation.request.pressurePreconditioner, 'ic0');
   assert.equal(invocation.request.outletBackflow, 'reject');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
     '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500', '--tolerance', '0.000001',
-    '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
+    '--convection', 'face-limited-linear', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
   const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
   assert.equal(limited.request.convection, 'limited-linear');
   const aggregation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, pressurePreconditioner: 'aggregation' });
   assert.equal(aggregation.request.pressurePreconditioner, 'aggregation');
-  assert.deepEqual(aggregation.args.slice(-10), ['--convection', 'upwind', '--pressure-preconditioner', 'aggregation', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
+  assert.deepEqual(aggregation.args.slice(-10), ['--convection', 'face-limited-linear', '--pressure-preconditioner', 'aggregation', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
   assert.equal(limited.request.viscousStress, 'symmetric');
   assert.deepEqual(limited.args.slice(-10), ['--convection', 'limited-linear', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
   assert.equal(limited.args.at(-1), 'newton-krylov');
@@ -215,12 +215,19 @@ test('context default selects the solver and explicit SIMPLE is always passed to
   const base={case:'channel',nu:.1,speed:1,maxIterations:500};
   for (const steadyAcceleration of [undefined,'default']) {
     assert.equal(validateFlowRequest({...base,steadyAcceleration}).steadyAcceleration,'newton-krylov');
+    assert.equal(validateFlowRequest({...base,steadyAcceleration}).convection,'face-limited-linear');
     assert.equal(validateFlowRequest({...base,steadyAcceleration,linearPolicy:'adaptive'}).steadyAcceleration,'none');
+    assert.equal(validateFlowRequest({...base,steadyAcceleration,linearPolicy:'adaptive'}).convection,'upwind');
     for (const mode of ['transient','adaptive'])
-      assert.equal(validateFlowRequest({...base,steadyAcceleration,mode,dt:.01,steps:2,endTime:.1}).steadyAcceleration,'none');
+      assert.deepEqual(
+        [validateFlowRequest({...base,steadyAcceleration,mode,dt:.01,steps:2,endTime:.1}).steadyAcceleration,
+         validateFlowRequest({...base,steadyAcceleration,mode,dt:.01,steps:2,endTime:.1}).convection],
+        ['none','upwind']);
   }
   const simple=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',{...base,steadyAcceleration:'none'});
   assert.equal(simple.args[simple.args.indexOf('--steady-acceleration')+1],'none');
+  assert.equal(simple.request.convection,'upwind');
+  assert.equal(validateFlowRequest({...base,convection:'upwind'}).convection,'upwind');
 });
 
 test('explicit steady acceleration is unavailable in time marching and bound to recorded diagnostics', () => {
@@ -248,7 +255,7 @@ test('coupled Newton mode binds strict controls, work budget and nonconvergence 
   assert.equal(invocation.args[invocation.args.indexOf('--steady-acceleration')+1],'newton-krylov');
   assert.throws(()=>validateFlowRequest({...request,linearPolicy:'adaptive'}),/固定线性精度/);
   assert.throws(()=>validateFlowRequest({...request,mode:'transient',dt:.02,steps:1}),/稳态加速/);
-  const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
+  const current={...summary,convection:'face-limited-linear',pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',
     forceDefinition:'shared-face-newtonian-traction',forceX:2,forceY:-3,pressureForceX:1,pressureForceY:-1,
     discreteForceX:2,discreteForceY:-3,wallForceX:2,wallForceY:-3,wallViscousForceX:1,wallViscousForceY:-2,
     steadyAcceleration:'newton-krylov',accelerationCandidates:6,accelerationAccepted:4,accelerationRejected:2,

@@ -177,9 +177,11 @@ build/cartmesh2d_flow_cli \
   --output outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear
 ```
 
-这里 `D=2 m`、`U=1 m/s`、`ν=.1 m²/s`，所以 `Re=20`；单位密度/单位深度下 `Cd=Fx/(.5U²D)=Fx`。Tritton 的 `Cd=2.045` 只作上下文参考，必须与几何、网格和外域敏感性一起解释，不能把有限方域与实验条件视为完全相同。六次联合细化的进程耗时是驱动实测；20D 运行只留有网格日志与最终摘要时间戳，约 1,846 秒间隔不是精确独占进程成本。完整定义、结果、限制和哈希见 `native-laminar-curved-benchmark.json`；当前只支持显式 face-limited-linear 的这一积分量资格，默认 Upwind 和圆环局部压力仍未合格。
+这里 `D=2 m`、`U=1 m/s`、`ν=.1 m²/s`，所以 `Re=20`；单位密度/单位深度下 `Cd=Fx/(.5U²D)=Fx`。Tritton 的 `Cd=2.045` 只作上下文参考，必须与几何、网格和外域敏感性一起解释，不能把有限方域与实验条件视为完全相同。六次联合细化的进程耗时是驱动实测；首个 20D face-limited-linear 运行只留有网格日志与最终摘要时间戳，约 1,846 秒间隔不是精确独占进程成本。随后同一 66,912 格网格实际补跑旧省略选项的 Upwind 默认：657 次完整评估、1,353.433 秒、`Cd=2.17429`，比参考高 `6.322%`；face-limited-linear 为 904 次评估、`Cd=2.06213`，误差 `0.838%`，完整评估成本增加 `37.6%`。这一完整成本/精度取舍与其他内流、封闭流、解析强迫流证据共同支持下述上下文默认改动；它不解决圆环局部压力。
 
-该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`，目前无新通用物理精度门、无产品默认改动。
+`FlowControls2D::convection=Default` 与 `resolveSteadyConvection2D` 现在只在固定物性、strict、实际采用 Newton–Krylov 的稳态上下文选择 `face-limited-linear`；显式 `--steady-acceleration none`、adaptive/engineering、物理时间和材料/温度联算解析为 `upwind`。三个显式 `--convection` 值均不改写。CLI 摘要和桌面保存工况记录解析后的实际格式；非定常 checkpoint 也把 Default 序列化为历史 Upwind，避免旧状态被新稳态策略重解释。17,796 格圆柱省略方法和对流选项的实际新默认重放以 559 次评估收敛，场、面量和残差历史与此前显式 face-limited-linear 逐字节相同。命令、哈希、100/100 原生及 194/194 前端回归见 `native-laminar-default-convection.json`；本批未运行实际 App、macOS 或打包版。
+
+该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格
 
@@ -195,7 +197,7 @@ CLI 均匀/自适应资源上限为 level 10/12；桌面分别为 9/10，且自�
 
 ## 原生层流求解
 
-Linux 云端接续使用 GCC（本次 13.3）和 CMake，关闭与不可压目标无关的 `CARTMESH2D_BUILD_CHEMISTRY`。API/CLI 省略稳态方法时按上下文选择；桌面“按工况选择”在保存工况时解析为明确方法。显式 `--steady-acceleration none` 保持 SIMPLE。云端原始圆环默认入口、完整验证范围和源码哈希见 `artifacts/current/native-laminar-cloud-default.json`；实际原始场位于忽略提交的 `outputs/cloud-laminar/`。Linux 结果不代表 macOS App 已验。
+Linux 云端接续使用 GCC（本次 13.3）和 CMake，关闭与不可压目标无关的 `CARTMESH2D_BUILD_CHEMISTRY`。API/CLI 省略稳态方法和对流格式时按上下文选择；桌面“按工况选择”在保存工况时解析为明确方法及格式。显式 `--steady-acceleration none` 保持 SIMPLE，并在未显式指定格式时保持 Upwind。云端原始圆环入口、完整验证范围和源码哈希见 `artifacts/current/native-laminar-cloud-default.json` 与 `native-laminar-default-convection.json`；实际原始场位于忽略提交的 `outputs/cloud-laminar/`。Linux 结果不代表 macOS App 已验。
 
 `Incompressible2D.cpp` 使用 SIMPLE、Rhie–Chow 及共享压力/黏性面通量；只读取最终 `*.solver.cm2d`。完整参数查 `build/cartmesh2d_flow_cli --help`。
 
@@ -208,7 +210,7 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 
 | 控制 | 约束 |
 | --- | --- |
-| `--convection upwind\|limited-linear\|face-limited-linear` | 迎风或限制重构，不是物理模型切换 |
+| `--convection upwind\|limited-linear\|face-limited-linear` | 显式迎风或限制重构，不是物理模型切换；省略时，strict 固定物性 Newton 稳态选 face-limited-linear，其余上下文选 upwind |
 | `--pressure-preconditioner ic0\|aggregation\|cholesky` | Cholesky 只在 macOS；仍验真实线性残差 |
 | `--linear-policy strict\|adaptive` | adaptive 最终严格复核 |
 | `--velocity-relaxation` / `--pressure-corrections` | 默认 .6 / 4；困难曲壁可能不稳，连续性小不代表收敛 |

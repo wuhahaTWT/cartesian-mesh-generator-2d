@@ -277,12 +277,13 @@
       </div>
       <label class="field">对流格式
         <select id="flowConvection">
-          <option value="upwind" selected>一阶迎风（默认，稳健）</option>
+          <option value="default" selected>按工况选择（稳态精度／其余稳健）</option>
+          <option value="upwind">一阶迎风（稳健）</option>
           <option value="limited-linear">线性迎风（限制重构）</option>
           <option value="face-limited-linear">线性迎风（面方向限制）</option>
         </select>
       </label>
-      <p class="note">线性迎风使用有界限制重构，可减少数值扩散，但不保证所有工况都更准确；这里不代表通用二阶格式或新的工程合格结论。</p>
+      <p class="note">按工况选择时，固定物性严格稳态的整体耦合求解使用面方向限制；显式 SIMPLE、非定常及材料路径使用一阶迎风。线性迎风采用有界限制重构，但不代表所有工况均达到二阶。</p>
       <label class="field">压力求解
         <select id="flowPressurePreconditioner">
           <option value="ic0" selected>标准（IC0）</option>

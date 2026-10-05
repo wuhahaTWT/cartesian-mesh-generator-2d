@@ -215,6 +215,7 @@ void contextDefaultSolver() {
     c.steadyAcceleration=FlowControls2D{}.steadyAcceleration;
     const auto actual=solveIncompressible2D(mesh,c);
     auto explicitNewton=c;explicitNewton.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
+    explicitNewton.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
     const auto expected=solveIncompressible2D(mesh,explicitNewton);
     require(actual.converged && actual.performance.coupledEvaluations>0 && actual.u==expected.u &&
         actual.v==expected.v && actual.p==expected.p && actual.flux==expected.flux,
@@ -223,14 +224,22 @@ void contextDefaultSolver() {
     const auto initial=initialIncompressibleState2D(mesh,timeControl);
     const auto advanced=advanceIncompressible2D(mesh,timeControl,initial,.01);
     auto explicitSimple=timeControl;explicitSimple.steadyAcceleration=SteadyAcceleration2D::None;
+    explicitSimple.convection=ConvectionScheme2D::Upwind;
     const auto reference=advanceIncompressible2D(mesh,explicitSimple,initial,.01);
     require(advanced.converged && advanced.performance.coupledEvaluations==0 && advanced.u==reference.u &&
         advanced.v==reference.v && advanced.p==reference.p && advanced.flux==reference.flux,
         "Context default changed physical time stepping");
+    require(resolveSteadyConvection2D(c)==ConvectionScheme2D::FaceLimitedLinearUpwind,
+        "Strict Newton context default did not select face-limited convection");
+    auto explicitUpwind=c;explicitUpwind.convection=ConvectionScheme2D::Upwind;
+    require(resolveSteadyConvection2D(explicitUpwind)==ConvectionScheme2D::Upwind,
+        "Explicit upwind was reinterpreted by the context default");
     c.adaptiveLinear=true;
     require(resolveSteadyAcceleration2D(c)==SteadyAcceleration2D::None,"Adaptive context default bypassed its requested linear policy");
+    require(resolveSteadyConvection2D(c)==ConvectionScheme2D::Upwind,"Adaptive context default changed convection");
     c.adaptiveLinear=false;c.convergence=FlowConvergence2D::Engineering;
     require(resolveSteadyAcceleration2D(c)==SteadyAcceleration2D::None,"Engineering context default selected strict-only Newton");
+    require(resolveSteadyConvection2D(c)==ConvectionScheme2D::Upwind,"Engineering context default changed convection");
     c.convergence=FlowConvergence2D::Strict;c.adaptiveLinear=true;
     c.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
     rejects([&]{(void)solveIncompressible2D(mesh,c);});

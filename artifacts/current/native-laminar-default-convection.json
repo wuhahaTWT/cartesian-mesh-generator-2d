@@ -1,0 +1,108 @@
+{
+  "format": "cartmesh2d-native-laminar-default-convection-v1",
+  "status": "verified-product-default-change",
+  "matureGoalCompleted": false,
+  "scope": "Native two-dimensional incompressible laminar flow. The context default selects bounded face-frame limited-linear convection only for strict constant-property Newton steady solves; explicit SIMPLE, adaptive/engineering, physical-time and material paths retain upwind unless a scheme is explicitly requested.",
+  "decisionBasis": {
+    "representativeNativeAccuracyRuns": 24,
+    "iterationControlRuns": 12,
+    "originalSimpleCostComparisons": 6,
+    "curvedAnnulusRuns": 8,
+    "jointCylinderRefinementRuns": 6,
+    "farFieldCylinderRuns": 2,
+    "unchangedStrictAcceptanceGates": true,
+    "reason": "Face-limited-linear materially improves the manufactured vortex, Re=100 cavity and Re=20 cylinder spatial results. Its retained SIMPLE budget failure is not imposed on SIMPLE or time/material fallback paths because those contexts still resolve to upwind."
+  },
+  "effectiveDefaults": {
+    "strictConstantPropertySteadyNewton": "face-limited-linear",
+    "explicitSimple": "upwind",
+    "adaptiveLinear": "upwind",
+    "engineeringConvergence": "upwind",
+    "physicalTime": "upwind",
+    "materialOrThermalCoupling": "upwind",
+    "explicitScheme": "unchanged"
+  },
+  "newDefaultReplay": {
+    "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-2.solver.cm2d --case external --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 2500 --output outputs/cloud-laminar/cylinder-joint/level-2-context-default",
+    "omittedOptions": ["--convection", "--steady-acceleration"],
+    "meshCells": 17796,
+    "meshSha256": "0c44835c8d5d621a0bcfd69faeb0b4b5daa8edbfaf6defa3b876dfa8dbccc88e",
+    "status": "converged",
+    "resolvedConvection": "face-limited-linear",
+    "resolvedSteadyAcceleration": "newton-krylov",
+    "completeEvaluations": 559,
+    "coupledFailedEvaluations": 0,
+    "elapsedSeconds": 167.39,
+    "dragCoefficient": 2.1527971058065707,
+    "byteIdenticalToPriorExplicitFaceLimitedLinear": {
+      "fields": true,
+      "faces": true,
+      "residualHistory": true
+    },
+    "summarySha256": "e86fd260ca83414ec382ef41ef163c6ed9a80f73da28648544a02ceab6cbcda5",
+    "fieldsSha256": "b09c41c8992a941d41d01dedbfcdbe7d322e266faa4bf6f43ad5d58e5dd75e17",
+    "facesSha256": "70681a1280b12dfcf7952bbf99dad1ec01e33027742c69d515415ed940c77db8"
+  },
+  "farFieldCostAccuracyControl": {
+    "definition": "Re=20, D=2 m, U=1 m/s, nu=0.1 m2/s, 20D far-field span, 128-segment cylinder, 66912 true cut cells, tolerance 1e-8. Cd=Fx for unit density and depth.",
+    "meshSha256": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280",
+    "contextReferenceDragCoefficient": 2.045,
+    "oldOmittedDefaultUpwind": {
+      "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/far-20.solver.cm2d --case external --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 2500 --output outputs/cloud-laminar/cylinder-joint/far-20-default",
+      "status": "converged",
+      "completeEvaluations": 657,
+      "coupledFailedEvaluations": 0,
+      "elapsedSeconds": 1353.433,
+      "dragCoefficient": 2.1742907810514294,
+      "referenceDifferencePercent": 6.322287581976993,
+      "summarySha256": "968a99ebae17c156d2859d88868d6b5e36d01ef7e4add0d1c58c44af68380191",
+      "fieldsSha256": "172ae1bdb52a993743f7e02a81367834389d668015f9d498fb5ff432a92f60a6",
+      "facesSha256": "678c471e831d7273a3567d38184a50d5abb4690f9e9463066150f100da777495"
+    },
+    "faceLimitedLinear": {
+      "status": "converged",
+      "completeEvaluations": 904,
+      "coupledFailedEvaluations": 0,
+      "dragCoefficient": 2.0621318915347593,
+      "referenceDifferencePercent": 0.83774530732319,
+      "evaluationIncreaseOverUpwindPercent": 37.59512937595129,
+      "summarySha256": "767ef826467be3603b7c1d47f9c4e1e975dfd7aa027a309c8fb68ea54bce41ed",
+      "fieldsSha256": "9108f11f8ab5cd1eb6bf3e6c8e2ee0a2fae78dd4f572b500f077460b28c43809",
+      "facesSha256": "90505465ab57327a71b8cd48ef4493b1792d5cb10693f1b497b15bd2dbbbf13d"
+    },
+    "interpretation": "The accuracy gain is substantial but not free: full native evaluations increase by 37.6 percent on this far-field control. This is a complete-cost comparison, not a best-sample timing claim."
+  },
+  "compatibility": {
+    "explicitUpwindPreserved": true,
+    "explicitLimitedLinearPreserved": true,
+    "explicitFaceLimitedLinearPreserved": true,
+    "oldFlowCasesStoreResolvedScheme": true,
+    "transientCheckpointDefaultSerializedAsHistoricalUpwind": true,
+    "failureCancellationAndLastAcceptedStateGatesChanged": false,
+    "solverQualityGateChanged": false
+  },
+  "verification": {
+    "linux": "Ubuntu-compatible cloud container, GCC 13.3.0, CMake 4.4 Unix Makefiles",
+    "nativeCTest": "100/100 passed after a clean full rerun; a preceding run had one BAD_COMMAND because one recovered build executable lacked its execute bit, then that exact test passed after restoring the build-artifact permission",
+    "frontend": "194/194 passed",
+    "actualDesktopAppThisBatch": "not run",
+    "macOS": "not run",
+    "packagedApp": "not run",
+    "crossPlatformQualification": false
+  },
+  "sourceSha256": {
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "5c8c520aa1fcd79883a8e44e7ad9f67b1e7d908ab9887d5d36cfe054a26e4b35",
+    "src/fv/Incompressible2D.cpp": "399b753160cff371dce36d65cda4c3f1ee8614266860c83b13e243429f7f5c06",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "4696f29dd08d224cf913f3828071cc55a737817117edfd442af0079e7acb3181",
+    "apps/cartmesh2d_flow_cli.cpp": "7eacfc335790f5fc892af346740f25148d9e7433caee7449e9486e7a1815f99f",
+    "apps/cartmesh2d_transport_cli.cpp": "5d1a64305a567db803e7ff450ae35c9afab2b660ece0d24e5d173b01b049a4fa",
+    "desktop/src/core/flow.js": "05a56a7e50783f5189a7c73462e55ff6351a581110e744a22805f447e1940810",
+    "desktop/src/renderer/index.html": "d98e597adccd4c4aa80ed6021c047adacfd6391e40898987d71d098be81a67f2",
+    "desktop/src/main.js": "70dc2780150467b27196293cf5b606fcfc586ee3509ea65ec03d4c7942aff2e1"
+  },
+  "remainingLimits": [
+    "Annulus near-wall local kinematic-pressure maxima remain unqualified.",
+    "The 20D cylinder result still uses a contextual experimental reference and does not replace a full domain/grid uncertainty study.",
+    "Actual macOS, physical-display desktop and packaged application paths were not run in this Linux batch."
+  ]
+}
