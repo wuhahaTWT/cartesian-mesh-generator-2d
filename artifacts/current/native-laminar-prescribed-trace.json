@@ -1,0 +1,140 @@
+{
+  "format": "cartmesh2d-native-laminar-prescribed-trace-v1",
+  "scope": "Native product regression of prescribed Cartesian velocity trace diagnostics; the Python driver only invokes native CLIs and reads their outputs, and is not an independent flow-equation audit.",
+  "platform": {
+    "os": "Linux 6.18.44 x86_64",
+    "compiler": "GCC 13.3",
+    "macOSOrPackagedAppQualification": false
+  },
+  "productChange": {
+    "summary": "FlowResult2D and the CLI now report shared-vertex jumps between every boundary face pair that fixes both Cartesian velocity components, while retaining the narrower legacy wallTrace diagnostic.",
+    "includedBoundaries": [
+      "stationary no-slip walls",
+      "moving and smooth-moving no-slip walls",
+      "velocity inlets",
+      "velocity outlets"
+    ],
+    "excludedBecauseNotBothComponentsArePrescribed": [
+      "pressure outlets and openings",
+      "farfield boundaries",
+      "symmetry or slip boundaries"
+    ],
+    "geometryMatching": "Final FvMesh2D face endpoints are reconstructed from face centre and area vector and paired only at TolerancePolicy construction-roundoff scale; no geometry welding or repair is performed.",
+    "comparisonTolerance": {
+      "quantity": "Euclidean jump of prescribed Cartesian velocity",
+      "units": "m/s",
+      "normalization": "TolerancePolicy::scale(max(reference speed, prescribed face speed))",
+      "observedValue": 1.01e-10,
+      "purpose": "Suppress construction floating-point roundoff only; not a physical accuracy or acceptance threshold."
+    },
+    "unchanged": [
+      "flow equations and boundary values",
+      "mesh area and boundary atoms",
+      "Solver quality gates",
+      "default method and convection",
+      "failure, cancellation and last-accepted-state semantics"
+    ]
+  },
+  "curvedDuct": {
+    "geometry": "examples/complex/nozzle_profile.xy",
+    "geometrySha256": "8a7ee17ec10a01ea6f628839ae9c28162e9ab2de80f0b799001f6c450692a18e",
+    "physics": "duct preset, nu=0.1 m2/s, reference speed=1 m/s, omitted method and convection resolved to Newton-Krylov plus face-limited-linear, tolerance=1e-8",
+    "levels": [
+      {
+        "level": 5,
+        "cells": 636,
+        "completeEvaluations": 75,
+        "nativeSolveSeconds": 0.325010653,
+        "continuity": 4.072848855638419e-13,
+        "globalRelativeImbalance": 1.4294077188898994e-13,
+        "wallForceX_m3_s2": 15.053999725848243,
+        "maximumCellSpeed_m_s": 2.856398298295172,
+        "pressureMaximum_m2_s2": 9.707830576688082,
+        "pressureMaximumLocation_m": [-2.906529366430684, 0.9252823438679639],
+        "distanceFromPressureMaximumToNearestInletWallCorner_m": 0.10830873109972759
+      },
+      {
+        "level": 6,
+        "cells": 2380,
+        "completeEvaluations": 133,
+        "nativeSolveSeconds": 2.599811154,
+        "continuity": 3.181361072797446e-13,
+        "globalRelativeImbalance": 4.349946343817799e-14,
+        "wallForceX_m3_s2": 15.642582451549396,
+        "maximumCellSpeed_m_s": 2.878756535417613,
+        "pressureMaximum_m2_s2": 13.869274663517883,
+        "pressureMaximumLocation_m": [-2.959439315221659, -0.9662585176623804],
+        "distanceFromPressureMaximumToNearestInletWallCorner_m": 0.04282519686496541
+      },
+      {
+        "level": 7,
+        "cells": 9336,
+        "completeEvaluations": 426,
+        "nativeSolveSeconds": 50.00826791,
+        "continuity": 1.1376940277887549e-12,
+        "globalRelativeImbalance": 6.334515912978284e-13,
+        "wallForceX_m3_s2": 15.981268190279135,
+        "maximumCellSpeed_m_s": 2.884444822263514,
+        "pressureMaximum_m2_s2": 17.87898277993261,
+        "pressureMaximumLocation_m": [-2.9768390481496456, 0.9675954270524882],
+        "distanceFromPressureMaximumToNearestInletWallCorner_m": 0.02627362024207121
+      }
+    ],
+    "traceResultAllLevels": {
+      "legacyWallTraceDiscontinuousVertices": 0,
+      "prescribedVelocityTraceDiscontinuousVertices": 2,
+      "maximumVelocityJump_m_s": 1,
+      "reportedMaximumJumpLocation_m": [-3, -0.98],
+      "symmetricOtherDiscontinuousVertex_m": [-3, 0.98],
+      "interpretation": "The uniform 1 m/s inlet meets stationary no-slip walls at two shared vertices. The increasing pointwise pressure maximum approaches these corners under refinement, so wall-only trace reporting was insufficient. No cells or near-corner errors are removed."
+    }
+  },
+  "externalCylinder": {
+    "physics": "Re=20 external cylinder, 4904 cells, explicit face-limited-linear, tolerance=1e-8",
+    "completeEvaluations": 295,
+    "processSeconds": 13.960696244997962,
+    "continuity": 2.307953072475545e-13,
+    "globalRelativeImbalance": 2.016905161402368e-15,
+    "dragCoefficientAndWallForceX": 2.15283663802888,
+    "prescribedFaces": 208,
+    "adjacentVertices": 207,
+    "discontinuousVertices": 0,
+    "maximumVelocityJump_m_s": 0,
+    "byteIdenticalToPriorAccepted": {
+      "cells.csv": true,
+      "faces.csv": true,
+      "fields.json": true,
+      "residuals.csv": true
+    }
+  },
+  "linuxDesktopPath": {
+    "scope": "Real Electron 37 headless renderer-to-IPC-to-native-CLI run; not a physical-display, macOS or packaged-App qualification.",
+    "cells": 728,
+    "solverQuality": "PASS",
+    "completeEvaluations": 117,
+    "converged": true,
+    "velocityTracePrescribedFaces": 56,
+    "velocityTraceAdjacentVertices": 55,
+    "velocityTraceDiscontinuousVertices": 0,
+    "renderedTextContains": [
+      "规定速度边界迹诊断",
+      "完整规定速度的相邻边界面未检测到迹跳；仍需压力网格加密验证"
+    ],
+    "screenshotSha256": "3e03ba0d0b40814b30707e76cac6ac052627595fb1cc75f9af13b9596baeb259",
+    "smokeRecordSha256": "c5b123860168e3c37a87fad9c279828c348a3c82f2bb6294a23887dcb6a38342",
+    "nativeSummarySha256": "a388aa80ecbb7c033012c30c8d44bdc403fa0818889d9ea1edc09de5ad495f09"
+  },
+  "verification": {
+    "nativeFocused": "cartmesh2d_flow_boundary passed",
+    "frontend": "196/196 passed",
+    "fullNativeSuite": "100/100 passed",
+    "driver": "artifacts/current/native-laminar-trace-regression.py",
+    "rawRecord": "outputs/cloud-laminar/trace-regression/runs.json",
+    "rawRecordSha256": "0601d9b37e5e572aa71509044c09a69b4f43c586e2464f1abbf961e1fe4b3a82",
+    "flowCliSha256": "1961549d82d9de185acb3d6ed9017c56198e1822c4e8b1d94bd89a63fe6395ce"
+  },
+  "qualification": {
+    "granted": "The product now exposes full prescribed-velocity trace incompatibilities needed to qualify pointwise pressure at boundary junctions without modifying the numerical solution.",
+    "notGranted": "Pointwise pressure at discontinuous prescribed-velocity junctions remains unqualified; zero reported jumps do not replace mesh, conservation, force or domain-size studies; maturity is not complete."
+  }
+}

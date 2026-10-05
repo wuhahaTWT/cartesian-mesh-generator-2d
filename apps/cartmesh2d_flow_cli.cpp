@@ -772,6 +772,14 @@ int main(int argc, char** argv) {
                 << ",\n\"wallTraceMaximumVelocityJump\":" << r.wallTrace.maximumVelocityJump
                 << ",\n\"wallTraceMaximumJumpLocation\":[" << r.wallTrace.maximumJumpLocation.x
                 << ',' << r.wallTrace.maximumJumpLocation.y << ']'
+                << ",\n\"velocityTraceDefinition\":\"prescribed Cartesian velocity jump at reconstructed shared vertices of boundary faces fixing both velocity components; includes no-slip walls and velocity ports; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification\""
+                << ",\n\"velocityTraceVelocityTolerance\":" << r.velocityTrace.velocityTolerance
+                << ",\n\"velocityTracePrescribedFaces\":" << r.velocityTrace.prescribedFaces
+                << ",\n\"velocityTraceAdjacentVertices\":" << r.velocityTrace.adjacentVertices
+                << ",\n\"velocityTraceDiscontinuousVertices\":" << r.velocityTrace.discontinuousVertices
+                << ",\n\"velocityTraceMaximumVelocityJump\":" << r.velocityTrace.maximumVelocityJump
+                << ",\n\"velocityTraceMaximumJumpLocation\":[" << r.velocityTrace.maximumJumpLocation.x
+                << ',' << r.velocityTrace.maximumJumpLocation.y << ']'
                 << ",\n\"discreteForceDefinition\":\"pressure plus selected viscous momentum flux; embedded walls\""
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight

@@ -544,9 +544,14 @@ int main() {
                     "moving-lid corner trace jump was not reported");
             require(result->wallTrace.velocityTolerance>0 && result->wallTrace.velocityTolerance<1e-8,
                     "wall trace velocity comparison tolerance is invalid");
+            require(result->velocityTrace.prescribedFaces==40 && result->velocityTrace.adjacentVertices==40 &&
+                    result->velocityTrace.discontinuousVertices==2 && result->velocityTrace.maximumVelocityJump==1,
+                    "complete prescribed-velocity trace did not report moving-lid corners");
         }
         require(baseline.wallTrace.discontinuousVertices==0 && baseline.wallTrace.maximumVelocityJump==0,
                 "stationary duct wall reported a false trace jump");
+        require(baseline.velocityTrace.discontinuousVertices==2 && baseline.velocityTrace.maximumVelocityJump==1,
+                "velocity-inlet/no-slip-wall corner trace jump was not reported");
         auto bad=control;bad.boundaryConditions.pop_back();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.push_back(bad.boundaryConditions.front());rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.front().face=mesh.faces.size();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});

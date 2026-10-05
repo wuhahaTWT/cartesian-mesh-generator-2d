@@ -235,6 +235,10 @@ build/cartmesh2d_flow_cli \
 
 该复算报告 `wallTraceWallFaces=352`、`wallTraceAdjacentVertices=352`、`wallTraceDiscontinuousVertices=128`、最大跳量 `0.02454122852291445 m/s`；cells/faces/fields/residuals 与旧接受前缀逐字节一致。原生边界测试另验证顶盖方腔恰有两个跳点、静止通道为零；完整 CTest 100/100 和前端 195/195 通过。桌面校验要求新诊断字段成组且数值自洽，但仍接受没有这些字段的旧摘要。当前二进制也实际走通 Linux Electron 37 headless renderer→IPC→CLI：728 格 Solver PASS 圆柱以 117 次完整评估收敛，原生摘要报告 40 个静止壁共顶点、零迹跳，真实结果 DOM 含诊断标题、计数和适用边界文字。该路径不是实体显示器、macOS 或打包版。复现命令、哈希和平台边界见 `native-laminar-wall-trace.json`。
 
+独立曲壁喷管回归暴露了上述壁面限定诊断的通用缺口：`examples/complex/nozzle_profile.xy` 的均匀速度入口与上下无滑移壁在 `(-3, ±0.98) m` 共享顶点，壁—壁比较为零，但完整规定速度的边界迹实际有两个 `1 m/s` 跳变。产品因此保留兼容的 `wallTrace`，并新增 `FlowVelocityTraceDiagnostics2D`：选择最终边界中 `fixedU && fixedV` 的面，覆盖无滑移/移动壁及速度入口/出口；压力边界、远场和只固定一个分量的滑移/对称面不参与。端点仍只在 construction-roundoff 尺度配对，速度容差为 `TolerancePolicy::scale(max(referenceSpeed, prescribedSpeed))`，本组为 `1.01e-10 m/s`，只排除浮点构造舍入，不是物理精度门。
+
+同一原生驱动把喷管 level 5/6/7 加密到 636/2380/9336 格，省略方法和格式后均解析为 Newton + face-limited-linear，并以 75/133/426 次完整评估严格收敛；全局相对不平衡为 `1.43e-13/4.35e-14/6.33e-13`。速度最大值 `2.8564→2.8788→2.8844 m/s`，壁面合力 X 分量 `15.054→15.643→15.981 m³/s²`；但压力最大值 `9.71→13.87→17.88 m²/s²`，其单元中心到最近入口—壁角点距离 `0.108→0.0428→0.0263 m`，说明点值峰值正在靠近已报告的不连续规定迹，不能伪称一般近壁压力已收敛。独立 4904 格 Re=20 圆柱报告 208 个完整规定速度面、207 个共顶点和零迹跳，295 次评估后 `Cd=2.152836638`；cells/faces/fields/residuals 与此前接受场逐字节一致。新增诊断不改变方程、边界、网格、质量门或场。完整 Linux 原生 100/100、前端 196/196 通过；同步当前 CLI 后，Electron 37 headless 的真实 renderer→IPC→CLI 路径生成 728 格 Solver PASS 圆柱、117 次评估收敛，并在 DOM 显示新诊断计数与“仍需压力网格加密验证”的限定。驱动、完整成本、哈希与原始记录见 `native-laminar-prescribed-trace.json`；它不是独立方程审计，也不是实体显示器、macOS 或打包版验证。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格

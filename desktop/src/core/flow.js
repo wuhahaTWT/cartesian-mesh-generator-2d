@@ -70,6 +70,7 @@ const VISCOUS_STRESS = 'symmetric';
 const LEGACY_VISCOUS_STRESS = 'laplacian';
 const FORCE_DEFINITION = 'shared-face-newtonian-traction';
 const WALL_TRACE_DEFINITION = 'prescribed Cartesian velocity jump at reconstructed shared vertices of impermeable no-slip faces; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification';
+const VELOCITY_TRACE_DEFINITION = 'prescribed Cartesian velocity jump at reconstructed shared vertices of boundary faces fixing both velocity components; includes no-slip walls and velocity ports; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification';
 const FLOW_OUTPUT_SUFFIXES = Object.freeze([
   '.json', '.fields.json', '.vtk', '.residuals.csv', '.cells.csv', '.faces.csv'
 ]);
@@ -436,6 +437,28 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     normalizedSummary.wallTraceMaximumJumpLocation = summary.wallTraceMaximumJumpLocation.map((value,index) =>
       finite(value, `wallTraceMaximumJumpLocation[${index}]`));
   }
+  const velocityTraceKeys = ['velocityTraceDefinition','velocityTraceVelocityTolerance',
+    'velocityTracePrescribedFaces','velocityTraceAdjacentVertices','velocityTraceDiscontinuousVertices',
+    'velocityTraceMaximumVelocityJump','velocityTraceMaximumJumpLocation'];
+  if (velocityTraceKeys.some(key => summary[key] !== undefined)) {
+    if (velocityTraceKeys.some(key => summary[key] === undefined)
+        || summary.velocityTraceDefinition !== VELOCITY_TRACE_DEFINITION)
+      throw new Error('规定速度边界迹诊断定义或字段不完整。');
+    const tolerance = finite(summary.velocityTraceVelocityTolerance, 'velocityTraceVelocityTolerance');
+    const maximumJump = finite(summary.velocityTraceMaximumVelocityJump, 'velocityTraceMaximumVelocityJump');
+    const integers = ['velocityTracePrescribedFaces','velocityTraceAdjacentVertices','velocityTraceDiscontinuousVertices'];
+    if (!(tolerance > 0) || maximumJump < 0 || integers.some(key => !Number.isSafeInteger(summary[key]) || summary[key] < 0)
+        || summary.velocityTraceAdjacentVertices > 2*summary.velocityTracePrescribedFaces
+        || summary.velocityTraceDiscontinuousVertices > summary.velocityTraceAdjacentVertices
+        || (summary.velocityTraceDiscontinuousVertices === 0 && maximumJump > tolerance)
+        || (summary.velocityTraceDiscontinuousVertices > 0 && maximumJump <= tolerance)
+        || !Array.isArray(summary.velocityTraceMaximumJumpLocation) || summary.velocityTraceMaximumJumpLocation.length !== 2)
+      throw new Error('规定速度边界迹诊断数值不一致。');
+    normalizedSummary.velocityTraceVelocityTolerance = tolerance;
+    normalizedSummary.velocityTraceMaximumVelocityJump = maximumJump;
+    normalizedSummary.velocityTraceMaximumJumpLocation = summary.velocityTraceMaximumJumpLocation.map((value,index) =>
+      finite(value, `velocityTraceMaximumJumpLocation[${index}]`));
+  }
   const acceleration=summary.steadyAcceleration ?? 'none';
   if (summary.steadyAcceleration===undefined && ['accelerationCandidates','accelerationAccepted','accelerationRejected'].some(key=>Object.hasOwn(summary,key)))
     throw new Error('稳态加速统计缺少模式。');
@@ -545,6 +568,7 @@ module.exports = {
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   WALL_TRACE_DEFINITION,
+  VELOCITY_TRACE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
   flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
 };

@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
-        validateFlowOutput, validateFlowRequest, WALL_TRACE_DEFINITION } = require('../src/core/flow');
+        validateFlowOutput, validateFlowRequest, WALL_TRACE_DEFINITION,
+        VELOCITY_TRACE_DEFINITION } = require('../src/core/flow');
 const { exportGuide } = require('../src/core/export-guide');
 
 const summary = {
@@ -95,6 +96,26 @@ test('wall trace diagnostics validate while legacy summaries remain readable', (
     const changed = { ...trace, wallTraceMaximumJumpLocation: [...trace.wallTraceMaximumJumpLocation] };
     mutate(changed);
     assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /壁面速度迹/);
+  }
+});
+
+test('complete prescribed-velocity trace covers port-wall corners without breaking older outputs', () => {
+  const trace = { velocityTraceDefinition: VELOCITY_TRACE_DEFINITION,
+    velocityTraceVelocityTolerance: 1e-10, velocityTracePrescribedFaces: 146,
+    velocityTraceAdjacentVertices: 144, velocityTraceDiscontinuousVertices: 2,
+    velocityTraceMaximumVelocityJump: 1, velocityTraceMaximumJumpLocation: [-3,.98] };
+  const accepted = validateFlowOutput({ ...summary, ...trace }, fields, 2);
+  assert.equal(accepted.summary.velocityTraceDiscontinuousVertices, 2);
+  assert.match(exportGuide({ result: { counts: { cells: 2 }, gates: {} }, flow: accepted }),
+    /2 个完整规定速度边界的共享顶点迹跳.*速度入口／出口.*不删除单元/);
+  assert.equal(Object.hasOwn(validateFlowOutput(summary, fields, 2).summary, 'velocityTraceDefinition'), false);
+  for (const mutate of [s => delete s.velocityTraceDefinition,
+    s => { s.velocityTraceDiscontinuousVertices = 0; },
+    s => { s.velocityTraceMaximumVelocityJump = -1; },
+    s => { s.velocityTraceMaximumJumpLocation = [0]; }]) {
+    const changed = { ...trace, velocityTraceMaximumJumpLocation: [...trace.velocityTraceMaximumJumpLocation] };
+    mutate(changed);
+    assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /规定速度边界迹/);
   }
 });
 

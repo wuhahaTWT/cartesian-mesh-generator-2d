@@ -332,18 +332,29 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     return b;
 }
 
-FlowWallTraceDiagnostics2D wallTraceDiagnostics(const FvMesh2D& m,
-                                                const Boundary& b,
-                                                double referenceSpeed) {
-    FlowWallTraceDiagnostics2D result;
+struct TraceDiagnostics {
+    std::size_t selectedFaces = 0;
+    std::size_t adjacentVertices = 0;
+    std::size_t discontinuousVertices = 0;
+    double velocityTolerance = 0;
+    double maximumVelocityJump = 0;
+    Point2D maximumJumpLocation{};
+};
+
+template<class Select>
+TraceDiagnostics traceDiagnostics(const FvMesh2D& m,
+                                  const Boundary& b,
+                                  double referenceSpeed,
+                                  Select select) {
+    TraceDiagnostics result;
     struct Endpoint { Point2D point; std::size_t face = 0; };
     std::vector<Endpoint> endpoints;
     double coordinateMagnitude = 1;
     double velocityMagnitude = referenceSpeed;
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
         const auto& face = m.faces[id];
-        if (face.neighbour || (b.role[id] != Role::Wall && b.role[id] != Role::Lid)) continue;
-        ++result.wallFaces;
+        if (face.neighbour || !select(id)) continue;
+        ++result.selectedFaces;
         velocityMagnitude = std::max(velocityMagnitude, std::hypot(b.u[id], b.v[id]));
         const Vector2D halfTangent{.5*face.areaVector.y, -.5*face.areaVector.x};
         for (double sign : {-1., 1.}) {
@@ -412,6 +423,26 @@ FlowWallTraceDiagnostics2D wallTraceDiagnostics(const FvMesh2D& m,
         }
     }
     return result;
+}
+
+FlowWallTraceDiagnostics2D wallTraceDiagnostics(const FvMesh2D& m,
+                                                const Boundary& b,
+                                                double referenceSpeed) {
+    const auto trace = traceDiagnostics(m, b, referenceSpeed, [&](std::size_t id) {
+        return b.role[id] == Role::Wall || b.role[id] == Role::Lid;
+    });
+    return {trace.selectedFaces, trace.adjacentVertices, trace.discontinuousVertices,
+            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation};
+}
+
+FlowVelocityTraceDiagnostics2D velocityTraceDiagnostics(const FvMesh2D& m,
+                                                        const Boundary& b,
+                                                        double referenceSpeed) {
+    const auto trace = traceDiagnostics(m, b, referenceSpeed, [&](std::size_t id) {
+        return b.fixedU[id] && b.fixedV[id];
+    });
+    return {trace.selectedFaces, trace.adjacentVertices, trace.discontinuousVertices,
+            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation};
 }
 
 void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
@@ -670,6 +701,7 @@ static FlowResult2D solveFlow(
     Vec mu(n), mv(n);
     FlowResult2D r;
     r.wallTrace = wallTraceDiagnostics(m, b, c.speed);
+    r.velocityTrace = velocityTraceDiagnostics(m, b, c.speed);
     // Global RHS-relative stopping can mask a tiny cut-cell residual when
     // large far-field cells carry the time term. Also require each row's
     // residual/diagonal in velocity units to be <=1% of the nonlinear target.

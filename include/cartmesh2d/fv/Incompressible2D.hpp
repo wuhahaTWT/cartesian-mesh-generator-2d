@@ -195,6 +195,19 @@ struct FlowWallTraceDiagnostics2D {
     Point2D maximumJumpLocation{};
 };
 
+// Diagnostic of the prescribed Cartesian velocity trace at vertices shared by
+// any boundary faces that fix both velocity components. This includes velocity
+// ports as well as no-slip walls. It is intentionally separate from wallTrace
+// so existing result consumers retain the narrower historical diagnostic.
+struct FlowVelocityTraceDiagnostics2D {
+    std::size_t prescribedFaces = 0;
+    std::size_t adjacentVertices = 0;
+    std::size_t discontinuousVertices = 0;
+    double velocityTolerance = 0;
+    double maximumVelocityJump = 0;
+    Point2D maximumJumpLocation{};
+};
+
 struct FlowResult2D {
     double convergenceReference = 0;
     std::vector<std::string> monitorNames;
@@ -213,6 +226,7 @@ struct FlowResult2D {
     std::vector<FaceMomentum2D> faceMomentum;
     std::vector<FlowWallLoad2D> namedWallLoads;
     FlowWallTraceDiagnostics2D wallTrace;
+    FlowVelocityTraceDiagnostics2D velocityTrace;
     std::vector<Vector2D> sourceIntegrals; // populated only for manufactured verification
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;

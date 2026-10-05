@@ -57,7 +57,10 @@ ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最
 ${duct ? '本次曲壁通道／喷管工况：最左侧竖直端面为均匀速度入口，最右侧竖直端面为运动学 p=0 出口，其余曲壁及障碍物无滑移。CM2D 的几何物面标签并不全是流动壁面；这些入口/出口条件由原生求解器的 duct 工况指定，使用 OpenFOAM 时仍需分别设置。\n' : ''}
 ${flow?.summary?.case === 'custom' ? '本次使用命名边界。*.flow.boundaries 保存实际输入，绑定最终网格面的位置、外法向与 owner；摘要含同一组逐面条件。参考速度仅用于归一化，实际入口速度在各边界记录中；出口压力为运动学压力。续算必须保持原名称、类型和数值。当前不支持自定义滑移或出口回流；OpenFOAM 边界仍须另外设置。\n' : ''}
 ${flow?.summary?.namedWallLoads ? '命名壁面载荷在摘要 namedWallLoads 中：压力与黏性力分项及总力，单位 m³/s²；力矩单位 m⁴/s²，基准原点 (0,0)，逆时针为正。它们表示流体作用于壁面的力/力矩除以密度和单位厚度，乘实际密度与厚度可换成 N 和 N·m；开放壁面分组的压力载荷依赖压力基准。\n' : ''}
-${flow?.summary?.wallTraceDefinition ? flow.summary.wallTraceDiscontinuousVertices > 0
+${flow?.summary?.velocityTraceDefinition ? flow.summary.velocityTraceDiscontinuousVertices > 0
+  ? `原生摘要检测到 ${flow.summary.velocityTraceDiscontinuousVertices} 个完整规定速度边界的共享顶点迹跳，最大跳量 ${flow.summary.velocityTraceMaximumVelocityJump} m/s，位置 (${flow.summary.velocityTraceMaximumJumpLocation.join(', ')}) m。它覆盖无滑移／移动壁和速度入口／出口之间的相容性；共享顶点处的压力点值需要单独的奇异性／边界迹资格。诊断不删除单元、不改变方程，完整场、守恒与积分载荷仍全部保留。\n`
+  : '原生摘要未检测到超过构造舍入容差的完整规定速度边界共享顶点迹跳；这项诊断本身不代替压力网格加密验证。\n'
+  : flow?.summary?.wallTraceDefinition ? flow.summary.wallTraceDiscontinuousVertices > 0
   ? `原生摘要检测到 ${flow.summary.wallTraceDiscontinuousVertices} 个相邻无滑移面速度迹跳点，最大跳量 ${flow.summary.wallTraceMaximumVelocityJump} m/s，位置 (${flow.summary.wallTraceMaximumJumpLocation.join(', ')}) m。共享顶点处的压力点值需要单独的奇异性／边界迹资格；诊断不删除单元、不改变方程，完整场、守恒与积分载荷仍全部保留。\n`
   : '原生摘要未检测到超过构造舍入容差的相邻无滑移面速度迹跳；这项诊断本身不代替压力网格加密验证。\n' : ''}
 ${flow?.summary?.timeStepControl === 'adaptive-cfl-retry' ? '自动步长仅控制 CFL 与失败重试，不是时间误差估计；需独立做步长细化。续算目标为绝对物理时间。\n' : ''}

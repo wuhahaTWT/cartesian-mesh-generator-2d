@@ -964,7 +964,15 @@ function renderFlowResult(summary) {
         [`${load.name} · 力矩（m⁴/s²）`,load.torque]);
     }
   }
-  if (summary.wallTraceDefinition) {
+  if (summary.velocityTraceDefinition) {
+    rows.push(['规定速度边界迹诊断', `${summary.velocityTracePrescribedFaces} 面 · ${summary.velocityTraceAdjacentVertices} 个共顶点`],
+      ['非零规定速度迹跳点', String(summary.velocityTraceDiscontinuousVertices)]);
+    if (summary.velocityTraceDiscontinuousVertices > 0) {
+      rows.push(['最大规定速度迹跳（m/s）', summary.velocityTraceMaximumVelocityJump],
+        ['最大迹跳位置（m）', `(${summary.velocityTraceMaximumJumpLocation[0].toPrecision(6)}, ${summary.velocityTraceMaximumJumpLocation[1].toPrecision(6)})`],
+        ['压力点值适用边界', '完整规定速度的边界共享顶点存在迹跳，需单独奇异性／迹资格；所有格、守恒与积分载荷仍保留']);
+    } else rows.push(['压力点值适用边界', '完整规定速度的相邻边界面未检测到迹跳；仍需压力网格加密验证']);
+  } else if (summary.wallTraceDefinition) {
     rows.push(['无滑移壁面迹诊断', `${summary.wallTraceWallFaces} 面 · ${summary.wallTraceAdjacentVertices} 个共顶点`],
       ['非零壁速迹跳点', String(summary.wallTraceDiscontinuousVertices)]);
     if (summary.wallTraceDiscontinuousVertices > 0) {
