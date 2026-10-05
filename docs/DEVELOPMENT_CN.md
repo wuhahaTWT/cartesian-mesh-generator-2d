@@ -154,6 +154,31 @@ outputs/cloud-laminar/mesh-balance-probe \
 
 追加一个或多个单元号可把其余单元标成 immutable，用于定位单个事务；结构成功不等于目标策略全部通过，必须同时检查探针 JSON 的 `outputDefaultPass` / `outputTargetPass`，实际流场仍须通过原 CLI 最终认证。当前三档圆环和三档圆柱结果见 `native-laminar-mesh-balance.json`：物理边界原子边逐坐标/patch 比较完全相同、面积守恒并通过默认门，但 `0.10` 比 `0.075` 更差，且圆柱积分量发生约 2.4% 系统移动，所以 `0.075` 只能保留为诊断，禁止据此改默认或宣称精度资格。
 
+Re=20 外流圆柱的可信积分量基准必须同时细化多边形和近壁/背景网格；固定 32 边多边形只加密远场不能授予空间资格。原生编排驱动只调用产品 CLI 和读取原生结果，不建立第二套方程：
+
+```sh
+python3 artifacts/current/native-laminar-curved-benchmark.py \
+  --levels 0 1 2 --schemes upwind face-limited-linear
+```
+
+三档分别为 32/64/128 段、近壁相对尺寸 `.125/.0625/.03125`、背景相对尺寸 `1/.5/.25`，外域为 10D；`outputs/cloud-laminar/cylinder-joint/runs.json` 保存六次实际命令、退出状态、严格残差、进程耗时和场哈希。域敏感性沿用最细轮廓与尺寸，把外域扩到 20D：
+
+```sh
+build/cartmesh2d_cli outputs/cloud-laminar/cylinder-joint/level-2.xy \
+  outputs/cloud-laminar/cylinder-joint/far-20 8 .25 .1 exterior \
+  outputs/cloud-laminar/cylinder-joint/far-20-foam 0 0 --size-field \
+  --reference-length 2 --wall-relative-size .03125 \
+  --background-relative-size .25 --far-field-spans 20 --cells-per-level 3
+
+build/cartmesh2d_flow_cli \
+  --mesh outputs/cloud-laminar/cylinder-joint/far-20.solver.cm2d \
+  --case external --nu .1 --speed 1 --convection face-limited-linear \
+  --tolerance 1e-8 --max-iterations 2500 \
+  --output outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear
+```
+
+这里 `D=2 m`、`U=1 m/s`、`ν=.1 m²/s`，所以 `Re=20`；单位密度/单位深度下 `Cd=Fx/(.5U²D)=Fx`。Tritton 的 `Cd=2.045` 只作上下文参考，必须与几何、网格和外域敏感性一起解释，不能把有限方域与实验条件视为完全相同。六次联合细化的进程耗时是驱动实测；20D 运行只留有网格日志与最终摘要时间戳，约 1,846 秒间隔不是精确独占进程成本。完整定义、结果、限制和哈希见 `native-laminar-curved-benchmark.json`；当前只支持显式 face-limited-linear 的这一积分量资格，默认 Upwind 和圆环局部压力仍未合格。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`，目前无新通用物理精度门、无产品默认改动。
 
 ## 完整笛卡尔背景网格

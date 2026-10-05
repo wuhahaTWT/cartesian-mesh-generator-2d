@@ -1,0 +1,130 @@
+{
+  "format": "cartmesh2d-native-laminar-curved-benchmark-v1",
+  "status": "qualified-opt-in-external-integral-not-default",
+  "matureGoalCompleted": false,
+  "scope": "Native Re=20 external cylinder joint polygon/grid refinement and far-field sensitivity. This qualifies an opt-in face-limited-linear integral-drag path for this stated setup; it is not a universal curved-flow qualification, an independent equation audit, or a default-policy change.",
+  "environment": {
+    "system": "Linux x86_64",
+    "compiler": "GCC 13.3.0",
+    "localHeadBeforeThisBatch": "a345802255d1432d48ddb226b89b83594c8d976f",
+    "sourceTree": "d73cf85fc27cd1c31d5e15068000e32ef8dbcdeb",
+    "remoteDeliveredHeadBeforeThisBatch": "164bd556835c3084b79ebe40da313aaab6041b25",
+    "meshCliSha256": "c20d0ca3f6940c8007d20c4d7c58a708598b76f8101ea3bc52edea923e45789a",
+    "flowCliSha256": "2a312daf486e059c89dd793bac5ddc5ba3d692faf5edb580720b305c6a348e27",
+    "driverSourceSha256": "17bfaa513544dc4b37ec8dab7a38548841b04092823e9434f82bf9230a2ff90a"
+  },
+  "physicalDefinition": {
+    "diameter_m": 2.0,
+    "speed_m_s": 1.0,
+    "kinematicViscosity_m2_s": 0.1,
+    "reynoldsNumber": 20.0,
+    "cylinderCentre_m": [0.07, 0.03],
+    "outerDomain": "square from the native external size-field preset",
+    "boundaryModel": "uniform inlet, zero-reference-pressure outlet, slip top/bottom, stationary no-slip embedded cylinder",
+    "dragCoefficient": "Cd = Fx/(0.5*U^2*D); rho and unit depth are normalized, so Cd=Fx for U=1 m/s and D=2 m",
+    "pressureUnits": "m2/s2 (kinematic)",
+    "forceUnits": "m3/s2 (force/density/unit depth)"
+  },
+  "reference": {
+    "dragCoefficient": 2.045,
+    "source": "Tritton, Experiments on the flow past a circular cylinder at low Reynolds numbers",
+    "doi": "https://doi.org/10.1017/S0022112070001428",
+    "use": "contextual comparison combined with grid, polygon and domain sensitivity",
+    "qualificationLimit": "The experimental geometry and the finite square-domain boundary definitions are not identical enough to treat one number as universal certification."
+  },
+  "jointGeometryGridRefinement": {
+    "farFieldSpans": 10.0,
+    "tolerance": 1e-8,
+    "steadyAcceleration": "context default resolved to newton-krylov",
+    "unchangedSolverGate": true,
+    "levels": [
+      {
+        "level": 0,
+        "segments": 32,
+        "wallRelativeSize": 0.125,
+        "backgroundRelativeSize": 1.0,
+        "polygonAreaDifferenceFromCircle_m2": -0.020147501331741147,
+        "cells": 1564,
+        "meshSeconds": 0.31476322900198284,
+        "upwind": {"evaluations": 95, "processSeconds": 1.0167999330005841, "dragCoefficient": 2.3426525947749846, "pressureDragCoefficient": 1.3628398287171883, "viscousDragCoefficient": 0.9798127660577974, "continuity": 6.112893305808832e-14, "momentumResidual": 2.6360933796763666e-10},
+        "faceLimitedLinear": {"evaluations": 153, "processSeconds": 1.8191577040015545, "dragCoefficient": 2.155961574845837, "pressureDragCoefficient": 1.242145337124757, "viscousDragCoefficient": 0.9138162377210787, "continuity": 4.5455937419684985e-14, "momentumResidual": 2.457742023172814e-10}
+      },
+      {
+        "level": 1,
+        "segments": 64,
+        "wallRelativeSize": 0.0625,
+        "backgroundRelativeSize": 0.5,
+        "polygonAreaDifferenceFromCircle_m2": -0.0050441630438538,
+        "cells": 4904,
+        "meshSeconds": 0.8163222410003073,
+        "upwind": {"evaluations": 142, "processSeconds": 7.036640571001044, "dragCoefficient": 2.306236276896815, "pressureDragCoefficient": 1.3755954101679684, "viscousDragCoefficient": 0.9306408667288452, "continuity": 1.1967939004148954e-13, "momentumResidual": 2.3296164341766157e-10},
+        "faceLimitedLinear": {"evaluations": 295, "processSeconds": 14.512228177001816, "dragCoefficient": 2.15283663802888, "pressureDragCoefficient": 1.2742026916567757, "viscousDragCoefficient": 0.8786339463721051, "continuity": 2.307953072475545e-13, "momentumResidual": 3.193901959264577e-10}
+      },
+      {
+        "level": 2,
+        "segments": 128,
+        "wallRelativeSize": 0.03125,
+        "backgroundRelativeSize": 0.25,
+        "polygonAreaDifferenceFromCircle_m2": -0.0012614966350401602,
+        "cells": 17796,
+        "meshSeconds": 9.59422665799866,
+        "upwind": {"evaluations": 392, "processSeconds": 115.72713008200299, "dragCoefficient": 2.2734231300994763, "pressureDragCoefficient": 1.3722953778190055, "viscousDragCoefficient": 0.9011277522804719, "continuity": 1.2556748398619076e-12, "momentumResidual": 3.9624339716961425e-11},
+        "faceLimitedLinear": {"evaluations": 559, "processSeconds": 166.44421816799877, "dragCoefficient": 2.1527971058065707, "pressureDragCoefficient": 1.2913792168354072, "viscousDragCoefficient": 0.8614178889711636, "continuity": 6.772360450213455e-13, "momentumResidual": 2.2227463936812977e-9}
+      }
+    ],
+    "successiveDragChanges_percent": {
+      "upwind": [-1.5544907494774065, -1.4228007392846518],
+      "faceLimitedLinear": [-0.14494399405891426, -0.001836285281063072]
+    },
+    "interpretation": "At fixed 10D far-field size, face-limited-linear is effectively stable over the last joint polygon/grid refinement, while default Upwind still changes by about 1.4 percent per level and is not spatially qualified for external-cylinder drag."
+  },
+  "farFieldSensitivity": {
+    "segments": 128,
+    "wallRelativeSize": 0.03125,
+    "backgroundRelativeSize": 0.25,
+    "farFieldSpans": 20.0,
+    "scheme": "face-limited-linear",
+    "cells": 66912,
+    "evaluations": 904,
+    "converged": true,
+    "dragCoefficient": 2.0621318915347593,
+    "pressureDragCoefficient": 1.2345088679638931,
+    "viscousDragCoefficient": 0.8276230235708651,
+    "relativeDifferenceFromReference_percent": 0.8377453073231961,
+    "changeFromMatched10DCase_percent": -4.211507625463971,
+    "continuity": 8.562748335868918e-13,
+    "momentumResidual": 2.5742176098617296e-10,
+    "velocityChange_m_s": 5.456317824751172e-10,
+    "pressureChange_m2_s2": 2.9979781480453547e-9,
+    "globalRelativeImbalance": 1.634464921131084e-14,
+    "solverQuality": {"maxNonOrthogonality_deg": 66.98309815192779, "maxBoundarySkewness": 3.2293656279714167, "minFaceWeight": 0.05983163605047501, "minVolumeRatio": 0.01396811278808623, "originalGate": "PASS"},
+    "costRecord": "The native mesh log completed at 2026-10-05T17:46:18+08:00 and the final summary at 2026-10-05T18:17:04+08:00. This about-1846-second interval is not reported as exact process cost because this manual run did not wrap a process timer.",
+    "meshSha256": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280",
+    "cellFieldSha256": "0094a4226f58da53e25098192a970aa2d4479741a989028c8f49d378347f4d3e",
+    "faceFieldSha256": "90505465ab57327a71b8cd48ef4493b1792d5cb10693f1b497b15bd2dbbbf13d",
+    "summarySha256": "767ef826467be3603b7c1d47f9c4e1e975dfd7aa027a309c8fb68ea54bce41ed"
+  },
+  "conclusions": [
+    "The previous fixed-polygon/fixed-domain cylinder balance experiment was not a spatial qualification; geometry and near-wall spacing must be refined together.",
+    "For this Re=20 setup, opt-in face-limited-linear has a stable 10D joint-refinement integral drag and the 20D result is within 0.838 percent of the contextual experimental value.",
+    "The 4.21 percent 10D-to-20D change is larger than the last grid/polygon change, so far-field extent is part of the stated qualification and cannot be hidden.",
+    "Default Upwind remains about 11.17 percent above the contextual reference on the finest 10D case and is still changing materially; this evidence does not justify a default convection change because other limited-reconstruction failures remain in scope.",
+    "The annular local-pressure defect remains unresolved. No product algorithm, default, threshold, quality gate, or claimed platform support changed in this batch."
+  ],
+  "rawEvidence": {
+    "driver": "artifacts/current/native-laminar-curved-benchmark.py",
+    "jointRunIndex": "outputs/cloud-laminar/cylinder-joint/runs.json",
+    "jointRunIndexSha256": "6eab097d4f815fd59be78e641449ba56378671f18cfa474e71c052abe995e3d1",
+    "farFieldSummary": "outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear.json",
+    "farFieldMeshQuality": "outputs/cloud-laminar/cylinder-joint/far-20-foam/solver_quality.json",
+    "driverLog": "outputs/cloud-laminar/cylinder-joint-run.log"
+  },
+  "newProductCode": false,
+  "newDefault": false,
+  "newAcceptanceThreshold": false,
+  "testsRerunInThisBatch": [
+    "cartmesh2d_flow_boundary_tests: PASS",
+    "cartmesh2d_solver_export_tests: PASS",
+    "cartmesh2d_io_tests: PASS"
+  ]
+}
