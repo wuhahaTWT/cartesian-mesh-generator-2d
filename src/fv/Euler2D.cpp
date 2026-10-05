@@ -1,4 +1,5 @@
 #include "cartmesh2d/fv/Euler2D.hpp"
+#include "cartmesh2d/fv/detail/EulerNewton2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -19,6 +20,7 @@ EulerPrimitive2D ghost(const EulerPrimitive2D& inside,const EulerBoundary2D& b,V
         return {inside.density,inside.u-2*normal*n.x,inside.v-2*normal*n.y,inside.pressure};
     if(b.kind==EulerBoundaryKind2D::Transmissive)return inside;
     if(b.kind==EulerBoundaryKind2D::PressureOutlet)return eulerPressureOutletState2D(inside,b.reference.pressure,n,gas);
+    if(b.kind==EulerBoundaryKind2D::TotalInlet)return eulerTotalInletState2D(inside,b.reference,n,gas);
     require(b.kind==EulerBoundaryKind2D::Farfield,"unexpected boundary ghost type");
     const double sound=eulerSoundSpeed2D(inside,gas);
     if(normal>=sound)return inside;
@@ -92,6 +94,25 @@ EulerPrimitive2D eulerPressureOutletState2D(const EulerPrimitive2D& inside,doubl
         inside.v+(boundaryNormal-normal)*n.y,pressure};
     primitiveValid(result);return result;
 }
+EulerPrimitive2D eulerTotalInletState2D(const EulerPrimitive2D& inside,const EulerPrimitive2D& ref,Vector2D area,const IdealGas2D& gas) {
+    primitiveValid(ref);const double length=std::hypot(area.x,area.y);
+    require(std::isfinite(length)&&length>0,"total inlet requires finite nonzero outward area");
+    const Vector2D n{area.x/length,area.y/length};const double a=gas.gamma-1;
+    const double un=dot(Vector2D{inside.u,inside.v},n),c=eulerSoundSpeed2D(inside,gas);
+    require(un<c,"total inlet cannot constrain supersonic outflow");
+    const double refn=dot(Vector2D{ref.u,ref.v},n),utx=ref.u-refn*n.x,uty=ref.v-refn*n.y;
+    const double h0=gas.gamma/a*ref.pressure/ref.density+.5*(ref.u*ref.u+ref.v*ref.v);
+    const double available=h0-.5*(utx*utx+uty*uty),outgoing=un+2*c/a;
+    require(available>0,"total inlet has invalid total enthalpy");
+    double lo=-std::sqrt(2*a*available/(gas.gamma+1)),hi=0;
+    const auto sound=[&](double u){return std::sqrt(a*(available-.5*u*u));};
+    const auto invariant=[&](double u){return u+2*sound(u)/a;};
+    require(outgoing>invariant(lo)&&outgoing<invariant(hi),"total inlet implies choking or flow reversal; change reservoir conditions");
+    for(unsigned i=0;i<80;++i){const double mid=.5*(lo+hi);if(invariant(mid)<outgoing)lo=mid;else hi=mid;}
+    const double normal=.5*(lo+hi),cb=sound(normal),entropy=ref.pressure/std::pow(ref.density,gas.gamma);
+    const double rho=std::pow(cb*cb/(gas.gamma*entropy),1/a);
+    EulerPrimitive2D q{rho,utx+normal*n.x,uty+normal*n.y,entropy*std::pow(rho,gas.gamma)};primitiveValid(q);return q;
+}
 void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,const IdealGas2D& gas) {
     validateIdealGas2D(gas);std::vector<const EulerBoundary2D*> lookup(mesh.faces.size(),nullptr);
     std::map<std::string,EulerBoundaryKind2D> groups;
@@ -102,7 +123,7 @@ void validateEulerBoundaries2D(const FvMesh2D& mesh,const std::vector<EulerBound
         require(inserted||it->second==b.kind,"one boundary name has multiple physical kinds");
         require(b.kind==EulerBoundaryKind2D::SlipWall||b.kind==EulerBoundaryKind2D::Transmissive||
                 b.kind==EulerBoundaryKind2D::Farfield||b.kind==EulerBoundaryKind2D::Periodic||b.kind==EulerBoundaryKind2D::NoSlipWall||
-                b.kind==EulerBoundaryKind2D::PressureOutlet,"unknown boundary kind");
+                b.kind==EulerBoundaryKind2D::PressureOutlet||b.kind==EulerBoundaryKind2D::TotalInlet,"unknown boundary kind");
         require(std::isfinite(b.wallVelocity.x)&&std::isfinite(b.wallVelocity.y),"nonfinite wall velocity");
         require(b.kind==EulerBoundaryKind2D::NoSlipWall||(b.wallVelocity.x==0&&b.wallVelocity.y==0),"only no-slip walls accept wall velocity");
         const auto normal=mesh.faces[b.face].areaVector;
@@ -197,7 +218,7 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
                 d={2*distance*normal.x,2*distance*normal.y};other=ghost(primitive[i],*bc,normal,gas);
                 // The pressure outlet supplies a trace at the actual face,
                 // unlike the mirrored state used by solid walls.
-                if(bc->kind==EulerBoundaryKind2D::PressureOutlet)d={f.centre.x-cell.centre.x,f.centre.y-cell.centre.y};
+                if(bc->kind==EulerBoundaryKind2D::PressureOutlet||bc->kind==EulerBoundaryKind2D::TotalInlet)d={f.centre.x-cell.centre.x,f.centre.y-cell.centre.y};
             }
             const double distance2=finite(d.x*d.x+d.y*d.y);require(distance2>0,"zero reconstruction stencil distance");
             const double w=1/distance2;xx+=w*d.x*d.x;xy+=w*d.x*d.y;yy+=w*d.y*d.y;
@@ -258,7 +279,7 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
             eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
         const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
         auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration);
-        if(boundary&&boundary->kind==EulerBoundaryKind2D::PressureOutlet) {
+        if(boundary&&(boundary->kind==EulerBoundaryKind2D::PressureOutlet||boundary->kind==EulerBoundaryKind2D::TotalInlet)) {
             // Apply the characteristic trace directly. A second Riemann solve
             // against the interior would weaken the specified static pressure.
             const double speed=flux.waveSpeed;
@@ -320,6 +341,78 @@ bool positiveUpdate(const FvMesh2D& mesh,const std::vector<EulerConservative2D>&
     return true;
 }
 }
+namespace {
+struct EulerInterrupted : std::exception {
+    const char* what() const noexcept override {return "Euler calculation interrupted by cancellation or wall-time budget; previous accepted state retained";}
+};
+struct ImplicitStage {std::vector<EulerConservative2D> cells;SpatialOperator op;};
+ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
+    const IdealGas2D& gas,const std::vector<EulerConservative2D>& base,
+    const std::vector<EulerConservative2D>& guess,double h,const EulerStepControls2D& control,
+    const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous,EulerStepResult2D& work) {
+    using namespace detail;const auto n=base.size();NewtonVector scale(4*n),x(4*n);
+    for(std::size_t i=0;i<n;++i) {
+        const auto p=eulerPrimitive2D(guess[i],gas);const double c=eulerSoundSpeed2D(p,gas);
+        scale[4*i]=p.density;scale[4*i+1]=scale[4*i+2]=p.density*c;scale[4*i+3]=guess[i][3];
+        for(std::size_t k=0;k<4;++k)x[4*i+k]=guess[i][k]/scale[4*i+k];
+    }
+    auto evaluate=[&](const NewtonVector& y) {
+        if(control.interrupted&&control.interrupted())throw EulerInterrupted{};
+        ImplicitStage s;s.cells.resize(n);
+        for(std::size_t i=0;i<n;++i)for(std::size_t k=0;k<4;++k)s.cells[i][k]=y[4*i+k]*scale[4*i+k];
+        ++work.spatialEvaluations;s.op=spatialOperator(mesh,lookup,gas,s.cells,control,heat,viscous);return s;
+    };
+    auto defect=[&](const ImplicitStage& s) {
+        NewtonVector f(4*n);
+        for(std::size_t i=0;i<n;++i)for(std::size_t k=0;k<4;++k)
+            f[4*i+k]=(s.cells[i][k]-base[i][k]+h/mesh.cells[i].area*s.op.residual[i][k])/scale[4*i+k];
+        return f;
+    };
+    auto current=evaluate(x);auto f=defect(current);
+    for(std::size_t it=0;it<=control.maximumNewtonIterations;++it) {
+        double largest=0;for(double a:f)largest=std::max(largest,std::abs(a));
+        if(largest<=control.nonlinearTolerance)return current;
+        require(it<control.maximumNewtonIterations,"implicit Newton budget exhausted; previous accepted state retained");
+        ++work.nonlinearIterations;
+        NewtonVector diagonal(4*n),rhs=f;
+        for(std::size_t i=0;i<n;++i)for(std::size_t k=0;k<4;++k) {
+            diagonal[4*i+k]=1+h*(current.op.spectral[i]/mesh.cells[i].area+current.op.heatRate[i]+current.op.viscousRate[i]);
+            rhs[4*i+k]=-rhs[4*i+k];
+        }
+        const auto apply=[&](const NewtonVector& v) {
+            NewtonVector direction(v.size());for(std::size_t j=0;j<v.size();++j)direction[j]=v[j]/diagonal[j];
+            const double length=newtonNorm(direction);if(length==0)return direction;
+            double epsilon=std::sqrt(std::numeric_limits<double>::epsilon())*(1+newtonNorm(x))/length;
+            ImplicitStage shifted;bool feasible=false;
+            for(unsigned trial=0;trial<12;++trial) {
+                auto y=x;for(std::size_t j=0;j<y.size();++j)y[j]+=epsilon*direction[j];
+                try {shifted=evaluate(y);feasible=true;break;}catch(const std::runtime_error&){epsilon*=-.5;}
+            }
+            require(feasible,"implicit Jacobian perturbation is inadmissible");
+            NewtonVector product(v.size());
+            for(std::size_t i=0;i<n;++i)for(std::size_t k=0;k<4;++k) {
+                const auto j=4*i+k;
+                product[j]=direction[j]+h/mesh.cells[i].area*(shifted.op.residual[i][k]-current.op.residual[i][k])/(epsilon*scale[j]);
+            }
+            return product;
+        };
+        auto delta=eulerGmres(apply,rhs,control.maximumKrylovIterations,work.linearIterations);
+        for(std::size_t j=0;j<delta.size();++j)delta[j]/=diagonal[j];
+        const double oldNorm=newtonNorm(f);bool accepted=false;
+        for(double fraction=1;fraction>=1./4096;fraction*=.5) {
+            auto y=x;for(std::size_t j=0;j<y.size();++j)y[j]+=fraction*delta[j];
+            try {
+                auto candidate=evaluate(y);auto next=defect(candidate);
+                if(newtonNorm(next)<oldNorm*(1-1e-4*fraction)) {
+                    x=std::move(y);current=std::move(candidate);f=std::move(next);accepted=true;break;
+                }
+            }catch(const std::runtime_error&){} // Reject physical/domain-invalid candidates, never repair them.
+        }
+        require(accepted,"implicit feasible line search failed; previous accepted state retained");
+    }
+    throw std::runtime_error("Euler implicit: unreachable Newton exit");
+}
+}
 static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& control,const HeatConductionOperator2D* heat,const ViscousStressOperator2D* viscous) {
     validateFvMesh2D(mesh);validateEulerBoundaries2D(mesh,boundaries,gas);
@@ -332,6 +425,9 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(control.wallGradient==WallGradient2D::Linear||control.wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
     require(control.timeStepControl==EulerTimeStepControl2D::Legacy||control.timeStepControl==EulerTimeStepControl2D::StageGuarded,"unknown time-step control");
+    require(control.integrator==EulerTimeIntegrator2D::Explicit||control.integrator==EulerTimeIntegrator2D::Sdirk2,"unknown time integrator");
+    const bool implicit=control.integrator==EulerTimeIntegrator2D::Sdirk2;
+    if(implicit)require(std::isfinite(control.nonlinearTolerance)&&control.nonlinearTolerance>0&&control.nonlinearTolerance<=2e-14&&control.maximumNewtonIterations>0&&control.maximumKrylovIterations>0,"invalid implicit solver controls");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<const EulerBoundary2D*> lookup(nf,nullptr);for(const auto& b:boundaries)lookup[b.face]=&b;
     require(!control.endTime||(std::isfinite(*control.endTime)&&*control.endTime>initial.time),"invalid integration end time");
@@ -339,7 +435,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     const bool guarded=control.timeStepControl==EulerTimeStepControl2D::StageGuarded;
     double cflStep=std::numeric_limits<double>::infinity();
     for(std::size_t i=0;i<nc;++i)cflStep=std::min(cflStep,(heat||viscous)?control.acousticCourant/(first.spectral[i]/mesh.cells[i].area+first.heatRate[i]+first.viscousRate[i]):control.acousticCourant*mesh.cells[i].area/first.spectral[i]);
-    double dt=std::min(control.maximumStep,(guarded&&control.order==2?.95:1)*cflStep);
+    double dt=implicit?control.maximumStep:std::min(control.maximumStep,(guarded&&control.order==2?.95:1)*cflStep);
     const auto limitHorizon=[&](double step) {
       if(control.endTime) {
         const double remaining=*control.endTime-initial.time;step=std::min(step,remaining);
@@ -358,11 +454,47 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     std::string failure="non-positive stage state";
     for(std::size_t attempt=0;;++attempt) {
         require(std::isfinite(initial.time+dt)&&initial.time+dt>initial.time,"physical time cannot advance at this step");
-        bool valid=positiveUpdate(mesh,initial.cells,first.residual,dt,gas,stage);
+        bool valid=implicit?false:positiveUpdate(mesh,initial.cells,first.residual,dt,gas,stage);
         bool cflExceeded=false,positiveStages=valid;
         double stageBound=dt;
         SpatialOperator combined=first;
-        if(valid&&control.order==2) {
+        if(implicit) {
+            try {
+                const double gamma=1-1/std::sqrt(2.);
+                const auto a=implicitStage(mesh,lookup,gas,initial.cells,initial.cells,gamma*dt,control,heat,viscous,result);
+                auto base=initial.cells;
+                for(std::size_t i=0;i<nc;++i)for(std::size_t k=0;k<4;++k)base[i][k]-=(1-gamma)*dt/mesh.cells[i].area*a.op.residual[i][k];
+                auto b=implicitStage(mesh,lookup,gas,base,a.cells,gamma*dt,control,heat,viscous,result);
+                combined=b.op;
+                for(std::size_t id=0;id<nf;++id) {
+                    for(std::size_t k=0;k<4;++k)combined.faceFlux[id][k]=(1-gamma)*a.op.faceFlux[id][k]+gamma*b.op.faceFlux[id][k];
+                    combined.heatFlux[id]=(1-gamma)*a.op.heatFlux[id]+gamma*b.op.heatFlux[id];
+                    for(std::size_t k=0;k<3;++k)combined.viscousFlux[id][k]=(1-gamma)*a.op.viscousFlux[id][k]+gamma*b.op.viscousFlux[id][k];
+                    combined.speed[id]=std::max(a.op.speed[id],b.op.speed[id]);
+                    combined.fallback[id]=static_cast<unsigned char>(a.op.fallback[id]|(b.op.fallback[id]<<1));
+                }
+                for(std::size_t i=0;i<nc;++i) {
+                    for(std::size_t k=0;k<4;++k)combined.residual[i][k]=(1-gamma)*a.op.residual[i][k]+gamma*b.op.residual[i][k];
+                    combined.spectral[i]=std::max(a.op.spectral[i],b.op.spectral[i]);
+                    combined.heatRate[i]=std::max(a.op.heatRate[i],b.op.heatRate[i]);
+                    combined.viscousRate[i]=std::max(a.op.viscousRate[i],b.op.viscousRate[i]);
+                }
+                combined.fallbackEvaluations+=a.op.fallbackEvaluations;combined.reconstructionFallbackCells+=a.op.reconstructionFallbackCells;
+                combined.minimumContactRestoration=std::min(a.op.minimumContactRestoration,b.op.minimumContactRestoration);
+                // RK output is ALWAYS the conservative quadrature of converged
+                // stage fluxes. Copying a finite-tolerance Newton stage would
+                // accumulate algebraic mass/energy defects, especially in tiny
+                // final steps. This is the RK update, not a positivity repair.
+                valid=positiveUpdate(mesh,initial.cells,combined.residual,dt,gas,accepted);
+                require(valid,"implicit conservative RK output is non-positive");
+                for(std::size_t i=0;i<nc;++i) {
+                    const auto p=eulerPrimitive2D(initial.cells[i],gas);const double c=eulerSoundSpeed2D(p,gas);
+                    const EulerConservative2D scale{p.density,p.density*c,p.density*c,initial.cells[i][3]};
+                    // Sum of two stage defects: bound is (1+(1-g)/g)*tol.
+                    for(std::size_t k=0;k<4;++k)require(std::abs(accepted[i][k]-b.cells[i][k])<=8*control.nonlinearTolerance*scale[k],"implicit stage/output defect exceeds nonlinear solve tolerance");
+                }
+            }catch(const std::runtime_error& e){valid=false;failure=e.what();}
+        }else if(valid&&control.order==2) {
             try {
                 ++result.spatialEvaluations;
                 const auto second=spatialOperator(mesh,lookup,gas,stage,control,heat,viscous);
@@ -482,6 +614,20 @@ EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const Eule
     require(controls.wallGradient==wallGradient_,"wall gradient setting differs from prepared solver");
     return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
 }
+EulerResidualDiagnostics2D EulerStepper2D::diagnostics(const EulerState2D& state,const EulerStepControls2D& control) const {
+    require(state.cells.size()==mesh_.cells.size(),"residual state size differs");
+    std::vector<const EulerBoundary2D*> lookup(mesh_.faces.size(),nullptr);for(const auto& b:boundaries_)lookup[b.face]=&b;
+    const auto op=spatialOperator(mesh_,lookup,gas_,state.cells,control,heat_?&*heat_:nullptr,viscous_?&*viscous_:nullptr);
+    EulerResidualDiagnostics2D result;
+    for(std::size_t face=0;face<mesh_.faces.size();++face)if(!mesh_.faces[face].neighbour&&!lookup[face]->partner)for(std::size_t k=0;k<4;++k)result.boundaryFlux[k]+=op.faceFlux[face][k];
+    for(std::size_t i=0;i<state.cells.size();++i) {
+        const auto p=eulerPrimitive2D(state.cells[i],gas_);const double c=eulerSoundSpeed2D(p,gas_);
+        const EulerConservative2D scale{p.density,p.density*c,p.density*c,state.cells[i][3]};
+        for(std::size_t k=0;k<4;++k) {result.rate=std::max(result.rate,std::abs(op.residual[i][k])/(mesh_.cells[i].area*scale[k]));result.integralScale[k]+=mesh_.cells[i].area*scale[k];}
+    }
+    return result;
+}
+double EulerStepper2D::residualRate(const EulerState2D& state,const EulerStepControls2D& control) const {return diagnostics(state,control).rate;}
 EulerStepResult2D advanceEuler2D(const FvMesh2D& mesh,const std::vector<EulerBoundary2D>& boundaries,
     const IdealGas2D& gas,const EulerState2D& initial,const EulerStepControls2D& controls,const EulerTransport2D& transport) {
     const auto heat=prepareHeat(mesh,boundaries,transport,controls.wallGradient);const auto viscous=prepareViscous(mesh,boundaries,transport,controls.wallGradient);

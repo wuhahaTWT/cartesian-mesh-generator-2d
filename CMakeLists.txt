@@ -302,6 +302,10 @@ if(CARTMESH2D_BUILD_TESTS)
     cartmesh2d_enable_warnings(cartmesh2d_compressible_laminar_tests)
     add_test(NAME cartmesh2d_compressible_laminar COMMAND cartmesh2d_compressible_laminar_tests)
     set_tests_properties(cartmesh2d_compressible_laminar PROPERTIES TIMEOUT 180)
+    add_test(NAME cartmesh2d_compressible_cloud_cli
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/compressible_cloud_cli_test.py
+                $<TARGET_FILE:cartmesh2d_cli> $<TARGET_FILE:cartmesh2d_euler_cli>)
+    set_tests_properties(cartmesh2d_compressible_cloud_cli PROPERTIES TIMEOUT 120)
 
     # Hosted Windows runs need longer wall-clock budgets: the core took 56 s,
     # vortex128 exceeded a 90 s subprocess limit, and cold Couette32 exhausted

@@ -505,6 +505,50 @@ void stageGuardedChecks() {
     const auto before=initial;rejects([&]{(void)solver.advance(initial,controls);});
     require(initial.cells==before.cells&&initial.time==before.time,"minimum-step failure changed the input state");
 }
+void totalInletAndImplicitChecks() {
+    const IdealGas2D gas{1.4,1};const EulerPrimitive2D q{1,.3,.07,1};
+    const auto inlet=eulerTotalInletState2D(q,q,{-1,0},gas);
+    require(std::abs(inlet.u-q.u)<1e-14&&std::abs(inlet.pressure-q.pressure)<1e-14,"total inlet free stream mismatch");
+    const auto altered=eulerTotalInletState2D({1,.32,.07,1},q,{-1,0},gas);
+    const auto h=[&](const EulerPrimitive2D& a){return gas.gamma/(gas.gamma-1)*a.pressure/a.density+.5*(a.u*a.u+a.v*a.v);};
+    require(std::abs(h(altered)-h(q))<1e-14&&altered.v==q.v,"total inlet prescribed incorrect incoming invariants");
+    require(std::abs(altered.pressure/std::pow(altered.density,gas.gamma)-1)<1e-14,"total inlet entropy changed");
+    rejects([&]{(void)eulerTotalInletState2D({1,-10,0,1},q,{-1,0},gas);});
+    const auto mesh=rectangle(12,4,2,true);const auto bc=periodic(mesh);
+    auto initial=constant(mesh,{1,0,0,1});
+    for(std::size_t i=0;i<mesh.cells.size();++i) {
+        const double wave=std::sin(2*std::acos(-1.)*mesh.cells[i].centre.x/2);
+        initial.cells[i]=eulerConservative2D({1+.001*wave,.02*wave,.01*wave,1+.0014*wave},gas);
+    }
+    const EulerStepper2D solver(mesh,bc,gas,{.02,.02});EulerStepControls2D ctl;
+    ctl.integrator=EulerTimeIntegrator2D::Sdirk2;ctl.fluxScheme=EulerFluxScheme2D::Hllc;ctl.order=2;ctl.endTime=.08;
+    const auto evolve=[&](double dt) {
+        ctl.maximumStep=dt;auto state=initial;
+        while(state.time<*ctl.endTime) {
+            const auto next=solver.advance(state,ctl);
+            require(next.maximumCellBalanceError<1e-12&&next.minimumPressure>0&&next.minimumDensity>0,"implicit stage conservation/positivity failed");
+            if(state.steps==1) {
+                std::stringstream file;writeEulerCheckpoint2D(file,mesh,bc,gas,state,"implicit",{.02,.02});
+                const auto restored=readEulerCheckpoint2D(file,mesh,bc,gas,"implicit",{.02,.02});
+                require(solver.advance(restored,ctl).state.cells==next.state.cells,"implicit restart has hidden history");
+            }
+            state=next.state;
+        }
+        return state;
+    };
+    const auto coarse=evolve(.005),medium=evolve(.0025),fine=evolve(.00125),reference=evolve(.00015625),checkedReference=evolve(.0003125);
+    const auto err=[&](const EulerState2D& a){double v=0;for(std::size_t i=0;i<a.cells.size();++i)for(std::size_t k=0;k<4;++k)v+=mesh.cells[i].area*std::pow(a.cells[i][k]-reference.cells[i][k],2);return std::sqrt(v);};
+    const double e0=err(coarse),e1=err(medium),e2=err(fine),order=std::log2(e1/e2);
+    std::cout<<"SDIRK2 errors="<<e0<<","<<e1<<","<<e2<<" order="<<order<<std::endl;
+    require(e0>e1&&order>1.8&&err(checkedReference)<.1*e2,"SDIRK2 temporal refinement/reference failed");
+    ctl.endTime=.020000000001;const auto tail=evolve(.01);
+    require(tail.time==*ctl.endTime&&tail.steps==3,"implicit tiny physical tail failed");
+    ctl.interrupted=[] {return true;};rejects([&]{(void)solver.advance(initial,ctl);});ctl.interrupted={};
+    // No field repair when Newton cannot complete: the input is immutable.
+    ctl.maximumStep=1;ctl.endTime.reset();ctl.maximumNewtonIterations=1;ctl.maximumRetries=0;
+    const auto before=initial;rejects([&]{(void)solver.advance(initial,ctl);});
+    require(initial.cells==before.cells&&initial.time==before.time,"failed Newton candidate replaced accepted input");
+}
 int main() {
     try {
         const EulerPrimitive2D p{1.225,320,-12,101325};const auto round=eulerPrimitive2D(eulerConservative2D(p));
@@ -512,7 +556,7 @@ int main() {
         rejects([]{(void)eulerConservative2D({-1,0,0,1});});
         rejects([]{(void)eulerPrimitive2D({1,10,0,1});});
         rejects([]{validateIdealGas2D({1,287});});
-        faceFluxIdentities();
+        totalInletAndImplicitChecks();faceFluxIdentities();
         for(auto scheme:{EulerFluxScheme2D::Rusanov,EulerFluxScheme2D::Hllc})for(unsigned order:{1u,2u}) {
             activeControls.fluxScheme=scheme;activeControls.order=order;
             std::cout<<"scheme="<<(scheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")<<", order="<<order<<std::endl;

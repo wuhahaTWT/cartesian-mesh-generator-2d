@@ -49,12 +49,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build", type=Path, default=Path("build"))
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--mach", type=float, choices=(0.2, 0.5), default=0.2)
-    parser.add_argument("--level", type=int, choices=(5, 6), default=5)
-    parser.add_argument("--wall-temperature", type=float, choices=(300., 330.), default=300.)
+    parser.add_argument("--mach", type=float, default=0.2)
+    parser.add_argument("--level", type=int, default=5)
+    parser.add_argument("--wall-temperature", type=float, default=300.)
     parser.add_argument("--shape", choices=("straight", "smooth"), default="straight")
+    parser.add_argument("--length", type=float, default=.0004)
+    parser.add_argument("--height", type=float, default=.0001)
+    parser.add_argument("--contraction", type=float, default=.08)
+    parser.add_argument("--shape-phase", type=float, default=0.)
+    parser.add_argument("--outlet-ratio", type=float, default=1.)
+    parser.add_argument("--initial-pressure-perturbation", type=float, default=0.)
+    parser.add_argument("--inlet-model", choices=("characteristic", "total"), default="characteristic")
+    parser.add_argument("--inlet-total-pressure", type=float)
+    parser.add_argument("--inlet-total-temperature", type=float)
     parser.add_argument("--flow-times", type=float, default=4.)
     parser.add_argument("--time-step-control", choices=("legacy", "stage-guarded"), default="legacy")
+    parser.add_argument("--integrator", choices=("explicit", "sdirk2"), default="explicit")
+    parser.add_argument("--max-step", type=float, default=1.)
     parser.add_argument("--cfl", type=float, default=.4)
     parser.add_argument("--max-steps", type=int, default=100000)
     parser.add_argument("--max-seconds", type=float, default=240)
@@ -66,6 +77,14 @@ def main():
         parser.error("--cfl must be finite and in (0, .45]")
     if not 1 <= args.max_steps <= 10000000 or not math.isfinite(args.max_seconds) or args.max_seconds <= 0:
         parser.error("positive finite runtime limits are required; --max-steps is limited to 10000000")
+    if not all(math.isfinite(x) and x>0 for x in (args.mach,args.length,args.height,args.wall_temperature,args.outlet_ratio,args.max_step)):
+        parser.error("positive finite physical inputs and maximum step required")
+    if not 0<=args.contraction<.3 or not abs(args.shape_phase)<=1 or not abs(args.initial_pressure_perturbation)<1 or not 4<=args.level<=8:
+        parser.error("unsupported geometry/perturbation parameters")
+    if (args.inlet_total_pressure is None) != (args.inlet_total_temperature is None):
+        parser.error("total pressure and temperature must be given together")
+    if args.inlet_total_pressure is not None and (args.inlet_model != "total" or not all(math.isfinite(v) and v>0 for v in (args.inlet_total_pressure,args.inlet_total_temperature))):
+        parser.error("positive total inlet conditions require --inlet-model total")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
     build = args.build.resolve()
@@ -73,6 +92,7 @@ def main():
     flow = next((p for p in (build/"cartmesh2d_euler_cli", build/"Release/cartmesh2d_euler_cli.exe", build/"cartmesh2d_euler_cli.exe") if p.is_file()), None)
     if cli is None or flow is None:
         raise FileNotFoundError("build cartmesh2d_cli and cartmesh2d_euler_cli first")
+    binary_hashes={p.name: digest(p) for p in (cli, flow)}
     report = {"format": "cartmesh2d-compressible-channel-v1", "qualification": "finite-time native workflow; not steady or mesh-independent qualification", "commands": [], "completed": False}
     def save():
         (root/"run.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n")
@@ -88,32 +108,35 @@ def main():
     def summary(name):
         return json.loads((root/(name+".json")).read_text())
 
-    height, length, temperature, pressure, gas_r, gamma = .0001, .0004, 300., 101325., 287.05, 1.4
+    height, length, temperature, pressure, gas_r, gamma = args.height, args.length, 300., 101325., 287.05, 1.4
     density = pressure/(gas_r*temperature)
     speed = args.mach*math.sqrt(gamma*gas_r*temperature)
     viscosity = 1.846e-5
     conductivity = viscosity*(gamma*gas_r/(gamma-1))/.72
     end_time = args.flow_times*length/speed
     report["inputs"] = {"heightM": height, "lengthM": length, "mach": args.mach, "reynoldsHeight": density*speed*height/viscosity, "wallTemperatureK": args.wall_temperature, "muPaS": viscosity, "kWmK": conductivity, "gamma": gamma, "gasR": gas_r, "referenceDensity": density, "referencePressurePa": pressure, "referenceTemperatureK": temperature, "referenceSpeedMs": speed, "endTimeS": end_time, "flowThroughTimes": args.flow_times, "shape": args.shape, "level": args.level, "pressureOutletBackflow": "explicit failure", "openDiffusion": "zero traction and Fourier heat flux"}
-    report["inputs"].update(timeStepControl=args.time_step_control, cfl=args.cfl, maximumSteps=args.max_steps, maximumSeconds=args.max_seconds)
+    report["inputs"].update(integrator=args.integrator, maximumStep=args.max_step, inletModel=args.inlet_model, contraction=args.contraction, shapePhase=args.shape_phase, outletRatio=args.outlet_ratio, initialPressurePerturbation=args.initial_pressure_perturbation, timeStepControl=args.time_step_control, cfl=args.cfl, maximumSteps=args.max_steps, maximumSeconds=args.max_seconds)
     # Explicit interior fluid region. The upper wall contracts smoothly by 8%;
     # its sampled polyline is passed unchanged to the native Cut-cell mesher.
     points = [(0., 0.), (length, 0.)]
     for i in range(16, -1, -1):
         x = length*i/16
-        y = height*(1-(.08*math.sin(math.pi*i/16)**2 if args.shape == "smooth" else 0.))
+        y = height*(1-(args.contraction*math.sin(math.pi*i/16)**2*(1+args.shape_phase*math.sin(2*math.pi*i/16)) if args.shape == "smooth" else 0.))
         points.append((x, y))
     geometry = root/"channel.xy"
     geometry.write_text("".join(f"{x:.17g} {y:.17g}\n" for x, y in points))
     save()
     try:
         run("mesh", [cli, geometry, root/"mesh", args.level, .125, .1, "interior", root/"openfoam", args.level-1, 0])
-        common = [flow, "--mesh", root/"mesh.solver.cm2d", "--case", "channel", "--outlet-pressure", pressure,
+        common = [flow, "--mesh", root/"mesh.solver.cm2d", "--case", "channel", "--outlet-pressure", pressure*args.outlet_ratio, "--inlet-model", args.inlet_model, "--initial-pressure-perturbation", args.initial_pressure_perturbation,
                   "--gamma", gamma, "--gas-r", gas_r, "--density", density, "--pressure", pressure, "--u", speed,
                   "--viscosity", viscosity, "--conductivity", conductivity, "--wall-model", "no-slip",
                   "--wall-thermal", "temperature", "--wall-value", args.wall_temperature, "--wall-gradient", "quadratic",
                   "--flux", "hllc", "--order", 2, "--cfl", args.cfl, "--time-step-control", args.time_step_control, "--end-time", end_time,
+                  "--integrator", args.integrator, "--max-step", args.max_step,
                   "--max-steps", args.max_steps, "--max-seconds", args.max_seconds, "--checkpoint-every", 1000]
+        if args.inlet_total_pressure is not None:
+            common += ["--inlet-total-pressure", args.inlet_total_pressure, "--inlet-total-temperature", args.inlet_total_temperature]
         run("full", [*common, "--output", root/"full"])
         full = summary("full")
         if not full["targetReached"] or full["time"] != end_time:
@@ -138,6 +161,10 @@ def main():
         for flag in ("--wall-model", "--wall-thermal", "--wall-value"):
             i = custom.index(flag)
             del custom[i:i+2]
+        for flag in ("--inlet-total-pressure", "--inlet-total-temperature"):
+            if flag in custom:
+                i = custom.index(flag)
+                del custom[i:i+2]
         run("custom", [*custom, "--boundary", root/"full.boundaries", "--output", root/"custom", "--max-steps", 8], expected=2)
         if (root/"limited.cells.csv").read_bytes() != (root/"custom.cells.csv").read_bytes():
             raise RuntimeError("custom pressure outlet roundtrip changed the accepted field")
@@ -153,7 +180,7 @@ def main():
     finally:
         report["compressedHistory"] = compress_histories(root)
         report["sha256"] = {p.name: digest(p) for p in sorted(root.iterdir()) if p.is_file() and p.name != "run.json"}
-        report["binarySha256"] = {p.name: digest(p) for p in (cli, flow)}
+        report["binarySha256"] = binary_hashes
         save()
     print(json.dumps({key: value for key, value in report.items() if key not in ("commands", "sha256", "binarySha256")}, indent=2))
 

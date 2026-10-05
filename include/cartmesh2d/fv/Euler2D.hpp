@@ -4,6 +4,7 @@
 #include "cartmesh2d/fv/ViscousStress2D.hpp"
 #include <array>
 #include <string>
+#include <functional>
 
 namespace cartmesh2d::fv {
 
@@ -13,7 +14,7 @@ struct EulerPrimitive2D { double density=1, u=0, v=0, pressure=1; };
 // Per-volume densities: rho, rho*u, rho*v, rho*E (total internal + kinetic).
 using EulerConservative2D = std::array<double,4>;
 // Append kinds: checkpoint bindings persist the existing integer values.
-enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic, NoSlipWall, PressureOutlet };
+enum class EulerBoundaryKind2D { SlipWall, Transmissive, Farfield, Periodic, NoSlipWall, PressureOutlet, TotalInlet };
 struct EulerBoundary2D {
     std::size_t face=0;
     EulerBoundaryKind2D kind=EulerBoundaryKind2D::SlipWall;
@@ -31,6 +32,7 @@ struct EulerState2D {
 };
 enum class EulerFluxScheme2D { Rusanov, Hllc };
 enum class EulerTimeStepControl2D { Legacy, StageGuarded };
+enum class EulerTimeIntegrator2D { Explicit, Sdirk2 };
 struct EulerFaceFlux2D {
     EulerConservative2D integratedFlux{};
     double waveSpeed=0;
@@ -53,6 +55,13 @@ struct EulerStepControls2D {
     // Optional 5% headroom for changing stage rates and rate-based CFL retries.
     // Stage positivity/CFL limits are unchanged; no history is needed on restart.
     EulerTimeStepControl2D timeStepControl=EulerTimeStepControl2D::Legacy;
+    EulerTimeIntegrator2D integrator=EulerTimeIntegrator2D::Explicit;
+    // SDIRK uses maximumStep as a uniform physical step, never a local clock.
+    // Dimensionless stage defect relative to fixed rho/rho*c/rho*E scales.
+    double nonlinearTolerance=2e-14;
+    std::size_t maximumNewtonIterations=16, maximumKrylovIterations=240;
+    // Optional cancellation/budget callback, checked inside implicit residuals.
+    std::function<bool()> interrupted;
 };
 struct EulerStepResult2D {
     EulerState2D state;
@@ -74,6 +83,11 @@ struct EulerStepResult2D {
     double maximumCellBalanceError=0;
     std::size_t rejectedCandidates=0;
     std::size_t cflRejectedCandidates=0,spatialEvaluations=0;
+    std::size_t nonlinearIterations=0,linearIterations=0;
+};
+struct EulerResidualDiagnostics2D {
+    double rate=0; // s^-1, maximum component residual with local physical scales.
+    EulerConservative2D boundaryFlux{},integralScale{};
 };
 
 void validateIdealGas2D(const IdealGas2D&);
@@ -86,9 +100,16 @@ void validateEulerTransport2D(const EulerTransport2D&,const std::vector<EulerBou
 // Backflow/choking of the subsonic boundary is rejected, never clipped.
 [[nodiscard]] EulerPrimitive2D eulerPressureOutletState2D(const EulerPrimitive2D&,
     double pressure, Vector2D outwardArea, const IdealGas2D& = {});
+// Three incoming conditions: reference entropy, total enthalpy and tangential
+// velocity. Outgoing J+ comes from the interior. Reference is a reservoir state,
+// not a prescription of all four boundary primitive variables.
+[[nodiscard]] EulerPrimitive2D eulerTotalInletState2D(const EulerPrimitive2D&,
+    const EulerPrimitive2D& reference,Vector2D outwardArea,const IdealGas2D& = {});
 void validateEulerBoundaries2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,const IdealGas2D& = {});
 // Selectable Rusanov/HLLC and first/second-order spatial and temporal methods.
-// Both RK stages obey combined acoustic/heat/viscous rates and cell areas. Reconstruction
+// Explicit RK stages obey combined acoustic/heat/viscous rates and cell areas.
+// SDIRK2 solves both coupled stages with feasible Newton-Krylov and the same residual.
+// Reconstruction
 // limits slopes; no accepted conserved density, pressure or energy is clipped.
 // A failed trial is retried with smaller dt, leaving the input untouched.
 [[nodiscard]] EulerStepResult2D advanceEuler2D(const FvMesh2D&,const std::vector<EulerBoundary2D>&,
@@ -99,6 +120,9 @@ class EulerStepper2D {
 public:
     EulerStepper2D(FvMesh2D,std::vector<EulerBoundary2D>,IdealGas2D = {},EulerTransport2D = {},WallGradient2D = WallGradient2D::Linear);
     [[nodiscard]] EulerStepResult2D advance(const EulerState2D&,const EulerStepControls2D&) const;
+    // Maximum |R/(V scale)|, in s^-1, scales rho, rho*c, rho*c, rho*E.
+    [[nodiscard]] double residualRate(const EulerState2D&,const EulerStepControls2D&) const;
+    [[nodiscard]] EulerResidualDiagnostics2D diagnostics(const EulerState2D&,const EulerStepControls2D&) const;
 private:
     WallGradient2D wallGradient_=WallGradient2D::Linear;
     FvMesh2D mesh_;

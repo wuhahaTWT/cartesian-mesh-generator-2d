@@ -50,6 +50,7 @@ std::string kindName(EulerBoundaryKind2D kind) {
     case EulerBoundaryKind2D::Farfield:return "farfield";
     case EulerBoundaryKind2D::Periodic:return "periodic";
     case EulerBoundaryKind2D::PressureOutlet:return "pressure-outlet";
+    case EulerBoundaryKind2D::TotalInlet:return "total-inlet";
     }
     throw std::runtime_error("invalid Euler boundary kind");
 }
@@ -101,6 +102,7 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
         else if(kind=="transmissive")b.kind=EulerBoundaryKind2D::Transmissive;
         else if(kind=="farfield")b.kind=EulerBoundaryKind2D::Farfield;
         else if(kind=="periodic")b.kind=EulerBoundaryKind2D::Periodic;
+        else if(kind=="total-inlet")b.kind=EulerBoundaryKind2D::TotalInlet;
         else if(kind=="pressure-outlet")b.kind=EulerBoundaryKind2D::PressureOutlet;
         else throw std::runtime_error("unknown Euler boundary kind: "+kind);
         if(partner!="-") {const auto n=number(partner);require(n>=0&&n<static_cast<double>(faces)&&n==std::floor(n),"invalid periodic partner");b.partner=static_cast<std::size_t>(n);}
@@ -115,8 +117,10 @@ int main(int argc,char** argv) {
     EulerTransport2D transport;HeatBoundaryKind2D wallThermal=HeatBoundaryKind2D::Insulated;double wallValue=0;bool specifiedWall=false;std::string wallModel="slip";bool specifiedWallModel=false;
     IdealGas2D gas;EulerPrimitive2D reference{1,0,0,1};EulerStepControls2D controls;
     double endTime=.2,split=.5,beta=5,maximumSeconds=180;std::size_t maximumSteps=100000,checkpointEvery=25;
-    bool specifiedReference=false;
-    std::optional<double> outletPressure;
+    double initialPressurePerturbation=0;
+    bool specifiedReference=false;std::string inletModel="characteristic",mode="transient";
+    double steadyScale=0,steadyTolerance=1e-5,steadyResidual=0,steadyChange=0,steadyOutputChange=0;
+    std::optional<double> outletPressure,inletTotalPressure,inletTotalTemperature;
     for(int i=1;i<argc;++i) {
         const std::string arg=argv[i];
         if(arg=="--help") {
@@ -126,6 +130,11 @@ int main(int argc,char** argv) {
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
                 "--wall-gradient linear|quadratic (optional quadratic Dirichlet wall recovery, overall order unchanged)\n"
+                "--mode transient|steady --steady-scale SECONDS --steady-tolerance 1e-5 (scaled residual, field AND boundary-output change rate)\n"
+                "--inlet-total-pressure Pa --inlet-total-temperature K (optional resting axial reservoir pair)\n"
+                "--initial-pressure-perturbation amplitude (sinusoidal start only; |amplitude|<1)\n"
+                "--inlet-model characteristic|total (channel; total uses reference entropy, total enthalpy, tangential velocity)\n"
+                "--integrator explicit|sdirk2 (SDIRK2 uniform physical dt from --max-step; time refinement required)\n"
                 "--time-step-control legacy|stage-guarded (default legacy; optional stage-rate headroom/retry)\n"
                 "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
@@ -148,7 +157,15 @@ int main(int argc,char** argv) {
         if(arg=="--mesh")meshPath=value;else if(arg=="--output")prefix=value;else if(arg=="--case")problem=value;
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
         else if(arg=="--restart")restart=value;
+        else if(arg=="--inlet-total-pressure")inletTotalPressure=number(value);
+        else if(arg=="--inlet-total-temperature")inletTotalTemperature=number(value);
+        else if(arg=="--initial-pressure-perturbation")initialPressurePerturbation=number(value);
+        else if(arg=="--inlet-model") {require(value=="characteristic"||value=="total","unknown inlet model");inletModel=value;}
+        else if(arg=="--mode") {require(value=="transient"||value=="steady","unknown run mode");mode=value;}
+        else if(arg=="--steady-scale")steadyScale=number(value);
+        else if(arg=="--steady-tolerance")steadyTolerance=number(value);
         else if(arg=="--outlet-pressure")outletPressure=number(value);
+        else if(arg=="--integrator") {require(value=="explicit"||value=="sdirk2","unknown integrator");controls.integrator=value=="sdirk2"?EulerTimeIntegrator2D::Sdirk2:EulerTimeIntegrator2D::Explicit;}
         else if(arg=="--time-step-control") {require(value=="legacy"||value=="stage-guarded","unknown time-step control");controls.timeStepControl=value=="stage-guarded"?EulerTimeStepControl2D::StageGuarded:EulerTimeStepControl2D::Legacy;}
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
         else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic","unknown wall gradient scheme");controls.wallGradient=value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
@@ -190,6 +207,10 @@ int main(int argc,char** argv) {
     for(const auto& v:read.topology.vertices){xmin=std::min(xmin,v.point.x);xmax=std::max(xmax,v.point.x);ymin=std::min(ymin,v.point.y);ymax=std::max(ymax,v.point.y);}
     const double scale=std::max(xmax-xmin,ymax-ymin);const double geometryTolerance=1e-10*scale;
     if(problem=="vortex")require(xmax-xmin>=20&&ymax-ymin>=20,"vortex periodic domain must be at least 20 by 20 to suppress artificial tail jumps");
+    require(inletTotalPressure.has_value()==inletTotalTemperature.has_value(),"both inlet total pressure Pa and total temperature K are required");
+    require(!inletTotalPressure||(problem=="channel"&&inletModel=="total"&&*inletTotalPressure>0&&*inletTotalTemperature>0),"reservoir total conditions require channel total inlet and positive absolute values");
+    EulerPrimitive2D reservoir=reference;
+    if(inletTotalPressure)reservoir={*inletTotalPressure/(gas.gasConstant * *inletTotalTemperature),0,0,*inletTotalPressure};
     std::vector<EulerBoundary2D> bc;
     if(problem=="custom")bc=readBoundaries(boundaryPath,mesh);
     else for(std::size_t i=0;i<mesh.faces.size();++i) {
@@ -200,7 +221,7 @@ int main(int argc,char** argv) {
         else if(problem=="channel") {
             const double length=std::hypot(f.areaVector.x,f.areaVector.y);
             const bool axial=std::abs(f.areaVector.y)<1e-12*length;
-            if(axial&&f.areaVector.x<0&&std::abs(f.centre.x-xmin)<geometryTolerance)b.name="inlet";
+            if(axial&&f.areaVector.x<0&&std::abs(f.centre.x-xmin)<geometryTolerance){b.name="inlet";if(inletModel=="total"){b.kind=EulerBoundaryKind2D::TotalInlet;b.reference=reservoir;}}
             else if(axial&&f.areaVector.x>0&&std::abs(f.centre.x-xmax)<geometryTolerance) {
                 b.kind=EulerBoundaryKind2D::PressureOutlet;b.name="outlet";b.reference.pressure=*outletPressure;
             }else {b.kind=EulerBoundaryKind2D::SlipWall;b.name="walls";}
@@ -218,7 +239,7 @@ int main(int argc,char** argv) {
     }
     if(problem=="channel") {
         const auto has=[&](EulerBoundaryKind2D kind){return std::any_of(bc.begin(),bc.end(),[&](const auto& b){return b.kind==kind;});};
-        require(has(EulerBoundaryKind2D::Farfield)&&has(EulerBoundaryKind2D::PressureOutlet),"channel requires planar inlet/outlet at xmin/xmax");
+        require((has(EulerBoundaryKind2D::Farfield)||has(EulerBoundaryKind2D::TotalInlet))&&has(EulerBoundaryKind2D::PressureOutlet),"channel requires planar inlet/outlet at xmin/xmax");
     }
     if(problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave")for(auto& b:bc) {
         const auto& f=mesh.faces[b.face];const bool x=b.name=="periodic-x";
@@ -265,6 +286,11 @@ int main(int argc,char** argv) {
         state.cells.push_back(eulerConservative2D(q,gas));
     }
     if(!restart.empty()) {std::ifstream in(restart);require(static_cast<bool>(in),"cannot read Euler restart");state=readEulerCheckpoint2D(in,mesh,bc,gas,problem,transport);}
+    require(std::abs(initialPressurePerturbation)<1,"initial pressure perturbation amplitude must be in (-1,1)");
+    if(restart.empty()&&initialPressurePerturbation!=0)for(std::size_t i=0;i<state.cells.size();++i) {
+        auto p=eulerPrimitive2D(state.cells[i],gas);p.pressure*=1+initialPressurePerturbation*std::sin(2*std::numbers::pi*(mesh.cells[i].centre.x-xmin)/(xmax-xmin));
+        state.cells[i]=eulerConservative2D(p,gas);
+    }
     require(endTime>state.time,"end time must exceed accepted restart time");
     const std::vector<std::string> suffixes={".json",".fields.json",".cells.csv",".faces.csv",".history.csv",".vtk",".checkpoint",".checkpoint.tmp",".boundaries"};
     for(const auto& suffix:suffixes) {
@@ -277,20 +303,35 @@ int main(int argc,char** argv) {
     save();auto boundaryOutput=output(prefix+".boundaries");boundaryFile(boundaryOutput,mesh,bc);boundaryOutput.close();
     auto history=output(prefix+".history.csv");history<<"step,time,dt,acousticCourant,minimumDensity,minimumPressure,cellBalanceError,rejectedCandidates,mass,momentumX,momentumY,totalEnergy,boundaryMass,boundaryMomentumX,boundaryMomentumY,boundaryEnergy,balanceMass,balanceMomentumX,balanceMomentumY,balanceEnergy,hllcFallbackEvaluations,reconstructionFallbackCells,minimumContactRestoration,thermalCourant,combinedCourant,boundaryHeat,viscousCourant,boundaryViscousWork,cflRejectedCandidates,spatialEvaluations\n";
     const EulerStepper2D solver(mesh,bc,gas,transport,controls.wallGradient);
+    require(mode!="steady"||(steadyScale>0&&steadyTolerance>0),"steady mode requires positive --steady-scale seconds and --steady-tolerance");
     const auto started=std::chrono::steady_clock::now();const double initialTime=state.time;const auto initialSteps=state.steps;
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
     std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
-    std::size_t cflRejected=0,spatialEvaluations=0;
+    std::size_t cflRejected=0,spatialEvaluations=0,nonlinearIterations=0,linearIterations=0;
+    std::optional<EulerResidualDiagnostics2D> previousDiagnostics;
     try {
+        if(mode=="steady")previousDiagnostics=solver.diagnostics(state,controls);
         while(state.time<endTime) {
             require(!stopped,"calculation cancelled; accepted state retained");
             require(state.steps-initialSteps<maximumSteps,"accepted-step budget exhausted");
             require(std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()<maximumSeconds,"wall-time budget exhausted");
             auto step=controls;step.endTime=endTime;
+            step.interrupted=[&]{return stopped||std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()>=maximumSeconds;};
             last=solver.advance(state,step);state=last->state;rejected+=last->rejectedCandidates;
+            nonlinearIterations+=last->nonlinearIterations;linearIterations+=last->linearIterations;
             cflRejected+=last->cflRejectedCandidates;spatialEvaluations+=last->spatialEvaluations;
             fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
             minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
+            if(mode=="steady") {
+                const auto metrics=solver.diagnostics(state,controls);steadyResidual=steadyScale*metrics.rate;steadyChange=0;steadyOutputChange=0;
+                for(std::size_t j=0;j<state.cells.size();++j) {
+                    const auto p=eulerPrimitive2D(state.cells[j],gas);const double c=eulerSoundSpeed2D(p,gas);
+                    const EulerConservative2D scales{p.density,p.density*c,p.density*c,state.cells[j][3]};
+                    for(std::size_t k=0;k<4;++k)steadyChange=std::max(steadyChange,steadyScale/last->step*std::abs(state.cells[j][k]-last->previousCells[j][k])/scales[k]);
+                }
+                for(std::size_t k=0;k<4;++k)steadyOutputChange=std::max(steadyOutputChange,steadyScale*steadyScale/last->step*std::abs(metrics.boundaryFlux[k]-previousDiagnostics->boundaryFlux[k])/metrics.integralScale[k]);
+                previousDiagnostics=metrics;
+            }
             history<<state.steps<<','<<state.time<<','<<last->step<<','<<last->acousticCourant<<','<<last->minimumDensity<<','<<last->minimumPressure<<','<<last->maximumCellBalanceError<<','<<last->rejectedCandidates;
             for(const auto& array:{last->afterIntegral,last->boundaryFlux,last->balanceError})for(double v:array)history<<','<<v;
             history<<','<<last->hllcFallbackEvaluations<<','<<last->reconstructionFallbackCells<<','<<last->minimumContactRestoration<<','<<last->thermalCourant<<','<<last->combinedCourant<<','<<last->boundaryHeat<<','<<last->viscousCourant<<','<<last->boundaryViscousWork<<','<<last->cflRejectedCandidates<<','<<last->spatialEvaluations<<'\n';
@@ -301,7 +342,9 @@ int main(int argc,char** argv) {
                     <<",\"minimumPressure\":"<<last->minimumPressure<<",\"mass\":"<<last->afterIntegral[0]
                     <<",\"totalEnergy\":"<<last->afterIntegral[3]<<"}\n"<<std::flush;
             }
+            if(mode=="steady"&&previousDiagnostics&&steadyResidual<=steadyTolerance&&steadyChange<=steadyTolerance&&steadyOutputChange<=steadyTolerance){status="steady_converged";break;}
         }
+        if(mode=="steady"&&status!="steady_converged"){status="failed";failure="steady integration horizon exhausted without residual, field and boundary-output convergence";}
     }catch(const std::exception& e){status=stopped?"cancelled":"failed";failure=e.what();}
     save();history.close();
     const double elapsed=std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
@@ -339,14 +382,16 @@ int main(int argc,char** argv) {
         for(const auto& q:state.cells){const auto p=eulerPrimitive2D(q,gas);vtk<<(field=="density"?p.density:field=="pressure"?p.pressure:field=="temperature"?p.pressure/(p.density*gas.gasConstant):std::hypot(p.u,p.v)/eulerSoundSpeed2D(p,gas))<<'\n';}
     }
     vtk<<"VECTORS velocity double\n";for(const auto& q:state.cells)vtk<<q[1]/q[0]<<' '<<q[2]/q[0]<<" 0\n";vtk.close();
+    std::optional<double> finalResidualRate;std::string residualFailure;
+    try {finalResidualRate=solver.residualRate(state,controls);}catch(const std::exception& e){residualFailure=e.what();}
     auto summary=output(prefix+".json");
     const std::string fluxName=controls.fluxScheme==EulerFluxScheme2D::Hllc?"HLLC-HLLE":"Rusanov";
-    const std::string method=controls.order==1?"first-order "+fluxName+" / forward Euler":"limited-linear "+fluxName+" / SSPRK2";
+    const std::string method=controls.integrator==EulerTimeIntegrator2D::Sdirk2?"limited/constant "+fluxName+" / SDIRK2 Newton-GMRES":controls.order==1?"first-order "+fluxName+" / forward Euler":"limited-linear "+fluxName+" / SSPRK2";
     summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":"<<quote(method)<<",\"fluxScheme\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")
         <<",\"shockControl\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"multidimensional pressure-ratio cube HLLC/HLLE blend":"none")
         <<",\"minimumContactRestoration\":"<<minimumContactRestoration<<",\"lastMinimumContactRestoration\":"<<(last?last->minimumContactRestoration:1)
         <<",\"wallGradient\":"<<quote(controls.wallGradient==WallGradient2D::Quadratic?"quadratic":"linear")<<",\"quadraticHeatWalls\":"<<(last?last->quadraticHeatWalls:0)<<",\"quadraticViscousWalls\":"<<(last?last->quadraticViscousWalls:0)
-        <<",\"order\":"<<controls.order<<",\"hllcFallbackEvaluations\":"<<fallbackEvaluations<<",\"reconstructionFallbackCells\":"<<reconstructionFallbackCells
+        <<",\"temporalOrder\":"<<(controls.integrator==EulerTimeIntegrator2D::Sdirk2?2:controls.order)<<",\"order\":"<<controls.order<<",\"hllcFallbackEvaluations\":"<<fallbackEvaluations<<",\"reconstructionFallbackCells\":"<<reconstructionFallbackCells
         <<",\"lastHllcFallbackEvaluations\":"<<(last?last->hllcFallbackEvaluations:0)<<",\"lastReconstructionFallbackCells\":"<<(last?last->reconstructionFallbackCells:0)
         <<",\"thermalConductivity\":"<<transport.thermalConductivity<<",\"wallThermal\":"<<quote(heatKindName(wallThermal))<<",\"wallValue\":"<<wallValue
         <<",\"heatDiscretization\":\"Fourier / least-squares corrected / full-row-norm explicit bound\""
@@ -357,18 +402,22 @@ int main(int argc,char** argv) {
         <<",\"viscousDiscretization\":\"Newtonian Stokes / corrected velocity gradient / full momentum block row norm\""
         <<",\"case\":"<<quote(problem)<<",\"outletPressure\":";
     if(outletPressure)summary<<*outletPressure;else summary<<"null";
-    summary<<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
+    summary<<",\"finalResidualRatePerSecond\":";if(finalResidualRate)summary<<*finalResidualRate;else summary<<"null";
+    summary<<",\"residualDiagnosticFailure\":"<<quote(residualFailure)
+        <<",\"mode\":"<<quote(mode)<<",\"steadyConverged\":"<<(status=="steady_converged"?"true":"false")<<",\"steadyResidual\":"<<steadyResidual<<",\"steadyChangeRate\":"<<steadyChange<<",\"steadyOutputChangeRate\":"<<steadyOutputChange<<",\"steadyScaleSeconds\":"<<steadyScale<<",\"steadyTolerance\":"<<steadyTolerance
+        <<",\"status\":"<<quote(status)<<",\"failure\":"<<quote(failure)<<",\"targetReached\":"<<(status=="target_reached"?"true":"false")
         <<",\"cells\":"<<mesh.cells.size()<<",\"faces\":"<<mesh.faces.size()<<",\"gamma\":"<<gas.gamma<<",\"gasConstant\":"<<gas.gasConstant
         <<",\"referenceState\":{\"rho\":"<<reference.density<<",\"u\":"<<reference.u<<",\"v\":"<<reference.v<<",\"p\":"<<reference.pressure<<"},\"split\":"<<split
         <<",\"time\":"<<state.time<<",\"requestedEndTime\":"<<endTime<<",\"initialTime\":"<<initialTime<<",\"steps\":"<<state.steps
         <<",\"acceptedSteps\":"<<state.steps-initialSteps<<",\"rejectedCandidates\":"<<rejected<<",\"lastStep\":"<<(last?last->step:0)
         <<",\"cflLimit\":"<<controls.acousticCourant<<",\"maximumStep\":"<<controls.maximumStep<<",\"minimumStep\":"<<controls.minimumStep
+        <<",\"integrator\":"<<quote(controls.integrator==EulerTimeIntegrator2D::Sdirk2?"sdirk2":"explicit")<<",\"nonlinearIterations\":"<<nonlinearIterations<<",\"linearIterations\":"<<linearIterations
         <<",\"timeStepControl\":"<<quote(controls.timeStepControl==EulerTimeStepControl2D::StageGuarded?"stage-guarded":"legacy")<<",\"cflRejectedCandidates\":"<<cflRejected<<",\"spatialEvaluations\":"<<spatialEvaluations
         <<",\"maximumSteps\":"<<maximumSteps<<",\"maximumSeconds\":"<<maximumSeconds<<",\"checkpointEvery\":"<<checkpointEvery<<",\"elapsedSeconds\":"<<elapsed
         <<",\"nativeTopologyRevalidated\":true,\"solverQualityPassed\":true,\"externalCheckMesh\":\"not run\""
         <<",\"units\":{\"rho\":\"kg/m3\",\"p\":\"Pa absolute\",\"rhoE\":\"J/m3\",\"temperature\":\"K\",\"flux\":\"outward-owner per unit depth\"}"
         <<",\"initialization\":\"cell-centre sampling; restart replaces complete conserved state\",\"scope\":\"ideal gas with constant Newtonian viscosity and Fourier conduction; planar laminar Stokes hypothesis, no turbulence; target time is not steady convergence\"\n}\n";
     summary.close();std::cout<<status<<": "<<mesh.cells.size()<<" cells, t="<<std::setprecision(17)<<state.time<<", "<<state.steps-initialSteps<<" accepted steps, "<<elapsed<<" s\n";
-    if(!failure.empty())std::cerr<<failure<<'\n';return status=="target_reached"?0:2;
+    if(!failure.empty())std::cerr<<failure<<'\n';return status=="target_reached"||status=="steady_converged"?0:2;
  }catch(const std::exception& e){std::cerr<<"cartmesh2d_euler_cli: "<<e.what()<<'\n';return 1;}
 }
