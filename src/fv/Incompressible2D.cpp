@@ -483,6 +483,7 @@ static FlowResult2D solveFlow(
     const FlowState2D* previous, double timeStep,
     const detail::MaterialUpdate2D& material = {}, const FlowInitialGuess2D* guess = nullptr) {
     auto c=input;
+    c.steadyAcceleration=resolveSteadyAcceleration2D(input,!previous && !material);
     using Clock = std::chrono::steady_clock;
     const auto solveStart = c.profile ? Clock::now() : Clock::time_point{};
     validateFvMesh2D(m);
@@ -1181,17 +1182,25 @@ static FlowResult2D solveFlow(
     return r;
 }
 
+SteadyAcceleration2D resolveSteadyAcceleration2D(const FlowControls2D& c,bool constantPropertySteady) {
+    if(c.steadyAcceleration!=SteadyAcceleration2D::Default)return c.steadyAcceleration;
+    return constantPropertySteady && !c.adaptiveLinear && c.convergence==FlowConvergence2D::Strict
+        ? SteadyAcceleration2D::NewtonKrylov : SteadyAcceleration2D::None;
+}
+
 FlowResult2D solveIncompressible2D(const FvMesh2D& m, const FlowControls2D& c,
     const std::function<void(const FlowIteration2D&)>& progress) {
-    if(c.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
-        return detail::solveNewtonKrylovFlow2D(m,c,nullptr,progress);
-    return solveFlow(m,c,progress,nullptr,0);
+    auto selected=c;selected.steadyAcceleration=resolveSteadyAcceleration2D(c);
+    if(selected.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
+        return detail::solveNewtonKrylovFlow2D(m,selected,nullptr,progress);
+    return solveFlow(m,selected,progress,nullptr,0);
 }
 FlowResult2D solveIncompressibleFromGuess2D(const FvMesh2D& m,const FlowControls2D& c,
     const FlowInitialGuess2D& guess,const std::function<void(const FlowIteration2D&)>& progress) {
-    if(c.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
-        return detail::solveNewtonKrylovFlow2D(m,c,&guess,progress);
-    return solveFlow(m,c,progress,nullptr,0,{},&guess);
+    auto selected=c;selected.steadyAcceleration=resolveSteadyAcceleration2D(c);
+    if(selected.steadyAcceleration==SteadyAcceleration2D::NewtonKrylov)
+        return detail::solveNewtonKrylovFlow2D(m,selected,&guess,progress);
+    return solveFlow(m,selected,progress,nullptr,0,{},&guess);
 }
 FlowResult2D detail::solveMaterialFlow2D(const FvMesh2D& m,const FlowControls2D& c,
     const MaterialUpdate2D& material,const std::function<void(const FlowIteration2D&)>& progress) {

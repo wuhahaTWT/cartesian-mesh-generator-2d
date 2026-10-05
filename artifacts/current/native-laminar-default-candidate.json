@@ -1,0 +1,138 @@
+{
+  "status": "work-in-progress-build-only",
+  "purpose": "Preserve default-method investigation before cloud transfer requested by user. Not release validation or physical qualification.",
+  "comparison_base_commit": "aae74f9c8cfe934fe4df0a3bd060f7433df34c1f",
+  "controls": {
+    "nu": 0.1,
+    "speed": 1,
+    "tolerance": 1e-06,
+    "maxIterations": 1500,
+    "pressurePreconditioner": "IC0",
+    "momentumScheme": "Upwind"
+  },
+  "cases": {
+    "0": "open rectangle channel, 192 and 4096 cells",
+    "1": "closed cavity, 256 and 1024 cells",
+    "2": "manufactured warped mesh, 576 cells"
+  },
+  "records": [
+    {
+      "case": 0,
+      "cells": 192,
+      "newton": false,
+      "converged": true,
+      "evaluations": 42,
+      "seconds": 0.012775959,
+      "momentum": 1.6192032915549893e-07,
+      "pressureChange": 8.439047464876962e-07,
+      "maxFieldDifference": 0
+    },
+    {
+      "case": 0,
+      "cells": 192,
+      "newton": true,
+      "converged": true,
+      "evaluations": 27,
+      "seconds": 0.013213417,
+      "momentum": 3.831361830303496e-08,
+      "pressureChange": 9.322941206913914e-08,
+      "maxFieldDifference": 2.208378126589139e-06
+    },
+    {
+      "case": 0,
+      "cells": 4096,
+      "newton": false,
+      "converged": true,
+      "evaluations": 406,
+      "seconds": 4.337771083,
+      "momentum": 1.058729242843945e-07,
+      "pressureChange": 9.782426327572837e-07,
+      "maxFieldDifference": 0
+    },
+    {
+      "case": 0,
+      "cells": 4096,
+      "newton": true,
+      "converged": true,
+      "evaluations": 81,
+      "seconds": 1.170297625,
+      "momentum": 1.715465097814257e-07,
+      "pressureChange": 4.4884878682503104e-07,
+      "maxFieldDifference": 4.559471110976432e-05
+    },
+    {
+      "case": 1,
+      "cells": 256,
+      "newton": false,
+      "converged": true,
+      "evaluations": 130,
+      "seconds": 0.038628667,
+      "momentum": 3.126704189705817e-07,
+      "pressureChange": 4.556159115643897e-07,
+      "maxFieldDifference": 0
+    },
+    {
+      "case": 1,
+      "cells": 256,
+      "newton": true,
+      "converged": true,
+      "evaluations": 40,
+      "seconds": 0.018994,
+      "momentum": 1.9766559719197407e-08,
+      "pressureChange": 6.849662453395859e-08,
+      "maxFieldDifference": 1.2314700730681194e-05
+    },
+    {
+      "case": 1,
+      "cells": 1024,
+      "newton": false,
+      "converged": true,
+      "evaluations": 428,
+      "seconds": 0.740152083,
+      "momentum": 3.3080733376613457e-07,
+      "pressureChange": 5.032574251268522e-07,
+      "maxFieldDifference": 0
+    },
+    {
+      "case": 1,
+      "cells": 1024,
+      "newton": true,
+      "converged": true,
+      "evaluations": 63,
+      "seconds": 0.163043125,
+      "momentum": 1.4549665736243978e-07,
+      "pressureChange": 4.347923120530016e-07,
+      "maxFieldDifference": 4.407649648932588e-05
+    },
+    {
+      "case": 2,
+      "cells": 576,
+      "newton": false,
+      "converged": true,
+      "evaluations": 331,
+      "seconds": 0.569042208,
+      "momentum": 1.5098305464371222e-07,
+      "pressureChange": 9.712895453585122e-07,
+      "maxFieldDifference": 0
+    },
+    {
+      "case": 2,
+      "cells": 576,
+      "newton": true,
+      "converged": true,
+      "evaluations": 67,
+      "seconds": 0.151665833,
+      "momentum": 5.002458939978563e-08,
+      "pressureChange": 1.9322083993406572e-07,
+      "maxFieldDifference": 2.8570927200433083e-05
+    }
+  ],
+  "limits": [
+    "Measured process samples are not general performance guarantees.",
+    "maxFieldDifference combines raw velocity and pressure values; not a dimensionless physical accuracy gate.",
+    "Records compare explicit original SIMPLE and Newton before changing the default.",
+    "Default patch builds; new tests, frontend expected-default updates and runtime qualification remain pending."
+  ],
+  "probe_source": "#define main inherited_boundary_test_main\n#include \"../../../tests/flow_boundary_test.cpp\"\n#undef main\n#include <chrono>\n#include <iomanip>\nint main() {\n    std::cout<<std::setprecision(17);\n    for(const auto shape:{std::array<int,3>{24,8,0},{128,32,0},{16,16,1},{32,32,1},{24,24,2}}) {\n        const auto mesh=rectangle(shape[0],shape[1],shape[2]==0?4:1,shape[2]==2);\n        auto c=conditions(mesh,shape[2]==1);c.nu=.1;c.tolerance=1e-6;c.maxIterations=1500;c.profile=true;\n        c.pressurePreconditioner=PressurePreconditioner2D::IncompleteCholesky0;\n        if(shape[2]==2){c.scenario=\"manufactured\";c.boundaryConditions.clear();}\n        FlowResult2D baseline;\n        for(bool newton:{false,true}) {\n            c.steadyAcceleration=newton?SteadyAcceleration2D::NewtonKrylov:SteadyAcceleration2D::None;\n            const auto start=std::chrono::steady_clock::now();\n            try {\n                const auto r=solveIncompressible2D(mesh,c);\n                const auto& step=r.history.back();\n                double fieldDifference=0;\n                if(newton && baseline.converged && r.converged)for(std::size_t i=0;i<r.u.size();++i)\n                    fieldDifference=std::max({fieldDifference,std::abs(r.u[i]-baseline.u[i]),std::abs(r.v[i]-baseline.v[i]),std::abs(r.p[i]-baseline.p[i])});\n                std::cout<<\"{\\\"case\\\":\"<<shape[2]<<\",\\\"cells\\\":\"<<mesh.cells.size()<<\",\\\"newton\\\":\"<<(newton?\"true\":\"false\")<<\",\\\"converged\\\":\"<<(r.converged?\"true\":\"false\")\n                    <<\",\\\"evaluations\\\":\"<<step.iteration<<\",\\\"seconds\\\":\"<<std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()\n                    <<\",\\\"momentum\\\":\"<<step.momentumResidual<<\",\\\"pressureChange\\\":\"<<step.pressureChange<<\",\\\"maxFieldDifference\\\":\"<<fieldDifference<<\"}\"<<std::endl;\n                if(!newton)baseline=r;\n            } catch(const std::exception& e) {\n                std::cout<<\"{\\\"case\\\":\"<<shape[2]<<\",\\\"cells\\\":\"<<mesh.cells.size()<<\",\\\"newton\\\":\"<<(newton?\"true\":\"false\")<<\",\\\"error\\\":\"<<std::quoted(e.what())<<\"}\"<<std::endl;\n            }\n        }\n    }\n}\n",
+  "build_log_tail": "]\n  482 |     rejects([&]{advanceIncompressible2D(mesh,c,state,.1);});\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~\n/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/tests/flow_boundary_test.cpp:505:68: warning: ignoring return value of function declared with 'nodiscard' attribute [-Wunused-result]\n  505 |         rejects([&]{std::istringstream changed(boundaryFile.str());readFlowBoundaryConditions2D(changed,rotated(mesh,.3),control);});\n      |                                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/tests/flow_boundary_test.cpp:506:76: warning: ignoring return value of function declared with 'nodiscard' attribute [-Wunused-result]\n  506 |         rejects([&]{std::istringstream changed(boundaryFile.str()+\"EXTRA\");readFlowBoundaryConditions2D(changed,mesh,control);});\n      |                                                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~\n/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/tests/flow_boundary_test.cpp:531:53: warning: ignoring return value of function declared with 'nodiscard' attribute [-Wunused-result]\n  531 |         bad=control;bad.scenario=\"duct\";rejects([&]{solveIncompressible2D(mesh,bad);});\n      |                                                     ^~~~~~~~~~~~~~~~~~~~~\n5 warnings generated.\n[100%] Linking CXX executable cartmesh2d_flow_boundary_tests\n[100%] Built target cartmesh2d_flow_boundary_tests\n[ 63%] Built target cartmesh2d\n[ 96%] Built target cartmesh2d_fv\n[100%] Building CXX object CMakeFiles/cartmesh2d_thermal_flow_tests.dir/tests/thermal_flow_test.cpp.o\n[100%] Linking CXX executable cartmesh2d_thermal_flow_tests\n[100%] Built target cartmesh2d_thermal_flow_tests\n[ 63%] Built target cartmesh2d\n[ 96%] Built target cartmesh2d_fv\n[100%] Building CXX object CMakeFiles/cartmesh2d_flow_checkpoint_tests.dir/tests/flow_checkpoint_test.cpp.o\n[100%] Linking CXX executable cartmesh2d_flow_checkpoint_tests\n[100%] Built target cartmesh2d_flow_checkpoint_tests\n[ 63%] Built target cartmesh2d\n[ 96%] Built target cartmesh2d_fv\n[ 96%] Building CXX object CMakeFiles/cartmesh2d_flow_initialization_tests.dir/tests/flow_initialization_test.cpp.o\n[100%] Linking CXX executable cartmesh2d_flow_initialization_tests\n[100%] Built target cartmesh2d_flow_initialization_tests\n"
+}

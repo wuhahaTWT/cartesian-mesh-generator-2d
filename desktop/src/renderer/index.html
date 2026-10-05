@@ -305,14 +305,14 @@
         <input id="flowPressureCorrections" type="number" min="1" max="4" step="1" value="4">
       </label>
       <p class="note">默认4次非正交校正。困难网格可尝试1次并降低速度松弛；可能改善迭代稳定性，也可能减慢收敛。最终守恒和残差门不变，不代表物理精度已合格；温度联算使用4次。</p>
-      <label class="field">稳态迭代加速
+      <label class="field">稳态求解方法
         <select id="flowSteadyAcceleration">
-          <option value="none" selected>关闭（默认）</option>
+          <option value="none">分离迭代（SIMPLE）</option>
           <option value="anderson">历史迭代加速（Anderson，试验）</option>
-          <option value="newton-krylov">整体耦合求解（Newton–Krylov，试验）</option>
+          <option value="newton-krylov" selected>整体耦合求解（Newton–Krylov，默认）</option>
         </select>
       </label>
-      <p class="note">历史迭代可减少部分算例的迭代；整体耦合面向困难稳态，需要固定线性精度，预算包含全部试算与收敛复核。两者保持原收敛要求，不保证所有工况更快；非定常和温度联算不使用。</p>
+      <p class="note">固定线性精度的稳态默认使用整体耦合，预算包含全部试算与严格收敛复核。SIMPLE 和历史迭代可显式选择。物理时间推进、温度联算保持原求解方式；数值收敛不代表物理精度已经验证。</p>
       <label class="field">出口回流
         <select id="flowOutletBackflow">
           <option value="reject" selected>检测到回流时停止</option>

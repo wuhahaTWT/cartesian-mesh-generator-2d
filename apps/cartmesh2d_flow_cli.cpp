@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
             }
             if (a == "--help") {
                 std::cout
-                    << "Native 2D incompressible laminar SIMPLE (experimental)\n"
+                    << "Native 2D incompressible laminar flow (development)\n"
             "--mesh FINAL.solver.cm2d --output PREFIX --case external|channel|duct|custom|cavity|manufactured|counterflow\n"
             "--case custom --boundary FILE: named, mesh-bound velocity inlet/pressure outlet/pressure opening/symmetry/wall conditions.\n"
             "--export-boundaries FILE: export channel/duct/cavity/annulus preset without solving; --output optional.\n"
@@ -179,6 +179,8 @@ int main(int argc, char** argv) {
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
+            "Default strict steady solver: newton-krylov; --steady-acceleration none selects original SIMPLE.\n"
+            "Time stepping, material/adaptive/engineering controls retain the SIMPLE context default.\n"
             "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
             "--velocity-relaxation 0.6: steady or transient inner iterations; (0,1], larger may be unstable.\n"
             "--linear-policy strict|adaptive (laminar); --convergence strict|engineering (steady only).\n"
@@ -344,6 +346,8 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("initial-guess requires an actual steady solve");
         if(controls.convergence!=fv::FlowConvergence2D::Strict && timeStep>0)
             throw std::invalid_argument("Engineering convergence requires steady laminar flow");
+        controls.steadyAcceleration=fv::resolveSteadyAcceleration2D(
+            controls,timeStep==0 && boundaryExportPath.empty());
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
         if (vortexOptions) {

@@ -109,10 +109,10 @@ function validateFlowRequest(request = {}) {
   if (viscousStress !== VISCOUS_STRESS) throw new Error('未知黏性应力格式。当前仅支持 symmetric。');
   const mode = request.mode ?? 'steady';
   if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
-  const steadyAcceleration=request.steadyAcceleration ?? 'none';
+  const linearPolicy=request.linearPolicy ?? 'strict';
+  const steadyAcceleration=request.steadyAcceleration ?? (mode==='steady' && linearPolicy==='strict'?'newton-krylov':'none');
   if (!['none','anderson','newton-krylov'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
     throw new Error('稳态加速仅支持稳态流动的 none、anderson 或 newton-krylov。');
-  const linearPolicy=request.linearPolicy ?? 'strict';
   if (!['strict','adaptive'].includes(linearPolicy)) throw new Error('线性迭代精度须为 strict 或 adaptive。');
   if (steadyAcceleration==='newton-krylov' && linearPolicy!=='strict')
     throw new Error('整体耦合求解需要固定线性精度（strict）。');
@@ -166,7 +166,8 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
       '--min-time-step',String(validated.minDt),'--max-courant',String(validated.maxCourant),
       '--max-step-retries',String(validated.maxRetries),'--max-time-steps',String(validated.maxSteps)] : [];
   if (validated.resume) temporalArgs.push('--restart', restartPath);
-  if (validated.steadyAcceleration!=='none') temporalArgs.push('--steady-acceleration',validated.steadyAcceleration);
+  // Always bind a steady method, including explicit legacy SIMPLE: omission now selects the native context default.
+  if (validated.mode==='steady') temporalArgs.push('--steady-acceleration',validated.steadyAcceleration);
   if (validated.linearPolicy!=='strict') temporalArgs.push('--linear-policy',validated.linearPolicy);
   if (validated.velocityRelaxation!==.6) temporalArgs.push('--velocity-relaxation',String(validated.velocityRelaxation));
   if (validated.pressureCorrectionPasses!==4) temporalArgs.push('--pressure-corrections',String(validated.pressureCorrectionPasses));

@@ -54,6 +54,7 @@ FvMesh2D rectangle(int nx=24, int ny=8, double length=4, bool warped=false) {
 
 FlowControls2D conditions(const FvMesh2D& mesh, bool cavity=false) {
     FlowControls2D c;c.scenario="custom";c.nu=.2;c.tolerance=1e-10;c.maxIterations=3000;
+    c.steadyAcceleration=SteadyAcceleration2D::None; // Explicit reference algorithm for these comparisons.
     c.pressurePreconditioner=PressurePreconditioner2D::Aggregation;
     for (std::size_t id=0;id<mesh.faces.size();++id) {
         const auto& face=mesh.faces[id];if(face.neighbour)continue;
@@ -206,6 +207,30 @@ void steadyRelaxationIndependence() {
     compare(original,solveIncompressible2D(cavity,single));
     closed.steadyAcceleration=SteadyAcceleration2D::Anderson;
     compare(original,solveIncompressible2D(cavity,closed));
+}
+
+void contextDefaultSolver() {
+    const auto mesh=rectangle(12,6,3,true);auto c=conditions(mesh);
+    c.nu=.1;c.tolerance=1e-6;c.maxIterations=300;
+    c.steadyAcceleration=FlowControls2D{}.steadyAcceleration;
+    const auto actual=solveIncompressible2D(mesh,c);
+    auto explicitNewton=c;explicitNewton.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
+    const auto expected=solveIncompressible2D(mesh,explicitNewton);
+    require(actual.converged && actual.performance.coupledEvaluations>0 && actual.u==expected.u &&
+        actual.v==expected.v && actual.p==expected.p && actual.flux==expected.flux,
+        "Default strict steady solve differs from the coupled solver");
+    auto timeControl=c;timeControl.maxIterations=1000;
+    const auto initial=initialIncompressibleState2D(mesh,timeControl);
+    const auto advanced=advanceIncompressible2D(mesh,timeControl,initial,.01);
+    auto explicitSimple=timeControl;explicitSimple.steadyAcceleration=SteadyAcceleration2D::None;
+    const auto reference=advanceIncompressible2D(mesh,explicitSimple,initial,.01);
+    require(advanced.converged && advanced.performance.coupledEvaluations==0 && advanced.u==reference.u &&
+        advanced.v==reference.v && advanced.p==reference.p && advanced.flux==reference.flux,
+        "Context default changed physical time stepping");
+    c.adaptiveLinear=true;
+    require(resolveSteadyAcceleration2D(c)==SteadyAcceleration2D::None,"Adaptive context default bypassed its requested linear policy");
+    c.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
+    rejects([&]{(void)solveIncompressible2D(mesh,c);});
 }
 
 void coupledNewtonStability() {
@@ -466,6 +491,7 @@ int main() {
     try {
         cachedGradientGeometry();
         steadyRelaxationIndependence();
+        contextDefaultSolver();
         coupledNewtonStability();
         pressureOpenings();
         symmetryBoundaries();

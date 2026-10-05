@@ -13,7 +13,7 @@ enum class PressurePreconditioner2D { Jacobi, IncompleteCholesky0, Aggregation, 
 enum class ViscousStress2D { Laplacian, Symmetric };
 enum class OutletBackflow2D { Reject, NormalInlet };
 enum class FlatPlateTop2D { PressureFarfield, Symmetry };
-enum class SteadyAcceleration2D { None, Anderson, NewtonKrylov };
+enum class SteadyAcceleration2D { None, Anderson, NewtonKrylov, Default };
 enum class FlowConvergence2D { Strict, Engineering };
 
 // PressureOpening prescribes static kinematic pressure on axis-aligned faces.
@@ -54,7 +54,10 @@ struct FlowControls2D {
     // Optional safeguarded coupled iteration. Steady laminar only.
     // NewtonKrylov requires strict linear/convergence controls. maxIterations
     // bounds all SIMPLE evaluations, including trial directions and certification.
-    SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::None;
+    // Context default: coupled Newton for strict constant-property steady
+    // solves; ordinary SIMPLE for physical time/material/adaptive controls.
+    // Explicit None/Anderson/NewtonKrylov always retain their requested meaning.
+    SteadyAcceleration2D steadyAcceleration = SteadyAcceleration2D::Default;
     // Explicit opt-ins preserve existing API/checkpoint and verification cases.
     // Engineering stopping is steady laminar only; it also requires a 50-step
     // window of field/physical-monitor stability and a strict final linear step.
@@ -93,6 +96,10 @@ struct FlowControls2D {
     // need a hard timeout. Callback exceptions propagate. Empty is unchanged.
     std::function<bool()> stopRequested;
 };
+
+// Resolve the context default before solving or reporting effective controls.
+[[nodiscard]] SteadyAcceleration2D resolveSteadyAcceleration2D(
+    const FlowControls2D&, bool constantPropertySteady = true);
 
 // Validates coverage, ownership, names, physical types and impermeability.
 // Does not infer or repair missing conditions. The mesh must be validated first.
