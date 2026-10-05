@@ -98,7 +98,8 @@ function thermalCheckpointTime(text) {
   // Native text streams use CRLF on Windows; line endings are not part of the
   // physical checkpoint identity. Keep the same version and field checks.
   text=text.replace(/\r\n/g,'\n');
-  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT 1\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
+  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT [13]\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
+  if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 3'))requireValue(/^EVENTS 0$/m.test(text),'包含时间事件的状态须用原完整 CLI 配置续算。');
   const parts=text.split('\nFLOW\n');
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
   const m=parts[1].match(/^TIME (\S+)$/m);

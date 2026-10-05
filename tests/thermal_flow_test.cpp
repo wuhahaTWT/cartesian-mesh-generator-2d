@@ -329,9 +329,15 @@ void controlledTimeAndEvents() {
     check(first.step.accepted.has_value(),"controlled first accepted");
     if(!first.step.accepted)return;
     std::stringstream saved;writeThermalCheckpoint2D(saved,mesh,fc,data,sc,*first.step.accepted);
-    const auto text=saved.str();check(text.starts_with("CARTMESH2D_THERMAL_CHECKPOINT 2"),"event checkpoint version 2");
+    const auto text=saved.str();check(text.starts_with("CARTMESH2D_THERMAL_CHECKPOINT 3"),"controlled event checkpoint version 3");
     const auto restored=readThermalCheckpoint2D(saved,mesh,fc,data,sc);
-    compareState(continuous,evolve(restored),"stateless controller split restart");
+    check(restored.controller && restored.controller->nextStep==first.step.accepted->controller->nextStep,"suggested step restored exactly");
+    compareState(continuous,evolve(restored),"checkpointed controller split restart");
+    auto changedControls=c;changedControls.limits.maximumStep=.02;
+    auto withoutHistory=restored;withoutHistory.controller.reset();
+    const auto reset=advanceControlledThermalFlow2D(mesh,fc,data,sc,restored,changedControls);
+    const auto clean=advanceControlledThermalFlow2D(mesh,fc,data,sc,withoutHistory,changedControls);
+    compareState(*reset.step.accepted,*clean.step.accepted,"changed numerical controls reset recommendations");
     auto changed=data;changed.events[0].sourceDensity[0]+=1.;
     rejects([&]{std::stringstream in(text);(void)readThermalCheckpoint2D(in,mesh,fc,changed,sc);},"event source","complete event law bound to restart");
     rejects([&]{(void)advanceThermalFlow2D(mesh,fc,data,sc,start,.05);},"crosses event","fixed step cannot straddle event");

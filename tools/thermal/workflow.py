@@ -2,7 +2,7 @@
 """Reproducible native CLI cases. Python only configures and reads output data;
 no independent equation or topology reconstruction/audit chain.
 """
-import argparse, csv, json, math, platform, subprocess, time, hashlib
+import argparse, csv, json, math, platform, subprocess, time, hashlib, shutil
 from pathlib import Path
 
 def run(cmd, log):
@@ -73,6 +73,10 @@ def execute(args):
         if r['code']:raise RuntimeError(r)
     flow,bc,event,cells=configure(mesh,args.case,root,speed=args.speed)
     prefix=root/args.label
+    frozen=[]
+    for input_path,suffix in [(flow,'.input.flow.boundaries'),(bc,'.input.thermal.csv'),(event,'.input.events.csv')]:
+        target=Path(str(prefix)+suffix);shutil.copyfile(input_path,target);frozen.append(target)
+    flow,bc,event=frozen
     cmd=[args.transport_cli,'--mesh',mesh,'--output',prefix,'--evolve-flow','custom','--flow-boundary',flow,
          '--boundary',bc,'--flow-nu',args.nu,'--flow-speed',args.speed or ('1' if args.case=='channel' else '.2'),'--flow-velocity-relaxation',args.relaxation,
          '--diffusivity',args.diffusivity,'--initial','300','--dt',args.dt,'--end-time',args.end,

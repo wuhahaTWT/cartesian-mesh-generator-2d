@@ -57,7 +57,7 @@ ThermalFlowResult2D advanceThermalFlow2D(const FvMesh2D& mesh,
     result.scalar=solveScalarTransport2D(mesh,scalar,scalarControls,previous.scalar,timeStep);
     if (result.scalar.converged)
         result.accepted=ThermalFlowState2D{
-            {result.flow.time,result.flow.u,result.flow.v,result.flow.p,result.flow.flux},result.scalar.values};
+            {result.flow.time,result.flow.u,result.flow.v,result.flow.p,result.flow.flux},result.scalar.values,{}};
     return result;
 }
 }
@@ -75,13 +75,24 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
     auto limits=c.limits;
     for (const auto& event:setup.events)
         if (event.time>previous.flow.time) {limits.targetTime=std::min(limits.targetTime,event.time);break;}
+    const std::vector<double> signature={c.limits.maximumStep,c.limits.minimumStep,c.limits.maximumCourant,
+        c.estimateError?1.:0.,c.temperatureScale,c.velocityScale,c.relativeTolerance,
+        c.temperatureAbsoluteTolerance,c.velocityAbsoluteTolerance,fc.velocityRelaxation};
+    const bool reuse=previous.controller && previous.controller->controls==signature;
     double dt=nextAdaptiveFlowTimeStep2D(mesh,previous.flow,limits);
+    if(reuse) {
+        const auto& h=*previous.controller;
+        if(!std::isfinite(h.nextStep)||h.nextStep<=0 || !std::isfinite(h.velocityRelaxation)||h.velocityRelaxation<=0||h.velocityRelaxation>1)
+            throw std::invalid_argument("Invalid accepted thermal controller history");
+        dt=std::min(dt,std::max(std::min(limits.minimumStep,limits.targetTime-previous.flow.time),h.nextStep));
+    }
     if (dt==0) throw std::invalid_argument("Thermal target must exceed accepted time");
     ThermalControlledResult2D out;
     const auto checkCancel=[&]() {
         if (cancelled && cancelled()) throw std::runtime_error("Thermal calculation cancelled; accepted state retained");
     };
     auto trialFlow=fc;
+    if(reuse)trialFlow.velocityRelaxation=std::min(fc.velocityRelaxation,previous.controller->velocityRelaxation);
     auto trialScalar=sc;
     trialScalar.stopRequested=[&] {return (cancelled && cancelled()) || (sc.stopRequested && sc.stopRequested());};
     const auto run=[&](const ThermalFlowState2D& start,double h) {
@@ -122,6 +133,13 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
             if (dt==limits.targetTime-previous.flow.time) {
                 full.flow.time=limits.targetTime;full.accepted->flow.time=limits.targetTime;
             }
+            // BE local defect scales as dt^2. Grow at most twice, and leave
+            // a 10% error-budget margin. CFL predictor still caps the next trial.
+            const double factor=c.estimateError && error>0?std::clamp(.9/std::sqrt(error),.5,2.):2.;
+            const double suggested=std::clamp(dt*factor,c.limits.minimumStep,c.limits.maximumStep);
+            double relaxation=trialFlow.velocityRelaxation;
+            if(full.flow.history.size()<20)relaxation=std::min(fc.velocityRelaxation,1.2*relaxation);
+            full.accepted->controller=ThermalControllerHistory2D{signature,suggested,relaxation};
             out.step=std::move(full);return out;
         }
         out.step=std::move(full);out.step.accepted.reset();

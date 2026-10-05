@@ -1182,6 +1182,37 @@ async function runSmoke() {
       document.getElementById('eulerBlock').scrollIntoView({block:'start'});
       smoke.state.eulerSmoke={wallGradient:first.summary.wallGradient,wallGradientControlsReachedNative:true,wallGradientChangeClearedStaleResult:true,dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
+    if (${JSON.stringify(argument('thermal-adaptive') === 'true')}) {
+      for(const [id,value] of Object.entries({flowCase:'channel',flowNu:'.1',flowSpeed:'.2',flowConvection:'limited-linear',
+        flowPressurePreconditioner:'ic0',flowOutletBackflow:'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
+        flowMinDt:'.000001',flowMaxCourant:'1',flowMaxRetries:'18',flowMaxSteps:'100000',
+        thermalDiffusivity:'.1',thermalInitial:'300',thermalTopValue:'301',thermalBottomValue:'300',
+        thermalTemperatureScale:'1',thermalTimeRtol:'.01'}))document.getElementById(id).value=value;
+      document.getElementById('thermalTopKind').value='value';document.getElementById('thermalBottomKind').value='value';
+      document.getElementById('thermalTimeError').checked=true;
+      document.getElementById('flowMode').dispatchEvent(new Event('change'));
+      if(document.getElementById('runThermal').disabled)throw new Error('Adaptive thermal button is disabled');
+      await smoke.runThermal();
+      if(smoke.state.thermal?.summary.time!==.5 || smoke.state.thermal.summary.timeStepControl!=='joint-cfl-be-error-retry')
+        throw new Error('Joint adaptive/error controller did not reach actual renderer');
+      const first=smoke.state.thermal;
+      document.getElementById('flowEndTime').value='.8';document.getElementById('flowDt').value='.05';
+      await smoke.runThermal();
+      if(smoke.state.thermal?.summary.time!==.8)throw new Error('Adaptive thermal restart failed');
+      const complete=smoke.state.thermal;
+      document.getElementById('flowEndTime').value='1.3';document.getElementById('flowMaxSteps').value='1';
+      await smoke.runThermal();
+      // IPC restores a structured clone, so compare the accepted physical
+      // result and its files rather than JavaScript object identity.
+      if(JSON.stringify(smoke.state.thermal)!==JSON.stringify(complete) || !(smoke.state.thermalRestart?.time>.8))
+        throw new Error('Adaptive failure did not retain displayed result and latest accepted restart');
+      document.getElementById('flowMaxSteps').value='100000';await smoke.runThermal();
+      if(smoke.state.thermal?.summary.time!==1.3)throw new Error('Resume after adaptive budget exhaustion failed');
+      document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
+      if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
+      smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,firstTime:first.summary.time,changedStepResume:true,
+        failedBudgetRetained:true,resumeAfterFailure:true,finalTime:1.3};
+    }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1'})) document.getElementById(id).value=value;
       await smoke.runThermal();
@@ -1220,10 +1251,11 @@ async function runSmoke() {
       const saved=smoke.state.thermalRestart;
       if(!saved || !document.getElementById('thermalResume').checked || document.getElementById('runThermal').disabled)
         throw new Error('Imported thermal checkpoint cannot be resumed from the desktop');
-      if(document.getElementById('flowMode').value!=='transient' || document.getElementById('flowInitialVortex').checked)
+      if(document.getElementById('flowMode').value!=='adaptive' || document.getElementById('flowInitialVortex').checked)
         throw new Error('Thermal import retained incompatible standalone initialization');
       for(const id of ['flowNu','thermalDiffusivity','thermalWallValue'])
         if(!document.getElementById(id).disabled) throw new Error('Thermal restart physics is not locked: '+id);
+      document.getElementById('flowMode').value='transient';document.getElementById('flowMode').dispatchEvent(new Event('change'));
       const dt=Number(${JSON.stringify(argument('flow-dt') || '.025')});
       for(const [id,value] of Object.entries({flowDt:dt,flowSteps:2,flowMaxIterations:saved.request.maxIterations,
         flowPressurePreconditioner:saved.request.pressurePreconditioner,flowTolerance:saved.request.tolerance}))
@@ -1308,7 +1340,8 @@ async function runSmoke() {
         fieldCells:smoke.state.thermal.fields.cells.length,historyRows:smoke.state.thermal.history.length,
         resultText:document.getElementById('thermalResult').innerText,restart:smoke.state.thermalRestart,
         displayMode:document.getElementById('displayMode').value,monitorVisible:!document.getElementById('thermalTimeline').hidden,
-        failureAndCancelResumeChecked:true} : null,
+        checks:smoke.state.thermalSmoke || null,
+        failureAndCancelResumeChecked:${JSON.stringify(argument('thermal') === 'true')}} : null,
       flow: smoke.state.flow ? {
         summary: smoke.state.flow.summary,
         fieldCells: smoke.state.flow.fields.cells.length,

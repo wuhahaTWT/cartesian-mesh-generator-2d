@@ -16,9 +16,14 @@ struct ThermalSetup2D {
     std::vector<ScalarBoundary2D> boundary;
     std::vector<ThermalEvent2D> events; // complete snapshots; bound to restart
 };
+struct ThermalControllerHistory2D {
+    std::vector<double> controls; // exact numerical signature; reset on change
+    double nextStep=0, velocityRelaxation=0;
+};
 struct ThermalFlowState2D {
     FlowState2D flow; // the single physical clock for both fields
     std::vector<double> scalar;
+    std::optional<ThermalControllerHistory2D> controller;
 };
 struct ThermalFlowResult2D {
     FlowResult2D flow;
@@ -43,8 +48,8 @@ struct ThermalControlledResult2D {
     ThermalFlowResult2D step;
     std::vector<ThermalAttempt2D> attempts;
 };
-// Stateless controller: next proposal depends only on accepted fields and limits.
-// Thus checkpoint restart needs no hidden controller history. BE full step is
+// Accepted recommendation/history is explicit and checkpointed. A change to
+// numerical controls resets it; physical compatibility remains strict. BE full step is
 // accepted; two half steps estimate its error, without Richardson extrapolation.
 [[nodiscard]] ThermalControlledResult2D advanceControlledThermalFlow2D(
     const FvMesh2D&, const FlowControls2D&, const ThermalSetup2D&,

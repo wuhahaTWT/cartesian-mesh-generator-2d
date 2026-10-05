@@ -1715,3 +1715,5 @@ function renderRegions() {
 }
 
 for(const id of ['backgroundMode','backgroundLevel','backgroundMinimumLevel','backgroundPadding']) $(id).addEventListener('change',updateReady);
+
+for(const id of ['thermalTimeError','thermalTemperatureScale','thermalTimeRtol'])$(id).addEventListener('input',updateThermalMode);

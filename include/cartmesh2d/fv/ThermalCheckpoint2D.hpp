@@ -22,7 +22,7 @@ inline void writeThermalCheckpoint2D(std::ostream& out,const FvMesh2D& mesh,
         ~RestoreFormat(){s.flags(flags);s.precision(precision);}
     } restore{out,out.flags(),out.precision()};
     out<<std::defaultfloat<<std::dec<<std::noshowpos<<std::noshowbase<<std::setprecision(17);
-    out<<"CARTMESH2D_THERMAL_CHECKPOINT "<<(setup.events.empty()?1:2)<<"\nCOUPLING new-time-flux-Euler-v1\nTHERMAL_CONFIG "
+    out<<"CARTMESH2D_THERMAL_CHECKPOINT "<<(state.controller?3:setup.events.empty()?1:2)<<"\nCOUPLING new-time-flux-Euler-v1\nTHERMAL_CONFIG "
        <<setup.diffusivity<<' '<<flow_checkpoint_detail::convectionName(controls.convection)<<'\n';
     out<<"SOURCES "<<setup.sourceDensity.size();
     for (double s:setup.sourceDensity) out<<' '<<s;
@@ -36,7 +36,16 @@ inline void writeThermalCheckpoint2D(std::ostream& out,const FvMesh2D& mesh,
         if (b.inflowValue) out<<' '<<*b.inflowValue;
         out<<'\n';
     }
-    if (!setup.events.empty()) {
+    if(state.controller) {
+        const auto& h=*state.controller;
+        if(h.controls.size()!=10 || !std::isfinite(h.nextStep)||h.nextStep<=0 ||
+           !std::isfinite(h.velocityRelaxation)||h.velocityRelaxation<=0||h.velocityRelaxation>1)
+            flow_checkpoint_detail::fail("invalid thermal controller history");
+        out<<"CONTROLLER "<<h.nextStep<<' '<<h.velocityRelaxation;
+        for(double v:h.controls) {flow_checkpoint_detail::finite(v,"controller control");out<<' '<<v;}
+        out<<'\n';
+    }
+    if (!setup.events.empty() || state.controller) {
         out<<"EVENTS "<<setup.events.size()<<'\n';
         for (const auto& e:setup.events) {
             out<<"EVENT "<<e.time<<'\n';
@@ -61,7 +70,7 @@ inline ThermalFlowState2D readThermalCheckpoint2D(std::istream& in,const FvMesh2
     validateThermalSetup2D(mesh,setup);
     using namespace flow_checkpoint_detail;
     token(in,"CARTMESH2D_THERMAL_CHECKPOINT");
-    std::string version;if(!(in>>version)||(version!="1"&&version!="2"))fail("thermal checkpoint version invalid");
+    std::string version;if(!(in>>version)||(version!="1"&&version!="2"&&version!="3"))fail("thermal checkpoint version invalid");
     if(version=="1"&&!setup.events.empty())fail("thermal events missing in legacy checkpoint");
     token(in,"COUPLING");token(in,"new-time-flux-Euler-v1");token(in,"THERMAL_CONFIG");
     double diffusivity=0;std::string scheme;
@@ -85,7 +94,16 @@ inline ThermalFlowState2D readThermalCheckpoint2D(std::istream& in,const FvMesh2
         exact(value,expected.value,"thermal boundary value");
         if(hasInflow) {double v=0;if(!(in>>v))fail("truncated thermal inflow");exact(v,*expected.inflowValue,"thermal inflow");}
     }
-    if(version=="2") {
+    std::optional<ThermalControllerHistory2D> controller;
+    if(version=="3") {
+        token(in,"CONTROLLER");ThermalControllerHistory2D h;
+        if(!(in>>h.nextStep>>h.velocityRelaxation))fail("truncated thermal controller");
+        finite(h.nextStep,"controller step");finite(h.velocityRelaxation,"controller relaxation");
+        if(h.nextStep<=0||h.velocityRelaxation<=0||h.velocityRelaxation>1)fail("invalid thermal controller");
+        h.controls.resize(10);for(auto& v:h.controls) {if(!(in>>v))fail("truncated controller controls");finite(v,"controller control");}
+        controller=std::move(h);
+    }
+    if(version=="2" || version=="3") {
         token(in,"EVENTS");count(in,setup.events.size(),"thermal events");
         for(const auto& e:setup.events) {
             token(in,"EVENT");double t=0;if(!(in>>t))fail("truncated event time");exact(t,e.time,"thermal event time");
@@ -103,7 +121,7 @@ inline ThermalFlowState2D readThermalCheckpoint2D(std::istream& in,const FvMesh2
             }
         }
     }
-    ThermalFlowState2D state;
+    ThermalFlowState2D state;state.controller=std::move(controller);
     token(in,"SCALAR");count(in,mesh.cells.size(),"thermal scalar");state.scalar.resize(mesh.cells.size());
     for(double& s:state.scalar) {
         if(!(in>>s))fail("truncated thermal scalar");

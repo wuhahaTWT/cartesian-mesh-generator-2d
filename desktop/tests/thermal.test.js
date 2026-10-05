@@ -259,3 +259,9 @@ test('thermal adaptive invocation carries joint CFL, error scales and budgets', 
   assert.throws(()=>validateThermalRequest({...r,temperatureScale:0}),/尺度/);
   assert.throws(()=>validateThermalRequest({...r,timeRtol:NaN}),/有限数/);
 });
+
+test('checkpointed controller metadata is accepted while event laws require full CLI setup',()=>{
+  const record='CARTMESH2D_THERMAL_CHECKPOINT 3\nCOUPLING new-time-flux-Euler-v1\nCONTROLLER 0.01 0.6\nEVENTS 0\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.1\nFLUX 1 0\n';
+  assert.equal(thermalCheckpointTime(record),.1);
+  assert.throws(()=>thermalCheckpointTime(record.replace('EVENTS 0','EVENTS 1')),/时间事件/);
+});
