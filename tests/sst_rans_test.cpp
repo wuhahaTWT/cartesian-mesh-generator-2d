@@ -38,7 +38,8 @@ void materialContract(const FvMesh2D& m) {
     rejects([&]{(void)detail::solveMaterialFlow2D(m,adaptive,[&](const auto&,const auto&) {
         return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),true};
     });});
-    const auto old=solveIncompressible2D(m,c);std::size_t updates=0;
+    auto legacy=c;legacy.steadyAcceleration=SteadyAcceleration2D::None;
+    const auto old=solveIncompressible2D(m,legacy);std::size_t updates=0;
     auto same=detail::solveMaterialFlow2D(m,c,[&](const auto& flow,const auto& bc) {
         require(flow.u.size()==m.cells.size()&&bc.size()==m.faces.size(),"callback current state missing");
         ++updates;return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),true};
@@ -46,11 +47,17 @@ void materialContract(const FvMesh2D& m) {
     require(old.converged&&same.converged&&same.u==old.u&&same.v==old.v&&same.p==old.p&&same.flux==old.flux,
         "constant material callback changed legacy flow");
     require(updates==same.history.size(),"one constitutive refresh per current momentum residual");
+    require(same.performance.coupledEvaluations==0,"default material solve selected fixed-property Newton");
+    const auto explicitMaterial=detail::solveMaterialFlow2D(m,legacy,[&](const auto&,const auto&) {
+        return detail::MaterialState2D{std::vector<double>(m.faces.size(),c.nu),true};
+    });
+    require(same.u==explicitMaterial.u && same.v==explicitMaterial.v && same.p==explicitMaterial.p &&
+        same.flux==explicitMaterial.flux,"default material solve differs from explicit SIMPLE");
     // A cooperative stop returns the same completed state as an iteration
     // limit, including constitutive refresh, fluxes and final force assembly.
-    auto limitedControls=c;limitedControls.maxIterations=3;
+    auto limitedControls=legacy;limitedControls.maxIterations=3;
     const auto limitedState=solveIncompressible2D(m,limitedControls);
-    std::size_t stopChecks=0;auto stoppedControls=c;
+    std::size_t stopChecks=0;auto stoppedControls=legacy;
     stoppedControls.stopRequested=[&]{return ++stopChecks==3;};
     const auto stoppedState=solveIncompressible2D(m,stoppedControls);
     require(stoppedState.stopped && !stoppedState.converged && !limitedState.stopped &&
@@ -80,8 +87,8 @@ void materialContract(const FvMesh2D& m) {
     rejects([&]{(void)detail::solveMaterialFlow2D(m,c,[](const auto&,const auto&){return detail::MaterialState2D{};});});
     // A one-step run must assemble its returned diffusion with the NEW material,
     // even when it has not converged. Each shared viscous face flux is linear in nu.
-    c.maxIterations=1;
-    const auto frozen=solveIncompressible2D(m,c);
+    c.maxIterations=1;legacy=c;legacy.steadyAcceleration=SteadyAcceleration2D::None;
+    const auto frozen=solveIncompressible2D(m,legacy);
     const auto changed=detail::solveMaterialFlow2D(m,c,[&](const auto&,const auto&){return detail::MaterialState2D{std::vector<double>(m.faces.size(),2*c.nu),true};});
     require(!changed.converged&&changed.u==frozen.u&&changed.p==frozen.p,"one-step coupling contract changed");
     double difference=0;
@@ -95,7 +102,8 @@ void materialContract(const FvMesh2D& m) {
 }
 void ransContract(const FvMesh2D& m) {
     SstRansControls2D c;c.flow.scenario="channel";c.flow.nu=.01;c.flow.tolerance=1e-8;c.inletK=0;c.turbulenceUpdatesPerIteration=500;
-    const auto laminar=solveIncompressible2D(m,c.flow);
+    auto legacy=c.flow;legacy.steadyAcceleration=SteadyAcceleration2D::None;
+    const auto laminar=solveIncompressible2D(m,legacy);
     const auto r=solveSstRans2D(m,c);
     require(r.converged&&r.flow.u==laminar.u&&r.flow.v==laminar.v&&r.flow.p==laminar.p&&r.flow.flux==laminar.flux,
         "zero-k laminar limit differs from old solver");

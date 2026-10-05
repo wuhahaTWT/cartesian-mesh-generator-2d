@@ -31,17 +31,17 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.equal(invocation.request.outletBackflow, 'reject');
   assert.deepEqual(invocation.args, ['--mesh', '/tmp/final.solver.cm2d', '--output', '/tmp/run',
     '--case', 'external', '--nu', '0.01', '--speed', '1', '--max-iterations', '1500', '--tolerance', '0.000001',
-    '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
+    '--convection', 'upwind', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
   const limited = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'limited-linear' });
   assert.equal(limited.request.convection, 'limited-linear');
   const aggregation = buildFlowInvocation('/tmp/final.solver.cm2d', '/tmp/run',
     { case: 'external', nu: 0.01, speed: 1, maxIterations: 10, pressurePreconditioner: 'aggregation' });
   assert.equal(aggregation.request.pressurePreconditioner, 'aggregation');
-  assert.deepEqual(aggregation.args.slice(-8), ['--convection', 'upwind', '--pressure-preconditioner', 'aggregation', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
+  assert.deepEqual(aggregation.args.slice(-10), ['--convection', 'upwind', '--pressure-preconditioner', 'aggregation', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
   assert.equal(limited.request.viscousStress, 'symmetric');
-  assert.deepEqual(limited.args.slice(-8), ['--convection', 'limited-linear', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric']);
-  assert.equal(limited.args.at(-1), 'symmetric');
+  assert.deepEqual(limited.args.slice(-10), ['--convection', 'limited-linear', '--pressure-preconditioner', 'ic0', '--outlet-backflow', 'reject', '--viscous-stress', 'symmetric', '--steady-acceleration', 'newton-krylov']);
+  assert.equal(limited.args.at(-1), 'newton-krylov');
   assert.throws(() => buildFlowInvocation('/tmp/intermediate.cm2d', '/tmp/run', invocation.request), /solver\.cm2d/);
   assert.throws(() => validateFlowRequest({ case: 'rans', nu: 0.01, speed: 1, maxIterations: 10 }), /未知/);
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'central' }), /对流格式/);
@@ -114,7 +114,7 @@ test('flow output accepts the limited-linear scheme and rejects unknown or mixed
     viscousStress: 'symmetric', forceDefinition: 'shared-face-newtonian-traction',
     forceX: 2, forceY: -3, pressureForceX: 1, pressureForceY: -1, discreteForceX: 2, discreteForceY: -3,
     wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 }, fields, 2,
-    { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'limited-linear' });
+    { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'limited-linear', steadyAcceleration: 'none' });
   assert.equal(limited.summary.convection, 'limited-linear');
   assert.equal(limited.summary.pressureDiscretization, 'shared-face-gauss');
   assert.equal(limited.summary.pressureDiscretizationInferred, false);
@@ -132,7 +132,7 @@ test('new symmetric stress output requires force metadata and consistent totals'
     forceDefinition: 'shared-face-newtonian-traction', forceX: 2, forceY: -3,
     pressureForceX: 1, pressureForceY: -1, discreteForceX: 2, discreteForceY: -3,
     wallForceX: 2, wallForceY: -3, wallViscousForceX: 1, wallViscousForceY: -2 };
-  const request = { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind' };
+  const request = { case: 'external', nu: 0.01, speed: 1, maxIterations: 30, convection: 'upwind', steadyAcceleration: 'none' };
   const validated = validateFlowOutput(current, fields, 2, request);
   assert.throws(() => validateFlowOutput(current, fields, 2, {...request,tolerance:1e-8}), /不一致/);
   assert.equal(validateFlowOutput({...current,tolerance:1e-8}, fields, 2, {...request,tolerance:1e-8}).summary.tolerance,1e-8);
@@ -211,11 +211,23 @@ test('desktop tolerance can only tighten the historical flow default',()=>{
     assert.throws(()=>validateFlowRequest({...request,tolerance}));
 });
 
-test('steady acceleration is explicit, unavailable in time marching, and bound to recorded diagnostics', () => {
+test('context default selects the solver and explicit SIMPLE is always passed to the CLI', () => {
+  const base={case:'channel',nu:.1,speed:1,maxIterations:500};
+  for (const steadyAcceleration of [undefined,'default']) {
+    assert.equal(validateFlowRequest({...base,steadyAcceleration}).steadyAcceleration,'newton-krylov');
+    assert.equal(validateFlowRequest({...base,steadyAcceleration,linearPolicy:'adaptive'}).steadyAcceleration,'none');
+    for (const mode of ['transient','adaptive'])
+      assert.equal(validateFlowRequest({...base,steadyAcceleration,mode,dt:.01,steps:2,endTime:.1}).steadyAcceleration,'none');
+  }
+  const simple=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',{...base,steadyAcceleration:'none'});
+  assert.equal(simple.args[simple.args.indexOf('--steady-acceleration')+1],'none');
+});
+
+test('explicit steady acceleration is unavailable in time marching and bound to recorded diagnostics', () => {
   const request={case:'external',nu:.01,speed:1,maxIterations:30,steadyAcceleration:'anderson'};
   const invocation=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',request);
   assert.equal(invocation.args[invocation.args.indexOf('--steady-acceleration')+1],'anderson');
-  assert.equal(validateFlowRequest({...request,steadyAcceleration:undefined}).steadyAcceleration,'none');
+  assert.equal(validateFlowRequest({...request,steadyAcceleration:undefined}).steadyAcceleration,'newton-krylov');
   assert.throws(()=>validateFlowRequest({...request,steadyAcceleration:'unknown'}),/稳态加速/);
   assert.throws(()=>validateFlowRequest({...request,mode:'transient',dt:.02,steps:1}),/稳态加速/);
   const current={...summary,pressureDiscretization:'shared-face-gauss',pressurePreconditioner:'ic0',viscousStress:'symmetric',

@@ -984,7 +984,7 @@ function updateFlowMode() {
   $('flowDtLabel').textContent=adaptive?'最大时间步长':transient?'时间步长':'温度联算步长';
   for (const id of ['flowEndTime','flowMaxCourant','flowMinDt','flowMaxRetries','flowMaxSteps']) $(id).disabled=state.busy||!adaptive;
   $('flowRestartSettings').hidden = !transient;
-  $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大 SIMPLE 迭代';
+  $('flowIterationLabel').textContent = transient ? '每个时间步的内迭代上限' : '最大求解预算';
   const restart = state.flowRestart;
   if (!restart) $('flowResume').checked = false;
   $('flowResume').disabled = state.busy || !restart || !transient;

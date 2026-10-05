@@ -100,7 +100,13 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     # Retain old fields as evidence, but never advertise them as the new result.
     reuse_mesh = root / 'reuse.solver.cm2d'
     rectangle(reuse_mesh, 8, 4)
-    run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    default, _ = run('reuse', reuse_mesh, extra=('--nu', '.1'))
+    assert default['steadyAcceleration'] == 'newton-krylov'
+    assert default['convection'] == 'upwind' and default['pressurePreconditioner'] == 'ic0'
+    simple, _ = run('explicit-simple', reuse_mesh, extra=('--nu', '.1', '--steady-acceleration', 'none'))
+    assert simple['steadyAcceleration'] == 'none'
+    adaptive_linear, _ = run('adaptive-linear-default', reuse_mesh, extra=('--nu', '.1', '--linear-policy', 'adaptive'))
+    assert adaptive_linear['steadyAcceleration'] == 'none'
     newton, _ = run('reuse-newton', reuse_mesh, extra=('--nu', '.1', '--steady-acceleration', 'newton-krylov', '--profile'))
     assert newton['steadyAcceleration'] == 'newton-krylov'
     assert newton['coupledEvaluations'] == newton['iterations'] <= 700

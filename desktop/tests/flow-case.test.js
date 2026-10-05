@@ -54,7 +54,7 @@ test('case never silently accepts restart, unknown or inactive solver settings, 
 });
 
 test('legacy case files retain the exact old default while v2 preserves tighter stopping controls',()=>{
-  const saved=createFlowCaseDocument(common,mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v5');
+  const saved=createFlowCaseDocument({...common,steadyAcceleration:'none'},mesh);assert.equal(saved.format,'cartmesh2d-flow-case-v5');
   const legacy=structuredClone(saved);legacy.format='cartmesh2d-flow-case-v1';delete legacy.request.tolerance;delete legacy.request.steadyAcceleration;delete legacy.request.pressureCorrectionPasses;delete legacy.request.linearPolicy;delete legacy.request.velocityRelaxation;
   const restored=parseFlowCaseDocument(serializeFlowCase(legacy),mesh);
   assert.equal(restored.request.tolerance,1e-6);assert.equal(restored.format,saved.format);
@@ -78,4 +78,15 @@ test('saved system Cholesky cases retain their backend or fail explicitly on uns
     const saved=createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh);
     assert.deepEqual(parseFlowCaseDocument(serializeFlowCase(saved),mesh),saved);
   } else assert.throws(()=>createFlowCaseDocument({...common,pressurePreconditioner:'cholesky'},mesh),/macOS/);
+});
+
+test('new default cases record the resolved method while explicit SIMPLE survives save and reload',()=>{
+  for (const steadyAcceleration of ['default','none']) {
+    const saved=createFlowCaseDocument({...common,steadyAcceleration},mesh);
+    const loaded=parseFlowCaseDocument(serializeFlowCase(saved),mesh);
+    assert.equal(loaded.request.steadyAcceleration,steadyAcceleration==='default'?'newton-krylov':'none');
+    assert.deepEqual(loaded,saved);
+    const args=buildFlowInvocation('/tmp/m.solver.cm2d','/tmp/flow',loaded.request,null,'/tmp/input.boundaries').args;
+    assert.equal(args[args.indexOf('--steady-acceleration')+1],loaded.request.steadyAcceleration);
+  }
 });

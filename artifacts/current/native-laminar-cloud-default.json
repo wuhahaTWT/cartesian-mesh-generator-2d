@@ -1,0 +1,76 @@
+{
+  "status": "cloud-default-path-validated-not-mature",
+  "baseCommit": "36ca9767a7aed9169e477967ce21a1551c092740",
+  "environment": {
+    "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+    "cmake": "4.4.4",
+    "dependsOnUserMac": false,
+    "remoteHeadObserved": "36ca9767a7aed9169e477967ce21a1551c092740"
+  },
+  "verification": {
+    "nativeCTest": {
+      "passed": 100,
+      "total": 100,
+      "chemistry": "disabled; unrelated dependencies not installed"
+    },
+    "frontend": {
+      "passed": 194,
+      "total": 194
+    },
+    "macOSApp": "not tested in cloud",
+    "packagedApp": "not tested",
+    "linuxDesktopApp": "not tested; no display server available"
+  },
+  "annulus": {
+    "meshCommand": "build/cartmesh2d_cli artifacts/current/annulus-1024-axis-roundoff.xy outputs/cloud-laminar/annulus 7 .15 .1 interior outputs/cloud-laminar/annulus-foam 7",
+    "boundaryCommand": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus.solver.cm2d --case annulus --speed .5 --export-boundaries outputs/cloud-laminar/annulus.boundaries",
+    "solveCommand": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus.solver.cm2d --case custom --boundary outputs/cloud-laminar/annulus.boundaries --nu .1 --speed .5 --tolerance 1e-6 --max-iterations 1500 --profile --output outputs/cloud-laminar/annulus-default",
+    "solverQuality": "PASS",
+    "cells": 7178,
+    "macHistoricalCells": 7177,
+    "crossCompilerTopologyIdentical": false,
+    "summary": {
+      "status": "converged",
+      "converged": true,
+      "iterations": 454,
+      "convection": "upwind",
+      "pressurePreconditioner": "ic0",
+      "steadyAcceleration": "newton-krylov",
+      "strictLinearFinal": true,
+      "continuity": 6.192767682132481e-11,
+      "momentumResidual": 4.9485301241392316e-08,
+      "pressureChange": 3.617978916774612e-07
+    },
+    "profile": {
+      "readAndMeshSeconds": 0.031344341,
+      "solveSeconds": 45.55486477,
+      "coupledEvaluations": 454,
+      "coupledFailedEvaluations": 0,
+      "momentumSolves": 908,
+      "pressureSolves": 1816
+    },
+    "physicalAccuracyQualified": false
+  },
+  "changes": [
+    "Desktop contextual default resolves strict steady to Newton and adaptive/time contexts to SIMPLE; explicit choices are retained.",
+    "Saved cases record resolved methods. Old v1/v2 cases retain none. No output validator is relaxed.",
+    "Legacy material/SST byte comparisons use explicit SIMPLE and default material is compared against it.",
+    "Native default/engineering, CLI omitted-default/explicit-none/adaptive and frontend save/load tests added."
+  ],
+  "limitations": [
+    "100 native tests are the actual Linux no-chemistry CMake configuration; not the historical macOS 164/164 count.",
+    "Mac historical compressed fields were not transferred. Committed input was reproduced.",
+    "Default flow numerical convergence is not sufficient physical accuracy qualification.",
+    "Mesh differences between GCC and system clang remain recorded; no cross-platform qualification."
+  ],
+  "sourceSha256": {
+    "desktop/src/core/flow.js": "6589bed20b88fc259e8f07ad4b3f300028313483b965426389b4976aec8186c3",
+    "desktop/src/renderer/index.html": "7336e14bb699c04d3671d931e1360aabf403a9a2276a45d33323002ff88f604f",
+    "desktop/src/renderer/app.js": "9c36bed07950ad28967abec0560c6e8e3d19bc78988e269aee4d4f1cd5883f49",
+    "tests/flow_boundary_test.cpp": "1864bf0794e2b488ed0af03b7d3346814a2bb9a5dda1b1a9e57fcde57e7d56f9",
+    "tests/flow_cli_test.py": "62c40e87937fbc805dd5cad506dd5237850392acf5299a5ad12f8f35e111e1b0",
+    "tests/sst_rans_test.cpp": "2f062ac3b0238164525a9a45ad6725c0ac28fc45892790a803a9f2963eadb08d"
+  },
+  "rawEvidence": "outputs/cloud-laminar/; fields, failures, inputs and logs retained there; large files will be losslessly compressed with manifests."
+}

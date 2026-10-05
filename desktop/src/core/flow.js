@@ -110,7 +110,9 @@ function validateFlowRequest(request = {}) {
   const mode = request.mode ?? 'steady';
   if (!['steady', 'transient', 'adaptive'].includes(mode)) throw new Error('未知时间模式。');
   const linearPolicy=request.linearPolicy ?? 'strict';
-  const steadyAcceleration=request.steadyAcceleration ?? (mode==='steady' && linearPolicy==='strict'?'newton-krylov':'none');
+  const requestedAcceleration=request.steadyAcceleration ?? 'default';
+  const steadyAcceleration=requestedAcceleration==='default'
+    ? (mode==='steady' && linearPolicy==='strict'?'newton-krylov':'none') : requestedAcceleration;
   if (!['none','anderson','newton-krylov'].includes(steadyAcceleration) || (steadyAcceleration!=='none' && mode!=='steady'))
     throw new Error('稳态加速仅支持稳态流动的 none、anderson 或 newton-krylov。');
   if (!['strict','adaptive'].includes(linearPolicy)) throw new Error('线性迭代精度须为 strict 或 adaptive。');

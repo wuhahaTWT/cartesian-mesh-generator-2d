@@ -229,6 +229,9 @@ void contextDefaultSolver() {
         "Context default changed physical time stepping");
     c.adaptiveLinear=true;
     require(resolveSteadyAcceleration2D(c)==SteadyAcceleration2D::None,"Adaptive context default bypassed its requested linear policy");
+    c.adaptiveLinear=false;c.convergence=FlowConvergence2D::Engineering;
+    require(resolveSteadyAcceleration2D(c)==SteadyAcceleration2D::None,"Engineering context default selected strict-only Newton");
+    c.convergence=FlowConvergence2D::Strict;c.adaptiveLinear=true;
     c.steadyAcceleration=SteadyAcceleration2D::NewtonKrylov;
     rejects([&]{(void)solveIncompressible2D(mesh,c);});
 }

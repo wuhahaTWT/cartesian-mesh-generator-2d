@@ -134,6 +134,8 @@ CLI 均匀/自适应资源上限为 level 10/12；桌面分别为 9/10，且自�
 
 ## 原生层流求解
 
+Linux 云端接续使用 GCC（本次 13.3）和 CMake，关闭与不可压目标无关的 `CARTMESH2D_BUILD_CHEMISTRY`。API/CLI 省略稳态方法时按上下文选择；桌面“按工况选择”在保存工况时解析为明确方法。显式 `--steady-acceleration none` 保持 SIMPLE。云端原始圆环默认入口、完整验证范围和源码哈希见 `artifacts/current/native-laminar-cloud-default.json`；实际原始场位于忽略提交的 `outputs/cloud-laminar/`。Linux 结果不代表 macOS App 已验。
+
 `Incompressible2D.cpp` 使用 SIMPLE、Rhie–Chow 及共享压力/黏性面通量；只读取最终 `*.solver.cm2d`。完整参数查 `build/cartmesh2d_flow_cli --help`。
 
 ```sh
