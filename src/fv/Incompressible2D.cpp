@@ -390,7 +390,7 @@ void momentum(System& a,
                 const std::vector<Vector2D>& faceVelocity,
                 bool y,
                 const Vec* previous = nullptr,
-                double timeStep = 0) {
+                double timeStep = 0, Vec* spatialDiagonal = nullptr) {
     a.reset();
     const auto& bc = y ? b.v : b.u;
     const auto& fixed = y ? b.fixedV : b.fixedU;
@@ -403,11 +403,6 @@ void momentum(System& a,
     for (std::size_t i = 0; i < m.cells.size(); ++i) {
         a.rhs[i] = -m.cells[i].area * (y ? gp[i].y : gp[i].x);
         if (!source.empty()) a.rhs[i] += y ? source[i].y : source[i].x;
-        if (previous) {
-            const double mass=finite(m.cells[i].area/timeStep);
-            a.diag[i]+=mass;
-            a.rhs[i]+=finite(mass*(*previous)[i]);
-        }
     }
     for (std::size_t id = 0; id < m.faces.size(); ++id) {
         const auto& f = m.faces[id];
@@ -453,6 +448,13 @@ void momentum(System& a,
                 a.rhs[i] -= q * (advectiveValue(id,q)-field[i]);
             }
         }
+    }
+    // Preserve the spatial coefficient without subtracting a potentially huge
+    // temporal mass from the assembled diagonal at small time steps.
+    if(spatialDiagonal)*spatialDiagonal=a.diag;
+    if(previous)for(std::size_t i=0;i<m.cells.size();++i) {
+        const double mass=finite(m.cells[i].area/timeStep);
+        a.diag[i]+=mass;a.rhs[i]+=finite(mass*(*previous)[i]);
     }
 }
 
@@ -651,7 +653,7 @@ static FlowResult2D solveFlow(
     // backflow, including candidate rejection and physical-time initialization.
     const auto pressureGradientStencil=detail::buildFlowGradientStencil2D(m,b.fixedP,true);
     detail::ChangingFlowGradientStencil2D velocityGradientU(m),velocityGradientV(m);
-    Vec ra(n);
+    Vec ra(n),spatialU(n),spatialV(n),spatialResponse(n);
     Vec pc(n);
     Vec df(nf);
     const double h = b.ymax - b.ymin;
@@ -720,7 +722,7 @@ static FlowResult2D solveFlow(
         for (std::size_t id=0;id<nf;++id) {
             const auto& f=m.faces[id];
             if (!f.neighbour) {
-                if (b.role[id]==Role::Outlet || b.role[id]==Role::Opening)
+                if (b.role[id]==Role::Outlet || b.role[id]==Role::Opening || b.role[id]==Role::Farfield)
                     oldFluxDefect[id]=r.flux[id]-r.u[f.owner]*f.areaVector.x-r.v[f.owner]*f.areaVector.y;
                 continue; // fixed-velocity and impermeable boundaries impose their new-time flux
             }
@@ -767,8 +769,8 @@ static FlowResult2D solveFlow(
             : std::vector<Vector2D>{};
         const auto faceVelocity=c.convection==ConvectionScheme2D::FaceLimitedLinearUpwind
             ? detail::faceFrameVelocityValues(m,r.flux,r.u,r.v,gu,gv,b.u,b.v,b.fixedU,b.fixedV) : std::vector<Vector2D>{};
-        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,false,previous?&previous->u:nullptr,timeStep);
-        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,true,previous?&previous->v:nullptr,timeStep);
+        momentum(checkU,m,c,b,r.u,r.flux,gu,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,false,previous?&previous->u:nullptr,timeStep,previous?&spatialU:nullptr);
+        momentum(checkV,m,c,b,r.v,r.flux,gv,forceGradient,r.sourceIntegrals,stressCorrection,faceVelocity,true,previous?&previous->v:nullptr,timeStep,previous?&spatialV:nullptr);
     };
     const auto takeRelaxed = [&](System& destination,System& source,const Vec& field) {
         destination.diag.swap(source.diag);
@@ -877,16 +879,28 @@ static FlowResult2D solveFlow(
         predictorResidual=0;predictorWorstCell=0;pressureLinearResidual=0;
         linearSolve(au, r.u, false);linearSolve(av, r.v, false);
         // Both components share the scalar pressure response away from slip walls.
-        for(std::size_t i=0;i<n;++i)ra[i]=m.cells[i].area/au.diag[i];
+        for(std::size_t i=0;i<n;++i) {
+            ra[i]=m.cells[i].area/au.diag[i];
+            if(previous) {
+                const double spatial=std::max(spatialU[i],spatialV[i]);
+                ensure(spatial>0,"Transient momentum interpolation needs a positive spatial diagonal");
+                spatialResponse[i]=finite(m.cells[i].area/spatial);
+            }
+        }
         const auto gup=velocityGradientU.apply(r.u,b.u,b.fixedU),gvp=velocityGradientV.apply(r.v,b.v,b.fixedV);
         Vec predicted(nf);
         for(std::size_t id=0;id<nf;++id){const auto&f=m.faces[id];const auto i=f.owner;
-            const double rf=interpolate(f,ra);df[id]=rf*f.transmissibility;
+            const double spatialFace=previous?interpolate(f,spatialResponse):0.;
+            const double temporalWeight=previous?timeStep/(timeStep+spatialFace):1.;
+            const double rf=previous?c.velocityRelaxation*temporalWeight*spatialFace:interpolate(f,ra);
+            df[id]=rf*f.transmissibility;
             if(f.neighbour){const auto j=*f.neighbour;const double w=f.neighbourWeight;
                 const Point2D point{m.cells[i].centre.x*(1-w)+m.cells[j].centre.x*w,m.cells[i].centre.y*(1-w)+m.cells[j].centre.y*w};
                 const auto skew=f.centre-point;
                 const double uf=interpolate(f,r.u)+dot(interpolateGradient(f,gup),skew),vf=interpolate(f,r.v)+dot(interpolateGradient(f,gvp),skew);
-                const Vector2D rag{(1-w)*ra[i]*forceGradient[i].x+w*ra[j]*forceGradient[j].x,(1-w)*ra[i]*forceGradient[i].y+w*ra[j]*forceGradient[j].y};
+                const double ri=previous?c.velocityRelaxation*temporalWeight*spatialResponse[i]:ra[i];
+                const double rj=previous?c.velocityRelaxation*temporalWeight*spatialResponse[j]:ra[j];
+                const Vector2D rag{(1-w)*ri*forceGradient[i].x+w*rj*forceGradient[j].x,(1-w)*ri*forceGradient[i].y+w*rj*forceGradient[j].y};
                 predicted[id]=uf*f.areaVector.x+vf*f.areaVector.y+dot(rag,f.areaVector)-rf*(f.transmissibility*(r.p[j]-r.p[i])+dot(interpolateGradient(f,gp),f.correction));
                 if (previous) {
                     const double oldUf=interpolate(f,oldU)+dot(interpolateGradient(f,gu),skew);
@@ -897,6 +911,17 @@ static FlowResult2D solveFlow(
                     // depends on the arbitrary inner relaxation factor.
                     predicted[id]+=rf/timeStep*oldFluxDefect[id]
                         +(1-c.velocityRelaxation)*(r.flux[id]-oldUf*f.areaVector.x-oldVf*f.areaVector.y);
+                    // Interpolate the spatial momentum equation before adding
+                    // the face temporal mass. The covariance term is essential
+                    // when cell diagonals differ: interpolation of the inverse
+                    // total diagonal gives a dt-dependent steady state.
+                    const auto correction=[&](const Vec& current,const Vec& old,const Vec& accepted) {
+                        const double xi=current[i]-accepted[i]-(1-c.velocityRelaxation)*(old[i]-accepted[i]);
+                        const double xj=current[j]-accepted[j]-(1-c.velocityRelaxation)*(old[j]-accepted[j]);
+                        return ((1-w)*(spatialResponse[i]-spatialFace)*xi+w*(spatialResponse[j]-spatialFace)*xj)/(timeStep+spatialFace);
+                    };
+                    predicted[id]+=correction(r.u,oldU,previous->u)*f.areaVector.x+
+                                   correction(r.v,oldV,previous->v)*f.areaVector.y;
                 } else {
                     // The face equation must retain the same implicit
                     // relaxation as the cell momentum equation. Otherwise

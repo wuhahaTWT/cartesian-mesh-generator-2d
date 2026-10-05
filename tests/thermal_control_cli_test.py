@@ -2,13 +2,14 @@
 """Native black-box state transactions, events and controller restart.
 Reads published native fields; no independent equation/topology audit backend.
 """
-import argparse,csv,hashlib,json,math,signal,subprocess,sys,time
+import argparse,csv,hashlib,json,math,os,signal,subprocess,sys,time,tempfile
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'/'thermal'))
 from workflow import run,configure
 
 def main(a):
-    root=Path(a.output).resolve();root.mkdir(parents=True,exist_ok=True)
+    base=Path(a.output).resolve();base.mkdir(parents=True,exist_ok=True)
+    root=Path(tempfile.mkdtemp(prefix='run-',dir=base))
     geom=root/'square.xy';geom.write_text('0 0\n1 0\n1 1\n0 1\n')
     assert run([a.mesh_cli,geom,root/'mesh','4',str(1/14),'.1','interior',root/'openfoam','4','0'],root/'mesh.log')['code']==0
     mesh=root/'mesh.solver.cm2d';flow,bc,event,_=configure(mesh,'cavity',root)
@@ -20,6 +21,11 @@ def main(a):
         assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
         return out
     continuous=invoke('continuous')
+    published=continuous.with_suffix('.thermal.checkpoint').read_bytes()
+    published_summary=continuous.with_suffix('.json').read_bytes()
+    invoke('continuous',code=1)
+    assert continuous.with_suffix('.thermal.checkpoint').read_bytes()==published
+    assert continuous.with_suffix('.json').read_bytes()==published_summary
     part=invoke('part',['--max-time-steps','17'],1)
     joint=part.with_suffix('.thermal.checkpoint');assert joint.exists()
     snapshot=joint.read_bytes();split=invoke('split',['--restart',joint])
@@ -63,10 +69,36 @@ def main(a):
     saved=checkpoint.read_bytes();resumed=invoke('after-cancel',['--restart',checkpoint]);assert saved==checkpoint.read_bytes()
     # State comparison uses matching accepted timestamps; interruption has no hidden history.
     assert resumed.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
-    report={'passed':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+    replaced_path_checked=False
+    if os.name=='posix':
+        # Reproduce replacement of a live history file: writes to the old
+        # unlinked inode otherwise succeed while the published path stays stale.
+        replaced=root/'replaced-output'
+        command=[str(x) for x in [*common,'--output',replaced,'--end-time','1000']]
+        (root/'replaced-output.command.json').write_text(json.dumps(command,indent=2))
+        proc=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+        first=proc.stdout.readline();assert 'thermal-time-step' in first,first
+        proc.send_signal(signal.SIGSTOP)
+        os.waitpid(proc.pid,os.WUNTRACED)
+        victim=replaced.with_suffix('.thermal-history.csv')
+        old_stat=victim.stat();original_bytes=victim.read_bytes()
+        copy=victim.with_suffix('.replacement');copy.write_bytes(original_bytes);copy.replace(victim)
+        assert victim.stat().st_ino!=old_stat.st_ino
+        proc.send_signal(signal.SIGCONT)
+        rest=proc.communicate(timeout=10)[0]
+        (root/'replaced-output.log').write_text(first+rest)
+        assert proc.returncode==1 and 'output path replaced or truncated' in rest,rest[-2000:]
+        assert victim.read_bytes()==original_bytes
+        saved=replaced.with_suffix('.thermal.checkpoint').read_bytes()
+        recovery=invoke('after-replacement',['--restart',replaced.with_suffix('.thermal.checkpoint')])
+        assert replaced.with_suffix('.thermal.checkpoint').read_bytes()==saved
+        assert recovery.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
+        replaced_path_checked=True
+    report={'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
             'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
             'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
-            'changedStepTime':meta['acceptedTime'],'continuousCheckpointSha256':hashlib.sha256(continuous.with_suffix('.thermal.checkpoint').read_bytes()).hexdigest()}
+            'changedStepTime':meta['acceptedTime'],'replacedLiveOutputFailsClosedAndResumesIdentically':replaced_path_checked,
+            'continuousCheckpointSha256':hashlib.sha256(continuous.with_suffix('.thermal.checkpoint').read_bytes()).hexdigest()}
     (root/'evidence.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--cli',required=True);p.add_argument('--mesh-cli',required=True);p.add_argument('--output',required=True);main(p.parse_args())

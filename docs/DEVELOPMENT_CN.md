@@ -65,6 +65,8 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 CFL 及内迭代收敛只控制可接受性。可选 BE 整步／两半步估计 `2*|T_full-T_halfhalf|`，归一化分母为 `temperature-atol + time-rtol*temperature-scale`（K）；速度分别用 m/s 的绝对容差和参考速度。温升尺度必须是目标温度变化量，例如 1 K，不能用 300 K 背景温度。默认绝对容差为 .001 K、.0001 m/s，相对容差 .01；这是局部时间缺陷预算，非全程／空间误差承诺。默认不启用误差估计；启用每次候选多两个联合求解。当前仍接受整步一阶 BE，不外推场；曲壁曾主要受流动内迭代限制；细网格 App 又暴露重复从最大步试起的成本，现以检查点化建议步长解决。保留一阶，依据真实敏感性与代价决定后续二阶需求。
 
+瞬态动量插值使用空间动量对角元，再加入面上的时间质量，避免插值总对角元的倒数造成稳态依赖 dt。记 `d_i=V_i/A_spatial,i`、`d_f=I(d_i)`、`theta=dt/(dt+d_f)`，面压力响应为 `alpha*theta*d_f`；梯度响应使用 `alpha*theta*I(d_i grad(p_i))`。非均匀对角元还保留协方差项 `I((d_i-d_f)*(U*_i-U^n_i-(1-alpha)*(U^iter_i-U^n_i)))/(dt+d_f)`。旧接受面通量与内松弛缺陷一同保留；稳态时速度差项消失，恢复原稳态面方程，不能只给总对角元公式补一个旧通量项。空间对角元在加入时间质量前直接保存，避免极小 dt 下相减失精。背景可参阅 [Moguen 等 WCCM 2014 的动量插值讨论](https://congress.cimne.com/iacm-eccomas2014/admin/files/filePaper/p1362.pdf)；本实现的验收依据是原生稳态变步不变性及真实 CLI 流场对照，未引入新物理或放宽残差。
+
 CLI：
 
 ```sh
@@ -84,9 +86,9 @@ build/cartmesh2d_transport_cli --mesh final.solver.cm2d --output outputs/run \
 代表算例完全调用原生生成、质量验证与求解；Python 只编排 CLI、生成配置并读取真实输出，不重建独立方程／拓扑审计链：
 
 ```sh
-python3 tools/thermal/workflow.py --case channel --output outputs/thermal/channel --end 6 --error
-python3 tools/thermal/workflow.py --case cavity --output outputs/thermal/cavity --end 6 --error
-python3 tools/thermal/workflow.py --case cylinder --output outputs/thermal/cylinder --level 5 --end 25 --diffusivity .05 --nu .05 --relaxation .2
+python3 tools/thermal/workflow.py --case channel --output outputs/thermal/channel --end 6 --error --isolate-live-output
+python3 tools/thermal/workflow.py --case cavity --output outputs/thermal/cavity --end 6 --error --isolate-live-output
+python3 tools/thermal/workflow.py --case cylinder --output outputs/thermal/cylinder --level 5 --end 25 --diffusivity .05 --nu .1 --error --isolate-live-output
 ctest --test-dir build -R 'cartmesh2d_(thermal_flow$|thermal_flow_cli$|thermal_control_cli$|scalar_transport$)' --output-on-failure
 ```
 
@@ -96,7 +98,7 @@ Linux 无显示服务的真实 App 操作验收（需先准备 `desktop/runtime`
 ```bash
 desktop/node_modules/.bin/electron --no-sandbox --ozone-platform=headless --disable-gpu desktop --smoke=rectangle --target-cells=1000 --thermal-adaptive=true --out=outputs/thermal/app --shot=outputs/thermal/app/adaptive.png
 ```
-此入口实际运行联合控制并检查变步长续算、预算失败保留和恢复；软件渲染截图不代表 macOS/Windows 验证。运行期间不要归档或替换活动输出文件；输出历史与原生完成步数不符必须拒绝，并保留原始目录追查。
+此入口实际运行联合控制并检查变步长续算、预算失败保留和恢复；软件渲染截图不代表 macOS/Windows 验证。运行期间不要归档或替换活动输出文件。云工作区曾出现活动路径被替换但原生继续写旧 inode 的现象；具体外部写入者未确立。原生现在逐次 flush 核对流位置与公开路径长度，发现替换／截断明确失败；CLI 编排还核对接受行数、最终时刻与原生 summary。`--isolate-live-output` 在同一云执行器的临时 outputs 目录计算，关闭后按 SHA256 导入指定 outputs，保留临时源供失败恢复；不复制活动文件。App 的 `--out`／`--shot` 同样可指定临时 outputs，结束后再导入。已有接受检查点的输出前缀拒绝复用，续算必须用新的 `--output`，原 `--restart` 文件保持不可变。此保护不能防止进程退出后的外部文件损坏，因此归档仍须逐文件读回核对。
 
 ## 从哪里进入代码
 

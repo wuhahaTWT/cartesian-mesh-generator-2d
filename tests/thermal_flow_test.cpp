@@ -373,8 +373,25 @@ void controlledTimeAndEvents() {
 
 }
 
+void steadyTimeInvariance() {
+    const auto mesh=cavityMesh(6);auto fc=flowControls();fc.maxIterations=1500;fc.tolerance=1e-10;
+    const auto steady=solveIncompressible2D(mesh,fc);
+    check(steady.converged,"steady cavity for variable-step invariant");if(!steady.converged)return;
+    auto data=setup(mesh,0.);const auto sc=scalarControls();
+    ThermalFlowState2D start{{1.,steady.u,steady.v,steady.p,steady.flux},std::vector<double>(mesh.cells.size(),300.)};
+    for(double dt:{.1,.01,.001}) {
+        const auto next=advanceThermalFlow2D(mesh,fc,data,sc,start,dt);
+        check(next.accepted.has_value(),"steady variable-step solve accepted");if(!next.accepted)continue;
+        double error=0;
+        for(std::size_t i=0;i<mesh.cells.size();++i)
+            error=std::max({error,std::abs(next.accepted->flow.u[i]-start.flow.u[i]),std::abs(next.accepted->flow.v[i]-start.flow.v[i])});
+        std::cout<<"steady-step-invariance dt="<<dt<<" velocity-error="<<error<<'\n';
+        check(error<2e-8*fc.speed,"steady flow independent of physical time step");
+    }
+}
 int main() {
     try {
+        steadyTimeInvariance();
         controlledTimeAndEvents();
         uniformSourceAndEvolution(); restartMatchesContinuous(); failureDoesNotMutateInputs();
         transientOutletInflow();

@@ -38,6 +38,14 @@ std::ofstream output(const std::string& prefix,const char* suffix) {
     std::ofstream out(prefix+suffix); out.exceptions(std::ios::badbit|std::ios::failbit);
     out<<std::setprecision(17); return out;
 }
+void flushOutput(std::ofstream& out,const std::string& prefix,const char* suffix) {
+    out.flush();
+    const auto position=out.tellp();
+    // A copied/replaced live path can leave this stream writing an unlinked
+    // inode without setting failbit. Never publish success with stale history.
+    require(position>=0 && std::filesystem::file_size(prefix+suffix)==static_cast<std::uintmax_t>(position),
+        "output path replaced or truncated while writing: "+prefix+suffix);
+}
 fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     std::ifstream in(path); require(bool(in),"cannot open flow checkpoint");
     // Recover only physical configuration, then run the existing strict full
@@ -359,6 +367,8 @@ int main(int argc,char**argv) {
             }
         }
         const auto parent=std::filesystem::path(prefix).parent_path();if(!parent.empty())std::filesystem::create_directories(parent);
+        require(!evolving || !std::filesystem::exists(prefix+".thermal.checkpoint"),
+            "output already contains an accepted thermal checkpoint; choose a new output prefix (restart inputs are immutable)");
         {auto pending=output(prefix,".json");pending<<"{\"status\":\"running\",\"converged\":false}\n";} started=true;
         auto history=output(prefix,".history.csv");history<<"step,time,iteration,linearIterations,residualNorm,relativeResidual,maxCellImbalance,maxDiagonalScaledImbalance\n";
         std::vector<double> previous;
@@ -397,7 +407,7 @@ int main(int argc,char**argv) {
                     auto controlled=fv::advanceControlledThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,timeControls,[]{return stopSignal!=0;},
                         [&](const fv::ThermalAttempt2D& a) {
                             attemptHistory<<step<<','<<a.startTime<<','<<a.timeStep<<','<<a.error<<','<<a.courant<<','<<a.velocityRelaxation<<','<<a.reason<<'\n';
-                            attemptHistory.flush();if(a.reason!="accepted")++rejectedAttempts;
+                            flushOutput(attemptHistory,prefix,".attempt-history.csv");if(a.reason!="accepted")++rejectedAttempts;
                         });
                     dt=controlled.attempts.back().timeStep;
                     attempt=std::move(controlled.step);
@@ -415,8 +425,8 @@ int main(int argc,char**argv) {
                 thermalHistory<<step<<','<<time<<','<<(attempt.accepted?1:0)<<','<<attempt.flow.history.size()<<','<<fh.momentumResidual<<','<<fh.continuity
                     <<','<<result.history.size()<<',';
                 if(result.history.empty())thermalHistory<<"nan";else thermalHistory<<result.history.back().residualNorm;
-                thermalHistory<<','<<heat<<','<<result.globalBalance<<','<<attempt.flow.maxCourant<<'\n';thermalHistory.flush();
-                heatHistory<<step<<','<<time<<','<<dt<<','<<result.minValue<<','<<result.maxValue<<','<<heat<<','<<result.boundaryFlux<<','<<result.sourceIntegral<<','<<result.temporalIntegral<<','<<result.globalBalance<<'\n';heatHistory.flush();
+                thermalHistory<<','<<heat<<','<<result.globalBalance<<','<<attempt.flow.maxCourant<<'\n';flushOutput(thermalHistory,prefix,".thermal-history.csv");
+                heatHistory<<step<<','<<time<<','<<dt<<','<<result.minValue<<','<<result.maxValue<<','<<heat<<','<<result.boundaryFlux<<','<<result.sourceIntegral<<','<<result.temporalIntegral<<','<<result.globalBalance<<'\n';flushOutput(heatHistory,prefix,".heat-history.csv");
                 std::map<std::string,std::array<double,5>> groups;
                 for(const auto& condition:flowControls.boundaryConditions) {
                     const double q=state.flow.flux[condition.face],a=result.advectiveFlux[condition.face];
@@ -429,7 +439,7 @@ int main(int argc,char**argv) {
                     for(double v:g)boundaryHeatHistory<<','<<v;
                     boundaryHeatHistory<<'\n';
                 }
-                boundaryHeatHistory.flush();
+                flushOutput(boundaryHeatHistory,prefix,".boundary-heat-history.csv");
                 }
                 if(!attempt.accepted) {
                     auto failed=output(prefix,".json");
@@ -446,11 +456,15 @@ int main(int argc,char**argv) {
                 p.volumeFlux=state.flow.flux;carrierTime=state.flow.time;
             } else result=fv::solveScalarTransport2D(mesh,p,controls,previous,dt);
             for(const auto& h:result.history)history<<step<<','<<time<<','<<h.iteration<<','<<h.linearIterations<<','<<h.residualNorm<<','<<h.relativeResidual<<','<<h.maxCellImbalance<<','<<h.maxDiagonalScaledImbalance<<'\n';
-            history.flush();
+            flushOutput(history,prefix,".history.csv");
             if(!result.converged)break;
             if(!evolving&&step<steps)previous=result.values;
         }
         if(evolving) {
+            flushOutput(thermalHistory,prefix,".thermal-history.csv");
+            flushOutput(heatHistory,prefix,".heat-history.csv");
+            flushOutput(boundaryHeatHistory,prefix,".boundary-heat-history.csv");
+            if(adaptive)flushOutput(attemptHistory,prefix,".attempt-history.csv");
             // Diagnostic carrier export is not the authoritative joint restart.
             flowPath=prefix+".carrier.checkpoint";
             auto out=output(prefix,".carrier.checkpoint");fv::writeFlowCheckpoint2D(out,mesh,flowControls,state.flow);out.close();

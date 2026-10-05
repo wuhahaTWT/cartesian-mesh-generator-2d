@@ -2,7 +2,7 @@
 """Reproducible native CLI cases. Python only configures and reads output data;
 no independent equation or topology reconstruction/audit chain.
 """
-import argparse, csv, json, math, platform, subprocess, time, hashlib, shutil
+import argparse, csv, json, math, platform, subprocess, time, hashlib, shutil, tempfile
 from pathlib import Path
 
 def run(cmd, log):
@@ -81,7 +81,7 @@ def execute(args):
          '--boundary',bc,'--flow-nu',args.nu,'--flow-speed',args.speed or ('1' if args.case=='channel' else '.2'),'--flow-velocity-relaxation',args.relaxation,
          '--diffusivity',args.diffusivity,'--initial','300','--dt',args.dt,'--end-time',args.end,
          '--flow-max-iterations','1500','--flow-convection','limited-linear','--convection','limited-linear',
-         '--min-dt','0.000001','--max-courant',args.courant,'--time-error','on' if args.error else 'off',
+         '--min-dt','0.000001','--max-courant',args.courant,'--max-step-retries',args.retries,'--time-error','on' if args.error else 'off',
          '--temperature-scale','1','--velocity-scale',args.speed or ('1' if args.case=='channel' else '.2'),'--time-rtol',args.rtol]
     if not args.no_events:cmd+=['--thermal-events',event]
     if args.restart:cmd+=['--restart',args.restart]
@@ -94,6 +94,14 @@ def execute(args):
     if prefix.with_suffix('.json').exists():meta['summary']=json.loads(prefix.with_suffix('.json').read_text())
     if r['code']==0:
         field=list(csv.DictReader(prefix.with_suffix('.cells.csv').open()));faces=list(csv.DictReader(prefix.with_suffix('.faces.csv').open()))
+        histories={suffix:list(csv.DictReader(Path(str(prefix)+suffix).open())) for suffix in
+            ['.thermal-history.csv','.heat-history.csv','.attempt-history.csv']}
+        accepted=histories['.thermal-history.csv'];heat=histories['.heat-history.csv'];attempts=histories['.attempt-history.csv']
+        meta['outputIntegrity']=bool(len(field)==cells and len(accepted)==len(heat)==meta['summary']['completedSteps']
+            and sum(row['reason']=='accepted' for row in attempts)==len(accepted)
+            and accepted and float(accepted[-1]['time'])==float(heat[-1]['time'])==meta['summary']['acceptedTime'])
+        if not meta['outputIntegrity']:
+            meta['run']['code']=1;meta['run']['error']='Native output files are incomplete or inconsistent; retained for diagnosis'
         names=json.loads((root/'face-names.json').read_text());groups={}
         for f in faces:
             name=names.get(f['face']);
@@ -104,6 +112,8 @@ def execute(args):
         meta['heatContent']=sum(float(c['area'])*float(c['value']) for c in field)
         if 'outlet' in groups and groups['outlet']['volumeFlux']>0:
             meta['outletTemperature']=groups['outlet']['advectiveFlux']/groups['outlet']['volumeFlux']
+    meta['outputSha256']={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.glob(args.label+'.*')
+                         if p.is_file() and not p.name.endswith('.metrics.json')}
     (root/(args.label+'.metrics.json')).write_text(json.dumps(meta,indent=2))
     print(json.dumps(meta,indent=2));return r['code']
 
@@ -111,5 +121,19 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mesh-cli',default='build/cartmesh2d_cli');p.add_argument('--transport-cli',default='build/cartmesh2d_transport_cli')
     p.add_argument('--case',choices=['channel','cavity','cylinder'],required=True);p.add_argument('--output',required=True)
     p.add_argument('--level',default='4');p.add_argument('--dt',default='.1');p.add_argument('--end',default='6');p.add_argument('--diffusivity',default='.1');p.add_argument('--nu',default='.1')
-    p.add_argument('--speed');p.add_argument('--relaxation',default='.6');p.add_argument('--courant',default='1');p.add_argument('--error',action='store_true');p.add_argument('--rtol',default='.01');p.add_argument('--no-events',action='store_true');p.add_argument('--restart');p.add_argument('--label',default='result')
-    raise SystemExit(execute(p.parse_args()))
+    p.add_argument('--speed');p.add_argument('--relaxation',default='.6');p.add_argument('--courant',default='1');p.add_argument('--retries',default='18');p.add_argument('--error',action='store_true');p.add_argument('--rtol',default='.01');p.add_argument('--no-events',action='store_true');p.add_argument('--restart');p.add_argument('--label',default='result')
+    p.add_argument('--isolate-live-output',action='store_true',help='Compute in temporary outputs/, then import closed files with hashes; avoids live workspace snapshot replacement')
+    args=p.parse_args()
+    if not args.isolate_live_output:raise SystemExit(execute(args))
+    target=Path(args.output).resolve();stage=Path(tempfile.mkdtemp(prefix='cartmesh2d-thermal-'))/'outputs'
+    args.output=str(stage)
+    try:code=execute(args)
+    finally:
+        # Preserve failures as well as successes. The staging directory remains
+        # available if importing files is interrupted; never copy active files.
+        if stage.exists():shutil.copytree(stage,target,dirs_exist_ok=True)
+    metrics=json.loads((target/(args.label+'.metrics.json')).read_text())
+    for name,digest in metrics['outputSha256'].items():
+        if hashlib.sha256((target/name).read_bytes()).hexdigest()!=digest:
+            raise RuntimeError('Closed output import hash mismatch: '+name)
+    raise SystemExit(code)

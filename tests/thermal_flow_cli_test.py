@@ -126,20 +126,23 @@ def main(args):
 
         checkpoint = continuous.with_suffix(".thermal.checkpoint")
         before = hashlib.sha256(checkpoint.read_bytes()).digest()
-        failed = invoke(args.transport_cli, mesh, continuous, 1,
+        flow_rejected = root / "flow-rejected"
+        failed = invoke(args.transport_cli, mesh, flow_rejected, 1,
                         extra=("--flow-max-iterations", "1"), restart=checkpoint)
         assert failed.returncode == 2
-        assert json.loads(continuous.with_suffix(".json").read_text())["failedStage"] == "flow"
+        assert json.loads(flow_rejected.with_suffix(".json").read_text())["failedStage"] == "flow"
         assert hashlib.sha256(checkpoint.read_bytes()).digest() == before
-        assert json.loads(continuous.with_suffix(".json").read_text())["converged"] is False
+        assert json.loads(flow_rejected.with_suffix(".json").read_text())["converged"] is False
+        assert flow_rejected.with_suffix(".thermal.checkpoint").read_bytes()==checkpoint.read_bytes()
         resumed = root / "resumed"
         assert invoke(args.transport_cli, mesh, resumed, 2, restart=checkpoint).returncode == 0
         assert math.isclose(json.loads(resumed.with_suffix(".json").read_text())["time"], .06)
 
-        scalar_failed = invoke(args.transport_cli, mesh, continuous, 1,
+        scalar_rejected = root / "scalar-rejected"
+        scalar_failed = invoke(args.transport_cli, mesh, scalar_rejected, 1,
                                extra=("--max-corrections", "1"), restart=checkpoint)
         assert scalar_failed.returncode == 2
-        scalar_summary = json.loads(continuous.with_suffix(".json").read_text())
+        scalar_summary = json.loads(scalar_rejected.with_suffix(".json").read_text())
         assert scalar_summary["failedStage"] == "scalar"
         assert math.isclose(scalar_summary["acceptedTime"], .04)
         assert hashlib.sha256(checkpoint.read_bytes()).digest() == before
