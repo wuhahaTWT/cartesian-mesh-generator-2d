@@ -91,17 +91,17 @@
   "findings": [
     "The growing maximum is real and remains explicitly reported, but on the finest mesh half of the area-weighted squared pressure error is carried by three cells occupying 0.01645% of fluid area.",
     "Area-weighted L1 and 99th-percentile errors decrease strongly while the pointwise maximum grows; this is a localized curved-wall/small-cell phenomenon, not a global pressure-field deterioration.",
-    "The rotor trace is exactly impermeable to roundoff and its adjacent Cartesian velocity jump halves with each geometric refinement. The correlation is diagnostic and does not by itself prove causation.",
+    "The rotor trace is exactly impermeable to roundoff and its adjacent Cartesian velocity jump halves with each geometric refinement. The postprocessor now also reconstructs the nonzero trace-jump vertices and reports cell distance from them; the fixed-polygon study records the discriminating result separately.",
     "The affine rigid-rotation patch residual stays near floating-point roundoff on all four accepted meshes, ruling out a general linear-consistency failure of the complete symmetric viscous operator. It does not qualify nonlinear or corner behaviour.",
-    "No near-wall cells are deleted from reported norms and no pointwise pressure qualification is granted. The next discriminating study is fixed-polygon spatial refinement or a polygon-consistent reference, followed by independent curved-flow regression before any product change."
+    "No near-wall cells are deleted from reported norms and no pointwise pressure qualification is granted. Fixed-polygon spatial refinement is recorded in native-laminar-fixed-polygon.json; independent curved-flow regression remains required before any product change."
   ],
   "reproduction": {
     "compile": "g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-pressure-localization.cpp -Lbuild -lcartmesh2d_fv -lcartmesh2d -o outputs/cloud-laminar/native-laminar-pressure-localization",
-    "driverSha256": "511ac638d12118e72583e94c013b01d44e04ee4177de958410dc98ba5ba3452d",
-    "binarySha256": "ff7b6315db67e602bee542d926dfe2ba5f9c581c8e42318500f86d7996194ccb",
+    "driverSha256": "e7ac76c55e744f96d03c8aca6b964f08e639a1a1e406df5c0139faae02d7d622",
+    "binarySha256": "36f3ac6e8b6f0217a0803fb024b457178851f9b3d92d151c78a607e6f75d8021",
     "rawJointJsonl": "outputs/cloud-laminar/pressure-localization.jsonl",
-    "rawJointJsonlSha256": "6ab3a84774403df111fcc3af8b83131ad363e914c31cea0ff758aa4b952b38be",
+    "rawJointJsonlSha256": "25f48e4b31c4bf47f1bbae19d32e89622a10989e08cf2a832053dd878fa0c7ec",
     "rawUpwindJson": "outputs/cloud-laminar/pressure-localization-upwind.json",
-    "rawUpwindJsonSha256": "449172b2437a3add74c3528e1b14214c5398217a5b2536102a466e6a730774c7"
+    "rawUpwindJsonSha256": "9a971d960b45b955dd69f995c8bc039d0a54ae5ce2674cdd91993d0bf088627f"
   }
 }

@@ -196,6 +196,31 @@ done
 
 最细网格补丁最大余量 `6.75e-13 m/s²`、真实转子最大法向速度 `5.35e-17 m/s`；但压力最大误差仍为 `1.806 m²/s²`，因此不能把补丁通过解释成局部压力正确。面积加权 L1、99% 分位和离壁 `0.025 m` 的最大误差随联合加密明显下降，而 50% 平方误差在最细档集中到 3 个格/`0.01645%` 总面积。最细 Upwind 也出现同一峰值与集中度，说明默认 face-limited-linear 不是原因。完整数组、原始 JSONL 与驱动/二进制哈希见 `native-laminar-pressure-localization.json`；下一步应固定同一多边形只细化空间网格，或取得保持该多边形无穿透语义的一致参考，不能从当前圆形解析解与局部峰值直接推出产品修复。
 
+同一诊断器现同时从真实边界原子面的中心和面积向量重建相邻分段共端点，记录每个单元到最近非零壁速迹跳点的距离。固定多边形空间研究逐字节复用 `annulus-joint-5.xy`（每环 128 段），只改变 level 4–8；level 5 复用既有同轮廓接受场，其余四档重新生成、导出 annulus 边界并以 `custom` 求解：
+
+```sh
+for level in 4 6 7 8; do
+  build/cartmesh2d_cli outputs/cloud-laminar/annulus-joint-5.xy \
+    outputs/cloud-laminar/annulus-fixed128-l$level "$level" .05 .05 interior \
+    outputs/cloud-laminar/annulus-fixed128-l$level-foam 0 0
+  build/cartmesh2d_flow_cli \
+    --mesh outputs/cloud-laminar/annulus-fixed128-l$level.solver.cm2d \
+    --case annulus --speed .5 \
+    --export-boundaries outputs/cloud-laminar/annulus-fixed128-l$level.boundaries
+  build/cartmesh2d_flow_cli \
+    --mesh outputs/cloud-laminar/annulus-fixed128-l$level.solver.cm2d \
+    --case custom --boundary outputs/cloud-laminar/annulus-fixed128-l$level.boundaries \
+    --nu .1 --speed .5 --convection face-limited-linear \
+    --tolerance 1e-8 --max-iterations 1800 \
+    --output outputs/cloud-laminar/annulus-fixed128-l$level-face-limited-linear
+  outputs/cloud-laminar/native-laminar-pressure-localization "fixed128-l$level" \
+    outputs/cloud-laminar/annulus-fixed128-l$level.solver.cm2d \
+    outputs/cloud-laminar/annulus-fixed128-l$level-face-limited-linear.cells.csv
+done
+```
+
+五档保持相同 `0.0245412 m/s` 最大迹跳和机器精度无穿透。全域峰值在最细档升到 `0.6147 m²/s²`，不能称点值收敛；但距每个迹跳点至少 `0.025 m` 的压力 RMS 在 level 5–8 为 `5.49e-3→1.58e-3→1.07e-3→5.90e-4 m²/s²`，对应最大值 `0.0448→0.0164→0.0123→0.0105 m²/s²`，最细仍保留 `96.74%` 流体面积。该距离带只定义可复现的观测范围，不改变求解或全域输出；所有近角点误差仍在 JSON 的全域 RMS/最大值中。固定折线角点上不连续切向 Dirichlet 迹的点值压力不得宣称合格；若产品后续显示适用范围，应同时输出这一几何/边界语义，而不能静默删格。完整网格、原始场、时间、质量值与哈希见 `native-laminar-fixed-polygon.json`。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格

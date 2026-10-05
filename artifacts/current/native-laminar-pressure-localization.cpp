@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
@@ -114,7 +115,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    struct Trace { double angle; Vector2D velocity; double length; };
+    struct Trace { double angle; Vector2D velocity; double length; Point2D centre; Vector2D areaVector; };
     std::vector<Trace> rotor;
     double normalVelocity = 0;
     for (const auto& bc : rotatingAnnulusBoundaryPreset2D(mesh,.5)) {
@@ -123,10 +124,11 @@ int main(int argc, char** argv) {
         normalVelocity = std::max(normalVelocity,
             std::abs(bc.velocity.x*face.areaVector.x+bc.velocity.y*face.areaVector.y)/length);
         if (bc.kind == FlowBoundaryKind2D::SmoothMovingWall)
-            rotor.push_back({std::atan2(face.centre.y,face.centre.x),bc.velocity,length});
+            rotor.push_back({std::atan2(face.centre.y,face.centre.x),bc.velocity,length,face.centre,face.areaVector});
     }
     std::sort(rotor.begin(),rotor.end(),[](const auto& a,const auto& b){return a.angle<b.angle;});
     double maximumJump = 0, jumpSquare = 0, jumpLength = 0;
+    std::vector<Point2D> traceJumpVertices;
     for (std::size_t i = 0; i < rotor.size(); ++i) {
         const auto& a = rotor[i];
         const auto& b = rotor[(i+1)%rotor.size()];
@@ -135,6 +137,28 @@ int main(int argc, char** argv) {
         maximumJump = std::max(maximumJump,jump);
         jumpSquare += weight*jump*jump;
         jumpLength += weight;
+        if(jump>1e-12) {
+            const Vector2D ta{.5*a.areaVector.y,-.5*a.areaVector.x};
+            const Vector2D tb{.5*b.areaVector.y,-.5*b.areaVector.x};
+            const Point2D ae[2]{{a.centre.x-ta.x,a.centre.y-ta.y},{a.centre.x+ta.x,a.centre.y+ta.y}};
+            const Point2D be[2]{{b.centre.x-tb.x,b.centre.y-tb.y},{b.centre.x+tb.x,b.centre.y+tb.y}};
+            double best=std::numeric_limits<double>::infinity();Point2D vertex{};
+            for(const auto& x:ae)for(const auto& y:be) {
+                const double distance=std::hypot(x.x-y.x,x.y-y.y);
+                if(distance<best) {best=distance;vertex={.5*(x.x+y.x),.5*(x.y+y.y)};}
+            }
+            traceJumpVertices.push_back(vertex);
+        }
+    }
+
+    std::vector<double> traceJumpDistance(mesh.cells.size(),std::numeric_limits<double>::infinity());
+    for(std::size_t i=0;i<mesh.cells.size();++i)for(const auto& vertex:traceJumpVertices)
+        traceJumpDistance[i]=std::min(traceJumpDistance[i],std::hypot(mesh.cells[i].centre.x-vertex.x,mesh.cells[i].centre.y-vertex.y));
+    std::vector<Band> jumpBands{{.0025},{.005},{.01},{.025},{.05}};
+    for(std::size_t i=0;i<error.size();++i)for(auto& band:jumpBands)if(traceJumpDistance[i]>=band.distance) {
+        band.area+=mesh.cells[i].area;
+        band.square+=mesh.cells[i].area*error[i]*error[i];
+        band.maximum=std::max(band.maximum,error[i]);
     }
 
     // Linear patch test on this exact accepted cut-cell mesh.  Rigid-body
@@ -204,6 +228,7 @@ int main(int argc, char** argv) {
         << "},\"worst_cell\":{"
         << "\"id\":" << maximumCell << ",\"x_m\":" << worst.centre.x
         << ",\"y_m\":" << worst.centre.y << ",\"area_m2\":" << worst.area
+        << ",\"nearest_rotor_trace_jump_m\":" << traceJumpDistance[maximumCell]
         << "},\"squared_error_concentration\":{"
         << "\"area_fraction_for_50_percent\":" << c50.first << ",\"cells_for_50_percent\":" << c50.second
         << ",\"area_fraction_for_90_percent\":" << c90.first << ",\"cells_for_90_percent\":" << c90.second
@@ -218,10 +243,19 @@ int main(int argc, char** argv) {
     }
     std::cout << "],\"rotor_trace\":{"
               << "\"faces\":" << rotor.size()
+              << ",\"nonzero_adjacent_jumps\":" << traceJumpVertices.size()
               << ",\"maximum_adjacent_velocity_jump_m_s\":" << maximumJump
               << ",\"length_weighted_rms_jump_m_s\":" << std::sqrt(jumpSquare/jumpLength)
               << ",\"maximum_normal_velocity_m_s\":" << normalVelocity
-              << "},\"rigid_rotation_symmetric_viscous_patch\":{"
+              << "},\"trace_jump_distance_bands\":[";
+    for(std::size_t i=0;i<jumpBands.size();++i) {
+        const auto& band=jumpBands[i];if(i)std::cout<<',';
+        std::cout<<"{\"minimum_distance_m\":"<<band.distance
+                 <<",\"retained_area_fraction\":"<<band.area/area
+                 <<",\"rms_m2_s2\":"<<(band.area?std::sqrt(band.square/band.area):0)
+                 <<",\"maximum_m2_s2\":"<<band.maximum<<'}';
+    }
+    std::cout << "],\"rigid_rotation_symmetric_viscous_patch\":{"
               << "\"rms_acceleration_m_s2\":" << std::sqrt(patchRms/area)
               << ",\"maximum_acceleration_m_s2\":" << patchMaximum
               << "},\"wall_cells\":" << wallCells << "}\n";
