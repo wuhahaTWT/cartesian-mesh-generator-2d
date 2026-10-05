@@ -120,6 +120,17 @@ build/cartmesh2d_flow_cli --mesh outputs/annulus.solver.cm2d --case custom --bou
 
 `cholesky` 是 macOS 的已有选项，跨平台构建不据此获得验证。普通网格、认证修复前后、默认线性求解器及真实 App 的完整记录见[入口证据](../artifacts/current/native-laminar-mesh-entry.json)。原生读回证明面积和外边界保持；当前 CM2D 格式不序列化完整 `sourceLineage`，故完整来源集合只在内存中的原生缩减例上核对，不能由两个空集合声称全网格谱系已验证。OpenFOAM 导出成功不等于外部 `checkMesh` 通过。
 
+### 云端原生精度与控制对照
+
+`artifacts/current/native-laminar-accuracy-probe.cpp` 复用现有原生测试的二维网格构造，调用产品求解器并导出真实单元场；不是独立离散方程审计。`native-laminar-accuracy-postprocess.py` 只读取这些场、解析 Couette/通道参考和仓库既有方腔文献数据，计算误差与插值，不建立第二套求解器或新验收门。
+
+```sh
+g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-accuracy-probe.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/cloud-laminar/accuracy-probe
+outputs/cloud-laminar/accuracy-probe channel 64 1e-8 upwind default outputs/cloud-laminar/channel-upwind-64
+```
+
+相同入口支持 `manufactured`（变形网格解析强迫涡）和 `cavity`（Re=100），格式为 `upwind` 或 `face-limited-linear`，方法为 `default` 或显式 `none`。原始 `accuracy-runs.json`、`accuracy-controls.json`、`cost-runs.json` 保留每次完整命令、进程退出状态和耗时；场、输入和日志在同目录。完成这些实际运行后执行 `python3 artifacts/current/native-laminar-accuracy-postprocess.py` 生成当前精度证据。压力为运动学压力，封闭流比较去除体积加权常数；速度/压力误差分别以 m/s 和 m²/s² 报告，不混成单个场误差。通道的参考为 `u=4y(1-y), v=0, p/ρ=8ν(4-x)`，方腔按真实中心网格和规定壁值双线性插值；圆环包含多边形几何误差，不因残差小而授予精度资格。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。
@@ -151,7 +162,7 @@ build/cartmesh2d_flow_cli --mesh outputs/channel.solver.cm2d --case custom --bou
 | `--pressure-preconditioner ic0\|aggregation\|cholesky` | Cholesky 只在 macOS；仍验真实线性残差 |
 | `--linear-policy strict\|adaptive` | adaptive 最终严格复核 |
 | `--velocity-relaxation` / `--pressure-corrections` | 默认 .6 / 4；困难曲壁可能不稳，连续性小不代表收敛 |
-| `--steady-acceleration none\|anderson\|newton-krylov` | 默认 none；限固定物性稳态。Anderson 保留原残差/守恒筛选，Newton–Krylov 要求 strict 线性及收敛控制，最终使用原严格验收 |
+| `--steady-acceleration none\|anderson\|newton-krylov` | 省略时 strict 固定物性稳态选择 Newton，其余上下文保持 SIMPLE；显式 none 保持原方法。Anderson/ Newton 限固定物性稳态，Newton 要求 strict 线性及收敛控制，最终使用原严格验收 |
 | `--initial-guess` / `--initial-flux` | 同目标网格稳态初值；面初值须与单元初值同用，不是物理检查点 |
 
 输出前缀在输入读取完成、首次写入结果前将 `.json` 标记为 `running`；最终摘要先写 `.json.tmp`，所有请求的输出关闭成功后才替换 `.json`。启动后的求解或导出异常标记为 `failed`，硬中断保留 `running`；只有非定常失败摘要记录最后接受时间。旧场文件可留作证据，读取端须以本次进程返回值和摘要状态共同判断，不能仅凭场文件存在认定完成。

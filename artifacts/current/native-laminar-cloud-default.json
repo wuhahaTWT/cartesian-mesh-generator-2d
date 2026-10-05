@@ -20,7 +20,38 @@
     },
     "macOSApp": "not tested in cloud",
     "packagedApp": "not tested",
-    "linuxDesktopApp": "not tested; no display server available"
+    "linuxDesktopApp": {
+      "kind": "real Electron renderer/IPC/native CLI smoke on Linux headless Ozone; not physical display/manual desktop or macOS",
+      "cells": 5168,
+      "evaluations": 111,
+      "converged": true,
+      "method": "newton-krylov",
+      "caseSaveLoadSettings": true,
+      "repeatedCalculationIdentical": true,
+      "gates": "\u5185\u90e8\u62d3\u6251\u68c0\u67e5\nPASS\n\u8be6\u60c5\nSolver \u8d28\u91cf\nPASS\n\u8be6\u60c5\n\u65b9\u5411\u8fde\u901a\u8d28\u91cf\nPASS\n\u8be6\u60c5",
+      "screenshot": "outputs/cloud-laminar/app-default.png",
+      "manualInteraction": false,
+      "cancellationChecked": false
+    },
+    "linuxAdaptiveLinearDefaultApp": {
+      "kind": "real Electron headless Ozone smoke; not physical/macOS GUI",
+      "cells": 5168,
+      "evaluations": 294,
+      "method": "none",
+      "converged": true,
+      "caseSaveLoadSettings": true,
+      "repeatedCalculationIdentical": true
+    },
+    "linuxTimePathRegressionApp": {
+      "kind": "real Electron headless renderer/IPC/native CLI, preservation check only",
+      "method": "none",
+      "caseSaveLoadSettings": true,
+      "repeatedCalculationIdentical": true,
+      "failureChecked": true,
+      "cancellationChecked": true,
+      "acceptedTimeAfterCancelAndResume": 0.05,
+      "scope": "Original physical-time SIMPLE path retained. Not new time-accuracy qualification."
+    }
   },
   "annulus": {
     "meshCommand": "build/cartmesh2d_cli artifacts/current/annulus-1024-axis-roundoff.xy outputs/cloud-laminar/annulus 7 .15 .1 interior outputs/cloud-laminar/annulus-foam 7",
@@ -70,7 +101,14 @@
     "desktop/src/renderer/app.js": "9c36bed07950ad28967abec0560c6e8e3d19bc78988e269aee4d4f1cd5883f49",
     "tests/flow_boundary_test.cpp": "1864bf0794e2b488ed0af03b7d3346814a2bb9a5dda1b1a9e57fcde57e7d56f9",
     "tests/flow_cli_test.py": "62c40e87937fbc805dd5cad506dd5237850392acf5299a5ad12f8f35e111e1b0",
-    "tests/sst_rans_test.cpp": "2f062ac3b0238164525a9a45ad6725c0ac28fc45892790a803a9f2963eadb08d"
+    "tests/sst_rans_test.cpp": "2f062ac3b0238164525a9a45ad6725c0ac28fc45892790a803a9f2963eadb08d",
+    "desktop/src/main.js": "37c728adddc2e96bc3c68b1acfe6defa63e1acfae610cdfdcd99f0d16b47e7b2"
   },
-  "rawEvidence": "outputs/cloud-laminar/; fields, failures, inputs and logs retained there; large files will be losslessly compressed with manifests."
+  "rawEvidence": "outputs/cloud-laminar/; fields, failures, inputs and logs retained there; large files will be losslessly compressed with manifests.",
+  "delivery": {
+    "localCommit": "f2e0469",
+    "remotePushed": false,
+    "pushError": "fatal: could not read Username for https://github.com: No such device or address",
+    "remoteBase": "36ca9767a7aed9169e477967ce21a1551c092740"
+  }
 }

@@ -1,0 +1,3095 @@
+{
+  "status": "accuracy-investigation-in-progress-not-mature",
+  "baseCommit": "f2e0469",
+  "units": {
+    "velocity": "m/s",
+    "pressure": "p/rho in m2/s2",
+    "continuity": "native dimensionless residual"
+  },
+  "thresholds": "No new acceptance threshold is introduced. Errors are measured against references and mesh trends; original solver gates unchanged.",
+  "nativeGridRuns": [
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "8",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/channel-upwind-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.030038610999781667,
+      "result": {
+        "case": "channel",
+        "n": 8,
+        "cells": 256,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 26,
+        "seconds": 0.026614129,
+        "continuity": 1.4227640517995486e-13,
+        "momentumResidual": 2.5727999064878807e-10,
+        "velocityChange": 7.465317508395505e-10,
+        "pressureChange": 1.6004993290282114e-09,
+        "velocityRms_m_s": 0.006243313110063944,
+        "velocityMax_m_s": 0.009943948268593872,
+        "pressureRms_m2_s2": 0.04304535425339803,
+        "pressureMax_m2_s2": 0.0943357400397371,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "16",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/channel-upwind-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.12887042500005919,
+      "result": {
+        "case": "channel",
+        "n": 16,
+        "cells": 1024,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 36,
+        "seconds": 0.122523509,
+        "continuity": 2.3328745619305424e-13,
+        "momentumResidual": 8.825428188912242e-10,
+        "velocityChange": 2.607527388699179e-09,
+        "pressureChange": 2.6702062783101606e-09,
+        "velocityRms_m_s": 0.0016597695045083181,
+        "velocityMax_m_s": 0.003180055182319756,
+        "pressureRms_m2_s2": 0.011032617298866744,
+        "pressureMax_m2_s2": 0.03165807275042054,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "32",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/channel-upwind-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.9609731489999831,
+      "result": {
+        "case": "channel",
+        "n": 32,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 52,
+        "seconds": 0.944298286,
+        "continuity": 2.254324783047897e-13,
+        "momentumResidual": 7.950096201804207e-10,
+        "velocityChange": 2.3955039745980583e-09,
+        "pressureChange": 2.9483871909586797e-09,
+        "velocityRms_m_s": 0.0004216871728937717,
+        "velocityMax_m_s": 0.0008852969700069647,
+        "pressureRms_m2_s2": 0.0027798378375599535,
+        "pressureMax_m2_s2": 0.011740359971676995,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "64",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/channel-upwind-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 8.189294271000108,
+      "result": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 75,
+        "seconds": 8.12535954,
+        "continuity": 5.228047541324526e-13,
+        "momentumResidual": 6.669869671448814e-10,
+        "velocityChange": 1.9999419178804745e-09,
+        "pressureChange": 5.00625157490669e-09,
+        "velocityRms_m_s": 0.00010587445436926961,
+        "velocityMax_m_s": 0.00023273117291637134,
+        "pressureRms_m2_s2": 0.0006974211323496611,
+        "pressureMax_m2_s2": 0.004835501666376807,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "8",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/channel-face-limited-linear-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.02637758599985318,
+      "result": {
+        "case": "channel",
+        "n": 8,
+        "cells": 256,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 26,
+        "seconds": 0.02319535,
+        "continuity": 1.6820531927825102e-13,
+        "momentumResidual": 7.759800927421791e-10,
+        "velocityChange": 1.862872802496442e-09,
+        "pressureChange": 2.5653313816643604e-09,
+        "velocityRms_m_s": 0.006242420265178619,
+        "velocityMax_m_s": 0.00994318181267298,
+        "pressureRms_m2_s2": 0.04305060079842847,
+        "pressureMax_m2_s2": 0.09410153198230065,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "16",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/channel-face-limited-linear-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.15829651800004285,
+      "result": {
+        "case": "channel",
+        "n": 16,
+        "cells": 1024,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 36,
+        "seconds": 0.152102899,
+        "continuity": 2.0693340782335685e-13,
+        "momentumResidual": 1.1860149120046382e-09,
+        "velocityChange": 3.5737419321702707e-09,
+        "pressureChange": 3.3239245699302374e-09,
+        "velocityRms_m_s": 0.001660623624804694,
+        "velocityMax_m_s": 0.003179911580254303,
+        "pressureRms_m2_s2": 0.011025737081848725,
+        "pressureMax_m2_s2": 0.031495607963233585,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "32",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/channel-face-limited-linear-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 1.335915415999807,
+      "result": {
+        "case": "channel",
+        "n": 32,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 64,
+        "seconds": 1.318940094,
+        "continuity": 5.386340245355781e-13,
+        "momentumResidual": 5.190982513835365e-10,
+        "velocityChange": 1.0445561036777912e-09,
+        "pressureChange": 2.412035016163827e-09,
+        "velocityRms_m_s": 0.0004218824514780047,
+        "velocityMax_m_s": 0.0008853015936935952,
+        "pressureRms_m2_s2": 0.002778081781072473,
+        "pressureMax_m2_s2": 0.011690345419433701,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "channel",
+        "64",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/channel-face-limited-linear-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 12.314529421000316,
+      "result": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 102,
+        "seconds": 12.246882803,
+        "continuity": 1.1675045085974937e-12,
+        "momentumResidual": 1.297994866196428e-10,
+        "velocityChange": 3.2642015099775357e-10,
+        "pressureChange": 1.569595362773477e-09,
+        "velocityRms_m_s": 0.00010591667575643928,
+        "velocityMax_m_s": 0.00023271913657247825,
+        "pressureRms_m2_s2": 0.0006969581776340783,
+        "pressureMax_m2_s2": 0.0048243818557844875,
+        "pressureGaugeOffset_m2_s2": 0
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "8",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/manufactured-upwind-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.040431878000163124,
+      "result": {
+        "case": "manufactured",
+        "n": 8,
+        "cells": 64,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 32,
+        "seconds": 0.035737052,
+        "continuity": 1.397479451106492e-12,
+        "momentumResidual": 3.9063683875867703e-10,
+        "velocityChange": 1.0579745229544562e-09,
+        "pressureChange": 1.7569741621188807e-09,
+        "velocityRms_m_s": 0.08436080141498332,
+        "velocityMax_m_s": 0.15023204558592562,
+        "pressureRms_m2_s2": 0.09429171722923804,
+        "pressureMax_m2_s2": 0.29761661767829173,
+        "pressureGaugeOffset_m2_s2": -0.9027638157274583
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "16",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/manufactured-upwind-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.056664234999971086,
+      "result": {
+        "case": "manufactured",
+        "n": 16,
+        "cells": 256,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 48,
+        "seconds": 0.053398728,
+        "continuity": 3.4042944138608017e-12,
+        "momentumResidual": 6.276614942980796e-10,
+        "velocityChange": 1.8202621590875997e-09,
+        "pressureChange": 2.398311044709606e-09,
+        "velocityRms_m_s": 0.04971573227487134,
+        "velocityMax_m_s": 0.09022592400739324,
+        "pressureRms_m2_s2": 0.05473929830818195,
+        "pressureMax_m2_s2": 0.19128793043769854,
+        "pressureGaugeOffset_m2_s2": -0.9554500134681964
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "32",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/manufactured-upwind-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.9015112490001229,
+      "result": {
+        "case": "manufactured",
+        "n": 32,
+        "cells": 1024,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 132,
+        "seconds": 0.895261355,
+        "continuity": 3.643099783899775e-13,
+        "momentumResidual": 2.662301097410525e-10,
+        "velocityChange": 7.817968704242227e-10,
+        "pressureChange": 1.3165654425248165e-09,
+        "velocityRms_m_s": 0.027395710213067387,
+        "velocityMax_m_s": 0.05010866101806848,
+        "pressureRms_m2_s2": 0.028836101964904316,
+        "pressureMax_m2_s2": 0.1032104170501893,
+        "pressureGaugeOffset_m2_s2": -0.9786309610751891
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "64",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/manufactured-upwind-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 21.14700548000019,
+      "result": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 566,
+        "seconds": 21.12814543,
+        "continuity": 3.025635341582617e-11,
+        "momentumResidual": 6.966668560936326e-10,
+        "velocityChange": 2.1137222867805825e-09,
+        "pressureChange": 2.2279546894245846e-09,
+        "velocityRms_m_s": 0.014486910011407414,
+        "velocityMax_m_s": 0.02659619215201995,
+        "pressureRms_m2_s2": 0.014931175863122969,
+        "pressureMax_m2_s2": 0.05369922389310822,
+        "pressureGaugeOffset_m2_s2": -0.9894897634515774
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "8",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/manufactured-face-limited-linear-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.011567711000225245,
+      "result": {
+        "case": "manufactured",
+        "n": 8,
+        "cells": 64,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 33,
+        "seconds": 0.009356602,
+        "continuity": 5.502031285767183e-13,
+        "momentumResidual": 7.659286201059432e-10,
+        "velocityChange": 1.6790969632543672e-09,
+        "pressureChange": 2.6253323757365684e-09,
+        "velocityRms_m_s": 0.02987694444181928,
+        "velocityMax_m_s": 0.04795961289968695,
+        "pressureRms_m2_s2": 0.02678823260562096,
+        "pressureMax_m2_s2": 0.07717339450911431,
+        "pressureGaugeOffset_m2_s2": -0.9440700833419964
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "16",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/manufactured-face-limited-linear-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.07238542699997197,
+      "result": {
+        "case": "manufactured",
+        "n": 16,
+        "cells": 256,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 48,
+        "seconds": 0.06908318,
+        "continuity": 5.752300329290392e-13,
+        "momentumResidual": 9.37031679457985e-10,
+        "velocityChange": 2.6971816534627924e-09,
+        "pressureChange": 2.3039841751620375e-09,
+        "velocityRms_m_s": 0.00619779170179523,
+        "velocityMax_m_s": 0.01249544960746247,
+        "pressureRms_m2_s2": 0.006382653340751718,
+        "pressureMax_m2_s2": 0.013850692429638212,
+        "pressureGaugeOffset_m2_s2": -0.9868401244859792
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "32",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/manufactured-face-limited-linear-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.9761776969999119,
+      "result": {
+        "case": "manufactured",
+        "n": 32,
+        "cells": 1024,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 144,
+        "seconds": 0.969992826,
+        "continuity": 1.883072012247839e-12,
+        "momentumResidual": 2.689541492490305e-09,
+        "velocityChange": 7.943664609965714e-09,
+        "pressureChange": 9.982953251931223e-09,
+        "velocityRms_m_s": 0.0013823094135104732,
+        "velocityMax_m_s": 0.002794144644507588,
+        "pressureRms_m2_s2": 0.0016575927659373713,
+        "pressureMax_m2_s2": 0.004590279464769087,
+        "pressureGaugeOffset_m2_s2": -0.9967210478982914
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "manufactured",
+        "64",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/manufactured-face-limited-linear-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 22.566446955000174,
+      "result": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 579,
+        "seconds": 22.545200477,
+        "continuity": 2.018479153346426e-11,
+        "momentumResidual": 3.1930027940244414e-10,
+        "velocityChange": 9.549599058477665e-10,
+        "pressureChange": 1.3350819439882466e-09,
+        "velocityRms_m_s": 0.0003335436048154526,
+        "velocityMax_m_s": 0.0006504792159765322,
+        "pressureRms_m2_s2": 0.0004326809712220841,
+        "pressureMax_m2_s2": 0.00128467101895835,
+        "pressureGaugeOffset_m2_s2": -0.9991813321206938
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "8",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/cavity-upwind-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.007775212000069587,
+      "result": {
+        "case": "cavity",
+        "n": 8,
+        "cells": 64,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 31,
+        "seconds": 0.005612876,
+        "continuity": 2.988911201873279e-13,
+        "momentumResidual": 1.7339470124423766e-09,
+        "velocityChange": 4.714301214885703e-09,
+        "pressureChange": 1.6196017436977829e-09
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "16",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/cavity-upwind-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.04731655699970361,
+      "result": {
+        "case": "cavity",
+        "n": 16,
+        "cells": 256,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 59,
+        "seconds": 0.0445075,
+        "continuity": 3.992431385491102e-13,
+        "momentumResidual": 3.2882096690993043e-10,
+        "velocityChange": 9.545339228539047e-10,
+        "pressureChange": 2.333857667081047e-10
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "32",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/cavity-upwind-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.3614940910001678,
+      "result": {
+        "case": "cavity",
+        "n": 32,
+        "cells": 1024,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 102,
+        "seconds": 0.356006754,
+        "continuity": 6.175602021950277e-12,
+        "momentumResidual": 9.556356207784937e-10,
+        "velocityChange": 2.8371953238594013e-09,
+        "pressureChange": 5.283804618055393e-10
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "64",
+        "1e-8",
+        "upwind",
+        "default",
+        "outputs/cloud-laminar/cavity-upwind-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 4.605053743000099,
+      "result": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 231,
+        "seconds": 4.587129164,
+        "continuity": 5.063906900141385e-11,
+        "momentumResidual": 3.2838909593757933e-10,
+        "velocityChange": 1.0016867323524783e-09,
+        "pressureChange": 3.220588082179911e-10
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "8",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/cavity-face-limited-linear-8"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.012749644999985321,
+      "result": {
+        "case": "cavity",
+        "n": 8,
+        "cells": 64,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 47,
+        "seconds": 0.010333847,
+        "continuity": 1.3758438832667252e-13,
+        "momentumResidual": 2.572422739939254e-09,
+        "velocityChange": 4.260705830754959e-09,
+        "pressureChange": 6.530913847746841e-10
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "16",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/cavity-face-limited-linear-16"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.06481016799989447,
+      "result": {
+        "case": "cavity",
+        "n": 16,
+        "cells": 256,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 69,
+        "seconds": 0.061778319,
+        "continuity": 1.4849232954361469e-13,
+        "momentumResidual": 1.258325268910871e-09,
+        "velocityChange": 3.096498027632787e-09,
+        "pressureChange": 1.1059350492598372e-09
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "32",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/cavity-face-limited-linear-32"
+      ],
+      "returncode": 0,
+      "processSeconds": 0.5430753370001185,
+      "result": {
+        "case": "cavity",
+        "n": 32,
+        "cells": 1024,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 118,
+        "seconds": 0.537025135,
+        "continuity": 1.0459364765350726e-12,
+        "momentumResidual": 1.4109225036019035e-09,
+        "velocityChange": 4.0984559437172666e-09,
+        "pressureChange": 1.0136261673244651e-09
+      }
+    },
+    {
+      "command": [
+        "outputs/cloud-laminar/accuracy-probe",
+        "cavity",
+        "64",
+        "1e-8",
+        "face-limited-linear",
+        "default",
+        "outputs/cloud-laminar/cavity-face-limited-linear-64"
+      ],
+      "returncode": 0,
+      "processSeconds": 7.298389424000106,
+      "result": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 342,
+        "seconds": 7.281597776,
+        "continuity": 1.3416209908702435e-11,
+        "momentumResidual": 2.9035548200879e-10,
+        "velocityChange": 3.9299664187337225e-10,
+        "pressureChange": 5.113198368561885e-10
+      }
+    }
+  ],
+  "cavity": {
+    "source": "tools/verification/references/cavity-marchi-2009-re100.json",
+    "sourceSha256": "a64c0f8c548b7ded9ba1202b65561724db09f2dd6e2874bef4752f8fd55ddb65",
+    "interpolation": "bilinear cell-centre interpolation plus prescribed wall values; no extrapolation",
+    "normalization": "lid speed = 1 m/s; dimensionless error equals numeric m/s error",
+    "comparisons": [
+      {
+        "n": 8,
+        "scheme": "upwind",
+        "component": "u",
+        "rms_m_s": 0.054916254971220206,
+        "max_m_s": 0.12517493724636358,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.045966484546347275,
+            "reference": -0.041974991,
+            "error": -0.003991493546347272
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07090295675534475,
+            "reference": -0.077125399,
+            "error": 0.006222442244655249
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.09583942896434222,
+            "reference": -0.109816214,
+            "error": 0.013976785035657774
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.11009674561141908,
+            "reference": -0.141930064,
+            "error": 0.03183331838858092
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.12435406225849593,
+            "reference": -0.172712391,
+            "error": 0.04835832874150406
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.13012100211607303,
+            "reference": -0.198470859,
+            "error": 0.06834985688392697
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.1358879419736501,
+            "reference": -0.212962392,
+            "error": 0.07707445002634991
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.12841835066909044,
+            "reference": -0.2091491418,
+            "error": 0.08073079113090956
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.12094875936453076,
+            "reference": -0.182080595,
+            "error": 0.061131835635469256
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.09033879784180604,
+            "reference": -0.131256301,
+            "error": 0.04091750315819395
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.05972883631908131,
+            "reference": -0.060245594,
+            "error": 0.0005167576809186891
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.015648028183763006,
+            "reference": 0.027874448,
+            "error": -0.012226419816236993
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.09102489268660732,
+            "reference": 0.140425325,
+            "error": -0.04940043231339267
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.28165832472012187,
+            "reference": 0.31055709,
+            "error": -0.028898765279878114
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.4722917567536364,
+            "reference": 0.597466694,
+            "error": -0.12517493724636358
+          }
+        ]
+      },
+      {
+        "n": 8,
+        "scheme": "upwind",
+        "component": "v",
+        "rms_m_s": 0.056044917130133716,
+        "max_m_s": 0.10266409295095355,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.09386552863234314,
+            "reference": 0.094807616,
+            "error": -0.0009420873676568575
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.11193181346209903,
+            "reference": 0.149243,
+            "error": -0.037311186537900956
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.12999809829185494,
+            "reference": 0.174342933,
+            "error": -0.04434483470814507
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.120045833531141,
+            "reference": 0.179243328,
+            "error": -0.05919749446885901
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.11009356877042707,
+            "reference": 0.169132064,
+            "error": -0.059038495229572927
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.08744524780357261,
+            "reference": 0.145730201,
+            "error": -0.05828495319642739
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.06479692683671816,
+            "reference": 0.1087758646,
+            "error": -0.043978937763281836
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.03155418556720916,
+            "reference": 0.057536559,
+            "error": -0.02598237343279084
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.0016885557022998333,
+            "reference": -0.007748504,
+            "error": 0.0060599482977001665
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.04341075198717872,
+            "reference": -0.084066715,
+            "error": 0.04065596301282128
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.0851329482720576,
+            "reference": -0.163010143,
+            "error": 0.0778771947279424
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.12516322004904645,
+            "reference": -0.227827313,
+            "error": 0.10266409295095355
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.16519349182603532,
+            "reference": -0.253768577,
+            "error": 0.08857508517396467
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.1652642352773821,
+            "reference": -0.218690812,
+            "error": 0.05342657672261791
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.16533497872872888,
+            "reference": -0.12331817,
+            "error": -0.04201680872872887
+          }
+        ]
+      },
+      {
+        "n": 16,
+        "scheme": "upwind",
+        "component": "u",
+        "rms_m_s": 0.030516597888979244,
+        "max_m_s": 0.048803292463795,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.04092659360988285,
+            "reference": -0.041974991,
+            "error": 0.0010483973901171534
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07247999370794436,
+            "reference": -0.077125399,
+            "error": 0.004645405292055635
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.09834056487895977,
+            "reference": -0.109816214,
+            "error": 0.011475649121040224
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.12057067468098699,
+            "reference": -0.141930064,
+            "error": 0.021359389319013003
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.13974322748220214,
+            "reference": -0.172712391,
+            "error": 0.032969163517797856
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.1549917614260802,
+            "reference": -0.198470859,
+            "error": 0.043479097573919795
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.164159099536205,
+            "reference": -0.212962392,
+            "error": 0.048803292463795
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.16411148181786978,
+            "reference": -0.2091491418,
+            "error": 0.04503765998213022
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.15115456737765598,
+            "reference": -0.182080595,
+            "error": 0.030926027622344032
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.12160803625095351,
+            "reference": -0.131256301,
+            "error": 0.009648264749046481
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.07219281018151633,
+            "reference": -0.060245594,
+            "error": -0.011947216181516326
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.0007680620306876277,
+            "reference": 0.027874448,
+            "error": -0.02710638596931237
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.10709988835824996,
+            "reference": 0.140425325,
+            "error": -0.03332543664175003
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.274420962463323,
+            "reference": 0.31055709,
+            "error": -0.036136127536677
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5571257269198749,
+            "reference": 0.597466694,
+            "error": -0.04034096708012502
+          }
+        ]
+      },
+      {
+        "n": 16,
+        "scheme": "upwind",
+        "component": "v",
+        "rms_m_s": 0.03398317856957943,
+        "max_m_s": 0.06401857625337654,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.08467466054379867,
+            "reference": 0.094807616,
+            "error": -0.010132955456201326
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.12990338927316367,
+            "reference": 0.149243,
+            "error": -0.01933961072683632
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.1469464164224334,
+            "reference": 0.174342933,
+            "error": -0.027396516577566615
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.14576875512074045,
+            "reference": 0.179243328,
+            "error": -0.03347457287925956
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.1324145072864267,
+            "reference": 0.169132064,
+            "error": -0.036717556713573296
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.10973480386243145,
+            "reference": 0.145730201,
+            "error": -0.03599539713756855
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.07874339586586362,
+            "reference": 0.1087758646,
+            "error": -0.03003246873413637
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.03978296811064466,
+            "reference": 0.057536559,
+            "error": -0.01775359088935534
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.006529887196508552,
+            "reference": -0.007748504,
+            "error": 0.0012186168034914475
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.05864998669588967,
+            "reference": -0.084066715,
+            "error": 0.025416728304110327
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.11336181013306587,
+            "reference": -0.163010143,
+            "error": 0.049648332866934125
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.16380873674662347,
+            "reference": -0.227827313,
+            "error": 0.06401857625337654
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.19706393022820984,
+            "reference": -0.253768577,
+            "error": 0.05670464677179016
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.1927427767045548,
+            "reference": -0.218690812,
+            "error": 0.025948035295445204
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.12712585753731093,
+            "reference": -0.12331817,
+            "error": -0.003807687537310922
+          }
+        ]
+      },
+      {
+        "n": 32,
+        "scheme": "upwind",
+        "component": "u",
+        "rms_m_s": 0.018169452967257912,
+        "max_m_s": 0.027417476308854605,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.04187587588058622,
+            "reference": -0.041974991,
+            "error": 9.911511941378126e-05
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.0751788615266057,
+            "reference": -0.077125399,
+            "error": 0.0019465374733942942
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.10396025898969627,
+            "reference": -0.109816214,
+            "error": 0.005855955010303726
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.13022920492143764,
+            "reference": -0.141930064,
+            "error": 0.011700859078562359
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.15407408757359506,
+            "reference": -0.172712391,
+            "error": 0.018638303426404934
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.1736751108046317,
+            "reference": -0.198470859,
+            "error": 0.02479574819536831
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.1855449156911454,
+            "reference": -0.212962392,
+            "error": 0.027417476308854605
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.1851279530685952,
+            "reference": -0.2091491418,
+            "error": 0.024021188731404797
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.16789735057887056,
+            "reference": -0.182080595,
+            "error": 0.014183244421129448
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.13072516076168209,
+            "reference": -0.131256301,
+            "error": 0.0005311402383179065
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.07266476140140335,
+            "reference": -0.060245594,
+            "error": -0.01241916740140335
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.007080997642534408,
+            "reference": 0.027874448,
+            "error": -0.02079345035746559
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.11684581173248787,
+            "reference": 0.140425325,
+            "error": -0.02357951326751212
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.2865548250146608,
+            "reference": 0.31055709,
+            "error": -0.024002264985339195
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5736794878797661,
+            "reference": 0.597466694,
+            "error": -0.023787206120233884
+          }
+        ]
+      },
+      {
+        "n": 32,
+        "scheme": "upwind",
+        "component": "v",
+        "rms_m_s": 0.01819747819915141,
+        "max_m_s": 0.035056001408466514,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.09045994516810871,
+            "reference": 0.094807616,
+            "error": -0.00434767083189129
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.1405748145569583,
+            "reference": 0.149243,
+            "error": -0.008668185443041682
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.16125165893700377,
+            "reference": 0.174342933,
+            "error": -0.013091274062996233
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.1622365628773408,
+            "reference": 0.179243328,
+            "error": -0.017006765122659195
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.14945992865104127,
+            "reference": 0.169132064,
+            "error": -0.01967213534895873
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.12552011192956358,
+            "reference": 0.145730201,
+            "error": -0.02021008907043642
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.09105218068086936,
+            "reference": 0.1087758646,
+            "error": -0.017723683919130637
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.0460718383687886,
+            "reference": 0.057536559,
+            "error": -0.0114647206312114
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.008763825529786242,
+            "reference": -0.007748504,
+            "error": -0.0010153215297862422
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.07110439462595944,
+            "reference": -0.084066715,
+            "error": 0.012962320374040562
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.1359357784307327,
+            "reference": -0.163010143,
+            "error": 0.02707436456926729
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.1927713115915335,
+            "reference": -0.227827313,
+            "error": 0.035056001408466514
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.22395341644233224,
+            "reference": -0.253768577,
+            "error": 0.029815160557667753
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.20656430383207044,
+            "reference": -0.218690812,
+            "error": 0.012126508167929567
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.12545581275019566,
+            "reference": -0.12331817,
+            "error": -0.0021376427501956508
+          }
+        ]
+      },
+      {
+        "n": 64,
+        "scheme": "upwind",
+        "component": "u",
+        "rms_m_s": 0.009783636923166654,
+        "max_m_s": 0.014547762956015564,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.04209692507672334,
+            "reference": -0.041974991,
+            "error": -0.00012193407672334011
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07633696033629474,
+            "reference": -0.077125399,
+            "error": 0.0007884386637052598
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.10694280382503774,
+            "reference": -0.109816214,
+            "error": 0.00287341017496226
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.13586740861411586,
+            "reference": -0.141930064,
+            "error": 0.00606265538588413
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.1628243630353492,
+            "reference": -0.172712391,
+            "error": 0.009888027964650797
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.1852188530415248,
+            "reference": -0.198470859,
+            "error": 0.0132520059584752
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.19841462904398444,
+            "reference": -0.212962392,
+            "error": 0.014547762956015564
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.1967682855204823,
+            "reference": -0.2091491418,
+            "error": 0.012380856279517682
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.1754166302328566,
+            "reference": -0.182080595,
+            "error": 0.006663964767143399
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.1321903026808442,
+            "reference": -0.131256301,
+            "error": -0.0009340016808442042
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.0681065764077606,
+            "reference": -0.060245594,
+            "error": -0.007860982407760606
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.015721279874952174,
+            "reference": 0.027874448,
+            "error": -0.012153168125047825
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.12712471743076825,
+            "reference": 0.140425325,
+            "error": -0.013300607569231737
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.29752649533692793,
+            "reference": 0.31055709,
+            "error": -0.013030594663072048
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5852047675920417,
+            "reference": 0.597466694,
+            "error": -0.012261926407958312
+          }
+        ]
+      },
+      {
+        "n": 64,
+        "scheme": "upwind",
+        "component": "v",
+        "rms_m_s": 0.009451048313839173,
+        "max_m_s": 0.018441502187676234,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.09290614153209965,
+            "reference": 0.094807616,
+            "error": -0.0019014744679003437
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.14527928638538773,
+            "reference": 0.149243,
+            "error": -0.003963713614612258
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.16806145715827459,
+            "reference": 0.174342933,
+            "error": -0.00628147584172542
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.1707378552099926,
+            "reference": 0.179243328,
+            "error": -0.008505472790007407
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.15896354994446132,
+            "reference": 0.169132064,
+            "error": -0.010168514055538674
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.13500759529881545,
+            "reference": 0.145730201,
+            "error": -0.010722605701184551
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.09914448336137775,
+            "reference": 0.1087758646,
+            "error": -0.009631381238622241
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.05106942187577421,
+            "reference": 0.057536559,
+            "error": -0.006467137124225794
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.008717904099871275,
+            "reference": -0.007748504,
+            "error": -0.0009694000998712749
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.07746847542365848,
+            "reference": -0.084066715,
+            "error": 0.006598239576341522
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.14874366346732715,
+            "reference": -0.163010143,
+            "error": 0.014266479532672849
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.20938581081232377,
+            "reference": -0.227827313,
+            "error": 0.018441502187676234
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.23851717606583644,
+            "reference": -0.253768577,
+            "error": 0.01525140093416355
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.21288020582969946,
+            "reference": -0.218690812,
+            "error": 0.005810606170300547
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.1244501772931571,
+            "reference": -0.12331817,
+            "error": -0.0011320072931571001
+          }
+        ]
+      },
+      {
+        "n": 8,
+        "scheme": "face-limited-linear",
+        "component": "u",
+        "rms_m_s": 0.03650835652988882,
+        "max_m_s": 0.08684463749425342,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.04312624319298232,
+            "reference": -0.041974991,
+            "error": -0.001151252192982316
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07140213369616986,
+            "reference": -0.077125399,
+            "error": 0.005723265303830133
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.09967802419935741,
+            "reference": -0.109816214,
+            "error": 0.010138189800642586
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.12137264037692232,
+            "reference": -0.141930064,
+            "error": 0.020557423623077678
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.1430672565544872,
+            "reference": -0.172712391,
+            "error": 0.029645134445512783
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.15317341072047366,
+            "reference": -0.198470859,
+            "error": 0.04529744827952634
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.16327956488646012,
+            "reference": -0.212962392,
+            "error": 0.049682827113539885
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.1528475570440782,
+            "reference": -0.2091491418,
+            "error": 0.056301584755921785
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.1424155492016963,
+            "reference": -0.182080595,
+            "error": 0.03966504579830371
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.09924028713002045,
+            "reference": -0.131256301,
+            "error": 0.03201601386997954
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.05606502505834461,
+            "reference": -0.060245594,
+            "error": 0.004180568941655388
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.028926520055200355,
+            "reference": 0.027874448,
+            "error": 0.0010520720552003558
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.11391806516874532,
+            "reference": 0.140425325,
+            "error": -0.026507259831254668
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.3122700608372459,
+            "reference": 0.31055709,
+            "error": 0.0017129708372459196
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5106220565057465,
+            "reference": 0.597466694,
+            "error": -0.08684463749425342
+          }
+        ]
+      },
+      {
+        "n": 8,
+        "scheme": "face-limited-linear",
+        "component": "v",
+        "rms_m_s": 0.03882798615637772,
+        "max_m_s": 0.07150269687134136,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.09241242367523245,
+            "reference": 0.094807616,
+            "error": -0.0023951923247675505
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.11590830280322753,
+            "reference": 0.149243,
+            "error": -0.033334697196772456
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.13940418193122261,
+            "reference": 0.174342933,
+            "error": -0.03493875106877739
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.13417562538132935,
+            "reference": 0.179243328,
+            "error": -0.04506770261867066
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.12894706883143608,
+            "reference": 0.169132064,
+            "error": -0.040184995168563914
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.10541265892404547,
+            "reference": 0.145730201,
+            "error": -0.04031754207595453
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.08187824901665487,
+            "reference": 0.1087758646,
+            "error": -0.026897615583345122
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.039873859952759765,
+            "reference": 0.057536559,
+            "error": -0.017662699047240236
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.002130529111135348,
+            "reference": -0.007748504,
+            "error": 0.0056179748888646516
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.057176284083978436,
+            "reference": -0.084066715,
+            "error": 0.026890430916021564
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.11222203905682152,
+            "reference": -0.163010143,
+            "error": 0.05078810394317848
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.15632461612865864,
+            "reference": -0.227827313,
+            "error": 0.07150269687134136
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.2004271932004958,
+            "reference": -0.253768577,
+            "error": 0.053341383799504205
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.17759466860704456,
+            "reference": -0.218690812,
+            "error": 0.04109614339295545
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.15476214401359337,
+            "reference": -0.12331817,
+            "error": -0.03144397401359336
+          }
+        ]
+      },
+      {
+        "n": 16,
+        "scheme": "face-limited-linear",
+        "component": "u",
+        "rms_m_s": 0.01135363929490903,
+        "max_m_s": 0.019594284028572884,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.039454026227918715,
+            "reference": -0.041974991,
+            "error": 0.0025209647720812883
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07222815384102875,
+            "reference": -0.077125399,
+            "error": 0.004897245158971247
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.1020562206471724,
+            "reference": -0.109816214,
+            "error": 0.007759993352827593
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.13065574349631995,
+            "reference": -0.141930064,
+            "error": 0.011274320503680046
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.15761266428024062,
+            "reference": -0.172712391,
+            "error": 0.015099726719759371
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.18015047217334218,
+            "reference": -0.198470859,
+            "error": 0.01832038682665782
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.19336810797142712,
+            "reference": -0.212962392,
+            "error": 0.019594284028572884
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.19136594709305738,
+            "reference": -0.2091491418,
+            "error": 0.017783194706942618
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.1693092481301739,
+            "reference": -0.182080595,
+            "error": 0.012771346869826117
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.12540576726178665,
+            "reference": -0.131256301,
+            "error": 0.005850533738213343
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.06113597641596443,
+            "reference": -0.060245594,
+            "error": -0.0008903824159644316
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.022628628595610767,
+            "reference": 0.027874448,
+            "error": -0.005245819404389233
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.13436590554796896,
+            "reference": 0.140425325,
+            "error": -0.006059419452031034
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.303932886449462,
+            "reference": 0.31055709,
+            "error": -0.006624203550537999
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5853898392937684,
+            "reference": 0.597466694,
+            "error": -0.012076854706231543
+          }
+        ]
+      },
+      {
+        "n": 16,
+        "scheme": "face-limited-linear",
+        "component": "v",
+        "rms_m_s": 0.0163024711837558,
+        "max_m_s": 0.027441336165684393,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.08588396639061528,
+            "reference": 0.094807616,
+            "error": -0.008923649609384715
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.13473383798649827,
+            "reference": 0.149243,
+            "error": -0.01450916201350172
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.1569744273443555,
+            "reference": 0.174342933,
+            "error": -0.017368505655644517
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.1610578490146168,
+            "reference": 0.179243328,
+            "error": -0.018185478985383197
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.15166242557232698,
+            "reference": 0.169132064,
+            "error": -0.017469638427673018
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.1303620880202481,
+            "reference": 0.145730201,
+            "error": -0.015368112979751908
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.09701362548223426,
+            "reference": 0.1087758646,
+            "error": -0.011762239117765735
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.051118769263131164,
+            "reference": 0.057536559,
+            "error": -0.006417789736868837
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.0068124123552211575,
+            "reference": -0.007748504,
+            "error": 0.0009360916447788423
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.07383750256292802,
+            "reference": -0.084066715,
+            "error": 0.010229212437071977
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.1428342168159831,
+            "reference": -0.163010143,
+            "error": 0.020175926184016896
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.2003859768343156,
+            "reference": -0.227827313,
+            "error": 0.027441336165684393
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.2266538257124545,
+            "reference": -0.253768577,
+            "error": 0.027114751287545508
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.20113843930888195,
+            "reference": -0.218690812,
+            "error": 0.017552372691118062
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.11746790534376375,
+            "reference": -0.12331817,
+            "error": 0.005850264656236254
+          }
+        ]
+      },
+      {
+        "n": 32,
+        "scheme": "face-limited-linear",
+        "component": "u",
+        "rms_m_s": 0.003011357578876039,
+        "max_m_s": 0.0050792654365023615,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.0416218698907041,
+            "reference": -0.041974991,
+            "error": 0.00035312110929590357
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07636039029435168,
+            "reference": -0.077125399,
+            "error": 0.0007650087056483151
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.10840337145200196,
+            "reference": -0.109816214,
+            "error": 0.0014128425479980333
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.13958580035027962,
+            "reference": -0.141930064,
+            "error": 0.002344263649720374
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.16925678450341816,
+            "reference": -0.172712391,
+            "error": 0.003455606496581831
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.19398193257676638,
+            "reference": -0.198470859,
+            "error": 0.004488926423233619
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.20788312656349764,
+            "reference": -0.212962392,
+            "error": 0.0050792654365023615
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.20426191432890994,
+            "reference": -0.2091491418,
+            "error": 0.00488722747109005
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.1782623148841701,
+            "reference": -0.182080595,
+            "error": 0.0038182801158299084
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.12910654646079997,
+            "reference": -0.131256301,
+            "error": 0.0021497545392000217
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.05985682015111785,
+            "reference": -0.060245594,
+            "error": 0.0003887738488821471
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.02698796059648793,
+            "reference": 0.027874448,
+            "error": -0.0008864874035120693
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.1389844511405127,
+            "reference": 0.140425325,
+            "error": -0.001440873859487296
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.30821595956564785,
+            "reference": 0.31055709,
+            "error": -0.0023411304343521344
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.5931827519134557,
+            "reference": 0.597466694,
+            "error": -0.004283942086544257
+          }
+        ]
+      },
+      {
+        "n": 32,
+        "scheme": "face-limited-linear",
+        "component": "v",
+        "rms_m_s": 0.0038282884610368736,
+        "max_m_s": 0.006733215583959451,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.0926114936952018,
+            "reference": 0.094807616,
+            "error": -0.0021961223047981954
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.14572351053433255,
+            "reference": 0.149243,
+            "error": -0.003519489465667436
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.17016996074155072,
+            "reference": 0.174342933,
+            "error": -0.004172972258449287
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.17492681838492802,
+            "reference": 0.179243328,
+            "error": -0.0043165096150719895
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.16506158422861272,
+            "reference": 0.169132064,
+            "error": -0.004070479771387275
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.1422505375391613,
+            "reference": 0.145730201,
+            "error": -0.0034796634608386945
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.10624860719919113,
+            "reference": 0.1087758646,
+            "error": -0.0025272574008088633
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.05636848336719458,
+            "reference": 0.057536559,
+            "error": -0.0011680756328054237
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.0071078323560013704,
+            "reference": -0.007748504,
+            "error": 0.0006406716439986294
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.08119406839216095,
+            "reference": -0.084066715,
+            "error": 0.0028726466078390495
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.15782564813309086,
+            "reference": -0.163010143,
+            "error": 0.0051844948669091395
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.22109409741604055,
+            "reference": -0.227827313,
+            "error": 0.006733215583959451
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.24763846499323333,
+            "reference": -0.253768577,
+            "error": 0.006130112006766664
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.21534893453851747,
+            "reference": -0.218690812,
+            "error": 0.0033418774614825397
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.1225910344629244,
+            "reference": -0.12331817,
+            "error": 0.00072713553707561
+          }
+        ]
+      },
+      {
+        "n": 64,
+        "scheme": "face-limited-linear",
+        "component": "u",
+        "rms_m_s": 0.0007504372385224397,
+        "max_m_s": 0.0012520327804558251,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": -0.041941274922186154,
+            "reference": -0.041974991,
+            "error": 3.371607781384872e-05
+          },
+          {
+            "coordinate": 0.125,
+            "computed": -0.07702926806936095,
+            "reference": -0.077125399,
+            "error": 9.613093063905176e-05
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": -0.10958228181142636,
+            "reference": -0.109816214,
+            "error": 0.00023393218857363507
+          },
+          {
+            "coordinate": 0.25,
+            "computed": -0.14147177839495367,
+            "reference": -0.141930064,
+            "error": 0.0004582856050463213
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": -0.17196702216508014,
+            "reference": -0.172712391,
+            "error": 0.0007453688349198517
+          },
+          {
+            "coordinate": 0.375,
+            "computed": -0.19743736923447913,
+            "reference": -0.198470859,
+            "error": 0.0010334897655208675
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": -0.21173084898780783,
+            "reference": -0.212962392,
+            "error": 0.0012315430121921656
+          },
+          {
+            "coordinate": 0.5,
+            "computed": -0.20789710901954417,
+            "reference": -0.2091491418,
+            "error": 0.0012520327804558251
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.18102308971557343,
+            "reference": -0.182080595,
+            "error": 0.0010575052844265798
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.13056593058616406,
+            "reference": -0.131256301,
+            "error": 0.0006903704138359334
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.05997911579345474,
+            "reference": -0.060245594,
+            "error": 0.0002664782065452606
+          },
+          {
+            "coordinate": 0.75,
+            "computed": 0.027806808687884942,
+            "reference": 0.027874448,
+            "error": -6.76393121150573e-05
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": 0.14016461086887602,
+            "reference": 0.140425325,
+            "error": -0.000260714131123968
+          },
+          {
+            "coordinate": 0.875,
+            "computed": 0.309956559428077,
+            "reference": 0.31055709,
+            "error": -0.000600530571922997
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": 0.596298306436584,
+            "reference": 0.597466694,
+            "error": -0.0011683875634159735
+          }
+        ]
+      },
+      {
+        "n": 64,
+        "scheme": "face-limited-linear",
+        "component": "v",
+        "rms_m_s": 0.000872912420430374,
+        "max_m_s": 0.0015717209609893978,
+        "samples": [
+          {
+            "coordinate": 0.0625,
+            "computed": 0.09429827351873772,
+            "reference": 0.094807616,
+            "error": -0.000509342481262276
+          },
+          {
+            "coordinate": 0.125,
+            "computed": 0.14842873129453382,
+            "reference": 0.149243,
+            "error": -0.0008142687054661646
+          },
+          {
+            "coordinate": 0.1875,
+            "computed": 0.1733782604847327,
+            "reference": 0.174342933,
+            "error": -0.0009646725152673008
+          },
+          {
+            "coordinate": 0.25,
+            "computed": 0.17825120565603214,
+            "reference": 0.179243328,
+            "error": -0.0009921223439678661
+          },
+          {
+            "coordinate": 0.3125,
+            "computed": 0.16821051855607666,
+            "reference": 0.169132064,
+            "error": -0.0009215454439233384
+          },
+          {
+            "coordinate": 0.375,
+            "computed": 0.1449656355777031,
+            "reference": 0.145730201,
+            "error": -0.0007645654222969145
+          },
+          {
+            "coordinate": 0.4375,
+            "computed": 0.10825628772837592,
+            "reference": 0.1087758646,
+            "error": -0.0005195768716240723
+          },
+          {
+            "coordinate": 0.5,
+            "computed": 0.057358209225515586,
+            "reference": 0.057536559,
+            "error": -0.00017834977448441536
+          },
+          {
+            "coordinate": 0.5625,
+            "computed": -0.007483503303881484,
+            "reference": -0.007748504,
+            "error": 0.00026500069611851574
+          },
+          {
+            "coordinate": 0.625,
+            "computed": -0.08327644740387567,
+            "reference": -0.084066715,
+            "error": 0.0007902675961243277
+          },
+          {
+            "coordinate": 0.6875,
+            "computed": -0.16170155069599193,
+            "reference": -0.163010143,
+            "error": 0.001308592304008066
+          },
+          {
+            "coordinate": 0.75,
+            "computed": -0.2262555920390106,
+            "reference": -0.227827313,
+            "error": 0.0015717209609893978
+          },
+          {
+            "coordinate": 0.8125,
+            "computed": -0.25247505653388175,
+            "reference": -0.253768577,
+            "error": 0.0012935204661182476
+          },
+          {
+            "coordinate": 0.875,
+            "computed": -0.21813785534348892,
+            "reference": -0.218690812,
+            "error": 0.0005529566565110888
+          },
+          {
+            "coordinate": 0.9375,
+            "computed": -0.12333484792918534,
+            "reference": -0.12331817,
+            "error": -1.6677929185332507e-05
+          }
+        ]
+      }
+    ]
+  },
+  "annulus": [
+    {
+      "prefix": "outputs/cloud-laminar/annulus-default",
+      "cells": 7178,
+      "converged": true,
+      "evaluations": 454,
+      "reference": "circular Couette, ri=.5 m, ro=1 m, inner speed=.5 m/s, nu=.1 m2/s",
+      "velocityFormula": "u_theta=A*r+B/r; A=-1/3 s^-1, B=1/3 m2/s",
+      "pressureFormula": "p/rho=A^2*r^2/2+2*A*B*log(r)-B^2/(2*r^2)",
+      "qualification": "polygon walls compared with circular reference; both geometry and discretization error included",
+      "fluidArea_m2": 2.3561797052752196,
+      "velocityRms_m_s": 0.0005012993999474014,
+      "velocityMax_m_s": 0.005101992922788547,
+      "velocityRms_over_innerSpeed": 0.001002598799894803,
+      "pressureRms_m2_s2": 0.003877214002688936,
+      "pressureMax_m2_s2": 0.4805965316662792,
+      "pressureRms_over_speedSquared": 0.015508856010755743,
+      "pressureGaugeOffset_m2_s2": -0.00034743061171317715,
+      "rotorTorque": -0.42200013940532033,
+      "exactRotorTorque": -0.41887902047863906,
+      "rotorTorqueRelativeError": 0.007451122577384914,
+      "worstPressureCells": [
+        {
+          "cell": 4695.0,
+          "x": -0.17526576610810463,
+          "y": 0.4685789838547741,
+          "area": 1.317819625822262e-06,
+          "u": -0.467681901144535,
+          "v": -0.17502481367067899,
+          "p": 0.4260904356069246,
+          "speed": 0.4993596359925605,
+          "pressureError_m2_s2": 0.4805965316662792
+        },
+        {
+          "cell": 4692.0,
+          "x": -0.18296263929909518,
+          "y": 0.4657846431408748,
+          "area": 3.990901849354332e-06,
+          "u": -0.46537743176567664,
+          "v": -0.18240413867584007,
+          "p": 0.39990799705591,
+          "speed": 0.4998474005162897,
+          "pressureError_m2_s2": 0.45434121726643134
+        },
+        {
+          "cell": 4696.0,
+          "x": -0.17883577549881619,
+          "y": 0.4675882257225809,
+          "area": 6.520898068027693e-06,
+          "u": -0.46585767962782454,
+          "v": -0.17882567738872954,
+          "p": 0.3710270362345775,
+          "speed": 0.4990010025658854,
+          "pressureError_m2_s2": 0.4253656271626203
+        },
+        {
+          "cell": 4689.0,
+          "x": -0.19621307984398598,
+          "y": 0.4632947619755548,
+          "area": 1.4395980492036143e-05,
+          "u": -0.45493054235847746,
+          "v": -0.19095910882689704,
+          "p": -0.3618110301778941,
+          "speed": 0.49338340022191784,
+          "pressureError_m2_s2": -0.3087078210905354
+        },
+        {
+          "cell": 4694.0,
+          "x": -0.19180343177640344,
+          "y": 0.46604536594710344,
+          "area": 1.9910569102837065e-05,
+          "u": -0.4582665748741475,
+          "v": -0.186031572221485,
+          "p": -0.35744694195643945,
+          "speed": 0.4945866956460518,
+          "pressureError_m2_s2": -0.3047506568940205
+        },
+        {
+          "cell": 4690.0,
+          "x": -0.19432347376358466,
+          "y": 0.4640774624415997,
+          "area": 1.4312416498651507e-05,
+          "u": -0.4567777946521756,
+          "v": -0.18890446138612652,
+          "p": -0.34374220315941095,
+          "speed": 0.4942983402955018,
+          "pressureError_m2_s2": -0.29063313956748976
+        },
+        {
+          "cell": 4691.0,
+          "x": -0.19242910069470928,
+          "y": 0.46484855376858786,
+          "area": 1.419943707724627e-05,
+          "u": -0.45840886952614296,
+          "v": -0.1871008485572274,
+          "p": -0.3433930957861512,
+          "speed": 0.49512162060555476,
+          "pressureError_m2_s2": -0.29027611564865996
+        },
+        {
+          "cell": 4688.0,
+          "x": -0.19809784779331235,
+          "y": 0.4625004818386833,
+          "area": 1.4450125911264664e-05,
+          "u": -0.45282589102272924,
+          "v": -0.19329149852885966,
+          "p": -0.332090831975038,
+          "speed": 0.4923544363403876,
+          "pressureError_m2_s2": -0.27899141592273935
+        }
+      ]
+    },
+    {
+      "prefix": "outputs/cloud-laminar/annulus-tighter",
+      "cells": 7178,
+      "converged": true,
+      "evaluations": 572,
+      "reference": "circular Couette, ri=.5 m, ro=1 m, inner speed=.5 m/s, nu=.1 m2/s",
+      "velocityFormula": "u_theta=A*r+B/r; A=-1/3 s^-1, B=1/3 m2/s",
+      "pressureFormula": "p/rho=A^2*r^2/2+2*A*B*log(r)-B^2/(2*r^2)",
+      "qualification": "polygon walls compared with circular reference; both geometry and discretization error included",
+      "fluidArea_m2": 2.3561797052752196,
+      "velocityRms_m_s": 0.0005013380665129456,
+      "velocityMax_m_s": 0.005101994130657569,
+      "velocityRms_over_innerSpeed": 0.0010026761330258912,
+      "pressureRms_m2_s2": 0.0038772131456713457,
+      "pressureMax_m2_s2": 0.4805966905429468,
+      "pressureRms_over_speedSquared": 0.015508852582685383,
+      "pressureGaugeOffset_m2_s2": -0.0003474288425239396,
+      "rotorTorque": -0.4219998370515822,
+      "exactRotorTorque": -0.41887902047863906,
+      "rotorTorqueRelativeError": 0.007450400761005196,
+      "worstPressureCells": [
+        {
+          "cell": 4695.0,
+          "x": -0.17526576610810463,
+          "y": 0.4685789838547741,
+          "area": 1.317819625822262e-06,
+          "u": -0.4676819013821916,
+          "v": -0.1750248137374731,
+          "p": 0.42609059625278145,
+          "speed": 0.4993596362385522,
+          "pressureError_m2_s2": 0.4805966905429468
+        },
+        {
+          "cell": 4692.0,
+          "x": -0.18296263929909518,
+          "y": 0.4657846431408748,
+          "area": 3.990901849354332e-06,
+          "u": -0.4653774322339186,
+          "v": -0.18240413884116663,
+          "p": 0.3999081648811691,
+          "speed": 0.49984740101257213,
+          "pressureError_m2_s2": 0.4543413833225012
+        },
+        {
+          "cell": 4696.0,
+          "x": -0.17883577549881619,
+          "y": 0.4675882257225809,
+          "area": 6.520898068027693e-06,
+          "u": -0.4658576802660948,
+          "v": -0.1788256776935674,
+          "p": 0.3710271820838183,
+          "speed": 0.4990010032710061,
+          "pressureError_m2_s2": 0.42536577124267183
+        },
+        {
+          "cell": 4689.0,
+          "x": -0.19621307984398598,
+          "y": 0.4632947619755548,
+          "area": 1.4395980492036143e-05,
+          "u": -0.45493054094604435,
+          "v": -0.19095911060123155,
+          "p": -0.3618110133081595,
+          "speed": 0.49338339960630406,
+          "pressureError_m2_s2": -0.30870780598999004
+        },
+        {
+          "cell": 4694.0,
+          "x": -0.19180343177640344,
+          "y": 0.46604536594710344,
+          "area": 1.9910569102837065e-05,
+          "u": -0.45826657740617144,
+          "v": -0.18603157281422983,
+          "p": -0.35744696828776545,
+          "speed": 0.4945866982150881,
+          "pressureError_m2_s2": -0.3047506849945357
+        },
+        {
+          "cell": 4690.0,
+          "x": -0.19432347376358466,
+          "y": 0.4640774624415997,
+          "area": 1.4312416498651507e-05,
+          "u": -0.45677779477547875,
+          "v": -0.18890446208992398,
+          "p": -0.3437421650640867,
+          "speed": 0.4942983406784135,
+          "pressureError_m2_s2": -0.2906331032413548
+        },
+        {
+          "cell": 4691.0,
+          "x": -0.19242910069470928,
+          "y": 0.46484855376858786,
+          "area": 1.419943707724627e-05,
+          "u": -0.45840887083597737,
+          "v": -0.18710084879366076,
+          "p": -0.34339308524347734,
+          "speed": 0.4951216219076118,
+          "pressureError_m2_s2": -0.29027610687517535
+        },
+        {
+          "cell": 4688.0,
+          "x": -0.19809784779331235,
+          "y": 0.4625004818386833,
+          "area": 1.4450125911264664e-05,
+          "u": -0.4528258877437899,
+          "v": -0.1932915020798094,
+          "p": -0.33209084234599845,
+          "speed": 0.4923544347187505,
+          "pressureError_m2_s2": -0.278991428062889
+        }
+      ]
+    }
+  ],
+  "iterationControlComparisons": [
+    {
+      "case": "channel",
+      "scheme": "upwind",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 38,
+      "seconds": 4.119565777,
+      "velocityMax_m_s": 5.697224700642691e-06,
+      "pressureMaxGaugeAligned_m2_s2": 1.1783906109228118e-05,
+      "pressureGaugeShift_m2_s2": 4.776551266852132e-06
+    },
+    {
+      "case": "channel",
+      "scheme": "upwind",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 126,
+      "seconds": 13.399853769,
+      "velocityMax_m_s": 1.9661735750343948e-07,
+      "pressureMaxGaugeAligned_m2_s2": 2.0382587286157232e-07,
+      "pressureGaugeShift_m2_s2": 1.8846497583261552e-07
+    },
+    {
+      "case": "channel",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 38,
+      "seconds": 4.325665155,
+      "velocityMax_m_s": 5.840453005949377e-06,
+      "pressureMaxGaugeAligned_m2_s2": 1.1761223073654548e-05,
+      "pressureGaugeShift_m2_s2": 4.4737697426784564e-06
+    },
+    {
+      "case": "channel",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 158,
+      "seconds": 18.089359999,
+      "velocityMax_m_s": 1.6357400890611496e-08,
+      "pressureMaxGaugeAligned_m2_s2": 1.7960764774917094e-08,
+      "pressureGaugeShift_m2_s2": 1.1443231796003205e-08
+    },
+    {
+      "case": "manufactured",
+      "scheme": "upwind",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 517,
+      "seconds": 19.338560511,
+      "velocityMax_m_s": 2.0891208104664825e-05,
+      "pressureMaxGaugeAligned_m2_s2": 2.5223316514377142e-05,
+      "pressureGaugeShift_m2_s2": 5.479674214892822e-06
+    },
+    {
+      "case": "manufactured",
+      "scheme": "upwind",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 610,
+      "seconds": 22.222817217,
+      "velocityMax_m_s": 2.049285252096893e-07,
+      "pressureMaxGaugeAligned_m2_s2": 2.5987152959258007e-07,
+      "pressureGaugeShift_m2_s2": -1.1736942987786837e-07
+    },
+    {
+      "case": "manufactured",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 550,
+      "seconds": 21.893222184,
+      "velocityMax_m_s": 4.070450636211147e-06,
+      "pressureMaxGaugeAligned_m2_s2": 4.5114420272716365e-06,
+      "pressureGaugeShift_m2_s2": -9.653504777941941e-07
+    },
+    {
+      "case": "manufactured",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 604,
+      "seconds": 23.240078501,
+      "velocityMax_m_s": 1.1850880111079966e-07,
+      "pressureMaxGaugeAligned_m2_s2": 2.3663208813812558e-07,
+      "pressureGaugeShift_m2_s2": 3.714538355508951e-08
+    },
+    {
+      "case": "cavity",
+      "scheme": "upwind",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 139,
+      "seconds": 2.958521625,
+      "velocityMax_m_s": 0.00011422942745418935,
+      "pressureMaxGaugeAligned_m2_s2": 2.1269950080503178e-05,
+      "pressureGaugeShift_m2_s2": 1.641550060571778e-05
+    },
+    {
+      "case": "cavity",
+      "scheme": "upwind",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 264,
+      "seconds": 5.615109429,
+      "velocityMax_m_s": 9.163577212473404e-08,
+      "pressureMaxGaugeAligned_m2_s2": 3.392632397051247e-08,
+      "pressureGaugeShift_m2_s2": -9.111329942379355e-09
+    },
+    {
+      "case": "cavity",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-06,
+      "converged": true,
+      "evaluations": 195,
+      "seconds": 4.740272489,
+      "velocityMax_m_s": 8.836953846706845e-06,
+      "pressureMaxGaugeAligned_m2_s2": 3.1471713039711833e-06,
+      "pressureGaugeShift_m2_s2": 9.30581273881184e-07
+    },
+    {
+      "case": "cavity",
+      "scheme": "face-limited-linear",
+      "tolerance": 1e-10,
+      "converged": true,
+      "evaluations": 375,
+      "seconds": 8.421702197,
+      "velocityMax_m_s": 5.805308818683592e-09,
+      "pressureMaxGaugeAligned_m2_s2": 1.4014608767641574e-09,
+      "pressureGaugeShift_m2_s2": -7.654648870604435e-10
+    }
+  ],
+  "completeCostComparisons": [
+    {
+      "case": "channel",
+      "scheme": "upwind",
+      "simple": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "none",
+        "converged": true,
+        "evaluations": 822,
+        "seconds": 50.76007597,
+        "continuity": 3.2455625488797527e-13,
+        "momentumResidual": 8.976573662177788e-10,
+        "velocityChange": 2.687423394971297e-09,
+        "pressureChange": 9.563557622594874e-09,
+        "velocityRms_m_s": 0.00010576802481383398,
+        "velocityMax_m_s": 0.0002327024881399147,
+        "pressureRms_m2_s2": 0.0006983795515646038,
+        "pressureMax_m2_s2": 0.00483693072662561,
+        "pressureGaugeOffset_m2_s2": 0
+      },
+      "default": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 75,
+        "seconds": 8.12535954,
+        "continuity": 5.228047541324526e-13,
+        "momentumResidual": 6.669869671448814e-10,
+        "velocityChange": 1.9999419178804745e-09,
+        "pressureChange": 5.00625157490669e-09,
+        "velocityRms_m_s": 0.00010587445436926961,
+        "velocityMax_m_s": 0.00023273117291637134,
+        "pressureRms_m2_s2": 0.0006974211323496611,
+        "pressureMax_m2_s2": 0.004835501666376807,
+        "pressureGaugeOffset_m2_s2": 0
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 4.6982026124574734e-07,
+        "pressureMaxGaugeAligned_m2_s2": 8.431259914806916e-07,
+        "pressureGaugeShift_m2_s2": -8.462148851085491e-07
+      },
+      "matchedConvergedSolutions": true,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    },
+    {
+      "case": "channel",
+      "scheme": "face-limited-linear",
+      "simple": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "none",
+        "converged": true,
+        "evaluations": 824,
+        "seconds": 55.318177014,
+        "continuity": 4.4186171648669115e-13,
+        "momentumResidual": 8.859118577281656e-10,
+        "velocityChange": 2.6523716655069532e-09,
+        "pressureChange": 9.537891284852858e-09,
+        "velocityRms_m_s": 0.00010579827678988908,
+        "velocityMax_m_s": 0.00023270331178074912,
+        "pressureRms_m2_s2": 0.0006980868570254167,
+        "pressureMax_m2_s2": 0.004826017682387995,
+        "pressureGaugeOffset_m2_s2": 0
+      },
+      "default": {
+        "case": "channel",
+        "n": 64,
+        "cells": 16384,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 102,
+        "seconds": 12.246882803,
+        "continuity": 1.1675045085974937e-12,
+        "momentumResidual": 1.297994866196428e-10,
+        "velocityChange": 3.2642015099775357e-10,
+        "pressureChange": 1.569595362773477e-09,
+        "velocityRms_m_s": 0.00010591667575643928,
+        "velocityMax_m_s": 0.00023271913657247825,
+        "pressureRms_m2_s2": 0.0006969581776340783,
+        "pressureMax_m2_s2": 0.0048243818557844875,
+        "pressureGaugeOffset_m2_s2": 0
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 3.768227379590866e-07,
+        "pressureMaxGaugeAligned_m2_s2": 1.0064442998235164e-06,
+        "pressureGaugeShift_m2_s2": -1.009634149946274e-06
+      },
+      "matchedConvergedSolutions": true,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    },
+    {
+      "case": "manufactured",
+      "scheme": "upwind",
+      "simple": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "none",
+        "converged": true,
+        "evaluations": 2875,
+        "seconds": 55.770964007,
+        "continuity": 5.267020476596334e-13,
+        "momentumResidual": 1.559234840976643e-09,
+        "velocityChange": 4.677870398746783e-09,
+        "pressureChange": 9.919303964070732e-09,
+        "velocityRms_m_s": 0.014487393506536191,
+        "velocityMax_m_s": 0.02659694113004789,
+        "pressureRms_m2_s2": 0.01493163259236738,
+        "pressureMax_m2_s2": 0.05370080013791301,
+        "pressureGaugeOffset_m2_s2": -0.9894893915683467
+      },
+      "default": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 566,
+        "seconds": 21.12814543,
+        "continuity": 3.025635341582617e-11,
+        "momentumResidual": 6.966668560936326e-10,
+        "velocityChange": 2.1137222867805825e-09,
+        "pressureChange": 2.2279546894245846e-09,
+        "velocityRms_m_s": 0.014486910011407414,
+        "velocityMax_m_s": 0.02659619215201995,
+        "pressureRms_m2_s2": 0.014931175863122969,
+        "pressureMax_m2_s2": 0.05369922389310822,
+        "pressureGaugeOffset_m2_s2": -0.9894897634515774
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 7.946753419585518e-07,
+        "pressureMaxGaugeAligned_m2_s2": 1.5762981054429837e-06,
+        "pressureGaugeShift_m2_s2": 3.7188322636930956e-07
+      },
+      "matchedConvergedSolutions": true,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    },
+    {
+      "case": "manufactured",
+      "scheme": "face-limited-linear",
+      "simple": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "none",
+        "converged": false,
+        "evaluations": 3000,
+        "seconds": 60.210413608,
+        "continuity": 5.196270624847614e-13,
+        "momentumResidual": 1.5773949271252344e-09,
+        "velocityChange": 4.727770863040896e-09,
+        "pressureChange": 1.0590537335986026e-08,
+        "velocityRms_m_s": 0.00033362894841373593,
+        "velocityMax_m_s": 0.0006504803069513245,
+        "pressureRms_m2_s2": 0.0004326205430173291,
+        "pressureMax_m2_s2": 0.0012837841471050604,
+        "pressureGaugeOffset_m2_s2": -0.9991807704854591
+      },
+      "default": {
+        "case": "manufactured",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.1,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 579,
+        "seconds": 22.545200477,
+        "continuity": 2.018479153346426e-11,
+        "momentumResidual": 3.1930027940244414e-10,
+        "velocityChange": 9.549599058477665e-10,
+        "pressureChange": 1.3350819439882466e-09,
+        "velocityRms_m_s": 0.0003335436048154526,
+        "velocityMax_m_s": 0.0006504792159765322,
+        "pressureRms_m2_s2": 0.0004326809712220841,
+        "pressureMax_m2_s2": 0.00128467101895835,
+        "pressureGaugeOffset_m2_s2": -0.9991813321206938
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 1.1361659598250225e-06,
+        "pressureMaxGaugeAligned_m2_s2": 2.260713674880227e-06,
+        "pressureGaugeShift_m2_s2": 5.616352328137233e-07
+      },
+      "matchedConvergedSolutions": false,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    },
+    {
+      "case": "cavity",
+      "scheme": "upwind",
+      "simple": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "none",
+        "converged": true,
+        "evaluations": 2434,
+        "seconds": 31.283286662,
+        "continuity": 5.530853552926374e-13,
+        "momentumResidual": 3.294994036433295e-09,
+        "velocityChange": 9.951981889311501e-09,
+        "pressureChange": 4.039230027185654e-09
+      },
+      "default": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "upwind",
+        "method": "default",
+        "converged": true,
+        "evaluations": 231,
+        "seconds": 4.587129164,
+        "continuity": 5.063906900141385e-11,
+        "momentumResidual": 3.2838909593757933e-10,
+        "velocityChange": 1.0016867323524783e-09,
+        "pressureChange": 3.220588082179911e-10
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 2.007580551182511e-06,
+        "pressureMaxGaugeAligned_m2_s2": 5.391480332426114e-07,
+        "pressureGaugeShift_m2_s2": 2.6433980853885805e-07
+      },
+      "matchedConvergedSolutions": true,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    },
+    {
+      "case": "cavity",
+      "scheme": "face-limited-linear",
+      "simple": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "none",
+        "converged": true,
+        "evaluations": 2614,
+        "seconds": 36.449760059,
+        "continuity": 5.417860170914279e-13,
+        "momentumResidual": 3.3025243217394534e-09,
+        "velocityChange": 9.967767636729518e-09,
+        "pressureChange": 4.400904771244837e-09
+      },
+      "default": {
+        "case": "cavity",
+        "n": 64,
+        "cells": 4096,
+        "nu": 0.01,
+        "tolerance": 1e-08,
+        "scheme": "face-limited-linear",
+        "method": "default",
+        "converged": true,
+        "evaluations": 342,
+        "seconds": 7.281597776,
+        "continuity": 1.3416209908702435e-11,
+        "momentumResidual": 2.9035548200879e-10,
+        "velocityChange": 3.9299664187337225e-10,
+        "pressureChange": 5.113198368561885e-10
+      },
+      "fieldComparison": {
+        "velocityMax_m_s": 2.210959255600108e-06,
+        "pressureMaxGaugeAligned_m2_s2": 6.821620015234004e-07,
+        "pressureGaugeShift_m2_s2": 3.042473102153114e-07
+      },
+      "matchedConvergedSolutions": true,
+      "timingQualification": "complete native solve and complete subprocess recorded; runs overlapped other cloud tasks; no universal speedup claim"
+    }
+  ],
+  "annulusControlComparison": {
+    "velocityMax_m_s": 1.257235729450209e-07,
+    "pressureMaxGaugeAligned_m2_s2": 6.660213989642481e-07,
+    "pressureGaugeShift_m2_s2": 1.7691892376294572e-09
+  },
+  "limitations": [
+    "Curved-wall local pressure errors remain unresolved.",
+    "Single circular-Couette comparison does not by itself establish mesh-independent curved-wall accuracy.",
+    "Headless Linux App is separate from physical macOS GUI and packaged-platform qualifications."
+  ],
+  "coarseCurveEntrance": {
+    "level6": {
+      "status": "rejected-by-original-Solver-quality",
+      "issueCount": 13,
+      "policy": {
+        "max_non_orthogonality_deg": 70,
+        "max_internal_skewness": 4,
+        "max_boundary_skewness": 4,
+        "max_concavity_deg": 80,
+        "max_cell_aspect": 1000,
+        "min_interior_angle_deg": 0.5,
+        "min_face_length": 1.01e-10,
+        "min_face_weight": 0.05,
+        "min_volume_ratio": 0.01
+      },
+      "metrics": {
+        "max_non_orthogonality_deg": 85.22440822702966,
+        "max_internal_skewness": 2.5889494134797637,
+        "max_boundary_skewness": 4.106610194077421,
+        "max_concavity_deg": 66.85699941038217,
+        "max_cell_aspect": 844.4325925264282,
+        "min_interior_angle_deg": 0.13616242767094555,
+        "min_face_length": 1.2910571468292628e-05,
+        "min_face_weight": 0.050349032940859594,
+        "min_volume_ratio": 0.011104828030016486,
+        "min_compactness": 0.0037188098795373097
+      },
+      "failureMesh": "outputs/cloud-laminar/annulus-l6.failed.solver.cm2d",
+      "log": "outputs/cloud-laminar/mesh-l6-solver.log"
+    },
+    "level5": {
+      "status": "exploratory-mesh-run-cancelled",
+      "command": "build/cartmesh2d_cli artifacts/current/annulus-1024-axis-roundoff.xy outputs/cloud-laminar/annulus-l5 5 .15 .1 interior outputs/cloud-laminar/annulus-l5-foam 5 ",
+      "reason": "Level 6 was rejected by original Solver quality. Stop additional coarse-annulus local exploration; preserve original input, generated source mesh and actual incomplete log. No Solver result or spatial precision result claimed.",
+      "sourceRetained": "outputs/cloud-laminar/annulus-l5.cm2d",
+      "input": "artifacts/current/annulus-1024-axis-roundoff.xy",
+      "solverMeshProduced": false,
+      "exitCode": 130,
+      "termination": "Confirmed execution-session Ctrl-C; direct signal attempt had failed earlier.",
+      "elapsedSecondsAtEarlierObservation": 322.52
+    }
+  },
+  "sourcesSha256": {
+    "artifacts/current/native-laminar-accuracy-probe.cpp": "529bda36177c4fd0223fa92a0faebc1f10445ec18c1127f9b2d39c5561ad132e",
+    "/workspace/scratch/579d8506ec97/cartmesh2d/artifacts/current/native-laminar-accuracy-postprocess.py": "2510627f3b63d0b2a372d03ee8848e864d08cd62e87b060396b10d73940ab14b",
+    "tools/verification/references/cavity-marchi-2009-re100.json": "a64c0f8c548b7ded9ba1202b65561724db09f2dd6e2874bef4752f8fd55ddb65"
+  }
+}
