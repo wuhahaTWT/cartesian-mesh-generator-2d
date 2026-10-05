@@ -1,0 +1,143 @@
+{
+  "scope": "incremental evidence; representative long-time reruns on controller-history version remain pending",
+  "sourceCommit": "8009974eb7e7d59dfdd1626b9f5f910ecbc16d79",
+  "originalBaseline": "991c9b85a677daa3771af486ec3c1f5939e61388",
+  "branch": "codex/thermal-stability-cloud",
+  "cloud": {
+    "hostname": "1385053c4b7d",
+    "system": "Ubuntu 24.04.3 Linux x86_64",
+    "compiler": "GCC 13.3",
+    "cpuQuota": 8,
+    "memoryGiB": 8,
+    "localComputerUsed": false
+  },
+  "tests": {
+    "relatedNativeAndCli": {
+      "passed": 12,
+      "failed": 0,
+      "log": "outputs/history-controller-related-ctest.log"
+    },
+    "frontend": {
+      "passed": 195,
+      "failed": 0,
+      "log": "outputs/history-frontend-final.log"
+    },
+    "restartComparison": {
+      "passed": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.007053296225308259,
+      "integratedHeatGain": 0.007053221752790292,
+      "integratedBudgetDefect": 7.447252636358726e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "continuousCheckpointSha256": "21bc9256bd7eacede598d62069e4330fedf1bdd78f446bf6fb8229461747f70a"
+    }
+  },
+  "linuxApp": {
+    "mode": "actual Electron 37.10.3, headless software rendering",
+    "command": [
+      "/workspace/scratch/579d8506ec97/cartmesh2d/desktop/node_modules/electron/dist/electron",
+      "--no-sandbox",
+      "--ozone-platform=headless",
+      "--disable-gpu",
+      "desktop",
+      "--smoke=rectangle",
+      "--target-cells=1000",
+      "--thermal-adaptive=true",
+      "--out=outputs/thermal/app",
+      "--shot=outputs/thermal/app/adaptive-serial.png"
+    ],
+    "checks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "finalTime": 1.3
+    },
+    "cells": 1300,
+    "finalSummary": {
+      "format": "cartmesh2d-scalar-transport-v1",
+      "status": "converged",
+      "converged": true,
+      "mesh": "/workspace/scratch/b53e6359ae08/cartmesh2d/outputs/thermal/app/mesh-t88pn1/rectangle.solver.cm2d",
+      "carrierCheckpoint": "/workspace/scratch/b53e6359ae08/cartmesh2d/outputs/thermal/app/mesh-t88pn1/thermal-run-pw3rzW/thermal.carrier.checkpoint",
+      "carrierTime": 1.3,
+      "boundaryFile": "/workspace/scratch/b53e6359ae08/cartmesh2d/outputs/thermal/app/mesh-t88pn1/thermal-run-pw3rzW/boundary.csv",
+      "verification": "",
+      "scope": "synchronized new-time carrier and passive scalar; no buoyancy or thermal feedback",
+      "evolvingFlow": true,
+      "acceptedTime": 1.3,
+      "restart": "/workspace/scratch/b53e6359ae08/cartmesh2d/outputs/thermal/app/mesh-t88pn1/thermal-run-pw3rzW/input.thermal.checkpoint",
+      "flowCase": "channel",
+      "cells": 1300,
+      "faces": 2812,
+      "time": 1.3,
+      "timeStep": 0.0499999999999996,
+      "verificationSpeed": 1,
+      "constantSource": 0,
+      "initialValue": 300,
+      "flowNu": 0.1,
+      "flowSpeed": 0.2,
+      "flowVelocityRelaxation": 0.6,
+      "flowTolerance": 1e-08,
+      "flowConvection": "limited-linear",
+      "outletBackflow": "normal-inlet",
+      "timeStepControl": "joint-cfl-be-error-retry",
+      "startTime": 0.8500000000000001,
+      "completedSteps": 9,
+      "rejectedAttempts": 0,
+      "maximumTimeStep": 0.05,
+      "temperatureScale": 1,
+      "timeRelativeTolerance": 0.01,
+      "steps": 1,
+      "diffusivity": 0.1,
+      "convection": "upwind",
+      "relativeTolerance": 1e-09,
+      "absoluteTolerance": 1e-12,
+      "cellTolerance": 1e-09,
+      "residualNorm": 1.7216146233088493e-09,
+      "maxCellImbalance": 2.4969759593318486e-10,
+      "maxDiagonalScaledImbalance": 5.968855041454207e-10,
+      "boundaryFlux": -0.20613838965326012,
+      "sourceIntegral": 0,
+      "temporalIntegral": 0.20613836646117464,
+      "globalBalance": -2.3192085474299518e-08,
+      "maxCarrierImbalance": 1.1809997424450103e-14,
+      "minValue": 300.00111199600275,
+      "maxValue": 300.99377972566975,
+      "maxCourant": 0.6396484374999895,
+      "l2Error": null,
+      "nativeTopologyRevalidated": true,
+      "solverQualityPassed": true,
+      "externalCheckMesh": "not run",
+      "dt": 0.05
+    },
+    "evidence": "outputs/thermal/app/adaptive-serial.png.json",
+    "image": "outputs/thermal/app/adaptive-serial-thermal.png",
+    "log": "outputs/app-adaptive-serial.log",
+    "macOSOrWindowsValidated": false
+  },
+  "openFailure": {
+    "log": "outputs/app-adaptive-history.log",
+    "data": "outputs/thermal/app/mesh-2EweXu/thermal-run-4VHgIE",
+    "observation": "Concurrent-tool run reached native t=.5 with 38 accepted steps but disk history contained 25; frontend correctly rejected incomplete evidence. Later isolated run passed. Cause not yet established; investigate file replacement during live output and preserve validation."
+  },
+  "nextAcceptance": [
+    "Final-controller representative channel/cavity/cylinder long-time runs and necessary sensitivity",
+    "Resolve incomplete live output observation and preserve raw failures",
+    "Physical budgets, response, outlet warming and wall heat flux qualification; final small evidence and recoverable archive"
+  ],
+  "binarySha256": {
+    "build/cartmesh2d_transport_cli": "e6bff0e828e3f82e0705a744a2a401ed15e38b9d57e2b7441d072969b3e32d31",
+    "desktop/runtime/bin/cartmesh2d_transport_cli": "e6bff0e828e3f82e0705a744a2a401ed15e38b9d57e2b7441d072969b3e32d31"
+  }
+}

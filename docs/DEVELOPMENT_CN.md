@@ -92,6 +92,12 @@ ctest --test-dir build -R 'cartmesh2d_(thermal_flow$|thermal_flow_cli$|thermal_c
 
 三例分别覆盖加热通道、顶盖封闭腔体热／冷却、64 边真实曲壁圆柱（外域减固体）。通道／圆柱显式使用压力开口与规定流入温度，保留压力出口回流拒绝的失败输入。`.command.json`、原始场、接受／拒绝记录及检查点在 outputs；小证据进入 artifacts，完整字段压缩保留。原生解析衰减、核心守恒测试保留，旧 Python 重复审计不作为本方向验证后端。
 
+Linux 无显示服务的真实 App 操作验收（需先准备 `desktop/runtime` 和 Electron 依赖）：
+```bash
+desktop/node_modules/.bin/electron --no-sandbox --ozone-platform=headless --disable-gpu desktop --smoke=rectangle --target-cells=1000 --thermal-adaptive=true --out=outputs/thermal/app --shot=outputs/thermal/app/adaptive.png
+```
+此入口实际运行联合控制并检查变步长续算、预算失败保留和恢复；软件渲染截图不代表 macOS/Windows 验证。运行期间不要归档或替换活动输出文件；输出历史与原生完成步数不符必须拒绝，并保留原始目录追查。
+
 ## 从哪里进入代码
 
 生成链：输入 → 尺寸场/Quadtree → Cut-cell 或共形边界层 → 小单元处理 → 共享面拓扑 → 质量 → 导出。
