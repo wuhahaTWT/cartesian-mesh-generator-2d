@@ -1187,7 +1187,7 @@ function bindThermal(payload) {
   const summary = payload.summary, last = state.thermalHistory.at(-1);
   const container = $('thermalResult'); container.replaceChildren();
   const heading = document.createElement('div'); heading.className = 'flow-state';
-  heading.textContent = `温度与流动已接受 t=${Number(summary.acceptedTime ?? summary.time).toPrecision(6)} s · 本次 ${summary.steps} 步 · 单向恒物性输运`;
+  heading.textContent = `温度与流动已接受 t=${Number(summary.acceptedTime ?? summary.time).toPrecision(6)} s · 本次 ${summary.completedSteps ?? summary.steps} 步 · 单向恒物性输运`;
   container.appendChild(heading);
   for (const [label, value] of [['时间步（s）',summary.dt], ['最低温度（K）',summary.minValue], ['最高温度（K）',summary.maxValue],
     ['热扩散率（m²/s）',summary.diffusivity], ['温度积分（K·m²）',last?.heatContent],

@@ -92,6 +92,8 @@ python3 tools/thermal/workflow.py --case cylinder --output outputs/thermal/cylin
 ctest --test-dir build -R 'cartmesh2d_(thermal_flow$|thermal_flow_cli$|thermal_control_cli$|scalar_transport$)' --output-on-failure
 ```
 
+同类粗细网格用 `--level 4/5`，实际流速用 `--speed`，热扩散率用 `--diffusivity`，最大步长用 `--dt`；尖锐启动研究驱动默认给 18 次候选重试，不改变原生产品默认值。变流速时同时更新真实边界和误差参考速度。对命名 `channel-coarse/channel-fine/...` 等目录中的冻结原生数据，可用 `python3 tools/thermal/summarize.py --input outputs/thermal/qualified --output outputs/thermal/summary.json --plot outputs/thermal/response.png` 读取、核对记录完整性并画图；该脚本只汇总原生预算与真实场，不重建离散方程。其命名输入矩阵和实际命令保存在原始证据目录，当前关键版本／资格只见 CURRENT_STATE。
+
 三例分别覆盖加热通道、顶盖封闭腔体热／冷却、64 边真实曲壁圆柱（外域减固体）。通道／圆柱显式使用压力开口与规定流入温度，保留压力出口回流拒绝的失败输入。`.command.json`、原始场、接受／拒绝记录及检查点在 outputs；小证据进入 artifacts，完整字段压缩保留。原生解析衰减、核心守恒测试保留，旧 Python 重复审计不作为本方向验证后端。
 
 Linux 无显示服务的真实 App 操作验收（需先准备 `desktop/runtime` 和 Electron 依赖）：

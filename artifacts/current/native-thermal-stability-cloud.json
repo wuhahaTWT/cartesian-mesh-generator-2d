@@ -1,0 +1,752 @@
+{
+  "scope": "native 2D incompressible constant-property laminar flow / one-way passive temperature",
+  "units": {
+    "temperature": "K",
+    "time": "s",
+    "heatContent": "K m^2 per unit depth (multiply by rho*cp for energy)",
+    "heatFlux": "K m^2/s per unit depth; outward positive"
+  },
+  "cases": {
+    "cavity-coarse": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 90,
+      "rejectedAttempts": 8,
+      "seconds": 2.273482327000238,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.0070306649708413715,
+      "integratedSourceMinusOutwardFlux": 0.007030592742252307,
+      "integratedNativeBudgetDefect": 7.222860355949616e-08,
+      "budgetAccumulationRounding": -1.4494885998535383e-14,
+      "endOutwardWallDiffusiveFlux": 0.006923452413877842,
+      "endTemperatureRateIntegral": -0.0069234333599643896,
+      "temperatureRangeOverHistory": [
+        299.9999999999633,
+        300.9496894834245
+      ],
+      "endTemperatureRange": [
+        300.00110278756034,
+        300.01135060546363
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {
+        "time-error": 8
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "56ef4a13975dd0f30940dd042fa114b5b6718360b953d354fee8fdd1c05f2378",
+      "rawDirectory": "outputs/thermal/qualified/cavity-coarse"
+    },
+    "cavity-dt-0125": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 481,
+      "rejectedAttempts": 0,
+      "seconds": 2.6350480019991664,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.0125,
+      "control": "joint-cfl-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.00623222308070126,
+      "integratedSourceMinusOutwardFlux": 0.00623209574591348,
+      "integratedNativeBudgetDefect": 1.2733481127163788e-07,
+      "budgetAccumulationRounding": -2.3491734287760542e-14,
+      "endOutwardWallDiffusiveFlux": 0.006137308138283972,
+      "endTemperatureRateIntegral": -0.006137228576110461,
+      "temperatureRangeOverHistory": [
+        300.00000000002194,
+        300.95083309769683
+      ],
+      "endTemperatureRange": [
+        300.0009767199897,
+        300.0100698321972
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {},
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "d7e39aac9be69535c26b57ab76cbcc264a56e74666b6f303ac7b048363d00032",
+      "rawDirectory": "outputs/thermal/qualified/cavity-dt-0125"
+    },
+    "cavity-dt-025": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 243,
+      "rejectedAttempts": 0,
+      "seconds": 1.6676133840010152,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.025,
+      "control": "joint-cfl-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.0063485903121431875,
+      "integratedSourceMinusOutwardFlux": 0.0063484935315153606,
+      "integratedNativeBudgetDefect": 9.678061824456745e-08,
+      "budgetAccumulationRounding": 9.582345705622167e-15,
+      "endOutwardWallDiffusiveFlux": 0.006251886202244353,
+      "endTemperatureRateIntegral": -0.0062518697677991205,
+      "temperatureRangeOverHistory": [
+        300.000000009498,
+        300.9506320510985
+      ],
+      "endTemperatureRange": [
+        300.00099507170336,
+        300.0102567021867
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {},
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "32e91d8c216d2659ab5c685e19d091b8f12d9815ea2e1c5b5f997698ada4f637",
+      "rawDirectory": "outputs/thermal/qualified/cavity-dt-025"
+    },
+    "cavity-dt-05": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 124,
+      "rejectedAttempts": 0,
+      "seconds": 0.857997722001528,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.05,
+      "control": "joint-cfl-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.006580585470999267,
+      "integratedSourceMinusOutwardFlux": 0.006580499905920185,
+      "integratedNativeBudgetDefect": 8.556504834521359e-08,
+      "budgetAccumulationRounding": 3.073676621436132e-14,
+      "endOutwardWallDiffusiveFlux": 0.006480311078314573,
+      "endTemperatureRateIntegral": -0.00648022666718509,
+      "temperatureRangeOverHistory": [
+        300.00000107698423,
+        300.95022903727136
+      ],
+      "endTemperatureRange": [
+        300.00103168068125,
+        300.01062903991755
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {},
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "3ff21d8fb56e3a2416630d0a567126a127136152930de3596a9765178a0902ad",
+      "rawDirectory": "outputs/thermal/qualified/cavity-dt-05"
+    },
+    "cavity-dt-1": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 61,
+      "rejectedAttempts": 0,
+      "seconds": 0.554219537998506,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.0070532956410716,
+      "integratedSourceMinusOutwardFlux": 0.007053221283969603,
+      "integratedNativeBudgetDefect": 7.435708005361026e-08,
+      "budgetAccumulationRounding": 2.1942881445328173e-14,
+      "endOutwardWallDiffusiveFlux": 0.006945732709948518,
+      "endTemperatureRateIntegral": -0.006945713595414824,
+      "temperatureRangeOverHistory": [
+        300.00003563360957,
+        300.94940701497677
+      ],
+      "endTemperatureRange": [
+        300.001106374398,
+        300.01138678365237
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {},
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "63ff5bcc1dd95d792f0c6ec233216ea3ac3eeb69f92dda75d08ee70a1da69e9e",
+      "rawDirectory": "outputs/thermal/qualified/cavity-dt-1"
+    },
+    "cavity-fine": {
+      "case": "cavity",
+      "cells": 784,
+      "endTime": 6,
+      "acceptedSteps": 101,
+      "rejectedAttempts": 14,
+      "seconds": 18.124157616999582,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.0069355890951783294,
+      "integratedSourceMinusOutwardFlux": 0.006935362035022847,
+      "integratedNativeBudgetDefect": 2.270601429380283e-07,
+      "budgetAccumulationRounding": 1.2544342881876924e-14,
+      "endOutwardWallDiffusiveFlux": 0.006851353166314304,
+      "endTemperatureRateIntegral": -0.006851259191844461,
+      "temperatureRangeOverHistory": [
+        299.99999999992787,
+        300.97512281984615
+      ],
+      "endTemperatureRange": [
+        300.0005403650136,
+        300.01126468145594
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {
+        "time-error": 14
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "54cba3693a6c8612c2326cfe6904dc3a2d4b98f8bd626526d1084993e368d5ee",
+      "rawDirectory": "outputs/thermal/qualified/cavity-fine"
+    },
+    "cavity-slow": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 30,
+      "acceptedSteps": 324,
+      "rejectedAttempts": 8,
+      "seconds": 4.042007862000901,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.02,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.0005784136254760597,
+      "integratedSourceMinusOutwardFlux": 0.0005782484985735051,
+      "integratedNativeBudgetDefect": 1.6512692779013387e-07,
+      "budgetAccumulationRounding": -2.5235592537617454e-14,
+      "endOutwardWallDiffusiveFlux": 0.00011909593736390893,
+      "endTemperatureRateIntegral": -0.00011908818754319505,
+      "temperatureRangeOverHistory": [
+        299.9999999999566,
+        300.9040395279373
+      ],
+      "endTemperatureRange": [
+        300.0000568782072,
+        300.0010678310201
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {
+        "time-error": 8
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "47b4e2b41cad64d78560bc431cb9e8678e4d870e22e3d89e1e288e035f898092",
+      "rawDirectory": "outputs/thermal/qualified/cavity-slow"
+    },
+    "cavity-tight": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 106,
+      "rejectedAttempts": 11,
+      "seconds": 2.548198921000221,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.005,
+      "heatGain": 0.00701796297812507,
+      "integratedSourceMinusOutwardFlux": 0.007017889317700579,
+      "integratedNativeBudgetDefect": 7.366042589579574e-08,
+      "budgetAccumulationRounding": -1.4049195644952103e-15,
+      "endOutwardWallDiffusiveFlux": 0.006910947417168247,
+      "endTemperatureRateIntegral": -0.006910857090376428,
+      "temperatureRangeOverHistory": [
+        299.99999999997544,
+        300.9497909837136
+      ],
+      "endTemperatureRange": [
+        300.00110077199133,
+        300.0113303233146
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {
+        "time-error": 11
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "48684c3fa616b8bc8fcd6a4cae9f2b766a90f56158cdd6618c70021d592a09a5",
+      "rawDirectory": "outputs/thermal/qualified/cavity-tight"
+    },
+    "cavity-tighter": {
+      "case": "cavity",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 127,
+      "rejectedAttempts": 13,
+      "seconds": 3.0796709710011783,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.0025,
+      "heatGain": 0.006998110083429765,
+      "integratedSourceMinusOutwardFlux": 0.006998032483047524,
+      "integratedNativeBudgetDefect": 7.760040484068235e-08,
+      "budgetAccumulationRounding": -2.2599994743026813e-14,
+      "endOutwardWallDiffusiveFlux": 0.00689140067531753,
+      "endTemperatureRateIntegral": -0.006891381248142382,
+      "temperatureRangeOverHistory": [
+        299.9999999999874,
+        300.94990067426045
+      ],
+      "endTemperatureRange": [
+        300.0010976342884,
+        300.0112985054419
+      ],
+      "outletTemperatureRise": null,
+      "rejectionReasons": {
+        "time-error": 13
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "b1ceabc4b375d4d3c362253aee9a92b248df42bbd8b10be2f5b28a988ba232a8",
+      "rawDirectory": "outputs/thermal/qualified/cavity-tighter"
+    },
+    "channel-coarse": {
+      "case": "channel",
+      "cells": 196,
+      "endTime": 6,
+      "acceptedSteps": 118,
+      "rejectedAttempts": 15,
+      "seconds": 3.0677356729993335,
+      "flowSpeed": 1,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 1.1981252992156897,
+      "integratedSourceMinusOutwardFlux": 1.1981253096649067,
+      "integratedNativeBudgetDefect": -1.0449223239724942e-08,
+      "budgetAccumulationRounding": 6.192543450173333e-15,
+      "endOutwardWallDiffusiveFlux": -1.0065515808452823,
+      "endTemperatureRateIntegral": -0.0014696715939344586,
+      "temperatureRangeOverHistory": [
+        299.99999999999983,
+        300.99600398469164
+      ],
+      "endTemperatureRange": [
+        300.01380954696305,
+        300.9923470057849
+      ],
+      "outletTemperatureRise": 0.7818447805838673,
+      "rejectionReasons": {
+        "time-error": 15
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "04348501805fbf690470ba0fecb959475c7b1ba9f6a68d8f3ed3b31c43246795",
+      "rawDirectory": "outputs/thermal/qualified/channel-coarse"
+    },
+    "channel-fine": {
+      "case": "channel",
+      "cells": 728,
+      "endTime": 6,
+      "acceptedSteps": 208,
+      "rejectedAttempts": 15,
+      "seconds": 17.037648703999366,
+      "flowSpeed": 1,
+      "diffusivity": 0.1,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 1.2018369414516883,
+      "integratedSourceMinusOutwardFlux": 1.2018369873461778,
+      "integratedNativeBudgetDefect": -4.589449789388897e-08,
+      "budgetAccumulationRounding": 8.351824646460566e-15,
+      "endOutwardWallDiffusiveFlux": -1.0798202621636865,
+      "endTemperatureRateIntegral": -0.0007245517203611334,
+      "temperatureRangeOverHistory": [
+        299.9999999999983,
+        300.9960994833546
+      ],
+      "endTemperatureRange": [
+        300.0053168026237,
+        300.9924061176281
+      ],
+      "outletTemperatureRise": 0.7812579115625908,
+      "rejectionReasons": {
+        "courant": 1,
+        "time-error": 14
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "72cc5b06950f455b37ed96459594b9d57ed12f6e09a66d6f4b9b0c6c7fd6e038",
+      "rawDirectory": "outputs/thermal/qualified/channel-fine"
+    },
+    "channel-slow": {
+      "case": "channel",
+      "cells": 196,
+      "endTime": 12,
+      "acceptedSteps": 158,
+      "rejectedAttempts": 11,
+      "seconds": 3.1083799810003256,
+      "flowSpeed": 0.5,
+      "diffusivity": 0.02,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 0.8579882497449489,
+      "integratedSourceMinusOutwardFlux": 0.8579882496173008,
+      "integratedNativeBudgetDefect": 1.2769015552083388e-10,
+      "budgetAccumulationRounding": -4.204121995157979e-14,
+      "endOutwardWallDiffusiveFlux": -0.2880837369122862,
+      "endTemperatureRateIntegral": -5.449296563441282e-07,
+      "temperatureRangeOverHistory": [
+        299.9999999999995,
+        300.98938123119484
+      ],
+      "endTemperatureRange": [
+        300.00131112528385,
+        300.98321204785253
+      ],
+      "outletTemperatureRise": 0.5110804147655585,
+      "rejectionReasons": {
+        "time-error": 11
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "e14ec8ac17287bf26a2dc75a138518b6a35e33e17a0c893c1116ab4675d23e49",
+      "rawDirectory": "outputs/thermal/qualified/channel-slow"
+    },
+    "cylinder-coarse": {
+      "case": "cylinder",
+      "cells": 312,
+      "endTime": 25,
+      "acceptedSteps": 556,
+      "rejectedAttempts": 97,
+      "seconds": 202.86501452599987,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.05,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 1.1314209794197723,
+      "integratedSourceMinusOutwardFlux": 1.131421010876073,
+      "integratedNativeBudgetDefect": -3.145624478023854e-08,
+      "budgetAccumulationRounding": -5.589512021965115e-14,
+      "endOutwardWallDiffusiveFlux": -0.1652370791703435,
+      "endTemperatureRateIntegral": 0.010124170233419485,
+      "temperatureRangeOverHistory": [
+        299.9707152421725,
+        300.9692320557069
+      ],
+      "endTemperatureRange": [
+        300.0018991581005,
+        300.9692320557069
+      ],
+      "outletTemperatureRise": 0.3540055108050524,
+      "rejectionReasons": {
+        "flow": 57,
+        "courant": 2,
+        "time-error": 26,
+        "flow-half": 12
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "6a045ebb4400dabf6cbd4ac24d5b6165accd55d7cc54564a6f40358ed79a7a8e",
+      "rawDirectory": "outputs/thermal/qualified/cylinder-coarse"
+    },
+    "cylinder-fine": {
+      "case": "cylinder",
+      "cells": 1072,
+      "endTime": 25,
+      "acceptedSteps": 344,
+      "rejectedAttempts": 30,
+      "seconds": 113.27968404800049,
+      "flowSpeed": 0.2,
+      "diffusivity": 0.05,
+      "maxDt": 0.1,
+      "control": "joint-cfl-be-error-retry",
+      "temperatureScale": 1,
+      "relativeTimeTolerance": 0.01,
+      "heatGain": 1.1639270859743647,
+      "integratedSourceMinusOutwardFlux": 1.1639271314263555,
+      "integratedNativeBudgetDefect": -4.545203199951345e-08,
+      "budgetAccumulationRounding": 4.116179411559144e-14,
+      "endOutwardWallDiffusiveFlux": -0.1680109817747387,
+      "endTemperatureRateIntegral": 0.010432778357418356,
+      "temperatureRangeOverHistory": [
+        299.97586936140897,
+        300.9766338214035
+      ],
+      "endTemperatureRange": [
+        300.0009359866263,
+        300.96984740709775
+      ],
+      "outletTemperatureRise": 0.360258471092493,
+      "rejectionReasons": {
+        "courant": 2,
+        "time-error": 28
+      },
+      "solverQualityPassed": true,
+      "nativeTopologyRevalidated": true,
+      "outputIntegrity": true,
+      "binarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+      "checkpointSha256": "d0b2cc95608c5799fc4fb1ba86425c15840efcef590d69a61f4902cbc432f51e",
+      "rawDirectory": "outputs/thermal/qualified/cylinder-fine"
+    }
+  },
+  "gridComparison": {
+    "channel": {
+      "heatGainDifference": 0.0037116422359986245,
+      "heatGainRelativeDifferenceToFine": 0.0030883076630306974,
+      "wallFluxDifference": -0.07326868131840425,
+      "outletRiseDifference": -0.0005868690212764704
+    },
+    "cavity": {
+      "heatGainDifference": -9.50758756630421e-05,
+      "heatGainRelativeDifferenceToFine": 0.013708406648418592,
+      "wallFluxDifference": -7.20992475635382e-05
+    },
+    "cylinder": {
+      "heatGainDifference": 0.03250610655459241,
+      "heatGainRelativeDifferenceToFine": 0.027927957813079322,
+      "wallFluxDifference": -0.0027739026043951953,
+      "outletRiseDifference": 0.006252960287440601
+    }
+  },
+  "timeSensitivity": {
+    "case": "cavity",
+    "maximumDt": [
+      0.1,
+      0.05,
+      0.025
+    ],
+    "eventClipped": true,
+    "adjacentEndpointMaxTemperatureDifferences": [
+      0.0007577437348231797,
+      0.00037233773082334665
+    ],
+    "differenceRatio": 2.0350979019708495,
+    "interpretation": "Consistent with first-order BE; not an adaptive-global-error guarantee.",
+    "adaptiveRtol": [
+      0.01,
+      0.005,
+      0.0025
+    ],
+    "adaptiveAdjacentEndpointMaxDifferences": [
+      2.028214902338732e-05,
+      3.1817872695683036e-05
+    ],
+    "adaptiveInterpretation": "Endpoint differences need not decrease monotonically: local control changes the step sequence, and maximum dt / absolute tolerance also limit refinement.",
+    "finerReferenceMaximumDt": 0.0125,
+    "adaptiveEndpointDifferencesToFinerReference": [
+      0.0012807732664441573,
+      0.00126049111742077,
+      0.001228673244725087
+    ],
+    "finestTwoFixedEndpointDifference": 0.0001868699895339887
+  },
+  "limitations": [
+    "Two spatial levels diagnose sensitivity, not grid independence or general curved-wall heat-transfer accuracy.",
+    "Sharp cylinder heating produces a transient spatial undershoot below 300 K; explicitly retained, no clipping. Implicit nonorthogonal corrected diffusion is not a discrete maximum-principle guarantee.",
+    "Local BE step-doubling tolerance is not a bound on accumulated, spatial, or unresolved startup error.",
+    "Observed live output replacement is detected and isolated; the external process responsible is not established."
+  ],
+  "implementation": {
+    "branch": "codex/thermal-stability-cloud",
+    "nativeCommit": "00c336c2995575b6975881ae10f36535369148ab",
+    "nativeSourceTree": "94de3391af1bd581729f5f941479998d71dd8473",
+    "nativeBinarySha256": "382ac6b1644284ae21a6d4629e462bbaa6d5cc82263ed6f8f247a17f7a4a82b5",
+    "runtimeBinaryMatchesBuild": true,
+    "rendererSha256": "e7eb63002da7833aba1414c9a3d6843d69d9cda2a47010ccee04d4b439a87953",
+    "provenanceNote": "Early qualified runs were made with an uncommitted native fix subsequently published in 00c336c; identical native binary hash is checked for every case. No previous stateless results are counted."
+  },
+  "cloud": {
+    "host": {
+      "system": "Linux",
+      "node": "1385053c4b7d",
+      "release": "6.18.44",
+      "version": "#1 SMP Sat Sep 26 20:02:31 UTC 2026",
+      "machine": "x86_64",
+      "processor": "x86_64"
+    },
+    "os": "Ubuntu 24.04.3 LTS",
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+    "cpuQuota": "800000 100000",
+    "memoryBytes": 8589934592,
+    "workspace": "/workspace/scratch/b53e6359ae08/cartmesh2d",
+    "verifiedUtc": "2026-10-05T07:28:18.419770+00:00",
+    "localMacOrWindowsCompute": false
+  },
+  "checks": {
+    "nativeAndCli": {
+      "passed": 13,
+      "total": 13,
+      "log": "outputs/thermal/qualified/native.log"
+    },
+    "frontend": {
+      "passed": 195,
+      "total": 195,
+      "log": "outputs/thermal/qualified/frontend.log"
+    },
+    "nativeControlTransactions": {
+      "passed": true,
+      "outputDirectory": "/workspace/scratch/b53e6359ae08/cartmesh2d/outputs/thermal/control-ctest/run-u19zburf",
+      "existingAcceptedOutputNotOverwritten": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.007053295641128443,
+      "integratedHeatGain": 0.007053221283969603,
+      "integratedBudgetDefect": 7.435708005361026e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "replacedLiveOutputFailsClosedAndResumesIdentically": true,
+      "continuousCheckpointSha256": "1813fd014ba6df2dae3220593f652b7d42b7f79817a80f903394a36d592625b9"
+    },
+    "representativeRestart": {
+      "channel": {
+        "passed": true,
+        "splitSteps": 17,
+        "splitTime": 0.022300583267593623,
+        "equalToFull": {
+          ".thermal.checkpoint": true,
+          ".cells.csv": true,
+          ".thermal-history.csv": true,
+          ".heat-history.csv": true,
+          ".boundary-heat-history.csv": true,
+          ".attempt-history.csv": true
+        },
+        "checkpointSha256": "04348501805fbf690470ba0fecb959475c7b1ba9f6a68d8f3ed3b31c43246795"
+      },
+      "cylinder": {
+        "passed": true,
+        "splitSteps": 200,
+        "splitTime": 13.514333829885743,
+        "equalToFull": {
+          ".thermal.checkpoint": true,
+          ".cells.csv": true,
+          ".thermal-history.csv": true,
+          ".heat-history.csv": true,
+          ".boundary-heat-history.csv": true,
+          ".attempt-history.csv": true
+        },
+        "checkpointSha256": "d0b2cc95608c5799fc4fb1ba86425c15840efcef590d69a61f4902cbc432f51e"
+      }
+    },
+    "zeroFlowSpatialDiagnostic": {
+      "minimumTemperature": 299.96896392816933,
+      "maximumVolumeFlux": 0.0,
+      "timeErrorControl": false,
+      "dt": 0.0001,
+      "endTime": 0.01,
+      "interpretation": "Undershoot in zero-velocity pure diffusion isolates spatial nonorthogonal correction; no clipping."
+    },
+    "linuxApp": {
+      "cells": 1300,
+      "checks": {
+        "adaptiveControl": true,
+        "errorControl": true,
+        "firstTime": 0.5,
+        "changedStepResume": true,
+        "failedBudgetRetained": true,
+        "resumeAfterFailure": true,
+        "finalTime": 1.3
+      },
+      "finalTime": 1.3,
+      "completedStepsInFinalResume": 9,
+      "displayedCompletedStepsCorrect": true,
+      "screenshot": "outputs/thermal/qualified/app/adaptive.png",
+      "raw": "outputs/thermal/qualified/app/adaptive.png.json",
+      "macOSOrWindowsValidated": false
+    }
+  },
+  "steadyStepRegression": {
+    "mesh": "6x6 native cavity",
+    "dt": [
+      0.1,
+      0.01,
+      0.001
+    ],
+    "beforeMaxVelocityChange": [
+      0.000105327,
+      7.68825e-05,
+      1.12537e-05
+    ],
+    "afterMaxVelocityChange": [
+      7.61175e-12,
+      1.68404e-12,
+      3.85192e-13
+    ],
+    "units": "m/s",
+    "logs": [
+      "outputs/steady-invariance-before.log",
+      "outputs/steady-invariance-after.log"
+    ],
+    "acceptance": "2e-8 times reference velocity, permitting accumulated iterative tolerance; not a physical accuracy criterion"
+  },
+  "characteristicTimes": {
+    "channel": "U=1,t=6 and U=.5,t=12 each cover 3 length-2 residence times",
+    "cavity": "D=.1,t=6 and D=.02,t=30 each cover about 5.92 primary diffusion times 1/(pi^2 D)",
+    "cylinder": "U=.2,t=25 covers 2.38 domain-length-2.1 residence times; real radius-.15 64-segment solid subtracted from exterior domain"
+  },
+  "costDecision": {
+    "timeMethod": "retain backward Euler",
+    "basis": "Primary artificial flow time-error limitation was dt-dependent momentum interpolation. Fix reduced channel coarse accepted steps 466 to 118 and slow channel 825 to 158; these are counts, not controlled timing speedup claims. Final cavity error against dt=.0125 is about .0013 K for the stated 1 K signal. No evidence yet justifies a second-order method to complete this scope.",
+    "stepDoublingCost": "Each attempted error estimate uses one full and two half joint solves; failures can stop earlier.",
+    "timingCaution": "Recorded full subprocess durations include output and may overlap other cloud work; no exclusive-machine performance claim."
+  },
+  "qualification": {
+    "runnable": "14 configurations plus restart/failure/App runs completed on the current native binary",
+    "numericalConvergence": "Each accepted native flow and scalar solve passes the unchanged residual and quality gates; rejected attempts are retained",
+    "temporalAccuracy": "Event-clipped BE maximum-step halving gives adjacent difference ratio 2.035; local tolerance is not global accuracy",
+    "physicalScope": "Representative transient response, signed wall heat and native integrated conservation checked. Early curved-wall diffusion undershoot and 2-level spatial sensitivity remain explicit limitations; not universal maximum-principle or grid-independent heat-transfer certification."
+  }
+}
