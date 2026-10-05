@@ -131,6 +131,16 @@ outputs/cloud-laminar/accuracy-probe channel 64 1e-8 upwind default outputs/clou
 
 相同入口支持 `manufactured`（变形网格解析强迫涡）和 `cavity`（Re=100），格式为 `upwind` 或 `face-limited-linear`，方法为 `default` 或显式 `none`。原始 `accuracy-runs.json`、`accuracy-controls.json`、`cost-runs.json` 保留每次完整命令、进程退出状态和耗时；场、输入和日志在同目录。完成这些实际运行后执行 `python3 artifacts/current/native-laminar-accuracy-postprocess.py` 生成当前精度证据。压力为运动学压力，封闭流比较去除体积加权常数；速度/压力误差分别以 m/s 和 m²/s² 报告，不混成单个场误差。通道的参考为 `u=4y(1-y), v=0, p/ρ=8ν(4-x)`，方腔按真实中心网格和规定壁值双线性插值；圆环包含多边形几何误差，不因残差小而授予精度资格。
 
+
+曲壁几何/空间联合细化由 `python3 artifacts/current/native-laminar-curve-study.py` 复现（可用 `--levels 4 5 6 7` 和 `--schemes upwind face-limited-linear`）。驱动生成独立参数化圆环输入，不修改原 1024 段 XY；按原 CLI 流程生成 Solver 网格、导出 annulus 边界，再以 `custom` 默认 Newton 求解。OpenFOAM 目标需提供目录：传 `-` 只构造源网格，不产生 `.solver.cm2d`；`--case annulus` 仅用于导出边界。首次驱动误用这两个入口造成的失败记录保留，修正后实际八次求解通过。`outputs/cloud-laminar/curve-joint-refinement.json` 记录网格、边界和完整求解成本；超时显式记失败，不能宣称该档完成。误差相对圆形解析解，含多边形几何/壁速差异；全域 RMS 与最大值同时报告，固定 `.6≤r≤.9 m` 内域指标只是定位工具，不能删去近壁误差。
+
+```sh
+g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-pressure-probe.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o outputs/cloud-laminar/pressure-probe
+outputs/cloud-laminar/pressure-probe outputs/cloud-laminar/annulus.solver.cm2d outputs/cloud-laminar/annulus-default.cells.csv > outputs/cloud-laminar/pressure-probe-baseline.csv 2> outputs/cloud-laminar/pressure-probe-trace.json
+```
+
+该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`，目前无新通用物理精度门、无产品默认改动。
+
 ## 完整笛卡尔背景网格
 
 `--background-grid adaptive|uniform` 在几何诊断、Quadtree 细化及 2:1 平衡后直接导出完整叶子，不做 Cut-cell、Solver 修复或 OpenFOAM 输出。均匀模式使最低层级等于最高层级；自适应复用尺寸场和盒加密。
