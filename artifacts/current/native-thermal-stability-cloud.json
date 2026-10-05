@@ -748,5 +748,17 @@
     "numericalConvergence": "Each accepted native flow and scalar solve passes the unchanged residual and quality gates; rejected attempts are retained",
     "temporalAccuracy": "Event-clipped BE maximum-step halving gives adjacent difference ratio 2.035; local tolerance is not global accuracy",
     "physicalScope": "Representative transient response, signed wall heat and native integrated conservation checked. Early curved-wall diffusion undershoot and 2-level spatial sensitivity remain explicit limitations; not universal maximum-principle or grid-independent heat-transfer certification."
+  },
+  "retention": {
+    "archiveFilename": "cartmesh2d-thermal-cloud-recovery.tar.gz",
+    "archiveSha256": "77cedaeceea797171798aef627a0b43cca11cafa870660b95666180601b2b980",
+    "bytes": 48511900,
+    "rawFilesVerifiedAfterRemoteDownload": 3777,
+    "rawSourceCommit": "7009296fa0dc8b92155ce68a01c12153e3a175ce",
+    "sourceAndDependenciesExcluded": true,
+    "previousArchiveTruncationRepaired": true,
+    "previousChangedFilesRecoveredWithOldHashes": 59,
+    "previousIndexedFilesMissing": 0,
+    "oldCorruptArchiveRetained": true
   }
 }

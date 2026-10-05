@@ -56,7 +56,7 @@
 
 曾出现活动历史路径被替换、原生仍写旧 inode 的问题，现已受控复现并加入逐次 flush 的路径长度校验；不完整输出明确失败，恢复状态可用。原始 38/25 步异常和本轮实际复现都保留，外部替换进程尚未确立。长时／App 验收在同一云执行器临时 outputs 内运行，关闭后逐文件 SHA256 导入工作区，避免活动快照替换；这不是用户电脑计算，也不是关闭完整性检查。已有接受检查点的输出前缀拒绝复用。进程结束后外部损坏仍依赖归档哈希发现，不能声称保护任意存储故障。
 
-[全部小证据与哈希](../artifacts/current/native-thermal-stability-cloud.json) · [真实响应曲线](../artifacts/current/native-thermal-stability-cloud.png) · [当前 Linux App](../artifacts/current/native-thermal-stability-cloud-app.png) · [方法与复现](DEVELOPMENT_CN.md#云端联合温度时间控制)。旧 `native-thermal-cloud-increment.json` 和无历史控制器长时结果按原版本保留，不计入当前通过。原始输入、接受场、失败、命令与恢复索引持续保存在 `cartmesh2d-thermal-cloud-recovery.tar.gz`；源码以独立 Git 分支为准，未自动合并 main。独立 Python 方程／拓扑重建审计链按用户规则移除，保留原生约束与真实数据对照。最终可恢复归档确认后停止本节任务；上述精度边界不伪称已解决。
+[全部小证据与哈希](../artifacts/current/native-thermal-stability-cloud.json) · [真实响应曲线](../artifacts/current/native-thermal-stability-cloud.png) · [当前 Linux App](../artifacts/current/native-thermal-stability-cloud-app.png) · [方法与复现](DEVELOPMENT_CN.md#云端联合温度时间控制)。旧 `native-thermal-cloud-increment.json` 和无历史控制器长时结果按原版本保留，不计入当前通过。原始输入、接受场、失败、命令与恢复索引持续保存在 `cartmesh2d-thermal-cloud-recovery.tar.gz`；源码以独立 Git 分支为准，未自动合并 main。独立 Python 方程／拓扑重建审计链按用户规则移除，保留原生约束与真实数据对照。最终归档 **48,511,900 字节、3777 项原始文件**，保存后重新下载逐项 SHA256 核对通过；归档 SHA256 为 `77cedaeceea797171798aef627a0b43cca11cafa870660b95666180601b2b980`。旧归档截断已确认；被重复回归改变的 59 项旧文件均从尚完整成员中按原索引哈希恢复，无旧索引文件缺失，损坏归档亦保留。两项目标在上述明确范围内完成，本节后台接续任务到此收尾；精度边界不伪称已解决。
 
 ## 持续目标：成熟燃烧模拟
 
