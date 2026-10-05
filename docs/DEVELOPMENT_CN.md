@@ -139,6 +139,21 @@ g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-pressure-probe.cpp
 outputs/cloud-laminar/pressure-probe outputs/cloud-laminar/annulus.solver.cm2d outputs/cloud-laminar/annulus-default.cells.csv > outputs/cloud-laminar/pressure-probe-baseline.csv 2> outputs/cloud-laminar/pressure-probe-trace.json
 ```
 
+最终单元均衡试验使用 `native-laminar-mesh-balance-probe.cpp`，只调用产品内已有的 `improveSolverForTargetPolicy2D`；它不是独立方程求解器，也不修改默认 Solver `minVolumeRatio=0.01`。第三个参数是无量纲目标邻格面积比 `min(Ao,An)/max(Ao,An)`。探针从最终网格的 `DomainBoundary` 恢复外域矩形；没有外域边界的内流按生成时 `.15×span` 留白重建仅供事务几何分类。可在已有 Release 静态库上直接编译：
+
+```bash
+g++ -std=gnu++20 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Wconversion -Wshadow \
+  -Iinclude artifacts/current/native-laminar-mesh-balance-probe.cpp \
+  build/libcartmesh2d.a -o outputs/cloud-laminar/mesh-balance-probe
+
+outputs/cloud-laminar/mesh-balance-probe \
+  outputs/cloud-laminar/annulus-joint-7.solver.cm2d \
+  outputs/cloud-laminar/annulus-joint-7.xy .075 \
+  outputs/cloud-laminar/annulus-joint-7-volume-075.solver.cm2d
+```
+
+追加一个或多个单元号可把其余单元标成 immutable，用于定位单个事务；结构成功不等于目标策略全部通过，必须同时检查探针 JSON 的 `outputDefaultPass` / `outputTargetPass`，实际流场仍须通过原 CLI 最终认证。当前三档圆环和三档圆柱结果见 `native-laminar-mesh-balance.json`：物理边界原子边逐坐标/patch 比较完全相同、面积守恒并通过默认门，但 `0.10` 比 `0.075` 更差，且圆柱积分量发生约 2.4% 系统移动，所以 `0.075` 只能保留为诊断，禁止据此改默认或宣称精度资格。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`，目前无新通用物理精度门、无产品默认改动。
 
 ## 完整笛卡尔背景网格

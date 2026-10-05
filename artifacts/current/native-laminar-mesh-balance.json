@@ -1,0 +1,201 @@
+{
+  "format": "cartmesh2d-native-laminar-mesh-balance-v1",
+  "status": "diagnostic-not-default",
+  "scope": "Native exact-union/split target-quality sensitivity on two circular Couette meshes and a three-level Re=20 external cylinder family. This is a mesh/FVM experiment, not an independent equation audit or a new Solver gate.",
+  "environment": {
+    "system": "Linux x86_64",
+    "compiler": "GCC 13.3.0",
+    "localHead": "2dcdce008b77d91be143158cbbc9f3dbe394d473",
+    "remoteDeliveredHeadBeforeThisBatch": "81350a845ef2e058d1731838645695938b99e148",
+    "flowCliSha256": "2a312daf486e059c89dd793bac5ddc5ba3d692faf5edb580720b305c6a348e27",
+    "coreLibrarySha256": "eecf3e9caea367627a98f4c6d6678cd0c75df90b40a86b69bc95ffd266cf6226",
+    "probeSourceSha256": "d2a044c3b2db8e3cdaa6989c2c6eafe386a5642067e6d9e45a3c4828334e70ce",
+    "probeBinarySha256": "b9fbe61dd43aa59c5010a3525ec4a8053056b75a00e58737c02fe42484a53513"
+  },
+  "method": {
+    "implementation": "improveSolverForTargetPolicy2D",
+    "targetQuantity": "minimum internal-face volume ratio min(A_owner,A_neighbour)/max(A_owner,A_neighbour), dimensionless",
+    "targetSweep": [0.06, 0.075, 0.1],
+    "unchangedDefaultSolverLimit": 0.01,
+    "acceptance": "existing exact union/split transactions, topology validity and full authoritative Solver-quality evaluation",
+    "invariants": [
+      "No source XY coordinate or physical boundary atom is changed.",
+      "No cell is discarded and total fluid area is conserved within the existing tolerance.",
+      "Every solved output passes the unchanged default Solver gate.",
+      "The target ratio is an experiment only; it is not a new default or acceptance threshold."
+    ]
+  },
+  "jointAnnulusLevel7": {
+    "input": {
+      "mesh": "outputs/cloud-laminar/annulus-joint-7.solver.cm2d",
+      "meshSha256": "ffa1e0945ed36c3e543d6e1d5edf767dfcc219a4b9e2387c69f7041b8c5160",
+      "cells": 6606,
+      "minimumCellArea_m2": 3.3593212737704015e-7,
+      "minimumVolumeRatio": 0.015447477511493477,
+      "boundaryAtoms": 1496
+    },
+    "runs": [
+      {
+        "target": "baseline",
+        "cells": 6606,
+        "evaluations": 310,
+        "velocityRms_m_s": 0.0006681574577921235,
+        "velocityMax_m_s": 0.017709419773983194,
+        "pressureRms_m2_s2": 0.007432426891410583,
+        "pressureMax_m2_s2": 1.8023570190804046,
+        "fixedInteriorPressureRms_m2_s2": 0.0007024385212867628,
+        "rotorTorqueRelativeError": 0.008844557909057273,
+        "cellFieldSha256": "ea9dc77433db63b2e11a7cb4e7a115a5eefdbd5f6f3a316ffab1e6cb3ea2b5ae"
+      },
+      {
+        "target": 0.06,
+        "cells": 6579,
+        "acceptedRepairTransactions": 111,
+        "minimumCellArea_m2": 4.971694895313778e-7,
+        "minimumVolumeRatio": 0.061381637232526522,
+        "evaluations": 208,
+        "velocityRms_m_s": 0.0005615415277882202,
+        "velocityMax_m_s": 0.0019607479625426724,
+        "pressureRms_m2_s2": 0.003900317542457891,
+        "pressureMax_m2_s2": 0.5121381235585549,
+        "fixedInteriorPressureRms_m2_s2": 0.0007369138111391278,
+        "rotorTorqueRelativeError": 0.00832873735830223,
+        "cellFieldSha256": "ae10c6271aab610d3ea784f2426f2e2c3fc94b58800765caa8b4ce9e7b81a29a"
+      },
+      {
+        "target": 0.075,
+        "cells": 6548,
+        "acceptedRepairTransactions": 166,
+        "minimumCellArea_m2": 1.0909843343999983e-6,
+        "minimumVolumeRatio": 0.075564307732798486,
+        "evaluations": 323,
+        "velocityRms_m_s": 0.0005021431099666743,
+        "velocityMax_m_s": 0.003437574803202089,
+        "pressureRms_m2_s2": 0.004108580751930262,
+        "pressureMax_m2_s2": 0.23368687413134617,
+        "fixedInteriorPressureRms_m2_s2": 0.0008117970349376389,
+        "rotorTorqueRelativeError": 0.005910101181543529,
+        "cellFieldSha256": "a22b08174ac133cdcaa8dfa0e911646a589ebc8502a5d34c3013fa23ee3fdda8"
+      },
+      {
+        "target": 0.1,
+        "cells": 6512,
+        "acceptedRepairTransactions": 231,
+        "minimumCellArea_m2": 1.0909843343999983e-6,
+        "minimumVolumeRatio": 0.10081457491180755,
+        "evaluations": 580,
+        "velocityRms_m_s": 0.0007403546947163622,
+        "velocityMax_m_s": 0.013830168372404902,
+        "pressureRms_m2_s2": 0.009011847159305836,
+        "pressureMax_m2_s2": 1.3250711929478918,
+        "fixedInteriorPressureRms_m2_s2": 0.0014022354081620315,
+        "rotorTorqueRelativeError": 0.004474112046998302,
+        "cellFieldSha256": "0d4617a002631aa7ad7cfd879465715549c44f836074af41ca15aa5f351a20dc"
+      }
+    ],
+    "invariantsForAllRepairedMeshes": {
+      "fluidArea_m2": 2.356135350858127,
+      "boundaryAtoms": 1496,
+      "boundaryAtomsBitwiseIdentical": true,
+      "defaultSolverGate": "PASS"
+    },
+    "interpretation": "The response is non-monotone: 0.075 is substantially better than both the original and 0.1 for this field, so blindly maximizing the minimum ratio is not a valid generic default."
+  },
+  "original1024SegmentAnnulus": {
+    "inputMeshSha256": "699ab46f1d12ee1b0c583b7fbaa0ce8910cc627b76a00c285eeed9f1dc023406",
+    "inputBoundarySha256": "aba995595e35e791e36b9134f69a7bfed3ec6a4f47ee982d0b5288e66c53b5d1",
+    "target": 0.075,
+    "repair": {
+      "inputCells": 7178,
+      "outputCells": 7081,
+      "acceptedRepairTransactions": 280,
+      "inputMinimumVolumeRatio": 0.010023412768830222,
+      "outputMinimumVolumeRatio": 0.030665515911626171,
+      "targetFullyReached": false,
+      "inputArea_m2": 2.3561797052752196,
+      "outputArea_m2": 2.3561797052752191,
+      "boundaryAtoms": 2520,
+      "boundaryAtomsBitwiseIdentical": true,
+      "defaultSolverGate": "PASS"
+    },
+    "baseline": {
+      "evaluations": 454,
+      "velocityRms_m_s": 0.0005012993999473869,
+      "velocityMax_m_s": 0.0051019929227885214,
+      "pressureRms_m2_s2": 0.0038772140026888543,
+      "pressureMax_m2_s2": 0.48059653166627914,
+      "fixedInteriorPressureRms_m2_s2": 0.000598706921813425,
+      "rotorTorqueRelativeError": 0.007451122577384914
+    },
+    "repaired": {
+      "evaluations": 268,
+      "velocityRms_m_s": 0.0005073426633030476,
+      "velocityMax_m_s": 0.004624436784130181,
+      "pressureRms_m2_s2": 0.0023623631843884578,
+      "pressureMax_m2_s2": 0.29577916611415067,
+      "fixedInteriorPressureRms_m2_s2": 0.0007304646170314783,
+      "rotorTorqueRelativeError": 0.0067627398523156705
+    }
+  },
+  "externalCylinderRe20": {
+    "geometry": "same 32-segment polygon and 42 m square domain at all three levels; U=1 m/s, diameter=2 m, nu=0.1 m2/s; default Upwind and tolerance 1e-6",
+    "target": 0.075,
+    "repairInvariants": {
+      "acceptedRepairTransactionsPerLevel": 16,
+      "inputMinimumVolumeRatio": 0.027387851591226305,
+      "outputMinimumVolumeRatio": 0.092183569507045801,
+      "boundaryAtomsBitwiseIdentical": true,
+      "defaultSolverGate": "PASS"
+    },
+    "levels": [
+      {
+        "cells": 1628,
+        "boundaryAtoms": 176,
+        "baselineEvaluations": 73,
+        "repairedEvaluations": 74,
+        "baselineDrag": 2.3504995434443128,
+        "repairedDrag": 2.293981524946645
+      },
+      {
+        "cells": 5168,
+        "boundaryAtoms": 232,
+        "baselineEvaluations": 111,
+        "repairedEvaluations": 112,
+        "baselineDrag": 2.3349860266216496,
+        "repairedDrag": 2.2792418418641476
+      },
+      {
+        "cells": 8480,
+        "boundaryAtoms": 304,
+        "baselineEvaluations": 146,
+        "repairedEvaluations": 129,
+        "baselineDrag": 2.333684785657324,
+        "repairedDrag": 2.2781365422495337
+      }
+    ],
+    "finestPair": {
+      "baselinePressureDrag": 1.3746657515694638,
+      "repairedPressureDrag": 1.3292191579083419,
+      "baselineViscousDrag": 0.9590190340878607,
+      "repairedViscousDrag": 0.9489173843411924,
+      "baselineContinuity": 9.53571884402306e-14,
+      "repairedContinuity": 5.125102264402231e-14
+    },
+    "interpretation": "Both families are internally converged with refinement, but the repair shifts the limiting drag by about 2.4%. No matched continuum reference exists for this polygon/domain/control combination, so the shift cannot yet be labelled more accurate."
+  },
+  "conclusion": {
+    "productChange": false,
+    "defaultChange": false,
+    "solverGateChange": false,
+    "result": "Final-cell balance is causally relevant to the annular pressure spike and the existing conservative repair can reduce it while preserving geometry. A single target is not monotone and changes an independent cylinder integral materially, so promoting 0.075 now would be case-tuned and is rejected.",
+    "next": "Design a quality objective based on discretization consistency rather than a target-ratio threshold, then validate it on the existing channel/manufactured/cavity suite plus both curved families before any default integration."
+  },
+  "rawEvidence": [
+    "outputs/cloud-laminar/annulus-joint-7-volume-*.json",
+    "outputs/cloud-laminar/annulus-joint-7-volume-*-upwind.*",
+    "outputs/cloud-laminar/annulus-volume-075*",
+    "outputs/cloud-laminar/cylinder-*-volume-075*",
+    "outputs/cloud-laminar/cylinder-*-base.*",
+    "outputs/cloud-laminar/cylinder-*-r075.*"
+  ]
+}
