@@ -1,0 +1,107 @@
+{
+  "format": "cartmesh2d-native-laminar-pressure-localization-v1",
+  "matureGoalCompleted": false,
+  "runtime": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+    "cloudOnly": true,
+    "macOSQualification": false,
+    "baseSourceCommit": "665e345ef6944d6113b796ac125a30dfb1f3a724"
+  },
+  "scope": {
+    "case": "circular Couette reference compared with the accepted true-polygon, impermeable Cut-cell solution",
+    "geometry": "ri=0.5 m, ro=1 m, inner speed=0.5 m/s",
+    "pressure": "kinematic pressure in m2/s2; area-weighted gauge removed",
+    "quantiles": "cell pressure-error quantiles weighted by final physical fluid area",
+    "concentration": "smallest set of cells whose area-weighted squared pressure error reaches the stated share",
+    "wallBands": "cell-centre distance from the analytic circular wall; diagnostic only, not an acceptance exclusion",
+    "patchTest": "product gradient and complete symmetric viscous face operator applied to affine rigid rotation on each accepted mesh; no independent flow equation is solved",
+    "acceptance": "No product threshold, quality gate, geometry, wall condition, or solver algorithm changed. Pointwise curved-wall pressure remains unqualified."
+  },
+  "faceLimitedLinearJointRefinement": [
+    {
+      "level": 4,
+      "cells": 192,
+      "pressureL1_m2_s2": 0.008913294780530988,
+      "pressureRms_m2_s2": 0.01677421867595966,
+      "pressureMaximum_m2_s2": 0.13997422524004596,
+      "pressureAreaQ99_m2_s2": 0.07545352045076868,
+      "areaFractionFor50PercentSquaredError": 0.032448685998821516,
+      "maximumRotorTraceJump_m_s": 0.04906767432741886,
+      "rigidRotationPatchMaximum_m_s2": 5.44444445533624e-15
+    },
+    {
+      "level": 5,
+      "cells": 576,
+      "pressureL1_m2_s2": 0.0041252139376885015,
+      "pressureRms_m2_s2": 0.009222112485412652,
+      "pressureMaximum_m2_s2": 0.2720744091593507,
+      "pressureAreaQ99_m2_s2": 0.042028676312369506,
+      "areaFractionFor50PercentSquaredError": 0.014765441015989447,
+      "maximumRotorTraceJump_m_s": 0.02454122852291445,
+      "rigidRotationPatchMaximum_m_s2": 3.617835274292842e-14
+    },
+    {
+      "level": 6,
+      "cells": 1853,
+      "pressureL1_m2_s2": 0.0020353131328713294,
+      "pressureRms_m2_s2": 0.008724299926064159,
+      "pressureMaximum_m2_s2": 0.5968289027840792,
+      "pressureAreaQ99_m2_s2": 0.028746685041436112,
+      "areaFractionFor50PercentSquaredError": 0.003073505866895037,
+      "maximumRotorTraceJump_m_s": 0.012271538285744147,
+      "rigidRotationPatchMaximum_m_s2": 6.110127181647543e-14
+    },
+    {
+      "level": 7,
+      "cells": 6606,
+      "pressureL1_m2_s2": 0.0005490925697317641,
+      "pressureRms_m2_s2": 0.007384998438405756,
+      "pressureMaximum_m2_s2": 1.805816070990076,
+      "pressureAreaQ99_m2_s2": 0.00691524067612743,
+      "pressureAreaQ999_m2_s2": 0.04495325189125965,
+      "areaFractionFor50PercentSquaredError": 0.00016449604772102893,
+      "areaFractionFor90PercentSquaredError": 0.0008408268167239739,
+      "cellsFor50PercentSquaredError": 3,
+      "cellsFor90PercentSquaredError": 44,
+      "minimumWallDistance_0_025m": {
+        "retainedAreaFraction": 0.897821164146248,
+        "pressureRms_m2_s2": 0.00041713203194207075,
+        "pressureMaximum_m2_s2": 0.012658148136521578
+      },
+      "minimumWallDistance_0_05m": {
+        "retainedAreaFraction": 0.8013320942331133,
+        "pressureRms_m2_s2": 0.00024045511925918666,
+        "pressureMaximum_m2_s2": 0.006186661242100358
+      },
+      "maximumRotorTraceJump_m_s": 0.006135884649222589,
+      "maximumNormalRotorVelocity_m_s": 5.351725822506688e-17,
+      "rigidRotationPatchRms_m_s2": 2.6358126616108315e-15,
+      "rigidRotationPatchMaximum_m_s2": 6.752330666102865e-13
+    }
+  ],
+  "finestUpwindControl": {
+    "cells": 6606,
+    "pressureMaximum_m2_s2": 1.8023570190804046,
+    "pressureAreaQ99_m2_s2": 0.006620961206226149,
+    "areaFractionFor50PercentSquaredError": 0.00016449604772102893,
+    "minimumWallDistance_0_025mPressureMaximum_m2_s2": 0.014005525878059855,
+    "interpretation": "The same localization with Upwind shows that the new default face-limited-linear convection is not the cause of the peak."
+  },
+  "findings": [
+    "The growing maximum is real and remains explicitly reported, but on the finest mesh half of the area-weighted squared pressure error is carried by three cells occupying 0.01645% of fluid area.",
+    "Area-weighted L1 and 99th-percentile errors decrease strongly while the pointwise maximum grows; this is a localized curved-wall/small-cell phenomenon, not a global pressure-field deterioration.",
+    "The rotor trace is exactly impermeable to roundoff and its adjacent Cartesian velocity jump halves with each geometric refinement. The correlation is diagnostic and does not by itself prove causation.",
+    "The affine rigid-rotation patch residual stays near floating-point roundoff on all four accepted meshes, ruling out a general linear-consistency failure of the complete symmetric viscous operator. It does not qualify nonlinear or corner behaviour.",
+    "No near-wall cells are deleted from reported norms and no pointwise pressure qualification is granted. The next discriminating study is fixed-polygon spatial refinement or a polygon-consistent reference, followed by independent curved-flow regression before any product change."
+  ],
+  "reproduction": {
+    "compile": "g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-pressure-localization.cpp -Lbuild -lcartmesh2d_fv -lcartmesh2d -o outputs/cloud-laminar/native-laminar-pressure-localization",
+    "driverSha256": "511ac638d12118e72583e94c013b01d44e04ee4177de958410dc98ba5ba3452d",
+    "binarySha256": "ff7b6315db67e602bee542d926dfe2ba5f9c581c8e42318500f86d7996194ccb",
+    "rawJointJsonl": "outputs/cloud-laminar/pressure-localization.jsonl",
+    "rawJointJsonlSha256": "6ab3a84774403df111fcc3af8b83131ad363e914c31cea0ff758aa4b952b38be",
+    "rawUpwindJson": "outputs/cloud-laminar/pressure-localization-upwind.json",
+    "rawUpwindJsonSha256": "449172b2437a3add74c3528e1b14214c5398217a5b2536102a466e6a730774c7"
+  }
+}

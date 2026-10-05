@@ -183,6 +183,19 @@ build/cartmesh2d_flow_cli \
 
 上下文默认的跨工况重放使用 `artifacts/current/native-laminar-default-matrix.cpp`；它复用原生测试网格构造和产品求解器，只记录解析误差及完整求解预算，不实现独立方程。通道、manufactured、cavity 的 `n=64` / `1e-8` 运行分别与显式 face-limited-linear 场逐字节相同。曲壁路径直接对 `annulus-joint-7.solver.cm2d` 省略 `--convection` 与 `--steady-acceleration`，与显式结果的 cells/faces/residuals/summary 逐字节相同。真实 App 复验命令必须给 `--out` 绝对路径并带 `--flow=external --flow-case-check=true`；相对路径会在保存工况时按设计拒绝。本次 Linux Electron headless 路径完成两次 5,168 格求解、保存读回和复算确定性，详情及哈希见 `native-laminar-default-regression.json`。它不替代实体显示器、macOS 或打包版验证。
 
+曲壁压力局部化诊断用 `artifacts/current/native-laminar-pressure-localization.cpp` 直接读取产品 CM2D 与接受的 cells CSV，不组装或求解独立流动方程。它按最终流体面积计算压力误差分位数和平方误差集中度，同时保留全域最大值；按解析圆壁的物理距离分带只用于定位，不是验收时删除近壁格。还对每个接受网格调用产品 `buildFlowGradientStencil2D`、`symmetricViscousCorrection` 和同一紧致非正交通量，令 `u=-y,v=x` 做刚体旋转的零对称应变补丁试验。该仿射迹只是算子线性一致性检查，不是允许穿透真实多边形的替代壁面条件。
+
+```sh
+g++ -std=c++20 -O2 -Iinclude artifacts/current/native-laminar-pressure-localization.cpp -Lbuild -lcartmesh2d_fv -lcartmesh2d -o outputs/cloud-laminar/native-laminar-pressure-localization
+for level in 4 5 6 7; do
+  outputs/cloud-laminar/native-laminar-pressure-localization joint-$level \
+    outputs/cloud-laminar/annulus-joint-$level.solver.cm2d \
+    outputs/cloud-laminar/annulus-joint-$level-face-limited-linear.cells.csv
+done
+```
+
+最细网格补丁最大余量 `6.75e-13 m/s²`、真实转子最大法向速度 `5.35e-17 m/s`；但压力最大误差仍为 `1.806 m²/s²`，因此不能把补丁通过解释成局部压力正确。面积加权 L1、99% 分位和离壁 `0.025 m` 的最大误差随联合加密明显下降，而 50% 平方误差在最细档集中到 3 个格/`0.01645%` 总面积。最细 Upwind 也出现同一峰值与集中度，说明默认 face-limited-linear 不是原因。完整数组、原始 JSONL 与驱动/二进制哈希见 `native-laminar-pressure-localization.json`；下一步应固定同一多边形只细化空间网格，或取得保持该多边形无穿透语义的一致参考，不能从当前圆形解析解与局部峰值直接推出产品修复。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格
