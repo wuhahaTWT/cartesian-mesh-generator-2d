@@ -964,6 +964,15 @@ function renderFlowResult(summary) {
         [`${load.name} · 力矩（m⁴/s²）`,load.torque]);
     }
   }
+  if (summary.wallTraceDefinition) {
+    rows.push(['无滑移壁面迹诊断', `${summary.wallTraceWallFaces} 面 · ${summary.wallTraceAdjacentVertices} 个共顶点`],
+      ['非零壁速迹跳点', String(summary.wallTraceDiscontinuousVertices)]);
+    if (summary.wallTraceDiscontinuousVertices > 0) {
+      rows.push(['最大壁速迹跳（m/s）', summary.wallTraceMaximumVelocityJump],
+        ['最大迹跳位置（m）', `(${summary.wallTraceMaximumJumpLocation[0].toPrecision(6)}, ${summary.wallTraceMaximumJumpLocation[1].toPrecision(6)})`],
+        ['压力点值适用边界', '迹跳共享顶点需单独奇异性／迹资格；所有格与全域误差仍保留']);
+    } else rows.push(['压力点值适用边界', '未检测到超过报告容差的相邻无滑移壁速迹跳']);
+  }
   for (const [label, value] of rows) {
     const item = document.createElement('div');
     const caption = document.createElement('span'); caption.textContent = label;

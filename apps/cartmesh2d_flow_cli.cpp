@@ -764,6 +764,14 @@ int main(int argc, char** argv) {
                 << ",\n\"wallViscousForceX\":" << r.wallViscousForceX
                 << ",\n\"wallViscousForceY\":" << r.wallViscousForceY
                 << ",\n\"wallForceDefinition\":\"all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum\""
+                << ",\n\"wallTraceDefinition\":\"prescribed Cartesian velocity jump at reconstructed shared vertices of impermeable no-slip faces; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification\""
+                << ",\n\"wallTraceVelocityTolerance\":" << r.wallTrace.velocityTolerance
+                << ",\n\"wallTraceWallFaces\":" << r.wallTrace.wallFaces
+                << ",\n\"wallTraceAdjacentVertices\":" << r.wallTrace.adjacentVertices
+                << ",\n\"wallTraceDiscontinuousVertices\":" << r.wallTrace.discontinuousVertices
+                << ",\n\"wallTraceMaximumVelocityJump\":" << r.wallTrace.maximumVelocityJump
+                << ",\n\"wallTraceMaximumJumpLocation\":[" << r.wallTrace.maximumJumpLocation.x
+                << ',' << r.wallTrace.maximumJumpLocation.y << ']'
                 << ",\n\"discreteForceDefinition\":\"pressure plus selected viscous momentum flux; embedded walls\""
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight

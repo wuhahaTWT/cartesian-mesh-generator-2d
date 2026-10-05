@@ -181,6 +181,20 @@ struct FlowWallLoad2D {
     double pressureTorque = 0, viscousTorque = 0;
 };
 
+// Diagnostic of the prescribed Cartesian velocity trace at vertices shared by
+// impermeable no-slip boundary faces. A nonzero jump is not removed from the
+// solution or its error norms: it identifies a boundary point where pressure
+// point values need a separate singular/trace qualification. Integral loads,
+// conservation and all cells remain governed by the original acceptance gates.
+struct FlowWallTraceDiagnostics2D {
+    std::size_t wallFaces = 0;
+    std::size_t adjacentVertices = 0;
+    std::size_t discontinuousVertices = 0;
+    double velocityTolerance = 0;
+    double maximumVelocityJump = 0;
+    Point2D maximumJumpLocation{};
+};
+
 struct FlowResult2D {
     double convergenceReference = 0;
     std::vector<std::string> monitorNames;
@@ -198,6 +212,7 @@ struct FlowResult2D {
     std::vector<double> flux;
     std::vector<FaceMomentum2D> faceMomentum;
     std::vector<FlowWallLoad2D> namedWallLoads;
+    FlowWallTraceDiagnostics2D wallTrace;
     std::vector<Vector2D> sourceIntegrals; // populated only for manufactured verification
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;

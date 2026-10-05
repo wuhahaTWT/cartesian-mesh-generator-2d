@@ -1,0 +1,97 @@
+{
+  "format": "cartmesh2d-native-laminar-wall-trace-v1",
+  "date": "2026-10-06",
+  "platform": {
+    "kernel": "Linux 6.18.44 x86_64",
+    "compiler": "g++ 13.3.0"
+  },
+  "purpose": "Expose prescribed no-slip wall velocity trace jumps in the native result without changing the equations, cells, convergence gates, or accepted field.",
+  "semantics": {
+    "endpointSource": "final FvMesh2D face centre plus or minus the face half-tangent reconstructed from areaVector",
+    "endpointMatch": "TolerancePolicy construction-roundoff scale; not a mesh weld or repair tolerance",
+    "wallSet": "impermeable no-slip stationary, moving, and smooth-moving faces",
+    "jump": "maximum Cartesian prescribed-velocity difference among wall faces sharing one reconstructed vertex",
+    "qualification": "a nonzero jump marks that shared vertex for separate pointwise-pressure trace/singularity qualification; no cell or error sample is removed",
+    "unchanged": [
+      "flow equations and boundary values",
+      "Solver quality gate",
+      "strict convergence and final certification",
+      "full fields, conservation, and integral loads"
+    ]
+  },
+  "nativeRegression": {
+    "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus-joint-5.solver.cm2d --case custom --boundary outputs/cloud-laminar/annulus-joint-5-face-limited-linear.boundaries --nu .1 --speed .5 --convection face-limited-linear --tolerance 1e-8 --max-iterations 1800 --output outputs/cloud-laminar/wall-trace-product/annulus-fixed128-l5 --profile",
+    "status": "converged",
+    "cells": 576,
+    "coupledEvaluations": 84,
+    "coupledFailedEvaluations": 0,
+    "reported": {
+      "velocityTolerance_m_per_s": 5.100000000000002e-11,
+      "wallFaces": 352,
+      "adjacentWallVertices": 352,
+      "discontinuousVertices": 128,
+      "maximumVelocityJump_m_per_s": 0.02454122852291445,
+      "maximumJumpLocation_m": [-0.4945882549823905, 0.0733652372276809]
+    },
+    "analyticPolygonJump_m_per_s": 0.024541228522912288,
+    "maximumJumpAbsoluteDifference_m_per_s": 2.1614654510671016e-15,
+    "acceptedFieldComparison": {
+      "referencePrefix": "outputs/cloud-laminar/annulus-joint-5-face-limited-linear",
+      "newPrefix": "outputs/cloud-laminar/wall-trace-product/annulus-fixed128-l5",
+      "cellsCsvByteIdentical": true,
+      "facesCsvByteIdentical": true,
+      "fieldsJsonByteIdentical": true,
+      "residualsCsvByteIdentical": true
+    }
+  },
+  "nativeUnitRegression": {
+    "movingLidPresetAndExplicit": "each reports 40 wall faces, 40 adjacent vertices, 2 discontinuous lid corners, and maximum jump 1 m/s",
+    "stationaryDuct": "reports zero discontinuous vertices and zero maximum jump",
+    "fullCtest": "100/100 passed"
+  },
+  "desktopRegression": {
+    "validation": "new complete diagnostic schema is checked; legacy summaries without it remain readable",
+    "surface": "result panel and export guide state the pointwise-pressure qualification while retaining every cell and full-field metric",
+    "nodeTests": "195/195 passed",
+    "linuxHeadlessPath": {
+      "command": "cd desktop && node_modules/.bin/electron . --no-sandbox --ozone-platform=headless --disable-gpu --disable-software-rasterizer --smoke=circle --out=/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/app-wall-trace-product-v2 --shot=/workspace/scratch/579d8506ec97/cartmesh2d/outputs/cloud-laminar/app-wall-trace-product-v2.png --target-cells=1000 --flow=external --flow-max-iterations=900 --flow-tolerance=0.000001 --flow-nu=0.1 --flow-speed=0.5 --flow-require-converged=true",
+      "meshCells": 728,
+      "solverQuality": "PASS",
+      "converged": true,
+      "coupledEvaluations": 117,
+      "reportedWallFaces": 40,
+      "reportedAdjacentWallVertices": 40,
+      "reportedDiscontinuousVertices": 0,
+      "resultPanelContains": [
+        "无滑移壁面迹诊断",
+        "非零壁速迹跳点",
+        "未检测到超过报告容差的相邻无滑移壁速迹跳"
+      ],
+      "sha256": {
+        "summary": "74c6385fe912fff94e2ce1f767bef88938103d1dc2ccc3ea3572c0ddba9742e1",
+        "fields": "4281719e874ef6970ef1ae4ab620ead646ac0535fdf44a903de4b9ee85471ddb",
+        "cells": "66aba36107231560a61f37a920331a334a437f0c119e76f1f955e11570af349e",
+        "faces": "1b1216bd501c240045d19e10645ca6c645d83d1baeb8642ab1d28ef6aff2c3d9",
+        "residuals": "435602256e9e988881b0a1dc65ec8b9c964aa88e302f8279f641a136b5ecf8b0",
+        "screenshot": "c3a57230732b2bdc2b5fd36358a0fc07a049479b3c3af7ea1d579603637be3ea",
+        "stdoutReport": "769e40791d944c045efdbf434e1f41cb7f2445bccf9ce4800c8b69b2f2fe04d3"
+      }
+    },
+    "scope": "real Linux Electron headless renderer-to-IPC-to-native path; no entity-display, macOS, or packaged-App claim"
+  },
+  "sha256": {
+    "flowCli": "1a92b4f22e525fb1b956787408869a18eb4d36b115a05ed9f6f38196a333e4d0",
+    "mesh": "4bb003fb53e02b2ef1499e44efb057ad927cbc3095e5934e4f2baa03d6e3cb0b",
+    "boundaryInput": "ef04f0c0b3350011eec60221d30c54b57e9a2d732f99f225a845f60f66f40033",
+    "summary": "9bc574f85a49b5cef12bd8166e8fff2fba5d3e4ec4f997338338a3c8afaba5ac",
+    "fields": "b776382c419ad3275937f6b45d0b05fcd4269ff3fb6c59decb300f0fa565f496",
+    "cells": "9fde46aac2a844e47e5669e9bd48e5a408eadfddd556e5ed5c571039268fba85",
+    "faces": "cec7aba70f1502082366b9275a6df397b67981e79aa90b2e54f2562e3a10e607",
+    "residuals": "303a8b0eeeebf5de4e5d8cd422f38242c9c04adad35d927d59d6c2f97829d601"
+  },
+  "remaining": [
+    "The diagnostic defines a reviewable applicability boundary but does not make polygon-corner pressure point values convergent.",
+    "Independent curved internal and external flows still need regression against the applicability definition.",
+    "Entity-display desktop, macOS, and packaged builds remain unverified in this Linux cloud run."
+  ]
+}

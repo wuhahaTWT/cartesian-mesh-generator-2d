@@ -332,6 +332,88 @@ Boundary boundaries(const FvMesh2D& m, const FlowControls2D& c) {
     return b;
 }
 
+FlowWallTraceDiagnostics2D wallTraceDiagnostics(const FvMesh2D& m,
+                                                const Boundary& b,
+                                                double referenceSpeed) {
+    FlowWallTraceDiagnostics2D result;
+    struct Endpoint { Point2D point; std::size_t face = 0; };
+    std::vector<Endpoint> endpoints;
+    double coordinateMagnitude = 1;
+    double velocityMagnitude = referenceSpeed;
+    for (std::size_t id = 0; id < m.faces.size(); ++id) {
+        const auto& face = m.faces[id];
+        if (face.neighbour || (b.role[id] != Role::Wall && b.role[id] != Role::Lid)) continue;
+        ++result.wallFaces;
+        velocityMagnitude = std::max(velocityMagnitude, std::hypot(b.u[id], b.v[id]));
+        const Vector2D halfTangent{.5*face.areaVector.y, -.5*face.areaVector.x};
+        for (double sign : {-1., 1.}) {
+            const Point2D point{face.centre.x + sign*halfTangent.x,
+                                face.centre.y + sign*halfTangent.y};
+            coordinateMagnitude = std::max({coordinateMagnitude, std::abs(point.x), std::abs(point.y)});
+            endpoints.push_back({point, id});
+        }
+    }
+    result.velocityTolerance = TolerancePolicy{}.scale(velocityMagnitude);
+    if (endpoints.empty()) return result;
+
+    // FvMesh2D intentionally stores final face geometry rather than topology
+    // vertex IDs. Recover common endpoints at a construction-roundoff scale,
+    // not at a user-visible welding or mesh-repair tolerance.
+    const double positionTolerance = std::max(
+        TolerancePolicy{}.constructionRoundoffScale(coordinateMagnitude),
+        std::numeric_limits<double>::denorm_min());
+    using Bin = std::pair<long long, long long>;
+    struct Vertex { Point2D point; std::vector<std::size_t> faces; };
+    std::vector<Vertex> vertices;
+    std::map<Bin, std::vector<std::size_t>> bins;
+    const auto bin = [&](Point2D point) {
+        return Bin{static_cast<long long>(std::floor(point.x/positionTolerance)),
+                   static_cast<long long>(std::floor(point.y/positionTolerance))};
+    };
+    for (const auto& endpoint : endpoints) {
+        const auto key = bin(endpoint.point);
+        std::optional<std::size_t> found;
+        for (long long dx = -1; dx <= 1 && !found; ++dx)
+            for (long long dy = -1; dy <= 1 && !found; ++dy) {
+                const auto it = bins.find({key.first + dx, key.second + dy});
+                if (it == bins.end()) continue;
+                for (const auto id : it->second) {
+                    const auto& point = vertices[id].point;
+                    if (std::abs(point.x-endpoint.point.x) <= positionTolerance &&
+                        std::abs(point.y-endpoint.point.y) <= positionTolerance) {
+                        found = id;
+                        break;
+                    }
+                }
+            }
+        if (!found) {
+            found = vertices.size();
+            vertices.push_back({endpoint.point, {}});
+            bins[key].push_back(*found);
+        }
+        auto& faces = vertices[*found].faces;
+        if (std::find(faces.begin(), faces.end(), endpoint.face) == faces.end())
+            faces.push_back(endpoint.face);
+    }
+    for (const auto& vertex : vertices) {
+        if (vertex.faces.size() < 2) continue;
+        ++result.adjacentVertices;
+        double vertexJump = 0;
+        for (std::size_t i = 0; i < vertex.faces.size(); ++i)
+            for (std::size_t j = i+1; j < vertex.faces.size(); ++j) {
+                const auto a = vertex.faces[i], c = vertex.faces[j];
+                vertexJump = std::max(vertexJump,
+                    std::hypot(b.u[a]-b.u[c], b.v[a]-b.v[c]));
+            }
+        if (vertexJump > result.velocityTolerance) ++result.discontinuousVertices;
+        if (vertexJump > result.maximumVelocityJump) {
+            result.maximumVelocityJump = vertexJump;
+            result.maximumJumpLocation = vertex.point;
+        }
+    }
+    return result;
+}
+
 void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
                           const FlowControls2D& c, const Vec& flux) {
     if(c.scenario!="flatplate" && c.scenario!="custom" && c.outletBackflow!=OutletBackflow2D::NormalInlet)return;
@@ -587,6 +669,7 @@ static FlowResult2D solveFlow(
     detail::LinearWorkspace2D workspace(n);
     Vec mu(n), mv(n);
     FlowResult2D r;
+    r.wallTrace = wallTraceDiagnostics(m, b, c.speed);
     // Global RHS-relative stopping can mask a tiny cut-cell residual when
     // large far-field cells carry the time term. Also require each row's
     // residual/diagonal in velocity units to be <=1% of the nonlinear target.

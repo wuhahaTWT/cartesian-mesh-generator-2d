@@ -69,6 +69,7 @@ const LEGACY_PRESSURE_DISCRETIZATION = 'legacy-unspecified';
 const VISCOUS_STRESS = 'symmetric';
 const LEGACY_VISCOUS_STRESS = 'laplacian';
 const FORCE_DEFINITION = 'shared-face-newtonian-traction';
+const WALL_TRACE_DEFINITION = 'prescribed Cartesian velocity jump at reconstructed shared vertices of impermeable no-slip faces; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification';
 const FLOW_OUTPUT_SUFFIXES = Object.freeze([
   '.json', '.fields.json', '.vtk', '.residuals.csv', '.cells.csv', '.faces.csv'
 ]);
@@ -414,6 +415,27 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
 
   validateWallLoads(normalizedSummary);
   validateBoundaryFluxes(normalizedSummary);
+  const wallTraceKeys = ['wallTraceDefinition','wallTraceVelocityTolerance','wallTraceWallFaces',
+    'wallTraceAdjacentVertices','wallTraceDiscontinuousVertices','wallTraceMaximumVelocityJump',
+    'wallTraceMaximumJumpLocation'];
+  if (wallTraceKeys.some(key => summary[key] !== undefined)) {
+    if (wallTraceKeys.some(key => summary[key] === undefined) || summary.wallTraceDefinition !== WALL_TRACE_DEFINITION)
+      throw new Error('壁面速度迹诊断定义或字段不完整。');
+    const tolerance = finite(summary.wallTraceVelocityTolerance, 'wallTraceVelocityTolerance');
+    const maximumJump = finite(summary.wallTraceMaximumVelocityJump, 'wallTraceMaximumVelocityJump');
+    const integers = ['wallTraceWallFaces','wallTraceAdjacentVertices','wallTraceDiscontinuousVertices'];
+    if (!(tolerance > 0) || maximumJump < 0 || integers.some(key => !Number.isSafeInteger(summary[key]) || summary[key] < 0)
+        || summary.wallTraceAdjacentVertices > 2*summary.wallTraceWallFaces
+        || summary.wallTraceDiscontinuousVertices > summary.wallTraceAdjacentVertices
+        || (summary.wallTraceDiscontinuousVertices === 0 && maximumJump > tolerance)
+        || (summary.wallTraceDiscontinuousVertices > 0 && maximumJump <= tolerance)
+        || !Array.isArray(summary.wallTraceMaximumJumpLocation) || summary.wallTraceMaximumJumpLocation.length !== 2)
+      throw new Error('壁面速度迹诊断数值不一致。');
+    normalizedSummary.wallTraceVelocityTolerance = tolerance;
+    normalizedSummary.wallTraceMaximumVelocityJump = maximumJump;
+    normalizedSummary.wallTraceMaximumJumpLocation = summary.wallTraceMaximumJumpLocation.map((value,index) =>
+      finite(value, `wallTraceMaximumJumpLocation[${index}]`));
+  }
   const acceleration=summary.steadyAcceleration ?? 'none';
   if (summary.steadyAcceleration===undefined && ['accelerationCandidates','accelerationAccepted','accelerationRejected'].some(key=>Object.hasOwn(summary,key)))
     throw new Error('稳态加速统计缺少模式。');
@@ -522,6 +544,7 @@ module.exports = {
   FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, LEGACY_PRESSURE_PRECONDITIONER, FLOW_OUTPUT_SUFFIXES,
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
+  WALL_TRACE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
   flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
 };

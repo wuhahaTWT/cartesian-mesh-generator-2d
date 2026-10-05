@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
-        validateFlowOutput, validateFlowRequest } = require('../src/core/flow');
+        validateFlowOutput, validateFlowRequest, WALL_TRACE_DEFINITION } = require('../src/core/flow');
 const { exportGuide } = require('../src/core/export-guide');
 
 const summary = {
@@ -79,6 +79,23 @@ test('optional outlet backflow diagnostics validate without inventing legacy val
   assert.equal(Object.hasOwn(legacy.summary, 'outletInflow'), false);
   assert.throws(() => validateFlowOutput({ ...summary, outletBackflowFaces: -1 }, fields, 2), /回流出口面数/);
   assert.throws(() => validateFlowOutput({ ...summary, outletInflow: -0.1 }, fields, 2), /出口流入量/);
+});
+
+test('wall trace diagnostics validate while legacy summaries remain readable', () => {
+  const trace = { wallTraceDefinition: WALL_TRACE_DEFINITION, wallTraceVelocityTolerance: 1e-10,
+    wallTraceWallFaces: 352, wallTraceAdjacentVertices: 352, wallTraceDiscontinuousVertices: 128,
+    wallTraceMaximumVelocityJump: .0245, wallTraceMaximumJumpLocation: [-.49,.07] };
+  const accepted = validateFlowOutput({ ...summary, ...trace }, fields, 2);
+  assert.equal(accepted.summary.wallTraceDiscontinuousVertices, 128);
+  assert.match(exportGuide({ result: { counts: { cells: 2 }, gates: {} }, flow: accepted }),
+    /128 个相邻无滑移面速度迹跳点.*不删除单元/);
+  assert.equal(Object.hasOwn(validateFlowOutput(summary, fields, 2).summary, 'wallTraceDefinition'), false);
+  for (const mutate of [s => delete s.wallTraceDefinition, s => { s.wallTraceDiscontinuousVertices = 0; },
+    s => { s.wallTraceMaximumVelocityJump = -1; }, s => { s.wallTraceMaximumJumpLocation = [0]; }]) {
+    const changed = { ...trace, wallTraceMaximumJumpLocation: [...trace.wallTraceMaximumJumpLocation] };
+    mutate(changed);
+    assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /壁面速度迹/);
+  }
 });
 
 test('progress accepts only complete native flow progress records', () => {

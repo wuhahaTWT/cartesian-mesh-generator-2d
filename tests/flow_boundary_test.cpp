@@ -534,7 +534,19 @@ int main() {
         }
         const auto square=rectangle(10,10,1);auto closed=conditions(square,true);
         auto lid=closed;lid.scenario="cavity";lid.boundaryConditions.clear();
-        compare(solveIncompressible2D(square,lid),solveIncompressible2D(square,closed));
+        const auto presetLid=solveIncompressible2D(square,lid);
+        const auto explicitLid=solveIncompressible2D(square,closed);
+        compare(presetLid,explicitLid);
+        for(const auto* result:{&presetLid,&explicitLid}) {
+            require(result->wallTrace.wallFaces==40 && result->wallTrace.adjacentVertices==40,
+                    "wall trace topology diagnostic is incomplete");
+            require(result->wallTrace.discontinuousVertices==2 && result->wallTrace.maximumVelocityJump==1,
+                    "moving-lid corner trace jump was not reported");
+            require(result->wallTrace.velocityTolerance>0 && result->wallTrace.velocityTolerance<1e-8,
+                    "wall trace velocity comparison tolerance is invalid");
+        }
+        require(baseline.wallTrace.discontinuousVertices==0 && baseline.wallTrace.maximumVelocityJump==0,
+                "stationary duct wall reported a false trace jump");
         auto bad=control;bad.boundaryConditions.pop_back();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.push_back(bad.boundaryConditions.front());rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.front().face=mesh.faces.size();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});

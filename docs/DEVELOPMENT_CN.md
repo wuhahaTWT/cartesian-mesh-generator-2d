@@ -221,6 +221,20 @@ done
 
 五档保持相同 `0.0245412 m/s` 最大迹跳和机器精度无穿透。全域峰值在最细档升到 `0.6147 m²/s²`，不能称点值收敛；但距每个迹跳点至少 `0.025 m` 的压力 RMS 在 level 5–8 为 `5.49e-3→1.58e-3→1.07e-3→5.90e-4 m²/s²`，对应最大值 `0.0448→0.0164→0.0123→0.0105 m²/s²`，最细仍保留 `96.74%` 流体面积。该距离带只定义可复现的观测范围，不改变求解或全域输出；所有近角点误差仍在 JSON 的全域 RMS/最大值中。固定折线角点上不连续切向 Dirichlet 迹的点值压力不得宣称合格；若产品后续显示适用范围，应同时输出这一几何/边界语义，而不能静默删格。完整网格、原始场、时间、质量值与哈希见 `native-laminar-fixed-polygon.json`。
 
+原生产品现直接生成 `FlowWallTraceDiagnostics2D`。诊断从最终 `Face::centre` 与 `Face::areaVector` 重建两个端点，只以 `TolerancePolicy::constructionRoundoffScale` 配对共享顶点；这不是更大的 weld/修复容差。参与比较的是求解器实际采用的 `Wall/Lid` 无滑移面值，因此静止壁、`MovingWall`、`SmoothMovingWall` 和方腔预设共享同一语义。每个共顶点取相邻壁面笛卡尔速度的最大两两差，超过 `TolerancePolicy::scale(referenceSpeed)` 才计作非零迹跳；结果只附加到 `FlowResult2D`/CLI，不进入矩阵、边界值或验收门。
+
+```sh
+build/cartmesh2d_flow_cli \
+  --mesh outputs/cloud-laminar/annulus-joint-5.solver.cm2d \
+  --case custom \
+  --boundary outputs/cloud-laminar/annulus-joint-5-face-limited-linear.boundaries \
+  --nu .1 --speed .5 --convection face-limited-linear \
+  --tolerance 1e-8 --max-iterations 1800 \
+  --output outputs/cloud-laminar/wall-trace-product/annulus-fixed128-l5 --profile
+```
+
+该复算报告 `wallTraceWallFaces=352`、`wallTraceAdjacentVertices=352`、`wallTraceDiscontinuousVertices=128`、最大跳量 `0.02454122852291445 m/s`；cells/faces/fields/residuals 与旧接受前缀逐字节一致。原生边界测试另验证顶盖方腔恰有两个跳点、静止通道为零；完整 CTest 100/100 和前端 195/195 通过。桌面校验要求新诊断字段成组且数值自洽，但仍接受没有这些字段的旧摘要。当前二进制也实际走通 Linux Electron 37 headless renderer→IPC→CLI：728 格 Solver PASS 圆柱以 117 次完整评估收敛，原生摘要报告 40 个静止壁共顶点、零迹跳，真实结果 DOM 含诊断标题、计数和适用边界文字。该路径不是实体显示器、macOS 或打包版。复现命令、哈希和平台边界见 `native-laminar-wall-trace.json`。
+
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
 ## 完整笛卡尔背景网格
