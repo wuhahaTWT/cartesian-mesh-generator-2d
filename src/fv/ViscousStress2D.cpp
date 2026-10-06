@@ -18,7 +18,8 @@ using Gradient=std::array<Vector2D,2>; // rows grad(u), grad(v)
 ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
     const std::vector<ViscousBoundary2D>& boundaries,double viscosity,WallGradient2D wallGradient):viscosity_(viscosity) {
     validateFvMesh2D(mesh);require(std::isfinite(viscosity)&&viscosity>0,"dynamic viscosity must be positive");
-    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic||wallGradient==WallGradient2D::FaceQuadratic,"invalid wall gradient scheme");
+    faceReconstruction_=wallGradient==WallGradient2D::FaceQuadratic;
     std::vector<const ViscousBoundary2D*> lookup(mesh.faces.size());
     for(const auto& b:boundaries) {
         require(b.face<lookup.size()&&!mesh.faces[b.face].neighbour&&!lookup[b.face],"invalid/duplicate boundary");
@@ -52,10 +53,15 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
         require(!a.neighbour||(a.weight>0&&a.weight<1),"face outside centre bracket");
     }
     wallGradients_.resize(faces_.size());
-    if(wallGradient==WallGradient2D::Quadratic) {
+    if(wallGradient!=WallGradient2D::Linear) {
         std::vector<bool> prescribed(faces_.size());std::vector<std::optional<std::size_t>> partners(faces_.size());
         for(std::size_t id=0;id<faces_.size();++id){prescribed[id]=!faces_[id].neighbour&&faces_[id].kind==ViscousBoundaryKind2D::Velocity;partners[id]=faces_[id].partner;}
-        for(std::size_t id=0;id<faces_.size();++id)if(prescribed[id]){wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);++quadraticWalls_;}
+        for(std::size_t id=0;id<faces_.size();++id) {
+            if(faces_[id].partner&&id>*faces_[id].partner)continue;
+            if(faceReconstruction_&&(faces_[id].neighbour||prescribed[id]))wallGradients_[id]=quadraticFaceGradient2D(mesh,id,prescribed,partners);
+            else if(prescribed[id])wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);
+            if(prescribed[id])++quadraticWalls_;
+        }
     }
     std::vector<std::array<Form,4>> jac(mesh.cells.size());
     for(std::size_t i=0;i<mesh.cells.size();++i) {
@@ -98,7 +104,10 @@ ViscousStressOperator2D::ViscousStressOperator2D(const FvMesh2D& mesh,
         }
         if(wallGradients_[id]) {
             g={};
-            for(const auto& sample:wallGradients_[id]->samples)if(!sample.boundary)for(std::size_t k=0;k<2;++k){g[2*k][2*sample.index+k]+=sample.weight.x;g[2*k+1][2*sample.index+k]+=sample.weight.y;}
+            for(const auto& sample:wallGradients_[id]->samples)for(std::size_t k=0;k<2;++k) {
+                if(!sample.boundary){g[2*k][2*sample.index+k]+=sample.weight.x;g[2*k+1][2*sample.index+k]+=sample.weight.y;}
+                if(faceReconstruction_){g[2*k][2*f.owner+k]-=sample.weight.x;g[2*k+1][2*f.owner+k]-=sample.weight.y;}
+            }
         }
         Form tx,ty;add(tx,g[0],4./3*f.area.x);add(tx,g[3],-2./3*f.area.x);add(tx,g[1],f.area.y);add(tx,g[2],f.area.y);
         add(ty,g[1],f.area.x);add(ty,g[2],f.area.x);add(ty,g[3],4./3*f.area.y);add(ty,g[0],-2./3*f.area.y);
@@ -152,9 +161,12 @@ ViscousStressResult2D ViscousStressOperator2D::evaluate(const std::vector<Vector
         }
         if(wallGradients_[id]) {
             g={};
+            const auto reference=faceReconstruction_?u[f.owner]:f.value;
+            if(faceReconstruction_&&f.neighbour)uf=reference;
             for(const auto& sample:wallGradients_[id]->samples) {
-                const auto value=sample.boundary?faces_[sample.index].value:u[sample.index];const double delta[2]={value.x-f.value.x,value.y-f.value.y};
+                const auto value=sample.boundary?faces_[sample.index].value:u[sample.index];const double delta[2]={value.x-reference.x,value.y-reference.y};
                 for(std::size_t k=0;k<2;++k){g[k].x+=sample.weight.x*delta[k];g[k].y+=sample.weight.y*delta[k];}
+                if(faceReconstruction_&&f.neighbour){uf.x+=sample.valueWeight*delta[0];uf.y+=sample.valueWeight*delta[1];}
             }
         }
         // Planar Newtonian gas, Stokes hypothesis. The 2/3 coefficient follows

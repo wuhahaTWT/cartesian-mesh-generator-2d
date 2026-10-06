@@ -29,6 +29,7 @@ public:
 private:
     std::vector<std::optional<WallGradientStencil2D>> wallGradients_;
     std::size_t quadraticWalls_=0;
+    bool faceReconstruction_=false;
     struct Sample { std::optional<std::size_t> cell; Vector2D value{},weight{},normal{}; ViscousBoundaryKind2D kind{}; };
     struct Face {
         std::size_t owner=0;

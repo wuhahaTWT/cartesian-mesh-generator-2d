@@ -18,11 +18,15 @@ def main():
     p.add_argument("--max-step", type=float, default=1e-8)
     p.add_argument("--end-time", type=float, default=2e-7)
     p.add_argument("--max-seconds", type=float, default=180.)
+    p.add_argument("--segments", type=int, default=48)
+    p.add_argument("--wall-gradient", choices=("linear", "quadratic", "face-quadratic"), default="linear")
     args = p.parse_args()
     root = args.output.resolve();root.mkdir(parents=True, exist_ok=False)
     radius = 5e-5
     body = root/"body.xy"
-    body.write_text("".join(f"{radius*math.cos(2*math.pi*i/48):.17g} {radius*math.sin(2*math.pi*i/48):.17g}\n" for i in range(48)))
+    if not 16 <= args.segments <= 4096:
+        p.error("--segments must be in [16, 4096]")
+    body.write_text("".join(f"{radius*math.cos(2*math.pi*i/args.segments):.17g} {radius*math.sin(2*math.pi*i/args.segments):.17g}\n" for i in range(args.segments)))
     cli, flow = (Path("build")/x for x in ("cartmesh2d_cli", "cartmesh2d_euler_cli"))
     binaries = {str(x): digest(x) for x in (cli, flow)}
     report = {"scope": "finite-time laminar external start; no steady drag or external physical validation", "commands": [], "inputs": vars(args).copy(), "binarySha256": binaries}
@@ -44,7 +48,7 @@ def main():
         run("flow", [flow, "--mesh", root/"mesh.solver.cm2d", "--output", root/"flow", "--case", "external",
                      "--density", rho, "--pressure", 101325, "--u", speed, "--viscosity", 1.846e-5,
                      "--conductivity", .025759, "--wall-model", "no-slip", "--wall-thermal", "temperature", "--wall-value", 300,
-                     "--flux", "hllc", "--order", 2, "--integrator", "sdirk2", "--max-step", args.max_step,
+                     "--flux", "hllc", "--order", 2, "--wall-gradient", args.wall_gradient, "--integrator", "sdirk2", "--max-step", args.max_step,
                      "--end-time", args.end_time, "--max-seconds", args.max_seconds, "--checkpoint-every", 20])
         report["native"] = json.loads((root/"flow.json").read_text());report["completed"] = True
     except Exception as error:

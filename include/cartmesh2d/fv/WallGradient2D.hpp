@@ -2,7 +2,7 @@
 #include "cartmesh2d/fv/FvMesh2D.hpp"
 
 namespace cartmesh2d::fv {
-enum class WallGradient2D { Linear, Quadratic };
+enum class WallGradient2D { Linear, Quadratic, FaceQuadratic };
 // Geometry-only recovery of a gradient at a prescribed-value wall face.
 // Input values are CENTROID POINT estimates, as in the existing second-order
 // primitive-variable transport discretization, not exact volume averages.
@@ -13,6 +13,7 @@ struct WallGradientStencil2D {
         std::size_t index=0;
         bool boundary=false;
         Vector2D weight{};
+        double valueWeight=0; // FaceQuadratic only: point value at the face.
     };
     std::vector<Sample> samples;
     unsigned rings=0;
@@ -22,6 +23,15 @@ struct WallGradientStencil2D {
 // are translated through reciprocal partners. Rank failure is explicit: an
 // under-resolved stencil must not silently be advertised as quadratic.
 [[nodiscard]] WallGradientStencil2D quadraticWallGradient2D(
+    const FvMesh2D&,std::size_t face,const std::vector<bool>& prescribed,
+    const std::vector<std::optional<std::size_t>>& partners);
+// Experimental shared-face reconstruction for internal/periodic faces and
+// prescribed-value boundaries. Fits a FREE constant and quadratic terms to
+// centroid point estimates; this is not a volume-moment discretization.
+// Evaluate differences against the owner value (including boundary samples),
+// and add the owner back only for the interpolated face value. One stencil is
+// used for the shared conservative flux, never independent owner/neighbor fits.
+[[nodiscard]] WallGradientStencil2D quadraticFaceGradient2D(
     const FvMesh2D&,std::size_t face,const std::vector<bool>& prescribed,
     const std::vector<std::optional<std::size_t>>& partners);
 } // namespace cartmesh2d::fv

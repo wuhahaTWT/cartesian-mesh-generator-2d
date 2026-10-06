@@ -129,7 +129,7 @@ int main(int argc,char** argv) {
                 "--flux rusanov|hllc --order 1|2 (default rusanov/1; order 2: limited linear + SSPRK2)\n"
                 "HLLC uses a multidimensional pressure-ratio cube HLLE blend; invalid star states report Rusanov fallback.\n"
                 "--end-time .2 --max-step 1 --min-step 1e-14 --cfl .4 (0 < CFL <= .45)\n"
-                "--wall-gradient linear|quadratic (optional quadratic Dirichlet wall recovery, overall order unchanged)\n"
+                "--wall-gradient linear|quadratic|face-quadratic (face-quadratic: experimental shared-face recovery)\n"
                 "--mode transient|steady --steady-scale SECONDS --steady-tolerance 1e-5 (scaled residual, field AND boundary-output change rate)\n"
                 "--inlet-total-pressure Pa --inlet-total-temperature K (optional resting axial reservoir pair)\n"
                 "--initial-pressure-perturbation amplitude (sinusoidal start only; |amplitude|<1)\n"
@@ -168,7 +168,7 @@ int main(int argc,char** argv) {
         else if(arg=="--integrator") {require(value=="explicit"||value=="sdirk2","unknown integrator");controls.integrator=value=="sdirk2"?EulerTimeIntegrator2D::Sdirk2:EulerTimeIntegrator2D::Explicit;}
         else if(arg=="--time-step-control") {require(value=="legacy"||value=="stage-guarded","unknown time-step control");controls.timeStepControl=value=="stage-guarded"?EulerTimeStepControl2D::StageGuarded:EulerTimeStepControl2D::Legacy;}
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
-        else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic","unknown wall gradient scheme");controls.wallGradient=value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
+        else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic"||value=="face-quadratic","unknown wall gradient scheme");controls.wallGradient=value=="face-quadratic"?WallGradient2D::FaceQuadratic:value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
         else if(arg=="--order")controls.order=static_cast<unsigned>(count(value,2));
         else if(arg=="--end-time")endTime=number(value);else if(arg=="--max-step")controls.maximumStep=number(value);
         else if(arg=="--min-step")controls.minimumStep=number(value);else if(arg=="--cfl")controls.acousticCourant=number(value);
@@ -391,7 +391,7 @@ int main(int argc,char** argv) {
     summary<<"{\n\"solver\":\"native 2D ideal-gas Euler\",\"method\":"<<quote(method)<<",\"fluxScheme\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"hllc":"rusanov")
         <<",\"shockControl\":"<<quote(controls.fluxScheme==EulerFluxScheme2D::Hllc?"multidimensional pressure-ratio cube HLLC/HLLE blend":"none")
         <<",\"minimumContactRestoration\":"<<minimumContactRestoration<<",\"lastMinimumContactRestoration\":"<<(last?last->minimumContactRestoration:1)
-        <<",\"wallGradient\":"<<quote(controls.wallGradient==WallGradient2D::Quadratic?"quadratic":"linear")<<",\"quadraticHeatWalls\":"<<(last?last->quadraticHeatWalls:0)<<",\"quadraticViscousWalls\":"<<(last?last->quadraticViscousWalls:0)
+        <<",\"wallGradient\":"<<quote(controls.wallGradient==WallGradient2D::FaceQuadratic?"face-quadratic":controls.wallGradient==WallGradient2D::Quadratic?"quadratic":"linear")<<",\"quadraticHeatWalls\":"<<(last?last->quadraticHeatWalls:0)<<",\"quadraticViscousWalls\":"<<(last?last->quadraticViscousWalls:0)
         <<",\"temporalOrder\":"<<(controls.integrator==EulerTimeIntegrator2D::Sdirk2?2:controls.order)<<",\"order\":"<<controls.order<<",\"hllcFallbackEvaluations\":"<<fallbackEvaluations<<",\"reconstructionFallbackCells\":"<<reconstructionFallbackCells
         <<",\"lastHllcFallbackEvaluations\":"<<(last?last->hllcFallbackEvaluations:0)<<",\"lastReconstructionFallbackCells\":"<<(last?last->reconstructionFallbackCells:0)
         <<",\"thermalConductivity\":"<<transport.thermalConductivity<<",\"wallThermal\":"<<quote(heatKindName(wallThermal))<<",\"wallValue\":"<<wallValue

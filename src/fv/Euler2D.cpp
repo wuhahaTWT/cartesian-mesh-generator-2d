@@ -422,7 +422,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(std::isfinite(control.maximumStep)&&control.maximumStep>0&&std::isfinite(control.minimumStep)&&control.minimumStep>0&&
             control.minimumStep<=control.maximumStep&&std::isfinite(control.acousticCourant)&&control.acousticCourant>0&&
             control.acousticCourant<=.45&&control.maximumRetries<=30,"invalid explicit acoustic time controls");
-    require(control.wallGradient==WallGradient2D::Linear||control.wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
+    require(control.wallGradient==WallGradient2D::Linear||control.wallGradient==WallGradient2D::Quadratic||control.wallGradient==WallGradient2D::FaceQuadratic,"invalid wall gradient scheme");
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
     require(control.timeStepControl==EulerTimeStepControl2D::Legacy||control.timeStepControl==EulerTimeStepControl2D::StageGuarded,"unknown time-step control");
     require(control.integrator==EulerTimeIntegrator2D::Explicit||control.integrator==EulerTimeIntegrator2D::Sdirk2,"unknown time integrator");
@@ -612,7 +612,7 @@ std::optional<ViscousStressOperator2D> prepareViscous(const FvMesh2D& mesh,const
 EulerStepper2D::EulerStepper2D(FvMesh2D mesh,std::vector<EulerBoundary2D> boundaries,IdealGas2D gas,EulerTransport2D transport,WallGradient2D wallGradient)
     :wallGradient_(wallGradient),mesh_(std::move(mesh)),boundaries_(std::move(boundaries)),gas_(gas) {
     validateFvMesh2D(mesh_);validateEulerBoundaries2D(mesh_,boundaries_,gas_);
-    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic||wallGradient==WallGradient2D::FaceQuadratic,"invalid wall gradient scheme");
     heat_=prepareHeat(mesh_,boundaries_,transport,wallGradient);viscous_=prepareViscous(mesh_,boundaries_,transport,wallGradient);
 }
 EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const EulerStepControls2D& controls) const {

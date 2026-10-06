@@ -28,6 +28,7 @@ public:
 private:
     std::vector<std::optional<WallGradientStencil2D>> wallGradients_;
     std::size_t quadraticWalls_=0;
+    bool faceReconstruction_=false;
     struct Sample { std::optional<std::size_t> cell; double value=0; Vector2D weight{}; };
     struct Gradient { Vector2D constant{}; std::vector<Sample> samples; };
     struct FaceData {

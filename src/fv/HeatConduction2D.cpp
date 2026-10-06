@@ -13,7 +13,8 @@ double checked(double x){require(std::isfinite(x),"non-finite arithmetic");retur
 HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
     const std::vector<HeatBoundary2D>& boundaries,double conductivity,WallGradient2D wallGradient):conductivity_(conductivity) {
     validateFvMesh2D(mesh);require(std::isfinite(conductivity)&&conductivity>0,"conductivity must be positive");
-    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic,"invalid wall gradient scheme");
+    require(wallGradient==WallGradient2D::Linear||wallGradient==WallGradient2D::Quadratic||wallGradient==WallGradient2D::FaceQuadratic,"invalid wall gradient scheme");
+    faceReconstruction_=wallGradient==WallGradient2D::FaceQuadratic;
     std::vector<const HeatBoundary2D*> lookup(mesh.faces.size());
     for(const auto& b:boundaries) {
         require(b.face<lookup.size()&&!mesh.faces[b.face].neighbour&&!lookup[b.face],"invalid/duplicate thermal boundary");
@@ -73,10 +74,15 @@ HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
         }
     }
     wallGradients_.resize(faces_.size());
-    if(wallGradient==WallGradient2D::Quadratic) {
+    if(wallGradient!=WallGradient2D::Linear) {
         std::vector<bool> prescribed(faces_.size());std::vector<std::optional<std::size_t>> partners(faces_.size());
         for(std::size_t id=0;id<faces_.size();++id){prescribed[id]=!faces_[id].neighbour&&faces_[id].kind==HeatBoundaryKind2D::Temperature;partners[id]=faces_[id].partner;}
-        for(std::size_t id=0;id<faces_.size();++id)if(prescribed[id]){wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);++quadraticWalls_;}
+        for(std::size_t id=0;id<faces_.size();++id) {
+            if(faces_[id].partner&&id>*faces_[id].partner)continue;
+            if(faceReconstruction_&&(faces_[id].neighbour||prescribed[id]))wallGradients_[id]=quadraticFaceGradient2D(mesh,id,prescribed,partners);
+            else if(prescribed[id])wallGradients_[id]=quadraticWallGradient2D(mesh,id,prescribed,partners);
+            if(prescribed[id])++quadraticWalls_;
+        }
     }
     // Assemble only the constant Jacobian for a dimensional time-step estimate.
     // Runtime flux evaluation below uses temperature DIFFERENCES, preserving
@@ -87,7 +93,12 @@ HeatConductionOperator2D::HeatConductionOperator2D(const FvMesh2D& mesh,
         if(!f.neighbour&&f.kind!=HeatBoundaryKind2D::Temperature)continue;
         std::map<std::size_t,double> coefficients;
         if(wallGradients_[id]) {
-            for(const auto& sample:wallGradients_[id]->samples)if(!sample.boundary)rows[f.owner][sample.index]-=conductivity_*dot(sample.weight,mesh.faces[id].areaVector);
+            for(const auto& sample:wallGradients_[id]->samples) {
+                const double c=-conductivity_*dot(sample.weight,f.area);
+                if(!sample.boundary)coefficients[sample.index]+=c;
+                if(faceReconstruction_)coefficients[f.owner]-=c;
+            }
+            for(const auto& [j,c]:coefficients){rows[f.owner][j]+=c;if(f.neighbour)rows[*f.neighbour][j]-=c;}
             continue;
         }
         const double a=conductivity_*f.transmissibility;
@@ -131,7 +142,8 @@ HeatConductionResult2D HeatConductionOperator2D::evaluate(const std::vector<doub
         }
         if(wallGradients_[id]) {
             Vector2D g{};
-            for(const auto& sample:wallGradients_[id]->samples){const double delta=(sample.boundary?faces_[sample.index].value:t[sample.index])-f.value;g.x+=sample.weight.x*delta;g.y+=sample.weight.y*delta;}
+            const double reference=faceReconstruction_?t[f.owner]:f.value;
+            for(const auto& sample:wallGradients_[id]->samples){const double delta=(sample.boundary?faces_[sample.index].value:t[sample.index])-reference;g.x+=sample.weight.x*delta;g.y+=sample.weight.y*delta;}
             // S = correction + tau * d; for a physical wall it is simpler to
             // cache the actual area vector than recover it from the split.
             q=-conductivity_*dot(g,f.area);

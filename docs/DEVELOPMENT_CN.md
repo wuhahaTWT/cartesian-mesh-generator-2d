@@ -224,6 +224,45 @@ desktop/node_modules/.bin/electron desktop --smoke=rectangle --control=manual --
 
 真实 App 流程覆盖独立总压/总温、预算失败保留完整结果及最后接受状态、隐式续算、显式阶段保护、初始压力扰动和提前稳态。导出 README 与场图分别标明稳态停止要求和瞬态终点；`viscousWork`、`heatFlux`、`convectiveEnergy` 相加为实际总能量通量。截图/清单及最小窗口检查随 `--shot` 输出；实际已完成范围与缺口只维护在当前状态。
 
+### 原生曲壁环域与圆柱空间研究
+
+构建 `cartmesh2d_curved_heat_benchmark`，使用 `tools/flow/run_curved_wall.py` 生成两个真实嵌套轮廓、原生共形 Cut-cell/Solver 拓扑。实验固定内/外半径 .5/1 m、壁温 2/2.2 K、k=.37 W/(m K)。耦合演化采用 γ=1.4、R=1 J/(kg K)、μ=.02 Pa s，从 ρ=1、p=2.1、u=v=0 的均匀初场推进；这是人工验证参数，不是空气推荐工况。
+
+解析稳态 `T(r)=2+.2 ln(r/.5)/ln(2)`。`trace` 以实际面心解析温度为壁值，`isothermal` 对内/外多边形分别给定常壁温，用其差异检查轮廓投影误差。原生基准通过单位扰动取得**同一个实际 Fourier 仿射算子**，由原生 GMRES 解其非对称线性系统；负对角或增长模态的系统即使求解收敛也不能取得稳定性资格。输出 `.matrix.csv` 允许对原生 Jacobian 作谱分析，该分析不重建 PDE。旧 ILU/Jacobi 前置正性限制与原二次算子的失败均保留在私密证据中。
+
+壁面参考热量按实际弦段的有向夹角精确积分 `-k B Δθ`，不把面心梯度乘长度作为精确积分。温度误差按真实面积加权、以壁温差 .2 K 归一化；壁面热流 L1 以全部边界解析热流绝对值总和归一化。近壁温度只统计实际贴壁单元。解析面积平均和谐均温度用原生 Gauss–Legendre/Duffy 积分，并将每个三角形分成四个重新积分来检查参考误差；这只是解析参考积分，不是数值通量审计。稳态可压恒压解的守恒密度是 `p/R * average(1/T)`，因此从守恒量得到的原始温度应与谐均参考比较，不能静默用质心点值冒充单元平均。
+
+默认实验只走线性壁面；`--include-quadratic` 是显式诊断选项，粗曲壁的原二次格式仍有已知增长模式。二次拟合的局部权重、删除边界样本、约束 owner、法向筛选等候选均未作为通用修复发布。`cartmesh2d_curved_heat` 回归针对这一个人工环域，要求细网格热流 L1 小于 2% 且明显改善粗网格，温度误差细化下降；这不是通用曲壁物理精度标准。代数残差与容差敏感性必须小于被测离散误差，沿用已有精度回归的隔离要求。此回归不把原二次格式列为合格。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCARTMESH2D_BUILD_CHEMISTRY=OFF
+cmake --build build --parallel 4 --target cartmesh2d_cli cartmesh2d_euler_cli cartmesh2d_curved_heat_benchmark
+python3 tools/flow/run_curved_wall.py --output outputs/annulus-new
+python3 tools/flow/run_curved_wall.py --output outputs/annulus-quadratic-diagnostic --include-quadratic --skip-coupled
+ctest --test-dir build -R '^cartmesh2d_curved_heat$' --output-on-failure
+python3 tools/flow/run_compressible_external.py --output outputs/cylinder-new --segments 192 --far-spans 7.5 --wall-cells 16 --wall-gradient linear --end-time 2e-7 --max-step 4e-9 --max-seconds 900
+```
+
+圆柱空间序列保持 `--segments 192`，将实际近壁请求 `--wall-cells` 改为 48、96，并读取真实网格尺度而不是假定请求值产生连续细化；细网格时间对照用 `--max-step 2e-9`。轮廓对照独立改 `--segments 48`。几何门失败、预算耗尽、取消或高成本试算均保留为各自状态，不改写为物理失败或成功。不采用局部时间钟，不为研究变更默认算法或壁面格式。同步 `076bca9` 已发布的 SDIRK2 face-envelope **诊断**修复并加原生面汇总回归，不把该同步算作本轮新推进算法。
+
+### 共享面二次重构候选
+
+`--wall-gradient face-quadratic` / `WallGradient2D::FaceQuadratic` 是原生研究入口。内部面、周期面和给定温度/速度的壁面统一由连通流体邻域拟合含自由常数项的六项二次多项式；同一面只有一个导热通量、黏性牵引及功，供 owner/neighbour 反号使用。内部面速度和梯度取自同一多项式，壁面功仍使用给定壁速。默认 linear、原 quadratic 和 App 选项保持原状。
+
+几何缓存使用列归一化的列主元 Householder QR，最少扩展两圈，秩不足再扩到五圈；退化显式失败。内部面以面心为原点，物理壁面以流体 owner 质心为原点，空间长度由相邻单元面长与几何跨度决定，不用趋零的切割面积开方。拟合行权重为 r/h<.5 时 1，否则 (2r/h)^−5；这是候选模板的距离衰减设计，不是验收阈值。温度、速度梯度按样本减 owner 值计算，完整 Jacobian 包含所有边界样本减 owner 的贡献，常数场严格抵消。给定热流、绝热、滑移和零牵引边界保持原物理处理。
+
+设计参考 [Devendran–Graves–Johansen 的共享通量加权重构](https://arxiv.org/pdf/1411.4283)，但本实现输入仍是质心点估计，未采用该文的单元/面矩语义，不能移植其稳定性结论。非对称拟合并无普适耗散保证；必须用真实小单元原生矩阵、实际演化及曲壁误差评估。局部多项式精确性不等于算子稳定性。
+
+`cartmesh2d_face_gradient` 只检查旋转与 SI 缩放后所有面的二次点通量、内部面翻转不变性、周期共享通量、热/力/功守恒、直接扰动得到的完整行范数，以及微型显式/SDIRK2 耦合正性与守恒。沿用原壁面回归的 4096 个 double epsilon、按通量或行范数归一化的代数舍入预算，不新增物理误差门。单格秩不足必须失败。这些检查通过不能把候选提升为成熟曲壁方法。
+
+```sh
+cmake --build build --parallel 4 --target cartmesh2d_face_gradient_tests cartmesh2d_curved_heat_benchmark cartmesh2d_euler_cli
+ctest --test-dir build -R '^cartmesh2d_face_gradient$' --output-on-failure
+python3 tools/flow/run_curved_wall.py --output outputs/annulus-face-candidate --phase .17 --levels 4 --include-quadratic --include-face-quadratic --skip-coupled
+```
+
+最后一项在云端运行，复用已知粗环域失败几何；生成原生 `.matrix.csv` 后可以作线性代数谱分析，不恢复 Python PDE 重建链。负实部的残差/面积矩阵特征值对应扩散演化增长模式，即使稳态 GMRES 得到一个解，也必须保留为失败。原生大环域/流动研究继续留在授权云端。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
