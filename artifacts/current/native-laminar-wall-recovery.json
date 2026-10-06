@@ -4557,5 +4557,68 @@
     "singleControlFinalReproducerNumericallyIdentical": true,
     "productionSuiteRerun": false,
     "frontendAppCrossPlatform": false
+  },
+  "mergedIntegration": {
+    "sourceSha256": {
+      "artifacts/current/native-laminar-p1-transport.cpp": "1c088d4c63e181fc0f899a845ec38e94040e8a2cf9c2114d31cfac366be10bc5",
+      "artifacts/current/native-laminar-p1-oseen.cpp": "0cc5e19a6191a59f1fb9b70094713b8e002c3cca424bc74ee0e2b80039744c2f",
+      "artifacts/current/native-laminar-p1-stress.cpp": "5319524a78548af108562648ca67c5f9e2d9c7ea7479a55445e6b98e537fc9b6",
+      "artifacts/current/native-laminar-wall-recovery.cpp": "73bf14f416174c0c520c5ed214da0b1612762d54ac6f59ae02004c23fe1e3f38",
+      "artifacts/current/native-laminar-wall-recovery.py": "c3694c542fda434ac77176708ede61aa309b64e9e332bcce26561fa3f94cd9ae",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11"
+    },
+    "strictWallMerge": {
+      "controls": [
+        "sheared",
+        "4",
+        "noslip-sheared",
+        "0",
+        "lift",
+        "symmetric",
+        "8"
+      ],
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -1.2863976261121193,
+        "cellPressureTraceRms": 2.009002513331136,
+        "reactionPressureRms": 1.043057967481257,
+        "reactionPressureProjectionRms": 1.043057967481257,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 1.2793371433066116,
+        "reactionPressureMaxAtQuadrature": 3.1802408788708996,
+        "cellPressureMaxAtQuadrature": 4.27419088184098,
+        "stressPressureRms": 2.8647287322680164,
+        "stressPressureProjectionRms": 2.8647287322680164,
+        "stressPressureMaxAtQuadrature": 7.334041605143752,
+        "tractionRms": 1.4844563973112195,
+        "tractionProjectionRms": 1.45495539066861,
+        "shearRms": 1.0562390221877214,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.6582600095747544e-14,
+        "seconds": 0.015932166
+      },
+      "wallCsvCoefficientMaxChangeFromHistorical40RunStudy": 1.5765166949677223e-14,
+      "note": "Merged cloud canonicalizes validated stationary boundary coefficients to exact zero; wall reader now uses same zero trace. Historical 40-run archive/source hashes remain historical."
+    },
+    "archive": {
+      "path": "outputs/laminar-stability/wall-recovery/native-p1-transport-mac-merged-check.tar.gz",
+      "bytes": 1530590,
+      "sha256": "b33f4a78548167659e496742c24fa414e701dad6aff3d9957e628adf6e7801c9",
+      "everyMemberReadbackVerified": true
+    },
+    "fullArchiveManifest": "native-laminar-p1-convection.json/macMergedIntegration/archive"
+  },
+  "localRecoveryCleanup": {
+    "rawDuplicateFilesRemoved": 864,
+    "rawDuplicateBytesRemoved": 15853269,
+    "twoVerifiedArchivesRetained": [
+      "native-wall-recovery-research.tar.gz",
+      "native-p1-transport-mac-merged-check.tar.gz"
+    ],
+    "activeTaskNativeBinariesAtCleanup": 0
   }
 }

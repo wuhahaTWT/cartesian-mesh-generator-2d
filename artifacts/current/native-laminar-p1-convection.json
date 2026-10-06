@@ -3508,5 +3508,2437 @@
     "original.rhsSha256": "314363d3f7a7ffa5842b511987736111b8811b9bb4b04c589cd0e28e2bad1e4e",
     "measuredStagesSeconds": 13.064264699001797,
     "costCaveat": "Nonexclusive sum of separately measured native assembly, solver and native recovery. Excludes build, failed I/O attempts and reference readback; no sparse-LU memory/speed advantage claimed. RSS covers solver and native recovery child maxima."
+  },
+  "macMergedIntegration": {
+    "mergedCloudCommit": "99a63f117badfd65cd3409ae86b1534a88c23fdf",
+    "mergeCommit": "8d3e7ff",
+    "sourceSha256": {
+      "artifacts/current/native-laminar-p1-transport.cpp": "1c088d4c63e181fc0f899a845ec38e94040e8a2cf9c2114d31cfac366be10bc5",
+      "artifacts/current/native-laminar-p1-oseen.cpp": "0cc5e19a6191a59f1fb9b70094713b8e002c3cca424bc74ee0e2b80039744c2f",
+      "artifacts/current/native-laminar-p1-stress.cpp": "5319524a78548af108562648ca67c5f9e2d9c7ea7479a55445e6b98e537fc9b6",
+      "artifacts/current/native-laminar-wall-recovery.cpp": "73bf14f416174c0c520c5ed214da0b1612762d54ac6f59ae02004c23fe1e3f38",
+      "artifacts/current/native-laminar-wall-recovery.py": "c3694c542fda434ac77176708ede61aa309b64e9e332bcce26561fa3f94cd9ae",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11"
+    },
+    "scope": "Mac system Clang -Werror build; four tiny native NS controls (max 144 unknowns), not original large-cylinder replication or full platform validation.",
+    "fullProcessSeconds": 2.1723584579885937,
+    "cases": [
+      {
+        "label": "square4-ns",
+        "controls": [
+          "square",
+          "4",
+          "noslip",
+          "1",
+          "ns",
+          "closed",
+          "6"
+        ],
+        "iterations": 6,
+        "seconds": 1.0938280420086812,
+        "final": {
+          "mode": "check",
+          "cells": 16,
+          "faces": 40,
+          "unknowns": 111,
+          "entries": 0,
+          "area": 1,
+          "nu": 1,
+          "velocityRms": 0.037623270993009106,
+          "pressureRms": 0.7200937795995804,
+          "maxSpeed": 0.8114371092467569,
+          "pressureRange": 5.702383482426979,
+          "quadraturePressureRange": 5.339552251520725,
+          "rt1VelocityRms": 0.09667823806533504,
+          "rt1SampledMaxSpeed": 0.9643080617470062,
+          "maxDivergence": 7.133794036004287e-15,
+          "pressureWork": -8.787538580255653e-17,
+          "viscousEnergy": 13.9819737791398,
+          "convectionEnergy": 0.03148445457293786,
+          "convectionIdentity": 0.031484454572938,
+          "convectionIdentityError": -1.3877787807814457e-16,
+          "forceWork": 14.013458233712907,
+          "boundaryWork": 0,
+          "energyBalance": -1.687538997430238e-13,
+          "internalResidual": 5.469657705242595e-13,
+          "freeFaceResidual": 3.257949465762522e-13,
+          "wallFx": 0,
+          "wallFy": 0,
+          "wallPressureFx": 0,
+          "wallViscousAndStabilizationFx": 0,
+          "wallConvectionReconstructionFx": 0,
+          "stressBodyFx": 0,
+          "stressBodyFy": 0,
+          "wallTractionMomentDifferencePerLength": 0,
+          "wallPressureFy": 0,
+          "netBoundaryMassFlux": 0,
+          "boundaryMomentumFluxX": 0,
+          "boundaryMomentumFluxY": 0,
+          "boundaryTractionX": 1.4432899320127035e-14,
+          "boundaryTractionY": -5.717648576819556e-15,
+          "globalMomentumBalanceX": null,
+          "globalMomentumBalanceY": null,
+          "physicalConvectionEnergy": 0.03148445457293786,
+          "physicalBoundaryTractionWork": 0,
+          "upwindDissipationPlusDivergenceWork": 0.03148445457293786,
+          "manufacturedTractionMomentRms": 1.0507646612076795,
+          "wallNormal": 0,
+          "stateCoefficientChange": 0,
+          "rtTraceResidual": 5.551115123125783e-16,
+          "seconds": 0.009976459
+        },
+        "state": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/mac-transport/square4-ns/iteration-005.recover.state",
+        "stateSha256": "387551d1518ffd32dd4c197805daa855a8f33e60aad481764b3c54217c45132e"
+      },
+      {
+        "label": "sheared4-ns-nu01",
+        "controls": [
+          "sheared",
+          "4",
+          "noslip-sheared",
+          ".1",
+          "ns",
+          "closed",
+          "6"
+        ],
+        "iterations": 19,
+        "seconds": 0.8652522079937626,
+        "final": {
+          "mode": "check",
+          "cells": 16,
+          "faces": 40,
+          "unknowns": 111,
+          "entries": 0,
+          "area": 1,
+          "nu": 0.1,
+          "velocityRms": 0.06781431375730654,
+          "pressureRms": 0.09045736160150007,
+          "maxSpeed": 0.9986899931381655,
+          "pressureRange": 1.4454054427194931,
+          "quadraturePressureRange": 1.4030728390063243,
+          "rt1VelocityRms": 0.20251329912183155,
+          "rt1SampledMaxSpeed": 1.3579247735886097,
+          "maxDivergence": 9.849584577966674e-15,
+          "pressureWork": -1.9097599345823265e-16,
+          "viscousEnergy": 2.6197419794791243,
+          "convectionEnergy": 0.11831603386517378,
+          "convectionIdentity": 0.11831603386517409,
+          "convectionIdentityError": -3.0531133177191805e-16,
+          "forceWork": 2.7380580133445482,
+          "boundaryWork": 0,
+          "energyBalance": -2.5002222514558525e-13,
+          "internalResidual": 5.052791518522781e-12,
+          "freeFaceResidual": 9.291512004239166e-12,
+          "wallFx": 0,
+          "wallFy": 0,
+          "wallPressureFx": 0,
+          "wallViscousAndStabilizationFx": 0,
+          "wallConvectionReconstructionFx": 0,
+          "stressBodyFx": 0,
+          "stressBodyFy": 0,
+          "wallTractionMomentDifferencePerLength": 0,
+          "wallPressureFy": 0,
+          "netBoundaryMassFlux": 0,
+          "boundaryMomentumFluxX": 0,
+          "boundaryMomentumFluxY": 0,
+          "boundaryTractionX": -4.85722573273506e-16,
+          "boundaryTractionY": -1.2264494975156026e-15,
+          "globalMomentumBalanceX": null,
+          "globalMomentumBalanceY": null,
+          "physicalConvectionEnergy": 0.11831603386517378,
+          "physicalBoundaryTractionWork": 0,
+          "upwindDissipationPlusDivergenceWork": 0.11831603386517378,
+          "manufacturedTractionMomentRms": 0.13316477594188564,
+          "wallNormal": 0,
+          "stateCoefficientChange": 0,
+          "rtTraceResidual": 2.1094237467877974e-15,
+          "seconds": 0.009878541
+        },
+        "state": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/mac-transport/sheared4-ns-nu01/iteration-018.recover.state",
+        "stateSha256": "24989ea90ce8fd8d9a9f9782c8054ce5b2974d70936d360cde75187b5d65de8a"
+      },
+      {
+        "label": "rotation4-ns",
+        "controls": [
+          "square",
+          "4",
+          "rotation",
+          ".1",
+          "ns",
+          "closed",
+          "6"
+        ],
+        "iterations": 3,
+        "seconds": 0.12785799999255687,
+        "final": {
+          "mode": "check",
+          "cells": 16,
+          "faces": 40,
+          "unknowns": 111,
+          "entries": 0,
+          "area": 1,
+          "nu": 0.1,
+          "velocityRms": 8.727721057214512e-16,
+          "pressureRms": 1.1843144034200034e-15,
+          "maxSpeed": 1.402489146328674,
+          "pressureRange": 7.458890298387734e-15,
+          "quadraturePressureRange": 7.282728271122471e-15,
+          "rt1VelocityRms": 9.04122493561816e-16,
+          "rt1SampledMaxSpeed": 1.4142135623730978,
+          "maxDivergence": 1.2957684051745525e-14,
+          "pressureWork": -2.1978922020804427e-31,
+          "viscousEnergy": -8.420041359443709e-16,
+          "convectionEnergy": 7.804463843044498e-16,
+          "convectionIdentity": -7.40871194327908e-17,
+          "convectionIdentityError": 8.545335037372405e-16,
+          "forceWork": -8.517103065463621e-17,
+          "boundaryWork": 1.4163294379902308e-16,
+          "energyBalance": -1.1801966478430827e-16,
+          "internalResidual": 9.025668407665834e-16,
+          "freeFaceResidual": 3.0531133177191805e-16,
+          "wallFx": 0,
+          "wallFy": 0,
+          "wallPressureFx": 0,
+          "wallViscousAndStabilizationFx": 0,
+          "wallConvectionReconstructionFx": 0,
+          "stressBodyFx": 0,
+          "stressBodyFy": 0,
+          "wallTractionMomentDifferencePerLength": 0,
+          "wallPressureFy": 0,
+          "netBoundaryMassFlux": -3.463640229329002e-17,
+          "boundaryMomentumFluxX": -0.49999999999999994,
+          "boundaryMomentumFluxY": -0.5000000000000001,
+          "boundaryTractionX": 4.128641872824801e-16,
+          "boundaryTractionY": -8.090068661509814e-16,
+          "globalMomentumBalanceX": null,
+          "globalMomentumBalanceY": null,
+          "physicalConvectionEnergy": 7.380278052273204e-16,
+          "physicalBoundaryTractionWork": 9.921436472189371e-17,
+          "upwindDissipationPlusDivergenceWork": 7.592370947658851e-16,
+          "manufacturedTractionMomentRms": null,
+          "wallNormal": 0,
+          "stateCoefficientChange": 0,
+          "rtTraceResidual": 5.551115123125783e-16,
+          "seconds": 0.009308084
+        },
+        "state": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/mac-transport/rotation4-ns/iteration-002.recover.state",
+        "stateSha256": "626daa04c73669d7bd6fa86783128c75890a1ff16921c5a7ca54b6cf67993c77"
+      },
+      {
+        "label": "obstacle-free-open-square4",
+        "controls": [
+          "square",
+          "4",
+          "cylinder",
+          ".1",
+          "ns",
+          "open",
+          "6"
+        ],
+        "iterations": 2,
+        "seconds": 0.08542020799359307,
+        "final": {
+          "mode": "check",
+          "cells": 16,
+          "faces": 40,
+          "unknowns": 144,
+          "entries": 0,
+          "area": 1,
+          "nu": 0.1,
+          "velocityRms": null,
+          "pressureRms": null,
+          "maxSpeed": 1.0000000000000038,
+          "pressureRange": 7.71945689669543e-15,
+          "quadraturePressureRange": 7.661888697962397e-15,
+          "rt1VelocityRms": null,
+          "rt1SampledMaxSpeed": 1.0000000000000038,
+          "maxDivergence": 6.874633126704607e-15,
+          "pressureWork": 1.9754373795526405e-31,
+          "viscousEnergy": -2.9976021664879227e-15,
+          "convectionEnergy": 0.9999999999999974,
+          "convectionIdentity": 0.9999999999999998,
+          "convectionIdentityError": -2.3314683517128287e-15,
+          "forceWork": 0,
+          "boundaryWork": 0.9999999999999948,
+          "energyBalance": -3.3306690738754696e-16,
+          "internalResidual": 2.3267824352743448e-15,
+          "freeFaceResidual": 6.106226635438361e-16,
+          "wallFx": 0,
+          "wallFy": 0,
+          "wallPressureFx": 0,
+          "wallViscousAndStabilizationFx": 0,
+          "wallConvectionReconstructionFx": 0,
+          "stressBodyFx": 0,
+          "stressBodyFy": 0,
+          "wallTractionMomentDifferencePerLength": 0,
+          "wallPressureFy": 0,
+          "netBoundaryMassFlux": 7.48481490412421e-17,
+          "boundaryMomentumFluxX": 1.1301206551273186e-16,
+          "boundaryMomentumFluxY": 9.09855318322924e-17,
+          "boundaryTractionX": -5.25336093276731e-15,
+          "boundaryTractionY": 2.64852218117148e-16,
+          "globalMomentumBalanceX": -5.3663729982800425e-15,
+          "globalMomentumBalanceY": 1.7386668628485563e-16,
+          "physicalConvectionEnergy": -2.55351295663786e-15,
+          "physicalBoundaryTractionWork": -5.218048215738236e-15,
+          "upwindDissipationPlusDivergenceWork": -2.6335652761070325e-15,
+          "manufacturedTractionMomentRms": null,
+          "wallNormal": 0,
+          "stateCoefficientChange": 0,
+          "rtTraceResidual": 5.551115123125783e-16,
+          "seconds": 0.00923325
+        },
+        "state": "/Users/Zhuanz/.codex/worktrees/incompressible-laminar/cartesian-mesh-generator-2d/outputs/laminar-stability/wall-recovery/mac-transport/obstacle-free-open-square4/iteration-001.recover.state",
+        "stateSha256": "5a6b58fcbc3b61d335a56a3447be345235d9884f6fd6aacbb88a8f2a607abe23"
+      }
+    ],
+    "openUniformCoefficientMaxError": {
+      "u0": 2.220446049250313e-15,
+      "uX": 1.9984014443252818e-15,
+      "uY": 4.524999492595532e-15,
+      "v0": 1.0546298040537718e-15,
+      "vX": 1.2151415255152088e-15,
+      "vY": 1.4335362056938496e-15,
+      "p0": 5.632511207488057e-15,
+      "pX": 2.13873650617821e-15,
+      "pY": 1.9939870688315917e-15
+    },
+    "strictWallMerge": {
+      "controls": [
+        "sheared",
+        "4",
+        "noslip-sheared",
+        "0",
+        "lift",
+        "symmetric",
+        "8"
+      ],
+      "wall": {
+        "cells": 16,
+        "unknowns": 111,
+        "wallFaces": 16,
+        "wallLength": 4.44131112314674,
+        "area": 1,
+        "pressureGauge": -1.2863976261121193,
+        "cellPressureTraceRms": 2.009002513331136,
+        "reactionPressureRms": 1.043057967481257,
+        "reactionPressureProjectionRms": 1.043057967481257,
+        "bestP1PressureRms": 1.1108068228707155e-16,
+        "omittedFaceLoadPressureRms": 1.2793371433066116,
+        "reactionPressureMaxAtQuadrature": 3.1802408788708996,
+        "cellPressureMaxAtQuadrature": 4.27419088184098,
+        "stressPressureRms": 2.8647287322680164,
+        "stressPressureProjectionRms": 2.8647287322680164,
+        "stressPressureMaxAtQuadrature": 7.334041605143752,
+        "tractionRms": 1.4844563973112195,
+        "tractionProjectionRms": 1.45495539066861,
+        "shearRms": 1.0562390221877214,
+        "wallVelocityMax": 0,
+        "forceBalanceNorm": 1.6582600095747544e-14,
+        "seconds": 0.015932166
+      },
+      "wallCsvCoefficientMaxChangeFromHistorical40RunStudy": 1.5765166949677223e-14,
+      "note": "Merged cloud canonicalizes validated stationary boundary coefficients to exact zero; wall reader now uses same zero trace. Historical 40-run archive/source hashes remain historical."
+    },
+    "archive": {
+      "path": "outputs/laminar-stability/wall-recovery/native-p1-transport-mac-merged-check.tar.gz",
+      "bytes": 1530590,
+      "sha256": "b33f4a78548167659e496742c24fa414e701dad6aff3d9957e628adf6e7801c9",
+      "members": [
+        {
+          "path": "mac-transport/obstacle-free-open-square4/history.json",
+          "bytes": 7872,
+          "sha256": "38596cbd3771d4f0bcc661fa5f17451444b0015d9a7041a6917107575cb89ac3"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.assemble.json",
+          "bytes": 1267,
+          "sha256": "344a553893f31506d18a782d656227fc78d4907c8c3387efcb52881fc7f4ed39"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.check.cells.csv",
+          "bytes": 3652,
+          "sha256": "1c40727eb08e4a070244561aa8783c8f1b4c3b8c846f5cada1ba49bdb1afed6e"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.check.faces.csv",
+          "bytes": 5797,
+          "sha256": "ca37f49d69fc09d14494839e580775ee9b3f24fbef0d12a6e9b7b0e824cf3dc8"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.check.json",
+          "bytes": 1740,
+          "sha256": "f70c322579ca8b8d8a214a18984a8f04ff1bf7cfdc7464d96b4ec3f47fc12ffd"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.check.state",
+          "bytes": 2456,
+          "sha256": "0ede48a1fad1b8d8b541e1d0d1771eabc92dbdbb55d3d72e7bb531d5cf793881"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.entries",
+          "bytes": 81792,
+          "sha256": "9194d208705bc00a774d22d6f2f1ef3cbb0267987021d7b68c43f3ed671403e8"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.recover.cells.csv",
+          "bytes": 3652,
+          "sha256": "1c40727eb08e4a070244561aa8783c8f1b4c3b8c846f5cada1ba49bdb1afed6e"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.recover.faces.csv",
+          "bytes": 5775,
+          "sha256": "3f3c97992b49ebfca11786402457f6b7a9e2f1f012302c293fc2824a3cbb6de4"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.recover.json",
+          "bytes": 1625,
+          "sha256": "7e4d1297b22e7f545df3c41d530653e987afbd02db72423c2d7970ecf999ce23"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.recover.state",
+          "bytes": 2456,
+          "sha256": "0ede48a1fad1b8d8b541e1d0d1771eabc92dbdbb55d3d72e7bb531d5cf793881"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.rhs",
+          "bytes": 1152,
+          "sha256": "d7af77bf5795c5f0a90235a34f5591e076258f911739bbcd1cfbbd5d909baa2d"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.solution",
+          "bytes": 1152,
+          "sha256": "1a3b1e160de25dc55abf87d90be8e276e5b68f9bb39c9d20bef611af4f506e33"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-000.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.assemble.json",
+          "bytes": 1267,
+          "sha256": "24470f45c5ee16a461bc04b81168dfd18fd5cba46a76d84a4f9e1f33d2aaf66c"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.check.cells.csv",
+          "bytes": 3695,
+          "sha256": "28e6554c8172302eb3c4807b5e62b05462973415d8f3bf2d515a672f97091596"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.check.faces.csv",
+          "bytes": 5745,
+          "sha256": "6afc191b964baeb305c74a2fb943e19684c6fa5fb2ba9ca1a157de13cd59ef7f"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.check.json",
+          "bytes": 1736,
+          "sha256": "966014af68e1f783e81215ac08bfc1569b5ec2265ceecbf21a2f69d8df7fe899"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.check.state",
+          "bytes": 2456,
+          "sha256": "5a6b58fcbc3b61d335a56a3447be345235d9884f6fd6aacbb88a8f2a607abe23"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.entries",
+          "bytes": 81792,
+          "sha256": "52f8d8f5e221a7acaa5927e13eeab098c81f90a30e17f943bcd147e129964951"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.recover.cells.csv",
+          "bytes": 3695,
+          "sha256": "28e6554c8172302eb3c4807b5e62b05462973415d8f3bf2d515a672f97091596"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.recover.faces.csv",
+          "bytes": 5767,
+          "sha256": "beea13949ae3682b2b67be6792dace0b2f249b9a88648532dd59bdb94eb25a48"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.recover.json",
+          "bytes": 1756,
+          "sha256": "6868f2fa7c9fac24623402b4dc235a854d85b6a658830c1b1de40360758e60a7"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.recover.state",
+          "bytes": 2456,
+          "sha256": "5a6b58fcbc3b61d335a56a3447be345235d9884f6fd6aacbb88a8f2a607abe23"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.rhs",
+          "bytes": 1152,
+          "sha256": "56b2601a99de8c9d09efa603bdea7fceb9684a24c5b1aaba61ff457fb5d7f546"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.solution",
+          "bytes": 1152,
+          "sha256": "46d394aeeb606f1d257fa448b126c50ac029645b0f4548d955c8cf15dd416d1b"
+        },
+        {
+          "path": "mac-transport/obstacle-free-open-square4/iteration-001.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/results.json",
+          "bytes": 9711,
+          "sha256": "3eaa334c7092bf3efa012c6185d2dcc5a6709ad9eeb6be827ea4fbdf39de75fd"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/history.json",
+          "bytes": 12084,
+          "sha256": "b5ad283836fbf34ca749a0010b66f5eddced8b1ec47c2658ea632656134577d2"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.assemble.json",
+          "bytes": 1263,
+          "sha256": "2449f1d700b293668f36113653513efe5d85d5c0ba2c35243b0f519c0912979d"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.check.cells.csv",
+          "bytes": 3420,
+          "sha256": "e42e6eccf6ddb95bcf14ac91d3e8bd68151edef9676c702fc3d334dcf906cf73"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.check.faces.csv",
+          "bytes": 5235,
+          "sha256": "edb48c382f1da7ac36187e0fa7db3f53b110dfe470adedbe5de39f5d8b76aa11"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.check.json",
+          "bytes": 1763,
+          "sha256": "fd554dae97a4840863519128003e279e5f04a1489e60a8ce2fb4e30a31da2193"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.check.state",
+          "bytes": 2456,
+          "sha256": "47fac7fcf8df761675ee9ec5a11e9a9ab696d53d008b0ff9486d166ed5127668"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.entries",
+          "bytes": 62784,
+          "sha256": "801021eb8dea47e9f69bf9bfa2d01dea202b219ee9c0ebf5d16d8d709267b41e"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.recover.cells.csv",
+          "bytes": 3420,
+          "sha256": "e42e6eccf6ddb95bcf14ac91d3e8bd68151edef9676c702fc3d334dcf906cf73"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.recover.faces.csv",
+          "bytes": 5282,
+          "sha256": "7f81f1757a15d2ccee37bb7a79a569094b697ffa860b2529b65be063f7db6bce"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.recover.json",
+          "bytes": 1628,
+          "sha256": "d1f297eb5141ec248da91b450ef3ab1ed22ce60dc11c19555b1a580cd3dcab29"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.recover.state",
+          "bytes": 2456,
+          "sha256": "47fac7fcf8df761675ee9ec5a11e9a9ab696d53d008b0ff9486d166ed5127668"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.rhs",
+          "bytes": 888,
+          "sha256": "b5ee347bd1210dbc3ee1398c32701c46eb5520c6578fa8aa6d0a41d67fcff571"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.solution",
+          "bytes": 888,
+          "sha256": "ff48d662a81d8207b5eae1dd600497b9c41d4382c1941d03998e7c997a9639ea"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-000.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.assemble.json",
+          "bytes": 1264,
+          "sha256": "4e16df809a011ae3ddd7379d09394fd634dbbf1f0ea90f140dd154583a2e6df5"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.check.cells.csv",
+          "bytes": 3526,
+          "sha256": "f4e5aeb5d40b27241b769b50bc6dda08e42d528eb0703bd99511705fcc2a1dd7"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.check.faces.csv",
+          "bytes": 5351,
+          "sha256": "1441196c08e7c4eb114a76739311b9520c813e6a2705e9ebb93afffef8c3808a"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.check.json",
+          "bytes": 1783,
+          "sha256": "e67bee704290a51c0a4b3eeee828f11fea80b61bcc1b9e2e56a89f8a60c5ee5e"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.check.state",
+          "bytes": 2456,
+          "sha256": "6396237a8b51a1287fbdcfd89105d002c10787ddda90b0a15d5198ea89199c1d"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.entries",
+          "bytes": 62784,
+          "sha256": "14a9fac3293838285beb02b8aae724a7f8724aa3c7dcda762332f3ff6ed2a5f2"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.recover.cells.csv",
+          "bytes": 3526,
+          "sha256": "f4e5aeb5d40b27241b769b50bc6dda08e42d528eb0703bd99511705fcc2a1dd7"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.recover.faces.csv",
+          "bytes": 5355,
+          "sha256": "bf03d08fcd3281c30a86315be99f456b792eea7406b8369e73e612829f0aaa64"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.recover.json",
+          "bytes": 1802,
+          "sha256": "d381a812c8bb864d4c2819af1fa33907e1c8ca98932c6e234ccfd02ceaa11b43"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.recover.state",
+          "bytes": 2456,
+          "sha256": "6396237a8b51a1287fbdcfd89105d002c10787ddda90b0a15d5198ea89199c1d"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.rhs",
+          "bytes": 888,
+          "sha256": "3f8929dda3d61aef9626a05b4ee26fec437f1d38d7599b146692d9a6f6cf19be"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.solution",
+          "bytes": 888,
+          "sha256": "5306e205e3d36955e41c2f1518301908e7ee0acdbf547410880a96a01279fa77"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-001.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.assemble.json",
+          "bytes": 1264,
+          "sha256": "6caa5980d5a0d3f3878c3668f11bad9872c558014726d424d9b1cd7d834992f9"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.check.cells.csv",
+          "bytes": 3524,
+          "sha256": "fbf97f1b0d6dcbb43fb75069d3133b9e16b9da3c4070fe7a8485339c1a42c3ad"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.check.faces.csv",
+          "bytes": 5352,
+          "sha256": "63476ccec149a8985a2ac94eef3e24037c3eb98621078dcbfba1b0cf2f6a2ea8"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.check.json",
+          "bytes": 1779,
+          "sha256": "8d4bea513b5eb248e0354724aa8ae0d20240edf44a3f178f1273206e4e9f3ff1"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.check.state",
+          "bytes": 2456,
+          "sha256": "626daa04c73669d7bd6fa86783128c75890a1ff16921c5a7ca54b6cf67993c77"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.entries",
+          "bytes": 62784,
+          "sha256": "e1182f6baf5d8e8dade499bdda3dce106a6fa4045790dfa61e0652b6cd006cdd"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.recover.cells.csv",
+          "bytes": 3524,
+          "sha256": "fbf97f1b0d6dcbb43fb75069d3133b9e16b9da3c4070fe7a8485339c1a42c3ad"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.recover.faces.csv",
+          "bytes": 5265,
+          "sha256": "34835d92487993ec55eea9d0c320dd4c9bcf9587c482d4080e415512752941d3"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.recover.json",
+          "bytes": 1807,
+          "sha256": "f9bc03d203b8d90850d3836ae69eecfe2dca8bff7e92a7d457f2c6ba2d4f0e13"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.recover.state",
+          "bytes": 2456,
+          "sha256": "626daa04c73669d7bd6fa86783128c75890a1ff16921c5a7ca54b6cf67993c77"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.rhs",
+          "bytes": 888,
+          "sha256": "b87c24f9dadb07efd35adae8c33510436b5bd59ff2d8fbf36ae855f82bc204ea"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.solution",
+          "bytes": 888,
+          "sha256": "5f5e5a2bbfbfec13fedd3918937bd4fe4bc33a7cd0972245ee7fd92d09cb96e8"
+        },
+        {
+          "path": "mac-transport/rotation4-ns/iteration-002.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/history.json",
+          "bytes": 73115,
+          "sha256": "a003d3cb5af203faadb6aff55727c2b64af105fe343a281772655b541d8af40d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.assemble.json",
+          "bytes": 1259,
+          "sha256": "1829b1879fda09ad6958f2020d3fc77a1c8fb1ef494da215badaadc574665157"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.check.cells.csv",
+          "bytes": 3451,
+          "sha256": "601f5281a68e432e833c09ca98ee27ed77f368edb068d10f4ad17a09f288c74f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.check.faces.csv",
+          "bytes": 5698,
+          "sha256": "9a074ab5737f5e5f77a06fdd38e740a4ea512bb8bc810e04f87b56bbce7fbbf2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.check.json",
+          "bytes": 1647,
+          "sha256": "f3c02be9bb2a266cccd720ece7bfcc6c264f33fce1c279a1c79d8c5b8241dd50"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.check.state",
+          "bytes": 2456,
+          "sha256": "d88cc9b0c94cd8b6f223cba41d5acaffeacfa92f22c800e44045c1ff34c30e24"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.entries",
+          "bytes": 64608,
+          "sha256": "b6165381059bb711b941fabfba6d56fb632a4eed7664487aac01d42b121cbe0e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.recover.cells.csv",
+          "bytes": 3451,
+          "sha256": "601f5281a68e432e833c09ca98ee27ed77f368edb068d10f4ad17a09f288c74f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.recover.faces.csv",
+          "bytes": 5744,
+          "sha256": "474956833b078d3de08d274fb2b31fa6249c3d8b2729413361992b3868d13fde"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.recover.json",
+          "bytes": 1585,
+          "sha256": "8182a7b4a6801d94733f0bff9b38fac602fc4d1998b402c78a8813c2433c3820"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.recover.state",
+          "bytes": 2456,
+          "sha256": "d88cc9b0c94cd8b6f223cba41d5acaffeacfa92f22c800e44045c1ff34c30e24"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.rhs",
+          "bytes": 888,
+          "sha256": "54c849407d09bef75987326aceef04584d1fd8840d688b3e22e7058ff8295f65"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.solution",
+          "bytes": 888,
+          "sha256": "addc262b20be20233bcf7d8898639fa6a90ad56849a748caebbf1af7f741a023"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-000.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.assemble.json",
+          "bytes": 1262,
+          "sha256": "ca3403fc297fa95528028a4d0b312f37c57eabea52cf8351774c28a65075d98e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.check.cells.csv",
+          "bytes": 3479,
+          "sha256": "fa8341ef1dce769e5f5ee7c0a7d355155342b8c87de3809c1d342a9e882f8100"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.check.faces.csv",
+          "bytes": 5732,
+          "sha256": "15e986272e368e7d7bd9f3f93fad16bcbe60dc0d7e07d5ad7e4f961f2b2fe2b4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.check.json",
+          "bytes": 1660,
+          "sha256": "cbb5154ad028b45042f55067ac68f6d7f95f2b9803d55700e27095aaf719b4a8"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.check.state",
+          "bytes": 2456,
+          "sha256": "beb9db387de4df6e7b1099661f5fa9fc3307a8e73143e585798bb7a414c1ad94"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.entries",
+          "bytes": 64608,
+          "sha256": "71d57f88e366a64d9bec3d73e858fa239a89bc6cc06a6c48b3de0a2bb9253407"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.recover.cells.csv",
+          "bytes": 3479,
+          "sha256": "fa8341ef1dce769e5f5ee7c0a7d355155342b8c87de3809c1d342a9e882f8100"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.recover.faces.csv",
+          "bytes": 5704,
+          "sha256": "9e42ddbd7e762563d92c9fe49c085ce1f7bf7666bf00348a53ba688a086edca9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.recover.json",
+          "bytes": 1684,
+          "sha256": "fbe6045fd34196ea413a7fcd87db25b4ccfef1660d134614b82c60e1e69b5136"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.recover.state",
+          "bytes": 2456,
+          "sha256": "beb9db387de4df6e7b1099661f5fa9fc3307a8e73143e585798bb7a414c1ad94"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.rhs",
+          "bytes": 888,
+          "sha256": "85a1dcbc0df993102c9582b311cbebc08064601256a3a74c334fa2f816afbe11"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.solution",
+          "bytes": 888,
+          "sha256": "bd3c3a79698cc49896a3fcd1f9bd9e702002336a1a0c7e568bc7922266f4763c"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-001.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.assemble.json",
+          "bytes": 1262,
+          "sha256": "1e92f486cdd939265b8d61d26319867c6ce86d08894b81c27ffe2f9743dc59e4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.check.cells.csv",
+          "bytes": 3473,
+          "sha256": "5a7f53c40f63a41fac4a47438e712388a6f20792be1fdc426374a68680f866ec"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.check.faces.csv",
+          "bytes": 5754,
+          "sha256": "f8220d3a50a6d12c829add15ed09c7580673477f23d1bcbb8bc2f7deb2dd7209"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.check.json",
+          "bytes": 1664,
+          "sha256": "45beb04f61057e59746586ab4411a35961ef706217f24b524daa06a3af27feb9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.check.state",
+          "bytes": 2456,
+          "sha256": "70e96016ce0349e6b6167a69a79a6395995eb1411e1cb88b7ff58303c9eac2d6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.entries",
+          "bytes": 64608,
+          "sha256": "b2f19269e18555f408cd0deaf612a526b9a7117b2be257038693a07f0e9d6ad9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.recover.cells.csv",
+          "bytes": 3473,
+          "sha256": "5a7f53c40f63a41fac4a47438e712388a6f20792be1fdc426374a68680f866ec"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.recover.faces.csv",
+          "bytes": 5718,
+          "sha256": "c4d8691c9e93d927336accbdb4588b2830636f2fc44d587fa0cab8e06024a400"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.recover.json",
+          "bytes": 1683,
+          "sha256": "7e73d36efbadf4f7fbf4d9fcee1522c2a4f9233296cf3f707f5d52dfe4535243"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.recover.state",
+          "bytes": 2456,
+          "sha256": "70e96016ce0349e6b6167a69a79a6395995eb1411e1cb88b7ff58303c9eac2d6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.rhs",
+          "bytes": 888,
+          "sha256": "593a3a987571b8c7b53bb3d434be23eddfff0f91a44b7bca37eae8e187ec2652"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.solution",
+          "bytes": 888,
+          "sha256": "68f78781cf500e847e93c136d9f2393e4053b6ae895e6f22ffef0530398e9aa5"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-002.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.assemble.json",
+          "bytes": 1262,
+          "sha256": "f356cfae187b2ca197512624697567b9500571dc8227c8271acceed1dc75521f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.check.cells.csv",
+          "bytes": 3475,
+          "sha256": "a83420d0231f7d8861001c0771564be4d5f0ac55a0f88041ff276bd9a8218ef6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.check.faces.csv",
+          "bytes": 5773,
+          "sha256": "5de33068dbd095b27f1c4f3c985f2e9b54adfbdc09531d503ad4a7a7fd00097f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.check.json",
+          "bytes": 1659,
+          "sha256": "b6435f2e9f77a8df7040bc8b6f6f25badb36e21a87ee1e89b485715cc3205804"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.check.state",
+          "bytes": 2456,
+          "sha256": "19705a699a05e3573d81ef530dd7eb24d15d11d97e05825b15929b48ca50dfa9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.entries",
+          "bytes": 64608,
+          "sha256": "3d0edfb7496346ba7a13d20fafe6110c2fd70acdff98aa1b534c5b3a97908c0d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.recover.cells.csv",
+          "bytes": 3475,
+          "sha256": "a83420d0231f7d8861001c0771564be4d5f0ac55a0f88041ff276bd9a8218ef6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.recover.faces.csv",
+          "bytes": 5712,
+          "sha256": "e096039a1ee249c1592548c24e66c00448bd2d9ddd1ed715d8c0d436d0d94ef1"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.recover.json",
+          "bytes": 1684,
+          "sha256": "7d8774ca3c841d3cce69a7c5852caa6e88a3c18c9668d4066bc1bbdc5d812e3b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.recover.state",
+          "bytes": 2456,
+          "sha256": "19705a699a05e3573d81ef530dd7eb24d15d11d97e05825b15929b48ca50dfa9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.rhs",
+          "bytes": 888,
+          "sha256": "56830305b822ba09c70eada25b952b6eb847db682fb3ad6123e06f56365bdd93"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.solution",
+          "bytes": 888,
+          "sha256": "82866f668c56f223cbdbaea446eaaf7cd428e61fcd4c14703e0719e8ed18a321"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-003.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.assemble.json",
+          "bytes": 1259,
+          "sha256": "61a91e74111506b16cf35be41278de887a8e8cc17102e2c95a9e5e44c3069c76"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.check.cells.csv",
+          "bytes": 3470,
+          "sha256": "7f462dd9652c1faa2cf4747c43bc3fdaadfcd57ed3334439ec4aa7e02aac9f4f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.check.faces.csv",
+          "bytes": 5784,
+          "sha256": "7347f134460661a686cf40a43e3a186858136eff061a86d922a10e4a259f4398"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.check.json",
+          "bytes": 1662,
+          "sha256": "3598c63bb0bb143c5bbf3abdfad3e04dc341ef5aeceedc46650127b5f4c04402"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.check.state",
+          "bytes": 2456,
+          "sha256": "af521367573ffd7f55268bbb3b8cf6fb576d6cfaa37231887d0ee89b291618c7"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.entries",
+          "bytes": 64608,
+          "sha256": "cfb2b317d7f283a0daf50602d5c39721188d5d8b4653b27bfb9bfb6e4a77d47b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.recover.cells.csv",
+          "bytes": 3470,
+          "sha256": "7f462dd9652c1faa2cf4747c43bc3fdaadfcd57ed3334439ec4aa7e02aac9f4f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.recover.faces.csv",
+          "bytes": 5681,
+          "sha256": "bcaa9a1e2e3af774f30165b051aec46fb4031ba9236c401880965f45212080d0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.recover.json",
+          "bytes": 1686,
+          "sha256": "6e1bc43908cd55e8ff89d0b308919575bbf83f89d4d702c55832856f84b14368"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.recover.state",
+          "bytes": 2456,
+          "sha256": "af521367573ffd7f55268bbb3b8cf6fb576d6cfaa37231887d0ee89b291618c7"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.rhs",
+          "bytes": 888,
+          "sha256": "d49ba3931b7336f1722a5c6c64e37c85fb08efc41f0e62a30ba09953e7fb252d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.solution",
+          "bytes": 888,
+          "sha256": "692301a9eca91162e9ca0a619a9b0d1440948a37d97c97236226a44efce104dd"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-004.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.assemble.json",
+          "bytes": 1262,
+          "sha256": "ab67e0559f8fbe343b3b3a0f4b349b492b2cf7b7ddaece935a452bff06b4d62e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.check.cells.csv",
+          "bytes": 3469,
+          "sha256": "f693120406bf7b92305f503afe8e3ed94a2f9713e702896d7ec0ae207c94f101"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.check.faces.csv",
+          "bytes": 5778,
+          "sha256": "c189a58ef58676b75ae13b2c7286e01fc784a6a2e313507e03bf04d86c88ebdb"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.check.json",
+          "bytes": 1663,
+          "sha256": "7c68c51e4df9197fbf80263e7c7be62cfc8006b5d81f84b2320008a995da76b2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.check.state",
+          "bytes": 2456,
+          "sha256": "8fd7d2512202e968586bfcf563769f9d4ea3231cac549ca00b23a1867a7304b4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.entries",
+          "bytes": 64608,
+          "sha256": "c12247699ac6644ca5c941b40b6b218e3715bdcbf7ddf62d3a7c74cdf6c6d701"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.recover.cells.csv",
+          "bytes": 3469,
+          "sha256": "f693120406bf7b92305f503afe8e3ed94a2f9713e702896d7ec0ae207c94f101"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.recover.faces.csv",
+          "bytes": 5781,
+          "sha256": "643ee1b4ee87abf9ff9abc53522ca518841fe89122fdfd87fb07f1f175fa6774"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.recover.json",
+          "bytes": 1685,
+          "sha256": "a5a1bc52bbf54d07867be98c608c7b0d5dc65d648e385c70f5dd49fc56de187a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.recover.state",
+          "bytes": 2456,
+          "sha256": "8fd7d2512202e968586bfcf563769f9d4ea3231cac549ca00b23a1867a7304b4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.rhs",
+          "bytes": 888,
+          "sha256": "8a9ccb197dd9cc4afdf0622330ea8f175b029a862f371b578d044d5218d6f729"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.solution",
+          "bytes": 888,
+          "sha256": "99eab223ce805d2de9c4da8f899c0256965250a8dc7532a8a47cdafdfb15e99e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-005.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.assemble.json",
+          "bytes": 1262,
+          "sha256": "488e23cf9264f815118a9072eb9c05003887298925afb2fd7d98f130d29b03d6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.check.cells.csv",
+          "bytes": 3471,
+          "sha256": "9567c8bd3c2bc954355ff51f3f22e337bdb6403167005372e838a7462b0875f0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.check.faces.csv",
+          "bytes": 5783,
+          "sha256": "68cd61c8c1a4d4771ec066eeb810316f40a94247d37986f8ad34984313558406"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.check.json",
+          "bytes": 1664,
+          "sha256": "d17bfe050adb7d41e6bcde58d993c34073b1f7bf760f532efc8dbafab4e2830d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.check.state",
+          "bytes": 2456,
+          "sha256": "67253fd21f1ce9d27bfb13500cdaae38fab6f6a0658c4c94269ec69e18eb33d6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.entries",
+          "bytes": 64608,
+          "sha256": "a29728aebe011c3b2ec729ba0cde2d3c862a50b6d345c2301c8eaaf99de93cda"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.recover.cells.csv",
+          "bytes": 3471,
+          "sha256": "9567c8bd3c2bc954355ff51f3f22e337bdb6403167005372e838a7462b0875f0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.recover.faces.csv",
+          "bytes": 5736,
+          "sha256": "afa67b5495dedd17e583491c71e09009d99ced78803f631c21b2511776a07051"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.recover.json",
+          "bytes": 1687,
+          "sha256": "c74545f29a6f7edc673ceaa74adb1a909c69c9a0b901c4e040379c38217f4d2e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.recover.state",
+          "bytes": 2456,
+          "sha256": "67253fd21f1ce9d27bfb13500cdaae38fab6f6a0658c4c94269ec69e18eb33d6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.rhs",
+          "bytes": 888,
+          "sha256": "6b23311cceba45f4b9f92232f69c9be1b324c60ccce2befdb409f7d5b2eaa6a6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.solution",
+          "bytes": 888,
+          "sha256": "d296cc907f97cde667f26aa6b9ee63a0643cf1576d8304e6b44ab36dcbff27a7"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-006.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.assemble.json",
+          "bytes": 1261,
+          "sha256": "1f7e2266c979a04ae76c5d739040602b8c0f44f91428ad377f5f29d9d0b65a17"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.check.cells.csv",
+          "bytes": 3467,
+          "sha256": "dd8c3380d1d35ee86c16047ccd52dbb14d9296294d1ff43badeccc9e8b36c6fc"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.check.faces.csv",
+          "bytes": 5784,
+          "sha256": "f5cde012dff3280dec4fb0e3d2a85b34de5bab5d591616ff1dedc688d31a6ee2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.check.json",
+          "bytes": 1663,
+          "sha256": "30cdab4dc21d8c7b5dfbe98d038595fac7e46d69223d4900958c1608087e00bd"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.check.state",
+          "bytes": 2456,
+          "sha256": "b6e9d4071681347daba52421da9486bc5ad09782e7d4b03104a41871e9d68a0b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.entries",
+          "bytes": 64608,
+          "sha256": "bf9eef7fe3e7dd3cbfb4954bd0eed28dc23813444540ca084e8715a46e0c6dc2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.recover.cells.csv",
+          "bytes": 3467,
+          "sha256": "dd8c3380d1d35ee86c16047ccd52dbb14d9296294d1ff43badeccc9e8b36c6fc"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.recover.faces.csv",
+          "bytes": 5717,
+          "sha256": "3b4221917677d6f85b98b5596616310eb5851eaf48b80b2f485a735d7bfb99e6"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.recover.json",
+          "bytes": 1680,
+          "sha256": "c9d1b286187cdd9fdb91bdb5498391f387e797d4a61722c738b4a3eca8d62d87"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.recover.state",
+          "bytes": 2456,
+          "sha256": "b6e9d4071681347daba52421da9486bc5ad09782e7d4b03104a41871e9d68a0b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.rhs",
+          "bytes": 888,
+          "sha256": "a3faa4706a111f8895cd0223dbce349d6e5adde7ffd3dcda47d89f363f7d49c0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.solution",
+          "bytes": 888,
+          "sha256": "47d4648a56239fe6477778199c0a61a213499d86abaae29075e803cdc311e591"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-007.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.assemble.json",
+          "bytes": 1262,
+          "sha256": "1e7b08fa74eac13e81943866c3e2bbded25f93c6314a6f3c80fd41c11a7e7cdd"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.check.cells.csv",
+          "bytes": 3471,
+          "sha256": "1700ec3b31b969089e33f67ac870bddc841a4fd3cf30a6dd89b6b539113f9edf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.check.faces.csv",
+          "bytes": 5782,
+          "sha256": "3a15031ea191b2f65310c8932cb9c7f262eb5c72dc8351f8b79996fee3535553"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.check.json",
+          "bytes": 1664,
+          "sha256": "c270ecf5d57a1e85d6e56e0712a96c3fb77bd1f5c748d01879d7b5c8503fae7a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.check.state",
+          "bytes": 2456,
+          "sha256": "8de3b3e2cca049353637da7dbe44a19e99adb5dca383c7f6d085d7c4ded63978"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.entries",
+          "bytes": 64608,
+          "sha256": "1318ee580a991a7f7c48e593eec73bcbe9f621d5ee5741795a51fa6399cf5686"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.recover.cells.csv",
+          "bytes": 3471,
+          "sha256": "1700ec3b31b969089e33f67ac870bddc841a4fd3cf30a6dd89b6b539113f9edf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.recover.faces.csv",
+          "bytes": 5699,
+          "sha256": "8f395bd3116b79dfc218b080d37d96342ebf77ed62b326ff5eacdbc1bc4da6a1"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.recover.json",
+          "bytes": 1686,
+          "sha256": "fce60dee2f5fb9320f0a54ce7045443123314f2b4069d3aed88ae1622dc2872d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.recover.state",
+          "bytes": 2456,
+          "sha256": "8de3b3e2cca049353637da7dbe44a19e99adb5dca383c7f6d085d7c4ded63978"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.rhs",
+          "bytes": 888,
+          "sha256": "237a90db1158e425594cb1b131ed87fb902708fe96fa3a2803a395d08e6d9f4e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.solution",
+          "bytes": 888,
+          "sha256": "2f6ba7429a68ac6cb7d7ef0d26609fa00d6628cafb4d79f95e0f0e02df62d61d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-008.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.assemble.json",
+          "bytes": 1262,
+          "sha256": "49683023115a172c6d38ce9777806541765f52348cea531cef5db6583cebcb2e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.check.cells.csv",
+          "bytes": 3468,
+          "sha256": "74dfea31abe8396b0604b41b9752fcaae570bd7e71b1d7c6ae2c289f74390763"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.check.faces.csv",
+          "bytes": 5782,
+          "sha256": "c0279e2d1d03a766e4b1648c7635900b1c81b9eb47753cbd91da5fd1b428f409"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.check.json",
+          "bytes": 1656,
+          "sha256": "09f9c762ff7a6154a2f3cb7aeb78846d8d9cfd8ffa47abd0c5fd27425d682ac3"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.check.state",
+          "bytes": 2456,
+          "sha256": "a0c3188dabd93a952c7bcf89ec12693bb8b7c9267b593b04684aed1b924531b8"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.entries",
+          "bytes": 64608,
+          "sha256": "c5b4f473118a93e02e617cb65d8d3f6100d6e989d6fd6d20428b176e12dba043"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.recover.cells.csv",
+          "bytes": 3468,
+          "sha256": "74dfea31abe8396b0604b41b9752fcaae570bd7e71b1d7c6ae2c289f74390763"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.recover.faces.csv",
+          "bytes": 5711,
+          "sha256": "4f14c013652c4fff8ceda0b1355ac00ed703a87402122252de2c76bb2d6ed362"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.recover.json",
+          "bytes": 1683,
+          "sha256": "489cafd8386ba32657c304fde018221634adcad4db31ac581df58e6f6f1b0823"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.recover.state",
+          "bytes": 2456,
+          "sha256": "a0c3188dabd93a952c7bcf89ec12693bb8b7c9267b593b04684aed1b924531b8"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.rhs",
+          "bytes": 888,
+          "sha256": "572cff8413a64bad5176ce462b19d319962dabb2ac3db9ea4ad9466b0332380b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.solution",
+          "bytes": 888,
+          "sha256": "2014f3ec1d098c24d03f54322d8c5a217881b82b0aa6abae0363d4d6511f49c3"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-009.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.assemble.json",
+          "bytes": 1262,
+          "sha256": "ceb7e327d8365e0121c7553a94b738b95b3f8ee2b365e9adc5549c072e51bc6e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.check.cells.csv",
+          "bytes": 3475,
+          "sha256": "86219c2a2afd7ca117bd68a49f03a3fcbf0a20430aa30e56339f02e84ded7cdb"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.check.faces.csv",
+          "bytes": 5784,
+          "sha256": "9f94e9c0203167594f154f1e81860f46a664d45ff108745ede6bcebaa9390f09"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.check.json",
+          "bytes": 1665,
+          "sha256": "0a0524a638a871ae40a11266eac33771c4c4d5dea2080f30cdbb63451230565c"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.check.state",
+          "bytes": 2456,
+          "sha256": "17652b8c8424f01603baabaaec3fb7b9019a266d57fb4a7fb387e9cd39b77285"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.entries",
+          "bytes": 64608,
+          "sha256": "4d61fe344e383d119e59587b55c13839b36143b75ecf78360d1652ebeb1fda11"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.recover.cells.csv",
+          "bytes": 3475,
+          "sha256": "86219c2a2afd7ca117bd68a49f03a3fcbf0a20430aa30e56339f02e84ded7cdb"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.recover.faces.csv",
+          "bytes": 5786,
+          "sha256": "5615e64f26d5f9b352d827b740d871dbc1b2512e6d2e7d815e1be8463d176ee3"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.recover.json",
+          "bytes": 1683,
+          "sha256": "09f77acc764c7e29e00419bc9f4f732f9fff0aa0100d3066cccb907c4a51f5af"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.recover.state",
+          "bytes": 2456,
+          "sha256": "17652b8c8424f01603baabaaec3fb7b9019a266d57fb4a7fb387e9cd39b77285"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.rhs",
+          "bytes": 888,
+          "sha256": "041cac5ed743aa419b23f4780ffa06b6108cb673eb971ccb5e306375ab8935b9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.solution",
+          "bytes": 888,
+          "sha256": "32fcce43065100476f2374fa597277cce0579d73713eab29aa228986c68f4c7d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-010.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.assemble.json",
+          "bytes": 1262,
+          "sha256": "8e324f459bc93950e3e1bb1df473db74fd986c02fd989f74addec67418397021"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.check.cells.csv",
+          "bytes": 3474,
+          "sha256": "0d3c79d80bec4bdb3010b0a9b412f8df62491fe2bc60218bbd3621ef0f2722d4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.check.faces.csv",
+          "bytes": 5775,
+          "sha256": "f8ed1630c28b7c0bef35f5798e9e2df57554117ab74ee2031e6e6fbbe29e0c9c"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.check.json",
+          "bytes": 1663,
+          "sha256": "39e7ee33e8150dcd49a747cd24e844f06aba7c33c43e789df5cfdcbdcc917264"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.check.state",
+          "bytes": 2456,
+          "sha256": "74abbbf4578a5c7bd10bfc73c268468afd03a1227e6b5ccaa560e14f75e974bf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.entries",
+          "bytes": 64608,
+          "sha256": "e597508818c555f9ae86f2403258068da2b2ed9881229607c0126d657e3d9c97"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.recover.cells.csv",
+          "bytes": 3474,
+          "sha256": "0d3c79d80bec4bdb3010b0a9b412f8df62491fe2bc60218bbd3621ef0f2722d4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.recover.faces.csv",
+          "bytes": 5709,
+          "sha256": "dc816a8af3cc3d17e33a552703882e66b2df7f9e0aa64de4c611e5fc0dd09b33"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.recover.json",
+          "bytes": 1684,
+          "sha256": "db2745cd63dacfbac1feb2643ca1e322d66580ffecc01909fc1f727b81d12b1d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.recover.state",
+          "bytes": 2456,
+          "sha256": "74abbbf4578a5c7bd10bfc73c268468afd03a1227e6b5ccaa560e14f75e974bf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.rhs",
+          "bytes": 888,
+          "sha256": "c1108c47cf00bc54aca5f4f4907d010a7017e023b4097a6a5417fd9c77c97f55"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.solution",
+          "bytes": 888,
+          "sha256": "b083f38890bcf1deedd4680a0b5288f8d382dcf0d8cb4979e88532f65c0d3430"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-011.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.assemble.json",
+          "bytes": 1262,
+          "sha256": "b0445729bd5974e48c1856e1099546fb4ac2d3a1d4f33dc91ad8bb02605be539"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.check.cells.csv",
+          "bytes": 3473,
+          "sha256": "364d8e93ac94a956ec8c2b03c42f86cc4527b4cb49dd4ec31fb83e8cae7a0b92"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.check.faces.csv",
+          "bytes": 5781,
+          "sha256": "11f7e5a060b1d0d1644f9c6c73dbf17f5cdce65400add4c8d852766e38467bf9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.check.json",
+          "bytes": 1664,
+          "sha256": "1e511c1150b7448b78afc2fdb9f7c97fa59aa8238b05c297127763e748830751"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.check.state",
+          "bytes": 2456,
+          "sha256": "b67c1caa151e1cc6bda5652ce08dd3c5cf0332d7dc14dc8493ebbb411380b595"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.entries",
+          "bytes": 64608,
+          "sha256": "24570f76955a328438cde4722d857dcc2a61dc193ba35795cf647b3347cc9c33"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.recover.cells.csv",
+          "bytes": 3473,
+          "sha256": "364d8e93ac94a956ec8c2b03c42f86cc4527b4cb49dd4ec31fb83e8cae7a0b92"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.recover.faces.csv",
+          "bytes": 5754,
+          "sha256": "f7c5754a21100a1df929eaa159ff3afccdc4e1f6cb5cec725a5d6d980c385f2d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.recover.json",
+          "bytes": 1690,
+          "sha256": "7606b10b90eac6802a1e0740ac7a5404e568596a0cb68f9c89c7655969751625"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.recover.state",
+          "bytes": 2456,
+          "sha256": "b67c1caa151e1cc6bda5652ce08dd3c5cf0332d7dc14dc8493ebbb411380b595"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.rhs",
+          "bytes": 888,
+          "sha256": "0554fd2ce70b0d1a777cb45d28eba33a0d85e3a45024d3e4f6e748c4266f40e3"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.solution",
+          "bytes": 888,
+          "sha256": "ab6fb5788eaf7bd2ad623dc3a45727e4f2e98a17fa55e6ea9a47942498607a93"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-012.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.assemble.json",
+          "bytes": 1262,
+          "sha256": "79b4079398917c13716f93b58d26d9f9286d44f9e7f866abf4bdd87e459c44c3"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.check.cells.csv",
+          "bytes": 3479,
+          "sha256": "e903db4986b2aa6219c71a6755f449219a6f953731d66c7bef87df3b07c0325d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.check.faces.csv",
+          "bytes": 5781,
+          "sha256": "1679d050abb8e8cca1af8171c8628a28d7d18b173ce7456e3894fcf79041a889"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.check.json",
+          "bytes": 1666,
+          "sha256": "df1bd126c6f50301352c95ea6c20340df8ca2288598182549eced0c53995fe18"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.check.state",
+          "bytes": 2456,
+          "sha256": "02b5b59d834a61181d2471466e21b4e89ea5e9a8ac6536383876f3ca76fa7fa7"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.entries",
+          "bytes": 64608,
+          "sha256": "2619ed334b0a9dace4a59b3911d8d80bf4220d6246ff90c2483f6d7694dce2d5"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.recover.cells.csv",
+          "bytes": 3479,
+          "sha256": "e903db4986b2aa6219c71a6755f449219a6f953731d66c7bef87df3b07c0325d"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.recover.faces.csv",
+          "bytes": 5695,
+          "sha256": "3be36e5bae6303bb84de9740c1c11ba9e78cbff1d732d6735aae7edda99016d0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.recover.json",
+          "bytes": 1684,
+          "sha256": "87b65f8439abecf5149696f11bf73b3e4b02c0c687e83c9cc06b47371441aabf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.recover.state",
+          "bytes": 2456,
+          "sha256": "02b5b59d834a61181d2471466e21b4e89ea5e9a8ac6536383876f3ca76fa7fa7"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.rhs",
+          "bytes": 888,
+          "sha256": "155c0c2d135044e4cd87f29a1e12abb330a468be0f687b32cd5a0cf7555a9644"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.solution",
+          "bytes": 888,
+          "sha256": "56692f9ee2b9dd0ef81130c17fc09135d46f8835334b8aec34bee1e0c4fa1e6a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-013.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.assemble.json",
+          "bytes": 1259,
+          "sha256": "55d856cb6230f4904103bcc954f1aa8a625c96ceac9eb6aabe85aa90697e6bb9"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.check.cells.csv",
+          "bytes": 3472,
+          "sha256": "c22c6e9fd781dde4e588e92ad1ff0dcc2b9e359318d2875e00f3f3a5609f3026"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.check.faces.csv",
+          "bytes": 5784,
+          "sha256": "6af8a613cd5159bf55b0f1c943eafb1d5adc3a818669eddb56891b00ec4366d0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.check.json",
+          "bytes": 1666,
+          "sha256": "7d9051585eccc9fe59c25b0ebfb91658cfa60fbe4d8fe40df3810a679660a85e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.check.state",
+          "bytes": 2456,
+          "sha256": "ad1e7f1becdf7410706ae85917ab208b54f62cd508c32d1bf8cf04f37917257e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.entries",
+          "bytes": 64608,
+          "sha256": "e74a5e21466ff7dca66d6d17062cb4f38fc42d57714e04d7b1c98315583c3e0f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.recover.cells.csv",
+          "bytes": 3472,
+          "sha256": "c22c6e9fd781dde4e588e92ad1ff0dcc2b9e359318d2875e00f3f3a5609f3026"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.recover.faces.csv",
+          "bytes": 5747,
+          "sha256": "f9e4f591db88d69e851d3bc57979c4d65436c6de85f9c9ebf470cb3306b56ad2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.recover.json",
+          "bytes": 1686,
+          "sha256": "c309bea6ab3a757a58777324b4630f18f9f5817eae2e148ac19b81f6ef8f1acb"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.recover.state",
+          "bytes": 2456,
+          "sha256": "ad1e7f1becdf7410706ae85917ab208b54f62cd508c32d1bf8cf04f37917257e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.rhs",
+          "bytes": 888,
+          "sha256": "205bbc6ddeae2f3b8b3232ac07f2e7a4fd738fbee6fc614311d9a09469829ccf"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.solution",
+          "bytes": 888,
+          "sha256": "4379627ae94f7a51cc8e831262e7907223405ce744e17d2874e2b544cf3b46ed"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-014.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.assemble.json",
+          "bytes": 1259,
+          "sha256": "052b28820c90f491b375aaef91342dd77afb290422c6cc3e3034d18409482876"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.check.cells.csv",
+          "bytes": 3478,
+          "sha256": "504e9752952685e41db565c04faed5786acbe4440cc59d69b4b262961c768c8f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.check.faces.csv",
+          "bytes": 5776,
+          "sha256": "babad1283ff79641440ba4df452d48da48d72ddf3c1efe5eb70bbf8dd9b230ce"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.check.json",
+          "bytes": 1665,
+          "sha256": "01f2631924fc15bac9d9c6559782374814885f6894d9de2142812b7341303746"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.check.state",
+          "bytes": 2456,
+          "sha256": "dd2a2c76286c7edf2ce87b62d8d82a62d11b676d5787d66edce80da16f499174"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.entries",
+          "bytes": 64608,
+          "sha256": "b9a8af30b361921db637a67960212c342a25dc6c075d2df84fd1188dd2eb1628"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.recover.cells.csv",
+          "bytes": 3478,
+          "sha256": "504e9752952685e41db565c04faed5786acbe4440cc59d69b4b262961c768c8f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.recover.faces.csv",
+          "bytes": 5733,
+          "sha256": "07b9576bbed62bdf6e78a42c4145f7657911fb4638f46ae3fdf0a8bd80888f65"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.recover.json",
+          "bytes": 1682,
+          "sha256": "64aa2115c58f611eb4861d16b85045c2d84e33f25c86a94e06c77a5a7f550703"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.recover.state",
+          "bytes": 2456,
+          "sha256": "dd2a2c76286c7edf2ce87b62d8d82a62d11b676d5787d66edce80da16f499174"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.rhs",
+          "bytes": 888,
+          "sha256": "46aa1863a7657e55536275739a370517722be4ecea764cba56173e1a6ea84ec1"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.solution",
+          "bytes": 888,
+          "sha256": "a26c89484b54faeea6c6f7619a694afc0b30faa78a6ce1573e3b6200fea9cd4c"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-015.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.assemble.json",
+          "bytes": 1262,
+          "sha256": "7bbcd9242887fa31b4765f0b2c34f0cd92b8e82e59558bf51ace39d2e0d1a04e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.check.cells.csv",
+          "bytes": 3477,
+          "sha256": "515bfc6d75b617570d9654e39b5b19750e6629a2315e06a9f330aef0f8770d60"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.check.faces.csv",
+          "bytes": 5786,
+          "sha256": "adb4ac19e4872be42a383cc1dfd0a0d402416f26f6602b613defb520c723e88b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.check.json",
+          "bytes": 1661,
+          "sha256": "84bf5ff1d34eef835aadca437783ff3d30bd99c8c4fb53350f6d8b7cc278fb29"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.check.state",
+          "bytes": 2456,
+          "sha256": "882996a80644a64704ab728f5798f587e4853583ff7127acf47fc4dcf2a6eb20"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.entries",
+          "bytes": 64608,
+          "sha256": "7aff61fc27b55fc2a1e4d13c58cd18293e76597e7c24cda25185b5f7c5def6e5"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.recover.cells.csv",
+          "bytes": 3477,
+          "sha256": "515bfc6d75b617570d9654e39b5b19750e6629a2315e06a9f330aef0f8770d60"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.recover.faces.csv",
+          "bytes": 5680,
+          "sha256": "6ad7e04aa1c104ca1a87c8c3f14b1ca2ddbf0eed3231dadaf59146fb3fd79e64"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.recover.json",
+          "bytes": 1665,
+          "sha256": "2971abf4c4944cfcf108b22f2bd4616232c78a83d850ef2159185f2392de531b"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.recover.state",
+          "bytes": 2456,
+          "sha256": "882996a80644a64704ab728f5798f587e4853583ff7127acf47fc4dcf2a6eb20"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.rhs",
+          "bytes": 888,
+          "sha256": "dd5863fedb231ac42f8c8bde6111aeca266472b45a7ee0a31b3c8ac518418311"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.solution",
+          "bytes": 888,
+          "sha256": "353bdc37add2d022dbd4eae573cdb99d3abc39f9946c138d48ddc767dc3280eb"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-016.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.assemble.json",
+          "bytes": 1262,
+          "sha256": "a0c184a5ee3329233b2d652e44f5f6590d5f6863b92bb4d784059773fde03735"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.check.cells.csv",
+          "bytes": 3473,
+          "sha256": "9f1ec968ba358e965b8f56036275bea5b5b6c0282890ba9183fee437db974007"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.check.faces.csv",
+          "bytes": 5781,
+          "sha256": "2ceb09f81c3452bab834f99d5778c5764cb740a416bf4cae6466fd9f58156bf0"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.check.json",
+          "bytes": 1664,
+          "sha256": "9a679451c3267c71f64cf14e97066f46bf35e5026599a13693e8fdd1c0304a30"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.check.state",
+          "bytes": 2456,
+          "sha256": "b367b7da121268bd8b15b126198936dbcbd12dddeb56714b72e08eb22bb6cff2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.entries",
+          "bytes": 64608,
+          "sha256": "a4cc8086be7643a188cb77c4ccf8cae27b5b62e6e58e37ae5d1380f5c429a5f1"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.recover.cells.csv",
+          "bytes": 3473,
+          "sha256": "9f1ec968ba358e965b8f56036275bea5b5b6c0282890ba9183fee437db974007"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.recover.faces.csv",
+          "bytes": 5692,
+          "sha256": "2feaa5b77910990c2fa577422f424351c083dc98acac91570e4594901aace975"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.recover.json",
+          "bytes": 1690,
+          "sha256": "818a6d4565ebc0c881881a0d04c1f64aa633a99dff3d89dfd9dff2fc06c65c23"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.recover.state",
+          "bytes": 2456,
+          "sha256": "b367b7da121268bd8b15b126198936dbcbd12dddeb56714b72e08eb22bb6cff2"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.rhs",
+          "bytes": 888,
+          "sha256": "fdc782b49f9098de23d2165df76bd60520b892dfae9cc1da739a4c54c5982bff"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.solution",
+          "bytes": 888,
+          "sha256": "e51092d6bbda0f8058ffd1def1d82ead50355df69d19cf887b7dce962a577ef4"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-017.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.assemble.json",
+          "bytes": 1262,
+          "sha256": "ea770a435ff69baa15cf3c99f4f77d2e558a8ff96eea1b0bbf6466ae967a663e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.check.cells.csv",
+          "bytes": 3468,
+          "sha256": "210878095692cfb2ffc63f1198ef57a89f77f40e8b77563bd410c1ea1650542f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.check.faces.csv",
+          "bytes": 5784,
+          "sha256": "efc8c2aa670bc39de490376144ccbc2be57792a557eff7812f45cf5cb8bf1850"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.check.json",
+          "bytes": 1670,
+          "sha256": "2f3c54bd511ddf017c9ba9d0e7a70395654453b04fb938fcbd44f6b40da90968"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.check.state",
+          "bytes": 2456,
+          "sha256": "24989ea90ce8fd8d9a9f9782c8054ce5b2974d70936d360cde75187b5d65de8a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.entries",
+          "bytes": 64608,
+          "sha256": "70dadfdbd2128d3e276cbbe07e62584416951738bf8d0556f60cdb69f8fbcd3e"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.recover.cells.csv",
+          "bytes": 3468,
+          "sha256": "210878095692cfb2ffc63f1198ef57a89f77f40e8b77563bd410c1ea1650542f"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.recover.faces.csv",
+          "bytes": 5764,
+          "sha256": "3e5f9bb37bf03aa0400ae59845df5e5be5f382cdd9109fccf65ea785946b2b3a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.recover.json",
+          "bytes": 1688,
+          "sha256": "ecb1ab7f817e13e1a8d5f4d35bb8dd5b7463e28dd156d3a86e3d32f87b234474"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.recover.state",
+          "bytes": 2456,
+          "sha256": "24989ea90ce8fd8d9a9f9782c8054ce5b2974d70936d360cde75187b5d65de8a"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.rhs",
+          "bytes": 888,
+          "sha256": "24ed8ffd6f91be0394beb8eef44f42ce3db05d9089f8446f9b996941cefba7ac"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.solution",
+          "bytes": 888,
+          "sha256": "805a50b9830e825a7bb0ba8c3f53820b47bd45a01b53935f118b45fcb752afc1"
+        },
+        {
+          "path": "mac-transport/sheared4-ns-nu01/iteration-018.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/history.json",
+          "bytes": 22959,
+          "sha256": "13548e61f7f4e27faa703f9fc3475af449b7fa3018b676f0c1d7e394dd09c006"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.assemble.json",
+          "bytes": 1259,
+          "sha256": "8765a9b3303e26731497d51c2a171a260e625e8bf8f2eedc2f0fde9f1e0824b6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.check.cells.csv",
+          "bytes": 3279,
+          "sha256": "fcf882cdffd05eaed7b43f9bd976ae3a321540d29304a86f329b8df02b1a8a1c"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.check.faces.csv",
+          "bytes": 4908,
+          "sha256": "7b63d9791c6bd412ee207bbb037d3e0efcccafdfffdd03838effc090334b72e5"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.check.json",
+          "bytes": 1650,
+          "sha256": "c589463d0703ebfe85df69a5b9c4799af25758d34aa72377b7625a7635496eff"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.check.state",
+          "bytes": 2456,
+          "sha256": "e528a30f0d2c7635b62becc98260b20704c6be69f57f19b1c75886b48f89ec2f"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.entries",
+          "bytes": 62784,
+          "sha256": "360a894834cb4149f8b2aed5065386b04f31f150fb4159c2526a955e9a2ef47c"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.recover.cells.csv",
+          "bytes": 3279,
+          "sha256": "fcf882cdffd05eaed7b43f9bd976ae3a321540d29304a86f329b8df02b1a8a1c"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.recover.faces.csv",
+          "bytes": 4771,
+          "sha256": "ec8726d55866abc9ec45834f1c7cd6110ec8552dfdfd582cb38f758946889c3e"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.recover.json",
+          "bytes": 1582,
+          "sha256": "1580e1fef7a9e25844360b31d25de319b2bd54624edb139a51eb01aead207c5f"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.recover.state",
+          "bytes": 2456,
+          "sha256": "e528a30f0d2c7635b62becc98260b20704c6be69f57f19b1c75886b48f89ec2f"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.rhs",
+          "bytes": 888,
+          "sha256": "5c2c4d8309548d93c13be0a21a023c148eb143a9ccb3b30d36af0d3e384cfbf6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.solution",
+          "bytes": 888,
+          "sha256": "013a975482f952bc791e1baf9bba19e588376ff5e7cd529be8bb63c5d52d921d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-000.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.assemble.json",
+          "bytes": 1257,
+          "sha256": "15f4c63f1ae3b4070e6ecfc45c6ab12a25dd2b6197fb3146082dca2a29819af7"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.check.cells.csv",
+          "bytes": 3295,
+          "sha256": "c03c9202ebbf5ecc40fb3045570292f0ad91aef1674ca27e9462b6ad0e8aea3d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.check.faces.csv",
+          "bytes": 4963,
+          "sha256": "8b56c25f4f66fa03a364253b3f4a75bbf9d9d627e90031e074514cb729cc2cde"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.check.json",
+          "bytes": 1665,
+          "sha256": "d487339cb3c47dd42a945512148b5593f86ceab064f701895562620341abecbb"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.check.state",
+          "bytes": 2456,
+          "sha256": "05277950654a7ddf6efdad205f9af4e899ba8d369d12a0fc76935e0cf06c7534"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.entries",
+          "bytes": 62784,
+          "sha256": "bb18e29dc0f011a50d6b59c9cc69119f6ba0d7940f62315e4dc793693db47717"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.recover.cells.csv",
+          "bytes": 3295,
+          "sha256": "c03c9202ebbf5ecc40fb3045570292f0ad91aef1674ca27e9462b6ad0e8aea3d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.recover.faces.csv",
+          "bytes": 4917,
+          "sha256": "fcd8fee7ca13d703ff87f8e88d2429bdda2f88ba2285ba20e76674dd4451d54c"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.recover.json",
+          "bytes": 1678,
+          "sha256": "843e97dbb428a62f1c86b3e51f837661810064fbe4df8248b0b18f40068abdc0"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.recover.state",
+          "bytes": 2456,
+          "sha256": "05277950654a7ddf6efdad205f9af4e899ba8d369d12a0fc76935e0cf06c7534"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.rhs",
+          "bytes": 888,
+          "sha256": "8c0da231526b2df79dc97cb1776e115143279bb76017cca26cce758db6f0462b"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.solution",
+          "bytes": 888,
+          "sha256": "747c9a94b4d4422c51f6adbb9e299bd35cd3c07dc38d89ad8a6f9ad815c4f67b"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-001.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.assemble.json",
+          "bytes": 1258,
+          "sha256": "6f6ba08a460d1b58a2b82ab3c18aa4075d39035ac9e49940e8c40b402bb26554"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.check.cells.csv",
+          "bytes": 3302,
+          "sha256": "3e80a2b1175e3f7302185e3a358171c653a6c920d1860352dee3758b4ea120e7"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.check.faces.csv",
+          "bytes": 4957,
+          "sha256": "a26522593aebcd42b12e0de49963cd2bd4ee3f742551f35c369960822d59a523"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.check.json",
+          "bytes": 1648,
+          "sha256": "4b1c93fd04eae2a19010c1ebd31e85e0c5e58459eae69f1552a230db0d09ecea"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.check.state",
+          "bytes": 2456,
+          "sha256": "44d6991d3d5dfacbe2343541559ffaa10866f79183959abebffd6f7d61f6001d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.entries",
+          "bytes": 62784,
+          "sha256": "448f1025e16f9679aabcb515c150f6066a93da259f190440b4134b3522137d21"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.recover.cells.csv",
+          "bytes": 3302,
+          "sha256": "3e80a2b1175e3f7302185e3a358171c653a6c920d1860352dee3758b4ea120e7"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.recover.faces.csv",
+          "bytes": 4847,
+          "sha256": "921ab94c2a033712d9e3c6524375c4bc6471c44baeec97c1acef2f4d710d0113"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.recover.json",
+          "bytes": 1676,
+          "sha256": "e3b07cddcb024f227b7050b74d264c2e3973200301abe684d64293c559c95af1"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.recover.state",
+          "bytes": 2456,
+          "sha256": "44d6991d3d5dfacbe2343541559ffaa10866f79183959abebffd6f7d61f6001d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.rhs",
+          "bytes": 888,
+          "sha256": "6301c1930728f91f1c85d0cd362be147cc48911e26b33a87b8b5b68184ae24cc"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.solution",
+          "bytes": 888,
+          "sha256": "63d28ee9cb4026a7fe41e66be55b8e038b9cda6cb2c076f7464db1ec74d11765"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-002.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.assemble.json",
+          "bytes": 1259,
+          "sha256": "38ac880b77a5af7ced415755951f7de9d3a2c162129d715a719cf2e36637bfdd"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.check.cells.csv",
+          "bytes": 3291,
+          "sha256": "2d0e999a376da465d372287ecf2ef8fc9757dd463ab8e005add78c45edd29360"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.check.faces.csv",
+          "bytes": 4958,
+          "sha256": "605f7e9e3b7fd2c5f2b88eb0a882ef4488013c74b38af1e77c04f9f5c9574d46"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.check.json",
+          "bytes": 1656,
+          "sha256": "a5a45d23dd5d5d7f0174da492ddcd8442c73636b859634d3ae8dd8072f91b047"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.check.state",
+          "bytes": 2456,
+          "sha256": "880b828851c45882711012947efeaa51d2e8c24f7ca3dab462a6251c85582953"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.entries",
+          "bytes": 62784,
+          "sha256": "203a163cf388c5ea6eeabfb32e43ee471328d265700e15cc3f1edd8825538dd3"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.recover.cells.csv",
+          "bytes": 3291,
+          "sha256": "2d0e999a376da465d372287ecf2ef8fc9757dd463ab8e005add78c45edd29360"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.recover.faces.csv",
+          "bytes": 4874,
+          "sha256": "39191f42ea3b57b09cfa9165c0aa52fa0c371732610edacaf7cb86150b8d4da4"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.recover.json",
+          "bytes": 1679,
+          "sha256": "8d507f3cd3fea40fe5456e97dd20e24e368594b6e501778a3a0aa24ae69d4b5e"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.recover.state",
+          "bytes": 2456,
+          "sha256": "880b828851c45882711012947efeaa51d2e8c24f7ca3dab462a6251c85582953"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.rhs",
+          "bytes": 888,
+          "sha256": "41ab107f046c7de60a48e37504c5de7d067b2d9955d46e1009ea87242e61dac4"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.solution",
+          "bytes": 888,
+          "sha256": "88ddd88741bdcc07eef159a121821bd7c3f34fcce5b409aaa6c884328a43dd93"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-003.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.assemble.json",
+          "bytes": 1259,
+          "sha256": "b058b20652606ed7e0cdc3ac9221225f7fb819a85c27f525d597df37ad1fbcaa"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.check.cells.csv",
+          "bytes": 3295,
+          "sha256": "19bd23e7d3d3629dd78cb54ebec71c403e7519ab879b7816926d74764c4bb4d6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.check.faces.csv",
+          "bytes": 4960,
+          "sha256": "cf523e6995e3a13c9c5cd6b282baec19534a3922f9cd2c7966ab1eab02b4ff24"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.check.json",
+          "bytes": 1660,
+          "sha256": "44ec94ba12c5ce3b9d3d143932b09112a06f64c6a630ebd49386e6e41a1f9732"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.check.state",
+          "bytes": 2456,
+          "sha256": "3c4027f93b61466d18b07c249daafd7c07480c84a04beb8ce5a883ffcd602f54"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.entries",
+          "bytes": 62784,
+          "sha256": "a84b7b3842a960d95c32d38d0fd73ebb484b691fa1ca1e60b1cb0c8c13690aee"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.recover.cells.csv",
+          "bytes": 3295,
+          "sha256": "19bd23e7d3d3629dd78cb54ebec71c403e7519ab879b7816926d74764c4bb4d6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.recover.faces.csv",
+          "bytes": 4916,
+          "sha256": "15a97dcedfdd90f018b46fa9b0593570f7cc266c7adecd65ad523c5270345e03"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.recover.json",
+          "bytes": 1681,
+          "sha256": "79c02cb93f972979085bf46f7ac6c97f2b1c866a3b3b675959f21c7798106898"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.recover.state",
+          "bytes": 2456,
+          "sha256": "3c4027f93b61466d18b07c249daafd7c07480c84a04beb8ce5a883ffcd602f54"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.rhs",
+          "bytes": 888,
+          "sha256": "f4ad032cc1ed7438194bb7c52cbb43ff82d909834e462a91355c325f75ccc32b"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.solution",
+          "bytes": 888,
+          "sha256": "3455d3379eaf1249e885bd990eb1e4451e994af12adc77c13deada6ff6f54e96"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-004.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.assemble.json",
+          "bytes": 1259,
+          "sha256": "49dd41f0c970048b3b79cc4f03597d0ffc45255220f6de7facdf8bfca453c5a9"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.check.cells.csv",
+          "bytes": 3292,
+          "sha256": "9bf141a1b66fafd17c32c9ea01024abb9fba9ae0e0d9d4669928478d46a6f6a6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.check.faces.csv",
+          "bytes": 4964,
+          "sha256": "e9e9d30dcaa4a980b0e829add9875a8442c1dea625401b5f359a7eddc7e08190"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.check.json",
+          "bytes": 1658,
+          "sha256": "ae8c58d08a59cebecaa3f242c1cc6d252fa34025d4d163cd21eb0ea8dd5d6cda"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.check.state",
+          "bytes": 2456,
+          "sha256": "387551d1518ffd32dd4c197805daa855a8f33e60aad481764b3c54217c45132e"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.entries",
+          "bytes": 62784,
+          "sha256": "001afbb6f9a062229fe4780b77360728760948b1b261fb168ccfcab13018cc38"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.recover.cells.csv",
+          "bytes": 3292,
+          "sha256": "9bf141a1b66fafd17c32c9ea01024abb9fba9ae0e0d9d4669928478d46a6f6a6"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.recover.faces.csv",
+          "bytes": 4836,
+          "sha256": "1e8943517b791772bd77c725cee6b3e94c0084396e90007f2d108fdc99a7b027"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.recover.json",
+          "bytes": 1683,
+          "sha256": "35af08c10f90a6c7d60d9996eb30095fc63e9ccf8103a5d56d35790b072a0013"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.recover.state",
+          "bytes": 2456,
+          "sha256": "387551d1518ffd32dd4c197805daa855a8f33e60aad481764b3c54217c45132e"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.rhs",
+          "bytes": 888,
+          "sha256": "049e1d63e6323cb0004d22472934da411cf54e13165ffda96af987a6d1227a71"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.solution",
+          "bytes": 888,
+          "sha256": "7399c05bcc483289c019b44407c01723495af20d2221c54d64a9e21004c35c3d"
+        },
+        {
+          "path": "mac-transport/square4-ns/iteration-005.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-wall/case-sheared-4-lift-symmetric.json",
+          "bytes": 3633,
+          "sha256": "e76f1ec50b04b919fb32eff73fb84d4bf36659eab51bd5e09c8f126abbf6d67e"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.cells.csv",
+          "bytes": 9680,
+          "sha256": "2b2d801af34cc0d3f5da5b2b98dd3e05204621441459cdecb5443cdd1b0622ef"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.entries",
+          "bytes": 64896,
+          "sha256": "149ededddc568f45b041d067e8213ea27e6d6ba1d5b110cd3d8153d7bba67e81"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.faces.csv",
+          "bytes": 6497,
+          "sha256": "e89ffffbc4ffe0f838ea4a158f41bd05dfca6bb0d99a3f09e7e4cdea18540be7"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.result.json",
+          "bytes": 3413,
+          "sha256": "bb85c42c2c0217e1ffb8412d664e4f9d538ac74b46c0fcc289d74945130368e0"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.rhs",
+          "bytes": 888,
+          "sha256": "09a60aadca5b0dec3a8c716dde57c099ffbba6f01c6ebb9c5e866a3248df0716"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.solution",
+          "bytes": 888,
+          "sha256": "9d7513375c57a9993ccd5b9bc5e58a39ace079f10c545700e9dc0ed647a9866e"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.stderr",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "mac-wall/sheared-4-lift-symmetric.wall-recovery.csv",
+          "bytes": 7272,
+          "sha256": "e32c21711e9f210e4cd72b58720622f9a27051f372f2d2919dd86e5094fce44d"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-p1-transport.cpp",
+          "bytes": 7184,
+          "sha256": "1c088d4c63e181fc0f899a845ec38e94040e8a2cf9c2114d31cfac366be10bc5"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-p1-oseen.cpp",
+          "bytes": 22425,
+          "sha256": "0cc5e19a6191a59f1fb9b70094713b8e002c3cca424bc74ee0e2b80039744c2f"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-p1-stress.cpp",
+          "bytes": 21317,
+          "sha256": "5319524a78548af108562648ca67c5f9e2d9c7ea7479a55445e6b98e537fc9b6"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-wall-recovery.cpp",
+          "bytes": 12372,
+          "sha256": "73bf14f416174c0c520c5ed214da0b1612762d54ac6f59ae02004c23fe1e3f38"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-wall-recovery.py",
+          "bytes": 4948,
+          "sha256": "c3694c542fda434ac77176708ede61aa309b64e9e332bcce26561fa3f94cd9ae"
+        },
+        {
+          "path": "source/artifacts/current/native-laminar-hybrid-stokes-p1.cpp",
+          "bytes": 22836,
+          "sha256": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11"
+        },
+        {
+          "path": "execution/cartmesh2d-wall-stress-merged",
+          "bytes": 292992,
+          "sha256": "2c18265894d97494cc6f8d75d85701520525b36451984de67e351c5c0b42363a"
+        },
+        {
+          "path": "execution/cartmesh2d-wall-recovery-merged",
+          "bytes": 292720,
+          "sha256": "d43963489fd2a9acb4c24d570a7213e40d502cd5f36d3b65f919819007d2a84a"
+        },
+        {
+          "path": "execution/cartmesh2d-p1-transport-merged",
+          "bytes": 328848,
+          "sha256": "9314b20f14b705ae339221dd6f701f97e4ecf829492db4ddcd0792debaf3ccc5"
+        },
+        {
+          "path": "execution/cartmesh2d-transport-mac-check.py",
+          "bytes": 2568,
+          "sha256": "2e0af73f5b79ebb78530647550ce0762e9271b0a27e15c5c12dc2c0b16b01d47"
+        },
+        {
+          "path": "execution/cartmesh2d-package-mac-transport.py",
+          "bytes": 4597,
+          "sha256": "3f0f3477b0f6e3471885acab31b7ec12dee1cde6298ab913d8010adf54a869a3"
+        }
+      ],
+      "everyMemberReadbackVerified": true
+    },
+    "maximumUnknowns": 144
+  },
+  "cloudPersistenceStatus": {
+    "reportedInCloudThread": "6ac328d0-c3c0-83ec-89de-70d5f806bee8",
+    "persistedVersion": "v27",
+    "newPackageStatus": "9408 entries locally verified, persistent save returned prepare_uploads failed; original data and archive retained in cloud runtime",
+    "newPackageLocalSha256": "d5cc886195870eb5dd7668321fef8de65f20bc797f45db81a7a3fddcb2ca3a5b",
+    "newPackagePersistenceConfirmed": false
+  },
+  "localRecoveryCleanup": {
+    "rawDuplicateFilesRemoved": 864,
+    "rawDuplicateBytesRemoved": 15853269,
+    "twoVerifiedArchivesRetained": [
+      "native-wall-recovery-research.tar.gz",
+      "native-p1-transport-mac-merged-check.tar.gz"
+    ],
+    "activeTaskNativeBinariesAtCleanup": 0
   }
 }

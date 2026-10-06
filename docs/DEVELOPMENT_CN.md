@@ -551,7 +551,16 @@ build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-1.so
 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python3 artifacts/current/native-laminar-wall-recovery.py outputs/laminar-stability/wall-recovery-reproduction
 ```
 
-需要当前原生库与 NumPy；Linux 使用相应编译器/既有库链接方式并省略 Accelerate。Python仅编排、读原生矩阵并做稠密线性代数，限制2300未知量，不另解一套流体方程；`--case ring-1-8-lift` 可只复现一个控制。已有案例前缀会拒绝覆盖，部分失败原样留存。C++ 的 `write-ring radial angular file` 建立半径0.5/1米、共享顶点身份一致的体贴合多边形圆环并通过原 `makeFvMesh2D`，它不是 Cartesian 网格生成器，也没有修补原曲壁几何。静水 `u=0,p=x+2y+x³+xy²` 在每个实际多边形上均是精确问题；面细化对照不是原圆环旋转流的资格。直接恢复接口为 `native-laminar-wall-recovery mesh n problem lambda lift|cell symmetric|laplace order existing_prefix`，读取同一原生 `.solution` 后输出 `.wall-recovery.csv`；只允许已声明的静止制造解，不能原样用作不同黏度、对流或开放出口的载荷后端。40项完整运行、追加恢复、源文件/二进制、矩阵、所有实际场和不利对照逐项压缩读回，索引为 `native-laminar-wall-recovery.json`，重现单控制与原结果完全一致。
+需要当前原生库与 NumPy；Linux 使用相应编译器/既有库链接方式并省略 Accelerate。Python仅编排、读原生矩阵并做稠密线性代数，限制2300未知量，不另解一套流体方程；`--case ring-1-8-lift` 可只复现一个控制。已有案例前缀会拒绝覆盖，部分失败原样留存。C++ 的 `write-ring radial angular file` 建立半径0.5/1米、共享顶点身份一致的体贴合多边形圆环并通过原 `makeFvMesh2D`，它不是 Cartesian 网格生成器，也没有修补原曲壁几何。静水 `u=0,p=x+2y+x³+xy²` 在每个实际多边形上均是精确问题；面细化对照不是原圆环旋转流的资格。直接恢复接口为 `native-laminar-wall-recovery mesh n problem lambda lift|cell symmetric|laplace order existing_prefix`，读取同一原生 `.solution` 后输出 `.wall-recovery.csv`；只允许已声明的静止制造解，不能原样用作不同黏度、对流或开放出口的载荷后端。40项完整运行、追加恢复、源文件/二进制、矩阵、所有实际场和不利对照逐项压缩读回，索引为 `native-laminar-wall-recovery.json`，重现单控制与原结果完全一致。随后合并云端后，Stokes入口及壁面读取器都将这些解析静止边界的系数设为严格零；原40项的投影舍入记录和源码哈希作为历史证据保留，合并后剪切4档壁面系数最大变化约 `1.58e-14`，详见索引中的独立读回。
+
+相容惯性入口 `native-laminar-p1-transport.cpp` 复用 `native-laminar-p1-oseen.cpp`、P1对称黏性及RT1相容载荷。对流采用RT1重构的对流速度、被输运速度和试函数；扇形内部及原子面使用同一法向通量和上风跳项，在线性法向通量的真实零点分段Gauss积分。原单元试函数版本保留为仿射不一致负对照。压力始终是运动学静压；自然出口 `(2ν sym G-pI)n=0` 不等于旧产品的规定压力/速度零法向梯度出口。边界反力分开记录压力、黏性加稳定项和对流重构项，后两项不得混称纯黏性；入口完整反力补回对流通量后才对应物理牵引。
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-p1-transport.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-p1-transport
+python3 artifacts/current/native-laminar-p1-oseen.py square 8 noslip 0.1 ns closed unique-label
+```
+
+上例使用已有Linux原生库及NumPy/SciPy；Mac采用系统Clang和Accelerate链接。圆柱用真实 `.solver.cm2d` 路径替代square、n=0、problem=cylinder、boundary=open。输出前缀拒绝覆盖；`CARTMESH_P1_INITIAL_STATE`可显式接续保存的研究场，meshKey绑定真实几何，不是产品checkpoint。每步保存完整解、原生恢复和原始非线性方程复核；`1e-9`研究控制同时约束系数变化及未消元残量（U=L=1，静压尺度U²），不是新增物理门或选解规则。Python只做编排和原生矩阵稀疏线代；失败、迭代上限及完整成本保留。P2势速度和RT1输运速度各报其误差，P1压力极值覆盖全单元顶点，速度峰值仍只是采样值。源码哈希、两档曲壁NS、仿射/二次负对照、积分对照、Mac4项短验证及云端恢复包持久保存失败均记录在 `native-laminar-p1-convection.json`。原出口等价性、回流、充分空间/外域收敛、壁面反力精度和可规模化联合求解仍未完成。
 
 ## 完整笛卡尔背景网格
 

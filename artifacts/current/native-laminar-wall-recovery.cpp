@@ -55,8 +55,9 @@ int main(int argc,char** argv)try {
     for(int i=0;i<nf;++i)if(mesh.faces[i].neighbour)for(int j=0;j<4;++j)map[4*i+j]=count++;
     for(int i=0;i<nc-1;++i)map[4*nf+i]=count++;
     for(int i=0;i<nf;++i)if(!mesh.faces[i].neighbour)for(auto [z,w]:gauss(order)){
-        const auto& face=mesh.faces[i];const double s=z-.5;
-        const auto u=manufactured({face.centre.x-face.areaVector.y*s,face.centre.y+face.areaVector.x*s},problem,lambda).u;
+        const double s=z-.5;
+        // Match the coupled driver: these validated stationary traces are exactly zero.
+        const Vector2D u{0,0};
         known[4*i]+=w*u.x;known[4*i+1]+=12*w*s*u.x;known[4*i+2]+=w*u.y;known[4*i+3]+=12*w*s*u.y;
     }
     Vec solution(count);std::ifstream input(prefix+".solution",std::ios::binary);
