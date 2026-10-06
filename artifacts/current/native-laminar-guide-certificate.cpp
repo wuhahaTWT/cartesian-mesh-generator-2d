@@ -1,4 +1,4 @@
-// Native branch-certificate probe for ordinary internal and closed flows.
+// Native branch-certificate probe for ordinary internal, manufactured and closed flows.
 // Reuses the product mesh fixture and product solver; it introduces no
 // independent discretized equations or acceptance thresholds.
 #define main inherited_boundary_test_main
@@ -73,9 +73,11 @@ int main(int argc,char** argv) {
         return 1;
     }
     const std::string kind=argv[1],prefix=argv[4];
-    if(kind!="channel"&&kind!="cavity")throw std::runtime_error("case must be channel or cavity");
+    if(kind!="channel"&&kind!="manufactured"&&kind!="cavity")
+        throw std::runtime_error("case must be channel, manufactured or cavity");
     const int n=std::stoi(argv[2]);
-    const auto mesh=rectangle(kind=="channel"?4*n:n,n,kind=="channel"?4:1,false);
+    const auto mesh=rectangle(kind=="channel"?4*n:n,n,kind=="channel"?4:1,
+        kind=="manufactured");
     FlowControls2D target;target.scenario=kind;target.nu=kind=="cavity"?.01:.1;
     target.speed=1;target.tolerance=std::stod(argv[3]);target.maxIterations=4000;target.profile=true;
     auto guide=target;guide.nu=10*target.nu;guide.tolerance=std::sqrt(target.tolerance);

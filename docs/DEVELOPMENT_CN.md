@@ -265,6 +265,21 @@ python3 artifacts/current/native-laminar-branch-continuation.py
 
 这组平方根关系只减少探针成本，不构成物理解选择原理；当前不接入 API/CLI 或默认，也不把幅值诊断升级为拒绝阈值。原始命令输出、各路径完整场哈希和所有规范不变差异由同一 `native-laminar-branch-continuation.py` v5 生成。
 
+同一原生驱动现在也接受 `manufactured`。64² 解析强迫涡在默认 `1e-6` 下，直接目标、平方根引导、从引导启动的原目标分别用 550/145/61 次完整评估；直接与引导目标的全场速度/去规范压力面积 RMS 差为 `7.72e-5/7.40e-5`，平坦 Anderson 110 次所得目标与直接 Newton 的对应差为 `4.63e-5/4.33e-5`。这说明高黏度引导可同时充当收敛预处理，但差值仍只按目标容差解释，不升级为物理误差界。
+
+移动圆环由 `native-laminar-annulus-guide.py` 调用产品 CLI：逐字节相同的 `annulus-joint-7.solver.cm2d` 和原边界文件上先跑直接目标 `ν=.1,tol=1e-6`，再跑 `ν=1,tol=1e-3` 引导，并把产品导出的同网格 `cell,x,y,u,v,p` 作为原目标初值；另以显式 Anderson 作独立算法控制。直接/引导/终档/Anderson 的完整评估为 `275/187/135/351`，三条目标路径均严格收敛到相同支路。引导目标相对直接目标的全场速度 RMS 为 `7.94e-8 Uref`、去规范压力 RMS 为 `3.41e-8 Uref²`；证书成本 `322/275=1.171`，direct+Anderson 成本 `626/275=2.276`。全部单元均参与比较，压力只移除面积均值；原规定速度迹跳、实际壁面法向速度和 Solver 门均未改。
+
+```sh
+outputs/cloud-laminar/guide-certificate manufactured 64 1e-6 \
+  outputs/cloud-laminar/guide-manufactured-64
+outputs/cloud-laminar/accuracy-probe-anderson manufactured 64 1e-6 \
+  face-limited-linear anderson \
+  outputs/cloud-laminar/manufactured-face-limited-linear-64-anderson-tol1e6
+python3 artifacts/current/native-laminar-annulus-guide.py --run
+```
+
+汇总和每份原生 cells/faces/residuals 哈希见 `native-laminar-guide-crosscase.json`。该驱动的 `--resume` 只用于云端中断后复用已完成的直接/引导场；正式从零复现用 `--run`。产品尚无分支证书 API，因此本批不声称旧工况、失败/取消或双候选恢复已经覆盖。
+
 独立算法交叉检查保持目标方程、网格和全部最终严格门不变，只把显式稳态加速器切换为既有 Anderson。正常 4,716 格圆柱直接运行 276 次，与 Newton 场的速度/去规范压力面积 RMS 差为 `1.30e-8 Uref/1.76e-9 Uref²`；直通道 64 档和 Re=100 方腔 64 档分别用下列命令运行 123/1,145 次，并与 Newton 场保持约 `1e-6` 或更小的全场差异：
 
 ```sh
