@@ -215,6 +215,10 @@
   "artifacts": {
     "boundaryAdapterSource": "artifacts/current/native-laminar-external-boundary.cpp",
     "boundaryAdapterSourceSha256": "230a49ee33cba22b38c6632560276151cbefaad20ca4a822525851608149dce4",
+    "guideCertificateBinary": "outputs/cloud-laminar/guide-certificate",
+    "guideCertificateBinarySha256": "2990c5b4ee3a03c27f9dea2a9bd5950113ab1ef96568beb7b14dbf818d9b5d1d",
+    "guideCertificateSource": "artifacts/current/native-laminar-guide-certificate.cpp",
+    "guideCertificateSourceSha256": "b5c88cb3d2045ed035ad372833a34c25f98f6bf38baaf5963ddf0a7de859675e",
     "topologySource": "artifacts/current/native-laminar-topology-spectrum.cpp",
     "topologySourceSha256": "00d70cb34b72325ad6e2b6e1b08a65acbff7c86d1fb72eccb98c62dff7a2c9f8"
   },
@@ -1077,7 +1081,7 @@
     }
   },
   "qualification": {
-    "conclusion": "Two-stage viscosity continuation recovered the same bounded branch on the known bad mesh with 35.8% fewer evaluations than the four-stage path and reproduced the existing bounded branch on the coarse mesh. Its 1.42x direct-solve cost, limited mesh evidence and unresolved branch-selection semantics remain insufficient for a default change.",
+    "conclusion": "At product tolerance the square-root guide certificate still exposes the retained bad external mesh, while a normal external mesh, a straight channel and a closed cavity reproduce their direct branches. The 1.23x--1.79x normal-case evaluation cost and unresolved physical branch-selection semantics remain insufficient for a default change.",
     "defaultChanged": false,
     "frontendOrAppRerun": false,
     "fullNativeSuiteRerun": false,
@@ -1180,6 +1184,102 @@
           }
         ]
       },
+      "closedCavity64": {
+        "directAndAndersonEvaluations": 1286,
+        "directVsAndersonDistance": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 6.117225800192351e-06,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 1.6108646980337372e-05,
+          "pressureRmsOverReferenceSpeedSquared": 1.869490227439595e-06,
+          "velocityRmsOverReferenceSpeed": 7.922812000275068e-06
+        },
+        "flatAnderson": {
+          "case": "cavity",
+          "cells": 4096,
+          "continuity": 5.342503037728853e-13,
+          "converged": true,
+          "evaluations": 1091,
+          "method": "anderson",
+          "momentumResidual": 2.833558329013149e-07,
+          "n": 64,
+          "nu": 0.01,
+          "prefix": "outputs/cloud-laminar/cavity-face-limited-linear-64-anderson-tol1e6",
+          "pressureChange": 9.715868580863797e-07,
+          "rawSha256": {
+            ".cells.csv": "3096e893a67f83f7bb838db4497780cf9e090d50e25de2ec0f61499c524b896c",
+            ".json": "c779b50346d708cdf5c053b6a3f2896e614c0da464ffa99651c6b56083ad7fe6"
+          },
+          "scheme": "face-limited-linear",
+          "seconds": 17.791855112,
+          "tolerance": 1e-06,
+          "velocityChange": 6.345632355545644e-07
+        },
+        "guideCertificate": {
+          "case": "cavity",
+          "cells": 4096,
+          "defaultConvection": "face-limited-linear",
+          "defaultMethod": "newton-krylov",
+          "directVsCertifiedTarget": {
+            "pressureGaugeOffset_m2_s2": 7.815520104153197e-07,
+            "pressureMaximum_m2_s2": 2.8908471462469673e-06,
+            "pressureRms_m2_s2": 1.0798461369945002e-06,
+            "velocityMaximum_m_s": 7.907653770242775e-06,
+            "velocityRms_m_s": 4.474246512550302e-06
+          },
+          "evaluationCostRatio": 1.2256410256410257,
+          "n": 64,
+          "prefix": "outputs/cloud-laminar/guide-cavity-64",
+          "rawSha256": {
+            "-certified.cells.csv": "06e691d466c191206323111a52f03f2087f6d5e7b46d55e3551dcc16bd8c0984",
+            "-direct.cells.csv": "48fe09e113585c36fb7a2e0df029f6b2d57aa52ce657d3f661d8e6f5f9795745",
+            "-guide.cells.csv": "f685980bc552145942df1240b9c4c20e74965a54cb174379bee7185d56a9930b",
+            ".json": "22967db9e6039f1555ab4c3d268ade822716e02835f7af01e51d5b19967d1a94"
+          },
+          "runs": {
+            "certifiedTarget": {
+              "continuity": 9.631400020517107e-13,
+              "converged": true,
+              "evaluations": 196,
+              "maximumSpeedRatio": 0.9521612938659395,
+              "momentumResidual": 4.200502801074054e-08,
+              "nu": 0.01,
+              "pressureChange": 5.2705978635397664e-08,
+              "pressureRangeRatio": 2.977581048361407,
+              "seconds": 4.269144925,
+              "tolerance": 1e-06,
+              "velocityChange": 7.860211275389774e-08
+            },
+            "direct": {
+              "continuity": 5.456191054520332e-13,
+              "converged": true,
+              "evaluations": 195,
+              "maximumSpeedRatio": 0.9521606165730023,
+              "momentumResidual": 5.677768526752812e-08,
+              "nu": 0.01,
+              "pressureChange": 1.040281918638056e-07,
+              "pressureRangeRatio": 2.977579465602158,
+              "seconds": 4.48651983,
+              "tolerance": 1e-06,
+              "velocityChange": 1.208411819056331e-07
+            },
+            "guide": {
+              "continuity": 4.1744385725905886e-13,
+              "converged": true,
+              "evaluations": 43,
+              "maximumSpeedRatio": 0.9522447762465669,
+              "momentumResidual": 7.166176387387589e-05,
+              "nu": 0.1,
+              "pressureChange": 0.00019991716279835453,
+              "pressureRangeRatio": 27.335821859401797,
+              "seconds": 1.025418966,
+              "tolerance": 0.001,
+              "velocityChange": 0.00021509354655298377
+            }
+          },
+          "schema": 1
+        },
+        "guideCertificateEvaluations": 239
+      },
       "guideTolerance": 0.001,
       "normalGrid": {
         "costRatioToDirect": 1.4950980392156863,
@@ -1266,9 +1366,110 @@
           }
         ]
       },
+      "straightChannel64": {
+        "directAndAndersonEvaluations": 77,
+        "directVsAndersonDistance": {
+          "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+          "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 3.121082924085974e-05,
+          "maximumVelocityVectorDifferenceOverReferenceSpeed": 2.6921578029230493e-05,
+          "pressureRmsOverReferenceSpeedSquared": 1.69607943119658e-05,
+          "velocityRmsOverReferenceSpeed": 1.2348873990195773e-05
+        },
+        "flatAnderson": {
+          "case": "channel",
+          "cells": 16384,
+          "continuity": 4.758738106523259e-13,
+          "converged": true,
+          "evaluations": 39,
+          "method": "anderson",
+          "momentumResidual": 1.2535286203643883e-07,
+          "n": 64,
+          "nu": 0.1,
+          "prefix": "outputs/cloud-laminar/channel-face-limited-linear-64-anderson-tol1e6",
+          "pressureChange": 3.253215155848724e-07,
+          "pressureGaugeOffset_m2_s2": 0,
+          "pressureMax_m2_s2": 0.004860648984874594,
+          "pressureRms_m2_s2": 0.0007261581285324289,
+          "rawSha256": {
+            ".cells.csv": "512bbae18d328d7426fbf8af6f546e4a3bf74e2b4b1bb7c1c40cb284e32cca3a",
+            ".json": "1f3f7daadf9e278c6c7f9eaaa3319b42e792744e3e3f61439fb8d4cdeae55588"
+          },
+          "scheme": "face-limited-linear",
+          "seconds": 3.433811772,
+          "tolerance": 1e-06,
+          "velocityChange": 3.755196890653411e-07,
+          "velocityMax_m_s": 0.00023217913535280503,
+          "velocityRms_m_s": 0.00010031041068068792
+        },
+        "guideCertificate": {
+          "case": "channel",
+          "cells": 16384,
+          "defaultConvection": "face-limited-linear",
+          "defaultMethod": "newton-krylov",
+          "directVsCertifiedTarget": {
+            "pressureGaugeOffset_m2_s2": 6.659391292437159e-06,
+            "pressureMaximum_m2_s2": 1.0849617812361975e-05,
+            "pressureRms_m2_s2": 4.343089150250974e-06,
+            "velocityMaximum_m_s": 4.206127735607274e-06,
+            "velocityRms_m_s": 1.6821215919096145e-06
+          },
+          "evaluationCostRatio": 1.7894736842105263,
+          "n": 64,
+          "prefix": "outputs/cloud-laminar/guide-channel-64",
+          "rawSha256": {
+            "-certified.cells.csv": "5b550d12de7c052b6db9c347fa79ac3f71e0a12606e7f85aab975b8016780922",
+            "-direct.cells.csv": "937f37929495ab9da9c7538c86697594d8ef2a5829ba60cd118e970ebecf8515",
+            "-guide.cells.csv": "df1b03bfc3fefbe4adc87fca0371fd80e92912eefc0a1a5c3ed43cd478dd03fb",
+            ".json": "fe27da1a50e3b0505f894bf8d2f2ce2b3f8473d847747e3778684691618b0815"
+          },
+          "runs": {
+            "certifiedTarget": {
+              "continuity": 3.66429509077084e-13,
+              "converged": true,
+              "evaluations": 60,
+              "maximumSpeedRatio": 0.9997558465142399,
+              "momentumResidual": 1.3880589894952974e-08,
+              "nu": 0.1,
+              "pressureChange": 1.1814475135581273e-07,
+              "pressureRangeRatio": 3.186359864194437,
+              "seconds": 7.127216831,
+              "tolerance": 1e-06,
+              "velocityChange": 3.2904936657120546e-08
+            },
+            "direct": {
+              "continuity": 4.951348982510859e-13,
+              "converged": true,
+              "evaluations": 38,
+              "maximumSpeedRatio": 0.9997558463562035,
+              "momentumResidual": 2.6556406556719052e-08,
+              "nu": 0.1,
+              "pressureChange": 3.1711011796240674e-07,
+              "pressureRangeRatio": 3.186376039560977,
+              "seconds": 4.636598715,
+              "tolerance": 1e-06,
+              "velocityChange": 8.091236559954438e-08
+            },
+            "guide": {
+              "continuity": 4.156920237175475e-13,
+              "converged": true,
+              "evaluations": 8,
+              "maximumSpeedRatio": 0.9997554712513655,
+              "momentumResidual": 1.863511776085867e-06,
+              "nu": 1,
+              "pressureChange": 0.0002924017923309208,
+              "pressureRangeRatio": 31.84560127093176,
+              "seconds": 1.009210892,
+              "tolerance": 0.001,
+              "velocityChange": 5.328158040517877e-06
+            }
+          },
+          "schema": 1
+        },
+        "guideCertificateEvaluations": 68
+      },
       "targetTolerance": 1e-06
     },
-    "qualification": "The square-root guide tolerance reduces certificate cost and exposes the retained bad mesh at the product default tolerance, while the neighboring normal mesh remains on the same branch. Certificate overhead is still 26.8% on the bad mesh and 49.5% on the normal mesh, and internal/closed-flow coverage is not yet available. This is insufficient for an automatic default, fallback, or physical branch-selection rule.",
+    "qualification": "The square-root guide tolerance reduces certificate cost and exposes the retained bad mesh at the product default tolerance, while the neighboring normal mesh remains on the same branch. The straight-channel and closed-cavity controls also remain on their direct branches within the target tolerance scale, at 1.79x and 1.23x direct evaluation cost. These 68/239 evaluation guide certificates are cheaper than the same-tolerance direct-plus-Anderson controls at 77/1286 evaluations. Together with 26.8% overhead on the bad mesh and 49.5% on the normal external mesh, this remains insufficient for an automatic default, fallback, or physical branch-selection rule.",
     "strictResearchTolerance": {
       "badGrid": {
         "costReductionRelativeToStrictGuide": 0.13786146603900473,
@@ -1397,6 +1598,6 @@
       "targetTolerance": 1e-08
     }
   },
-  "schema": "cartmesh2d.native-laminar-branch-continuation.v4",
+  "schema": "cartmesh2d.native-laminar-branch-continuation.v5",
   "scope": "Native fixed-geometry Re=20 cylinder branch selection and geometry-only quadratic consistency; no cells omitted and no product acceptance threshold added."
 }

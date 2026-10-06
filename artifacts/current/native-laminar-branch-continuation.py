@@ -141,6 +141,20 @@ def accuracy_summary(prefix: str) -> dict:
     return result
 
 
+def guide_certificate(prefix: str) -> dict:
+    """Read one native default/guide/default run and retain every field hash."""
+    path = ROOT / f"outputs/cloud-laminar/{prefix}.json"
+    result = json.loads(path.read_text())
+    result["prefix"] = str(path.with_suffix("").relative_to(ROOT))
+    result["rawSha256"] = {
+        suffix: sha256(ROOT / f"outputs/cloud-laminar/{prefix}{suffix}")
+        for suffix in (
+            ".json", "-direct.cells.csv", "-guide.cells.csv", "-certified.cells.csv"
+        )
+    }
+    return result
+
+
 def topology(prefix: str) -> dict:
     path = RUN / f"{prefix}.topology-spectrum.csv"
     with path.open(newline="") as stream:
@@ -250,6 +264,14 @@ channel_default = accuracy_summary("channel-face-limited-linear-64")
 channel_anderson = accuracy_summary("channel-face-limited-linear-64-anderson")
 cavity_default = accuracy_summary("cavity-face-limited-linear-64")
 cavity_anderson = accuracy_summary("cavity-face-limited-linear-64-anderson")
+channel_guide_certificate = guide_certificate("guide-channel-64")
+cavity_guide_certificate = guide_certificate("guide-cavity-64")
+channel_anderson_default_tolerance = accuracy_summary(
+    "channel-face-limited-linear-64-anderson-tol1e6"
+)
+cavity_anderson_default_tolerance = accuracy_summary(
+    "cavity-face-limited-linear-64-anderson-tol1e6"
+)
 
 external_prefix = "far-20-fixed128-grid1-face-limited-linear"
 custom_prefix = "far-20-fixed128-grid1-custom-flat"
@@ -265,7 +287,7 @@ nu1_two_stage_cost = grid1_stages[0]["coupledEvaluations"] + grid1_short_from_nu
 nu05_two_stage_cost = grid1_short_nu05["coupledEvaluations"] + grid1_short_from_nu05["coupledEvaluations"]
 nu02_two_stage_cost = grid1_short_nu02["coupledEvaluations"] + grid1_short_from_nu02["coupledEvaluations"]
 evidence = {
-    "schema": "cartmesh2d.native-laminar-branch-continuation.v4",
+    "schema": "cartmesh2d.native-laminar-branch-continuation.v5",
     "scope": (
         "Native fixed-geometry Re=20 cylinder branch selection and geometry-only "
         "quadratic consistency; no cells omitted and no product acceptance threshold added."
@@ -504,12 +526,47 @@ evidence = {
                     "far-20-fixed128-grid0-target-from-guide-tol1e3-to1e6",
                 ),
             },
+            "straightChannel64": {
+                "guideCertificate": channel_guide_certificate,
+                "flatAnderson": channel_anderson_default_tolerance,
+                "directVsAndersonDistance": normalized_field_distance_paths(
+                    ROOT / "outputs/cloud-laminar/guide-channel-64-direct.cells.csv",
+                    ROOT / "outputs/cloud-laminar/channel-face-limited-linear-64-anderson-tol1e6.cells.csv",
+                ),
+                "guideCertificateEvaluations": (
+                    channel_guide_certificate["runs"]["guide"]["evaluations"]
+                    + channel_guide_certificate["runs"]["certifiedTarget"]["evaluations"]
+                ),
+                "directAndAndersonEvaluations": (
+                    channel_guide_certificate["runs"]["direct"]["evaluations"]
+                    + channel_anderson_default_tolerance["evaluations"]
+                ),
+            },
+            "closedCavity64": {
+                "guideCertificate": cavity_guide_certificate,
+                "flatAnderson": cavity_anderson_default_tolerance,
+                "directVsAndersonDistance": normalized_field_distance_paths(
+                    ROOT / "outputs/cloud-laminar/guide-cavity-64-direct.cells.csv",
+                    ROOT / "outputs/cloud-laminar/cavity-face-limited-linear-64-anderson-tol1e6.cells.csv",
+                ),
+                "guideCertificateEvaluations": (
+                    cavity_guide_certificate["runs"]["guide"]["evaluations"]
+                    + cavity_guide_certificate["runs"]["certifiedTarget"]["evaluations"]
+                ),
+                "directAndAndersonEvaluations": (
+                    cavity_guide_certificate["runs"]["direct"]["evaluations"]
+                    + cavity_anderson_default_tolerance["evaluations"]
+                ),
+            },
         },
         "qualification": (
             "The square-root guide tolerance reduces certificate cost and exposes the retained "
             "bad mesh at the product default tolerance, while the neighboring normal mesh remains "
-            "on the same branch. Certificate overhead is still 26.8% on the bad mesh and 49.5% "
-            "on the normal mesh, and internal/closed-flow coverage is not yet available. This is "
+            "on the same branch. The straight-channel and closed-cavity controls also remain on "
+            "their direct branches within the target tolerance scale, at 1.79x and 1.23x direct "
+            "evaluation cost. These 68/239 evaluation guide certificates are cheaper than the "
+            "same-tolerance direct-plus-Anderson controls at 77/1286 evaluations. Together with "
+            "26.8% overhead on the bad mesh and 49.5% on the normal external mesh, this remains "
             "insufficient for an automatic default, fallback, or physical branch-selection rule."
         ),
     },
@@ -529,6 +586,14 @@ evidence = {
         "topologySourceSha256": sha256(ROOT / "artifacts/current/native-laminar-topology-spectrum.cpp"),
         "boundaryAdapterSource": "artifacts/current/native-laminar-external-boundary.cpp",
         "boundaryAdapterSourceSha256": sha256(ROOT / "artifacts/current/native-laminar-external-boundary.cpp"),
+        "guideCertificateSource": "artifacts/current/native-laminar-guide-certificate.cpp",
+        "guideCertificateSourceSha256": sha256(
+            ROOT / "artifacts/current/native-laminar-guide-certificate.cpp"
+        ),
+        "guideCertificateBinary": "outputs/cloud-laminar/guide-certificate",
+        "guideCertificateBinarySha256": sha256(
+            ROOT / "outputs/cloud-laminar/guide-certificate"
+        ),
     },
     "qualification": {
         "productAlgorithmChanged": False,
@@ -538,10 +603,11 @@ evidence = {
         "fullNativeSuiteRerun": False,
         "frontendOrAppRerun": False,
         "conclusion": (
-            "Two-stage viscosity continuation recovered the same bounded branch on the known bad "
-            "mesh with 35.8% fewer evaluations than the four-stage path and reproduced the existing "
-            "bounded branch on the coarse mesh. Its 1.42x direct-solve cost, limited mesh evidence "
-            "and unresolved branch-selection semantics remain insufficient for a default change."
+            "At product tolerance the square-root guide certificate still exposes the retained "
+            "bad external mesh, while a normal external mesh, a straight channel and a closed "
+            "cavity reproduce their direct branches. The 1.23x--1.79x normal-case evaluation "
+            "cost and unresolved physical branch-selection semantics remain insufficient for a "
+            "default change."
         ),
     },
 }

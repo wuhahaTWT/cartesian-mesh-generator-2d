@@ -241,7 +241,29 @@ python3 artifacts/current/native-laminar-fixed-cylinder-pressure.py --skip-runs
 
 缩短路径复用同一原生 CLI 和同一 `1e-8` 严格门，只改变前一级已接受场。平坦启动 `.2→.1` 的两级均严格收敛，却保留高幅值支路，总成本 `680+467=1147`；平坦启动 `.5→.1` 和 `1→.1` 分别以 `735+762=1497`、`715+772=1487` 次回到四级路径的同一有界终点。后者是当前最低已验证有界成本，比四级少 `35.8%`，但仍为直接异常解成本的 `1.42` 倍。正常粗网格的 `1→.1` 为 `275+262=537` 次，终点与直接解的全单元面积加权速度 RMS 差 `1.15e-9 Uref`、去规范压力 RMS 差 `1.99e-10 Uref²`。后处理的 `normalized_field_distance` 使用所有单元面积权重，压力差仅移除全域面积均值以消除不可压规范；不删格，也不以该差值决定哪条支路正确。生成初值 CSV 时保留目标网格逐行 `cell,x,y,u,v,p`，不作空间插值。
 
-引导成本对照另采用不依赖案例幅值的容差关系：`νguide=10νtarget`，`tolguide=sqrt(toltarget)`，终档仍使用未经放宽的目标方程和目标容差。`toltarget=1e-8` 时，中档反例的两级成本由严格引导的 1,487 次降到 `459+823=1,282`，正常粗档由 537 次降到 `155+263=418`；反例终点相对严格引导终点的全场速度 RMS/最大向量差为 `1.15e-8/5.63e-7 Uref`，去规范压力 RMS/最大差为 `7.00e-9/1.59e-5 Uref²`。产品默认 `toltarget=1e-6` 另做独立真实运行：反例平坦直解 792 次仍落在高幅值支路，引导 `398` 次加终档 `606` 次回到有界支路，总成本为直解的 `1.268` 倍；正常粗档直解 204 次，引导加终档 `127+178=305` 次，两个终点的速度 RMS 差 `1.62e-7 Uref`、去规范压力 RMS 差 `2.47e-8 Uref²`。这组平方根关系只减少探针成本，不构成物理解选择原理；当前不接入 API/CLI 或默认，也不把幅值诊断升级为拒绝阈值。原始命令输出、四类场文件哈希和所有规范不变差异由同一 `native-laminar-branch-continuation.py` v4 生成。
+引导成本对照另采用不依赖案例幅值的容差关系：`νguide=10νtarget`，`tolguide=sqrt(toltarget)`，终档仍使用未经放宽的目标方程和目标容差。`toltarget=1e-8` 时，中档反例的两级成本由严格引导的 1,487 次降到 `459+823=1,282`，正常粗档由 537 次降到 `155+263=418`；反例终点相对严格引导终点的全场速度 RMS/最大向量差为 `1.15e-8/5.63e-7 Uref`，去规范压力 RMS/最大差为 `7.00e-9/1.59e-5 Uref²`。产品默认 `toltarget=1e-6` 另做独立真实运行：反例平坦直解 792 次仍落在高幅值支路，引导 `398` 次加终档 `606` 次回到有界支路，总成本为直解的 `1.268` 倍；正常粗档直解 204 次，引导加终档 `127+178=305` 次，两个终点的速度 RMS 差 `1.62e-7 Uref`、去规范压力 RMS 差 `2.47e-8 Uref²`。
+
+`native-laminar-guide-certificate.cpp` 在同一进程、逐字节相同的最终网格上运行直接目标、平方根容差高黏度引导和从引导场启动的原目标；保留三份完整单元场，以全部单元面积权重比较速度，并只移除压力差的面积均值。它不建立独立方程、误差门或分支选择规则。64 档直通道在默认 `1e-6` 下的完整评估为 `38` 对 `8+60`，目标终点速度/去规范压力 RMS 差 `1.68e-6/4.34e-6`；Re=100 方腔为 `195` 对 `43+196`，差 `4.47e-6/1.08e-6`。同容差的平坦 Anderson 对照分别为 39/1091 次，因此直接 Newton + Anderson 的双路径成本为 77/1286 次，高黏度证书的 68/239 次更低。运行和再生成命令为：
+
+```sh
+g++ -std=c++20 -O2 -Iinclude \
+  artifacts/current/native-laminar-guide-certificate.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a \
+  -o outputs/cloud-laminar/guide-certificate
+outputs/cloud-laminar/guide-certificate channel 64 1e-6 \
+  outputs/cloud-laminar/guide-channel-64
+outputs/cloud-laminar/guide-certificate cavity 64 1e-6 \
+  outputs/cloud-laminar/guide-cavity-64
+outputs/cloud-laminar/accuracy-probe-anderson channel 64 1e-6 \
+  face-limited-linear anderson \
+  outputs/cloud-laminar/channel-face-limited-linear-64-anderson-tol1e6
+outputs/cloud-laminar/accuracy-probe-anderson cavity 64 1e-6 \
+  face-limited-linear anderson \
+  outputs/cloud-laminar/cavity-face-limited-linear-64-anderson-tol1e6
+python3 artifacts/current/native-laminar-branch-continuation.py
+```
+
+这组平方根关系只减少探针成本，不构成物理解选择原理；当前不接入 API/CLI 或默认，也不把幅值诊断升级为拒绝阈值。原始命令输出、各路径完整场哈希和所有规范不变差异由同一 `native-laminar-branch-continuation.py` v5 生成。
 
 独立算法交叉检查保持目标方程、网格和全部最终严格门不变，只把显式稳态加速器切换为既有 Anderson。正常 4,716 格圆柱直接运行 276 次，与 Newton 场的速度/去规范压力面积 RMS 差为 `1.30e-8 Uref/1.76e-9 Uref²`；直通道 64 档和 Re=100 方腔 64 档分别用下列命令运行 123/1,145 次，并与 Newton 场保持约 `1e-6` 或更小的全场差异：
 
@@ -266,7 +288,7 @@ g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 python3 artifacts/current/native-laminar-branch-continuation.py
 ```
 
-本批不改产品方程、默认、质量门或接受状态语义。若把黏度延拓发展为产品候选，必须先在通道、强迫涡、方腔、固定/联合圆环、更多 Re/几何外流及失败/取消/旧工况上证明分支选择、完整成本和确定性，不能把已知反例硬编码成阶段表；双路径不一致只能证明分支风险，不能静默把延拓支路宣布为物理解。
+本批不改产品方程、默认、质量门或接受状态语义。若把黏度延拓发展为产品候选，已有通道和方腔正常支路控制仍须扩展到强迫涡、固定/联合圆环、更多 Re/几何外流及失败/取消/旧工况，并证明双候选场保留、完整成本和确定性；不能把已知反例硬编码成阶段表。双路径不一致只能证明分支风险，不能静默把延拓支路宣布为物理解。
 
 固定 128 段圆环 level 4--8 另复用 `native-laminar-pressure-probe.cpp`，对解析压力调用产品 `buildFlowGradientStencil2D`、`pressureFaceValues` 和 `conservativePressureGradient`。面积加权保守梯度 RMS 为 `0.04075→0.01661→0.007133→0.003365→0.001306 m/s²`；数值压力峰值仍不收敛，最差格梯度矩阵条件数却仅 `2.22–9.53`（粗档 `8.11`）。因此本批不修改压力重构权重或门槛：现有证据反对一般重构退化，却仍保留规定迹角点压力未资格。原始 CSV、当前默认圆柱的逐字节复算、筛选测试及哈希见 `native-laminar-curved-pressure-profile.json`。
 
