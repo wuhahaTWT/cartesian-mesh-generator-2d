@@ -47,6 +47,33 @@ test('Euler job retains prior complete result on failure and binds imported rest
   }finally{await fs.rm(directory,{recursive:true,force:true});}
 });
 
+test('unfinished Euler runs require native validation and retain the saved checkpoint unchanged',async()=>{
+  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'cm2d-euler-unfinished-'));
+  try {
+    const meshPath=path.join(directory,'mesh.solver.cm2d');await fs.writeFile(meshPath,fixture.mesh);
+    const currentResult={cm2dPath:meshPath,outputDirectory:directory};
+    const runner=async(_exe,args)=>{const prefix=args[args.indexOf('--output')+1];await Promise.all(Object.entries(fixture.files).map(([suffix,text])=>fs.writeFile(prefix+suffix,text)));return {code:0,stderr:''};};
+    const complete=await runEulerJob({currentResult,mesh,request,executable:x=>x,runProcess:runner,signal:new AbortController().signal});
+    const manifest=path.join(directory,complete.manifest),record=JSON.parse(await fs.readFile(manifest));
+    record.status='running';delete record.acceptedTime;delete record.checkpointSha256;
+    const manifestText=JSON.stringify(record);await fs.writeFile(manifest,manifestText);
+    await assert.rejects(()=>importEulerRestart(manifest,mesh,meshPath),/原生程序/);
+    let calls=0;
+    const validation={executable:x=>x,runProcess:async(_exe,args)=>{
+      calls++;assert.ok(args.includes('--inspect-restart'));assert.ok(!args.includes('--output')&&!args.includes('--restart'));
+      return {code:0,stdout:JSON.stringify({type:'euler-checkpoint',time:.02,steps:currentResult.eulerRestart.metadata.steps,cells:mesh.cells.length})};
+    }};
+    const restored=await importEulerRestart(manifest,mesh,meshPath,validation);
+    assert.equal(calls,1);assert.equal(restored.metadata.unfinished,true);assert.equal(restored.metadata.time,.02);
+    assert.equal(await fs.readFile(manifest,'utf8'),manifestText);
+    assert.equal(await fs.readFile(restored.path,'utf8'),fixture.files['.checkpoint']);
+    await assert.rejects(()=>importEulerRestart(manifest,mesh,meshPath,{...validation,runProcess:async()=>{throw new Error('native physical boundary mismatch');}}),/boundary mismatch/);
+    await assert.rejects(()=>importEulerRestart(manifest,mesh,meshPath,{...validation,runProcess:async(...args)=>{
+      const result=await validation.runProcess(...args);await fs.appendFile(restored.path,'\n');return result;
+    }}),/校验期间/);
+  }finally{await fs.rm(directory,{recursive:true,force:true});}
+});
+
 test('Euler numerical method selection is explicit and legacy requests remain reproducible',()=>{
   const selected={...request,fluxScheme:'hllc',order:2};
   const invocation=buildEulerInvocation('/tmp/mesh.solver.cm2d','/tmp/run',selected);

@@ -471,7 +471,7 @@ app.whenReady().then(async () => {
     const selected=await dialog.showOpenDialog(mainWindow,{title:'选择 Euler 结果目录中的 desktop-state.json',filters:[{name:'Euler 续算清单',extensions:['json']}],properties:['openFile']});
     if(selected.canceled)return null;
     const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
-    currentResult.eulerRestart=await importEulerRestart(selected.filePaths[0],mesh,currentResult.cm2dPath);
+    currentResult.eulerRestart=await importEulerRestart(selected.filePaths[0],mesh,currentResult.cm2dPath,{executable,runProcess,signal:operation.signal});
     return currentResult.eulerRestart.metadata;
   }));
 

@@ -1344,6 +1344,7 @@ function updateEulerControls() {
   if(channel)$('eulerScope').textContent='下方指定初始场与入口参考状态；左右端面分别为特征入口和静压出口，其余边界采用所选壁面条件。开边界采用零黏性牵引与零导热通量。';
   $('eulerRestartInfo').textContent=restart?`可续算到 t=${restart.time.toPrecision(6)} s 的已接受状态（${restart.steps}步）。物理参数锁定，目标时间需更晚；取消续算则从初始场重新计算。`:'每25步保存一次，正常结束或取消时再次保存。重开App后，先生成同一网格，再选择结果目录的 desktop-state.json。';
   if(restart?.steps===0)$('eulerRestartInfo').textContent='仅保存了初始状态，尚未接受任何时间步。可以保留物理参数重新尝试推进；这不是完成计算的检查点。';
+  if(restart?.unfinished)$('eulerRestartInfo').textContent+=' 原运行没有完成记录；这里只恢复已保存状态。';
 }
 function applyEulerRestart() {
   if($('eulerResume').checked&&state.eulerRestart) {
@@ -1426,7 +1427,7 @@ $('eulerMode').addEventListener('change',()=>{
 for(const input of document.querySelectorAll('#eulerBlock input[type=number]'))input.addEventListener('change',()=>{if(state.euler)clearEulerBinding();updateEulerControls();});
 $('pickEulerCheckpoint').addEventListener('click',async()=>{
   if(state.busy||!state.result)return;setBusy(true);
-  try{const selected=await window.cartmesh.pickEulerCheckpoint();if(selected){state.eulerRestart=selected;$('eulerResume').checked=true;applyEulerRestart();status('可压续算清单已载入','原生计算开始前还会核对完整网格与物理边界。');}}
+  try{const selected=await window.cartmesh.pickEulerCheckpoint();if(selected){clearEulerBinding();state.eulerRestart=selected;$('eulerResume').checked=true;applyEulerRestart();status('可压续算清单已载入',selected.unfinished?'已由原生程序核对保存状态；原运行尚未完成，可设置更晚时间继续。':'原生计算开始前还会核对完整网格与物理边界。');}}
   catch(error){status('可压续算载入失败',error.message);log(error.message);}finally{setBusy(false);}
 });
 window.cartmesh.onEulerProgress(progress=>{

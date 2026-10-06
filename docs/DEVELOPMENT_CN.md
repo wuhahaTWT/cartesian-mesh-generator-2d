@@ -206,6 +206,21 @@ build/cartmesh2d_euler_cli --mesh final.solver.cm2d --output outputs/euler/run -
 
 最后一条用短时功能测试物性，不是空气推荐值。精度脚本可能需数分钟，Windows 预算更长；日常只选相关项，完整范围与未验物理问题见当前状态。
 
+### 可压未完成清单的原生恢复
+
+进程被强制结束时，原子写入的 euler.checkpoint 可能完好，而 desktop-state.json 仍是 running。App 读取此类清单时调用原生 --inspect-restart，复用 readEulerCheckpoint2D 的完整几何、气体、输运、边界及正状态检查；校验前后文件哈希须保持不变，随后仅建立新的续算绑定。原清单不被改成 complete，检查点不被覆盖，零步初值仍与接受步区分。已有 complete/failed/cancelled 清单继续核对保存的 SHA 和接受时间。
+
+只读检查使用原运行的全部物理参数，移除 --output，将 --restart 改成 --inspect-restart；未带 --restart 的原命令直接加入 --inspect-restart FILE。它不推进、不导出，也不要求新终点晚于检查点；真正续算仍要求更晚终点并再次核对完整状态。输出是含 time、steps、cells 的 euler-checkpoint JSON，不是收敛或完成证明。
+
+相关回归使用现有原生通道和 App 测试入口：
+
+    cmake --build build --target cartmesh2d_euler_cli --parallel 2
+    ctest --test-dir build -R '^cartmesh2d_compressible_cloud_cli$' --output-on-failure
+    node --test desktop/tests/euler.test.js
+    node desktop/scripts/build-native.js
+
+最后一条使 App 自带程序获得相同入口；构建成功不能代替重开 App 的实际交互验证。实际完成范围和平台限制见当前状态。
+
 ### 可压 App 控制与真实流程复现
 
 `desktop/src/core/euler.js` 将物理条件、数值格式及停止目标分别归一化；`euler-job.js` 从续算清单恢复完整物理绑定。隐式两阶段输出保留正性、EOS、守恒和诊断一致性检查，只去掉不适用的显式 CFL 上限。SDIRK2 摘要的声学速率与导出的各面阶段最大波速严格对应；稳态完成在常规 25 步保存间隔前也会发送最后进度。已有旧显式清单按原默认值读取。

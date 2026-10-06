@@ -28,6 +28,22 @@ with tempfile.TemporaryDirectory(prefix="cartmesh-cloud-") as folder:
     assert limited["acceptedSteps"] == 2 and "budget" in limited["failure"]
     run("resumed", ["--restart", str(root/"limited.checkpoint")])
     assert (root/"full.checkpoint").read_bytes() == (root/"resumed.checkpoint").read_bytes()
+    # Recovery of an unfinished desktop run must reuse the full native reader
+    # without advancing or overwriting any result, even at/beyond the old goal.
+    original_checkpoint = (root/"full.checkpoint").read_bytes()
+    original_names = set(root.iterdir())
+    def inspect(options=(), expected=0):
+        process = subprocess.run([*common, "--inspect-restart", str(root/"full.checkpoint"), *options],
+                                 cwd=root, capture_output=True, text=True, timeout=30)
+        assert process.returncode == expected, process.stderr
+        assert (root/"full.checkpoint").read_bytes() == original_checkpoint
+        assert set(root.iterdir()) == original_names
+        return process
+    inspected = json.loads(inspect(["--end-time", "1e-10"]).stdout)
+    assert inspected == {"type":"euler-checkpoint", "time":full["time"], "steps":full["steps"], "cells":full["cells"]}
+    inspect(["--outlet-pressure", "101831.625"], 1)
+    inspect(["--viscosity", "2e-5"], 1)
+    inspect(["--output", str(root/"full")], 1)
     steady = run("steady-short", ["--mode", "steady", "--steady-scale", "5.76e-6", "--steady-tolerance", "1e-5"], 2)
     assert not steady["steadyConverged"] and not steady["targetReached"] and "horizon" in steady["failure"]
     budget = run("budget", ["--max-seconds", "0.000001"], 2)

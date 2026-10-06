@@ -10,14 +10,27 @@ async function readCheckpoint(file,mesh,request) {
   const text=await fs.readFile(file,'utf8'),state=eulerCheckpoint(text,mesh,request);
   return {path:file,metadata:{time:state.time,steps:state.steps,request,sha256:hash(text)}};
 }
-async function importEulerRestart(file,mesh,meshPath) {
+async function importEulerRestart(file,mesh,meshPath,validation={}) {
   const stat=await fs.stat(file);if(stat.size>65536)throw new Error('Euler 续算清单过大。');
   const record=JSON.parse(await fs.readFile(file,'utf8'));
-  if(record?.format!==manifestFormat||!['complete','failed','cancelled'].includes(record.status)||record.checkpoint!=='euler.checkpoint')throw new Error('请选择 Euler 结果目录中的 desktop-state.json。');
+  if(record?.format!==manifestFormat||!['complete','failed','cancelled','running'].includes(record.status)||record.checkpoint!=='euler.checkpoint')throw new Error('请选择 Euler 结果目录中的 desktop-state.json。');
   const request=validateEulerRequest(record.request);
   if(record.meshSha256!==hash(await fs.readFile(meshPath)))throw new Error('Euler 续算需要同一最终网格。');
   const state=await readCheckpoint(path.join(path.dirname(file),'euler.checkpoint'),mesh,request);
-  if(state.metadata.sha256!==record.checkpointSha256||state.metadata.time!==record.acceptedTime)throw new Error('Euler 检查点与清单不一致。');
+  if(record.status==='running') {
+    // A hard stop can leave the atomic native checkpoint newer than the run
+    // manifest. Only the native reader owns full geometry/boundary validation.
+    if(!validation.executable||!validation.runProcess)throw new Error('未完成运行的检查点须经原生程序校验后恢复。');
+    const invocation=buildEulerInvocation(meshPath,'',{...request,resume:true},state.path);
+    invocation.args.splice(invocation.args.indexOf('--output'),2);
+    invocation.args[invocation.args.indexOf('--restart')]='--inspect-restart';
+    const result=await validation.runProcess(validation.executable(invocation.executable),invocation.args,()=>{},validation.signal,0,[0]);
+    const inspected=JSON.parse(result.stdout.trim());
+    if(inspected.type!=='euler-checkpoint'||inspected.time!==state.metadata.time||inspected.steps!==state.metadata.steps||inspected.cells!==mesh.cells.length)throw new Error('原生检查点校验与已读取状态不一致。');
+    if(hash(await fs.readFile(state.path))!==state.metadata.sha256||hash(await fs.readFile(meshPath))!==record.meshSha256)throw new Error('校验期间 Euler 检查点或网格发生变化，请停止原计算后重新载入。');
+    validation.signal?.throwIfAborted();
+    state.metadata.unfinished=true;
+  }else if(state.metadata.sha256!==record.checkpointSha256||state.metadata.time!==record.acceptedTime)throw new Error('Euler 检查点与清单不一致。');
   return state;
 }
 async function runEulerJob({currentResult,mesh,request,executable,runProcess,signal,onProgress=()=>{},log=()=>{}}) {

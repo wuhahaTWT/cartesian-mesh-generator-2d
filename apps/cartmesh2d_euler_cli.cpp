@@ -114,6 +114,7 @@ std::vector<EulerBoundary2D> readBoundaries(const std::string& path,const FvMesh
 int main(int argc,char** argv) {
  try {
     std::string meshPath,prefix,problem="sod",boundaryPath,exportBoundary,restart;
+    bool inspectRestart=false;
     EulerTransport2D transport;HeatBoundaryKind2D wallThermal=HeatBoundaryKind2D::Insulated;double wallValue=0;bool specifiedWall=false;std::string wallModel="slip";bool specifiedWallModel=false;
     IdealGas2D gas;EulerPrimitive2D reference{1,0,0,1};EulerStepControls2D controls;
     double endTime=.2,split=.5,beta=5,maximumSeconds=180;std::size_t maximumSteps=100000,checkpointEvery=25;
@@ -151,13 +152,17 @@ int main(int argc,char** argv) {
                 "Pressure outlet: unidirectional subsonic static pressure; backflow/choking fail explicitly, supersonic flow extrapolates.\n"
                 "--export-boundaries FILE exports the selected preset without solving.\n"
                 "--restart PREFIX.checkpoint --checkpoint-every 25 --max-steps 100000 --max-seconds 180\n"
+                "--inspect-restart FILE checks the full mesh, gas, transport, boundaries and saved state; reads only, no --output.\n"
                 "SI density kg/m3, absolute pressure Pa, velocity m/s, R J/(kg K); unit-depth integrals.\n"
                 "Outputs .json .fields.json .cells.csv .faces.csv .history.csv .vtk .checkpoint .boundaries\n";return 0;
         }
         require(i+1<argc,"missing value for "+arg);const std::string value=argv[++i];
         if(arg=="--mesh")meshPath=value;else if(arg=="--output")prefix=value;else if(arg=="--case")problem=value;
         else if(arg=="--boundary")boundaryPath=value;else if(arg=="--export-boundaries")exportBoundary=value;
-        else if(arg=="--restart")restart=value;
+        else if(arg=="--restart"||arg=="--inspect-restart") {
+            require(restart.empty(),"provide only one restart input");
+            restart=value;inspectRestart=arg=="--inspect-restart";
+        }
         else if(arg=="--inlet-total-pressure")inletTotalPressure=number(value);
         else if(arg=="--inlet-total-temperature")inletTotalTemperature=number(value);
         else if(arg=="--initial-pressure-perturbation")initialPressurePerturbation=number(value);
@@ -190,7 +195,8 @@ int main(int argc,char** argv) {
         else if(arg=="--checkpoint-every")checkpointEvery=count(value,10000);
         else throw std::runtime_error("unknown argument "+arg);
     }
-    require(!meshPath.empty()&&(!prefix.empty()||!exportBoundary.empty()),"--mesh and --output (or --export-boundaries) required");
+    require(!meshPath.empty()&&(!prefix.empty()||!exportBoundary.empty()||inspectRestart),"--mesh and --output (or --export-boundaries / --inspect-restart) required");
+    require(!inspectRestart||(prefix.empty()&&exportBoundary.empty()),"checkpoint inspection is read-only; omit output and boundary export");
     require(meshPath.ends_with(".solver.cm2d")&&!meshPath.ends_with(".failed.solver.cm2d"),"requires final *.solver.cm2d");
     require(problem=="sod"||problem=="uniform"||problem=="external"||problem=="vortex"||problem=="thermal-wave"||problem=="shear-wave"||problem=="sealed"||problem=="channel"||problem=="custom","unknown Euler case");
     require((problem=="channel")==outletPressure.has_value(),"channel requires --outlet-pressure; custom outlet values belong in the boundary file");
@@ -288,6 +294,11 @@ int main(int argc,char** argv) {
         state.cells.push_back(eulerConservative2D(q,gas));
     }
     if(!restart.empty()) {std::ifstream in(restart);require(static_cast<bool>(in),"cannot read Euler restart");state=readEulerCheckpoint2D(in,mesh,bc,gas,problem,transport);}
+    if(inspectRestart) {
+        std::cout<<std::setprecision(17)<<"{\"type\":\"euler-checkpoint\",\"time\":"<<state.time
+            <<",\"steps\":"<<state.steps<<",\"cells\":"<<state.cells.size()<<"}\n";
+        return 0;
+    }
     require(std::abs(initialPressurePerturbation)<1,"initial pressure perturbation amplitude must be in (-1,1)");
     if(restart.empty()&&initialPressurePerturbation!=0)for(std::size_t i=0;i<state.cells.size();++i) {
         auto p=eulerPrimitive2D(state.cells[i],gas);p.pressure*=1+initialPressurePerturbation*std::sin(2*std::numbers::pi*(mesh.cells[i].centre.x-xmin)/(xmax-xmin));
