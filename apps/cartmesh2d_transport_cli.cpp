@@ -428,9 +428,12 @@ int main(int argc,char**argv) {
                 require(!stopSignal,"thermal calculation cancelled; last accepted checkpoint retained");
                 require(!adaptive||completedSteps<timeControls.limits.maximumAcceptedSteps,"thermal accepted-step budget exhausted");
                 fv::ThermalFlowResult2D attempt;
+                std::optional<fv::ThermalAttempt2D> lastAttempt;
+                std::size_t attemptCount=0;
                 if(adaptive) {
                     auto controlled=fv::advanceControlledThermalFlow2D(mesh,flowControls,thermalSetup,controls,state,timeControls,[]{return stopSignal!=0;},
                         [&](const fv::ThermalAttempt2D& a) {
+                            lastAttempt=a;++attemptCount;
                             attemptHistory<<step<<','<<a.startTime<<','<<a.timeStep<<','<<a.error<<','<<a.courant<<','<<a.velocityRelaxation<<','<<a.reason<<'\n';
                             flushOutput(attemptHistory,prefix,".attempt-history.csv");if(a.reason!="accepted")++rejectedAttempts;
                         });
@@ -469,7 +472,19 @@ int main(int argc,char**argv) {
                 if(!attempt.accepted) {
                     auto failed=output(prefix,".json");
                     failed<<"{\"status\":\"step-not-accepted\",\"converged\":false,\"failedStage\":"
-                        <<quote(adaptive?"joint-controller":attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time<<"}\n";
+                        <<quote(adaptive?"joint-controller":attempt.flow.converged?"scalar":"flow")<<",\"acceptedTime\":"<<acceptedTime<<",\"attemptedTime\":"<<time;
+                    if(lastAttempt) {
+                        const auto& a=*lastAttempt;
+                        failed<<",\"controller\":{\"reason\":"<<quote(a.reason)
+                            <<",\"attempts\":"<<attemptCount<<",\"maximumRetries\":"<<timeControls.limits.maximumRetries
+                            <<",\"timeStep\":"<<a.timeStep<<",\"minimumTimeStep\":"<<timeControls.limits.minimumStep
+                            <<",\"errorRatio\":";
+                        if(std::isfinite(a.error))failed<<a.error;else failed<<"null";
+                        failed<<",\"courant\":";
+                        if(std::isfinite(a.courant))failed<<a.courant;else failed<<"null";
+                        failed<<",\"maximumCourant\":"<<timeControls.limits.maximumCourant<<'}';
+                    }
+                    failed<<"}\n";
                     return 2;
                 }
                 std::cout<<std::setprecision(17)<<"{\"type\":\"thermal-time-step\",\"accepted\":1,\"step\":"<<step

@@ -331,3 +331,48 @@ test('thermal restart rejects a changed future event value before running or rep
   assert.equal(currentResult.thermalRestart,restart);
   assert.equal(currentResult.thermal,complete);
 });
+
+
+test('thermal failure explains the native time budget and minimum step', () => {
+  const {thermalFailureMessage}=require('../src/core/thermal');
+  const failure={acceptedTime:0,failedStage:'joint-controller',controller:{reason:'time-error',
+    timeStep:1e-6,minimumTimeStep:1e-6,errorRatio:2.8796237198236692,courant:.000433,
+    maximumCourant:1,attempts:18,maximumRetries:24}};
+  const message=thermalFailureMessage(failure,0);
+  assert.match(message,/时间缺陷.*2\.87962.*预算/);
+  assert.match(message,/最小步长.*0\.000001.*s/);
+  assert.match(message,/减小.*最小步长/);
+  assert.doesNotMatch(message,/放宽.*误差|已有.*检查点/);
+  const old=thermalFailureMessage({acceptedTime:.5,failedStage:'joint-controller'},0);
+  assert.match(old,/0\.5 s/);
+  assert.doesNotMatch(old,/最小步长|重试预算/);
+});
+
+test('thermal job failure retains old state and does not invent a startup checkpoint', async t => {
+  const fs=require('node:fs/promises'),os=require('node:os'),path=require('node:path');
+  const {runThermalJob}=require('../src/core/thermal-job');
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'thermal-failure-message-'));
+  t.after(()=>fs.rm(root,{recursive:true,force:true}));
+  const mesh=parseCm2d(RECTANGLE),currentResult={outputDirectory:root,cm2dPath:path.join(root,'mesh.solver.cm2d'),mesh};
+  const requestData=request({mode:'adaptive',endTime:.5,minDt:1e-6,maxRetries:0,timeError:true});
+  const failure={status:'step-not-accepted',converged:false,acceptedTime:0,failedStage:'joint-controller',
+    controller:{reason:'time-error',timeStep:1e-6,minimumTimeStep:1e-6,errorRatio:2.8796237198236692,
+      courant:.000433,maximumCourant:1,attempts:1,maximumRetries:0}};
+  const runProcess=async(_executable,args)=>{
+    const prefix=args[args.indexOf('--output')+1];
+    await fs.writeFile(prefix+'.json',JSON.stringify(failure));return {code:2,stdout:'',stderr:''};
+  };
+  const options={currentResult,mesh,request:requestData,executable:name=>name,runProcess,
+    signal:new AbortController().signal,onProgress:()=>{},log:()=>{}};
+  await assert.rejects(runThermalJob(options),error=>{
+    assert.match(error.message,/时间缺陷/);assert.match(error.message,/重试预算/);
+    assert.match(error.message,/尚无已接受的联合续算状态/);return true;
+  });
+  assert.equal(currentResult.thermalRestart,undefined);
+  const old={path:path.join(root,'old.thermal.checkpoint'),metadata:{time:.2}},display={summary:{time:.1}};
+  currentResult.thermalRestart=old;currentResult.thermal=display;
+  await assert.rejects(runThermalJob(options),error=>{
+    assert.match(error.message,/已保留 t=0\.2 s 的联合续算状态/);return true;
+  });
+  assert.equal(currentResult.thermalRestart,old);assert.equal(currentResult.thermal,display);
+});

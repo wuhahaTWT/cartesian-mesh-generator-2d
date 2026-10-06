@@ -190,7 +190,10 @@ const { levelColour, RAMP, SPEED_RAMP, PRESSURE_RAMP, TEMPERATURE_RAMP } = windo
 
 const fmt = value => Number(value || 0).toLocaleString('en-US');
 const log = line => { $('log').textContent += `${line}\n`; $('log').scrollTop = 1e9; };
-const status = (title, text) => { $('statusTitle').textContent = title; $('statusText').textContent = text || ''; };
+const status = (title, text, expanded = false) => {
+  $('statusTitle').textContent = title; $('statusText').textContent = text || '';
+  $('statusText').classList.toggle('expanded', expanded);
+};
 
 function importSettings() {
   return {
@@ -1407,7 +1410,8 @@ async function runThermal() {
     const message = error.message.replace(/^Error invoking remote method '[^']+': Error: /, '');
     const saved = await refreshThermalState(true).catch(() => null);
     if (saved?.restart) $('thermalResume').checked = true;
-    status(/取消/.test(message) ? '温度推进已取消' : '温度推进未完成', message.split('\n')[0] + (saved?.thermal ? ' 当前显示上次完整温度结果。' : '') + (saved?.restart ? ` 可从 t=${saved.restart.time} s 联合续算。` : ''));
+    const explanation = message.split('\n诊断文件保留在 ')[0].replace(/\n/g, ' ');
+    status(/取消/.test(message) ? '温度推进已取消' : '温度推进未完成', explanation + (saved?.thermal ? ' 当前显示上次完整温度结果。' : '') + (saved?.restart ? ` 可从 t=${saved.restart.time} s 联合续算。` : ''), true);
     log(message);
   } finally { setBusy(false); applyThermalRestartControls(); }
 }

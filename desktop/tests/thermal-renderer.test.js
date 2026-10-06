@@ -108,3 +108,38 @@ test('loading a thermal restart clears a locked vortex and preserves supported a
   assert.equal(elements.flowDt.value, '0.005');
   assert.equal(elements.flowSteps.value, '7');
 });
+
+
+test('thermal failure status exposes controller cause and preserved state while keeping file paths in the log', async () => {
+  const detail = '热计算未完成；已接受到 t=0 s。\n联合时间缺陷为 2.88 倍预算，接受上限为 1。\n最后尝试步长为 0.000001 s，已到最小步长；可减小最小步长并保持当前精度预算。';
+  for (const retained of [false, true]) {
+    const message = detail + (retained ? '\n已保留 t=0.4 s 的联合续算状态。' : '\n尚无已接受的联合续算状态。') + '\n诊断文件保留在 /example/thermal-run。';
+    const elements = {runThermal:{}, thermalResume:{checked:false}};
+    const saved = retained ? {thermal:{summary:{time:.3}}, restart:{time:.4}} : {};
+    const statuses = [], logs = [];
+    const context = {
+      $:id=>elements[id], state:{result:{},mesh:{},thermalHistory:[]},
+      validThermalInputs:()=>true, thermalRequest:()=>({resume:false}),
+      clearThermalBinding(){}, renderThermalMonitor(){}, setBusy(){}, applyThermalRestartControls(){},
+      status:(title,text,expanded)=>statuses.push({title,text,expanded}), log:text=>logs.push(text),
+      refreshThermalState:async restore=>{assert.equal(restore,true);return saved;},
+      window:{cartmesh:{runThermal:async()=>{throw new Error("Error invoking remote method 'thermal:run': Error: " + message);}}}
+    };
+    vm.createContext(context);
+    const start = source.indexOf('async function runThermal(');
+    const end = source.indexOf('\nfunction boundedFlowHistory(', start);
+    assert.ok(start>=0 && end>start);
+    vm.runInContext(source.slice(start,end),context);
+    await context.runThermal();
+    const status = statuses.at(-1);
+    assert.equal(status.title,'温度推进未完成');
+    assert.equal(status.expanded,true,'failure explanations must wrap instead of using an ellipsis');
+    assert.match(status.text,/时间缺陷为 2\.88 倍预算/);
+    assert.match(status.text,/最小步长/);
+    assert.match(status.text,retained ? /已保留 t=0\.4 s/ : /尚无已接受/);
+    assert.equal(elements.thermalResume.checked,retained);
+    assert.equal(status.text.includes('/example/thermal-run'),false);
+    if (retained) assert.match(status.text,/当前显示上次完整温度结果/);
+    assert.equal(logs.at(-1),message,'full diagnostic path remains available in the log');
+  }
+});

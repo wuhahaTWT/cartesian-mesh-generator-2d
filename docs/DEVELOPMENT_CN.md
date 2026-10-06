@@ -154,6 +154,24 @@ pulse 的步数 200/400/800 对应 dt=.001/.0005/.00025 s，模式为 unrestrict
 
 `outputs/thermal-spatial/analyze.py` 读取上述输出，比较同网格减半时间步与切换方法的末态、相邻网格总量，生成 `artifacts/current/native-thermal-spatial.json/.png` 和本地逐文件哈希。`attempt-direct/`、`attempt-stabilized/` 与对应 harmonic 失败目录保留两种未采用的边界二次修正；旧 `wall_probe.cpp` 和 `cartmesh2d_thermal_wall_probe` 是失败研究版本，不能当作当前支持入口。生产 ScalarTransport/WallGradient 已按 `quadratic-decision.json` 的哈希恢复。当前结果与局部壁热流限制集中在状态文档；本增量不改默认算法。
 
+### 对流较强的曲壁温度与首步失败说明
+
+Pe=30 代表例使用上节同一 64 点夹具与 level 5/6 网格，保持入口 .2 m/s、ν=.1 m²/s、301/300 K 壁温阶跃，仅将 D 改为 .002 m²/s；最大 dt=.05 s、温升尺度 1 K、相对时间容差 .01、有界修正。`outputs/thermal-advection/protocol.json` 和各目录的 `command.json` 保存完整参数，`run.py`、`run-time.py` 编排同一原生二进制；`analyze-completed.py` 只读取闭合的真实 CSV，计算热量、已输出通量积分与同网格场差。原生数值未在 Python 重建。重算必须使用新目录，不能覆盖接受检查点前缀。
+
+16212 格原首步失败保存在 `finest-dt005/`；`run-finest-resolved.py` 显式使用最小 dt=1e-7 s、24 次重试，先真实积分至 1e-6 s，再以该接受状态续至 25 s。若完成，累计量必须拼接 `finest-start/` 与 `finest-resolved/`，之前失败的计算成本另列，不能当作零成本初始化。改变分段终点造成实际时间网格变化，不能宣称与一次直达轨迹相同。
+
+`cartmesh2d_transport_cli` 在自适应步未接受时输出 `controller`：`reason`、`attempts`、`maximumRetries`、`timeStep`、`minimumTimeStep`、`errorRatio`、`courant`、`maximumCourant`；非有限误差/CFL 写 JSON null，原尝试 CSV 保留。值来自既有控制器回调，仅记录信息，不参与接受。`core/thermal.js::thermalFailureMessage` 形成原因和操作建议，`thermal-job.js` 根据实际保留的正时间状态描述续算能力；renderer 完整显示原因、折行而非省略，日志保留文件路径。旧 JSON 缺少详情时仍可报告已接受时间，不猜测原因。
+
+真实 App 曲壁入口：
+
+```sh
+./desktop/node_modules/.bin/electron desktop --smoke=circle --geometry="$PWD/tests/fixtures/thermal_cylinder64.xy" --target-cells=5000 --auto-padding=3 --small-alpha=.1 --thermal-adaptive=true --thermal-case=external --thermal-diffusivity=.002 --thermal-events=true --thermal-flux-correction=bounded --flow-min-dt=.0000001 --flow-max-retries=24 --out="$PWD/outputs/advection-app-rerun" --shot="$PWD/outputs/advection-app-rerun.png" --export="$PWD/outputs/advection-app-rerun.zip"
+```
+
+该入口使用正常几何导入、renderer、IPC 和原生 CLI，几何预设先选外流圆柱，再读实际夹具。温度对流保持 App 默认 upwind，上下边界绝热，源项/壁面事件与 25 s 原生代表例不同。加入 `--thermal-start-failure-check=true --thermal-start-failure-only=true` 可只验收预期失败：将首步和下限设为 1e-6 s、无重试，要求明确原因、文本不被裁剪且没有接受状态；返回成功仅指失败流程验收通过。普通组合则继续完成 .5/.8/预算失败/1.3 s 全流程。
+
+`outputs/thermal-advection/reopen.command.json` 保存真实 ZIP 重开至 1.4 s 的调用；`compare-cli.cjs` 用相同输入状态与控制复算并比较 7 类原生文件，检查原项目/ZIP 和旧显示以及未来事件。`startup-defect/` 用原生整步与两半步输出定位首步缺陷来源，面积加权 RMS 只作诊断，未替换实际最大值接受范数。版本、测试、实际范围与未完成项统一见当前状态及 `artifacts/current/native-thermal-advection.json`。
+
 ## 云端联合温度时间控制
 
 本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。

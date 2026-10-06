@@ -170,6 +170,29 @@ function readThermalHistory(text,input,startTime,endTime,{partial=false}={}) {
   if(!partial)requireValue(rows.length>0&&rows.at(-1).time===endTime,'时间历史未到已接受终点。');
   return {rows,truncated};
 }
+// Failure diagnostics report the native rejected attempt. They neither accept
+// its fields nor infer a restart checkpoint from an initial/attempted clock.
+function thermalFailureMessage(summary,startTime=0) {
+  const time=Number.isFinite(summary?.acceptedTime)?summary.acceptedTime:startTime;
+  const lines=[`热计算未完成；已接受到 t=${time} s。`],c=summary?.controller;
+  const reasons={flow:'流动方程未收敛',scalar:'温度方程未收敛',
+    'flow-half':'时间估计的半步流动方程未收敛','scalar-half':'时间估计的半步温度方程未收敛',
+    'nonfinite-error':'时间缺陷含非有限数'};
+  const number=value=>Number(value.toPrecision(6)).toString();
+  if(c?.reason==='time-error'&&Number.isFinite(c.errorRatio))
+    lines.push(`联合时间缺陷为 ${number(c.errorRatio)} 倍预算，接受上限为 1。`);
+  else if(c?.reason==='courant'&&Number.isFinite(c.courant)&&Number.isFinite(c.maximumCourant))
+    lines.push(`CFL 为 ${number(c.courant)}，超过上限 ${number(c.maximumCourant)}。`);
+  else if(reasons[c?.reason || summary?.failedStage])lines.push(reasons[c?.reason || summary.failedStage]+'。');
+  if(c&&Number.isFinite(c.timeStep)&&Number.isFinite(c.minimumTimeStep)) {
+    lines.push(`最后尝试步长 ${number(c.timeStep)} s；设定最小步长 ${number(c.minimumTimeStep)} s。`);
+    if(c.timeStep<=c.minimumTimeStep)
+      lines.push('步长已到下限；可减小设定的最小步长后重试，保留当前精度要求。');
+  }
+  if(c&&Number.isSafeInteger(c.attempts)&&Number.isSafeInteger(c.maximumRetries)&&c.attempts-1>=c.maximumRetries)
+    lines.push(`重试预算已用尽（${c.attempts} 次尝试）；可增加重试次数后重试。`);
+  return lines.join('\n');
+}
 function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,input,startTime=0) {
   const r=validateThermalRequest(input);
   requireValue(summary?.format==='cartmesh2d-scalar-transport-v1'&&summary.status==='converged'&&summary.converged===true&&summary.evolvingFlow===true,'不是完整同步热计算结果。');
@@ -213,4 +236,4 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   requireValue(near(history.at(-1).heatContent,heat)&&near(history.at(-1).globalBalance,summary.globalBalance)&&near(history.at(-1).scalarResidual,summary.residualNorm),'历史、场与摘要不一致。');
   return {summary:{...summary,dt:r.dt},fields:{cells},history,request:r};
 }
-module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,readThermalHistory,validateThermalOutput};
+module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,readThermalHistory,validateThermalOutput,thermalFailureMessage};

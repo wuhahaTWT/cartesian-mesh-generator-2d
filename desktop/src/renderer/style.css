@@ -522,6 +522,9 @@ html, body { height: 100%; }
 .logpanel { min-height: 0; max-height: 24vh; overflow: auto; }
 .statusbar > div:first-child { min-width: 0; flex: 1; }
 .statusbar i { display: block; margin-left: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.statusbar i.expanded { white-space: normal; overflow-wrap: anywhere; }
+.statusbar:has(i.expanded) { flex-wrap: wrap; }
+.statusbar:has(i.expanded) > div:first-child { flex-basis: 100%; }
 .viewtools { flex-wrap: wrap; justify-content: flex-end; }
 
 /* Keep the primary density choice within reach at the minimum window size. */

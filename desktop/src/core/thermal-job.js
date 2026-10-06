@@ -2,7 +2,7 @@
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const {checkpointDigest,historyForRestart}=require('./thermal-history');
-const {SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput}=require('./thermal');
+const {SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput,thermalFailureMessage}=require('./thermal');
 
 // A run owns a new directory. Publish the in-memory binding only after every
 // output is checked; the previous complete result never participates in writes.
@@ -59,7 +59,7 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
     }});
     signal.throwIfAborted();
     const summary=JSON.parse(await fs.readFile(`${prefix}.json`,'utf8'));
-    if(processResult.code!==0||summary.converged!==true)throw new Error(`热计算未完成；已接受到 t=${summary.acceptedTime ?? startTime} s。`);
+    if(processResult.code!==0||summary.converged!==true)throw new Error(thermalFailureMessage(summary,startTime));
     await Promise.all(suffixes.map(suffix=>fs.stat(prefix+suffix)));
     const [cells,history,joint]=await Promise.all(['.cells.csv','.thermal-history.csv','.thermal.checkpoint'].map(suffix=>fs.readFile(prefix+suffix,'utf8')));
     const validated=validateThermalOutput(summary,cells,history,joint,mesh,normalized,startTime);
@@ -78,7 +78,9 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
     await fs.writeFile(path.join(directory,'desktop-state.json'),JSON.stringify({status:signal.aborted?'cancelled':'failed',
       request:normalized,acceptedTime:currentResult.thermalRestart?.metadata.time ?? null,error:String(error.message)},null,2)).catch(()=>{});
     if(/outlet backflow unsupported/.test(error.message))error.message='当前设置遇到出口回流会停止。请检查计算域，或在流动设置中选择试验性法向回流。\n'+error.message;
-    error.message+=`\n诊断及最后联合状态保留在 ${directory}`;
+    const retained=currentResult.thermalRestart?.metadata.time;
+    error.message+=retained>0?`\n已保留 t=${retained} s 的联合续算状态。`:'\n尚无已接受的联合续算状态。';
+    error.message+=`\n诊断文件保留在 ${directory}`;
     throw error;
   }
 }

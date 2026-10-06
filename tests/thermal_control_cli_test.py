@@ -83,7 +83,14 @@ def main(a):
     assert not exhausted.with_suffix('.thermal.checkpoint').exists()
     assert len(rows(exhausted.with_suffix('.thermal-history.csv')))==0
     assert rows(exhausted.with_suffix('.attempt-history.csv'))[-1]['reason']=='time-error'
-    invoke('minimum',['--time-error','on','--min-dt','.1'],2)
+    failure=json.loads(exhausted.with_suffix('.json').read_text())
+    assert failure['controller']['reason']=='time-error' and failure['controller']['errorRatio']>1
+    assert failure['controller']['attempts']==1 and failure['controller']['maximumRetries']==0
+    minimum=invoke('minimum',['--time-error','on','--min-dt','.1'],2)
+    failure=json.loads(minimum.with_suffix('.json').read_text())
+    assert failure['acceptedTime']==0 and not minimum.with_suffix('.thermal.checkpoint').exists()
+    assert failure['controller']['timeStep']==failure['controller']['minimumTimeStep']==.1
+    assert failure['controller']['reason']=='time-error' and failure['controller']['errorRatio']>1
     scalar=invoke('scalar-fail',['--max-corrections','1','--max-step-retries','0'],2)
     assert not scalar.with_suffix('.thermal.checkpoint').exists()
     invoke('nan',['--temperature-scale','nan','--restart',joint],1)

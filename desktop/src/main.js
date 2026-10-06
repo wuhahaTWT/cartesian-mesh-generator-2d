@@ -891,6 +891,8 @@ async function runSmoke() {
     if (sampleField?.farFieldSpans !== undefined &&
         Number(document.getElementById('autoPadding').value) !== sampleField.farFieldSpans)
       throw new Error('Loading sample did not apply its physical domain to automatic mode');
+    if (${JSON.stringify(Boolean(argument('geometry')))})
+      await smoke.chooseGeometry(${JSON.stringify(argument('geometry'))}, ${JSON.stringify(path.basename(argument('geometry') || ''))}, null);
     if (${JSON.stringify(Boolean(argument('image')))}) {
       const previousPath = smoke.state.geometryPath;
       const pendingImport = smoke.importGeometryFile(${JSON.stringify(argument('image'))});
@@ -1221,17 +1223,23 @@ async function runSmoke() {
       smoke.state.eulerSmoke={wallGradient:first.summary.wallGradient,wallGradientControlsReachedNative:true,wallGradientChangeClearedStaleResult:true,dynamicViscosity:first.summary.dynamicViscosity,wallModel:first.summary.wallModel,viscousControlsReachedNative:true,viscousRestartLocked:true,viscosityChangeClearedStaleResult:first.summary.dynamicViscosity>0,thermalConductivity:first.summary.thermalConductivity,thermalControlsReachedNative:true,thermalRestartLocked:true,thermalChangeClearedStaleResult:first.summary.thermalConductivity>0,fluxScheme:first.summary.fluxScheme,order:first.summary.order,methodChangeClearedStaleResult:true,repeatedFieldsAndHistoryIdentical:true,resumeChecked:true,failedBudgetPreservedComplete:true,cancelledTime,cancelResumeChecked:true,allFiveFieldMaps:true};
     }
     if (${JSON.stringify(argument('thermal-adaptive') === 'true')}) {
-      for(const [id,value] of Object.entries({flowCase:'channel',flowNu:'.1',flowSpeed:'.2',flowConvection:'limited-linear',
+      const thermalCase=${JSON.stringify(argument('thermal-case') || 'channel')};
+      if(!['channel','external'].includes(thermalCase))throw new Error('Unsupported adaptive thermal smoke case');
+      for(const [id,value] of Object.entries({flowCase:thermalCase,flowNu:${JSON.stringify(argument('flow-nu') || '.1')},flowSpeed:${JSON.stringify(argument('flow-speed') || '.2')},flowConvection:'limited-linear',
         flowPressurePreconditioner:'ic0',flowOutletBackflow:'normal-inlet',flowMaxIterations:'1500',flowMode:'adaptive',flowDt:'.1',flowEndTime:'.5',
-        flowMinDt:'.000001',flowMaxCourant:'1',flowMaxRetries:'18',flowMaxSteps:'100000',
-        thermalDiffusivity:'.1',thermalInitial:'300',thermalTopValue:'301',thermalBottomValue:'300',
+        flowMinDt:${JSON.stringify(argument('flow-min-dt') || '.000001')},flowMaxCourant:'1',
+        flowMaxRetries:${JSON.stringify(argument('flow-max-retries') || '18')},flowMaxSteps:'100000',
+        thermalDiffusivity:${JSON.stringify(argument('thermal-diffusivity') || '.1')},thermalInitial:'300',thermalWallValue:'301',
+        thermalTopValue:thermalCase==='external'?'0':'301',thermalBottomValue:thermalCase==='external'?'0':'300',
         thermalTemperatureScale:'1',thermalTimeRtol:'.01',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}}))document.getElementById(id).value=value;
-      document.getElementById('thermalTopKind').value='value';document.getElementById('thermalBottomKind').value='value';
+      document.getElementById('thermalTopKind').value=thermalCase==='external'?'flux':'value';
+      document.getElementById('thermalBottomKind').value=thermalCase==='external'?'flux':'value';
+      const heatedBoundary=thermalCase==='external'?'wall':'top';
       if(${JSON.stringify(argument('thermal-events') === 'true')})smoke.setThermalEvents([
         {time:.137,target:'source',kind:'source',value:.2},
-        {time:.137,target:'top',kind:'value',value:300,inflowValue:300},
+        {time:.137,target:heatedBoundary,kind:'value',value:300,inflowValue:300},
         {time:.243,target:'source',kind:'source',value:0},
-        {time:.337,target:'top',kind:'value',value:301,inflowValue:300},
+        {time:.337,target:heatedBoundary,kind:'value',value:301,inflowValue:300},
         {time:.913,target:'source',kind:'source',value:.1},
         {time:1.137,target:'source',kind:'source',value:0},
         {time:1.337,target:'source',kind:'source',value:-.1}
@@ -1239,38 +1247,58 @@ async function runSmoke() {
       document.getElementById('thermalTimeError').checked=true;
       document.getElementById('flowMode').dispatchEvent(new Event('change'));
       if(document.getElementById('runThermal').disabled)throw new Error('Adaptive thermal button is disabled');
-      await smoke.runThermal();
-      if(smoke.state.thermal?.summary.time!==.5 || smoke.state.thermal.summary.timeStepControl!=='joint-cfl-be-error-retry')
-        throw new Error('Joint adaptive/error controller did not reach actual renderer');
-      const first=smoke.state.thermal;
-      if(${JSON.stringify(argument('thermal-events') === 'true')}) {
-        if(first.summary.thermalEventCount!==6 || ![.137,.243,.337].every(t=>first.history.some(row=>row.time===t)))
-          throw new Error('Thermal event controls did not reach exact native event times');
-        if([...document.querySelectorAll('#thermalEvents input,#thermalEvents select,#thermalEvents button')].some(input=>!input.disabled))
-          throw new Error('Resuming event law is not locked');
+      let startupFailure=null;
+      if(${JSON.stringify(argument('thermal-start-failure-check') === 'true')}) {
+        const ids=['flowDt','flowMinDt','flowMaxRetries'];
+        const saved=ids.map(id=>document.getElementById(id).value);
+        for(const [id,value] of Object.entries({flowDt:'.000001',flowMinDt:'.000001',flowMaxRetries:'0'}))document.getElementById(id).value=value;
+        await smoke.runThermal();
+        const message=document.getElementById('statusText').textContent;
+        if(smoke.state.thermal || smoke.state.thermalRestart || !message.includes('时间缺陷') ||
+           !message.includes('最小步长') || !message.includes('尚无已接受的联合续算状态'))
+          throw new Error('Startup failure did not explain its cause or published an initial checkpoint: '+message);
+        const detail=document.getElementById('statusText');
+        if(getComputedStyle(detail).whiteSpace==='nowrap' || detail.scrollHeight>detail.clientHeight || detail.scrollWidth>detail.clientWidth)
+          throw new Error('Startup failure explanation is clipped by the status bar');
+        startupFailure={message,noAcceptedCheckpoint:true,explanationVisible:true};
+        smoke.state.thermalStartupFailure=startupFailure;
+        if(!${JSON.stringify(argument('thermal-start-failure-only') === 'true')})
+          ids.forEach((id,index)=>{document.getElementById(id).value=saved[index];});
       }
-      if(${JSON.stringify(argument('thermal-crash-after') !== null)}) {
-        document.getElementById('flowEndTime').value='100';
-        await smoke.runThermal();throw new Error('Crash acceptance did not stop the App');
+      if(!${JSON.stringify(argument('thermal-start-failure-only') === 'true')}) {
+        await smoke.runThermal();
+        if(smoke.state.thermal?.summary.time!==.5 || smoke.state.thermal.summary.timeStepControl!=='joint-cfl-be-error-retry')
+          throw new Error('Joint adaptive/error controller did not reach actual renderer');
+        const first=smoke.state.thermal;
+        if(${JSON.stringify(argument('thermal-events') === 'true')}) {
+          if(first.summary.thermalEventCount!==6 || ![.137,.243,.337].every(t=>first.history.some(row=>row.time===t)))
+            throw new Error('Thermal event controls did not reach exact native event times');
+          if([...document.querySelectorAll('#thermalEvents input,#thermalEvents select,#thermalEvents button')].some(input=>!input.disabled))
+            throw new Error('Resuming event law is not locked');
+        }
+        if(${JSON.stringify(argument('thermal-crash-after') !== null)}) {
+          document.getElementById('flowEndTime').value='100';
+          await smoke.runThermal();throw new Error('Crash acceptance did not stop the App');
+        }
+        document.getElementById('flowEndTime').value='.8';document.getElementById('flowDt').value='.05';
+        await smoke.runThermal();
+        if(smoke.state.thermal?.summary.time!==.8)throw new Error('Adaptive thermal restart failed');
+        if(smoke.state.thermalHistory.length!==first.history.length+smoke.state.thermal.history.length)throw new Error('Continued thermal history lost the first run');
+        const complete=smoke.state.thermal;
+        document.getElementById('flowEndTime').value='1.3';document.getElementById('flowMaxSteps').value='1';
+        await smoke.runThermal();
+        // IPC restores a structured clone, so compare the accepted physical
+        // result and its files rather than JavaScript object identity.
+        if(JSON.stringify(smoke.state.thermal)!==JSON.stringify(complete) || !(smoke.state.thermalRestart?.time>.8))
+          throw new Error('Adaptive failure did not retain displayed result and latest accepted restart');
+        if(smoke.state.thermalHistory.at(-1)?.time!==smoke.state.thermalRestart.time)throw new Error('Failed-run accepted history was lost');
+        document.getElementById('flowMaxSteps').value='100000';await smoke.runThermal();
+        if(smoke.state.thermal?.summary.time!==1.3)throw new Error('Resume after adaptive budget exhaustion failed');
+        document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
+        if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
+        smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,startupFailure,firstTime:first.summary.time,changedStepResume:true,
+          failedBudgetRetained:true,resumeAfterFailure:true,continuousHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0].time,lastTime:smoke.state.thermalHistory.at(-1).time,segments:smoke.state.thermalHistoryInfo.segments},finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
       }
-      document.getElementById('flowEndTime').value='.8';document.getElementById('flowDt').value='.05';
-      await smoke.runThermal();
-      if(smoke.state.thermal?.summary.time!==.8)throw new Error('Adaptive thermal restart failed');
-      if(smoke.state.thermalHistory.length!==first.history.length+smoke.state.thermal.history.length)throw new Error('Continued thermal history lost the first run');
-      const complete=smoke.state.thermal;
-      document.getElementById('flowEndTime').value='1.3';document.getElementById('flowMaxSteps').value='1';
-      await smoke.runThermal();
-      // IPC restores a structured clone, so compare the accepted physical
-      // result and its files rather than JavaScript object identity.
-      if(JSON.stringify(smoke.state.thermal)!==JSON.stringify(complete) || !(smoke.state.thermalRestart?.time>.8))
-        throw new Error('Adaptive failure did not retain displayed result and latest accepted restart');
-      if(smoke.state.thermalHistory.at(-1)?.time!==smoke.state.thermalRestart.time)throw new Error('Failed-run accepted history was lost');
-      document.getElementById('flowMaxSteps').value='100000';await smoke.runThermal();
-      if(smoke.state.thermal?.summary.time!==1.3)throw new Error('Resume after adaptive budget exhaustion failed');
-      document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
-      if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
-      smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,firstTime:first.summary.time,changedStepResume:true,
-        failedBudgetRetained:true,resumeAfterFailure:true,continuousHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0].time,lastTime:smoke.state.thermalHistory.at(-1).time,segments:smoke.state.thermalHistoryInfo.segments},finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}})) document.getElementById(id).value=value;
@@ -1386,6 +1414,7 @@ async function runSmoke() {
       raster: smoke.state.rasterEvidence,
       adaptive: smoke.state.adaptiveSmoke || null,
       initialVortex: smoke.state.initialVortexSmoke || null,
+      thermalStartupFailure: smoke.state.thermalStartupFailure || null,
       flowCase: smoke.state.flowCaseSmoke || null,
       restartImport: smoke.state.restartImportSmoke || null,
       bundledChineseFontLoaded: true,
