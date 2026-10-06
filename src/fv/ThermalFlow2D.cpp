@@ -79,13 +79,17 @@ ThermalControlledResult2D advanceControlledThermalFlow2D(const FvMesh2D& mesh,
         c.estimateError?1.:0.,c.temperatureScale,c.velocityScale,c.relativeTolerance,
         c.temperatureAbsoluteTolerance,c.velocityAbsoluteTolerance,fc.velocityRelaxation};
     const bool reuse=previous.controller && previous.controller->controls==signature;
-    double dt=nextAdaptiveFlowTimeStep2D(mesh,previous.flow,limits);
+    auto predictionLimits=limits;
     if(reuse) {
         const auto& h=*previous.controller;
         if(!std::isfinite(h.nextStep)||h.nextStep<=0 || !std::isfinite(h.velocityRelaxation)||h.velocityRelaxation<=0||h.velocityRelaxation>1)
             throw std::invalid_argument("Invalid accepted thermal controller history");
-        dt=std::min(dt,std::max(std::min(limits.minimumStep,limits.targetTime-previous.flow.time),h.nextStep));
+        // Apply the accepted recommendation BEFORE fitting the physical interval
+        // to the target/event. Capping afterwards can undo the predictor's ulp
+        // adjustment and leave an unresolvable extra BE half-step at the end.
+        predictionLimits.maximumStep=std::clamp(h.nextStep,limits.minimumStep,limits.maximumStep);
     }
+    double dt=nextAdaptiveFlowTimeStep2D(mesh,previous.flow,predictionLimits);
     if (dt==0) throw std::invalid_argument("Thermal target must exceed accepted time");
     ThermalControlledResult2D out;
     const auto checkCancel=[&]() {

@@ -389,8 +389,47 @@ void steadyTimeInvariance() {
         check(error<2e-8*fc.speed,"steady flow independent of physical time step");
     }
 }
+void controllerHistoryPreservesTerminalInterval() {
+    const auto mesh=cavityMesh();auto fc=flowControls();fc.scenario="custom";
+    for(std::size_t id=0;id<mesh.faces.size();++id)if(!mesh.faces[id].neighbour)
+        fc.boundaryConditions.push_back({id,FlowBoundaryKind2D::Wall,{},0,"wall"});
+    const auto sc=scalarControls();
+    for(const bool eventEndpoint:{false,true}) {
+        auto data=setup(mesh,2.);
+        if(eventEndpoint) {
+            auto after=data;after.sourceDensity.assign(mesh.cells.size(),-1.);
+            data.events.push_back({1.4,after.sourceDensity,after.boundary});
+        }
+        ThermalFlowState2D state{initialIncompressibleState2D(mesh,fc),std::vector<double>(mesh.cells.size(),300.)};
+        state.flow.time=1.3; // quiescent, uniform accepted starting state
+        ThermalTimeControls2D c;c.limits.maximumStep=.025;c.limits.minimumStep=1e-6;
+        c.limits.targetTime=eventEndpoint?1.5:1.4;c.estimateError=true;
+        for(int i=0;i<4;++i) {
+            const auto r=advanceControlledThermalFlow2D(mesh,fc,data,sc,state,c);
+            check(r.step.accepted.has_value(),"terminal rounding step accepted with controller history");
+            if(!r.step.accepted)return;
+            state=*r.step.accepted;
+            if(i==2) {
+                // The actual v3 saved recommendation must survive restart;
+                // resetting history would conceal the original failure.
+                std::stringstream saved;writeThermalCheckpoint2D(saved,mesh,fc,data,sc,state);
+                state=readThermalCheckpoint2D(saved,mesh,fc,data,sc);
+            }
+        }
+        check(state.flow.time==1.4,eventEndpoint?"event reached exactly after four steps":"target reached exactly after four steps");
+        for(double value:state.scalar)check(std::abs(value-300.2)<2e-8,"full terminal interval retains the source budget");
+        if(eventEndpoint && state.flow.time==1.4) {
+            const auto next=advanceControlledThermalFlow2D(mesh,fc,data,sc,state,c);
+            check(next.step.accepted.has_value(),"step after rounded event accepted");
+            if(next.step.accepted)for(double value:next.step.accepted->scalar)
+                check(std::abs(value-300.175)<2e-8,"event uses the right-hand source after exact endpoint");
+        }
+    }
+}
+
 int main() {
     try {
+        controllerHistoryPreservesTerminalInterval();
         steadyTimeInvariance();
         controlledTimeAndEvents();
         uniformSourceAndEvolution(); restartMatchesContinuous(); failureDoesNotMutateInputs();
