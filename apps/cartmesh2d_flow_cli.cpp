@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/Incompressible2D.hpp"
 #include "cartmesh2d/fv/detail/FlowConvergence2D.hpp"
 #include "cartmesh2d/fv/FlowCheckpoint2D.hpp"
+#include "cartmesh2d/fv/FlowBranchCertificate2D.hpp"
 #include "cartmesh2d/fv/FlowBoundaryIO2D.hpp"
 #include "cartmesh2d/fv/FlowTimeStep2D.hpp"
 #include "cartmesh2d/fv/FlowInitialization2D.hpp"
@@ -132,6 +133,25 @@ void progress(const fv::FlowIteration2D& h) {
               << ",\"pressureChange\":" << h.pressureChange << "}" << std::endl;
 }
 
+const char* branchStageName(fv::FlowBranchCertificateStage2D stage) {
+    switch (stage) {
+    case fv::FlowBranchCertificateStage2D::DirectTarget: return "direct-target";
+    case fv::FlowBranchCertificateStage2D::Guide: return "guide";
+    case fv::FlowBranchCertificateStage2D::GuidedTarget: return "guided-target";
+    }
+    return "invalid";
+}
+
+const char* branchOutcomeName(fv::FlowBranchCertificateOutcome2D outcome) {
+    switch (outcome) {
+    case fv::FlowBranchCertificateOutcome2D::Completed: return "completed";
+    case fv::FlowBranchCertificateOutcome2D::Unconverged: return "unconverged";
+    case fv::FlowBranchCertificateOutcome2D::Stopped: return "stopped";
+    case fv::FlowBranchCertificateOutcome2D::Failed: return "failed";
+    }
+    return "invalid";
+}
+
 }
 
 int main(int argc, char** argv) {
@@ -150,6 +170,9 @@ int main(int argc, char** argv) {
     try {
         std::string path,viscosityPath,boundaryPath,boundaryExportPath,guessPath,fluxPath;
         fv::FlowControls2D controls;
+        fv::FlowBranchCertificateControls2D branchControls;
+        bool branchRequested=false,branchOptions=false;
+        unsigned branchLimitOptions=0;
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
         fv::FlowTimeStepControls2D adaptiveControls;
@@ -163,6 +186,10 @@ int main(int argc, char** argv) {
             std::string a = argv[i];
             if (a == "--profile") {
                 controls.profile = true;
+                continue;
+            }
+            if (a == "--branch-certificate") {
+                branchRequested = true;
                 continue;
             }
             if (a == "--help") {
@@ -179,6 +206,10 @@ int main(int argc, char** argv) {
             "--max-courant 1 --min-time-step MAX_DT/1024 --max-step-retries 10 --max-time-steps 100000: adaptive limits.\n"
             "--initial-guess CSV: optional steady starting iterate (cell,x,y,u,v,p), all stopping gates unchanged.\n"
             "--initial-flux CSV: optional face,owner,neighbour,x,y,flux iterate; requires --initial-guess.\n"
+            "--branch-certificate: explicit steady three-path risk certificate; writes PREFIX.branch.certificate and selects no field.\n"
+            "--branch-velocity-rms-limit X --branch-pressure-rms-limit X: required dimensionless report limits; not acceptance gates.\n"
+            "--branch-guide-viscosity-multiplier 10 --branch-guide-tolerance-exponent .5: explicit guide controls.\n"
+            "--branch-guide-max-iterations N --branch-target-max-iterations N: optional independent stage budgets.\n"
             "Default strict steady solver: newton-krylov; --steady-acceleration none selects original SIMPLE.\n"
             "Time stepping, material/adaptive/engineering controls retain the SIMPLE context default.\n"
             "--pressure-corrections 1..4 (default 4): non-orthogonal pressure passes per inner iteration.\n"
@@ -240,6 +271,24 @@ int main(int argc, char** argv) {
                 controls.convergence=v=="engineering"?fv::FlowConvergence2D::Engineering:fv::FlowConvergence2D::Strict;
             } else if (a == "--tolerance") {
                 controls.tolerance = number(v);
+            } else if (a == "--branch-velocity-rms-limit") {
+                branchOptions=true;branchLimitOptions|=1;
+                branchControls.maximumVelocityRmsDifference=number(v);
+            } else if (a == "--branch-pressure-rms-limit") {
+                branchOptions=true;branchLimitOptions|=2;
+                branchControls.maximumPressureRmsDifference=number(v);
+            } else if (a == "--branch-guide-viscosity-multiplier") {
+                branchOptions=true;branchControls.guideViscosityMultiplier=number(v);
+            } else if (a == "--branch-guide-tolerance-exponent") {
+                branchOptions=true;branchControls.guideToleranceExponent=number(v);
+            } else if (a == "--branch-guide-max-iterations" || a == "--branch-target-max-iterations") {
+                branchOptions=true;
+                const double n=number(v);
+                if(n<1 || n>100000 || n!=std::floor(n))
+                    throw std::invalid_argument("branch stage budget must be an integer in [1,100000]");
+                if(a=="--branch-guide-max-iterations")
+                    branchControls.guideMaximumIterations=static_cast<std::size_t>(n);
+                else branchControls.guidedTargetMaximumIterations=static_cast<std::size_t>(n);
             } else if (a == "--initial-guess") {
                 guessPath=v;
             } else if (a == "--initial-flux") {
@@ -330,6 +379,14 @@ int main(int argc, char** argv) {
         }
         if (!boundaryExportPath.empty() && (timeStep > 0 || requestedSteps > 0 || adaptive || adaptiveOptions || !restart.empty()))
             throw std::invalid_argument("boundary template export does not run time steps or restart");
+        if(branchOptions && !branchRequested)
+            throw std::invalid_argument("branch certificate controls require --branch-certificate");
+        if(branchRequested && branchLimitOptions!=3)
+            throw std::invalid_argument("branch certificate requires explicit velocity and pressure RMS report limits");
+        if(branchRequested && (timeStep>0 || requestedSteps || adaptive || adaptiveOptions || !restart.empty() ||
+                               !boundaryExportPath.empty() || !guessPath.empty() || !fluxPath.empty() ||
+                               vortexOptions || controls.profile))
+            throw std::invalid_argument("branch certificate requires a fresh steady solve without profile, restart or initial fields");
         if (!path.ends_with(".solver.cm2d") || path.ends_with(".failed.solver.cm2d")) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
@@ -352,6 +409,8 @@ int main(int argc, char** argv) {
             controls,timeStep==0 && boundaryExportPath.empty());
         if(controls.steadyAcceleration!=fv::SteadyAcceleration2D::None && (timeStep>0 || !boundaryExportPath.empty()))
             throw std::invalid_argument("steady-acceleration requires an actual steady solve");
+        if(branchRequested && controls.steadyAcceleration!=fv::SteadyAcceleration2D::NewtonKrylov)
+            throw std::invalid_argument("branch certificate requires newton-krylov steady acceleration");
         if (vortexOptions) {
             if (vortexOptions!=15 || timeStep==0 || !restart.empty() || !boundaryExportPath.empty() ||
                 (controls.scenario!="external" && controls.scenario!="channel" && controls.scenario!="duct" &&
@@ -411,6 +470,56 @@ int main(int argc, char** argv) {
         if (controls.scenario == "custom") {
             auto boundarySnapshot = out(prefix, ".boundaries");
             fv::writeFlowBoundaryConditions2D(boundarySnapshot, mesh, controls);
+        }
+        if(branchRequested) {
+            const auto certificate=fv::certifyIncompressibleBranch2D(mesh,controls,branchControls);
+            const std::string archivePath=prefix+".branch.certificate";
+            const std::string archiveTemporary=archivePath+".tmp";
+            {
+                std::ofstream archive(archiveTemporary,std::ios::binary);
+                archive.exceptions(std::ios::badbit|std::ios::failbit);
+                fv::writeFlowBranchCertificate2D(archive,mesh,controls,branchControls,certificate);
+            }
+            std::filesystem::rename(archiveTemporary,archivePath);
+            auto summary=out(prefix,".json.tmp");
+            summary << "{\n\"format\":\"cartmesh2d-flow-branch-certificate-summary-v1\",\n"
+                << "\"status\":" << std::quoted(certificate.outcome==fv::FlowBranchCertificateOutcome2D::Completed
+                    ? (certificate.consistent?"branch_consistent":"branch_divergent") : "branch_incomplete") << ",\n"
+                << "\"converged\":false,\n\"selectedCandidate\":null,\n"
+                << "\"candidateSelection\":\"none; explicit user review required\",\n"
+                << "\"stage\":" << std::quoted(branchStageName(certificate.stage)) << ",\n"
+                << "\"outcome\":" << std::quoted(branchOutcomeName(certificate.outcome)) << ",\n"
+                << "\"reason\":" << std::quoted(certificate.reason) << ",\n"
+                << "\"archiveSuffix\":\".branch.certificate\",\n"
+                << "\"guideViscosityMultiplier\":" << branchControls.guideViscosityMultiplier << ",\n"
+                << "\"guideToleranceExponent\":" << branchControls.guideToleranceExponent << ",\n"
+                << "\"maximumVelocityRmsDifference\":" << branchControls.maximumVelocityRmsDifference << ",\n"
+                << "\"maximumPressureRmsDifference\":" << branchControls.maximumPressureRmsDifference << ",\n"
+                << "\"pathsCompared\":" << (certificate.pathsCompared?"true":"false") << ",\n"
+                << "\"consistent\":" << (certificate.pathsCompared?(certificate.consistent?"true":"false"):"null") << ",\n"
+                << "\"velocityRmsDifference\":" << certificate.difference.velocityRms << ",\n"
+                << "\"maximumVelocityDifference\":" << certificate.difference.maximumVelocity << ",\n"
+                << "\"pressureRmsDifference\":" << certificate.difference.pressureRms << ",\n"
+                << "\"maximumPressureDifference\":" << certificate.difference.maximumPressure << ",\n";
+            const auto candidate=[&](const char* name,const std::optional<fv::FlowResult2D>& value,bool comma) {
+                summary << std::quoted(name) << ':';
+                if(!value)summary << "null";
+                else summary << "{\"converged\":" << (value->converged?"true":"false")
+                    << ",\"stopped\":" << (value->stopped?"true":"false")
+                    << ",\"coupledEvaluations\":" << value->performance.coupledEvaluations
+                    << ",\"globalRelativeImbalance\":" << value->globalRelativeImbalance
+                    << ",\"maximumSpeedRatio\":" << value->fieldAmplitude.maximumSpeedRatio
+                    << ",\"pressureRangeRatio\":" << value->fieldAmplitude.pressureRangeRatio << '}';
+                summary << (comma?",\n":"\n");
+            };
+            candidate("directTarget",certificate.directTarget,true);
+            candidate("guide",certificate.guide,true);
+            candidate("guidedTarget",certificate.guidedTarget,false);
+            summary << "}\n";
+            summary.close();
+            std::filesystem::rename(prefix+".json.tmp",prefix+".json");
+            return certificate.outcome!=fv::FlowBranchCertificateOutcome2D::Completed ? 2
+                : certificate.consistent ? 0 : 3;
         }
         fv::FlowResult2D r;
         std::size_t totalInnerIterations=0, adaptiveInnerIterations=0, strictAcceptedSteps=0;
@@ -892,6 +1001,7 @@ int main(int argc, char** argv) {
         if (outputStarted) {
             std::error_code ignored;
             std::filesystem::remove(prefix+".json.tmp",ignored);
+            std::filesystem::remove(prefix+".branch.certificate.tmp",ignored);
             try { auto failed=out(prefix,".json");
                 failed << "{\"format\":\"cartmesh2d-flow-summary-v1\",\"status\":\"failed\",\"converged\":false";
                 if(transientOutputStarted)failed << ",\"acceptedTime\":" << acceptedTime;

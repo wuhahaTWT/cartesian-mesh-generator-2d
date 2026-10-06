@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 from queue import Queue
 from threading import Thread
 
@@ -119,6 +120,43 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     assert newton['strictLinearFinal'] is True
     assert newton['coupledLastFailure'] == ''
     assert newton_work['coupledFailedEvaluations'] == 0
+    def branch_run(label, limits=('.01', '.01'), extra=(), code=0):
+        prefix = root / label
+        result = subprocess.run([
+            cli, '--mesh', str(reuse_mesh), '--output', str(prefix),
+            '--case', 'channel', '--nu', '.1', '--speed', '1',
+            '--max-iterations', '700', '--branch-certificate',
+            '--branch-velocity-rms-limit', limits[0],
+            '--branch-pressure-rms-limit', limits[1], *extra],
+            text=True, capture_output=True, timeout=40)
+        assert result.returncode == code, (label, result.stdout[-1000:], result.stderr)
+        summary = json.loads(prefix.with_suffix('.json').read_text())
+        archive = Path(str(prefix) + '.branch.certificate')
+        assert archive.read_text().startswith('CARTMESH2D_FLOW_BRANCH_CERTIFICATE 1\n')
+        assert summary['format'] == 'cartmesh2d-flow-branch-certificate-summary-v1'
+        assert summary['converged'] is False and summary['selectedCandidate'] is None
+        assert summary['candidateSelection'] == 'none; explicit user review required'
+        for suffix in ('.cells.csv', '.faces.csv', '.fields.json', '.residuals.csv', '.vtk'):
+            assert not Path(str(prefix) + suffix).exists(), suffix
+        return summary
+
+    certified = branch_run('branch-consistent')
+    assert certified['status'] == 'branch_consistent' and certified['consistent'] is True
+    assert all(certified[name]['converged'] for name in
+               ('directTarget', 'guide', 'guidedTarget'))
+    divergent = branch_run('branch-divergent', ('1e-15', '1e-15'), code=3)
+    assert divergent['status'] == 'branch_divergent' and divergent['consistent'] is False
+    assert divergent['selectedCandidate'] is None
+    incomplete = branch_run('branch-incomplete', extra=('--branch-guide-max-iterations', '1'), code=2)
+    assert incomplete['status'] == 'branch_incomplete' and incomplete['stage'] == 'guide'
+    assert incomplete['directTarget']['converged'] is True
+    assert incomplete['guide']['converged'] is False and incomplete['guidedTarget'] is None
+    run('branch-control-without-mode', reuse_mesh,
+        extra=('--branch-velocity-rms-limit', '.01'), code=1,
+        error_contains='require --branch-certificate')
+    run('branch-missing-limit', reuse_mesh,
+        extra=('--branch-certificate', '--branch-velocity-rms-limit', '.01'), code=1,
+        error_contains='requires explicit velocity and pressure')
     saved_cells = (root / 'reuse.cells.csv').read_bytes()
     run('reuse', reuse_mesh, case='external', code=1)
     failed = json.loads((root / 'reuse.json').read_text())
@@ -159,6 +197,29 @@ with tempfile.TemporaryDirectory(prefix='cartmesh-flow-') as name:
     interrupted = json.loads((root / 'reuse.json').read_text())
     assert interrupted['status'] == 'running' and interrupted['converged'] is False
     assert (root / 'reuse.cells.csv').read_bytes() == saved_cells
+
+    branch_prefix = root / 'branch-interrupted'
+    with subprocess.Popen([
+            cli, '--mesh', str(interrupted_mesh), '--output', str(branch_prefix),
+            '--case', 'cavity', '--nu', '.01', '--tolerance', '1e-9',
+            '--max-iterations', '100000', '--branch-certificate',
+            '--branch-velocity-rms-limit', '.001',
+            '--branch-pressure-rms-limit', '.001'],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        marker = branch_prefix.with_suffix('.json')
+        for _ in range(100):
+            if marker.exists() and json.loads(marker.read_text())['status'] == 'running':
+                break
+            assert process.poll() is None, process.communicate()
+            time.sleep(.02)
+        else:
+            raise AssertionError('branch certificate did not publish running marker')
+        process.terminate()
+        process.communicate(timeout=10)
+    interrupted_branch = json.loads(branch_prefix.with_suffix('.json').read_text())
+    assert interrupted_branch['status'] == 'running' and interrupted_branch['converged'] is False
+    assert not Path(str(branch_prefix) + '.branch.certificate').exists()
+    assert not Path(str(branch_prefix) + '.branch.certificate.tmp').exists()
 
     errors, pressure_errors, wall_force_errors = [], [], []
     for ny in (8, 16):

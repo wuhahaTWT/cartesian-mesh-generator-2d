@@ -286,6 +286,22 @@ python3 artifacts/current/native-laminar-annulus-guide.py --run
 
 `Unconverged/Stopped/Failed` 同时记录发生阶段，后续阶段不会覆盖 `directTarget` 或已完成的 `guide`。证书自己的阶段取消会在进入阶段前和完整求解更新后检查；原 `FlowControls2D::stopRequested` 仍参与每一阶段，任一回调抛出的异常继续向调用方传播。归档固定写三条候选记录；存在的候选各用现有 `FlowState2D` checkpoint 保存 `u/v/p/flux`，另存完整评估数和 `converged/stopped`，没有共享“当前场”槽。读回同时绑定最终网格、显式边界、物性、对流格式、引导参数、阶段预算和调用方限值，重算一致/分歧结果；截断、尾随数据、负/非有限差值、缺候选或阶段矛盾均拒绝。旧 v1–v4 flow checkpoint 读取器和非定常恢复格式没有修改。
 
+CLI 只以显式开关暴露该事务；两个归一化 RMS 报告限值必须由调用者提供，不能沿用隐藏默认：
+
+```sh
+build/cartmesh2d_flow_cli \
+  --mesh outputs/cloud-laminar/annulus-joint-4.solver.cm2d \
+  --boundaries outputs/cloud-laminar/annulus-joint-4.boundaries \
+  --output outputs/cloud-laminar/cli-branch-smoke/consistent \
+  --case custom --nu .01 --speed .5 --tolerance 1e-6 --max-iterations 700 \
+  --branch-certificate \
+  --branch-velocity-rms-limit .01 --branch-pressure-rms-limit .01
+```
+
+事务发布 `PREFIX.branch.certificate` 和格式为 `cartmesh2d-flow-branch-certificate-summary-v1` 的 `PREFIX.json`。摘要固定为 `converged=false`、`selectedCandidate=null`，并列出三候选是否存在、收敛/停止状态、完整评估数、守恒和幅值诊断；普通 cells/faces/fields/residuals/VTK 均不生成，避免让脚本把任一候选误当普通接受场。退出码 0 表示三阶段完成且两目标路径在调用方报告限值内一致，3 表示三阶段完成但分歧，2 表示某阶段未完成；求解前输入错误仍返回 1。可选 `--branch-guide-viscosity-multiplier`、`--branch-guide-tolerance-exponent`、`--branch-guide-max-iterations` 和 `--branch-target-max-iterations` 均只影响显式事务。新鲜稳态之外的 profile、restart、initial guess/flux、非定常、adaptive、模板导出与非 Newton 方法会被拒绝。
+
+192 格移动圆环真实运行的直接/引导/终档完整评估为 `68/34/37`，归一化速度/压力 RMS 差为 `2.9137e-6/6.6336e-7`；相同三候选在 `.01/.01` 下返回 0，在 `1e-8/1e-8` 下返回 3。把引导预算设为 1 返回 2，归档仍保留已完成直接场和未收敛引导场，终档为空。CLI 验证还实际终止 32×32 方腔证书进程，确认只保留 `running` 标记且不留下最终或 `.tmp` 归档。复现数据与哈希见 `native-laminar-branch-cli.json`。
+
 真实反例复现：
 
 ```sh
