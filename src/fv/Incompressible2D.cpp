@@ -339,6 +339,9 @@ struct TraceDiagnostics {
     double velocityTolerance = 0;
     double maximumVelocityJump = 0;
     Point2D maximumJumpLocation{};
+    std::size_t magnitudeDiscontinuousVertices = 0;
+    std::size_t equalMagnitudeDirectionVertices = 0;
+    double maximumSpeedMagnitudeJump = 0;
 };
 
 template<class Select>
@@ -410,13 +413,25 @@ TraceDiagnostics traceDiagnostics(const FvMesh2D& m,
         if (vertex.faces.size() < 2) continue;
         ++result.adjacentVertices;
         double vertexJump = 0;
+        bool magnitudeDiscontinuous = false;
+        bool equalMagnitudeDirection = false;
         for (std::size_t i = 0; i < vertex.faces.size(); ++i)
             for (std::size_t j = i+1; j < vertex.faces.size(); ++j) {
                 const auto a = vertex.faces[i], c = vertex.faces[j];
-                vertexJump = std::max(vertexJump,
-                    std::hypot(b.u[a]-b.u[c], b.v[a]-b.v[c]));
+                const double jump = std::hypot(b.u[a]-b.u[c], b.v[a]-b.v[c]);
+                const double speedJump = std::abs(std::hypot(b.u[a], b.v[a])-
+                                                  std::hypot(b.u[c], b.v[c]));
+                vertexJump = std::max(vertexJump, jump);
+                result.maximumSpeedMagnitudeJump =
+                    std::max(result.maximumSpeedMagnitudeJump, speedJump);
+                if (speedJump > result.velocityTolerance) magnitudeDiscontinuous = true;
+                else if (jump > result.velocityTolerance) equalMagnitudeDirection = true;
             }
-        if (vertexJump > result.velocityTolerance) ++result.discontinuousVertices;
+        if (vertexJump > result.velocityTolerance) {
+            ++result.discontinuousVertices;
+            if (magnitudeDiscontinuous) ++result.magnitudeDiscontinuousVertices;
+            if (equalMagnitudeDirection) ++result.equalMagnitudeDirectionVertices;
+        }
         if (vertexJump > result.maximumVelocityJump) {
             result.maximumVelocityJump = vertexJump;
             result.maximumJumpLocation = vertex.point;
@@ -431,8 +446,16 @@ FlowWallTraceDiagnostics2D wallTraceDiagnostics(const FvMesh2D& m,
     const auto trace = traceDiagnostics(m, b, referenceSpeed, [&](std::size_t id) {
         return b.role[id] == Role::Wall || b.role[id] == Role::Lid;
     });
+    double maximumNormalVelocity = 0;
+    for (std::size_t id = 0; id < m.faces.size(); ++id) {
+        if (m.faces[id].neighbour || (b.role[id] != Role::Wall && b.role[id] != Role::Lid)) continue;
+        const double length = std::hypot(m.faces[id].areaVector.x, m.faces[id].areaVector.y);
+        maximumNormalVelocity = std::max(maximumNormalVelocity,
+            std::abs(b.u[id]*m.faces[id].areaVector.x+b.v[id]*m.faces[id].areaVector.y)/length);
+    }
     return {trace.selectedFaces, trace.adjacentVertices, trace.discontinuousVertices,
-            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation};
+            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation,
+            maximumNormalVelocity};
 }
 
 FlowVelocityTraceDiagnostics2D velocityTraceDiagnostics(const FvMesh2D& m,
@@ -442,7 +465,9 @@ FlowVelocityTraceDiagnostics2D velocityTraceDiagnostics(const FvMesh2D& m,
         return b.fixedU[id] && b.fixedV[id];
     });
     return {trace.selectedFaces, trace.adjacentVertices, trace.discontinuousVertices,
-            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation};
+            trace.velocityTolerance, trace.maximumVelocityJump, trace.maximumJumpLocation,
+            trace.magnitudeDiscontinuousVertices, trace.equalMagnitudeDirectionVertices,
+            trace.maximumSpeedMagnitudeJump};
 }
 
 void updateOutletBoundary(Boundary& b, const FvMesh2D& m,
@@ -1291,6 +1316,37 @@ static FlowResult2D solveFlow(
         }
         for (auto& entry : loads) r.namedWallLoads.push_back(std::move(entry.second));
     }
+    ensure(!r.u.empty() && r.u.size()==n && r.v.size()==n && r.p.size()==n,
+           "Flow final field dimensions differ from mesh");
+    auto& amplitude=r.fieldAmplitude;
+    amplitude.minimumU=amplitude.maximumU=r.u.front();
+    amplitude.minimumV=amplitude.maximumV=r.v.front();
+    amplitude.maximumSpeed=finite(std::hypot(r.u.front(),r.v.front()));
+    amplitude.maximumSpeedLocation=m.cells.front().centre;
+    amplitude.minimumKinematicPressure=amplitude.maximumKinematicPressure=r.p.front();
+    amplitude.minimumPressureLocation=amplitude.maximumPressureLocation=m.cells.front().centre;
+    for(std::size_t i=0;i<n;++i) {
+        const double speed=finite(std::hypot(r.u[i],r.v[i]));
+        if(speed>amplitude.maximumSpeed) {
+            amplitude.maximumSpeed=speed;
+            amplitude.maximumSpeedLocation=m.cells[i].centre;
+        }
+        amplitude.minimumU=std::min(amplitude.minimumU,r.u[i]);
+        amplitude.maximumU=std::max(amplitude.maximumU,r.u[i]);
+        amplitude.minimumV=std::min(amplitude.minimumV,r.v[i]);
+        amplitude.maximumV=std::max(amplitude.maximumV,r.v[i]);
+        if(r.p[i]<amplitude.minimumKinematicPressure) {
+            amplitude.minimumKinematicPressure=r.p[i];
+            amplitude.minimumPressureLocation=m.cells[i].centre;
+        }
+        if(r.p[i]>amplitude.maximumKinematicPressure) {
+            amplitude.maximumKinematicPressure=r.p[i];
+            amplitude.maximumPressureLocation=m.cells[i].centre;
+        }
+    }
+    amplitude.maximumSpeedRatio=finite(amplitude.maximumSpeed/c.speed);
+    amplitude.pressureRangeRatio=finite(
+        (amplitude.maximumKinematicPressure-amplitude.minimumKinematicPressure)/(c.speed*c.speed));
     if (c.profile) {
         r.performance.solveSeconds = std::chrono::duration<double>(Clock::now() - solveStart).count();
     }

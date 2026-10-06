@@ -71,6 +71,9 @@ const LEGACY_VISCOUS_STRESS = 'laplacian';
 const FORCE_DEFINITION = 'shared-face-newtonian-traction';
 const WALL_TRACE_DEFINITION = 'prescribed Cartesian velocity jump at reconstructed shared vertices of impermeable no-slip faces; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification';
 const VELOCITY_TRACE_DEFINITION = 'prescribed Cartesian velocity jump at reconstructed shared vertices of boundary faces fixing both velocity components; includes no-slip walls and velocity ports; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification';
+const WALL_TRACE_IMPERMEABILITY_DEFINITION = 'maximum absolute prescribed velocity dotted with the unit normal of the actual polygon wall face; m/s; diagnostic only';
+const VELOCITY_TRACE_CAUSE_DEFINITION = 'coordinate-invariant split of nonzero Cartesian trace jumps into speed-magnitude mismatch and equal-magnitude direction change; counts may overlap at multi-face vertices; diagnostic only';
+const FIELD_AMPLITUDE_DEFINITION = 'final accepted cell-centre extrema; maximum speed normalized by requested reference speed; gauge-invariant pressure range normalized by reference speed squared; diagnostic only; no acceptance threshold';
 const FLOW_OUTPUT_SUFFIXES = Object.freeze([
   '.json', '.fields.json', '.vtk', '.residuals.csv', '.cells.csv', '.faces.csv'
 ]);
@@ -416,6 +419,28 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
 
   validateWallLoads(normalizedSummary);
   validateBoundaryFluxes(normalizedSummary);
+  const amplitudeKeys = ['fieldAmplitudeDefinition','minimumU','maximumU','minimumV','maximumV',
+    'maximumSpeed','maximumSpeedLocation','minimumKinematicPressure','maximumKinematicPressure',
+    'minimumPressureLocation','maximumPressureLocation','maximumSpeedRatio','pressureRangeRatio'];
+  if (amplitudeKeys.some(key => summary[key] !== undefined)) {
+    if (amplitudeKeys.some(key => summary[key] === undefined)
+        || summary.fieldAmplitudeDefinition !== FIELD_AMPLITUDE_DEFINITION)
+      throw new Error('最终接受场幅值诊断不完整。');
+    for (const key of ['minimumU','maximumU','minimumV','maximumV','maximumSpeed',
+      'minimumKinematicPressure','maximumKinematicPressure','maximumSpeedRatio','pressureRangeRatio'])
+      normalizedSummary[key] = finite(summary[key], key);
+    for (const key of ['maximumSpeedLocation','minimumPressureLocation','maximumPressureLocation']) {
+      if (!Array.isArray(summary[key]) || summary[key].length !== 2)
+        throw new Error('最终接受场幅值诊断位置无效。');
+      normalizedSummary[key] = summary[key].map((value,index) => finite(value, `${key}[${index}]`));
+    }
+    if (normalizedSummary.minimumU > normalizedSummary.maximumU
+        || normalizedSummary.minimumV > normalizedSummary.maximumV
+        || normalizedSummary.minimumKinematicPressure > normalizedSummary.maximumKinematicPressure
+        || normalizedSummary.maximumSpeed < 0 || normalizedSummary.maximumSpeedRatio < 0
+        || normalizedSummary.pressureRangeRatio < 0)
+      throw new Error('最终接受场幅值诊断范围无效。');
+  }
   const wallTraceKeys = ['wallTraceDefinition','wallTraceVelocityTolerance','wallTraceWallFaces',
     'wallTraceAdjacentVertices','wallTraceDiscontinuousVertices','wallTraceMaximumVelocityJump',
     'wallTraceMaximumJumpLocation'];
@@ -436,6 +461,16 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     normalizedSummary.wallTraceMaximumVelocityJump = maximumJump;
     normalizedSummary.wallTraceMaximumJumpLocation = summary.wallTraceMaximumJumpLocation.map((value,index) =>
       finite(value, `wallTraceMaximumJumpLocation[${index}]`));
+  }
+  const wallImpermeabilityKeys = ['wallTraceImpermeabilityDefinition','wallTraceMaximumNormalVelocity'];
+  if (wallImpermeabilityKeys.some(key => summary[key] !== undefined)) {
+    if (wallImpermeabilityKeys.some(key => summary[key] === undefined)
+        || summary.wallTraceImpermeabilityDefinition !== WALL_TRACE_IMPERMEABILITY_DEFINITION)
+      throw new Error('壁面无穿透诊断定义或字段不完整。');
+    const normalVelocity = finite(summary.wallTraceMaximumNormalVelocity, 'wallTraceMaximumNormalVelocity');
+    if (normalVelocity < 0 || summary.wallTraceDefinition === undefined)
+      throw new Error('壁面无穿透诊断数值不一致。');
+    normalizedSummary.wallTraceMaximumNormalVelocity = normalVelocity;
   }
   const velocityTraceKeys = ['velocityTraceDefinition','velocityTraceVelocityTolerance',
     'velocityTracePrescribedFaces','velocityTraceAdjacentVertices','velocityTraceDiscontinuousVertices',
@@ -458,6 +493,28 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
     normalizedSummary.velocityTraceMaximumVelocityJump = maximumJump;
     normalizedSummary.velocityTraceMaximumJumpLocation = summary.velocityTraceMaximumJumpLocation.map((value,index) =>
       finite(value, `velocityTraceMaximumJumpLocation[${index}]`));
+  }
+  const velocityTraceCauseKeys = ['velocityTraceCauseDefinition',
+    'velocityTraceMagnitudeDiscontinuousVertices','velocityTraceEqualMagnitudeDirectionVertices',
+    'velocityTraceMaximumSpeedMagnitudeJump'];
+  if (velocityTraceCauseKeys.some(key => summary[key] !== undefined)) {
+    if (velocityTraceCauseKeys.some(key => summary[key] === undefined)
+        || summary.velocityTraceCauseDefinition !== VELOCITY_TRACE_CAUSE_DEFINITION
+        || summary.velocityTraceDefinition === undefined)
+      throw new Error('规定速度迹跳分类定义或字段不完整。');
+    const magnitudeVertices = summary.velocityTraceMagnitudeDiscontinuousVertices;
+    const directionVertices = summary.velocityTraceEqualMagnitudeDirectionVertices;
+    const speedJump = finite(summary.velocityTraceMaximumSpeedMagnitudeJump,
+      'velocityTraceMaximumSpeedMagnitudeJump');
+    if (![magnitudeVertices,directionVertices].every(value => Number.isSafeInteger(value) && value >= 0)
+        || magnitudeVertices > summary.velocityTraceDiscontinuousVertices
+        || directionVertices > summary.velocityTraceDiscontinuousVertices
+        || magnitudeVertices + directionVertices < summary.velocityTraceDiscontinuousVertices
+        || speedJump < 0 || speedJump > summary.velocityTraceMaximumVelocityJump + summary.velocityTraceVelocityTolerance
+        || (magnitudeVertices === 0 && speedJump > summary.velocityTraceVelocityTolerance)
+        || (magnitudeVertices > 0 && speedJump <= summary.velocityTraceVelocityTolerance))
+      throw new Error('规定速度迹跳分类数值不一致。');
+    normalizedSummary.velocityTraceMaximumSpeedMagnitudeJump = speedJump;
   }
   const acceleration=summary.steadyAcceleration ?? 'none';
   if (summary.steadyAcceleration===undefined && ['accelerationCandidates','accelerationAccepted','accelerationRejected'].some(key=>Object.hasOwn(summary,key)))
@@ -569,6 +626,8 @@ module.exports = {
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
   WALL_TRACE_DEFINITION,
   VELOCITY_TRACE_DEFINITION,
+  WALL_TRACE_IMPERMEABILITY_DEFINITION,
+  VELOCITY_TRACE_CAUSE_DEFINITION,
   buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
   flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
 };

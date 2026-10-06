@@ -1,0 +1,118 @@
+{
+  "format": "cartmesh2d-native-laminar-field-amplitude-v1",
+  "status": "product-diagnostic-and-causal-localization-not-equation-fix",
+  "baselineCommit": "951075cd8a3c46772e6d46abc19110bf4b0b6af1",
+  "productChange": {
+    "scope": "FlowResult2D, native CLI, desktop validation and result display",
+    "definition": "final accepted cell-centre extrema; maximum speed normalized by requested reference speed; gauge-invariant pressure range normalized by reference speed squared",
+    "units": {
+      "velocity": "m/s",
+      "kinematicPressure": "m2/s2",
+      "maximumSpeedRatio": "1",
+      "pressureRangeRatio": "1"
+    },
+    "semantics": "diagnostic only; no acceptance threshold",
+    "equationsChanged": false,
+    "boundaryConditionsChanged": false,
+    "meshChanged": false,
+    "defaultsChanged": false,
+    "solverQualityGateChanged": false,
+    "failureCancellationOrLastAcceptedFieldChanged": false
+  },
+  "fixedCylinder20D": {
+    "geometry": "byte-identical 128-segment stationary cylinder",
+    "referenceSpeed": 1.0,
+    "kinematicViscosity": 0.1,
+    "badAcceptedField": {
+      "summary": "outputs/cloud-laminar/cylinder-joint/field-amplitude-bad.json",
+      "cells": 17260,
+      "completeEvaluations": 1049,
+      "strictlyConverged": true,
+      "globalRelativeImbalance": 8.472897180614914e-15,
+      "maximumSpeed": 5.489758876044062,
+      "maximumSpeedLocation": [-0.8185693477078143, 0.5195235728100948],
+      "minimumKinematicPressure": -182.6456035097578,
+      "maximumKinematicPressure": 83.2057247654601,
+      "maximumSpeedRatio": 5.489758876044062,
+      "pressureRangeRatio": 265.8513282752179,
+      "wallForceX": 2.007087571876749,
+      "pressureForceX": -13.2566395842264,
+      "wallViscousForceX": 15.26372715610316,
+      "sha256": {
+        "summary": "3974e532b06c7622dbe04642badf72ab9d45aa72917337e524e9eb81fc6e6cfc",
+        "cells": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+        "faces": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        "residuals": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
+      }
+    },
+    "fullRepairCausalControl": {
+      "summary": "outputs/cloud-laminar/cylinder-joint/field-amplitude-repaired.json",
+      "cells": 17252,
+      "completeEvaluations": 552,
+      "strictlyConverged": true,
+      "globalRelativeImbalance": 1.123762329803512e-15,
+      "maximumSpeed": 1.164485843178421,
+      "minimumKinematicPressure": -1.163356233470738,
+      "maximumKinematicPressure": 1.293270423228863,
+      "maximumSpeedRatio": 1.164485843178421,
+      "pressureRangeRatio": 2.456626656699601,
+      "wallForceX": 2.058872062552532,
+      "pressureForceX": 1.229301076675635,
+      "wallViscousForceX": 0.829570985876897,
+      "notAProductDefault": "a fixed 0.075 neighbour-area target previously showed non-monotone pressure response and systematic drag movement in an independent cylinder series",
+      "sha256": {
+        "summary": "595d7ee024fddb03cc1aad992d6ae5ac83c942bcbf79a222719f7f88a3543235",
+        "cells": "c4385eb8d3203f10dd11811066f060bbb7e5197f39a09cc17b43d8ea1935bba5",
+        "faces": "2e3a03887b5b05e5971e125b02fbca60f29c7d007b7dc15d090f640af0583cdb",
+        "residuals": "759676eaa8c191f9e053e00140e338db9e91f4215a507a9f9adf4db4032cd3e2"
+      }
+    },
+    "solutionDependentLocalization": {
+      "seed": "28 bad-field cells with speed greater than 1.5 times the reference speed",
+      "halo2": {
+        "mutableCells": 92,
+        "repairTransactions": 10,
+        "outputCells": 17258,
+        "areaPreserved": true,
+        "boundaryAtomsIdentical": true,
+        "originalSolverGatePassed": true,
+        "completeEvaluations": 546,
+        "maximumSpeed": 1.443943708949454,
+        "maximumSpeedLocation": [0.9585693477078147, 0.5195235728100948],
+        "kinematicPressureRange": [-19.17276067793296, 43.71272152949729],
+        "wallForceX": 2.083492753290402,
+        "pressureForceX": -1.462996204659446,
+        "wallViscousForceX": 3.546488957949846
+      },
+      "halo4": {
+        "mutableCells": 172,
+        "repairTransactions": 8,
+        "outputCells": 17256,
+        "areaPreserved": true,
+        "boundaryAtomsIdentical": true,
+        "originalSolverGatePassed": true,
+        "completeEvaluations": 479,
+        "maximumSpeed": 1.443742666934251,
+        "maximumSpeedLocation": [0.9585693477078147, 0.5195235728100948],
+        "kinematicPressureRange": [-19.16909156072079, 43.70839488123335],
+        "wallForceX": 2.087136275694513,
+        "pressureForceX": -1.521639381559858,
+        "wallViscousForceX": 3.608775657254372
+      },
+      "interpretation": "repairing the upstream solution-selected motif moves the largest amplitude to an isomorphic downstream motif; multiple latent wall-adjacent topology sites exist, so a solution-dependent repair seed is not an admissible product rule"
+    }
+  },
+  "nonInterference": {
+    "badReplayByteIdentical": ["cells.csv", "faces.csv", "fields.json", "residuals.csv"],
+    "fullRepairReplayByteIdentical": ["cells.csv", "faces.csv", "fields.json", "residuals.csv"]
+  },
+  "verification": {
+    "linuxRelatedNativeTests": "16/16 passed",
+    "nativeFinalArrayAssertion": "passed",
+    "frontendTests": "197/197 passed",
+    "fullNativeSuiteThisBatch": "not run",
+    "electronPathThisBatch": "not run",
+    "macOSOrPackagedApp": "not run"
+  },
+  "qualification": "the diagnostic exposes a converged-field amplitude hazard but does not itself make the unstable mesh phase accurate or mature"
+}

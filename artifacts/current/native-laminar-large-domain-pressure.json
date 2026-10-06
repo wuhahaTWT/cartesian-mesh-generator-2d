@@ -1,0 +1,147 @@
+{
+  "title": "Re=20 曲壁外流同一 20D 外域三档空间加密与压力剖面",
+  "date": "2026-10-06",
+  "scope": {
+    "model": "原生二维、恒物性、稳态、不可压层流，真实 Cut-cell",
+    "case": "静止圆柱，D=2 m、U=1 m/s、nu=0.1 m2/s、Re=20",
+    "domain": "所有三档均使用 far-field-spans=20；几何段数、壁面尺寸和背景尺寸同步减半",
+    "solver": "Newton--Krylov、face-limited-linear、strict tolerance=1e-8、max evaluations=2500",
+    "pressure_unit": "m2/s2（运动学压力）",
+    "profile": "从原生 faces.csv 读取壁面压力；每档减去壁长加权 gauge 常数，以壁长加权周界中心为极角原点，在 16384 个等角位置周期线性插值",
+    "not_an_independent_equation_audit": true
+  },
+  "source": {
+    "git_head_before_evidence_commit": "e84353d8c17587ef142568cb4673c72a758b37d2",
+    "git_tree_before_evidence_commit": "77450d733601bc7ec922a0f481b4434f01157cd2",
+    "orchestrator": "artifacts/current/native-laminar-large-domain-pressure.py",
+    "orchestrator_sha256": "05f331296177a0a79b9e67f5e2d3014175c410f2313b51186c4b4e2b465a5498",
+    "profile_driver": "artifacts/current/native-laminar-cylinder-pressure-profile.cpp",
+    "profile_driver_sha256": "239aa08c7edb4206f255fed2ed82902d87580a0f6081d2f523a6b56bd8981b0a",
+    "mesh_cli_sha256": "c20d0ca3f6940c8007d20c4d7c58a708598b76f8101ea3bc52edea923e45789a",
+    "flow_cli_sha256": "f456e1558d36c440d0a8c61f0b6bfd2da796c8951950d0d59beea4e3d3251c8c",
+    "profile_binary_sha256": "fed535fecfdcc324a708d17b806a9ab0095a01fe1bebc85e68331afc4ec89c1f"
+  },
+  "same_20D_domain_refinement": [
+    {
+      "level": 0,
+      "polygon_segments": 32,
+      "wall_relative_size": 0.125,
+      "background_relative_size": 1.0,
+      "solver_cells": 4620,
+      "complete_evaluations": 264,
+      "process_seconds": 11.955823532000068,
+      "converged": true,
+      "global_relative_imbalance": 2.816175477097958e-16,
+      "velocity_trace_jumps": 0,
+      "wall_maximum_normal_prescribed_velocity_m_s": 0.0,
+      "drag_coefficient": 2.0653112359063166,
+      "pressure_drag_coefficient": 1.2066065323743314,
+      "viscous_drag_coefficient": 0.8587047035319846,
+      "drag_relative_to_context_reference": 0.009932144697465365,
+      "gauge_removed_pressure_profile_rms_m2_s2": 0.3521521115898535,
+      "mesh_sha256": "920eacc34da2fa7f5f0529fe739628ce189a56732babdbb71151ab36ce388e79"
+    },
+    {
+      "level": 1,
+      "polygon_segments": 64,
+      "wall_relative_size": 0.0625,
+      "background_relative_size": 0.5,
+      "solver_cells": 17196,
+      "complete_evaluations": 336,
+      "process_seconds": 91.31178800099588,
+      "converged": true,
+      "global_relative_imbalance": 1.741154645936526e-15,
+      "velocity_trace_jumps": 0,
+      "wall_maximum_normal_prescribed_velocity_m_s": 0.0,
+      "drag_coefficient": 2.062071816329552,
+      "pressure_drag_coefficient": 1.2239804476866984,
+      "viscous_drag_coefficient": 0.8380913686428525,
+      "drag_relative_to_context_reference": 0.00834807644476871,
+      "drag_relative_change_from_previous": 0.001570953810197921,
+      "gauge_removed_pressure_profile_rms_m2_s2": 0.3649135617202243,
+      "profile_difference_from_previous_rms_m2_s2": 0.02735868358793947,
+      "profile_difference_from_previous_maximum_m2_s2": 0.07272797564121775,
+      "profile_difference_maximum_angle_rad": 1.9305148215540795,
+      "mesh_sha256": "ded0f622fec3227ab8158b9d4eb50099b2118194d8a1f51f085726c84306fedf"
+    },
+    {
+      "level": 2,
+      "polygon_segments": 128,
+      "wall_relative_size": 0.03125,
+      "background_relative_size": 0.25,
+      "solver_cells": 66912,
+      "complete_evaluations": 904,
+      "converged": true,
+      "global_relative_imbalance": 1.634464921131084e-14,
+      "velocity_trace_jumps": 0,
+      "wall_maximum_normal_prescribed_velocity_m_s": 0.0,
+      "drag_coefficient": 2.0621318915347593,
+      "pressure_drag_coefficient": 1.2345088679638931,
+      "viscous_drag_coefficient": 0.8276230235708652,
+      "drag_relative_to_context_reference": 0.008377453073232,
+      "drag_relative_change_from_previous": 0.000029132571710838727,
+      "gauge_removed_pressure_profile_rms_m2_s2": 0.3696249067005583,
+      "profile_difference_from_previous_rms_m2_s2": 0.016442712884461967,
+      "profile_difference_from_previous_maximum_m2_s2": 0.07769131481145339,
+      "profile_difference_maximum_angle_rad": 2.2120002961310945,
+      "mesh_sha256": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280"
+    }
+  ],
+  "spatial_interpretation": {
+    "successive_profile_rms_difference_ratio": 1.6638789341017366,
+    "two_interval_apparent_order_from_rms_difference": 0.7345504650143578,
+    "profile_rms_difference_decreases": true,
+    "profile_maximum_difference_decreases": false,
+    "integrated_drag_finest_relative_change": 0.000029132571710838727,
+    "qualification": "在同一 20D 外域内，积分阻力的中/细档变化仅 0.00291%，但壁面压力剖面的最大相邻差没有下降；因此积分载荷获得强加密证据，局部压力点值仍不授予空间精度资格。"
+  },
+  "domain_sensitivity_10D_to_20D": [
+    {
+      "level": 0,
+      "profile_difference_rms_m2_s2": 0.021900564975133898,
+      "profile_difference_maximum_m2_s2": 0.0676320122335417
+    },
+    {
+      "level": 1,
+      "profile_difference_rms_m2_s2": 0.024408411971148316,
+      "profile_difference_maximum_m2_s2": 0.07837308457356709
+    },
+    {
+      "level": 2,
+      "profile_difference_rms_m2_s2": 0.02301836972485474,
+      "profile_difference_maximum_m2_s2": 0.08389846924555627
+    }
+  ],
+  "domain_interpretation": "10D/20D 的剖面 RMS 差三档均约 0.022--0.024 m2/s2，并不随空间细化消失；最细域效应 RMS 仍大于 20D 最后一档空间差。局部压力资格必须同时包含外域敏感性，不能用单一有限方域替代。",
+  "raw": {
+    "runs": "outputs/cloud-laminar/cylinder-joint/far-20-spatial-runs.json",
+    "runs_sha256": "e63551f8c03f80e4c973a1150f24fa10ccf82af322b682d72abd52b449a9a337",
+    "profile_10D": "outputs/cloud-laminar/cylinder-pressure-profile-10d.json",
+    "profile_10D_sha256": "ad10cc0a5e43da802df4dd2375dd229775e182f03cb40eb1b05c1e8d10a5064f",
+    "profile_20D": "outputs/cloud-laminar/cylinder-pressure-profile-20d.json",
+    "profile_20D_sha256": "b7932d1f795ed443a41b508a32422413db04e6718ff31836b506c6412f8b6ad6",
+    "domain_pair_sha256": [
+      "856092c62154863f762410d4ef177e619a233909151ada64d6d40739c7e78552",
+      "36b23fac98df816049974bebba5b6b82908203110e7010428da4a0dcebfbe1b3",
+      "3b08454a40713bb46c0dbe5d5defeedc2e2e7637bf5eeaabd03dbe9c18e4a21a"
+    ]
+  },
+  "tests": {
+    "targeted_ctest": "16/16 passed (regex flow_boundary|solver_export|io also selects name substrings)",
+    "log": "outputs/cloud-laminar/large-domain-targeted-tests.log",
+    "log_sha256": "21e63b47c47f848970f506e7cec0a0dc038839adfddb2317061edffc16b83e6b",
+    "profile_driver_compile": "g++ -std=c++20 -O2 -Wall -Wextra -Werror passed",
+    "full_native_suite_this_batch": "not rerun; previous committed product state remains 100/100",
+    "frontend_or_app_this_batch": "not rerun; no product or desktop implementation changed"
+  },
+  "decision": {
+    "product_equation_default_or_quality_gate_changed": false,
+    "reason": "同一大外域证据支持积分阻力稳定，却明确否定局部最大压力差已收敛；没有跨工况证据支持修改压力权重、默认或网格门。",
+    "remaining": [
+      "在零迹跳一般曲壁上筛选能改善局部压力、且不系统移动积分载荷的通用离散候选",
+      "任何候选必须保持真实几何、原面积、边界原子、无穿透和 Solver 门，并回归内流、封闭流、外流、失败/取消/旧工况及完整成本",
+      "不连续规定速度迹角点的压力点值继续未资格；完整场、守恒和积分载荷不删除",
+      "实体桌面、macOS 与打包版仍未验证"
+    ]
+  }
+}

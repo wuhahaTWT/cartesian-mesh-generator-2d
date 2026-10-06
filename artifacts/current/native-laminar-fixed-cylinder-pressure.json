@@ -1,0 +1,742 @@
+{
+  "format": "cartmesh2d-native-laminar-fixed-cylinder-pressure-v1",
+  "status": "diagnostic-counterexample-not-default",
+  "scope": "One byte-identical 128-segment stationary-cylinder polygon and one 20D outer domain, with spatial size only refined. Native accepted fields and the existing exact-union/split repair are compared; no surrogate flow equation or relaxed acceptance threshold is used.",
+  "environment": {
+    "system": "Linux x86_64",
+    "localHeadBeforeEvidenceCommit": "390047315691e24e4762e46dde80bfbfa4991f2d",
+    "flowCliSha256": "f456e1558d36c440d0a8c61f0b6bfd2da796c8951950d0d59beea4e3d3251c8c",
+    "meshCliSha256": "c20d0ca3f6940c8007d20c4d7c58a708598b76f8101ea3bc52edea923e45789a",
+    "profileSourceSha256": "239aa08c7edb4206f255fed2ed82902d87580a0f6081d2f523a6b56bd8981b0a",
+    "profileBinarySha256": "fed535fecfdcc324a708d17b806a9ab0095a01fe1bebc85e68331afc4ec89c1f",
+    "driverSourceSha256": "158ccd44bb84d9745ccc132310f7505be18a4ca26833e4dc1aa3a7b21af57cc1"
+  },
+  "fixedSetup": {
+    "polygon": "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+    "polygonSha256": "a3c33ea090e7c12b820ba0d4931ff4565245418ec2950e3f854008fbc14571d9",
+    "segments": 128,
+    "centre_m": [
+      0.07,
+      0.03
+    ],
+    "diameter_m": 2,
+    "outerDomainDiameterSpans": 20,
+    "speed_m_s": 1,
+    "kinematicViscosity_m2_s": 0.1,
+    "reynoldsNumber": 20,
+    "solverTolerance": 1e-08,
+    "unchangedSolverMinimumVolumeRatio": 0.01
+  },
+  "nativeRuns": [
+    {
+      "name": "fixed128-grid0-fll",
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+      "meshSha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+      "outputPrefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear",
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 4716,
+        "iterations": 285,
+        "coupledEvaluations": 285,
+        "coupledFailedEvaluations": 0,
+        "continuity": 2.309706664256438e-13,
+        "globalImbalance": 6.705747068735946e-14,
+        "globalRelativeImbalance": 8.177740327726763e-16,
+        "momentumResidual": 6.081255944476062e-10,
+        "velocityChange": 1.850034919402475e-09,
+        "pressureChange": 4.029426981548569e-09,
+        "wallForceX": 2.0734286072758974,
+        "pressureForceX": 1.2413670526657137,
+        "wallViscousForceX": 0.8320615546101826,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "velocityTracePrescribedFaces": 224,
+        "velocityTraceAdjacentVertices": 223,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": 0.01390151945031661
+      },
+      "fieldExtrema": {
+        "minimumU_m_s": -0.028424618380498583,
+        "maximumU_m_s": 1.1476436190068582,
+        "minimumV_m_s": -0.49133010665334337,
+        "maximumV_m_s": 0.48839579521959103,
+        "minimumKinematicPressure_m2_s2": -0.7230329554955772,
+        "maximumKinematicPressure_m2_s2": 0.8090526400404693,
+        "maximumSpeed_m_s": 1.1622710644164136
+      },
+      "streamwiseWallLoadCancellationFactor": 0.9999999999999993,
+      "rawSha256": {
+        ".json": "e9b4fd30477cc00985b47ba68bc724e41e530c034d1708cc0adfff75b16ad7b0",
+        ".cells.csv": "99f58d4124583ae3c7ba5875ae5e4a064a41e516ed4824c502f92cc864ec8d2e",
+        ".faces.csv": "194b253b824061b58bcb5e50dbdad155fdcde1af1bfc81b2da16664f90da767f",
+        ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
+      }
+    },
+    {
+      "name": "fixed128-grid1-fll",
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+      "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+      "outputPrefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear",
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 17260,
+        "iterations": 1049,
+        "coupledEvaluations": 1049,
+        "coupledFailedEvaluations": 0,
+        "continuity": 4.2293446911384396e-13,
+        "globalImbalance": -6.94777568810423e-13,
+        "globalRelativeImbalance": 8.472897180614914e-15,
+        "momentumResidual": 1.3305429890180518e-10,
+        "velocityChange": 1.3108565405312205e-10,
+        "pressureChange": 2.048785069057328e-09,
+        "wallForceX": 2.007087571876749,
+        "pressureForceX": -13.256639584226399,
+        "wallViscousForceX": 15.263727156103158,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "velocityTracePrescribedFaces": 332,
+        "velocityTraceAdjacentVertices": 331,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": -0.018539084656846463
+      },
+      "fieldExtrema": {
+        "minimumU_m_s": -1.2566710762244317,
+        "maximumU_m_s": 3.927646221022845,
+        "minimumV_m_s": -4.987543022642476,
+        "maximumV_m_s": 4.9877818981918915,
+        "minimumKinematicPressure_m2_s2": -182.6456035097578,
+        "maximumKinematicPressure_m2_s2": 83.2057247654601,
+        "maximumSpeed_m_s": 5.489758876044062
+      },
+      "streamwiseWallLoadCancellationFactor": 14.209826785814473,
+      "rawSha256": {
+        ".json": "4254c9880554f0756805a5f29840d2a9f67a98e89ef37152f1a51936d7c4c882",
+        ".cells.csv": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+        ".faces.csv": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
+      }
+    },
+    {
+      "name": "fixed128-grid1-upwind",
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+      "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+      "outputPrefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-upwind",
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 17260,
+        "iterations": 413,
+        "coupledEvaluations": 413,
+        "coupledFailedEvaluations": 0,
+        "continuity": 5.520325552189726e-13,
+        "globalImbalance": -3.204103649068202e-13,
+        "globalRelativeImbalance": 3.907443474473417e-15,
+        "momentumResidual": 1.9622595496929855e-10,
+        "velocityChange": 1.3568012577681977e-10,
+        "pressureChange": 2.998071570405472e-09,
+        "wallForceX": 2.180284912365933,
+        "pressureForceX": -13.834112641058768,
+        "wallViscousForceX": 16.014397553424697,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "upwind",
+        "velocityTracePrescribedFaces": 332,
+        "velocityTraceAdjacentVertices": 331,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": 0.06615399137698434
+      },
+      "fieldExtrema": {
+        "minimumU_m_s": -1.429839614113536,
+        "maximumU_m_s": 4.0384184942188375,
+        "minimumV_m_s": -4.8529112935254926,
+        "maximumV_m_s": 4.852732149734213,
+        "minimumKinematicPressure_m2_s2": -188.94109869278327,
+        "maximumKinematicPressure_m2_s2": 86.00589254275357,
+        "maximumSpeed_m_s": 5.599369148765326
+      },
+      "streamwiseWallLoadCancellationFactor": 13.690187931490753,
+      "rawSha256": {
+        ".json": "20a3ba8f992efe50738cbfec4adbe7da8402ae852d74349e8d4cf25fdd269f83",
+        ".cells.csv": "3a8e42627e765ebce586b70f04e3e350d20e66380702b42ba583fe366ba6c825",
+        ".faces.csv": "d4245846253a9061a91ce064c47c68197d01b88365102a6b06f0c6809e43666b",
+        ".residuals.csv": "660000095e3438b061088e64a9d83872b2429373370651a9d7b58d4515b0fc91"
+      }
+    },
+    {
+      "name": "fixed128-grid1-volume075-fll",
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075.solver.cm2d",
+      "meshSha256": "290b2a2918ee956a998c881d5d6192983393b4a7025e8f63203f89f3479edc5d",
+      "outputPrefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-face-limited-linear",
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 17252,
+        "iterations": 552,
+        "coupledEvaluations": 552,
+        "coupledFailedEvaluations": 0,
+        "continuity": 5.231720076532766e-13,
+        "globalImbalance": 9.214851104388799e-14,
+        "globalRelativeImbalance": 1.123762329803512e-15,
+        "momentumResidual": 3.278494612678534e-10,
+        "velocityChange": 5.68238348432426e-10,
+        "pressureChange": 1.3010528464573222e-09,
+        "wallForceX": 2.058872062552532,
+        "pressureForceX": 1.2293010766756352,
+        "wallViscousForceX": 0.829570985876897,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "velocityTracePrescribedFaces": 332,
+        "velocityTraceAdjacentVertices": 331,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": 0.006783404671164866
+      },
+      "fieldExtrema": {
+        "minimumU_m_s": -0.028635489618349264,
+        "maximumU_m_s": 1.1487305824560683,
+        "minimumV_m_s": -0.49210090514391575,
+        "maximumV_m_s": 0.4921152736789503,
+        "minimumKinematicPressure_m2_s2": -1.1633562334707377,
+        "maximumKinematicPressure_m2_s2": 1.2932704232288632,
+        "maximumSpeed_m_s": 1.1644858431784209
+      },
+      "streamwiseWallLoadCancellationFactor": 1.0,
+      "rawSha256": {
+        ".json": "c93306a3979639fce27ebbf011903bee0a15aeeb1f09f1b954053f60a54a5044",
+        ".cells.csv": "c4385eb8d3203f10dd11811066f060bbb7e5197f39a09cc17b43d8ea1935bba5",
+        ".faces.csv": "2e3a03887b5b05e5971e125b02fbca60f29c7d007b7dc15d090f640af0583cdb",
+        ".residuals.csv": "759676eaa8c191f9e053e00140e338db9e91f4215a507a9f9adf4db4032cd3e2"
+      }
+    },
+    {
+      "name": "fixed128-grid2-fll",
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20.solver.cm2d",
+      "meshSha256": "fa020f87d9fa42d61f987425b93a523b152691542643db5257a83a7c993c3280",
+      "outputPrefix": "outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear",
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 66912,
+        "iterations": 904,
+        "coupledEvaluations": 904,
+        "coupledFailedEvaluations": 0,
+        "continuity": 8.562748335868918e-13,
+        "globalImbalance": -1.340261235327489e-12,
+        "globalRelativeImbalance": 1.634464921131084e-14,
+        "momentumResidual": 2.5742176098617296e-10,
+        "velocityChange": 5.456317824751172e-10,
+        "pressureChange": 2.9979781480453547e-09,
+        "wallForceX": 2.0621318915347593,
+        "pressureForceX": 1.2345088679638931,
+        "wallViscousForceX": 0.8276230235708651,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": 0.00837745307323196
+      },
+      "fieldExtrema": {
+        "minimumU_m_s": -0.03058656317681056,
+        "maximumU_m_s": 1.1496279069466353,
+        "minimumV_m_s": -0.4918864115050594,
+        "maximumV_m_s": 0.49188641151831003,
+        "minimumKinematicPressure_m2_s2": -0.49997015918375,
+        "maximumKinematicPressure_m2_s2": 0.6562120825598162,
+        "maximumSpeed_m_s": 1.1645571871763656
+      },
+      "streamwiseWallLoadCancellationFactor": 0.9999999999999996,
+      "rawSha256": {
+        ".json": "767ef826467be3603b7c1d47f9c4e1e975dfd7aa027a309c8fb68ea54bce41ed",
+        ".cells.csv": "0094a4226f58da53e25098192a970aa2d4479741a989028c8f49d378347f4d3e",
+        ".faces.csv": "90505465ab57327a71b8cd48ef4493b1792d5cb10693f1b497b15bd2dbbbf13d",
+        ".residuals.csv": "6379762e8836be04104063acc1dd30444fbc8adb41ae00e54d4e82648a22fc2f"
+      }
+    }
+  ],
+  "newGridRunRecords": [
+    {
+      "grid": 0,
+      "segments": 128,
+      "wallRelativeSize": 0.125,
+      "backgroundRelativeSize": 1.0,
+      "farFieldSpans": 20,
+      "input": "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+      "inputSha256": "a3c33ea090e7c12b820ba0d4931ff4565245418ec2950e3f854008fbc14571d9",
+      "mesh": {
+        "command": [
+          "build/cartmesh2d_cli",
+          "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0",
+          "8",
+          ".25",
+          ".1",
+          "exterior",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-foam",
+          "0",
+          "0",
+          "--size-field",
+          "--reference-length",
+          "2",
+          "--wall-relative-size",
+          "0.125",
+          "--background-relative-size",
+          "1.0",
+          "--far-field-spans",
+          "20",
+          "--cells-per-level",
+          "3"
+        ],
+        "log": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-mesh.log",
+        "status": "completed",
+        "returncode": 0,
+        "processSeconds": 3.5756246550008655
+      },
+      "meshSha256": "22de365e3908da5c2de891902a2414fe743275886c551c5a176b2ad03efa748e",
+      "constructionQuality": {
+        "quality_class": "construction_quality",
+        "metric_semantics": {
+          "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+          "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+        },
+        "valid": true,
+        "counts": {
+          "vertices": 4916,
+          "edges": 9500,
+          "cells": 4584,
+          "internal_edges": 9084,
+          "boundary_edges": 416,
+          "source_cut_cells": 52,
+          "source_full_cells": 4548,
+          "source_small_cells": 16
+        },
+        "quality": {
+          "min_cell_area": 0.007398362260276513,
+          "min_edge_length": 0.008229850806820448,
+          "max_cell_edge_length_ratio": 19.4604074556578,
+          "max_centroid_vertex_mean_offset_normalized": 0.2856014837194927,
+          "min_cut_cell_area_fraction": 0.011611265419843189
+        },
+        "level_distribution": {
+          "6": 4044,
+          "7": 148,
+          "8": 152,
+          "9": 256
+        },
+        "topology_audit": {
+          "duplicate_vertices": 0,
+          "duplicate_edges": 0,
+          "orphan_internal_edges": 0,
+          "non_manifold_edges": 0,
+          "unclassified_boundary_edges": 0,
+          "open_cell_loops": 0,
+          "area_mismatches": 0
+        },
+        "issue_count": 0
+      },
+      "solve": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0.solver.cm2d",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "2500",
+          "--output",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear"
+        ],
+        "log": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear.log",
+        "status": "completed",
+        "returncode": 0,
+        "processSeconds": 14.104149706006865
+      },
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 4716,
+        "iterations": 285,
+        "coupledEvaluations": 285,
+        "coupledFailedEvaluations": 0,
+        "continuity": 2.309706664256438e-13,
+        "globalImbalance": 6.705747068735946e-14,
+        "globalRelativeImbalance": 8.177740327726763e-16,
+        "momentumResidual": 6.081255944476062e-10,
+        "velocityChange": 1.850034919402475e-09,
+        "pressureChange": 4.029426981548569e-09,
+        "wallForceX": 2.0734286072758974,
+        "pressureForceX": 1.2413670526657137,
+        "wallViscousForceX": 0.8320615546101826,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "velocityTracePrescribedFaces": 224,
+        "velocityTraceAdjacentVertices": 223,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": 0.01390151945031661
+      },
+      "rawSha256": {
+        ".json": "e9b4fd30477cc00985b47ba68bc724e41e530c034d1708cc0adfff75b16ad7b0",
+        ".cells.csv": "99f58d4124583ae3c7ba5875ae5e4a064a41e516ed4824c502f92cc864ec8d2e",
+        ".faces.csv": "194b253b824061b58bcb5e50dbdad155fdcde1af1bfc81b2da16664f90da767f",
+        ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
+      }
+    },
+    {
+      "grid": 1,
+      "segments": 128,
+      "wallRelativeSize": 0.0625,
+      "backgroundRelativeSize": 0.5,
+      "farFieldSpans": 20,
+      "input": "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+      "inputSha256": "a3c33ea090e7c12b820ba0d4931ff4565245418ec2950e3f854008fbc14571d9",
+      "mesh": {
+        "command": [
+          "build/cartmesh2d_cli",
+          "outputs/cloud-laminar/cylinder-joint/level-2.xy",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1",
+          "8",
+          ".25",
+          ".1",
+          "exterior",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-foam",
+          "0",
+          "0",
+          "--size-field",
+          "--reference-length",
+          "2",
+          "--wall-relative-size",
+          "0.0625",
+          "--background-relative-size",
+          "0.5",
+          "--far-field-spans",
+          "20",
+          "--cells-per-level",
+          "3"
+        ],
+        "log": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-mesh.log",
+        "status": "completed",
+        "returncode": 0,
+        "processSeconds": 19.174290139999357
+      },
+      "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995",
+      "constructionQuality": {
+        "quality_class": "construction_quality",
+        "metric_semantics": {
+          "cell_edge_length_ratio": "max polygon edge length / min polygon edge length",
+          "centroid_vertex_mean_offset_normalized": "distance(area centroid, arithmetic vertex mean) / sqrt(cell area)"
+        },
+        "valid": true,
+        "counts": {
+          "vertices": 17644,
+          "edges": 34780,
+          "cells": 17136,
+          "internal_edges": 34064,
+          "boundary_edges": 716,
+          "source_cut_cells": 100,
+          "source_full_cells": 17056,
+          "source_small_cells": 20
+        },
+        "quality": {
+          "min_cell_area": 0.0006839207767828993,
+          "min_edge_length": 0.0028141835696866638,
+          "max_cell_edge_length_ratio": 28.45518887345222,
+          "max_centroid_vertex_mean_offset_normalized": 0.23731865180142123,
+          "min_cut_cell_area_fraction": 0.0022882426705626985
+        },
+        "level_distribution": {
+          "7": 16308,
+          "8": 192,
+          "9": 232,
+          "10": 424
+        },
+        "topology_audit": {
+          "duplicate_vertices": 0,
+          "duplicate_edges": 0,
+          "orphan_internal_edges": 0,
+          "non_manifold_edges": 0,
+          "unclassified_boundary_edges": 0,
+          "open_cell_loops": 0,
+          "area_mismatches": 0
+        },
+        "issue_count": 0
+      },
+      "solve": {
+        "command": [
+          "build/cartmesh2d_flow_cli",
+          "--mesh",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+          "--case",
+          "external",
+          "--nu",
+          ".1",
+          "--speed",
+          "1",
+          "--convection",
+          "face-limited-linear",
+          "--tolerance",
+          "1e-8",
+          "--max-iterations",
+          "2500",
+          "--output",
+          "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear"
+        ],
+        "log": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear.log",
+        "status": "completed",
+        "returncode": 0,
+        "processSeconds": 314.30144497199217
+      },
+      "summary": {
+        "status": "converged",
+        "converged": true,
+        "cells": 17260,
+        "iterations": 1049,
+        "coupledEvaluations": 1049,
+        "coupledFailedEvaluations": 0,
+        "continuity": 4.2293446911384396e-13,
+        "globalImbalance": -6.94777568810423e-13,
+        "globalRelativeImbalance": 8.472897180614914e-15,
+        "momentumResidual": 1.3305429890180518e-10,
+        "velocityChange": 1.3108565405312205e-10,
+        "pressureChange": 2.048785069057328e-09,
+        "wallForceX": 2.007087571876749,
+        "pressureForceX": -13.256639584226399,
+        "wallViscousForceX": 15.263727156103158,
+        "steadyAcceleration": "newton-krylov",
+        "convection": "face-limited-linear",
+        "velocityTracePrescribedFaces": 332,
+        "velocityTraceAdjacentVertices": 331,
+        "velocityTraceDiscontinuousVertices": 0,
+        "velocityTraceMagnitudeDiscontinuousVertices": 0,
+        "velocityTraceEqualMagnitudeDirectionVertices": 0,
+        "velocityTraceMaximumVelocityJump": 0,
+        "wallTraceMaximumNormalVelocity": 0,
+        "referenceCd": 2.045,
+        "referenceRelativeDifference": -0.018539084656846463
+      },
+      "rawSha256": {
+        ".json": "4254c9880554f0756805a5f29840d2a9f67a98e89ef37152f1a51936d7c4c882",
+        ".cells.csv": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+        ".faces.csv": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
+      }
+    }
+  ],
+  "fixedGeometrySpatialPressureProfile": {
+    "angular_samples": 16384,
+    "cases": [
+      {
+        "label": "fixed128-grid0-fll",
+        "wall_faces": 160,
+        "perimeter_m": 6.282554501865551,
+        "perimeter_centre_m": [
+          0.07000000000000003,
+          0.030000000000000002
+        ],
+        "pressure_gauge_mean_m2_s2": -0.14826323033329378,
+        "gauge_removed_profile_m2_s2": {
+          "minimum": -0.6027560170807448,
+          "minimum_angle_rad": 1.2360050198388555,
+          "maximum": 1.110827434903038,
+          "maximum_angle_rad": 3.411573272257666,
+          "rms": 0.39032990987109484,
+          "total_variation": 9.872224091710674
+        },
+        "pressure_force_per_density_m4_s2": {
+          "x": 1.2413670526657137,
+          "y": -0.025431236846655377
+        }
+      },
+      {
+        "label": "fixed128-grid1-fll",
+        "wall_faces": 204,
+        "perimeter_m": 6.282554501865549,
+        "perimeter_centre_m": [
+          0.06999999999999997,
+          0.029999999999999995
+        ],
+        "pressure_gauge_mean_m2_s2": -1.0588284047703824,
+        "gauge_removed_profile_m2_s2": {
+          "minimum": -272.9439401642371,
+          "minimum_angle_rad": 2.675262494072558,
+          "maximum": 89.77819721317374,
+          "maximum_angle_rad": 2.5770877236478773,
+          "rms": 28.50150135902192,
+          "total_variation": 2263.685419535294
+        },
+        "pressure_force_per_density_m4_s2": {
+          "x": -13.256639584226399,
+          "y": -0.004147125450743176
+        }
+      },
+      {
+        "label": "fixed128-grid2-fll",
+        "wall_faces": 280,
+        "perimeter_m": 6.282554501865549,
+        "perimeter_centre_m": [
+          0.06999999999999994,
+          0.029999999999999992
+        ],
+        "pressure_gauge_mean_m2_s2": -0.14839929523850104,
+        "gauge_removed_profile_m2_s2": {
+          "minimum": -0.35258900778298125,
+          "minimum_angle_rad": 1.5059856385067283,
+          "maximum": 0.8109402384295177,
+          "maximum_angle_rad": 3.1615344038323063,
+          "rms": 0.3696249067005583,
+          "total_variation": 3.6449685548972965
+        },
+        "pressure_force_per_density_m4_s2": {
+          "x": 1.2345088679638931,
+          "y": -4.370676601672327e-11
+        }
+      }
+    ],
+    "successive_profile_differences_m2_s2": [
+      {
+        "coarse": "fixed128-grid0-fll",
+        "fine": "fixed128-grid1-fll",
+        "rms": 28.48963486344184,
+        "maximum": 273.2414223142026,
+        "maximum_angle_rad": 2.675262494072558
+      },
+      {
+        "coarse": "fixed128-grid1-fll",
+        "fine": "fixed128-grid2-fll",
+        "rms": 28.51862636738067,
+        "maximum": 273.50223225289267,
+        "maximum_angle_rad": 2.675262494072558
+      }
+    ]
+  },
+  "repair": {
+    "status": "causal-sensitivity-not-default",
+    "targetQuantity": "minimum internal-face area ratio min(A_owner,A_neighbour)/max(A_owner,A_neighbour), dimensionless",
+    "experimentalTarget": 0.075,
+    "unchangedDefaultSolverLimit": 0.01,
+    "nativeRepair": {
+      "inputCells": 17260,
+      "outputCells": 17252,
+      "repartitionCount": 24,
+      "inputArea": 6720.859668843033,
+      "outputArea": 6720.859668843033,
+      "inputMinimumCellArea": 1.849485305160464e-05,
+      "outputMinimumCellArea": 1.849485305160464e-05,
+      "inputBoundaryEdges": 716,
+      "outputBoundaryEdges": 716,
+      "boundaryAtomsIdentical": true,
+      "originalDefaultPass": true,
+      "outputDefaultPass": true,
+      "outputTargetPass": true,
+      "inputMinimumVolumeRatio": 0.018593345633624074,
+      "outputMinimumVolumeRatio": 0.0776874612631218
+    },
+    "pressureProfile": {
+      "angular_samples": 16384,
+      "cases": [
+        {
+          "label": "fixed128-grid1-fll",
+          "wall_faces": 204,
+          "perimeter_m": 6.282554501865549,
+          "perimeter_centre_m": [
+            0.06999999999999997,
+            0.029999999999999995
+          ],
+          "pressure_gauge_mean_m2_s2": -1.0588284047703824,
+          "gauge_removed_profile_m2_s2": {
+            "minimum": -272.9439401642371,
+            "minimum_angle_rad": 2.675262494072558,
+            "maximum": 89.77819721317374,
+            "maximum_angle_rad": 2.5770877236478773,
+            "rms": 28.50150135902192,
+            "total_variation": 2263.685419535294
+          },
+          "pressure_force_per_density_m4_s2": {
+            "x": -13.256639584226399,
+            "y": -0.004147125450743176
+          }
+        },
+        {
+          "label": "fixed128-grid1-volume075-fll",
+          "wall_faces": 204,
+          "perimeter_m": 6.282554501865549,
+          "perimeter_centre_m": [
+            0.06999999999999997,
+            0.029999999999999995
+          ],
+          "pressure_gauge_mean_m2_s2": -0.14985457422656026,
+          "gauge_removed_profile_m2_s2": {
+            "minimum": -1.3907806114586536,
+            "minimum_angle_rad": 5.178719139901925,
+            "maximum": 1.8994748103518397,
+            "maximum_angle_rad": 2.675262494072558,
+            "rms": 0.4118125592224808,
+            "total_variation": 19.73951143749227
+          },
+          "pressure_force_per_density_m4_s2": {
+            "x": 1.2293010766756352,
+            "y": -0.0007355485344411026
+          }
+        }
+      ],
+      "successive_profile_differences_m2_s2": [
+        {
+          "coarse": "fixed128-grid1-fll",
+          "fine": "fixed128-grid1-volume075-fll",
+          "rms": 28.691859355255716,
+          "maximum": 274.84341497458894,
+          "maximum_angle_rad": 2.675262494072558
+        }
+      ]
+    }
+  },
+  "interpretation": {
+    "finding": "The fixed polygon does not yield a monotone spatial sequence. The middle grid passes every existing Solver and strict residual gate but contains a large local velocity/pressure branch and cancellation of opposite pressure and viscous wall loads. Upwind has the same failure, so the Newton default and face-limited convection are not its cause.",
+    "causalControl": "The existing conservative exact-union/split repair changes only 24 transactions, preserves total area and every physical boundary atom, passes the unchanged Solver gate, and removes the large local branch.",
+    "qualification": "This proves a mesh-topology sensitivity and supplies a deterministic default-path counterexample. It does not justify promoting 0.075: prior cross-case evidence shows non-monotone response and a systematic force shift. A discretization-consistency objective and cross-case regression remain required before any product repair or default change."
+  },
+  "productChange": false,
+  "defaultChange": false,
+  "solverGateChange": false,
+  "rawEvidence": [
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-runs.json",
+    "outputs/cloud-laminar/cylinder-joint/cylinder-pressure-profile-fixed128-20d.json",
+    "outputs/cloud-laminar/cylinder-joint/cylinder-pressure-profile-fixed128-grid1-repair.json",
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-repair.json",
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear.*",
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-face-limited-linear.*",
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-upwind.*",
+    "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-face-limited-linear.*",
+    "outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear.*"
+  ]
+}

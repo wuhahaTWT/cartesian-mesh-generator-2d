@@ -1,0 +1,152 @@
+{
+  "format": "cartmesh2d-native-laminar-trace-causes-v1",
+  "scope": "Native product classification of prescribed-velocity trace jumps on the final FvMesh2D; no independent flow equation, geometry repair, cell deletion, threshold relaxation, or boundary replacement.",
+  "platform": {
+    "os": "Linux 6.18.44 x86_64",
+    "compiler": "GCC 13.3",
+    "macOSPhysicalDisplayOrPackagedAppQualification": false
+  },
+  "mathematicalConstraint": {
+    "statement": "At a vertex shared by two non-collinear polygon faces, the intersection of their tangential vector subspaces is the zero vector. A nonzero single Cartesian wall velocity therefore cannot be continuous and simultaneously impermeable on both actual faces.",
+    "consequence": "The product must retain and qualify equal-speed direction jumps at polygon corners; projecting an analytic-circle velocity onto neither actual face would violate the requested no-penetration semantics.",
+    "notClaimed": "This classification does not make corner pressure point values convergent and is not a pressure discretization fix."
+  },
+  "productChange": {
+    "velocityTraceCauseDefinition": "coordinate-invariant split of nonzero Cartesian trace jumps into speed-magnitude mismatch and equal-magnitude direction change; counts may overlap at multi-face vertices; diagnostic only",
+    "magnitudeQuantity": "absolute difference of prescribed velocity magnitudes",
+    "magnitudeUnits": "m/s",
+    "comparisonTolerance": "The existing TolerancePolicy::scale(max(reference speed, prescribed face speed)); construction floating-point comparison only, not a physical accuracy gate.",
+    "wallImpermeabilityQuantity": "maximum absolute prescribed wall velocity dotted with the unit normal of each actual polygon wall face",
+    "wallImpermeabilityUnits": "m/s",
+    "compatibility": "Existing wallTrace and velocityTrace fields retain their definitions. The cause and impermeability groups are additive; desktop validation still accepts older summaries without either group.",
+    "unchanged": [
+      "flow equations and prescribed boundary values",
+      "mesh area and boundary atoms",
+      "default Newton-Krylov and convection resolution",
+      "Solver quality gates and convergence certification",
+      "failure, cancellation, checkpoint and last-accepted-state semantics"
+    ]
+  },
+  "nativeRuns": {
+    "fixed128PolygonAnnulus": {
+      "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus-fixed128-l4.solver.cm2d --case custom --boundary outputs/cloud-laminar/annulus-fixed128-l4.boundaries --nu .1 --speed .5 --tolerance 1e-8 --max-iterations 1500 --convection face-limited-linear --steady-acceleration newton-krylov --output outputs/cloud-laminar/trace-cause/annulus-fixed128-l4",
+      "cells": 260,
+      "completeEvaluations": 86,
+      "converged": true,
+      "globalRelativeImbalance": 0.0,
+      "cartesianDiscontinuousVertices": 128,
+      "speedMagnitudeDiscontinuousVertices": 0,
+      "equalMagnitudeDirectionVertices": 128,
+      "maximumCartesianVelocityJump_m_s": 0.02454122852291383,
+      "maximumSpeedMagnitudeJump_m_s": 1.6653345369377348e-16,
+      "maximumActualPolygonWallNormalVelocity_m_s": 4.208277949138816e-17,
+      "wallForceX_m3_s2": -2.304754649824249e-9,
+      "wallForceY_m3_s2": -3.6978854149778695e-9,
+      "byteIdenticalToPriorAccepted": {
+        "cells.csv": true,
+        "faces.csv": true,
+        "fields.json": true,
+        "residuals.csv": true
+      },
+      "outputSha256": {
+        "summary": "a54e19a698eded9957f54aebf7111e568d46457267890039c7b3930ddd42dcdb",
+        "cells": "0060abb0551540e059964ea660f8df770cd83223dfcb35505f13d91783542bfa",
+        "faces": "86ccd9e1f19a520c470b9c548d3b4c90e151172ff93499bf7982c41fed77928f",
+        "fields": "d3486bb17c6bb823aeb818d82febd4e7a46063b6bafa02a2d7da5305fa033723",
+        "residuals": "8429fae6eddfb01ef9d60eb5fcd966fb1ec99935712f82d7458ec8a6ccb39034"
+      }
+    },
+    "curvedDuct": {
+      "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/trace-regression/duct-l5.solver.cm2d --case duct --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 1500 --convection face-limited-linear --steady-acceleration newton-krylov --output outputs/cloud-laminar/trace-cause/duct-l5",
+      "cells": 636,
+      "completeEvaluations": 75,
+      "converged": true,
+      "globalRelativeImbalance": 1.4294077188898994e-13,
+      "cartesianDiscontinuousVertices": 2,
+      "speedMagnitudeDiscontinuousVertices": 2,
+      "equalMagnitudeDirectionVertices": 0,
+      "maximumCartesianVelocityJump_m_s": 1.0,
+      "maximumSpeedMagnitudeJump_m_s": 1.0,
+      "maximumActualPolygonWallNormalVelocity_m_s": 0.0,
+      "wallForceX_m3_s2": 15.053999725848243,
+      "byteIdenticalToPriorAccepted": {
+        "cells.csv": true,
+        "faces.csv": true,
+        "fields.json": true,
+        "residuals.csv": true
+      },
+      "outputSha256": {
+        "summary": "d82a6452ee456b3b0de559debfd87f5c515ca22189c19b9eb5a21d39415654",
+        "cells": "80e9929dcea6fbfaa9f0b2b7f40ddd9a520680b4dadcd428d53ad6476ff71af6",
+        "faces": "0fb1b0bd59c85f9a6e1fe65997846b75e99314b630e94922573cd08d10b671e6",
+        "fields": "e875a26a09fabea86a972286720f13659c8146d7784671bb8f9a796b541e9dc5",
+        "residuals": "5cb05a9740b37fd47607a72df25a94203292b48f47a0a0520e8be29ddcb8f9f5"
+      }
+    },
+    "re20ExternalCylinder": {
+      "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-1.solver.cm2d --case external --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 1500 --convection face-limited-linear --steady-acceleration newton-krylov --output outputs/cloud-laminar/trace-cause/cylinder-level1",
+      "cells": 4904,
+      "completeEvaluations": 295,
+      "converged": true,
+      "globalRelativeImbalance": 2.016905161402368e-15,
+      "cartesianDiscontinuousVertices": 0,
+      "speedMagnitudeDiscontinuousVertices": 0,
+      "equalMagnitudeDirectionVertices": 0,
+      "maximumSpeedMagnitudeJump_m_s": 0.0,
+      "maximumActualPolygonWallNormalVelocity_m_s": 0.0,
+      "dragCoefficient": 2.15283663802888,
+      "byteIdenticalToPriorAccepted": {
+        "cells.csv": true,
+        "faces.csv": true,
+        "fields.json": true,
+        "residuals.csv": true
+      },
+      "outputSha256": {
+        "summary": "7e162a72e2000f7d4bba4e41a4a480e7971328e01630763b7ed7aab15e0e19b9",
+        "cells": "809f46e0a3aa193bdbf72e0d923e2bccaf34ed3e370c272fb093565eb6453d19",
+        "faces": "b6d87c878af693a06da0df0c85c9e6d77245306501fb61e57a77357932351bdf",
+        "fields": "fd033da9a2b7105b20b42be92702c2254d963c591b795aedc15985f32e5264bc",
+        "residuals": "d2d5c3e3ece34102f085342e6335b5a836d0c4d5a484d25fb961f1cd2436295a"
+      }
+    }
+  },
+  "nativeUnitCoverage": {
+    "equalSpeedTurningFixture": "A closed square with every wall moving at unit tangential speed converged in Stokes mode and reported four equal-magnitude direction vertices, zero magnitude-discontinuous vertices, maximum Cartesian jump sqrt(2) m/s, and wall-normal prescribed speed below the report tolerance.",
+    "magnitudeMismatchFixtures": "The cavity lid corners and uniform-inlet/no-slip-wall duct corners each report two magnitude-discontinuous vertices and zero equal-magnitude direction vertices."
+  },
+  "linuxDesktopPath": {
+    "scope": "Electron 37 headless renderer-to-IPC-to-native-CLI run; not a physical-display, macOS or packaged-App qualification.",
+    "cells": 728,
+    "solverQuality": "PASS",
+    "completeEvaluations": 117,
+    "converged": true,
+    "classification": {
+      "speedMagnitudeDiscontinuousVertices": 0,
+      "equalMagnitudeDirectionVertices": 0,
+      "maximumSpeedMagnitudeJump_m_s": 0.0,
+      "maximumActualPolygonWallNormalVelocity_m_s": 0.0
+    },
+    "renderedTextContains": [
+      "速度大小不连续点",
+      "等速方向转折点",
+      "实际多边形壁面最大法向规定速度（m/s）"
+    ],
+    "screenshotSha256": "4886159c4452fd13d42c8228ec8f9bf6c2c36b9b54284446efc483aca708f0b0",
+    "smokeRecordSha256": "0beb225e1c7e7acd6ba1a29124dd465916ef13a812135b32c002ed96f5e93a8a"
+  },
+  "verification": {
+    "nativeCTest": "100/100 passed",
+    "frontend": "196/196 passed",
+    "flowBoundaryTarget": "passed with new equal-speed polygon-turning fixture",
+    "flowCliSha256": "f456e1558d36c440d0a8c61f0b6bfd2da796c8951950d0d59beea4e3d3251c8c"
+  },
+  "qualification": {
+    "granted": "The result now distinguishes prescribed-speed mismatch from unavoidable equal-speed turning on the actual polygon while reporting the retained no-penetration quantity.",
+    "notGranted": [
+      "pressure point values at any reported discontinuous trace vertex",
+      "general near-wall pressure accuracy away from reported corners",
+      "physical-display, macOS or packaged-App qualification"
+    ],
+    "next": "Investigate local curved-wall pressure discretization away from explicitly classified trace vertices while retaining actual polygon geometry, no penetration, all cells, boundary atoms, Solver gates, and cross-case integral quantities."
+  }
+}

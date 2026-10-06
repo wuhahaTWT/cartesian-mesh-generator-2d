@@ -764,6 +764,22 @@ int main(int argc, char** argv) {
                 << ",\n\"wallViscousForceX\":" << r.wallViscousForceX
                 << ",\n\"wallViscousForceY\":" << r.wallViscousForceY
                 << ",\n\"wallForceDefinition\":\"all no-slip walls and moving lid; fluid on boundary; same pressure and viscous flux as momentum\""
+                << ",\n\"fieldAmplitudeDefinition\":\"final accepted cell-centre extrema; maximum speed normalized by requested reference speed; gauge-invariant pressure range normalized by reference speed squared; diagnostic only; no acceptance threshold\""
+                << ",\n\"minimumU\":" << r.fieldAmplitude.minimumU
+                << ",\n\"maximumU\":" << r.fieldAmplitude.maximumU
+                << ",\n\"minimumV\":" << r.fieldAmplitude.minimumV
+                << ",\n\"maximumV\":" << r.fieldAmplitude.maximumV
+                << ",\n\"maximumSpeed\":" << r.fieldAmplitude.maximumSpeed
+                << ",\n\"maximumSpeedLocation\":[" << r.fieldAmplitude.maximumSpeedLocation.x
+                << ',' << r.fieldAmplitude.maximumSpeedLocation.y << ']'
+                << ",\n\"minimumKinematicPressure\":" << r.fieldAmplitude.minimumKinematicPressure
+                << ",\n\"maximumKinematicPressure\":" << r.fieldAmplitude.maximumKinematicPressure
+                << ",\n\"minimumPressureLocation\":[" << r.fieldAmplitude.minimumPressureLocation.x
+                << ',' << r.fieldAmplitude.minimumPressureLocation.y << ']'
+                << ",\n\"maximumPressureLocation\":[" << r.fieldAmplitude.maximumPressureLocation.x
+                << ',' << r.fieldAmplitude.maximumPressureLocation.y << ']'
+                << ",\n\"maximumSpeedRatio\":" << r.fieldAmplitude.maximumSpeedRatio
+                << ",\n\"pressureRangeRatio\":" << r.fieldAmplitude.pressureRangeRatio
                 << ",\n\"wallTraceDefinition\":\"prescribed Cartesian velocity jump at reconstructed shared vertices of impermeable no-slip faces; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification\""
                 << ",\n\"wallTraceVelocityTolerance\":" << r.wallTrace.velocityTolerance
                 << ",\n\"wallTraceWallFaces\":" << r.wallTrace.wallFaces
@@ -772,6 +788,8 @@ int main(int argc, char** argv) {
                 << ",\n\"wallTraceMaximumVelocityJump\":" << r.wallTrace.maximumVelocityJump
                 << ",\n\"wallTraceMaximumJumpLocation\":[" << r.wallTrace.maximumJumpLocation.x
                 << ',' << r.wallTrace.maximumJumpLocation.y << ']'
+                << ",\n\"wallTraceImpermeabilityDefinition\":\"maximum absolute prescribed velocity dotted with the unit normal of the actual polygon wall face; m/s; diagnostic only\""
+                << ",\n\"wallTraceMaximumNormalVelocity\":" << r.wallTrace.maximumNormalVelocity
                 << ",\n\"velocityTraceDefinition\":\"prescribed Cartesian velocity jump at reconstructed shared vertices of boundary faces fixing both velocity components; includes no-slip walls and velocity ports; diagnostic only; nonzero vertices retain all cells and require separate pointwise-pressure qualification\""
                 << ",\n\"velocityTraceVelocityTolerance\":" << r.velocityTrace.velocityTolerance
                 << ",\n\"velocityTracePrescribedFaces\":" << r.velocityTrace.prescribedFaces
@@ -780,6 +798,10 @@ int main(int argc, char** argv) {
                 << ",\n\"velocityTraceMaximumVelocityJump\":" << r.velocityTrace.maximumVelocityJump
                 << ",\n\"velocityTraceMaximumJumpLocation\":[" << r.velocityTrace.maximumJumpLocation.x
                 << ',' << r.velocityTrace.maximumJumpLocation.y << ']'
+                << ",\n\"velocityTraceCauseDefinition\":\"coordinate-invariant split of nonzero Cartesian trace jumps into speed-magnitude mismatch and equal-magnitude direction change; counts may overlap at multi-face vertices; diagnostic only\""
+                << ",\n\"velocityTraceMagnitudeDiscontinuousVertices\":" << r.velocityTrace.magnitudeDiscontinuousVertices
+                << ",\n\"velocityTraceEqualMagnitudeDirectionVertices\":" << r.velocityTrace.equalMagnitudeDirectionVertices
+                << ",\n\"velocityTraceMaximumSpeedMagnitudeJump\":" << r.velocityTrace.maximumSpeedMagnitudeJump
                 << ",\n\"discreteForceDefinition\":\"pressure plus selected viscous momentum flux; embedded walls\""
                 << ",\n\"globalRelativeImbalance\":" << r.globalRelativeImbalance
                 << ",\n\"domainHeight\":" << r.domainHeight

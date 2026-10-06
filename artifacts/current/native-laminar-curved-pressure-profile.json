@@ -1,0 +1,123 @@
+{
+  "title": "无规定速度迹跳曲壁的壁面压力剖面与产品算子复核",
+  "date": "2026-10-06",
+  "scope": {
+    "model": "原生二维、恒物性、稳态、不可压层流，真实 Cut-cell",
+    "pressure_unit": "m2/s2（运动学压力）",
+    "gradient_unit": "m/s2",
+    "profile_gauge": "每个闭合物面剖面减去壁长加权平均常数；闭合物体压力合力不受该常数影响",
+    "not_an_independent_equation_audit": true
+  },
+  "source": {
+    "git_head_before_evidence_commit": "3ec397ab58ffbd183dadfd60d4897fcc52bfb011",
+    "git_tree_before_evidence_commit": "2454cf3711ee67c15945e85298e65d036326af7d",
+    "driver": "artifacts/current/native-laminar-cylinder-pressure-profile.cpp",
+    "driver_sha256": "239aa08c7edb4206f255fed2ed82902d87580a0f6081d2f523a6b56bd8981b0a",
+    "flow_cli_sha256": "f456e1558d36c440d0a8c61f0b6bfd2da796c8951950d0d59beea4e3d3251c8c",
+    "fv_library_sha256": "119d7c6f6525406ff2a753dc477faf510a9e359c22f3184048624790d387d813",
+    "mesh_library_sha256": "eecf3e9caea367627a98f4c6d6678cd0c75df90b40a86b69bc95ffd266cf6226"
+  },
+  "cylinder_surface_pressure": {
+    "case": "Re=20、U=1 m/s、D=2 m、nu=0.1 m2/s、静止圆柱；完整规定速度迹跳为零",
+    "sampling": "读取 cartmesh2d_flow_cli 写出的实际 wall face 压力，以壁长加权周界中心为极角原点，在 16384 个等角位置作周期线性插值",
+    "joint_refinement_10D": [
+      {
+        "segments": 32,
+        "cells": 1564,
+        "wall_faces": 72,
+        "gauge_removed_profile_rms_m2_s2": 0.35964373386753584,
+        "pressure_force_x_per_density_m4_s2": 1.242145337124757
+      },
+      {
+        "segments": 64,
+        "cells": 4904,
+        "wall_faces": 144,
+        "gauge_removed_profile_rms_m2_s2": 0.37908631195782877,
+        "pressure_force_x_per_density_m4_s2": 1.2742026916567757,
+        "profile_difference_from_previous_rms_m2_s2": 0.037583469085985297,
+        "profile_difference_from_previous_maximum_m2_s2": 0.1052611198734635
+      },
+      {
+        "segments": 128,
+        "cells": 17796,
+        "wall_faces": 296,
+        "gauge_removed_profile_rms_m2_s2": 0.38670056898930405,
+        "pressure_force_x_per_density_m4_s2": 1.2913792168354072,
+        "profile_difference_from_previous_rms_m2_s2": 0.020339653684087803,
+        "profile_difference_from_previous_maximum_m2_s2": 0.0724864593295178
+      }
+    ],
+    "domain_sensitivity_same_128_segment_geometry": {
+      "cells_20D": 66912,
+      "wall_faces_20D": 280,
+      "profile_rms_20D_m2_s2": 0.3696249067005583,
+      "pressure_force_x_20D_per_density_m4_s2": 1.2345088679638931,
+      "profile_difference_10D_to_20D_rms_m2_s2": 0.02301836972485474,
+      "profile_difference_10D_to_20D_maximum_m2_s2": 0.08389846924555627,
+      "interpretation": "域尺寸引起的剖面差已略大于最后一档联合加密 RMS 差，局部压力资格同样必须包含外域敏感性"
+    },
+    "raw_profile": "outputs/cloud-laminar/cylinder-pressure-profile-10d.json",
+    "raw_profile_sha256": "ad10cc0a5e43da802df4dd2375dd229775e182f03cb40eb1b05c1e8d10a5064f",
+    "correction": "旧后处理以全局原点计算极角；圆柱中心实际为 (0.07,0.03) m。本版改用壁长加权周界中心，未改变任何原生接受场。"
+  },
+  "fixed_polygon_product_operator": {
+    "case": "逐字节相同的每环 128 段圆环，只细化空间网格 level 4--8",
+    "method": "在接受场上调用产品压力最小二乘重构、共享面压力和保守压力梯度；解析圆形压力只用于误差评价",
+    "cells": [260, 576, 1710, 6084, 23548],
+    "exact_pressure_conservative_gradient_rms_m_s2": [
+      0.04075433410881473,
+      0.016610385658817308,
+      0.007132782806250955,
+      0.0033647036321567247,
+      0.0013064659338010158
+    ],
+    "worst_computed_pressure_cell_stencil_condition": [
+      8.110199493621726,
+      2.2213596304113454,
+      4.591072090440562,
+      2.5849355890250925,
+      9.531409328201912
+    ],
+    "full_field_pressure_maximum_error_m2_s2": [
+      0.1448221053365443,
+      0.2720744091593507,
+      0.16214926631502488,
+      0.20474117621131133,
+      0.6147157306084238
+    ],
+    "interpretation": "解析压力经过同一产品重构与保守积分后的面积加权梯度 RMS 连续下降，最差数值压力格的重构条件数也不接近退化；这反对把一般压力梯度秩/条件问题当作峰值根因。数值压力峰值仍不收敛，且此前距离诊断已把它定位到规定迹角点，故不据此改写产品压力算子。",
+    "raw_summary": "outputs/cloud-laminar/pressure-operator-study/summary.json",
+    "raw_summary_sha256": "ae6b3ec61f8ebe758aa71b9f985eb67435e31d63dd61bf9230e7beb4b2980bf4"
+  },
+  "fresh_native_regression": {
+    "command": "build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-0.solver.cm2d --case external --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 2500 --output outputs/cloud-laminar/pressure-profile-regression/default",
+    "resolved_method": "newton-krylov",
+    "resolved_convection": "face-limited-linear",
+    "cells": 1564,
+    "complete_evaluations": 153,
+    "converged": true,
+    "global_relative_imbalance": 9.706521301008512e-15,
+    "drag_coefficient": 2.155961574845837,
+    "cells_faces_residuals_byte_identical_to_existing_explicit_fll": true,
+    "cells_sha256": "13a701f484f2e9550e272bccc8518b00beeab234e65f2f982fb7f5153e0c1c67",
+    "faces_sha256": "d0d3b5c0c2d36464b66b7edddfbb394b4926df02c4f06ed33b06e3f62bc365d",
+    "residuals_sha256": "422ba158c37499c9b1b8f871b12ef01c1d9131dbbb8aa9681e7a3a5d734b266b"
+  },
+  "tests": {
+    "targeted_ctest": "16/16 passed (regex flow_boundary|solver_export|io also selects name substrings)",
+    "log": "outputs/cloud-laminar/pressure-profile-regression/targeted-ctest.log",
+    "log_sha256": "3697fa57a610c18033b39cc8b225b622d77483771f0ed6cd9ae28ba90cac1318",
+    "full_native_suite_this_batch": "not rerun; previous committed product state remains 100/100",
+    "frontend_this_batch": "not rerun; this batch changes only a native post-processing driver and docs"
+  },
+  "decision": {
+    "product_equation_or_default_changed": false,
+    "reason": "零迹跳静止圆柱的整周压力剖面随联合加密改善，且域尺寸效应已成为同量级限制；固定多边形解析压力的产品保守梯度误差也持续下降。没有跨工况证据支持改变压力重构权重、放宽门槛或以单一圆环峰值调参。",
+    "remaining": [
+      "不连续规定速度迹角点的压力点值继续明确为未资格观测量，完整场、守恒和积分载荷不删除",
+      "同一大外域三档补充证据见 native-laminar-large-domain-pressure.json；局部最大剖面差仍未收敛",
+      "需要继续寻找对无迹跳一般曲壁误差有跨工况收益、同时不移动积分载荷的离散候选",
+      "实体桌面、macOS 和打包版仍未验证"
+    ]
+  }
+}

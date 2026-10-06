@@ -193,6 +193,10 @@ struct FlowWallTraceDiagnostics2D {
     double velocityTolerance = 0;
     double maximumVelocityJump = 0;
     Point2D maximumJumpLocation{};
+    // Maximum prescribed wall-normal speed on the actual polygon faces.
+    // This is a reported physical quantity (m/s), not a relaxed acceptance
+    // threshold and not a projection onto an analytic smooth curve.
+    double maximumNormalVelocity = 0;
 };
 
 // Diagnostic of the prescribed Cartesian velocity trace at vertices shared by
@@ -206,6 +210,33 @@ struct FlowVelocityTraceDiagnostics2D {
     double velocityTolerance = 0;
     double maximumVelocityJump = 0;
     Point2D maximumJumpLocation{};
+    // Coordinate-invariant cause split for nonzero Cartesian jumps. A vertex
+    // may contribute to both counts when more than two faces meet. Equal-speed
+    // direction changes identify polygon/patch turning; magnitude changes
+    // identify incompatible prescribed speed data. Neither classification
+    // removes the vertex or grants its pressure point value qualification.
+    std::size_t magnitudeDiscontinuousVertices = 0;
+    std::size_t equalMagnitudeDirectionVertices = 0;
+    double maximumSpeedMagnitudeJump = 0;
+};
+
+// Gauge-invariant final accepted field amplitudes. These are diagnostics, not
+// acceptance thresholds: mesh refinement and physical references still decide
+// whether a converged field is qualified. Normalization uses the requested
+// reference speed so values remain comparable across native/API/desktop paths.
+struct FlowFieldAmplitudeDiagnostics2D {
+    double minimumU = 0;
+    double maximumU = 0;
+    double minimumV = 0;
+    double maximumV = 0;
+    double maximumSpeed = 0;
+    Point2D maximumSpeedLocation{};
+    double minimumKinematicPressure = 0;
+    double maximumKinematicPressure = 0;
+    Point2D minimumPressureLocation{};
+    Point2D maximumPressureLocation{};
+    double maximumSpeedRatio = 0; // maximum speed / requested reference speed
+    double pressureRangeRatio = 0; // (max(p)-min(p)) / reference speed^2
 };
 
 struct FlowResult2D {
@@ -227,6 +258,7 @@ struct FlowResult2D {
     std::vector<FlowWallLoad2D> namedWallLoads;
     FlowWallTraceDiagnostics2D wallTrace;
     FlowVelocityTraceDiagnostics2D velocityTrace;
+    FlowFieldAmplitudeDiagnostics2D fieldAmplitude;
     std::vector<Vector2D> sourceIntegrals; // populated only for manufactured verification
     std::vector<FlowIteration2D> history;
     double globalImbalance = 0;

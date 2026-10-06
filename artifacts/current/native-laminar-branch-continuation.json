@@ -1,0 +1,542 @@
+{
+  "adjacentAndTopologyControls": {
+    "badGrid": {
+      "cells": 17260,
+      "eightWorstWallCells": [
+        {
+          "areaRatio": 0.08295347924366439,
+          "boundaryFaces": 1,
+          "cell": 16908,
+          "error": 184.05411782089092,
+          "nonorthogonalRatio": 10.580845284060103,
+          "x": 0.5298068600854267,
+          "y": -0.8589233108239324
+        },
+        {
+          "areaRatio": 0.0829534792436567,
+          "boundaryFaces": 1,
+          "cell": 16805,
+          "error": 184.054117820865,
+          "nonorthogonalRatio": 10.580845284060304,
+          "x": -0.3898068600854267,
+          "y": -0.8589233108239323
+        },
+        {
+          "areaRatio": 0.08295347924366682,
+          "boundaryFaces": 1,
+          "cell": 16838,
+          "error": 184.0541178208002,
+          "nonorthogonalRatio": 10.580845284059048,
+          "x": -0.8189233108239328,
+          "y": -0.4298068600854261
+        },
+        {
+          "areaRatio": 0.08295347924371294,
+          "boundaryFaces": 1,
+          "cell": 17157,
+          "error": 184.05411782075416,
+          "nonorthogonalRatio": 10.580845284053922,
+          "x": 0.9589233108239329,
+          "y": 0.48980686008542695
+        },
+        {
+          "areaRatio": 0.08295347924368862,
+          "boundaryFaces": 1,
+          "cell": 16955,
+          "error": 184.05411782073853,
+          "nonorthogonalRatio": 10.580845284057096,
+          "x": 0.9589233108239327,
+          "y": -0.4298068600854264
+        },
+        {
+          "areaRatio": 0.08295347924369828,
+          "boundaryFaces": 1,
+          "cell": 17040,
+          "error": 184.05411782072022,
+          "nonorthogonalRatio": 10.580845284055918,
+          "x": -0.8189233108239327,
+          "y": 0.489806860085427
+        },
+        {
+          "areaRatio": 0.08295347924371621,
+          "boundaryFaces": 1,
+          "cell": 17087,
+          "error": 184.05411782068919,
+          "nonorthogonalRatio": 10.580845284053575,
+          "x": -0.3898068600854264,
+          "y": 0.9189233108239332
+        },
+        {
+          "areaRatio": 0.08295347924372534,
+          "boundaryFaces": 1,
+          "cell": 17190,
+          "error": 184.05411782059733,
+          "nonorthogonalRatio": 10.580845284052678,
+          "x": 0.5298068600854268,
+          "y": 0.9189233108239332
+        }
+      ],
+      "maximumInteriorQuadraticConsistencyError": 7.0594595447734685,
+      "maximumWallQuadraticConsistencyError": 184.05411782089092,
+      "path": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.topology-spectrum.csv",
+      "sha256": "61d770ecbf7a383a80a0e21b2c4aa98401d60607b0f21cc264a9eb125b0e8f1f"
+    },
+    "finding": "The geometry-only spectrum identifies all symmetric latent wall motifs, but its maximum remains large after the accepted field is normalized; it is not a sufficient standalone quality gate.",
+    "grid1VolumeRepair": {
+      "case": "external",
+      "cells": 17252,
+      "coupledEvaluations": 552,
+      "globalRelativeImbalance": 1.123762329803512e-15,
+      "iterations": 552,
+      "maximumSpeedRatio": null,
+      "momentumInertia": 1,
+      "name": "grid1-volume-0.075-control",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-face-limited-linear",
+      "pressureForceX": 1.2293010766756352,
+      "pressureRangeRatio": null,
+      "rawSha256": {
+        ".cells.csv": "c4385eb8d3203f10dd11811066f060bbb7e5197f39a09cc17b43d8ea1935bba5",
+        ".faces.csv": "2e3a03887b5b05e5971e125b02fbca60f29c7d007b7dc15d090f640af0583cdb",
+        ".json": "c93306a3979639fce27ebbf011903bee0a15aeeb1f09f1b954053f60a54a5044",
+        ".residuals.csv": "759676eaa8c191f9e053e00140e338db9e91f4215a507a9f9adf4db4032cd3e2"
+      },
+      "status": "converged",
+      "wallForceX": 2.058872062552532,
+      "wallViscousForceX": 0.829570985876897
+    },
+    "grid2Direct": {
+      "case": "external",
+      "cells": 66912,
+      "coupledEvaluations": 904,
+      "globalRelativeImbalance": 1.634464921131084e-14,
+      "iterations": 904,
+      "maximumSpeedRatio": null,
+      "momentumInertia": 1,
+      "name": "grid2-direct",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear",
+      "pressureForceX": 1.2345088679638931,
+      "pressureRangeRatio": null,
+      "rawSha256": {
+        ".cells.csv": "0094a4226f58da53e25098192a970aa2d4479741a989028c8f49d378347f4d3e",
+        ".faces.csv": "90505465ab57327a71b8cd48ef4493b1792d5cb10693f1b497b15bd2dbbbf13d",
+        ".json": "767ef826467be3603b7c1d47f9c4e1e975dfd7aa027a309c8fb68ea54bce41ed",
+        ".residuals.csv": "6379762e8836be04104063acc1dd30444fbc8adb41ae00e54d4e82648a22fc2f"
+      },
+      "status": "converged",
+      "wallForceX": 2.0621318915347593,
+      "wallViscousForceX": 0.8276230235708651
+    },
+    "volumeRepair": {
+      "cells": 17252,
+      "eightWorstWallCells": [
+        {
+          "areaRatio": 0.08295347924366439,
+          "boundaryFaces": 1,
+          "cell": 16906,
+          "error": 187.23083888034063,
+          "nonorthogonalRatio": 10.580845284060103,
+          "x": 0.5298068600854267,
+          "y": -0.8589233108239324
+        },
+        {
+          "areaRatio": 0.0829534792436567,
+          "boundaryFaces": 1,
+          "cell": 16805,
+          "error": 187.23083888031513,
+          "nonorthogonalRatio": 10.580845284060304,
+          "x": -0.3898068600854267,
+          "y": -0.8589233108239323
+        },
+        {
+          "areaRatio": 0.08295347924366682,
+          "boundaryFaces": 1,
+          "cell": 16836,
+          "error": 187.23083888024934,
+          "nonorthogonalRatio": 10.580845284059048,
+          "x": -0.8189233108239328,
+          "y": -0.4298068600854261
+        },
+        {
+          "areaRatio": 0.08295347924371294,
+          "boundaryFaces": 1,
+          "cell": 17151,
+          "error": 187.23083888019832,
+          "nonorthogonalRatio": 10.580845284053922,
+          "x": 0.9589233108239329,
+          "y": 0.48980686008542695
+        },
+        {
+          "areaRatio": 0.08295347924368862,
+          "boundaryFaces": 1,
+          "cell": 16951,
+          "error": 187.23083888018678,
+          "nonorthogonalRatio": 10.580845284057096,
+          "x": 0.9589233108239327,
+          "y": -0.4298068600854264
+        },
+        {
+          "areaRatio": 0.08295347924369828,
+          "boundaryFaces": 1,
+          "cell": 17036,
+          "error": 187.23083888016774,
+          "nonorthogonalRatio": 10.580845284055918,
+          "x": -0.8189233108239327,
+          "y": 0.489806860085427
+        },
+        {
+          "areaRatio": 0.08295347924371621,
+          "boundaryFaces": 1,
+          "cell": 17081,
+          "error": 187.2308388801368,
+          "nonorthogonalRatio": 10.580845284053575,
+          "x": -0.3898068600854264,
+          "y": 0.9189233108239332
+        },
+        {
+          "areaRatio": 0.08295347924372534,
+          "boundaryFaces": 1,
+          "cell": 17184,
+          "error": 187.23083888004294,
+          "nonorthogonalRatio": 10.580845284052678,
+          "x": 0.5298068600854268,
+          "y": 0.9189233108239332
+        }
+      ],
+      "maximumInteriorQuadraticConsistencyError": 50.18462332487284,
+      "maximumWallQuadraticConsistencyError": 187.23083888034063,
+      "path": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075.topology-spectrum.csv",
+      "sha256": "9501ee599ad69b13a05a3ed200355ffaa7361f90a06b61f625b611a1404860b5"
+    }
+  },
+  "artifacts": {
+    "boundaryAdapterSource": "artifacts/current/native-laminar-external-boundary.cpp",
+    "boundaryAdapterSourceSha256": "230a49ee33cba22b38c6632560276151cbefaad20ca4a822525851608149dce4",
+    "topologySource": "artifacts/current/native-laminar-topology-spectrum.cpp",
+    "topologySourceSha256": "00d70cb34b72325ad6e2b6e1b08a65acbff7c86d1fb72eccb98c62dff7a2c9f8"
+  },
+  "externalToCustomEquivalence": {
+    "allByteIdentical": true,
+    "boundaryFile": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.external.boundaries",
+    "boundarySha256": "cbd937dad29c61d73fe5739683d9697038705506e355a6b35bdcd958f0cde9b6",
+    "byteIdentical": {
+      ".cells.csv": true,
+      ".faces.csv": true,
+      ".residuals.csv": true
+    }
+  },
+  "grid0NoBranchRegression": {
+    "continuationStages": [
+      {
+        "case": "custom",
+        "cells": 4716,
+        "coupledEvaluations": 275,
+        "globalRelativeImbalance": 2.101300163680784e-15,
+        "iterations": 275,
+        "maximumSpeedRatio": 1.103341254865851,
+        "momentumInertia": 1,
+        "name": "grid0-nu-1",
+        "nu": 1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-custom-nu1",
+        "pressureForceX": 3.605020785753903,
+        "pressureRangeRatio": 3.8910122373107248,
+        "rawSha256": {
+          ".cells.csv": "ecaa6e435d5181f47e9743961506c594bd4aeab8ac1b3a602bf25490650be4fb",
+          ".faces.csv": "eddebf61dff263aeb570174490d6a59987232b7c2eada8bef88d6a4cbc6b4146",
+          ".json": "f387ca458fadab61b22e93857b9f1f38766fc9d67a871b6368e73f5232b83275",
+          ".residuals.csv": "2559d5fc3345e3a59c3822799555189ae03cfef5119963efd48ad42781bbab18"
+        },
+        "status": "converged",
+        "wallForceX": 7.203839482253143,
+        "wallViscousForceX": 3.5988186964992424
+      },
+      {
+        "case": "custom",
+        "cells": 4716,
+        "coupledEvaluations": 238,
+        "globalRelativeImbalance": 4.278420436360359e-16,
+        "iterations": 238,
+        "maximumSpeedRatio": 1.1068211709389801,
+        "momentumInertia": 1,
+        "name": "grid0-nu-0.5",
+        "nu": 0.5,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-custom-nu05",
+        "pressureForceX": 2.4279722385790246,
+        "pressureRangeRatio": 2.7913562960884772,
+        "rawSha256": {
+          ".cells.csv": "bc778d89ba8e9fef504f9179b3eb2a8ad2eb4c44c9151521b140a57e6ced73ab",
+          ".faces.csv": "4a53ebd757bba7f03dc6149093f5ee4c131388af9eff8dce4f75813dcdadaf77",
+          ".json": "7fc209363809f1f47f96d058dcc2f8d3ae6431a3c272806452cb9e68509f9769",
+          ".residuals.csv": "58c1dc3f9ae227fcba557c5ee0bbba80da053c44691917ae5001351abba96a31"
+        },
+        "status": "converged",
+        "wallForceX": 4.704355736148031,
+        "wallViscousForceX": 2.2763834975690096
+      },
+      {
+        "case": "custom",
+        "cells": 4716,
+        "coupledEvaluations": 198,
+        "globalRelativeImbalance": 1.4866157085834414e-15,
+        "iterations": 198,
+        "maximumSpeedRatio": 1.1319579878637307,
+        "momentumInertia": 1,
+        "name": "grid0-nu-0.2",
+        "nu": 0.2,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-custom-nu02",
+        "pressureForceX": 1.589655587614999,
+        "pressureRangeRatio": 1.937950770886058,
+        "rawSha256": {
+          ".cells.csv": "31d160b0b2562559186b5e8893b750cbea640e42676f1f125ce2f22ab56c081c",
+          ".faces.csv": "bb4d69e9893cfeaee62a3004645e0765e70db266824c7488d937556a863b8e63",
+          ".json": "d95da8d2749fe861837a2191cbfd8b42e48025d3ff12375e46ac75f3d00c89c0",
+          ".residuals.csv": "708228ea2f360333a2252147af88716dfaa674701837a0e44e32f90aee762433"
+        },
+        "status": "converged",
+        "wallForceX": 2.8694283279388615,
+        "wallViscousForceX": 1.2797727403238628
+      },
+      {
+        "case": "custom",
+        "cells": 4716,
+        "coupledEvaluations": 190,
+        "globalRelativeImbalance": 1.5434807903325346e-16,
+        "iterations": 190,
+        "maximumSpeedRatio": 1.1622710627070718,
+        "momentumInertia": 1,
+        "name": "grid0-nu-0.1",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-custom-continuation",
+        "pressureForceX": 1.2413670518170838,
+        "pressureRangeRatio": 1.5320855926219603,
+        "rawSha256": {
+          ".cells.csv": "f5f368ec883d9b2931ddcc2e70c3768f565fce3d936a94f4c3fcb59fbdd9fd7d",
+          ".faces.csv": "a039a05b0e056db0bceeb5847101da573ab45289044ac6ed2b50f1e4f9e7f95c",
+          ".json": "c1058873073c72f1e8d65165b8180fa004f850ae948d465c7deba7e5c7226992",
+          ".residuals.csv": "81c33bb849879aedf902e6b9efdb25a4132b2d82825891a1e7ca53d1f4243f39"
+        },
+        "status": "converged",
+        "wallForceX": 2.073428604077489,
+        "wallViscousForceX": 0.8320615522604049
+      }
+    ],
+    "direct": {
+      "case": "external",
+      "cells": 4716,
+      "coupledEvaluations": 285,
+      "globalRelativeImbalance": 8.177740327726763e-16,
+      "iterations": 285,
+      "maximumSpeedRatio": null,
+      "momentumInertia": 1,
+      "name": "grid0-direct",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear",
+      "pressureForceX": 1.2413670526657137,
+      "pressureRangeRatio": null,
+      "rawSha256": {
+        ".cells.csv": "99f58d4124583ae3c7ba5875ae5e4a064a41e516ed4824c502f92cc864ec8d2e",
+        ".faces.csv": "194b253b824061b58bcb5e50dbdad155fdcde1af1bfc81b2da16664f90da767f",
+        ".json": "e9b4fd30477cc00985b47ba68bc724e41e530c034d1708cc0adfff75b16ad7b0",
+        ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
+      },
+      "status": "converged",
+      "wallForceX": 2.0734286072758974,
+      "wallViscousForceX": 0.8320615546101826
+    },
+    "finalFieldDifference": {
+      "maximumAbsolutePDifference": 3.6510174883375157e-09,
+      "maximumAbsoluteUDifference": 5.644737011145651e-09,
+      "maximumAbsoluteVDifference": 2.005555967088087e-09
+    },
+    "wallForceAbsoluteDifference": 3.1984082049518747e-09
+  },
+  "grid1Branches": [
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 1049,
+      "globalRelativeImbalance": 8.472897180614914e-15,
+      "iterations": 1049,
+      "maximumSpeedRatio": 5.489758876044062,
+      "momentumInertia": 1,
+      "name": "grid1-flat-initial",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-flat",
+      "pressureForceX": -13.256639584226399,
+      "pressureRangeRatio": 265.8513282752179,
+      "rawSha256": {
+        ".cells.csv": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+        ".faces.csv": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+        ".json": "782183740313e79f7c6fe88d831f990247692d6f7ede1557bec146215e69a352",
+        ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
+      },
+      "status": "converged",
+      "wallForceX": 2.007087571876749,
+      "wallViscousForceX": 15.263727156103158
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 591,
+      "globalRelativeImbalance": 5.9491706953694364e-15,
+      "iterations": 591,
+      "maximumSpeedRatio": 1.2205779599697926,
+      "momentumInertia": 0,
+      "name": "grid1-stokes",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-stokes",
+      "pressureForceX": 0.1826117500034005,
+      "pressureRangeRatio": 0.25203532313064625,
+      "rawSha256": {
+        ".cells.csv": "86847762ef9c1288584c60dfb9ea2c5bed63e4d804ab8612a23663ebabfcd906",
+        ".faces.csv": "d70021749da0c1f0ae6b79909c16eaca9fdd9ce4608c54baeb3b7f517c9be2f2",
+        ".json": "bf44f0bcf5a5f9ade3de5b0bdc8edb909a64fca8837485a086372852310b9517",
+        ".residuals.csv": "15f340d0fb5bbcdd3fdeecd76ede7c25511c5c0057c9070a8430412841bf6125"
+      },
+      "status": "converged",
+      "wallForceX": 0.41177380389378654,
+      "wallViscousForceX": 0.22916205389038588
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 949,
+      "globalRelativeImbalance": 1.5017797303831997e-14,
+      "iterations": 949,
+      "maximumSpeedRatio": 1.5581548392303641,
+      "momentumInertia": 1,
+      "name": "grid1-from-stokes",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-from-stokes",
+      "pressureForceX": 4.040596164726625,
+      "pressureRangeRatio": 67.23358316473696,
+      "rawSha256": {
+        ".cells.csv": "9a1f99ef8929e98cc48c6bf2a205420b0f5f9833e7d2f1e9dbf476160948bef9",
+        ".faces.csv": "d2c730d38a25259ef29c3b60346d2580d986253a13ecd1d761de65b0d2ef66ec",
+        ".json": "d0d434dc894848ea7ffcace5f7723e27e4e60fe762abd93db5be8ecef7bb4a50",
+        ".residuals.csv": "152516ed5208655be2e8867ab690bd449bea97c4089e2fb885f32ef779b0708e"
+      },
+      "status": "converged",
+      "wallForceX": 2.0448071639880405,
+      "wallViscousForceX": -1.995789000738583
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 715,
+      "globalRelativeImbalance": 1.9415363625761884e-15,
+      "iterations": 715,
+      "maximumSpeedRatio": 1.103246129801472,
+      "momentumInertia": 1,
+      "name": "grid1-nu-1",
+      "nu": 1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-nu1",
+      "pressureForceX": 3.3013939417547453,
+      "pressureRangeRatio": 5.246062074033263,
+      "rawSha256": {
+        ".cells.csv": "73283841ad704ebe156999e5dcaf647e8eed4b3b3f2965aa57be3ce1deba7fe7",
+        ".faces.csv": "d645ebb5a5ecc4fd41a85ec81f2eaad586fba0150ab209e1109c76f34102a5a9",
+        ".json": "7423c7da1bd7feb1c69a143fdffddba6176a4f89d77b7f42c38ff2f3f5bf3b02",
+        ".residuals.csv": "4fc8c7cbc4a7efb38afa1969558fc718d3d58820ce9f544f21ae09838ba5c983"
+      },
+      "status": "converged",
+      "wallForceX": 7.20415131762801,
+      "wallViscousForceX": 3.902757375873268
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 509,
+      "globalRelativeImbalance": 2.29762008876694e-15,
+      "iterations": 509,
+      "maximumSpeedRatio": 1.106061059034609,
+      "momentumInertia": 1,
+      "name": "grid1-nu-0.5",
+      "nu": 0.5,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-nu05",
+      "pressureForceX": 2.2315884406503237,
+      "pressureRangeRatio": 3.6888652766465273,
+      "rawSha256": {
+        ".cells.csv": "8dc249b2593db2c3764c2875d5bb3deb2d51eb54dab0d1009a06fe314a387ce5",
+        ".faces.csv": "0ed2883981beb0f9d2ae17cba5396c7d7a79aaefd890bcb488fecec68f8737f1",
+        ".json": "7e1915045343c07b0789b6d6e3cc0ef17b379faf59b23d04437bc0823b0a77ad",
+        ".residuals.csv": "6ef791484d0db39f55c55d85393d29ba5e611b4ae4dc2f3097b29d2ad63e1a04"
+      },
+      "status": "converged",
+      "wallForceX": 4.702304364238886,
+      "wallViscousForceX": 2.4707159235885636
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 618,
+      "globalRelativeImbalance": 2.174412411643904e-14,
+      "iterations": 618,
+      "maximumSpeedRatio": 1.1321539871902282,
+      "momentumInertia": 1,
+      "name": "grid1-nu-0.2",
+      "nu": 0.2,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-nu02",
+      "pressureForceX": 1.473385342067452,
+      "pressureRangeRatio": 2.421545979210073,
+      "rawSha256": {
+        ".cells.csv": "fd05b440b00bc1ff82a88d6ab40a7122722d40ab503a33bb4fbbfee4193b3f5c",
+        ".faces.csv": "90670e7c7ce1a7d9289c1281b2702372ed449daa7e70cefe41265feaf9930b27",
+        ".json": "e231b9a88a14041e412fca730aaeb3943615ce161911d6e50b24e6e440975ff3",
+        ".residuals.csv": "5507dd74684f6c590f7dca20369cd27126a60dad02bafac56766160711c7e799"
+      },
+      "status": "converged",
+      "wallForceX": 2.8651912937764656,
+      "wallViscousForceX": 1.3918059517090158
+    },
+    {
+      "case": "custom",
+      "cells": 17260,
+      "coupledEvaluations": 473,
+      "globalRelativeImbalance": 4.232386798753951e-15,
+      "iterations": 473,
+      "maximumSpeedRatio": 1.1645096900329872,
+      "momentumInertia": 1,
+      "name": "grid1-nu-0.1",
+      "nu": 0.1,
+      "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-continuation",
+      "pressureForceX": 1.1580140252735587,
+      "pressureRangeRatio": 1.7974588927586495,
+      "rawSha256": {
+        ".cells.csv": "030ff55300cc1d0ab7f7bf061862f3cb8b7c2f39e6f825fe13060c136d7fbfd3",
+        ".faces.csv": "bb76903fe974273219928aa0bb8dc4a418d845fa4961995172d5b95facc917b6",
+        ".json": "e59356254892b91402efc7379e8e243150628d24f94db8770f3bdd9b7bb2f713",
+        ".residuals.csv": "d6f559c4200ba202103b00a66d324e4e63553ca5042c3bd7c690bd43cc2100b0"
+      },
+      "status": "converged",
+      "wallForceX": 2.0641631656349286,
+      "wallViscousForceX": 0.9061491403613694
+    }
+  ],
+  "grid1Continuation": {
+    "costRatioToDirectFlat": 2.2068636796949477,
+    "directFlatCoupledEvaluations": 1049,
+    "finalWallForceBetweenAdjacentDirectMeshes": true,
+    "finalWallForceRelativeDifferenceToFine": 0.0009850359758790945,
+    "intermediateCoupledEvaluations": 1842,
+    "totalCoupledEvaluations": 2315,
+    "viscosities": [
+      1,
+      0.5,
+      0.2,
+      0.1
+    ]
+  },
+  "qualification": {
+    "conclusion": "Viscosity continuation recovered a bounded branch on the known bad mesh and reproduced the existing bounded branch on the coarse mesh, but the 2.21x evaluation cost and two-mesh evidence are insufficient for a default change.",
+    "defaultChanged": false,
+    "frontendOrAppRerun": false,
+    "fullNativeSuiteRerun": false,
+    "productAlgorithmChanged": false,
+    "qualityGateChanged": false,
+    "relatedLinuxNativeTests": "3/3 passed: flow_boundary, solver_export, io"
+  },
+  "schema": "cartmesh2d.native-laminar-branch-continuation.v1",
+  "scope": "Native fixed-geometry Re=20 cylinder branch selection and geometry-only quadratic consistency; no cells omitted and no product acceptance threshold added."
+}

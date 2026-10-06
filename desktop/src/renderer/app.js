@@ -947,6 +947,12 @@ function renderFlowResult(summary) {
   }
   if (summary.outletInflow !== undefined)
     rows.push(['出口流入量（m²/s）', summary.outletInflow]);
+  if (summary.fieldAmplitudeDefinition) rows.push(
+    ['最终接受场最大速度（m/s）', summary.maximumSpeed],
+    ['最大速度／参考速度', summary.maximumSpeedRatio],
+    ['运动学压力范围（m²/s²）', summary.maximumKinematicPressure-summary.minimumKinematicPressure],
+    ['压力范围／参考速度²', summary.pressureRangeRatio],
+    ['场幅值说明', '仅报告最终接受场；不替代网格加密、物理参考或精度资格']);
   if (summary.namedBoundaryFluxes) {
     rows.push(['边界体积流量', '每单位厚度；净流出为正，净流入为负']);
     for(const flux of summary.namedBoundaryFluxes) {
@@ -972,6 +978,12 @@ function renderFlowResult(summary) {
         ['最大迹跳位置（m）', `(${summary.velocityTraceMaximumJumpLocation[0].toPrecision(6)}, ${summary.velocityTraceMaximumJumpLocation[1].toPrecision(6)})`],
         ['压力点值适用边界', '完整规定速度的边界共享顶点存在迹跳，需单独奇异性／迹资格；所有格、守恒与积分载荷仍保留']);
     } else rows.push(['压力点值适用边界', '完整规定速度的相邻边界面未检测到迹跳；仍需压力网格加密验证']);
+    if (summary.velocityTraceCauseDefinition) rows.push(
+      ['速度大小不连续点', String(summary.velocityTraceMagnitudeDiscontinuousVertices)],
+      ['等速方向转折点', String(summary.velocityTraceEqualMagnitudeDirectionVertices)],
+      ['最大速度大小跳量（m/s）', summary.velocityTraceMaximumSpeedMagnitudeJump]);
+    if (summary.wallTraceImpermeabilityDefinition)
+      rows.push(['实际多边形壁面最大法向规定速度（m/s）', summary.wallTraceMaximumNormalVelocity]);
   } else if (summary.wallTraceDefinition) {
     rows.push(['无滑移壁面迹诊断', `${summary.wallTraceWallFaces} 面 · ${summary.wallTraceAdjacentVertices} 个共顶点`],
       ['非零壁速迹跳点', String(summary.wallTraceDiscontinuousVertices)]);

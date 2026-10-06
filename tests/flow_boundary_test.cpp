@@ -510,6 +510,30 @@ int main() {
         prescribedStokesPorts();
         const auto mesh=rectangle();const auto control=conditions(mesh);
         const auto baseline=solveIncompressible2D(mesh,control);
+        {
+            double minU=baseline.u.front(),maxU=baseline.u.front();
+            double minV=baseline.v.front(),maxV=baseline.v.front();
+            double minP=baseline.p.front(),maxP=baseline.p.front(),maxSpeed=0;
+            Point2D maxSpeedLocation{};
+            for(std::size_t i=0;i<mesh.cells.size();++i) {
+                minU=std::min(minU,baseline.u[i]);maxU=std::max(maxU,baseline.u[i]);
+                minV=std::min(minV,baseline.v[i]);maxV=std::max(maxV,baseline.v[i]);
+                minP=std::min(minP,baseline.p[i]);maxP=std::max(maxP,baseline.p[i]);
+                const double speed=std::hypot(baseline.u[i],baseline.v[i]);
+                if(speed>maxSpeed){maxSpeed=speed;maxSpeedLocation=mesh.cells[i].centre;}
+            }
+            const auto& amplitude=baseline.fieldAmplitude;
+            require(amplitude.minimumU==minU&&amplitude.maximumU==maxU&&
+                    amplitude.minimumV==minV&&amplitude.maximumV==maxV&&
+                    amplitude.minimumKinematicPressure==minP&&
+                    amplitude.maximumKinematicPressure==maxP&&
+                    amplitude.maximumSpeed==maxSpeed&&
+                    amplitude.maximumSpeedLocation.x==maxSpeedLocation.x&&
+                    amplitude.maximumSpeedLocation.y==maxSpeedLocation.y&&
+                    amplitude.maximumSpeedRatio==maxSpeed/control.speed&&
+                    amplitude.pressureRangeRatio==(maxP-minP)/(control.speed*control.speed),
+                    "final accepted field amplitude diagnostic differs from native fields");
+        }
         std::ostringstream boundaryFile;writeFlowBoundaryConditions2D(boundaryFile,mesh,control);
         std::istringstream boundaryInput(boundaryFile.str());auto fromFile=control;
         fromFile.boundaryConditions=readFlowBoundaryConditions2D(boundaryInput,mesh,control);
@@ -547,11 +571,38 @@ int main() {
             require(result->velocityTrace.prescribedFaces==40 && result->velocityTrace.adjacentVertices==40 &&
                     result->velocityTrace.discontinuousVertices==2 && result->velocityTrace.maximumVelocityJump==1,
                     "complete prescribed-velocity trace did not report moving-lid corners");
+            require(result->velocityTrace.magnitudeDiscontinuousVertices==2 &&
+                    result->velocityTrace.equalMagnitudeDirectionVertices==0 &&
+                    result->velocityTrace.maximumSpeedMagnitudeJump==1,
+                    "moving-lid trace cause was not classified as a speed-magnitude mismatch");
+            require(result->wallTrace.maximumNormalVelocity==0,
+                    "axis-aligned no-slip walls reported nonzero prescribed normal speed");
         }
         require(baseline.wallTrace.discontinuousVertices==0 && baseline.wallTrace.maximumVelocityJump==0,
                 "stationary duct wall reported a false trace jump");
         require(baseline.velocityTrace.discontinuousVertices==2 && baseline.velocityTrace.maximumVelocityJump==1,
                 "velocity-inlet/no-slip-wall corner trace jump was not reported");
+        require(baseline.velocityTrace.magnitudeDiscontinuousVertices==2 &&
+                baseline.velocityTrace.equalMagnitudeDirectionVertices==0 &&
+                baseline.velocityTrace.maximumSpeedMagnitudeJump==1,
+                "inlet/no-slip trace cause was not classified as a speed-magnitude mismatch");
+        auto turning=closed;turning.nu=1;turning.momentumInertia=0;turning.tolerance=1e-8;
+        for(auto& condition:turning.boundaryConditions) {
+            const auto& face=square.faces[condition.face];
+            const double length=std::hypot(face.areaVector.x,face.areaVector.y);
+            condition.kind=FlowBoundaryKind2D::SmoothMovingWall;
+            condition.name="turning-wall";
+            condition.velocity={face.areaVector.y/length,-face.areaVector.x/length};
+        }
+        const auto turningResult=solveIncompressible2D(square,turning);
+        require(turningResult.converged && turningResult.velocityTrace.discontinuousVertices==4 &&
+                turningResult.velocityTrace.magnitudeDiscontinuousVertices==0 &&
+                turningResult.velocityTrace.equalMagnitudeDirectionVertices==4 &&
+                std::abs(turningResult.velocityTrace.maximumVelocityJump-std::sqrt(2.))<1e-14 &&
+                turningResult.velocityTrace.maximumSpeedMagnitudeJump<turningResult.velocityTrace.velocityTolerance,
+                "equal-speed polygon turning was not distinguished from prescribed speed mismatch");
+        require(turningResult.wallTrace.maximumNormalVelocity<turningResult.wallTrace.velocityTolerance,
+                "tangential polygon wall motion violated the reported no-penetration scale");
         auto bad=control;bad.boundaryConditions.pop_back();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.push_back(bad.boundaryConditions.front());rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});
         bad=control;bad.boundaryConditions.front().face=mesh.faces.size();rejects([&]{validateFlowBoundaryConditions2D(mesh,bad);});

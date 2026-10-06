@@ -4,7 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
         validateFlowOutput, validateFlowRequest, WALL_TRACE_DEFINITION,
-        VELOCITY_TRACE_DEFINITION } = require('../src/core/flow');
+        VELOCITY_TRACE_DEFINITION, WALL_TRACE_IMPERMEABILITY_DEFINITION,
+        VELOCITY_TRACE_CAUSE_DEFINITION } = require('../src/core/flow');
 const { exportGuide } = require('../src/core/export-guide');
 
 const summary = {
@@ -85,7 +86,9 @@ test('optional outlet backflow diagnostics validate without inventing legacy val
 test('wall trace diagnostics validate while legacy summaries remain readable', () => {
   const trace = { wallTraceDefinition: WALL_TRACE_DEFINITION, wallTraceVelocityTolerance: 1e-10,
     wallTraceWallFaces: 352, wallTraceAdjacentVertices: 352, wallTraceDiscontinuousVertices: 128,
-    wallTraceMaximumVelocityJump: .0245, wallTraceMaximumJumpLocation: [-.49,.07] };
+    wallTraceMaximumVelocityJump: .0245, wallTraceMaximumJumpLocation: [-.49,.07],
+    wallTraceImpermeabilityDefinition: WALL_TRACE_IMPERMEABILITY_DEFINITION,
+    wallTraceMaximumNormalVelocity: 2e-17 };
   const accepted = validateFlowOutput({ ...summary, ...trace }, fields, 2);
   assert.equal(accepted.summary.wallTraceDiscontinuousVertices, 128);
   assert.match(exportGuide({ result: { counts: { cells: 2 }, gates: {} }, flow: accepted }),
@@ -97,17 +100,27 @@ test('wall trace diagnostics validate while legacy summaries remain readable', (
     mutate(changed);
     assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /壁面速度迹/);
   }
+  assert.throws(() => validateFlowOutput({ ...summary, ...trace, wallTraceMaximumNormalVelocity: -1 }, fields, 2),
+    /壁面无穿透/);
+  assert.equal(Object.hasOwn(validateFlowOutput({ ...summary,
+    ...Object.fromEntries(Object.entries(trace).filter(([key]) =>
+      !['wallTraceImpermeabilityDefinition','wallTraceMaximumNormalVelocity'].includes(key))) }, fields, 2).summary,
+    'wallTraceMaximumNormalVelocity'), false);
 });
 
 test('complete prescribed-velocity trace covers port-wall corners without breaking older outputs', () => {
   const trace = { velocityTraceDefinition: VELOCITY_TRACE_DEFINITION,
     velocityTraceVelocityTolerance: 1e-10, velocityTracePrescribedFaces: 146,
     velocityTraceAdjacentVertices: 144, velocityTraceDiscontinuousVertices: 2,
-    velocityTraceMaximumVelocityJump: 1, velocityTraceMaximumJumpLocation: [-3,.98] };
+    velocityTraceMaximumVelocityJump: 1, velocityTraceMaximumJumpLocation: [-3,.98],
+    velocityTraceCauseDefinition: VELOCITY_TRACE_CAUSE_DEFINITION,
+    velocityTraceMagnitudeDiscontinuousVertices: 2,
+    velocityTraceEqualMagnitudeDirectionVertices: 0,
+    velocityTraceMaximumSpeedMagnitudeJump: 1 };
   const accepted = validateFlowOutput({ ...summary, ...trace }, fields, 2);
   assert.equal(accepted.summary.velocityTraceDiscontinuousVertices, 2);
   assert.match(exportGuide({ result: { counts: { cells: 2 }, gates: {} }, flow: accepted }),
-    /2 个完整规定速度边界的共享顶点迹跳.*速度入口／出口.*不删除单元/);
+    /2 个完整规定速度边界的共享顶点迹跳.*速度大小不连续点 2 个.*速度入口／出口.*不删除单元/);
   assert.equal(Object.hasOwn(validateFlowOutput(summary, fields, 2).summary, 'velocityTraceDefinition'), false);
   for (const mutate of [s => delete s.velocityTraceDefinition,
     s => { s.velocityTraceDiscontinuousVertices = 0; },
@@ -116,6 +129,42 @@ test('complete prescribed-velocity trace covers port-wall corners without breaki
     const changed = { ...trace, velocityTraceMaximumJumpLocation: [...trace.velocityTraceMaximumJumpLocation] };
     mutate(changed);
     assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /规定速度边界迹/);
+  }
+  for (const mutate of [s => delete s.velocityTraceCauseDefinition,
+    s => { s.velocityTraceMagnitudeDiscontinuousVertices = 0; },
+    s => { s.velocityTraceEqualMagnitudeDirectionVertices = 3; },
+    s => { s.velocityTraceMaximumSpeedMagnitudeJump = -1; }]) {
+    const changed = { ...trace, velocityTraceMaximumJumpLocation: [...trace.velocityTraceMaximumJumpLocation] };
+    mutate(changed);
+    assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /规定速度迹跳分类/);
+  }
+  const legacyCause = Object.fromEntries(Object.entries(trace).filter(([key]) => !key.startsWith('velocityTraceCause')
+    && !['velocityTraceMagnitudeDiscontinuousVertices','velocityTraceEqualMagnitudeDirectionVertices',
+      'velocityTraceMaximumSpeedMagnitudeJump'].includes(key)));
+  assert.equal(Object.hasOwn(validateFlowOutput({ ...summary, ...legacyCause }, fields, 2).summary,
+    'velocityTraceCauseDefinition'), false);
+});
+
+test('final accepted field amplitudes are optional for legacy summaries and validated as a complete group', () => {
+  const amplitude = {
+    fieldAmplitudeDefinition: 'final accepted cell-centre extrema; maximum speed normalized by requested reference speed; gauge-invariant pressure range normalized by reference speed squared; diagnostic only; no acceptance threshold',
+    minimumU: -.2, maximumU: 1.1, minimumV: -.4, maximumV: .3,
+    maximumSpeed: 1.12, maximumSpeedLocation: [.5,.25],
+    minimumKinematicPressure: -.7, maximumKinematicPressure: .8,
+    minimumPressureLocation: [-.5,0], maximumPressureLocation: [.5,0],
+    maximumSpeedRatio: 1.12, pressureRangeRatio: 1.5
+  };
+  const accepted = validateFlowOutput({ ...summary, ...amplitude }, fields, 2);
+  assert.equal(accepted.summary.pressureRangeRatio, 1.5);
+  assert.equal(Object.hasOwn(validateFlowOutput(summary, fields, 2).summary,
+    'fieldAmplitudeDefinition'), false);
+  for (const mutate of [s => delete s.maximumSpeed, s => { s.maximumSpeedRatio = -1; },
+    s => { s.maximumPressureLocation = [0]; }, s => { s.minimumU = 2; }]) {
+    const changed = { ...amplitude, maximumSpeedLocation: [...amplitude.maximumSpeedLocation],
+      minimumPressureLocation: [...amplitude.minimumPressureLocation],
+      maximumPressureLocation: [...amplitude.maximumPressureLocation] };
+    mutate(changed);
+    assert.throws(() => validateFlowOutput({ ...summary, ...changed }, fields, 2), /接受场幅值/);
   }
 });
 

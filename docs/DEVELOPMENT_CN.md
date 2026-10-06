@@ -179,6 +179,84 @@ build/cartmesh2d_flow_cli \
 
 这里 `D=2 m`、`U=1 m/s`、`ν=.1 m²/s`，所以 `Re=20`；单位密度/单位深度下 `Cd=Fx/(.5U²D)=Fx`。Tritton 的 `Cd=2.045` 只作上下文参考，必须与几何、网格和外域敏感性一起解释，不能把有限方域与实验条件视为完全相同。六次联合细化的进程耗时是驱动实测；首个 20D face-limited-linear 运行只留有网格日志与最终摘要时间戳，约 1,846 秒间隔不是精确独占进程成本。随后同一 66,912 格网格实际补跑旧省略选项的 Upwind 默认：657 次完整评估、1,353.433 秒、`Cd=2.17429`，比参考高 `6.322%`；face-limited-linear 为 904 次评估、`Cd=2.06213`，误差 `0.838%`，完整评估成本增加 `37.6%`。这一完整成本/精度取舍与其他内流、封闭流、解析强迫流证据共同支持下述上下文默认改动；它不解决圆环局部压力。
 
+整周局部压力复核使用 `artifacts/current/native-laminar-cylinder-pressure-profile.cpp`。它读取 `cartmesh2d_flow_cli` 已写出的真实 wall-face 压力与 CM2D 面几何，不组装新方程；每个闭合物面先减去壁长加权压力常数，并以壁长加权周界中心为极角原点，再在 16,384 个等角位置周期插值。不能用全局原点：当前圆柱中心是 `(0.07,0.03) m`，否则会引入平移相位误差。减去常数只固定压力 gauge，闭合物体压力合力不变。复现 10D 三档并补齐 20D 粗、中档：
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Werror -Iinclude \
+  artifacts/current/native-laminar-cylinder-pressure-profile.cpp \
+  build/libcartmesh2d_fv.a build/libcartmesh2d.a \
+  -o outputs/cloud-laminar/cylinder-pressure-profile
+
+outputs/cloud-laminar/cylinder-pressure-profile \
+  level0-10D outputs/cloud-laminar/cylinder-joint/level-0.solver.cm2d outputs/cloud-laminar/cylinder-joint/level-0-face-limited-linear.faces.csv \
+  level1-10D outputs/cloud-laminar/cylinder-joint/level-1.solver.cm2d outputs/cloud-laminar/cylinder-joint/level-1-face-limited-linear.faces.csv \
+  level2-10D outputs/cloud-laminar/cylinder-joint/level-2.solver.cm2d outputs/cloud-laminar/cylinder-joint/level-2-face-limited-linear.faces.csv \
+  > outputs/cloud-laminar/cylinder-pressure-profile-10d.json
+
+python3 artifacts/current/native-laminar-large-domain-pressure.py --levels 0 1
+outputs/cloud-laminar/cylinder-pressure-profile \
+  level0-20D outputs/cloud-laminar/cylinder-joint/far-20-level0.solver.cm2d outputs/cloud-laminar/cylinder-joint/far-20-level0-face-limited-linear.faces.csv \
+  level1-20D outputs/cloud-laminar/cylinder-joint/far-20-level1.solver.cm2d outputs/cloud-laminar/cylinder-joint/far-20-level1-face-limited-linear.faces.csv \
+  level2-20D outputs/cloud-laminar/cylinder-joint/far-20.solver.cm2d outputs/cloud-laminar/cylinder-joint/far-20-face-limited-linear.faces.csv \
+  > outputs/cloud-laminar/cylinder-pressure-profile-20d.json
+```
+
+修正极角中心后，10D 三档联合加密的相邻压力剖面 RMS 差为 `0.03758→0.02034 m²/s²`，最大差为 `0.1053→0.07249 m²/s²`。同一 20D 外域的三档为 4,620/17,196/66,912 个最终单元，压力剖面相邻 RMS 差 `0.02736→0.01644 m²/s²`，而最大差 `0.07273→0.07769 m²/s²` 未下降；积分阻力 `2.06531→2.06207→2.06213`，中/细档相对变化仅 `0.00291%`。匹配 10D/20D 的三档剖面 RMS 差为 `0.02190/0.02441/0.02302 m²/s²`，不会随空间细化消失。该圆柱完整规定速度迹跳和壁面法向规定速度均为零，故它是圆环迹角点之外的一般曲壁压力回归；结论只支持积分载荷稳定，不授予局部点值压力空间精度资格。完整编排、严格残差、成本和哈希见 `native-laminar-large-domain-pressure.json`。
+
+固定几何反例用 `artifacts/current/native-laminar-fixed-cylinder-pressure.py` 逐字节复用 `cylinder-joint/level-2.xy` 的 128 段静止圆柱和 20D 外域，只改变近壁/背景相对尺寸；脚本只调用原生网格、流动 CLI 与上述压力剖面后处理，不实现独立方程。粗、中档新建网格并求解，细档复用同轮廓的既有 `far-20` 接受场：
+
+```sh
+python3 artifacts/current/native-laminar-fixed-cylinder-pressure.py --grids 0 1
+
+build/cartmesh2d_flow_cli \
+  --mesh outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d \
+  --case external --nu .1 --speed 1 --convection upwind \
+  --tolerance 1e-8 --max-iterations 2500 \
+  --output outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-upwind
+
+g++ -std=c++20 -O2 -Wall -Wextra -Werror -Iinclude \
+  artifacts/current/native-laminar-mesh-balance-probe.cpp build/libcartmesh2d.a \
+  -o outputs/cloud-laminar/native-laminar-mesh-balance-probe
+outputs/cloud-laminar/native-laminar-mesh-balance-probe \
+  outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d \
+  outputs/cloud-laminar/cylinder-joint/level-2.xy .075 \
+  outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075.solver.cm2d \
+  > outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-repair.json
+build/cartmesh2d_flow_cli \
+  --mesh outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075.solver.cm2d \
+  --case external --nu .1 --speed 1 --convection face-limited-linear \
+  --tolerance 1e-8 --max-iterations 2500 \
+  --output outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-volume-075-face-limited-linear
+
+python3 artifacts/current/native-laminar-fixed-cylinder-pressure.py --skip-runs
+```
+
+4,716/17,260/66,912 格 face-limited-linear 三档均通过原 Solver 门和 `1e-8` 严格门，但中档出现最大速度 `5.49 m/s`、运动学压力范围 `[-182.6,83.2] m²/s²`，而粗/细档最大速度均约 `1.16 m/s`。中档压力/黏性 X 向壁载荷为 `-13.26/+15.26 m³/s²`，绝对分量之和除以总载荷的无量纲抵消因子为 `14.21`；显式 Upwind 对照也为 `13.69`，所以不是 Newton 或 face-limited-linear 特有。`native-laminar-mesh-balance-probe.cpp` 的既有精确合并/重分因果对照只接受 24 个事务，保持流体面积、716 条边界原子边和原门不变，将内部邻格面积比 `0.0186→0.0777`；修复网格的最大速度为 `1.16 m/s`、载荷抵消因子为 1。这个实验只证明最终单元关系是因果因素；由于旧跨工况扫描已证明 `.075` 非单调且可系统移动积分载荷，不能把实验目标抄成产品默认。完整命令、进程成本、场/面/残差哈希、壁压剖面和修复不变量在 `native-laminar-fixed-cylinder-pressure.json`，原始大场保留于恢复包。
+
+最终接受场幅值由 `FlowResult2D::fieldAmplitude` 在原生最终单元数组上一次扫描得到，不重新求解或重构场。CLI 摘要成组写出极值、位置、`maximumSpeedRatio=max|U|/Uref` 和 `pressureRangeRatio=(pmax-pmin)/Uref²`；压力范围不依赖压力 gauge。桌面只在整组字段存在时校验并显示，旧摘要保持兼容。两项无量纲量是诊断，不是新的通过阈值；物理资格仍须按工况参考与加密判断。
+
+局部因果试验从中档接受场中取 `|U|>1.5Uref` 的 28 个异常格，仅允许其两环/四环图邻域参与同一精确合并/重分，再用原默认 Newton + face-limited-linear 和 `1e-8` 门复算。两环接受 10 个事务、四环 8 个事务，均保持总面积、716 条边界原子边和原 Solver 门；但峰值从上游移到下游同构小格，最大速度约 `1.44 m/s`、压力范围约 `[-19.2,43.7] m²/s²`，没有达到全周 24 事务对照的正常分支。这是定位实验而非产品选择规则；异常场不能作为未来网格器的输入判据。原始局部网格、场和日志保留在 `outputs/cloud-laminar/cylinder-joint/`，摘要与哈希见 `native-laminar-field-amplitude.json`。
+
+固定圆柱的分支复核由 `native-laminar-external-boundary.cpp` 按产品 external 规则把最终 716 条边界原子面写成 custom 配置；同一平坦初值的 custom 与 external cells/faces/residuals 三份数组逐字节相同。这样可在不修改公开预设接口的情况下调用 custom-only `momentum-inertia=0` Stokes，并把其单元场作为原生 `--initial-guess`。一步 Stokes 初值最终仍产生压力/黏性载荷大数抵消，只是落到不同支路。随后保持目标 Re=20 方程和所有门槛不变，用 `ν=1,.5,.2,.1 m²/s` 的已收敛单元场依次作为下一档初值；中档四阶段完整评估为 `715+509+618+473=2315`，终点得到 `max|U|/Uref=1.16451`、压力范围比 `1.79746`、总阻力 `2.06416` 的有界场。粗网格同一路径终点与直接解的 `u/v/p` 最大差小于 `5.7e-9`，但这仍只是两网格分支证据，尚未证明任意不利网格上的唯一性或默认成本合理。
+
+几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  artifacts/current/native-laminar-external-boundary.cpp \
+  -Lbuild -lcartmesh2d_fv -lcartmesh2d \
+  -o outputs/cloud-laminar/native-laminar-external-boundary
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+  artifacts/current/native-laminar-topology-spectrum.cpp \
+  -Lbuild -lcartmesh2d_fv -lcartmesh2d \
+  -o outputs/cloud-laminar/native-laminar-topology-spectrum
+python3 artifacts/current/native-laminar-branch-continuation.py
+```
+
+本批不改产品方程、默认、质量门或接受状态语义。若把黏度延拓发展为产品候选，必须先在通道、强迫涡、方腔、固定/联合圆环、更多 Re/几何外流及失败/取消/旧工况上证明分支选择、完整成本和确定性，不能把已知反例硬编码成阶段表。
+
+固定 128 段圆环 level 4--8 另复用 `native-laminar-pressure-probe.cpp`，对解析压力调用产品 `buildFlowGradientStencil2D`、`pressureFaceValues` 和 `conservativePressureGradient`。面积加权保守梯度 RMS 为 `0.04075→0.01661→0.007133→0.003365→0.001306 m/s²`；数值压力峰值仍不收敛，最差格梯度矩阵条件数却仅 `2.22–9.53`（粗档 `8.11`）。因此本批不修改压力重构权重或门槛：现有证据反对一般重构退化，却仍保留规定迹角点压力未资格。原始 CSV、当前默认圆柱的逐字节复算、筛选测试及哈希见 `native-laminar-curved-pressure-profile.json`。
+
 `FlowControls2D::convection=Default` 与 `resolveSteadyConvection2D` 现在只在固定物性、strict、实际采用 Newton–Krylov 的稳态上下文选择 `face-limited-linear`；显式 `--steady-acceleration none`、adaptive/engineering、物理时间和材料/温度联算解析为 `upwind`。三个显式 `--convection` 值均不改写。CLI 摘要和桌面保存工况记录解析后的实际格式；非定常 checkpoint 也把 Default 序列化为历史 Upwind，避免旧状态被新稳态策略重解释。17,796 格圆柱省略方法和对流选项的实际新默认重放以 559 次评估收敛，场、面量和残差历史与此前显式 face-limited-linear 逐字节相同。命令、哈希、100/100 原生及 194/194 前端回归见 `native-laminar-default-convection.json`；本批未运行实际 App、macOS 或打包版。
 
 上下文默认的跨工况重放使用 `artifacts/current/native-laminar-default-matrix.cpp`；它复用原生测试网格构造和产品求解器，只记录解析误差及完整求解预算，不实现独立方程。通道、manufactured、cavity 的 `n=64` / `1e-8` 运行分别与显式 face-limited-linear 场逐字节相同。曲壁路径直接对 `annulus-joint-7.solver.cm2d` 省略 `--convection` 与 `--steady-acceleration`，与显式结果的 cells/faces/residuals/summary 逐字节相同。真实 App 复验命令必须给 `--out` 绝对路径并带 `--flow=external --flow-case-check=true`；相对路径会在保存工况时按设计拒绝。本次 Linux Electron headless 路径完成两次 5,168 格求解、保存读回和复算确定性，详情及哈希见 `native-laminar-default-regression.json`。它不替代实体显示器、macOS 或打包版验证。
@@ -238,6 +316,26 @@ build/cartmesh2d_flow_cli \
 独立曲壁喷管回归暴露了上述壁面限定诊断的通用缺口：`examples/complex/nozzle_profile.xy` 的均匀速度入口与上下无滑移壁在 `(-3, ±0.98) m` 共享顶点，壁—壁比较为零，但完整规定速度的边界迹实际有两个 `1 m/s` 跳变。产品因此保留兼容的 `wallTrace`，并新增 `FlowVelocityTraceDiagnostics2D`：选择最终边界中 `fixedU && fixedV` 的面，覆盖无滑移/移动壁及速度入口/出口；压力边界、远场和只固定一个分量的滑移/对称面不参与。端点仍只在 construction-roundoff 尺度配对，速度容差为 `TolerancePolicy::scale(max(referenceSpeed, prescribedSpeed))`，本组为 `1.01e-10 m/s`，只排除浮点构造舍入，不是物理精度门。
 
 同一原生驱动把喷管 level 5/6/7 加密到 636/2380/9336 格，省略方法和格式后均解析为 Newton + face-limited-linear，并以 75/133/426 次完整评估严格收敛；全局相对不平衡为 `1.43e-13/4.35e-14/6.33e-13`。速度最大值 `2.8564→2.8788→2.8844 m/s`，壁面合力 X 分量 `15.054→15.643→15.981 m³/s²`；但压力最大值 `9.71→13.87→17.88 m²/s²`，其单元中心到最近入口—壁角点距离 `0.108→0.0428→0.0263 m`，说明点值峰值正在靠近已报告的不连续规定迹，不能伪称一般近壁压力已收敛。独立 4904 格 Re=20 圆柱报告 208 个完整规定速度面、207 个共顶点和零迹跳，295 次评估后 `Cd=2.152836638`；cells/faces/fields/residuals 与此前接受场逐字节一致。新增诊断不改变方程、边界、网格、质量门或场。完整 Linux 原生 100/100、前端 196/196 通过；同步当前 CLI 后，Electron 37 headless 的真实 renderer→IPC→CLI 路径生成 728 格 Solver PASS 圆柱、117 次评估收敛，并在 DOM 显示新诊断计数与“仍需压力网格加密验证”的限定。驱动、完整成本、哈希与原始记录见 `native-laminar-prescribed-trace.json`；它不是独立方程审计，也不是实体显示器、macOS 或打包版验证。
+
+后续分类不尝试在折线角点伪造连续速度。若两个实际面不共线，分别严格切向的速度空间是两条不同直线，其交集只有零向量；所以非零壁速若保持两侧真实面无穿透，就不能在该顶点具有同一个笛卡尔迹。产品新增的原因分类对每对规定速度计算 `abs(|Ua|-|Ub|)`：该量超过速度舍入容差为“速度大小不连续”，否则笛卡尔向量跳仍非零时为“等速方向转折”。它对坐标旋转不变，多面顶点的两类计数允许重叠。`wallTraceMaximumNormalVelocity` 另报告每个实际多边形壁面上的 `|Ub·n|`，单位 m/s，不投影到解析圆，也不改变边界值。
+
+```sh
+build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/annulus-fixed128-l4.solver.cm2d \
+  --case custom --boundary outputs/cloud-laminar/annulus-fixed128-l4.boundaries \
+  --nu .1 --speed .5 --tolerance 1e-8 --max-iterations 1500 \
+  --convection face-limited-linear --steady-acceleration newton-krylov \
+  --output outputs/cloud-laminar/trace-cause/annulus-fixed128-l4
+build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/trace-regression/duct-l5.solver.cm2d \
+  --case duct --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 1500 \
+  --convection face-limited-linear --steady-acceleration newton-krylov \
+  --output outputs/cloud-laminar/trace-cause/duct-l5
+build/cartmesh2d_flow_cli --mesh outputs/cloud-laminar/cylinder-joint/level-1.solver.cm2d \
+  --case external --nu .1 --speed 1 --tolerance 1e-8 --max-iterations 1500 \
+  --convection face-limited-linear --steady-acceleration newton-krylov \
+  --output outputs/cloud-laminar/trace-cause/cylinder-level1
+```
+
+圆环分别得到大小冲突/等速转折 `0/128`，最大模长差 `1.67e-16 m/s`、实际面法向速度 `4.21e-17 m/s`；喷管为 `2/0` 和 `1 m/s`；静止圆柱为 `0/0`。三次原生复算都严格收敛，守恒与积分载荷保留，四类主输出和旧接受解逐字节一致。原生测试还构造全周等速移动方形：4 个非共线角点全归类为等速方向转折，法向速度在报告容差内。Linux Electron headless 的真实结果面板显示新增计数和无穿透量。完整字段、哈希、测试与平台范围见 `native-laminar-trace-causes.json`。
 
 该诊断只调用产品压力/黏性重构算子，对实际网格和解析场作一致性对照，不重建独立离散方程。黏性项以 `m/s²`、压力梯度以 `m/s²` 报告。连续圆形解析速度在多边形面上的反事实对照有非零法向分量，仅用于识别边界表示敏感性，禁止作为求解边界绕过无穿透检查。完整诊断见 `native-laminar-pressure-diagnosis.json`；该诊断批次本身未产生通用物理精度门或产品算法改动，后续上下文默认升级依据是跨算例精度与完整成本证据。
 
