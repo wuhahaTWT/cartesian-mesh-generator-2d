@@ -322,6 +322,20 @@ HMM 热的非局部 Schur 行符号尚未逐行枚举，因此结果 heatMonoton
 
 新时间细化检查使用原有二阶观察门（阶数 >1.8），并要求独立半步参考差异小于细步误差的 0.3；对二阶且参考步为细步 1/4 时，理论差异比例约 0.2，用于排除参考过粗，不是物理误差百分比。既有 1e−12 单元守恒审计门保持，微型闭腔另按相对总能量检查；跨平台、实际曲壁空间误差和全流程同精度成本分别验收。
 
+### 云端孤立曲壁黏性制造解复现
+
+原生工具 hybrid_viscous_benchmark 直接读取真实 Solver 网格，使用给定面速度 u=(-(.3+.2/r²)y,(.3+.2/r²)x)、ρ=1、μ=.02。它在原生求解器上抽取真实共享单元动量矩阵，以现有线性求解求稳态，重新调用原生残差检查实际共享收支；Python 只驱动原生程序、读取矩阵作线性代数与整理已有场/参考，不重建 PDE。
+
+所有面都取解析速度的面心值。这个向量边值问题不能当作折线固壁上物理旋转的 Couette 流：面心值的法向分量与真实静网格壁面运动约束需另行处理。实际牵引与沿真实边的解析牵引积分比较，机械功同时保留解析积分和给定面心速度下的参考；质心速度、单元算术平均速度及 8 点 Gauss 三角剖分积分的加密差分别输出，不相互替代。
+
+    cmake --build build --parallel 4 --target cartmesh2d_hybrid_viscous_benchmark
+    python3 tools/flow/run_hybrid_viscous.py --output outputs/hybrid-viscous-run --mesh-root outputs/curved-wall
+    OPENBLAS_NUM_THREADS=1 python3 tools/flow/read_hybrid_viscous.py --output outputs/hybrid-viscous-run
+
+驱动复用 ring-128-L4 及 ring-128-L4/L5/L6-phase0.375 的既有真实网格；最后一个读回脚本依赖 NumPy/SciPy，仅分析原生导出的矩阵。矩阵按实际单元质量（本研究 ρ=1）缩放，HMM 同时报告非对称残差与对称部分最低谱；原 264 格另检查完整非对称谱和最低模态场。每面双侧牵引、共享动量/功、局部耗散和实际机械发热都有原始输出。
+
+这套研究工具显式抽取/导出稠密单元矩阵，成本及存储为二次量级，不是工程求解路径。计时分别记录两种算子的构造、矩阵抽取、稳态求解、单次 trace 与完整原生进程，驱动还计完整进程墙钟；不能把这些隔离算子时间当作完整可压同精度性能结论。四组云端原场、失败及最低模态已另行私密持久保存。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
