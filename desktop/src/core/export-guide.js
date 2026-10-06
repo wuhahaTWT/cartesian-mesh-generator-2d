@@ -1,6 +1,6 @@
 'use strict';
 
-function exportGuide({ result, rasterImport, flow, thermal, euler, background }) {
+function exportGuide({ result, rasterImport, flow, flowBranchCertificate, thermal, euler, background }) {
   if(background) return `# 完整笛卡尔背景网格
 
 本次 ${result.counts.cells} 个完整单元，保留物体内部。分类为外部、内部、相交；相交单元没有被裁切。
@@ -52,6 +52,7 @@ function exportGuide({ result, rasterImport, flow, thermal, euler, background })
 | *.resolution.json / *.solver-quality.json | 实际尺寸、边界层和内部质量的详细数据。 |
 ${rasterImport ? '| source-image.* / image-outline.png / image-import.json | 原图、确认的轮廓叠加图及尺寸标定记录。 |\n' : ''}| *.xy 及其他 JSON | 输入轮廓或过程诊断，排查问题时保留。 |
 ${flow ? '| *.flow.json / *.flow.fields.json | 自研二维层流摘要与按最终 CM2D cell id 对齐的速度、运动学压力场。 |\n| *.flow.vtk / *.flow.cells.csv / *.flow.faces.csv | ParaView 流场、逐单元数值及面通量；faces.csv 还含压力与动量通量列。 |\n| *.flow.residuals.csv | SIMPLE 内迭代历史；非定常时仅含最后一个时间步。 |\n' : ''}${transient ? '| *.flow.time-history.csv | 本次全部物理时间步、CFL、动能及受力监测。 |\n| *.flow.checkpoint | 最后接受状态，可配合同一最终网格继续计算；需要保持物性与离散格式。 |\n' : ''}${flow?.summary?.timeStepControl === 'adaptive-cfl-retry' ? '| *.flow.attempt-history.csv | 自动步长全部试算，包括拒绝原因、重试步长、实际 CFL 与收敛指标；time-history 只含已接受步。 |\n' : ''}| flow-incomplete-* | 取消/失败诊断；候选CSV不能当作完成的流场。目录内完整 .checkpoint 可用于续算，忽略 .tmp。 |
+${flowBranchCertificate ? '| *.flow.branch.json / *.flow.branch.certificate | 显式分支风险摘要与三候选归档；没有自动选择候选，不能当作普通接受场。 |\n' : ''}
 
 内部拓扑：${gate(result.gates?.topology)}；内部 Solver：${gate(result.gates?.solver)}。
 ${duct ? '本次曲壁通道／喷管工况：最左侧竖直端面为均匀速度入口，最右侧竖直端面为运动学 p=0 出口，其余曲壁及障碍物无滑移。CM2D 的几何物面标签并不全是流动壁面；这些入口/出口条件由原生求解器的 duct 工况指定，使用 OpenFOAM 时仍需分别设置。\n' : ''}
@@ -67,6 +68,7 @@ ${flow?.summary?.timeStepControl === 'adaptive-cfl-retry' ? '自动步长仅控�
 ${flow?.summary?.initialVortex ? `初始局部涡 compact-cubic-v1：中心 (${flow.summary.initialVortex.centre.join(', ')}) m，支撑半径 ${flow.summary.initialVortex.radius} m，带符号峰值速度 ${flow.summary.initialVortex.peakSpeed} m/s（正值逆时针）。仅在零时刻施加，整个支撑圆盘须位于流体内；不是持续源项。*.flow.initial.checkpoint 保存真实初始场，可用于独立复核或从零重算；*.flow.checkpoint 继续最后接受的状态，续算不再施加扰动。\n` : ''}
 ${flow ? `自研${transient ? '非定常' : '稳态'}层流：${transient ? `本次时间推进完成，已接受到 t=${flow.summary.acceptedTime} s；本次 ${flow.summary.completedSteps} 步，最后一步 dt=${flow.summary.dt} s` : flow.summary.converged ? '已收敛' : '到达迭代上限，未收敛'}；流动停止容差 ${flow.summary.tolerance ?? "未记录"}（动量残差与速度/压力变化），连续性门 1e-8；工况 ${flow.summary.case}，${transient ? '最后一步内' : ''}迭代 ${flow.summary.iterations} 次。对流格式：${convectionLabel}${convectionNote}；压力求解：${pressurePreconditioner}；压力离散：${pressureDiscretization}；黏性应力：${viscousStress}；压力 p 的单位是 m²/s²。${convectionQualification}${flow.summary.viscousStress === 'symmetric' ? '压力力和黏性力在同一组共享面上积分。' : ''}\n` : ''}
 ${flow ? `线性迭代精度：${flow.summary.linearPolicy==='adaptive' || flow.summary.adaptiveLinear===true ? '自适应（最终仍须严格复核）' : '固定精度'}；速度松弛系数：${flow.summary.velocityRelaxation ?? '旧结果未记录'}；压力校正次数：${flow.summary.pressureCorrectionPasses ?? 4}。这些是数值迭代设置，不改变物理时间步或最终停止容差。\n` : ''}
+${flowBranchCertificate ? `显式分支证书状态：${flowBranchCertificate.summary.status}。直接目标／高黏度引导／引导后原目标分别保存在独立归档中；selectedCandidate 固定为空。速度和压力 RMS 限值仅分类路径差异，不是物理接受门；普通显示场与续算状态没有被证书替换。\n` : ''}
 ${thermal ? `## 温度结果
 
 最后完整温度场：t=${thermal.summary.acceptedTime} s，${thermal.summary.minValue.toPrecision(6)}–${thermal.summary.maxValue.toPrecision(6)} K。先看 **temperature-preview.png**。

@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
         validateFlowOutput, validateFlowRequest, WALL_TRACE_DEFINITION,
         VELOCITY_TRACE_DEFINITION, WALL_TRACE_IMPERMEABILITY_DEFINITION,
-        VELOCITY_TRACE_CAUSE_DEFINITION } = require('../src/core/flow');
+        VELOCITY_TRACE_CAUSE_DEFINITION, buildFlowBranchCertificateInvocation,
+        validateFlowBranchCertificateSummary } = require('../src/core/flow');
 const { exportGuide } = require('../src/core/export-guide');
 
 const summary = {
@@ -49,6 +50,31 @@ test('flow invocation uses the final solver mesh and the small supported paramet
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, convection: 'central' }), /对流格式/);
   assert.throws(() => validateFlowRequest({ case: 'external', nu: 0.01, speed: 1, maxIterations: 10, pressurePreconditioner: 'amg' }), /压力预条件器/);
   assert.throws(() => validateFlowRequest({ case: 'cavity', nu: 0, speed: 1, maxIterations: 10 }), /大于 0/);
+});
+
+test('branch certificate invocation and summary never select an accepted field', () => {
+  const request={case:'external',nu:.01,speed:1,maxIterations:700,tolerance:1e-6,
+    mode:'steady',linearPolicy:'strict',steadyAcceleration:'newton-krylov',
+    branchVelocityRmsLimit:1e-4,branchPressureRmsLimit:2e-4};
+  const invocation=buildFlowBranchCertificateInvocation('/tmp/final.solver.cm2d','/tmp/certificate',request);
+  assert.deepEqual(invocation.args.slice(-5),['--branch-certificate','--branch-velocity-rms-limit','0.0001',
+    '--branch-pressure-rms-limit','0.0002']);
+  const candidate={converged:true,stopped:false,coupledEvaluations:24,globalRelativeImbalance:1e-12,
+    maximumSpeedRatio:1.2,pressureRangeRatio:2.3};
+  const summary={format:'cartmesh2d-flow-branch-certificate-summary-v1',status:'branch_divergent',
+    converged:false,selectedCandidate:null,candidateSelection:'none; explicit user review required',
+    stage:'guided-target',outcome:'completed',reason:'target paths differ',archiveSuffix:'.branch.certificate',
+    guideViscosityMultiplier:10,guideToleranceExponent:.5,maximumVelocityRmsDifference:1e-4,
+    maximumPressureRmsDifference:2e-4,pathsCompared:true,consistent:false,
+    velocityRmsDifference:.01,maximumVelocityDifference:4,pressureRmsDifference:.02,
+    maximumPressureDifference:8,directTarget:candidate,guide:candidate,guidedTarget:candidate};
+  const validated=validateFlowBranchCertificateSummary(summary,request);
+  assert.equal(validated.selectedCandidate,null);
+  assert.equal(validated.guidedTarget.coupledEvaluations,24);
+  assert.throws(()=>validateFlowBranchCertificateSummary({...summary,selectedCandidate:'guidedTarget'},request),/不得自动/);
+  assert.throws(()=>validateFlowBranchCertificateSummary({...summary,consistent:true},request),/分类/);
+  assert.throws(()=>buildFlowBranchCertificateInvocation('/tmp/final.solver.cm2d','/tmp/certificate',
+    {...request,mode:'transient'}),/仅支持/);
 });
 
 test('curved duct can run steady and transient and is retained in output metadata', () => {

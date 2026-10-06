@@ -12,6 +12,7 @@ const state = {
   wallBounds: null,
   result: null,
   flow: null,
+  flowBranchCertificate: null,
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
@@ -121,9 +122,15 @@ function clearFlowBinding({ hidePanel = false } = {}) {
   if (hidePanel) $('flowBlock').hidden = true;
   if (state.mesh) renderLegend(state.mesh, state.levelBasis);
 }
+function clearFlowBranchCertificate() {
+  state.flowBranchCertificate=null;
+  $('flowBranchCertificateResult').hidden=true;
+  $('flowBranchCertificateResult').replaceChildren();
+}
 function clearResult() {
   clearEulerBinding(true);
   clearFlowBinding({ hidePanel: true });
+  clearFlowBranchCertificate();
   clearThermalBinding({ hidePanel: true });
   state.mesh = null; state.result = null; state.wallBounds = null;
   state.job = null;
@@ -1003,6 +1010,29 @@ function renderFlowResult(summary) {
   container.hidden = false;
 }
 
+function renderFlowBranchCertificate(payload) {
+  state.flowBranchCertificate=payload;
+  const summary=payload.summary, container=$('flowBranchCertificateResult');
+  container.replaceChildren();
+  const heading=document.createElement('div');heading.className='flow-state';
+  heading.textContent=summary.status==='branch_consistent'
+    ? '分支证书完成 · 两条目标路径在报告限值内一致 · 未选择候选'
+    :summary.status==='branch_divergent'
+      ? '分支证书完成 · 两条目标路径显著分歧 · 未选择候选'
+      :`分支证书未完成 · 阶段：${summary.stage} · 已有候选仍保留 · 未选择候选`;
+  container.appendChild(heading);
+  const rows=[['候选选择','无；需要独立物理审查'],['证书归档',payload.files.archive],
+    ['速度 RMS 差／报告限值',summary.pathsCompared?`${summary.velocityRmsDifference.toExponential(4)} / ${summary.maximumVelocityRmsDifference.toExponential(4)}`:'未比较'],
+    ['压力 RMS 差／报告限值',summary.pathsCompared?`${summary.pressureRmsDifference.toExponential(4)} / ${summary.maximumPressureRmsDifference.toExponential(4)}`:'未比较']];
+  for(const [key,label] of [['directTarget','直接目标'],['guide','高黏度引导'],['guidedTarget','引导后的原目标']]){
+    const candidate=summary[key];
+    rows.push([label,candidate?`${candidate.converged?'严格收敛':'未收敛'} · ${candidate.coupledEvaluations} 次完整评估 · max|U|/Uref ${candidate.maximumSpeedRatio.toExponential(4)} · Δp/Uref² ${candidate.pressureRangeRatio.toExponential(4)}`:'无候选']);
+  }
+  for(const [label,value] of rows){const item=document.createElement('div'),caption=document.createElement('span'),text=document.createElement('b');caption.textContent=label;text.textContent=value;item.append(caption,text);container.appendChild(item);}
+  const note=document.createElement('p');note.className='note';note.textContent='证书只暴露路径风险；本界面不会把任一候选写入普通接受场、色图或续算状态。归档随结果包导出。';container.appendChild(note);
+  container.hidden=false;
+}
+
 function updateFlowMode() {
   const transient = $('flowMode').value !== 'steady';
   const adaptive = $('flowMode').value === 'adaptive';
@@ -1048,6 +1078,13 @@ function updateFlowMode() {
     ? `本次 ${start.toPrecision(5)} → ${(start+dt*steps).toPrecision(5)} s。一阶时间格式；时间步越小通常越准确，也更慢。`
     : '请填写正的时间步长和整数步数。';
   if (!state.busy) $('runFlow').textContent = transient ? (resuming ? '继续计算' : $('flowInitialVortex').checked?'从初始局部涡开始计算':'从静止开始计算') : '启动层流求解';
+  const certificateEligible=!state.busy&&Boolean(state.result)&&!transient
+    && $('flowLinearPolicy').value==='strict'
+    && ['default','newton-krylov'].includes($('flowSteadyAcceleration').value);
+  $('runFlowBranchCertificate').disabled=!certificateEligible;
+  $('flowBranchCertificateHint').textContent=certificateEligible
+    ? '将保存三候选归档；一致或分歧都不自动选择候选，也不替换普通流场。'
+    : '仅支持新鲜、固定物性、strict Newton–Krylov 稳态；请调整上方模式与求解方法。';
   updateThermalMode();
 }
 function applySharedFlowControls(request) {
@@ -1264,6 +1301,7 @@ async function refreshFlowState(restoreResult=false) {
   const saved=await window.cartmesh.flowState();
   state.flowRestart=saved.restart;
   if (restoreResult && saved.flow) bindFlow(saved.flow);
+  if (saved.branchCertificate) renderFlowBranchCertificate(saved.branchCertificate);
   updateFlowMode();
   return saved;
 }
@@ -1285,6 +1323,10 @@ function flowRequest() {
       radius:Number($('flowVortexRadius').value),peakSpeed:Number($('flowVortexSpeed').value)};
   return request;
 }
+function flowBranchCertificateRequest(){return {...flowRequest(),mode:'steady',resume:false,
+  steadyAcceleration:'newton-krylov',linearPolicy:'strict',
+  branchVelocityRmsLimit:Number($('flowBranchVelocityLimit').value),
+  branchPressureRmsLimit:Number($('flowBranchPressureLimit').value)};}
 function applyFlowCase(request) {
   $('flowResume').checked=false;
   $('thermalResume').checked=false;
@@ -1459,6 +1501,18 @@ async function runFlow() {
   } finally {setBusy(false);applyRestartControls();}
 }
 
+async function runFlowBranchCertificate(){
+  if(state.busy||!state.result||!state.mesh||!validFlowInputs()||$('runFlowBranchCertificate').disabled)return;
+  const request=flowBranchCertificateRequest();setBusy(true);$('runFlowBranchCertificate').textContent='正在生成证书…';
+  status('分支证书运行中','依次保留直接目标、高黏度引导和引导后的原目标；不自动选择候选。');
+  try{const payload=await window.cartmesh.runFlowBranchCertificate(request);renderFlowBranchCertificate(payload);
+    status(payload.summary.status==='branch_consistent'?'分支证书：路径一致':payload.summary.status==='branch_divergent'?'分支证书：路径分歧':'分支证书未完成','三个阶段和已有候选已独立保存；普通接受场未改变。');}
+  catch(error){const message=error.message.replace(/^Error invoking remote method '[^']+': Error: /,'');
+    const saved=await refreshFlowState(false).catch(()=>null);if(saved?.branchCertificate)renderFlowBranchCertificate(saved.branchCertificate);
+    status(/取消/.test(message)?'分支证书已取消':'分支证书未完成',message.split('\n')[0]+'；上次完整证书与普通接受场均未改变。');log(message);}
+  finally{setBusy(false);$('runFlowBranchCertificate').textContent='生成分支风险证书';updateFlowMode();}
+}
+
 async function importGeometryFile(picked) {
   if (!picked || state.busy) return;
   if (/\.(png|jpe?g)$/i.test(picked)) {
@@ -1513,6 +1567,7 @@ $('probe').addEventListener('click', probeSizing);
 $('probeRelative').addEventListener('click', probeSizing);
 $('generate').addEventListener('click', generate);
 $('runFlow').addEventListener('click', runFlow);
+$('runFlowBranchCertificate').addEventListener('click',runFlowBranchCertificate);
 $('saveFlowCase').addEventListener('click', saveFlowCase);
 $('loadFlowCase').addEventListener('click', loadFlowCase);
 $('runThermal').addEventListener('click', runThermal);
@@ -1545,10 +1600,12 @@ $('importFlowBoundaries').addEventListener('click',()=>prepareFlowBoundaries('im
 for (const id of ['flowNu', 'flowSpeed', 'flowMaxIterations', 'flowTolerance']) {
   $(id).addEventListener('input', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 }
+$('flowBranchVelocityLimit').addEventListener('input',updateFlowMode);
+$('flowBranchPressureLimit').addEventListener('input',updateFlowMode);
 $('flowConvection').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
 $('flowPressurePreconditioner').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
-$('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
-$('flowLinearPolicy').addEventListener('change', () => { if (state.flow) clearFlowBinding(); });
+$('flowSteadyAcceleration').addEventListener('change', () => { if (state.flow) clearFlowBinding(); updateFlowMode(); });
+$('flowLinearPolicy').addEventListener('change', () => { if (state.flow) clearFlowBinding(); updateFlowMode(); });
 $('flowVelocityRelaxation').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowPressureCorrections').addEventListener('input', () => { if (state.flow) clearFlowBinding(); });
 $('flowOutletBackflow').addEventListener('change', () => { if (state.flow) clearFlowBinding(); if (state.thermal) clearThermalBinding(); });
@@ -1645,7 +1702,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runFlowBranchCertificate, runThermal, runEuler, eulerRequest, flowRequest, flowBranchCertificateRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

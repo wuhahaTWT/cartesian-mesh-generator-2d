@@ -18,7 +18,8 @@ const { parseBackgroundGrid, requireFluidMesh } = require('./core/background-gri
 const { exportGuide } = require('./core/export-guide');
 const { zipDirectory } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
-        parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
+        buildFlowBranchCertificateInvocation, parseFlowProgress, validateFlowOutput,
+        validateFlowBranchCertificateSummary, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { runEulerJob, importEulerRestart } = require('./core/euler-job');
@@ -240,7 +241,9 @@ app.whenReady().then(async () => {
     return result.canceled ? null : exportPackage(result.filePath);
   }));
 
-  const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
+  const flowState = () => ({ flow: currentResult?.flow || null,
+    branchCertificate: currentResult?.flowBranchCertificate || null,
+    restart: currentResult?.flowRestart?.metadata || null });
   ipcMain.handle('flow-state', () => flowState());
   // Only the real smoke harness can supply a dialog replacement. Renderer
   // requests never carry read/write paths for case files.
@@ -455,6 +458,61 @@ app.whenReady().then(async () => {
       if (restored.every(entry => entry.status === 'fulfilled')) currentResult.flow = previousFlow;
       await preserveIncomplete(error).catch(() => {});
       error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
+      throw error;
+    }
+  }));
+
+  ipcMain.handle('run-flow-branch-certificate', (_event, request) => exclusive(async () => {
+    requireFluidMesh(currentResult);
+    const mesh = currentResult.mesh
+      || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
+    const incompleteDirectory = await fs.mkdtemp(path.join(currentResult.outputDirectory, 'flow-branch-incomplete-'));
+    const pendingPrefix = path.join(incompleteDirectory, 'certificate');
+    let boundaryDefinition = null;
+    let boundaryPath = null;
+    try {
+      boundaryDefinition=request?.case==='custom'
+        ? validateBoundaryMesh(request.boundaryDefinition,mesh,Number(request.speed)) : null;
+      boundaryPath=boundaryDefinition ? path.join(incompleteDirectory,'input.boundaries') : null;
+      if (boundaryPath) await fs.writeFile(boundaryPath,serializeBoundaryDefinition(boundaryDefinition));
+      const invocation=buildFlowBranchCertificateInvocation(currentResult.cm2dPath,pendingPrefix,request,boundaryPath);
+      log(`正在运行显式层流分支证书：${FLOW_CASES[invocation.request.case].label}…`);
+      const processResult=await runProcess(executable(invocation.executable),invocation.args,line=>log(line),operation.signal,0,[0,2,3]);
+      operation.signal.throwIfAborted();
+      const summaryPath=`${pendingPrefix}.json`, archivePath=`${pendingPrefix}.branch.certificate`;
+      const [summary, archiveStat]=await Promise.all([readJson(summaryPath),fs.stat(archivePath)]);
+      const validated=validateFlowBranchCertificateSummary(summary,invocation.request);
+      const expectedCode=validated.status==='branch_consistent'?0:validated.status==='branch_divergent'?3:2;
+      if(processResult.code!==expectedCode)throw new Error('原生证书退出码与摘要状态不一致。');
+      const destinations={summary:`${currentResult.prefix}.flow.branch.json`,archive:`${currentResult.prefix}.flow.branch.certificate`};
+      const previous=currentResult.flowBranchCertificate;
+      const backups=[];
+      for(const [kind,destination] of Object.entries(destinations)){
+        const backup=path.join(incompleteDirectory,`previous.${kind}`);
+        try{await fs.copyFile(destination,backup);backups.push({kind,backup,destination});}
+        catch(error){if(error.code!=='ENOENT')throw error;}
+      }
+      try{
+        await commitFlowFiles(fs,[{source:summaryPath,destination:destinations.summary},{source:archivePath,destination:destinations.archive}]);
+        const payload={summary:validated,request:invocation.request,archiveBytes:archiveStat.size,
+          files:{summary:path.basename(destinations.summary),archive:path.basename(destinations.archive)}};
+        currentResult.flowBranchCertificate=payload;
+        await fs.rm(incompleteDirectory,{recursive:true,force:true});
+        log(validated.status==='branch_consistent'?'分支证书完成：两条目标路径在报告限值内一致。'
+          :validated.status==='branch_divergent'?'分支证书完成：两条目标路径显著分歧，未选择候选。'
+          :'分支证书阶段未完成，已保留可用候选且未选择候选。');
+        return payload;
+      }catch(error){
+        await Promise.allSettled(Object.values(destinations).map(file=>fs.rm(file,{force:true})));
+        const restored=await Promise.allSettled(backups.map(entry=>fs.copyFile(entry.backup,entry.destination)));
+        currentResult.flowBranchCertificate=restored.every(entry=>entry.status==='fulfilled')?previous:null;
+        throw error;
+      }
+    }catch(error){
+      const report={format:'cartmesh2d-flow-branch-desktop-incomplete-v1',
+        status:operation.signal.aborted?'cancelled':'failed',message:String(error.message||error).split('\n')[0]};
+      await fs.writeFile(path.join(incompleteDirectory,'desktop-flow-branch-error.json'),JSON.stringify(report,null,2)).catch(()=>{});
+      error.message+=`\n未完成证书诊断保留在 ${incompleteDirectory}`;
       throw error;
     }
   }));
@@ -1098,6 +1156,37 @@ async function runSmoke() {
         if (Math.abs(smoke.state.flow.summary.acceptedTime-resumeTime-2*Number(document.getElementById('flowDt').value))>1e-10)
           throw new Error('Resume from cancelled calculation did not use the saved time');
       }
+      if (${JSON.stringify(argument('flow-branch-certificate') === 'true')}) {
+        const ordinary=smoke.state.flow;
+        const ordinaryFields=JSON.stringify(ordinary?.fields);
+        document.getElementById('flowBranchVelocityLimit').value=${JSON.stringify(argument('flow-branch-velocity-limit') || '0.01')};
+        document.getElementById('flowBranchPressureLimit').value=${JSON.stringify(argument('flow-branch-pressure-limit') || '0.01')};
+        await smoke.runFlowBranchCertificate();
+        const certificate=smoke.state.flowBranchCertificate;
+        if(!certificate||certificate.summary.selectedCandidate!==null||certificate.summary.converged!==false)
+          throw new Error('Desktop branch certificate selected or accepted a candidate');
+        if(smoke.state.flow!==ordinary||JSON.stringify(smoke.state.flow?.fields)!==ordinaryFields)
+          throw new Error('Branch certificate replaced the ordinary accepted field');
+        const text=document.getElementById('flowBranchCertificateResult').innerText;
+        if(document.getElementById('flowBranchCertificateResult').hidden||!text.includes('未选择候选')||!text.includes('直接目标')||!text.includes('引导后的原目标'))
+          throw new Error('Branch certificate review did not reach the real DOM');
+        smoke.state.flowBranchSmoke={summary:certificate.summary,files:certificate.files,
+          archiveBytes:certificate.archiveBytes,ordinaryFieldPreserved:true,resultText:text};
+        if(${JSON.stringify(argument('flow-branch-cancel-check') === 'true')}){
+          const previous=smoke.state.flowBranchCertificate;
+          const pending=smoke.runFlowBranchCertificate();
+          const deadline=Date.now()+5000;
+          while(!smoke.state.busy&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,5));
+          if(!smoke.state.busy)throw new Error('Branch certificate cancellation did not start');
+          await new Promise(resolve=>setTimeout(resolve,25));
+          document.getElementById('cancel').click();await pending;
+          if(JSON.stringify(smoke.state.flowBranchCertificate)!==JSON.stringify(previous))
+            throw new Error('Cancelled branch certificate replaced the previous complete certificate');
+          if(smoke.state.flow!==ordinary||JSON.stringify(smoke.state.flow?.fields)!==ordinaryFields)
+            throw new Error('Cancelled branch certificate replaced the ordinary accepted field');
+          smoke.state.flowBranchSmoke.cancelPreservedPrevious=true;
+        }
+      }
       if (!smoke.state.flow || document.getElementById('flowSpeedOption').hidden ||
           document.getElementById('displayMode').value !== 'speed')
         throw new Error('Native flow result did not reach the renderer');
@@ -1274,7 +1363,8 @@ async function runSmoke() {
         restart: smoke.state.flowRestart,
         cancellationChecked: ${JSON.stringify(argument('flow-cancel-check') === 'true')},
         failureChecked: ${JSON.stringify(argument('flow-failure-check') === 'true')}
-      } : null
+      } : null,
+      flowBranchCertificate: smoke.state.flowBranchSmoke || null
     };
   })()`).then(async report => {
     if (report.rasterPreview) {

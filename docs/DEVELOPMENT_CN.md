@@ -302,6 +302,8 @@ build/cartmesh2d_flow_cli \
 
 192 格移动圆环真实运行的直接/引导/终档完整评估为 `68/34/37`，归一化速度/压力 RMS 差为 `2.9137e-6/6.6336e-7`；相同三候选在 `.01/.01` 下返回 0，在 `1e-8/1e-8` 下返回 3。把引导预算设为 1 返回 2，归档仍保留已完成直接场和未收敛引导场，终档为空。CLI 验证还实际终止 32×32 方腔证书进程，确认只保留 `running` 标记且不留下最终或 `.tmp` 归档。复现数据与哈希见 `native-laminar-branch-cli.json`。
 
+桌面通过独立 `run-flow-branch-certificate` IPC 调用同一 CLI 事务。主进程只接受退出码与摘要分类一致的 `.json` 和 `.branch.certificate`，以独立 `*.flow.branch.*` 名称原子提交；复制失败恢复上一次证书，普通 `currentResult.flow` 与重启状态不参与该事务。renderer 只在新鲜 strict Newton 稳态启用入口，显示三候选和归一化场差，固定提示“未选择候选”；导出 ZIP 直接包含归档和摘要。Linux Electron 37 headless 实际在 728 格圆柱上先生成普通默认场，再运行证书：普通场 117 次严格收敛，证书 direct/guide/guided-target 为 `117/60/94` 次；两目标速度/压力 RMS 差 `1.1592e-7/5.1066e-8`。报告限值 `.01/.01` 时 DOM 显示一致，`1e-8/1e-8` 时显示分歧；两次均保留 `selectedCandidate=null`，普通场对象和逐格字段不变。复现证据见 `native-laminar-branch-desktop.json`；这不是实体显示器、macOS 或打包版验证。
+
 真实反例复现：
 
 ```sh

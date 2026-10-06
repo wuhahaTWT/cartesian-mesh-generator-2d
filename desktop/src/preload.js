@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('cartmesh', {
   probeSizing: request => ipcRenderer.invoke('probe-sizing', request),
   generate: request => ipcRenderer.invoke('generate', request),
   runFlow: request => ipcRenderer.invoke('run-flow', request),
+  runFlowBranchCertificate: request => ipcRenderer.invoke('run-flow-branch-certificate', request),
   runEuler: request => ipcRenderer.invoke('run-euler',request),
   eulerState: () => ipcRenderer.invoke('euler-state'),
   pickEulerCheckpoint: () => ipcRenderer.invoke('pick-euler-checkpoint'),

@@ -1,0 +1,124 @@
+{
+  "format": "cartmesh2d-native-laminar-branch-desktop-evidence-v1",
+  "generatedUtc": "2026-10-06T09:52:00Z",
+  "scope": "Explicit desktop renderer-to-IPC-to-native-CLI branch certificate workflow; candidate review and archive export without selecting or replacing an ordinary accepted flow field.",
+  "platform": {
+    "system": "Linux 6.18.44 x86_64",
+    "compiler": "GCC 13.3",
+    "electron": "37",
+    "headlessOzone": true,
+    "physicalDisplay": false,
+    "macos": false,
+    "packagedApplication": false
+  },
+  "productContract": {
+    "ipc": "run-flow-branch-certificate",
+    "eligible": "fresh fixed-property strict Newton-Krylov steady flow",
+    "requiredCallerLimits": [
+      "velocity RMS normalized by Uref",
+      "gauge-removed pressure RMS normalized by Uref squared"
+    ],
+    "limitsArePhysicalAcceptanceGate": false,
+    "summaryConverged": false,
+    "selectedCandidate": null,
+    "ordinaryFlowStateIsSeparate": true,
+    "archiveIncludedInResultZip": true,
+    "candidateAdoptionUi": false,
+    "candidateAdoptionReason": "No candidate can be promoted without an independent physical basis; the workflow only reports and preserves branch risk."
+  },
+  "realRuns": {
+    "common": {
+      "sample": "32-segment circle in the generated external-flow domain",
+      "solverCells": 728,
+      "nuM2PerS": 0.1,
+      "referenceSpeedMPerS": 0.5,
+      "targetTolerance": 0.000001,
+      "ordinaryTarget": {
+        "converged": true,
+        "coupledEvaluations": 117,
+        "maximumSpeedRatio": 1.1725428164985552,
+        "pressureRangeRatio": 1.115936873603627
+      },
+      "certificateCandidates": {
+        "directTargetEvaluations": 117,
+        "guideEvaluations": 60,
+        "guidedTargetEvaluations": 94
+      },
+      "pathDifference": {
+        "velocityRmsNormalized": 1.1592170951957827e-7,
+        "pressureRmsNormalized": 5.106571934244777e-8
+      }
+    },
+    "consistent": {
+      "reportLimits": [0.01, 0.01],
+      "status": "branch_consistent",
+      "archiveBytes": 783614,
+      "archiveSha256": "cb4609ec9fa70ce970562b54c3116f0876a411266fcca48a152a4648d04e1581",
+      "summarySha256": "df9a3fd28ecd8600bb16c4c10fffdbaab45252b0df74f750365c48667acebbc3",
+      "realDomShowsThreeCandidates": true,
+      "ordinaryFieldPreserved": true
+    },
+    "divergent": {
+      "reportLimits": [1e-8, 1e-8],
+      "status": "branch_divergent",
+      "archiveBytes": 783617,
+      "archiveSha256": "dd8cc9e1ae276285e295a015e676f0faaee5bbeb5420e9fad32560cf46f0bbec",
+      "summarySha256": "724585e624b689ceef23f46469c00fb2e89747ff150f8ad692eaad953ea30c65",
+      "realDomSaysNoCandidateSelected": true,
+      "ordinaryFieldPreserved": true
+    },
+    "incomplete": {
+      "maximumEvaluationsPerStage": 1,
+      "status": "branch_incomplete",
+      "stage": "direct-target",
+      "outcome": "unconverged",
+      "directTargetPresent": true,
+      "guidePresent": false,
+      "guidedTargetPresent": false,
+      "archiveBytes": 261640,
+      "archiveSha256": "067338a6c8db193577babd9e5666208fba1a25581379d965196f5aa5b26252bf",
+      "summarySha256": "f086b0ef3e2d4dca86e4cbd41cb3976bb883e30fa80c358e733249a7f75f6471",
+      "realDomSaysNoCandidateSelected": true
+    },
+    "cancel": {
+      "completedCertificateSavedBeforeSecondAttempt": true,
+      "secondAttemptCancelledThroughRealRendererButton": true,
+      "incompleteReportStatus": "cancelled",
+      "previousCertificatePreserved": true,
+      "ordinaryFieldPreserved": true,
+      "publishedArchiveSha256": "cb4609ec9fa70ce970562b54c3116f0876a411266fcca48a152a4648d04e1581"
+    }
+  },
+  "verification": {
+    "frontend": {
+      "command": "npm --prefix desktop test",
+      "passed": 198,
+      "total": 198,
+      "logSha256": "cc61f60802bb487ab029b048ed224618ce99d14343b086b9698a8e7b641526af"
+    },
+    "nativeTargeted": {
+      "command": "ctest --test-dir build -R ^cartmesh2d_flow_cli_validation$ --output-on-failure",
+      "passed": 1,
+      "total": 1
+    },
+    "nativeFullRerun": false,
+    "electronConsistentReportSha256": "ff7eb7bbb76b23e5ad5af3e55508b970451c9d047395837fab1087e3c785ff21",
+    "electronDivergentLogSha256": "e221a861f704300842bcf04c8c297d89c84cb051341476165ae519c22ce56b1b",
+    "electronIncompleteLogSha256": "85b6bcb550dea7d25a81a1d3e5babda3111df7c06d964c85f7ab5cdbae418296",
+    "electronCancelLogSha256": "4aa649f72e70a05ebf5de11c183496cc487842ea452abdb34a72b766a3e7dc1b"
+  },
+  "hashes": {
+    "runtimeFlowCliSha256": "68a02c84815689c360defb8fb294fd62eb8ba65d4f08d8ff1a48eddc3bbbce7c",
+    "coreFlowJsSha256": "dbc3582c7e42edc3355adcb7ae15eebd67254ad4404a57fec5f2cf2998d11c18",
+    "mainJsSha256": "ba3bff82f268f46794f70cbc35038359c39510432c85e1d8df98277777179265",
+    "rendererJsSha256": "925f07bab68ab9272cb799c17e96f23fa4103939dea043726c8607a9fb0e1d21"
+  },
+  "qualification": {
+    "equationsChanged": false,
+    "defaultChanged": false,
+    "solverQualityGateChanged": false,
+    "ordinaryFailureOrLastAcceptedStateChanged": false,
+    "candidateAutomaticallySelected": false,
+    "remaining": "Explicit adoption/export of one candidate as an ordinary flow field still requires a defensible physical selection policy; physical-display, macOS and packaged-App validation, plus general curved-wall local-pressure qualification, remain incomplete."
+  }
+}

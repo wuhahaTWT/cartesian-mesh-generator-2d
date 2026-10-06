@@ -207,6 +207,86 @@ function buildFlowInvocation(meshPath, outputPrefix, request, restartPath = null
   };
 }
 
+function validateFlowBranchCertificateRequest(request = {}) {
+  const target = validateFlowRequest(request);
+  if (target.mode !== 'steady' || target.linearPolicy !== 'strict'
+      || target.steadyAcceleration !== 'newton-krylov' || target.resume || target.initialVortex)
+    throw new Error('分支证书仅支持新鲜、固定物性、strict Newton–Krylov 稳态工况。');
+  const velocityRmsLimit = finite(request.branchVelocityRmsLimit, '速度 RMS 报告限值');
+  const pressureRmsLimit = finite(request.branchPressureRmsLimit, '压力 RMS 报告限值');
+  if (!(velocityRmsLimit > 0) || !(pressureRmsLimit > 0))
+    throw new Error('分支证书报告限值必须大于 0；它们只分类路径差异，不是物理接受门。');
+  return { ...target, branchVelocityRmsLimit: velocityRmsLimit,
+    branchPressureRmsLimit: pressureRmsLimit };
+}
+
+function buildFlowBranchCertificateInvocation(meshPath, outputPrefix, request, boundaryPath = null) {
+  const validated = validateFlowBranchCertificateRequest(request);
+  const base = buildFlowInvocation(meshPath, outputPrefix, validated, null, boundaryPath);
+  return { ...base, request: validated, args: [...base.args, '--branch-certificate',
+    '--branch-velocity-rms-limit', String(validated.branchVelocityRmsLimit),
+    '--branch-pressure-rms-limit', String(validated.branchPressureRmsLimit)] };
+}
+
+function validateFlowBranchCertificateSummary(value, request) {
+  if (!value || value.format !== 'cartmesh2d-flow-branch-certificate-summary-v1')
+    throw new Error('分支证书摘要格式无效。');
+  const expected = validateFlowBranchCertificateRequest(request);
+  if (value.converged !== false || value.selectedCandidate !== null
+      || value.candidateSelection !== 'none; explicit user review required')
+    throw new Error('分支证书不得自动接受或选择候选。');
+  if (!['branch_consistent','branch_divergent','branch_incomplete'].includes(value.status)
+      || !['completed','unconverged','stopped'].includes(value.outcome)
+      || !['direct-target','guide','guided-target'].includes(value.stage))
+    throw new Error('分支证书阶段或结果无效。');
+  if (typeof value.pathsCompared !== 'boolean' || value.archiveSuffix !== '.branch.certificate'
+      || typeof value.reason !== 'string' || !value.reason)
+    throw new Error('分支证书元数据不完整。');
+  if (finite(value.guideViscosityMultiplier,'guideViscosityMultiplier') !== 10
+      || finite(value.guideToleranceExponent,'guideToleranceExponent') !== .5)
+    throw new Error('分支证书引导参数与桌面固定事务不一致。');
+  for (const [key, wanted] of [['maximumVelocityRmsDifference', expected.branchVelocityRmsLimit],
+    ['maximumPressureRmsDifference', expected.branchPressureRmsLimit]]) {
+    const got = finite(value[key], key);
+    if (Math.abs(got-wanted) > 1e-12*Math.max(1,Math.abs(wanted)))
+      throw new Error('分支证书报告限值与请求不一致。');
+  }
+  const candidate = (item, name) => {
+    if (item === null) return null;
+    if (!item || typeof item.converged !== 'boolean' || typeof item.stopped !== 'boolean')
+      throw new Error(`分支证书 ${name} 候选无效。`);
+    const normalized = { converged:item.converged, stopped:item.stopped };
+    for (const key of ['coupledEvaluations','globalRelativeImbalance','maximumSpeedRatio','pressureRangeRatio'])
+      normalized[key] = finite(item[key], `${name}.${key}`);
+    if (!Number.isInteger(normalized.coupledEvaluations) || normalized.coupledEvaluations < 0
+        || normalized.globalRelativeImbalance < 0 || normalized.maximumSpeedRatio < 0
+        || normalized.pressureRangeRatio < 0)
+      throw new Error(`分支证书 ${name} 候选数值无效。`);
+    return normalized;
+  };
+  const result = { ...value, directTarget:candidate(value.directTarget,'directTarget'),
+    guide:candidate(value.guide,'guide'), guidedTarget:candidate(value.guidedTarget,'guidedTarget') };
+  if (!result.directTarget) throw new Error('分支证书缺少直接目标候选。');
+  if (value.pathsCompared) {
+    if (!result.guidedTarget || typeof value.consistent !== 'boolean')
+      throw new Error('分支证书路径比较不完整。');
+    for (const key of ['velocityRmsDifference','maximumVelocityDifference','pressureRmsDifference','maximumPressureDifference']) {
+      result[key] = finite(value[key], key);
+      if (result[key] < 0) throw new Error('分支证书场差不能为负。');
+    }
+    const consistent = result.velocityRmsDifference <= expected.branchVelocityRmsLimit
+      && result.pressureRmsDifference <= expected.branchPressureRmsLimit;
+    if (consistent !== value.consistent
+        || value.status !== (consistent ? 'branch_consistent' : 'branch_divergent'))
+      throw new Error('分支证书路径分类与场差不一致。');
+    if (value.outcome !== 'completed' || value.stage !== 'guided-target' || !result.guide)
+      throw new Error('已比较分支证书的阶段或候选不完整。');
+  } else if (value.consistent !== null || value.status !== 'branch_incomplete') {
+    throw new Error('未完成分支证书不得给出路径一致性。');
+  }
+  return result;
+}
+
 function parseFlowProgress(line) {
   const progressNumber = (value, label) => {
     if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${label} 进度必须为有限数值。`);
@@ -628,6 +708,8 @@ module.exports = {
   VELOCITY_TRACE_DEFINITION,
   WALL_TRACE_IMPERMEABILITY_DEFINITION,
   VELOCITY_TRACE_CAUSE_DEFINITION,
-  buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
+  buildFlowInvocation, buildFlowBranchCertificateInvocation, commitFlowFiles, parseFlowProgress,
+  validateFlowOutput, validateFlowRequest, validateFlowBranchCertificateRequest,
+  validateFlowBranchCertificateSummary,
   flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
 };
