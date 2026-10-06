@@ -356,14 +356,14 @@ if(CARTMESH2D_BUILD_TESTS)
                 $<TARGET_FILE:cartmesh2d_cli> $<TARGET_FILE:cartmesh2d_euler_cli>)
     set_tests_properties(cartmesh2d_compressible_cloud_cli PROPERTIES TIMEOUT 120)
 
-    # Hosted Windows runs need longer wall-clock budgets: the core took 56 s,
-    # vortex128 exceeded a 90 s subprocess limit, and cold Couette32 exhausted
-    # the CLI's default 180 s at t=33.72 of the required t=60. Keep every grid,
-    # physical endpoint, iteration limit and numerical assertion unchanged.
-    # Python/CLI limits for the two studies are 540/480 s; allow their full suite.
+    # Hosted Windows needs longer execution budgets. The native cold Couette
+    # regression passed ny=8/16 but timed out during ny=32 at 180 s; comparable
+    # core/CLI checks took about 3.3 times macOS's time (Couette: 62.54 s).
+    # 300 s allows that measured host difference plus scheduling variation.
+    # All grids, physical endpoints, step budgets and numerical gates stay fixed.
     if(WIN32)
         set_tests_properties(cartmesh2d_euler_core PROPERTIES TIMEOUT 180)
-
+        set_tests_properties(cartmesh2d_compressible_laminar PROPERTIES TIMEOUT 300)
     endif()
 
     target_link_libraries(cartmesh2d_fv_tests PRIVATE cartmesh2d_fv)
