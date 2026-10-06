@@ -509,7 +509,7 @@ app.whenReady().then(async () => {
     if(!file.endsWith('.thermal.checkpoint'))throw new Error('请选择 thermal.checkpoint，carrier.checkpoint 不能联合续算。');
     const saved=await readJson(path.join(path.dirname(file),'desktop-state.json'));
     if(!saved?.request)throw new Error('请保留同目录的 desktop-state.json，以恢复物性和热边界。');
-    const request=validateThermalRequest(saved.request),time=thermalCheckpointTime(await fs.readFile(file,'utf8'));
+    const request=validateThermalRequest(saved.request),time=thermalCheckpointTime(await fs.readFile(file,'utf8'),request.events);
     currentResult.thermalRestart={path:file,metadata:{time,request,fileName:path.basename(file)}};
     return currentResult.thermalRestart.metadata;
   }));
@@ -885,6 +885,17 @@ async function runSmoke() {
       delete report.before.fields;
     }
     if (argument('export')) report.exported=await exportPackage(argument('export'));
+    if (argument('thermal-events') === 'true') {
+      mainWindow.setSize(1320,900);
+      report.eventEditor=await mainWindow.webContents.executeJavaScript(`(() => {
+        const editor=document.getElementById('thermalEventEditor');editor.open=true;
+        editor.scrollIntoView({block:'start'});
+        document.querySelector('.results').scrollTop=document.querySelector('.results').scrollHeight;
+        return {rows:document.querySelectorAll('.thermal-event-row').length,
+          locked:[...editor.querySelectorAll('input,select,button')].every(input=>input.disabled)};
+      })()`);
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
     if (shot) {
       await fs.writeFile(shot,(await mainWindow.webContents.capturePage()).toPNG());
       await fs.writeFile(shot+'.json',JSON.stringify(report,null,2));
@@ -1250,6 +1261,15 @@ async function runSmoke() {
         thermalDiffusivity:'.1',thermalInitial:'300',thermalTopValue:'301',thermalBottomValue:'300',
         thermalTemperatureScale:'1',thermalTimeRtol:'.01',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}}))document.getElementById(id).value=value;
       document.getElementById('thermalTopKind').value='value';document.getElementById('thermalBottomKind').value='value';
+      if(${JSON.stringify(argument('thermal-events') === 'true')})smoke.setThermalEvents([
+        {time:.137,target:'source',kind:'source',value:.2},
+        {time:.137,target:'top',kind:'value',value:300,inflowValue:300},
+        {time:.243,target:'source',kind:'source',value:0},
+        {time:.337,target:'top',kind:'value',value:301,inflowValue:300},
+        {time:.913,target:'source',kind:'source',value:.1},
+        {time:1.137,target:'source',kind:'source',value:0},
+        {time:1.337,target:'source',kind:'source',value:-.1}
+      ]);
       document.getElementById('thermalTimeError').checked=true;
       document.getElementById('flowMode').dispatchEvent(new Event('change'));
       if(document.getElementById('runThermal').disabled)throw new Error('Adaptive thermal button is disabled');
@@ -1257,6 +1277,12 @@ async function runSmoke() {
       if(smoke.state.thermal?.summary.time!==.5 || smoke.state.thermal.summary.timeStepControl!=='joint-cfl-be-error-retry')
         throw new Error('Joint adaptive/error controller did not reach actual renderer');
       const first=smoke.state.thermal;
+      if(${JSON.stringify(argument('thermal-events') === 'true')}) {
+        if(first.summary.thermalEventCount!==6 || ![.137,.243,.337].every(t=>first.history.some(row=>row.time===t)))
+          throw new Error('Thermal event controls did not reach exact native event times');
+        if([...document.querySelectorAll('#thermalEvents input,#thermalEvents select,#thermalEvents button')].some(input=>!input.disabled))
+          throw new Error('Resuming event law is not locked');
+      }
       document.getElementById('flowEndTime').value='.8';document.getElementById('flowDt').value='.05';
       await smoke.runThermal();
       if(smoke.state.thermal?.summary.time!==.8)throw new Error('Adaptive thermal restart failed');
@@ -1272,7 +1298,7 @@ async function runSmoke() {
       document.getElementById('displayMode').value='temperature';document.getElementById('displayMode').dispatchEvent(new Event('change'));
       if(!smoke.view.fieldRange || document.getElementById('thermalTimeline').hidden)throw new Error('Thermal map or timeline missing');
       smoke.state.thermalSmoke={adaptiveControl:true,errorControl:true,firstTime:first.summary.time,changedStepResume:true,
-        failedBudgetRetained:true,resumeAfterFailure:true,finalTime:1.3};
+        failedBudgetRetained:true,resumeAfterFailure:true,finalTime:1.3,eventsChecked:${JSON.stringify(argument('thermal-events') === 'true')},firstEventTimes:first.history.filter(row=>[.137,.243,.337].includes(row.time)).map(row=>row.time)};
     }
     if (${JSON.stringify(argument('thermal') === 'true')}) {
       for(const [id,value] of Object.entries({flowCase:'external',flowNu:'.1',flowSpeed:'1',flowConvection:${JSON.stringify(argument('flow-convection') || 'limited-linear')},flowPressurePreconditioner:'aggregation',flowMaxIterations:'1500',flowDt:'.05',flowSteps:'2',thermalDiffusivity:'.1',thermalFluxCorrection:${JSON.stringify(argument('thermal-flux-correction') || 'unrestricted')}})) document.getElementById(id).value=value;

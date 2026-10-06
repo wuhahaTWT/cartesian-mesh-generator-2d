@@ -50,33 +50,45 @@ fv::FlowState2D carrier(const std::string& path,const fv::FvMesh2D& mesh) {
     std::ifstream in(path); require(bool(in),"cannot open flow checkpoint");
     // Recover only physical configuration, then run the existing strict full
     // geometry/incidence/state parser from the beginning. No CSV-order guessing.
-    std::string line; fv::FlowControls2D c;
-    std::getline(in,line);
-    require(line=="CARTMESH2D_FLOW_CHECKPOINT 1"||line=="CARTMESH2D_FLOW_CHECKPOINT 2"||line=="CARTMESH2D_FLOW_CHECKPOINT 3","invalid flow checkpoint header");
-    const bool v2=line.ends_with(" 2")||line.ends_with(" 3");
-    const bool v3=line.ends_with(" 3");
-    std::getline(in,line); require(line=="DISCRETIZATION Euler-RC-v2","unsupported flow checkpoint discretization");
-    std::getline(in,line); std::istringstream config(line); std::string token,scheme,stress;
-    std::string backflow;
-    require(bool(config>>token>>std::quoted(c.scenario)>>c.nu>>c.speed>>scheme>>stress>>c.manufacturedPressureSlope)
-        && (!v2 || bool(config>>backflow)) && token=="CONFIG",
-        "invalid flow checkpoint configuration");
+    fv::FlowControls2D c;
+    std::string magic,version,scheme,stress,backflow;
+    require(bool(in>>magic>>version)&&magic=="CARTMESH2D_FLOW_CHECKPOINT"&&
+        (version=="1"||version=="2"||version=="3"||version=="4"),"invalid flow checkpoint header");
+    const bool explicitBoundary=version=="4",hasBackflow=version!="1";
+    fv::flow_checkpoint_detail::token(in,"DISCRETIZATION");
+    fv::flow_checkpoint_detail::token(in,"Euler-RC-v2");
+    fv::flow_checkpoint_detail::token(in,"CONFIG");
+    require(bool(in>>std::quoted(c.scenario)>>c.nu>>c.speed>>scheme>>stress>>c.manufacturedPressureSlope)
+        && (!hasBackflow || bool(in>>backflow)),"invalid flow checkpoint configuration");
     require(scheme=="upwind"||scheme=="limited-linear"||scheme=="face-limited-linear","invalid carrier convection");
     require(stress=="symmetric"||stress=="laplacian","invalid carrier stress");
     c.convection=scheme=="upwind"?fv::ConvectionScheme2D::Upwind:
         scheme=="face-limited-linear"?fv::ConvectionScheme2D::FaceLimitedLinearUpwind:fv::ConvectionScheme2D::LimitedLinearUpwind;
     c.viscousStress=stress=="symmetric"?fv::ViscousStress2D::Symmetric:fv::ViscousStress2D::Laplacian;
-    if (v2) {
+    if (hasBackflow) {
         require(backflow=="reject"||backflow=="normal-inlet","invalid carrier outlet backflow model");
         c.outletBackflow=backflow=="normal-inlet"?fv::OutletBackflow2D::NormalInlet:fv::OutletBackflow2D::Reject;
     }
-    if (v3) {
-        std::string label; std::size_t count=0;
-        require(bool(in>>label>>count)&&label=="FACE_VISCOSITY"&&count==mesh.faces.size(),
-                "invalid face viscosity field");
+    if (version=="3" || explicitBoundary) {
+        fv::flow_checkpoint_detail::token(in,"FACE_VISCOSITY");
+        std::size_t count=0;
+        require(bool(in>>count)&&(count==mesh.faces.size()||(explicitBoundary&&count==0)),"invalid face viscosity field");
         c.faceViscosity.resize(count);
-        for (double& value:c.faceViscosity) {
+        for (double& value:c.faceViscosity)
             require(bool(in>>value)&&std::isfinite(value)&&value>0,"invalid face viscosity value");
+    }
+    if(explicitBoundary) {
+        fv::flow_checkpoint_detail::token(in,"BOUNDARIES");
+        std::size_t count=0;
+        const auto expected=std::count_if(mesh.faces.begin(),mesh.faces.end(),[](const auto& f){return !f.neighbour;});
+        require(bool(in>>count)&&count==static_cast<std::size_t>(expected),"invalid carrier boundary count");
+        for(std::size_t i=0;i<count;++i) {
+            fv::flow_checkpoint_detail::token(in,"BOUNDARY");
+            fv::FlowBoundaryCondition2D condition;std::string kind;
+            require(bool(in>>condition.face>>kind>>std::quoted(condition.name)>>condition.velocity.x>>condition.velocity.y>>condition.pressure),
+                    "truncated carrier boundary");
+            condition.kind=fv::flowBoundaryKindFromName2D(kind);
+            c.boundaryConditions.push_back(std::move(condition));
         }
     }
     in.clear(); in.seekg(0); return fv::readFlowCheckpoint2D(in,mesh,c);
@@ -517,6 +529,7 @@ int main(int argc,char**argv) {
             <<",\n\"startTime\":"<<startTime<<",\n\"completedSteps\":"<<completedSteps<<",\n\"rejectedAttempts\":"<<rejectedAttempts
             <<",\n\"maximumTimeStep\":"<<timeControls.limits.maximumStep
             <<",\n\"temperatureScale\":"<<timeControls.temperatureScale<<",\n\"timeRelativeTolerance\":"<<timeControls.relativeTolerance
+            <<",\n\"thermalEventCount\":"<<thermalSetup.events.size()
             <<",\n\"steps\":"<<steps
             <<",\n\"diffusivity\":"<<diffusivity<<",\n\"convection\":"<<quote(controls.convection==fv::ConvectionScheme2D::Upwind?"upwind":"limited-linear")
             <<",\n\"relativeTolerance\":"<<controls.relativeTolerance<<",\n\"absoluteTolerance\":"<<controls.absoluteTolerance<<",\n\"cellTolerance\":"<<controls.cellTolerance

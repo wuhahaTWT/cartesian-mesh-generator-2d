@@ -7,6 +7,7 @@ const {
   buildThermalInvocation,
   parseThermalProgress,
   thermalBoundaryCsv,
+  thermalEventsCsv,
   validateThermalOutput,
   validateThermalRequest,
   thermalCheckpointTime
@@ -276,4 +277,57 @@ test('bounded thermal method reaches native and versioned restart metadata',()=>
   assert.equal(thermalCheckpointTime(record),.1);
   assert.throws(()=>thermalCheckpointTime(record.replace(' bounded',' clipped')),/有界温度/);
   assert.throws(()=>thermalCheckpointTime(record.replace('EVENTS 0','EVENTS 1')),/时间事件/);
+});
+
+
+test('thermal event law is canonical, typed, and maps actual boundary faces',()=>{
+  const events=[{time:.243,target:'source',kind:'source',value:0},
+    {time:.137,target:'top',kind:'value',value:303,inflowValue:300},
+    {time:.137,target:'source',kind:'source',value:2}];
+  const r=request({mode:'adaptive',endTime:.5,events});
+  const normalized=validateThermalRequest(r);
+  assert.deepEqual(normalized.events.map(e=>e.target),['source','top','source']);
+  assert.equal(thermalEventsCsv(parseCm2d(RECTANGLE),r),
+    'time,target,type,value,inflowValue\n0.137,source,source,2,\n0.137,face:2,value,303,300\n0.243,source,source,0,\n');
+  const args=buildThermalInvocation('/tmp/final.solver.cm2d','/tmp/run','/tmp/bc.csv',r,null,'/tmp/events.csv').args;
+  assert.equal(args[args.indexOf('--thermal-events')+1],'/tmp/events.csv');
+  assert.throws(()=>buildThermalInvocation('/tmp/final.solver.cm2d','/tmp/run','/tmp/bc.csv',r),/完整时间事件/);
+  assert.throws(()=>validateThermalRequest({...r,mode:'transient'}),/自动步长/);
+  assert.throws(()=>validateThermalRequest({...r,events:[events[0],events[0]]}),/重复/);
+  for(const mutation of [{time:NaN},{time:-1},{value:'2'},{target:'unknown'},{kind:'value'}])
+    assert.throws(()=>validateThermalRequest({...r,events:[{...events[0],...mutation}]}),/事件|热源|有限/);
+  assert.throws(()=>thermalEventsCsv(parseCm2d(RECTANGLE),{...r,events:[{...events[1],target:'wall'}]}),/没有边界面/);
+  assert.throws(()=>validateThermalRequest({...r,events:[{...events[1],value:-1}]}),/0 K/);
+});
+
+test('event checkpoint metadata requires the complete ordered time law',()=>{
+  const events=validateThermalRequest(request({mode:'adaptive',endTime:.5,events:[
+    {time:.137,target:'source',kind:'source',value:2},{time:.137,target:'top',kind:'value',value:301,inflowValue:300},
+    {time:.243,target:'source',kind:'source',value:0}]})).events;
+  for(const version of [2,3,4]) {
+    const text=`CARTMESH2D_THERMAL_CHECKPOINT ${version}\nCOUPLING new-time-flux-Euler-v1\n`+
+      (version===4?'THERMAL_CONFIG 0.1 upwind bounded\nCONTROLLER_PRESENT 1\n':'')+
+      'EVENTS 2\nEVENT 0.137\nEVENT 0.243\nSCALAR 1 300\nFLOW\nCARTMESH2D_FLOW_CHECKPOINT 2\nTIME 0.5\nFLUX 1 0\n';
+    assert.equal(thermalCheckpointTime(text,events),.5);
+    assert.equal(thermalCheckpointTime(text.replaceAll('\n','\r\n'),events),.5);
+    assert.throws(()=>thermalCheckpointTime(text),/时间事件|格式/);
+    assert.throws(()=>thermalCheckpointTime(text,events.slice(0,2)),/时间事件/);
+    assert.throws(()=>thermalCheckpointTime(text.replace('EVENT 0.243','EVENT 0.244'),events),/时间事件/);
+  }
+});
+
+
+test('thermal restart rejects a changed future event value before running or replacing state',async()=>{
+  const {runThermalJob}=require('../src/core/thermal-job');
+  const original=validateThermalRequest(request({mode:'adaptive',endTime:.5,events:[
+    {time:.137,target:'source',kind:'source',value:.2},
+    {time:1.337,target:'source',kind:'source',value:0}]}));
+  const restart={path:'/unused/thermal.checkpoint',metadata:{time:.5,request:original}};
+  const complete={summary:{time:.5}};
+  const currentResult={thermalRestart:restart,thermal:complete};
+  const changed={...original,resume:true,endTime:1.5,events:original.events.map((event,i)=>i?{...event,value:-.1}:event)};
+  await assert.rejects(runThermalJob({currentResult,mesh:parseCm2d(RECTANGLE),request:changed,
+    runProcess:()=>assert.fail('changed law must not run')}),/完整热源和边界时间规律/);
+  assert.equal(currentResult.thermalRestart,restart);
+  assert.equal(currentResult.thermal,complete);
 });

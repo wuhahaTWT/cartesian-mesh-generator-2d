@@ -19,7 +19,7 @@ function controls() {
   const context = {
     $:id => elements[id], state:{flowRestart:{case:'external', nu:.01, speed:1, convection:'upwind'}},
     clearFlowBinding:() => counts.flow++, clearThermalBinding:() => counts.thermal++,
-    updateFlowScope() {}, updateFlowMode() {}
+    updateFlowScope() {}, updateFlowMode() {}, setThermalEvents(events) { elements.events=events; }
   };
   vm.createContext(context);
   vm.runInContext(functionSource('applySharedFlowControls') + '\n' + functionSource('applyRestartControls'), context);
@@ -96,12 +96,13 @@ test('loading a thermal restart clears a locked vortex and preserves supported a
   elements.flowDt = {value:'0.005'}; elements.flowSteps = {value:'7'};
   context.thermalPatches = [];
   context.state.thermalRestart = {request:{case:'external',nu:.01,speed:1,convection:'upwind',
-    diffusivity:.1,initial:300,source:2,scalarConvection:'upwind',boundaries:{}}};
+    diffusivity:.1,initial:300,source:2,scalarConvection:'upwind',boundaries:{},events:[{time:.137,target:'source',kind:'source',value:2}]}};
   vm.runInContext(functionSource('applyThermalRestartControls'), context);
   context.applyThermalRestartControls();
   assert.equal(elements.thermalFluxCorrection.value, 'unrestricted', 'legacy restart keeps its original flux operator');
   assert.equal(elements.flowInitialVortex.checked, false, 'restart uses its saved flow, without a fresh vortex');
   assert.equal(elements.flowMode.value, 'adaptive');
+  assert.deepEqual(elements.events,context.state.thermalRestart.request.events);
   assert.equal(elements.flowResume.checked, false);
   assert.equal(elements.thermalResume.checked, true);
   assert.equal(elements.flowDt.value, '0.005');

@@ -61,6 +61,16 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 真实 App 的跨进程项目验收入口：先正常运行并 `--export=/绝对路径/project.zip`，退出后使用 `--smoke=rectangle --open-project=/绝对路径/project.zip --out=/绝对路径/验收目录` 直接打开。可附加 `--project-resume=thermal --project-dt=.025 --project-end-time=1.4`；独立流动用 `--project-resume=flow --project-dt=.01 --project-steps=2`。支持已有 `--shot`、`--export`；不会先生成新网格。路径参数仅替代 smoke 文件对话框，正式操作通过顶部“打开项目”。原生终点回归在 `tests/thermal_flow_test.cpp`，前端文件恢复/取消检查在 `desktop/tests/project.test.js`、`archive.test.js` 和 `flow-checkpoint.test.js`。
 
+### 桌面热时间事件
+
+`core/thermal.js` 归一化请求的 `events`，按绝对时刻和目标排序，拒绝同时间重复目标；源项记录 `{time,target:'source',kind:'source',value}`，边界记录 `{time,target,kind,value,inflowValue}`。目标为既有 wall/inlet/outlet/top/bottom，按当前工况与真实最终网格映射到 `face:ID`；没有对应面的目标明确失败，不按屏幕邻近猜测边界。桌面事件要求自动步长模式；空列表保留原有静态流程。
+
+`core/thermal-job.js` 写出 `.events.csv` 并传给既有 `--thermal-events`；基准热边界和完整事件规律共同进入原生检查点身份。续算先比较完整归一化规律，原生再次检查完整源项/边界快照；元数据读取器只核对 v2/v3/v4 的时间表与时钟，不能替代原生物理核对。`desktop-state.json` 与完整项目清单均保存事件，未来时刻也不丢弃。任意命名 custom 流动边界仍通过 CLI 配置。
+
+真实 App 事件验收复用 `--smoke=rectangle --target-cells=1000 --thermal-adaptive=true --thermal-flux-correction=bounded --thermal-events=true`，再加 `--out`、`--shot`、`--export` 绝对路径。此组合包含同时改变热源与上壁、预算失败和恢复，保存时还保留未来事件；用上一节项目重开入口续至 1.4 s，验证 1.337 s 事件。仅查看已保存事件可用 `--open-project=... --thermal-events=true --shot=...`，不必重新计算。核心与界面测试在 `desktop/tests/thermal.test.js`、`thermal-renderer.test.js`；原始 App/CLI 对照在 `outputs/thermal-events/`。
+
+冻结载流器的 `--flow-checkpoint` 导入读取原生 flow checkpoint v1/v2/v3/v4 配置，再调用既有 `readFlowCheckpoint2D` 完整验证；v4 带完整命名边界，LF/CRLF 均可读入。回归使用实际联合计算生成的 v4，核对冻结面通量和载流器时钟，并拒绝坏边界、网格和截断文件，见 `tests/thermal_control_cli_test.py`。
+
 ## 非定常守恒有界温度修正
 
 入口为 `ScalarTransportControls2D::fluxCorrection`、`ScalarTransport2D.cpp` 和 CLI `--flux-correction bounded|unrestricted`。默认 `unrestricted` 保持原有离散。`bounded` 当前要求非空上一物理层和正 dt；稳态调用明确失败。支持 Upwind/LimitedLinearUpwind、逐面正扩散率和非负隐式损失。算法背景可参阅 [Lipnikov、Svyatskiy、Vassilevski 对非正交网格离散最大值原理的讨论](https://dodo.inm.ras.ru/research/_media/lip-svy-vas-12.pdf)；本仓库采用下述隐式行余量构造，资格依据是原生算例。

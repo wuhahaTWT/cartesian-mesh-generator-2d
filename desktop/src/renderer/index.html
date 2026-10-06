@@ -348,6 +348,12 @@
         <label class="field">时间相对容差<input id="thermalTimeRtol" type="number" min="0.000000001" step="any" value="0.01"></label>
         <p class="note">按温升而非绝对开尔文温度归一化；同时检查速度误差。每次估计需要三个联合求解，仍为一阶后向欧拉。CFL／内迭代收敛与时间精度分别检查。</p>
       </details>
+      <details id="thermalEventEditor"><summary>热源与边界随时间变化</summary>
+        <p class="note">填写绝对物理时刻（秒）。变化在该时刻之后生效，并持续到下一次同目标变化。使用自动步长，求解器会精确停在每个变化时刻；同一时刻可改变不同目标。</p>
+        <div id="thermalEvents"></div>
+        <button id="addThermalEvent" type="button">添加时间事件</button>
+        <p class="note" id="thermalEventHint">未设置事件：沿用固定热源与边界。</p>
+      </details>
       <details><summary>热源、温度格式与边界</summary>
         <label class="field">均匀源项<span class="unit"><input id="thermalSource" type="number" step="any" value="0"><i>K/s</i></span></label>
         <label class="field">温度对流格式<select id="thermalConvection"><option value="upwind">一阶迎风</option><option value="limited-linear">线性迎风（限制重构）</option></select></label>

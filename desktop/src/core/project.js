@@ -186,9 +186,10 @@ async function readProject(root, signal) {
     state.flowRestart = { path: saved.path, metadata };
   }
   if (state.thermalRestart) {
-    const saved = state.thermalRestart, time = thermalCheckpointTime(await text(saved.path));
+    const saved = state.thermalRestart, request = validateThermalRequest(saved.metadata.request);
+    const time = thermalCheckpointTime(await text(saved.path),request.events);
     if (time !== saved.metadata.time) fail('联合检查点时钟与保存记录不同。');
-    state.thermalRestart = { path: saved.path, metadata: { time, request: validateThermalRequest(saved.metadata.request) } };
+    state.thermalRestart = { path: saved.path, metadata: { time, request } };
   }
   if (state.eulerRestart) {
     const saved = state.eulerRestart;

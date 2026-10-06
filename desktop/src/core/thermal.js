@@ -29,6 +29,23 @@ function validateThermalRequest(input) {
     r.boundaries[group]={kind:b.kind,value:finite(b.value,group),inflowValue:finite(b.inflowValue,`${group} 回流温度`)};
     requireValue(b.inflowValue>=0 && (b.kind!=='value'||b.value>=0),'温度不得低于 0 K。');
   }
+  requireValue(input.events===undefined || Array.isArray(input.events),'时间事件必须为列表。');
+  r.events=(input.events || []).map((event,index)=>{
+    requireValue(event && typeof event==='object',`事件 ${index+1} 缺少配置。`);
+    const time=finite(event.time,'事件时间'),value=finite(event.value,'事件值');
+    requireValue(time>=0,'事件时间不得为负。');
+    requireValue(['source',...GROUPS].includes(event.target),'未知事件目标。');
+    if(event.target==='source') {
+      requireValue(event.kind==='source','体积热源事件须使用热源类型。');
+      return {time,target:'source',kind:'source',value};
+    }
+    requireValue(['value','flux'].includes(event.kind),'事件边界类型无效。');
+    const inflowValue=finite(event.inflowValue,'事件流入温度');
+    requireValue(inflowValue>=0 && (event.kind!=='value'||value>=0),'事件温度不得低于 0 K。');
+    return {time,target:event.target,kind:event.kind,value,inflowValue};
+  }).sort((a,b)=>a.time-b.time || ['source',...GROUPS].indexOf(a.target)-['source',...GROUPS].indexOf(b.target));
+  for(let i=1;i<r.events.length;++i)requireValue(r.events[i].time!==r.events[i-1].time || r.events[i].target!==r.events[i-1].target,'同一时刻不能重复设置同一事件目标。');
+  requireValue(!r.events.length || r.mode==='adaptive','时间事件须使用自动步长模式，以精确停在变化时刻。');
   r.timeError=Boolean(input.timeError);
   r.temperatureScale=finite(input.temperatureScale ?? 1,'温升尺度');
   r.timeRtol=finite(input.timeRtol ?? .01,'时间误差相对容差');
@@ -37,28 +54,45 @@ function validateThermalRequest(input) {
 }
 // Match the native flow cases. A nonrectangular boundary outside duct fails;
 // assigning the closest screen side would silently invent a physical condition.
-function thermalBoundaryCsv(mesh, request) {
-  const r=validateThermalRequest(request), b=mesh.bounds;
-  const eps=1e-10*Math.max(b.maxX-b.minX,b.maxY-b.minY);
+function thermalBoundaryGroups(mesh, r) {
+  const b=mesh.bounds,eps=1e-10*Math.max(b.maxX-b.minX,b.maxY-b.minY);
   const equal=(x,y)=>Math.abs(x-y)<=eps;
-  const rows=['face,type,value,inflowValue'];
+  const groups=Object.fromEntries(GROUPS.map(name=>[name,[]]));
   mesh.edges.forEach((e,id)=>{
     if(e.neighbour>=0)return;
-    const a=mesh.vertices[e.a],z=mesh.vertices[e.b];
-    let group;
+    const a=mesh.vertices[e.a],z=mesh.vertices[e.b];let group;
     if(r.case==='external' && e.patch===1)group='wall';
     else if(equal(a[0],b.minX)&&equal(z[0],b.minX))group='inlet';
     else if(equal(a[0],b.maxX)&&equal(z[0],b.maxX))group='outlet';
     else if(r.case==='duct')group='wall';
     else if(equal(a[1],b.maxY)&&equal(z[1],b.maxY))group='top';
     else if(equal(a[1],b.minY)&&equal(z[1],b.minY))group='bottom';
-    requireValue(group,'所选流动工况要求轴对齐矩形外边界。');
-    const v=r.boundaries[group];rows.push([id,v.kind,v.value,v.inflowValue].join(','));
+    requireValue(group,'所选流动工况要求轴对齐矩形外边界。');groups[group].push(id);
   });
-  requireValue(rows.length>1,'没有边界面。');
+  return groups;
+}
+function thermalBoundaryCsv(mesh, request) {
+  const r=validateThermalRequest(request),groups=thermalBoundaryGroups(mesh,r),records=[];
+  for(const group of GROUPS)for(const id of groups[group]) {
+    const v=r.boundaries[group];records.push([id,v.kind,v.value,v.inflowValue]);
+  }
+  requireValue(records.length>0,'没有边界面。');
+  records.sort((a,b)=>a[0]-b[0]);
+  return 'face,type,value,inflowValue\n'+records.map(row=>row.join(',')).join('\n')+'\n';
+}
+function thermalEventsCsv(mesh, request) {
+  const r=validateThermalRequest(request),groups=thermalBoundaryGroups(mesh,r);
+  const rows=['time,target,type,value,inflowValue'];
+  for(const event of r.events) {
+    if(event.target==='source')rows.push([event.time,'source','source',event.value,''].join(','));
+    else {
+      requireValue(groups[event.target].length>0,`事件目标 ${event.target} 在当前网格/工况中没有边界面。`);
+      for(const id of groups[event.target])rows.push([event.time,`face:${id}`,event.kind,event.value,event.inflowValue].join(','));
+    }
+  }
   return rows.join('\n')+'\n';
 }
-function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
+function buildThermalInvocation(mesh,prefix,boundary,input,restart=null,events=null) {
   const r=validateThermalRequest(input);
   requireValue(typeof mesh==='string'&&mesh.endsWith('.solver.cm2d'),'必须使用最终 solver.cm2d。');
   requireValue(!r.resume||restart,'没有可用的联合续算状态。');
@@ -73,6 +107,7 @@ function buildThermalInvocation(mesh,prefix,boundary,input,restart=null) {
     '--time-error',r.timeError?'on':'off','--temperature-scale',String(r.temperatureScale),
     '--velocity-scale',String(r.speed),'--time-rtol',String(r.timeRtol));
   else args.push('--steps',String(r.steps));
+  if(r.events.length) {requireValue(typeof events==='string'&&events.length>0,'缺少完整时间事件文件。');args.push('--thermal-events',events);}
   if(r.resume)args.push('--restart',restart);
   return {executable:'cartmesh2d_transport_cli',request:r,args};
 }
@@ -95,12 +130,18 @@ function csvRows(text,header) {
   return lines.map(line=>{const f=line.split(',');requireValue(f.length===header.split(',').length,'CSV 列数错误。');return f;});
 }
 // Metadata only; native restart still validates the complete geometry and state.
-function thermalCheckpointTime(text) {
+function thermalCheckpointTime(text, events=[]) {
   // Native text streams use CRLF on Windows; line endings are not part of the
   // physical checkpoint identity. Keep the same version and field checks.
   text=text.replace(/\r\n/g,'\n');
-  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT [134]\nCOUPLING new-time-flux-Euler-v1\n/.test(text),'续算文件格式错误。');
-  if(/^CARTMESH2D_THERMAL_CHECKPOINT [34]\n/.test(text))requireValue(/^EVENTS 0$/m.test(text),'包含时间事件的状态须用原完整 CLI 配置续算。');
+  requireValue(/^CARTMESH2D_THERMAL_CHECKPOINT [1234]\nCOUPLING new-time-flux-Euler-v1\n/.test(text) &&
+    (!text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 2') || events.length>0),'续算文件格式错误。');
+  if(/^CARTMESH2D_THERMAL_CHECKPOINT [234]\n/.test(text)) {
+    const count=text.match(/^EVENTS (\d+)$/m),times=[...text.matchAll(/^EVENT (\S+)$/gm)].map(m=>Number(m[1]));
+    const expected=[...new Set(events.map(event=>event.time))];
+    requireValue(count && Number(count[1])===expected.length && times.length===expected.length && times.every((time,i)=>time===expected[i]),
+      '时间事件与保存的完整规律不一致；须保留原 desktop-state.json 或项目包。');
+  } else requireValue(events.length===0,'旧状态缺少时间事件。');
   if(text.startsWith('CARTMESH2D_THERMAL_CHECKPOINT 4'))requireValue(/^THERMAL_CONFIG \S+ (?:upwind|limited-linear) bounded$/m.test(text)&&/^CONTROLLER_PRESENT [01]$/m.test(text),'有界温度状态配置缺失。');
   const parts=text.split('\nFLOW\n');
   requireValue(parts.length===2 && /^(?:CARTMESH2D_FLOW_CHECKPOINT 1|CARTMESH2D_FLOW_CHECKPOINT 2)\n/.test(parts[1]),'缺少联合流动状态。');
@@ -131,7 +172,8 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   if(adaptive) {requireValue(near(summary.temperatureScale,r.temperatureScale)&&near(summary.timeRelativeTolerance,r.timeRtol),'时间误差尺度与请求不符。');}
   if(adaptive)requireValue(summary.timeStepControl===(r.timeError?'joint-cfl-be-error-retry':'joint-cfl-retry'),'联合时间控制模式不符。');
   for(const key of ['time','acceptedTime','carrierTime'])requireValue(near(summary[key],t),'流动与温度物理时间不同步。');
-  requireValue(near(thermalCheckpointTime(jointText),t),'联合保存时间不同步。');
+  if(r.events.length)requireValue(summary.thermalEventCount===new Set(r.events.map(e=>e.time)).size,'原生时间事件数量与请求不符。');
+  requireValue(near(thermalCheckpointTime(jointText,r.events),t),'联合保存时间不同步。');
   const scalarLine=jointText.split(/\r?\nFLOW\r?\n/)[0].split(/\r?\n/).find(l=>l.startsWith('SCALAR '));
   requireValue(scalarLine,'缺少联合温度场。');
   const jointValues=scalarLine.trim().split(/\s+/).slice(1).map(Number);
@@ -158,4 +200,4 @@ function validateThermalOutput(summary,cellsText,historyText,jointText,mesh,inpu
   requireValue(near(history.at(-1).heatContent,heat)&&near(history.at(-1).globalBalance,summary.globalBalance)&&near(history.at(-1).scalarResidual,summary.residualNorm),'历史、场与摘要不一致。');
   return {summary:{...summary,dt:r.dt},fields:{cells},history,request:r};
 }
-module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput};
+module.exports={GROUPS,SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput};

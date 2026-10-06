@@ -21,6 +21,32 @@ def main(a):
         assert r['code']==code,(label,r,(root/(label+'.log')).read_text()[-2000:])
         return out
     continuous=invoke('continuous')
+    # Frozen transport must accept the custom-boundary checkpoint written by
+    # this same native coupled run, including its exact carrier flux and clock.
+    carrier=continuous.with_suffix('.carrier.checkpoint')
+    frozen=root/'frozen-custom'
+    cmd=[a.cli,'--mesh',mesh,'--flow-checkpoint',carrier,'--boundary',bc,'--initial','300',
+         '--diffusivity','.1','--dt','.01','--steps','2','--output',frozen]
+    def frozen_run(label,text=None,code=0):
+        args=list(cmd);out=root/label;args[args.index('--output')+1]=out
+        if text is not None:
+            file=root/(label+'.input.checkpoint');file.write_text(text)
+            args[args.index('--flow-checkpoint')+1]=file
+        result=run(args,root/(label+'.log'))
+        assert result['code']==code,(label,result,(root/(label+'.log')).read_text()[-1000:])
+        return out
+    frozen_run('frozen-custom')
+    source=carrier.read_text();assert source.startswith('CARTMESH2D_FLOW_CHECKPOINT 4')
+    frozen_run('frozen-crlf',source.replace('\n','\r\n'))
+    frozen_summary=json.loads(frozen.with_suffix('.json').read_text())
+    assert frozen_summary['carrierTime']==6 and not frozen_summary['evolvingFlow']
+    field_rows=lambda prefix:list(csv.DictReader(prefix.with_suffix('.faces.csv').open()))
+    assert [r['volumeFlux'] for r in field_rows(frozen)]==[r['volumeFlux'] for r in field_rows(continuous)]
+    frozen_run('frozen-bad-kind',source.replace(' moving-wall ', ' invalid-kind ',1),1)
+    frozen_run('frozen-truncated',source[:source.rfind('END')],1)
+    lines=source.splitlines();index=next(i for i,line in enumerate(lines) if line.startswith('CELL '))
+    fields=lines[index].split();fields[2]=str(float(fields[2])+.001);lines[index]=' '.join(fields)
+    frozen_run('frozen-wrong-mesh','\n'.join(lines)+'\n',1)
     published=continuous.with_suffix('.thermal.checkpoint').read_bytes()
     published_summary=continuous.with_suffix('.json').read_bytes()
     invoke('continuous',code=1)
@@ -94,7 +120,7 @@ def main(a):
         assert replaced.with_suffix('.thermal.checkpoint').read_bytes()==saved
         assert recovery.with_suffix('.thermal.checkpoint').read_bytes()==continuous.with_suffix('.thermal.checkpoint').read_bytes()
         replaced_path_checked=True
-    report={'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
+    report={'frozenCustomCarrierExact':True,'frozenCrLfSupported':True,'frozenMalformedRejected':True,'passed':True,'outputDirectory':str(root),'existingAcceptedOutputNotOverwritten':True,'continuousSteps':len(h),'splitSteps':17,'eventTimes':[1.37,2.43,3.23],
             'heatGain':actual,'integratedHeatGain':integrated,'integratedBudgetDefect':defect,
             'continuousSplitCheckpointIdentical':True,'cancelResumeCheckpointIdentical':True,
             'changedStepTime':meta['acceptedTime'],'replacedLiveOutputFailsClosedAndResumesIdentically':replaced_path_checked,

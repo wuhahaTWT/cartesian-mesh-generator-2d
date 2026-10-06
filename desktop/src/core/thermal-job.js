@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs/promises');
 const path=require('node:path');
-const {SUFFIXES,validateThermalRequest,thermalBoundaryCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput}=require('./thermal');
+const {SUFFIXES,validateThermalRequest,thermalBoundaryCsv,thermalEventsCsv,buildThermalInvocation,parseThermalProgress,thermalCheckpointTime,validateThermalOutput}=require('./thermal');
 
 // A run owns a new directory. Publish the in-memory binding only after every
 // output is checked; the previous complete result never participates in writes.
@@ -10,31 +10,35 @@ async function runThermalJob({currentResult,mesh,request,executable,runProcess,s
   const selected=normalized.resume?currentResult.thermalRestart:null;
   if(normalized.resume&&!selected)throw new Error('没有可用的联合续算状态。');
   const boundary=thermalBoundaryCsv(mesh,normalized);
+  const events=normalized.events.length?thermalEventsCsv(mesh,normalized):null;
   if(selected) {
+    if(JSON.stringify(normalized.events)!==JSON.stringify(validateThermalRequest(selected.metadata.request).events))
+      throw new Error('联合续算必须保持完整热源和边界时间规律。');
     if(normalized.fluxCorrection!==(selected.metadata.request.fluxCorrection ?? 'unrestricted'))
       throw new Error('联合续算必须保持温度通量修正。');
     for(const key of ['case','nu','speed','convection','outletBackflow','diffusivity','source','scalarConvection','boundaries'])
       if(JSON.stringify(normalized[key])!==JSON.stringify(selected.metadata.request[key]))
         throw new Error('联合续算必须保持工况、物性、温度源、边界和对流格式。');
   }
-  const suffixes=[...SUFFIXES,...(normalized.mode==='adaptive'?['.attempt-history.csv']:[])];
+  const suffixes=[...SUFFIXES,...(normalized.mode==='adaptive'?['.attempt-history.csv']:[]),...(normalized.events.length?['.events.csv']:[])];
   const directory=await fs.mkdtemp(path.join(currentResult.outputDirectory,'thermal-run-'));
   const prefix=path.join(directory,'thermal'), boundaryPath=path.join(directory,'boundary.csv');
   const previousRestart=currentResult.thermalRestart;
   let startTime=0;
   const readRestart=async()=>({path:`${prefix}.thermal.checkpoint`,metadata:{
-    time:thermalCheckpointTime(await fs.readFile(`${prefix}.thermal.checkpoint`,'utf8')),request:normalized}});
+    time:thermalCheckpointTime(await fs.readFile(`${prefix}.thermal.checkpoint`,'utf8'),normalized.events),request:normalized}});
   await fs.writeFile(path.join(directory,'desktop-state.json'),JSON.stringify({status:'running',request:normalized}));
   try {
     await fs.writeFile(boundaryPath,boundary);
+    if(events)await fs.writeFile(prefix+'.events.csv',events);
     let restart=null;
     if(selected) {
       restart=path.join(directory,'input.thermal.checkpoint');
       await fs.copyFile(selected.path,restart);
-      startTime=thermalCheckpointTime(await fs.readFile(restart,'utf8'));
+      startTime=thermalCheckpointTime(await fs.readFile(restart,'utf8'),normalized.events);
       if(startTime!==selected.metadata.time)throw new Error('续算文件已发生变化。');
     }
-    const invocation=buildThermalInvocation(currentResult.cm2dPath,prefix,boundaryPath,normalized,restart);
+    const invocation=buildThermalInvocation(currentResult.cm2dPath,prefix,boundaryPath,normalized,restart,events?prefix+'.events.csv':null);
     const processResult=await runProcess(executable(invocation.executable),invocation.args,(line,isError)=>{
       let progress=null;
       if(!isError)try{progress=parseThermalProgress(line);}catch(e){log(`忽略无效热进度：${e.message}`);}

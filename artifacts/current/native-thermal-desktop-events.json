@@ -1,0 +1,221 @@
+{
+  "format": "cartmesh2d-desktop-thermal-events-evidence-v1",
+  "date": "2026-10-07",
+  "branch": "codex/transient-thermal-workflow",
+  "baseCommit": "9d3bfb7bf5b8943b27bf46e97b0daebeb0c61d25",
+  "scope": "Native 2D incompressible laminar flow and constant-property passive temperature; desktop piecewise-constant source and boundary events using existing native controller.",
+  "host": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "compiler": "/usr/bin/clang++"
+  },
+  "sourceSha256": {
+    "apps/cartmesh2d_transport_cli.cpp": "30eb56fac1e6b2453e243aa956a45593518c31543f55eda42e6d2e9c8119c64b",
+    "tests/thermal_control_cli_test.py": "0ddeef424fbe538ad2e478c230110079d3effbe885d49be27d5601d96a44cc93",
+    "desktop/src/core/thermal.js": "22542b4dec6af4183c2cb0255d420b43dea1273a5575617c07297307e0739602",
+    "desktop/src/core/thermal-job.js": "19b2d378ebc2190c46d7b10fa0bcbf0189f5e34a64cd7665dfb2da4ff074404e",
+    "desktop/src/core/project.js": "eb4d68756dd79e32ab42119fa913d8ec5e9a6618a192859be15bc2e78dee3146",
+    "desktop/src/main.js": "d817a6e69b99b921179f5b65265b315c559d09db176c228ae22f5958f7c630b4",
+    "desktop/src/renderer/app.js": "4053f6c6f830e98c3857e854470cff0f9c7ba6524570730c23775aae3f0a92b7",
+    "desktop/src/renderer/index.html": "93ce991f5484ab67306ea804990581d2f68dd6b540397dc05f5bc28bb5a65db6",
+    "desktop/src/renderer/style.css": "384b9389867fc1774fe576757fa2465da6cde33e379f159822371fb8eb474c28",
+    "desktop/tests/thermal.test.js": "64afb82e31e371a254bda9742cf1f64d6db36edaa6545684dc61d7295e29c180",
+    "desktop/tests/thermal-renderer.test.js": "47413e8d4cd8f210906630c63b2c4102b8d9cba43a6b453a1777209097da036c",
+    "src/fv/ScalarTransport2D.cpp": "3974d98f50d3332a1f4e4c88b16c2ba72017f528dbe2a1df9959f48498ccac5c",
+    "src/fv/ThermalFlow2D.cpp": "318615b654119fec0e56a80326dba463d6b9b8f572e5601bbd83472efc22c295",
+    "include/cartmesh2d/fv/ThermalCheckpoint2D.hpp": "579a04379564783e5c9a79d2ea42e6e16176e7b0d1e923ccd82e504a70ad60b1",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "ef14aa217350081192019c5fc52366981c28d2f8d67280994f7ddd98c6b244ad",
+    "src/fv/Incompressible2D.cpp": "4d0f573df7fe232fc1596ad91911c9b1556203860482caddb07fdc78b9d0ccfc",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "26dc69ee421a6361d1071a21ce7ebd4eab7d4340cb24bb673ccf38d9c0f060f2",
+    "src/fv/FlowBoundaryIO2D.cpp": "42283949d9c795702560a6c754695530bebc346bcc7e911cff20cbceecd5f4de",
+    "CMakeLists.txt": "ca793f2ef9f766c77ad2e56e3061d89b69665449170f4bb3d2ea603df4688984"
+  },
+  "runtimeSha256": "d152e138532be4010a1e95b6d6687a4f1becaa9d5c616a62a6d9aa17664d320a",
+  "buildRuntimeIdentical": true,
+  "frozenCarrier": {
+    "fixed": "Native custom flow checkpoint v4 and CRLF now accepted; full native geometry/incidence/physical validation retained.",
+    "regression": {
+      "frozenCustomCarrierExact": true,
+      "frozenCrLfSupported": true,
+      "frozenMalformedRejected": true,
+      "passed": true,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/thermal/control-ctest/run-00u0pmzr",
+      "existingAcceptedOutputNotOverwritten": true,
+      "continuousSteps": 61,
+      "splitSteps": 17,
+      "eventTimes": [
+        1.37,
+        2.43,
+        3.23
+      ],
+      "heatGain": 0.0070532956411852865,
+      "integratedHeatGain": 0.007053221260278254,
+      "integratedBudgetDefect": 7.438106338824277e-08,
+      "continuousSplitCheckpointIdentical": true,
+      "cancelResumeCheckpointIdentical": true,
+      "changedStepTime": 6,
+      "replacedLiveOutputFailsClosedAndResumesIdentically": true,
+      "continuousCheckpointSha256": "a9e1203501610d9c0b2766f642308e681bbd8457451ba52bf935d862d4d05359"
+    },
+    "evidencePath": "outputs/thermal/control-ctest/run-00u0pmzr/evidence.json",
+    "sha256": "6d7c8d53733c8131f6e3c4ac1b9394c3390e448e0ef08be1460ab03ea0afc443"
+  },
+  "desktop": {
+    "cells": 1300,
+    "method": "bounded",
+    "events": [
+      {
+        "time": 0.137,
+        "target": "source",
+        "kind": "source",
+        "value": 0.2
+      },
+      {
+        "time": 0.137,
+        "target": "top",
+        "kind": "value",
+        "value": 300,
+        "inflowValue": 300
+      },
+      {
+        "time": 0.243,
+        "target": "source",
+        "kind": "source",
+        "value": 0
+      },
+      {
+        "time": 0.337,
+        "target": "top",
+        "kind": "value",
+        "value": 301,
+        "inflowValue": 300
+      },
+      {
+        "time": 0.913,
+        "target": "source",
+        "kind": "source",
+        "value": 0.1
+      },
+      {
+        "time": 1.137,
+        "target": "source",
+        "kind": "source",
+        "value": 0
+      },
+      {
+        "time": 1.337,
+        "target": "source",
+        "kind": "source",
+        "value": -0.1
+      }
+    ],
+    "firstRunChecks": {
+      "adaptiveControl": true,
+      "errorControl": true,
+      "firstTime": 0.5,
+      "changedStepResume": true,
+      "failedBudgetRetained": true,
+      "resumeAfterFailure": true,
+      "finalTime": 1.3,
+      "eventsChecked": true,
+      "firstEventTimes": [
+        0.137,
+        0.243,
+        0.337
+      ]
+    },
+    "projectOpenAndResume": {
+      "projectEventsRestored": 7,
+      "nativeUniqueEventTimes": 6,
+      "resumedFrom": 1.3,
+      "resumedTo": 1.4,
+      "futureEventTime": 1.337,
+      "futureEventHitExactly": true,
+      "continuousNativeComparison": {
+        ".thermal.checkpoint": true,
+        ".cells.csv": true,
+        ".faces.csv": true,
+        ".heat-history.csv": true
+      },
+      "nativeIntegratedSource": -0.012600000000000227,
+      "checkpointSha256": "a5c779d04ff1fde1ffac4f9aac15138bd7291a1a8dde4ae75d273b8b88e18b69"
+    },
+    "editor": {
+      "rows": 7,
+      "locked": true
+    },
+    "editorVisuallyInspected": true,
+    "finalTime": 1.4
+  },
+  "tests": {
+    "nativeRelevantPassed": 3,
+    "nativeLog": "outputs/thermal-events/native-final.log",
+    "frontendPassed": 207,
+    "frontendLog": "outputs/thermal-events/frontend-final-all.log",
+    "futureEventValueMutationRejectedBeforeLaunch": true
+  },
+  "artifacts": {
+    "outputs/thermal-events/app.png": {
+      "bytes": 200875,
+      "sha256": "c3e796b1bf190eb847eb6b0023c295689693a040dcfd702c7077f1bda3560a92"
+    },
+    "outputs/thermal-events/app-thermal.png": {
+      "bytes": 352771,
+      "sha256": "6c5cd66e17dd2c7edad039a8d7c51ffc8ba9ac4ff98d87fc05ad6941412918b6"
+    },
+    "outputs/thermal-events/editor.png": {
+      "bytes": 263875,
+      "sha256": "b46b1fa72620208e062a27fb5b16e1cd250ff9508943afa6d50c7b7ccf14b411"
+    },
+    "outputs/thermal-events/reopen.png": {
+      "bytes": 318244,
+      "sha256": "f5643f3e47b223aa647f1d227b707b5daf26db5bdf58a9664fb76c59075757aa"
+    },
+    "outputs/thermal-events/app.png.json": {
+      "bytes": 20554,
+      "sha256": "e9cb2f28c59c57a00fdcd9eff9ba2cd75693b08ea03e3e0ec1027f64080de991"
+    },
+    "outputs/thermal-events/reopen.png.json": {
+      "bytes": 15203,
+      "sha256": "bc757b7180b7f6ead68d1fbc54e52b535c174e8b08121d633b86a2fc674fffd4"
+    },
+    "outputs/thermal-events/editor.png.json": {
+      "bytes": 15126,
+      "sha256": "158b66553e0a2f0d7147992f64ad136fdfbfde2809ebab0ffdeca0d99ce86614"
+    },
+    "outputs/thermal-events/project.zip": {
+      "bytes": 2144406,
+      "sha256": "39ef17eb521b11fa1ac8dbef226a28cc52258544fddd5a11c785cc36f04409e6"
+    },
+    "outputs/thermal-events/reopened-project.zip": {
+      "bytes": 2657493,
+      "sha256": "03739d516a7ecc2d95271595daa38f8f2cb926a05963bcae712d306ed167f154"
+    },
+    "outputs/thermal-events/comparison.json": {
+      "bytes": 457,
+      "sha256": "d5993815079ee8e463bd71641f8375f39fed720ed940517def5e84994bdcfc98"
+    },
+    "outputs/thermal-events/frozen-before.log": {
+      "bytes": 1722,
+      "sha256": "9606760972a21791da488da261d66f047da11f961abbb135de8008ca06066b6d"
+    },
+    "outputs/thermal-events/frozen-after.log": {
+      "bytes": 397,
+      "sha256": "20df5b7cd74a49ee27c1dcaf51d126dd78eabb5b3e392737ef2e9b6225a5aea5"
+    },
+    "outputs/thermal-events/native-final.log": {
+      "bytes": 505,
+      "sha256": "58c23548d7efee4910b8b29a17ba84d1ee5528146230b75905c2456e3d616dac"
+    },
+    "outputs/thermal-events/frontend-final-all.log": {
+      "bytes": 18233,
+      "sha256": "5f81b1e051eed32828c208105256b206362d037521c9202e259cb62dd4d1dff6"
+    }
+  },
+  "limitations": [
+    "Actual macOS Electron renderer/IPC/native execution; smoke supplies file-selection paths, not manual OS-dialog acceptance.",
+    "Event run includes budget exhaustion and recovery; actual App cancellation with events was not repeated in this increment. Native event cancellation/restart regression passed.",
+    "No new packaged App or Windows/Linux event editor acceptance.",
+    "Current monitor still displays the current run; continuous histories and abnormal-exit recovery remain goal work.",
+    "No additional physical-accuracy qualification from desktop tests. Named custom boundary editing remains CLI-only."
+  ]
+}

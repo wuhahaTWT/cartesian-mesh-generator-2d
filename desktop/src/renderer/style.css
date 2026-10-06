@@ -550,3 +550,8 @@ html, body { height: 100%; }
 .flow-boundary-patch { margin: 10px 0; padding: 10px; border: 1px solid var(--border, #8885); border-radius: 8px; }
 .flow-boundary-patch > summary { cursor: pointer; margin-bottom: 8px; overflow-wrap: anywhere; }
 .flow-boundary-patch > select { width: 100%; margin-bottom: 8px; }
+
+.thermal-event-row { margin: 10px 0; padding: 8px; border: 1px solid var(--line-soft); min-width: 0; }
+.thermal-event-row .event-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.thermal-event-row .event-header button { padding: 3px 8px; }
+.thermal-event-row label { min-width: 0; }

@@ -791,6 +791,48 @@ function bindMeshResult(payload) {
   }
 }
 
+function thermalEventRows() {
+  return [...$('thermalEvents').querySelectorAll('.thermal-event-row')].map(row=>
+    Object.fromEntries([...row.querySelectorAll('[data-field]')].map(input=>[input.dataset.field,input.value])));
+}
+function updateThermalEventEditor() {
+  const locked=Boolean(state.busy || (state.thermalRestart && $('thermalResume').checked));
+  const rows=[...$('thermalEvents').querySelectorAll('.thermal-event-row')];
+  for(const [index,row] of rows.entries()) {
+    const target=row.querySelector('[data-field=target]'),kind=row.querySelector('[data-field=kind]');
+    const source=target.value==='source';
+    for(const option of kind.options)option.hidden=source?option.value!=='source':option.value==='source';
+    if(source)kind.value='source';else if(kind.value==='source')kind.value='value';
+    const value=row.querySelector('[data-field=value]'),inflow=row.querySelector('[data-field=inflowValue]');
+    row.querySelector('.event-number').textContent=`事件 ${index+1}`;
+    row.querySelector('.event-unit').textContent=source?'热源值（K/s）':kind.value==='value'?'温度（K）':'向外热通量（K·m/s）';
+    if(!source && kind.value==='value')value.min='0';else value.removeAttribute('min');
+    for(const input of row.querySelectorAll('input,select,button'))input.disabled=locked;
+    kind.disabled=locked||source;inflow.disabled=locked||source;
+  }
+  $('addThermalEvent').disabled=locked;
+  $('thermalEventHint').textContent=rows.length
+    ? `${rows.length} 条事件；运行时按时刻排序。${locked?'续算锁定完整规律。':'需要使用上方的自动步长模式。'} 物面用于外流，矩形内流按四边设置。`
+    : '未设置事件：沿用固定热源与边界。';
+}
+function setThermalEvents(events) {
+  const host=$('thermalEvents');host.replaceChildren();
+  for(const event of events || []) {
+    const row=document.createElement('div');row.className='thermal-event-row';
+    // Only static markup enters innerHTML. Saved/requested values go through
+    // DOM value properties and cannot create markup or event handlers.
+    row.innerHTML='<div class="event-header"><b class="event-number"></b><button type="button" data-remove-event>移除</button></div>'+
+      '<div class="pair"><label class="field">时刻（s）<input data-field="time" type="number" min="0" step="any" required></label>'+
+      '<label class="field">目标<select data-field="target"><option value="source">体积热源</option><option value="wall">物面</option><option value="inlet">入口 / 左边</option><option value="outlet">出口 / 右边</option><option value="top">上边</option><option value="bottom">下边</option></select></label></div>'+
+      '<label class="field">边界类型<select data-field="kind"><option value="source">体积热源</option><option value="value">定温</option><option value="flux">向外热通量</option></select></label>'+
+      '<div class="pair"><label class="field"><span class="event-unit"></span><input data-field="value" type="number" step="any" required></label>'+
+      '<label class="field">流入温度（K）<input data-field="inflowValue" type="number" min="0" step="any" required></label></div>';
+    for(const input of row.querySelectorAll('[data-field]'))input.value=event[input.dataset.field] ?? (input.dataset.field==='inflowValue'?300:'');
+    host.appendChild(row);
+  }
+  updateThermalEventEditor();
+}
+
 function projectControls() {
   if (!state.result) return null;
   const inputs = {};
@@ -799,7 +841,7 @@ function projectControls() {
     inputs[input.id] = input.type === 'checkbox' ? input.checked : input.value;
   }
   return { inputs, regions: structuredClone(state.regions), boundaryDefinition: state.flowBoundaryDefinition,
-    displayMode: $('displayMode').value };
+    displayMode: $('displayMode').value, thermalEvents: thermalEventRows() };
 }
 window.__projectControls = projectControls;
 function applyProjectInputs(ui) {
@@ -809,6 +851,7 @@ function applyProjectInputs(ui) {
     if (input.type === 'checkbox' && typeof value === 'boolean') input.checked = value;
     else if (typeof value === 'string') input.value = value;
   }
+  setThermalEvents(ui?.thermalEvents || []);
   // The bundled XY is already in metres regardless of the original DXF/image.
   $('sourceUnits').value = 'm';
   $('sample').value = '';
@@ -1190,6 +1233,7 @@ function updateThermalMode() {
   $('pickThermalCheckpoint').disabled=state.busy||!state.result;
   for (const input of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
     input.disabled = Boolean(state.busy || resuming);
+  updateThermalEventEditor();
   const automatic=$('flowMode').value==='adaptive';
   for(const id of ['thermalTemperatureScale','thermalTimeRtol','thermalTimeError'])$(id).disabled=Boolean(state.busy||!automatic);
   const vortex=$('flowMode').value!=='steady' && $('flowInitialVortex').checked && !$('flowResume').checked;
@@ -1217,6 +1261,8 @@ function applyThermalRestartControls() {
     for (const [field, id] of Object.entries({ diffusivity:'thermalDiffusivity', initial:'thermalInitial', source:'thermalSource', scalarConvection:'thermalConvection' }))
       $(id).value = request[field];
     $('thermalFluxCorrection').value=request.fluxCorrection ?? 'unrestricted';
+    setThermalEvents(request.events || []);
+    if(request.events?.length)$('flowMode').value='adaptive';
     for (const patch of thermalPatches) {
       const boundary = request.boundaries[patch], id = thermalPatchId(patch);
       $(`${id}Kind`).value = boundary.kind; $(`${id}Value`).value = boundary.value; $(`${id}Inflow`).value = boundary.inflowValue;
@@ -1239,9 +1285,13 @@ function thermalRequest() {
     minDt:Number($('flowMinDt').value),maxCourant:Number($('flowMaxCourant').value),maxRetries:Number($('flowMaxRetries').value),maxSteps:Number($('flowMaxSteps').value),
     timeError:$('thermalTimeError').checked,temperatureScale:Number($('thermalTemperatureScale').value),timeRtol:Number($('thermalTimeRtol').value),
     resume:$('thermalResume').checked, diffusivity:Number($('thermalDiffusivity').value), initial:Number($('thermalInitial').value),
-    source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, fluxCorrection:$('thermalFluxCorrection').value, boundaries };
+    source:Number($('thermalSource').value), scalarConvection:$('thermalConvection').value, fluxCorrection:$('thermalFluxCorrection').value, boundaries,
+    events:thermalEventRows().map(event=>({...event,time:Number(event.time),value:Number(event.value),inflowValue:Number(event.inflowValue)})) };
 }
 function validThermalInputs() {
+  if(thermalEventRows().length && $('flowMode').value!=='adaptive') {
+    status('时间事件需要自动步长','请选择上方的自动步长模式，以精确停在事件时刻。');$('flowMode').focus();return false;
+  }
   if($('flowLinearPolicy').value!=='strict' || Number($('flowVelocityRelaxation').value)!==.6 || Number($('flowPressureCorrections').value)!==4) {
     status('温度联算的迭代设置需要调整','请恢复固定线性精度、0.6速度松弛和4次压力校正。');return false;
   }
@@ -1576,6 +1626,14 @@ $('pickThermalCheckpoint').addEventListener('click',async()=>{
   finally{setBusy(false);}
 });
 $('thermalResume').addEventListener('change', applyThermalRestartControls);
+$('addThermalEvent').addEventListener('click',()=>{
+  setThermalEvents([...thermalEventRows(),{time:$('flowEndTime').value,target:'source',kind:'source',value:0,inflowValue:300}]);
+  if(state.thermal)clearThermalBinding();
+});
+$('thermalEvents').addEventListener('change',()=>{updateThermalEventEditor();if(state.thermal)clearThermalBinding();});
+$('thermalEvents').addEventListener('click',event=>{
+  if(event.target.closest('[data-remove-event]')) {event.target.closest('.thermal-event-row').remove();updateThermalEventEditor();if(state.thermal)clearThermalBinding();}
+});
 $('thermalMonitorMetric').addEventListener('change', renderThermalMonitor);
 for (const control of document.querySelectorAll('#thermalBlock input[type=number], #thermalBlock select'))
   control.addEventListener('change', () => { if (state.thermal) clearThermalBinding(); });
@@ -1697,7 +1755,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, openProject, projectControls, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, openProject, projectControls, selectMethod, chooseGeometry, generate, runFlow, runThermal, setThermalEvents, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {
