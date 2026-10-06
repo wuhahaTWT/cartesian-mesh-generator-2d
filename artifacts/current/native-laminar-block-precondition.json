@@ -1,0 +1,582 @@
+{
+  "schema_version": 1,
+  "scope": "Native linear-solver research on unchanged P1/RT1 symmetric Stokes condensed matrices. No mesh, PDE, product, nonlinear or default change; not a physical acceptance gate.",
+  "base_commit": "36ced3657a5c8c493c1e25b2b9a09f1f3480a1cb",
+  "source": {
+    "path": "artifacts/current/native-laminar-block-precondition.cpp",
+    "sha256": "f948aa7ea6e7c8c95c01414b22354e6bbd3cd76063160f634cf79a451e1429c1",
+    "binarySha256": "cc97601f7f1e59c1bf0d62702b569f74ba5aa18a1cb20d89523257861da12d9a",
+    "originalRecoverySourceHashes": {
+      "artifacts/current/native-laminar-block-precondition.cpp": "1277581ce8081269d619c5da4357ff9118235171976c96c81587cab217a553ea",
+      "artifacts/current/native-laminar-p1-stress.cpp": "8927a6706bb5b80051d935d55825f385a985a78e45adbeb926b11c36e19d350d",
+      "artifacts/current/native-laminar-hybrid-stokes-p1.cpp": "cb1f7a6f4b96372e4373d0af328bf1ed5f4dbe98dfd07488deaded3b88d8ab11",
+      "include/cartmesh2d/fv/detail/NewtonKrylov2D.hpp": "1656888015897892f8fb7795cddfc8d89850676e650d9b0a4271eb126e0dff9a",
+      "include/cartmesh2d/fv/detail/FlowLinearSystem2D.hpp": "61080acf8e4da616845587cdd400ae8b1c48be51fa956f0f247a938eb3ea65c4"
+    },
+    "all19FinalSolutionsByteIdenticalToRecoveredFields": true
+  },
+  "platform": "macOS arm64, system Apple clang21.0.0 C++20 -O2 -Wall -Wextra -Wpedantic -Werror; existing bundled NumPy only for dense reference linear algebra and actual-field comparisons; no dependencies installed.",
+  "method": {
+    "matrix": "Read native .entries/.rhs and cell areas. Sum duplicate triplets in native order, preserve complete K and b for every Krylov product and true-residual evaluation. No independent PDE implementation.",
+    "preconditioner": "Right upper triangular block inverse: pressure z_p=-M_g^{-1}r_p (nu=1 source); velocity z_u=IC0(A)^{-1}(r_u-K_up*z_p). IC0 is existing product SparseSystem2D, no shift, pivot replacement or silent fallback.",
+    "pressure_mass": "The eliminated gauge is p_last=0. For retained means M_g=diag(V_i)-V_i*V_j/V_total. Exact inverse is diag(1/V_i)+1*1^T/V_last. A separate plain-diagonal control deliberately omits the rank-one term.",
+    "velocity_matrix": "Only the preconditioner averages opposite A entries. K itself is unchanged. Union sparsity retains one-sided roundoff entries; missing opposite coefficient is zero. Recorded symmetry-correction key in raw logs reports the original pair difference; each coefficient changes by half that value.",
+    "krylov": "Existing newtonKrylovDirection2D, at most60 directions per restart, two orthogonalisation passes, internal0.1 reduction target; outer at most50 restarts checks the actual unpreconditioned residual. No normal equations.",
+    "linear_control": "Raw algebraic norm ||b-Kx||2/||b||2 in the source SI/reference-unit convention. rtol=1e-11 reuses the existing linear relative-control value without its mixed-unit absolute floor. This is not a units-invariant CFD residual or pressure/continuity acceptance gate.",
+    "tight_control": "One sheared16 case uses1e-13 in the same algebraic norm to check that actual field errors and native continuity improve; adds32 Krylov products. Not a production-default change.",
+    "failure": "IC0 invalid pivots and input format failures explicitly exit. Budget/nonconvergence writes .candidate, exits2 and never .solution. Existing output prefixes are not overwritten.",
+    "support": "Current source format: nu=1, zero pressure block, last-cell constant pressure gauge, four velocity modes per internal face, all physical boundary velocities prescribed. Not yet the future traction-outlet or Navier-Stokes system."
+  },
+  "units": {
+    "velocity_field_difference": "m/s; full P1 cell polynomial area RMS, plus shared-face endpoint maximum",
+    "pressure_difference": "m^2/s^2; full P1 pressure polynomial area RMS after one global mean shift",
+    "divergence": "s^-1; native recovery integral-point sample maximum",
+    "energy_balance": "m^4/s^3 per unit density/depth",
+    "residual": "dimensionless numerical relative norm in the fixed coefficient convention; componentwise physical residuals remain separate"
+  },
+  "cases": [
+    {
+      "label": "square4-vortex",
+      "cells": 16,
+      "unknowns": 111,
+      "matrixSha256": "360a894834cb4149f8b2aed5065386b04f31f150fb4159c2526a955e9a2ef47c",
+      "rhsSha256": "e0f90fa1af8fe0b795c19b0fb8050decf9e20d2fb2d5dd4c6a01d648a37c7721",
+      "referenceSolutionSha256": "95ebd65ed6c81c7195a285d48326e4b4205e35bbc5c15eb34e2ffea8ace89fd2",
+      "referenceVelocityRms": 0.007084366907307548,
+      "referencePressureRms": 0.18414027236292135,
+      "referenceMaxDivergence": 3.16600584368154e-15,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 51,
+          "relativeResidual": 5.165634862524011e-12,
+          "maximumResidual": 3.6524644122884626e-11,
+          "cellP1VelocityRmsDifference": 2.3025217605602124e-10,
+          "pressureP1RmsDifferenceAfterGauge": 3.3444529584112606e-09,
+          "faceEndpointVelocityMaxDifference": 6.260001894541711e-10,
+          "potentialCoefficientMaxDifference": 1.709725694354347e-09,
+          "nativeRecoveredMaxDivergence": 3.959114707392379e-09,
+          "nativeRecoveredEnergyBalance": -2.55779286639779e-11,
+          "linearStageSeconds": 0.004439291,
+          "solutionSha256": "55cbe819c658fef01114e424d2795f1512410c322170832ff7abcc0c52f4ee6e",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 34,
+          "relativeResidual": 1.684849819308583e-12,
+          "maximumResidual": 1.2211497866654367e-11,
+          "cellP1VelocityRmsDifference": 2.763385762329331e-11,
+          "pressureP1RmsDifferenceAfterGauge": 3.2353104554216594e-10,
+          "faceEndpointVelocityMaxDifference": 5.6573485318464976e-11,
+          "potentialCoefficientMaxDifference": 1.3999557069155344e-10,
+          "nativeRecoveredMaxDivergence": 1.953862487513297e-10,
+          "nativeRecoveredEnergyBalance": 8.65586768927784e-12,
+          "linearStageSeconds": 0.001922292,
+          "solutionSha256": "965a6e31e689bf5b01174490c1d7bf96a2ce93ffed83759149018ecf117696fc",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "square8-vortex",
+      "cells": 64,
+      "unknowns": 511,
+      "matrixSha256": "d3138c9c5aa937df4843bb5c47edba4770ad43581eab62c21a4e848b687e582f",
+      "rhsSha256": "06b14e4e39c4627a57fdf896a84e58dc1b28df015e4e14c1afb2d3c8db6b1201",
+      "referenceSolutionSha256": "f6516952592c77e98ca335f937185d7298d68f39e10a4a3495aca4582eaf65d8",
+      "referenceVelocityRms": 0.0009480273477919264,
+      "referencePressureRms": 0.04927291909186414,
+      "referenceMaxDivergence": 1.0044791007766545e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 112,
+          "relativeResidual": 8.016088751293593e-12,
+          "maximumResidual": 3.28948497373006e-11,
+          "cellP1VelocityRmsDifference": 1.1995992117691886e-09,
+          "pressureP1RmsDifferenceAfterGauge": 3.078734004046461e-08,
+          "faceEndpointVelocityMaxDifference": 5.477315847132854e-09,
+          "potentialCoefficientMaxDifference": 1.4710113349636345e-08,
+          "nativeRecoveredMaxDivergence": 6.963800349995384e-08,
+          "nativeRecoveredEnergyBalance": 1.3257142258971122e-10,
+          "linearStageSeconds": 0.012815125,
+          "solutionSha256": "6c33412b365b4e9bc9475dd783b04390f1f918032b7f7c6239c8e7f02a2afbdb",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 50,
+          "relativeResidual": 2.65051938746597e-12,
+          "maximumResidual": 1.4261522518488334e-11,
+          "cellP1VelocityRmsDifference": 2.8747458096815488e-11,
+          "pressureP1RmsDifferenceAfterGauge": 2.724949000533123e-10,
+          "faceEndpointVelocityMaxDifference": 6.263939112579222e-11,
+          "potentialCoefficientMaxDifference": 7.858957928874588e-11,
+          "nativeRecoveredMaxDivergence": 2.8828302280079863e-10,
+          "nativeRecoveredEnergyBalance": 6.424221397904883e-11,
+          "linearStageSeconds": 0.005471291,
+          "solutionSha256": "b566d6e0d19cbc2a474e04e59e5320473870c208ddc5a280e85624dda83d012e",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "square16-vortex",
+      "cells": 256,
+      "unknowns": 2175,
+      "matrixSha256": "b9a14150e6d9e869e3ad1722b3d33b5e1d907469de173ca232a97daab3244db7",
+      "rhsSha256": "aa32aa264f66c286e0e55a1ede557ee201b54ce25f3244b962516523742c0508",
+      "referenceSolutionSha256": "27b8320bebe65d5655aa0be90c3b41ff86e46a1aa168cf1800f20c356036d4cc",
+      "referenceVelocityRms": 0.00010671307761434647,
+      "referencePressureRms": 0.008641774125612286,
+      "referenceMaxDivergence": 3.368168713517393e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 213,
+          "relativeResidual": 9.888634331242406e-12,
+          "maximumResidual": 3.9090286563236987e-11,
+          "cellP1VelocityRmsDifference": 2.6932820590172024e-09,
+          "pressureP1RmsDifferenceAfterGauge": 1.066833470841256e-07,
+          "faceEndpointVelocityMaxDifference": 1.824895148926142e-08,
+          "potentialCoefficientMaxDifference": 4.827224786563278e-08,
+          "nativeRecoveredMaxDivergence": 4.604400643798519e-07,
+          "nativeRecoveredEnergyBalance": -1.0453800412119074e-10,
+          "linearStageSeconds": 0.054685208,
+          "solutionSha256": "e40cac90a6d1a12b2d7682fdfe1231502b0d3d8b93bb1536de98a966e583e998",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 116,
+          "relativeResidual": 8.55310514442147e-13,
+          "maximumResidual": 3.707076312586821e-12,
+          "cellP1VelocityRmsDifference": 1.849699260454557e-11,
+          "pressureP1RmsDifferenceAfterGauge": 2.136542235102781e-10,
+          "faceEndpointVelocityMaxDifference": 3.9222651900085824e-11,
+          "potentialCoefficientMaxDifference": 3.8367253818449853e-11,
+          "nativeRecoveredMaxDivergence": 2.2076227948234664e-10,
+          "nativeRecoveredEnergyBalance": -2.1679142617365976e-10,
+          "linearStageSeconds": 0.024232708,
+          "solutionSha256": "000a82fb36a936cf6c1068f40a704bfdc0bac9d990bfe50e300b8df8803b143d",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "sheared4-vortex",
+      "cells": 16,
+      "unknowns": 111,
+      "matrixSha256": "ee6f7da96c1065d54589d52f233e2874a90f0c09134663bee817057e01714f80",
+      "rhsSha256": "a1585be224d845bcf99e6e2ff0d1115f2703c83ffe3d3373f7e5de58c0b8c803",
+      "referenceSolutionSha256": "679eef7adbe47f157a8e8706d37cca7f5dd6c709b89c7d5ce154d97b2e77ed94",
+      "referenceVelocityRms": 0.03763036825959493,
+      "referencePressureRms": 0.5375278463387735,
+      "referenceMaxDivergence": 2.2905300361065585e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 69,
+          "relativeResidual": 2.297060636162205e-12,
+          "maximumResidual": 2.63225691243818e-11,
+          "cellP1VelocityRmsDifference": 4.009005987509195e-11,
+          "pressureP1RmsDifferenceAfterGauge": 8.7681663160641e-10,
+          "faceEndpointVelocityMaxDifference": 1.0839559123508402e-10,
+          "potentialCoefficientMaxDifference": 6.233682459111378e-10,
+          "nativeRecoveredMaxDivergence": 5.623810950343653e-10,
+          "nativeRecoveredEnergyBalance": -2.4139856780180935e-11,
+          "linearStageSeconds": 0.0018915,
+          "solutionSha256": "8f6f49a84c6f1a9b9477db07ff07cd1b8bc15470bb4c1ebc785aec610f7f2df6",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 45,
+          "relativeResidual": 7.95308537514742e-13,
+          "maximumResidual": 1.0256101523609118e-11,
+          "cellP1VelocityRmsDifference": 2.051489040173204e-11,
+          "pressureP1RmsDifferenceAfterGauge": 3.544113910736539e-10,
+          "faceEndpointVelocityMaxDifference": 3.74555907219163e-11,
+          "potentialCoefficientMaxDifference": 1.8921086919476693e-10,
+          "nativeRecoveredMaxDivergence": 1.6409978466266508e-10,
+          "nativeRecoveredEnergyBalance": 8.127609696373383e-12,
+          "linearStageSeconds": 0.000862625,
+          "solutionSha256": "db5ef728570c43bfcfcf78c91fdec6b870f5bd1f688a60a883bdbb9b18150335",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "sheared8-vortex",
+      "cells": 64,
+      "unknowns": 511,
+      "matrixSha256": "93cd2ee24385fb3d9a1ed181f32074b6f69ab1d2c618dd2b414eb97e0518c983",
+      "rhsSha256": "9d8870d3045dd9f63cc707dccd3a683c1ff864890f8cbff958b7d36003f8cfe3",
+      "referenceSolutionSha256": "acf113e8cdbdcfa39a591eebbe02a2d44a610792c7b928c4eb8c662197e1ca2c",
+      "referenceVelocityRms": 0.006252959940751353,
+      "referencePressureRms": 0.14406913129858845,
+      "referenceMaxDivergence": 2.341683228086794e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 107,
+          "relativeResidual": 9.067936460768885e-12,
+          "maximumResidual": 8.600142820114343e-11,
+          "cellP1VelocityRmsDifference": 3.541516922780129e-10,
+          "pressureP1RmsDifferenceAfterGauge": 9.36231696655817e-09,
+          "faceEndpointVelocityMaxDifference": 1.016122473658428e-09,
+          "potentialCoefficientMaxDifference": 6.044045874897819e-09,
+          "nativeRecoveredMaxDivergence": 1.0671766226086387e-08,
+          "nativeRecoveredEnergyBalance": 1.5873627412510416e-10,
+          "linearStageSeconds": 0.005941917,
+          "solutionSha256": "748235d13ed2237fcd9f12d7f440eda5003320950dc21904ebf66941c5b512c1",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 75,
+          "relativeResidual": 2.1954144426870945e-12,
+          "maximumResidual": 1.6963985771667467e-11,
+          "cellP1VelocityRmsDifference": 6.131994427956587e-11,
+          "pressureP1RmsDifferenceAfterGauge": 1.3543948445806249e-09,
+          "faceEndpointVelocityMaxDifference": 1.3311505089278935e-10,
+          "potentialCoefficientMaxDifference": 5.334129249412456e-10,
+          "nativeRecoveredMaxDivergence": 8.390654092183488e-10,
+          "nativeRecoveredEnergyBalance": 5.4133482418894374e-11,
+          "linearStageSeconds": 0.00411225,
+          "solutionSha256": "0f6a86b26bf63f4a3bbfefd685f6fe163979e78aeb24deac2a335b86f2ec4b41",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "sheared16-vortex",
+      "cells": 256,
+      "unknowns": 2175,
+      "matrixSha256": "fd2803e2622a537d046aa4e0b811d6a6a5434f3a379714ad1fc23533956f69cb",
+      "rhsSha256": "e5ac7094b3ee7c3f9d4b8312829b229b0ef66fbdc187594013a2e0af1f079457",
+      "referenceSolutionSha256": "7421f3f84ab16edd92d69c5c5137649aa2e18b44216ab5f06d998069bdf12415",
+      "referenceVelocityRms": 0.0006380359295857263,
+      "referencePressureRms": 0.028210924883030255,
+      "referenceMaxDivergence": 4.4030208884822335e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 256,
+          "relativeResidual": 1.9181260074291176e-12,
+          "maximumResidual": 1.5606516079458288e-11,
+          "cellP1VelocityRmsDifference": 1.6979698671850385e-09,
+          "pressureP1RmsDifferenceAfterGauge": 1.062960664138097e-07,
+          "faceEndpointVelocityMaxDifference": 1.2278835988194385e-08,
+          "potentialCoefficientMaxDifference": 7.28696331747658e-08,
+          "nativeRecoveredMaxDivergence": 2.628857077039147e-07,
+          "nativeRecoveredEnergyBalance": 2.1503703331871016e-10,
+          "linearStageSeconds": 0.057700292,
+          "solutionSha256": "642b9d180924433393319c42612f3c2cc48715b6a664bb4b640bad327ec220c8",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 148,
+          "relativeResidual": 9.817271336430391e-12,
+          "maximumResidual": 7.260370082917689e-11,
+          "cellP1VelocityRmsDifference": 8.583014434946113e-10,
+          "pressureP1RmsDifferenceAfterGauge": 1.409743964183855e-08,
+          "faceEndpointVelocityMaxDifference": 1.4749921604180622e-09,
+          "potentialCoefficientMaxDifference": 1.1818583056655285e-09,
+          "nativeRecoveredMaxDivergence": 5.0055215955112564e-09,
+          "nativeRecoveredEnergyBalance": -2.3284315881638706e-10,
+          "linearStageSeconds": 0.030597375,
+          "solutionSha256": "7c8e99cd88cc853d05f6f7b1fa42a60c92b08a8a513b7bcbb770b84537160271",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-13,
+          "returncode": 0,
+          "krylovProducts": 180,
+          "relativeResidual": 5.953886269321766e-14,
+          "maximumResidual": 3.441552598459907e-13,
+          "cellP1VelocityRmsDifference": 5.233597477086541e-12,
+          "pressureP1RmsDifferenceAfterGauge": 8.489216585850875e-11,
+          "faceEndpointVelocityMaxDifference": 9.203130774878892e-12,
+          "potentialCoefficientMaxDifference": 6.9666390711820014e-12,
+          "nativeRecoveredMaxDivergence": 2.203376487726186e-11,
+          "nativeRecoveredEnergyBalance": -9.95551557858576e-12,
+          "linearStageSeconds": 0.036059833,
+          "solutionSha256": "577d8b0793c07f2b68c136d68279a90ef6f4fba46dd2df2b64348f2d25fbdfae",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "cut4-vortex",
+      "cells": 14,
+      "unknowns": 93,
+      "matrixSha256": "82256a88148de30cfcc2853557ea23e072d77a7253ddf898574686c5048f86dc",
+      "rhsSha256": "55f09050572940512e4a9b8ceca7a027b21be1b04495af8e8bcf387276e178d8",
+      "referenceSolutionSha256": "d5c0e779201e7a398c116a5960bd689652a77b0373168d2c888f34e9c9ca6866",
+      "referenceVelocityRms": 0.007273938846433373,
+      "referencePressureRms": 0.17306800694234667,
+      "referenceMaxDivergence": 2.2648988573438753e-14,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 58,
+          "relativeResidual": 4.715047142904415e-12,
+          "maximumResidual": 4.616218518549431e-11,
+          "cellP1VelocityRmsDifference": 1.1336811885254274e-10,
+          "pressureP1RmsDifferenceAfterGauge": 2.1653463842812037e-09,
+          "faceEndpointVelocityMaxDifference": 3.314470197287449e-10,
+          "potentialCoefficientMaxDifference": 1.0313980780551901e-09,
+          "nativeRecoveredMaxDivergence": 2.3033540071492666e-09,
+          "nativeRecoveredEnergyBalance": -1.5046008883246031e-10,
+          "linearStageSeconds": 0.001937792,
+          "solutionSha256": "8789904d9f4bd13e764241ce52cb76a7f5b78ca783cdb1ab0ab3251a38503203",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 39,
+          "relativeResidual": 1.4681682165772096e-12,
+          "maximumResidual": 2.1473489653089928e-11,
+          "cellP1VelocityRmsDifference": 8.237663459698427e-12,
+          "pressureP1RmsDifferenceAfterGauge": 1.2227906942913328e-10,
+          "faceEndpointVelocityMaxDifference": 2.1033301183444613e-11,
+          "potentialCoefficientMaxDifference": 7.073808205859677e-11,
+          "nativeRecoveredMaxDivergence": 1.2785546103464806e-10,
+          "nativeRecoveredEnergyBalance": -1.3486545213936552e-11,
+          "linearStageSeconds": 0.000782333,
+          "solutionSha256": "30e8781ac08564f334e4bd5b0ef2b57e9f5a40193aae67bf8a12c42cad9d36b9",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "split1-poiseuille",
+      "cells": 3,
+      "unknowns": 14,
+      "matrixSha256": "4b2afff8910e62cfd9935682765b553b0aec05e794305ea18afa3bc50e12c1c4",
+      "rhsSha256": "9185f15d4afcaf00290d7c88197044d974b127b2c9c5c46934b778dcfe3d9de2",
+      "referenceSolutionSha256": "6fd95d79fbc56a74fd07a4cd5045e12bef1253eb305c1c6122d70fd6f2d6f583",
+      "referenceVelocityRms": 3.638852844593233e-15,
+      "referencePressureRms": 9.368837283300919e-15,
+      "referenceMaxDivergence": 4.145509996167805e-15,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 4,
+          "relativeResidual": 3.1880801134587614e-16,
+          "maximumResidual": 1.4210854715202004e-14,
+          "cellP1VelocityRmsDifference": 3.386689169221062e-16,
+          "pressureP1RmsDifferenceAfterGauge": 1.9185014789307504e-15,
+          "faceEndpointVelocityMaxDifference": 4.3771738530333865e-15,
+          "potentialCoefficientMaxDifference": 8.881784197001252e-15,
+          "nativeRecoveredMaxDivergence": 5.966003482699806e-15,
+          "nativeRecoveredEnergyBalance": 5.684341886080802e-14,
+          "linearStageSeconds": 0.000645459,
+          "solutionSha256": "04db28611f95c3875f970834c2797fc39653631a1703eaabb165bbcd9d11357b",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 15,
+          "relativeResidual": 1.0093201481323888e-12,
+          "maximumResidual": 4.702227496267142e-11,
+          "cellP1VelocityRmsDifference": 1.5161643744711954e-11,
+          "pressureP1RmsDifferenceAfterGauge": 7.245191243219211e-11,
+          "faceEndpointVelocityMaxDifference": 4.946712609083739e-11,
+          "potentialCoefficientMaxDifference": 9.752376683991315e-11,
+          "nativeRecoveredMaxDivergence": 4.702273008604302e-11,
+          "nativeRecoveredEnergyBalance": -5.2864379540551454e-11,
+          "linearStageSeconds": 0.000298084,
+          "solutionSha256": "7feed25ccb071ec5c517197022436ffb17e726685b9489139c09f71f397fdc4d",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "tip1-poiseuille",
+      "cells": 4,
+      "unknowns": 15,
+      "matrixSha256": "fdbd9b8e85fb43478170acc566a26bc465515f56b2304583d95fce0c5584068c",
+      "rhsSha256": "bee447fdbe8fd5d67ac6304d0d482bcb799238120cdc0bde495c570947a08230",
+      "referenceSolutionSha256": "aa83beacac6598d2a770fe83a634f448bb8279643aaabd4c8afac848cf3b072b",
+      "referenceVelocityRms": 2.2394869358211377e-15,
+      "referencePressureRms": 6.174275501765249e-15,
+      "referenceMaxDivergence": 2.2954706449899003e-15,
+      "runs": [
+        {
+          "mass": "plain",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 12,
+          "relativeResidual": 1.105248134898234e-16,
+          "maximumResidual": 8.881784197001252e-16,
+          "cellP1VelocityRmsDifference": 5.45891838394649e-17,
+          "pressureP1RmsDifferenceAfterGauge": 3.3956750592258014e-16,
+          "faceEndpointVelocityMaxDifference": 2.9046143202012297e-16,
+          "potentialCoefficientMaxDifference": 4.440892098500625e-15,
+          "nativeRecoveredMaxDivergence": 2.2954706449899003e-15,
+          "nativeRecoveredEnergyBalance": 1.2789769243681803e-13,
+          "linearStageSeconds": 0.000742875,
+          "solutionSha256": "5577c7b0aae4e1e3c0512001640373f74a85bb47e64bbec93d56b390cc13eac3",
+          "recoveredFieldSolutionBytesUnchanged": true
+        },
+        {
+          "mass": "gauge",
+          "relativeTolerance": 1e-11,
+          "returncode": 0,
+          "krylovProducts": 22,
+          "relativeResidual": 8.37339744789005e-13,
+          "maximumResidual": 5.005773573429906e-12,
+          "cellP1VelocityRmsDifference": 9.100021077543604e-13,
+          "pressureP1RmsDifferenceAfterGauge": 8.735610307240536e-12,
+          "faceEndpointVelocityMaxDifference": 3.037840199693904e-12,
+          "potentialCoefficientMaxDifference": 8.101492389347423e-12,
+          "nativeRecoveredMaxDivergence": 2.4655628209897846e-12,
+          "nativeRecoveredEnergyBalance": 3.0269120543380268e-12,
+          "linearStageSeconds": 0.00031075,
+          "solutionSha256": "360361904675e9e58755fe824f4115397f7b535a43c34e0c09e772de7dd2ed1d",
+          "recoveredFieldSolutionBytesUnchanged": true
+        }
+      ]
+    }
+  ],
+  "outcome": {
+    "matrixCases": 9,
+    "completedIterativeControls": 19,
+    "maximumUnknowns": 2175,
+    "maximumGaugeVelocityRmsDifference": 8.583014434946113e-10,
+    "maximumGaugePressureRmsDifference": 1.409743964183855e-08,
+    "maximumGaugeNativeDivergence": 5.0055215955112564e-09,
+    "maximumPlainNativeDivergence": 4.604400643798519e-07,
+    "finalLinearStageSeconds": 0.245449
+  },
+  "graphFormatFailureAndRepair": {
+    "removed_upper_row": 0,
+    "removed_upper_column": 1,
+    "remaining_lower_value": -1.6031258492851388e-16,
+    "removed_upper_value": -1.9666225431128342e-16,
+    "scope": "native format control only; one assembly-roundoff coefficient omitted, no physical result claimed",
+    "runs": [
+      {
+        "version": "before",
+        "returncode": 1,
+        "stderr": "Flow sparse connection missing\n",
+        "linear": null
+      },
+      {
+        "version": "after",
+        "returncode": 0,
+        "stderr": "",
+        "linear": {
+          "converged": true,
+          "unknowns": 111,
+          "velocity_unknowns": 96,
+          "pressure_unknowns": 15,
+          "matrix_nonzeros": 2231,
+          "velocity_off_nonzeros": 1952,
+          "method": "ic0",
+          "mass": "gauge",
+          "relative_tolerance": 1e-11,
+          "rhs_norm": 19.90750413990574,
+          "residual_norm": 3.354096476127805e-11,
+          "relative_residual": 1.6848402755844844e-12,
+          "maximum_residual": 1.2211442355503135e-11,
+          "restarts": 10,
+          "krylov_products": 34,
+          "preconditioner_applications": 44,
+          "velocity_preconditioner_symmetry_correction_max": 1.3322676295501878e-15,
+          "setup_seconds": 0.000365417,
+          "total_seconds": 0.00077775,
+          "residual_history": [
+            19.90750413990574,
+            1.5230383982788769,
+            0.11312942586801585,
+            0.008005543394150934,
+            0.00029235489894174324,
+            2.1015398402873484e-05,
+            1.3740836629576683e-06,
+            8.199787614345247e-08,
+            5.7694682243462215e-09,
+            4.911713096847994e-10,
+            3.354096476127805e-11
+          ]
+        }
+      }
+    ]
+  },
+  "limits": [
+    "Pressure gauge correction reduces Krylov products on the tested regular/sheared/cut cases; the smallest split/tip cases are slower than the plain control. No universal speedup.",
+    "At the same1e-11 algebraic tolerance, plain mass reaches native divergence4.60e-7 s^-1 while gauge-aware reaches5.01e-9; a small algebraic norm is not a physical acceptance certificate.",
+    "No original4716/17260 cylinder solve, memory/RSS measurement, scalable large-mesh or complete-flow cost comparison in this local batch. IC0 may fail on more difficult matrices.",
+    "Dense NumPy reference refactors for its two residual refinements; its timing is not a fair production sparse-LU performance baseline.",
+    "No variable-viscosity, inertia, pressure/traction outlet, transient, frontend or packaged App qualification. No new product tests needed because only research artifact was added."
+  ],
+  "references": [
+    {
+      "url": "https://www.netlib.org/templates/templates.pdf",
+      "use": "standard preconditioning/Krylov principles; native implementations already in repository, not copied source"
+    },
+    {
+      "url": "https://arxiv.org/abs/2009.13840",
+      "use": "HHO static-condensation/p-multilevel research context only; this is a different block-IC0 experiment, not the paper method or theorem"
+    }
+  ],
+  "reproduction": {
+    "build": "/usr/bin/clang++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-block-precondition.cpp -framework Accelerate -o outputs/laminar-stability/block-preconditioner/probe",
+    "linuxBuild": "g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-block-precondition.cpp -o build/native-laminar-block-precondition",
+    "run": "probe existing_prefix existing_prefix.cells.csv ic0 gauge new_prefix [relative_tolerance=1e-11] [maximum_restarts=50]",
+    "nativeRecovery": "Use unchanged native-laminar-p1-stress recover with the same mesh/problem/load/stress/order and new_prefix after a successful .solution output."
+  },
+  "raw_evidence": {
+    "archive": "outputs/laminar-stability/block-preconditioner/native-block-precondition-research.tar.gz",
+    "bytes": 2370946,
+    "sha256": "ed69fb0bcd8becc62f9ca77d265a0116b7344f905ec16762168fd75fe1f8f06b",
+    "memberCount": 227,
+    "allMembersReadbackSha256": true,
+    "resultsSha256": "4f4239bf8bf9c05cad8f04797ce35e84e7761dc0b5403bbd8f307c65375c3485",
+    "contents": "All native matrices, RHS, direct/iterative solutions and fields, every residual history, original/final source and binaries, minimal graph failure, pilot runs and source dependencies. No big cylinder files downloaded.",
+    "duplicateCleanup": {
+      "rawFilesRemoved": 183,
+      "pilotFilesRemoved": 33,
+      "removedBytes": 7134794,
+      "archiveReadbackAndProcessCheck": true,
+      "removedPathsAbsent": true
+    }
+  }
+}

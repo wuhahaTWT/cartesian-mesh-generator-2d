@@ -430,6 +430,19 @@ python3 artifacts/current/native-laminar-p1-stress.py sheared 8 vortex 0 lift sy
 
 原生参数为 `assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix`；文件网格时n忽略，cylinder控制要求显式Embedded/Domain边界标识。这个cylinder案例在整个外边界施加(1,0)、内壁零速度、ν=1且无对流，输出静态运动学压力；不等于原产品压力出口或Re20。CSV中 `traction_x/y` 与 `stress_x/y` 是积分力矩而非逐点应力；最大速度、压力范围及散度取积分采样点，尚非连续最大值。154011未知量的全局LU规模已显示成本问题，后续需解决可扩展预条件、兼容对流和原问题边界；不能仅凭小矩阵正性或有界幅值选取物理解。
 
+`native-laminar-block-precondition.cpp` 只读取上方原生凝聚矩阵、右端和单元面积，不重建方程。右块三角预条件器使用既有 `SparseSystem2D::factorIC0` 近似速度块逆；压力固定最后一格为0时，去均值质量矩阵为 `diag(V_i)-V_i V_j/Vtotal`，其逆为 `diag(1/V_i)+11ᵀ/V_last`。`plain` 控制只用普通对角质量，`gauge` 保留秩一项。仅在近似逆中把速度块两侧系数取平均，并采用两侧非零结构的并集；所有 Krylov 乘积和停止检查始终用原 K。IC0 不补主元、不移对角、不静默切换算法。原始日志中的对称修正字段记录取平均前的两侧差，每侧实际变化为其一半。
+
+研究求解控制为 `||b-Kx||₂/||b||₂`，在原始参考单位下默认 `1e-11`；不附加混合量纲的绝对残差地板，不作为CFD验收门。既有GMRES每个60方向子空间内以0.1为工作目标，外层至多50轮重新计算真实残差。成功才写 `.solution`；用尽预算写 `.candidate`、非零退出，已有前缀拒绝覆盖。只支持当前ν=1、零压力块、最后一格均值规范的全速度边界Stokes格式，不能直接套用未来压力出口/对流系统。Linux无需原生库或第三方依赖；Mac在下面构建命令中使用系统clang++并增加Accelerate框架：
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include \
+  artifacts/current/native-laminar-block-precondition.cpp -o build/native-laminar-block-precondition
+build/native-laminar-block-precondition existing_prefix existing_prefix.cells.csv \
+  ic0 gauge new_prefix 1e-11
+```
+
+然后用原 `native-laminar-p1-stress recover` 与相同几何/物理参数读取 `new_prefix.solution`，分别核对实际压力、速度、散度与能量；不能仅看GMRES返回成功。9个案例的原生字段、多项式场积分差、普通质量对照和一档更紧控制见 `native-laminar-block-precondition.json`。NumPy仅用于2175未知量以内的直接线性代数参照及字段比较，没有独立方程审计；该直接参考重复分解以作残差修正，计时不用于生产稀疏LU性能比较。方法背景可参见[标准Krylov预条件](https://www.netlib.org/templates/templates.pdf)与[HHO凝聚/多层研究](https://arxiv.org/abs/2009.13840)，当前实现不是后者的p多层算法或定理复现。
+
 几何预筛使用 `native-laminar-topology-spectrum.cpp`，对完整二次基 `r²、x²-y²、2xy` 调用产品梯度与修正扩散几何，输出旋转不变的二次一致性误差、梯度条件数、邻格面积比和非正交修正比；它不读取接受流场。坏中档的八个对称壁面模体均在求解前出现高值，但全局 `.075` 修复网格取得正常场后最坏二次误差仍约 `187.23`，不低于原网格 `184.05`。因此该量可定位候选模体，不能直接作为通过/失败判据。运行摘要、全部原始 SHA256 和成本由下列只读后处理固化：
 
 ```sh
