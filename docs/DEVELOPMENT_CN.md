@@ -430,9 +430,11 @@ python3 artifacts/current/native-laminar-p1-stress.py sheared 8 vortex 0 lift sy
 
 原生参数为 `assemble|recover mesh n problem lambda lift|cell symmetric|laplace order prefix`；文件网格时n忽略，cylinder控制要求显式Embedded/Domain边界标识。这个cylinder案例在整个外边界施加(1,0)、内壁零速度、ν=1且无对流，输出静态运动学压力；不等于原产品压力出口或Re20。CSV中 `traction_x/y` 与 `stress_x/y` 是积分力矩而非逐点应力；最大速度、压力范围及散度取积分采样点，尚非连续最大值。154011未知量的全局LU规模已显示成本问题，后续需解决可扩展预条件、兼容对流和原问题边界；不能仅凭小矩阵正性或有界幅值选取物理解。
 
-`native-laminar-block-precondition.cpp` 只读取上方原生凝聚矩阵、右端和单元面积，不重建方程。右块三角预条件器使用既有 `SparseSystem2D::factorIC0` 近似速度块逆；压力固定最后一格为0时，去均值质量矩阵为 `diag(V_i)-V_i V_j/Vtotal`，其逆为 `diag(1/V_i)+11ᵀ/V_last`。`plain` 控制只用普通对角质量，`gauge` 保留秩一项。仅在近似逆中把速度块两侧系数取平均，并采用两侧非零结构的并集；所有 Krylov 乘积和停止检查始终用原 K。IC0 不补主元、不移对角、不静默切换算法。原始日志中的对称修正字段记录取平均前的两侧差，每侧实际变化为其一半。
+`native-laminar-block-precondition.cpp` 只读取原生凝聚矩阵、右端和单元面积，不重建方程。右块三角预条件器复用 `SparseSystem2D::factorIC0/factorILU0` 近似速度块逆。`ic0` 仅在预条件器中取速度块对称部分；`ilu0` 保留全部非对称系数，`jacobi` 为对角控制。采用两侧非零结构并集，所有Krylov乘积和停止检查始终用原K；不补主元、不移对角、不静默切换算法。旧 `velocity_preconditioner_symmetry_correction_max` 字段记录原两侧差，保留兼容；新增 `velocity_matrix_asymmetry_max` 含义相同，`velocity_preconditioner_entry_change_max` 才记录实际系数变化，ILU0为零。
 
-研究求解控制为 `||b-Kx||₂/||b||₂`，在原始参考单位下默认 `1e-11`；不附加混合量纲的绝对残差地板，不作为CFD验收门。既有GMRES每个60方向子空间内以0.1为工作目标，外层至多50轮重新计算真实残差。成功才写 `.solution`；用尽预算写 `.candidate`、非零退出，已有前缀拒绝覆盖。只支持当前ν=1、零压力块、最后一格均值规范的全速度边界Stokes格式，不能直接套用未来压力出口/对流系统。Linux无需原生库或第三方依赖；Mac在下面构建命令中使用系统clang++并增加Accelerate框架：
+闭域固定最后一格压力为0，去均值质量矩阵为 `diag(V_i)-V_i V_j/Vtotal`，`gauge` 逆为 `diag(1/V_i)+11ᵀ/V_last`，`plain` 省略秩一项作负对照。自然出口用 `outlet`，保留Nc个压力及其绝对水平，只用对角质量逆，不减均值。各布局的压力近似逆均乘以 `-ν`；正黏度是显式输入，这是黏性Schur近似，不是Oseen精确逆或对雷诺数/网格的鲁棒性保证。仍只支持当前速度在前、单元均压在后、零保留压力块的凝聚格式；部分速度分量边界约束允许使速度未知量不再是4的整数倍。新接口为 `input_prefix cell_csv ic0|ilu0|jacobi gauge|plain|outlet output_prefix [relative_tolerance=1e-11] [restarts=50] [viscosity=1]`，历史ν=1调用保持兼容。
+
+研究求解控制为 `||b-Kx||₂/||b||₂`，在原始参考单位下默认 `1e-11`；不附加混合量纲绝对残差地板，不作为CFD验收门。既有GMRES每个60方向子空间内以0.1为工作目标，外层至多50轮重新计算真实残差。成功才写 `.solution`；用尽预算/方向失败写 `.candidate`、非零退出，已有前缀拒绝覆盖。Linux块求解器无需原生库或第三方依赖；Mac在下面构建命令中使用系统clang++并增加Accelerate框架：
 
 ```sh
 g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include \
@@ -561,6 +563,17 @@ python3 artifacts/current/native-laminar-p1-oseen.py square 8 noslip 0.1 ns clos
 ```
 
 上例使用已有Linux原生库及NumPy/SciPy；Mac采用系统Clang和Accelerate链接。圆柱用真实 `.solver.cm2d` 路径替代square、n=0、problem=cylinder、boundary=open。输出前缀拒绝覆盖；`CARTMESH_P1_INITIAL_STATE`可显式接续保存的研究场，meshKey绑定真实几何，不是产品checkpoint。每步保存完整解、原生恢复和原始非线性方程复核；`1e-9`研究控制同时约束系数变化及未消元残量（U=L=1，静压尺度U²），不是新增物理门或选解规则。Python只做编排和原生矩阵稀疏线代；失败、迭代上限及完整成本保留。P2势速度和RT1输运速度各报其误差，P1压力极值覆盖全单元顶点，速度峰值仍只是采样值。源码哈希、两档曲壁NS、仿射/二次负对照、积分对照、Mac4项短验证及云端恢复包持久保存失败均记录在 `native-laminar-p1-convection.json`。原出口等价性、回流、充分空间/外域收敛、壁面反力精度和可规模化联合求解仍未完成。
+
+`native-laminar-oseen-block.py` 提供相同原生装配、恢复和完整非线性检查的块求解入口。默认ILU0路径只用Python标准库；NumPy仅在显式 `--backend dense-reference` 的2175未知量以内参考中使用，不另写流体方程。运行前构建上述 `native-laminar-p1-transport`、`native-laminar-block-precondition`，并构建共用几何/场比较入口：
+
+```sh
+g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -I include artifacts/current/native-laminar-state-compare.cpp build/libcartmesh2d_fv.a build/libcartmesh2d.a -o build/native-laminar-state-compare
+python3 artifacts/current/native-laminar-oseen-block.py sheared 8 noslip-sheared 0.1 ns closed outputs/laminar-stability/oseen-block-reproduction
+```
+
+Mac用 `/usr/bin/clang++` 并加 `-framework Accelerate`。可显式传 `--transport/--block/--fields` 二进制路径，或 `--backend ic0|jacobi|dense-reference` 对照。研究默认线性相对控制为 `1e-13`，非线性沿用 `1e-9` 完整残差及系数变化双条件；前者从上一批物理散度敏感性选择，用于隔离代数误差，未改变产品精度门。输出目录必须不存在；各步命令输出、线性失败候选、完整场、原始方程复核及成本保留。`--iterations/--restarts` 分别限制非线性/线性工作量，耗尽返回2；只有最终双条件满足才记录 `completed=true/finalState`。线性失败不恢复或采用候选。`lastCompletedIterate` 仅指最后完成原生检查的研究迭代，可能未收敛；`--initial-state` 的meshKey只绑定几何，不提供产品级物性/边界/时钟检查点语义。
+
+`native-laminar-state-compare geometry mesh n prefix` 从相同原生几何导出单元面积；`compare mesh n first.state second.state` 使用原生状态读取及多项式积分给出P1速度/压力RMS、面速度端点最大差。闭域压力同时报告绝对差及一次全域规范校正后的差；自然出口必须看绝对差。它不计算第二套PDE，也不把P1单元场与P2势速度或RT1输运速度混为同一指标。4个冻结矩阵、6个完整NS控制、4个失败对照和复现命令见 `native-laminar-oseen-block.json`；归档保留每个迭代和输入，8档均匀出口没有障碍物，不能用 `cylinder` 问题名宣称圆柱资格。原Re20大矩阵、内存与完整稀疏LU成本尚待云端验证。
 
 ## 完整笛卡尔背景网格
 
