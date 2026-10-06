@@ -383,6 +383,16 @@ build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries ou
 
 频率由升力或偏离尾迹中心的速度获取，不能把阻力的双倍频率当作脱落频率。壁面力使用原生唯一共享动量通量，Cd/Cl 按 .5ρU²D 归一化；研究 driver 的 boundary-history.csv 逐壁面、逐接受步保存 RK 平均通量。后处理只能读取这些原生数据。必须明确舍弃的启动时间、连续周期统计、实际时间网格与空间/时间/外域变化，并区分低速实验关联、有限 Mach 模型差异及独立数值比较。当前未设置自动物理通过门。
 
+### 固定轮廓圆柱续算与原场读回
+
+`run_curved_cylinder_reference.py` 读取私密恢复目录 `outputs/curved-cylinder/` 中的原始命令及检查点，用当前 build 下原生 Euler CLI 续算；不映射跨网格场，不实现独立 PDE。它依次执行所选算例，每次记录完整命令、返回码和进程耗时。输出目录必须全新，避免覆盖原场；未完成返回码、检查点及诊断照常保留。
+
+    python3 tools/flow/run_curved_cylinder_reference.py --output outputs/corrected-cylinder-repeat --cases fine fine-half --end 4e-7 --budget 900
+
+中格可显式指定 `--mid-step 1e-9 --mid-restart PATH.checkpoint`；这会产生新的时间轨迹，不能冒充原 4 ns 请求已经通过。研究结束时执行的调度取消及续算链以私密原始命令为准，单次顺序包装命令不会重演那次调度事故。最终公开同步仅增加禁止覆盖既有目录的保护，云端实际实验使用的原脚本哈希另存。
+
+`read_curved_cylinder_reference.py` 专用于已恢复的 `outputs/curved-cylinder/` 与 `outputs/corrected-curved-reference/` 归档布局，读取实际面通量、单元中心、分辨率与历史，不是任意目录的通用比较器。角向指标将整条面通量按面心归入 32 箱，比较各箱积分；净热流、绝对和及正负部分分别输出。√(νt)、√(αt)仅作尺度估计，质心到壁面的切/法向比属于几何诊断。共同半径点场插值脚本保存在私密归档中，其插值结果不能替代解析参考或原生重构误差。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
