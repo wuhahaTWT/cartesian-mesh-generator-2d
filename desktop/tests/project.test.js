@@ -104,3 +104,25 @@ test('ZIP links are rejected rather than restored as filesystem references', asy
   await assert.rejects(extractZip(file,f.session),/链接/);
   assert.deepEqual(await fs.readdir(f.session),[]);
 });
+
+
+test('relative output directories are portable before the original path disappears', async t => {
+  const f = await fixture(t);
+  const rewrite = value => typeof value === 'string' && value.startsWith(f.root)
+    ? path.relative(process.cwd(), value) : value;
+  f.current.outputDirectory = rewrite(f.current.outputDirectory);
+  f.current.prefix = rewrite(f.current.prefix);
+  f.current.cm2dPath = rewrite(f.current.cm2dPath);
+  f.current.job.outputDirectory = f.current.outputDirectory;
+  f.current.result.openFoam.path = rewrite(f.current.result.openFoam.path);
+  f.current.result.raw = {cm2d:f.current.cm2dPath};
+  const manifest = await writeProjectManifest(f.current,{});
+  assert.equal(manifest.state.cm2dPath,'project://rectangle.solver.cm2d');
+  assert.equal(manifest.state.prefix,'project://rectangle');
+  assert.equal(manifest.state.result.raw.cm2d,'project://rectangle.solver.cm2d');
+  const zip = path.join(f.temp,'relative.zip');
+  await zipDirectory(f.root,zip); await fs.rm(f.root,{recursive:true});
+  const loaded = await openProject(zip,f.session);
+  assert.equal(loaded.mesh.cells.length,1);
+  assert.ok(loaded.result.openFoam.path.startsWith(f.session+path.sep));
+});

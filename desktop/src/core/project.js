@@ -65,7 +65,7 @@ async function writeProjectManifest(current, ui, signal) {
   const state = structuredClone({ ...current, mesh: undefined, levelHistogram: undefined, projectUi: undefined });
   state.outputDirectory = root;
   state.job.outputDirectory = root;
-  state.job.geometryPath = current.prefix + '.xy';
+  state.job.geometryPath = path.resolve(current.prefix + '.xy');
   state.job.sourceUnits = 'm';
   if (state.selectedRequest) {
     state.selectedRequest.geometryPath = state.job.geometryPath;
@@ -77,6 +77,7 @@ async function writeProjectManifest(current, ui, signal) {
     const restart = state[kind + 'Restart'];
     if (restart) {
       const original = path.resolve(restart.path);
+      restart.path = original;
       if (!(original.startsWith(root + path.sep))) {
         const directory = path.join(root, 'project-inputs');
         await fs.mkdir(directory, { recursive: true });
@@ -90,8 +91,18 @@ async function writeProjectManifest(current, ui, signal) {
       state[kind] = { request, files: portableFiles, ...(manifest ? { manifest: manifest.split(path.sep).join('/') } : {}) };
     }
   }
-  const portable = transform(state, value => typeof value === 'string' &&
-    (value === root || value.startsWith(root + path.sep)) ? 'project://' + relative(root, value) : value);
+  // Native output names retain the spelling of the requested output directory,
+  // which may be relative. Normalize that known prefix before making bindings
+  // portable; otherwise the ZIP silently keeps paths into the old checkout.
+  const sourceRoot = path.normalize(current.outputDirectory);
+  const portable = transform(state, value => {
+    if (typeof value !== 'string') return value;
+    let file = value;
+    if (!path.isAbsolute(value) && sourceRoot !== '.' &&
+        (path.normalize(value) === sourceRoot || path.normalize(value).startsWith(sourceRoot + path.sep)))
+      file = path.resolve(value);
+    return file === root || file.startsWith(root + path.sep) ? 'project://' + relative(root, file) : value;
+  });
   const document = { format: FORMAT, geometryLabel: path.basename(current.job.geometryPath),
     state: portable, ui: ui ?? current.projectUi ?? null, files: await inventory(root, signal) };
   signal?.throwIfAborted();
