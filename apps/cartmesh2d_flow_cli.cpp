@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
         double timeStep=0;
         std::size_t requestedSteps=0,completedSteps=0;
         fv::FlowTimeStepControls2D adaptiveControls;
-        bool adaptive=false, adaptiveOptions=false, explicitMinimumStep=false;
+        bool adaptive=false, adaptiveOptions=false, explicitMinimumStep=false, checkRestartOnly=false;
         double startTime=0;
         std::size_t attemptCount=0,rejectedSteps=0;
         std::string restart;
@@ -184,6 +184,7 @@ int main(int argc, char** argv) {
             "Engineering: all strict stopping gates plus 3-order reduction or <1e-5 and 50-step field/monitor stability <1e-3.\n"
             "--steady-acceleration none|anderson: optional safeguarded history extrapolation, steady laminar only.\n"
             "--restart PREFIX.checkpoint: resume accepted state on identical mesh and physical setup.\n"
+            "--check-restart on: validate complete restart binding without advancing or writing outputs.\n"
             "--case taylor-green: unforced exact slip-box decay; transient verification only.\n"
             "Transient physical cases start at rest; boundary velocities switch on for t>0.\n"
             "--initial-vortex-x X --initial-vortex-y Y --initial-vortex-radius R --initial-vortex-speed V:\n"
@@ -272,6 +273,9 @@ int main(int argc, char** argv) {
                 if (n<0 || n>1000000 || n!=std::floor(n)) throw std::invalid_argument("bad adaptive iteration budget");
                 if (a == "--max-step-retries") adaptiveControls.maximumRetries=static_cast<std::size_t>(n);
                 else adaptiveControls.maximumAcceptedSteps=static_cast<std::size_t>(n);
+            } else if (a == "--check-restart") {
+                if(v!="on" && v!="off")throw std::invalid_argument("invalid restart-check switch");
+                checkRestartOnly=v=="on";
             } else if (a == "--restart") {
                 restart=v;
             } else if (a == "--initial-vortex-x" || a == "--initial-vortex-y" ||
@@ -325,6 +329,7 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("requires final *.solver.cm2d");
         }
 
+        if (checkRestartOnly && restart.empty())throw std::invalid_argument("restart check requires a checkpoint");
         if (adaptive) {
             if (timeStep<=0 || requestedSteps) throw std::invalid_argument("--end-time requires --time-step and cannot be combined with --steps");
             adaptiveControls.maximumStep=timeStep;
@@ -387,6 +392,14 @@ int main(int argc, char** argv) {
         if(!fluxPath.empty())guess.flux=initialFluxCsv(fluxPath,mesh);
         const double readSeconds = std::chrono::duration<double>(
             std::chrono::steady_clock::now() - readStart).count();
+        if(checkRestartOnly) {
+            std::ifstream input(restart);
+            if(!input)throw std::runtime_error("cannot open restart checkpoint");
+            const auto state=fv::readFlowCheckpoint2D(input,mesh,controls);
+            std::cout<<std::setprecision(17)<<"{\"format\":\"cartmesh2d-flow-restart-check-v1\",\"status\":\"valid\",\"time\":"
+                <<state.time<<",\"cells\":"<<mesh.cells.size()<<"}\n";
+            return 0;
+        }
         const auto parent = std::filesystem::path(prefix).parent_path();
         if (!parent.empty()) std::filesystem::create_directories(parent);
         if (controls.scenario == "custom") {
@@ -415,6 +428,7 @@ int main(int argc, char** argv) {
                 auto checkpoint=out(prefix,".checkpoint.tmp");
                 fv::writeFlowCheckpoint2D(checkpoint,mesh,controls,state);
                 checkpoint.close();
+                if(!checkpoint)throw std::runtime_error("accepted checkpoint write failed");
                 std::filesystem::rename(prefix+".checkpoint.tmp",prefix+".checkpoint");
             };
             // Invalidate any old summary before replacing this prefix's files.
@@ -503,14 +517,19 @@ int main(int argc, char** argv) {
                 double energy=0;
                 for (std::size_t i=0;i<mesh.cells.size();++i)
                     energy+=.5*mesh.cells[i].area*(r.u[i]*r.u[i]+r.v[i]*r.v[i]);
+                // Publish the recoverable state before its accepted-history row.
+                // A crash may leave a missing sample, never a sample ahead of its checkpoint.
+                if(r.converged) {
+                    ++strictAcceptedSteps;
+                    state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
+                    saveAccepted();
+                }
                 times << step << ',' << r.time << ',' << r.timeStep << ',' << (r.converged?1:0) << ',' << last.iteration
                       << ',' << last.momentumResidual << ',' << last.continuity << ',' << r.maxCourant
                       << ',' << energy << ',' << r.forceX << ',' << r.forceY << '\n';
                 times.flush();
+                if(!times)throw std::runtime_error("time history write failed; last accepted checkpoint retained");
                 if (!r.converged) break; // fixed-step mode preserves its diagnostic failure output
-                ++strictAcceptedSteps;
-                state={r.time,r.u,r.v,r.p,r.flux};acceptedTime=r.time;++completedSteps;
-                saveAccepted();
                 std::cout << "{\"type\":\"flow-time-step\",\"time\":" << state.time
                           << ",\"step\":" << step << ",\"maxCourant\":" << r.maxCourant
                           << ",\"kineticEnergy\":" << energy << ",\"forceX\":" << r.forceX << ",\"forceY\":" << r.forceY << "}" << std::endl;

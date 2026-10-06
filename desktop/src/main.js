@@ -17,14 +17,15 @@ const { normalizeResult, parseKeyValues } = require('./core/report');
 const { parseBackgroundGrid, requireFluidMesh } = require('./core/background-grid');
 const { exportGuide } = require('./core/export-guide');
 const { saveDirectoryArchive } = require('./core/archive');
-const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
-        parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
+const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob,checkThermalRestart } = require('./core/thermal-job');
 const {readThermalTimeline}=require('./core/thermal-history');
 const {RecoveryStore}=require('./core/recovery');
 const { runEulerJob, importEulerRestart } = require('./core/euler-job');
-const { readCheckpointMetadata, readAcceptedCheckpointMetadata } = require('./core/flow-checkpoint');
+const { readAcceptedCheckpointMetadata } = require('./core/flow-checkpoint');
+const {runFlowJob,checkFlowRestart}=require('./core/flow-job');
+const {readFlowTimeline}=require('./core/flow-history');
 const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
 const { writeProjectManifest, openProject } = require('./core/project');
@@ -36,6 +37,10 @@ let sessionDirectory;
 let recoveryStore;
 let currentResult;
 let operation = null;
+function sendToRenderer(channel,payload) {
+  const window=mainWindow;
+  if(window && !window.isDestroyed() && !window.webContents.isDestroyed())window.webContents.send(channel,payload);
+}
 const rasterSources = new Map();
 const rasterImports = new Map();
 const timingHistory = new Map();
@@ -45,17 +50,19 @@ async function exclusive(work) {
   try { return await work(); } finally {
     if(operation?.persistRecovery) {
       try {await persistRecovery(operation.recoveryUi);}
-      catch(error) {mainWindow?.webContents.send('run-line','会话恢复点保存失败：'+error.message);}
+      catch(error) {sendToRenderer('run-line','会话恢复点保存失败：'+error.message);}
     }
     operation = null;
   }
 }
 async function persistRecovery(ui) {
   if(!currentResult||currentResult.incomplete)return;
-  if(ui===undefined)ui=await mainWindow?.webContents.executeJavaScript('window.__projectControls?.() || null').catch(()=>null);
+  if(ui===undefined && mainWindow && !mainWindow.isDestroyed())ui=await mainWindow.webContents.executeJavaScript('window.__projectControls?.() || null').catch(()=>null);
   if(!ui)ui=currentResult.projectUi || null;
-  if(ui&&currentResult.thermalRestart)ui={...ui,inputs:{...ui.inputs,thermalResume:true,flowResume:false}};
+  const kind=operation?.recoveryKind || (ui?.inputs?.flowResume&&!ui?.inputs?.thermalResume?'flow':currentResult.thermalRestart?'thermal':currentResult.flowRestart?'flow':null);
+  if(ui&&kind&&currentResult[kind+'Restart'])ui={...ui,inputs:{...ui.inputs,thermalResume:kind==='thermal',flowResume:kind==='flow'}};
   await recoveryStore.checkpoint(currentResult,ui);
+  if(ui)currentResult.projectUi=structuredClone(ui);
 }
 async function exportPackage(destination) {
   if (!currentResult) throw new Error('请先成功生成网格。');
@@ -195,6 +202,19 @@ async function createWindow() {
       nodeIntegration: false
     }
   });
+  mainWindow.on('close',()=>operation?.abort());
+  mainWindow.once('closed',async()=>{
+    if(!process.argv.some(arg=>arg.startsWith('--smoke=')) || !process.argv.some(arg=>arg.startsWith('--flow-close-after=')))return;
+    const deadline=Date.now()+10000;
+    while(operation && Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
+    if(operation){console.error('Window-close cancellation did not finish');app.exit(1);return;}
+    const out=process.argv.find(arg=>arg.startsWith('--out='))?.slice(6);
+    const record=recoveryStore.records.get(path.resolve(currentResult.outputDirectory));
+    await fs.writeFile(path.join(out,'close-state.json'),JSON.stringify({windowDestroyed:true,
+      flowTime:currentResult.flow?.summary.acceptedTime,flowRestart:currentResult.flowRestart?.metadata.time,
+      history:await readFlowTimeline(currentResult),runClosed:!record.activeFlow},null,2));
+    app.exit(0);
+  });
   // Renderer errors are otherwise invisible from a headless smoke run.
   mainWindow.webContents.on('console-message', (_event, level, message) => {
     if (level >= 2) console.error(`renderer: ${message}`);
@@ -209,7 +229,7 @@ app.whenReady().then(async () => {
   await fs.mkdir(recoveryBase,{recursive:true});
   sessionDirectory = await fs.mkdtemp(path.join(recoveryBase,'session-'));
   recoveryStore=new RecoveryStore(recoveryBase,sessionDirectory);
-  const log = line => mainWindow?.webContents.send('run-line', line);
+  const log = line => sendToRenderer('run-line', line);
 
   ipcMain.handle('catalog', () => ({
     methods: METHODS,
@@ -278,18 +298,19 @@ app.whenReady().then(async () => {
     // Publishing is transactional; an invalid ZIP never replaces this binding.
     currentResult = restored;
     operation.persistRecovery=true;operation.recoveryUi=restored.projectUi;
-    return {...restored,thermalTimeline:await readThermalTimeline(restored)};
+    return {...restored,thermalTimeline:await readThermalTimeline(restored),flowTimeline:await readFlowTimeline(restored)};
   }));
 
   ipcMain.handle('list-recoveries',()=>recoveryStore.list());
   ipcMain.handle('recover-project',(_event,id)=>exclusive(async()=>{
-    const restored=await recoveryStore.restore(id,(currentResult,checkpoint,request,signal)=>
-      checkThermalRestart({currentResult,checkpoint,request,executable,runProcess,signal}),operation.signal);
+    const restored=await recoveryStore.restore(id,(currentResult,checkpoint,request,signal,kind)=>
+      (kind==='flow'?checkFlowRestart:checkThermalRestart)({currentResult,checkpoint,request,executable,runProcess,signal}),operation.signal);
     currentResult=restored;
-    return {...restored,thermalTimeline:await readThermalTimeline(restored)};
+    return {...restored,thermalTimeline:await readThermalTimeline(restored),flowTimeline:await readFlowTimeline(restored)};
   }));
 
-  const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
+  const flowState = async () => ({flow:currentResult?.flow || null,restart:currentResult?.flowRestart?.metadata || null,
+    timeline:currentResult?await readFlowTimeline(currentResult):null});
   ipcMain.handle('flow-state', () => flowState());
   // Only the real smoke harness can supply a dialog replacement. Renderer
   // requests never carry read/write paths for case files.
@@ -367,146 +388,22 @@ app.whenReady().then(async () => {
     currentResult.flowRestart = { path: file, metadata };
     return metadata;
   }));
-  ipcMain.handle('run-flow', (_event, request) => exclusive(async () => {
+  ipcMain.handle('run-flow',(_event,request)=>exclusive(async()=>{
     requireFluidMesh(currentResult);
-    const mesh = currentResult.mesh
-      || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath, 'utf8')));
-    const selectedRestart = request?.resume ? currentResult.flowRestart : null;
-    // Validate before creating outputs; paths come only from this main process.
-    buildFlowInvocation(currentResult.cm2dPath, 'pending', request, selectedRestart?.path, 'pending.boundaries');
-    const boundaryDefinition=request.case==='custom' ? validateBoundaryMesh(request.boundaryDefinition,mesh,Number(request.speed)) : null;
-    const incompleteDirectory = await fs.mkdtemp(path.join(currentResult.outputDirectory, 'flow-incomplete-'));
-    const pendingPrefix = path.join(incompleteDirectory, 'flow');
-    let restartPath = null, startTime = 0;
-    if (selectedRestart) {
-      try {
-        restartPath = path.join(incompleteDirectory, 'input.checkpoint');
-        await fs.copyFile(selectedRestart.path, restartPath);
-        const metadata = await readCheckpointMetadata(restartPath);
-        startTime = metadata.time;
-        for (const key of ['case', 'nu', 'speed', 'convection', 'outletBackflow'])
-          if (metadata[key] !== (['nu','speed'].includes(key) ? Number(request[key]) : request[key]))
-            throw new Error('续算必须保持原工况、物性和对流格式；可调整时间步与步数。');
-        if (boundaryDefinition && !sameConditions(metadata.boundaryDefinition?.records,boundaryDefinition.records))
-          throw new Error('续算必须保持原命名边界的名称、类型和数值。');
-      } catch (error) {
-        // No solver has started and the selected source remains untouched.
-        await fs.rm(incompleteDirectory, { recursive: true, force: true });
-        throw error;
-      }
-    }
-    const boundaryPath=boundaryDefinition ? path.join(incompleteDirectory,'input.boundaries') : null;
-    if (boundaryPath) await fs.writeFile(boundaryPath,serializeBoundaryDefinition(boundaryDefinition));
-    const invocation = buildFlowInvocation(currentResult.cm2dPath, pendingPrefix, request, restartPath, boundaryPath);
-    const transient = invocation.request.mode !== 'steady';
-    const adaptive = invocation.request.mode === 'adaptive';
-    if (adaptive && !(invocation.request.endTime>startTime)) {
-      await fs.rm(incompleteDirectory,{recursive:true,force:true});
-      throw new Error('目标物理时间必须晚于已接受的重启时间。');
-    }
-    const previousFlow = currentResult.flow;
-    const previousRestart = currentResult.flowRestart;
-    const preserveIncomplete = async error => {
-      if (transient) {
-        // Ignore .tmp: only the native atomic accepted-state file is resumable.
-        try { currentResult.flowRestart = { path: `${pendingPrefix}.checkpoint`,
-          metadata: await readAcceptedCheckpointMetadata(`${pendingPrefix}.checkpoint`) }; }
-        catch { currentResult.flowRestart = previousRestart; }
-      }
-      const report = { format: 'cartmesh2d-flow-incomplete-v1',
-        status: operation.signal.aborted ? 'cancelled' : 'failed', request: invocation.request,
-        mesh: path.basename(currentResult.cm2dPath),
-        acceptedTime: currentResult.flowRestart?.metadata.time ?? null,
-        exitCode: Number.isInteger(error.code) ? error.code : null,
-        message: String(error.message || error).split('\n')[0] };
-      await fs.writeFile(path.join(incompleteDirectory, 'desktop-flow-error.json'), JSON.stringify(report, null, 2));
-    };
-    log(`正在运行原生二维${transient ? '非定常' : '稳态'}层流：${FLOW_CASES[invocation.request.case].label}…`);
-    const onLine = (line, isError) => {
-      let progress = null;
-      if (!isError) {
-        try { progress = parseFlowProgress(line); }
-        catch (error) { log(`忽略无效进度：${error.message}`); }
-      }
-      if (progress) mainWindow.webContents.send('flow-progress', progress);
-      else log(line);
-    };
-    let backups = [];
-    let commitStarted = false;
-    try {
-      const processResult = await runProcess(executable(invocation.executable), invocation.args,
-        onLine, operation.signal, 0, [0, 2]);
-      operation.signal.throwIfAborted();
-      const outputFiles = { summary: `${pendingPrefix}.json`, fields: `${pendingPrefix}.fields.json`,
-        vtk: `${pendingPrefix}.vtk`, residuals: `${pendingPrefix}.residuals.csv`,
-        cells: `${pendingPrefix}.cells.csv`, faces: `${pendingPrefix}.faces.csv` };
-      if (transient) Object.assign(outputFiles, { checkpoint: `${pendingPrefix}.checkpoint`, timeHistory: `${pendingPrefix}.time-history.csv` });
-      if (adaptive) outputFiles.attemptHistory=`${pendingPrefix}.attempt-history.csv`;
-      if (invocation.request.initialVortex) outputFiles.initialCheckpoint=`${pendingPrefix}.initial.checkpoint`;
-      if (boundaryDefinition) outputFiles.boundaries=`${pendingPrefix}.boundaries`;
-      const [summary, fields] = await Promise.all([readJson(outputFiles.summary), readJson(outputFiles.fields),
-        ...Object.values(outputFiles).map(file => fs.stat(file))]);
-      const validated = validateFlowOutput(summary, fields, mesh.cells.length, invocation.request, startTime);
-      if (boundaryDefinition) {
-        const exported=validateBoundaryMesh(parseBoundaryDefinition(await fs.readFile(outputFiles.boundaries,'utf8')),mesh,invocation.request.speed);
-        if (!sameConditions(exported.records,boundaryDefinition.records)) throw new Error('导出边界与输入不一致。');
-      }
-      if ((processResult.code === 0) !== validated.summary.converged)
-        throw new Error('原生求解器退出码与收敛状态不一致。');
-      let history = null, attempts = null, checkpointMetadata = null;
-      if (transient) {
-        history = validateTimeHistory(await fs.readFile(outputFiles.timeHistory, 'utf8'), validated.summary, startTime);
-        if (adaptive) attempts=validateAttemptHistory(await fs.readFile(outputFiles.attemptHistory,'utf8'),validated.summary,history);
-        checkpointMetadata = await readCheckpointMetadata(outputFiles.checkpoint);
-        if (outputFiles.initialCheckpoint) {
-          const initial=await readCheckpointMetadata(outputFiles.initialCheckpoint);
-          if (initial.time!==0 || ['case','nu','speed','convection','outletBackflow'].some(k=>initial[k]!==checkpointMetadata[k]))
-            throw new Error('初始局部涡检查点的时间或物性与结果不一致。');
+    const mesh=currentResult.mesh || assignSizeBands(parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8')));
+    operation.recoveryKind='flow';await persistRecovery();operation.persistRecovery=true;
+    return runFlowJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
+      onProgress:progress=>{
+        sendToRenderer('flow-progress',progress);
+        const close=process.argv.find(arg=>arg.startsWith('--flow-close-after='))?.slice(19);
+        const threshold=process.argv.some(arg=>arg.startsWith('--smoke='))?(close ?? process.argv.find(arg=>arg.startsWith('--flow-crash-after='))?.slice(19)):null;
+        if(threshold!=null && !mainWindow.isDestroyed() && progress.type==='flow-time-step' && progress.time>=Number(threshold)) {
+          const out=process.argv.find(arg=>arg.startsWith('--out='))?.slice(6);
+          if(out)require('node:fs').writeFileSync(path.join(out,'crash-marker.json'),JSON.stringify({pid:process.pid,outputDirectory:currentResult.outputDirectory,displayedTime:currentResult.flow?.summary.acceptedTime,observedTime:progress.time,recoverySession:sessionDirectory}));
+          if(close!=null)mainWindow.close();else process.kill(process.pid,'SIGKILL');
         }
-        if (Math.abs(checkpointMetadata.time-summary.acceptedTime) > 1e-12+1e-9*Math.abs(summary.acceptedTime))
-          throw new Error('重启状态时间与摘要不一致。');
-        if (!validated.summary.converged)
-          throw Object.assign(new Error(summary.acceptedTime>0 ? `时间步未收敛；已接受到 t=${summary.acceptedTime} s，可继续计算。候选场仅留作诊断。` : '本次没有接受物理时间步；初值不能作为续算状态。候选场仅留作诊断。'), { code: 2 });
-      }
-      operation.signal.throwIfAborted();
-      // Preserve the earlier complete result even if copying the new set fails.
-      const allSuffixes = flowOutputSuffixes({ mode: 'adaptive', case:'custom', initialVortex:true });
-      for (const suffix of allSuffixes) {
-        const destination = `${currentResult.prefix}.flow${suffix}`;
-        const backup = path.join(incompleteDirectory, `previous${suffix}`);
-        try { await fs.copyFile(destination, backup); backups.push({ backup, destination }); }
-        catch (error) { if (error.code !== 'ENOENT') throw error; }
-      }
-      const entries = Object.entries(outputFiles).map(([kind, source]) => ({ kind, source,
-        destination: `${currentResult.prefix}.flow${source.slice(pendingPrefix.length)}` }));
-      commitStarted = true;
-      await commitFlowFiles(fs, entries);
-      operation.signal.throwIfAborted();
-      for (const suffix of allSuffixes.filter(suffix => !flowOutputSuffixes(invocation.request).includes(suffix)))
-        await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true });
-      const saved = Object.fromEntries(entries.map(entry => [entry.kind, path.basename(entry.destination)]));
-      const payload = { ...validated, request: invocation.request, files: saved, history, attempts };
-      currentResult.flow = payload;
-      currentResult.flowRestart = transient ? { path: `${currentResult.prefix}.flow.checkpoint`, metadata: { ...checkpointMetadata, fileName: path.basename(`${currentResult.prefix}.flow.checkpoint`) } } : null;
-      await fs.rm(incompleteDirectory, { recursive: true, force: true }).catch(error => log(`结果已保存，临时目录清理失败：${error.message}`));
-      log(transient ? `非定常计算完成，已接受到 t=${summary.acceptedTime} s。`
-        : validated.summary.converged ? '层流求解已收敛。' : '层流求解到达迭代上限，保留诊断结果但未收敛。');
-      return payload;
-    } catch (error) {
-      if (commitStarted) {
-        for (const suffix of flowOutputSuffixes({ mode: 'adaptive', case:'custom', initialVortex:true }))
-          await fs.rm(`${currentResult.prefix}.flow${suffix}`, { force: true }).catch(() => {});
-      }
-      const restored = await Promise.allSettled(backups.map(entry => fs.copyFile(entry.backup, entry.destination)));
-      if (restored.some(entry => entry.status === 'rejected')) {
-        currentResult.flow = null;
-        error.message += '\n上次结果恢复失败，完整备份保留在诊断目录。';
-      }
-      if (restored.every(entry => entry.status === 'fulfilled')) currentResult.flow = previousFlow;
-      await preserveIncomplete(error).catch(() => {});
-      error.message += `\n未完成诊断保留在 ${incompleteDirectory}`;
-      throw error;
-    }
+      },log,
+      onPrepared:pending=>recoveryStore.beginFlow(currentResult,pending)});
   }));
 
   ipcMain.handle('euler-state', () => ({euler:currentResult?.euler || null,restart:currentResult?.eulerRestart?.metadata || null}));
@@ -514,7 +411,7 @@ app.whenReady().then(async () => {
     requireFluidMesh(currentResult);
     const mesh=currentResult.mesh||parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
     return runEulerJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
-      onProgress:progress=>mainWindow.webContents.send('euler-progress',progress),log:line=>mainWindow.webContents.send('run-line',line)});
+      onProgress:progress=>sendToRenderer('euler-progress',progress),log:line=>sendToRenderer('run-line',line)});
   }));
   ipcMain.handle('pick-euler-checkpoint',()=>exclusive(async()=>{
     requireFluidMesh(currentResult);
@@ -547,11 +444,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('run-thermal', (_event,request) => exclusive(async()=>{
     requireFluidMesh(currentResult);
     const mesh=currentResult.mesh || parseCm2d(await fs.readFile(currentResult.cm2dPath,'utf8'));
-    await persistRecovery();operation.persistRecovery=true;
+    operation.recoveryKind='thermal';await persistRecovery();operation.persistRecovery=true;
     log('正在同步推进原生流动与温度；温度不反馈物性或浮力。');
     return runThermalJob({currentResult,mesh,request,executable,runProcess,signal:operation.signal,
       onProgress:progress=>{
-        mainWindow.webContents.send('thermal-progress',progress);
+        sendToRenderer('thermal-progress',progress);
         const crash=process.argv.some(arg=>arg.startsWith('--smoke='))?process.argv.find(arg=>arg.startsWith('--thermal-crash-after='))?.slice(22):null;
         if(crash!==null && crash!==undefined && progress.time>=Number(crash)) {
           const marker=process.argv.find(arg=>arg.startsWith('--out='))?.slice(6);
@@ -778,7 +675,7 @@ app.whenReady().then(async () => {
         signal: operation.signal,
         generate: choice => generateOnce(choice, true),
         progress: ({ attempt, maximum, parameters }) => {
-          mainWindow.webContents.send('run-progress', { attempt, maximum,
+          sendToRenderer('run-progress', { attempt, maximum,
             estimatedSeconds: request.targetCells >= 100000 ? 90 : 30, estimateSource: '数量档位粗估' });
           log(`数量目标 ${request.targetCells}：第 ${attempt}/${maximum} 组，壁面 h/Lref=${parameters.wallRelativeSize}，背景=${parameters.backgroundRelativeSize}。`);
         }
@@ -806,7 +703,7 @@ app.whenReady().then(async () => {
       const started = Date.now();
       const historyKey = JSON.stringify({ ...choice, outputDirectory: undefined });
       const estimate = estimateSeconds(choice, timingHistory.get(historyKey));
-      mainWindow.webContents.send('run-progress', { attempt: index + 1, maximum: choices.length,
+      sendToRenderer('run-progress', { attempt: index + 1, maximum: choices.length,
         estimatedSeconds: estimate.seconds, estimateSource: estimate.source });
       log(`${request.automatic ? '自动选参' : '手动生成'}：第 ${index + 1}/${choices.length} 次，` +
         (choice.sizingMode === 'relative'
@@ -849,7 +746,9 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
   if (process.argv.some(item => item.startsWith('--smoke='))) {
-    try { await runSmoke(); } catch (error) { console.error(error); app.exit(1); }
+    try { await runSmoke(); } catch (error) {
+      if(!(process.argv.some(arg=>arg.startsWith('--flow-close-after=')) && mainWindow.isDestroyed())) {console.error(error);app.exit(1);}
+    }
   }
 });
 
@@ -897,7 +796,13 @@ async function runSmoke() {
 
   if (argument('open-project') || argument('recover-latest') === 'true') {
     if(argument('recover-latest') === 'true') {
-      await mainWindow.webContents.executeJavaScript('window.__smoke.showRecovery()');
+      await mainWindow.webContents.executeJavaScript(`(async()=>{
+        await window.__smoke.showRecovery();
+        await document.fonts.ready;
+        if(!document.getElementById('recoveryDialog').open)throw new Error('Recovery dialog did not open');
+      })()`);
+      // The native capture can precede the compositor after showModal resolves.
+      await new Promise(resolve=>setTimeout(resolve,200));
       if(shot)await fs.writeFile(shot.replace(/\.png$/,'-dialog.png'),(await mainWindow.webContents.capturePage()).toPNG());
     }
     const report = await mainWindow.webContents.executeJavaScript(`(async () => {
@@ -905,7 +810,7 @@ async function runSmoke() {
       const restored=await (${JSON.stringify(argument('recover-latest') === 'true')}?smoke.restoreRecovery():smoke.openProject());
       if(!restored)throw new Error(document.getElementById('statusText').textContent);
       const before={recoveryNotice:restored.recoveryNotice,cells:smoke.state.mesh.cells.length,geometryPath:smoke.state.geometryPath,
-        flowTime:smoke.state.flow?.summary.acceptedTime,thermalTime:smoke.state.thermal?.summary.time,thermalHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0]?.time,lastTime:smoke.state.thermalHistory.at(-1)?.time},
+        flowTime:smoke.state.flow?.summary.acceptedTime,flowHistory:{rows:smoke.state.flowHistory.length,firstTime:smoke.state.flowHistory[0]?.time,lastTime:smoke.state.flowHistory.at(-1)?.time},thermalTime:smoke.state.thermal?.summary.time,thermalHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0]?.time,lastTime:smoke.state.thermalHistory.at(-1)?.time},
         flowRestart:smoke.state.flowRestart?.time,thermalRestart:smoke.state.thermalRestart?.time,
         controls:smoke.projectControls(),fields:smoke.state.thermal?.fields || smoke.state.flow?.fields};
       const kind=${JSON.stringify(argument('project-resume'))};
@@ -920,7 +825,7 @@ async function runSmoke() {
         const time=kind==='thermal'?smoke.state.thermal?.summary.time:smoke.state.flow?.summary.acceptedTime;
         if(!(time>oldTime))throw new Error('Project resume did not advance physical time');
       }
-      return {projectOpened:true,before,after:{flowTime:smoke.state.flow?.summary.acceptedTime,
+      return {projectOpened:true,before,after:{flowTime:smoke.state.flow?.summary.acceptedTime,flowRestart:smoke.state.flowRestart?.time,flowSummary:smoke.state.flow?.summary,flowFiles:smoke.state.flow?.files,flowHistory:{rows:smoke.state.flowHistory.length,firstTime:smoke.state.flowHistory[0]?.time,lastTime:smoke.state.flowHistory.at(-1)?.time},
         thermalTime:smoke.state.thermal?.summary.time,thermalRestart:smoke.state.thermalRestart?.time,
         thermalSummary:smoke.state.thermal?.summary,thermalFiles:smoke.state.thermal?.files,thermalHistory:{rows:smoke.state.thermalHistory.length,firstTime:smoke.state.thermalHistory[0]?.time,lastTime:smoke.state.thermalHistory.at(-1)?.time},
         controls:smoke.projectControls()},status:document.getElementById('statusTitle').textContent,
@@ -939,6 +844,14 @@ async function runSmoke() {
         document.querySelector('.results').scrollTop=document.querySelector('.results').scrollHeight;
         return {rows:document.querySelectorAll('.thermal-event-row').length,
           locked:[...editor.querySelectorAll('input,select,button')].every(input=>input.disabled)};
+      })()`);
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
+    if(argument('project-resume')==='flow' || argument('flow-history')==='true') {
+      mainWindow.setSize(1320,900);
+      await mainWindow.webContents.executeJavaScript(`(() => {
+        document.getElementById('flowResult').scrollIntoView({block:'start'});
+        document.querySelector('.results').scrollTop=document.querySelector('.results').scrollHeight;
       })()`);
       await new Promise(resolve=>setTimeout(resolve,200));
     }
@@ -1128,6 +1041,13 @@ async function runSmoke() {
         smoke.state.restartImportSmoke={flowStart:smoke.state.flowRestart.time};
       }
       await smoke.runFlow();
+      if(${JSON.stringify(argument('flow-crash-after')!==null || argument('flow-close-after')!==null)}) {
+        document.getElementById('flowResume').checked=true;
+        document.getElementById('flowResume').dispatchEvent(new Event('change'));
+        if(document.getElementById('flowMode').value==='adaptive')document.getElementById('flowEndTime').value='100';
+        else document.getElementById('flowSteps').value='100000';
+        await smoke.runFlow();throw new Error('Expected dedicated crash session to exit');
+      }
       if(smoke.state.restartImportSmoke?.flowStart!==undefined) {
         const expected=smoke.state.restartImportSmoke.flowStart+Number(document.getElementById('flowDt').value)*Number(document.getElementById('flowSteps').value);
         if(!smoke.state.flow || Math.abs(smoke.state.flow.summary.acceptedTime-expected)>1e-10)
@@ -1176,9 +1096,9 @@ async function runSmoke() {
         document.getElementById('flowMaxRetries').value='10';
         document.getElementById('flowEndTime').value=String(target+100);
         const pending=smoke.runFlow(),deadline=Date.now()+90000;
-        while(smoke.state.busy && !smoke.state.flowHistory.length && Date.now()<deadline)
+        while(smoke.state.busy && !(smoke.state.flowHistory.at(-1)?.time>target) && Date.now()<deadline)
           await new Promise(resolve=>setTimeout(resolve,25));
-        if(!smoke.state.busy || !smoke.state.flowHistory.length) throw new Error('Adaptive cancellation had no accepted live step');
+        if(!smoke.state.busy || !(smoke.state.flowHistory.at(-1)?.time>target)) throw new Error('Adaptive cancellation had no accepted live step');
         document.getElementById('cancel').click();await pending;
         const saved=smoke.state.flowRestart?.time;
         if(!(saved>target) || smoke.state.flow?.summary.acceptedTime!==completed.summary.acceptedTime)
@@ -1220,9 +1140,9 @@ async function runSmoke() {
         document.getElementById('flowSteps').value='10000';
         const pendingFlow=smoke.runFlow();
         const deadline=Date.now()+90000;
-        while (smoke.state.busy && !smoke.state.flowHistory.length && Date.now()<deadline)
+        while (smoke.state.busy && !(smoke.state.flowHistory.at(-1)?.time>completed.summary.acceptedTime) && Date.now()<deadline)
           await new Promise(resolve=>setTimeout(resolve,50));
-        if (!smoke.state.busy || !smoke.state.flowHistory.length) throw new Error('Could not observe live accepted step for cancellation');
+        if (!smoke.state.busy || !(smoke.state.flowHistory.at(-1)?.time>completed.summary.acceptedTime)) throw new Error('Could not observe live accepted step for cancellation');
         document.getElementById('cancel').click();
         await pendingFlow;
         if (!smoke.state.flowRestart || smoke.state.flowRestart.time<=completed.summary.acceptedTime
@@ -1487,6 +1407,8 @@ async function runSmoke() {
         displayMode: document.getElementById('displayMode').value,
         resultText: document.getElementById('flowResult').innerText,
         historyRows: smoke.state.flow.history?.length || 0,
+        continuousHistory:smoke.state.flowHistoryInfo,
+        files:smoke.state.flow.files,
         monitorVisible: !document.getElementById('flowTimeline').hidden,
         restart: smoke.state.flowRestart,
         cancellationChecked: ${JSON.stringify(argument('flow-cancel-check') === 'true')},

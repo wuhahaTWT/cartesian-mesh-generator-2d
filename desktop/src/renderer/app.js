@@ -15,6 +15,7 @@ const state = {
   flowRestart: null,
   flowBoundaryDefinition: null,
   flowHistory: [],
+  flowHistoryInfo: null,
   euler: null,
   eulerRestart: null,
   eulerHistory: [],
@@ -107,7 +108,7 @@ function validFlowInputs() {
 }
 function clearFlowBinding({ hidePanel = false } = {}) {
   state.flow = null;
-  state.flowHistory=[];
+  state.flowHistory=[];state.flowHistoryInfo=null;
   $('flowTimeline').hidden=true;
   if (hidePanel) {state.flowRestart=null;state.flowBoundaryDefinition=null;view.setBoundaryHighlight([]);renderFlowBoundaries();updateFlowMode();
     $('flowCaseFileInfo').textContent='保存从零起算的流动设置，读取前须生成同一最终网格；续算请使用重启文件。温度设置单独配置。';}
@@ -892,6 +893,7 @@ async function openProject(recoveryId=null) {
       applyRestartControls();
     }
     if (payload.flow) bindFlow(payload.flow);
+    if(payload.flowTimeline)setFlowTimeline(payload.flowTimeline);
     if (payload.euler) bindEuler(payload.euler);
     if (payload.thermal) bindThermal(payload.thermal);
     if(payload.thermalTimeline)setThermalTimeline(payload.thermalTimeline);
@@ -916,8 +918,8 @@ function updateRecoveryChoice() {
   const entry=recoveryChoices.find(item=>item.id===$('recoveryChoice').value);
   $('restoreRecovery').disabled=!entry || entry.active;
   $('recoveryDetail').textContent=!entry?'没有保留的会话。':entry.error?entry.error:
-    `${entry.label} · ${entry.updatedAt}${entry.thermalTime!==null?' · 保存时 t='+entry.thermalTime+' s':''}\n`+
-    (entry.active?'会话或原生程序仍在运行，结束后再恢复。':entry.interrupted?'存在中断的温度运行，将核对最新原生接受状态。':'可恢复已保存的网格、结果与续算状态。');
+    `${entry.label} · ${entry.updatedAt}${(entry.kind==='flow'?entry.flowTime:entry.thermalTime)!=null?' · 保存时 t='+(entry.kind==='flow'?entry.flowTime:entry.thermalTime)+' s':''}\n`+
+    (entry.active?'会话或原生程序仍在运行，结束后再恢复。':entry.interrupted?`存在中断的${entry.kind==='flow'?'流动':'温度'}运行，将核对最新原生接受状态。`:'可恢复已保存的网格、结果与续算状态。');
 }
 async function showRecovery() {
   if(state.busy)return;
@@ -1203,7 +1205,7 @@ function renderFlowMonitor() {
   const data=rows.filter(row => Number.isFinite(row[metric]));
   if (!data.length) return;
   const stride=Math.max(1,Math.ceil(data.length/700));
-  const sampled=data.filter((_r,i)=>i%stride===0);
+  const sampled=data.filter((r,i)=>i%stride===0 || r.breakBefore || data[i+1]?.breakBefore);
   if (sampled.at(-1)!==data.at(-1)) sampled.push(data.at(-1));
   const t0=data[0].time,t1=data.at(-1).time;
   let lo=Infinity,hi=-Infinity;
@@ -1212,12 +1214,17 @@ function renderFlowMonitor() {
   const x=t=>94+592*(t-t0)/(t1-t0||1),y=v=>100-82*(v-lo)/(hi-lo);
   const add=(tag,attrs,text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attrs))el.setAttribute(key,String(value));if(text!==undefined)el.textContent=text;svg.appendChild(el);};
   add('path',{d:'M94 12 V100 H690',fill:'none',stroke:'currentColor',opacity:.3});
-  add('path',{d:sampled.map((r,i)=>`${i?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
+  add('path',{d:sampled.map((r,i)=>`${i&&!r.breakBefore?'L':'M'}${x(r.time)},${y(r[metric])}`).join(' '),fill:'none',stroke:'currentColor','stroke-width':1.8});
   const last=sampled.at(-1);add('circle',{cx:x(last.time),cy:y(last[metric]),r:2.5,fill:'currentColor'});
   const digits=Math.min(12,Math.max(3,2+Math.ceil(Math.log10(Math.max(Math.abs(lo),Math.abs(hi))/(hi-lo)||1))));
   for(const [tx,ty,label]of [[90,20,hi.toPrecision(digits)],[90,101,lo.toPrecision(digits)],[135,122,`${t0.toPrecision(4)} s`],[675,122,`${t1.toPrecision(4)} s`]])
     add('text',{x:tx,y:ty,fill:'currentColor','text-anchor':'end','font-size':11},label);
-  $('flowMonitorCaption').textContent=`已接受时间步 · 最新 ${last[metric].toPrecision(Math.max(5,digits))} · 曲线按需抽样显示，导出 CSV 保留本次全部步数。`;
+  const info=state.flowHistoryInfo,fieldTime=state.flow?.summary.acceptedTime;
+  const field=fieldTime!==undefined&&fieldTime!==t1?` · 场图 t=${fieldTime.toPrecision(6)} s`:'';
+  const gaps=info?.gaps?.length?` · ${info.gaps.length} 处历史缺失，曲线断开`:'';
+  const tail=info?.uncommittedSamples?` · ${info.uncommittedSamples} 条未绑定检查点的末尾记录未纳入曲线`:'';
+  const start=info?.startTime>0?` · 已保存区间从 ${info.startTime.toPrecision(5)} s 开始`:'';
+  $('flowMonitorCaption').textContent=`连续接受历史 · ${info?.availableSteps ?? rows.length} 步 · 最新 t=${t1.toPrecision(6)} s${field}${gaps}${tail}${start} · 项目保留各段全部 CSV。`;
 }
 function renderThermalMonitor() {
   const rows = state.thermalHistory || [];
@@ -1405,8 +1412,17 @@ async function runThermal() {
   } finally { setBusy(false); applyThermalRestartControls(); }
 }
 
+function boundedFlowHistory(rows) {
+  const accepted=rows.filter(row=>row.accepted!==0);
+  const stride=Math.max(1,Math.ceil(accepted.length/1400));
+  return accepted.filter((row,i)=>i%stride===0 || i===accepted.length-1 || row.breakBefore || accepted[i+1]?.breakBefore);
+}
+function setFlowTimeline(timeline) {
+  state.flowHistory=boundedFlowHistory(timeline.rows);
+  const {rows,...info}=timeline;state.flowHistoryInfo=info;renderFlowMonitor();
+}
 function bindFlow(payload) {
-  state.flow=payload; state.flowHistory=payload.history || [];
+  state.flow=payload; state.flowHistory=boundedFlowHistory(payload.history || []);
   view.setFlowFields(payload.fields.cells);
   $('flowSpeedOption').hidden=false; $('flowPressureOption').hidden=false;
   $('displayMode').value='speed';view.mode='speed';view.draw();
@@ -1416,6 +1432,7 @@ async function refreshFlowState(restoreResult=false) {
   const saved=await window.cartmesh.flowState();
   state.flowRestart=saved.restart;
   if (restoreResult && saved.flow) bindFlow(saved.flow);
+  if(saved.timeline)setFlowTimeline(saved.timeline);
   updateFlowMode();
   return saved;
 }
@@ -1593,7 +1610,11 @@ window.cartmesh.onEulerProgress(progress=>{
 async function runFlow() {
   if (state.busy || !state.result || !state.mesh || !validFlowInputs()) return;
   const request=flowRequest(),transient=request.mode!=='steady';
-  clearFlowBinding();setBusy(true);$('runFlow').textContent='正在求解…';
+  const history=request.resume?state.flowHistory:[],info=request.resume?state.flowHistoryInfo:null;
+  const start=request.resume?state.flowRestart.time:0;
+  clearFlowBinding();state.flowHistory=history;
+  state.flowHistoryInfo={...(info||{availableSteps:0,segments:0,gaps:[],startTime:start}),liveStartTime:start,liveStarted:false};
+  renderFlowMonitor();setBusy(true);$('runFlow').textContent='正在求解…';
   status('层流求解中',transient?'按物理时间推进；取消后可从最后接受的时间步继续。':'SIMPLE 速度—压力耦合；可随时取消。');
   try {
     const payload=await window.cartmesh.runFlow(request);
@@ -1777,8 +1798,13 @@ window.cartmesh.onFlowProgress(progress => {
     status('当前试算未接受',message);log(message);return;
   }
   if (progress.type==='flow-time-step') {
+    const info=state.flowHistoryInfo;
+    if(info) {
+      if(!info.liveStarted && state.flowHistory.at(-1)?.time<info.liveStartTime)progress={...progress,breakBefore:true};
+      info.liveStarted=true;info.availableSteps++;info.endTime=progress.time;
+    }
     state.flowHistory.push(progress);
-    if (state.flowHistory.length>1400) state.flowHistory=state.flowHistory.filter((_r,i)=>i%2===0 || i===state.flowHistory.length-1);
+    if (state.flowHistory.length>1400) state.flowHistory=boundedFlowHistory(state.flowHistory);
     renderFlowMonitor();
     status('非定常计算中',`已接受第 ${progress.step} 步 · t=${progress.time.toPrecision(6)} s · 最大 CFL ${progress.maxCourant.toPrecision(4)}`);
     return;

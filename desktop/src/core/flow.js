@@ -243,7 +243,9 @@ function flowOutputSuffixes(request) {
     ...(request?.case === 'custom' ? ['.boundaries'] : [])];
 }
 
-function validateTimeHistory(text, summary, startTime = 0) {
+function parseTimeHistory(text, summary, startTime = 0, partial = false) {
+  if(partial && !text.endsWith('\n'))text=text.slice(0,text.lastIndexOf('\n')+1);
+  if(partial && !text.trim())return [];
   const lines = text.trim().split(/\r?\n/);
   const keys = ['step', 'time', 'dt', 'accepted', 'innerIterations', 'momentumResidual', 'continuity', 'maxCourant', 'kineticEnergy', 'forceX', 'forceY'];
   if (lines.shift() !== keys.join(',')) throw new Error('时间历史表头无效。');
@@ -265,6 +267,23 @@ function validateTimeHistory(text, summary, startTime = 0) {
     lastTime = row.time;
     return row;
   });
+  return rows;
+}
+function readFlowHistory(text, input, startTime, endTime, {partial=false}={}) {
+  const request=validateFlowRequest(input);
+  const all=parseTimeHistory(text,{dt:request.dt,tolerance:request.tolerance,
+    timeStepControl:request.mode==='adaptive'?'adaptive-cfl-retry':undefined},startTime,partial);
+  if(all.some(row=>row.dt>request.dt*(1+1e-9)))throw new Error('时间历史超出最大步长。');
+  const rows=all.filter(row=>row.accepted && row.time<=endTime);
+  // Older CLIs flushed history just before the checkpoint. Preserve any such
+  // tail on disk, but never treat it as recoverable state beyond that checkpoint.
+  const uncommittedSamples=all.filter(row=>row.accepted && row.time>endTime).length;
+  if(!partial && (rows.length!==all.length || rows.at(-1)?.time!==endTime))
+    throw new Error('时间历史未到已接受终点或包含未接受步骤。');
+  return {rows,uncommittedSamples};
+}
+function validateTimeHistory(text, summary, startTime = 0) {
+  const rows=parseTimeHistory(text,summary,startTime);
   const last = rows.at(-1);
   if (!last || rows.filter(r => r.accepted).length !== summary.completedSteps
       || rows.length !== summary.completedSteps + (summary.converged ? 0 : 1)
@@ -480,19 +499,11 @@ function validateFlowOutput(summary, fields, expectedCells, expectedRequest = nu
   return { summary: normalizedSummary, fields: { ...fields, cells: normalizedCells } };
 }
 
-async function commitFlowFiles(fileSystem, entries) {
-  try {
-    for (const entry of entries) await fileSystem.copyFile(entry.source, entry.destination);
-  } catch (error) {
-    await Promise.allSettled(entries.map(entry => fileSystem.rm(entry.destination, { force: true })));
-    throw error;
-  }
-}
 
 module.exports = {
   FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, LEGACY_PRESSURE_PRECONDITIONER, FLOW_OUTPUT_SUFFIXES,
   LEGACY_PRESSURE_DISCRETIZATION, PRESSURE_DISCRETIZATION,
   VISCOUS_STRESS, LEGACY_VISCOUS_STRESS, FORCE_DEFINITION,
-  buildFlowInvocation, commitFlowFiles, parseFlowProgress, validateFlowOutput, validateFlowRequest,
-  flowOutputSuffixes, validateTimeHistory, validateAttemptHistory
+  buildFlowInvocation, parseFlowProgress, validateFlowOutput, validateFlowRequest,
+  flowOutputSuffixes, validateTimeHistory, readFlowHistory, validateAttemptHistory
 };

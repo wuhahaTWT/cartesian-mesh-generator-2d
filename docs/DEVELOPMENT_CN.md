@@ -65,11 +65,25 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 `core/thermal-history.js` 沿 `thermalRestart.history` 的真实运行区间读取原生接受 CSV，检查非重叠时钟和检查点终点；检查点 SHA256 绑定选入状态。`core/thermal.js` 共用接受步读取规则：完整段须达到其完整结果终点，失败/中断段可缺末尾未刷出的行，但已完整写出的坏行仍拒绝。缺少采样的区间返回显式 gaps，renderer 不跨缺口连线；旧项目只从与选中检查点路径相同的完整段建立历史。表格/场图仍来自各自完整结果，聚合历史不覆盖场的物理时钟。
 
-`core/recovery.js` 在应用数据目录 `recovery/session-*` 保留原项目清单与独立恢复记录。温度作业启动前保存已关闭文件的 SHA256 清单，再登记新运行目录；`core/process.js` 的 onSpawn 写入原生进程 PID。恢复时确认原 App/子进程已结束，复制工作目录后验证基线项目。对中断的新检查点，`checkThermalRestart` 调用 `cartmesh2d_transport_cli --check-restart on`，由既有原生完整读取器验证网格、边界、物性、方法和完整时间事件；之后才发布更新时钟和历史。取消、原生核对失败均不发布未经验证的新状态，源会话不改动。该只读选项需要原正常物理输入及 `--restart`；允许目标时间等于检查点时间，不产生输出文件。
+`core/recovery.js` 在应用数据目录 `recovery/session-*` 保留原项目清单与独立恢复记录。温度作业启动前保存已关闭文件的 SHA256 清单，再登记新运行目录；`core/process.js` 的 onSpawn 写入原生进程 PID。恢复时确认没有其他存活的源 App 或原生子进程，再由当前 App 排他复制工作目录并验证基线项目。对中断的新检查点，`checkThermalRestart` 调用 `cartmesh2d_transport_cli --check-restart on`，由既有原生完整读取器验证网格、边界、物性、方法和完整时间事件；之后才发布更新时钟和历史。取消、原生核对失败均不发布未经验证的新状态，源会话不改动。该只读选项需要原正常物理输入及 `--restart`；允许目标时间等于检查点时间，不产生输出文件。
 
 真实 App 强制退出验收使用独立恢复目录：在温度事件 smoke 参数后加 `--recovery-root=/绝对路径/store --thermal-crash-after=.7`。先完成 .5 s，再续算并在接收达到 .7 s 的接受进度时 SIGKILL **本次测试 App 自身**；原生程序可能多接受一步，以落盘检查点为准。用新进程 `--smoke=rectangle --recover-latest=true --recovery-root=/绝对路径/store --project-resume=thermal --project-dt=.025 --project-end-time=1.4 --thermal-events=true --out=/绝对路径/recovered --shot=/绝对路径/recovered.png --export=/绝对路径/recovered.zip`，通过真实恢复对话框、renderer、IPC 和原生程序继续。`--recover-latest` 与强制终止开关仅在 smoke 分支生效；正常 App 由用户选择“恢复会话”。
 
-历史/项目/进程存活/取消回归分别在 `desktop/tests/thermal-history.test.js`、`project.test.js`、`recovery.test.js`；只读原生核对与截断文件回归在 `tests/thermal_control_cli_test.py`。实际逐字节续算对照脚本、调用参数和源文件索引在 `outputs/thermal-recovery/`，旧的预算失败连续历史证据在 `outputs/thermal-history/`。当前中断登记只覆盖温度联算；独立流动、断电持久性和多平台另按当前状态维护。
+历史/项目/进程存活/取消回归分别在 `desktop/tests/thermal-history.test.js`、`project.test.js`、`recovery.test.js`；只读原生核对与截断文件回归在 `tests/thermal_control_cli_test.py`。实际逐字节续算对照脚本、调用参数和源文件索引在 `outputs/thermal-recovery/`，旧的预算失败连续历史证据在 `outputs/thermal-history/`。独立流动使用下节相同的会话机制；断电持久性和多平台范围见当前状态。
+
+### 独立流动连续历史与恢复
+
+`core/flow-job.js` 保留每次运行的 `flow-run-*/flow.*`，只有完整读取并通过既有结果检查后才替换显示绑定；失败/取消只更新真正有新增接受步的 `flowRestart`。不再把文件复制覆盖到固定 `.flow.*` 路径。选入状态使用 SHA256 绑定；`core/flow-history.js` 聚合其 `history` 区间，复用 `core/flow.js` 的原生 CSV 规则，拒绝完整坏行、重叠时钟及不匹配终点，未写全的末尾显示缺口。旧项目仅使用能证明与选中检查点同源的历史；旧 CLI 先写历史后写检查点形成的超前尾部留在磁盘并计数，不接入接受曲线。
+
+流动 CLI 在每步接受后先原子保存检查点，再刷新接受历史，避免可见历史领先已保存状态。`--check-restart on` 需要 `--restart` 及原物理参数，由 `readFlowCheckpoint2D` 完整核对几何、物性、边界及场，返回 `cartmesh2d-flow-restart-check-v1`；不推进时钟、不创建原生输出目录或写边界快照。自适应目标可等于检查点时刻。该入口与截断拒绝在 `tests/transient_flow_cli_test.py` 回归。
+
+`RecoveryStore.beginFlow` 在运行前保存请求/目录，原生 PID 与温度联算相同登记。恢复副本上的 `checkFlowRestart` 对命名边界写出原请求，再调用只读原生核对，全部通过后才发布新状态和历史。流动与温度状态共存时保持各自历史，按最近运行类别恢复续算控件。窗口关闭会取消当前操作，renderer 销毁后停止向它发送进度，并用保存的 UI 快照记录关闭状态。同进程闲置会话允许恢复，当前操作排他锁及其他存活 App/子进程仍阻止并发写入。
+
+真实 App 固定步验收使用 `--smoke=rectangle --target-cells=1000 --flow=channel --flow-dt=.02 --flow-steps=2 --flow-resume-steps=2 --flow-max-iterations=1500 --flow-nu=.1 --flow-speed=.2 --flow-convection=limited-linear --flow-failure-check=true --flow-cancel-check=true --flow-require-converged=true`，另指定 `--out`、`--shot`、`--export` 绝对路径。ZIP 新进程重开使用前述 `--project-resume=flow` 入口。
+
+强制退出或关窗验收使用独立 `--recovery-root=/绝对路径/store`，同一 1300 格配置改为 `--flow=custom --flow-end-time=.04 --flow-crash-after=.07`；正常关窗改为 `--flow-close-after=.07`。先完成 .04 s，再运行长续算，于阈值后强制终止**本次测试 App 自身**或关闭其窗口；最终接受时刻取实际文件。新进程使用 `--smoke=rectangle --recover-latest=true --recovery-root=/绝对路径/store --project-resume=flow --project-dt=.01 --project-end-time=.16 --out=/绝对路径/recovered --shot=/绝对路径/recovered.png --export=/绝对路径/recovered.zip`。所有注入仅在 smoke 下生效，正常恢复通过顶部按钮。
+
+核心回归在 `desktop/tests/flow-job.test.js`、`flow-history.test.js`、`project.test.js` 和 `recovery.test.js`；实际 App/CLI 逐字节对照脚本、参数、源场与文件哈希在 `outputs/flow-history/`。对照复用实际恢复后的输入和控制，不将分段终点改变产生的新时间网格声称为同轨迹。
 
 ### 桌面热时间事件
 

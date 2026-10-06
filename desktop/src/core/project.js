@@ -14,6 +14,7 @@ const { validateFlowOutput, validateTimeHistory, validateAttemptHistory } = requ
 const { thermalCheckpointTime, validateThermalRequest, validateThermalOutput } = require('./thermal');
 const { validateEulerOutput } = require('./euler');
 const {checkpointDigest,readThermalTimeline}=require('./thermal-history');
+const {readFlowTimeline}=require('./flow-history');
 const { readCheckpoint: readEulerCheckpoint } = require('./euler-job');
 
 const MANIFEST = 'cartmesh2d-project.json';
@@ -184,7 +185,9 @@ async function readProject(root, signal) {
   if (state.flowRestart) {
     const saved = state.flowRestart, metadata = await readAcceptedCheckpointMetadata(checked(saved.path));
     if (metadata.time !== saved.metadata.time) fail('流动检查点时钟与保存记录不同。');
-    state.flowRestart = { path: saved.path, metadata };
+    if(saved.sha256 && saved.sha256!==checkpointDigest(await text(saved.path)))fail('流动状态与保存历史的身份不同。');
+    state.flowRestart = {...saved,metadata};
+    await readFlowTimeline(state,text);
   }
   if (state.thermalRestart) {
     const saved = state.thermalRestart, request = validateThermalRequest(saved.metadata.request);

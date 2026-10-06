@@ -1,0 +1,410 @@
+{
+  "format": "cartmesh2d-flow-history-recovery-evidence-v1",
+  "date": "2026-10-07",
+  "branch": "codex/transient-thermal-workflow",
+  "baseCommit": "2f0bf72d5effa87e123c98205767acea416a9e7d",
+  "scope": "Immutable standalone incompressible flow runs, continuous accepted history and native-validated session recovery, including custom boundaries; workflow/state evidence, not new physical qualification.",
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "macOS": "27.0.1",
+    "compiler": "/usr/bin/clang++",
+    "electron": "37.10.3"
+  },
+  "sourceSha256": {
+    "apps/cartmesh2d_flow_cli.cpp": "4426f7f4567e92b809a4fa376b5d87f7c33807bcfd1592008fb29f974273d39b",
+    "tests/transient_flow_cli_test.py": "244595ce5786727a502ccd2f14eeb7a43bf254c78dbe53c384fa350c40e9d72f",
+    "desktop/src/main.js": "bd8da8fd216338cd793a54bd54adb7ed21ed85a764c94f28bca41c12488dbbb1",
+    "desktop/src/renderer/app.js": "228ccad91b2966de0e0c574b94b307899a6872ec514ec62910b24bb8d5993b28",
+    "desktop/src/core/flow.js": "51813f3911548b7affef3ef4f42845e6fad4614ff29524deab640c4150223693",
+    "desktop/src/core/flow-job.js": "084a4713adb924c3ba2e277899a7762e9a9170fbab4647bafd3f5987258dab8e",
+    "desktop/src/core/flow-history.js": "cd47656cbaea031171a996d51c0fb28fab0eebaeade2c4c5389229606929f3a8",
+    "desktop/src/core/flow-checkpoint.js": "febbf15a5e8f278d39634d01200b56f19c054058f6c967c6440e2105880f2974",
+    "desktop/src/core/flow-boundaries.js": "047227556d493727b8c0bf1718df2307387dd88bf70329935d2a4c43bed6f78a",
+    "desktop/src/core/recovery.js": "e83200e1763002b77e0fbddcbaf697ad8220216a3bab12afa657188bd3863b37",
+    "desktop/src/core/project.js": "1727549fac80c56914b8a453cbb494c974f65bb870c1c006da2e13a6f898a398",
+    "desktop/src/core/export-guide.js": "77fc5cc85df68f5bc6354a62d75ae12455b63810552d0dd1113f41ced383ba6b",
+    "desktop/src/core/process.js": "3e352df99ffc695396478cfb326cf763456deb28268a9c10a369507962a1675a",
+    "desktop/tests/flow.test.js": "52e710bff6f930107e2315a1824d346f3eaf942572d6c24a5ddd37881deff61a",
+    "desktop/tests/flow-job.test.js": "07cf32836819fff03f5c3e44ba6abde97977c51a74db1c522d8eb3f0fa964838",
+    "desktop/tests/flow-history.test.js": "aa48581051ce5c0bc8a4b18b02baebaf724db86c8712fc9a3e3ae8103ea6171e",
+    "desktop/tests/project.test.js": "860d339d6c3627d3bdca2fdd1efddc1157b1c7423f6fe864bf21dbd2d1cb4507",
+    "desktop/tests/recovery.test.js": "ad93216fabfff1784fe5d301bd8db4648aeafef13afff4e78b495770c21ffef5",
+    "CMakeLists.txt": "ca793f2ef9f766c77ad2e56e3061d89b69665449170f4bb3d2ea603df4688984",
+    "src/fv/Incompressible2D.cpp": "4d0f573df7fe232fc1596ad91911c9b1556203860482caddb07fdc78b9d0ccfc",
+    "include/cartmesh2d/fv/Incompressible2D.hpp": "26dc69ee421a6361d1071a21ce7ebd4eab7d4340cb24bb673ccf38d9c0f060f2",
+    "src/fv/FlowBoundaryIO2D.cpp": "42283949d9c795702560a6c754695530bebc346bcc7e911cff20cbceecd5f4de",
+    "include/cartmesh2d/fv/FlowCheckpoint2D.hpp": "ef14aa217350081192019c5fc52366981c28d2f8d67280994f7ddd98c6b244ad"
+  },
+  "baselineNote": "Native build includes inherited uncommitted common cleanup and incompressible changes. Actual tested source hashes are recorded; unrelated changes are excluded from this increment.",
+  "runtimeSha256": "505d12487a73fa3134cd16771a52d0de2efde3f6849e51ac9ff6efac51eac617",
+  "buildRuntimeIdentical": true,
+  "fixedStep": {
+    "cells": 1300,
+    "firstAndResumeTimes": [
+      0.04,
+      0.08
+    ],
+    "failedBudgetRetained": true,
+    "cancellationRetained": true,
+    "cancelledAcceptedTime": 0.1,
+    "completeFieldWhileCancelled": 0.08,
+    "beforeZip": {
+      "segments": 4,
+      "availableSteps": 7,
+      "gaps": [],
+      "uncommittedSamples": 0,
+      "startTime": 0,
+      "endTime": 0.14
+    },
+    "afterZipReopen": {
+      "flowTime": 0.16000000000000003,
+      "flowRestart": 0.16000000000000003,
+      "flowHistory": {
+        "rows": 9,
+        "firstTime": 0.02,
+        "lastTime": 0.16000000000000003
+      }
+    },
+    "project": "outputs/flow-history/fixed.zip",
+    "reopenedProject": "outputs/flow-history/reopened.zip"
+  },
+  "crashRecovery": {
+    "marker": {
+      "pid": 77339,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/flow-history/crash/mesh-AHOLnK",
+      "displayedTime": 0.04,
+      "observedTime": 0.08,
+      "recoverySession": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/flow-history/crash-store/session-CgyxlF"
+    },
+    "before": {
+      "recoveryNotice": "中断运行已找回 t=0.08 s 的原生接受状态；场图保留上次完整结果。",
+      "cells": 1300,
+      "flowTime": 0.04,
+      "flowRestart": 0.08,
+      "flowHistory": {
+        "rows": 4,
+        "firstTime": 0.02,
+        "lastTime": 0.08
+      }
+    },
+    "after": {
+      "flowTime": 0.16,
+      "flowRestart": 0.16,
+      "flowHistory": {
+        "rows": 12,
+        "firstTime": 0.02,
+        "lastTime": 0.16
+      }
+    },
+    "project": "outputs/flow-history/restored.zip"
+  },
+  "normalWindowClose": {
+    "marker": {
+      "pid": 78186,
+      "outputDirectory": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/flow-history/closed-final/mesh-JC9r5Y",
+      "displayedTime": 0.04,
+      "observedTime": 0.08,
+      "recoverySession": "/Users/Zhuanz/.codex/worktrees/transient-thermal-workflow/cartesian-mesh-generator-2d/outputs/flow-history/close-store/session-P9Stp4"
+    },
+    "windowDestroyed": true,
+    "runClosed": true,
+    "savedFieldTime": 0.04,
+    "savedRestartTime": 0.08,
+    "savedHistory": {
+      "segments": 2,
+      "availableSteps": 4,
+      "gaps": [],
+      "uncommittedSamples": 0,
+      "startTime": 0,
+      "endTime": 0.08
+    },
+    "before": {
+      "recoveryNotice": "已从保留的会话恢复项目，源会话文件未改动。",
+      "cells": 1300,
+      "flowTime": 0.04,
+      "flowRestart": 0.08,
+      "flowHistory": {
+        "rows": 4,
+        "firstTime": 0.02,
+        "lastTime": 0.08
+      }
+    },
+    "after": {
+      "flowTime": 0.16,
+      "flowRestart": 0.16,
+      "flowHistory": {
+        "rows": 12,
+        "firstTime": 0.02,
+        "lastTime": 0.16
+      }
+    },
+    "project": "outputs/flow-history/closed-restored.zip"
+  },
+  "directCliComparisons": [
+    {
+      "label": "fixed",
+      "cells": 1300,
+      "case": "channel",
+      "mode": "transient",
+      "displayedTimeBefore": 0.14,
+      "recoveredTime": 0.14,
+      "finalTime": 0.16000000000000003,
+      "maximumStep": 0.01,
+      "sourceCheckpointUnchanged": true,
+      "oldDisplayUnchanged": true,
+      "oldFieldSha256": "ee314851c46780eb705743ed97e382fb1a9412ce3f6aa0c030860c257d923940",
+      "inputSha256": "ce1f79007aa6a23c9afe17c531d443c89a7b0b5cf6e6f0a886322db892b8eb18",
+      "history": {
+        "segments": 5,
+        "availableSteps": 9,
+        "gaps": [],
+        "uncommittedSamples": 0,
+        "startTime": 0,
+        "endTime": 0.16000000000000003
+      },
+      "files": [
+        {
+          "suffix": ".fields.json",
+          "bytes": 152087,
+          "sha256": "5e3857ea5db4163ec95b6c668af0a43958471fb3c4beb486c4c83d041703139b",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 282414,
+          "sha256": "8d8c4936b18261514f92c00c690e03abef6c3e062bcf62faf486bdced949196d",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 408651,
+          "sha256": "709748b77e365745d5da41eccdd1953f415583563fc9e428729d8bd8ec6c0e48",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".checkpoint",
+          "bytes": 437446,
+          "sha256": "c730f7f702f50531fdb27b856fe50f6775f13e4471e525345c689ae532901863",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".time-history.csv",
+          "bytes": 431,
+          "sha256": "6dc6f61eb3078a6182ff8a254d3865ae8b5e6cdbf7e2e5b92eb155d97e86a291",
+          "byteEqual": true
+        }
+      ]
+    },
+    {
+      "label": "crash",
+      "cells": 1300,
+      "case": "custom",
+      "mode": "adaptive",
+      "displayedTimeBefore": 0.04,
+      "recoveredTime": 0.08,
+      "finalTime": 0.16,
+      "maximumStep": 0.01,
+      "sourceCheckpointUnchanged": true,
+      "oldDisplayUnchanged": true,
+      "oldFieldSha256": "b8e210f9694d8f1acbad73568d78deab5b5628052cc767721715b10105845468",
+      "inputSha256": "901e9761926957bcf2ec8bc4eff5c034f0a490df2d44d5848fe31dfa9be42616",
+      "history": {
+        "segments": 3,
+        "availableSteps": 12,
+        "gaps": [],
+        "uncommittedSamples": 0,
+        "startTime": 0,
+        "endTime": 0.16
+      },
+      "files": [
+        {
+          "suffix": ".fields.json",
+          "bytes": 151225,
+          "sha256": "cba7bdddd0045958ac2cd287b96030e656250886512311f58b3ed7cff68aea28",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 281009,
+          "sha256": "e631b3861a58814a19b956da20369141f2aa5912a7db95bb7f7f672201a9ddc0",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 407244,
+          "sha256": "382e9e8b8fa0b43f02a837bb12d9f2512afecbe2b08d18acb5dcdb943c7f71ec",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".checkpoint",
+          "bytes": 446602,
+          "sha256": "c1c18b6be53049ae888ed3d19e15caf106d6e82e026f96862659b9515f173eb1",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".time-history.csv",
+          "bytes": 1403,
+          "sha256": "053819080cb495937843d3be51408169f8c1b084f77b6fddde9bae40cf3dd64b",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "bytes": 1565,
+          "sha256": "60c8bacfea44109452c24e6e96c42345efd4f07a360cfc6b4a83b57df7a88211",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".boundaries",
+          "bytes": 17907,
+          "sha256": "290dd9a32fed91584799acd308d066429f337d43f121ce42df2ea8b4d32fc95d",
+          "byteEqual": true
+        }
+      ]
+    },
+    {
+      "label": "closed",
+      "cells": 1300,
+      "case": "custom",
+      "mode": "adaptive",
+      "displayedTimeBefore": 0.04,
+      "recoveredTime": 0.08,
+      "finalTime": 0.16,
+      "maximumStep": 0.01,
+      "sourceCheckpointUnchanged": true,
+      "oldDisplayUnchanged": true,
+      "oldFieldSha256": "b8e210f9694d8f1acbad73568d78deab5b5628052cc767721715b10105845468",
+      "inputSha256": "901e9761926957bcf2ec8bc4eff5c034f0a490df2d44d5848fe31dfa9be42616",
+      "history": {
+        "segments": 3,
+        "availableSteps": 12,
+        "gaps": [],
+        "uncommittedSamples": 0,
+        "startTime": 0,
+        "endTime": 0.16
+      },
+      "files": [
+        {
+          "suffix": ".fields.json",
+          "bytes": 151225,
+          "sha256": "cba7bdddd0045958ac2cd287b96030e656250886512311f58b3ed7cff68aea28",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".cells.csv",
+          "bytes": 281009,
+          "sha256": "e631b3861a58814a19b956da20369141f2aa5912a7db95bb7f7f672201a9ddc0",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".faces.csv",
+          "bytes": 407244,
+          "sha256": "382e9e8b8fa0b43f02a837bb12d9f2512afecbe2b08d18acb5dcdb943c7f71ec",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".checkpoint",
+          "bytes": 446602,
+          "sha256": "c1c18b6be53049ae888ed3d19e15caf106d6e82e026f96862659b9515f173eb1",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".time-history.csv",
+          "bytes": 1403,
+          "sha256": "053819080cb495937843d3be51408169f8c1b084f77b6fddde9bae40cf3dd64b",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".attempt-history.csv",
+          "bytes": 1565,
+          "sha256": "60c8bacfea44109452c24e6e96c42345efd4f07a360cfc6b4a83b57df7a88211",
+          "byteEqual": true
+        },
+        {
+          "suffix": ".boundaries",
+          "bytes": 17907,
+          "sha256": "290dd9a32fed91584799acd308d066429f337d43f121ce42df2ea8b4d32fc95d",
+          "byteEqual": true
+        }
+      ]
+    }
+  ],
+  "desktopLayout": {
+    "fixed": {
+      "bottomReachable": true,
+      "pageHeight": 560,
+      "windowHeight": 560,
+      "geometry": {
+        "bodyHeight": 560,
+        "innerHeight": 560,
+        "canvasHeight": 200,
+        "shellBottom": 560
+      },
+      "wallpaper": {
+        "image": "none",
+        "canvasBackground": "rgb(251, 252, 248)",
+        "welcomeHidden": true
+      },
+      "previewCells": 1300,
+      "exportedCells": 1300,
+      "sidebarCollapsed": false,
+      "sidebarExpanded": true
+    },
+    "flow": {
+      "resultBottom": 540.8984375,
+      "monitorTop": 547.8984375,
+      "separated": true
+    },
+    "curveScreenshot": "artifacts/current/native-flow-history-recovery.png",
+    "recoveryDialogScreenshot": "artifacts/current/native-flow-recovery-dialog.png",
+    "dialogContext": "Final capture opens an idle saved .16 s session; interruption and restore are independently evidenced by crash marker, recovery record and App report."
+  },
+  "tests": {
+    "native": {
+      "passed": 4,
+      "failed": 0,
+      "log": "outputs/flow-history/native-tests.log",
+      "names": [
+        "cartmesh2d_flow_boundary",
+        "cartmesh2d_transient_flow_cli",
+        "cartmesh2d_flow_checkpoint",
+        "cartmesh2d_flow_cli_validation"
+      ]
+    },
+    "frontend": {
+      "passed": 221,
+      "failed": 0,
+      "log": "outputs/flow-history/frontend-final.log"
+    },
+    "coverage": [
+      "read-only full native restart validation and truncated checkpoint rejection",
+      "completed run originals survive later completion/cancellation",
+      "same-clock checkpoint replacement cannot attach old history",
+      "missing tail creates explicit break; legacy future rows not accepted",
+      "ZIP lineage portability and flow/thermal coexistence",
+      "live other App/native child blocked; own idle session allowed"
+    ]
+  },
+  "retainedFailedChecks": [
+    "Initial build selected a nonexistent aggregate test target after the flow CLI had built; correct existing targets were built and four native tests passed. See build.log and build-tests.log.",
+    "First export-guide assertion failed because wording changed; wording fixed and final 221 tests passed.",
+    "First normal-close harness waited for a destroyed renderer after native cancellation/autosave completed. Exact idle test App was terminated; closed event harness fixed and closed-final passed. Original outputs/flow-history/closed retained.",
+    "Initial dialog capture preceded paint; raw empty screenshot retained. Capture timing fixed, actual dialog visually verified without rerunning physics."
+  ],
+  "rawFilesIndex": {
+    "path": "outputs/flow-history/raw-files.json",
+    "sha256": "4cc3de7d8ab259ce2d9bd006bd45cd49836dc2b46e23716e43a90cc19a1e7389",
+    "files": 703,
+    "bytes": 79265455
+  },
+  "reproductionScript": "outputs/flow-history/compare-cli.cjs",
+  "reproductionGuide": "docs/DEVELOPMENT_CN.md#独立流动连续历史与恢复",
+  "limitations": [
+    "No Windows/Linux or new packaged App validation for this increment.",
+    "Normal-window close and new-process recovery tested; same-process idle restoration covered by core tests, Dock UI reactivation not visually tested.",
+    "Atomic file replacement and process-crash tests do not establish power-loss durability.",
+    "Same recovered checkpoint and changed controls used for CLI comparison; different requested segment endpoints can change the numerical time grid.",
+    "Missing samples remain explicit gaps; raw diagnostics retained and history never reconstructed.",
+    "Curved-wall spatial accuracy and representative application qualification remain the next priority; the overall maturity goal stays active."
+  ]
+}

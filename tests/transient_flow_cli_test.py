@@ -115,6 +115,16 @@ def main(cli):
         for suffix in ('.cells.csv', '.faces.csv', '.fields.json', '.checkpoint'):
             assert split.with_suffix(suffix).read_bytes() == continuous.with_suffix(suffix).read_bytes(), suffix
 
+        checked = invoke(cli, mesh, continuous, .04, 5, ('--check-restart', 'on'), restart=continuous.with_suffix('.checkpoint'))
+        assert checked.returncode == 0, checked.stderr
+        check = json.loads(checked.stdout)
+        assert check['format'] == 'cartmesh2d-flow-restart-check-v1' and check['time'] == .2
+        assert split.with_suffix('.checkpoint').read_bytes() == continuous.with_suffix('.checkpoint').read_bytes()
+        truncated = root / 'truncated.checkpoint'
+        truncated.write_bytes(continuous.with_suffix('.checkpoint').read_bytes()[:-12])
+        assert invoke(cli, mesh, root/'check-invalid', .04, 1, ('--check-restart', 'on'), restart=truncated).returncode == 1
+        assert not (root/'check-invalid.json').exists()
+
         failed = root / 'failed'
         result = invoke(cli, mesh, failed, .04, 1, ('--max-iterations', '1'))
         assert result.returncode == 2, result.stderr

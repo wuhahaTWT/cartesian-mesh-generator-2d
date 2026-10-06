@@ -147,3 +147,18 @@ test('portable project retains accepted history lineage and restart identity',as
   loaded.thermalRestart.sha256='0'.repeat(64);await writeProjectManifest(loaded,{});
   await assert.rejects(readProject(loaded.outputDirectory),/身份不同/);
 });
+
+test('flow checkpoint lineage remains portable across a project move',async t=>{
+ const f=await fixture(t),file=path.join(f.root,'flow.checkpoint'),csv=path.join(f.root,'flow.time-history.csv');
+ const text='CARTMESH2D_FLOW_CHECKPOINT 2\nDISCRETIZATION Euler-RC-v2\nCONFIG "channel" .1 1 upwind symmetric 0 reject\nCELLS 1\nFACES 4\nTIME .02\nEND\n';
+ await fs.writeFile(file,text);await fs.writeFile(csv,'step,time,dt,accepted,innerIterations,momentumResidual,continuity,maxCourant,kineticEnergy,forceX,forceY\n1,.01,.01,1,12,1e-9,1e-10,.1,0,0,0\n2,.02,.01,1,12,1e-9,1e-10,.1,0,0,0\n');
+ const {checkpointDigest,readFlowTimeline}=require('../src/core/flow-history');
+ const {readAcceptedCheckpointMetadata}=require('../src/core/flow-checkpoint');
+ f.current.flowRestart={path:file,metadata:await readAcceptedCheckpointMetadata(file),sha256:checkpointDigest(text),history:[{file:csv,startTime:0,endTime:.02,request:REQUEST,complete:true}]};
+ await writeProjectManifest(f.current,{inputs:{flowResume:true}});
+ const moved=path.join(f.session,'moved');await fs.rename(f.root,moved);
+ const restored=await readProject(moved);
+ assert.ok(restored.flowRestart.path.startsWith(moved));
+ assert.deepEqual((await readFlowTimeline(restored)).rows.map(r=>r.time),[.01,.02]);
+ assert.equal(restored.flowRestart.sha256,checkpointDigest(text));
+});

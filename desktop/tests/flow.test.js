@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, commitFlowFiles, parseFlowProgress,
+const { FLOW_OUTPUT_SUFFIXES, buildFlowInvocation, parseFlowProgress,
         validateFlowOutput, validateFlowRequest } = require('../src/core/flow');
 const { exportGuide } = require('../src/core/export-guide');
 
@@ -183,25 +183,6 @@ test('malformed field ids, counts and vector magnitudes fail closed', () => {
     cells: [{ ...fields.cells[0], id: 0, speed: 9 }, fields.cells[1]] }, 2), /速度分量/);
   assert.throws(() => validateFlowOutput({ ...summary, cells: 3 }, fields, 2), /单元数/);
 });
-
-test('a partial flow-file copy removes every top-level committed name', async () => {
-  const copied = [];
-  const removed = [];
-  const fileSystem = {
-    async copyFile(source, destination) {
-      copied.push([source, destination]);
-      if (source.endsWith('.faces.csv')) throw new Error('faces copy failed');
-    },
-    async rm(file) { removed.push(file); }
-  };
-  const entries = FLOW_OUTPUT_SUFFIXES.map(suffix => ({
-    source: `/pending/flow${suffix}`, destination: `/result/mesh.flow${suffix}`
-  }));
-  await assert.rejects(commitFlowFiles(fileSystem, entries), /faces copy failed/);
-  assert.equal(copied.length, entries.length);
-  assert.deepEqual(removed.sort(), entries.map(entry => entry.destination).sort());
-});
-
 
 test('desktop tolerance can only tighten the historical flow default',()=>{
   const request={case:'external',nu:.1,speed:1,maxIterations:500,tolerance:1e-9};
