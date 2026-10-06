@@ -17,6 +17,7 @@ int main(int argc,char** argv) {
     if(scheme=="face-limited-linear")c.convection=ConvectionScheme2D::FaceLimitedLinearUpwind;
     else if(scheme!="upwind")throw std::runtime_error("unknown scheme");
     if(method=="none")c.steadyAcceleration=SteadyAcceleration2D::None;
+    else if(method=="anderson")c.steadyAcceleration=SteadyAcceleration2D::Anderson;
     else if(method!="default")throw std::runtime_error("unknown method");
     const auto start=std::chrono::steady_clock::now();
     std::ofstream record(prefix+".json");record<<std::setprecision(17);

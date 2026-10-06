@@ -789,6 +789,266 @@
       }
     ]
   },
+  "independentAlgorithmCrosscheck": {
+    "badGrid": {
+      "continuationGuideAndTargetEvaluations": 1487,
+      "defaultNewton": {
+        "case": "custom",
+        "cells": 17260,
+        "coupledEvaluations": 1049,
+        "globalRelativeImbalance": 8.472897180614914e-15,
+        "iterations": 1049,
+        "maximumSpeedRatio": 5.489758876044062,
+        "momentumInertia": 1,
+        "name": "grid1-flat-initial",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-custom-flat",
+        "pressureForceX": -13.256639584226399,
+        "pressureRangeRatio": 265.8513282752179,
+        "rawSha256": {
+          ".cells.csv": "310273839719829eb3ecba30dfc0418e6ef00cf067c10f9e16e5ee3bf4cc3385",
+          ".faces.csv": "e40b82af30001fad85172e3afbfe8d6f420b50b63ba248b71a3d042cbcd3901f",
+          ".json": "782183740313e79f7c6fe88d831f990247692d6f7ede1557bec146215e69a352",
+          ".residuals.csv": "8b56eb6411547e55fa473339e7cfab613bf4d6a11ac3cb5b917f0f9a9d154a25"
+        },
+        "status": "converged",
+        "wallForceX": 2.007087571876749,
+        "wallViscousForceX": 15.263727156103158
+      },
+      "dualFlatPathIterations": 1539,
+      "finding": "Flat-start Anderson converges faster than flat-start Newton but reaches an even larger-amplitude branch. Starting Anderson from the bounded nu=1 field reaches a third, load-cancelling target branch, so Anderson can expose non-uniqueness but cannot preserve or choose the bounded branch.",
+      "flatAnderson": {
+        "case": "custom",
+        "cells": 17260,
+        "coupledEvaluations": null,
+        "globalRelativeImbalance": 1.4459977930483745e-15,
+        "iterations": 490,
+        "maximumSpeedRatio": 5.92815722836224,
+        "momentumInertia": 1,
+        "name": "grid1-anderson-flat",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-anderson-flat",
+        "pressureForceX": -17.818571728251676,
+        "pressureRangeRatio": 291.78363777126594,
+        "rawSha256": {
+          ".cells.csv": "2f9d86d6d5b8843a56236b1a0db6fb7d4d7e5477752fab6d553e44411dc8ca14",
+          ".faces.csv": "d23faa15010307b5191dae67ee73679ad7af5c42a4ca56f97b1372511cd7e780",
+          ".json": "c1971da2081921897a242fe4f4f16b49bf906e4261aa184f2bc7a793c77d424b",
+          ".residuals.csv": "5946a58caa29b938416792e5b04646d17e8ceb02d485b93ccc9a53c9add7ac81"
+        },
+        "status": "converged",
+        "wallForceX": 2.3503187164670853,
+        "wallViscousForceX": 20.168890444718766
+      },
+      "newtonToFlatAndersonDistance": {
+        "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+        "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 211.18109240453873,
+        "maximumVelocityVectorDifferenceOverReferenceSpeed": 6.175492252207971,
+        "pressureRmsOverReferenceSpeedSquared": 0.07780645354547805,
+        "velocityRmsOverReferenceSpeed": 0.028411719601151016
+      },
+      "nu1InitializedAnderson": {
+        "case": "custom",
+        "cells": 17260,
+        "coupledEvaluations": null,
+        "globalRelativeImbalance": 1.9990784095841996e-14,
+        "iterations": 1372,
+        "maximumSpeedRatio": 1.39082680270822,
+        "momentumInertia": 1,
+        "name": "grid1-anderson-from-nu-1",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1-anderson-from-nu1",
+        "pressureForceX": -0.6696877036403235,
+        "pressureRangeRatio": 60.68895615470376,
+        "rawSha256": {
+          ".cells.csv": "9c514aee09169b249c8365ef7f90e02586a7f1c7c9d0c9d7bdd4bef997602069",
+          ".faces.csv": "f1ec04cd5ed95f05f2281bb1ce091039587c089018096f20e011979a41ea3489",
+          ".json": "eab8dc47bc018db8afb394b8cb642a52f603df7e688558befabffcb803d24458",
+          ".residuals.csv": "e12ea1d7f8cccf18c42129c5bf7ffe27c8520d7f57e34421c581d68031c26869"
+        },
+        "status": "converged",
+        "wallForceX": 1.9750786136525331,
+        "wallViscousForceX": 2.644766317292859
+      },
+      "recoveredNormalToFlatAndersonDistance": {
+        "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+        "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 203.74371866228412,
+        "maximumVelocityVectorDifferenceOverReferenceSpeed": 5.937105527142094,
+        "pressureRmsOverReferenceSpeedSquared": 0.10373702426506586,
+        "velocityRmsOverReferenceSpeed": 0.027410749806633796
+      }
+    },
+    "closedCavity64": {
+      "defaultNewton": {
+        "case": "cavity",
+        "cells": 4096,
+        "continuity": 1.3416209908702435e-11,
+        "converged": true,
+        "evaluations": 342,
+        "method": "default",
+        "momentumResidual": 2.9035548200879e-10,
+        "n": 64,
+        "nu": 0.01,
+        "prefix": "outputs/cloud-laminar/cavity-face-limited-linear-64",
+        "pressureChange": 5.113198368561885e-10,
+        "rawSha256": {
+          ".cells.csv": "e49e16be1d8d58cede591524ad8e230ee7e73cda39df40c0098f6044abf2dbd2",
+          ".json": "fbfcdc5eca6e452d9bb6ddff61b531c250af2663e508bf42de62338c05a436d3"
+        },
+        "scheme": "face-limited-linear",
+        "seconds": 7.281597776,
+        "tolerance": 1e-08,
+        "velocityChange": 3.9299664187337225e-10
+      },
+      "distance": {
+        "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+        "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 3.8082823647749413e-07,
+        "maximumVelocityVectorDifferenceOverReferenceSpeed": 1.1532147630112972e-06,
+        "pressureRmsOverReferenceSpeedSquared": 1.4671848785001956e-07,
+        "velocityRmsOverReferenceSpeed": 6.608902425960903e-07
+      },
+      "flatAnderson": {
+        "case": "cavity",
+        "cells": 4096,
+        "continuity": 1.0013467106276958e-12,
+        "converged": true,
+        "evaluations": 1145,
+        "method": "anderson",
+        "momentumResidual": 3.252595465867358e-09,
+        "n": 64,
+        "nu": 0.01,
+        "prefix": "outputs/cloud-laminar/cavity-face-limited-linear-64-anderson",
+        "pressureChange": 3.011577119420968e-09,
+        "rawSha256": {
+          ".cells.csv": "ba5fa302f376df162b97113af8f32c124cdf50554d08aae0b7227cc3cfefbbfc",
+          ".json": "9bad8e192b95a198c3369e677d7b3c353c9784f88b8ca2da03cb105bc84b15f3"
+        },
+        "scheme": "face-limited-linear",
+        "seconds": 18.39934181,
+        "tolerance": 1e-08,
+        "velocityChange": 9.931468281363422e-09
+      }
+    },
+    "method": "Existing explicit Anderson acceleration solves the identical target equation and uses the unchanged strict final gates; it is an independent nonlinear path, not a physical branch selector.",
+    "normalGrid": {
+      "defaultNewton": {
+        "case": "external",
+        "cells": 4716,
+        "coupledEvaluations": 285,
+        "globalRelativeImbalance": 8.177740327726763e-16,
+        "iterations": 285,
+        "maximumSpeedRatio": null,
+        "momentumInertia": 1,
+        "name": "grid0-direct",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-face-limited-linear",
+        "pressureForceX": 1.2413670526657137,
+        "pressureRangeRatio": null,
+        "rawSha256": {
+          ".cells.csv": "99f58d4124583ae3c7ba5875ae5e4a064a41e516ed4824c502f92cc864ec8d2e",
+          ".faces.csv": "194b253b824061b58bcb5e50dbdad155fdcde1af1bfc81b2da16664f90da767f",
+          ".json": "e9b4fd30477cc00985b47ba68bc724e41e530c034d1708cc0adfff75b16ad7b0",
+          ".residuals.csv": "e866ce9cb7f21cd10730e1e397d52d79ed9fedbcfd06099eb2e3e609e0803a2e"
+        },
+        "status": "converged",
+        "wallForceX": 2.0734286072758974,
+        "wallViscousForceX": 0.8320615546101826
+      },
+      "distance": {
+        "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+        "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 3.882181203386031e-08,
+        "maximumVelocityVectorDifferenceOverReferenceSpeed": 1.2067468489372234e-07,
+        "pressureRmsOverReferenceSpeedSquared": 1.75752374647291e-09,
+        "velocityRmsOverReferenceSpeed": 1.298542360417989e-08
+      },
+      "dualPathIterations": 561,
+      "flatAnderson": {
+        "case": "custom",
+        "cells": 4716,
+        "coupledEvaluations": null,
+        "globalRelativeImbalance": 1.5299414851541792e-15,
+        "iterations": 276,
+        "maximumSpeedRatio": 1.162271037126264,
+        "momentumInertia": 1,
+        "name": "grid0-anderson-flat",
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid0-anderson-flat",
+        "pressureForceX": 1.2413670450413425,
+        "pressureRangeRatio": 1.5320855879806783,
+        "rawSha256": {
+          ".cells.csv": "ccc264f8a69811b919ab0017b190804b9b8224e4078c87941264391266ffaebf",
+          ".faces.csv": "ff2474c5c38542ccde65f0ac871b09ac2f38e55b465670efb60b783f84e594b5",
+          ".json": "6a8cedca05dce3512cc99831d49067df2ca7a423f884be8f0786bed9f385762f",
+          ".residuals.csv": "92e1324f5b3af442d9da4d91d72fde5f3826fd9eb7d45fecb3d30effbbdba84d"
+        },
+        "status": "converged",
+        "wallForceX": 2.0734285743837813,
+        "wallViscousForceX": 0.8320615293424385
+      }
+    },
+    "qualification": "Agreement on three normal controls and disagreement on the retained counterexample supports an explicit branch-risk certificate. It does not identify which converged branch is physical, so no automatic acceptance, fallback, or default change is made.",
+    "straightChannel64": {
+      "defaultNewton": {
+        "case": "channel",
+        "cells": 16384,
+        "continuity": 1.1675045085974937e-12,
+        "converged": true,
+        "evaluations": 102,
+        "method": "default",
+        "momentumResidual": 1.297994866196428e-10,
+        "n": 64,
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/channel-face-limited-linear-64",
+        "pressureChange": 1.569595362773477e-09,
+        "pressureGaugeOffset_m2_s2": 0,
+        "pressureMax_m2_s2": 0.0048243818557844875,
+        "pressureRms_m2_s2": 0.0006969581776340783,
+        "rawSha256": {
+          ".cells.csv": "810373164c9f719b426cd5e693d43a88e157fd8258382100216fe263df7c976d",
+          ".json": "4157c7b56238beeeb1ba4658e48f3430231731ae7109a840062d7219e1d1571b"
+        },
+        "scheme": "face-limited-linear",
+        "seconds": 12.246882803,
+        "tolerance": 1e-08,
+        "velocityChange": 3.2642015099775357e-10,
+        "velocityMax_m_s": 0.00023271913657247825,
+        "velocityRms_m_s": 0.00010591667575643928
+      },
+      "distance": {
+        "definition": "all-cell area-weighted; pressure difference has its area mean removed",
+        "maximumGaugeAlignedPressureDifferenceOverReferenceSpeedSquared": 9.955672750306442e-07,
+        "maximumVelocityVectorDifferenceOverReferenceSpeed": 4.4653381819495845e-07,
+        "pressureRmsOverReferenceSpeedSquared": 5.067064856742152e-07,
+        "velocityRmsOverReferenceSpeed": 1.9953293488480762e-07
+      },
+      "flatAnderson": {
+        "case": "channel",
+        "cells": 16384,
+        "continuity": 6.210408440607059e-13,
+        "converged": true,
+        "evaluations": 123,
+        "method": "anderson",
+        "momentumResidual": 1.2212163435206412e-09,
+        "n": 64,
+        "nu": 0.1,
+        "prefix": "outputs/cloud-laminar/channel-face-limited-linear-64-anderson",
+        "pressureChange": 6.01185283373566e-09,
+        "pressureGaugeOffset_m2_s2": 0,
+        "pressureMax_m2_s2": 0.004825848558479784,
+        "pressureRms_m2_s2": 0.0006980485726010451,
+        "rawSha256": {
+          ".cells.csv": "8464565d0d1c1a68e3f184be528bd33dbbd88a586e646d363a8de6794dfc7757",
+          ".json": "ff4cf1dbb987c384038edea2b67179ed029c129cb146d7baeeb6f21a264608d5"
+        },
+        "scheme": "face-limited-linear",
+        "seconds": 9.810338118,
+        "tolerance": 1e-08,
+        "velocityChange": 3.6602497418881015e-09,
+        "velocityMax_m_s": 0.00023271258691183355,
+        "velocityRms_m_s": 0.00010579360217373936
+      }
+    }
+  },
   "qualification": {
     "conclusion": "Two-stage viscosity continuation recovered the same bounded branch on the known bad mesh with 35.8% fewer evaluations than the four-stage path and reproduced the existing bounded branch on the coarse mesh. Its 1.42x direct-solve cost, limited mesh evidence and unresolved branch-selection semantics remain insufficient for a default change.",
     "defaultChanged": false,
@@ -798,6 +1058,6 @@
     "qualityGateChanged": false,
     "relatedLinuxNativeTests": "3/3 passed: flow_boundary, solver_export, io"
   },
-  "schema": "cartmesh2d.native-laminar-branch-continuation.v2",
+  "schema": "cartmesh2d.native-laminar-branch-continuation.v3",
   "scope": "Native fixed-geometry Re=20 cylinder branch selection and geometry-only quadratic consistency; no cells omitted and no product acceptance threshold added."
 }
