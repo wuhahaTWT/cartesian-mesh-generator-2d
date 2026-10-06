@@ -271,11 +271,11 @@ python3 tools/flow/run_curved_wall.py --output outputs/annulus-face-candidate --
 
 ### Hybrid 黏性局部能量块
 
-`HybridViscousCell2D` 是供后续完整可压耦合使用的原生局部算法部件，不切换现有 Euler/ViscousStress/App 路径。输入来自 `makeFvMesh2D` 的真实单元，附加检查法向距离为正、法向闭合以及 `Σ S⊗(x_face−x_cell)=V I`。身份与面积不重构、不合并或删除坏格。几何恒等式使用 1024 个 double epsilon 乘实际面数的舍入预算，分别按累计真实长度/矩尺度归一化，不能解释为物理误差容差。
+`HybridViscousCell2D` 是供后续完整可压耦合使用的原生局部算法部件，不切换现有 Euler/ViscousStress/App 路径。输入来自 `makeFvMesh2D` 的真实单元，附加检查法向距离为正、法向闭合以及 `Σ S⊗(x_face−x_cell)=V I`。身份与面积不重构、不合并或删除坏格。现由下述共用 HybridCellGeometry2D 检查几何恒等式；原首版 1024 epsilon 乘面数的检查保留在 Git 历史，不能解释为物理误差容差。
 
 对面与单元速度差 δu，令 `g=Σ S δu/V`、`r=δu−g·(x_face−x_cell)`。局部双线性形式采用恒 μ 的二维速度场、三维分子气体 Stokes 2/3 系数；其二次型为 `μV[(u_x−v_y)²+(u_y+v_x)²+(u_x+v_y)²/3]+μΣ(|S|/d)|r|²`。局部牵引矩阵以对称条目装配，稳定项来自同一残差形式。机械能通量使用同一真实面 trace 速度，因此局部总能量输入减动量产生的动能输入等于这个非负耗散。刚体转动属于局部矩阵核，不能把它当作正定矩阵直接求逆。
 
-必须由全局面 trace 方程使内部牵引反号相等，才能将这些局部通量用于守恒推进。当前仅仿射一致场的内部通量自动匹配，任意 trace 还没有全局求解。本部件没有宣称离散 Korn 不等式、点正性、时间精度、工程成本或完整可压能量耦合通过。
+必须由全局面 trace 方程使内部牵引反号相等，才能将这些局部通量用于守恒推进。首版仅仿射一致场自动匹配；现由下述全局面速度算子处理一般单元输入。本部件没有宣称离散 Korn 不等式、点正性、时间精度、工程成本或完整可压能量耦合通过。
 
 ```sh
 cmake --build build --parallel 4 --target cartmesh2d_hybrid_viscous_cell_tests
@@ -283,6 +283,29 @@ ctest --test-dir build -R '^cartmesh2d_hybrid_viscous_cell$' --output-on-failure
 ```
 
 测试直接扰动每个 trace 分量比对实际牵引、检查对称矩阵二次型/平方和/机械功三者一致、刚体运动和仿射应力、旋转与 SI 缩放、非法几何/物性/非有限输入。沿用 4096 个 double epsilon 的代数预算；常规长宽比另保留直接通量门，极端薄长输入按真实局部矩阵对绝对速度采样舍入的放大归一化，并输出未归一化误差。该测试不模拟真实曲壁流动。
+
+### HMM 导热与全局黏性 trace
+
+HybridCellGeometry2D 统一热和黏性局部块的真实面身份、向外 S、面心偏移 D、G=S/V、R=I−DG 和 |S|/d。它检查局部面索引/归属/重复、有限系数、严格正法向距离，以及闭合和 ΣS⊗D=VI。两个几何恒等式用 4096 个 double epsilon 乘实际绝对项和的舍入预算归一化（≤1），不设面积下限、不替代原 FV/Solver 质量门。这是量纲消去后的算术一致性检查，不是空间误差阈值。
+
+HybridHeatOperator2D 使用局部 A=kVGᵀG+Rᵀdiag(k|S|/d)R。稳态与 backward-Euler 局部消去单元温度后，以现有 Jacobi-PCG 联立真实面温度。温度、绝热和给定向外热流边界可用；周期热边界及纯 Neumann 稳态的给定均值未实现，缺少 Dirichlet 参考的稳态连通分量显式失败。evaluateAtCells 给定单元值并全局求解面温度；当前每次仍组装图和矩阵，这个非局部成本必须计入未来 Euler 残差的完整成本。
+
+局部向外热流 q=−A(λ−T_K)，单位 W/m；A 单位 W/(m K)，二维按单位深度。导出唯一 owner 通量，邻格反号。backward-Euler 的统一物理步以 m=cv V/dt 进入局部块；保存阶段温度和通量，再以 T_previous−sharedResidual/m 给出守恒终值。阶段/终值差用实际线性残差上限除以 m，加温度/热流运算的 4096 epsilon 舍入项验收，单位 K；不裁剪。最终、共享阶段、局部侧三种收支分别报告，均为 W/m。扰动二次能量 ΣcvVθ²/2 的单位为 J K/m，不能当作可压总能量。恒 cv 标量的单元算术平均参考与质心点参考均输出，不据此宣称气体守恒平均转换已解决。
+
+HybridViscousOperator2D 以已有局部牵引矩阵联立面速度；矩阵和稀疏图随对象保存，单次求解 RHS 按 μ 与实际速度差尺度归一化，避免固定 SI 绝对容差主导小物性工况。给定速度面不设未知量，滑移面只求切向速度，开边界求零牵引，平移周期面共用速度未知量。要求每个流体连通分量至少有一个给定速度面；纯周期/滑移的局部交错转动零模态保留为原生最小失败例。当前支持带无滑移壁的目标流动，未宣称一般离散 Korn 资格。
+
+最终动量通量 −τS 和能量通量 −λ·τS 共用真实面速度；开边界严格输出零牵引/功，静止滑移壁严格输出零功，周期伙伴精确反号。实际单元残差和机械发热全部从这些导出通量累加。局部平方和耗散、实际机械发热、两者偏差及牵引连续性残差分别保留，不把有限迭代的局部双侧通量当作严格共享守恒量。静态面消元的动量二次型介于 0 和单元 EᵀAE 块上界之间，据此给出质量缩放的谱上界；它不是点正性或完整可压 CFL 的资格证明。
+
+复现命令（系统 Clang 参数仅用于 macOS，云端沿用 GCC）：
+
+    cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+    cmake --build build --parallel 4 --target cartmesh2d_hybrid_heat_tests cartmesh2d_hybrid_heat_benchmark cartmesh2d_hybrid_viscous_tests cartmesh2d_hybrid_viscous_cell_tests
+    ctest --test-dir build -R '^cartmesh2d_hybrid_(heat(_cli)?|viscous(_cell)?)$' --output-on-failure
+    python3 tools/flow/run_hybrid_heat.py --output outputs/hmm-run --mesh-root outputs/curved-wall
+
+最后一个驱动复用保存的真实 Solver 网格，调用原生 mesher/benchmark，不在 Python 重建 PDE。HMM 热研究 CLI 用 r=.5..1 m、cv=1 J/(m³ K)、k=.37 W/(m K)、2..2.2 K 人工环域；末个真实物理步合并仅处于时间舍入预算内的伪尾步，原失败记录保留。强脉冲负温候选与最后正温检查点分别输出，不能用弱脉冲的通过替代一般正性证明。
+
+全局黏性微型检查包含实际 trace 矩阵的对称性/小矩阵 Cholesky、仿射与刚体运动、共享通量机械功、任意单元场的互易性/能量上界、SI 缩放及非法边界。无量纲代数预算 65536 epsilon（约 1.46e−11）只用于这些微型规模及 2e−14 请求线性容差的装配/迭代累计误差，不是物理阈值。应力与功分别按 μU 和 μU² 加实际通量累积尺度归一化；绝对误差仍输出。首轮错误地用 1 加近零 SI 输出作尺度，在高 μ/U 的刚体转动下误报，修正测试量纲后算子不变；没有用放宽物理门解决它。
 
 ### 可压层流阶段步长控制
 
