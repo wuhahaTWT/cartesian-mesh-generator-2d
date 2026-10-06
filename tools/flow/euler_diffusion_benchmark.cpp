@@ -4,6 +4,7 @@
 #include "cartmesh2d/fv/EulerCheckpoint2D.hpp"
 #include "cartmesh2d/io/MeshIO2D.hpp"
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -364,6 +365,10 @@ int main(int argc, char **argv) {
                 label = "diffusion-research/" + name;
     EulerStepControls2D ctl;
     ctl.integrator = EulerTimeIntegrator2D::Sdirk2;
+    if (const char *pc = std::getenv("CARTMESH_RESEARCH_PRECONDITIONER")) {
+      require(std::string(pc)=="diagonal" || std::string(pc)=="frozen-flux-ilu0", "unknown research preconditioner");
+      if (std::string(pc)=="frozen-flux-ilu0") ctl.implicitPreconditioner=EulerImplicitPreconditioner2D::FrozenFluxIlu0;
+    }
     ctl.fluxScheme = EulerFluxScheme2D::Hllc;
     ctl.order = 2;
     ctl.wallGradient = WallGradient2D::Linear;
@@ -408,6 +413,7 @@ int main(int argc, char **argv) {
     bfile << std::setprecision(17)
           << "step,time,name,mass,mx,my,energy,heat,viscousWork\n";
     double construction = 0;
+    std::ofstream rejectionLog(prefix + ".rejections.csv");
     size_t spatial = 0, newton = 0, krylov = 0, rejected = 0;
     EulerStepResult2D last;
     std::string status = "complete", error;
@@ -454,6 +460,7 @@ int main(int argc, char **argv) {
         newton += r.nonlinearIterations;
         krylov += r.linearIterations;
         rejected += r.rejectedCandidates;
+        if (r.rejectedCandidates) rejectionLog << std::setprecision(17) << old.time << "," << r.step << "," << r.rejectedCandidates << "," << std::quoted(r.lastRejectedReason) << "\n";
         state = r.state;
         last = std::move(r);
         save();

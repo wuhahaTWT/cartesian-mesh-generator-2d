@@ -365,6 +365,8 @@ build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries ou
 build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries outputs/resumed all END_SECONDS MAX_STEP_SECONDS WALL_BUDGET_SECONDS outputs/comparison
 ```
 
+独立模式可用环境变量 `CARTMESH_RESEARCH_PRECONDITIONER=diagonal|frozen-flux-ilu0` 复现冷/热壁短段比较；未设置时仍为 diagonal。该变量仅影响独立模式，`all` 共同时间网格模式不读取它。独立模式额外写入 `.rejections.csv`，无表头，依次为调用前物理时间（s）、最终接受步长（s）、调用内拒绝次数和带引号的最近实际拒绝原因；它不记录每个失败候选的完整轨迹。云端结果不支持扩大当前 ILU 路线，保留研究实现及失败记录。
+
 独立模式第四个参数为 `corrected`、`hybrid-heat` 或 `hybrid`，其接受时间序列可能不同，只作独立稳定性诊断。`all` 模式逐方案计算候选，若内部重试返回不同步长，全部候选不提交并以共同最小步重算；写 attempts.csv 区分内部拒绝、返回步长和外层共同提交/丢弃。这是研究比较协议，不修改产品求解器的时间控制。带共同 restart prefix 后可追加 `strict-step` 禁用内部重试，复现原 48 ns 圆柱状态后的 4 ns GMRES 失败；随后去掉 strict-step 或选 2 ns 可研究恢复。
 
 每种方案记录单元场、唯一 RK 面通量、边界组收支、原生守恒缺陷、正性范围、实际时钟、构造/求解及导出归属时间；另记录整个调用耗时和额外 checkpoint/新建求解器校验时间。计数包含返回调用内的重试及共同事务丢弃，最终抛出异常的调用不能从未返回结果恢复完整计数，但实际耗时仍计入。与初始短启动分开的续算成本不能冒充从零开始的完整独立算例成本。剖析构建的 -pg 结果单独存档，不能用于公平时间比较；剖析/无插桩短程场已核对一致。
