@@ -44,6 +44,26 @@ int main(){try {
     const IdealGas2D gas{1.4,1};const EulerTransport2D transport{.5,.2};EulerStepper2D solver(mesh,bc,gas,transport);
     EulerState2D state{0,0,std::vector<EulerConservative2D>(mesh.cells.size(),eulerConservative2D({1,.1,-.2,1},gas))};
     EulerStepControls2D controls;controls.fluxScheme=EulerFluxScheme2D::Hllc;controls.order=2;
+    for(auto scheme:{EulerFluxScheme2D::Rusanov,EulerFluxScheme2D::Hllc}){
+        const auto q=eulerConservative2D({1,.3,-.2,1.7},gas);
+        const Vector2D area{.4,.7};
+        const auto flux=eulerFaceFlux2D(q,q,area,gas,scheme,1,true);
+        const auto plain=eulerFaceFlux2D(q,q,area,gas,scheme);
+        require(flux.integratedFlux==plain.integratedFlux,"pressure diagnostic changed conservative flux");
+        require(std::abs(flux.pressureFlux.x-1.7*area.x)+std::abs(flux.pressureFlux.y-1.7*area.y)<512*std::numeric_limits<double>::epsilon(),"uniform pressure diagnostic failed");
+    }
+    const auto snapshotInput=state;
+    const auto snapshot=solver.spatialSnapshot(state,controls);
+    require(state.time==snapshotInput.time&&state.steps==snapshotInput.steps&&state.cells==snapshotInput.cells,"read-only snapshot changed state");
+    std::vector<EulerConservative2D> assembled(mesh.cells.size());
+    for(std::size_t f=0;f<mesh.faces.size();++f)for(std::size_t k=0;k<4;++k){
+        assembled[mesh.faces[f].owner][k]+=snapshot.faceFlux[f][k];
+        if(mesh.faces[f].neighbour)assembled[*mesh.faces[f].neighbour][k]-=snapshot.faceFlux[f][k];
+    }
+    for(std::size_t c=0;c<mesh.cells.size();++c)for(std::size_t k=0;k<4;++k)
+        require(std::abs(assembled[c][k]-snapshot.cellResidual[c][k])<256*std::numeric_limits<double>::epsilon()*(1+std::abs(assembled[c][k])),"snapshot unique flux/residual mismatch");
+    const auto repeat=solver.spatialSnapshot(state,controls);
+    require(snapshot.faceFlux==repeat.faceFlux&&snapshot.cellResidual==repeat.cellResidual,"snapshot is not deterministic");
     const auto initial=state;double total0=0;for(std::size_t i=0;i<state.cells.size();++i)total0+=mesh.cells[i].area*state.cells[i][3];
     for(int step=0;step<30;++step){const auto next=solver.advance(state,controls);for(const auto& b:bc)require(next.faceFlux[b.face][0]==0&&next.faceFlux[b.face][3]==0,"stationary insulated wall leaks mass/energy");require(next.combinedCourant<=controls.acousticCourant*(1+1e-13),"combined CFL invalid");state=next.state;}
     double total=0;for(std::size_t i=0;i<state.cells.size();++i)total+=mesh.cells[i].area*state.cells[i][3];require(std::abs(total-total0)<1e-13*total0,"sealed energy not conserved");

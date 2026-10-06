@@ -42,13 +42,17 @@ enum class EulerImplicitPreconditioner2D { Diagonal, FrozenFluxIlu0 };
 enum class EulerDiffusionScheme2D { Corrected, HybridHeat, Hybrid };
 struct EulerFaceFlux2D {
     EulerConservative2D integratedFlux{};
+    // Populated only when pressureDiagnostic=true. Diagnostic algebraic pressure contribution: physical/star pressure,
+    // blended by the same HLLC/HLLE weight; Rusanov uses mean pressure.
+    // Momentum remainder includes advective and numerical dissipative terms.
+    Vector2D pressureFlux{};
     double waveSpeed=0;
     bool hllcFallback=false;
 };
 // A single outward-owner flux per actual edge; reversing states and the area
 // vector reverses the flux. HLLC falls back visibly if its star states are invalid.
 [[nodiscard]] EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& left,
-    const EulerConservative2D& right, Vector2D areaVector, const IdealGas2D&, EulerFluxScheme2D, double contactRestoration=1);
+    const EulerConservative2D& right, Vector2D areaVector, const IdealGas2D&, EulerFluxScheme2D, double contactRestoration=1,bool pressureDiagnostic=false);
 struct EulerStepControls2D {
     // Legacy name: with k>0 this caps the combined acoustic + thermal + viscous rate.
     double maximumStep=1, minimumStep=1e-14, acousticCourant=.4;
@@ -98,6 +102,13 @@ struct EulerStepResult2D {
     std::size_t cflRejectedCandidates=0,spatialEvaluations=0;
     std::size_t nonlinearIterations=0,linearIterations=0;
 };
+// Read-only instantaneous application of the same native conservative operator.
+struct EulerSpatialSnapshot2D {
+    std::vector<EulerConservative2D> faceFlux,cellResidual;
+    std::vector<Vector2D> facePressureFlux;
+    std::vector<std::array<double,3>> faceViscousFlux;
+    std::vector<double> faceHeatFlux;
+};
 struct EulerResidualDiagnostics2D {
     double rate=0; // s^-1, maximum component residual with local physical scales.
     EulerConservative2D boundaryFlux{},integralScale{};
@@ -138,6 +149,7 @@ public:
     [[nodiscard]] EulerStepResult2D advance(const EulerState2D&,const EulerStepControls2D&) const;
     // Maximum |R/(V scale)|, in s^-1, scales rho, rho*c, rho*c, rho*E.
     [[nodiscard]] double residualRate(const EulerState2D&,const EulerStepControls2D&) const;
+    [[nodiscard]] EulerSpatialSnapshot2D spatialSnapshot(const EulerState2D&,const EulerStepControls2D&) const;
     [[nodiscard]] EulerResidualDiagnostics2D diagnostics(const EulerState2D&,const EulerStepControls2D&) const;
 private:
     WallGradient2D wallGradient_=WallGradient2D::Linear;

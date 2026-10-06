@@ -4,7 +4,7 @@ import argparse, json, math, pathlib, subprocess, time
 p=argparse.ArgumentParser()
 p.add_argument('--output',required=True); p.add_argument('--segments',type=int,default=64)
 p.add_argument('--level',type=int,default=5); p.add_argument('--phase',type=float,default=.375)
-p.add_argument('--initial',choices=['exact','rest'],default='exact')
+p.add_argument('--initial',choices=['exact','rest','thermal-exact','thermal-rest'],default='exact')
 p.add_argument('--end',type=float,default=100); p.add_argument('--dt',type=float,default=.05)
 p.add_argument('--budget',type=float,default=240); p.add_argument('--checkpoint')
 a=p.parse_args(); out=pathlib.Path(a.output); out.mkdir(parents=True,exist_ok=False)

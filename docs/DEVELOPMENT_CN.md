@@ -264,6 +264,18 @@ desktop/node_modules/.bin/electron desktop --smoke=rectangle --control=manual --
 
 内/外解析向外热量约 .1808727/−.1733329 W/m，机械功约 −.02513274/.01759292 W/m，黏性力矩约 −.05026548/+.05026548 N；净热加功为零。all-faces 输出实际共享通量；按单元质心汇总的角动量含内部通量力臂与壁面力臂修正，它不等于真实单元角动量积分。报告的空间调用数不含额外诊断残差调用；完整成本应保留这些诊断、装配、检查点及导出开销。半步稳态续算比较的是点误差范数变化，不是完整场差或瞬态时间收敛阶。
 
+### 原生空间快照与静止曲壁导热
+
+EulerStepper2D::spatialSnapshot 调用同一 spatialOperator，返回唯一共享面总通量、单元集成残差、黏性/热通量和压力诊断，不推进或修改输入状态。压力收集只在显式快照时开启；Rusanov 取两侧平均压力，HLLC 取选中星态压力，HLLE 部分取波速加权物理压力，再按同一恢复权重混合；壁面全部法向牵引归入压力。剩余无黏动量同时包含对流与数值耗散，这是一种算法分解约定。原生回归检查只读、确定性、唯一面组装与诊断不改通量；256/512 epsilon 是本微例无量纲代数舍入预算，不是物理精度门。
+
+    build/cartmesh2d_compressible_couette_benchmark INPUT.solver.cm2d outputs/new-prefix snapshot 1 .05 30 INPUT.checkpoint
+    python3 tools/flow/read_compressible_couette_snapshots.py outputs/new-prefix
+    python3 tools/flow/run_compressible_couette.py --output outputs/static-heat-new --segments 64 --level 5 --initial thermal-exact --end 100 --dt .05 --budget 180
+
+snapshot / thermal-snapshot 不做物理时间步，但会向指定新前缀导出 point/mean/input/final 原生快照与 16 点积分 reference-faces。读取脚本只汇总原始面通量；体积 L1 动量率为单元集成动量残差向量长度之和除以总面积，单位为密度×速度/时间，不是用于稳态停止的归一化 s⁻¹ 残差。各分项 L1 不可直接相加。连续旋转场在真实直面上仍有法向速度，不能把其全部边界差异都称为数值错误。
+
+thermal-exact / thermal-rest 的参考为 T=1+.2 ln(r)/ln(2)、u=v=0、常压力，密度 p/T；压力按真实多边形总质量 3π 归一化。壁面静止无滑移，在每面中心给解析温度，实际折线面上以原生 Gauss 积分给出约 ±.17625845 W/m 的参考向外热量，壁功为零；边界采样/求积误差仍属于比较的一部分。thermal-rest 从均匀 1.1 K 静止状态推进。预算失败需以新目录或新前缀载入旧检查点续算，不能当作已稳态；研究入口支持 SIGINT/SIGTERM，已接受场与失败保留。整体算例成本须累加所有失败与续算进程。half-step 稳态比较不等价于瞬态时间精度检验。
+
 ### 原生曲壁环域与圆柱空间研究
 
 构建 `cartmesh2d_curved_heat_benchmark`，使用 `tools/flow/run_curved_wall.py` 生成两个真实嵌套轮廓、原生共形 Cut-cell/Solver 拓扑。实验固定内/外半径 .5/1 m、壁温 2/2.2 K、k=.37 W/(m K)。耦合演化采用 γ=1.4、R=1 J/(kg K)、μ=.02 Pa s，从 ρ=1、p=2.1、u=v=0 的均匀初场推进；这是人工验证参数，不是空气推荐工况。

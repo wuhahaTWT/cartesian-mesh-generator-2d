@@ -173,6 +173,7 @@ PrimitiveValues values(const EulerPrimitive2D& q){return {q.density,q.u,q.v,q.pr
 EulerPrimitive2D primitiveValues(const PrimitiveValues& q){return {q[0],q[1],q[2],q[3]};}
 struct SpatialOperator {
     std::vector<EulerConservative2D> faceFlux,residual;
+    std::vector<Vector2D> pressureFlux;
     std::vector<double> speed,spectral,heatFlux,heatRate,viscousRate;
     std::vector<std::array<double,3>> viscousFlux;
     std::vector<unsigned char> fallback;
@@ -180,12 +181,12 @@ struct SpatialOperator {
     double minimumContactRestoration=1;
 };
 SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const EulerBoundary2D*>& lookup,
-    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const EulerDiffusionOperators2D& diffusion) {
+    const IdealGas2D& gas,const std::vector<EulerConservative2D>& cells,const EulerStepControls2D& control,const EulerDiffusionOperators2D& diffusion,bool pressureDiagnostic=false) {
     const auto* heat=diffusion.heat?&*diffusion.heat:nullptr;const auto* viscous=diffusion.viscous?&*diffusion.viscous:nullptr;
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
     std::vector<EulerPrimitive2D> primitive;primitive.reserve(nc);
     for(const auto& u:cells)primitive.push_back(eulerPrimitive2D(u,gas));
-    SpatialOperator out;out.faceFlux.resize(nf);out.residual.resize(nc);out.speed.resize(nf);
+    SpatialOperator out;if(pressureDiagnostic)out.pressureFlux.resize(nf);out.faceFlux.resize(nf);out.residual.resize(nc);out.speed.resize(nf);
     out.spectral.resize(nc);out.fallback.resize(nf);out.heatFlux.resize(nf);out.heatRate.resize(nc);out.viscousFlux.resize(nf);out.viscousRate.resize(nc);
     // Multidimensional pressure sensor inspired by Simon & Mandal (2018),
     // eqs. 49-50, alpha=3. Our polygon stencil includes every face incident on
@@ -291,12 +292,12 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
         const auto right=neighbour?reconstructed(*neighbour,rightCentre):
             eulerConservative2D(ghost(eulerPrimitive2D(left,gas),*boundary,normal,gas),gas);
         const double restoration=neighbour?std::min(contactWeight[owner],contactWeight[*neighbour]):contactWeight[owner];
-        auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration);
+        auto flux=eulerFaceFlux2D(left,right,face.areaVector,gas,control.fluxScheme,restoration,pressureDiagnostic);
         if(boundary&&(boundary->kind==EulerBoundaryKind2D::PressureOutlet||boundary->kind==EulerBoundaryKind2D::TotalInlet)) {
             // Apply the characteristic trace directly. A second Riemann solve
             // against the interior would weaken the specified static pressure.
             const double speed=flux.waveSpeed;
-            flux=eulerFaceFlux2D(right,right,face.areaVector,gas,control.fluxScheme);
+            flux=eulerFaceFlux2D(right,right,face.areaVector,gas,control.fluxScheme,1,pressureDiagnostic);
             flux.waveSpeed=std::max(speed,flux.waveSpeed);
         }
         if(boundary&&(boundary->kind==EulerBoundaryKind2D::SlipWall||boundary->kind==EulerBoundaryKind2D::NoSlipWall)) {
@@ -306,8 +307,11 @@ SpatialOperator spatialOperator(const FvMesh2D& mesh,const std::vector<const Eul
             // of large SI energy terms to floating-point star-state arithmetic.
             const double traction=flux.integratedFlux[1]*normal.x+flux.integratedFlux[2]*normal.y;
             flux.integratedFlux={0,traction*normal.x,traction*normal.y,0};
+            flux.pressureFlux={flux.integratedFlux[1],flux.integratedFlux[2]};
         }
         out.minimumContactRestoration=std::min(out.minimumContactRestoration,restoration);
+        if(pressureDiagnostic){out.pressureFlux[id]=flux.pressureFlux;
+        if(boundary&&boundary->partner)out.pressureFlux[*boundary->partner]={-flux.pressureFlux.x,-flux.pressureFlux.y};}
         out.faceFlux[id]=flux.integratedFlux;out.speed[id]=flux.waveSpeed;
         out.fallback[id]=static_cast<unsigned char>(flux.hllcFallback);
         if(flux.hllcFallback)++out.fallbackEvaluations;
@@ -696,6 +700,15 @@ EulerStepResult2D EulerStepper2D::advance(const EulerState2D& initial,const Eule
     require(controls.wallGradient==wallGradient_,"wall gradient setting differs from prepared solver");
     require(controls.diffusionScheme==diffusionScheme_,"diffusion scheme differs from prepared solver");
     return advanceEulerImpl(mesh_,boundaries_,gas_,initial,controls,*diffusion_);
+}
+EulerSpatialSnapshot2D EulerStepper2D::spatialSnapshot(const EulerState2D& state,const EulerStepControls2D& control) const {
+    require(state.cells.size()==mesh_.cells.size(),"snapshot state size differs");
+    require(control.diffusionScheme==diffusionScheme_&&control.wallGradient==wallGradient_,"snapshot controls differ from prepared solver");
+    require(control.order==1||control.order==2,"snapshot order must be 1 or 2");
+    std::vector<const EulerBoundary2D*> lookup(mesh_.faces.size(),nullptr);
+    for(const auto& b:boundaries_)lookup[b.face]=&b;
+    auto op=spatialOperator(mesh_,lookup,gas_,state.cells,control,*diffusion_,true);
+    return {std::move(op.faceFlux),std::move(op.residual),std::move(op.pressureFlux),std::move(op.viscousFlux),std::move(op.heatFlux)};
 }
 EulerResidualDiagnostics2D EulerStepper2D::diagnostics(const EulerState2D& state,const EulerStepControls2D& control) const {
     require(state.cells.size()==mesh_.cells.size(),"residual state size differs");

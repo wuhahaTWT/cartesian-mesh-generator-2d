@@ -14,7 +14,7 @@ bool validStar(const EulerConservative2D& u,const IdealGas2D& gas) {
 }
 }
 EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& ul,const EulerConservative2D& ur,
-    Vector2D areaVector,const IdealGas2D& gas,EulerFluxScheme2D scheme,double contactRestoration) {
+    Vector2D areaVector,const IdealGas2D& gas,EulerFluxScheme2D scheme,double contactRestoration,bool pressureDiagnostic) {
     if(!std::isfinite(contactRestoration)||contactRestoration<0||contactRestoration>1)
         throw std::runtime_error("Euler flux: contact restoration must be in [0,1]");
     const auto l=eulerPrimitive2D(ul,gas),r=eulerPrimitive2D(ur,gas);
@@ -27,7 +27,9 @@ EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& ul,const EulerConserv
     const double al=eulerSoundSpeed2D(l,gas),ar=eulerSoundSpeed2D(r,gas);
     const auto fl=physicalFlux(ul,l,n),fr=physicalFlux(ur,r,n);
     EulerFaceFlux2D result;result.waveSpeed=std::max(std::abs(vl)+al,std::abs(vr)+ar);
+    double pressureContribution=0;
     const auto rusanov=[&]{
+        if(pressureDiagnostic)pressureContribution=.5*(l.pressure+r.pressure);
         for(std::size_t k=0;k<4;++k)
             result.integratedFlux[k]=.5*length*(fl[k]+fr[k]-result.waveSpeed*(ur[k]-ul[k]));
     };
@@ -46,8 +48,8 @@ EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& ul,const EulerConserv
         const double sl=std::min({vl-al,vr-ar,roeNormal-roeSound});
         const double sr=std::max({vl+al,vr+ar,roeNormal+roeSound});
         if(usable)result.waveSpeed=std::max({result.waveSpeed,std::abs(sl),std::abs(sr)});
-        if(usable&&sl>=0)for(std::size_t k=0;k<4;++k)result.integratedFlux[k]=length*fl[k];
-        else if(usable&&sr<=0)for(std::size_t k=0;k<4;++k)result.integratedFlux[k]=length*fr[k];
+        if(usable&&sl>=0){if(pressureDiagnostic)pressureContribution=l.pressure;for(std::size_t k=0;k<4;++k)result.integratedFlux[k]=length*fl[k];}
+        else if(usable&&sr<=0){if(pressureDiagnostic)pressureContribution=r.pressure;for(std::size_t k=0;k<4;++k)result.integratedFlux[k]=length*fr[k];}
         else {
             const double dl=l.density*(sl-vl),dr=r.density*(sr-vr);
             const double sm=(r.pressure-l.pressure+dl*vl-dr*vr)/(dl-dr);
@@ -66,6 +68,12 @@ EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& ul,const EulerConserv
             if(usable) {
                 const bool left=sm>=0;const auto& f=left?fl:fr;const auto& u=left?ul:ur;
                 const auto& star=stars[left?0:1];const double wave=left?sl:sr;
+                if(pressureDiagnostic){
+                const auto& q=left?l:r;const double vn=left?vl:vr;
+                const double starPressure=q.pressure+q.density*(wave-vn)*(sm-vn);
+                const double hllePressure=(sr*l.pressure-sl*r.pressure)/(sr-sl);
+                pressureContribution=contactRestoration==1?starPressure:hllePressure+contactRestoration*(starPressure-hllePressure);
+                }
                 for(std::size_t k=0;k<4;++k) {
                     const double hllc=f[k]+wave*(star[k]-u[k]);
                     const double hlle=(sr*fl[k]-sl*fr[k]+sl*sr*(ur[k]-ul[k]))/(sr-sl);
@@ -78,6 +86,7 @@ EulerFaceFlux2D eulerFaceFlux2D(const EulerConservative2D& ul,const EulerConserv
         throw std::runtime_error("Euler flux: non-finite acoustic speed");
     for(double value:result.integratedFlux)if(!std::isfinite(value))
         throw std::runtime_error("Euler flux: non-finite numerical flux");
+    if(pressureDiagnostic)result.pressureFlux={pressureContribution*areaVector.x,pressureContribution*areaVector.y};
     return result;
 }
 } // namespace cartmesh2d::fv
