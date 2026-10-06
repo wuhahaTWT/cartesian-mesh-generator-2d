@@ -336,6 +336,23 @@ HMM 热的非局部 Schur 行符号尚未逐行枚举，因此结果 heatMonoton
 
 这套研究工具显式抽取/导出稠密单元矩阵，成本及存储为二次量级，不是工程求解路径。计时分别记录两种算子的构造、矩阵抽取、稳态求解、单次 trace 与完整原生进程，驱动还计完整进程墙钟；不能把这些隔离算子时间当作完整可压同精度性能结论。四组云端原场、失败及最低模态已另行私密持久保存。
 
+### 可选冻结通量隐式预条件
+
+`EulerImplicitPreconditioner2D::{Diagonal,FrozenFluxIlu0}` 由 `EulerStepControls2D.implicitPreconditioner` 选择；CLI 使用 `--implicit-preconditioner diagonal|frozen-flux-ilu0`，只有 SDIRK2 使用它，默认 diagonal。摘要写入所选值和最近一次实际拒绝原因 `lastRejectedReason`；失败预算计数的边界仍与原推进调用一致。App 尚未增加该研究选项。
+
+`src/fv/EulerPreconditioner2D.cpp` 在每个 Newton 迭代组装 `I + h M^-1 J_approx`，与当前阶段固定的 rho/rho*c/rho*E 尺度相似变换。每条真实共享面只组装一次，周期平移使用两侧实际面到质心距离。对流采用物理 Euler 通量解析导数加冻结 Rusanov 波速；扩散仅用法向两点 Fourier/Stokes 近似，黏性功冻结面速度。滑移反射及外推边界用解析链式导数，总状态入口/压力出口/远场的导数由原 ghost 映射的合法保守量扰动得到。非正交、高阶/HMM 项仍完整保留在真实残差里。
+
+这是近似预条件矩阵与真实矩阵自由 Newton 算子的分离，没有引入 PETSc 依赖；方法角色可参阅 [PETSc SNES 的 matrix-free operator 说明](https://petsc.org/release/manual/snes/#matrix-free-methods)。预条件复用项目原生自然序 ILU(0)，没有位移或坏枢轴替换，失败走原重试。当前实现每轮重建邻接图/矩阵及分解，尚未证明完整成本收益，不进行缓存或重排优化来掩盖路线不利结果。
+
+```sh
+cmake --build build --target cartmesh2d_euler_preconditioner_tests cartmesh2d_euler_tests cartmesh2d_euler_hybrid_tests cartmesh2d_euler_cli
+ctest --test-dir build -R '^(cartmesh2d_euler_preconditioner|cartmesh2d_euler_hybrid|cartmesh2d_euler_core|cartmesh2d_compressible_cloud_cli)$' --output-on-failure
+```
+
+原生预条件检查直接扰动已有物理面通量，中心差分预算按 eps^(2/3) 及实际通量尺度设定；均匀 Rusanov 的 max/abs 造成 O(eps^(1/3)) 的差分项，周期装配单独按该预算检查。共享面守恒按 256 epsilon 和累加通量尺度检查，四步接受场差按既有阶段容差累计预算检查；这些均是实现误差而非物理精度门。三类微例同时核实原始守恒终值、压力/密度正性、取消、有限 Newton 预算失败及新建求解器后的精确续算。
+
+`tests/compressible_cloud_cli_test.py` 的 heated 参数保留 200 格通道反例的原生网格生成、物性、独立总压/总温和热壁输入，可只切换预条件重现该短程比较。曾把相同 maximumStep 误当作相同实际时钟的 CLI 场对比已撤销：两种预条件的拒绝序列不同，甚至按另一条轨迹逐步续算也可能触发不同拒绝。该回归因此只检查实际使用语义，不声称成本或时间精度通过；完整成本研究必须保存 history 中的实际时间步，计构造、装配、拒绝、求解及导出全部耗时，并另做时间误差对照。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。

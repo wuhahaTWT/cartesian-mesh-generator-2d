@@ -37,6 +37,23 @@ with tempfile.TemporaryDirectory(prefix="cartmesh-cloud-") as folder:
     run("reservoir-limited", ["--inlet-model", "total", "--inlet-total-pressure", "104190.2", "--inlet-total-temperature", "302.4", "--max-steps", "2"], 2)
     run("reservoir-resumed", ["--inlet-model", "total", "--inlet-total-pressure", "104190.2", "--inlet-total-temperature", "302.4", "--restart", str(root/"reservoir-limited.checkpoint")])
     assert (root/"reservoir.checkpoint").read_bytes() == (root/"reservoir-resumed.checkpoint").read_bytes()
+    # Candidate/retry/restart semantics on a generated cut-cell channel with a
+    # total inlet and a heated no-slip wall. Same-clock state agreement is
+    # checked in the native euler_preconditioner test; this workflow may retry.
+    heated = ["--inlet-model", "total", "--inlet-total-pressure", "104190.2", "--inlet-total-temperature", "302.4",
+              "--wall-value", "330", "--max-step", "2e-8", "--end-time", "8e-8"]
+    preconditioned = [*heated, "--implicit-preconditioner", "frozen-flux-ilu0"]
+    ilu = run("heated-ilu", preconditioned)
+    assert ilu["targetReached"] and ilu["implicitPreconditioner"] == "frozen-flux-ilu0"
+    if ilu["rejectedCandidates"]:
+        assert ilu["lastRejectedReason"]
+    ilu_fields = json.loads((root/"heated-ilu.fields.json").read_text())["cells"]
+    assert ilu["time"] == ilu["requestedEndTime"]
+    assert len(ilu_fields) == ilu["cells"]
+    assert all(c["rho"] > 0 and c["p"] > 0 and c["temperature"] > 0 for c in ilu_fields)
+    run("heated-ilu-limited", [*preconditioned, "--max-steps", "2"], 2)
+    run("heated-ilu-resumed", [*preconditioned, "--restart", str(root/"heated-ilu-limited.checkpoint")])
+    assert (root/"heated-ilu.checkpoint").read_bytes() == (root/"heated-ilu-resumed.checkpoint").read_bytes()
     process = subprocess.Popen([*common, "--output", str(root/"cancelled"), "--end-time", "1e-4"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     line = process.stdout.readline()
     assert '"type":"euler-step"' in line

@@ -2,6 +2,7 @@
 #include "cartmesh2d/fv/HybridHeat2D.hpp"
 #include "cartmesh2d/fv/HybridViscous2D.hpp"
 #include "cartmesh2d/fv/detail/EulerNewton2D.hpp"
+#include "cartmesh2d/fv/detail/EulerPreconditioner2D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -10,6 +11,7 @@
 
 namespace cartmesh2d::fv {
 struct EulerDiffusionOperators2D {
+    EulerTransport2D transport;
     std::optional<HeatConductionOperator2D> heat;
     std::optional<ViscousStressOperator2D> viscous;
     std::optional<HybridHeatOperator2D> hybridHeat;
@@ -410,8 +412,19 @@ ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBo
             diagonal[4*i+k]=1+h*(current.op.spectral[i]/mesh.cells[i].area+current.op.heatRate[i]+current.op.viscousRate[i]);
             rhs[4*i+k]=-rhs[4*i+k];
         }
+        std::unique_ptr<EulerFrozenPreconditioner2D> coupled;
+        if(control.implicitPreconditioner==EulerImplicitPreconditioner2D::FrozenFluxIlu0)
+            coupled=std::make_unique<EulerFrozenPreconditioner2D>(mesh,lookup,gas,diffusion.transport,
+                current.cells,h,scale,[&](const EulerConservative2D& u,const EulerBoundary2D& b,Vector2D normal) {
+                    return eulerConservative2D(ghost(eulerPrimitive2D(u,gas),b,normal,gas),gas);
+                });
+        const auto precondition=[&](const NewtonVector& v) {
+            if(coupled)return coupled->apply(v);
+            NewtonVector result(v.size());for(std::size_t j=0;j<v.size();++j)result[j]=v[j]/diagonal[j];
+            return result;
+        };
         const auto apply=[&](const NewtonVector& v) {
-            NewtonVector direction(v.size());for(std::size_t j=0;j<v.size();++j)direction[j]=v[j]/diagonal[j];
+            NewtonVector direction=precondition(v);
             const double length=newtonNorm(direction);if(length==0)return direction;
             double epsilon=std::sqrt(std::numeric_limits<double>::epsilon())*(1+newtonNorm(x))/length;
             ImplicitStage shifted;bool feasible=false;
@@ -428,7 +441,8 @@ ImplicitStage implicitStage(const FvMesh2D& mesh,const std::vector<const EulerBo
             return product;
         };
         auto delta=eulerGmres(apply,rhs,control.maximumKrylovIterations,work.linearIterations);
-        for(std::size_t j=0;j<delta.size();++j)delta[j]/=diagonal[j];
+        if(coupled)delta=coupled->apply(delta);
+        else for(std::size_t j=0;j<delta.size();++j)delta[j]/=diagonal[j];
         const double oldNorm=newtonNorm(f);bool accepted=false;
         for(double fraction=1;fraction>=1./4096;fraction*=.5) {
             auto y=x;for(std::size_t j=0;j<y.size();++j)y[j]+=fraction*delta[j];
@@ -458,6 +472,7 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
     require(control.order==1||control.order==2,"spatial/time order must be 1 or 2");
     require(control.timeStepControl==EulerTimeStepControl2D::Legacy||control.timeStepControl==EulerTimeStepControl2D::StageGuarded,"unknown time-step control");
     require(control.integrator==EulerTimeIntegrator2D::Explicit||control.integrator==EulerTimeIntegrator2D::Sdirk2,"unknown time integrator");
+    require(control.implicitPreconditioner==EulerImplicitPreconditioner2D::Diagonal||control.implicitPreconditioner==EulerImplicitPreconditioner2D::FrozenFluxIlu0,"unknown implicit preconditioner");
     const bool implicit=control.integrator==EulerTimeIntegrator2D::Sdirk2;
     if(implicit)require(std::isfinite(control.nonlinearTolerance)&&control.nonlinearTolerance>0&&control.nonlinearTolerance<=2e-14&&control.maximumNewtonIterations>0&&control.maximumKrylovIterations>0,"invalid implicit solver controls");
     const auto nc=mesh.cells.size(),nf=mesh.faces.size();
@@ -584,11 +599,11 @@ static EulerStepResult2D advanceEulerImpl(const FvMesh2D& mesh,const std::vector
             residual=std::move(combined.residual);spectral=std::move(combined.spectral);break;
         }
         require(attempt<control.maximumRetries,"stage positivity/CFL retry budget exhausted ("+failure+"); previous accepted state retained");
-        ++result.rejectedCandidates;if(cflExceeded)++result.cflRejectedCandidates;
+        ++result.rejectedCandidates;result.lastRejectedReason=failure;if(cflExceeded)++result.cflRejectedCandidates;
         // Only a CFL-only rejection may use the measured rate. Any positivity
         // or boundary/operator failure retains the conservative half-step retry.
         dt=guarded&&cflExceeded&&positiveStages?limitHorizon(.95*stageBound):.5*dt;
-        require(dt>=control.minimumStep,"stage positivity/CFL requires a step below the declared minimum; previous accepted state retained");
+        require(dt>=control.minimumStep,"stage positivity/CFL requires a step below the declared minimum ("+failure+"); previous accepted state retained");
     }
     result.step=dt;result.state={initial.time+dt,initial.steps+1,std::move(accepted)};
     result.minimumDensity=std::numeric_limits<double>::infinity();result.minimumPressure=result.minimumDensity;
@@ -647,6 +662,7 @@ std::shared_ptr<const EulerDiffusionOperators2D> prepareDiffusion(const FvMesh2D
     require(scheme==EulerDiffusionScheme2D::Corrected||scheme==EulerDiffusionScheme2D::HybridHeat||scheme==EulerDiffusionScheme2D::Hybrid,"invalid diffusion scheme");
     require(scheme==EulerDiffusionScheme2D::Corrected||wallGradient==WallGradient2D::Linear,"hybrid diffusion requires the linear wall option; it uses its own geometric form");
     auto out=std::make_shared<EulerDiffusionOperators2D>();
+    out->transport=transport;
     if(scheme==EulerDiffusionScheme2D::Corrected)out->heat=prepareHeat(mesh,boundaries,transport,wallGradient);
     else if(transport.thermalConductivity>0) {
         std::vector<HeatBoundary2D> bc;for(const auto& b:boundaries)bc.push_back({b.face,b.partner?HeatBoundaryKind2D::Periodic:b.thermalKind,b.thermalValue,b.partner});

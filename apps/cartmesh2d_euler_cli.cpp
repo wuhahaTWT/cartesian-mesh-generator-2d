@@ -135,6 +135,7 @@ int main(int argc,char** argv) {
                 "--initial-pressure-perturbation amplitude (sinusoidal start only; |amplitude|<1)\n"
                 "--inlet-model characteristic|total (channel; total uses reference entropy, total enthalpy, tangential velocity)\n"
                 "--integrator explicit|sdirk2 (SDIRK2 uniform physical dt from --max-step; time refinement required)\n"
+                "--implicit-preconditioner diagonal|frozen-flux-ilu0 (optional research SDIRK2 right preconditioner; default diagonal)\n"
                 "--time-step-control legacy|stage-guarded (default legacy; optional stage-rate headroom/retry)\n"
                 "--viscosity 0 (dynamic Pa s); --wall-model slip|no-slip (stationary).\n"
                 "--conductivity 0 (W/m/K); --wall-thermal insulated|temperature|flux --wall-value 0 (K or outward W/m2)\n"
@@ -166,6 +167,7 @@ int main(int argc,char** argv) {
         else if(arg=="--steady-tolerance")steadyTolerance=number(value);
         else if(arg=="--outlet-pressure")outletPressure=number(value);
         else if(arg=="--integrator") {require(value=="explicit"||value=="sdirk2","unknown integrator");controls.integrator=value=="sdirk2"?EulerTimeIntegrator2D::Sdirk2:EulerTimeIntegrator2D::Explicit;}
+        else if(arg=="--implicit-preconditioner") {require(value=="diagonal"||value=="frozen-flux-ilu0","unknown implicit preconditioner");controls.implicitPreconditioner=value=="frozen-flux-ilu0"?EulerImplicitPreconditioner2D::FrozenFluxIlu0:EulerImplicitPreconditioner2D::Diagonal;}
         else if(arg=="--time-step-control") {require(value=="legacy"||value=="stage-guarded","unknown time-step control");controls.timeStepControl=value=="stage-guarded"?EulerTimeStepControl2D::StageGuarded:EulerTimeStepControl2D::Legacy;}
         else if(arg=="--flux") {require(value=="rusanov"||value=="hllc","unknown Euler flux");controls.fluxScheme=value=="hllc"?EulerFluxScheme2D::Hllc:EulerFluxScheme2D::Rusanov;}
         else if(arg=="--wall-gradient"){require(value=="linear"||value=="quadratic"||value=="face-quadratic","unknown wall gradient scheme");controls.wallGradient=value=="face-quadratic"?WallGradient2D::FaceQuadratic:value=="quadratic"?WallGradient2D::Quadratic:WallGradient2D::Linear;}
@@ -308,6 +310,7 @@ int main(int argc,char** argv) {
     std::signal(SIGINT,stop);std::signal(SIGTERM,stop);std::optional<EulerStepResult2D> last;
     std::size_t rejected=0,fallbackEvaluations=0,reconstructionFallbackCells=0;double minimumContactRestoration=1;std::string status="target_reached",failure;
     std::size_t cflRejected=0,spatialEvaluations=0,nonlinearIterations=0,linearIterations=0;
+    std::string lastRejectedReason;
     std::optional<EulerResidualDiagnostics2D> previousDiagnostics;
     try {
         if(mode=="steady")previousDiagnostics=solver.diagnostics(state,controls);
@@ -319,6 +322,7 @@ int main(int argc,char** argv) {
             step.interrupted=[&]{return stopped||std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count()>=maximumSeconds;};
             last=solver.advance(state,step);state=last->state;rejected+=last->rejectedCandidates;
             nonlinearIterations+=last->nonlinearIterations;linearIterations+=last->linearIterations;
+            if(!last->lastRejectedReason.empty())lastRejectedReason=last->lastRejectedReason;
             cflRejected+=last->cflRejectedCandidates;spatialEvaluations+=last->spatialEvaluations;
             fallbackEvaluations+=last->hllcFallbackEvaluations;reconstructionFallbackCells+=last->reconstructionFallbackCells;
             minimumContactRestoration=std::min(minimumContactRestoration,last->minimumContactRestoration);
@@ -416,8 +420,10 @@ int main(int argc,char** argv) {
         <<",\"referenceState\":{\"rho\":"<<reference.density<<",\"u\":"<<reference.u<<",\"v\":"<<reference.v<<",\"p\":"<<reference.pressure<<"},\"split\":"<<split
         <<",\"time\":"<<state.time<<",\"requestedEndTime\":"<<endTime<<",\"initialTime\":"<<initialTime<<",\"steps\":"<<state.steps
         <<",\"acceptedSteps\":"<<state.steps-initialSteps<<",\"rejectedCandidates\":"<<rejected<<",\"lastStep\":"<<(last?last->step:0)
+        <<",\"lastRejectedReason\":"<<quote(lastRejectedReason)
         <<",\"cflLimit\":"<<controls.acousticCourant<<",\"maximumStep\":"<<controls.maximumStep<<",\"minimumStep\":"<<controls.minimumStep
         <<",\"integrator\":"<<quote(controls.integrator==EulerTimeIntegrator2D::Sdirk2?"sdirk2":"explicit")<<",\"nonlinearIterations\":"<<nonlinearIterations<<",\"linearIterations\":"<<linearIterations
+        <<",\"implicitPreconditioner\":"<<quote(controls.implicitPreconditioner==EulerImplicitPreconditioner2D::FrozenFluxIlu0?"frozen-flux-ilu0":"diagonal")
         <<",\"timeStepControl\":"<<quote(controls.timeStepControl==EulerTimeStepControl2D::StageGuarded?"stage-guarded":"legacy")<<",\"cflRejectedCandidates\":"<<cflRejected<<",\"spatialEvaluations\":"<<spatialEvaluations
         <<",\"maximumSteps\":"<<maximumSteps<<",\"maximumSeconds\":"<<maximumSeconds<<",\"checkpointEvery\":"<<checkpointEvery<<",\"elapsedSeconds\":"<<elapsed
         <<",\"nativeTopologyRevalidated\":true,\"solverQualityPassed\":true,\"externalCheckMesh\":\"not run\""

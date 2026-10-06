@@ -34,6 +34,9 @@ struct EulerState2D {
 enum class EulerFluxScheme2D { Rusanov, Hllc };
 enum class EulerTimeStepControl2D { Legacy, StageGuarded };
 enum class EulerTimeIntegrator2D { Explicit, Sdirk2 };
+// FrozenFluxIlu0 approximates only the Newton right preconditioner. The true
+// residual, accepted RK flux and nonlinear tolerance are unchanged.
+enum class EulerImplicitPreconditioner2D { Diagonal, FrozenFluxIlu0 };
 // Optional research transport forms. HybridHeat keeps corrected viscous stress;
 // Hybrid also solves shared velocity traces. Neither changes the default.
 enum class EulerDiffusionScheme2D { Corrected, HybridHeat, Hybrid };
@@ -61,6 +64,7 @@ struct EulerStepControls2D {
     // Stage positivity/CFL limits are unchanged; no history is needed on restart.
     EulerTimeStepControl2D timeStepControl=EulerTimeStepControl2D::Legacy;
     EulerTimeIntegrator2D integrator=EulerTimeIntegrator2D::Explicit;
+    EulerImplicitPreconditioner2D implicitPreconditioner=EulerImplicitPreconditioner2D::Diagonal;
     // SDIRK uses maximumStep as a uniform physical step, never a local clock.
     // Dimensionless stage defect relative to fixed rho/rho*c/rho*E scales.
     double nonlinearTolerance=2e-14;
@@ -90,6 +94,7 @@ struct EulerStepResult2D {
     double step=0, acousticCourant=0, minimumDensity=0, minimumPressure=0;
     double maximumCellBalanceError=0;
     std::size_t rejectedCandidates=0;
+    std::string lastRejectedReason;
     std::size_t cflRejectedCandidates=0,spatialEvaluations=0;
     std::size_t nonlinearIterations=0,linearIterations=0;
 };
