@@ -1,0 +1,1354 @@
+{
+  "schema": 1,
+  "scope": "Native research-only k=0 hybrid Laplacian Stokes with RT0 H(div) body-force reconstruction. No product/default/geometry/quality-gate change. Not old collocated solver repair or full Navier-Stokes qualification.",
+  "method": "Centroid fan, each triangle R(v)=a_j+b(x-c_T), b=D_T(v)/2. Exact outward face normal moments and internal radial normal continuity, with remaining circulation minimizing integral |R(v)-v_T|^2. Integrate arbitrary f(x).R(v) by 6x6 Duffy Gauss quadrature. Same native k=0 viscous stiffness and same B/-B^T for lifted and cell-load controls.",
+  "identity": "For every local test basis, integral grad(phi).R(v) = sum_F mean_F(phi)*(v_F.S_TF) - mean_T(phi)*B_T(v). Assembly cancels shared-face terms; gradient forces change only projected pressure for fixed Dirichlet velocity.",
+  "units": "Lref=1 m, Uref=1 m/s, nu=1 m^2/s. phi=Uref^2*((x/Lref)^3+(x/Lref)*(y/Lref)^2); lambda dimensionless=0,1,10000. f=-nu Laplacian(u)+lambda grad(phi) in m/s^2. u error m/s, p error m^2/s^2, div s^-1, pressure work m^4/s^3. Local load identity coefficient per unit velocity basis m^3/s^2; trace residual per unit velocity m. No amplitude is an acceptance threshold.",
+  "manufacturedProblems": {
+    "hydrostatic": "u=0,p=lambda phi",
+    "polynomial": "u=(x^2,-2xy) in unit reference coordinates,p=lambda phi",
+    "vortex": "u=(sin(pi x)cos(pi y),-cos(pi x)sin(pi y)),p=lambda phi"
+  },
+  "boundary": "Exact manufactured velocity face averages on all boundary faces. Zero velocity hydrostatic control is impermeable; nonzero manufactured traces are not physical cylinder or annulus boundary conditions.",
+  "reference": "https://arxiv.org/abs/2203.07180v3 Sections 2.4 and 3.2, read via PDF. Implementation is a direct two-dimensional k=0 constrained lift, not full paper code/high-order or convection implementation.",
+  "buildCommand": [
+    "g++",
+    "-std=c++20",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Wno-unused-parameter",
+    "-Werror",
+    "-Iinclude",
+    "artifacts/current/native-laminar-hdiv-load.cpp",
+    "build/libcartmesh2d_fv.a",
+    "build/libcartmesh2d.a",
+    "-o",
+    "/workspace/scratch/579d8506ec97/cartmesh2d/build/native-laminar-hdiv-load"
+  ],
+  "solveCount": 126,
+  "rejectedMeshes": [
+    {
+      "label": "cut8",
+      "rejected": "FVM mesh: existing Solver quality gate failed (2 issues)"
+    },
+    {
+      "label": "cut12",
+      "rejected": "FVM mesh: existing Solver quality gate failed (2 issues)"
+    }
+  ],
+  "nativeSolveSeconds": 5.042692984,
+  "maximumLiftedGradientVelocityRms": 3.5924010406805663e-13,
+  "maximumLiftedGradientFaceVelocity": 1.3593738778443812e-12,
+  "maximumLiftedPressureShiftRms": 2.5324156403409162e-11,
+  "maximumLiftedDivergence": 4.796163466380672e-14,
+  "maximumLiftedLinearResidual": 1.8189894035458565e-12,
+  "groups": [
+    {
+      "label": "square4-hydrostatic-cell",
+      "cells": 16,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.05505145954434044,
+          "velocityMax": 0.1015072269138237,
+          "faceVelocityMax": 0.07874885627538998,
+          "pressureShiftRms": 0.10933216972756989,
+          "pressureShiftMax": 0.3089613688167927
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 550.5145954434045,
+          "velocityMax": 1015.0722691382371,
+          "faceVelocityMax": 787.4885627539,
+          "pressureShiftRms": 1093.3216972756984,
+          "pressureShiftMax": 3089.6136881679217
+        }
+      ]
+    },
+    {
+      "label": "square4-hydrostatic-lift",
+      "cells": 16,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 4.462430100566168e-18,
+          "velocityMax": 7.560291121436186e-18,
+          "faceVelocityMax": 1.5069587768578897e-17,
+          "pressureShiftRms": 2.486168018310063e-16,
+          "pressureShiftMax": 7.181755190543981e-16
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 3.646290871208003e-14,
+          "velocityMax": 8.094045991881138e-14,
+          "faceVelocityMax": 1.6594982672340487e-13,
+          "pressureShiftRms": 1.4335364781935018e-12,
+          "pressureShiftMax": 2.8421709430404007e-12
+        }
+      ]
+    },
+    {
+      "label": "square4-polynomial-cell",
+      "cells": 16,
+      "baseVelocityRms": 0.05703735176976522,
+      "basePressureRms": 0.1372573897770638,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.05505145954434021,
+          "velocityMax": 0.101507226913823,
+          "faceVelocityMax": 0.0787488562753894,
+          "pressureShiftRms": 0.10933216972757039,
+          "pressureShiftMax": 0.30896136881679404
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 550.5145954434045,
+          "velocityMax": 1015.0722691382371,
+          "faceVelocityMax": 787.4885627538999,
+          "pressureShiftRms": 1093.321697275698,
+          "pressureShiftMax": 3089.6136881679213
+        }
+      ]
+    },
+    {
+      "label": "square4-polynomial-lift",
+      "cells": 16,
+      "baseVelocityRms": 0.007619934230671091,
+      "basePressureRms": 0.018336971306042994,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.233850653737051e-16,
+          "velocityMax": 2.7755575615628914e-16,
+          "faceVelocityMax": 2.482534153247273e-16,
+          "pressureShiftRms": 5.634514302671379e-16,
+          "pressureShiftMax": 1.0096090630185017e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.025788659043103e-14,
+          "velocityMax": 7.71801063358269e-14,
+          "faceVelocityMax": 1.6389155054707166e-13,
+          "pressureShiftRms": 1.3897605615963642e-12,
+          "pressureShiftMax": 2.4158453015843406e-12
+        }
+      ]
+    },
+    {
+      "label": "square4-vortex-cell",
+      "cells": 16,
+      "baseVelocityRms": 0.24483816519726773,
+      "basePressureRms": 0.0031760277937443447,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.05505145954434047,
+          "velocityMax": 0.10150722691382368,
+          "faceVelocityMax": 0.07874885627539004,
+          "pressureShiftRms": 0.1093321697275699,
+          "pressureShiftMax": 0.30896136881679437
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 550.5145954434045,
+          "velocityMax": 1015.072269138237,
+          "faceVelocityMax": 787.4885627538998,
+          "pressureShiftRms": 1093.321697275698,
+          "pressureShiftMax": 3089.613688167922
+        }
+      ]
+    },
+    {
+      "label": "square4-vortex-lift",
+      "cells": 16,
+      "baseVelocityRms": 0.09114346331562671,
+      "basePressureRms": 0.01995607754109936,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.0993275399547627e-16,
+          "velocityMax": 2.237726045655905e-16,
+          "faceVelocityMax": 3.3354228354050435e-16,
+          "pressureShiftRms": 1.9488257524133544e-15,
+          "pressureShiftMax": 4.805184028455756e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.2608179977818054e-14,
+          "velocityMax": 9.768469063329477e-14,
+          "faceVelocityMax": 2.0622754286202923e-13,
+          "pressureShiftRms": 1.23364625404808e-12,
+          "pressureShiftMax": 3.0127011996228248e-12
+        }
+      ]
+    },
+    {
+      "label": "square8-hydrostatic-cell",
+      "cells": 64,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.016939224243244597,
+          "velocityMax": 0.03425098756898504,
+          "faceVelocityMax": 0.03161999735385283,
+          "pressureShiftRms": 0.06057903813920444,
+          "pressureShiftMax": 0.28427983745721985
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 169.39224243244595,
+          "velocityMax": 342.5098756898506,
+          "faceVelocityMax": 316.1999735385285,
+          "pressureShiftRms": 605.7903813920444,
+          "pressureShiftMax": 2842.7983745722004
+        }
+      ]
+    },
+    {
+      "label": "square8-hydrostatic-lift",
+      "cells": 64,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 5.065223790063739e-18,
+          "velocityMax": 1.0957422944952494e-17,
+          "faceVelocityMax": 1.708318833130345e-17,
+          "pressureShiftRms": 1.7875597343102245e-16,
+          "pressureShiftMax": 5.295243410419204e-16
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.4213892861011004e-14,
+          "velocityMax": 1.2241451137795518e-13,
+          "faceVelocityMax": 1.8479961949472656e-13,
+          "pressureShiftRms": 2.049998913399779e-12,
+          "pressureShiftMax": 1.042366193360067e-11
+        }
+      ]
+    },
+    {
+      "label": "square8-polynomial-cell",
+      "cells": 64,
+      "baseVelocityRms": 0.01758608598144079,
+      "basePressureRms": 0.0656585081046944,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.0169392242432445,
+          "velocityMax": 0.03425098756898427,
+          "faceVelocityMax": 0.03161999735385204,
+          "pressureShiftRms": 0.06057903813920621,
+          "pressureShiftMax": 0.28427983745723534
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 169.39224243244598,
+          "velocityMax": 342.5098756898507,
+          "faceVelocityMax": 316.1999735385285,
+          "pressureShiftRms": 605.7903813920443,
+          "pressureShiftMax": 2842.7983745722004
+        }
+      ]
+    },
+    {
+      "label": "square8-polynomial-lift",
+      "cells": 64,
+      "baseVelocityRms": 0.0023494221662747838,
+      "basePressureRms": 0.00877168202797236,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.1661671712868683e-16,
+          "velocityMax": 3.3306690738754696e-16,
+          "faceVelocityMax": 4.577566798522237e-16,
+          "pressureShiftRms": 1.5642387403557794e-15,
+          "pressureShiftMax": 6.34041430469523e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 4.473422707941005e-14,
+          "velocityMax": 8.570233225983087e-14,
+          "faceVelocityMax": 1.7388747398201725e-13,
+          "pressureShiftRms": 1.930153735757459e-12,
+          "pressureShiftMax": 8.192557743313955e-12
+        }
+      ]
+    },
+    {
+      "label": "square8-vortex-cell",
+      "cells": 64,
+      "baseVelocityRms": 0.06415507419688163,
+      "basePressureRms": 0.002972542506248253,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.016939224243244618,
+          "velocityMax": 0.03425098756898515,
+          "faceVelocityMax": 0.03161999735385282,
+          "pressureShiftRms": 0.06057903813920459,
+          "pressureShiftMax": 0.2842798374572197
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 169.39224243244598,
+          "velocityMax": 342.50987568985056,
+          "faceVelocityMax": 316.19997353852835,
+          "pressureShiftRms": 605.7903813920444,
+          "pressureShiftMax": 2842.7983745722004
+        }
+      ]
+    },
+    {
+      "label": "square8-vortex-lift",
+      "cells": 64,
+      "baseVelocityRms": 0.03786947221256726,
+      "basePressureRms": 0.023213491403259148,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.4236098862663545e-16,
+          "velocityMax": 4.440892098500626e-16,
+          "faceVelocityMax": 4.456167806755388e-16,
+          "pressureShiftRms": 2.2268186203983503e-15,
+          "pressureShiftMax": 7.212112851373575e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 3.4525061895337183e-14,
+          "velocityMax": 7.604379385631098e-14,
+          "faceVelocityMax": 1.447316133880768e-13,
+          "pressureShiftRms": 2.0188918718988825e-12,
+          "pressureShiftMax": 8.682832230988424e-12
+        }
+      ]
+    },
+    {
+      "label": "square12-hydrostatic-cell",
+      "cells": 144,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.00811305991876154,
+          "velocityMax": 0.01677904498049949,
+          "faceVelocityMax": 0.01570352722053931,
+          "pressureShiftRms": 0.0381389910858022,
+          "pressureShiftMax": 0.23904944650277885
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 81.13059918761536,
+          "velocityMax": 167.7904498049949,
+          "faceVelocityMax": 157.03527220539314,
+          "pressureShiftRms": 381.389910858023,
+          "pressureShiftMax": 2390.49446502778
+        }
+      ]
+    },
+    {
+      "label": "square12-hydrostatic-lift",
+      "cells": 144,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 5.223099481017069e-18,
+          "velocityMax": 1.2009332319740126e-17,
+          "faceVelocityMax": 1.790304050597022e-17,
+          "pressureShiftRms": 3.633918927748552e-16,
+          "pressureShiftMax": 1.5518065227877162e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.094923969480536e-14,
+          "velocityMax": 1.312332953757194e-13,
+          "faceVelocityMax": 1.8556108038466458e-13,
+          "pressureShiftRms": 3.66785137138423e-12,
+          "pressureShiftMax": 1.5240352190125574e-11
+        }
+      ]
+    },
+    {
+      "label": "square12-polynomial-cell",
+      "cells": 144,
+      "baseVelocityRms": 0.008403898973813485,
+      "basePressureRms": 0.03737724303567372,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.0081130599187616,
+          "velocityMax": 0.01677904498050011,
+          "faceVelocityMax": 0.015703527220540626,
+          "pressureShiftRms": 0.0381389910858022,
+          "pressureShiftMax": 0.23904944650277912
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 81.13059918761537,
+          "velocityMax": 167.7904498049949,
+          "faceVelocityMax": 157.03527220539317,
+          "pressureShiftRms": 381.38991085802263,
+          "pressureShiftMax": 2390.494465027779
+        }
+      ]
+    },
+    {
+      "label": "square12-polynomial-lift",
+      "cells": 144,
+      "baseVelocityRms": 0.0011227231888349674,
+      "basePressureRms": 0.004993431932210351,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.6335459850331333e-16,
+          "velocityMax": 5.551115123125783e-16,
+          "faceVelocityMax": 8.005932084973442e-16,
+          "pressureShiftRms": 3.1520183331433853e-15,
+          "pressureShiftMax": 1.4058777290474694e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.714655935362565e-14,
+          "velocityMax": 1.092207821829501e-13,
+          "faceVelocityMax": 1.9557737455924194e-13,
+          "pressureShiftRms": 3.751856699653516e-12,
+          "pressureShiftMax": 1.6255638810333935e-11
+        }
+      ]
+    },
+    {
+      "label": "square12-vortex-cell",
+      "cells": 144,
+      "baseVelocityRms": 0.028806048066681685,
+      "basePressureRms": 0.0018935198752318078,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.008113059918761522,
+          "velocityMax": 0.016779044980499445,
+          "faceVelocityMax": 0.015703527220539255,
+          "pressureShiftRms": 0.038138991085802765,
+          "pressureShiftMax": 0.23904944650277427
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 81.13059918761537,
+          "velocityMax": 167.79044980499492,
+          "faceVelocityMax": 157.0352722053931,
+          "pressureShiftRms": 381.38991085802263,
+          "pressureShiftMax": 2390.4944650277785
+        }
+      ]
+    },
+    {
+      "label": "square12-vortex-lift",
+      "cells": 144,
+      "baseVelocityRms": 0.018869477583727024,
+      "basePressureRms": 0.015473097912098964,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.6653144589986936e-16,
+          "velocityMax": 3.608224830031759e-16,
+          "faceVelocityMax": 5.757191532588119e-16,
+          "pressureShiftRms": 2.1396475903780853e-15,
+          "pressureShiftMax": 6.595804149769585e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 5.402407082724881e-14,
+          "velocityMax": 1.1191890636478864e-13,
+          "faceVelocityMax": 1.6698197423285157e-13,
+          "pressureShiftRms": 3.821472050065079e-12,
+          "pressureShiftMax": 1.5860892846022742e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared4-hydrostatic-cell",
+      "cells": 16,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.16363354953416034,
+          "velocityMax": 0.28351089091353004,
+          "faceVelocityMax": 0.18528568394631784,
+          "pressureShiftRms": 0.7713638391022077,
+          "pressureShiftMax": 2.104724517858646
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 1636.3354953416033,
+          "velocityMax": 2835.108909135299,
+          "faceVelocityMax": 1852.8568394631775,
+          "pressureShiftRms": 7713.638391022084,
+          "pressureShiftMax": 21047.245178586487
+        }
+      ]
+    },
+    {
+      "label": "sheared4-hydrostatic-lift",
+      "cells": 16,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 3.5043366533563894e-17,
+          "velocityMax": 7.092584257942789e-17,
+          "faceVelocityMax": 1.1206821880143737e-16,
+          "pressureShiftRms": 8.634393328267476e-16,
+          "pressureShiftMax": 2.3175905639050143e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 3.1029837016415014e-13,
+          "velocityMax": 6.007367659576737e-13,
+          "faceVelocityMax": 1.2354404785493752e-12,
+          "pressureShiftRms": 5.669543333984476e-12,
+          "pressureShiftMax": 1.1482370609883219e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared4-polynomial-cell",
+      "cells": 16,
+      "baseVelocityRms": 0.04905201680227216,
+      "basePressureRms": 0.2622153028840526,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.16363354953415976,
+          "velocityMax": 0.2835108909135267,
+          "faceVelocityMax": 0.18528568394631711,
+          "pressureShiftRms": 0.7713638391022085,
+          "pressureShiftMax": 2.1047245178586493
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 1636.335495341603,
+          "velocityMax": 2835.1089091352997,
+          "faceVelocityMax": 1852.8568394631773,
+          "pressureShiftRms": 7713.638391022084,
+          "pressureShiftMax": 21047.245178586487
+        }
+      ]
+    },
+    {
+      "label": "sheared4-polynomial-lift",
+      "cells": 16,
+      "baseVelocityRms": 0.05490672469605372,
+      "basePressureRms": 0.6716366947724207,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 4.594921973428807e-16,
+          "velocityMax": 1.1102230246251565e-15,
+          "faceVelocityMax": 2.0014830212433605e-15,
+          "pressureShiftRms": 1.8651560949546997e-15,
+          "pressureShiftMax": 3.982925100842749e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 3.5924010406805663e-13,
+          "velocityMax": 7.559961112751015e-13,
+          "faceVelocityMax": 1.2488252283947229e-12,
+          "pressureShiftRms": 4.960707935713669e-12,
+          "pressureShiftMax": 9.549694368615746e-12
+        }
+      ]
+    },
+    {
+      "label": "sheared4-vortex-cell",
+      "cells": 16,
+      "baseVelocityRms": 0.32308595523786965,
+      "basePressureRms": 0.27511264576889216,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.16363354953416034,
+          "velocityMax": 0.28351089091352966,
+          "faceVelocityMax": 0.18528568394631767,
+          "pressureShiftRms": 0.7713638391022076,
+          "pressureShiftMax": 2.104724517858646
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 1636.3354953416033,
+          "velocityMax": 2835.1089091353006,
+          "faceVelocityMax": 1852.856839463179,
+          "pressureShiftRms": 7713.638391022083,
+          "pressureShiftMax": 21047.245178586483
+        }
+      ]
+    },
+    {
+      "label": "sheared4-vortex-lift",
+      "cells": 16,
+      "baseVelocityRms": 0.2164313190045441,
+      "basePressureRms": 1.9775008303066042,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 2.1121994753142163e-16,
+          "velocityMax": 5.613217783960923e-16,
+          "faceVelocityMax": 7.731808680624463e-16,
+          "pressureShiftRms": 2.3393850751791097e-15,
+          "pressureShiftMax": 4.6629367034256575e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.949622950122821e-13,
+          "velocityMax": 8.32322598825331e-13,
+          "faceVelocityMax": 1.3593738778443812e-12,
+          "pressureShiftRms": 5.876630886323294e-12,
+          "pressureShiftMax": 1.6825651982799172e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared8-hydrostatic-cell",
+      "cells": 64,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.06448352998531245,
+          "velocityMax": 0.11188266790805061,
+          "faceVelocityMax": 0.08902288052231105,
+          "pressureShiftRms": 0.567444411501633,
+          "pressureShiftMax": 2.3303216699445852
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 644.8352998531245,
+          "velocityMax": 1118.8266790805055,
+          "faceVelocityMax": 890.2288052231102,
+          "pressureShiftRms": 5674.44411501633,
+          "pressureShiftMax": 23303.216699445864
+        }
+      ]
+    },
+    {
+      "label": "sheared8-hydrostatic-lift",
+      "cells": 64,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.753165854684259e-17,
+          "velocityMax": 4.92834359121679e-17,
+          "faceVelocityMax": 6.936771370115833e-17,
+          "pressureShiftRms": 6.42079722039915e-16,
+          "pressureShiftMax": 2.007075061705166e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.0703053992722515e-13,
+          "velocityMax": 4.345648170587907e-13,
+          "faceVelocityMax": 7.074852189936892e-13,
+          "pressureShiftRms": 7.595725109033813e-12,
+          "pressureShiftMax": 3.0041746867937036e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared8-polynomial-cell",
+      "cells": 64,
+      "baseVelocityRms": 0.014762416316025862,
+      "basePressureRms": 0.16584266308099274,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.06448352998531241,
+          "velocityMax": 0.11188266790805042,
+          "faceVelocityMax": 0.08902288052231103,
+          "pressureShiftRms": 0.5674444115016358,
+          "pressureShiftMax": 2.3303216699446034
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 644.8352998531244,
+          "velocityMax": 1118.8266790805058,
+          "faceVelocityMax": 890.2288052231102,
+          "pressureShiftRms": 5674.444115016331,
+          "pressureShiftMax": 23303.216699445864
+        }
+      ]
+    },
+    {
+      "label": "sheared8-polynomial-lift",
+      "cells": 64,
+      "baseVelocityRms": 0.0350591201057254,
+      "basePressureRms": 0.45081779959255497,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 4.807035035218729e-16,
+          "velocityMax": 1.4043333874306805e-15,
+          "faceVelocityMax": 2.220446049250313e-15,
+          "pressureShiftRms": 6.494833420717865e-15,
+          "pressureShiftMax": 2.8362728832220796e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.468915351977666e-13,
+          "velocityMax": 6.668895220070461e-13,
+          "faceVelocityMax": 8.35295828422005e-13,
+          "pressureShiftRms": 7.965333020575129e-12,
+          "pressureShiftMax": 3.709033080667723e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared8-vortex-cell",
+      "cells": 64,
+      "baseVelocityRms": 0.08991342847278151,
+      "basePressureRms": 0.26390645212288955,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.06448352998531236,
+          "velocityMax": 0.11188266790805046,
+          "faceVelocityMax": 0.08902288052231082,
+          "pressureShiftRms": 0.5674444115016324,
+          "pressureShiftMax": 2.3303216699445812
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 644.8352998531244,
+          "velocityMax": 1118.8266790805062,
+          "faceVelocityMax": 890.2288052231099,
+          "pressureShiftRms": 5674.44411501633,
+          "pressureShiftMax": 23303.216699445868
+        }
+      ]
+    },
+    {
+      "label": "sheared8-vortex-lift",
+      "cells": 64,
+      "baseVelocityRms": 0.1107778617128166,
+      "basePressureRms": 1.5185697533341618,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 2.891448283011605e-16,
+          "velocityMax": 7.782704976483342e-16,
+          "faceVelocityMax": 1.0007415106216803e-15,
+          "pressureShiftRms": 2.5579966743636775e-15,
+          "pressureShiftMax": 1.061650767297806e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 1.9073347871176923e-13,
+          "velocityMax": 3.878351427825799e-13,
+          "faceVelocityMax": 6.976784765937472e-13,
+          "pressureShiftRms": 6.933033131867581e-12,
+          "pressureShiftMax": 2.9672264645341784e-11
+        }
+      ]
+    },
+    {
+      "label": "sheared12-hydrostatic-cell",
+      "cells": 144,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.03619491750737957,
+          "velocityMax": 0.06817888057758953,
+          "faceVelocityMax": 0.05602965725014263,
+          "pressureShiftRms": 0.40805287654576894,
+          "pressureShiftMax": 2.1352072798313975
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 361.9491750737957,
+          "velocityMax": 681.7888057758958,
+          "faceVelocityMax": 560.2965725014265,
+          "pressureShiftRms": 4080.528765457692,
+          "pressureShiftMax": 21352.072798314006
+        }
+      ]
+    },
+    {
+      "label": "sheared12-hydrostatic-lift",
+      "cells": 144,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 2.364172986274968e-17,
+          "velocityMax": 6.830951771412738e-17,
+          "faceVelocityMax": 1.0230414967294416e-16,
+          "pressureShiftRms": 2.1620894599302825e-15,
+          "pressureShiftMax": 9.625787821142405e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.5557300419407875e-13,
+          "velocityMax": 5.263587152077958e-13,
+          "faceVelocityMax": 1.0653164844092121e-12,
+          "pressureShiftRms": 2.49069031760229e-11,
+          "pressureShiftMax": 1.1720481375555716e-10
+        }
+      ]
+    },
+    {
+      "label": "sheared12-polynomial-cell",
+      "cells": 144,
+      "baseVelocityRms": 0.007810231364040447,
+      "basePressureRms": 0.10679090816884819,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.036194917507379694,
+          "velocityMax": 0.06817888057759008,
+          "faceVelocityMax": 0.05602965725014339,
+          "pressureShiftRms": 0.4080528765457641,
+          "pressureShiftMax": 2.135207279831409
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 361.9491750737957,
+          "velocityMax": 681.7888057758954,
+          "faceVelocityMax": 560.2965725014263,
+          "pressureShiftRms": 4080.5287654576896,
+          "pressureShiftMax": 21352.072798314002
+        }
+      ]
+    },
+    {
+      "label": "sheared12-polynomial-lift",
+      "cells": 144,
+      "baseVelocityRms": 0.021843877512163493,
+      "basePressureRms": 0.29887628124404764,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 5.122830011498451e-16,
+          "velocityMax": 1.831026719408895e-15,
+          "faceVelocityMax": 2.808666774861361e-15,
+          "pressureShiftRms": 1.0148811242656076e-14,
+          "pressureShiftMax": 6.035449917618505e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.792034986211766e-13,
+          "velocityMax": 6.883578381937061e-13,
+          "faceVelocityMax": 1.113400155762586e-12,
+          "pressureShiftRms": 2.5324156403409162e-11,
+          "pressureShiftMax": 1.2296494686678543e-10
+        }
+      ]
+    },
+    {
+      "label": "sheared12-vortex-cell",
+      "cells": 144,
+      "baseVelocityRms": 0.04216133472999327,
+      "basePressureRms": 0.2332617860884251,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.0361949175073796,
+          "velocityMax": 0.06817888057758993,
+          "faceVelocityMax": 0.0560296572501428,
+          "pressureShiftRms": 0.4080528765457713,
+          "pressureShiftMax": 2.1352072798314157
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 361.94917507379574,
+          "velocityMax": 681.7888057758956,
+          "faceVelocityMax": 560.2965725014265,
+          "pressureShiftRms": 4080.52876545769,
+          "pressureShiftMax": 21352.072798314002
+        }
+      ]
+    },
+    {
+      "label": "sheared12-vortex-lift",
+      "cells": 144,
+      "baseVelocityRms": 0.06795386770441333,
+      "basePressureRms": 1.1538833982303363,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 2.396728251017577e-16,
+          "velocityMax": 7.066778860128639e-16,
+          "faceVelocityMax": 1.0026641665932502e-15,
+          "pressureShiftRms": 4.157987387973682e-15,
+          "pressureShiftMax": 1.7004915993841964e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.925545944281266e-13,
+          "velocityMax": 7.090903530701607e-13,
+          "faceVelocityMax": 1.119484774389012e-12,
+          "pressureShiftRms": 2.497409679889227e-11,
+          "pressureShiftMax": 1.175395583332928e-10
+        }
+      ]
+    },
+    {
+      "label": "cut4-hydrostatic-cell",
+      "cells": 14,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.049251726814170976,
+          "velocityMax": 0.08994832482152895,
+          "faceVelocityMax": 0.048452677936847835,
+          "pressureShiftRms": 0.15159988722162862,
+          "pressureShiftMax": 0.34499703111074337
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 492.51726814170974,
+          "velocityMax": 899.4832482152898,
+          "faceVelocityMax": 484.52677936847846,
+          "pressureShiftRms": 1515.9988722162857,
+          "pressureShiftMax": 3449.970311107428
+        }
+      ]
+    },
+    {
+      "label": "cut4-hydrostatic-lift",
+      "cells": 14,
+      "baseVelocityRms": 0,
+      "basePressureRms": 0,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 6.296607017697383e-18,
+          "velocityMax": 9.349458941369782e-18,
+          "faceVelocityMax": 2.2824003898870373e-17,
+          "pressureShiftRms": 2.938422347259075e-16,
+          "pressureShiftMax": 6.854414476130959e-16
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 2.1322825076892923e-14,
+          "velocityMax": 3.742066979143029e-14,
+          "faceVelocityMax": 1.0780505000666809e-13,
+          "pressureShiftRms": 1.6859725580099382e-12,
+          "pressureShiftMax": 4.485167421617488e-12
+        }
+      ]
+    },
+    {
+      "label": "cut4-polynomial-cell",
+      "cells": 14,
+      "baseVelocityRms": 0.049751550225638964,
+      "basePressureRms": 0.16967381185714084,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.04925172681417078,
+          "velocityMax": 0.08994832482152855,
+          "faceVelocityMax": 0.04845267793684756,
+          "pressureShiftRms": 0.15159988722162854,
+          "pressureShiftMax": 0.3449970311107445
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 492.51726814170985,
+          "velocityMax": 899.4832482152897,
+          "faceVelocityMax": 484.52677936847846,
+          "pressureShiftRms": 1515.9988722162857,
+          "pressureShiftMax": 3449.970311107428
+        }
+      ]
+    },
+    {
+      "label": "cut4-polynomial-lift",
+      "cells": 14,
+      "baseVelocityRms": 0.00706339928301768,
+      "basePressureRms": 0.03948361638464302,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 9.015957231490564e-17,
+          "velocityMax": 2.220446049250313e-16,
+          "faceVelocityMax": 2.482534153247273e-16,
+          "pressureShiftRms": 9.59196542979969e-16,
+          "pressureShiftMax": 3.6706770574051e-15
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 4.823975426055472e-14,
+          "velocityMax": 8.706451142408618e-14,
+          "faceVelocityMax": 2.9480286968157047e-13,
+          "pressureShiftRms": 1.9903916397763854e-12,
+          "pressureShiftMax": 4.806514827127266e-12
+        }
+      ]
+    },
+    {
+      "label": "cut4-vortex-cell",
+      "cells": 14,
+      "baseVelocityRms": 0.23848978141213337,
+      "basePressureRms": 0.08271264353291997,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 0.049251726814171025,
+          "velocityMax": 0.08994832482152895,
+          "faceVelocityMax": 0.048452677936847884,
+          "pressureShiftRms": 0.15159988722162823,
+          "pressureShiftMax": 0.344997031110743
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 492.5172681417098,
+          "velocityMax": 899.4832482152898,
+          "faceVelocityMax": 484.52677936847846,
+          "pressureShiftRms": 1515.9988722162852,
+          "pressureShiftMax": 3449.9703111074277
+        }
+      ]
+    },
+    {
+      "label": "cut4-vortex-lift",
+      "cells": 14,
+      "baseVelocityRms": 0.07553819743222588,
+      "basePressureRms": 0.7265908482888052,
+      "gradientControls": [
+        {
+          "amplitude": 1,
+          "velocityRms": 1.0462778558770434e-16,
+          "velocityMax": 2.220446049250313e-16,
+          "faceVelocityMax": 3.331391796911832e-16,
+          "pressureShiftRms": 2.4246357499404945e-15,
+          "pressureShiftMax": 1.204696136828965e-14
+        },
+        {
+          "amplitude": 10000,
+          "velocityRms": 3.774927727672158e-14,
+          "velocityMax": 5.86987050480276e-14,
+          "faceVelocityMax": 2.0445466324629106e-13,
+          "pressureShiftRms": 1.1782661335981452e-12,
+          "pressureShiftMax": 2.4535297965394162e-12
+        }
+      ]
+    }
+  ],
+  "realMeshReconstructionChecks": [
+    {
+      "mesh": "outputs/cloud-laminar/cylinder-joint/far-20-fixed128-grid1.solver.cm2d",
+      "cells": 17260,
+      "faces": 34904,
+      "fanTriangles": 69092,
+      "area": 6720.859668843033,
+      "maxNormalTraceIntegralResidual": 1.857872699023258e-15,
+      "maxGradientLoadIdentityResidual": 9.487166607868858e-11,
+      "seconds": 0.294631471,
+      "meshSha256": "07044fa7f9bc234743ac8a952ab63cf7e3153fd462709b120e68110ed0fec995"
+    },
+    {
+      "mesh": "outputs/cloud-laminar/annulus-joint-7.solver.cm2d",
+      "cells": 6606,
+      "faces": 13910,
+      "fanTriangles": 26324,
+      "area": 2.3561353508581275,
+      "maxNormalTraceIntegralResidual": 9.170436084766573e-16,
+      "maxGradientLoadIdentityResidual": 5.926384600077328e-16,
+      "seconds": 0.190430681,
+      "meshSha256": "ffa1e0945ed36c3e543d6e1d5edf767dfccdc219a4b9e2387c69f7041b8c5160"
+    }
+  ],
+  "limits": [
+    "Only low-order Stokes solves <=144 cells; dense <=1500 unknowns. Full original 17260-cell and 6606-cell checks cover local reconstruction and integration identity, not global flow solve.",
+    "Lowest-order viscosity still gives poor sheared vortex pressure accuracy; gradient invariance does not qualify general pressure accuracy.",
+    "Centroid fan must have positive triangles and closed radial endpoints within construction roundoff. No polygon alteration or welding. Not proved for arbitrary non-star-shaped cells.",
+    "No convection, traction boundary, symmetric-stress qualification, physical time, old nonlinear branch selection, Electron/macOS/packaged app validation."
+  ],
+  "sourceHashes": {
+    "artifacts/current/native-laminar-hdiv-load.py": "852931e0f281a8f0a54858d878d9bb8a8c85681653a43b34cf9026b344e5998f",
+    "artifacts/current/native-laminar-hdiv-load.cpp": "d1981f83a2e69f62e4fc0d270b138b04c63306f2d6baba3ab955e1ab2d26d916",
+    "artifacts/current/native-laminar-hybrid-stokes.cpp": "ef394259980faf8564460004679c5e6d4682234c1b9ecd7ac79086a47f4680d2"
+  },
+  "binarySha256": "ad4f70de644ba987a810756e560ebe7ca6697a2f53b689b4c635653584acc5e0",
+  "libraryHashes": {
+    "build/libcartmesh2d_fv.a": "79bf363b29db639cb3306b4919cedcb456f9a142fa6fe97989e20e8a757496bc",
+    "build/libcartmesh2d.a": "eecf3e9caea367627a98f4c6d6678cd0c75df90b40a86b69bc95ffd266cf6226"
+  },
+  "rawOutputHashes": {
+    "annulus-audit.json": "8fce158c4334d537c8513c8ac31b24ce9a7a7e43da18d5b62ade2c83282e6f9b",
+    "cut4-hydrostatic-cell-0.cells.csv": "524d8fe6cc0caa1feb95c21ca944139d569253cd45350e5172439aac7a6eb972",
+    "cut4-hydrostatic-cell-0.faces.csv": "ab2f218947db4d095dcb3d64558142bc9e0ddbddff1345c36b88da3bd3eb11d5",
+    "cut4-hydrostatic-cell-1.cells.csv": "2a0651e9bc30a2125f23cb8acc61b8d8ae905e28c3103adbe0d833830a36eea5",
+    "cut4-hydrostatic-cell-1.faces.csv": "9299012ef55a1ea483cd3238e20cc66c02998209796e6ac9e6347c7aa48b18b3",
+    "cut4-hydrostatic-cell-10000.cells.csv": "2bd739081f451314254707f47af4336d6ff9e58ec02f6c5ecd6eb385ea0d8233",
+    "cut4-hydrostatic-cell-10000.faces.csv": "35a6e2ad4b41631362d6b63599d6c4b698a816a8a4d43e76d92f2bf097f5b393",
+    "cut4-hydrostatic-lift-0.cells.csv": "524d8fe6cc0caa1feb95c21ca944139d569253cd45350e5172439aac7a6eb972",
+    "cut4-hydrostatic-lift-0.faces.csv": "ab2f218947db4d095dcb3d64558142bc9e0ddbddff1345c36b88da3bd3eb11d5",
+    "cut4-hydrostatic-lift-1.cells.csv": "65aa97707b53ed7b6a576eebb88b79d0172d6efda2ebb64d1d12b6337601137e",
+    "cut4-hydrostatic-lift-1.faces.csv": "df3511eb9b27c4979fd04243351ec8a7ba794ed77b8733ccb55a154ad9e8fdbd",
+    "cut4-hydrostatic-lift-10000.cells.csv": "e0042c22785549b73166f0111ae60c2ed7150247314155f0fafdc7ee5dcdcfb8",
+    "cut4-hydrostatic-lift-10000.faces.csv": "71b84a9597877a44b2ce0002c91631cb136927072d599536e62dbc01f4e0da68",
+    "cut4-polynomial-cell-0.cells.csv": "3b6eeb7d0dfb60852aad78c1b7d1d30e2dddfc651e85432b3ef363490301ce1c",
+    "cut4-polynomial-cell-0.faces.csv": "36b91b8a313c302dc3c4740871f1e31418efef8fdd36ccd1c8ca56b270c06db3",
+    "cut4-polynomial-cell-1.cells.csv": "2ed5e64972288e93a95cedba4c40c3e8675edb03368685e35520cd1d4ed6da10",
+    "cut4-polynomial-cell-1.faces.csv": "b38260bb14421c7906b0b58c772d97e5a6290da953b71b466144ac257d0ed549",
+    "cut4-polynomial-cell-10000.cells.csv": "870b6e4e7efb465ca56437511e11c23cd683e065915bcd6da5227424a1238cb3",
+    "cut4-polynomial-cell-10000.faces.csv": "6f891566f002b9cb7e950cf86026c1fd3dc85d7fd7f50890a601a3e12e48c6f8",
+    "cut4-polynomial-lift-0.cells.csv": "d9ff209e1b6559a8b6bb6bfaace8d9220c1d6bebbf008767a11810018fe03186",
+    "cut4-polynomial-lift-0.faces.csv": "8a8cfbca6d64bd351ef89970fb01431aec908aaf0efc98aef7a1c94eb7c9218a",
+    "cut4-polynomial-lift-1.cells.csv": "f68eecb46bf21b312db6256ea5ef7cd650ae4ed36bdbcc8b26339d78b5c3d807",
+    "cut4-polynomial-lift-1.faces.csv": "b110f4c32509d1ced7f3e5fe9c3245d7543e305c465e7d0c7db1beeb9a4819f9",
+    "cut4-polynomial-lift-10000.cells.csv": "18503c4e86dda864ce35d14afe8e5fac52799d215455024840d5e36fcdd5a364",
+    "cut4-polynomial-lift-10000.faces.csv": "d877793389474ff10f51c8e30b0a365d1de716c80d53dd11729bf79c66b85a91",
+    "cut4-vortex-cell-0.cells.csv": "d6dbdbfaae62c0766867af44f9ffb0e3314a735a75127ed5b0c1dc83552da0dc",
+    "cut4-vortex-cell-0.faces.csv": "cdf2f5057e48abc4275f092d35ae9820f4c268dd8807f156d748db9edf31d950",
+    "cut4-vortex-cell-1.cells.csv": "79712de9f2f3c65e36b193f2a25bdf0d945e53f273b2642c7a0776b18df3f76d",
+    "cut4-vortex-cell-1.faces.csv": "092531bbb9c6a4ac95cd8e78b90dc42ed1a6bfbec8e0c72a54238b61e20838b8",
+    "cut4-vortex-cell-10000.cells.csv": "aa25b0d7cdad74e6c3c54939b36ac4849c3feaf9941752c2b1a88c8c77f20b0e",
+    "cut4-vortex-cell-10000.faces.csv": "ba3656072e44380eef06e290f8fbbb6a853d9b4d168db66643386054d1ba27da",
+    "cut4-vortex-lift-0.cells.csv": "7c80734a4857aabc64c6602099ab2d67f30cd46d584f11391ca1aff6c29c2611",
+    "cut4-vortex-lift-0.faces.csv": "7b9d87b4543213e9691ad12c0d70085550145e2647ba033ba048c7253f9e0da7",
+    "cut4-vortex-lift-1.cells.csv": "eb04933f8c8802f9aaf9031243006588f6b8b531d7991f478c9e84e2b20c4865",
+    "cut4-vortex-lift-1.faces.csv": "1d36503e961613e6dcea4709ad5911f18549409563e562e5604c926420fb278c",
+    "cut4-vortex-lift-10000.cells.csv": "8652803ec93a4b0f59721434d9d0cf2babf1ba27aecbc4629da0422f07804a6a",
+    "cut4-vortex-lift-10000.faces.csv": "1bb0df7fd684095bd1217c4b403934cb705d1f68f1828cd234fa6a84a51d9068",
+    "cylinder-audit.json": "2a1eee6475ed7923b6c9c8f1273b1666382e267872c857365e07fc3040ce99e5",
+    "runs.jsonl": "33e479659c41fac4841e8a932b4954ce7793064b5e1c23bd1bad2dd7958726f4",
+    "sheared12-hydrostatic-cell-0.cells.csv": "db5e0210e74e06657eaea473c3f71c36929415206f7880e1cdd2a3ca7ca5e7f5",
+    "sheared12-hydrostatic-cell-0.faces.csv": "b8b894745ae235bb57371808b0bec9ca3d7b795fcb768637e1c2c29e2e1f366d",
+    "sheared12-hydrostatic-cell-1.cells.csv": "56016809c6e7ee80bc78836fc881c121968f8ec3eee2081e5fbc63cc101addc7",
+    "sheared12-hydrostatic-cell-1.faces.csv": "098d45ea2032126c690ffc8433cedaef63951e98eae82eb8132220983a76053b",
+    "sheared12-hydrostatic-cell-10000.cells.csv": "d23ea32cd0c3d82a6aab919f203944de81cf6b8f539213f54bb5be65630bf7ac",
+    "sheared12-hydrostatic-cell-10000.faces.csv": "067e90e01440237b69436ed3c2a6e8d749b8a87abc5422ec784c020a67ad4ff0",
+    "sheared12-hydrostatic-lift-0.cells.csv": "db5e0210e74e06657eaea473c3f71c36929415206f7880e1cdd2a3ca7ca5e7f5",
+    "sheared12-hydrostatic-lift-0.faces.csv": "b8b894745ae235bb57371808b0bec9ca3d7b795fcb768637e1c2c29e2e1f366d",
+    "sheared12-hydrostatic-lift-1.cells.csv": "919a1a849cd06d3f4e56c311f60bf668e1ac468c8643ada06509ab66239862df",
+    "sheared12-hydrostatic-lift-1.faces.csv": "6d474347cd3328e6a1a2525afbfc4df3d32dc330b75991f8311b79a61b67b9db",
+    "sheared12-hydrostatic-lift-10000.cells.csv": "b78115d3df5f80223547b7441fb2084c06af58cefd0e8ef182ce9c2a463b68ee",
+    "sheared12-hydrostatic-lift-10000.faces.csv": "a9c08d64c940ddb3406c17cab3dcc21f8ad1b09c5306ef8df57bf95f164ec63d",
+    "sheared12-polynomial-cell-0.cells.csv": "ae3283cafaa215a8f48d0e158b3ae459cc2e3271c132d87d18327ccf47a2a70b",
+    "sheared12-polynomial-cell-0.faces.csv": "1d622222ddd0d2a513a09b245101081b795814ece8b4443d8c99b71b05fbfd34",
+    "sheared12-polynomial-cell-1.cells.csv": "58ffb6eb351ba497eee3f79e6fdd5c730d2e380effa695549290ba770bae0601",
+    "sheared12-polynomial-cell-1.faces.csv": "69b0f2df4cf168cba34c7510c2217f6eada8fcd9e2b3f14b2279bce3a6bc40e3",
+    "sheared12-polynomial-cell-10000.cells.csv": "66a1c9d50292a96a723be35224db4358b885e392169cc8452e0ec41078573032",
+    "sheared12-polynomial-cell-10000.faces.csv": "58a251112e67ec8136c4318aa56a57c7592cd8af70c1f65e4ca9493ef5664dc1",
+    "sheared12-polynomial-lift-0.cells.csv": "302c9960f2eae9bd6456c70b4a2b515ce16609a763a79cf3ba35d4c89611bd9a",
+    "sheared12-polynomial-lift-0.faces.csv": "3e128dc78ce0feb3155c3aa366407dcfa5d3688ced52a175b35bc624a3e2ca9b",
+    "sheared12-polynomial-lift-1.cells.csv": "4295f29820268da375c878dee44858f97779608251007d7d39fa32dfe6dbd48f",
+    "sheared12-polynomial-lift-1.faces.csv": "e7c779c49a5fbc153015a00beead82f5590ed76d5c8383e0fc7b217c1e6bd522",
+    "sheared12-polynomial-lift-10000.cells.csv": "30295627c0953f36120a13338290a91e3cb96a1af4e79954b70e6c73fe62d171",
+    "sheared12-polynomial-lift-10000.faces.csv": "778b764cef15f764b52125ec6b2fff8f8cdac4472e663be94f668353ab85e948",
+    "sheared12-vortex-cell-0.cells.csv": "68ebc260befed169c51a9f4c510ce06e8781790bce64a3c39895eab70e6ccc21",
+    "sheared12-vortex-cell-0.faces.csv": "35ab784239935db38a58831f5b2dc949eac8b311dc4baa68caf9d23e850850b5",
+    "sheared12-vortex-cell-1.cells.csv": "7039ee0e89787cce8f1d4eb5c301a097ea8a606e26da6ff40613dca39cb38266",
+    "sheared12-vortex-cell-1.faces.csv": "879f40cfb2dd961d1d7e3f628c6ac7cc5ac0c4b3f4a625282ffc9a9b6bc1ed8a",
+    "sheared12-vortex-cell-10000.cells.csv": "8a16fede18e43c12bc858602dc17efc68433f2e24b5d3b645ba5ea4ea2f26a5a",
+    "sheared12-vortex-cell-10000.faces.csv": "c73b49cdc691c76027ddc683bd5924cc9a0872e345f36b161c90c1d5c63de289",
+    "sheared12-vortex-lift-0.cells.csv": "3d9b042e1f2e9e429f3657246ef4eba32636889ad9d4d2ad02749b3d0bb7bdaf",
+    "sheared12-vortex-lift-0.faces.csv": "3090bdb0bdab77fb661193bca719bfb4b0204980c19661dd8659315e0b1b160e",
+    "sheared12-vortex-lift-1.cells.csv": "b9b76e7f9aceca613346c3c2c1ba28f09c4b307b7b6177a44fd1e022ec4dad22",
+    "sheared12-vortex-lift-1.faces.csv": "3fe6855da6302898d2637bf1de82386b7806a35479716086f198c68913b084e5",
+    "sheared12-vortex-lift-10000.cells.csv": "76169e05a42931b670a06ca9a79fc84ed2d762da4974c5f1904f2efff7bbdb30",
+    "sheared12-vortex-lift-10000.faces.csv": "a81545084606217301cffff774b790252d5402f9615913707370f3b5189b95fc",
+    "sheared4-hydrostatic-cell-0.cells.csv": "82afc8f18b32104444e80d0e4b5723cee9a1e853f972810bdba8a1f3a4824fe5",
+    "sheared4-hydrostatic-cell-0.faces.csv": "9099977112e9ed304600c8a1edaf653bb0b9666da60114d33ceb140055939e1e",
+    "sheared4-hydrostatic-cell-1.cells.csv": "23744794d1d3092dadc5d75416fc16d43c3c892f2539bca50f3ab414b9eda0b0",
+    "sheared4-hydrostatic-cell-1.faces.csv": "fe62795772741fe4c6d885a3379d9170a5ce4d54f74b288229e4d713832664e7",
+    "sheared4-hydrostatic-cell-10000.cells.csv": "1645c21702c145ab6f93068b32ea072fa798c694f3f0cb69d9d7b80ee241f0da",
+    "sheared4-hydrostatic-cell-10000.faces.csv": "813906b203006a6cdf7a5f0af386920555383920a70d30d91bfffd15c713948f",
+    "sheared4-hydrostatic-lift-0.cells.csv": "82afc8f18b32104444e80d0e4b5723cee9a1e853f972810bdba8a1f3a4824fe5",
+    "sheared4-hydrostatic-lift-0.faces.csv": "9099977112e9ed304600c8a1edaf653bb0b9666da60114d33ceb140055939e1e",
+    "sheared4-hydrostatic-lift-1.cells.csv": "8bd78ff443f26ad4b7ebeea5fe7a91cdcd29f7559bf7a2b6e9df4cc9b5558d73",
+    "sheared4-hydrostatic-lift-1.faces.csv": "8e429854dcd3531f21b81e7d31d3b3c59e52156cb4111fff8da17e783bd368e5",
+    "sheared4-hydrostatic-lift-10000.cells.csv": "4d29008909e32d81660ea21a12da81a280c8f9981ff49c7647673a6ca6155931",
+    "sheared4-hydrostatic-lift-10000.faces.csv": "004d31d7242f7f8552a4202158734f5d29340ffef4553855749ccf022f82ae86",
+    "sheared4-polynomial-cell-0.cells.csv": "eded3e19bb642273ab3124032290ea5d9a42717532c438497d151b83d90ec15c",
+    "sheared4-polynomial-cell-0.faces.csv": "c904592ace7af9a495905f9e822d6543bac1c8ca59f8ba8627f47c558a09b2e3",
+    "sheared4-polynomial-cell-1.cells.csv": "d74b21870ec23a8e6b1410ef0b7d640d8e13aabbf16b0dd519c85ce2f5721185",
+    "sheared4-polynomial-cell-1.faces.csv": "452af18f4b3cbff57b0f347b69daff49a1ca3cc7788b0bdc29aca6215b176b87",
+    "sheared4-polynomial-cell-10000.cells.csv": "ebfff8ed55bc16957aba59730cb765fe55a62dc375c3a19f767cccc3c2727659",
+    "sheared4-polynomial-cell-10000.faces.csv": "d17427d2f267be2176edfea3d50b5d96c9d0e06b044458c9b2b7025298596885",
+    "sheared4-polynomial-lift-0.cells.csv": "fd6ad4911abae4794ce32a56a35e679b3ad8c507b81acdea66629a31eea11cb6",
+    "sheared4-polynomial-lift-0.faces.csv": "8672ad2067bf968503d9cc93c490570eff096b26ebe42e3ba7d740b109e33fcb",
+    "sheared4-polynomial-lift-1.cells.csv": "cb2c0c8ae49541480bfa7888f3bc6744b251e5bb74f15601d3a1392c3f7de2c1",
+    "sheared4-polynomial-lift-1.faces.csv": "f1673c16edd0cedc3a4b61f8c6c756e447fb1ac75d2ebc75398a28cde7ca726a",
+    "sheared4-polynomial-lift-10000.cells.csv": "b0985b2c8f8fe05f0dcebc227e6edce40736500ac4fee5b90f9a49cb2b6ccdc8",
+    "sheared4-polynomial-lift-10000.faces.csv": "1a51cf6eaf6baa5d1dee58b0bb3775b1b16eec1328d6129a283aa73435f9f9b6",
+    "sheared4-vortex-cell-0.cells.csv": "376688bc9d09ab13eed6a396c95fc8035f165ce710670a502d73fb0822be207e",
+    "sheared4-vortex-cell-0.faces.csv": "910af1e5abb097c7f6fd1cb6319d2c44ce3091f520a124193bbbcf8efccf548b",
+    "sheared4-vortex-cell-1.cells.csv": "bb5fc944781b80247ac7ff6945705c9d2475fe8a5bd5b0af869e1c9f5025ff4d",
+    "sheared4-vortex-cell-1.faces.csv": "ecd4c6026ee57273f3dda8e2dc12bd8eccba9f662a753210c2ce5cbb4ef58838",
+    "sheared4-vortex-cell-10000.cells.csv": "8f00f174076181bc68cd443f35aabead3ab8970754931e3df2c19007eb731617",
+    "sheared4-vortex-cell-10000.faces.csv": "eace7f2516a889c498341f9e2138a7956ff3773e985287f3ba34e6799183f571",
+    "sheared4-vortex-lift-0.cells.csv": "915d2437816d1a1d3749d92087f94cb332dd1e1a1b805db7faaf82e73d4ba291",
+    "sheared4-vortex-lift-0.faces.csv": "ff013a4ac23b4ca795f4132f9fb30d29f89349daeb9b89371536e19433a0b746",
+    "sheared4-vortex-lift-1.cells.csv": "ba6967e54656587828186fb9f72a9c3e153d57f631ef87ee3b86aec0e7d448dc",
+    "sheared4-vortex-lift-1.faces.csv": "1131de2b8889a44093e2562535ff66ae1aced6837217bbdd212f80b8ea58e447",
+    "sheared4-vortex-lift-10000.cells.csv": "daaba35b21c7f1c78554a5099dba891521fb173c9371069d8cfc6fe1505c3a6b",
+    "sheared4-vortex-lift-10000.faces.csv": "eb12cd2873e3cfe78630db8ae5ff84256066ddb896d502f76bccbebbdedf76c0",
+    "sheared8-hydrostatic-cell-0.cells.csv": "4d6713edb4ee5b7f150f6d3405a342cd11d35df2cd8b6ce8b83bf036710934bf",
+    "sheared8-hydrostatic-cell-0.faces.csv": "544bef716510374a1f4a5733fb2be7b6aff159b8774715c604a6fe2b0b4363ce",
+    "sheared8-hydrostatic-cell-1.cells.csv": "20e5bb21d342d10be6dfb72800be7a1da120a3e1c90245f98170084454506f1b",
+    "sheared8-hydrostatic-cell-1.faces.csv": "06a4700611cad15fa69171416a22ccdf6d7c78c9dbac4e966c2f094c35edd679",
+    "sheared8-hydrostatic-cell-10000.cells.csv": "66e0a37a59262b9f12c2dffdfd161bb118813da1e17eb4095d49afbb97272bb2",
+    "sheared8-hydrostatic-cell-10000.faces.csv": "74011686b7bea7160e977bc803717c85effd43c38410579d1eb161c638c61673",
+    "sheared8-hydrostatic-lift-0.cells.csv": "4d6713edb4ee5b7f150f6d3405a342cd11d35df2cd8b6ce8b83bf036710934bf",
+    "sheared8-hydrostatic-lift-0.faces.csv": "544bef716510374a1f4a5733fb2be7b6aff159b8774715c604a6fe2b0b4363ce",
+    "sheared8-hydrostatic-lift-1.cells.csv": "b2193bcd84357be03a74473dfe2467a47b77c72d684bf545c1505f84523db603",
+    "sheared8-hydrostatic-lift-1.faces.csv": "8daa2733b3651ea0aff6b0e54febef0a3d42224fd5a23d829705ccebe9a82996",
+    "sheared8-hydrostatic-lift-10000.cells.csv": "a4e1aed397fa83d9755e1ef62820973d45edadab51d64b8a3aad5b16140b66b2",
+    "sheared8-hydrostatic-lift-10000.faces.csv": "ddcf777c699cb330ecc461274ca90c773f29fbc5553d7680a16502155f855228",
+    "sheared8-polynomial-cell-0.cells.csv": "4e0cda0f3177f3fdb0e8ce60a7584bf66e72c83ca883daceb666381f9defb43f",
+    "sheared8-polynomial-cell-0.faces.csv": "fd7b5ca433dd833618f5b4a9f0d6a2c7e843245794622b0c22169c5aff419ccc",
+    "sheared8-polynomial-cell-1.cells.csv": "fa22566193a8fa122466d199c283e8d13eb704ade722b2c7cb099f39d301cb45",
+    "sheared8-polynomial-cell-1.faces.csv": "dafc93e237de8eea000b9a268179b9ad32ff2e422a78c7b41f9463ff48e2b3bf",
+    "sheared8-polynomial-cell-10000.cells.csv": "c28a5a0af70740b1d07b263229275647c63106f442b1639a49f079ce03f1fbfa",
+    "sheared8-polynomial-cell-10000.faces.csv": "6ce4d3d0bc008cdb81d27949ccc97129fc60499214d12865255e03c912c66bc6",
+    "sheared8-polynomial-lift-0.cells.csv": "ddf23176abe0db43f1fe14c491c6897c5209ba6f4e82d53d8750dfe4d2601949",
+    "sheared8-polynomial-lift-0.faces.csv": "c8d341591298c91288279ba2ddd2cfca92dc72a229d7d63f76065fb8e3613662",
+    "sheared8-polynomial-lift-1.cells.csv": "6e2b5c8722704d9e17264203f8ce302a175d13140df4b5e47f87807069b4f3e2",
+    "sheared8-polynomial-lift-1.faces.csv": "578bf2980fe1f3990749ba50db45e620545f5212600fa1adca8b408a4cf8cf70",
+    "sheared8-polynomial-lift-10000.cells.csv": "9c87e2bc6edc94fdaa1144f342b6d5792740033737179202c17a65234e8bf4fb",
+    "sheared8-polynomial-lift-10000.faces.csv": "69c571c8c87faf6eb81b81d198ebca661c645aa23c33ad6663085eceecdb99d0",
+    "sheared8-vortex-cell-0.cells.csv": "110cddca28711a8454aecd21207eac742b537ff87ac6e673d368a4cc0bfe865b",
+    "sheared8-vortex-cell-0.faces.csv": "f5518f446c348c8f831f849217bc1eb0cc7e26c3e5965a60324547e950744101",
+    "sheared8-vortex-cell-1.cells.csv": "ab0aaedb248436520ed8adbc15e81ec3a31a474e9edf1d4eee3aa31ca7213d1d",
+    "sheared8-vortex-cell-1.faces.csv": "8c3ddb4a9cdb768d096aa5776201b5216d0535d8af0490552347dc8cd73cb9fe",
+    "sheared8-vortex-cell-10000.cells.csv": "0c87db1964cbc07c8cd9bdf1aed358d8a1f0bc9459f2aa386f39695dac739611",
+    "sheared8-vortex-cell-10000.faces.csv": "4d1b91cc4f99abfb644c259f749a6f4f20ca2b31335a21d04b43c9cd8363c3f8",
+    "sheared8-vortex-lift-0.cells.csv": "ece8532bca4b85705214d6abd5bce66e0e724cd57fd418e02c79e113c7ad633e",
+    "sheared8-vortex-lift-0.faces.csv": "e75c6ac173967cc0d0bb551f0683524961e13d5c7107f5d26f85bc93e6e7d873",
+    "sheared8-vortex-lift-1.cells.csv": "666cf9f3ed823536f23862bde3614504eb325367660bfcce340712527cb8b52b",
+    "sheared8-vortex-lift-1.faces.csv": "ccea63307d3d2c10ba623835a8c2deec94b0a931f1a7451d7b5ebe2dbdf23295",
+    "sheared8-vortex-lift-10000.cells.csv": "678d1f877254a1a9871d981632dfc6064e4519b0c7a714c5c6c8cdf0d007291c",
+    "sheared8-vortex-lift-10000.faces.csv": "e3396cd1048050f21cdb488089514646779beabb8caea937531a2b1239b590c1",
+    "square12-hydrostatic-cell-0.cells.csv": "7b8a138695b6464dc85fcd8bf2e790b3c2d06b6cb40d5d516b90a33acb3a6ef6",
+    "square12-hydrostatic-cell-0.faces.csv": "8715d75e0c40231807914f463ca28933d1699260b045b2cc3f2c8591a4882a66",
+    "square12-hydrostatic-cell-1.cells.csv": "864661c9e04d4d24f34b426a5b3f8a0f848abd7785b22d4e89f629f065af6cd3",
+    "square12-hydrostatic-cell-1.faces.csv": "d53dbf65887949f735d501caa350133c9bc6a47b9572dfe3428069dc3de40bd4",
+    "square12-hydrostatic-cell-10000.cells.csv": "3892363e757d1c8b9c51290cc17fe47d2e8c60210fcc33cdfbeb21b03a6eea53",
+    "square12-hydrostatic-cell-10000.faces.csv": "0100d499a5d1cc1d8b1753930530461805ecb79df9314e1f987afddd7ac711ad",
+    "square12-hydrostatic-lift-0.cells.csv": "7b8a138695b6464dc85fcd8bf2e790b3c2d06b6cb40d5d516b90a33acb3a6ef6",
+    "square12-hydrostatic-lift-0.faces.csv": "8715d75e0c40231807914f463ca28933d1699260b045b2cc3f2c8591a4882a66",
+    "square12-hydrostatic-lift-1.cells.csv": "143cee3b23ab23406d96ea0e56121b30ee680afbffaaf0ee2e2eb3378701ad9b",
+    "square12-hydrostatic-lift-1.faces.csv": "f5cbf6ce1912cd0ad2165f1215302ce61668c1572b58da89cd38743af5c9ae49",
+    "square12-hydrostatic-lift-10000.cells.csv": "56c18691bb3c4cfbd70c4c4a293bd43b539fb21dec15c78d6cc6bc8390c1b692",
+    "square12-hydrostatic-lift-10000.faces.csv": "5192450fe48a5bbca5d128ce922d82ae5cf440453750f474d9aed4bb9b354056",
+    "square12-polynomial-cell-0.cells.csv": "3a4dee27ba315a9dcf5225c25824f7d285479a68e2413d9df0d45e5b95561a17",
+    "square12-polynomial-cell-0.faces.csv": "751bfb31eba3ff05c88acf9a27a647351d4e5711c292dd0e1df855cab5237baf",
+    "square12-polynomial-cell-1.cells.csv": "50b9be9e4ca4483850c3dc05e0e568f5d0e1351a5d1d09a78cb3f231a937a0b0",
+    "square12-polynomial-cell-1.faces.csv": "06c36b8b5687fc2acbe9264e17c13436115d756f36b1f5aaf47951bc6d14b0b3",
+    "square12-polynomial-cell-10000.cells.csv": "5c97c3503220118c12d12aef7f9bf5c1fc773a55d2972642162b78290e515aff",
+    "square12-polynomial-cell-10000.faces.csv": "7e0761876ef35e9d0ac427a2cfb838ab94156f31144ef8945ba6edee41a55957",
+    "square12-polynomial-lift-0.cells.csv": "ce276ff7250fc4257508e9a056fcf2202a29666b547a213157be07820e85ba79",
+    "square12-polynomial-lift-0.faces.csv": "56a1886eaacee18ccaefe1051eb1258bad10d1012ddc4ca03bb64a49c3aaaa1f",
+    "square12-polynomial-lift-1.cells.csv": "b17bd9fbbcf630748d129a7957cbd04d9d744338f28e1c1448ffa3467c47c80b",
+    "square12-polynomial-lift-1.faces.csv": "b935c342c16608442cecb3e47c3ee8e86bb87788ab1a18f2c71caea0261c4f7b",
+    "square12-polynomial-lift-10000.cells.csv": "9bba755df73ab3c3f0e925c7f2b0c3ef9893570c7243a5485596b359337ae86e",
+    "square12-polynomial-lift-10000.faces.csv": "cc7f0749b859659053590254c38f541409334f786cc59b32eaa6ce7239d371cd",
+    "square12-vortex-cell-0.cells.csv": "0e29ad793b753ccaf92a241ba1c2132eb24108aab7ab7207578328993297c8d1",
+    "square12-vortex-cell-0.faces.csv": "8f4bd90cc906a84b74dbca4a513e7015f5a596552cf126a54b757be054994f84",
+    "square12-vortex-cell-1.cells.csv": "ea19fcc61bc8f2da1e78dd5db05f1768c5085ebe5d81179ecd594411b5536d68",
+    "square12-vortex-cell-1.faces.csv": "cae934f45b492038ee4c84c42f59e4fcd66a7d5cbe5c55e57f0cac68accfab99",
+    "square12-vortex-cell-10000.cells.csv": "a8472fb9fc5e9e6e9c2a04f629215e1e94afc2de3cb5e97c78d5794576edcc91",
+    "square12-vortex-cell-10000.faces.csv": "893713d616724dfeb7d2b0adb0d0bd2581d9b146d3e3572df4c0ff8255d0df37",
+    "square12-vortex-lift-0.cells.csv": "2adbbf8becc7b4b1c111a0aa42e7f9ad37563767439eab16c39f402357086242",
+    "square12-vortex-lift-0.faces.csv": "11d78e41df045de5953b210ddbcea9726a9848b57915a9f938d47ef2856b47b3",
+    "square12-vortex-lift-1.cells.csv": "34f3368070085fbe1bc944b3c621ac879dcbe2fc20f65991685fe10ef5b29fd4",
+    "square12-vortex-lift-1.faces.csv": "2c93de233b79cf68a54808da6e3e43ff08e0a532f3e8c797d8489c1436a023e5",
+    "square12-vortex-lift-10000.cells.csv": "1654a7e51d3e6560bd78095c261f698696fe0eb7225873383f6447456b97f24e",
+    "square12-vortex-lift-10000.faces.csv": "0b3414ca8c0e35bef62ec2a82aa185cb43ccb4fa75c81d67ad534ba348e21910",
+    "square4-hydrostatic-cell-0.cells.csv": "a2d9699327aebbc1ab664f621e185c2c95fccd6fab1515b8a09fb95cc335309e",
+    "square4-hydrostatic-cell-0.faces.csv": "7632a18f457618e4fec3e2922e0231b5a721d3698fb58a476942e99ccebd97af",
+    "square4-hydrostatic-cell-1.cells.csv": "3e3055442d73451666a044728024ee491d785a9d3e0ac05973ca257f47a45f10",
+    "square4-hydrostatic-cell-1.faces.csv": "81aba0036aa9fbb9451cd98ebe5f3f0f4d3fcf379d854ba4c16adc2e463a3faa",
+    "square4-hydrostatic-cell-10000.cells.csv": "fa4854aea6146928266e74063e2c835304f52f9d4d3c48681fe060ac8493d82d",
+    "square4-hydrostatic-cell-10000.faces.csv": "b8398c67b2f9ef52b2bed4a562e9419f67cdaa3e883b6d581e2f9ce260527a77",
+    "square4-hydrostatic-lift-0.cells.csv": "a2d9699327aebbc1ab664f621e185c2c95fccd6fab1515b8a09fb95cc335309e",
+    "square4-hydrostatic-lift-0.faces.csv": "7632a18f457618e4fec3e2922e0231b5a721d3698fb58a476942e99ccebd97af",
+    "square4-hydrostatic-lift-1.cells.csv": "ce5adfcaee210e72b34d692d4c9e7616b1dfb89cb8232e1b1c7568548ad3cc02",
+    "square4-hydrostatic-lift-1.faces.csv": "02adb58ca1297617d55592a5142331fef12605a036699e74c883cf8d26046b64",
+    "square4-hydrostatic-lift-10000.cells.csv": "97931db0999051aca8bfe58ce9db6ac4290d700e063e3121613493617faba01f",
+    "square4-hydrostatic-lift-10000.faces.csv": "f2526aaccdbef292d197473ebadcc152f2630e2c4b5d55faf142b501c309a5b6",
+    "square4-polynomial-cell-0.cells.csv": "4078a94752daa07b84edf0af10887d686f4386d79e8403c258e2acfd91815872",
+    "square4-polynomial-cell-0.faces.csv": "1a51affe870967ffc4d874cd6d8b63ff46f9429faedf87337b9752b98f7e3349",
+    "square4-polynomial-cell-1.cells.csv": "6aad257b29d82198f2c1b981e5677fbc8bb36e4966a2ab911e548d77524bd192",
+    "square4-polynomial-cell-1.faces.csv": "fc029dfc4a1a036d3c117f306aebe632654ec6c45718d7081c5cffed20b75a5d",
+    "square4-polynomial-cell-10000.cells.csv": "27703c9c8cd9704c3cefd764b628fb32592512cd2eadcc620cf5fbe51c4f2135",
+    "square4-polynomial-cell-10000.faces.csv": "c585510a4167355c847e8a5d6009e9ee54a978272959a88415ed0b3dd7064127",
+    "square4-polynomial-lift-0.cells.csv": "f437d7acba78297826749b4b8eec3bdfaba572a8cf659d21949e09dd4a1428ec",
+    "square4-polynomial-lift-0.faces.csv": "7251085acb362a158bc89a911741f796403c85a64e59f1a544ee178e1294fc21",
+    "square4-polynomial-lift-1.cells.csv": "4c09a4f23cbfe624c1d4940010f0241f8753e37f264923e9380bf9958bf1389c",
+    "square4-polynomial-lift-1.faces.csv": "04a8cc4b4527cda2cdc7dfd28cb30b505552be20521a62c045b4d418f4d5f672",
+    "square4-polynomial-lift-10000.cells.csv": "098d2e61380d67b5dc80c92dc7938ad324cc03919085a549c0573ffa207c37e7",
+    "square4-polynomial-lift-10000.faces.csv": "f4c13dac7961970d0936c802d6ea71570d500e7ecec3d4299e5c043e03e30f57",
+    "square4-vortex-cell-0.cells.csv": "1f5f66ceb7e3dbb19b754b035bd35990c7acfe3afa4cf40c1f3a1d7f7d1d9c21",
+    "square4-vortex-cell-0.faces.csv": "e232f1bb52263128e8cc0dfb880aa02c0ab270346bb9d2699e1d7354a04c277d",
+    "square4-vortex-cell-1.cells.csv": "8e272b352714b44c0a0a96e09ae7fcd24c24afc05536a628a00933380eb58b73",
+    "square4-vortex-cell-1.faces.csv": "4be28ee6cc1f7d9b4602f43b3eba473f623173b5fa890e6c503d2bfb44671915",
+    "square4-vortex-cell-10000.cells.csv": "83a05b3aadef2fdb89dbbcf73f45ba61a99a60d715dcb04040e606495f59c7b1",
+    "square4-vortex-cell-10000.faces.csv": "07d39397fd9a2203605527ec1b24a6aa3d5b54badf85e418e81578a1247406a4",
+    "square4-vortex-lift-0.cells.csv": "9efbbc9f7689cb66299e36567ab9a4b2cf3f6895f03e85345c1667f03a10b94d",
+    "square4-vortex-lift-0.faces.csv": "5a127f592bf99749be702712c076d4718e285b4561bca0aee1cc6068839c3714",
+    "square4-vortex-lift-1.cells.csv": "a28525ab85271c9b23d42db943534ba987090724c8d0394f9092810d24698c5b",
+    "square4-vortex-lift-1.faces.csv": "8db4dd82df290e84b5bad7c4a7dd8d54a655a5199515404e56e0800957544cd5",
+    "square4-vortex-lift-10000.cells.csv": "d98d740d746cf3222b1e2111ba76f0b1d12285b7a94f077ae2dbfb432443189a",
+    "square4-vortex-lift-10000.faces.csv": "9bd6f8e71e26da7c183f4137b160a394297ae6785d6a0f2fd065b8cd66f1c421",
+    "square8-hydrostatic-cell-0.cells.csv": "ca975cfa3b8610eefca638fb1127a2ebc60cc263acb64161ba14aca20789980c",
+    "square8-hydrostatic-cell-0.faces.csv": "faed4f313fdc70f4b046214b0cb0188b79f50a582bbd14a3835f93513601d76b",
+    "square8-hydrostatic-cell-1.cells.csv": "e68c2b0a85ad746b1792e07c6f7dda3ef41544491f01ba24f5127fbedb08dd3b",
+    "square8-hydrostatic-cell-1.faces.csv": "cf1bb54fa7eabe530c1633a98dcb964fc4af229a9661dab8177b7826d0eb68dd",
+    "square8-hydrostatic-cell-10000.cells.csv": "91cc5bda69302a56df90c6edf4d158c76e8b3e2a2a6e558b5c31ce27d3c8797c",
+    "square8-hydrostatic-cell-10000.faces.csv": "b97d321b3fc0f8b9865e6c684f4c2dcb541abb41baaafe50717e70ebd621c865",
+    "square8-hydrostatic-lift-0.cells.csv": "ca975cfa3b8610eefca638fb1127a2ebc60cc263acb64161ba14aca20789980c",
+    "square8-hydrostatic-lift-0.faces.csv": "faed4f313fdc70f4b046214b0cb0188b79f50a582bbd14a3835f93513601d76b",
+    "square8-hydrostatic-lift-1.cells.csv": "2f5598fe135887d1efd316430db68df163af494bfffd11a2d0e23facd18ad3b8",
+    "square8-hydrostatic-lift-1.faces.csv": "2abaf93ce4b8ba323d9c549a8822b90fcd4908140e16f1ff8f42dd8c8b5feecb",
+    "square8-hydrostatic-lift-10000.cells.csv": "f51f46656367eb3aaaba26b3f7aa80f4e6dadcb1b7158575007f87afecad6bd1",
+    "square8-hydrostatic-lift-10000.faces.csv": "02eeea98b58594736b920ae9fe637be9ede7102a47fa5aee2bf01509ecae8bc9",
+    "square8-polynomial-cell-0.cells.csv": "f4652bcf902ae01339ab54d9a6941726926a7a19c1becc3ba25b092921a00f1a",
+    "square8-polynomial-cell-0.faces.csv": "9920f3926328a421cca9db2ccb9741e9fb2f74489853f3cc0b532a92b481676d",
+    "square8-polynomial-cell-1.cells.csv": "8bb4f7c55a7e98f55283a2ee19f299f9d2c660341d6a40441a74d8b6af14138f",
+    "square8-polynomial-cell-1.faces.csv": "c569145aa927c50d529a221c2de76054ef4003b74af9496b5879276762f68650",
+    "square8-polynomial-cell-10000.cells.csv": "07ad129f6a81c642dd7e76615865276bb74104b4098b0a490d65df9b37ccc8c8",
+    "square8-polynomial-cell-10000.faces.csv": "f2fa2732b75a58a7ce5bdfe40f3bcd2581cf5963bfedbbbff370668364be580c",
+    "square8-polynomial-lift-0.cells.csv": "7666fd3d5f67bfd02f5cc1892b8b81f3a3765361372dfa545dbb7690cd84db89",
+    "square8-polynomial-lift-0.faces.csv": "e6ac2cff1aa85aae6bd775f446541eb3e0c57daee3b18b8d9e1fde6da09b0ec1",
+    "square8-polynomial-lift-1.cells.csv": "82f8bc5dddc5567fc94c7b83f65800bbe00c5a2d51d1169c90daa21748a4c491",
+    "square8-polynomial-lift-1.faces.csv": "c345e11bc67fd033b1c54925fb728cd580a768ba650190f081ac9313f42e0b3a",
+    "square8-polynomial-lift-10000.cells.csv": "a0c16a61216f59eec146c7d52a6787bbc4fe95b7fdcefd9a0143d4ed768c6855",
+    "square8-polynomial-lift-10000.faces.csv": "eacac20d71751179ca3395ae831a1ec3606fb4949e0b0c0d102ad7b063b47809",
+    "square8-vortex-cell-0.cells.csv": "3608f615b11d1cecaf1738e3a9c22cef9016baaff529855f702050d544c8d737",
+    "square8-vortex-cell-0.faces.csv": "427a0b7561b117f0c90b294a24519a7ed28a840749398ee5e22a30d561171242",
+    "square8-vortex-cell-1.cells.csv": "bacd9881d3179700486869cfa2cbaa67b7ead229663b00423df9dffa33ed7bf3",
+    "square8-vortex-cell-1.faces.csv": "e4fa9b3fe55bd6ab1d16f654c07e98729be4f3a06fd057b713d2a5b5201b998b",
+    "square8-vortex-cell-10000.cells.csv": "bf28bf24da600d6c952c49dc90ad2debc198d1d6572615e643297e3f0399a2e0",
+    "square8-vortex-cell-10000.faces.csv": "2c4ef4d8286ed4eff2c6d8c53bc51bc4956f28ad0ce6a25aad62cbda47056519",
+    "square8-vortex-lift-0.cells.csv": "a08c22919b67716a3e5b6a7741c5656ff378eb892fb38f2be884096edf6cde27",
+    "square8-vortex-lift-0.faces.csv": "7e8f37e3e7ca65390d85467b4a36503533e7a0fc8f98b2cb448e46a551f1678f",
+    "square8-vortex-lift-1.cells.csv": "2b3dd87e21ad6dde53830a459c68c77dfa85c9eb3a23b532fe0516417b57aced",
+    "square8-vortex-lift-1.faces.csv": "da6418f53cf041c6988a5f1b01f76169322cf583c6aa1b699ba92af783e6cd55",
+    "square8-vortex-lift-10000.cells.csv": "fba84ef5999c51415f4e291eba4eb8185373b40ad8cec98f2229eee07799c1ab",
+    "square8-vortex-lift-10000.faces.csv": "be1e2730ae5b515d4e025b7bb0cea0903ea2da3f874580f82882abc7f0c7441f"
+  }
+}

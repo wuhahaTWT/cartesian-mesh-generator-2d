@@ -218,6 +218,7 @@ void print(const std::string& mesh,const std::string& problem,bool moment,const 
     <<",\"affine_moment_defect\":"<<r.maxAffineMomentDefect<<",\"seconds\":"<<r.seconds<<"}\n";
 }
 
+#ifndef CARTMESH_HYBRID_STOKES_NO_MAIN
 int main(int argc,char** argv)try {
     if(argc>2)throw std::runtime_error("usage: probe [existing-output-directory]");
     const std::string output=argc==2?argv[1]:"";
@@ -246,3 +247,5 @@ int main(int argc,char** argv)try {
     }
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
+
+#endif
