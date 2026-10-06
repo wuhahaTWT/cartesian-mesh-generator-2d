@@ -28,21 +28,23 @@ Vec localState(const Fixture& f,int t,int m,const Vec& state){
     for(std::size_t l=0;l<f.mesh.cells[t].faces.size();++l)for(int c=0;c<2;++c)for(int j=0;j<2;++j)v[c*m+3+2*l+j]=state[9*f.mesh.cells.size()+4*f.mesh.cells[t].faces[l]+2*c+j];
     return v;
 }
-// 0 prescribed velocity, 1 natural outlet, 2 symmetry (normal fixed).
-int boundaryKind(const Face& face,bool open){
-    if(face.neighbour||!open)return 0;
+// Face kind: 0 prescribed velocity, 1 open outlet, 2 symmetry (normal fixed).
+// Outlet model: 0 closed, 1 total-stress natural, 2 product-like fixed static
+// pressure with zero primary normal velocity gradient.
+int boundaryKind(const Face& face,int outletModel,const std::string& problem){
+    if(face.neighbour||outletModel==0)return 0;
     if(face.patch==BoundaryPatch2D::EmbeddedBoundary)return 0;
     if(face.patch!=BoundaryPatch2D::DomainBoundary)throw std::runtime_error("explicit external patches required");
     auto S=face.areaVector;double round=128*std::numeric_limits<double>::epsilon()*std::hypot(S.x,S.y);
     if(std::abs(S.y)<=round)return S.x>0?1:0;
-    if(std::abs(S.x)<=round)return 2;
+    if(std::abs(S.x)<=round)return problem=="outlet-poiseuille"?0:2;
     throw std::runtime_error("external control requires axis-aligned far boundary");
 }
 Vector2D forceAt(Point2D p,const std::string& problem,double nu,bool nonlinear){
     if(problem=="cylinder")return {0,0};
     auto ex=exactAt(p,problem);
-    if(problem=="couette"||problem=="hydrostatic"||problem=="poiseuille"||problem=="rotation"){
-        Vector2D gp=problem=="hydrostatic"?Vector2D{1,2}:problem=="poiseuille"?Vector2D{-8,0}:Vector2D{0,0};
+    if(problem=="couette"||problem=="hydrostatic"||problem=="poiseuille"||problem=="outlet-poiseuille"||problem=="rotation"){
+        Vector2D gp=problem=="hydrostatic"?Vector2D{1,2}:(problem=="poiseuille"||problem=="outlet-poiseuille")?Vector2D{-8,0}:Vector2D{0,0};
         Vector2D result{nu*(ex.f.x-gp.x)+gp.x,nu*(ex.f.y-gp.y)+gp.y};
         if(nonlinear&&problem=="rotation"){result.x-=p.x;result.y-=p.y;}return result;
     }
@@ -52,9 +54,9 @@ Vector2D forceAt(Point2D p,const std::string& problem,double nu,bool nonlinear){
     if(nonlinear){force.x+=ex.u.x*ex.gradient[0].x+ex.u.y*ex.gradient[0].y;force.y+=ex.u.x*ex.gradient[1].x+ex.u.y*ex.gradient[1].y;}return force;
 }
 struct Oseen {
-    Element e;Lift lift;Mat convection;Vec beta;std::vector<Vec> bc;bool open;double nu;int order;const Fixture& f;int t;
-    Oseen(const Fixture& F,int T,const std::string& problem,double viscosity,bool nonlinear,bool Open,int Order,const Vec& previous):
-        e(F,T,problem,0,false,true,Order),lift(F,T,e.a,Order),convection(2*e.a.m,2*e.a.m),beta(localState(F,T,e.a.m,previous)),open(Open),nu(viscosity),order(Order),f(F),t(T){
+    Element e;Lift lift;Mat convection;Vec beta;std::vector<Vec> bc;int outletModel;double nu;int order;const Fixture& f;int t;std::string problem;
+    Oseen(const Fixture& F,int T,const std::string& Problem,double viscosity,bool nonlinear,int OutletModel,int Order,const Vec& previous):
+        e(F,T,Problem,0,false,true,Order),lift(F,T,e.a,Order),convection(2*e.a.m,2*e.a.m),beta(localState(F,T,e.a.m,previous)),outletModel(OutletModel),nu(viscosity),order(Order),f(F),t(T),problem(Problem){
         auto& a=e.a;int m=a.m;const auto& cell=f.mesh.cells[t];e.rhs.assign(e.rhs.size(),0);
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)*=nu;
         for(std::size_t k=0;k<lift.tri.size();++k){Vec coeff(8);for(int l=0;l<8;++l)for(int j=0;j<2*m;++j)coeff[l]+=lift.coefficients(8*k+l,j)*beta[j];bc.push_back(coeff);
@@ -66,8 +68,24 @@ struct Oseen {
             for(auto [z,w]:gauss(order)){double s=z-.5;auto S=face.areaVector;Point2D p{face.centre.x-s*S.y,face.centre.y+s*S.x};auto phi=a.basis.phi(p);double flux=sign*((beta[3+2*l]+s*beta[4+2*l])*S.x+(beta[m+3+2*l]+s*beta[m+4+2*l])*S.y),positive=std::max(flux,0.);
                 for(int c=0;c<2;++c){Vec test(m),trial(m);for(int j=0;j<3;++j){test[j]=phi[j];trial[j]=positive*phi[j];}for(int j=0;j<2;++j){test[3+2*l+j]=-(j?s:1);trial[3+2*l+j]=(flux-positive)*(j?s:1);}
                     for(int i=0;i<m;++i)for(int j=0;j<m;++j)convection(c*m+i,c*m+j)+=w*test[i]*trial[j];
-                    if(boundaryKind(face,open)==1)for(int i=0;i<2;++i)for(int j=0;j<2;++j)convection(c*m+3+2*l+i,c*m+3+2*l+j)+=w*flux*(i?s:1)*(j?s:1);
-                }}}
+                    if(boundaryKind(face,outletModel,problem)==1)for(int i=0;i<2;++i)for(int j=0;j<2;++j)convection(c*m+3+2*l+i,c*m+3+2*l+j)+=w*flux*(i?s:1)*(j?s:1);
+                }}
+            // The collocated pressure outlet removes grad(U).n from the
+            // primary diffusion stencil while retaining -nu*grad(U)^T.S as
+            // the symmetric correction. Starting from the full symmetric
+            // weak form, subtract that transpose-gradient boundary bilinear
+            // form. The manufactured outlet static pressure is exactly zero.
+            if(outletModel==2&&boundaryKind(face,outletModel,problem)==1){
+                for(auto [z,w]:gauss(order)){double s=z-.5;auto S=face.areaVector;Point2D p{face.centre.x-s*S.y,face.centre.y+s*S.x};auto phi=a.basis.phi(p);
+                    for(int i=0;i<2;++i){double q=i?s:1;int rx=3+2*l+i,ry=m+3+2*l+i;
+                        for(int j=0;j<m;++j){double gx=0,gy=0;for(int k=0;k<3;++k){gx+=phi[k]*a.gx(k,j);gy+=phi[k]*a.gy(k,j);}
+                            e.matrix(rx,j)-=w*nu*q*gx*S.x;e.matrix(rx,m+j)-=w*nu*q*gx*S.y;
+                            e.matrix(ry,j)-=w*nu*q*gy*S.x;e.matrix(ry,m+j)-=w*nu*q*gy*S.y;
+                        }
+                    }
+                }
+            }
+        }
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)+=convection(i,j);
         Mat ii(8,8);for(int i=0;i<8;++i)for(int j=0;j<8;++j)ii(i,j)=e.matrix(e.inside[i],e.inside[j]);DenseLU lu(ii.v,8);
         for(std::size_t j=0;j<e.outside.size();++j){Vec r(8);for(int i=0;i<8;++i)r[i]=e.matrix(e.inside[i],e.outside[j]);r=lu.solve(r);for(int i=0;i<8;++i)e.eliminated(i,int(j))=r[i];}
@@ -80,23 +98,23 @@ struct Oseen {
         for(std::size_t k=0;k<lift.tri.size();++k)for(auto q:lift.tri[k].quadrature(order)){auto phi=e.a.basis.phi(q.p);double u=0,w=0,d=0;for(int j=0;j<3;++j){u+=phi[j]*v[j];w+=phi[j]*v[m+j];for(int l=0;l<m;++l)d+=phi[j]*(e.a.gx(j,l)*beta[l]+e.a.gy(j,l)*beta[m+l]);}result+=.5*q.w*d*(u*u+w*w);}
         for(std::size_t l=0;l<cell.faces.size();++l){const auto& face=f.mesh.faces[cell.faces[l]];double sign=face.owner==std::size_t(t)?1:-1;
             for(auto [z,w]:gauss(order)){double s=z-.5;auto S=face.areaVector;auto phi=e.a.basis.phi({face.centre.x-s*S.y,face.centre.y+s*S.x});double flux=sign*((beta[3+2*l]+s*beta[4+2*l])*S.x+(beta[m+3+2*l]+s*beta[m+4+2*l])*S.y);
-                for(int c=0;c<2;++c){double u=0,uf=v[c*m+3+2*l]+s*v[c*m+4+2*l];for(int j=0;j<3;++j)u+=phi[j]*v[c*m+j];result+=.5*w*(std::abs(flux)*(u-uf)*(u-uf)+(boundaryKind(face,open)==1?1:-1)*flux*uf*uf);}}}return result;
+                for(int c=0;c<2;++c){double u=0,uf=v[c*m+3+2*l]+s*v[c*m+4+2*l];for(int j=0;j<3;++j)u+=phi[j]*v[c*m+j];result+=.5*w*(std::abs(flux)*(u-uf)*(u-uf)+(boundaryKind(face,outletModel,problem)==1?1:-1)*flux*uf*uf);}}}return result;
     }
 };
 template<class Operator> int runOseen(int argc,char** argv)try{
-    if(argc!=11)throw std::runtime_error("usage: p1-oseen assemble|recover|check mesh n noslip|noslip-sheared|cylinder nu stokes|ns closed|open order previous.state|zero prefix");
-    std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[10];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double nu=std::stod(argv[5]);bool nonlinear=std::string(argv[6])=="ns",open=std::string(argv[7])=="open";
-    if((mode!="assemble"&&mode!="recover"&&mode!="check")||!(nu>0)||order<4||order>12||(std::string(argv[6])!="ns"&&std::string(argv[6])!="stokes")||(std::string(argv[7])!="open"&&std::string(argv[7])!="closed"))throw std::runtime_error("invalid research options");
-    if((problem=="noslip"&&name!="square")||(problem=="noslip-sheared"&&name!="sheared")||(problem!="noslip"&&problem!="noslip-sheared"&&problem!="cylinder"&&problem!="couette"&&problem!="hydrostatic"&&problem!="poiseuille"&&problem!="rotation")||(open&&problem!="cylinder"))throw std::runtime_error("unsupported manufactured/boundary pairing");
+    if(argc!=11)throw std::runtime_error("usage: p1-oseen assemble|recover|check mesh n problem nu stokes|ns closed|open|pressure order previous.state|zero prefix");
+    std::string mode=argv[1],name=argv[2],problem=argv[4],prefix=argv[10],boundaryMode=argv[7];int n=std::stoi(argv[3]),order=std::stoi(argv[8]);double nu=std::stod(argv[5]);bool nonlinear=std::string(argv[6])=="ns";int outletModel=boundaryMode=="closed"?0:boundaryMode=="open"?1:boundaryMode=="pressure"?2:-1;bool open=outletModel!=0;
+    if((mode!="assemble"&&mode!="recover"&&mode!="check")||!(nu>0)||order<4||order>12||(std::string(argv[6])!="ns"&&std::string(argv[6])!="stokes")||outletModel<0)throw std::runtime_error("invalid research options");
+    if((problem=="noslip"&&name!="square")||(problem=="noslip-sheared"&&name!="sheared")||(problem=="outlet-poiseuille"&&name!="square")||(problem!="noslip"&&problem!="noslip-sheared"&&problem!="cylinder"&&problem!="couette"&&problem!="hydrostatic"&&problem!="poiseuille"&&problem!="outlet-poiseuille"&&problem!="rotation")||(open&&problem!="cylinder"&&problem!="outlet-poiseuille")||(outletModel==2&&problem!="outlet-poiseuille"&&problem!="cylinder"))throw std::runtime_error("unsupported manufactured/boundary pairing");
     auto start=std::chrono::steady_clock::now();auto f=readFixture(name,n);const auto& mesh=f.mesh;int nc=int(mesh.cells.size()),nf=int(mesh.faces.size()),raw=4*nf+nc,count=0;Vec previous=readState(argv[9],f),outState(previous.size()),zero(previous.size());
     std::vector<int> map(raw,-1);Vec known(raw);int outlets=0;
-    for(int i=0;i<nf;++i){const auto& face=mesh.faces[i];int kind=boundaryKind(face,open);outlets+=kind==1;
+    for(int i=0;i<nf;++i){const auto& face=mesh.faces[i];int kind=boundaryKind(face,outletModel,problem);outlets+=kind==1;
         for(int c=0;c<2;++c)for(int j=0;j<2;++j)if(face.neighbour||kind==1||(kind==2&&c==0))map[4*i+2*c+j]=count++;
         if(!face.neighbour&&problem=="cylinder"&&face.patch==BoundaryPatch2D::DomainBoundary&&kind==0)known[4*i]=1.;
         if(!face.neighbour&&problem!="cylinder"&&problem!="noslip"&&problem!="noslip-sheared")for(auto [z,w]:gauss(order)){double ss=z-.5;auto S=face.areaVector;auto u=exactAt({face.centre.x-ss*S.y,face.centre.y+ss*S.x},problem).u;
             known[4*i]+=w*u.x;known[4*i+1]+=12*w*ss*u.x;known[4*i+2]+=w*u.y;known[4*i+3]+=12*w*ss*u.y;}
     }
-    if(open&&!outlets)throw std::runtime_error("no pressure-reference natural outlet");
+    if(open&&!outlets)throw std::runtime_error("no pressure-reference outlet");
     for(int t=0;t<nc-(open?0:1);++t)map[4*nf+t]=count++;
     Vec rhs(count),solution;std::ofstream entries,cells,faces;std::uint64_t nnz=0;
     if(mode=="assemble")entries.open(prefix+".entries.tmp",std::ios::binary);
@@ -106,7 +124,7 @@ template<class Operator> int runOseen(int argc,char** argv)try{
         cells.open(prefix+"."+mode+".cells.csv.tmp");cells<<std::setprecision(17)<<"cell,x,y,area,u0,uX,uY,v0,vX,vY,p0,pX,pY\n";
     }
     Vec reaction(4*nf),viscousReaction(4*nf),convectionReaction(4*nf),stressReaction(4*nf),exactReaction(4*nf);double area=0,urms=0,prms=0,gauge=0,pressureWork=0,visc=0,conv=0,identity=0,force=0,maxdiv=0,maxspeed=0,pmin=1e300,pmax=-1e300,internal=0,trace=0,delta=0,rtRms=0,rtMax=0,pVertexMin=1e300,pVertexMax=-1e300;
-    for(int t=0;t<nc;++t){Operator o(f,t,problem,nu,nonlinear,open,order,nonlinear?previous:zero);auto& e=o.e;const auto& a=e.a;int m=a.m;area+=mesh.cells[t].area;trace=std::max(trace,o.lift.traceResidual);
+    for(int t=0;t<nc;++t){Operator o(f,t,problem,nu,nonlinear,outletModel,order,nonlinear?previous:zero);auto& e=o.e;const auto& a=e.a;int m=a.m;area+=mesh.cells[t].area;trace=std::max(trace,o.lift.traceResidual);
         std::vector<int> ids;for(int j:e.outside)if(j==2*m)ids.push_back(4*nf+t);else{int c=j/m,k=j%m;ids.push_back(4*int(mesh.cells[t].faces[(k-3)/2])+2*c+(k-3)%2);}
         if(mode=="assemble"){auto [k,b]=e.condensed();for(std::size_t i=0;i<ids.size();++i){int row=map[ids[i]];if(row<0)continue;rhs[row]+=b[i];for(std::size_t j=0;j<ids.size();++j){int col=map[ids[j]];double v=k(int(i),int(j));if(col<0)rhs[row]-=v*known[ids[j]];else if(v!=0){Entry z{row,col,v};entries.write(reinterpret_cast<char*>(&z),sizeof z);++nnz;}}}}
         else{Vec ext;for(int id:ids)ext.push_back(known[id]);auto v=mode=="check"?localState(f,t,m,previous):e.recover(ext);P6 ru{},rv{};for(int l=0;l<6;++l)for(int j=0;j<m;++j){ru[l]+=a.potential(l,j)*v[j];rv[l]+=a.potential(l,j)*v[m+j];}
@@ -145,7 +163,7 @@ template<class Operator> int runOseen(int argc,char** argv)try{
                 tractionX+=reaction[4*i];tractionY+=reaction[4*i+2];
                 for(auto [z,w]:gauss(order)){double ss=z-.5;Vector2D u{known[4*i]+ss*known[4*i+1],known[4*i+2]+ss*known[4*i+3]};double mass=dot(u,face.areaVector),flux=nonlinear?((previous[9*nc+4*i]+ss*previous[9*nc+4*i+1])*face.areaVector.x+(previous[9*nc+4*i+2]+ss*previous[9*nc+4*i+3])*face.areaVector.y):0;
                     massFlux+=w*mass;momentumX+=w*flux*u.x;momentumY+=w*flux*u.y;allFluxWork+=w*flux*dot(u,u);
-                    if(nonlinear&&boundaryKind(face,open)!=1){tractionX+=w*flux*u.x;tractionY+=w*flux*u.y;fluxWork+=w*flux*dot(u,u);}
+                    if(nonlinear&&boundaryKind(face,outletModel,problem)!=1){tractionX+=w*flux*u.x;tractionY+=w*flux*u.y;fluxWork+=w*flux*dot(u,u);}
                     if(face.patch==BoundaryPatch2D::EmbeddedBoundary){int t=int(face.owner);Basis b{mesh.cells[t].centre,f.diameter[t],{}};auto phi=b.phi({face.centre.x-ss*face.areaVector.y,face.centre.y+ss*face.areaVector.x});double p=0;for(int j=0;j<3;++j)p+=phi[j]*outState[9*t+6+j];wallPressureFx+=w*p*face.areaVector.x;wallPressureFy+=w*p*face.areaVector.y;}
                 }
             }

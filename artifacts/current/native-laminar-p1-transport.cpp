@@ -10,8 +10,10 @@
 // not assumed by the implementation; backflow can inject energy and is reported.
 // R is affine-exact but not a general quadratic velocity reconstruction:
 // lost quadratic-channel exactness on irregular coarse cells is retained.
-// This research natural stress outlet differs from the collocated product's
-// pressure Dirichlet / zero-normal-gradient velocity boundary stencil.
+// Boundary mode "open" retains the earlier natural total-stress outlet.
+// Boundary mode "pressure" uses the product decomposition: fixed static
+// pressure, zero primary normal velocity gradient, retained transpose-gradient
+// symmetric correction. The two modes are deliberately kept distinct.
 #define CARTMESH_P1_OSEEN_NO_MAIN
 #include "native-laminar-p1-oseen.cpp"
 
@@ -27,7 +29,7 @@ std::vector<std::pair<double,double>> upwindRule(int order,double left,double ri
 }
 Vector2D difference(Vector2D a,Vector2D b){return {a.x-b.x,a.y-b.y};}
 struct Transport : Oseen {
-    Transport(const Fixture& f,int t,const std::string& problem,double nu,bool nonlinear,bool open,int order,const Vec& previous):Oseen(f,t,problem,nu,nonlinear,open,order,previous){
+    Transport(const Fixture& f,int t,const std::string& problem,double nu,bool nonlinear,int outletModel,int order,const Vec& previous):Oseen(f,t,problem,nu,nonlinear,outletModel,order,previous){
         int m=e.a.m;for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){e.matrix(i,j)-=convection(i,j);convection(i,j)=0;}
         for(std::size_t k=0;k<lift.tri.size();++k){const auto& tr=lift.tri[k];
             for(auto q:tr.quadrature(order)){auto z=tr.ref(q.p);auto b=betaAt(int(k),q.p);Vec r0(2*m),r1(2*m),d0(2*m),d1(2*m);auto shape=tr.shape(q.p);
@@ -49,7 +51,7 @@ struct Transport : Oseen {
             for(auto [z,w]:upwindRule(order,fluxEnd(-.5),fluxEnd(.5))){double ss=z-.5;auto Sface=face.areaVector;Point2D p{face.centre.x-ss*Sface.y,face.centre.y+ss*Sface.x};double flux=sign*((beta[3+2*l]+ss*beta[4+2*l])*Sface.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*Sface.y);std::vector<Vector2D> inside(2*m),facev(2*m);
                 for(int j=0;j<2*m;++j)inside[j]=lift.value(int(k),j,p);
                 facev[3+2*l].x=1;facev[4+2*l].x=ss;facev[m+3+2*l].y=1;facev[m+4+2*l].y=ss;
-                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){convection(i,j)+=w*flux*dot(difference(inside[i],facev[i]),flux>=0?inside[j]:facev[j]);if(boundaryKind(face,open)==1)convection(i,j)+=w*flux*dot(facev[i],facev[j]);}
+                for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j){convection(i,j)+=w*flux*dot(difference(inside[i],facev[i]),flux>=0?inside[j]:facev[j]);if(boundaryKind(face,outletModel,problem)==1)convection(i,j)+=w*flux*dot(facev[i],facev[j]);}
             }
         }
         for(int i=0;i<2*m;++i)for(int j=0;j<2*m;++j)e.matrix(i,j)+=convection(i,j);
@@ -64,7 +66,7 @@ struct Transport : Oseen {
             for(auto [z,w]:upwindRule(order,dot(betaAt(int(k),tr.c),S),dot(betaAt(int(k),tr.a),S))){Point2D p{tr.c.x+z*d.x,tr.c.y+z*d.y};double flux=dot(betaAt(int(k),p),S);auto jump=difference(transported(v,int(k),p),transported(v,prev,p));result+=.5*w*std::abs(flux)*dot(jump,jump);}
             int l=lift.faceLocal[k];const auto& face=f.mesh.faces[f.mesh.cells[t].faces[l]];double sign=face.owner==std::size_t(t)?1:-1;
             auto fluxEnd=[&](double ss){return sign*((beta[3+2*l]+ss*beta[4+2*l])*face.areaVector.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*face.areaVector.y);};
-            for(auto [z,w]:upwindRule(order,fluxEnd(-.5),fluxEnd(.5))){double ss=z-.5;auto sf=face.areaVector;Point2D p{face.centre.x-ss*sf.y,face.centre.y+ss*sf.x};double flux=sign*((beta[3+2*l]+ss*beta[4+2*l])*sf.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*sf.y);Vector2D uf{v[3+2*l]+ss*v[4+2*l],v[m+3+2*l]+ss*v[m+4+2*l]};auto jump=difference(transported(v,int(k),p),uf);result+=.5*w*(std::abs(flux)*dot(jump,jump)+(boundaryKind(face,open)==1?1:-1)*flux*dot(uf,uf));}
+            for(auto [z,w]:upwindRule(order,fluxEnd(-.5),fluxEnd(.5))){double ss=z-.5;auto sf=face.areaVector;Point2D p{face.centre.x-ss*sf.y,face.centre.y+ss*sf.x};double flux=sign*((beta[3+2*l]+ss*beta[4+2*l])*sf.x+(beta[m+3+2*l]+ss*beta[m+4+2*l])*sf.y);Vector2D uf{v[3+2*l]+ss*v[4+2*l],v[m+3+2*l]+ss*v[m+4+2*l]};auto jump=difference(transported(v,int(k),p),uf);result+=.5*w*(std::abs(flux)*dot(jump,jump)+(boundaryKind(face,outletModel,problem)==1?1:-1)*flux*dot(uf,uf));}
         }return result;
     }
 };

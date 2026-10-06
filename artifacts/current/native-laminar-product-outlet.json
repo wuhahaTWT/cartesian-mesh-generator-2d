@@ -1,0 +1,149 @@
+{
+  "schema": "native-laminar-compatible-product-pressure-outlet-v1",
+  "status": "research only; product equations, defaults and quality gates unchanged",
+  "purpose": "Distinguish the collocated product PressureOutlet weak semantics from the previously studied total-stress natural outlet before re-running the original curved Re20 problem.",
+  "productBoundaryReading": {
+    "pressure": "PressureOutlet fixes the face static pressure and pressure correction reference.",
+    "primaryViscosity": "A free outlet velocity has no compact grad(U).n diffusion term.",
+    "symmetricCorrection": "The symmetric-stress option still applies -nu*grad(U)^T.S using a tangential face gradient.",
+    "advection": "Outflow retains the transported outlet face velocity; configured backflow handling remains a separate product rule.",
+    "consequence": "This is not the total-stress condition (2 nu sym(grad U)-pI)n=0 used by the earlier hybrid prototype."
+  },
+  "researchImplementation": {
+    "unknowns": "Existing P1 cell/face velocity, P1 static pressure, RT1 compatible load/transport and local 8x8 condensation.",
+    "pressureOutlet": "On the open face, subtract the transpose-gradient boundary bilinear form from the full symmetric weak form. This leaves the product's zero primary normal derivative plus retained transpose correction. The manufactured outlet pressure is p=0.",
+    "geometry": "Native FvMesh2D square grids; all cells and original faces retained; no threshold or fitted coefficient.",
+    "manufacturedField": "u=(4 y (1-y),0), p=8(1-x), nu=1. Inertia vanishes exactly, walls are stationary no-slip, inlet velocity is prescribed, and the right face has p=0 with grad(U).n=0.",
+    "negativeControl": "The identical field does not satisfy zero total stress at the outlet because its tangential shear traction is generally nonzero."
+  },
+  "stokesRefinement": [
+    {
+      "n": 4,
+      "pressureOutlet": {"velocityRms": 8.576319714819571e-16, "rt1VelocityRms": 0.01863389981249841, "pressureRmsGaugeRemoved": 1.494696622221425e-14, "absolutePressureMeanError": -3.409078574989621e-14, "absolutePressureRms": 3.693165902684212e-14, "maxDivergence": 7.16093850883226e-15, "energyBalance": 1.7763568394002505e-15},
+      "naturalOutlet": {"velocityRms": 0.0480159417339056, "rt1VelocityRms": 0.03510056158369981, "pressureRmsGaugeRemoved": 0.38903307235519174, "absolutePressureMeanError": -0.8149553503755727, "absolutePressureRms": 0.8734396469717647, "maxDivergence": 8.881784197001252e-15, "energyBalance": -5.329070518200751e-15}
+    },
+    {
+      "n": 8,
+      "pressureOutlet": {"velocityRms": 1.2952187914547484e-15, "rt1VelocityRms": 0.004658474953124809, "pressureRmsGaugeRemoved": 5.157694482522066e-14, "absolutePressureMeanError": -9.752528645767811e-14, "absolutePressureRms": 1.1015330772296628e-13, "maxDivergence": 2.1344037648418634e-14, "energyBalance": 8.348877145181177e-14},
+      "naturalOutlet": {"velocityRms": 0.03201158264556914, "rt1VelocityRms": 0.029227516181132417, "pressureRmsGaugeRemoved": 0.41606646724514246, "absolutePressureMeanError": -0.49232297328727964, "absolutePressureRms": 0.6309183368896307, "maxDivergence": 1.7819079545233762e-14, "energyBalance": 2.930988785010413e-14}
+    },
+    {
+      "n": 16,
+      "pressureOutlet": {"velocityRms": 5.501653973948141e-15, "rt1VelocityRms": 0.0011646187382814205, "pressureRmsGaugeRemoved": 6.632488564503524e-14, "absolutePressureMeanError": -6.575686176124584e-15, "absolutePressureRms": 6.596080345106341e-14, "maxDivergence": 4.266031972122164e-14, "energyBalance": -6.128431095930864e-14},
+      "naturalOutlet": {"velocityRms": 0.02838484953631731, "rt1VelocityRms": 0.027904074582508685, "pressureRmsGaugeRemoved": 0.46682063990319456, "absolutePressureMeanError": -0.3862026524740999, "absolutePressureRms": 0.5999683117665138, "maxDivergence": 4.9904524956900786e-14, "energyBalance": -2.042810365310288e-14}
+    }
+  ],
+  "observedOrders": {
+    "pressureOutletRt1Velocity": [1.9999999999999363, 1.99999999999973],
+    "naturalOutletCellVelocity": [0.5849194682064354, 0.1734729110400965],
+    "naturalOutletPressureGaugeRemoved": [-0.09692121312980459, -0.16605432996638606]
+  },
+  "nonlinearControl": {
+    "description": "The same manufactured field has zero convective acceleration. The compatible RT1 upwind Navier-Stokes path converged in two Picard solves at n=4,8,16 with the pressure outlet.",
+    "finalCoefficientChanges": [3.108624468950438e-14, 1.758593271006248e-13, 2.5135449277513544e-13],
+    "finalEquationResidualMax": [9.992007221626409e-15, 1.7791323969618134e-14, 4.268807529683727e-14],
+    "finalPressureRanges": [7.999999999999959, 7.9999999999997, 8.00000000000027]
+  },
+  "closedRegression": {
+    "case": "square n=4 Couette Stokes closed",
+    "velocityRms": 6.891311546492144e-16,
+    "rt1VelocityRms": 4.945999341383474e-16,
+    "pressureRms": 1.1018904365534057e-14,
+    "maxDivergence": 5.384581669432009e-15,
+    "energyBalance": 1.6653345369377348e-14
+  },
+  "fixedPolygonCylinderRe20": {
+    "geometry": "Original Linux fixed 128-segment polygon, 20D outer domain, unchanged coarse/medium FvMesh2D with 4716/17260 cells; nu=0.1, U=1, D=2.",
+    "boundary": "Left prescribed (1,0), horizontal symmetry, true zero-velocity embedded wall, right product-like p=0 outlet with zero primary normal velocity gradient and retained transpose-gradient symmetric correction.",
+    "coarseFromZero": {
+      "iterations": 18,
+      "seconds": 284.7789637189999,
+      "finalEquationResidualMax": 3.233415618586477e-11,
+      "maxDivergence": 7.105427357601002e-14,
+      "wallFx": 2.0679407169384882,
+      "wallPressureFx": 1.2414932881405585,
+      "wallViscousAndStabilizationFx": 0.8273849422721756,
+      "wallConvectionReconstructionFx": -0.0009375134742464137,
+      "pressureVertexRange": 1.1591585845576522,
+      "rt1SampledMaxSpeed": 1.1744676476720748,
+      "netBoundaryMassFlux": -3.322342401190781e-13,
+      "globalMomentumBalanceX": 2.910677254774896e-11,
+      "energyBalance": -2.502531515347073e-11
+    },
+    "coarseFromPriorNaturalOutlet": {
+      "iterations": 9,
+      "seconds": 140.44060630999957,
+      "finalEquationResidualMax": 5.562453275764767e-11,
+      "fieldDifferenceFromZero": {"cellMeanVelocityRms": 2.8541899507014065e-11, "pressureP0GaugeRms": 1.3008190337204864e-11, "pressureP0MaxGauge": 1.01270070737225e-10}
+    },
+    "mediumFromPriorNaturalOutlet": {
+      "iterations": 9,
+      "seconds": 613.6210694109996,
+      "finalEquationResidualMax": 1.608489730298146e-11,
+      "maxDivergence": 3.11972669919669e-14,
+      "wallFx": 2.0686336486242003,
+      "wallPressureFx": 1.2457975010756897,
+      "wallViscousAndStabilizationFx": 0.822746311193691,
+      "wallConvectionReconstructionFx": 8.983635481848766e-05,
+      "pressureVertexRange": 1.1664280400802702,
+      "rt1SampledMaxSpeed": 1.1676588324540311,
+      "netBoundaryMassFlux": 7.239903121458724e-13,
+      "globalMomentumBalanceX": 5.428500982063156e-10,
+      "energyBalance": -4.80767425869999e-10
+    },
+    "productVersusNaturalOutlet": {
+      "coarse": {"cellMeanVelocityRms": 5.4476388874380225e-05, "pressureP0GaugeRms": 3.25322644606722e-05, "wallPressureTraceRms": 1.2785065352642969e-05, "wallPressureTraceMaxAtQuadrature": 1.6445207729587352e-05},
+      "medium": {"cellMeanVelocityRms": 6.084679340164363e-05, "pressureP0GaugeRms": 3.419232607319994e-05, "wallPressureTraceRms": 1.2702925799660754e-05, "wallPressureTraceMaxAtQuadrature": 1.6164828908871165e-05},
+      "interpretation": "At the 20D outlet the two boundary conditions perturb this bounded branch only slightly, but they are not algebraically or physically interchangeable."
+    },
+    "coarseMediumSpatialChange": {
+      "wallFxRelative": 0.000335081994995459,
+      "wallPressureTraceRms": 0.010893705829535374,
+      "wallPressureTraceMaxAtQuadrature": 0.037892399335158145,
+      "wallPressureForceXChange": 0.0043042129351307246,
+      "commonWallLength": 6.2825545018655458,
+      "commonIntervals": 204,
+      "naturalOutletPressureTraceRmsControl": 0.010893611612812987,
+      "interpretation": "The compatible formulation removes the old medium-grid high-amplitude branch in this controlled path and gives a modest coarse/medium wall-pressure change, but two levels do not establish asymptotic convergence or qualify local curved-wall pressure."
+    }
+  },
+  "interpretation": {
+    "supported": "The implemented pressure-outlet weak form reproduces the product boundary decomposition, passes an exact open-flow control, and yields bounded, conservative coarse/medium Re20 solutions on the original fixed-polygon meshes. The prior natural-stress result alone was not evidence for the original product boundary problem.",
+    "notSupported": "The medium result starts from the saved natural-outlet field rather than an independent zero field. Two spatial levels do not qualify local curved-wall pressure; backflow, fine-grid scalability, branch uniqueness and production integration remain open."
+  },
+  "build": {
+    "compiler": "g++ Linux, C++20, O2, Wall/Wextra/Wpedantic/Werror; unused-parameter warning suppressed only for the included pre-existing flow_face_test helper",
+    "nativeCtest": "flow_face, flow_boundary, flow_branch_certificate: 3/3 passed; full native/frontend/Electron suites not rerun",
+    "binarySha256": "4fc2c0a9b4654758ebaedeb6209106d80ce1f3d2b610bdb86a790e66cac7ddb3",
+    "wallProfileBinarySha256": "6af800fef6b7b27637aecdb8213031a07b9bf7a32919ae951da39a46f471b585"
+  },
+  "sourceSha256": {
+    "native-laminar-hybrid-stokes-p1.cpp": "273a7f4b9da2201abf44e3a8103260a9c48530dd25f3533a773b509df5adf0a4",
+    "native-laminar-p1-oseen.cpp": "3762779497c27d7c9b979cc9c21f0c08f1cf69fc6d4e72ee3c01143516824ad0",
+    "native-laminar-p1-transport.cpp": "f116582a082ce9cd96a41c2326c3984532febbfb8056e91cb29361f656a3ce57",
+    "native-laminar-product-wall-profile.cpp": "5eb53f73c049089f7ea550c843b015f7fb24113cfc2ec446bd7b31fded071d13"
+  },
+  "resultSha256": {
+    "stokes-pressure-n4": "1af06573886b87656b30d5bfe5f9bc26cf3cea44f29a552230d19d1cfffe3119",
+    "stokes-pressure-n8": "ada18918380d93e7494a51ad67dc82123d8518ab28288c01fe4c4d5bbffacd38",
+    "stokes-pressure-n16": "d7e69b83521ea8f2185e49daead1dfc7657424e5f7948b33d5682d7fc5e58b52",
+    "stokes-natural-n4": "9ebbd9a04c2cc152885e598445f5f5a55cc266741473dfa4f93df27025b9188a",
+    "stokes-natural-n8": "9567b5faace12d3cd25eacf6081862b602e7a8cfa3be5fbeaa03f96ef5e75168",
+    "stokes-natural-n16": "1587897c0d5828de4bd07dca5b443897fcea92f763029bc22cf76762225fbe00",
+    "navier-stokes-pressure-n4": "1068ba5307eb01381bcd8423b445803229aa36e1f2d61288978ad9d2d4c2d5e0",
+    "navier-stokes-pressure-n8": "964e88614f04512c5542ace660c00f40422e0f952d2586753269901e656e8c0a",
+    "navier-stokes-pressure-n16": "8968725d6b3f154d32bcc1f750737bb1190cbdd367acd5ff6a7cf0eea0c74d68",
+    "closed-couette-n4": "cd4f6838a0faa835a90cd9dea937ad9f4648d907ae575362ff1067187b66e4fc",
+    "cylinder-coarse-from-zero": "2bf848e7842235b3b728195bbe645f14d893c694619fe3c6eefd422020971f66",
+    "cylinder-medium-from-natural": "45ae4e603322cb830edb8da6f9aa5e4d446cc4f2110704f55d6b5a9c9bc2b09b",
+    "wall-profile-product-coarse-medium": "b485170c573cdcd8a963287727f4c8855d7228733986f055dcae7001796a086f",
+    "wall-profile-natural-coarse-medium": "2a0ef023636223926764ed586d8f587d8aba35e0c59f5461780773a64423defb",
+    "wall-profile-coarse-natural-product": "e8d8fadb5b50e34bb4865c7ccc6f178af8f09eac1e3e5d9a2df596f820b9de86",
+    "wall-profile-medium-natural-product": "38280bce9993e3bf4e0e0a856a98f8bd5b9a12ea92751c22d9b4f32da5ada82a"
+  },
+  "failuresRetained": [
+    "The first edited source did not compile because the new face correction was placed after the face-loop brace.",
+    "The second build exposed a local variable name collision with the existing boundary-work accumulator.",
+    "Neither failed build produced a runnable binary or accepted numerical field."
+  ]
+}
