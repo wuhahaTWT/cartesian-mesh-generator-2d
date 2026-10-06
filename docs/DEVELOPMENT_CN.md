@@ -353,6 +353,24 @@ ctest --test-dir build -R '^(cartmesh2d_euler_preconditioner|cartmesh2d_euler_hy
 
 `tests/compressible_cloud_cli_test.py` 的 heated 参数保留 200 格通道反例的原生网格生成、物性、独立总压/总温和热壁输入，可只切换预条件重现该短程比较。曾把相同 maximumStep 误当作相同实际时钟的 CLI 场对比已撤销：两种预条件的拒绝序列不同，甚至按另一条轨迹逐步续算也可能触发不同拒绝。该回归因此只检查实际使用语义，不声称成本或时间精度通过；完整成本研究必须保存 history 中的实际时间步，计构造、装配、拒绝、求解及导出全部耗时，并另做时间误差对照。
 
+### 完整可压扩散方案的共同时间网格比较
+
+`tools/flow/euler_diffusion_benchmark.cpp` 直接调用原生 EulerStepper2D、v3 边界及检查点能力，固定本轮理想气体和恒物性参数 γ=1.4、R=287.05、μ=1.846e−5、k=.025758750694444447（SI）。研究输入当前支持远场、压力出口、静止无滑移壁及原热条件，要求远场参考初值，不是通用总状态入口/周期 CLI。`run_euler_diffusion.py` 仅准备输入并调用原生二进制，`read_euler_diffusion.py` 只汇总导出的场/面通量与时间序列，不实现第二套 PDE。
+
+```sh
+cmake --build build --target cartmesh2d_euler_diffusion_benchmark
+# 先从私密归档恢复真实 mesh、v3 boundary；output 目录须已存在。
+build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries outputs/comparison all END_SECONDS MAX_STEP_SECONDS WALL_BUDGET_SECONDS
+# 共同检查点续算；三个文件分别为 PREFIX.corrected / hybrid-heat / hybrid.checkpoint。
+build/cartmesh2d_euler_diffusion_benchmark INPUT.solver.cm2d INPUT.boundaries outputs/resumed all END_SECONDS MAX_STEP_SECONDS WALL_BUDGET_SECONDS outputs/comparison
+```
+
+独立模式第四个参数为 `corrected`、`hybrid-heat` 或 `hybrid`，其接受时间序列可能不同，只作独立稳定性诊断。`all` 模式逐方案计算候选，若内部重试返回不同步长，全部候选不提交并以共同最小步重算；写 attempts.csv 区分内部拒绝、返回步长和外层共同提交/丢弃。这是研究比较协议，不修改产品求解器的时间控制。带共同 restart prefix 后可追加 `strict-step` 禁用内部重试，复现原 48 ns 圆柱状态后的 4 ns GMRES 失败；随后去掉 strict-step 或选 2 ns 可研究恢复。
+
+每种方案记录单元场、唯一 RK 面通量、边界组收支、原生守恒缺陷、正性范围、实际时钟、构造/求解及导出归属时间；另记录整个调用耗时和额外 checkpoint/新建求解器校验时间。计数包含返回调用内的重试及共同事务丢弃，最终抛出异常的调用不能从未返回结果恢复完整计数，但实际耗时仍计入。与初始短启动分开的续算成本不能冒充从零开始的完整独立算例成本。剖析构建的 -pg 结果单独存档，不能用于公平时间比较；剖析/无插桩短程场已核对一致。
+
+包装脚本沿用云端归档内的 outputs/recomputed-heated-smooth 和 outputs/curved-cylinder/N48-W16 输入位置；直接原生调用可使用恢复后的实际路径。半步比较要求两份 summary 都完成且物理终点一致，并首先核对每轮三方案的真实接受时间序列。近壁单元依据原边界文件的 no-slip-wall 面 owner 选取，不从零通量阈值猜测壁面。没有跨网格/连续介质参考时，方法间差异只能报告差异，不能称为精度改进。
+
 ### 可压层流阶段步长控制
 
 `EulerStepControls2D::timeStepControl` 和 CLI `--time-step-control legacy|stage-guarded` 是数值控制；默认 legacy 保持旧轨迹。StageGuarded 仅对 SSPRK2 的第一次 CFL 估计乘固定 .95，且继续取用户 maximumStep 与精确物理终点约束。第二阶段实际组合速率为各面两阶段最大波速之和除以面积，加热/黏性速率的阶段最大值。所有单元都满足原 CFL 门才能接受；仅 CFL 失败且两个 FE 阶段正性有效时，用 `.95*min(CFL/rate)` 重试。正性、物理边界或算子失败仍走减半与原重试预算，不裁剪接受场。
