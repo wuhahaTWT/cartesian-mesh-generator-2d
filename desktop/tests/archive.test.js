@@ -5,7 +5,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const yauzl = require('yauzl');
-const { zipDirectory } = require('../src/core/archive');
+const { zipDirectory, saveDirectoryArchive } = require('../src/core/archive');
 
 function readZip(file) {
   return new Promise((resolve, reject) => {
@@ -52,4 +52,19 @@ test('ZIP refuses recursive output and cancelled work without damaging input', a
   await assert.rejects(zipDirectory(source, path.join(source, 'export.zip')), /不能写入/);
   const controller = new AbortController(); controller.abort();
   await assert.rejects(zipDirectory(source, source + '.zip', controller.signal), /abort/i);
+});
+
+test('project save replaces an archive only on success and preserves it on cancellation or failure', async t => {
+  const parent=await fs.mkdtemp(path.join(os.tmpdir(),'archive-replace-'));
+  t.after(()=>fs.rm(parent,{recursive:true,force:true}));
+  const source=path.join(parent,'project'),target=path.join(parent,'saved.zip');
+  await fs.mkdir(source);await fs.writeFile(path.join(source,'value.txt'),'old');
+  await saveDirectoryArchive(source,target);
+  await fs.writeFile(path.join(source,'value.txt'),'new');await saveDirectoryArchive(source,target);
+  assert.equal((await readZip(target))['project/value.txt'].toString(),'new');
+  const accepted=await fs.readFile(target),stop=new AbortController();stop.abort();
+  await assert.rejects(saveDirectoryArchive(source,target,stop.signal),/abort/i);
+  await assert.rejects(saveDirectoryArchive(path.join(parent,'missing'),target),/ENOENT/);
+  assert.deepEqual(await fs.readFile(target),accepted);
+  assert.deepEqual((await fs.readdir(parent)).sort(),['project','saved.zip']);
 });

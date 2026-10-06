@@ -181,4 +181,12 @@ async function readCheckpointMetadata(filePath) {
   };
 }
 
-module.exports = { readCheckpointMetadata };
+// Initial-vortex files legitimately use t=0, but are not physical recovery
+// checkpoints. Keep that distinction at the desktop import/publication boundary.
+async function readAcceptedCheckpointMetadata(filePath) {
+  const metadata = await readCheckpointMetadata(filePath);
+  if (!(metadata.time > 0)) throw new Error('初值不是已接受的物理续算状态。');
+  return metadata;
+}
+
+module.exports = { readCheckpointMetadata, readAcceptedCheckpointMetadata };

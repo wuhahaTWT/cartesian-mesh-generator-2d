@@ -3,6 +3,8 @@
 function exportGuide({ result, rasterImport, flow, thermal, euler, background }) {
   if(background) return `# 完整笛卡尔背景网格
 
+可用 App 顶部“打开项目”直接载入此 ZIP，恢复几何、网格和设置。
+
 本次 ${result.counts.cells} 个完整单元，保留物体内部。分类为外部、内部、相交；相交单元没有被裁切。
 
 - mesh-preview.png：真实网格预览与几何轮廓。
@@ -39,6 +41,9 @@ function exportGuide({ result, rasterImport, flow, thermal, euler, background })
     ? '有界限制重构可减少数值扩散，但不保证所有工况都更准确，也不代表通用二阶或新的工程合格结论。'
     : '一阶迎风为默认稳健格式。';
   return `# 先看这里
+
+可用 App 顶部“打开项目”直接载入此 ZIP，恢复最终网格、设置、结果和已接受续算状态。
+项目清单 cartmesh2d-project.json 记录文件校验；续算仍使用原生物理一致性检查。
 
 本次网格：**${cells} 个单元**。先打开 **mesh-preview.png**，看全景和壁面局部。
 

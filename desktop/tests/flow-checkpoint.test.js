@@ -5,7 +5,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { readCheckpointMetadata } = require('../src/core/flow-checkpoint');
+const { readCheckpointMetadata, readAcceptedCheckpointMetadata } = require('../src/core/flow-checkpoint');
 
 const SERIALIZED = [
   'CARTMESH2D_FLOW_CHECKPOINT 1',
@@ -93,4 +93,11 @@ test('rejects directories and non-regular paths', async () => {
   } finally {
     await fs.rm(directory, { recursive: true, force: true });
   }
+});
+
+test('initial guesses remain readable but cannot become accepted desktop restart states', async () => {
+  const initial = SERIALIZED.replace('TIME 0.125', 'TIME 0');
+  assert.equal((await withFile(initial, readCheckpointMetadata)).time, 0);
+  await assert.rejects(withFile(initial, readAcceptedCheckpointMetadata), /初值不是已接受/);
+  assert.equal((await withFile(SERIALIZED, readAcceptedCheckpointMetadata)).time, .125);
 });

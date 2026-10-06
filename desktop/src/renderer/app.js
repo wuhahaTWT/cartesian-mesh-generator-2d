@@ -73,6 +73,7 @@ function setBusy(busy) {
   $('cancel').disabled = false;
   $('exportResult').disabled = busy;
   $('returnHome').disabled = busy;
+  $('openProject').disabled = busy;
   $('actualToManual').disabled = busy;
   $('runFlow').disabled = busy || !state.result;
   updateFlowMode();
@@ -141,6 +142,7 @@ async function returnToStart() {
   ++previewSequence;
   clearInterval(progressTimer);
   const exportable = !$('exportResult').hidden;
+  const savedControls = projectControls();
   clearResult();
   state.geometryPath = ''; state.geometryLabel = ''; state.sampleId = null;
   state.geometryLoading = false; state.frame = null; state.regions = [];
@@ -154,10 +156,11 @@ async function returnToStart() {
   renderRegions();
   updateReady();
   status('从一个轮廓开始', exportable ? '预览已释放；上一份结果仍可导出，生成新网格后替换。' : '选择样例或导入几何。');
-  try { await window.cartmesh.releasePreview(); }
+  try { await window.cartmesh.releasePreview(savedControls); }
   catch (error) { log(error.message); }
 }
 $('returnHome').addEventListener('click', returnToStart);
+$('openProject').addEventListener('click', openProject);
 window.__exportMeshPreview = async () => {
   await document.fonts.load('13px "CartMesh UI"', '生成网格');
   await document.fonts.ready;
@@ -721,6 +724,147 @@ function advice(message) {
   return '';
 }
 
+function bindMeshResult(payload) {
+  state.mesh = payload.mesh;
+  state.wallBounds = payload.wallBounds;
+  state.result = payload.result;
+  state.job = payload.job;
+  state.levelBasis = payload.levelBasis;
+  state.selectedRequest = payload.selectedRequest || null;
+  state.cellBudget = payload.cellBudget || null;
+  $('actualToManual').hidden = !state.selectedRequest;
+  $('cellBudgetResult').hidden = !payload.cellBudget;
+  if (payload.cellBudget) {
+    const b = payload.cellBudget;
+    $('cellBudgetResult').textContent = `目标约 ${fmt(b.targetCells)}；实际 ${fmt(b.actualCells)} 个单元。${b.reached ? '已达到目标范围（±30%）。' : '未达到目标范围，保留本次最接近目标的可导出结果。'} 共尝试 ${b.attempts} 次。` + (b.stoppedReason ? ` 后续调整停止：${b.stoppedReason}` : '');
+  }
+  $('classificationOption').hidden=!payload.background;
+  if(payload.background){$('displayMode').value='classification';view.mode='classification';}
+  else if(view.mode==='classification'){$('displayMode').value='level';view.mode='level';}
+  view.setMesh(payload.mesh);
+  syncRegions();
+  $('empty').hidden = true;
+  renderLegend(payload.mesh, payload.levelBasis);
+  renderCounters(payload.result);
+  renderGates(payload.result);
+  renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
+  const resolution = payload.result.resolution;
+  $('resolutionResult').hidden = !resolution;
+  if (resolution) {
+    const actual = resolution.actual;
+    const percent = resolution.wall_owner_tangential_exceedance_length_fraction;
+    $('resolutionResult').textContent = `最终求解网格实测：Lref=${resolution.reference_length.toPrecision(5)} m；` +
+      `单元等效尺寸 h/Lref 中位 ${actual.sqrt_area_over_reference?.p50.toPrecision(4) ?? '—'}；` +
+      `壁面单元切向跨度 P95 ${actual.wall_owner_tangential_extent_over_reference?.p95.toPrecision(4) ?? '—'}；` +
+      `切向跨度超过壁面目标的壁长占比 ${percent == null ? '未设置目标' : (100*percent).toFixed(2)+'%'}。` +
+      '切向跨度与法向高度分开测量；完整尺寸报告随结果包保存。';
+    const layers = resolution.boundary_layers;
+    if (layers && layers.status !== 'not_requested') {
+      const percent = value => value == null ? '未测得' : (100*value).toFixed(2)+'%';
+      $('resolutionResult').textContent += layers.status === 'no_layers_retained'
+        ? ' 本次为纯网格回退，未保留边界层。'
+        : ` 边界层最终保留 ${layers.retained_cells}/${layers.requested_cells} 个请求单元；` +
+          `首层覆盖壁长 ${percent(layers.first_layer_wall_length_fraction)}，` +
+          `完整请求层数覆盖壁长 ${percent(layers.full_requested_layers_wall_length_fraction)}。` +
+          `首层法向高度超过目标的壁长占比 ${percent(layers.first_layer_height_exceedance_wall_length_fraction)}。` +
+          (layers.status === 'incomplete' ? ' 层身份或连通性核对不完整，详见报告。' : '');
+    }
+  }
+  fitOverview();
+  if (payload.automatic) {
+    const job = payload.job;
+    $('autoNote').textContent = job.relativeSizing
+      ? `${payload.cellBudget ? '参数已按最终选中的结果记录。' : payload.densityReduced ? '更密请求未满足，已降密。' : ''}上次生成的壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
+      : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
+      ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
+      : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
+  }
+  $('exportResult').hidden = Boolean(payload.incomplete);
+  $('flowBlock').hidden = Boolean(payload.incomplete || payload.background);
+  $('thermalBlock').hidden = Boolean(payload.incomplete || payload.background);
+  $('eulerBlock').hidden = Boolean(payload.incomplete || payload.background);
+  if (!payload.incomplete && !payload.background) {
+    $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
+    $('eulerCase').value=payload.job.fluidRegion==='interior'?'sod':'external';
+    updateEulerControls();
+    updateFlowScope();
+  }
+}
+
+function projectControls() {
+  if (!state.result) return null;
+  const inputs = {};
+  for (const input of document.querySelectorAll('.panel input[id], .panel select[id]')) {
+    if (input.type === 'file') continue;
+    inputs[input.id] = input.type === 'checkbox' ? input.checked : input.value;
+  }
+  return { inputs, regions: structuredClone(state.regions), boundaryDefinition: state.flowBoundaryDefinition,
+    displayMode: $('displayMode').value };
+}
+window.__projectControls = projectControls;
+function applyProjectInputs(ui) {
+  for (const [id, value] of Object.entries(ui?.inputs || {})) {
+    const input = $(id);
+    if (!input?.matches('.panel input, .panel select') || input.type === 'file') continue;
+    if (input.type === 'checkbox' && typeof value === 'boolean') input.checked = value;
+    else if (typeof value === 'string') input.value = value;
+  }
+  // The bundled XY is already in metres regardless of the original DXF/image.
+  $('sourceUnits').value = 'm';
+  $('sample').value = '';
+  $('referenceLengthField').hidden = $('referenceMode').value !== 'explicit';
+  $('wakeFields').hidden = !$('useWake').checked;
+  $('gapCells').disabled = !$('useGap').checked;
+  updateControlMode();
+}
+async function openProject() {
+  if (state.busy) return null;
+  setBusy(true);
+  try {
+    const payload = await window.cartmesh.openProject();
+    if (!payload) return null;
+    const ui = payload.projectUi;
+    selectMethod(payload.job.method);
+    applyProjectInputs(ui);
+    $('fluidRegion').value = payload.job.fluidRegion;
+    state.regions = structuredClone(ui?.regions || []);
+    state.sampleId = null;
+    await chooseGeometry(payload.job.geometryPath, payload.projectLabel || '项目几何');
+    bindMeshResult(payload);
+    applyProjectInputs(ui);
+    state.flowBoundaryDefinition = ui?.boundaryDefinition || payload.flow?.request.boundaryDefinition || null;
+    state.flowRestart = payload.flowRestart?.metadata || null;
+    state.thermalRestart = payload.thermalRestart?.metadata || null;
+    state.eulerRestart = payload.eulerRestart?.metadata || null;
+    // Apply controls before displayed fields: changing the shared physics can
+    // invalidate older bindings, and must not erase the restored native output.
+    if (!ui && (payload.thermal || payload.flow)) applyFlowCase((payload.thermal || payload.flow).request);
+    if (state.thermalRestart && (ui?.inputs?.thermalResume ?? true)) {
+      $('thermalResume').checked = true;
+      applyThermalRestartControls();
+    } else if (state.flowRestart && (ui?.inputs?.flowResume ?? true)) {
+      $('flowResume').checked = true;
+      applyRestartControls();
+    }
+    if (payload.flow) bindFlow(payload.flow);
+    if (payload.euler) bindEuler(payload.euler);
+    if (payload.thermal) bindThermal(payload.thermal);
+    if (ui?.displayMode && [...$('displayMode').options].some(option => option.value === ui.displayMode && !option.hidden)) {
+      $('displayMode').value = ui.displayMode;
+      $('displayMode').dispatchEvent(new Event('change'));
+    }
+    renderRegions(); renderFlowBoundaries();
+    const restart = state.thermalRestart || state.flowRestart || state.eulerRestart;
+    status('项目已打开', `${payload.projectLabel || '几何'} · 已恢复最终网格、设置和结果。` +
+      (restart ? ` 可从 t=${restart.time} s 继续；时间步和目标时间可调整。` : ''));
+    return payload;
+  } catch (error) {
+    status('项目打开失败', error.message.replace(/^Error invoking remote method '[^']+': Error: /, '').split('\n')[0]);
+    log(error.message);
+    return null;
+  } finally { setBusy(false); updateControlMode(); }
+}
+
 async function generate() {
   if (state.busy || state.geometryLoading || !state.geometryPath || !validInputs()) return;
   clearResult();
@@ -730,70 +874,7 @@ async function generate() {
   status('生成中', state.method==='background'?'几何诊断 → 完整笛卡尔网格 → 分类 → 导出':'几何转换 → 尺寸场 → 加密 → cut-cell → 稳定化 → 质量');
   try {
     const payload = await window.cartmesh.generate(buildRequest());
-    state.mesh = payload.mesh;
-    state.wallBounds = payload.wallBounds;
-    state.result = payload.result;
-    state.job = payload.job;
-    state.levelBasis = payload.levelBasis;
-    state.selectedRequest = payload.selectedRequest || null;
-    state.cellBudget = payload.cellBudget || null;
-    $('actualToManual').hidden = !state.selectedRequest;
-    $('cellBudgetResult').hidden = !payload.cellBudget;
-    if (payload.cellBudget) {
-      const b = payload.cellBudget;
-      $('cellBudgetResult').textContent = `目标约 ${fmt(b.targetCells)}；实际 ${fmt(b.actualCells)} 个单元。${b.reached ? '已达到目标范围（±30%）。' : '未达到目标范围，保留本次最接近目标的可导出结果。'} 共尝试 ${b.attempts} 次。` + (b.stoppedReason ? ` 后续调整停止：${b.stoppedReason}` : '');
-    }
-    $('classificationOption').hidden=!payload.background;
-    if(payload.background){$('displayMode').value='classification';view.mode='classification';}
-    else if(view.mode==='classification'){$('displayMode').value='level';view.mode='level';}
-    view.setMesh(payload.mesh);
-    syncRegions();
-    $('empty').hidden = true;
-    renderLegend(payload.mesh, payload.levelBasis);
-    renderCounters(payload.result);
-    renderGates(payload.result);
-    renderHistogram(payload.levelHistogram, payload.mesh, payload.levelBasis);
-    const resolution = payload.result.resolution;
-    $('resolutionResult').hidden = !resolution;
-    if (resolution) {
-      const actual = resolution.actual;
-      const percent = resolution.wall_owner_tangential_exceedance_length_fraction;
-      $('resolutionResult').textContent = `最终求解网格实测：Lref=${resolution.reference_length.toPrecision(5)} m；` +
-        `单元等效尺寸 h/Lref 中位 ${actual.sqrt_area_over_reference?.p50.toPrecision(4) ?? '—'}；` +
-        `壁面单元切向跨度 P95 ${actual.wall_owner_tangential_extent_over_reference?.p95.toPrecision(4) ?? '—'}；` +
-        `切向跨度超过壁面目标的壁长占比 ${percent == null ? '未设置目标' : (100*percent).toFixed(2)+'%'}。` +
-        '切向跨度与法向高度分开测量；完整尺寸报告随结果包保存。';
-      const layers = resolution.boundary_layers;
-      if (layers && layers.status !== 'not_requested') {
-        const percent = value => value == null ? '未测得' : (100*value).toFixed(2)+'%';
-        $('resolutionResult').textContent += layers.status === 'no_layers_retained'
-          ? ' 本次为纯网格回退，未保留边界层。'
-          : ` 边界层最终保留 ${layers.retained_cells}/${layers.requested_cells} 个请求单元；` +
-            `首层覆盖壁长 ${percent(layers.first_layer_wall_length_fraction)}，` +
-            `完整请求层数覆盖壁长 ${percent(layers.full_requested_layers_wall_length_fraction)}。` +
-            `首层法向高度超过目标的壁长占比 ${percent(layers.first_layer_height_exceedance_wall_length_fraction)}。` +
-            (layers.status === 'incomplete' ? ' 层身份或连通性核对不完整，详见报告。' : '');
-      }
-    }
-    fitOverview();
-    if (payload.automatic) {
-      const job = payload.job;
-      $('autoNote').textContent = job.relativeSizing
-        ? `${payload.cellBudget ? '参数已按最终选中的结果记录。' : payload.densityReduced ? '更密请求未满足，已降密。' : ''}上次生成的壁面目标 h/Lref=${job.sizeField.wallRelativeSize.toPrecision(4)}，背景 h/Lref=${job.sizeField.backgroundRelativeSize.toPrecision(4)}，留白 ${job.sizeField.farFieldSpans.toPrecision(4)} Lref。实际参数与尝试记录随结果包保存。`
-        : `${payload.densityReduced ? '更密参数未通过，已降至可生成的密度。' : ''}本次采用：${job.method === 'cutcell'
-        ? `壁面目标体长/${job.sizeField.wallCellsPerSpan}，每级带宽 ${job.sizeField.cellsPerLevel} 格，远场 ${job.sizeField.farFieldSpans} 倍，α ${job.smallAlpha}`
-        : `余域 / 壁面 level ${job.maxLevel} / ${job.boundaryLevel}，${job.nLayers} 层，首层 ${job.firstThickness}`}。实际参数与尝试记录随结果包保存。`;
-    }
-    $('exportResult').hidden = Boolean(payload.incomplete);
-    $('flowBlock').hidden = Boolean(payload.incomplete || payload.background);
-    $('thermalBlock').hidden = Boolean(payload.incomplete || payload.background);
-    $('eulerBlock').hidden = Boolean(payload.incomplete || payload.background);
-    if (!payload.incomplete && !payload.background) {
-      $('flowCase').value = payload.job.fluidRegion === 'interior' ? 'duct' : 'external';
-      $('eulerCase').value=payload.job.fluidRegion==='interior'?'sod':'external';
-      updateEulerControls();
-      updateFlowScope();
-    }
+    bindMeshResult(payload);
     const seconds = payload.result.timings.total_seconds;
     if (payload.incomplete) {
       status('网格已生成，后续步骤失败', payload.incomplete);
@@ -1561,7 +1642,7 @@ $('exportResult').addEventListener('click', async () => {
   setBusy(true);
   try {
     const destination = await window.cartmesh.exportResult();
-    if (destination) status('结果包已保存', destination);
+    if (destination) status('项目与结果包已保存', '可用“打开项目”直接恢复网格、结果和续算状态。' + destination);
   } catch (error) { status('保存失败', error.message); }
   finally { setBusy(false); }
 });
@@ -1615,7 +1696,7 @@ window.addEventListener('resize', () => view.requestDraw());
   selectMethod('cutcell');
   renderRegions();
   // Smoke tests drive these same handlers; an optional output override retains fixtures.
-  window.__smoke = { state, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
+  window.__smoke = { state, openProject, projectControls, selectMethod, chooseGeometry, generate, runFlow, runThermal, runEuler, eulerRequest, flowRequest, saveFlowCase, loadFlowCase, prepareFlowBoundaries, setOutput, addRegion, renderRegions, view, loadVerifiedPreset, setSidebarCollapsed, returnToStart, importGeometryFile };
 })();
 
 function setOutput(directory) {

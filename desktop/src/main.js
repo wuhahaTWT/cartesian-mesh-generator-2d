@@ -16,15 +16,16 @@ const { validateJob, buildInvocation } = require('./core/job');
 const { normalizeResult, parseKeyValues } = require('./core/report');
 const { parseBackgroundGrid, requireFluidMesh } = require('./core/background-grid');
 const { exportGuide } = require('./core/export-guide');
-const { zipDirectory } = require('./core/archive');
+const { saveDirectoryArchive } = require('./core/archive');
 const { FLOW_CASES, FLOW_CONVECTION_SCHEMES, FLOW_PRESSURE_PRECONDITIONERS, FLOW_OUTLET_BACKFLOW_MODES, buildFlowInvocation, commitFlowFiles,
         parseFlowProgress, validateFlowOutput, validateTimeHistory, validateAttemptHistory, flowOutputSuffixes } = require('./core/flow');
 const {validateThermalRequest,thermalCheckpointTime}=require('./core/thermal');
 const { runThermalJob } = require('./core/thermal-job');
 const { runEulerJob, importEulerRestart } = require('./core/euler-job');
-const { readCheckpointMetadata } = require('./core/flow-checkpoint');
+const { readCheckpointMetadata, readAcceptedCheckpointMetadata } = require('./core/flow-checkpoint');
 const { pressureDrivenBoundaryDefinition, parseBoundaryDefinition, serializeBoundaryDefinition, validateBoundaryMesh, sameConditions } = require('./core/flow-boundaries');
 const { MAX_BYTES: FLOW_CASE_MAX_BYTES, createFlowCaseDocument, serializeFlowCase, parseFlowCaseDocument } = require('./core/flow-case');
+const { writeProjectManifest, openProject } = require('./core/project');
 const { parseCm2d, levelHistogram, embeddedBounds,
         assignSizeBands } = require('./core/cm2d');
 
@@ -57,11 +58,10 @@ async function exportPackage(destination) {
     await fs.writeFile(path.join(currentResult.outputDirectory,'euler-preview.png'),Buffer.from(png.split(',')[1],'base64'));
   }
   await fs.writeFile(path.join(currentResult.outputDirectory, 'README_CN.md'), exportGuide(currentResult));
-  const temporary = path.join(sessionDirectory, 'export.zip');
-  await fs.rm(temporary, { force: true });
-  await zipDirectory(currentResult.outputDirectory, temporary, operation?.signal);
-  await fs.copyFile(temporary, destination);
-  await fs.rm(temporary, { force: true });
+  const ui = await mainWindow.webContents.executeJavaScript('window.__projectControls()');
+  await writeProjectManifest(currentResult, ui, operation?.signal);
+  if (ui) currentResult.projectUi = ui;
+  await saveDirectoryArchive(currentResult.outputDirectory, destination, operation?.signal);
   return destination;
 }
 
@@ -221,9 +221,12 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('cancel', () => { operation?.abort(); });
-  ipcMain.handle('release-preview', () => {
+  ipcMain.handle('release-preview', (_event, controls) => {
     if (operation) throw new Error('请先等待当前操作完成。');
-    if (currentResult) { currentResult.mesh = null; currentResult.levelHistogram = null; }
+    if (currentResult) {
+      currentResult.mesh = null; currentResult.levelHistogram = null;
+      if (controls) currentResult.projectUi = controls;
+    }
     return Boolean(currentResult);
   });
   ipcMain.handle('export-preview-data', async () => {
@@ -234,10 +237,26 @@ app.whenReady().then(async () => {
   ipcMain.handle('export-result', () => exclusive(async () => {
     if (!currentResult) throw new Error('请先成功生成网格。');
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: '保存网格结果包', defaultPath: `${safeBaseName(currentResult.job.geometryPath)}.zip`,
+      title: '保存项目与结果包', defaultPath: `${safeBaseName(currentResult.job.geometryPath)}.zip`,
       filters: [{ name: '网格结果包', extensions: ['zip'] }]
     });
     return result.canceled ? null : exportPackage(result.filePath);
+  }));
+
+  ipcMain.handle('open-project', () => exclusive(async () => {
+    const smoke = process.argv.some(arg => arg.startsWith('--smoke='));
+    let file = smoke ? process.argv.find(arg => arg.startsWith('--open-project='))?.slice(15) : null;
+    if (!file) {
+      const picked = await dialog.showOpenDialog(mainWindow, { title: '打开 CartMesh2D 项目包',
+        properties: ['openFile'], filters: [{ name: '项目与结果包', extensions: ['zip'] }] });
+      if (picked.canceled) return null;
+      file = picked.filePaths[0];
+    }
+    const testRoot = smoke ? process.argv.find(arg => arg.startsWith('--out='))?.slice(6) : null;
+    const restored = await openProject(file, testRoot || sessionDirectory, operation.signal);
+    // Publishing is transactional; an invalid ZIP never replaces this binding.
+    currentResult = restored;
+    return restored;
   }));
 
   const flowState = () => ({ flow: currentResult?.flow || null, restart: currentResult?.flowRestart?.metadata || null });
@@ -314,7 +333,7 @@ app.whenReady().then(async () => {
       properties: ['openFile'], filters: [{ name: '已接受流动状态', extensions: ['checkpoint'] }] });
     if (picked.canceled) return null;
     const file = picked.filePaths[0];
-    const metadata = await readCheckpointMetadata(file);
+    const metadata = await readAcceptedCheckpointMetadata(file);
     currentResult.flowRestart = { path: file, metadata };
     return metadata;
   }));
@@ -361,7 +380,7 @@ app.whenReady().then(async () => {
       if (transient) {
         // Ignore .tmp: only the native atomic accepted-state file is resumable.
         try { currentResult.flowRestart = { path: `${pendingPrefix}.checkpoint`,
-          metadata: await readCheckpointMetadata(`${pendingPrefix}.checkpoint`) }; }
+          metadata: await readAcceptedCheckpointMetadata(`${pendingPrefix}.checkpoint`) }; }
         catch { currentResult.flowRestart = previousRestart; }
       }
       const report = { format: 'cartmesh2d-flow-incomplete-v1',
@@ -417,7 +436,7 @@ app.whenReady().then(async () => {
         if (Math.abs(checkpointMetadata.time-summary.acceptedTime) > 1e-12+1e-9*Math.abs(summary.acceptedTime))
           throw new Error('重启状态时间与摘要不一致。');
         if (!validated.summary.converged)
-          throw Object.assign(new Error(`时间步未收敛；已接受到 t=${summary.acceptedTime} s，可继续计算。候选场仅留作诊断。`), { code: 2 });
+          throw Object.assign(new Error(summary.acceptedTime>0 ? `时间步未收敛；已接受到 t=${summary.acceptedTime} s，可继续计算。候选场仅留作诊断。` : '本次没有接受物理时间步；初值不能作为续算状态。候选场仅留作诊断。'), { code: 2 });
       }
       operation.signal.throwIfAborted();
       // Preserve the earlier complete result even if copying the new set fails.
@@ -787,7 +806,9 @@ app.whenReady().then(async () => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-  if (process.argv.some(item => item.startsWith('--smoke='))) await runSmoke();
+  if (process.argv.some(item => item.startsWith('--smoke='))) {
+    try { await runSmoke(); } catch (error) { console.error(error); app.exit(1); }
+  }
 });
 
 // `--smoke=<sample-id> [--out=<dir>] [--method=<id>] [--flow-convection=<scheme>] [--flow-pressure-preconditioner=<id>] [--shot=<png>]` drives the real
@@ -830,6 +851,46 @@ async function runSmoke() {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (await mainWindow.webContents.executeJavaScript('Boolean(window.__smoke)')) break;
     await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  if (argument('open-project')) {
+    const report = await mainWindow.webContents.executeJavaScript(`(async () => {
+      const smoke=window.__smoke;
+      const restored=await smoke.openProject();
+      if(!restored)throw new Error(document.getElementById('statusText').textContent);
+      const before={cells:smoke.state.mesh.cells.length,geometryPath:smoke.state.geometryPath,
+        flowTime:smoke.state.flow?.summary.acceptedTime,thermalTime:smoke.state.thermal?.summary.time,
+        flowRestart:smoke.state.flowRestart?.time,thermalRestart:smoke.state.thermalRestart?.time,
+        controls:smoke.projectControls(),fields:smoke.state.thermal?.fields || smoke.state.flow?.fields};
+      const kind=${JSON.stringify(argument('project-resume'))};
+      if(kind) {
+        if(!['thermal','flow'].includes(kind))throw new Error('unknown project resume kind');
+        const target=document.getElementById(kind==='thermal'?'runThermal':'runFlow');
+        if(target.disabled)throw new Error('Restored project cannot resume');
+        const changes=${JSON.stringify({flowDt:argument('project-dt'),flowSteps:argument('project-steps'),flowEndTime:argument('project-end-time')})};
+        for(const [id,value] of Object.entries(changes))if(value!==null)document.getElementById(id).value=value;
+        const oldTime=kind==='thermal'?before.thermalRestart:before.flowRestart;
+        await (kind==='thermal'?smoke.runThermal():smoke.runFlow());
+        const time=kind==='thermal'?smoke.state.thermal?.summary.time:smoke.state.flow?.summary.acceptedTime;
+        if(!(time>oldTime))throw new Error('Project resume did not advance physical time');
+      }
+      return {projectOpened:true,before,after:{flowTime:smoke.state.flow?.summary.acceptedTime,
+        thermalTime:smoke.state.thermal?.summary.time,thermalRestart:smoke.state.thermalRestart?.time,
+        thermalSummary:smoke.state.thermal?.summary,thermalFiles:smoke.state.thermal?.files,
+        controls:smoke.projectControls()},status:document.getElementById('statusTitle').textContent,
+        detail:document.getElementById('statusText').textContent};
+    })()`);
+    if (report.before.fields) {
+      report.before.fieldSha256=createHash('sha256').update(JSON.stringify(report.before.fields)).digest('hex');
+      delete report.before.fields;
+    }
+    if (argument('export')) report.exported=await exportPackage(argument('export'));
+    if (shot) {
+      await fs.writeFile(shot,(await mainWindow.webContents.capturePage()).toPNG());
+      await fs.writeFile(shot+'.json',JSON.stringify(report,null,2));
+    }
+    console.log(JSON.stringify(report,null,2));
+    app.exit(0); return;
   }
 
   await mainWindow.webContents.executeJavaScript(`(async () => {

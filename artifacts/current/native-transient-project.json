@@ -1,0 +1,134 @@
+{
+  "scope": "Native 2D incompressible laminar / constant-property one-way passive temperature; desktop project recovery and terminal time robustness",
+  "date": "2026-10-07",
+  "branch": "codex/transient-thermal-workflow",
+  "nativeFixCommit": "12614a006c444d3b211334b4af19e5363faf39dc",
+  "sourceSha256": {
+    "desktop/src/core/project.js": "0d85ec0f0644f951f8f5a9c4a65d5c668bc5dc28f6b28a3e6ff5c30395ec5000",
+    "desktop/src/core/archive.js": "16a9e63f508600eef486741c465ef2dec235526da1fc55409befb66fe4f3ce07",
+    "desktop/src/core/flow-checkpoint.js": "febbf15a5e8f278d39634d01200b56f19c054058f6c967c6440e2105880f2974",
+    "desktop/src/core/thermal.js": "d7cc6a3533007e8c1d4d6d2cfb364bc413cae5da583ae216fa8abaeb0fc3bfaa",
+    "desktop/src/main.js": "ed24faeb9833621531c9fbd5899c02626f66a8908cbf4864c8105a0febe3fa39",
+    "desktop/src/preload.js": "f61eae3b1079185d25aaa70350aa06fb27803666b12c6ea53ba8545b2a239642",
+    "desktop/src/renderer/app.js": "bea3fc2b30bf269eb320d1f7712f9b6ba4f18ed7e29743cfde5a69758122cd8e",
+    "desktop/src/renderer/index.html": "69c8ae44a281887d51680adaae2f3b335645e425e2b790c8b98a9b5448a6d7fa",
+    "src/fv/ThermalFlow2D.cpp": "875b595959d4fd2982d1afd72351f0a4a5f954601da0ae222cec73910f976a48",
+    "tests/thermal_flow_test.cpp": "5c8a8d405060cded1a322d70264510a9bf28647f96324278e1208769b48b9082",
+    "desktop/tests/project.test.js": "49ee562c6706563eba48a2a4c7cffe693f75cb8e2eadbef263a619b1be5d335c"
+  },
+  "localBaseline": "Cloud 2ff2efe plus retained local shared cleanup/research; unrelated local changes are not included in this feature commit.",
+  "platform": {
+    "os": "macOS",
+    "architecture": "arm64",
+    "compiler": "/usr/bin/clang++",
+    "runtimeSha256": "a482fd9b8ac5db947e366b0fce36f9db5a6f7d1e07a84c21119626198c9ba826",
+    "packagedRuntimeMatches": true
+  },
+  "implementation": [
+    "portable self-contained project ZIP and original native output validation",
+    "independent complete-result and latest-accepted-restart bindings",
+    "atomic ZIP replacement and transactional open",
+    "zero-time initialization not published as accepted desktop restart",
+    "controller recommendation applied before terminal/event interval fitting"
+  ],
+  "checks": {
+    "nativeAndCli": {
+      "passed": 3,
+      "failed": 0
+    },
+    "frontend": {
+      "passed": 202,
+      "failed": 0
+    },
+    "beforeFixTerminalRegressionsFailed": 2
+  },
+  "thermalProject": {
+    "restoredFieldIdentical": true,
+    "restoredFieldSha256": "40f024c76ce96f295e24543a8da2929e66105ff2279c213ea2f83f2d1070a273",
+    "nativeContinuationCheckpointIdentical": true,
+    "nativeContinuationCellsIdentical": true,
+    "finalTime": 1.4,
+    "completedSteps": 4,
+    "checkpointSha256": "115ad613ff7407a2e3fdba2afcf4a61e259c81e8ebafd3986cd557d9eacf3be3",
+    "failedProjectDisplayTime": 1.3,
+    "failedProjectRestartTime": 1.3999999999999997,
+    "cells": 1300,
+    "firstRunEndTime": 1.3,
+    "oldOutputDirectoryMovedBeforeOpen": true
+  },
+  "packagedRecovery": {
+    "openedCompleteResultTime": 1.3,
+    "openedLatestCheckpointTime": 1.3999999999999997,
+    "recoveredTime": 1.5,
+    "cells": 1300,
+    "projectFile": "final-recovered-project.zip"
+  },
+  "flowProject": {
+    "openedTime": 0.04,
+    "finalTime": 0.060000000000000005,
+    "oldTimeStep": 0.02,
+    "newTimeStep": 0.01,
+    "steps": 2,
+    "restoredFieldSha256": "c53c3ab239785e49b93fa9089993f362d222f3afbc5370e1aee59fadfcd8facb"
+  },
+  "retention": {
+    "root": "outputs/project-workflow",
+    "archives": [
+      {
+        "file": "thermal-project.zip",
+        "bytes": 2070956,
+        "sha256": "7e573031d5d3e8884357d4c755a0f9f9c90697020443144c12a3d6a61cbe148f"
+      },
+      {
+        "file": "reopened-project.zip",
+        "bytes": 2574477,
+        "sha256": "a65b774b81fe10ecfd8cc85521da44e4eef7c6c9bc6f36f987b606bb1bef19dd"
+      },
+      {
+        "file": "failed-project.zip",
+        "bytes": 2339654,
+        "sha256": "941447d1f3d6d5786b5d29537ca7d4bc07c1235c82985639034a9359bc8d4ef2"
+      },
+      {
+        "file": "final-recovered-project.zip",
+        "bytes": 2812592,
+        "sha256": "674f58258070db0cab8ef7e7597478d9bbcffc14e1cff0ef9f8cc562e041f76f"
+      },
+      {
+        "file": "flow-project.zip",
+        "bytes": 818503,
+        "sha256": "4e479c94416dd61a9b724fc135abf7162d1b054b728ec9bc02d1b3f756317129"
+      },
+      {
+        "file": "flow-reopened.zip",
+        "bytes": 815556,
+        "sha256": "43c4c26f6b3f8e146cc919a30dc36a76bd18bd4b23ff3909f961c09a4e6c3f45"
+      }
+    ],
+    "logs": {
+      "terminal-before.log": "a2d032815389688d9d7d0f7b8aba73a2992560d685af4e8392e25048ac512046",
+      "terminal-after.log": "b62e2e137053fd30a5e064d96e3cfded158f2d06a905190c09596ea0a10106e8",
+      "frontend-final.log": "13134dcead97a8420795c967f3ef5e674b03f04b8c02f9d51f70038b52736889",
+      "app-create.log": "a0729b596e47124cf01fd1fe97b71daee043b9a51ea6383cf7d517d1316e1b1d",
+      "app-open.log": "35f0a59e3bfe0c427c6715c6f35e35b8986921a2482f940f95ab9b16211df557",
+      "app-repaired.log": "d54659b0b472c3fe41a09b06c1a65b06c358eff45b71b13554af21c562f3eacd",
+      "final-recovery.log": "b81b265eb7bc75ad05537b7f2cbd6c7bc4a33aeb8ce6ea7b9cd662d4ed9f2caf",
+      "flow-create.log": "38f26d52aaac031d7a5db546c85fc6dac664f8b05437efcca66eb0c620b59c4c",
+      "flow-accepted.log": "0866d38344f01bcb00aef19075d99336b7d3f6e895448ad4ebff263a7bbb223e",
+      "flow-open.log": "40a40e777a693037ca4b636218e2371631c23f930fae31ba4070fc1d627c8b69",
+      "package-final.log": "ce48e33e7f283bab1873dc760e8a2efd278c0e955a013bd1744c1c13b837aa4f",
+      "native-reference/command.json": "14455921d64113c9907c8c702c8d3f001573083c4d88a650d5e2df396772ffe0",
+      "native-reference/run.log": "cab4727aa4480949760dac66f2ea955c2c85ad7be09f21ac5c7c58a000b985fc"
+    },
+    "firstTerminalFailure": "failure-terminal-roundoff",
+    "firstFlowBudgetFailure": "flow-create-data"
+  },
+  "limits": [
+    "Goal remains active; this is not a mature-physics qualification.",
+    "Curved-wall sharp-start spatial temperature undershoot remains unresolved.",
+    "Time events remain CLI-only; full multi-run history and automatic crash recovery remain pending.",
+    "No Windows/Linux project runtime acceptance or manual OS file-dialog acceptance.",
+    "The 20-iteration initial flow smoke failed and was retained; the accepted flow used 1500 available iterations.",
+    "Backwards compatibility here is existing static thermal/flow checkpoints, not unsupported event-bearing desktop projects."
+  ]
+}

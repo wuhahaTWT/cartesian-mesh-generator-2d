@@ -55,6 +55,12 @@ node_modules/.bin/electron . --smoke=circle --out=../outputs/smoke --shot=../out
 
 桌面续算重载复用同一 smoke 入口：`--flow=channel --flow-dt=.02 --flow-steps=2 --flow-checkpoint=/绝对路径/状态.checkpoint` 通过流动载入按钮导入；`--thermal-checkpoint=/绝对路径/thermal.thermal.checkpoint` 通过温度载入按钮导入并推进两步，步长默认 .025 s，可用 `--flow-dt=` 改变。联合文件旁须保留 `desktop-state.json`，两者均须使用原网格参数重新生成网格。路径替代仅在 `--smoke=` 下作用于文件选择对话框，解析、控件、IPC 和原生续算仍使用产品代码；这不验收系统文件对话框的人工选择。温度重载还检查从局部涡／自动步长设置切换到联合状态的操作。
 
+### 完整桌面项目
+
+`desktop/src/core/project.js` 将当前绑定保存到结果包内 `cartmesh2d-project.json`（`cartmesh2d-project-v1`），使用项目内相对路径与原始文件 SHA256。转换后的 XY 已是米制，恢复时不能再次使用原 DXF/图片单位缩放。外部选入的接受检查点一起打包；场与历史重新从原生文件读取，失败/取消的较新状态与上次完整结果分开保存。`core/archive.js` 流式读取 ZIP，拒绝越界路径、重复文件、链接和特殊文件；只在完整读回成功后发布绑定。已有 ZIP 采用同文件系统原子替换。
+
+真实 App 的跨进程项目验收入口：先正常运行并 `--export=/绝对路径/project.zip`，退出后使用 `--smoke=rectangle --open-project=/绝对路径/project.zip --out=/绝对路径/验收目录` 直接打开。可附加 `--project-resume=thermal --project-dt=.025 --project-end-time=1.4`；独立流动用 `--project-resume=flow --project-dt=.01 --project-steps=2`。支持已有 `--shot`、`--export`；不会先生成新网格。路径参数仅替代 smoke 文件对话框，正式操作通过顶部“打开项目”。原生终点回归在 `tests/thermal_flow_test.cpp`，前端文件恢复/取消检查在 `desktop/tests/project.test.js`、`archive.test.js` 和 `flow-checkpoint.test.js`。
+
 ## 云端联合温度时间控制
 
 本方向基于 `991c9b85a677daa3771af486ec3c1f5939e61388`，独立分支 `codex/thermal-stability-cloud`；不与其他开发分支或 main 自动合并。原生接口在 `ThermalFlow2D.hpp/.cpp`，物理模型为二维恒物性不可压层流与单向被动温度。
